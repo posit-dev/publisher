@@ -12,8 +12,8 @@ image := "rstudio/connect-client:latest"
 run: build start
 
 # start the server
-start:
-    just container-run ./bin/linux-amd64/connect-client -debug
+start *args:
+    just container-run ./bin/linux-amd64/connect-client --debug {{ args }}
 
 # build the server
 build:
