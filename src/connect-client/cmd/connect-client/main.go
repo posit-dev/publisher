@@ -3,12 +3,13 @@ package main
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"connect-client/project"
 	"fmt"
 	"os"
 
 	"github.com/alecthomas/kong"
 	"github.com/rstudio/platform-lib/pkg/rslog"
+
+	"connect-client/project"
 )
 
 type versionCmd struct{}
@@ -23,6 +24,7 @@ type commonArgs struct {
 	Serve       bool       `help:"Serve the UI and emit its URL on standard output."`
 	Interactive bool       `short:"i" help:"Launch a browser to show the interactive UI. Implies --serve."`
 	Version     versionCmd `cmd:"" help:"Show the client software version."`
+
 	logger      rslog.Logger
 	debugLogger rslog.DebugLogger
 }
