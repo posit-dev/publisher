@@ -1,3 +1,4 @@
+<!-- Copyright (C) 2023 by Posit Software, PBC. -->
 <template>
   <v-app app>
     <v-app-bar

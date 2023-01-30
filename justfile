@@ -37,6 +37,7 @@ lint:
     ./scripts/ccheck.py ./scripts/ccheck.config
     just container-build \
         just _lint
+    just ui/ lint
 
 # format shell scripts
 format:
@@ -47,15 +48,14 @@ _lint format='0':
     #!/usr/bin/env bash
     set -euxo pipefail
 
+    just src/connect-client/ lint
+
     # SCRIPTS=(
     # )
-
     # if [[ "{{ format }}" = "1" ]]; then
     #     shfmt -i 2 -bn -ci -sr -w ${SCRIPTS[*]}
     #     exit
     # fi
-
-    just src/connect-client/ lint
     # shfmt -i 2 -bn -ci -sr -d ${SCRIPTS[*]}
     # shellcheck ${SCRIPTS[*]}
 

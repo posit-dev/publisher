@@ -1,3 +1,4 @@
+<!-- Copyright (C) 2023 by Posit Software, PBC. -->
 <template>
   <div>
     This is where the server list will be!

@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import Vue from 'vue'
 import App from './App.vue'
 import router from './router'

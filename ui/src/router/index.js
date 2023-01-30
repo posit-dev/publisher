@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import ServerList from '../views/ServerList.vue'
