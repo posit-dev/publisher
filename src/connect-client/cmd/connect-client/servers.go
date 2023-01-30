@@ -23,7 +23,7 @@ type addServerCmd struct {
 	Insecure    bool     `help:"Don't validate Connect server certificate."`
 }
 
-func (cmd *addServerCmd) Run(ctx *global) error {
+func (cmd *addServerCmd) Run(ctx *commonArgs) error {
 	fmt.Printf("add-server: %+v %+v", ctx, cmd)
 	return nil
 }
@@ -32,20 +32,20 @@ type removeServerCmd struct {
 	serverSpec `group:"Server:"`
 }
 
-func (cmd *removeServerCmd) Run(ctx *global) error {
+func (cmd *removeServerCmd) Run(ctx *commonArgs) error {
 	fmt.Printf("remove-server: %+v %+v", ctx, cmd)
 	return nil
 }
 
 type listServersCmd struct{}
 
-func (cmd *listServersCmd) Run(ctx *global) error {
-	fmt.Printf("list-servers: %+v %+v", ctx, cmd)
+func (cmd *listServersCmd) Run(ctx *commonArgs) error {
+	ctx.debugLogger.Debugf("list-servers: %+v %+v", ctx, cmd)
 	return nil
 }
 
 type serverCommands struct {
-	AddServer    addServerCmd    `group:"Servers" cmd:"" help:"Add a publishing server."`
-	RemoveServer removeServerCmd `group:"Servers" cmd:"" help:"Remove a publishing server."`
-	ListServers  listServersCmd  `group:"Servers" cmd:"" help:"List publishing servers."`
+	AddServer    addServerCmd    `cmd:"" help:"Add a publishing server."`
+	RemoveServer removeServerCmd `cmd:"" help:"Remove a publishing server."`
+	ListServers  listServersCmd  `cmd:"" help:"List publishing servers."`
 }

@@ -13,7 +13,7 @@ run: build start
 
 # start the server
 start *args:
-    just container-run ./bin/linux-amd64/connect-client --debug {{ args }}
+    just container-run ./bin/linux-amd64/connect-client {{ args }}
 
 # build the server
 build:
