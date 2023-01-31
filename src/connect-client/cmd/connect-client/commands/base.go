@@ -1,10 +1,12 @@
 package commands
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
+	"net/url"
+
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
-
-// Copyright (C) 2023 by Posit Software, PBC.
 
 type UIArgs struct {
 	Serve       bool   `help:"Serve the UI and emit its URL on standard output."`
@@ -26,4 +28,11 @@ func (args *CommonArgs) Resolve() {
 		args.Serve = true
 	}
 	args.DebugLogger = rslog.NewDebugLogger(GeneralRegion)
+}
+
+// serverSpec contains the info about a saved server in the server list.
+// The user must specify a saved server by name or URL (but not both).
+type serverSpec struct {
+	URL  *url.URL `short:"u" xor:"spec" required:"" help:"URL of the server URL to remove."`
+	Name string   `short:"n" xor:"spec" required:"" help:"Nickname of the server to remove."`
 }

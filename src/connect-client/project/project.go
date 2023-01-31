@@ -2,7 +2,7 @@ package project
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-// Version is set by the linked
+// Version is set by the linker
 var Version string
 
 func UserAgent() string {

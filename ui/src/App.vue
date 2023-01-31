@@ -10,7 +10,7 @@
     >
       <v-app-bar-nav-icon></v-app-bar-nav-icon>
 
-      <v-toolbar-title>Posit Publishing</v-toolbar-title>
+      <v-toolbar-title>Posit Publishing Client</v-toolbar-title>
 
       <v-spacer></v-spacer>
 

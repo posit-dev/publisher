@@ -10,13 +10,6 @@ import (
 	"os"
 )
 
-// serverSpec contains the info about a saved server in the server list.
-// The user can specify a saved server by name or URL (but not both).
-type serverSpec struct {
-	URL  *url.URL `short:"u" xor:"spec" required:"" help:"URL of the server URL to remove."`
-	Name string   `short:"n" xor:"spec" required:"" help:"Nickname of the server to remove."`
-}
-
 type addServerCmd struct {
 	URL         *url.URL `short:"u" help:"Server URL."`
 	Name        string   `short:"n" help:"Nickname for the server."`
@@ -57,7 +50,7 @@ func (cmd *listServersCmd) Run(ctx *CommonArgs) error {
 
 	servers := cmd.servers.GetAllServers()
 	if len(servers) == 0 {
-		fmt.Println("No servers are saved. To add a server, see `connect-client add --help`.")
+		fmt.Println("No servers are saved. To add a server, see `connect-client add-server --help`.")
 	} else {
 		fmt.Println()
 		for _, server := range servers {
@@ -71,7 +64,7 @@ func (cmd *listServersCmd) Run(ctx *CommonArgs) error {
 				fmt.Println("    Insecure mode (TLS host/certificate validation disabled)")
 			}
 			if server.Certificate != "" {
-				fmt.Printf("    Client TLS certificate data provided")
+				fmt.Println("    Client TLS certificate data provided")
 			}
 			fmt.Println()
 		}

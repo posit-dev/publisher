@@ -26,7 +26,6 @@ build:
 build-all:
     mkdir -p .cache/go ui/dist
     just ui/ build
-    cp -r ui/dist/* src/connect-client/static/
 
     just container-build \
         just src/connect-client/ build-all "{{ version }}"

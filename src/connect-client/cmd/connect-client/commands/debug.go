@@ -1,5 +1,7 @@
 package commands
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )

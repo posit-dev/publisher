@@ -1,8 +1,8 @@
 package servers
 
-import "os"
-
 // Copyright (C) 2023 by Posit Software, PBC.
+
+import "os"
 
 func (l *ServerList) loadServerFromEnvironment() {
 	serverURL := os.Getenv("CONNECT_SERVER")
