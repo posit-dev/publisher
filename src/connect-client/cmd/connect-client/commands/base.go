@@ -4,6 +4,7 @@ package commands
 
 import (
 	"net/url"
+	"os"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
@@ -18,16 +19,28 @@ type UIArgs struct {
 type CommonArgs struct {
 	UIArgs `group:"UI"`
 	Debug  debugFlag `help:"Enable debug mode." env:"CONNECT_DEBUG"`
-
-	Logger      rslog.Logger      `kong:"-"`
-	DebugLogger rslog.DebugLogger `kong:"-"`
 }
 
 func (args *CommonArgs) Resolve() {
 	if args.Interactive {
 		args.Serve = true
 	}
-	args.DebugLogger = rslog.NewDebugLogger(GeneralRegion)
+}
+
+type CLIContext struct {
+	Logger      rslog.Logger      `kong:"-"`
+	DebugLogger rslog.DebugLogger `kong:"-"`
+}
+
+func NewCLIContext() *CLIContext {
+	logger := rslog.DefaultLogger()
+	logger.SetOutput(os.Stderr)
+	logger.SetLevel(rslog.DebugLevel)
+
+	return &CLIContext{
+		Logger:      logger,
+		DebugLogger: rslog.NewDebugLogger(GeneralRegion),
+	}
 }
 
 // serverSpec contains the info about a saved server in the server list.

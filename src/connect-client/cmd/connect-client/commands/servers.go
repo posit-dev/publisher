@@ -18,8 +18,8 @@ type addServerCmd struct {
 	Insecure    bool     `help:"Don't validate server certificate."`
 }
 
-func (cmd *addServerCmd) Run(ctx *CommonArgs) error {
-	fmt.Printf("add-server: %+v %+v", ctx, cmd)
+func (cmd *addServerCmd) Run(args *CommonArgs) error {
+	fmt.Printf("add-server: %+v %+v", args, cmd)
 	return nil
 }
 
@@ -27,8 +27,8 @@ type removeServerCmd struct {
 	serverSpec `group:"Server:"`
 }
 
-func (cmd *removeServerCmd) Run(ctx *CommonArgs) error {
-	fmt.Printf("remove-server: %+v %+v", ctx, cmd)
+func (cmd *removeServerCmd) Run(args *CommonArgs) error {
+	fmt.Printf("remove-server: %+v %+v", args, cmd)
 	return nil
 }
 
@@ -36,11 +36,11 @@ type listServersCmd struct {
 	servers servers.ServerList
 }
 
-func (cmd *listServersCmd) Run(ctx *CommonArgs) error {
-	ctx.DebugLogger.Debugf("list-servers: %+v %+v", ctx, cmd)
+func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
+	ctx.DebugLogger.Debugf("list-servers: %+v %+v", args, cmd)
 
-	if ctx.Serve {
-		return cmd.Serve(ctx)
+	if args.Serve {
+		return cmd.Serve(args, ctx)
 	}
 
 	err := cmd.servers.Load()
@@ -72,8 +72,8 @@ func (cmd *listServersCmd) Run(ctx *CommonArgs) error {
 	return nil
 }
 
-func (cmd *listServersCmd) Serve(ctx *CommonArgs) error {
-	app := connect_client.NewApplication("#servers", ctx.Host, ctx.Port, bool(ctx.Debug), ctx.Logger)
+func (cmd *listServersCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
+	app := connect_client.NewApplication("#servers", args.Host, args.Port, bool(args.Debug), ctx.Logger)
 	return app.Run()
 }
 

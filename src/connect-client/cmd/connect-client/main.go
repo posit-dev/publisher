@@ -5,36 +5,31 @@ package main
 import (
 	"connect-client/cmd/connect-client/commands"
 	"connect-client/project"
-	"os"
 
 	"github.com/alecthomas/kong"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
-type cli struct {
+type cliSpec struct {
 	commands.CommonArgs
 	commands.ServerCommands `group:"Servers"`
 	Version                 commands.VersionFlag `help:"Show the client software version and exit."`
 }
 
 func main() {
-	logger := rslog.DefaultLogger()
-	logger.SetOutput(os.Stderr)
-	logger.SetLevel(rslog.DebugLevel)
+	ctx := commands.NewCLIContext()
+	ctx.Logger.Infof("Client version: %s", project.Version)
 	defer rslog.Flush()
 
-	args := cli{
-		CommonArgs: commands.CommonArgs{
-			Logger: logger,
-		},
+	cli := cliSpec{
+		CommonArgs: commands.CommonArgs{},
 	}
 
-	ctx := kong.Parse(&args)
-	args.CommonArgs.Resolve()
-
-	args.Logger.Infof("Client version: %s", project.Version)
+	args := kong.Parse(&cli)
+	cli.CommonArgs.Resolve()
+	args.Bind(ctx)
 
 	// Dispatch to the Run() method of the selected command.
-	err := ctx.Run(&args.CommonArgs)
-	ctx.FatalIfErrorf(err)
+	err := args.Run(&cli.CommonArgs)
+	args.FatalIfErrorf(err)
 }
