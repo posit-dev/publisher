@@ -11,7 +11,7 @@ import (
 
 // Returns the path to rsconnect-python's configuration directory.
 // The config directory is where the server list (servers.json) is
-// stored, along with deployment metadata for any deployements that
+// stored, along with deployment metadata for any deployments that
 // were made from read-only directories.
 func rsconnectPythonConfigDir() (string, error) {
 	// https://github.com/rstudio/rsconnect-python/blob/master/rsconnect/metadata.py
@@ -45,58 +45,49 @@ func rsconnectPythonServerListPath() (string, error) {
 	return filepath.Join(dir, "servers.json"), nil
 }
 
-// Infers a server type from the server URL.
-// For Posit-deployed servers (shinyapps.io, posit.cloud)
-// it returns the corresponding type. Otherwise,
-// it assumes a Connect server.
-func serverTypeFromURL(url string) ServerType {
-	switch url {
-	case "https://api.posit.cloud":
-		return ServerTypeCloud
-	case "https://api.rstudio.cloud":
-		return ServerTypeCloud
-	case "https://api.shinyapps.io":
-		return ServerTypeShinyappsIO
-	default:
-		return ServerTypeConnect
+func decodeRSConnectPythonServerStore(data []byte) ([]Server, error) {
+	// rsconnect-python stores a map of nicknames to servers
+	var serverMap map[string]Server
+	err := json.Unmarshal(data, &serverMap)
+	if err != nil {
+		return []Server{}, err
 	}
+
+	servers := []Server{}
+	for _, server := range serverMap {
+		server.Source = ServerSourceRSCP
+
+		// rsconnect-python does not store the server
+		// type, so infer it from the URL.
+		server.Type = serverTypeFromURL(server.URL)
+
+		// Migrate existing rstudio.cloud entries.
+		if server.URL == "https://api.rstudio.cloud" {
+			server.URL = "https://api.posit.cloud"
+		}
+		servers = append(servers, server)
+	}
+	return servers, nil
 }
 
 // Loads the list of servers stored by rsconnect-python
 // by reading its servers.json file.
-func ReadRsconnectPythonServers() (ServerList, error) {
+func (l *ServerList) loadRSConnectPythonServers() error {
 	path, err := rsconnectPythonServerListPath()
 	if err != nil {
-		return ServerList{}, err
+		return err
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return ServerList{}, nil
+			return nil
 		}
-		return ServerList{}, err
+		return err
 	}
-
-	// rsconnect-python stores a map of nicknames to servers
-	var serverMap map[string]Server
-	err = json.Unmarshal(data, &serverMap)
+	servers, err := decodeRSConnectPythonServerStore(data)
 	if err != nil {
-		return ServerList{}, err
+		return err
 	}
-	var serverList ServerList
-	for _, server := range serverMap {
-		serverList = append(serverList, server)
-	}
-
-	// rsconnect-python does not store the server
-	// type, so infer it from the URL.
-	for i := range serverList {
-		server := &serverList[i]
-		server.Type = serverTypeFromURL(server.URL)
-		if server.Type == ServerTypeCloud && server.URL == "https://api.rstudio.cloud" {
-			// Migrate existing rstudio.cloud entries.
-			server.URL = "https://api.posit.cloud"
-		}
-	}
-	return serverList, nil
+	l.servers = append(l.servers, servers...)
+	return nil
 }

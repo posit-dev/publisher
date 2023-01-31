@@ -18,12 +18,16 @@ start *args:
 # build the server
 build:
     mkdir -p .cache/go ui/dist
+
     just container-build \
         just src/connect-client/ build "{{ version }}"
 
 # build the server for all platforms
 build-all:
     mkdir -p .cache/go ui/dist
+    just ui/ build
+    cp -r ui/dist/* src/connect-client/static/
+
     just container-build \
         just src/connect-client/ build-all "{{ version }}"
 
@@ -98,7 +102,6 @@ container-build *args:
         -e GOMODCACHE=/work/.cache/go/mod \
         -u $(id -u):$(id -g) \
         -v "$(pwd)":/work \
-        -v "$(pwd)/ui/dist":/work/src/connect-client/boot/static \
         -w /work \
         {{ image }} {{ args }}
 
@@ -108,7 +111,6 @@ container-test *args:
         -e GOCACHE=/work/.cache/go/cache \
         -e GOMODCACHE=/work/.cache/go/mod \
         -v "$(pwd)":/work \
-        -v "$(pwd)/ui/dist":/work/src/connect-client/boot/static \
         -w /work \
         {{ image }} {{ args }}
 
