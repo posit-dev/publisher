@@ -3,6 +3,7 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"connect-client/servers"
 	"net/url"
 	"os"
 
@@ -28,19 +29,26 @@ func (args *CommonArgs) Resolve() {
 }
 
 type CLIContext struct {
+	Servers     servers.ServerList
 	Logger      rslog.Logger      `kong:"-"`
 	DebugLogger rslog.DebugLogger `kong:"-"`
 }
 
-func NewCLIContext() *CLIContext {
+func NewCLIContext() (*CLIContext, error) {
 	logger := rslog.DefaultLogger()
 	logger.SetOutput(os.Stderr)
 	logger.SetLevel(rslog.DebugLevel)
 
+	serverList, err := servers.NewServerList()
+	if err != nil {
+		return nil, err
+	}
+
 	return &CLIContext{
+		Servers:     serverList,
 		Logger:      logger,
 		DebugLogger: rslog.NewDebugLogger(GeneralRegion),
-	}
+	}, nil
 }
 
 // serverSpec contains the info about a saved server in the server list.

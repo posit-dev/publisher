@@ -13,12 +13,12 @@ import (
 type cliSpec struct {
 	commands.CommonArgs
 	commands.ServerCommands `group:"Servers"`
-	Version                 commands.VersionFlag `help:"Show the client software version and exit."`
+
+	Publish commands.PublishCmd  `cmd:"" help:"Publish a project."`
+	Version commands.VersionFlag `help:"Show the client software version and exit."`
 }
 
 func main() {
-	ctx := commands.NewCLIContext()
-	ctx.Logger.Infof("Client version: %s", project.Version)
 	defer rslog.Flush()
 
 	cli := cliSpec{
@@ -27,9 +27,15 @@ func main() {
 
 	args := kong.Parse(&cli)
 	cli.CommonArgs.Resolve()
-	args.Bind(ctx)
+
+	ctx, err := commands.NewCLIContext()
+	if err != nil {
+		ctx.Logger.Fatalf("Error initializing client: %s", err)
+	}
+	ctx.Logger.Infof("Client version: %s", project.Version)
 
 	// Dispatch to the Run() method of the selected command.
-	err := args.Run(&cli.CommonArgs)
+	args.Bind(ctx)
+	err = args.Run(&cli.CommonArgs)
 	args.FatalIfErrorf(err)
 }

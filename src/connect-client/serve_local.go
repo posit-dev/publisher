@@ -15,21 +15,22 @@ import (
 var content embed.FS
 
 type Application struct {
-	urlPath string
-	host    string
-	port    int
-	debug   bool
-	logger  rslog.Logger
-	server  *http.Server
+	urlPath     string
+	host        string
+	port        int
+	debug       bool
+	logger      rslog.Logger
+	debugLogger rslog.DebugLogger
 }
 
-func NewApplication(urlPath string, host string, port int, debug bool, logger rslog.Logger) *Application {
+func NewApplication(urlPath string, host string, port int, debug bool, logger rslog.Logger, debugLogger rslog.DebugLogger) *Application {
 	return &Application{
-		urlPath: urlPath,
-		host:    host,
-		port:    port,
-		debug:   debug,
-		logger:  logger,
+		urlPath:     urlPath,
+		host:        host,
+		port:        port,
+		debug:       debug,
+		logger:      logger,
+		debugLogger: debugLogger,
 	}
 }
 
@@ -48,7 +49,8 @@ func (app *Application) Run() error {
 	}
 
 	addr := fmt.Sprintf("%s:%d", app.host, app.port)
-	fmt.Printf("http://%s%s\n", addr, app.getPath())
+	url := fmt.Sprintf("http://%s%s\n", addr, app.getPath())
+	fmt.Printf("%s\n", url)
 
 	err = http.ListenAndServe(addr, router)
 	if err != nil && err != http.ErrServerClosed {
@@ -59,7 +61,9 @@ func (app *Application) Run() error {
 }
 
 func (app *Application) configure() (*gin.Engine, error) {
-	if !app.debug {
+	if app.debug {
+		gin.DebugPrintRouteFunc = debugPrintRouteFunc(app.debugLogger)
+	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
@@ -77,8 +81,6 @@ func (app *Application) configure() (*gin.Engine, error) {
 	})
 	r.GET("static/*filepath", gin.WrapH(http.FileServer(http.FS(content))))
 
-	// Proxy to Connect server for the publishing UI
-	// ...
 	// More APIs to come...
 	return r, nil
 }

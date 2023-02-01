@@ -4,7 +4,6 @@ package commands
 
 import (
 	connect_client "connect-client"
-	"connect-client/servers"
 	"fmt"
 	"net/url"
 	"os"
@@ -32,9 +31,7 @@ func (cmd *removeServerCmd) Run(args *CommonArgs) error {
 	return nil
 }
 
-type listServersCmd struct {
-	servers servers.ServerList
-}
+type listServersCmd struct{}
 
 func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	ctx.DebugLogger.Debugf("list-servers: %+v %+v", args, cmd)
@@ -43,12 +40,7 @@ func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return cmd.Serve(args, ctx)
 	}
 
-	err := cmd.servers.Load()
-	if err != nil {
-		ctx.Logger.Fatalf("Could not load server list: %s", err)
-	}
-
-	servers := cmd.servers.GetAllServers()
+	servers := ctx.Servers.GetAllServers()
 	if len(servers) == 0 {
 		fmt.Println("No servers are saved. To add a server, see `connect-client add-server --help`.")
 	} else {
@@ -73,7 +65,7 @@ func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 func (cmd *listServersCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
-	app := connect_client.NewApplication("#servers", args.Host, args.Port, bool(args.Debug), ctx.Logger)
+	app := connect_client.NewApplication("#servers", args.Host, args.Port, bool(args.Debug), ctx.Logger, ctx.DebugLogger)
 	return app.Run()
 }
 

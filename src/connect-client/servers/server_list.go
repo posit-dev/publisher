@@ -19,6 +19,14 @@ type ServerList struct {
 	servers []Server
 }
 
+func NewServerList() (ServerList, error) {
+	serverList := ServerList{
+		servers: []Server{},
+	}
+	err := serverList.Load()
+	return serverList, err
+}
+
 func (l *ServerList) Load() error {
 	l.servers = []Server{}
 	l.loadServerFromEnvironment()
