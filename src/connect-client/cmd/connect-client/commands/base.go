@@ -15,8 +15,8 @@ import (
 type UIArgs struct {
 	Serve       bool   `help:"Serve the UI and emit its URL on standard output."`
 	Interactive bool   `short:"i" help:"Launch a browser to show the interactive UI. Implies --serve."`
-	Host        string `default:"localhost" help:"Hostname to listen on. Default: 'localhost'"`
-	Port        int    `default:"4242" help:"Post number to listen on. Default: automatic port selection."`
+	Host        string `default:"0.0.0.0" help:"Hostname or IP to listen on."`
+	Port        int    `default:"4242" help:"Post number to listen on."`
 }
 
 type CommonArgs struct {
