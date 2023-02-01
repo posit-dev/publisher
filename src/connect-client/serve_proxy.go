@@ -8,6 +8,7 @@ import (
 	"connect-client/proxy"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -53,6 +54,7 @@ func (app *ProxyApplication) Run() error {
 	addr := fmt.Sprintf("%s:%d", app.host, app.port)
 	url := fmt.Sprintf("http://%s%s", addr, app.getPath())
 	fmt.Printf("%s\n", url)
+	app.logger.Infof("Proxy server URL: %s", url)
 
 	err = http.ListenAndServe(addr, router)
 	if err != nil && err != http.ErrServerClosed {
@@ -81,10 +83,12 @@ func (app *ProxyApplication) configure() (*gin.Engine, error) {
 	// }
 
 	// Proxy to Connect server for the publishing UI
-	p, err := proxy.NewProxy(app.remoteUrl, app.getPath(), app.logger, app.debugLogger)
+	remoteUrl, err := url.Parse(app.remoteUrl)
 	if err != nil {
 		return nil, err
 	}
+
+	p := proxy.NewProxy(remoteUrl, app.getPath(), app.logger)
 	handler := proxy.NewProxyRequestHandler(p)
 	r.Any(app.getPath()+"*path", gin.WrapF(handler))
 	return r, nil

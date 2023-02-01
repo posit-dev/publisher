@@ -81,7 +81,7 @@ container-run *args:
         args=(--net host)
     fi
 
-    docker run --rm {{ interactive }} --privileged --name connect-client \
+    docker run --rm --privileged --name connect-client \
         -e GOCACHE=/work/.cache/go/cache \
         -e GOMODCACHE=/work/.cache/go/mod \
         -e http_proxy=${http_proxy:-} \
