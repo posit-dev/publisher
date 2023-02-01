@@ -78,10 +78,11 @@ func (p *proxy) logRequest(msg string, req *http.Request) {
 func (p *proxy) logResponse(resp *http.Response) {
 	if p.debugLogger.Enabled() {
 		p.debugLogger.WithFields(rslog.Fields{
-			"status": strconv.Itoa(resp.StatusCode),
-			"length": resp.ContentLength,
-			"url":    resp.Request.URL.String(),
-			"server": resp.Header["Server"],
+			"status":         strconv.Itoa(resp.StatusCode),
+			"length":         resp.ContentLength,
+			"url":            resp.Request.URL.String(),
+			"server":         resp.Header["Server"],
+			"correlation-id": resp.Header.Get("X-Correlation-Id"),
 		}).Debugf("Proxy response")
 	}
 }
