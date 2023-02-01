@@ -3,7 +3,7 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	connect_client "connect-client"
+	"connect-client/services/ui"
 	"fmt"
 	"net/url"
 	"os"
@@ -63,7 +63,7 @@ func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 func (cmd *listServersCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
-	app := connect_client.NewApplication("#servers", args.Host, args.Port, ctx.Logger)
+	app := ui.NewUIApplication("#servers", args.Host, args.Port, ctx.Logger)
 	return app.Run()
 }
 

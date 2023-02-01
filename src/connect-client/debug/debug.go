@@ -28,7 +28,7 @@ func getRegionByName(name string) rslog.ProductRegion {
 }
 
 func enableAllRegions() {
-	for region, _ := range definedRegionNames {
+	for region := range definedRegionNames {
 		rslog.Enable(region)
 	}
 }
@@ -44,5 +44,17 @@ func InitDebugLogging(regionNames []string) {
 		if region == AllRegions {
 			enableAllRegions()
 		}
+	}
+}
+
+// DebugPrintRouteFunc is a gin route printer that
+// prints the routes via structured logging.
+func DebugPrintRouteFunc(debugLogger rslog.DebugLogger) func(string, string, string, int) {
+	return func(httpMethod, absolutePath, handlerName string, _ int) {
+		debugLogger.WithFields(rslog.Fields{
+			"method":  httpMethod,
+			"path":    absolutePath,
+			"handler": handlerName,
+		}).Debugf("Route defined")
 	}
 }

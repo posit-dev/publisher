@@ -1,4 +1,4 @@
-package connect_client
+package ui
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -15,7 +15,7 @@ import (
 //go:embed static/*
 var content embed.FS
 
-type Application struct {
+type UIApplication struct {
 	urlPath     string
 	host        string
 	port        int
@@ -24,8 +24,8 @@ type Application struct {
 	debugLogger rslog.DebugLogger
 }
 
-func NewApplication(urlPath string, host string, port int, logger rslog.Logger) *Application {
-	return &Application{
+func NewUIApplication(urlPath string, host string, port int, logger rslog.Logger) *UIApplication {
+	return &UIApplication{
 		urlPath:     urlPath,
 		host:        host,
 		port:        port,
@@ -34,7 +34,7 @@ func NewApplication(urlPath string, host string, port int, logger rslog.Logger) 
 	}
 }
 
-func (app *Application) getPath() string {
+func (app *UIApplication) getPath() string {
 	path := "/static/"
 	if app.urlPath != "" {
 		path += app.urlPath
@@ -42,7 +42,7 @@ func (app *Application) getPath() string {
 	return path
 }
 
-func (app *Application) Run() error {
+func (app *UIApplication) Run() error {
 	router, err := app.configure()
 	if err != nil {
 		return err
@@ -61,9 +61,9 @@ func (app *Application) Run() error {
 	return nil
 }
 
-func (app *Application) configure() (*gin.Engine, error) {
+func (app *UIApplication) configure() (*gin.Engine, error) {
 	if app.debug {
-		gin.DebugPrintRouteFunc = debugPrintRouteFunc(app.debugLogger)
+		gin.DebugPrintRouteFunc = debug.DebugPrintRouteFunc(app.debugLogger)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}

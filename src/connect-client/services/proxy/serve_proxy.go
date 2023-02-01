@@ -1,11 +1,10 @@
-package connect_client
+package proxy
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
 	"connect-client/debug"
 	"connect-client/middleware"
-	"connect-client/proxy"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -66,7 +65,7 @@ func (app *ProxyApplication) Run() error {
 
 func (app *ProxyApplication) configure() (*gin.Engine, error) {
 	if app.debug {
-		gin.DebugPrintRouteFunc = debugPrintRouteFunc(app.debugLogger)
+		gin.DebugPrintRouteFunc = debug.DebugPrintRouteFunc(app.debugLogger)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -88,18 +87,8 @@ func (app *ProxyApplication) configure() (*gin.Engine, error) {
 		return nil, err
 	}
 
-	p := proxy.NewProxy(remoteUrl, app.getPath(), app.logger)
-	handler := proxy.NewProxyRequestHandler(p)
+	proxy := NewProxy(remoteUrl, app.getPath(), app.logger)
+	handler := NewProxyRequestHandler(proxy)
 	r.Any(app.getPath()+"*path", gin.WrapF(handler))
 	return r, nil
-}
-
-func debugPrintRouteFunc(debugLogger rslog.DebugLogger) func(string, string, string, int) {
-	return func(httpMethod, absolutePath, handlerName string, _ int) {
-		debugLogger.WithFields(rslog.Fields{
-			"method":  httpMethod,
-			"path":    absolutePath,
-			"handler": handlerName,
-		}).Debugf("Route defined")
-	}
 }

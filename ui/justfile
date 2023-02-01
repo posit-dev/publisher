@@ -4,7 +4,7 @@ install:
 
 build:
     yarn build
-    cp -r dist/* ../src/connect-client/static/
+    cp -r dist/* ../src/connect-client/services/ui/static/
 
 serve:
     yarn serve
