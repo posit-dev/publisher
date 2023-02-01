@@ -3,10 +3,11 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"connect-client/servers"
 	"fmt"
 	"net/url"
 	"os"
+
+	"connect-client/servers"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )

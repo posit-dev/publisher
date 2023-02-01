@@ -3,10 +3,11 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"connect-client/services/ui"
 	"fmt"
 	"net/url"
 	"os"
+
+	"connect-client/services/ui"
 )
 
 type addServerCmd struct {

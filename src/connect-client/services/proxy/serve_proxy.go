@@ -3,11 +3,12 @@ package proxy
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"connect-client/debug"
-	"connect-client/middleware"
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"connect-client/debug"
+	"connect-client/services/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rstudio/platform-lib/pkg/rslog"

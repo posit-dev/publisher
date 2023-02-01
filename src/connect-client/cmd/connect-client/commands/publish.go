@@ -1,8 +1,9 @@
 package commands
 
 import (
-	"connect-client/services/proxy"
 	"fmt"
+
+	"connect-client/services/proxy"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.

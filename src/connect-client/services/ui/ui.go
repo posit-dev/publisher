@@ -3,10 +3,11 @@ package ui
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"connect-client/debug"
 	"embed"
 	"fmt"
 	"net/http"
+
+	"connect-client/debug"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rstudio/platform-lib/pkg/rslog"

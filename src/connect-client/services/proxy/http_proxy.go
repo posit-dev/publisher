@@ -3,12 +3,13 @@ package proxy
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"connect-client/debug"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"connect-client/debug"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
@@ -30,14 +31,14 @@ func NewProxy(
 	sourcePath string,
 	logger rslog.Logger) *httputil.ReverseProxy {
 
-	proxy := proxy{
+	p := proxy{
 		targetURL:    targetURL.String(),
 		sourcePath:   sourcePath,
 		baseDirector: httputil.NewSingleHostReverseProxy(targetURL).Director,
 		logger:       logger,
 		debugLogger:  rslog.NewDebugLogger(debug.ProxyRegion),
 	}
-	return proxy.asReverseProxy()
+	return p.asReverseProxy()
 }
 
 // NewProxyRequestHandler wraps a proxy in a request handler function.
