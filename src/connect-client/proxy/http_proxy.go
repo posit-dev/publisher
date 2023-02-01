@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
+	"strconv"
 	"strings"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -46,7 +46,15 @@ func urlPathJoin(a, b string) string {
 }
 
 func (h *proxyHelper) ModifyResponse(resp *http.Response) error {
-	h.debugLogger.Debugf("Proxy response: %s (%d bytes) from %s", resp.Status, resp.ContentLength, resp.Header["Server"])
+	if h.debugLogger.Enabled() {
+		h.debugLogger.WithFields(rslog.Fields{
+			"code":   strconv.Itoa(resp.StatusCode),
+			"status": resp.Status,
+			"length": resp.ContentLength,
+			"url":    resp.Request.URL.String(),
+			"server": resp.Header["Server"],
+		}).Debugf("Proxy response")
+	}
 
 	// Rewrite outbound absolute redirects
 	location := resp.Header.Get("Location")
@@ -76,13 +84,24 @@ func NewProxy(serverURL string, proxyPath string, logger rslog.Logger, debugLogg
 
 	originalDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
-		debugLogger.Debugf("Proxy req in:  %s %s", req.Method, req.URL)
+		if debugLogger.Enabled() {
+			debugLogger.WithFields(rslog.Fields{
+				"method": req.Method,
+				"url":    req.URL.String(),
+			}).Debugf("Proxy request in")
+		}
 		helper.StripSourcePrefix(req)
 		originalDirector(req)
 		req.Host = req.URL.Host
-		req.Header.Set("Host", req.URL.Host)
-		debugLogger.Debugf("Proxy req out: %s %s", req.Method, req.URL)
-		req.Header.Write(os.Stderr)
+		req.Header.Set("Host", req.Host)
+
+		if debugLogger.Enabled() {
+			debugLogger.WithFields(rslog.Fields{
+				"method": req.Method,
+				"url":    req.URL.String(),
+			}).Debugf("Proxy request out")
+		}
+		//req.Header.Write(os.Stderr)
 	}
 	proxy.ModifyResponse = helper.ModifyResponse
 	proxy.ErrorHandler = helper.ErrorHandler

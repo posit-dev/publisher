@@ -4,6 +4,7 @@ package commands
 
 import (
 	"connect-client/servers"
+	"fmt"
 	"net/url"
 	"os"
 
@@ -22,16 +23,16 @@ type CommonArgs struct {
 	Debug  debugFlag `help:"Enable debug mode." env:"CONNECT_DEBUG"`
 }
 
-func (args *CommonArgs) Resolve() {
+func (args *CommonArgs) AfterApply() error {
 	if args.Interactive {
 		args.Serve = true
 	}
+	return nil
 }
 
 type CLIContext struct {
-	Servers     servers.ServerList
-	Logger      rslog.Logger      `kong:"-"`
-	DebugLogger rslog.DebugLogger `kong:"-"`
+	Servers servers.ServerList
+	Logger  rslog.Logger `kong:"-"`
 }
 
 func NewCLIContext() (*CLIContext, error) {
@@ -45,15 +46,34 @@ func NewCLIContext() (*CLIContext, error) {
 	}
 
 	return &CLIContext{
-		Servers:     serverList,
-		Logger:      logger,
-		DebugLogger: rslog.NewDebugLogger(GeneralRegion),
+		Servers: serverList,
+		Logger:  logger,
 	}, nil
 }
 
-// serverSpec contains the info about a saved server in the server list.
+// ServerSpec contains the info about a saved server in the server list.
 // The user must specify a saved server by name or URL (but not both).
-type serverSpec struct {
-	URL  *url.URL `short:"u" xor:"spec" required:"" help:"URL of the server URL to remove."`
-	Name string   `short:"n" xor:"spec" required:"" help:"Nickname of the server to remove."`
+type ServerSpec struct {
+	URL    *url.URL `short:"u" xor:"spec" required:"" help:"URL of the server URL to remove."`
+	Name   string   `short:"n" xor:"spec" required:"" help:"Nickname of the server to remove."`
+	server servers.Server
+}
+
+func (s *ServerSpec) AfterApply(ctx *CLIContext) error {
+	// Argument parsing enforces that exactly one of s.Name or s.URL is set
+	if s.Name != "" {
+		ok, server := ctx.Servers.GetServerByName(s.Name)
+		if !ok {
+			return fmt.Errorf("Server name '%s' is not defined.", s.Name)
+		}
+		s.server = server
+	}
+	if s.URL != nil {
+		ok, server := ctx.Servers.GetServerByURL(s.URL.String())
+		if !ok {
+			return fmt.Errorf("Server url '%s' is not defined.", s.URL)
+		}
+		s.server = server
+	}
+	return nil
 }

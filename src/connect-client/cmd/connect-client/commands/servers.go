@@ -23,7 +23,7 @@ func (cmd *addServerCmd) Run(args *CommonArgs) error {
 }
 
 type removeServerCmd struct {
-	serverSpec `group:"Server:"`
+	serverSpec ServerSpec `group:"Server:"`
 }
 
 func (cmd *removeServerCmd) Run(args *CommonArgs) error {
@@ -34,8 +34,6 @@ func (cmd *removeServerCmd) Run(args *CommonArgs) error {
 type listServersCmd struct{}
 
 func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	ctx.DebugLogger.Debugf("list-servers: %+v %+v", args, cmd)
-
 	if args.Serve {
 		return cmd.Serve(args, ctx)
 	}
@@ -65,7 +63,7 @@ func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 func (cmd *listServersCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
-	app := connect_client.NewApplication("#servers", args.Host, args.Port, bool(args.Debug), ctx.Logger, ctx.DebugLogger)
+	app := connect_client.NewApplication("#servers", args.Host, args.Port, ctx.Logger)
 	return app.Run()
 }
 

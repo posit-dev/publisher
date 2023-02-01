@@ -3,6 +3,7 @@ package connect_client
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"connect-client/debug"
 	"embed"
 	"fmt"
 	"net/http"
@@ -23,14 +24,13 @@ type Application struct {
 	debugLogger rslog.DebugLogger
 }
 
-func NewApplication(urlPath string, host string, port int, debug bool, logger rslog.Logger, debugLogger rslog.DebugLogger) *Application {
+func NewApplication(urlPath string, host string, port int, logger rslog.Logger) *Application {
 	return &Application{
 		urlPath:     urlPath,
 		host:        host,
 		port:        port,
-		debug:       debug,
 		logger:      logger,
-		debugLogger: debugLogger,
+		debugLogger: rslog.NewDebugLogger(debug.UIRegion),
 	}
 }
 
@@ -51,6 +51,7 @@ func (app *Application) Run() error {
 	addr := fmt.Sprintf("%s:%d", app.host, app.port)
 	url := fmt.Sprintf("http://%s%s\n", addr, app.getPath())
 	fmt.Printf("%s\n", url)
+	app.logger.Infof("Local UI server URL: %s", url)
 
 	err = http.ListenAndServe(addr, router)
 	if err != nil && err != http.ErrServerClosed {

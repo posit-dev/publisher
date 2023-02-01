@@ -3,6 +3,7 @@ package connect_client
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"connect-client/debug"
 	"connect-client/middleware"
 	"connect-client/proxy"
 	"fmt"
@@ -27,18 +28,15 @@ func NewProxyApplication(
 	remoteUrl string,
 	host string,
 	port int,
-	debug bool,
-	logger rslog.Logger,
-	debugLogger rslog.DebugLogger) *ProxyApplication {
+	logger rslog.Logger) *ProxyApplication {
 
 	return &ProxyApplication{
 		remoteName:  remoteName,
 		remoteUrl:   remoteUrl,
 		host:        host,
 		port:        port,
-		debug:       debug,
 		logger:      logger,
-		debugLogger: debugLogger,
+		debugLogger: rslog.NewDebugLogger(debug.ProxyRegion),
 	}
 }
 

@@ -8,7 +8,7 @@ import (
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type PublishCmd struct {
-	serverSpec `group:"Server:"`
+	ServerSpec `group:"Server:"`
 }
 
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
@@ -21,12 +21,10 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 
 func (cmd *PublishCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
 	app := connect_client.NewProxyApplication(
-		"devpw",
-		"https://connect.localtest.me/rsc/dev-password",
+		cmd.server.Name,
+		cmd.server.URL,
 		args.Host,
 		args.Port,
-		bool(args.Debug),
-		ctx.Logger,
-		ctx.DebugLogger)
+		ctx.Logger)
 	return app.Run()
 }
