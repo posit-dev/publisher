@@ -4,8 +4,6 @@ interactive := `tty -s && echo "-it" || echo ""`
 # environment variables for docker build
 export DOCKER_BUILDKIT := "1"
 
-version := `git describe --always --tags`
-
 image := "rstudio/connect-client:latest"
 
 # build and run the server
@@ -20,7 +18,31 @@ build:
     mkdir -p .cache/go ui/dist
 
     just container-build \
-        just src/connect-client/ build "{{ version }}"
+        just src/connect-client/ build
+
+# build the server
+build-native:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p .cache/go ui/dist
+
+    # translate `just` os/arch strings to the ones `go build` expects
+    os="{{ os() }}"
+    arch="{{ arch() }}"
+
+    # windows and linux strings match
+    if [[ "$os" == "macos" ]]; then
+        os=darwin
+    fi
+
+    if [[ "$arch" == "x86_64" ]]; then
+        arch=amd64
+    elif [[ "$arch" == "aarch64" ]]; then
+        arch=arm64
+    fi
+
+    just container-build \
+        just src/connect-client/ build $os $arch
 
 # build the server for all platforms
 build-all:
@@ -28,7 +50,7 @@ build-all:
     just ui/ build
 
     just container-build \
-        just src/connect-client/ build-all "{{ version }}"
+        just src/connect-client/ build-all
 
 # run server tests
 test *args:
