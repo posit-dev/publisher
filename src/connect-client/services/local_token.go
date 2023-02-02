@@ -1,15 +1,16 @@
 package services
 
 import (
-	"crypto/rand"
 	"encoding/base64"
 	"strings"
+
+	"connect-client/util"
 )
 
 type LocalToken string
 
 func NewToken() (LocalToken, error) {
-	key, err := randomBytes(32)
+	key, err := util.RandomBytes(32)
 	if err != nil {
 		return LocalToken(""), err
 	}
@@ -18,12 +19,6 @@ func NewToken() (LocalToken, error) {
 		return LocalToken(""), err
 	}
 	return LocalToken(tokenString), nil
-}
-
-func randomBytes(n int) ([]byte, error) {
-	buf := make([]byte, 32)
-	_, err := rand.Read(buf)
-	return buf, err
 }
 
 func toBase64(data []byte) (string, error) {

@@ -26,7 +26,7 @@ func LocalTokenSession(expectedToken string, logger rslog.Logger) gin.HandlerFun
 				// Success
 				logger.Infof("Authenticated via token, creating session")
 				markContextAuthenticated(c)
-				createCookie(c)
+				//setCookie()
 				target.Query().Del(tokenParameterName)
 				c.Redirect(http.StatusMovedPermanently, target.String())
 			} else {
