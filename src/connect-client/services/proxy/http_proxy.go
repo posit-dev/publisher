@@ -17,11 +17,11 @@ import (
 )
 
 type proxy struct {
-	targetURL    string
-	sourcePath   string
-	baseDirector func(req *http.Request)
-	logger       rslog.Logger
-	debugLogger  rslog.DebugLogger
+	targetURL   string
+	sourcePath  string
+	baseProxy   *httputil.ReverseProxy
+	logger      rslog.Logger
+	debugLogger rslog.DebugLogger
 }
 
 // NewProxy creates a proxy that will accept requests
@@ -34,11 +34,11 @@ func NewProxy(
 	logger rslog.Logger) *httputil.ReverseProxy {
 
 	p := proxy{
-		targetURL:    targetURL.String(),
-		sourcePath:   sourcePath,
-		baseDirector: httputil.NewSingleHostReverseProxy(targetURL).Director,
-		logger:       logger,
-		debugLogger:  rslog.NewDebugLogger(debug.ProxyRegion),
+		targetURL:   targetURL.String(),
+		sourcePath:  sourcePath,
+		baseProxy:   httputil.NewSingleHostReverseProxy(targetURL),
+		logger:      logger,
+		debugLogger: rslog.NewDebugLogger(debug.ProxyRegion),
 	}
 	return p.asReverseProxy()
 }
@@ -51,11 +51,11 @@ func NewProxyRequestHandler(proxy *httputil.ReverseProxy) func(http.ResponseWrit
 }
 
 func (p *proxy) asReverseProxy() *httputil.ReverseProxy {
-	return &httputil.ReverseProxy{
-		Director:       p.director,
-		ModifyResponse: p.modifyResponse,
-		ErrorHandler:   p.handleError,
-	}
+	proxy := *p.baseProxy
+	proxy.Director = p.director
+	proxy.ModifyResponse = p.modifyResponse
+	proxy.ErrorHandler = p.handleError
+	return &proxy
 }
 
 // fixReferer rewrites the referer to be on the Connect server.
@@ -80,14 +80,14 @@ func (p *proxy) proxyURL(sourceURL string) (string, error) {
 		return "", err
 	}
 	p.stripSourcePrefix(tempRequest)
-	p.baseDirector(tempRequest)
+	p.baseProxy.Director(tempRequest)
 	return tempRequest.URL.String(), nil
 }
 
 func (p *proxy) director(req *http.Request) {
 	p.logRequest("Proxy request in", req)
 	p.stripSourcePrefix(req)
-	p.baseDirector(req)
+	p.baseProxy.Director(req)
 	p.fixReferer(req)
 	req.Host = req.URL.Host
 	req.Header.Set("Host", req.Host)
