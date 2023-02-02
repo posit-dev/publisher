@@ -87,8 +87,7 @@ func (app *ProxyApplication) configure() (http.HandlerFunc, error) {
 	}
 
 	proxy := NewProxy(remoteUrl, app.getPath(), app.logger)
-	handler := NewProxyRequestHandler(proxy)
-	r.HandleFunc(app.getPath(), handler)
+	r.Handle(app.getPath(), proxy)
 
 	h := r.ServeHTTP
 	h = middleware.RootRedirect(app.getPath(), publishPath, h)

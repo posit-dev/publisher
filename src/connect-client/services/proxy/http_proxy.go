@@ -3,7 +3,6 @@ package proxy
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -41,13 +40,6 @@ func NewProxy(
 		debugLogger: rslog.NewDebugLogger(debug.ProxyRegion),
 	}
 	return p.asReverseProxy()
-}
-
-// NewProxyRequestHandler wraps a proxy in a request handler function.
-func NewProxyRequestHandler(proxy *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		proxy.ServeHTTP(w, r)
-	}
 }
 
 func (p *proxy) asReverseProxy() *httputil.ReverseProxy {
@@ -102,7 +94,7 @@ func (p *proxy) logRequest(msg string, req *http.Request) {
 		}).Debugf("%s", msg)
 
 		req.Header.Write(os.Stderr)
-		fmt.Println()
+		os.Stderr.Write([]byte{'\n'})
 	}
 }
 
