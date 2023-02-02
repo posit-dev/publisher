@@ -3,9 +3,11 @@ package proxy
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -56,10 +58,37 @@ func (p *proxy) asReverseProxy() *httputil.ReverseProxy {
 	}
 }
 
+// fixReferer rewrites the referer to be on the Connect server.
+func (p *proxy) fixReferer(req *http.Request) error {
+	referer := req.Header.Get("Referer")
+	if referer == "" {
+		return nil
+	}
+	targetURL, err := p.proxyURL(referer)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Referer", targetURL)
+	return nil
+}
+
+// proxyURL uses the base proxy director to map an
+// URL to the target server.
+func (p *proxy) proxyURL(sourceURL string) (string, error) {
+	tempRequest, err := http.NewRequest("GET", sourceURL, nil)
+	if err != nil {
+		return "", err
+	}
+	p.stripSourcePrefix(tempRequest)
+	p.baseDirector(tempRequest)
+	return tempRequest.URL.String(), nil
+}
+
 func (p *proxy) director(req *http.Request) {
 	p.logRequest("Proxy request in", req)
 	p.stripSourcePrefix(req)
 	p.baseDirector(req)
+	p.fixReferer(req)
 	req.Host = req.URL.Host
 	req.Header.Set("Host", req.Host)
 	p.logRequest("Proxy request out", req)
@@ -71,7 +100,9 @@ func (p *proxy) logRequest(msg string, req *http.Request) {
 			"method": req.Method,
 			"url":    req.URL.String(),
 		}).Debugf("%s", msg)
-		//req.Header.Write(os.Stderr)
+
+		req.Header.Write(os.Stderr)
+		fmt.Println()
 	}
 }
 
