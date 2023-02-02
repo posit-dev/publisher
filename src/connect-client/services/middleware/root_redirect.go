@@ -4,17 +4,16 @@ package middleware
 
 import (
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 // RootRedirect redirects root requests to a specified path
-func RootRedirect(rootPath, targetPath string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if c.Request.URL.Path == rootPath {
-			c.Redirect(http.StatusMovedPermanently, targetPath)
+func RootRedirect(rootPath, targetPath string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == rootPath {
+			w.Header().Add("Location", targetPath)
+			w.WriteHeader(http.StatusTemporaryRedirect)
 		} else {
-			c.Next()
+			next(w, req)
 		}
 	}
 }

@@ -93,7 +93,10 @@ func (p *proxy) modifyResponse(resp *http.Response) error {
 	location := resp.Header.Get("Location")
 	if strings.HasPrefix(location, p.targetURL) {
 		relativePath := strings.TrimPrefix(location, p.targetURL)
-		newLocation := urlPathJoin(p.sourcePath, relativePath)
+		newLocation, err := url.JoinPath(p.sourcePath, relativePath)
+		if err != nil {
+			return err
+		}
 		resp.Header.Set("Location", newLocation)
 		p.debugLogger.Debugf("Rewrite redirect %s to %s", location, newLocation)
 	}
@@ -111,8 +114,4 @@ func (p *proxy) stripSourcePrefix(req *http.Request) {
 		path = "/"
 	}
 	req.URL.Path = path
-}
-
-func urlPathJoin(a, b string) string {
-	return strings.TrimSuffix(a, "/") + "/" + strings.TrimPrefix(b, "/")
 }

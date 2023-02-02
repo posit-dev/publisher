@@ -8,9 +8,9 @@ import (
 	"net/url"
 
 	"connect-client/debug"
+	"connect-client/services"
 	"connect-client/services/middleware"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
@@ -19,7 +19,7 @@ type ProxyApplication struct {
 	remoteUrl   string
 	host        string
 	port        int
-	debug       bool
+	token       services.LocalToken
 	logger      rslog.Logger
 	debugLogger rslog.DebugLogger
 }
@@ -29,6 +29,7 @@ func NewProxyApplication(
 	remoteUrl string,
 	host string,
 	port int,
+	token services.LocalToken,
 	logger rslog.Logger) *ProxyApplication {
 
 	return &ProxyApplication{
@@ -36,6 +37,7 @@ func NewProxyApplication(
 		remoteUrl:   remoteUrl,
 		host:        host,
 		port:        port,
+		token:       token,
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.ProxyRegion),
 	}
@@ -52,9 +54,19 @@ func (app *ProxyApplication) Run() error {
 	}
 
 	addr := fmt.Sprintf("%s:%d", app.host, app.port)
-	url := fmt.Sprintf("http://%s%s", addr, app.getPath())
-	fmt.Printf("%s\n", url)
-	app.logger.Infof("Proxy server URL: %s", url)
+	proxyURL := url.URL{
+		Scheme: "http",
+		Host:   addr,
+		Path:   app.getPath(),
+	}
+	// Log without the token
+	app.logger.Infof("Proxy server URL: %s", proxyURL.String())
+
+	// Show the user the token
+	proxyURL.RawQuery = url.Values{
+		"token": []string{string(app.token)},
+	}.Encode()
+	fmt.Printf("%s\n", proxyURL.String())
 
 	err = http.ListenAndServe(addr, router)
 	if err != nil && err != http.ErrServerClosed {
@@ -64,25 +76,11 @@ func (app *ProxyApplication) Run() error {
 	return nil
 }
 
-func (app *ProxyApplication) configure() (*gin.Engine, error) {
-	if app.debug {
-		gin.DebugPrintRouteFunc = debug.DebugPrintRouteFunc(app.debugLogger)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
-	}
-	r := gin.New()
-
-	// middleware
-	r.Use(gin.Recovery())
-	// r.Use(middleware.SecurityHeaders())
-	publishPath := app.getPath() + "publish/"
-	r.Use(middleware.RootRedirect(app.getPath(), publishPath))
-
-	// if app.debug {
-	// 	r.Use(middleware.LogRequest())
-	// }
+func (app *ProxyApplication) configure() (http.HandlerFunc, error) {
+	r := http.NewServeMux()
 
 	// Proxy to Connect server for the publishing UI
+	publishPath := app.getPath() + "publish/"
 	remoteUrl, err := url.Parse(app.remoteUrl)
 	if err != nil {
 		return nil, err
@@ -90,6 +88,12 @@ func (app *ProxyApplication) configure() (*gin.Engine, error) {
 
 	proxy := NewProxy(remoteUrl, app.getPath(), app.logger)
 	handler := NewProxyRequestHandler(proxy)
-	r.Any(app.getPath()+"*path", gin.WrapF(handler))
-	return r, nil
+	r.HandleFunc(app.getPath(), handler)
+
+	h := r.ServeHTTP
+	h = middleware.RootRedirect(app.getPath(), publishPath, h)
+	h = middleware.AuthRequired(app.logger, h)
+	h = middleware.CookieSession(app.logger, h)
+	h = middleware.LocalTokenSession(app.token, app.logger, h)
+	return h, nil
 }

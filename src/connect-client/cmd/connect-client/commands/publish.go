@@ -26,6 +26,7 @@ func (cmd *PublishCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
 		cmd.server.URL,
 		args.Host,
 		args.Port,
+		ctx.LocalToken,
 		ctx.Logger)
 	return app.Run()
 }

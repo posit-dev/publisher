@@ -46,15 +46,3 @@ func InitDebugLogging(regionNames []string) {
 		}
 	}
 }
-
-// DebugPrintRouteFunc is a gin route printer that
-// prints the routes via structured logging.
-func DebugPrintRouteFunc(debugLogger rslog.DebugLogger) func(string, string, string, int) {
-	return func(httpMethod, absolutePath, handlerName string, _ int) {
-		debugLogger.WithFields(rslog.Fields{
-			"method":  httpMethod,
-			"path":    absolutePath,
-			"handler": handlerName,
-		}).Debugf("Route defined")
-	}
-}

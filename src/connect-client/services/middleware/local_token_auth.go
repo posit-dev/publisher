@@ -3,9 +3,9 @@ package middleware
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"connect-client/services"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
@@ -17,26 +17,29 @@ import (
 // session cookie. A mismatch is an auth failure (401).
 const tokenParameterName string = "token"
 
-func LocalTokenSession(expectedToken string, logger rslog.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		target := c.Request.URL
+func LocalTokenSession(expectedToken services.LocalToken, logger rslog.Logger, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		target := req.URL
 		receivedToken := target.Query().Get(tokenParameterName)
 		if receivedToken != "" {
-			if receivedToken == expectedToken {
+			if expectedToken == services.LocalToken(receivedToken) {
 				// Success
 				logger.Infof("Authenticated via token, creating session")
-				markContextAuthenticated(c)
-				//setCookie()
-				target.Query().Del(tokenParameterName)
-				c.Redirect(http.StatusMovedPermanently, target.String())
+				req = authenticatedRequest(req)
+				setCookie(w)
+				values := target.Query()
+				values.Del(tokenParameterName)
+				target.RawQuery = values.Encode()
+				w.Header().Add("Location", target.String())
+				w.WriteHeader(http.StatusMovedPermanently)
 			} else {
 				// Failure
 				logger.Errorf("Invalid authentication token: '%s'", receivedToken)
-				c.AbortWithStatus(http.StatusUnauthorized)
+				w.WriteHeader(http.StatusUnauthorized)
 			}
 		} else {
 			// No token in the request
-			c.Next()
+			next(w, req)
 		}
 	}
 }

@@ -64,7 +64,7 @@ func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 func (cmd *listServersCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
-	app := ui.NewUIApplication("#servers", args.Host, args.Port, ctx.Logger)
+	app := ui.NewUIApplication("#servers", args.Host, args.Port, ctx.LocalToken, ctx.Logger)
 	return app.Run()
 }
 

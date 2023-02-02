@@ -6,10 +6,12 @@ import (
 	"embed"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"connect-client/debug"
+	"connect-client/services"
+	"connect-client/services/middleware"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
@@ -20,27 +22,24 @@ type UIApplication struct {
 	urlPath     string
 	host        string
 	port        int
-	debug       bool
+	token       services.LocalToken
 	logger      rslog.Logger
 	debugLogger rslog.DebugLogger
 }
 
-func NewUIApplication(urlPath string, host string, port int, logger rslog.Logger) *UIApplication {
+func NewUIApplication(urlPath string, host string, port int, token services.LocalToken, logger rslog.Logger) *UIApplication {
 	return &UIApplication{
 		urlPath:     urlPath,
 		host:        host,
 		port:        port,
+		token:       token,
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.UIRegion),
 	}
 }
 
 func (app *UIApplication) getPath() string {
-	path := "/static/"
-	if app.urlPath != "" {
-		path += app.urlPath
-	}
-	return path
+	return "/static/" + app.urlPath
 }
 
 func (app *UIApplication) Run() error {
@@ -50,7 +49,21 @@ func (app *UIApplication) Run() error {
 	}
 
 	addr := fmt.Sprintf("%s:%d", app.host, app.port)
-	url := fmt.Sprintf("http://%s%s\n", addr, app.getPath())
+	appURL := url.URL{
+		Scheme: "http",
+		Host:   addr,
+		Path:   app.getPath(),
+	}
+	// Log without the token
+	app.logger.Infof("Local UI server URL: %s", appURL.String())
+
+	// Show the user the token
+	appURL.RawQuery = url.Values{
+		"token": []string{string(app.token)},
+	}.Encode()
+	fmt.Printf("%s\n", appURL.String())
+
+	url := fmt.Sprintf("http://%s%s?token=%s", addr, app.getPath(), app.token)
 	fmt.Printf("%s\n", url)
 	app.logger.Infof("Local UI server URL: %s", url)
 
@@ -62,27 +75,18 @@ func (app *UIApplication) Run() error {
 	return nil
 }
 
-func (app *UIApplication) configure() (*gin.Engine, error) {
-	if app.debug {
-		gin.DebugPrintRouteFunc = debug.DebugPrintRouteFunc(app.debugLogger)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
-	}
-	r := gin.New()
-
-	// middleware
-	r.Use(gin.Recovery())
-	// r.Use(middleware.SecurityHeaders())
-	// if app.debug {
-	// 	r.Use(middleware.LogRequest())
-	// }
+func (app *UIApplication) configure() (http.HandlerFunc, error) {
+	r := http.NewServeMux()
 
 	// static files for the local (server list) UI
-	r.GET("", func(c *gin.Context) {
-		c.Redirect(http.StatusTemporaryRedirect, app.getPath())
-	})
-	r.GET("static/*filepath", gin.WrapH(http.FileServer(http.FS(content))))
+	r.Handle("/static/", http.FileServer(http.FS(content)))
 
 	// More APIs to come...
-	return r, nil
+	h := r.ServeHTTP
+
+	h = middleware.RootRedirect("/", app.getPath(), h)
+	h = middleware.AuthRequired(app.logger, h)
+	h = middleware.CookieSession(app.logger, h)
+	h = middleware.LocalTokenSession(app.token, app.logger, h)
+	return h, nil
 }

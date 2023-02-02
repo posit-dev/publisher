@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/chmike/securecookie"
-	"github.com/gin-gonic/gin"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 
 	"connect-client/util"
@@ -26,21 +25,20 @@ var cookieObj = securecookie.MustNew("session", cookieKey, securecookie.Params{
 // If there is a cookie, and it is valid,
 // the session is marked as authenticated.
 // An invalid cookie results in auth failure (401).
-func CookieSession(expectedToken string, logger rslog.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		_, err := cookieObj.GetValue(nil, c.Request)
+func CookieSession(logger rslog.Logger, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		_, err := cookieObj.GetValue(nil, req)
 		if err != nil {
-			if err == http.ErrNoCookie {
-				// Proceed without auth.
-				c.Next()
-			} else {
+			// Proceed without auth.
+			if err != http.ErrNoCookie {
 				logger.Errorf("Error checking for session cookie: %s", err)
-				return
 			}
+			next(w, req)
+		} else {
+			// Any valid cookie (signed with our key) is accepted.
+			req = authenticatedRequest(req)
+			next(w, req)
 		}
-		// Any valid cookie (signed with our key) is accepted.
-		markContextAuthenticated(c)
-		c.Next()
 	}
 }
 

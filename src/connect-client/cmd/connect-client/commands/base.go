@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"connect-client/servers"
+	"connect-client/services"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
@@ -32,8 +33,9 @@ func (args *CommonArgs) AfterApply() error {
 }
 
 type CLIContext struct {
-	Servers servers.ServerList
-	Logger  rslog.Logger `kong:"-"`
+	Servers    servers.ServerList
+	LocalToken services.LocalToken
+	Logger     rslog.Logger `kong:"-"`
 }
 
 func NewCLIContext() (*CLIContext, error) {
@@ -46,9 +48,15 @@ func NewCLIContext() (*CLIContext, error) {
 		return nil, err
 	}
 
+	token, err := services.NewLocalToken()
+	if err != nil {
+		return nil, err
+	}
+
 	return &CLIContext{
-		Servers: serverList,
-		Logger:  logger,
+		Servers:    serverList,
+		LocalToken: token,
+		Logger:     logger,
 	}, nil
 }
 
