@@ -5,6 +5,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,18 +13,19 @@ import (
 	"connect-client/services"
 	"connect-client/services/middleware"
 
+	"github.com/pkg/browser"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
 type Service struct {
 	handler     http.HandlerFunc
-	host        string
-	port        int
+	listen      string
 	path        string
 	keyFile     string
 	certFile    string
 	openBrowser bool
 	token       services.LocalToken
+	addr        net.Addr
 	logger      rslog.Logger
 	debugLogger rslog.DebugLogger
 }
@@ -32,8 +34,7 @@ var tlsRequiredFilesError = errors.New("TLS requires both a private key file and
 
 func NewService(
 	handler http.HandlerFunc,
-	host string,
-	port int,
+	listen string,
 	path string,
 	keyFile string,
 	certFile string,
@@ -48,13 +49,13 @@ func NewService(
 
 	return &Service{
 		handler:     handler,
-		host:        host,
-		port:        port,
+		listen:      listen,
 		path:        path,
 		keyFile:     keyFile,
 		certFile:    certFile,
 		openBrowser: openBrowser,
 		token:       token,
+		addr:        nil,
 		logger:      logger,
 		debugLogger: debugLogger,
 	}
@@ -77,12 +78,10 @@ func (svc *Service) getURL(includeToken bool) *url.URL {
 	if isTLS {
 		scheme = "https"
 	}
-	addr := fmt.Sprintf("%s:%d", svc.host, svc.port)
-
 	path, fragment, _ := strings.Cut(svc.path, "#")
 	appURL := &url.URL{
 		Scheme:   scheme,
-		Host:     addr,
+		Host:     svc.addr.String(),
 		Path:     path,
 		Fragment: fragment,
 	}
@@ -100,6 +99,10 @@ func (svc *Service) Run() error {
 		return err
 	}
 
+	// Open listener first so the browser can connect
+	listener, err := net.Listen("tcp", svc.listen)
+	svc.addr = listener.Addr()
+
 	// Log without the token
 	appURL := svc.getURL(false)
 	svc.logger.Infof("UI server URL: %s", appURL.String())
@@ -108,10 +111,13 @@ func (svc *Service) Run() error {
 	appURL = svc.getURL(true)
 	fmt.Printf("%s\n", appURL.String())
 
+	if svc.openBrowser {
+		browser.OpenURL(appURL.String())
+	}
 	if isTLS {
-		err = http.ListenAndServeTLS(appURL.Host, svc.keyFile, svc.certFile, svc.handler)
+		err = http.ServeTLS(listener, svc.handler, svc.certFile, svc.keyFile)
 	} else {
-		err = http.ListenAndServe(appURL.Host, svc.handler)
+		err = http.Serve(listener, svc.handler)
 	}
 	if err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("UI server error: %s", err)

@@ -18,8 +18,7 @@ import (
 var content embed.FS
 
 func NewUIService(
-	host string,
-	port int,
+	listen string,
 	path string,
 	keyFile string,
 	certFile string,
@@ -31,8 +30,7 @@ func NewUIService(
 
 	return api.NewService(
 		handler,
-		host,
-		port,
+		listen,
 		path,
 		keyFile,
 		certFile,

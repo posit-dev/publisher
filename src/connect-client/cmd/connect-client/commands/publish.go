@@ -27,10 +27,10 @@ func (cmd *PublishCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
 	svc := proxy.NewProxyService(
 		cmd.server.Name,
 		serverURL,
-		args.Host,
-		args.Port,
+		args.Listen,
 		args.TLSKeyFile,
 		args.TLSCertFile,
+		args.Interactive,
 		ctx.LocalToken,
 		ctx.Logger)
 	return svc.Run()

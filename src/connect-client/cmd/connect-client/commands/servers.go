@@ -63,11 +63,11 @@ func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 
 func (cmd *listServersCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
 	svc := ui.NewUIService(
-		args.Host,
-		args.Port,
+		args.Listen,
 		"#servers",
 		args.TLSKeyFile,
 		args.TLSCertFile,
+		args.Interactive,
 		ctx.LocalToken,
 		ctx.Logger)
 	return svc.Run()

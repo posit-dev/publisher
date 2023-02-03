@@ -17,10 +17,10 @@ import (
 func NewProxyService(
 	remoteName string,
 	remoteUrl *url.URL,
-	host string,
-	port int,
+	listen string,
 	keyFile string,
 	certFile string,
+	openBrowser bool,
 	token services.LocalToken,
 	logger rslog.Logger) *api.Service {
 
@@ -29,11 +29,11 @@ func NewProxyService(
 
 	return api.NewService(
 		handler,
-		host,
-		port,
+		listen,
 		path,
 		keyFile,
 		certFile,
+		openBrowser,
 		token,
 		logger,
 		rslog.NewDebugLogger(debug.ProxyRegion),

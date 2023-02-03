@@ -20,6 +20,13 @@ build:
     just container-build \
         just src/connect-client/ build
 
+certs:
+    mkdir -p certs
+    cd certs
+    mkcert -cert-file localhost-cert.pem \
+           -key-file localhost-key.pem \
+           localhost 127.0.0.1 ::1 0.0.0.0
+
 # build the server
 build-native:
     #!/usr/bin/env bash
