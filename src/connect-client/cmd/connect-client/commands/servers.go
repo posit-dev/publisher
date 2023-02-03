@@ -68,6 +68,7 @@ func (cmd *listServersCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
 		args.TLSKeyFile,
 		args.TLSCertFile,
 		args.Interactive,
+		args.AccessLog,
 		ctx.LocalToken,
 		ctx.Logger)
 	return svc.Run()

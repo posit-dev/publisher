@@ -39,6 +39,7 @@ func NewService(
 	keyFile string,
 	certFile string,
 	openBrowser bool,
+	accessLog bool,
 	token services.LocalToken,
 	logger rslog.Logger,
 	debugLogger rslog.DebugLogger) *Service {
@@ -46,6 +47,10 @@ func NewService(
 	handler = middleware.AuthRequired(logger, handler)
 	handler = middleware.CookieSession(logger, handler)
 	handler = middleware.LocalTokenSession(token, logger, handler)
+	if accessLog {
+		handler = middleware.LogRequest("Access Log", logger, handler)
+	}
+	handler = middleware.PanicRecovery(logger, debugLogger, handler)
 
 	return &Service{
 		handler:     handler,

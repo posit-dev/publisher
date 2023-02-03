@@ -23,6 +23,7 @@ func NewUIService(
 	keyFile string,
 	certFile string,
 	openBrowser bool,
+	accessLog bool,
 	token services.LocalToken,
 	logger rslog.Logger) *api.Service {
 
@@ -35,6 +36,7 @@ func NewUIService(
 		keyFile,
 		certFile,
 		openBrowser,
+		accessLog,
 		token,
 		logger,
 		rslog.NewDebugLogger(debug.UIRegion),

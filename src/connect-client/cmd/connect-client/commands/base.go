@@ -17,6 +17,7 @@ type UIArgs struct {
 	Serve       bool   `help:"Serve the UI and emit its URL on standard output."`
 	Interactive bool   `short:"i" help:"Launch a browser to show the interactive UI. Implies --serve."`
 	Listen      string `help:"Host:port to listen on."`
+	AccessLog   bool   `help:"Log all HTTP requests."`
 	TLSKeyFile  string `help:"Path to TLS private key file for the UI server."`
 	TLSCertFile string `help:"Path to TLS certificate chain file for the UI server."`
 }
