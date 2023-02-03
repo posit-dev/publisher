@@ -64,8 +64,15 @@ func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 func (cmd *listServersCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
-	app := ui.NewUIApplication("#servers", args.Host, args.Port, ctx.LocalToken, ctx.Logger)
-	return app.Run()
+	svc := ui.NewUIService(
+		args.Host,
+		args.Port,
+		"#servers",
+		args.TLSKeyFile,
+		args.TLSCertFile,
+		ctx.LocalToken,
+		ctx.Logger)
+	return svc.Run()
 }
 
 type serverUICmd struct{}

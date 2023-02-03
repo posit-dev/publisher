@@ -18,6 +18,8 @@ type UIArgs struct {
 	Interactive bool   `short:"i" help:"Launch a browser to show the interactive UI. Implies --serve."`
 	Host        string `default:"0.0.0.0" help:"Hostname or IP to listen on."`
 	Port        int    `default:"4242" help:"Post number to listen on."`
+	TLSKeyFile  string `help:"Path to TLS private key file for the UI server."`
+	TLSCertFile string `help:"Path to TLS certificate chain file for the UI server."`
 }
 
 type CommonArgs struct {

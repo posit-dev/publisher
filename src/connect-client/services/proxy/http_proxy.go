@@ -3,10 +3,10 @@ package proxy
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 
@@ -16,11 +16,12 @@ import (
 )
 
 type proxy struct {
-	targetURL   string
-	sourcePath  string
-	baseProxy   *httputil.ReverseProxy
-	logger      rslog.Logger
-	debugLogger rslog.DebugLogger
+	targetURL          string
+	sourcePath         string
+	baseProxy          *httputil.ReverseProxy
+	logger             rslog.Logger
+	debugLogger        rslog.DebugLogger
+	headersDebugLogger rslog.DebugLogger
 }
 
 // NewProxy creates a proxy that will accept requests
@@ -33,11 +34,12 @@ func NewProxy(
 	logger rslog.Logger) *httputil.ReverseProxy {
 
 	p := proxy{
-		targetURL:   targetURL.String(),
-		sourcePath:  sourcePath,
-		baseProxy:   httputil.NewSingleHostReverseProxy(targetURL),
-		logger:      logger,
-		debugLogger: rslog.NewDebugLogger(debug.ProxyRegion),
+		targetURL:          targetURL.String(),
+		sourcePath:         sourcePath,
+		baseProxy:          httputil.NewSingleHostReverseProxy(targetURL),
+		logger:             logger,
+		debugLogger:        rslog.NewDebugLogger(debug.ProxyRegion),
+		headersDebugLogger: rslog.NewDebugLogger(debug.ProxyHeadersRegion),
 	}
 	return p.asReverseProxy()
 }

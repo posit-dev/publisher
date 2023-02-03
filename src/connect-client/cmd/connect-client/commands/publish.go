@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"fmt"
+	"net/url"
 
 	"connect-client/services/proxy"
 )
@@ -21,12 +21,18 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 func (cmd *PublishCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
-	app := proxy.NewProxyApplication(
+	serverURL, err := url.Parse(cmd.server.URL)
+	if err != nil {
+		return err
+	}
+	svc := proxy.NewProxyService(
 		cmd.server.Name,
-		cmd.server.URL,
+		serverURL,
 		args.Host,
 		args.Port,
+		args.TLSKeyFile,
+		args.TLSCertFile,
 		ctx.LocalToken,
 		ctx.Logger)
-	return app.Run()
+	return svc.Run()
 }
