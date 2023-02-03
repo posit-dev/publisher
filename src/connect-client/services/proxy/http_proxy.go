@@ -85,31 +85,12 @@ func (p *proxy) director(req *http.Request) {
 	p.fixReferer(req)
 	req.Host = req.URL.Host
 	req.Header.Set("Host", req.Host)
+
+	// Don't pass through cookies, since we only load
+	// unauthenticated resources (the publishing UI)
+	// from the target server.
+	req.Header.Del("Cookie")
 	p.logRequest("Proxy request out", req)
-}
-
-func (p *proxy) logRequest(msg string, req *http.Request) {
-	if p.debugLogger.Enabled() {
-		p.debugLogger.WithFields(rslog.Fields{
-			"method": req.Method,
-			"url":    req.URL.String(),
-		}).Debugf("%s", msg)
-
-		req.Header.Write(os.Stderr)
-		os.Stderr.Write([]byte{'\n'})
-	}
-}
-
-func (p *proxy) logResponse(resp *http.Response) {
-	if p.debugLogger.Enabled() {
-		p.debugLogger.WithFields(rslog.Fields{
-			"status":         strconv.Itoa(resp.StatusCode),
-			"length":         resp.ContentLength,
-			"url":            resp.Request.URL.String(),
-			"server":         resp.Header["Server"],
-			"correlation-id": resp.Header.Get("X-Correlation-Id"),
-		}).Debugf("Proxy response")
-	}
 }
 
 func (p *proxy) modifyResponse(resp *http.Response) error {
@@ -123,7 +104,7 @@ func (p *proxy) modifyResponse(resp *http.Response) error {
 			return err
 		}
 		resp.Header.Set("Location", newLocation)
-		p.debugLogger.Debugf("Rewrite redirect %s to %s", location, newLocation)
+		p.debugLogger.Debugf("Rewrite Location %s to %s", location, newLocation)
 	}
 	return nil
 }
@@ -139,4 +120,47 @@ func (p *proxy) stripSourcePrefix(req *http.Request) {
 		path = "/"
 	}
 	req.URL.Path = path
+}
+
+func (p *proxy) logRequest(msg string, req *http.Request) {
+	if p.debugLogger.Enabled() {
+		p.debugLogger.WithFields(rslog.Fields{
+			"method": req.Method,
+			"url":    req.URL.String(),
+		}).Debugf("%s", msg)
+	}
+	p.logHeader("Request headers", req.Header)
+}
+
+func (p *proxy) logResponse(resp *http.Response) {
+	if p.debugLogger.Enabled() {
+		p.debugLogger.WithFields(rslog.Fields{
+			"status":           strconv.Itoa(resp.StatusCode),
+			"length":           resp.ContentLength,
+			"url":              resp.Request.URL.String(),
+			"Server":           resp.Header["Server"][0],
+			"X-Correlation-Id": resp.Header.Get("X-Correlation-Id"),
+		}).Debugf("Proxy response")
+	}
+	p.logHeader("Response headers", resp.Header)
+}
+
+func (p *proxy) logHeader(msg string, header http.Header) {
+	if p.headersDebugLogger.Enabled() {
+		fields := rslog.Fields{}
+		for name, values := range header {
+			var value string
+			if name == "Cookie" || name == "Authorization" {
+				value = "REDACTED"
+			} else {
+				if len(values) == 1 {
+					value = values[0]
+				} else {
+					value = fmt.Sprintf("%v", values)
+				}
+			}
+			fields[name] = value
+		}
+		p.headersDebugLogger.WithFields(fields).Debugf("%s", msg)
+	}
 }

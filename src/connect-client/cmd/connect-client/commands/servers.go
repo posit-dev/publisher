@@ -19,7 +19,6 @@ type addServerCmd struct {
 }
 
 func (cmd *addServerCmd) Run(args *CommonArgs) error {
-	fmt.Printf("add-server: %+v %+v", args, cmd)
 	return nil
 }
 
@@ -28,7 +27,6 @@ type removeServerCmd struct {
 }
 
 func (cmd *removeServerCmd) Run(args *CommonArgs) error {
-	fmt.Printf("remove-server: %+v %+v", args, cmd)
 	return nil
 }
 

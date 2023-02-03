@@ -12,8 +12,8 @@ import (
 
 type VersionFlag bool
 
-func (v VersionFlag) BeforeReset(app *kong.Kong, vars kong.Vars) error {
+func (v VersionFlag) BeforeReset(cli *kong.Kong) error {
 	fmt.Println(project.Version)
-	app.Exit(0)
+	cli.Exit(0)
 	return nil
 }

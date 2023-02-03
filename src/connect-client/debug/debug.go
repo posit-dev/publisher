@@ -9,13 +9,15 @@ const (
 	GeneralRegion
 	UIRegion
 	ProxyRegion
+	ProxyHeadersRegion
 )
 
 var definedRegionNames = map[rslog.ProductRegion]string{
-	AllRegions:    "all",
-	GeneralRegion: "general",
-	UIRegion:      "ui",
-	ProxyRegion:   "proxy",
+	AllRegions:         "all",
+	GeneralRegion:      "general",
+	UIRegion:           "ui",
+	ProxyRegion:        "proxy",
+	ProxyHeadersRegion: "proxy-headers",
 }
 
 func getRegionByName(name string) rslog.ProductRegion {

@@ -13,7 +13,6 @@ type PublishCmd struct {
 }
 
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	fmt.Printf("publish: %+v %+v\n", args, cmd)
 	if args.Serve {
 		return cmd.Serve(args, ctx)
 	}
