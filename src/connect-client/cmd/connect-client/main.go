@@ -12,7 +12,7 @@ import (
 
 type cliSpec struct {
 	commands.CommonArgs
-	commands.ServerCommands `group:"Servers"`
+	commands.AccountCommands `group:"Accounts"`
 
 	Publish commands.PublishCmd  `cmd:"" help:"Publish a project."`
 	Version commands.VersionFlag `help:"Show the client software version and exit."`

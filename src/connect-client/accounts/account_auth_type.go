@@ -2,21 +2,21 @@ package accounts
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-type ServerAuthType string
+type AccountAuthType string
 
 const (
-	ServerAuthAPIKey ServerAuthType = "api-key" // Connect API key
-	ServerAuthToken                 = "token"   // rsconnect token & private key
-	ServerAuthNone                  = "none"    // No saved credentials
+	AccountAuthAPIKey AccountAuthType = "api-key" // Connect API key
+	AccountAuthToken                  = "token"   // rsconnect token & private key
+	AccountAuthNone                   = "none"    // No saved credentials
 )
 
-func (auth ServerAuthType) String() string {
+func (auth AccountAuthType) String() string {
 	switch auth {
-	case ServerAuthAPIKey:
+	case AccountAuthAPIKey:
 		return "Connect API key"
-	case ServerAuthToken:
+	case AccountAuthToken:
 		return "RStudio IDE/rsconnect token"
-	case ServerAuthNone:
+	case AccountAuthNone:
 		return "No saved credentials"
 	default:
 		return string(auth)

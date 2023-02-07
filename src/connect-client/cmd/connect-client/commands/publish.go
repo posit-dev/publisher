@@ -9,7 +9,7 @@ import (
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type PublishCmd struct {
-	ServerSpec `group:"Server:"`
+	AccountSpec `group:"Account:"`
 }
 
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
@@ -20,12 +20,12 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 func (cmd *PublishCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
-	serverURL, err := url.Parse(cmd.server.URL)
+	serverURL, err := url.Parse(cmd.account.URL)
 	if err != nil {
 		return err
 	}
 	svc := proxy.NewProxyService(
-		cmd.server.Name,
+		cmd.account.Name,
 		serverURL,
 		args.Listen,
 		args.TLSKeyFile,

@@ -2,32 +2,32 @@ package accounts
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-type Server struct {
-	Type        ServerType     // Which type of API this server provides
-	Source      ServerSource   // Source of the saved server configuration
-	AuthType    ServerAuthType // Authentication method (API key, token, etc)
-	Name        string         // Nickname
-	URL         string         // Server URL, e.g. https://connect.example.com/rsc
-	Insecure    bool           // Skip https server verification
-	Certificate string         `json:"ca_cert"`      // Root CA certificate, if server cert is signed by a private CA
-	ApiKey      string         `json:"api_key"`      // For Connect servers
-	AccountName string         `json:"account_name"` // For shinyapps.io and Posit Cloud servers
-	Token       string         //   ...
-	Secret      string         //   ...
+type Account struct {
+	Type        AccountType     // Which type of API this server provides
+	Source      AccountSource   // Source of the saved server configuration
+	AuthType    AccountAuthType // Authentication method (API key, token, etc)
+	Name        string          // Nickname
+	URL         string          // Server URL, e.g. https://connect.example.com/rsc
+	Insecure    bool            // Skip https server verification
+	Certificate string          `json:"ca_cert"`      // Root CA certificate, if server cert is signed by a private CA
+	ApiKey      string          `json:"api_key"`      // For Connect servers
+	AccountName string          `json:"account_name"` // For shinyapps.io and Posit Cloud servers
+	Token       string          //   ...
+	Secret      string          //   ...
 }
 
 type provider interface {
-	Load() ([]Server, error)
+	Load() ([]Account, error)
 }
 
-type ServerList struct {
-	servers   []Server
+type AccountList struct {
+	accounts  []Account
 	providers []provider
 }
 
-func NewServerList() *ServerList {
-	return &ServerList{
-		servers: []Server{},
+func NewAccountList() *AccountList {
+	return &AccountList{
+		accounts: []Account{},
 		providers: []provider{
 			newDefaultProvider(),
 			newRSConnectProvider(),
@@ -36,36 +36,36 @@ func NewServerList() *ServerList {
 	}
 }
 
-func (l *ServerList) Load() error {
-	l.servers = []Server{}
+func (l *AccountList) Load() error {
+	l.accounts = []Account{}
 	for _, provider := range l.providers {
-		servers, err := provider.Load()
+		accounts, err := provider.Load()
 		if err != nil {
 			return err
 		}
-		l.servers = append(l.servers, servers...)
+		l.accounts = append(l.accounts, accounts...)
 	}
 	return nil
 }
 
-func (l *ServerList) GetAllServers() []Server {
-	return l.servers
+func (l *AccountList) GetAllAccounts() []Account {
+	return l.accounts
 }
 
-func (l *ServerList) GetServerByName(name string) (bool, Server) {
-	for _, server := range l.servers {
-		if server.Name == name {
-			return true, server
+func (l *AccountList) GetAccountByName(name string) (bool, Account) {
+	for _, account := range l.accounts {
+		if account.Name == name {
+			return true, account
 		}
 	}
-	return false, Server{}
+	return false, Account{}
 }
 
-func (l *ServerList) GetServerByURL(url string) (bool, Server) {
-	for _, server := range l.servers {
-		if server.URL == url {
-			return true, server
+func (l *AccountList) GetAccountByURL(url string) (bool, Account) {
+	for _, account := range l.accounts {
+		if account.URL == url {
+			return true, account
 		}
 	}
-	return false, Server{}
+	return false, Account{}
 }

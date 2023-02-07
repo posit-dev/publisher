@@ -46,7 +46,7 @@ func NewUIService(
 func newUIHandler(path string) http.HandlerFunc {
 	r := http.NewServeMux()
 
-	// static files for the local (server list) UI
+	// static files for the local (account list) UI
 	r.Handle("/", http.FileServer(http.FS(content)))
 
 	// More APIs to come...

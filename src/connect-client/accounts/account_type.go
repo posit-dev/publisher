@@ -2,40 +2,40 @@ package accounts
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-type ServerType string
+type AccountType string
 
 const (
-	ServerTypeConnect     ServerType = "connect"
-	ServerTypeShinyappsIO            = "shinyapps"
-	ServerTypeCloud                  = "cloud"
+	AccountTypeConnect     AccountType = "connect"
+	AccountTypeShinyappsIO             = "shinyapps"
+	AccountTypeCloud                   = "cloud"
 )
 
-func (t ServerType) String() string {
+func (t AccountType) String() string {
 	switch t {
-	case ServerTypeConnect:
+	case AccountTypeConnect:
 		return "Posit Connect"
-	case ServerTypeShinyappsIO:
+	case AccountTypeShinyappsIO:
 		return "shinyapps.io"
-	case ServerTypeCloud:
+	case AccountTypeCloud:
 		return "Posit Cloud"
 	default:
 		return string(t)
 	}
 }
 
-// Infer a server type from the server URL.
+// accountTypeFromURL infers an account type from the server URL.
 // For Posit-deployed servers (shinyapps.io, posit.cloud)
 // it returns the corresponding type. Otherwise,
 // it assumes a Connect server.
-func serverTypeFromURL(url string) ServerType {
+func accountTypeFromURL(url string) AccountType {
 	switch url {
 	case "https://api.posit.cloud":
-		return ServerTypeCloud
+		return AccountTypeCloud
 	case "https://api.rstudio.cloud":
-		return ServerTypeCloud
+		return AccountTypeCloud
 	case "https://api.shinyapps.io":
-		return ServerTypeShinyappsIO
+		return AccountTypeShinyappsIO
 	default:
-		return ServerTypeConnect
+		return AccountTypeConnect
 	}
 }

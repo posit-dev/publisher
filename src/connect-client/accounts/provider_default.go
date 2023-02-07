@@ -10,24 +10,24 @@ func newDefaultProvider() provider {
 	return &defaultProvider{}
 }
 
-func (p *defaultProvider) Load() ([]Server, error) {
+func (p *defaultProvider) Load() ([]Account, error) {
 	serverURL := os.Getenv("CONNECT_SERVER")
 	if serverURL == "" {
 		return nil, nil
 	}
-	server := Server{
-		Type:        serverTypeFromURL(serverURL),
-		Source:      ServerSourceEnvironment,
+	account := Account{
+		Type:        accountTypeFromURL(serverURL),
+		Source:      AccountSourceEnvironment,
 		Name:        "default",
 		URL:         serverURL,
 		Insecure:    (os.Getenv("CONNECT_INSECURE") != ""),
 		Certificate: os.Getenv("CONNECT_CERT"),
 		ApiKey:      os.Getenv("CONNECT_API_KEY"),
 	}
-	if server.ApiKey != "" {
-		server.AuthType = ServerAuthAPIKey
+	if account.ApiKey != "" {
+		account.AuthType = AccountAuthAPIKey
 	} else {
-		server.AuthType = ServerAuthNone
+		account.AuthType = AccountAuthNone
 	}
-	return []Server{server}, nil
+	return []Account{account}, nil
 }

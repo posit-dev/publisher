@@ -50,51 +50,51 @@ func (p *rsconnectProvider) configDir() (string, error) {
 // from the provided rsconnect server list.
 func makeServerNameMap(rscServers util.DCFData) map[string]string {
 	serverNameToURL := map[string]string{}
-	for _, rscServer := range rscServers {
-		name := rscServer["name"]
-		url := strings.TrimSuffix(rscServer["url"], "/__api__")
+	for _, server := range rscServers {
+		name := server["name"]
+		url := strings.TrimSuffix(server["url"], "/__api__")
 		serverNameToURL[name] = url
 	}
 	return serverNameToURL
 }
 
-// serversFromConfig constructs Server objects from the
+// accountsFromConfig constructs Account objects from the
 // provided rsconnect server and account lists. Primarily,
 // this is a join between the two on account.server = server.name.
-func (p *rsconnectProvider) serversFromConfig(rscServers, rscAccounts util.DCFData) ([]Server, error) {
-	servers := []Server{}
+func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts util.DCFData) ([]Account, error) {
+	accounts := []Account{}
 	serverNameToURL := makeServerNameMap(rscServers)
 	for _, account := range rscAccounts {
 		serverName := account["server"]
 		if serverName == "" {
-			return servers, fmt.Errorf("Missing server name in account %v", account)
+			return accounts, fmt.Errorf("Missing server name in account %v", account)
 		}
 		url, ok := serverNameToURL[serverName]
 		if !ok {
-			return servers, fmt.Errorf("Account references nonexistent server name '%s'", serverName)
+			return accounts, fmt.Errorf("Account references nonexistent server name '%s'", serverName)
 		}
-		server := Server{
-			Source:      ServerSourceRsconnect,
-			Type:        serverTypeFromURL(url),
+		account := Account{
+			Source:      AccountSourceRsconnect,
+			Type:        accountTypeFromURL(url),
 			Name:        serverName,
 			URL:         url,
 			AccountName: account["username"],
 			Token:       account["token"],
 			Secret:      account["private_key"],
 		}
-		if server.Token != "" && server.Secret != "" {
-			server.AuthType = ServerAuthToken
+		if account.Token != "" && account.Secret != "" {
+			account.AuthType = AccountAuthToken
 		} else {
-			server.AuthType = ServerAuthNone
+			account.AuthType = AccountAuthNone
 		}
-		servers = append(servers, server)
+		accounts = append(accounts, account)
 	}
-	return servers, nil
+	return accounts, nil
 }
 
-// Load loads the list of servers stored by
+// Load loads the list of accounts stored by
 // rsconnect, by reading its servers and account DCF files.
-func (p *rsconnectProvider) Load() ([]Server, error) {
+func (p *rsconnectProvider) Load() ([]Account, error) {
 	configDir, err := p.configDir()
 	if err != nil {
 		return nil, err
@@ -109,9 +109,9 @@ func (p *rsconnectProvider) Load() ([]Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	servers, err := p.serversFromConfig(rscServers, rscAccounts)
+	accounts, err := p.accountsFromConfig(rscServers, rscAccounts)
 	if err != nil {
 		return nil, err
 	}
-	return servers, nil
+	return accounts, nil
 }

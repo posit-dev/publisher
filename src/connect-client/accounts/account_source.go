@@ -2,21 +2,21 @@ package accounts
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-type ServerSource string
+type AccountSource string
 
 const (
-	ServerSourceRSCP        ServerSource = "rsconnect-python"
-	ServerSourceRsconnect                = "rsconnect"
-	ServerSourceEnvironment              = "environment"
+	AccountSourceRSCP        AccountSource = "rsconnect-python"
+	AccountSourceRsconnect                 = "rsconnect"
+	AccountSourceEnvironment               = "environment"
 )
 
-func (source ServerSource) String() string {
+func (source AccountSource) String() string {
 	switch source {
-	case ServerSourceRSCP:
+	case AccountSourceRSCP:
 		return "rsconnect-python"
-	case ServerSourceRsconnect:
+	case AccountSourceRsconnect:
 		return "RStudio IDE/rsconnect"
-	case ServerSourceEnvironment:
+	case AccountSourceEnvironment:
 		return "CONNECT_SERVER environment variable"
 	default:
 		return string(source)

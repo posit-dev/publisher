@@ -35,7 +35,7 @@ func (args *CommonArgs) AfterApply() error {
 }
 
 type CLIContext struct {
-	Servers    *accounts.ServerList
+	Accounts   *accounts.AccountList
 	LocalToken services.LocalToken
 	Logger     rslog.Logger `kong:"-"`
 }
@@ -45,8 +45,8 @@ func NewCLIContext() (*CLIContext, error) {
 	logger.SetOutput(os.Stderr)
 	logger.SetLevel(rslog.DebugLevel)
 
-	serverList := accounts.NewServerList()
-	err := serverList.Load()
+	accountList := accounts.NewAccountList()
+	err := accountList.Load()
 	if err != nil {
 		return nil, err
 	}
@@ -57,35 +57,35 @@ func NewCLIContext() (*CLIContext, error) {
 	}
 
 	return &CLIContext{
-		Servers:    serverList,
+		Accounts:   accountList,
 		LocalToken: token,
 		Logger:     logger,
 	}, nil
 }
 
-// ServerSpec contains the info about a saved server in the server list.
-// The user must specify a saved server by name or URL (but not both).
-type ServerSpec struct {
-	URL    *url.URL `short:"u" xor:"spec" required:"" help:"URL of the server URL to remove."`
-	Name   string   `short:"n" xor:"spec" required:"" help:"Nickname of the server to remove."`
-	server accounts.Server
+// AccountSpec contains the info about a saved account in the account list.
+// The user must specify a saved account by name or URL (but not both).
+type AccountSpec struct {
+	Name    string   `short:"n" xor:"spec" required:"" help:"Nickname of the account to remove."`
+	URL     *url.URL `short:"u" xor:"spec" required:"" help:"URL of the server URL to remove."`
+	account accounts.Account
 }
 
-func (s *ServerSpec) AfterApply(ctx *CLIContext) error {
+func (s *AccountSpec) AfterApply(ctx *CLIContext) error {
 	// Argument parsing enforces that exactly one of s.Name or s.URL is set
 	if s.Name != "" {
-		ok, server := ctx.Servers.GetServerByName(s.Name)
+		ok, account := ctx.Accounts.GetAccountByName(s.Name)
 		if !ok {
-			return fmt.Errorf("Server name '%s' is not defined.", s.Name)
+			return fmt.Errorf("Account name '%s' is not defined.", s.Name)
 		}
-		s.server = server
+		s.account = account
 	}
 	if s.URL != nil {
-		ok, server := ctx.Servers.GetServerByURL(s.URL.String())
+		ok, account := ctx.Accounts.GetAccountByURL(s.URL.String())
 		if !ok {
 			return fmt.Errorf("Server url '%s' is not defined.", s.URL)
 		}
-		s.server = server
+		s.account = account
 	}
 	return nil
 }

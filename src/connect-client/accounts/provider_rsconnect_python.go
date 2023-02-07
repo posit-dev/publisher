@@ -51,42 +51,42 @@ func (p *rsconnectPythonProvider) serverListPath() (string, error) {
 	return filepath.Join(dir, "servers.json"), nil
 }
 
-func (p *rsconnectPythonProvider) decodeServerStore(data []byte) ([]Server, error) {
+func (p *rsconnectPythonProvider) decodeServerStore(data []byte) ([]Account, error) {
 	// rsconnect-python stores a map of nicknames to servers
-	var serverMap map[string]Server
+	var serverMap map[string]Account
 	err := json.Unmarshal(data, &serverMap)
 	if err != nil {
 		return nil, err
 	}
 
-	servers := []Server{}
-	for _, server := range serverMap {
-		server.Source = ServerSourceRSCP
+	accounts := []Account{}
+	for _, account := range serverMap {
+		account.Source = AccountSourceRSCP
 
 		// rsconnect-python does not store the server
 		// type, so infer it from the URL.
-		server.Type = serverTypeFromURL(server.URL)
+		account.Type = accountTypeFromURL(account.URL)
 
-		if server.ApiKey != "" {
-			server.AuthType = ServerAuthAPIKey
-		} else if server.Token != "" && server.Secret != "" {
-			server.AuthType = ServerAuthToken
+		if account.ApiKey != "" {
+			account.AuthType = AccountAuthAPIKey
+		} else if account.Token != "" && account.Secret != "" {
+			account.AuthType = AccountAuthToken
 		} else {
-			server.AuthType = ServerAuthNone
+			account.AuthType = AccountAuthNone
 		}
 
 		// Migrate existing rstudio.cloud entries.
-		if server.URL == "https://api.rstudio.cloud" {
-			server.URL = "https://api.posit.cloud"
+		if account.URL == "https://api.rstudio.cloud" {
+			account.URL = "https://api.posit.cloud"
 		}
-		servers = append(servers, server)
+		accounts = append(accounts, account)
 	}
-	return servers, nil
+	return accounts, nil
 }
 
-// Loads the list of servers stored by rsconnect-python
+// Load loads the list of accounts stored by rsconnect-python
 // by reading its servers.json file.
-func (p *rsconnectPythonProvider) Load() ([]Server, error) {
+func (p *rsconnectPythonProvider) Load() ([]Account, error) {
 	path, err := p.serverListPath()
 	if err != nil {
 		return nil, err
@@ -98,9 +98,9 @@ func (p *rsconnectPythonProvider) Load() ([]Server, error) {
 		}
 		return nil, err
 	}
-	servers, err := p.decodeServerStore(data)
+	accounts, err := p.decodeServerStore(data)
 	if err != nil {
 		return nil, err
 	}
-	return servers, nil
+	return accounts, nil
 }
