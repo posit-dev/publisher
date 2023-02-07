@@ -51,7 +51,7 @@ func LogRequest(msg string, logger rslog.Logger, next http.HandlerFunc) http.Han
 		next(writer, req)
 		elapsedMs := time.Now().Sub(startTime).Milliseconds()
 
-		logger.WithFields(rslog.Fields{
+		fieldLogger := logger.WithFields(rslog.Fields{
 			"method":      req.Method,
 			"url":         req.URL.String(),
 			"elapsed_ms":  elapsedMs,
@@ -59,6 +59,13 @@ func LogRequest(msg string, logger rslog.Logger, next http.HandlerFunc) http.Han
 			"req_size":    req.ContentLength,
 			"resp_size":   writer.GetBytesSent(),
 			"client_addr": req.RemoteAddr,
-		}).Infof("%s", msg)
+		})
+		correlationId := writer.Header().Get("X-Correlation-Id")
+		if correlationId != "" {
+			fieldLogger = fieldLogger.WithFields(rslog.Fields{
+				"X-Correlation-Id": correlationId,
+			})
+		}
+		fieldLogger.Infof("%s", msg)
 	}
 }

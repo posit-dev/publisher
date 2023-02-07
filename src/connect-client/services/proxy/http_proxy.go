@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"connect-client/debug"
@@ -95,7 +94,6 @@ func (p *proxy) director(req *http.Request) {
 
 func (p *proxy) modifyResponse(resp *http.Response) error {
 	// Rewrite outbound absolute redirects
-	p.logResponse(resp)
 	location := resp.Header.Get("Location")
 	if strings.HasPrefix(location, p.targetURL) {
 		relativePath := strings.TrimPrefix(location, p.targetURL)
@@ -130,19 +128,6 @@ func (p *proxy) logRequest(msg string, req *http.Request) {
 		}).Debugf("%s", msg)
 	}
 	p.logHeader("Request headers", req.Header)
-}
-
-func (p *proxy) logResponse(resp *http.Response) {
-	if p.debugLogger.Enabled() {
-		p.debugLogger.WithFields(rslog.Fields{
-			"status":           strconv.Itoa(resp.StatusCode),
-			"length":           resp.ContentLength,
-			"url":              resp.Request.URL.String(),
-			"Server":           resp.Header["Server"][0],
-			"X-Correlation-Id": resp.Header.Get("X-Correlation-Id"),
-		}).Debugf("Proxy response")
-	}
-	p.logHeader("Response headers", resp.Header)
 }
 
 func (p *proxy) logHeader(msg string, header http.Header) {
