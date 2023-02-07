@@ -10,9 +10,9 @@ import (
 )
 
 type statusCapturingResponseWriter struct {
-	writer http.ResponseWriter
-	sent   int64
-	status int
+	writer    http.ResponseWriter
+	bytesSent int64
+	status    int
 }
 
 func NewStatusCapturingResponseWriter(w http.ResponseWriter) *statusCapturingResponseWriter {
@@ -26,7 +26,7 @@ func (w *statusCapturingResponseWriter) Header() http.Header {
 }
 
 func (w *statusCapturingResponseWriter) Write(buf []byte) (int, error) {
-	w.sent += int64(len(buf))
+	w.bytesSent += int64(len(buf))
 	return w.writer.Write(buf)
 }
 
@@ -40,7 +40,7 @@ func (w *statusCapturingResponseWriter) GetStatus() int {
 }
 
 func (w *statusCapturingResponseWriter) GetBytesSent() int64 {
-	return w.sent
+	return w.bytesSent
 }
 
 // LogRequest logs request info to the specified logger.
