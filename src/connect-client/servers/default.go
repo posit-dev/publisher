@@ -16,6 +16,11 @@ func (l *ServerList) loadServerFromEnvironment() {
 			Certificate: os.Getenv("CONNECT_CERT"),
 			ApiKey:      os.Getenv("CONNECT_API_KEY"),
 		}
+		if server.ApiKey != "" {
+			server.AuthType = ServerAuthAPIKey
+		} else {
+			server.AuthType = ServerAuthNone
+		}
 		l.servers = append(l.servers, server)
 	}
 }

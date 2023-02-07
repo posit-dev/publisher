@@ -61,6 +61,14 @@ func decodeRSConnectPythonServerStore(data []byte) ([]Server, error) {
 		// type, so infer it from the URL.
 		server.Type = serverTypeFromURL(server.URL)
 
+		if server.ApiKey != "" {
+			server.AuthType = ServerAuthAPIKey
+		} else if server.Token != "" && server.Secret != "" {
+			server.AuthType = ServerAuthToken
+		} else {
+			server.AuthType = ServerAuthNone
+		}
+
 		// Migrate existing rstudio.cloud entries.
 		if server.URL == "https://api.rstudio.cloud" {
 			server.URL = "https://api.posit.cloud"
