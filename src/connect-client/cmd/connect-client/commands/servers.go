@@ -46,9 +46,7 @@ func (cmd *listServersCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 			fmt.Printf("Nickname: \"%s\"\n", server.Name)
 			fmt.Printf("    URL: %s\n", server.URL)
 			fmt.Printf("    Configured via: %s\n", server.Source)
-			if server.ApiKey != "" {
-				fmt.Println("    API key is saved")
-			}
+			fmt.Printf("    Authentication: %s\n", server.AuthType.String())
 			if server.Insecure {
 				fmt.Println("    Insecure mode (TLS host/certificate validation disabled)")
 			}

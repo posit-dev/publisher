@@ -9,8 +9,8 @@ type Server struct {
 	Name        string         // Nickname
 	URL         string         // Server URL, e.g. https://connect.example.com/rsc
 	Insecure    bool           // Skip https server verification
-	Certificate string         // Root CA certificate, if server cert is signed by a private CA
-	ApiKey      string         // For Connect servers
+	Certificate string         `json:"ca_cert"` // Root CA certificate, if server cert is signed by a private CA
+	ApiKey      string         `json:"api_key"` // For Connect servers
 	AccountName string         // For shinyapps.io and Posit Cloud servers
 	Token       string         //   ...
 	Secret      string         //   ...
@@ -32,7 +32,11 @@ func (l *ServerList) Load() error {
 	l.servers = []Server{}
 	l.loadServerFromEnvironment()
 
-	err := l.loadRSConnectPythonServers()
+	err := l.loadRSConnectServers()
+	if err != nil {
+		return err
+	}
+	err = l.loadRSConnectPythonServers()
 	if err != nil {
 		return err
 	}
