@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"os"
 
-	"connect-client/servers"
+	"connect-client/accounts"
 	"connect-client/services"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -35,7 +35,7 @@ func (args *CommonArgs) AfterApply() error {
 }
 
 type CLIContext struct {
-	Servers    *servers.ServerList
+	Servers    *accounts.ServerList
 	LocalToken services.LocalToken
 	Logger     rslog.Logger `kong:"-"`
 }
@@ -45,7 +45,7 @@ func NewCLIContext() (*CLIContext, error) {
 	logger.SetOutput(os.Stderr)
 	logger.SetLevel(rslog.DebugLevel)
 
-	serverList := servers.NewServerList()
+	serverList := accounts.NewServerList()
 	err := serverList.Load()
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func NewCLIContext() (*CLIContext, error) {
 type ServerSpec struct {
 	URL    *url.URL `short:"u" xor:"spec" required:"" help:"URL of the server URL to remove."`
 	Name   string   `short:"n" xor:"spec" required:"" help:"Nickname of the server to remove."`
-	server servers.Server
+	server accounts.Server
 }
 
 func (s *ServerSpec) AfterApply(ctx *CLIContext) error {
