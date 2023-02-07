@@ -8,11 +8,18 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
-// rsconnectConfigDir returns the directory where the rsconnect
+type rsconnectProvider struct{}
+
+func newRSConnectProvider() provider {
+	return &rsconnectProvider{}
+}
+
+// configDir returns the directory where the rsconnect
 // R package stores its configuration.
-func rsconnectConfigDir() (string, error) {
+func (p *rsconnectProvider) configDir() (string, error) {
 	// https://github.com/rstudio/rsconnect/blob/main/R/config.R
 	baseDir := os.Getenv("R_USER_CONFIG_DIR")
 	if baseDir == "" {
@@ -39,30 +46,22 @@ func rsconnectConfigDir() (string, error) {
 	return filepath.Join(baseDir, "R", "rsconnect"), nil
 }
 
-func readRsconnectServers(configDir string) (util.DCFData, error) {
-	serverPattern := filepath.Join(configDir, "servers", "*.dcf")
-	return util.ReadDCFFiles(serverPattern)
-}
-
-func readRsconnectAccounts(configDir string) (util.DCFData, error) {
-	accountsPattern := filepath.Join(configDir, "accounts", "*", "*.dcf")
-	return util.ReadDCFFiles(accountsPattern)
-}
-
 // makeServerNameMap constructs a server name-to-url map
 // from the provided rsconnect server list.
 func makeServerNameMap(rscServers util.DCFData) map[string]string {
 	serverNameToURL := map[string]string{}
 	for _, rscServer := range rscServers {
-		serverNameToURL[rscServer["name"]] = rscServer["url"]
+		name := rscServer["name"]
+		url := strings.TrimSuffix(rscServer["url"], "/__api__")
+		serverNameToURL[name] = url
 	}
 	return serverNameToURL
 }
 
-// serversFromRsconnectConfig constructs Server objects from the
+// serversFromConfig constructs Server objects from the
 // provided rsconnect server and account lists. Primarily,
 // this is a join between the two on account.server = server.name.
-func serversFromRsconnectConfig(rscServers, rscAccounts util.DCFData) ([]Server, error) {
+func (p *rsconnectProvider) serversFromConfig(rscServers, rscAccounts util.DCFData) ([]Server, error) {
 	servers := []Server{}
 	serverNameToURL := makeServerNameMap(rscServers)
 	for _, account := range rscAccounts {
@@ -93,25 +92,26 @@ func serversFromRsconnectConfig(rscServers, rscAccounts util.DCFData) ([]Server,
 	return servers, nil
 }
 
-// loadRSConnectServers loads the list of servers stored by
+// Load loads the list of servers stored by
 // rsconnect, by reading its servers and account DCF files.
-func (l *ServerList) loadRSConnectServers() error {
-	configDir, err := rsconnectConfigDir()
+func (p *rsconnectProvider) Load() ([]Server, error) {
+	configDir, err := p.configDir()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	rscServers, err := readRsconnectServers(configDir)
+	serverPattern := filepath.Join(configDir, "servers", "*.dcf")
+	rscServers, err := util.ReadDCFFiles(serverPattern)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	rscAccounts, err := readRsconnectAccounts(configDir)
+	accountsPattern := filepath.Join(configDir, "accounts", "*", "*.dcf")
+	rscAccounts, err := util.ReadDCFFiles(accountsPattern)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	servers, err := serversFromRsconnectConfig(rscServers, rscAccounts)
+	servers, err := p.serversFromConfig(rscServers, rscAccounts)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	l.servers = append(l.servers, servers...)
-	return nil
+	return servers, nil
 }

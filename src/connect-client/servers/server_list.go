@@ -9,36 +9,41 @@ type Server struct {
 	Name        string         // Nickname
 	URL         string         // Server URL, e.g. https://connect.example.com/rsc
 	Insecure    bool           // Skip https server verification
-	Certificate string         `json:"ca_cert"` // Root CA certificate, if server cert is signed by a private CA
-	ApiKey      string         `json:"api_key"` // For Connect servers
-	AccountName string         // For shinyapps.io and Posit Cloud servers
+	Certificate string         `json:"ca_cert"`      // Root CA certificate, if server cert is signed by a private CA
+	ApiKey      string         `json:"api_key"`      // For Connect servers
+	AccountName string         `json:"account_name"` // For shinyapps.io and Posit Cloud servers
 	Token       string         //   ...
 	Secret      string         //   ...
 }
 
-type ServerList struct {
-	servers []Server
+type provider interface {
+	Load() ([]Server, error)
 }
 
-func NewServerList() (ServerList, error) {
-	serverList := ServerList{
+type ServerList struct {
+	servers   []Server
+	providers []provider
+}
+
+func NewServerList() *ServerList {
+	return &ServerList{
 		servers: []Server{},
+		providers: []provider{
+			newDefaultProvider(),
+			newRSConnectProvider(),
+			newRSConnectPythonProvider(),
+		},
 	}
-	err := serverList.Load()
-	return serverList, err
 }
 
 func (l *ServerList) Load() error {
 	l.servers = []Server{}
-	l.loadServerFromEnvironment()
-
-	err := l.loadRSConnectServers()
-	if err != nil {
-		return err
-	}
-	err = l.loadRSConnectPythonServers()
-	if err != nil {
-		return err
+	for _, provider := range l.providers {
+		servers, err := provider.Load()
+		if err != nil {
+			return err
+		}
+		l.servers = append(l.servers, servers...)
 	}
 	return nil
 }

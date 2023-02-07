@@ -35,7 +35,7 @@ func (args *CommonArgs) AfterApply() error {
 }
 
 type CLIContext struct {
-	Servers    servers.ServerList
+	Servers    *servers.ServerList
 	LocalToken services.LocalToken
 	Logger     rslog.Logger `kong:"-"`
 }
@@ -45,7 +45,8 @@ func NewCLIContext() (*CLIContext, error) {
 	logger.SetOutput(os.Stderr)
 	logger.SetLevel(rslog.DebugLevel)
 
-	serverList, err := servers.NewServerList()
+	serverList := servers.NewServerList()
+	err := serverList.Load()
 	if err != nil {
 		return nil, err
 	}

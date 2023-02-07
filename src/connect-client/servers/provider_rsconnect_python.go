@@ -9,11 +9,17 @@ import (
 	"runtime"
 )
 
+type rsconnectPythonProvider struct{}
+
+func newRSConnectPythonProvider() provider {
+	return &rsconnectPythonProvider{}
+}
+
 // Returns the path to rsconnect-python's configuration directory.
 // The config directory is where the server list (servers.json) is
 // stored, along with deployment metadata for any deployments that
 // were made from read-only directories.
-func rsconnectPythonConfigDir() (string, error) {
+func (p *rsconnectPythonProvider) configDir() (string, error) {
 	// https://github.com/rstudio/rsconnect-python/blob/master/rsconnect/metadata.py
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -37,20 +43,20 @@ func rsconnectPythonConfigDir() (string, error) {
 }
 
 // Returns the path to rsconnect-python's servers.json file.
-func rsconnectPythonServerListPath() (string, error) {
-	dir, err := rsconnectPythonConfigDir()
+func (p *rsconnectPythonProvider) serverListPath() (string, error) {
+	dir, err := p.configDir()
 	if err != nil {
 		return "", err
 	}
 	return filepath.Join(dir, "servers.json"), nil
 }
 
-func decodeRSConnectPythonServerStore(data []byte) ([]Server, error) {
+func (p *rsconnectPythonProvider) decodeServerStore(data []byte) ([]Server, error) {
 	// rsconnect-python stores a map of nicknames to servers
 	var serverMap map[string]Server
 	err := json.Unmarshal(data, &serverMap)
 	if err != nil {
-		return []Server{}, err
+		return nil, err
 	}
 
 	servers := []Server{}
@@ -80,22 +86,21 @@ func decodeRSConnectPythonServerStore(data []byte) ([]Server, error) {
 
 // Loads the list of servers stored by rsconnect-python
 // by reading its servers.json file.
-func (l *ServerList) loadRSConnectPythonServers() error {
-	path, err := rsconnectPythonServerListPath()
+func (p *rsconnectPythonProvider) Load() ([]Server, error) {
+	path, err := p.serverListPath()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return nil, nil
 		}
-		return err
+		return nil, err
 	}
-	servers, err := decodeRSConnectPythonServerStore(data)
+	servers, err := p.decodeServerStore(data)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	l.servers = append(l.servers, servers...)
-	return nil
+	return servers, nil
 }
