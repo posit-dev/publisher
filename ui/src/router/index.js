@@ -2,15 +2,15 @@
 
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import ServerList from '../views/ServerList.vue'
+import AccountList from '../views/AccountList.vue'
 
 Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
-    name: 'serverList',
-    component: ServerList
+    name: 'accountList',
+    component: AccountList
   }
 ]
 
