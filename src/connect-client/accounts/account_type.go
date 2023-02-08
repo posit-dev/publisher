@@ -10,7 +10,7 @@ const (
 	AccountTypeCloud                   = "cloud"
 )
 
-func (t AccountType) String() string {
+func (t AccountType) Description() string {
 	switch t {
 	case AccountTypeConnect:
 		return "Posit Connect"

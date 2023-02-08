@@ -10,7 +10,7 @@ const (
 	AccountSourceEnvironment               = "environment"
 )
 
-func (source AccountSource) String() string {
+func (source AccountSource) Description() string {
 	switch source {
 	case AccountSourceRSCP:
 		return "rsconnect-python"

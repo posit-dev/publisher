@@ -6,6 +6,7 @@ import (
 	"embed"
 	"net/http"
 
+	"connect-client/accounts"
 	"connect-client/debug"
 	"connect-client/services"
 	"connect-client/services/api"
@@ -27,7 +28,7 @@ func NewUIService(
 	token services.LocalToken,
 	logger rslog.Logger) *api.Service {
 
-	handler := newUIHandler()
+	handler := newUIHandler(logger)
 
 	return api.NewService(
 		handler,
@@ -43,15 +44,15 @@ func NewUIService(
 	)
 }
 
-func newUIHandler() http.HandlerFunc {
+func newUIHandler(logger rslog.Logger) http.HandlerFunc {
 	r := http.NewServeMux()
+	api_prefix := "/api/"
+	r.Handle(api_prefix+"accounts", api.NewAccountListEndpoint(accounts.NewAccountList(), logger))
 
 	// static files for the local (account list) UI
-	r.Handle("/", http.FileServer(http.FS(content)))
+	staticHandler := http.FileServer(http.FS(content)).ServeHTTP
+	staticHandler = middleware.AddPathPrefix("/static", staticHandler)
+	r.HandleFunc("/", staticHandler)
 
-	// More APIs to come...
-
-	handler := r.ServeHTTP
-	handler = middleware.AddPathPrefix("/static", handler)
-	return handler
+	return r.ServeHTTP
 }

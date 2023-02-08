@@ -1,6 +1,6 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 <template>
-  <v-list flat style="overflow-y:auto; width: 100%; max-height: 300px; min-height: 300px;">
+  <v-list flat>
     <v-toolbar elevation="1" class="pr-0">
       <v-toolbar-title>Publishing Accounts</v-toolbar-title>
       <v-spacer />
@@ -96,62 +96,30 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   name: 'AccountList',
   components: {
   },
   data: () => ({
-    accounts: [
-      {
-        type: 'connect',
-        auth_type: 'api-key',
-        name: 'colorado',
-        url: 'https://colorado.posit.co/rsc',
-        insecure: false,
-        certificate: '',
-        api_key: '0123456789abcdef0123456789abcdef',
-        account_name: 'someuser',
-        token: '',
-        secret: ''
-      },
-      {
-        type: 'connect',
-        auth_type: 'none',
-        name: 'development',
-        url: 'https://connect.localtest.me/rsc/dev-password',
-        insecure: true,
-        certificate: '',
-        api_key: '',
-        account_name: 'admin',
-        token: '',
-        secret: ''
-      },
-      {
-        type: 'shinyapps',
-        auth_type: 'token',
-        name: 'shinyapps.io',
-        url: 'https://shinyapps.io',
-        insecure: false,
-        certificate: '',
-        api_key: '',
-        account_name: 'justauser',
-        token: 'blahblah',
-        secret: 'somethingsomething'
-      }
-    ]
+    accounts: []
   }),
+  created () {
+    this.fetchAccounts()
+  },
   methods: {
     haveAccounts () {
-      return this.data.accounts.length !== 0
+      return this.accounts.length !== 0
     },
     addAccount () {
     },
     removeAccount (name) {
     },
-    hasKey (account) {
-      console.log(account)
-      console.log(account.auth_type !== 'none')
-      return account.auth_type !== 'none'
+    fetchAccounts () {
+      axios.get('/api/accounts').then((response) => {
+        this.accounts = response.data.accounts
+      })
     }
   }
 }

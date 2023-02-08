@@ -10,7 +10,7 @@ const (
 	AccountAuthNone                   = "none"    // No saved credentials
 )
 
-func (auth AccountAuthType) String() string {
+func (auth AccountAuthType) Description() string {
 	switch auth {
 	case AccountAuthAPIKey:
 		return "Connect API key"

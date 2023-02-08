@@ -3,17 +3,17 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type Account struct {
-	Type        AccountType     // Which type of API this server provides
-	Source      AccountSource   // Source of the saved server configuration
-	AuthType    AccountAuthType // Authentication method (API key, token, etc)
-	Name        string          // Nickname
-	URL         string          // Server URL, e.g. https://connect.example.com/rsc
-	Insecure    bool            // Skip https server verification
-	Certificate string          `json:"ca_cert"`      // Root CA certificate, if server cert is signed by a private CA
-	ApiKey      string          `json:"api_key"`      // For Connect servers
+	Type        AccountType     `json:"type"`         // Which type of API this server provides
+	Source      AccountSource   `json:"source"`       // Source of the saved server configuration
+	AuthType    AccountAuthType `json:"auth_type"`    // Authentication method (API key, token, etc)
+	Name        string          `json:"name"`         // Nickname
+	URL         string          `json:"url"`          // Server URL, e.g. https://connect.example.com/rsc
+	Insecure    bool            `json:"insecure"`     // Skip https server verification
+	Certificate string          `json:"-"`            // Root CA certificate, if server cert is signed by a private CA
+	ApiKey      string          `json:"-"`            // For Connect servers
 	AccountName string          `json:"account_name"` // For shinyapps.io and Posit Cloud servers
-	Token       string          //   ...
-	Secret      string          //   ...
+	Token       string          `json:"-"`            //   ...
+	Secret      string          `json:"-"`            //   ...
 }
 
 type provider interface {

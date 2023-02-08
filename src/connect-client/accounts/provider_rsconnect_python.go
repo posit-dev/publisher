@@ -51,35 +51,60 @@ func (p *rsconnectPythonProvider) serverListPath() (string, error) {
 	return filepath.Join(dir, "servers.json"), nil
 }
 
+type rsconnectPythonAccount struct {
+	Name        string `json:"name"`         // Nickname
+	URL         string `json:"url"`          // Server URL, e.g. https://connect.example.com/rsc
+	Insecure    bool   `json:"insecure"`     // Skip https server verification
+	Certificate string `json:"ca_cert"`      // Root CA certificate, if server cert is signed by a private CA
+	ApiKey      string `json:"api_key"`      // For Connect servers
+	AccountName string `json:"account_name"` // For shinyapps.io and Posit Cloud servers
+	Token       string `json:"token"`        //   ...
+	Secret      string `json:"secret"`       //   ...
+}
+
+func (r *rsconnectPythonAccount) toAccount() Account {
+	acct := Account{
+		Name:        r.Name,
+		URL:         r.URL,
+		Insecure:    r.Insecure,
+		Certificate: r.Certificate,
+		ApiKey:      r.ApiKey,
+		AccountName: r.AccountName,
+		Token:       r.Token,
+		Secret:      r.Secret,
+	}
+	acct.Source = AccountSourceRSCP
+
+	// rsconnect-python does not store the server
+	// type, so infer it from the URL.
+	acct.Type = accountTypeFromURL(acct.URL)
+
+	if acct.ApiKey != "" {
+		acct.AuthType = AccountAuthAPIKey
+	} else if acct.Token != "" && acct.Secret != "" {
+		acct.AuthType = AccountAuthToken
+	} else {
+		acct.AuthType = AccountAuthNone
+	}
+
+	// Migrate existing rstudio.cloud entries.
+	if acct.URL == "https://api.rstudio.cloud" {
+		acct.URL = "https://api.posit.cloud"
+	}
+	return acct
+}
+
 func (p *rsconnectPythonProvider) decodeServerStore(data []byte) ([]Account, error) {
 	// rsconnect-python stores a map of nicknames to servers
-	var serverMap map[string]Account
-	err := json.Unmarshal(data, &serverMap)
+	var accountMap map[string]rsconnectPythonAccount
+	err := json.Unmarshal(data, &accountMap)
 	if err != nil {
 		return nil, err
 	}
 
 	accounts := []Account{}
-	for _, account := range serverMap {
-		account.Source = AccountSourceRSCP
-
-		// rsconnect-python does not store the server
-		// type, so infer it from the URL.
-		account.Type = accountTypeFromURL(account.URL)
-
-		if account.ApiKey != "" {
-			account.AuthType = AccountAuthAPIKey
-		} else if account.Token != "" && account.Secret != "" {
-			account.AuthType = AccountAuthToken
-		} else {
-			account.AuthType = AccountAuthNone
-		}
-
-		// Migrate existing rstudio.cloud entries.
-		if account.URL == "https://api.rstudio.cloud" {
-			account.URL = "https://api.posit.cloud"
-		}
-		accounts = append(accounts, account)
+	for _, rscpAccount := range accountMap {
+		accounts = append(accounts, rscpAccount.toAccount())
 	}
 	return accounts, nil
 }

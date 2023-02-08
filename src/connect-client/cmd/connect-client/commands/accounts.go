@@ -43,8 +43,8 @@ func (cmd *listAccountsCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		for _, account := range accounts {
 			fmt.Printf("Nickname: \"%s\"\n", account.Name)
 			fmt.Printf("    Server URL: %s\n", account.URL)
-			fmt.Printf("    Configured via: %s\n", account.Source)
-			fmt.Printf("    Authentication: %s\n", account.AuthType.String())
+			fmt.Printf("    Configured via: %s\n", account.Source.Description())
+			fmt.Printf("    Authentication: %s\n", account.AuthType.Description())
 			if account.Insecure {
 				fmt.Println("    Insecure mode (TLS host/certificate validation disabled)")
 			}
