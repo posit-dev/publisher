@@ -18,8 +18,8 @@ import (
 var content embed.FS
 
 func NewUIService(
+	fragment string,
 	listen string,
-	path string,
 	keyFile string,
 	certFile string,
 	openBrowser bool,
@@ -27,12 +27,12 @@ func NewUIService(
 	token services.LocalToken,
 	logger rslog.Logger) *api.Service {
 
-	handler := newUIHandler(path)
+	handler := newUIHandler()
 
 	return api.NewService(
 		handler,
 		listen,
-		path,
+		fragment,
 		keyFile,
 		certFile,
 		openBrowser,
@@ -43,7 +43,7 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(path string) http.HandlerFunc {
+func newUIHandler() http.HandlerFunc {
 	r := http.NewServeMux()
 
 	// static files for the local (account list) UI

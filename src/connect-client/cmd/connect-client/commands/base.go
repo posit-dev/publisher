@@ -9,6 +9,7 @@ import (
 
 	"connect-client/accounts"
 	"connect-client/services"
+	"connect-client/services/ui"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
@@ -20,6 +21,19 @@ type UIArgs struct {
 	AccessLog   bool   `help:"Log all HTTP requests."`
 	TLSKeyFile  string `help:"Path to TLS private key file for the UI server."`
 	TLSCertFile string `help:"Path to TLS certificate chain file for the UI server."`
+}
+
+func RunUI(fragment string, args *CommonArgs, ctx *CLIContext) error {
+	svc := ui.NewUIService(
+		fragment,
+		args.Listen,
+		args.TLSKeyFile,
+		args.TLSCertFile,
+		args.Interactive,
+		args.AccessLog,
+		ctx.LocalToken,
+		ctx.Logger)
+	return svc.Run()
 }
 
 type CommonArgs struct {

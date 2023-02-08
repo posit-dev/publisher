@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-
-	"connect-client/services/ui"
 )
 
 type addAccountCmd struct {
@@ -60,16 +58,7 @@ func (cmd *listAccountsCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 func (cmd *listAccountsCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
-	svc := ui.NewUIService(
-		args.Listen,
-		"#accounts",
-		args.TLSKeyFile,
-		args.TLSCertFile,
-		args.Interactive,
-		args.AccessLog,
-		ctx.LocalToken,
-		ctx.Logger)
-	return svc.Run()
+	return RunUI("#accounts", args, ctx)
 }
 
 type accountUICmd struct{}
