@@ -59,13 +59,13 @@
               API Key
             </span>
             <span v-else-if="account.auth_type === 'token-key'">
-              <v-icon  light>
+              <v-icon light>
                 mdi-check-circle
               </v-icon>
               Token & Key
             </span>
             <span v-else-if="account.auth_type === 'token-secret'">
-              <v-icon  light>
+              <v-icon light>
                 mdi-check-circle
               </v-icon>
               Token & Secret
@@ -73,7 +73,9 @@
           </td>
           <td>{{account.account_name}}</td>
           <td>
-            <v-icon light @click="removeAccount(account.name)">
+            <v-icon v-if="account.source !== 'environment'"
+              light
+              @click="removeAccount(account.name)">
               mdi-trash-can
             </v-icon>
           </td>
