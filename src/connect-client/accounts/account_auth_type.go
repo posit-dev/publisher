@@ -5,18 +5,21 @@ package accounts
 type AccountAuthType string
 
 const (
-	AccountAuthAPIKey AccountAuthType = "api-key" // Connect API key
-	AccountAuthToken                  = "token"   // rsconnect token & private key
-	AccountAuthNone                   = "none"    // No saved credentials
+	AuthTypeAPIKey      AccountAuthType = "api-key"      // Connect API key
+	AuthTypeTokenKey                    = "token-key"    // rsconnect token & private key (Connect)
+	AuthTypeTokenSecret                 = "token-secret" // rsconnect token & secret (Cloud, shinyapps.io)
+	AuthTypeNone                        = "none"         // No saved credentials
 )
 
 func (auth AccountAuthType) Description() string {
 	switch auth {
-	case AccountAuthAPIKey:
+	case AuthTypeAPIKey:
 		return "Connect API key"
-	case AccountAuthToken:
-		return "RStudio IDE/rsconnect token"
-	case AccountAuthNone:
+	case AuthTypeTokenKey:
+		return "RStudio IDE/rsconnect private key"
+	case AuthTypeTokenSecret:
+		return "RStudio IDE/rsconnect secret"
+	case AuthTypeNone:
 		return "No saved credentials"
 	default:
 		return string(auth)

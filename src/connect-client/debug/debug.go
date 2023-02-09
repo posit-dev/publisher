@@ -7,6 +7,7 @@ import "github.com/rstudio/platform-lib/pkg/rslog"
 const (
 	AllRegions rslog.ProductRegion = iota
 	GeneralRegion
+	AccountsRegion
 	UIRegion
 	ProxyRegion
 	ProxyHeadersRegion
@@ -15,6 +16,7 @@ const (
 var definedRegionNames = map[rslog.ProductRegion]string{
 	AllRegions:         "all",
 	GeneralRegion:      "general",
+	AccountsRegion:     "accounts",
 	UIRegion:           "ui",
 	ProxyRegion:        "proxy",
 	ProxyHeadersRegion: "proxy-headers",

@@ -1,5 +1,7 @@
 package accounts
 
+import "github.com/rstudio/platform-lib/pkg/rslog"
+
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type Account struct {
@@ -10,10 +12,22 @@ type Account struct {
 	URL         string          `json:"url"`          // Server URL, e.g. https://connect.example.com/rsc
 	Insecure    bool            `json:"insecure"`     // Skip https server verification
 	Certificate string          `json:"-"`            // Root CA certificate, if server cert is signed by a private CA
+	AccountName string          `json:"account_name"` // Username, if known
 	ApiKey      string          `json:"-"`            // For Connect servers
-	AccountName string          `json:"account_name"` // For shinyapps.io and Posit Cloud servers
-	Token       string          `json:"-"`            //   ...
-	Secret      string          `json:"-"`            //   ...
+	Token       string          `json:"-"`            // If IDE token auth is being used (requires secret or private key)
+	Secret      string          `json:"-"`            // token auth for Connect
+	PrivateKey  string          `json:"-"`            // token auth for shinyapps.io and Posit Cloud
+}
+
+func (acct *Account) InferAuthType() AccountAuthType {
+	if acct.ApiKey != "" {
+		return AuthTypeAPIKey
+	} else if acct.Token != "" && acct.Secret != "" {
+		return AuthTypeTokenSecret
+	} else if acct.Token != "" && acct.PrivateKey != "" {
+		return AuthTypeTokenKey
+	}
+	return AuthTypeNone
 }
 
 type provider interface {
@@ -23,16 +37,18 @@ type provider interface {
 type AccountList struct {
 	accounts  []Account
 	providers []provider
+	logger    rslog.Logger
 }
 
-func NewAccountList() *AccountList {
+func NewAccountList(logger rslog.Logger) *AccountList {
 	return &AccountList{
 		accounts: []Account{},
 		providers: []provider{
-			newDefaultProvider(),
-			newRSConnectProvider(),
-			newRSConnectPythonProvider(),
+			newDefaultProvider(logger),
+			newRSConnectProvider(logger),
+			newRSConnectPythonProvider(logger),
 		},
+		logger: logger,
 	}
 }
 

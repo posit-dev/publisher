@@ -5,7 +5,6 @@ package commands
 import (
 	"fmt"
 	"net/url"
-	"os"
 
 	"connect-client/accounts"
 	"connect-client/services"
@@ -54,12 +53,8 @@ type CLIContext struct {
 	Logger     rslog.Logger `kong:"-"`
 }
 
-func NewCLIContext() (*CLIContext, error) {
-	logger := rslog.DefaultLogger()
-	logger.SetOutput(os.Stderr)
-	logger.SetLevel(rslog.DebugLevel)
-
-	accountList := accounts.NewAccountList()
+func NewCLIContext(logger rslog.Logger) (*CLIContext, error) {
+	accountList := accounts.NewAccountList(logger)
 	err := accountList.Load()
 	if err != nil {
 		return nil, err

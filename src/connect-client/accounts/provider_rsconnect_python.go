@@ -3,16 +3,25 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"connect-client/debug"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
-type rsconnectPythonProvider struct{}
+type rsconnectPythonProvider struct {
+	logger      rslog.Logger
+	debugLogger rslog.DebugLogger
+}
 
-func newRSConnectPythonProvider() provider {
-	return &rsconnectPythonProvider{}
+func newRSConnectPythonProvider(logger rslog.Logger) provider {
+	return &rsconnectPythonProvider{
+		logger:      logger,
+		debugLogger: rslog.NewDebugLogger(debug.AccountsRegion),
+	}
 }
 
 // Returns the path to rsconnect-python's configuration directory.
@@ -30,6 +39,9 @@ func (p *rsconnectPythonProvider) configDir() (string, error) {
 	switch runtime.GOOS {
 	case "linux":
 		baseDir = os.Getenv("XDG_CONFIG_HOME")
+		if baseDir != "" {
+			p.debugLogger.Debugf("rsconnect-python: using XDG_CONFIG_HOME (%s)", baseDir)
+		}
 	case "windows":
 		baseDir = os.Getenv("APPDATA")
 	case "darwin":
@@ -63,7 +75,7 @@ type rsconnectPythonAccount struct {
 }
 
 func (r *rsconnectPythonAccount) toAccount() Account {
-	acct := Account{
+	account := Account{
 		Name:        r.Name,
 		URL:         r.URL,
 		Insecure:    r.Insecure,
@@ -73,25 +85,18 @@ func (r *rsconnectPythonAccount) toAccount() Account {
 		Token:       r.Token,
 		Secret:      r.Secret,
 	}
-	acct.Source = AccountSourceRSCP
+	account.Source = AccountSourceRsconnectPython
 
 	// rsconnect-python does not store the server
 	// type, so infer it from the URL.
-	acct.Type = accountTypeFromURL(acct.URL)
-
-	if acct.ApiKey != "" {
-		acct.AuthType = AccountAuthAPIKey
-	} else if acct.Token != "" && acct.Secret != "" {
-		acct.AuthType = AccountAuthToken
-	} else {
-		acct.AuthType = AccountAuthNone
-	}
+	account.Type = accountTypeFromURL(account.URL)
+	account.AuthType = account.InferAuthType()
 
 	// Migrate existing rstudio.cloud entries.
-	if acct.URL == "https://api.rstudio.cloud" {
-		acct.URL = "https://api.posit.cloud"
+	if account.URL == "https://api.rstudio.cloud" {
+		account.URL = "https://api.posit.cloud"
 	}
-	return acct
+	return account
 }
 
 func (p *rsconnectPythonProvider) decodeServerStore(data []byte) ([]Account, error) {
@@ -119,10 +124,12 @@ func (p *rsconnectPythonProvider) Load() ([]Account, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
+			p.debugLogger.Debugf("rsconnect-python config file does not exist (%s), checking old config directory", path)
 			return nil, nil
 		}
 		return nil, err
 	}
+	p.logger.Infof("Loading rsconnect-python accounts from %s", path)
 	accounts, err := p.decodeServerStore(data)
 	if err != nil {
 		return nil, err

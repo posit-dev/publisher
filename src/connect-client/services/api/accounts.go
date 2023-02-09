@@ -12,7 +12,7 @@ import (
 )
 
 // accountGetDTO is the format of returned account data.
-// It does not include credentials (api_key, token, or secret).
+// It does not include credentials (ApiKey, Token, Secret, or PrivateKey).
 type accountGetDTO struct {
 	Type        string `json:"type"`         // Which type of API this server provides
 	Source      string `json:"source"`       // Source of the saved server configuration

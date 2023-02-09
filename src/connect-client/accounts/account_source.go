@@ -5,14 +5,14 @@ package accounts
 type AccountSource string
 
 const (
-	AccountSourceRSCP        AccountSource = "rsconnect-python"
-	AccountSourceRsconnect                 = "rsconnect"
-	AccountSourceEnvironment               = "environment"
+	AccountSourceRsconnectPython AccountSource = "rsconnect-python"
+	AccountSourceRsconnect                     = "rsconnect"
+	AccountSourceEnvironment                   = "environment"
 )
 
 func (source AccountSource) Description() string {
 	switch source {
-	case AccountSourceRSCP:
+	case AccountSourceRsconnectPython:
 		return "rsconnect-python"
 	case AccountSourceRsconnect:
 		return "RStudio IDE/rsconnect"

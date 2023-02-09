@@ -47,7 +47,9 @@ func NewUIService(
 func newUIHandler(logger rslog.Logger) http.HandlerFunc {
 	r := http.NewServeMux()
 	api_prefix := "/api/"
-	r.Handle(api_prefix+"accounts", api.NewAccountListEndpoint(accounts.NewAccountList(), logger))
+
+	accountList := accounts.NewAccountList(logger)
+	r.Handle(api_prefix+"accounts", api.NewAccountListEndpoint(accountList, logger))
 
 	// static files for the local (account list) UI
 	staticHandler := http.FileServer(http.FS(content)).ServeHTTP

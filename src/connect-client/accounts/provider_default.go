@@ -2,12 +2,20 @@ package accounts
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import "os"
+import (
+	"os"
 
-type defaultProvider struct{}
+	"github.com/rstudio/platform-lib/pkg/rslog"
+)
 
-func newDefaultProvider() provider {
-	return &defaultProvider{}
+type defaultProvider struct {
+	logger rslog.Logger
+}
+
+func newDefaultProvider(logger rslog.Logger) provider {
+	return &defaultProvider{
+		logger: logger,
+	}
 }
 
 func (p *defaultProvider) Load() ([]Account, error) {
@@ -24,10 +32,7 @@ func (p *defaultProvider) Load() ([]Account, error) {
 		Certificate: os.Getenv("CONNECT_CERT"),
 		ApiKey:      os.Getenv("CONNECT_API_KEY"),
 	}
-	if account.ApiKey != "" {
-		account.AuthType = AccountAuthAPIKey
-	} else {
-		account.AuthType = AccountAuthNone
-	}
+	account.AuthType = account.InferAuthType()
+	p.logger.Infof("Creating default account from CONNECT_SERVER: %s", serverURL)
 	return []Account{account}, nil
 }

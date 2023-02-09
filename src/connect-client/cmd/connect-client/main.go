@@ -5,6 +5,7 @@ package main
 import (
 	"connect-client/cmd/connect-client/commands"
 	"connect-client/project"
+	"os"
 
 	"github.com/alecthomas/kong"
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -18,13 +19,23 @@ type cliSpec struct {
 	Version commands.VersionFlag `help:"Show the client software version and exit."`
 }
 
+func logVersion(logger rslog.Logger) {
+	logger.WithFields(rslog.Fields{
+		"version": project.Version,
+	}).Infof("Client version")
+}
+
 func main() {
+	logger := rslog.DefaultLogger()
+	logger.SetOutput(os.Stderr)
+	logger.SetLevel(rslog.DebugLevel)
+	logVersion(logger)
+
 	defer rslog.Flush()
-	ctx, err := commands.NewCLIContext()
+	ctx, err := commands.NewCLIContext(logger)
 	if err != nil {
-		ctx.Logger.Fatalf("Error initializing client: %s", err)
+		logger.Fatalf("Error initializing client: %s", err)
 	}
-	ctx.Logger.Infof("Client version: %s", project.Version)
 
 	cli := cliSpec{
 		CommonArgs: commands.CommonArgs{},

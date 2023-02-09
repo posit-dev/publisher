@@ -58,11 +58,17 @@
               </v-icon>
               API Key
             </span>
-            <span v-else-if="account.auth_type === 'token'">
+            <span v-else-if="account.auth_type === 'token-key'">
               <v-icon  light>
                 mdi-check-circle
               </v-icon>
-              Token
+              Token & Key
+            </span>
+            <span v-else-if="account.auth_type === 'token-secret'">
+              <v-icon  light>
+                mdi-check-circle
+              </v-icon>
+              Token & Secret
             </span>
           </td>
           <td>{{account.account_name}}</td>
