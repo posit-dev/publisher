@@ -16,9 +16,9 @@ func (auth AccountAuthType) Description() string {
 	case AuthTypeAPIKey:
 		return "Connect API key"
 	case AuthTypeTokenKey:
-		return "RStudio IDE/rsconnect private key"
+		return "RStudio IDE/rsconnect token+key"
 	case AuthTypeTokenSecret:
-		return "RStudio IDE/rsconnect secret"
+		return "RStudio IDE/rsconnect token+secret"
 	case AuthTypeNone:
 		return "No saved credentials"
 	default:

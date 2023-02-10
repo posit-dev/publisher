@@ -51,6 +51,7 @@
               <v-icon  light>
                 mdi-circle-outline
               </v-icon>
+              Not saved
             </span>
             <span v-else-if="account.auth_type === 'api-key'">
               <v-icon  light>
@@ -62,13 +63,13 @@
               <v-icon light>
                 mdi-check-circle
               </v-icon>
-              Token & Key
+              IDE Token+key
             </span>
             <span v-else-if="account.auth_type === 'token-secret'">
               <v-icon light>
                 mdi-check-circle
               </v-icon>
-              Token & Secret
+              IDE Token+secret
             </span>
           </td>
           <td>{{account.account_name}}</td>
