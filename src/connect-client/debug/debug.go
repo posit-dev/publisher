@@ -8,6 +8,7 @@ const (
 	AllRegions rslog.ProductRegion = iota
 	GeneralRegion
 	AccountsRegion
+	BundleRegion
 	UIRegion
 	ProxyRegion
 	ProxyHeadersRegion
@@ -17,6 +18,7 @@ var definedRegionNames = map[rslog.ProductRegion]string{
 	AllRegions:         "all",
 	GeneralRegion:      "general",
 	AccountsRegion:     "accounts",
+	BundleRegion:       "bundle",
 	UIRegion:           "ui",
 	ProxyRegion:        "proxy",
 	ProxyHeadersRegion: "proxy-headers",
