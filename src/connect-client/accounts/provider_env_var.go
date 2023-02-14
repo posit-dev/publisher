@@ -8,17 +8,17 @@ import (
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
-type defaultProvider struct {
+type envVarProvider struct {
 	logger rslog.Logger
 }
 
-func newDefaultProvider(logger rslog.Logger) provider {
-	return &defaultProvider{
+func newEnvVarProvider(logger rslog.Logger) provider {
+	return &envVarProvider{
 		logger: logger,
 	}
 }
 
-func (p *defaultProvider) Load() ([]Account, error) {
+func (p *envVarProvider) Load() ([]Account, error) {
 	serverURL := os.Getenv("CONNECT_SERVER")
 	if serverURL == "" {
 		return nil, nil
@@ -26,13 +26,13 @@ func (p *defaultProvider) Load() ([]Account, error) {
 	account := Account{
 		Type:        accountTypeFromURL(serverURL),
 		Source:      AccountSourceEnvironment,
-		Name:        "default",
+		Name:        "env",
 		URL:         serverURL,
 		Insecure:    (os.Getenv("CONNECT_INSECURE") != ""),
 		Certificate: os.Getenv("CONNECT_CERT"),
 		ApiKey:      os.Getenv("CONNECT_API_KEY"),
 	}
 	account.AuthType = account.InferAuthType()
-	p.logger.Infof("Creating default account from CONNECT_SERVER: %s", serverURL)
+	p.logger.Infof("Creating '%s' account from CONNECT_SERVER: %s", account.Name, serverURL)
 	return []Account{account}, nil
 }

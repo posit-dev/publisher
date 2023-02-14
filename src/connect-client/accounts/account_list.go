@@ -44,7 +44,7 @@ func NewAccountList(logger rslog.Logger) *AccountList {
 	return &AccountList{
 		accounts: []Account{},
 		providers: []provider{
-			newDefaultProvider(logger),
+			newEnvVarProvider(logger),
 			newRSConnectProvider(logger),
 			newRSConnectPythonProvider(logger),
 		},
