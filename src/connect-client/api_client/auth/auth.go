@@ -11,7 +11,7 @@ type AuthMethod interface {
 	AddAuthHeaders(req *http.Request) error
 }
 
-func NewClientAuth(acct accounts.Account) AuthMethod {
+func NewClientAuth(acct *accounts.Account) AuthMethod {
 	switch acct.AuthType {
 	case accounts.AuthTypeAPIKey:
 		return NewApiKeyAuthenticator(acct.ApiKey, "")

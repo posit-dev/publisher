@@ -16,13 +16,13 @@ import (
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type ConnectClient struct {
-	account accounts.Account
+	account *accounts.Account
 	client  *http.Client
 	logger  rslog.Logger
 }
 
 func NewConnectClient(
-	account accounts.Account,
+	account *accounts.Account,
 	timeout time.Duration,
 	logger rslog.Logger) (APIClient, error) {
 
@@ -37,14 +37,13 @@ func NewConnectClient(
 	}, nil
 }
 
-var errNotAConnectServer = errors.New("The target server does not appear to be a Connect server.")
 var errAuthenticationFailed = errors.New("Unable to log in with the provided credentials.")
 
 func (c *ConnectClient) TestConnection() error {
 	// Make a client without auth so we're just testing the connection.
-	acctWithoutAuth := c.account
+	acctWithoutAuth := *c.account
 	acctWithoutAuth.AuthType = accounts.AuthTypeNone
-	client, err := newHTTPClientForAccount(acctWithoutAuth, 30*time.Second, c.logger)
+	client, err := newHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.logger)
 	if err != nil {
 		return err
 	}
@@ -54,7 +53,7 @@ func (c *ConnectClient) TestConnection() error {
 		return err
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		return errNotAConnectServer
+		return fmt.Errorf("The server '%s' does not appear to be a Connect server.", c.account.URL)
 	} else if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("Unexpected response from Connect server: %s", resp.Status)
 	}
@@ -92,11 +91,13 @@ func (c *ConnectClient) get(path string) ([]byte, error) {
 }
 
 func (c *ConnectClient) CreateDeployment() (ContentID, error) {
-
+	// TODO
+	return "", nil
 }
 
 func (c *ConnectClient) DeployBundle(ContentID, io.Reader) (BundleID, TaskID, error) {
-
+	// TODO
+	return "", "", nil
 }
 
 // From Connect's api/v1/tasks/dto.go

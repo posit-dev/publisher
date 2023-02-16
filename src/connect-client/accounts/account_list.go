@@ -1,6 +1,10 @@
 package accounts
 
-import "github.com/rstudio/platform-lib/pkg/rslog"
+import (
+	"fmt"
+
+	"github.com/rstudio/platform-lib/pkg/rslog"
+)
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -68,20 +72,11 @@ func (l *AccountList) GetAllAccounts() []Account {
 	return l.accounts
 }
 
-func (l *AccountList) GetAccountByName(name string) (bool, Account) {
+func (l *AccountList) GetAccountByName(name string) (*Account, error) {
 	for _, account := range l.accounts {
 		if account.Name == name {
-			return true, account
+			return &account, nil
 		}
 	}
-	return false, Account{}
-}
-
-func (l *AccountList) GetAccountByURL(url string) (bool, Account) {
-	for _, account := range l.accounts {
-		if account.URL == url {
-			return true, account
-		}
-	}
-	return false, Account{}
+	return nil, fmt.Errorf("There is no account named '%s'", name)
 }

@@ -3,9 +3,12 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"connect-client/accounts"
+	"connect-client/api_client/clients"
 	"fmt"
 	"net/url"
 	"os"
+	"time"
 )
 
 type addAccountCmd struct {
@@ -21,10 +24,36 @@ func (cmd *addAccountCmd) Run(args *CommonArgs) error {
 }
 
 type removeAccountCmd struct {
-	accountSpec AccountSpec `group:"Account:"`
+	Name string `short:"n" help:"Nickname of account to remove."`
 }
 
 func (cmd *removeAccountCmd) Run(args *CommonArgs) error {
+	return nil
+}
+
+type testAccountCmd struct {
+	Name string `short:"n" help:"Nickname of account to test."`
+}
+
+func (cmd *testAccountCmd) Run(args *CommonArgs, ctx *CLIContext) error {
+	account, err := ctx.Accounts.GetAccountByName(cmd.Name)
+	if err != nil {
+		return err
+	}
+	client, err := clients.NewConnectClient(account, 30*time.Second, ctx.Logger)
+	if err != nil {
+		return err
+	}
+	err = client.TestConnection()
+	if err != nil {
+		return err
+	}
+	if account.AuthType != accounts.AuthTypeNone {
+		err = client.TestAuthentication()
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -67,4 +96,5 @@ type AccountCommands struct {
 	AddAccount    addAccountCmd    `cmd:"" help:"Add a publishing account."`
 	RemoveAccount removeAccountCmd `cmd:"" help:"Remove a publishing account. Specify by name or URL."`
 	ListAccounts  listAccountsCmd  `cmd:"" help:"List publishing accounts."`
+	TestAccount   testAccountCmd   `cmd:"" help:"Verify connectivity and credentials for a publishing account."`
 }

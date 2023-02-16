@@ -7,9 +7,7 @@ import (
 	"connect-client/api_client/auth"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -35,11 +33,9 @@ type APIClient interface {
 	TestConnection() error
 	TestAuthentication() error
 	CreateDeployment() (ContentID, error)
-	DeployBundle(ContentID, io.Reader) (BundleID, TaskID, error)
+	// DeployBundle(ContentID, io.Reader) (BundleID, TaskID, error)
 	GetTask(TaskID) (*Task, error)
 }
-
-var errNoCertificatesFound = errors.New("No PEM certificates were found in the certificate file.")
 
 func loadCACertificates(path string, logger rslog.Logger) (*x509.CertPool, error) {
 	if path == "" {
@@ -53,12 +49,12 @@ func loadCACertificates(path string, logger rslog.Logger) (*x509.CertPool, error
 	certPool := x509.NewCertPool()
 	ok := certPool.AppendCertsFromPEM(certificate)
 	if !ok {
-		return nil, errNoCertificatesFound
+		return nil, fmt.Errorf("No PEM certificates were found in the certificate file '%s'", path)
 	}
 	return certPool, nil
 }
 
-func newHTTPClientForAccount(account accounts.Account, timeout time.Duration, logger rslog.Logger) (*http.Client, error) {
+func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, logger rslog.Logger) (*http.Client, error) {
 	cookieJar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})

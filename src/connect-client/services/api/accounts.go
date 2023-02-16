@@ -30,7 +30,7 @@ type accountListDTO struct {
 
 // toAccountDTO converts an internal Account object
 // to the DTO type we return from the API.
-func toAccountDTO(acct accounts.Account) *accountGetDTO {
+func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 	return &accountGetDTO{
 		Type:        string(acct.Type),
 		Source:      string(acct.Source),
@@ -53,7 +53,7 @@ func NewAccountListEndpoint(accountList *accounts.AccountList, logger rslog.Logg
 		}
 		data := &accountListDTO{}
 		for _, acct := range accountList.GetAllAccounts() {
-			data.Accounts = append(data.Accounts, toAccountDTO(acct))
+			data.Accounts = append(data.Accounts, toAccountDTO(&acct))
 		}
 		json.NewEncoder(w).Encode(data)
 	}
