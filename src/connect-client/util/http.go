@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // GetRequestBody reads the body of an http client request.
@@ -20,4 +21,8 @@ func GetRequestBody(req *http.Request) ([]byte, error) {
 		req.Body = io.NopCloser(bytes.NewReader(body))
 	}
 	return body, nil
+}
+
+func URLPathJoin(a, b string) string {
+	return strings.TrimRight(a, "/") + "/" + strings.TrimLeft(b, "/")
 }
