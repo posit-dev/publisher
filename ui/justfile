@@ -1,19 +1,12 @@
-
-ui_dir := '../src/connect-client/services/ui/static/'
-
 install:
     yarn install
 
+lint:
+    yarn lint
+
 build:
     yarn build
-    cp -r dist/* {{ ui_dir }}
-
-build-dev:
-    yarn build-dev
-    cp -r dist/* {{ ui_dir }}
 
 serve:
     yarn serve
 
-lint:
-    yarn lint
