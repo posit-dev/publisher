@@ -5,6 +5,7 @@ package main
 import (
 	"connect-client/cmd/connect-client/commands"
 	"connect-client/project"
+	"fmt"
 	"os"
 
 	"github.com/alecthomas/kong"
@@ -44,5 +45,9 @@ func main() {
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
 	err = args.Run(&cli.CommonArgs)
-	args.FatalIfErrorf(err)
+	if err != nil {
+		logger.Errorf("%s", err)
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
