@@ -27,6 +27,8 @@ certs:
            -key-file localhost-key.pem \
            localhost 127.0.0.1 ::1 0.0.0.0
 
+
+
 # build the server
 build-native:
     #!/usr/bin/env bash
@@ -55,6 +57,7 @@ build-native:
 build-all:
     mkdir -p .cache/go ui/dist
     just ui/ build
+    cp -r ./ui/dist ./src/connect-client/services/ui/static
 
     just container-build \
         just src/connect-client/ build-all
@@ -94,7 +97,8 @@ _lint format='0':
 # build all artifacts
 all:
     rm -f bin/connect-client
-    just ui/ build
+    just ui/ build  
+    cp -r ./ui/dist ./src/connect-client/services/ui/static
     just build
 
 # inspect the running container
