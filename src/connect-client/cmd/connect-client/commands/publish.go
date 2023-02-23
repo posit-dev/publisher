@@ -17,9 +17,6 @@ type PublishCmd struct {
 }
 
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	if args.Serve {
-		return cmd.Serve(args, ctx)
-	}
 	var buf bufio.Writer
 	bundle, err := bundles.NewBundleFromDirectory(".", cmd.Exclude, &buf, ctx.Logger)
 	if err != nil {
@@ -29,7 +26,12 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	return nil
 }
 
-func (cmd *PublishCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
+type PublishUICmd struct {
+	UIArgs
+	PublishCmd
+}
+
+func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	account, err := ctx.Accounts.GetAccountByName(cmd.Name)
 	if err != nil {
 		return err
@@ -41,11 +43,11 @@ func (cmd *PublishCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
 	svc := proxy.NewProxyService(
 		cmd.Name,
 		serverURL,
-		args.Listen,
-		args.TLSKeyFile,
-		args.TLSCertFile,
-		args.Interactive,
-		args.AccessLog,
+		cmd.Listen,
+		cmd.TLSKeyFile,
+		cmd.TLSCertFile,
+		cmd.Interactive,
+		cmd.AccessLog,
 		ctx.LocalToken,
 		ctx.Logger)
 	return svc.Run()

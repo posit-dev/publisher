@@ -5,6 +5,7 @@ package commands
 import (
 	"connect-client/accounts"
 	"connect-client/api_client/clients"
+	"connect-client/services/ui"
 	"fmt"
 	"net/url"
 	"os"
@@ -60,10 +61,6 @@ func (cmd *testAccountCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 type listAccountsCmd struct{}
 
 func (cmd *listAccountsCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	if args.Serve {
-		return cmd.Serve(args, ctx)
-	}
-
 	accounts := ctx.Accounts.GetAllAccounts()
 	if len(accounts) == 0 {
 		fmt.Println("No accounts are saved. To add an account, see `connect-client add-server --help`.")
@@ -86,13 +83,25 @@ func (cmd *listAccountsCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	return nil
 }
 
-func (cmd *listAccountsCmd) Serve(args *CommonArgs, ctx *CLIContext) error {
-	return RunUI("#accounts", args, ctx)
+type accountUICmd struct {
+	UIArgs
 }
 
-type accountUICmd struct{}
+func (cmd *accountUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
+	svc := ui.NewUIService(
+		"#accounts",
+		cmd.Listen,
+		cmd.TLSKeyFile,
+		cmd.TLSCertFile,
+		cmd.Interactive,
+		cmd.AccessLog,
+		ctx.LocalToken,
+		ctx.Logger)
+	return svc.Run()
+}
 
 type AccountCommands struct {
+	AccountUI     accountUICmd     `cmd:"" help:"Serve the account management UI."`
 	AddAccount    addAccountCmd    `cmd:"" help:"Add a publishing account."`
 	RemoveAccount removeAccountCmd `cmd:"" help:"Remove a publishing account. Specify by name or URL."`
 	ListAccounts  listAccountsCmd  `cmd:"" help:"List publishing accounts."`
