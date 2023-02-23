@@ -20,9 +20,9 @@ type Manifest struct {
 	Version     int                `json:"version"`     // Manifest version (always 1)
 	Platform    string             `json:"platform"`    // Client R version
 	Metadata    Metadata           `json:"metadata"`    // Properties about this deployment. Ignored by shinyapps.io
-	Python      Python             `json:"python"`      // If non-null, specifies the Python version and dependencies
-	Jupyter     Jupyter            `json:"jupyter"`     // If non-null, specifies the Jupyter options
-	Quarto      Quarto             `json:"quarto"`      // If non-null, specifies the Quarto version and engines
+	Python      *Python            `json:"python"`      // If non-null, specifies the Python version and dependencies
+	Jupyter     *Jupyter           `json:"jupyter"`     // If non-null, specifies the Jupyter options
+	Quarto      *Quarto            `json:"quarto"`      // If non-null, specifies the Quarto version and engines
 	Environment Environment        `json:"environment"` // Information about the execution environment
 	Packages    map[string]Package `json:"packages"`    // Map of R package name to package details
 	Files       []string           `json:"files"`       // List of file paths contained in the bundle
@@ -77,7 +77,7 @@ func ReadManifest(r io.Reader) (*Manifest, error) {
 	manifest := &Manifest{}
 	err := decoder.Decode(&manifest)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot parse manifest file: %s", err)
+		return nil, fmt.Errorf("Cannot parse manifest: %s", err)
 	}
 	return manifest, nil
 }
