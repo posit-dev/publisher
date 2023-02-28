@@ -46,13 +46,13 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 // NewAccountListEndpoint returns a handler for the account list.
 func NewAccountListEndpoint(accountList *accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		err := accountList.Load()
+		accounts, err := accountList.GetAllAccounts()
 		if err != nil {
 			internalError(w, logger, err)
 			return
 		}
 		data := &accountListDTO{}
-		for _, acct := range accountList.GetAllAccounts() {
+		for _, acct := range accounts {
 			data.Accounts = append(data.Accounts, toAccountDTO(&acct))
 		}
 		json.NewEncoder(w).Encode(data)

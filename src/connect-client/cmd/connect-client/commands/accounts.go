@@ -61,7 +61,10 @@ func (cmd *testAccountCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 type listAccountsCmd struct{}
 
 func (cmd *listAccountsCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	accounts := ctx.Accounts.GetAllAccounts()
+	accounts, err := ctx.Accounts.GetAllAccounts()
+	if err != nil {
+		return err
+	}
 	if len(accounts) == 0 {
 		fmt.Println("No accounts are saved. To add an account, see `connect-client add-server --help`.")
 	} else {

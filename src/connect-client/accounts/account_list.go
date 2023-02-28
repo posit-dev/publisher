@@ -39,14 +39,12 @@ type provider interface {
 }
 
 type AccountList struct {
-	accounts  []Account
 	providers []provider
 	logger    rslog.Logger
 }
 
 func NewAccountList(logger rslog.Logger) *AccountList {
 	return &AccountList{
-		accounts: []Account{},
 		providers: []provider{
 			newEnvVarProvider(logger),
 			newRSConnectProvider(logger),
@@ -56,24 +54,24 @@ func NewAccountList(logger rslog.Logger) *AccountList {
 	}
 }
 
-func (l *AccountList) Load() error {
-	l.accounts = []Account{}
+func (l *AccountList) GetAllAccounts() ([]Account, error) {
+	accounts := []Account{}
 	for _, provider := range l.providers {
-		accounts, err := provider.Load()
+		providerAccounts, err := provider.Load()
 		if err != nil {
-			return err
+			return nil, err
 		}
-		l.accounts = append(l.accounts, accounts...)
+		accounts = append(accounts, providerAccounts...)
 	}
-	return nil
-}
-
-func (l *AccountList) GetAllAccounts() []Account {
-	return l.accounts
+	return accounts, nil
 }
 
 func (l *AccountList) GetAccountByName(name string) (*Account, error) {
-	for _, account := range l.accounts {
+	accounts, err := l.GetAllAccounts()
+	if err != nil {
+		return nil, err
+	}
+	for _, account := range accounts {
 		if account.Name == name {
 			return &account, nil
 		}

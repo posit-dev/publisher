@@ -145,18 +145,21 @@ func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts util.DCFD
 
 func (p *rsconnectProvider) Load() ([]Account, error) {
 	configDir, err := p.configDir()
-	if err == nil && util.Exists(configDir) {
-		return p.loadFromConfigDir(configDir)
-	} else {
-		p.debugLogger.Debugf("rsconnect config directory does not exist (%s), checking old config directory", configDir)
-
-		oldConfigDir, err := p.oldConfigDir()
-		if err == nil && util.Exists(oldConfigDir) {
-			return p.loadFromConfigDir(oldConfigDir)
-		} else {
-			p.debugLogger.Debugf("Old rsconnect config directory does not exist (%s)", oldConfigDir)
-		}
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("Error getting rsconnect config directory: %s", err)
 	}
+	if util.Exists(configDir) {
+		return p.loadFromConfigDir(configDir)
+	}
+	p.debugLogger.Debugf("rsconnect config directory does not exist (%s), checking old config directory", configDir)
+	oldConfigDir, err := p.oldConfigDir()
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("Error getting old rsconnect config directory: %s", err)
+	}
+	if util.Exists(oldConfigDir) {
+		return p.loadFromConfigDir(oldConfigDir)
+	}
+	p.debugLogger.Debugf("Old rsconnect config directory does not exist (%s)", oldConfigDir)
 	return nil, nil
 }
 

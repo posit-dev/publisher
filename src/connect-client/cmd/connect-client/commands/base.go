@@ -29,11 +29,6 @@ type CLIContext struct {
 
 func NewCLIContext(logger rslog.Logger) (*CLIContext, error) {
 	accountList := accounts.NewAccountList(logger)
-	err := accountList.Load()
-	if err != nil {
-		return nil, err
-	}
-
 	token, err := services.NewLocalToken()
 	if err != nil {
 		return nil, err
