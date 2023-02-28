@@ -50,9 +50,21 @@ func (cmd *testAccountCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	if account.AuthType != accounts.AuthTypeNone {
-		err = client.TestAuthentication()
+		user, err := client.TestAuthentication()
 		if err != nil {
 			return err
+		}
+		if user.FirstName != "" || user.LastName != "" {
+			fmt.Printf("Name:     %s %s\n", user.FirstName, user.LastName)
+		}
+		if user.Username != "" {
+			fmt.Printf("Username: %s\n", user.Username)
+		}
+		if user.Id != "" {
+			fmt.Printf("ID:       %s\n", user.Id)
+		}
+		if user.Email != "" {
+			fmt.Printf("Email:    %s\n", user.Email)
 		}
 	}
 	return nil

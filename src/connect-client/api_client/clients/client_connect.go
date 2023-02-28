@@ -72,15 +72,33 @@ type UserDTO struct {
 	GUID        string    `json:"guid"`
 }
 
-func (c *ConnectClient) TestAuthentication() error {
-	c.logger.Infof("Testing %s authentication to %s", c.account.AuthType.Description(), c.account.URL)
-	var user UserDTO
-	err := c.get("/__api__/v1/user", &user)
-	if err != nil {
-		return err
+func (u *UserDTO) toUser() *User {
+	return &User{
+		Id:        u.GUID,
+		Username:  u.Username,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Email:     u.Email,
 	}
-	fmt.Printf("%s (%s %s) [%s]\n", user.Username, user.FirstName, user.LastName, user.GUID)
-	return nil
+}
+
+func (c *ConnectClient) TestAuthentication() (*User, error) {
+	c.logger.Infof("Testing %s authentication to %s", c.account.AuthType.Description(), c.account.URL)
+	var connectUser UserDTO
+	err := c.get("/__api__/v1/user", &connectUser)
+	if err != nil {
+		return nil, err
+	}
+	if connectUser.Locked {
+		return nil, fmt.Errorf("User account %s is locked.", connectUser.Username)
+	}
+	if !connectUser.Confirmed {
+		return nil, fmt.Errorf("User account %s is not confirmed.", connectUser.Username)
+	}
+	if !(connectUser.UserRole == "publisher" || connectUser.UserRole == "administrator") {
+		return nil, fmt.Errorf("User account %s with role '%s' does not have permission to publish content.", connectUser.Username, connectUser.UserRole)
+	}
+	return connectUser.toUser(), nil
 }
 
 func (c *ConnectClient) CreateDeployment() (ContentID, error) {
