@@ -5,7 +5,9 @@ package accounts
 import (
 	"connect-client/debug"
 	"connect-client/util"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -85,6 +87,7 @@ func (p *rsconnectProvider) oldConfigDir() (string, error) {
 		}
 		configDir = filepath.Join(configDir, "R", "rsconnect")
 	}
+	p.debugLogger.Debugf("rsconnect: candidate old config directory is '%s'", configDir)
 	configDir, err = filepath.Abs(configDir)
 	if err != nil {
 		return "", err
@@ -145,22 +148,23 @@ func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts util.DCFD
 
 func (p *rsconnectProvider) Load() ([]Account, error) {
 	configDir, err := p.configDir()
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil {
 		return nil, fmt.Errorf("Error getting rsconnect config directory: %s", err)
 	}
 	if util.Exists(configDir) {
 		return p.loadFromConfigDir(configDir)
 	}
-	p.debugLogger.Debugf("rsconnect config directory does not exist (%s), checking old config directory", configDir)
+	p.debugLogger.Debugf("rsconnect config directory '%s' does not exist, checking old config directory", configDir)
 	oldConfigDir, err := p.oldConfigDir()
-	if err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("Error getting old rsconnect config directory: %s", err)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			p.debugLogger.Debugf("Old rsconnect config directory does not exist")
+			return nil, nil
+		} else {
+			return nil, fmt.Errorf("Error getting old rsconnect config directory: %s", err)
+		}
 	}
-	if util.Exists(oldConfigDir) {
-		return p.loadFromConfigDir(oldConfigDir)
-	}
-	p.debugLogger.Debugf("Old rsconnect config directory does not exist (%s)", oldConfigDir)
-	return nil, nil
+	return p.loadFromConfigDir(oldConfigDir)
 }
 
 // Load loads the list of accounts stored by
