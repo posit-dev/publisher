@@ -23,6 +23,6 @@ func GetRequestBody(req *http.Request) ([]byte, error) {
 	return body, nil
 }
 
-func URLPathJoin(a, b string) string {
+func URLJoin(a, b string) string {
 	return strings.TrimRight(a, "/") + "/" + strings.TrimLeft(b, "/")
 }

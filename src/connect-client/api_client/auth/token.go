@@ -76,7 +76,7 @@ func (a *tokenAuthenticator) signRequest(req *http.Request, now time.Time) error
 
 	if a.secret != "" {
 		// Secret (Posit Cloud, shinyapps.io)
-		bodyMD5 := hex.EncodeToString(MD5(body))
+		bodyMD5 = hex.EncodeToString(MD5(body))
 		canonicalRequest := strings.Join([]string{req.Method, req.URL.Path, date, bodyMD5}, "\n")
 		decodedSecret, err := base64.StdEncoding.DecodeString(a.secret)
 		if err != nil {
@@ -87,6 +87,7 @@ func (a *tokenAuthenticator) signRequest(req *http.Request, now time.Time) error
 		signature = base64.StdEncoding.EncodeToString(requestHMAC) + "; version=1"
 	} else {
 		// Private key (Posit Connect)
+		bodyMD5 = base64.StdEncoding.EncodeToString(MD5(body))
 		decodedKey, err := base64.StdEncoding.DecodeString(a.privateKey)
 		if err != nil {
 			return err
@@ -97,11 +98,7 @@ func (a *tokenAuthenticator) signRequest(req *http.Request, now time.Time) error
 		}
 		canonicalRequest := strings.Join([]string{req.Method, req.URL.Path, date, bodyMD5}, "\n")
 		requestSHA := SHA1([]byte(canonicalRequest))
-		rsaSignature, err := rsa.SignPKCS1v15(
-			rand.Reader,
-			key,
-			crypto.SHA1,
-			requestSHA)
+		rsaSignature, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA1, requestSHA)
 		if err != nil {
 			return err
 		}

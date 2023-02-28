@@ -16,8 +16,9 @@ type cliSpec struct {
 	commands.CommonArgs
 	commands.AccountCommands `group:"Accounts"`
 
-	Publish commands.PublishCmd  `cmd:"" help:"Publish a project."`
-	Version commands.VersionFlag `help:"Show the client software version and exit."`
+	Publish   commands.PublishCmd   `cmd:"" help:"Publish a project."`
+	PublishUI commands.PublishUICmd `cmd:"" help:"Publish a project using the UI."`
+	Version   commands.VersionFlag  `help:"Show the client software version and exit."`
 }
 
 func logVersion(logger rslog.Logger) {
