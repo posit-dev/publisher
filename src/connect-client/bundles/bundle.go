@@ -197,7 +197,7 @@ func (bundle *Bundle) addFiles(dir string) error {
 }
 
 func (bundle *Bundle) addManifest() error {
-	manifestJSON, err := json.Marshal(bundle.manifest)
+	manifestJSON, err := json.MarshalIndent(bundle.manifest, "", "\t")
 	if err != nil {
 		return err
 	}

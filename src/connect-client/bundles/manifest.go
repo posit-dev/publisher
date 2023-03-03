@@ -22,7 +22,7 @@ type Manifest struct {
 	Platform    string       `json:"platform"`              // Client R version
 	Metadata    Metadata     `json:"metadata"`              // Properties about this deployment. Ignored by shinyapps.io
 	Python      *Python      `json:"python,omitempty"`      // If non-null, specifies the Python version and dependencies
-	Jupyter     *Jupyter     `json:"jupyte,omitemptyr"`     // If non-null, specifies the Jupyter options
+	Jupyter     *Jupyter     `json:"jupyter,omitempty"`     // If non-null, specifies the Jupyter options
 	Quarto      *Quarto      `json:"quarto,omitempty"`      // If non-null, specifies the Quarto version and engines
 	Environment *Environment `json:"environment,omitempty"` // Information about the execution environment
 	Packages    PackageMap   `json:"packages"`              // Map of R package name to package details
