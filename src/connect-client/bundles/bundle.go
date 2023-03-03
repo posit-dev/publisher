@@ -22,7 +22,7 @@ type Bundle struct {
 	manifest    Manifest              // Manifest describing the bundle
 	ignoreList  *gitignore.IgnoreList // Ignore patterns from CLI and ignore files
 	numFiles    int64                 // Number of files in the bundle
-	size        Size                  // Total uncompressed size of the files, in bytes
+	size        util.Size             // Total uncompressed size of the files, in bytes
 	archive     *tar.Writer           // Archive containing the files
 	logger      rslog.Logger
 	debugLogger rslog.DebugLogger
@@ -60,22 +60,6 @@ var standardIgnores = []string{
 	// Less precise than rsconnect, which checks for a
 	// matching Rmd filename in the same directory.
 	"*_cache/",
-}
-
-type Size int64
-
-func (n Size) String() string {
-	if n < 1e3 {
-		return fmt.Sprintf("%d", n)
-	} else if n < 1e6 {
-		return fmt.Sprintf("%.1f KB", float64(n)/1e3)
-	} else if n < 1e9 {
-		return fmt.Sprintf("%.1f MB", float64(n)/1e6)
-	} else if n < 1e12 {
-		return fmt.Sprintf("%.1f GB", float64(n)/1e9)
-	} else {
-		return fmt.Sprintf("%.1f TB", float64(n)/1e12)
-	}
 }
 
 func loadIgnoreFiles(dir string, ignores []string) (*gitignore.IgnoreList, error) {
@@ -173,7 +157,7 @@ func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) erro
 			return err
 		}
 		bundle.numFiles++
-		bundle.size += Size(info.Size())
+		bundle.size += util.Size(info.Size())
 	} else {
 		pathLogger.Infof("Skipping non-regular file")
 	}

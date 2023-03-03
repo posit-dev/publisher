@@ -4,9 +4,26 @@ package util
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 )
+
+type Size int64
+
+func (n Size) String() string {
+	if n < 1e3 {
+		return fmt.Sprintf("%d", n)
+	} else if n < 1e6 {
+		return fmt.Sprintf("%.1f KB", float64(n)/1e3)
+	} else if n < 1e9 {
+		return fmt.Sprintf("%.1f MB", float64(n)/1e6)
+	} else if n < 1e12 {
+		return fmt.Sprintf("%.1f GB", float64(n)/1e9)
+	} else {
+		return fmt.Sprintf("%.1f TB", float64(n)/1e12)
+	}
+}
 
 func Exists(path string) bool {
 	_, err := os.Stat(path)
