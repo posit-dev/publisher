@@ -94,11 +94,20 @@ func loadIgnoreFiles(dir string, ignores []string) (*gitignore.IgnoreList, error
 	return &ignore, err
 }
 
+var pythonBinPaths = []string{
+	"bin/python",
+	"bin/python3",
+	"Scripts/python.exe",
+	"Scripts/python3.exe",
+}
+
 func isPythonEnvironmentDir(path string) bool {
-	return util.Exists(filepath.Join(path, "bin", "python")) ||
-		util.Exists(filepath.Join(path, "bin", "python3")) ||
-		util.Exists(filepath.Join(path, "Scripts", "python.exe")) ||
-		util.Exists(filepath.Join(path, "Scripts", "python3.exe"))
+	for _, binary := range pythonBinPaths {
+		if util.Exists(filepath.Join(path, binary)) {
+			return true
+		}
+	}
+	return false
 }
 
 var bundleTooLargeError = errors.New("Directory is too large to deploy.")
