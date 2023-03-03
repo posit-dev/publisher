@@ -196,15 +196,13 @@ func (bundle *Bundle) addFiles(dir string) error {
 	return nil
 }
 
-const MANIFEST_FILENAME = "manifest.json"
-
 func (bundle *Bundle) addManifest() error {
 	manifestJSON, err := json.Marshal(bundle.manifest)
 	if err != nil {
 		return err
 	}
 	header := &tar.Header{
-		Name: MANIFEST_FILENAME,
+		Name: ManifestFilename,
 		Size: int64(len(manifestJSON)),
 		Mode: 0660,
 	}
