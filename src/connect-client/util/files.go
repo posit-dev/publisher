@@ -25,6 +25,10 @@ func (n Size) String() string {
 	}
 }
 
+func (n Size) ToInt64() int64 {
+	return int64(n)
+}
+
 func Exists(path string) bool {
 	_, err := os.Stat(path)
 	return !errors.Is(err, fs.ErrNotExist)

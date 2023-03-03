@@ -7,6 +7,8 @@ import (
 	"compress/gzip"
 	"connect-client/debug"
 	"connect-client/util"
+	"crypto/md5"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,7 +21,7 @@ import (
 )
 
 type Bundle struct {
-	manifest    Manifest              // Manifest describing the bundle
+	manifest    *Manifest             // Manifest describing the bundle
 	ignoreList  *gitignore.IgnoreList // Ignore patterns from CLI and ignore files
 	numFiles    int64                 // Number of files in the bundle
 	size        util.Size             // Total uncompressed size of the files, in bytes
@@ -101,10 +103,10 @@ func isPythonEnvironmentDir(path string) bool {
 
 var bundleTooLargeError = errors.New("Directory is too large to deploy.")
 
-func writeToTar(info fs.FileInfo, path string, archive *tar.Writer) error {
+func writeToTar(info fs.FileInfo, path string, archive *tar.Writer) ([]byte, error) {
 	header, err := tar.FileInfoHeader(info, "")
 	if err != nil {
-		return fmt.Errorf("Error creating tarfile header for %s: %w", path, err)
+		return nil, fmt.Errorf("Error creating tarfile header for %s: %w", path, err)
 	}
 	header.Name = path
 	if info.IsDir() {
@@ -112,18 +114,24 @@ func writeToTar(info fs.FileInfo, path string, archive *tar.Writer) error {
 	}
 	err = archive.WriteHeader(header)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if info.IsDir() {
-		return nil
+		return nil, nil
 	}
 	f, err := os.Open(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer f.Close()
-	_, err = io.Copy(archive, f)
-	return err
+	hash := md5.New()
+	writer := io.MultiWriter(archive, hash)
+	_, err = io.Copy(writer, f)
+	if err != nil {
+		return nil, err
+	}
+	md5sum := hash.Sum(nil)
+	return md5sum, nil
 }
 
 func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) error {
@@ -146,16 +154,17 @@ func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) erro
 			pathLogger.Infof("Skipping Python environment directory")
 			return filepath.SkipDir
 		}
-		err = writeToTar(info, path, bundle.archive)
+		_, err = writeToTar(info, path, bundle.archive)
 		if err != nil {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
 		pathLogger.Infof("Adding file")
-		err = writeToTar(info, path, bundle.archive)
+		fileMD5, err := writeToTar(info, path, bundle.archive)
 		if err != nil {
 			return err
 		}
+		bundle.manifest.AddFile(path, fileMD5)
 		bundle.numFiles++
 		bundle.size += util.Size(info.Size())
 	} else {
@@ -171,24 +180,51 @@ func (bundle *Bundle) addFiles(dir string) error {
 	if err != nil {
 		return err
 	}
-	bundle.logger.Infof("Bundle size: %d files totaling %s", bundle.numFiles, bundle.size)
+	bundle.logger.WithFields(rslog.Fields{
+		"files":       bundle.numFiles,
+		"total_bytes": bundle.size.ToInt64(),
+	}).Infof("Bundle created")
 	return nil
 }
 
-func NewBundleFromDirectory(dir string, ignores []string, dest io.Writer, logger rslog.Logger) (*Bundle, error) {
+const MANIFEST_FILENAME = "manifest.json"
+
+func (bundle *Bundle) addManifest() error {
+	manifestJSON, err := json.Marshal(bundle.manifest)
+	if err != nil {
+		return err
+	}
+	header := &tar.Header{
+		Name: MANIFEST_FILENAME,
+		Size: int64(len(manifestJSON)),
+		Mode: 0660,
+	}
+	err = bundle.archive.WriteHeader(header)
+	if err != nil {
+		return err
+	}
+	_, err = bundle.archive.Write(manifestJSON)
+	return err
+}
+
+func NewBundleFromDirectory(dir string, ignores []string, dest io.Writer, logger rslog.Logger) error {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	logger.Infof("Creating bundle from directory at '%s'", absDir)
 	ignoreList, err := loadIgnoreFiles(absDir, ignores)
 	if err != nil {
-		return nil, fmt.Errorf("Error loading ignore list: %w", err)
+		return fmt.Errorf("Error loading ignore list: %w", err)
 	}
-	archive := tar.NewWriter(gzip.NewWriter(dest))
+	gzipper := gzip.NewWriter(dest)
+	defer gzipper.Close()
+
+	archive := tar.NewWriter(gzipper)
 	defer archive.Close()
 
 	bundle := &Bundle{
+		manifest:    NewManifest(),
 		ignoreList:  ignoreList,
 		archive:     archive,
 		logger:      logger,
@@ -196,9 +232,14 @@ func NewBundleFromDirectory(dir string, ignores []string, dest io.Writer, logger
 	}
 	err = bundle.addFiles(absDir)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating bundle: %w", err)
+		return fmt.Errorf("Error creating bundle: %w", err)
 	}
-	return bundle, nil
+	bundle.manifest.Metadata.AppMode = "static" // TODO: pass this in
+	err = bundle.addManifest()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // func NewBundleFromManifest(manifest *Manifest) *Bundle {

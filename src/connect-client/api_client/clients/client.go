@@ -1,6 +1,9 @@
 package clients
 
-import "io"
+import (
+	"connect-client/apitypes"
+	"io"
+)
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -21,16 +24,17 @@ type User struct {
 
 // Simplified task structure common to all servers
 type Task struct {
-	Finished bool
-	Output   []string
-	Error    string
+	Finished   bool
+	Output     []string
+	Error      string
+	TotalLines int32
 }
 
 type APIClient interface {
 	TestConnection() error
 	TestAuthentication() (*User, error)
-	CreateDeployment(name ContentName, title string) (ContentID, error)
-	UploadBundle(io.Reader) (BundleID, error)
+	CreateDeployment(name ContentName, title apitypes.NullString) (ContentID, error)
+	UploadBundle(ContentID, io.Reader) (BundleID, error)
 	DeployBundle(ContentID, BundleID) (TaskID, error)
-	GetTask(TaskID) (*Task, error)
+	GetTask(TaskID, *Task) (*Task, error)
 }

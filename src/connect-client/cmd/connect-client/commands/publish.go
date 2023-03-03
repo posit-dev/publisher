@@ -4,31 +4,85 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"time"
 
+	"connect-client/api_client/clients"
+	"connect-client/apitypes"
 	"connect-client/bundles"
 	"connect-client/services/proxy"
+
+	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type PublishCmd struct {
 	Name      string   `short:"n" help:"Nickname of destination publishing account."`
-	Exclude   []string `short:"x" help:"list of file patterns to exclude"`
-	SourceDir string   `arg:"" type"existingdir"`
+	Exclude   []string `short:"x" help:"list of file patterns to exclude."`
+	SourceDir string   `help:"Path to directory containing files to publish." arg:"" type:"existingdir"`
 }
 
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	bundleFile, err := os.CreateTemp(".", "bundle-*.tar.gz")
+	account, err := ctx.Accounts.GetAccountByName(cmd.Name)
 	if err != nil {
 		return err
 	}
+	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
-	bundle, err := bundles.NewBundleFromDirectory(cmd.SourceDir, cmd.Exclude, bundleFile, ctx.Logger)
+	err = bundles.NewBundleFromDirectory(cmd.SourceDir, cmd.Exclude, bundleFile, ctx.Logger)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("bundle file: %s\n", bundleFile.Name())
-	fmt.Printf("bundle: %+v\n", bundle)
+	bundleFile.Seek(0, os.SEEK_SET)
+
+	// TODO: factory method to create client based on server type
+	// TODO: timeout option
+	client, err := clients.NewConnectClient(account, 2*time.Minute, ctx.Logger)
+	if err != nil {
+		return err
+	}
+	// TODO: name and title
+	// TODO: redeployment option
+	contentID, err := client.CreateDeployment("", apitypes.NullString{})
+	if err != nil {
+		return err
+	}
+	bundleID, err := client.UploadBundle(contentID, bundleFile)
+	if err != nil {
+		return err
+	}
+	taskID, err := client.DeployBundle(contentID, bundleID)
+	if err != nil {
+		return err
+	}
+	var previous *clients.Task
+	taskLogger := ctx.Logger.WithFields(rslog.Fields{
+		"source":     "server deployment log",
+		"server":     account.Name,
+		"content_id": contentID,
+		"bundle_id":  bundleID,
+		"task_id":    taskID,
+	})
+	for {
+		task, err := client.GetTask(taskID, previous)
+		if err != nil {
+			return err
+		}
+		for _, line := range task.Output {
+			taskLogger.Infof("%s", line)
+		}
+		if task.Finished {
+			if task.Error != "" {
+				return fmt.Errorf("Error from the server: %s", task.Error)
+			}
+			break
+		}
+		time.Sleep(1.0)
+	}
 	return nil
 }
 

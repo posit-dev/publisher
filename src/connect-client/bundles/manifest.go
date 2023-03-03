@@ -1,6 +1,7 @@
 package bundles
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,15 +18,15 @@ const ManifestFilename = "manifest.json"
 // The manifest describes the type of content (its dependencies, how its
 // environment can be recreated (if needed) and how it is served/executed).
 type Manifest struct {
-	Version     int                `json:"version"`     // Manifest version (always 1)
-	Platform    string             `json:"platform"`    // Client R version
-	Metadata    Metadata           `json:"metadata"`    // Properties about this deployment. Ignored by shinyapps.io
-	Python      *Python            `json:"python"`      // If non-null, specifies the Python version and dependencies
-	Jupyter     *Jupyter           `json:"jupyter"`     // If non-null, specifies the Jupyter options
-	Quarto      *Quarto            `json:"quarto"`      // If non-null, specifies the Quarto version and engines
-	Environment Environment        `json:"environment"` // Information about the execution environment
-	Packages    map[string]Package `json:"packages"`    // Map of R package name to package details
-	Files       []string           `json:"files"`       // List of file paths contained in the bundle
+	Version     int          `json:"version"`               // Manifest version (always 1)
+	Platform    string       `json:"platform"`              // Client R version
+	Metadata    Metadata     `json:"metadata"`              // Properties about this deployment. Ignored by shinyapps.io
+	Python      *Python      `json:"python,omitempty"`      // If non-null, specifies the Python version and dependencies
+	Jupyter     *Jupyter     `json:"jupyte,omitemptyr"`     // If non-null, specifies the Jupyter options
+	Quarto      *Quarto      `json:"quarto,omitempty"`      // If non-null, specifies the Quarto version and engines
+	Environment *Environment `json:"environment,omitempty"` // Information about the execution environment
+	Packages    PackageMap   `json:"packages"`              // Map of R package name to package details
+	Files       FileMap      `json:"files"`                 // List of file paths contained in the bundle
 }
 
 // Metadata contains details about this deployment (type, etc).
@@ -33,9 +34,9 @@ type Metadata struct {
 	AppMode         string `json:"appmode"`          // Selects the runtime for this content.
 	ContentCategory string `json:"content_category"` // A refinement of the AppMode used by plots and sites
 	EntryPoint      string `json:"entrypoint"`       // The main file being deployed.
-	PrimaryRmd      string `json:"primary_rmd"`      // Obsolete - see EntryPoint. The rendering target for Rmd deployments
-	PrimaryHtml     string `json:"primary_html"`     // Obsolete - see EntryPoint. The default document for static deployments
-	HasParameters   bool   `json:"has_parameters"`   // True if this is content allows parameter customization.
+	// PrimaryRmd      string `json:"primary_rmd"`      // Obsolete - see EntryPoint. The rendering target for Rmd deployments
+	// PrimaryHtml     string `json:"primary_html"`     // Obsolete - see EntryPoint. The default document for static deployments
+	HasParameters bool `json:"has_parameters"` // True if this is content allows parameter customization.
 }
 
 type Environment struct {
@@ -64,11 +65,19 @@ type PythonPackageManager struct {
 	PackageFile string `json:"package_file"` // Filename listing dependencies; usually "requirements.txt"
 }
 
+type PackageMap map[string]Package
+
 // Package describes a single R package.
 type Package struct {
 	Source      string            // Symbolic name describing where this package originated. e.g. "CRAN".
 	Repository  string            // URL to the source repository
 	Description map[string]string // A collection of key:value fields from the DESCRIPTION file
+}
+
+type FileMap map[string]FileInfo
+
+type FileInfo struct {
+	Checksum string `json:"checksum"`
 }
 
 // ReadManifest reads and parses the manifest.
@@ -90,4 +99,18 @@ func ReadManifestFile(path string) (*Manifest, error) {
 	}
 	defer f.Close()
 	return ReadManifest(f)
+}
+
+func NewManifest() *Manifest {
+	return &Manifest{
+		Version:  1,
+		Packages: make(PackageMap),
+		Files:    make(FileMap),
+	}
+}
+
+func (manifest *Manifest) AddFile(path string, fileMD5 []byte) {
+	manifest.Files[path] = FileInfo{
+		Checksum: hex.EncodeToString(fileMD5),
+	}
 }

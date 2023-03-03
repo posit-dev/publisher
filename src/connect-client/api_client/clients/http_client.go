@@ -41,7 +41,7 @@ func NewHTTPClient(account *accounts.Account, timeout time.Duration, logger rslo
 
 var errAuthenticationFailed = errors.New("Unable to log in with the provided credentials.")
 
-func (c *HTTPClient) do(method string, path string, body io.Reader) ([]byte, error) {
+func (c *HTTPClient) do(method string, path string, body io.Reader, bodyType string) ([]byte, error) {
 	apiURL := util.URLJoin(c.baseURL, path)
 	req, err := http.NewRequest(method, apiURL, body)
 	if err != nil {
@@ -53,12 +53,14 @@ func (c *HTTPClient) do(method string, path string, body io.Reader) ([]byte, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusUnauthorized {
+	switch resp.StatusCode {
+	case http.StatusUnauthorized:
 		return nil, errAuthenticationFailed
-	} else if resp.StatusCode != http.StatusOK {
+	case http.StatusOK, http.StatusCreated, http.StatusAccepted, http.StatusNoContent:
+		return io.ReadAll(resp.Body)
+	default:
 		return nil, fmt.Errorf("Unexpected response from the server: %s on URL %s", resp.Status, req.URL.String())
 	}
-	return io.ReadAll(resp.Body)
 }
 
 func (c *HTTPClient) doJSON(method string, path string, body any, into any) error {
@@ -70,7 +72,7 @@ func (c *HTTPClient) doJSON(method string, path string, body any, into any) erro
 		}
 		reqBody = bytes.NewReader(bodyJSON)
 	}
-	respBody, err := c.do(method, path, reqBody)
+	respBody, err := c.do(method, path, reqBody, "application/json")
 	if err != nil {
 		return err
 	}
@@ -81,11 +83,11 @@ func (c *HTTPClient) doJSON(method string, path string, body any, into any) erro
 }
 
 func (c *HTTPClient) getRaw(path string) ([]byte, error) {
-	return c.do("GET", path, nil)
+	return c.do("GET", path, nil, "")
 }
 
-func (c *HTTPClient) postRaw(path string, body io.Reader) ([]byte, error) {
-	return c.do("POST", path, body)
+func (c *HTTPClient) postRaw(path string, body io.Reader, bodyType string) ([]byte, error) {
+	return c.do("POST", path, body, bodyType)
 }
 
 func (c *HTTPClient) get(path string, into any) error {

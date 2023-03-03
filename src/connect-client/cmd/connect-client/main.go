@@ -22,9 +22,7 @@ type cliSpec struct {
 }
 
 func logVersion(logger rslog.Logger) {
-	logger.WithFields(rslog.Fields{
-		"version": project.Version,
-	}).Infof("Client version")
+	logger.WithField("version", project.Version).Infof("Client version")
 }
 
 func main() {

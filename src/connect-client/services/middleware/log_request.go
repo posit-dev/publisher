@@ -62,9 +62,7 @@ func LogRequest(msg string, logger rslog.Logger, next http.HandlerFunc) http.Han
 		})
 		correlationId := writer.Header().Get("X-Correlation-Id")
 		if correlationId != "" {
-			fieldLogger = fieldLogger.WithFields(rslog.Fields{
-				"X-Correlation-Id": correlationId,
-			})
+			fieldLogger = fieldLogger.WithField("X-Correlation-Id", correlationId)
 		}
 		fieldLogger.Infof("%s", msg)
 	}

@@ -8,6 +8,7 @@ require (
 	github.com/iriri/minimal/gitignore v0.3.2
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/rstudio/platform-lib/pkg/rslog v1.6.0
+	golang.org/x/net v0.7.0
 )
 
 require (
@@ -17,7 +18,6 @@ require (
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
-	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )

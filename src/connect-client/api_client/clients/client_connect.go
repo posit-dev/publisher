@@ -1,5 +1,7 @@
 package clients
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"connect-client/accounts"
 	"connect-client/apitypes"
@@ -12,8 +14,6 @@ import (
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
-
-// Copyright (C) 2023 by Posit Software, PBC.
 
 type ConnectClient struct {
 	*HTTPClient
@@ -145,10 +145,10 @@ type connectGetContentDTO struct {
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
 
-func (c *ConnectClient) CreateDeployment(name ContentName, title string) (ContentID, error) {
+func (c *ConnectClient) CreateDeployment(name ContentName, title apitypes.NullString) (ContentID, error) {
 	body := connectCreateContentDTO{
 		Name:  name,
-		Title: apitypes.NewNullString(title),
+		Title: title,
 	}
 	content := connectGetContentDTO{}
 	err := c.post("/__api__/v1/content", &body, &content)
@@ -181,8 +181,9 @@ type connectGetBundleDTO struct {
 	Metadata      bundleMetadataDTO   `json:"metadata"`
 }
 
-func (c *ConnectClient) UploadBundle(body io.Reader) (BundleID, error) {
-	resp, err := c.postRaw("/__api__/v1/content", body)
+func (c *ConnectClient) UploadBundle(contentID ContentID, body io.Reader) (BundleID, error) {
+	url := fmt.Sprintf("/__api__/v1/content/%s/bundles", contentID)
+	resp, err := c.postRaw(url, body, "application/gzip")
 	if err != nil {
 		return "", err
 	}
@@ -226,15 +227,21 @@ type taskOutputDTO struct {
 	Last     int32    `json:"last"`
 }
 
-func (c *ConnectClient) GetTask(taskID TaskID) (*Task, error) {
+func (c *ConnectClient) GetTask(taskID TaskID, previous *Task) (*Task, error) {
 	var task taskOutputDTO
-	err := c.get(fmt.Sprintf("/__api__/v1/tasks/%s", taskID), &task)
+	var firstLine int32
+	if previous != nil {
+		firstLine = previous.TotalLines
+	}
+	url := fmt.Sprintf("/__api__/v1/tasks/%s?first=%d", taskID, firstLine)
+	err := c.get(url, &task)
 	if err != nil {
 		return nil, err
 	}
 	return &Task{
-		Finished: task.Finished,
-		Output:   task.Output,
-		Error:    task.Error,
+		Finished:   task.Finished,
+		Output:     task.Output,
+		Error:      task.Error,
+		TotalLines: task.Last,
 	}, nil
 }
