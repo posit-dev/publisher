@@ -4,8 +4,10 @@ package bundles
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"connect-client/debug"
 	"connect-client/util"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -21,7 +23,7 @@ type Bundle struct {
 	ignoreList  *gitignore.IgnoreList // Ignore patterns from CLI and ignore files
 	numFiles    int64                 // Number of files in the bundle
 	size        Size                  // Total uncompressed size of the files, in bytes
-	archive     tar.Writer            // Archive containing the files (TODO: gzip)
+	archive     *tar.Writer           // Archive containing the files
 	logger      rslog.Logger
 	debugLogger rslog.DebugLogger
 }
@@ -77,28 +79,33 @@ func (n Size) String() string {
 }
 
 func loadIgnoreFiles(dir string, ignores []string) (*gitignore.IgnoreList, error) {
-	ignore, err := gitignore.New()
-	if err != nil {
-		return nil, err
-	}
-	const errNotInGitRepo = "not in a git repository"
-	err = ignore.AppendGit()
-	if err != nil && err.Error() != errNotInGitRepo {
-		return nil, err
-	}
-	for _, pattern := range standardIgnores {
-		err = ignore.AppendGlob(pattern)
+	var ignore gitignore.IgnoreList
+	err := util.WithWorkingDir(dir, func() error {
+		var err error
+		ignore, err = gitignore.New()
 		if err != nil {
-			return nil, err
+			return err
 		}
-	}
-	for _, pattern := range ignores {
-		err = ignore.AppendGlob(pattern)
-		if err != nil {
-			return nil, err
+		const errNotInGitRepo = "not in a git repository"
+		err = ignore.AppendGit()
+		if err != nil && err.Error() != errNotInGitRepo {
+			return err
 		}
-	}
-	return &ignore, nil
+		for _, pattern := range standardIgnores {
+			err = ignore.AppendGlob(pattern)
+			if err != nil {
+				return err
+			}
+		}
+		for _, pattern := range ignores {
+			err = ignore.AppendGlob(pattern)
+			if err != nil {
+				return err
+			}
+		}
+		return err
+	})
+	return &ignore, err
 }
 
 func isPythonEnvironmentDir(path string) bool {
@@ -108,6 +115,33 @@ func isPythonEnvironmentDir(path string) bool {
 		util.Exists(filepath.Join(path, "Scripts", "python3.exe"))
 }
 
+var bundleTooLargeError = errors.New("Directory is too large to deploy.")
+
+func writeToTar(info fs.FileInfo, path string, archive *tar.Writer) error {
+	header, err := tar.FileInfoHeader(info, "")
+	if err != nil {
+		return fmt.Errorf("Error creating tarfile header for %s: %w", path, err)
+	}
+	header.Name = path
+	if info.IsDir() {
+		header.Name += "/"
+	}
+	err = archive.WriteHeader(header)
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return nil
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = io.Copy(archive, f)
+	return err
+}
+
 func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) error {
 	if err != nil {
 		// Stop walking the tree on errors.
@@ -115,6 +149,7 @@ func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) erro
 	}
 	pathLogger := bundle.logger.WithFields(rslog.Fields{
 		"path": path,
+		"size": info.Size(),
 	})
 	if info.IsDir() {
 		// Load .rscignore from every directory where it exists
@@ -127,13 +162,32 @@ func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) erro
 			pathLogger.Infof("Skipping Python environment directory")
 			return filepath.SkipDir
 		}
+		err = writeToTar(info, path, bundle.archive)
+		if err != nil {
+			return err
+		}
 	} else if info.Mode().IsRegular() {
-		pathLogger.Infof("Added file")
+		pathLogger.Infof("Adding file")
+		err = writeToTar(info, path, bundle.archive)
+		if err != nil {
+			return err
+		}
 		bundle.numFiles++
 		bundle.size += Size(info.Size())
 	} else {
 		pathLogger.Infof("Skipping non-regular file")
 	}
+	return nil
+}
+
+func (bundle *Bundle) addFiles(dir string) error {
+	err := util.WithWorkingDir(dir, func() error {
+		return bundle.ignoreList.Walk(dir, bundle.addFileFunc)
+	})
+	if err != nil {
+		return err
+	}
+	bundle.logger.Infof("Bundle size: %d files totaling %s", bundle.numFiles, bundle.size)
 	return nil
 }
 
@@ -143,21 +197,23 @@ func NewBundleFromDirectory(dir string, ignores []string, dest io.Writer, logger
 		return nil, err
 	}
 	logger.Infof("Creating bundle from directory at '%s'", absDir)
-	ignoreList, err := loadIgnoreFiles(dir, ignores)
+	ignoreList, err := loadIgnoreFiles(absDir, ignores)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error loading ignore list: %w", err)
 	}
+	archive := tar.NewWriter(gzip.NewWriter(dest))
+	defer archive.Close()
+
 	bundle := &Bundle{
 		ignoreList:  ignoreList,
-		archive:     *tar.NewWriter(dest),
+		archive:     archive,
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
 	}
-	err = ignoreList.Walk(dir, bundle.addFileFunc)
+	err = bundle.addFiles(absDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error creating bundle: %w", err)
 	}
-	bundle.logger.Infof("Bundle size: %d files totaling %s", bundle.numFiles, bundle.size)
 	return bundle, nil
 }
 

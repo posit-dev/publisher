@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"bufio"
 	"fmt"
 	"net/url"
+	"os"
 
 	"connect-client/bundles"
 	"connect-client/services/proxy"
@@ -12,16 +12,22 @@ import (
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type PublishCmd struct {
-	Name    string   `short:"n" help:"Nickname of destination publishing account."`
-	Exclude []string `short:"x" help:"list of file patterns to exclude"`
+	Name      string   `short:"n" help:"Nickname of destination publishing account."`
+	Exclude   []string `short:"x" help:"list of file patterns to exclude"`
+	SourceDir string   `arg:"" type"existingdir"`
 }
 
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	var buf bufio.Writer
-	bundle, err := bundles.NewBundleFromDirectory(".", cmd.Exclude, &buf, ctx.Logger)
+	bundleFile, err := os.CreateTemp(".", "bundle-*.tar.gz")
 	if err != nil {
 		return err
 	}
+	defer bundleFile.Close()
+	bundle, err := bundles.NewBundleFromDirectory(cmd.SourceDir, cmd.Exclude, bundleFile, ctx.Logger)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("bundle file: %s\n", bundleFile.Name())
 	fmt.Printf("bundle: %+v\n", bundle)
 	return nil
 }
