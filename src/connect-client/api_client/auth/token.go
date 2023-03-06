@@ -49,7 +49,11 @@ func (a *tokenAuthenticator) AddAuthHeaders(req *http.Request) error {
 	if a.secret == "" && a.privateKey == "" {
 		return errMissingKeyOrSecret
 	}
-	return a.signRequest(req, time.Now())
+	err := a.signRequest(req, time.Now())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func MD5(data []byte) []byte {

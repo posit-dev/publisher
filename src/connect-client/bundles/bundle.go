@@ -134,9 +134,6 @@ func (b *bundle) addFileFunc(path string, info fs.FileInfo, err error) error {
 }
 
 func (b *bundle) addDirectory(dir string) error {
-	// err := util.WithWorkingDir(dir, func() error {
-	// 	return bundle.ignoreList.Walk(dir, bundle.addFileFunc)
-	// })
 	err := b.ignorer.Walk(dir, b.addFileFunc)
 	if err != nil {
 		return err

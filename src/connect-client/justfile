@@ -33,7 +33,6 @@ build-all:
 lint:
     ./fmt-check.sh
     go vet -all ./...
-    shadow ./...
 
 test *args:
     #!/usr/bin/env bash

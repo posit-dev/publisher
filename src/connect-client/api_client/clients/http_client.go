@@ -56,8 +56,10 @@ func (c *HTTPClient) do(method string, path string, body io.Reader, bodyType str
 	switch resp.StatusCode {
 	case http.StatusUnauthorized:
 		return nil, errAuthenticationFailed
-	case http.StatusOK, http.StatusCreated, http.StatusAccepted, http.StatusNoContent:
+	case http.StatusOK, http.StatusCreated, http.StatusAccepted:
 		return io.ReadAll(resp.Body)
+	case http.StatusNoContent:
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("Unexpected response from the server: %s on URL %s", resp.Status, req.URL.String())
 	}
@@ -77,7 +79,10 @@ func (c *HTTPClient) doJSON(method string, path string, body any, into any) erro
 		return err
 	}
 	if into != nil {
-		return json.Unmarshal(respBody, into)
+		err = json.Unmarshal(respBody, into)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

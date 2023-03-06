@@ -32,7 +32,6 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	defer os.Remove(bundleFile.Name())
-	// fmt.Println("Bundle file:", bundleFile.Name())
 	defer bundleFile.Close()
 	err = bundles.NewBundleFromDirectory(cmd.SourceDir, cmd.Exclude, bundleFile, ctx.Logger)
 	if err != nil {
