@@ -16,16 +16,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/iriri/minimal/gitignore"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
-type Bundle struct {
-	manifest    *Manifest             // Manifest describing the bundle
-	ignoreList  *gitignore.IgnoreList // Ignore patterns from CLI and ignore files
-	numFiles    int64                 // Number of files in the bundle
-	size        util.Size             // Total uncompressed size of the files, in bytes
-	archive     *tar.Writer           // Archive containing the files
+type bundle struct {
+	manifest    *Manifest   // Manifest describing the bundle
+	ignorer     Ignorer     // Ignore patterns from CLI and ignore files
+	numFiles    int64       // Number of files in the bundle
+	size        util.Size   // Total uncompressed size of the files, in bytes
+	archive     *tar.Writer // Archive containing the files
 	logger      rslog.Logger
 	debugLogger rslog.DebugLogger
 }
@@ -64,19 +63,19 @@ func writeToTar(info fs.FileInfo, path string, archive *tar.Writer) ([]byte, err
 	return md5sum, nil
 }
 
-func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) error {
+func (b *bundle) addFileFunc(path string, info fs.FileInfo, err error) error {
 	if err != nil {
 		// Stop walking the tree on errors.
 		return fmt.Errorf("Error creating bundle: %s", err)
 	}
-	pathLogger := bundle.logger.WithFields(rslog.Fields{
+	pathLogger := b.logger.WithFields(rslog.Fields{
 		"path": path,
 		"size": info.Size(),
 	})
 	if info.IsDir() {
 		// Load .rscignore from every directory where it exists
 		ignorePath := filepath.Join(path, ".rscignore")
-		err = bundle.ignoreList.Append(ignorePath)
+		err = b.ignorer.Append(ignorePath)
 		if err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("Error loading .rscignore file '%s': %s", ignorePath, err)
 		}
@@ -84,19 +83,19 @@ func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) erro
 			pathLogger.Infof("Skipping Python environment directory")
 			return filepath.SkipDir
 		}
-		_, err = writeToTar(info, path, bundle.archive)
+		_, err = writeToTar(info, path, b.archive)
 		if err != nil {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
 		pathLogger.Infof("Adding file")
-		fileMD5, err := writeToTar(info, path, bundle.archive)
+		fileMD5, err := writeToTar(info, path, b.archive)
 		if err != nil {
 			return err
 		}
-		bundle.manifest.AddFile(path, fileMD5)
-		bundle.numFiles++
-		bundle.size += util.Size(info.Size())
+		b.manifest.AddFile(path, fileMD5)
+		b.numFiles++
+		b.size += util.Size(info.Size())
 	} else if info.Mode().Type()&os.ModeSymlink == os.ModeSymlink {
 		pathLogger.Infof("Following symlink")
 		targetPath, err := filepath.EvalSymlinks(path)
@@ -118,7 +117,7 @@ func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) erro
 			// so that it appears as a descendant of the ignore list root dir.
 			for _, entry := range dirEntries {
 				subPath := filepath.Join(path, entry.Name())
-				err = bundle.ignoreList.Walk(subPath, bundle.addFileFunc)
+				err = b.ignorer.Walk(subPath, b.addFileFunc)
 				if err != nil {
 					return err
 				}
@@ -126,7 +125,7 @@ func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) erro
 			return nil
 		} else {
 			// Handle all non-directory symlink targets normally
-			return bundle.addFileFunc(path, targetInfo, nil)
+			return b.addFileFunc(path, targetInfo, nil)
 		}
 	} else {
 		pathLogger.Warnf("Skipping non-regular file")
@@ -134,23 +133,23 @@ func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) erro
 	return nil
 }
 
-func (bundle *Bundle) addDirectory(dir string) error {
+func (b *bundle) addDirectory(dir string) error {
 	// err := util.WithWorkingDir(dir, func() error {
 	// 	return bundle.ignoreList.Walk(dir, bundle.addFileFunc)
 	// })
-	err := bundle.ignoreList.Walk(dir, bundle.addFileFunc)
+	err := b.ignorer.Walk(dir, b.addFileFunc)
 	if err != nil {
 		return err
 	}
-	bundle.logger.WithFields(rslog.Fields{
-		"files":       bundle.numFiles,
-		"total_bytes": bundle.size.ToInt64(),
+	b.logger.WithFields(rslog.Fields{
+		"files":       b.numFiles,
+		"total_bytes": b.size.ToInt64(),
 	}).Infof("Bundle created")
 	return nil
 }
 
-func (bundle *Bundle) addManifest() error {
-	manifestJSON, err := json.MarshalIndent(bundle.manifest, "", "\t")
+func (b *bundle) addManifest() error {
+	manifestJSON, err := json.MarshalIndent(b.manifest, "", "\t")
 	if err != nil {
 		return err
 	}
@@ -159,11 +158,11 @@ func (bundle *Bundle) addManifest() error {
 		Size: int64(len(manifestJSON)),
 		Mode: 0660,
 	}
-	err = bundle.archive.WriteHeader(header)
+	err = b.archive.WriteHeader(header)
 	if err != nil {
 		return err
 	}
-	_, err = bundle.archive.Write(manifestJSON)
+	_, err = b.archive.Write(manifestJSON)
 	return err
 }
 
@@ -172,8 +171,8 @@ func NewBundleFromDirectory(dir string, ignores []string, dest io.Writer, logger
 	if err != nil {
 		return err
 	}
-	logger.Infof("Creating bundle from directory at '%s'", absDir)
-	ignoreList, err := loadIgnoreFiles(absDir, ignores)
+	logger.WithField("source_dir", absDir).Infof("Creating bundle from directory")
+	ignorer, err := NewIgnorer(absDir, ignores)
 	if err != nil {
 		return fmt.Errorf("Error loading ignore list: %w", err)
 	}
@@ -183,14 +182,14 @@ func NewBundleFromDirectory(dir string, ignores []string, dest io.Writer, logger
 	archive := tar.NewWriter(gzipper)
 	defer archive.Close()
 
-	bundle := &Bundle{
+	bundle := &bundle{
 		manifest:    NewManifest(),
-		ignoreList:  ignoreList,
+		ignorer:     ignorer,
 		archive:     archive,
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
 	}
-	err = util.WithWorkingDir(dir, func() error {
+	return util.WithWorkingDir(dir, func() error {
 		err := bundle.addDirectory(absDir)
 		if err != nil {
 			return fmt.Errorf("Error creating bundle: %w", err)
@@ -202,7 +201,6 @@ func NewBundleFromDirectory(dir string, ignores []string, dest io.Writer, logger
 		}
 		return nil
 	})
-	return err
 }
 
 // func NewBundleFromManifest(manifest *Manifest) *Bundle {

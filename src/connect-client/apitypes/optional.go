@@ -12,14 +12,29 @@ type Optional[T any] struct {
 	valid bool
 }
 
+func NewOptional[T any](value T) Optional[T] {
+	return Optional[T]{
+		value: value,
+		valid: true,
+	}
+}
+
 func (opt *Optional[T]) Get() (T, bool) {
 	return opt.value, opt.valid
 }
 
-var NULL = []byte("null")
+var JSON_NULL = []byte("null")
+
+func (opt Optional[T]) MarshalJSON() ([]byte, error) {
+	if opt.valid {
+		return json.Marshal(opt.value)
+	} else {
+		return JSON_NULL, nil
+	}
+}
 
 func (opt *Optional[T]) UnmarshalJSON(data []byte) error {
-	if bytes.Equal(data, NULL) {
+	if bytes.Equal(data, JSON_NULL) {
 		opt.valid = false
 		return nil
 	}
@@ -28,19 +43,4 @@ func (opt *Optional[T]) UnmarshalJSON(data []byte) error {
 	}
 	opt.valid = true
 	return nil
-}
-
-func (opt Optional[T]) MarshalJSON() ([]byte, error) {
-	if opt.valid {
-		return json.Marshal(opt.value)
-	} else {
-		return NULL, nil
-	}
-}
-
-func NewOptional[T any](value T) Optional[T] {
-	return Optional[T]{
-		value: value,
-		valid: true,
-	}
 }
