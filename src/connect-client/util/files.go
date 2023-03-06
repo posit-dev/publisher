@@ -34,15 +34,14 @@ func Exists(path string) bool {
 	return !errors.Is(err, fs.ErrNotExist)
 }
 
-func WithWorkingDir(dir string, function func() error) error {
+func Chdir(dir string) (string, error) {
 	oldWd, err := os.Getwd()
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = os.Chdir(dir)
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer os.Chdir(oldWd)
-	return function()
+	return oldWd, nil
 }

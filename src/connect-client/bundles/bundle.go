@@ -31,10 +31,15 @@ type bundle struct {
 
 var bundleTooLargeError = errors.New("Directory is too large to deploy.")
 
-func writeToTar(info fs.FileInfo, path string, archive *tar.Writer) ([]byte, error) {
+// writeHeaderToTar writes a file or directory entry to the tar archive.
+func writeHeaderToTar(info fs.FileInfo, path string, archive *tar.Writer) error {
+	if path == "." {
+		// omit root dir
+		return nil
+	}
 	header, err := tar.FileInfoHeader(info, "")
 	if err != nil {
-		return nil, fmt.Errorf("Error creating tarfile header for %s: %w", path, err)
+		return fmt.Errorf("Error creating tarfile header for %s: %w", path, err)
 	}
 	header.Name = path
 	if info.IsDir() {
@@ -42,12 +47,14 @@ func writeToTar(info fs.FileInfo, path string, archive *tar.Writer) ([]byte, err
 	}
 	err = archive.WriteHeader(header)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if info.IsDir() {
-		// Directory entries are just headers, so we're done.
-		return nil, nil
-	}
+	return nil
+}
+
+// writeFileContentsToTar writes the contents of the specified file to the archive.
+// It returns the file's md5 hash.
+func writeFileContentsToTar(path string, archive *tar.Writer) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -61,6 +68,18 @@ func writeToTar(info fs.FileInfo, path string, archive *tar.Writer) ([]byte, err
 	}
 	md5sum := hash.Sum(nil)
 	return md5sum, nil
+}
+
+func (b *bundle) addFile(path string) error {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	err = b.addFileFunc(path, fileInfo, nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (b *bundle) addFileFunc(path string, info fs.FileInfo, err error) error {
@@ -83,13 +102,17 @@ func (b *bundle) addFileFunc(path string, info fs.FileInfo, err error) error {
 			pathLogger.Infof("Skipping Python environment directory")
 			return filepath.SkipDir
 		}
-		_, err = writeToTar(info, path, b.archive)
+		err = writeHeaderToTar(info, path, b.archive)
 		if err != nil {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
 		pathLogger.Infof("Adding file")
-		fileMD5, err := writeToTar(info, path, b.archive)
+		err = writeHeaderToTar(info, path, b.archive)
+		if err != nil {
+			return err
+		}
+		fileMD5, err := writeFileContentsToTar(path, b.archive)
 		if err != nil {
 			return err
 		}
@@ -122,10 +145,12 @@ func (b *bundle) addFileFunc(path string, info fs.FileInfo, err error) error {
 					return err
 				}
 			}
-			return nil
 		} else {
 			// Handle all non-directory symlink targets normally
-			return b.addFileFunc(path, targetInfo, nil)
+			err = b.addFileFunc(path, targetInfo, nil)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		pathLogger.Warnf("Skipping non-regular file")
@@ -186,23 +211,64 @@ func NewBundleFromDirectory(dir string, ignores []string, dest io.Writer, logger
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
 	}
-	return util.WithWorkingDir(dir, func() error {
-		err := bundle.addDirectory(absDir)
-		if err != nil {
-			return fmt.Errorf("Error creating bundle: %w", err)
-		}
-		bundle.manifest.Metadata.AppMode = "static" // TODO: pass this in
-		err = bundle.addManifest()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	oldWD, err := util.Chdir(dir)
+	if err != nil {
+		return err
+	}
+	defer util.Chdir(oldWD)
+
+	err = bundle.addDirectory(absDir)
+	if err != nil {
+		return fmt.Errorf("Error creating bundle: %w", err)
+	}
+	bundle.manifest.Metadata.AppMode = "static" // TODO: pass this in
+	err = bundle.addManifest()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-// func NewBundleFromManifest(manifest *Manifest) *Bundle {
-// 	bundle := NewBundle()
-// 	for _, f := range manifest.Files {
-// 	}
-// 	return nil
-// }
+func NewBundleFromManifest(manifestPath string, dest io.Writer, logger rslog.Logger) error {
+	manifest, err := ReadManifestFile(manifestPath)
+	if err != nil {
+		return err
+	}
+	dir := filepath.Dir(manifestPath)
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return err
+	}
+	logger.WithField("source_dir", absDir).Infof("Creating bundle from directory")
+
+	gzipper := gzip.NewWriter(dest)
+	defer gzipper.Close()
+
+	archive := tar.NewWriter(gzipper)
+	defer archive.Close()
+
+	bundle := &bundle{
+		manifest:    manifest,
+		ignorer:     nil,
+		archive:     archive,
+		logger:      logger,
+		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
+	}
+	oldWD, err := util.Chdir(dir)
+	if err != nil {
+		return err
+	}
+	defer util.Chdir(oldWD)
+
+	for path := range manifest.Files {
+		err = bundle.addFile(path)
+		if err != nil {
+			return fmt.Errorf("Error adding file '%s' to the bundle: %w", path, err)
+		}
+	}
+	err = bundle.addManifest()
+	if err != nil {
+		return fmt.Errorf("Error adding manifest to the bundle: %w", err)
+	}
+	return nil
+}

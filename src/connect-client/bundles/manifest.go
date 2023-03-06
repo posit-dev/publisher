@@ -76,9 +76,9 @@ type Package struct {
 	Description map[string]string // A collection of key:value fields from the DESCRIPTION file
 }
 
-type FileMap map[string]FileInfo
+type FileMap map[string]ManifestFile
 
-type FileInfo struct {
+type ManifestFile struct {
 	Checksum string `json:"checksum"`
 }
 
@@ -112,7 +112,7 @@ func NewManifest() *Manifest {
 }
 
 func (manifest *Manifest) AddFile(path string, fileMD5 []byte) {
-	manifest.Files[path] = FileInfo{
+	manifest.Files[path] = ManifestFile{
 		Checksum: hex.EncodeToString(fileMD5),
 	}
 }
