@@ -1,5 +1,7 @@
 package clients
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"connect-client/api_client/auth"
 	"net/http"

@@ -1,5 +1,7 @@
 package bundles
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"encoding/hex"
 	"encoding/json"
