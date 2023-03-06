@@ -16,10 +16,28 @@ import (
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-type PublishCmd struct {
-	Name      string   `short:"n" help:"Nickname of destination publishing account."`
+type baseBundleCmd struct {
 	Exclude   []string `short:"x" help:"list of file patterns to exclude."`
 	SourceDir string   `help:"Path to directory containing files to publish." arg:"" type:"existingdir"`
+}
+
+type WriteBundleCmd struct {
+	baseBundleCmd
+	BundleFile string `help:"Path to a file where the bundle should be written." required:"" type:"path"`
+}
+
+func (cmd *WriteBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
+	bundleFile, err := os.Create(cmd.BundleFile)
+	if err != nil {
+		return err
+	}
+	defer bundleFile.Close()
+	return bundles.NewBundleFromDirectory(cmd.SourceDir, cmd.Exclude, bundleFile, ctx.Logger)
+}
+
+type PublishCmd struct {
+	baseBundleCmd
+	Name string `short:"n" help:"Nickname of destination publishing account."`
 }
 
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
