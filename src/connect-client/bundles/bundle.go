@@ -30,86 +30,6 @@ type Bundle struct {
 	debugLogger rslog.DebugLogger
 }
 
-var standardIgnores = []string{
-	// From rsconnect-python
-	".Rproj.user/",
-	".env/",
-	".git/",
-	".svn/",
-	".venv/",
-	"__pycache__/",
-	"env/",
-	"packrat/",
-	// rsconnect was more precise in specifying renv/renv.lock
-	// "renv/",
-	"rsconnect-python/",
-	"rsconnect/",
-	"venv/",
-
-	// From rsconnect
-	".DS_Store",
-	".gitignore",
-	".Rhistory",
-	"manifest.json",
-	// "rsconnect",
-	// "packrat",
-	"app_cache/",
-	// ".svn/",
-	// ".git/",
-	".quarto/",
-	// ".Rproj.user/",
-	"renv/renv.lock",
-	// Less precise than rsconnect, which checks for a
-	// matching Rmd filename in the same directory.
-	"*_cache/",
-}
-
-func loadIgnoreFiles(dir string, ignores []string) (*gitignore.IgnoreList, error) {
-	var ignore gitignore.IgnoreList
-	err := util.WithWorkingDir(dir, func() error {
-		var err error
-		ignore, err = gitignore.New()
-		if err != nil {
-			return err
-		}
-		const errNotInGitRepo = "not in a git repository"
-		err = ignore.AppendGit()
-		if err != nil && err.Error() != errNotInGitRepo {
-			return err
-		}
-		for _, pattern := range standardIgnores {
-			err = ignore.AppendGlob(pattern)
-			if err != nil {
-				return err
-			}
-		}
-		for _, pattern := range ignores {
-			err = ignore.AppendGlob(pattern)
-			if err != nil {
-				return err
-			}
-		}
-		return err
-	})
-	return &ignore, err
-}
-
-var pythonBinPaths = []string{
-	"bin/python",
-	"bin/python3",
-	"Scripts/python.exe",
-	"Scripts/python3.exe",
-}
-
-func isPythonEnvironmentDir(path string) bool {
-	for _, binary := range pythonBinPaths {
-		if util.Exists(filepath.Join(path, binary)) {
-			return true
-		}
-	}
-	return false
-}
-
 var bundleTooLargeError = errors.New("Directory is too large to deploy.")
 
 func writeToTar(info fs.FileInfo, path string, archive *tar.Writer) ([]byte, error) {
@@ -126,6 +46,7 @@ func writeToTar(info fs.FileInfo, path string, archive *tar.Writer) ([]byte, err
 		return nil, err
 	}
 	if info.IsDir() {
+		// Directory entries are just headers, so we're done.
 		return nil, nil
 	}
 	f, err := os.Open(path)
@@ -176,16 +97,48 @@ func (bundle *Bundle) addFileFunc(path string, info fs.FileInfo, err error) erro
 		bundle.manifest.AddFile(path, fileMD5)
 		bundle.numFiles++
 		bundle.size += util.Size(info.Size())
+	} else if info.Mode().Type()&os.ModeSymlink == os.ModeSymlink {
+		pathLogger.Infof("Following symlink")
+		targetPath, err := filepath.EvalSymlinks(path)
+		if err != nil {
+			return fmt.Errorf("Error following symlink %s: %w", path, err)
+		}
+		targetInfo, err := os.Stat(targetPath)
+		if err != nil {
+			return fmt.Errorf("Error getting target info for symlink %s: %w", targetPath, err)
+		}
+		if targetInfo.IsDir() {
+			dirEntries, err := os.ReadDir(targetPath)
+			if err != nil {
+				return err
+			}
+			// Iterate over the directory entries here, constructing
+			// a path that goes through the symlink rather than
+			// resolving the link and iterating the directory,
+			// so that it appears as a descendant of the ignore list root dir.
+			for _, entry := range dirEntries {
+				subPath := filepath.Join(path, entry.Name())
+				err = bundle.ignoreList.Walk(subPath, bundle.addFileFunc)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		} else {
+			// Handle all non-directory symlink targets normally
+			return bundle.addFileFunc(path, targetInfo, nil)
+		}
 	} else {
-		pathLogger.Infof("Skipping non-regular file")
+		pathLogger.Warnf("Skipping non-regular file")
 	}
 	return nil
 }
 
-func (bundle *Bundle) addFiles(dir string) error {
-	err := util.WithWorkingDir(dir, func() error {
-		return bundle.ignoreList.Walk(dir, bundle.addFileFunc)
-	})
+func (bundle *Bundle) addDirectory(dir string) error {
+	// err := util.WithWorkingDir(dir, func() error {
+	// 	return bundle.ignoreList.Walk(dir, bundle.addFileFunc)
+	// })
+	err := bundle.ignoreList.Walk(dir, bundle.addFileFunc)
 	if err != nil {
 		return err
 	}
@@ -237,16 +190,19 @@ func NewBundleFromDirectory(dir string, ignores []string, dest io.Writer, logger
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
 	}
-	err = bundle.addFiles(absDir)
-	if err != nil {
-		return fmt.Errorf("Error creating bundle: %w", err)
-	}
-	bundle.manifest.Metadata.AppMode = "static" // TODO: pass this in
-	err = bundle.addManifest()
-	if err != nil {
-		return err
-	}
-	return nil
+	err = util.WithWorkingDir(dir, func() error {
+		err := bundle.addDirectory(absDir)
+		if err != nil {
+			return fmt.Errorf("Error creating bundle: %w", err)
+		}
+		bundle.manifest.Metadata.AppMode = "static" // TODO: pass this in
+		err = bundle.addManifest()
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
 }
 
 // func NewBundleFromManifest(manifest *Manifest) *Bundle {
