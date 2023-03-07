@@ -24,17 +24,18 @@ type ConnectClient struct {
 func NewConnectClient(
 	account *accounts.Account,
 	timeout time.Duration,
-	logger rslog.Logger) (APIClient, error) {
+	logger rslog.Logger) (*PublishingClient, error) {
 
 	httpClient, err := NewHTTPClient(account, timeout, logger)
 	if err != nil {
 		return nil, err
 	}
-	return &ConnectClient{
-		HTTPClient: httpClient,
-		account:    account,
-		logger:     logger,
-	}, nil
+	return &PublishingClient{
+		&ConnectClient{
+			HTTPClient: httpClient,
+			account:    account,
+			logger:     logger,
+		}}, nil
 }
 
 func (c *ConnectClient) TestConnection() error {

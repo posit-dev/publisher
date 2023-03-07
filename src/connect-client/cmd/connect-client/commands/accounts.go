@@ -41,6 +41,7 @@ func (cmd *testAccountCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
+	// TODO: create and call a generic factory to make a new client for any account
 	client, err := clients.NewConnectClient(account, 30*time.Second, ctx.Logger)
 	if err != nil {
 		return err

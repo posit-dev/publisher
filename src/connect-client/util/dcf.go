@@ -1,5 +1,7 @@
 package util
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"bufio"
 	"fmt"
@@ -7,8 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 )
-
-// Copyright (C) 2023 by Posit Software, PBC.
 
 type DCFRecord map[string]string
 type DCFData []DCFRecord

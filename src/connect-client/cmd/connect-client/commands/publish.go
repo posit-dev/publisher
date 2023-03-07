@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"net/url"
 	"os"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"connect-client/apitypes"
 	"connect-client/bundles"
 	"connect-client/services/proxy"
+	"connect-client/util"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
@@ -77,7 +77,6 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	var previous *clients.Task
 	taskLogger := ctx.Logger.WithFields(rslog.Fields{
 		"source":     "server deployment log",
 		"server":     account.Name,
@@ -85,21 +84,9 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		"bundle_id":  bundleID,
 		"task_id":    taskID,
 	})
-	for {
-		task, err := client.GetTask(taskID, previous)
-		if err != nil {
-			return err
-		}
-		for _, line := range task.Output {
-			taskLogger.Infof("%s", line)
-		}
-		if task.Finished {
-			if task.Error != "" {
-				return fmt.Errorf("Error from the server: %s", task.Error)
-			}
-			break
-		}
-		time.Sleep(1.0)
+	err = client.WaitForTask(taskID, util.NewLoggerWriter(taskLogger))
+	if err != nil {
+		return err
 	}
 	return nil
 }

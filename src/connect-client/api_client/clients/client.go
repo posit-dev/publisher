@@ -2,7 +2,9 @@ package clients
 
 import (
 	"connect-client/apitypes"
+	"fmt"
 	"io"
+	"time"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
@@ -37,4 +39,34 @@ type APIClient interface {
 	UploadBundle(ContentID, io.Reader) (BundleID, error)
 	DeployBundle(ContentID, BundleID) (TaskID, error)
 	GetTask(TaskID, *Task) (*Task, error)
+}
+
+// PublishingClient provides higher-level client methods that work
+// on any type of publishing server, using the APIClient to abstract
+// any details of specific server types.
+type PublishingClient struct {
+	APIClient
+}
+
+func (client *PublishingClient) WaitForTask(taskID TaskID, logWriter io.Writer) error {
+	var previous *Task
+	for {
+		task, err := client.GetTask(taskID, previous)
+		if err != nil {
+			return err
+		}
+		for _, line := range task.Output {
+			_, err = io.WriteString(logWriter, line)
+			if err != nil {
+				return err
+			}
+		}
+		if task.Finished {
+			if task.Error != "" {
+				return fmt.Errorf("Error from the server: %s", task.Error)
+			}
+			return nil
+		}
+		time.Sleep(1.0)
+	}
 }
