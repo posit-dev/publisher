@@ -227,21 +227,25 @@ type taskOutputDTO struct {
 	Last     int32    `json:"last"`
 }
 
-func (c *ConnectClient) GetTask(taskID TaskID, previous *Task) (*Task, error) {
-	var task taskOutputDTO
-	var firstLine int32
-	if previous != nil {
-		firstLine = previous.TotalLines
-	}
-	url := fmt.Sprintf("/__api__/v1/tasks/%s?first=%d", taskID, firstLine)
-	err := c.get(url, &task)
-	if err != nil {
-		return nil, err
-	}
+func (task *taskOutputDTO) ToTask() *Task {
 	return &Task{
 		Finished:   task.Finished,
 		Output:     task.Output,
 		Error:      task.Error,
 		TotalLines: task.Last,
-	}, nil
+	}
+}
+
+func (c *ConnectClient) GetTask(taskID TaskID, previous *Task) (*Task, error) {
+	var connectTask taskOutputDTO
+	var firstLine int32
+	if previous != nil {
+		firstLine = previous.TotalLines
+	}
+	url := fmt.Sprintf("/__api__/v1/tasks/%s?first=%d", taskID, firstLine)
+	err := c.get(url, &connectTask)
+	if err != nil {
+		return nil, err
+	}
+	return connectTask.ToTask(), nil
 }
