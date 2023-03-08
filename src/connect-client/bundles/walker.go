@@ -76,6 +76,16 @@ func (i *defaultWalker) Walk(path string, fn filepath.WalkFunc) error {
 	})
 }
 
+func (i *defaultWalker) addGlobs(globs []string) error {
+	for _, pattern := range globs {
+		err := i.ignoreList.AppendGlob(pattern)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func NewDefaultWalker(dir string, ignores []string) (Walker, error) {
 	oldWD, err := util.Chdir(dir)
 	if err != nil {
@@ -87,22 +97,21 @@ func NewDefaultWalker(dir string, ignores []string) (Walker, error) {
 	if err != nil {
 		return nil, err
 	}
+	walker := &defaultWalker{
+		ignoreList: ignore,
+	}
 	const errNotInGitRepo = "not in a git repository"
 	err = ignore.AppendGit()
 	if err != nil && err.Error() != errNotInGitRepo {
 		return nil, err
 	}
-	for _, pattern := range standardIgnores {
-		err = ignore.AppendGlob(pattern)
-		if err != nil {
-			return nil, err
-		}
+	err = walker.addGlobs(standardIgnores)
+	if err != nil {
+		return nil, err
 	}
-	for _, pattern := range ignores {
-		err = ignore.AppendGlob(pattern)
-		if err != nil {
-			return nil, err
-		}
+	err = walker.addGlobs(ignores)
+	if err != nil {
+		return nil, err
 	}
 	return &defaultWalker{
 		ignoreList: ignore,
