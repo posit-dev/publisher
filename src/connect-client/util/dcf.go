@@ -5,6 +5,7 @@ package util
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,7 +27,7 @@ func ReadDCFFiles(pattern string) (DCFData, error) {
 	}
 
 	for _, path := range paths {
-		fileRecords, err := ReadDCF(path)
+		fileRecords, err := ReadDCFFile(path)
 		if err != nil {
 			return records, err
 		}
@@ -35,14 +36,17 @@ func ReadDCFFiles(pattern string) (DCFData, error) {
 	return records, nil
 }
 
-func ReadDCF(path string) (DCFData, error) {
+func ReadDCFFile(path string) (DCFData, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return DCFData{}, err
 	}
 	defer f.Close()
+	return ReadDCF(f)
+}
 
-	fileScanner := bufio.NewScanner(f)
+func ReadDCF(r io.Reader) (DCFData, error) {
+	fileScanner := bufio.NewScanner(r)
 	records := DCFData{}
 	currentRecord := DCFRecord{}
 	currentTag := ""
@@ -61,14 +65,14 @@ func ReadDCF(path string) (DCFData, error) {
 		} else if trimmedLine != line {
 			// Leading whitespace indicates a continuation line
 			if currentTag == "" {
-				return records, fmt.Errorf("Couldn't parse DCF data: unexpected continuation at file '%s', line %d", path, lineNum)
+				return records, fmt.Errorf("Couldn't parse DCF data: unexpected continuation on line %d", lineNum)
 			}
 			currentRecord[currentTag] += strings.Trim(line, whitespace)
 		} else {
 			// New field in the current record
 			tag, value, ok := strings.Cut(line, ":")
 			if !ok {
-				return records, fmt.Errorf("Couldn't parse DCF data: missing ':' at file '%s' line %d", path, lineNum)
+				return records, fmt.Errorf("Couldn't parse DCF data: missing ':' on line %d", lineNum)
 			}
 			currentRecord[tag] = strings.Trim(value, whitespace)
 			currentTag = tag
