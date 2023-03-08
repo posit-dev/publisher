@@ -23,12 +23,12 @@ type baseBundleCmd struct {
 	SourceDir string   `help:"Path to directory containing files to publish." arg:"" type:"existingdir"`
 }
 
-func (cmd *baseBundleCmd) makeIgnorer() (bundles.Ignorer, error) {
-	ignorer, err := bundles.NewDefaultIgnorer(cmd.SourceDir, cmd.Exclude)
+func (cmd *baseBundleCmd) makewalker() (bundles.Walker, error) {
+	walker, err := bundles.NewDefaultWalker(cmd.SourceDir, cmd.Exclude)
 	if err != nil {
 		return nil, fmt.Errorf("Error loading ignore list: %w", err)
 	}
-	return ignorer, nil
+	return walker, nil
 }
 
 type CreateBundleCmd struct {
@@ -37,7 +37,7 @@ type CreateBundleCmd struct {
 }
 
 func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	ignorer, err := cmd.makeIgnorer()
+	walker, err := cmd.makewalker()
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	defer bundleFile.Close()
-	_, err = bundles.NewBundleFromDirectory(cmd.SourceDir, ignorer, bundleFile, ctx.Logger)
+	_, err = bundles.NewBundleFromDirectory(cmd.SourceDir, walker, bundleFile, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -58,11 +58,11 @@ type WriteManifestCmd struct {
 }
 
 func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	ignorer, err := cmd.makeIgnorer()
+	walker, err := cmd.makewalker()
 	if err != nil {
 		return err
 	}
-	manifest, err := bundles.NewBundleFromDirectory(cmd.SourceDir, ignorer, nil, ctx.Logger)
+	manifest, err := bundles.NewBundleFromDirectory(cmd.SourceDir, walker, nil, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	ignorer, err := cmd.makeIgnorer()
+	walker, err := cmd.makewalker()
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
-	_, err = bundles.NewBundleFromDirectory(cmd.SourceDir, ignorer, bundleFile, ctx.Logger)
+	_, err = bundles.NewBundleFromDirectory(cmd.SourceDir, walker, bundleFile, ctx.Logger)
 	if err != nil {
 		return err
 	}

@@ -20,7 +20,7 @@ import (
 
 type bundler struct {
 	manifest    *Manifest   // Manifest describing the bundle
-	ignorer     Ignorer     // Ignore patterns from CLI and ignore files
+	walker      Walker      // Ignore patterns from CLI and ignore files
 	numFiles    int64       // Number of files in the bundle
 	size        util.Size   // Total uncompressed size of the files, in bytes
 	archive     *tar.Writer // Archive containing the files
@@ -137,7 +137,7 @@ func (b *bundler) walkFunc(path string, info fs.FileInfo, err error) error {
 			// so that it appears as a descendant of the ignore list root dir.
 			for _, entry := range dirEntries {
 				subPath := filepath.Join(path, entry.Name())
-				err = b.ignorer.Walk(subPath, b.walkFunc)
+				err = b.walker.Walk(subPath, b.walkFunc)
 				if err != nil {
 					return err
 				}
@@ -156,7 +156,7 @@ func (b *bundler) walkFunc(path string, info fs.FileInfo, err error) error {
 }
 
 func (b *bundler) addDirectory(dir string) error {
-	err := b.ignorer.Walk(dir, b.walkFunc)
+	err := b.walker.Walk(dir, b.walkFunc)
 	if err != nil {
 		return err
 	}
@@ -185,11 +185,11 @@ func (b *bundler) addManifest() error {
 	return err
 }
 
-func NewManifestFromDirectory(dir string, ignorer Ignorer, logger rslog.Logger) (*Manifest, error) {
-	return NewBundleFromDirectory(dir, ignorer, nil, logger)
+func NewManifestFromDirectory(dir string, walker Walker, logger rslog.Logger) (*Manifest, error) {
+	return NewBundleFromDirectory(dir, walker, nil, logger)
 }
 
-func NewBundleFromDirectory(dir string, ignorer Ignorer, dest io.Writer, logger rslog.Logger) (*Manifest, error) {
+func NewBundleFromDirectory(dir string, walker Walker, dest io.Writer, logger rslog.Logger) (*Manifest, error) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, err
@@ -213,7 +213,7 @@ func NewBundleFromDirectory(dir string, ignorer Ignorer, dest io.Writer, logger 
 
 	bundle := &bundler{
 		manifest:    NewManifest(),
-		ignorer:     ignorer,
+		walker:      walker,
 		archive:     archive,
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
@@ -253,7 +253,7 @@ func NewBundleFromManifest(manifestPath string, dest io.Writer, logger rslog.Log
 
 	bundle := &bundler{
 		manifest:    manifest,
-		ignorer:     nil,
+		walker:      nil,
 		archive:     archive,
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),

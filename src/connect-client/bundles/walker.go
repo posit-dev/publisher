@@ -12,7 +12,7 @@ import (
 	"github.com/iriri/minimal/gitignore"
 )
 
-type Ignorer interface {
+type Walker interface {
 	Walk(path string, fn filepath.WalkFunc) error
 }
 
@@ -50,16 +50,16 @@ var standardIgnores = []string{
 	"*_cache/",
 }
 
-type defaultIgnorer struct {
-	baseIgnorer gitignore.IgnoreList
+type defaultWalker struct {
+	ignoreList gitignore.IgnoreList
 }
 
-func (i *defaultIgnorer) Walk(path string, fn filepath.WalkFunc) error {
-	return i.baseIgnorer.Walk(path, func(path string, info fs.FileInfo, err error) error {
+func (i *defaultWalker) Walk(path string, fn filepath.WalkFunc) error {
+	return i.ignoreList.Walk(path, func(path string, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			// Load .rscignore from every directory where it exists
 			ignorePath := filepath.Join(path, ".rscignore")
-			err = i.baseIgnorer.Append(ignorePath)
+			err = i.ignoreList.Append(ignorePath)
 			if os.IsNotExist(err) {
 				err = nil
 			}
@@ -76,7 +76,7 @@ func (i *defaultIgnorer) Walk(path string, fn filepath.WalkFunc) error {
 	})
 }
 
-func NewDefaultIgnorer(dir string, ignores []string) (Ignorer, error) {
+func NewDefaultWalker(dir string, ignores []string) (Walker, error) {
 	oldWD, err := util.Chdir(dir)
 	if err != nil {
 		return nil, err
@@ -104,8 +104,8 @@ func NewDefaultIgnorer(dir string, ignores []string) (Ignorer, error) {
 			return nil, err
 		}
 	}
-	return &defaultIgnorer{
-		baseIgnorer: ignore,
+	return &defaultWalker{
+		ignoreList: ignore,
 	}, nil
 }
 
