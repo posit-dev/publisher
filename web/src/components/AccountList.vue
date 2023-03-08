@@ -1,24 +1,37 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 <template>
   <v-list flat>
-    <v-toolbar elevation="1" class="pr-0">
+    <v-toolbar
+      elevation="1"
+      class="pr-0"
+    >
       <v-toolbar-title>Publishing Accounts</v-toolbar-title>
       <v-spacer />
-      <v-btn icon="mdi-plus" size="small" rounded="large" color="indigo" @click="addAccount">
-      </v-btn>
+      <v-btn
+        icon="mdi-plus"
+        size="small"
+        rounded="large"
+        color="indigo"
+        @click="addAccount"
+      />
     </v-toolbar>
     <v-table v-if="haveAccounts">
       <thead>
         <tr>
-          <th class="text-left">Nickname</th>
-          <th class="text-left">Server URL</th>
+          <th class="text-left">
+            Nickname
+          </th>
+          <th class="text-left">
+            Server URL
+          </th>
           <th>
             <v-tooltip left>
-              <template v-slot:activator="{ on, attrs }">
+              <template #activator="{ on, attrs }">
                 <v-icon
                   light
                   v-bind="attrs"
-                  v-on:hover="on">
+                  @hover="on"
+                >
                   mdi-key-variant
                 </v-icon>
               </template>
@@ -27,23 +40,28 @@
               </span>
             </v-tooltip>
           </th>
-          <th class="text-left">Username</th>
-          <th></th>
+          <th class="text-left">
+            Username
+          </th>
+          <th />
         </tr>
       </thead>
       <tbody>
-        <tr v-for="account in accounts" :key="`account-${account.name}`">
-          <td>{{account.name}}</td>
-          <td>{{account.url}}</td>
+        <tr
+          v-for="account in accounts"
+          :key="`account-${account.name}`"
+        >
+          <td>{{ account.name }}</td>
+          <td>{{ account.url }}</td>
           <td>
             <span v-if="account.auth_type === 'none'">
-              <v-icon  light>
+              <v-icon light>
                 mdi-circle-outline
               </v-icon>
               Not saved
             </span>
             <span v-else-if="account.auth_type === 'api-key'">
-              <v-icon  light>
+              <v-icon light>
                 mdi-check-circle
               </v-icon>
               API Key
@@ -61,11 +79,13 @@
               IDE Token+secret
             </span>
           </td>
-          <td>{{account.account_name}}</td>
+          <td>{{ account.account_name }}</td>
           <td>
-            <v-icon v-if="account.source !== 'environment'"
+            <v-icon
+              v-if="account.source !== 'environment'"
               light
-              @click="removeAccount(account.name)">
+              @click="removeAccount(account.name)"
+            >
               mdi-trash-can
             </v-icon>
           </td>
@@ -84,7 +104,7 @@
         </span>
       </v-card-title>
       <v-card-subtitle class="mt-2">
-        <div style="text-align: center; width: 100%" >
+        <div style="text-align: center; width: 100%">
           Click on the "plus" icon above to add a new account.<br>
           Be sure to have the account password or API key ready.<br>
         </div>

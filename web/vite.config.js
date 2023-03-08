@@ -1,9 +1,12 @@
-import { defineConfig } from 'vite'
+import eslint from 'vite-plugin-eslint'
 import vue from '@vitejs/plugin-vue'
 import vuetify from 'vite-plugin-vuetify'
 
+import { defineConfig } from 'vite'
+
 export default defineConfig({
   plugins: [
+    eslint(),
     vue(),
     vuetify()
   ]

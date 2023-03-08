@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "yarn@3.4.1",
   "scripts": {
-    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
+    "lint": "eslint --ext .js,.vue src",
     "build": "vite build",
     "preview": "vite preview",
     "start": "vite",
@@ -18,9 +18,10 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
-    "eslint": "8",
+    "eslint": "^8.35.0",
     "eslint-plugin-vue": "8",
     "vite": "^4.1.4",
+    "vite-plugin-eslint": "^1.8.1",
     "vite-plugin-vuetify": "^1.0.2"
   }
 }
