@@ -16,10 +16,11 @@ type cliSpec struct {
 	commands.CommonArgs
 	commands.AccountCommands `group:"Accounts"`
 
-	Publish      commands.PublishCmd     `cmd:"" help:"Publish a project."`
-	PublishUI    commands.PublishUICmd   `cmd:"" help:"Publish a project using the UI."`
-	CreateBundle commands.WriteBundleCmd `cmd:"" help:"Create a bundle file for a project directory."`
-	Version      commands.VersionFlag    `help:"Show the client software version and exit."`
+	Publish       commands.PublishCmd       `cmd:"" help:"Publish a project."`
+	PublishUI     commands.PublishUICmd     `cmd:"" help:"Publish a project using the UI."`
+	CreateBundle  commands.CreateBundleCmd  `cmd:"" help:"Create a bundle file for a project directory."`
+	WriteManifest commands.WriteManifestCmd `cmd:"" help:"Create a manifest.json file for a project directory."`
+	Version       commands.VersionFlag      `help:"Show the client software version and exit."`
 }
 
 func logVersion(logger rslog.Logger) {

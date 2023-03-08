@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"time"
 
 	"connect-client/api_client/clients"
@@ -21,18 +23,60 @@ type baseBundleCmd struct {
 	SourceDir string   `help:"Path to directory containing files to publish." arg:"" type:"existingdir"`
 }
 
-type WriteBundleCmd struct {
+func (cmd *baseBundleCmd) makeIgnorer() (bundles.Ignorer, error) {
+	ignorer, err := bundles.NewDefaultIgnorer(cmd.SourceDir, cmd.Exclude)
+	if err != nil {
+		return nil, fmt.Errorf("Error loading ignore list: %w", err)
+	}
+	return ignorer, nil
+}
+
+type CreateBundleCmd struct {
 	baseBundleCmd
 	BundleFile string `help:"Path to a file where the bundle should be written." required:"" type:"path"`
 }
 
-func (cmd *WriteBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
+func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
+	ignorer, err := cmd.makeIgnorer()
+	if err != nil {
+		return err
+	}
 	bundleFile, err := os.Create(cmd.BundleFile)
 	if err != nil {
 		return err
 	}
 	defer bundleFile.Close()
-	return bundles.NewBundleFromDirectory(cmd.SourceDir, cmd.Exclude, bundleFile, ctx.Logger)
+	_, err = bundles.NewBundleFromDirectory(cmd.SourceDir, ignorer, bundleFile, ctx.Logger)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type WriteManifestCmd struct {
+	baseBundleCmd
+}
+
+func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
+	ignorer, err := cmd.makeIgnorer()
+	if err != nil {
+		return err
+	}
+	manifest, err := bundles.NewBundleFromDirectory(cmd.SourceDir, ignorer, nil, ctx.Logger)
+	if err != nil {
+		return err
+	}
+	manifestPath := filepath.Join(cmd.SourceDir, bundles.ManifestFilename)
+	ctx.Logger.Infof("Writing manifest to '%s'", manifestPath)
+	manifestJSON, err := manifest.ToJSON()
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(manifestPath, manifestJSON, 0666)
+	if err != nil {
+		return fmt.Errorf("Error writing manifest file '%s': %w", manifestPath, err)
+	}
+	return nil
 }
 
 type PublishCmd struct {
@@ -45,13 +89,17 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
+	ignorer, err := cmd.makeIgnorer()
+	if err != nil {
+		return err
+	}
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
-	err = bundles.NewBundleFromDirectory(cmd.SourceDir, cmd.Exclude, bundleFile, ctx.Logger)
+	_, err = bundles.NewBundleFromDirectory(cmd.SourceDir, ignorer, bundleFile, ctx.Logger)
 	if err != nil {
 		return err
 	}

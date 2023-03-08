@@ -4,6 +4,9 @@ package bundles
 
 import (
 	"connect-client/util"
+	"fmt"
+	"io/fs"
+	"os"
 	"path/filepath"
 
 	"github.com/iriri/minimal/gitignore"
@@ -11,7 +14,6 @@ import (
 
 type Ignorer interface {
 	Walk(path string, fn filepath.WalkFunc) error
-	Append(ignoreFile string) error
 }
 
 var standardIgnores = []string{
@@ -48,7 +50,33 @@ var standardIgnores = []string{
 	"*_cache/",
 }
 
-func NewIgnorer(dir string, ignores []string) (Ignorer, error) {
+type defaultIgnorer struct {
+	baseIgnorer gitignore.IgnoreList
+}
+
+func (i *defaultIgnorer) Walk(path string, fn filepath.WalkFunc) error {
+	return i.baseIgnorer.Walk(path, func(path string, info fs.FileInfo, err error) error {
+		if info.IsDir() {
+			// Load .rscignore from every directory where it exists
+			ignorePath := filepath.Join(path, ".rscignore")
+			err = i.baseIgnorer.Append(ignorePath)
+			if os.IsNotExist(err) {
+				err = nil
+			}
+			if err != nil {
+				return fmt.Errorf("Error loading .rscignore file '%s': %s", ignorePath, err)
+			}
+			// Ignore Python environment directories. We check for these
+			// separately because they aren't expressible as gitignore patterns.
+			if isPythonEnvironmentDir(path) {
+				return filepath.SkipDir
+			}
+		}
+		return fn(path, info, err)
+	})
+}
+
+func NewDefaultIgnorer(dir string, ignores []string) (Ignorer, error) {
 	oldWD, err := util.Chdir(dir)
 	if err != nil {
 		return nil, err
@@ -76,7 +104,9 @@ func NewIgnorer(dir string, ignores []string) (Ignorer, error) {
 			return nil, err
 		}
 	}
-	return &ignore, err
+	return &defaultIgnorer{
+		baseIgnorer: ignore,
+	}, nil
 }
 
 var pythonBinPaths = []string{
