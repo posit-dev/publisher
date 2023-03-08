@@ -4,6 +4,7 @@ package util
 
 import (
 	"io"
+	"strings"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
@@ -21,6 +22,6 @@ func NewLoggerWriter(logger rslog.Logger) io.Writer {
 }
 
 func (w *LoggerWriter) Write(data []byte) (int, error) {
-	w.logger.Infof("%s", string(data))
+	w.logger.Infof("%s", strings.TrimRight(string(data), "\n"))
 	return len(data), nil
 }

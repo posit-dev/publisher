@@ -56,7 +56,7 @@ func (client *PublishingClient) WaitForTask(taskID TaskID, logWriter io.Writer) 
 			return err
 		}
 		for _, line := range task.Output {
-			_, err = io.WriteString(logWriter, line)
+			_, err = fmt.Fprintln(logWriter, line)
 			if err != nil {
 				return err
 			}
