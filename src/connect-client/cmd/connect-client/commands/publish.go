@@ -23,7 +23,7 @@ type baseBundleCmd struct {
 	SourceDir string   `help:"Path to directory containing files to publish." arg:"" type:"existingdir"`
 }
 
-func (cmd *baseBundleCmd) makewalker() (bundles.Walker, error) {
+func (cmd *baseBundleCmd) makeWalker() (bundles.Walker, error) {
 	walker, err := bundles.NewDefaultWalker(cmd.SourceDir, cmd.Exclude)
 	if err != nil {
 		return nil, fmt.Errorf("Error loading ignore list: %w", err)
@@ -37,7 +37,7 @@ type CreateBundleCmd struct {
 }
 
 func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	walker, err := cmd.makewalker()
+	walker, err := cmd.makeWalker()
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ type WriteManifestCmd struct {
 }
 
 func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	walker, err := cmd.makewalker()
+	walker, err := cmd.makeWalker()
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	walker, err := cmd.makewalker()
+	walker, err := cmd.makeWalker()
 	if err != nil {
 		return err
 	}
