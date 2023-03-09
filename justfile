@@ -15,7 +15,7 @@ start *args:
 
 # build the server
 build:
-    mkdir -p .cache/go ui/dist
+    mkdir -p .cache/go web/dist
 
     just container-build \
         just src/connect-client/ build
@@ -33,7 +33,7 @@ certs:
 build-native:
     #!/usr/bin/env bash
     set -euo pipefail
-    mkdir -p .cache/go ui/dist
+    mkdir -p .cache/go web/dist
 
     # translate `just` os/arch strings to the ones `go build` expects
     os="{{ os() }}"
@@ -55,9 +55,9 @@ build-native:
 
 # build the server for all platforms
 build-all:
-    mkdir -p .cache/go ui/dist
-    just ui/ build
-    cp -r ./ui/dist ./src/connect-client/services/ui/static
+    mkdir -p .cache/go web/dist
+    just web build
+    cp -r ./web/dist ./src/connect-client/services/web/static
 
     just container-build \
         just src/connect-client/ build-all
@@ -72,7 +72,7 @@ lint:
     ./scripts/ccheck.py ./scripts/ccheck.config
     just container-build \
         just _lint
-    just ui/ lint
+    just web/ lint
 
 # format shell scripts
 format:
@@ -97,8 +97,8 @@ _lint format='0':
 # build all artifacts
 all:
     rm -f bin/connect-client
-    just ui/ build  
-    cp -r ./ui/dist ./src/connect-client/services/ui/static
+    just web/ build  
+    cp -r ./web/dist ./src/connect-client/services/web/static
     just build
 
 # inspect the running container
@@ -176,5 +176,5 @@ container-image-push:
 # Run CI locally
 local-ci:
     just container-image
-    just ui/ local-ci
+    just web/ local-ci
     just build lint test
