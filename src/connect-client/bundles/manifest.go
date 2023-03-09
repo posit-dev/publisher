@@ -116,3 +116,7 @@ func (manifest *Manifest) AddFile(path string, fileMD5 []byte) {
 		Checksum: hex.EncodeToString(fileMD5),
 	}
 }
+
+func (manifest *Manifest) ToJSON() ([]byte, error) {
+	return json.MarshalIndent(manifest, "", "\t")
+}

@@ -162,10 +162,7 @@ func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, l
 			RootCAs:            certPool,
 		},
 	}
-	authTransport := &AuthenticatedTransport{
-		Base: transport,
-		Auth: auth.NewClientAuth(account),
-	}
+	authTransport := NewAuthenticatedTransport(transport, auth.NewClientAuth(account))
 	return &http.Client{
 		Jar:       cookieJar,
 		Timeout:   timeout,

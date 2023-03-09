@@ -4,14 +4,16 @@ package bundles
 
 import (
 	"connect-client/util"
+	"fmt"
+	"io/fs"
+	"os"
 	"path/filepath"
 
 	"github.com/iriri/minimal/gitignore"
 )
 
-type Ignorer interface {
+type Walker interface {
 	Walk(path string, fn filepath.WalkFunc) error
-	Append(ignoreFile string) error
 }
 
 var standardIgnores = []string{
@@ -48,7 +50,43 @@ var standardIgnores = []string{
 	"*_cache/",
 }
 
-func NewIgnorer(dir string, ignores []string) (Ignorer, error) {
+type defaultWalker struct {
+	ignoreList gitignore.IgnoreList
+}
+
+func (i *defaultWalker) Walk(path string, fn filepath.WalkFunc) error {
+	return i.ignoreList.Walk(path, func(path string, info fs.FileInfo, err error) error {
+		if info.IsDir() {
+			// Load .rscignore from every directory where it exists
+			ignorePath := filepath.Join(path, ".rscignore")
+			err = i.ignoreList.Append(ignorePath)
+			if os.IsNotExist(err) {
+				err = nil
+			}
+			if err != nil {
+				return fmt.Errorf("Error loading .rscignore file '%s': %s", ignorePath, err)
+			}
+			// Ignore Python environment directories. We check for these
+			// separately because they aren't expressible as gitignore patterns.
+			if isPythonEnvironmentDir(path) {
+				return filepath.SkipDir
+			}
+		}
+		return fn(path, info, err)
+	})
+}
+
+func (i *defaultWalker) addGlobs(globs []string) error {
+	for _, pattern := range globs {
+		err := i.ignoreList.AppendGlob(pattern)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func NewDefaultWalker(dir string, ignores []string) (Walker, error) {
 	oldWD, err := util.Chdir(dir)
 	if err != nil {
 		return nil, err
@@ -59,24 +97,25 @@ func NewIgnorer(dir string, ignores []string) (Ignorer, error) {
 	if err != nil {
 		return nil, err
 	}
+	walker := &defaultWalker{
+		ignoreList: ignore,
+	}
 	const errNotInGitRepo = "not in a git repository"
 	err = ignore.AppendGit()
 	if err != nil && err.Error() != errNotInGitRepo {
 		return nil, err
 	}
-	for _, pattern := range standardIgnores {
-		err = ignore.AppendGlob(pattern)
-		if err != nil {
-			return nil, err
-		}
+	err = walker.addGlobs(standardIgnores)
+	if err != nil {
+		return nil, err
 	}
-	for _, pattern := range ignores {
-		err = ignore.AppendGlob(pattern)
-		if err != nil {
-			return nil, err
-		}
+	err = walker.addGlobs(ignores)
+	if err != nil {
+		return nil, err
 	}
-	return &ignore, err
+	return &defaultWalker{
+		ignoreList: ignore,
+	}, nil
 }
 
 var pythonBinPaths = []string{

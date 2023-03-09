@@ -24,18 +24,17 @@ type ConnectClient struct {
 func NewConnectClient(
 	account *accounts.Account,
 	timeout time.Duration,
-	logger rslog.Logger) (*PublishingClient, error) {
+	logger rslog.Logger) (*ConnectClient, error) {
 
 	httpClient, err := NewHTTPClient(account, timeout, logger)
 	if err != nil {
 		return nil, err
 	}
-	return &PublishingClient{
-		&ConnectClient{
-			HTTPClient: httpClient,
-			account:    account,
-			logger:     logger,
-		}}, nil
+	return &ConnectClient{
+		HTTPClient: httpClient,
+		account:    account,
+		logger:     logger,
+	}, nil
 }
 
 func (c *ConnectClient) TestConnection() error {
@@ -218,7 +217,7 @@ func (c *ConnectClient) DeployBundle(contentId ContentID, bundleId BundleID) (Ta
 }
 
 // From Connect's api/v1/tasks/dto.go
-type taskOutputDTO struct {
+type taskDTO struct {
 	Id       TaskID   `json:"id"`
 	Output   []string `json:"output"`
 	Result   any      `json:"result"`
@@ -228,25 +227,39 @@ type taskOutputDTO struct {
 	Last     int32    `json:"last"`
 }
 
-func (task *taskOutputDTO) ToTask() *Task {
-	return &Task{
-		Finished:   task.Finished,
-		Output:     task.Output,
-		Error:      task.Error,
-		TotalLines: task.Last,
-	}
-}
-
-func (c *ConnectClient) GetTask(taskID TaskID, previous *Task) (*Task, error) {
-	var connectTask taskOutputDTO
+func (c *ConnectClient) getTask(taskID TaskID, previous *taskDTO) (*taskDTO, error) {
+	var task taskDTO
 	var firstLine int32
 	if previous != nil {
-		firstLine = previous.TotalLines
+		firstLine = previous.Last
 	}
 	url := fmt.Sprintf("/__api__/v1/tasks/%s?first=%d", taskID, firstLine)
-	err := c.get(url, &connectTask)
+	err := c.get(url, &task)
 	if err != nil {
 		return nil, err
 	}
-	return connectTask.ToTask(), nil
+	return &task, nil
+}
+
+func (client *ConnectClient) WaitForTask(taskID TaskID, logWriter io.Writer) error {
+	var previous *taskDTO
+	for {
+		task, err := client.getTask(taskID, previous)
+		if err != nil {
+			return err
+		}
+		for _, line := range task.Output {
+			_, err = fmt.Fprintln(logWriter, line)
+			if err != nil {
+				return err
+			}
+		}
+		if task.Finished {
+			if task.Error != "" {
+				return fmt.Errorf("Error from the server: %s", task.Error)
+			}
+			return nil
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 }
