@@ -3,7 +3,6 @@ package ui
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"embed"
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -11,12 +10,10 @@ import (
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/middleware"
+	"github.com/rstudio/connect-client/web"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
-
-//go:embed static
-var content embed.FS
 
 func NewUIService(
 	fragment string,
@@ -52,8 +49,8 @@ func newUIHandler(logger rslog.Logger) http.HandlerFunc {
 	r.Handle(api_prefix+"accounts", api.NewAccountListEndpoint(accountList, logger))
 
 	// static files for the local (account list) UI
-	staticHandler := http.FileServer(http.FS(content)).ServeHTTP
-	staticHandler = middleware.AddPathPrefix("/static", staticHandler)
+	staticHandler := http.FileServer(http.FS(web.Dist)).ServeHTTP
+	staticHandler = middleware.AddPathPrefix("/dist", staticHandler)
 	r.HandleFunc("/", staticHandler)
 
 	return r.ServeHTTP
