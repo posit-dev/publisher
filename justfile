@@ -7,6 +7,8 @@ build os='linux' arch='amd64':
     #!/usr/bin/env bash
     set -euxo pipefail
 
+    just web/build
+
     subdir="{{ os }}-{{ arch }}"
     mkdir -p "{{ output }}/$subdir"
 
