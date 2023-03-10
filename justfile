@@ -1,46 +1,19 @@
-top := `git rev-parse --show-toplevel`
-output := top + "/bin"
-binary := "connect-client"
-version := `git describe --always --tags`
-
-build os='linux' arch='amd64':
-    #!/usr/bin/env bash
-    set -euxo pipefail
-
-    just web/build
-
-    subdir="{{ os }}-{{ arch }}"
-    mkdir -p "{{ output }}/$subdir"
-
-    GOOS={{ os }} GOARCH={{ arch }} \
-    go build \
-        -ldflags "-X project.Version={{ version }}" \
-        -o "{{ output }}" \
-        ./internal/cmd/connect-client
-    cd "{{ output }}"
-
-    if [[ "{{ os }}" == "windows" ]]; then
-        target="{{ binary }}.exe"
-    else
-        target="{{ binary }}"
-    fi
-    mv {{ output }}/connect-client* "{{ output }}/$subdir/$target"
-
-build-all:
-    just build linux amd64
-    just build windows amd64
-    just build darwin amd64
-    just build darwin arm64
+default: clean lint test build
 
 lint:
-    ./fmt-check.sh
+    ./scripts/fmt-check.sh
+    ./scripts/ccheck.py ./scripts/ccheck.config
     go vet -all ./...
 
-test *args:
-    #!/usr/bin/env bash
-    set -euxo pipefail
+test:
+    go test -race ./...
 
-    test_args="{{ args }}"
-    test_args=${test_args:-./...}
+build: _web
+    ./scripts/build.bash ./internal/cmd/connect-client
 
-    go test -race ${test_args}
+clean:
+    rm -r ./bin
+
+[private]
+_web:
+    just web/
