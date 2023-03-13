@@ -1,6 +1,7 @@
-/.cache/
-/bin/
-/certs/
+.cache/
+
+bin/
+certs/
 
 # Visual Studio Code
 .vscode/*

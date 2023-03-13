@@ -1,46 +1,51 @@
-top := `git rev-parse --show-toplevel`
-output := top + "/bin"
-binary := "connect-client"
-version := `git describe --always --tags`
+default: clean lint test build
 
-build os='linux' arch='amd64':
-    #!/usr/bin/env bash
-    set -euxo pipefail
+_interactive := `tty -s && echo "-it" || echo ""`
 
-    just web/build
+_tag := "rstudio/connect-client:latest"
 
-    subdir="{{ os }}-{{ arch }}"
-    mkdir -p "{{ output }}/$subdir"
+_with_runner := if env_var_or_default("DOCKER", "true") == "true" { 
+        "just _with_docker" 
+    } else { 
+        "" 
+    }
 
-    GOOS={{ os }} GOARCH={{ arch }} \
-    go build \
-        -ldflags "-X project.Version={{ version }}" \
-        -o "{{ output }}" \
-        ./internal/cmd/connect-client
-    cd "{{ output }}"
+build: _web
+    {{ _with_runner }} ./scripts/build.bash ./internal/cmd/connect-client
 
-    if [[ "{{ os }}" == "windows" ]]; then
-        target="{{ binary }}.exe"
-    else
-        target="{{ binary }}"
-    fi
-    mv {{ output }}/connect-client* "{{ output }}/$subdir/$target"
+certs:
+    mkdir -p certs
+    mkcert -cert-file ./certs/localhost-cert.pem -key-file ./certs/localhost-key.pem localhost 127.0.0.1 ::1 0.0.0.0
 
-build-all:
-    just build linux amd64
-    just build windows amd64
-    just build darwin amd64
-    just build darwin arm64
+clean:
+    rm -rf ./bin
 
 lint:
-    ./fmt-check.sh
+    ./scripts/fmt-check.bash
+    ./scripts/ccheck.py ./scripts/ccheck.config
     go vet -all ./...
 
-test *args:
-    #!/usr/bin/env bash
-    set -euxo pipefail
+test:
+    {{ _with_runner }} go test -race ./...
 
-    test_args="{{ args }}"
-    test_args=${test_args:-./...}
+[private]
+_image:
+    docker build \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --pull \
+        --tag {{ _tag }} \
+        ./build/package
 
-    go test -race ${test_args}
+[private]
+_web:
+    just web/
+
+[private]
+_with_docker *args: _image
+    docker run --rm {{ _interactive }} \
+        -e GOCACHE=/work/.cache/go/cache \
+        -e GOMODCACHE=/work/.cache/go/mod \
+        -u $(id -u):$(id -g) \
+        -v "$(pwd)":/work \
+        -w /work \
+        {{ _tag }} {{ args }}

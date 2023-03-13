@@ -9,10 +9,9 @@ lint *args:
 build *args:
     yarn build {{ args }}
 
-test:
+test: build
     yarn test
-    just build --mode development
-    go test
+    go test -race ./...
 
 start:
     yarn start
