@@ -21,7 +21,7 @@ clean:
     rm -rf ./bin
 
 lint:
-    ./scripts/fmt-check.sh
+    ./scripts/fmt-check.bash
     ./scripts/ccheck.py ./scripts/ccheck.config
     go vet -all ./...
 
