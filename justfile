@@ -11,7 +11,7 @@ _with_runner := if env_var_or_default("DOCKER", "true") == "true" {
     }
 
 build: _web
-    {{ _with_runner }} ./scripts/build.bash ./internal/cmd/connect-client
+   just _build
 
 certs:
     mkdir -p certs
@@ -27,6 +27,10 @@ lint:
 
 test:
     {{ _with_runner }} go test -race ./...
+
+[private]
+_build:
+    {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client
 
 [private]
 _image:
