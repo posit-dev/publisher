@@ -25,6 +25,9 @@ lint:
     ./scripts/ccheck.py ./scripts/ccheck.config
     go vet -all ./...
 
+run:
+    {{ _with_runner }} go run ./internal/cmd/connect-client
+
 test:
     {{ _with_runner }} go test -race ./...
 
