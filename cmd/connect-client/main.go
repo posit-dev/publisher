@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rstudio/connect-client/internal/cmd/connect-client/commands"
+	"github.com/rstudio/connect-client/cmd/connect-client/commands"
 	"github.com/rstudio/connect-client/internal/project"
 
 	"github.com/alecthomas/kong"
