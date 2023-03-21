@@ -26,9 +26,9 @@ lint:
     go vet -all ./...
 
 run:
-    {{ _with_runner }} go run ./internal/cmd/connect-client
+    {{ _with_runner }} go run ./cmd/connect-client
 
-test:
+test: _web
     {{ _with_runner }} go test -race ./...
 
 [private]
