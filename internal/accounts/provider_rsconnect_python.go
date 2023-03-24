@@ -4,22 +4,28 @@ package accounts
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 
 	"github.com/rstudio/connect-client/internal/debug"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
+	"github.com/spf13/afero"
 )
 
 type rsconnectPythonProvider struct {
+	fs          afero.Fs
 	logger      rslog.Logger
 	debugLogger rslog.DebugLogger
 }
 
-func newRSConnectPythonProvider(logger rslog.Logger) provider {
+func newRSConnectPythonProvider(fs afero.Fs, logger rslog.Logger) *rsconnectPythonProvider {
 	return &rsconnectPythonProvider{
+		fs:          fs,
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.AccountsRegion),
 	}
@@ -29,7 +35,7 @@ func newRSConnectPythonProvider(logger rslog.Logger) provider {
 // The config directory is where the server list (servers.json) is
 // stored, along with deployment metadata for any deployments that
 // were made from read-only directories.
-func (p *rsconnectPythonProvider) configDir() (string, error) {
+func (p *rsconnectPythonProvider) configDir(goos string) (string, error) {
 	// https://github.com/rstudio/rsconnect-python/blob/master/rsconnect/metadata.py
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -37,7 +43,7 @@ func (p *rsconnectPythonProvider) configDir() (string, error) {
 	}
 	var baseDir string
 
-	switch runtime.GOOS {
+	switch goos {
 	case "linux":
 		baseDir = os.Getenv("XDG_CONFIG_HOME")
 		if baseDir != "" {
@@ -56,8 +62,8 @@ func (p *rsconnectPythonProvider) configDir() (string, error) {
 }
 
 // Returns the path to rsconnect-python's servers.json file.
-func (p *rsconnectPythonProvider) serverListPath() (string, error) {
-	dir, err := p.configDir()
+func (p *rsconnectPythonProvider) serverListPath(goos string) (string, error) {
+	dir, err := p.configDir(goos)
 	if err != nil {
 		return "", err
 	}
@@ -112,19 +118,22 @@ func (p *rsconnectPythonProvider) decodeServerStore(data []byte) ([]Account, err
 	for _, rscpAccount := range accountMap {
 		accounts = append(accounts, rscpAccount.toAccount())
 	}
+	sort.Slice(accounts, func(i, j int) bool {
+		return accounts[i].Name < accounts[j].Name
+	})
 	return accounts, nil
 }
 
 // Load loads the list of accounts stored by rsconnect-python
 // by reading its servers.json file.
 func (p *rsconnectPythonProvider) Load() ([]Account, error) {
-	path, err := p.serverListPath()
+	path, err := p.serverListPath(runtime.GOOS)
 	if err != nil {
 		return nil, err
 	}
-	data, err := os.ReadFile(path)
+	data, err := afero.ReadFile(p.fs, path)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			p.debugLogger.Debugf("rsconnect-python config file does not exist (%s), checking old config directory", path)
 			return nil, nil
 		}

@@ -4,10 +4,16 @@ _interactive := `tty -s && echo "-it" || echo ""`
 
 _tag := "rstudio/connect-client:latest"
 
-_with_runner := if env_var_or_default("DOCKER", "true") == "true" { 
-        "just _with_docker" 
-    } else { 
-        "" 
+_with_runner := if env_var_or_default("DOCKER", "true") == "true" {
+        "just _with_docker"
+    } else {
+        ""
+    }
+
+_uid_args := if "{{ os() }}" == "Linux" {
+        "-u $(id -u):$(id -g)"
+    } else {
+        ""
     }
 
 build: _web
@@ -52,7 +58,7 @@ _with_docker *args: _image
     docker run --rm {{ _interactive }} \
         -e GOCACHE=/work/.cache/go/cache \
         -e GOMODCACHE=/work/.cache/go/mod \
-        -u $(id -u):$(id -g) \
         -v "$(pwd)":/work \
         -w /work \
+        {{ _uid_args }} \
         {{ _tag }} {{ args }}

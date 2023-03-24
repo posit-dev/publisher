@@ -7,7 +7,7 @@ var Version string
 
 func UserAgent() string {
 	if Version != "" {
-		return "github.com/rstudio/connect-client/internal/" + Version
+		return "connect-client/" + Version
 	}
 	return "connect-client"
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/rstudio/connect-client/web"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
+	"github.com/spf13/afero"
 )
 
 func NewUIService(
@@ -23,9 +24,10 @@ func NewUIService(
 	openBrowser bool,
 	accessLog bool,
 	token services.LocalToken,
+	fs afero.Fs,
 	logger rslog.Logger) *api.Service {
 
-	handler := newUIHandler(logger)
+	handler := newUIHandler(fs, logger)
 
 	return api.NewService(
 		handler,
@@ -41,11 +43,11 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(logger rslog.Logger) http.HandlerFunc {
+func newUIHandler(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
 	r := http.NewServeMux()
 	api_prefix := "/api/"
 
-	accountList := accounts.NewAccountList(logger)
+	accountList := accounts.NewAccountList(fs, logger)
 	r.Handle(api_prefix+"accounts", api.NewAccountListEndpoint(accountList, logger))
 
 	// static files for the local (account list) UI

@@ -6,21 +6,21 @@ type AccountType string
 
 const (
 	AccountTypeConnect     AccountType = "connect"
-	AccountTypeShinyappsIO             = "shinyapps"
-	AccountTypeCloud                   = "cloud"
+	AccountTypeShinyappsIO AccountType = "shinyapps"
+	AccountTypeCloud       AccountType = "cloud"
 )
 
+var accountTypeDescriptions = map[AccountType]string{
+	AccountTypeConnect:     "Posit Connect",
+	AccountTypeShinyappsIO: "shinyapps.io",
+	AccountTypeCloud:       "Posit Cloud",
+}
+
 func (t AccountType) Description() string {
-	switch t {
-	case AccountTypeConnect:
-		return "Posit Connect"
-	case AccountTypeShinyappsIO:
-		return "shinyapps.io"
-	case AccountTypeCloud:
-		return "Posit Cloud"
-	default:
-		return string(t)
+	if desc, ok := accountTypeDescriptions[t]; ok {
+		return desc
 	}
+	return string(t)
 }
 
 // accountTypeFromURL infers an account type from the server URL.

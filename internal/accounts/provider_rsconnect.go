@@ -3,27 +3,33 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/debug"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/connect-client/internal/util/dcf"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
+	"github.com/spf13/afero"
 )
 
 type rsconnectProvider struct {
+	fs          afero.Fs
+	goos        string
+	dcfReader   dcf.FileReader
 	logger      rslog.Logger
 	debugLogger rslog.DebugLogger
 }
 
-func newRSConnectProvider(logger rslog.Logger) provider {
+func newRSConnectProvider(fs afero.Fs, logger rslog.Logger) *rsconnectProvider {
 	return &rsconnectProvider{
+		fs:          fs,
+		goos:        runtime.GOOS,
+		dcfReader:   dcf.NewFileReader(fs),
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.AccountsRegion),
 	}
@@ -43,7 +49,7 @@ func (p *rsconnectProvider) configDir() (string, error) {
 		}
 	}
 	if baseDir == "" {
-		switch runtime.GOOS {
+		switch p.goos {
 		case "windows":
 			baseDir = filepath.Join(os.Getenv("APPDATA"), "R", "config")
 		case "darwin":
@@ -73,7 +79,7 @@ func (p *rsconnectProvider) oldConfigDir() (string, error) {
 		p.debugLogger.Debugf("rsconnect: using R_USER_CONFIG_DIR (%s)", configDir)
 		configDir = filepath.Join(configDir, "rsconnect")
 	} else {
-		switch runtime.GOOS {
+		switch p.goos {
 		case "windows":
 			configDir = os.Getenv("APPDATA")
 		case "darwin":
@@ -93,16 +99,12 @@ func (p *rsconnectProvider) oldConfigDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	configDir, err = filepath.EvalSymlinks(configDir)
-	if err != nil {
-		return "", err
-	}
 	return configDir, nil
 }
 
 // makeServerNameMap constructs a server name-to-url map
 // from the provided rsconnect server list.
-func makeServerNameMap(rscServers util.DCFData) map[string]string {
+func makeServerNameMap(rscServers dcf.Records) map[string]string {
 	serverNameToURL := map[string]string{}
 	for _, server := range rscServers {
 		name := server["name"]
@@ -110,22 +112,22 @@ func makeServerNameMap(rscServers util.DCFData) map[string]string {
 		serverNameToURL[name] = url
 	}
 	// rsconnect does not make server entries for public instances
-	serverNameToURL["shinyapps.io"] = "shinyapps.io"
-	serverNameToURL["posit.cloud"] = "posit.cloud"
-	serverNameToURL["rstudio.cloud"] = "posit.cloud"
+	serverNameToURL["shinyapps.io"] = "https://api.shinyapps.io"
+	serverNameToURL["posit.cloud"] = "https://api.posit.cloud"
+	serverNameToURL["rstudio.cloud"] = "https://api.posit.cloud"
 	return serverNameToURL
 }
 
 // accountsFromConfig constructs Account objects from the
 // provided rsconnect server and account lists. Primarily,
 // this is a join between the two on account.server = server.name.
-func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts util.DCFData) ([]Account, error) {
+func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts dcf.Records) ([]Account, error) {
 	accounts := []Account{}
 	serverNameToURL := makeServerNameMap(rscServers)
 	for _, account := range rscAccounts {
 		serverName := account["server"]
 		if serverName == "" {
-			return accounts, fmt.Errorf("Missing server name in account %v", account)
+			return accounts, fmt.Errorf("Missing server name in rsconnect account")
 		}
 		url, ok := serverNameToURL[serverName]
 		if !ok {
@@ -144,27 +146,45 @@ func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts util.DCFD
 		account.AuthType = account.InferAuthType()
 		accounts = append(accounts, account)
 	}
+	sort.Slice(accounts, func(i, j int) bool {
+		return accounts[i].Name < accounts[j].Name
+	})
 	return accounts, nil
 }
 
 func (p *rsconnectProvider) Load() ([]Account, error) {
 	configDir, err := p.configDir()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting rsconnect config directory: %s", err)
+		return nil, fmt.Errorf("Error getting rsconnect config directory: %w", err)
 	}
-	if util.Exists(configDir) {
+	exists, err := afero.Exists(p.fs, configDir)
+	if err == nil && exists {
 		return p.loadFromConfigDir(configDir)
 	}
 	p.debugLogger.Debugf("rsconnect config directory '%s' does not exist, checking old config directory", configDir)
 	oldConfigDir, err := p.oldConfigDir()
 	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			p.debugLogger.Debugf("Old rsconnect config directory does not exist")
-			return nil, nil
-		} else {
-			return nil, fmt.Errorf("Error getting old rsconnect config directory: %s", err)
-		}
+		return nil, err
 	}
+	exists, err = afero.Exists(p.fs, oldConfigDir)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		p.debugLogger.Debugf("Old rsconnect config directory does not exist")
+		return nil, nil
+	}
+
+	// TODO: afero doesn't support EvalSymlinks; make our own using fs.Lstat?
+	// oldConfigDir, err = filepath.EvalSymlinks(oldConfigDir)
+	// if err != nil {
+	// 	if errors.Is(err, fs.ErrNotExist) {
+	// 		p.debugLogger.Debugf("Old rsconnect config directory does not exist")
+	// 		return nil, nil
+	// 	} else {
+	// 		return nil, fmt.Errorf("Error getting old rsconnect config directory: %s", err)
+	// 	}
+	// }
 	return p.loadFromConfigDir(oldConfigDir)
 }
 
@@ -173,12 +193,12 @@ func (p *rsconnectProvider) Load() ([]Account, error) {
 func (p *rsconnectProvider) loadFromConfigDir(configDir string) ([]Account, error) {
 	p.logger.Infof("Loading rsconnect accounts from %s", configDir)
 	serverPattern := filepath.Join(configDir, "servers", "*.dcf")
-	rscServers, err := util.ReadDCFFiles(serverPattern)
+	rscServers, err := p.dcfReader.ReadFiles(serverPattern)
 	if err != nil {
 		return nil, err
 	}
 	accountsPattern := filepath.Join(configDir, "accounts", "*", "*.dcf")
-	rscAccounts, err := util.ReadDCFFiles(accountsPattern)
+	rscAccounts, err := p.dcfReader.ReadFiles(accountsPattern)
 	if err != nil {
 		return nil, err
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
+	"github.com/spf13/afero"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
@@ -23,34 +24,23 @@ type baseBundleCmd struct {
 	SourceDir string   `help:"Path to directory containing files to publish." arg:"" type:"existingdir"`
 }
 
-func (cmd *baseBundleCmd) makeWalker() (bundles.Walker, error) {
-	walker, err := bundles.NewDefaultWalker(cmd.SourceDir, cmd.Exclude)
-	if err != nil {
-		return nil, fmt.Errorf("Error loading ignore list: %w", err)
-	}
-	return walker, nil
-}
-
 type CreateBundleCmd struct {
 	baseBundleCmd
 	BundleFile string `help:"Path to a file where the bundle should be written." required:"" type:"path"`
 }
 
 func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	walker, err := cmd.makeWalker()
-	if err != nil {
-		return err
-	}
 	bundleFile, err := os.Create(cmd.BundleFile)
 	if err != nil {
 		return err
 	}
 	defer bundleFile.Close()
-	_, err = bundles.NewBundleFromDirectory(cmd.SourceDir, walker, bundleFile, ctx.Logger)
+	bundler, err := bundles.NewBundlerForDirectory(afero.NewOsFs(), cmd.SourceDir, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
-	return nil
+	_, err = bundler.CreateBundle(bundleFile)
+	return err
 }
 
 type WriteManifestCmd struct {
@@ -58,14 +48,11 @@ type WriteManifestCmd struct {
 }
 
 func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	walker, err := cmd.makeWalker()
+	bundler, err := bundles.NewBundlerForDirectory(afero.NewOsFs(), cmd.SourceDir, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
-	manifest, err := bundles.NewBundleFromDirectory(cmd.SourceDir, walker, nil, ctx.Logger)
-	if err != nil {
-		return err
-	}
+	manifest, err := bundler.CreateManifest()
 	manifestPath := filepath.Join(cmd.SourceDir, bundles.ManifestFilename)
 	ctx.Logger.Infof("Writing manifest to '%s'", manifestPath)
 	manifestJSON, err := manifest.ToJSON()
@@ -89,20 +76,17 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	walker, err := cmd.makeWalker()
-	if err != nil {
-		return err
-	}
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
-	_, err = bundles.NewBundleFromDirectory(cmd.SourceDir, walker, bundleFile, ctx.Logger)
+	bundler, err := bundles.NewBundlerForDirectory(afero.NewOsFs(), cmd.SourceDir, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
+	_, err = bundler.CreateBundle(bundleFile)
 	bundleFile.Seek(0, os.SEEK_SET)
 
 	// TODO: factory method to create client based on server type

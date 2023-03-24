@@ -7,6 +7,7 @@ import (
 	"github.com/rstudio/connect-client/internal/services"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
+	"github.com/spf13/afero"
 )
 
 type UIArgs struct {
@@ -22,21 +23,17 @@ type CommonArgs struct {
 }
 
 type CLIContext struct {
-	Accounts   *accounts.AccountList
+	Accounts   accounts.AccountList
 	LocalToken services.LocalToken
-	Logger     rslog.Logger `kong:"-"`
+	Fs         afero.Fs
+	Logger     rslog.Logger
 }
 
-func NewCLIContext(logger rslog.Logger) (*CLIContext, error) {
-	accountList := accounts.NewAccountList(logger)
-	token, err := services.NewLocalToken()
-	if err != nil {
-		return nil, err
-	}
-
+func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, logger rslog.Logger) *CLIContext {
 	return &CLIContext{
 		Accounts:   accountList,
 		LocalToken: token,
+		Fs:         fs,
 		Logger:     logger,
-	}, nil
+	}
 }

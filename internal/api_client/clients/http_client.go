@@ -24,17 +24,27 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
-type HTTPClient struct {
+type HTTPClient interface {
+	GetRaw(path string) ([]byte, error)
+	PostRaw(path string, body io.Reader, bodyType string) ([]byte, error)
+	Get(path string, into any) error
+	Post(path string, body any, into any) error
+	Put(path string, body any, into any) error
+	Patch(path string, body any, into any) error
+	Delete(path string) error
+}
+
+type defaultHTTPClient struct {
 	client  *http.Client
 	baseURL string
 }
 
-func NewHTTPClient(account *accounts.Account, timeout time.Duration, logger rslog.Logger) (*HTTPClient, error) {
+func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, logger rslog.Logger) (*defaultHTTPClient, error) {
 	baseClient, err := newHTTPClientForAccount(account, timeout, logger)
 	if err != nil {
 		return nil, err
 	}
-	return &HTTPClient{
+	return &defaultHTTPClient{
 		client:  baseClient,
 		baseURL: account.URL,
 	}, nil
@@ -42,7 +52,7 @@ func NewHTTPClient(account *accounts.Account, timeout time.Duration, logger rslo
 
 var errAuthenticationFailed = errors.New("Unable to log in with the provided credentials.")
 
-func (c *HTTPClient) do(method string, path string, body io.Reader, bodyType string) ([]byte, error) {
+func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyType string) ([]byte, error) {
 	apiURL := util.URLJoin(c.baseURL, path)
 	req, err := http.NewRequest(method, apiURL, body)
 	if err != nil {
@@ -66,7 +76,7 @@ func (c *HTTPClient) do(method string, path string, body io.Reader, bodyType str
 	}
 }
 
-func (c *HTTPClient) doJSON(method string, path string, body any, into any) error {
+func (c *defaultHTTPClient) doJSON(method string, path string, body any, into any) error {
 	reqBody := io.Reader(nil)
 	if body != nil {
 		bodyJSON, err := json.Marshal(body)
@@ -79,6 +89,9 @@ func (c *HTTPClient) doJSON(method string, path string, body any, into any) erro
 	if err != nil {
 		return err
 	}
+	if respBody == nil {
+		return nil
+	}
 	if into != nil {
 		err = json.Unmarshal(respBody, into)
 		if err != nil {
@@ -88,31 +101,31 @@ func (c *HTTPClient) doJSON(method string, path string, body any, into any) erro
 	return nil
 }
 
-func (c *HTTPClient) getRaw(path string) ([]byte, error) {
+func (c *defaultHTTPClient) GetRaw(path string) ([]byte, error) {
 	return c.do("GET", path, nil, "")
 }
 
-func (c *HTTPClient) postRaw(path string, body io.Reader, bodyType string) ([]byte, error) {
+func (c *defaultHTTPClient) PostRaw(path string, body io.Reader, bodyType string) ([]byte, error) {
 	return c.do("POST", path, body, bodyType)
 }
 
-func (c *HTTPClient) get(path string, into any) error {
+func (c *defaultHTTPClient) Get(path string, into any) error {
 	return c.doJSON("GET", path, nil, into)
 }
 
-func (c *HTTPClient) post(path string, body any, into any) error {
+func (c *defaultHTTPClient) Post(path string, body any, into any) error {
 	return c.doJSON("POST", path, body, into)
 }
 
-func (c *HTTPClient) put(path string, body any, into any) error {
+func (c *defaultHTTPClient) Put(path string, body any, into any) error {
 	return c.doJSON("PUT", path, body, into)
 }
 
-func (c *HTTPClient) patch(path string, body any, into any) error {
+func (c *defaultHTTPClient) Patch(path string, body any, into any) error {
 	return c.doJSON("PATCH", path, body, into)
 }
 
-func (c *HTTPClient) delete(path string) error {
+func (c *defaultHTTPClient) Delete(path string) error {
 	return c.doJSON("DELETE", path, nil, nil)
 }
 

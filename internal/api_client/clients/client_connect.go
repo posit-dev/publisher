@@ -17,7 +17,7 @@ import (
 )
 
 type ConnectClient struct {
-	*HTTPClient
+	client  HTTPClient
 	account *accounts.Account
 	logger  rslog.Logger
 }
@@ -27,14 +27,14 @@ func NewConnectClient(
 	timeout time.Duration,
 	logger rslog.Logger) (*ConnectClient, error) {
 
-	httpClient, err := NewHTTPClient(account, timeout, logger)
+	httpClient, err := NewDefaultHTTPClient(account, timeout, logger)
 	if err != nil {
 		return nil, err
 	}
 	return &ConnectClient{
-		HTTPClient: httpClient,
-		account:    account,
-		logger:     logger,
+		client:  httpClient,
+		account: account,
+		logger:  logger,
 	}, nil
 }
 
@@ -88,7 +88,7 @@ func (u *UserDTO) toUser() *User {
 func (c *ConnectClient) TestAuthentication() (*User, error) {
 	c.logger.Infof("Testing %s authentication to %s", c.account.AuthType.Description(), c.account.URL)
 	var connectUser UserDTO
-	err := c.get("/__api__/v1/user", &connectUser)
+	err := c.client.Get("/__api__/v1/user", &connectUser)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (c *ConnectClient) CreateDeployment(name ContentName, title apitypes.NullSt
 		Title: title,
 	}
 	content := connectGetContentDTO{}
-	err := c.post("/__api__/v1/content", &body, &content)
+	err := c.client.Post("/__api__/v1/content", &body, &content)
 	if err != nil {
 		return "", err
 	}
@@ -184,7 +184,7 @@ type connectGetBundleDTO struct {
 
 func (c *ConnectClient) UploadBundle(contentID ContentID, body io.Reader) (BundleID, error) {
 	url := fmt.Sprintf("/__api__/v1/content/%s/bundles", contentID)
-	resp, err := c.postRaw(url, body, "application/gzip")
+	resp, err := c.client.PostRaw(url, body, "application/gzip")
 	if err != nil {
 		return "", err
 	}
@@ -210,7 +210,7 @@ func (c *ConnectClient) DeployBundle(contentId ContentID, bundleId BundleID) (Ta
 	}
 	url := fmt.Sprintf("/__api__/v1/content/%s/deploy", contentId)
 	output := deployOutputDTO{}
-	err := c.post(url, body, &output)
+	err := c.client.Post(url, body, &output)
 	if err != nil {
 		return "", err
 	}
@@ -235,17 +235,17 @@ func (c *ConnectClient) getTask(taskID TaskID, previous *taskDTO) (*taskDTO, err
 		firstLine = previous.Last
 	}
 	url := fmt.Sprintf("/__api__/v1/tasks/%s?first=%d", taskID, firstLine)
-	err := c.get(url, &task)
+	err := c.client.Get(url, &task)
 	if err != nil {
 		return nil, err
 	}
 	return &task, nil
 }
 
-func (client *ConnectClient) WaitForTask(taskID TaskID, logWriter io.Writer) error {
+func (c *ConnectClient) WaitForTask(taskID TaskID, logWriter io.Writer) error {
 	var previous *taskDTO
 	for {
-		task, err := client.getTask(taskID, previous)
+		task, err := c.getTask(taskID, previous)
 		if err != nil {
 			return err
 		}

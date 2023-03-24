@@ -44,7 +44,7 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 }
 
 // NewAccountListEndpoint returns a handler for the account list.
-func NewAccountListEndpoint(accountList *accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
+func NewAccountListEndpoint(accountList accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		accounts, err := accountList.GetAllAccounts()
 		if err != nil {

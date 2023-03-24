@@ -12,7 +12,7 @@ type envVarProvider struct {
 	logger rslog.Logger
 }
 
-func newEnvVarProvider(logger rslog.Logger) provider {
+func newEnvVarProvider(logger rslog.Logger) *envVarProvider {
 	return &envVarProvider{
 		logger: logger,
 	}

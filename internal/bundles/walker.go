@@ -3,14 +3,13 @@ package bundles
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 
-	"github.com/rstudio/connect-client/internal/util"
-
-	"github.com/iriri/minimal/gitignore"
+	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/spf13/afero"
 )
 
 type Walker interface {
@@ -51,25 +50,30 @@ var standardIgnores = []string{
 	"*_cache/",
 }
 
-type defaultWalker struct {
-	ignoreList gitignore.IgnoreList
+type walker struct {
+	fs         afero.Fs
+	ignoreList gitignore.GitIgnoreList
 }
 
-func (i *defaultWalker) Walk(path string, fn filepath.WalkFunc) error {
+func (i *walker) FS() afero.Fs {
+	return i.fs
+}
+
+func (i *walker) Walk(path string, fn filepath.WalkFunc) error {
 	return i.ignoreList.Walk(path, func(path string, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			// Load .rscignore from every directory where it exists
 			ignorePath := filepath.Join(path, ".rscignore")
 			err = i.ignoreList.Append(ignorePath)
-			if os.IsNotExist(err) {
+			if errors.Is(err, fs.ErrNotExist) {
 				err = nil
 			}
 			if err != nil {
-				return fmt.Errorf("Error loading .rscignore file '%s': %s", ignorePath, err)
+				return fmt.Errorf("Error loading .rscignore file '%s': %w", ignorePath, err)
 			}
 			// Ignore Python environment directories. We check for these
 			// separately because they aren't expressible as gitignore patterns.
-			if isPythonEnvironmentDir(path) {
+			if isPythonEnvironmentDir(i.fs, path) {
 				return filepath.SkipDir
 			}
 		}
@@ -77,7 +81,7 @@ func (i *defaultWalker) Walk(path string, fn filepath.WalkFunc) error {
 	})
 }
 
-func (i *defaultWalker) addGlobs(globs []string) error {
+func (i *walker) addGlobs(globs []string) error {
 	for _, pattern := range globs {
 		err := i.ignoreList.AppendGlob(pattern)
 		if err != nil {
@@ -87,36 +91,30 @@ func (i *defaultWalker) addGlobs(globs []string) error {
 	return nil
 }
 
-func NewDefaultWalker(dir string, ignores []string) (Walker, error) {
-	oldWD, err := util.Chdir(dir)
-	if err != nil {
-		return nil, err
-	}
-	defer util.Chdir(oldWD)
+func NewWalker(fs afero.Fs, dir string, ignores []string) (Walker, error) {
+	gitIgnore := gitignore.New(fs, dir)
+	return newWalker(fs, dir, ignores, &gitIgnore)
+}
 
-	ignore, err := gitignore.New()
-	if err != nil {
-		return nil, err
-	}
-	walker := &defaultWalker{
-		ignoreList: ignore,
+func newWalker(fs afero.Fs, dir string, ignores []string, gitIgnore gitignore.GitIgnoreList) (Walker, error) {
+	walk := &walker{
+		fs:         fs,
+		ignoreList: gitIgnore,
 	}
 	const errNotInGitRepo = "not in a git repository"
-	err = ignore.AppendGit()
+	err := gitIgnore.AppendGit()
 	if err != nil && err.Error() != errNotInGitRepo {
 		return nil, err
 	}
-	err = walker.addGlobs(standardIgnores)
+	err = walk.addGlobs(standardIgnores)
 	if err != nil {
 		return nil, err
 	}
-	err = walker.addGlobs(ignores)
+	err = walk.addGlobs(ignores)
 	if err != nil {
 		return nil, err
 	}
-	return &defaultWalker{
-		ignoreList: ignore,
-	}, nil
+	return walk, nil
 }
 
 var pythonBinPaths = []string{
@@ -126,9 +124,10 @@ var pythonBinPaths = []string{
 	"Scripts/python3.exe",
 }
 
-func isPythonEnvironmentDir(path string) bool {
+func isPythonEnvironmentDir(fs afero.Fs, path string) bool {
 	for _, binary := range pythonBinPaths {
-		if util.Exists(filepath.Join(path, binary)) {
+		exists, err := afero.Exists(fs, filepath.Join(path, binary))
+		if err == nil && exists {
 			return true
 		}
 	}
