@@ -1,10 +1,19 @@
-install:
-    yarn install
+default: install lint test build
 
-lint:
-    yarn lint
+install *args:
+    yarn install {{ args }}
 
-build:
-    yarn build
+lint *args:
+    yarn lint {{ args }}
+
+build *args:
+    yarn build {{ args }}
+
+test: build
+    yarn test
+    go test -race ./...
+
+start:
+    yarn start
 
 

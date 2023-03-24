@@ -4,6 +4,7 @@
   "packageManager": "yarn@3.4.1",
   "scripts": {
     "lint": "eslint --ext .js,.vue src",
+    "test": "vitest run",
     "build": "vite build",
     "preview": "vite preview",
     "start": "vite",
@@ -23,6 +24,7 @@
     "vite": "^4.1.4",
     "vite-jsconfig-paths": "^2.0.1",
     "vite-plugin-eslint": "^1.8.1",
-    "vite-plugin-vuetify": "^1.0.2"
+    "vite-plugin-vuetify": "^1.0.2",
+    "vitest": "^0.29.2"
   }
 }
