@@ -14,7 +14,6 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
-	"github.com/spf13/afero"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
@@ -35,7 +34,7 @@ func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundlerForDirectory(afero.NewOsFs(), cmd.SourceDir, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -48,11 +47,14 @@ type WriteManifestCmd struct {
 }
 
 func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	bundler, err := bundles.NewBundlerForDirectory(afero.NewOsFs(), cmd.SourceDir, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
 	manifest, err := bundler.CreateManifest()
+	if err != nil {
+		return err
+	}
 	manifestPath := filepath.Join(cmd.SourceDir, bundles.ManifestFilename)
 	ctx.Logger.Infof("Writing manifest to '%s'", manifestPath)
 	manifestJSON, err := manifest.ToJSON()
@@ -82,7 +84,7 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundlerForDirectory(afero.NewOsFs(), cmd.SourceDir, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
