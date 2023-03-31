@@ -96,7 +96,7 @@ func (r *rsconnectPythonAccount) toAccount() Account {
 
 	// rsconnect-python does not store the server
 	// type, so infer it from the URL.
-	account.Type = accountTypeFromURL(account.URL)
+	account.ServerType = serverTypeFromURL(account.URL)
 	account.AuthType = account.InferAuthType()
 
 	// Migrate existing rstudio.cloud entries.

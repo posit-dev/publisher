@@ -3,7 +3,7 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type Account struct {
-	Type        AccountType     `json:"type"`         // Which type of API this server provides
+	ServerType  ServerType      `json:"type"`         // Which type of API this server provides
 	Source      AccountSource   `json:"source"`       // Source of the saved server configuration
 	AuthType    AccountAuthType `json:"auth_type"`    // Authentication method (API key, token, etc)
 	Name        string          `json:"name"`         // Nickname

@@ -32,7 +32,7 @@ type accountListDTO struct {
 // to the DTO type we return from the API.
 func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 	return &accountGetDTO{
-		Type:        string(acct.Type),
+		Type:        string(acct.ServerType),
 		Source:      string(acct.Source),
 		AuthType:    string(acct.AuthType),
 		Name:        acct.Name,

@@ -44,7 +44,7 @@ func (s *AccountEnvVarProviderSuite) TestLoadAll() {
 	accountList, err := provider.Load()
 	s.Nil(err)
 	s.Equal([]Account{{
-		Type:        AccountTypeConnect,
+		ServerType:  ServerTypeConnect,
 		AuthType:    AuthTypeAPIKey,
 		Source:      AccountSourceEnvironment,
 		Name:        "env",
@@ -62,7 +62,7 @@ func (s *AccountEnvVarProviderSuite) TestLoadSome() {
 	accountList, err := provider.Load()
 	s.Nil(err)
 	s.Equal([]Account{{
-		Type:        AccountTypeConnect,
+		ServerType:  ServerTypeConnect,
 		AuthType:    AuthTypeNone,
 		Source:      AccountSourceEnvironment,
 		Name:        "env",

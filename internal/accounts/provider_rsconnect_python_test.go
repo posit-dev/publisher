@@ -179,16 +179,16 @@ func (s *RsconnectPythonProviderSuite) TestLoad() {
 	s.Nil(err)
 	s.Equal([]Account{
 		{
-			Type:     AccountTypeConnect,
-			Source:   AccountSourceRsconnectPython,
-			AuthType: AuthTypeAPIKey,
-			Name:     "local",
-			URL:      "http://localhost:3939/",
-			Insecure: true,
-			ApiKey:   "0123456789ABCDEF0123456789ABCDEF",
+			ServerType: ServerTypeConnect,
+			Source:     AccountSourceRsconnectPython,
+			AuthType:   AuthTypeAPIKey,
+			Name:       "local",
+			URL:        "http://localhost:3939/",
+			Insecure:   true,
+			ApiKey:     "0123456789ABCDEF0123456789ABCDEF",
 		},
 		{
-			Type:        AccountTypeShinyappsIO,
+			ServerType:  ServerTypeShinyappsIO,
 			Source:      AccountSourceRsconnectPython,
 			AuthType:    AuthTypeTokenSecret,
 			Name:        "shinyapps",

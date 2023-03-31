@@ -135,7 +135,7 @@ func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts dcf.Recor
 		}
 		account := Account{
 			Source:      AccountSourceRsconnect,
-			Type:        accountTypeFromURL(url),
+			ServerType:  serverTypeFromURL(url),
 			Name:        serverName,
 			URL:         url,
 			AccountName: account["username"],

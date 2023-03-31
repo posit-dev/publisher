@@ -173,13 +173,13 @@ func (s *RsconnectProviderSuite) TestAccountsFromConfigShinyapps() {
 	accounts, err := s.provider.accountsFromConfig(configServers, configAccounts)
 	s.Nil(err)
 	s.Equal([]Account{{
-		Type:     AccountTypeShinyappsIO,
-		Source:   AccountSourceRsconnect,
-		AuthType: AuthTypeTokenSecret,
-		Name:     "shinyapps.io",
-		URL:      "https://api.shinyapps.io",
-		Token:    "0123456789ABCDEF",
-		Secret:   "FEDCBA9876543210",
+		ServerType: ServerTypeShinyappsIO,
+		Source:     AccountSourceRsconnect,
+		AuthType:   AuthTypeTokenSecret,
+		Name:       "shinyapps.io",
+		URL:        "https://api.shinyapps.io",
+		Token:      "0123456789ABCDEF",
+		Secret:     "FEDCBA9876543210",
 	}}, accounts)
 }
 
@@ -199,7 +199,7 @@ func (s *RsconnectProviderSuite) TestAccountsFromConfigConnect() {
 	accounts, err := s.provider.accountsFromConfig(configServers, configAccounts)
 	s.Nil(err)
 	s.Equal([]Account{{
-		Type:        AccountTypeConnect,
+		ServerType:  ServerTypeConnect,
 		Source:      AccountSourceRsconnect,
 		AuthType:    AuthTypeTokenKey,
 		Name:        "connect.example.com",

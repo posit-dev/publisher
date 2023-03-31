@@ -24,7 +24,7 @@ func (p *envVarProvider) Load() ([]Account, error) {
 		return nil, nil
 	}
 	account := Account{
-		Type:        accountTypeFromURL(serverURL),
+		ServerType:  serverTypeFromURL(serverURL),
 		Source:      AccountSourceEnvironment,
 		Name:        "env",
 		URL:         serverURL,
