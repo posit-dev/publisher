@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rstudio/connect-client/cmd/connect-client/commands"
-	"github.com/rstudio/connect-client/internal/project"
-
 	"github.com/alecthomas/kong"
+	"github.com/rstudio/connect-client/cmd/connect-client/commands"
+	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/project"
+	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/platform-lib/pkg/rslog"
+	"github.com/spf13/afero"
 )
 
 type cliSpec struct {
@@ -28,22 +30,36 @@ func logVersion(logger rslog.Logger) {
 	logger.WithField("version", project.Version).Infof("Client version")
 }
 
-func main() {
+func setupLogging() rslog.Logger {
 	logger := rslog.DefaultLogger()
 	logger.SetOutput(os.Stderr)
-	logger.SetLevel(rslog.DebugLevel)
-	logVersion(logger)
+	logger.SetLevel(rslog.InfoLevel)
+	return logger
+}
 
+func makeContext(logger rslog.Logger) (*commands.CLIContext, error) {
+	fs := afero.NewOsFs()
+	accountList := accounts.NewAccountList(fs, logger)
+	token, err := services.NewLocalToken()
+	if err != nil {
+		return nil, err
+	}
+	ctx := commands.NewCLIContext(accountList, token, fs, logger)
+	return ctx, nil
+}
+
+func main() {
+	logger := setupLogging()
+	logVersion(logger)
 	defer rslog.Flush()
-	ctx, err := commands.NewCLIContext(logger)
+
+	ctx, err := makeContext(logger)
 	if err != nil {
 		logger.Fatalf("Error initializing client: %s", err)
 	}
-
 	cli := cliSpec{
 		CommonArgs: commands.CommonArgs{},
 	}
-
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
 	err = args.Run(&cli.CommonArgs)

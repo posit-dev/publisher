@@ -32,7 +32,7 @@ type accountListDTO struct {
 // to the DTO type we return from the API.
 func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 	return &accountGetDTO{
-		Type:        string(acct.Type),
+		Type:        string(acct.ServerType),
 		Source:      string(acct.Source),
 		AuthType:    string(acct.AuthType),
 		Name:        acct.Name,
@@ -44,7 +44,7 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 }
 
 // NewAccountListEndpoint returns a handler for the account list.
-func NewAccountListEndpoint(accountList *accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
+func NewAccountListEndpoint(accountList accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		accounts, err := accountList.GetAllAccounts()
 		if err != nil {

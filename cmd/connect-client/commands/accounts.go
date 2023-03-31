@@ -113,6 +113,7 @@ func (cmd *accountUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		cmd.Interactive,
 		cmd.AccessLog,
 		ctx.LocalToken,
+		ctx.Fs,
 		ctx.Logger)
 	return svc.Run()
 }

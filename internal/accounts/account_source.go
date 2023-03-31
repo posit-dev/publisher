@@ -6,19 +6,19 @@ type AccountSource string
 
 const (
 	AccountSourceRsconnectPython AccountSource = "rsconnect-python"
-	AccountSourceRsconnect                     = "rsconnect"
-	AccountSourceEnvironment                   = "environment"
+	AccountSourceRsconnect       AccountSource = "rsconnect"
+	AccountSourceEnvironment     AccountSource = "environment"
 )
 
+var sourceDescriptions = map[AccountSource]string{
+	AccountSourceRsconnectPython: "rsconnect-python",
+	AccountSourceRsconnect:       "RStudio IDE/rsconnect",
+	AccountSourceEnvironment:     "CONNECT_SERVER environment variable",
+}
+
 func (source AccountSource) Description() string {
-	switch source {
-	case AccountSourceRsconnectPython:
-		return "rsconnect-python"
-	case AccountSourceRsconnect:
-		return "RStudio IDE/rsconnect"
-	case AccountSourceEnvironment:
-		return "CONNECT_SERVER environment variable"
-	default:
-		return string(source)
+	if desc, ok := sourceDescriptions[source]; ok {
+		return desc
 	}
+	return string(source)
 }

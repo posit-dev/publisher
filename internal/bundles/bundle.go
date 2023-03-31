@@ -17,22 +17,123 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
+	"github.com/spf13/afero"
 )
 
+type Bundler interface {
+	CreateManifest() (*Manifest, error)
+	CreateBundle(archive io.Writer) error
+}
+
+func NewBundlerForDirectory(fs afero.Fs, dir string, ignores []string, logger rslog.Logger) (*bundler, error) {
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
+	walker, err := NewWalker(fs, dir, ignores)
+	if err != nil {
+		return nil, fmt.Errorf("Error loading ignore list: %w", err)
+	}
+	return &bundler{
+		manifest:    NewManifest(),
+		fs:          fs,
+		baseDir:     absDir,
+		walker:      walker,
+		logger:      logger,
+		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
+	}, nil
+}
+
+func NewBundlerForManifest(fs afero.Fs, manifestPath string, logger rslog.Logger) (*bundler, error) {
+	dir := filepath.Dir(manifestPath)
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
+	manifest, err := ReadManifestFile(fs, manifestPath)
+	if err != nil {
+		return nil, err
+	}
+	return &bundler{
+		manifest:    manifest,
+		fs:          fs,
+		baseDir:     absDir,
+		walker:      newManifestWalker(fs, absDir, manifest),
+		logger:      logger,
+		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
+	}, nil
+}
+
 type bundler struct {
-	manifest    *Manifest   // Manifest describing the bundle
-	walker      Walker      // Ignore patterns from CLI and ignore files
-	numFiles    int64       // Number of files in the bundle
-	size        util.Size   // Total uncompressed size of the files, in bytes
-	archive     *tar.Writer // Archive containing the files
+	fs          afero.Fs  // Filesystem we are walking to get the files
+	baseDir     string    // Directory being bundled
+	walker      Walker    // Ignore patterns from CLI and ignore files
+	manifest    *Manifest // Manifest describing the bundle, if provided
 	logger      rslog.Logger
 	debugLogger rslog.DebugLogger
 }
 
+type bundle struct {
+	*bundler
+	manifest *Manifest      // Manifest describing the bundle
+	archive  util.TarWriter // Archive containing the files
+	numFiles int64          // Number of files in the bundle
+	size     util.Size      // Total uncompressed size of the files, in bytes
+}
+
 var bundleTooLargeError = errors.New("Directory is too large to deploy.")
 
+func (b *bundler) CreateManifest() (*Manifest, error) {
+	b.logger.WithField("source_dir", b.baseDir).Infof("Creating manifest from directory")
+	return b.makeBundle(nil)
+}
+
+func (b *bundler) CreateBundle(archive io.Writer) (*Manifest, error) {
+	b.logger.WithField("source_dir", b.baseDir).Infof("Creating bundle from directory")
+	return b.makeBundle(archive)
+}
+
+func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
+	bundle := &bundle{
+		bundler: b,
+	}
+	if b.manifest != nil {
+		manifestCopy, err := b.manifest.Clone()
+		if err != nil {
+			return nil, err
+		}
+		bundle.manifest = manifestCopy
+	}
+	if dest != nil {
+		gzipper := gzip.NewWriter(dest)
+		defer gzipper.Close()
+
+		bundle.archive = tar.NewWriter(gzipper)
+		defer bundle.archive.Close()
+	}
+
+	oldWD, err := util.Chdir(b.baseDir)
+	if err != nil {
+		return nil, err
+	}
+	defer util.Chdir(oldWD)
+
+	err = bundle.addDirectory(b.baseDir)
+	if err != nil {
+		return nil, fmt.Errorf("Error creating bundle: %w", err)
+	}
+	bundle.manifest.Metadata.AppMode = "static" // TODO: pass this in
+	if dest != nil {
+		err = bundle.addManifest()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return bundle.manifest, nil
+}
+
 // writeHeaderToTar writes a file or directory entry to the tar archive.
-func writeHeaderToTar(info fs.FileInfo, path string, archive *tar.Writer) error {
+func writeHeaderToTar(info fs.FileInfo, path string, archive util.TarWriter) error {
 	if archive == nil {
 		// Just scanning files, not archiving
 		return nil
@@ -58,8 +159,8 @@ func writeHeaderToTar(info fs.FileInfo, path string, archive *tar.Writer) error 
 
 // writeFileContentsToTar writes the contents of the specified file to the archive.
 // It returns the file's md5 hash.
-func writeFileContentsToTar(path string, archive *tar.Writer) ([]byte, error) {
-	f, err := os.Open(path)
+func writeFileContentsToTar(fs afero.Fs, path string, archive io.Writer) ([]byte, error) {
+	f, err := fs.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -78,21 +179,13 @@ func writeFileContentsToTar(path string, archive *tar.Writer) ([]byte, error) {
 	return md5sum, nil
 }
 
-func (b *bundler) addFile(path string) error {
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return err
-	}
-	err = b.walkFunc(path, fileInfo, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (b *bundler) walkFunc(path string, info fs.FileInfo, err error) error {
+func (b *bundle) walkFunc(path string, info fs.FileInfo, err error) error {
 	if err != nil {
 		// Stop walking the tree on errors.
+		return err
+	}
+	relPath, err := filepath.Rel(b.baseDir, path)
+	if err != nil {
 		return err
 	}
 	pathLogger := b.logger.WithFields(rslog.Fields{
@@ -100,21 +193,21 @@ func (b *bundler) walkFunc(path string, info fs.FileInfo, err error) error {
 		"size": info.Size(),
 	})
 	if info.IsDir() {
-		err = writeHeaderToTar(info, path, b.archive)
+		err = writeHeaderToTar(info, relPath, b.archive)
 		if err != nil {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
 		pathLogger.Infof("Adding file")
-		err = writeHeaderToTar(info, path, b.archive)
+		err = writeHeaderToTar(info, relPath, b.archive)
 		if err != nil {
 			return err
 		}
-		fileMD5, err := writeFileContentsToTar(path, b.archive)
+		fileMD5, err := writeFileContentsToTar(b.fs, path, b.archive)
 		if err != nil {
 			return err
 		}
-		b.manifest.AddFile(path, fileMD5)
+		b.manifest.AddFile(relPath, fileMD5)
 		b.numFiles++
 		b.size += util.Size(info.Size())
 	} else if info.Mode().Type()&os.ModeSymlink == os.ModeSymlink {
@@ -123,12 +216,12 @@ func (b *bundler) walkFunc(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("Error following symlink %s: %w", path, err)
 		}
-		targetInfo, err := os.Stat(targetPath)
+		targetInfo, err := b.fs.Stat(targetPath)
 		if err != nil {
 			return fmt.Errorf("Error getting target info for symlink %s: %w", targetPath, err)
 		}
 		if targetInfo.IsDir() {
-			dirEntries, err := os.ReadDir(targetPath)
+			dirEntries, err := afero.ReadDir(b.fs, targetPath)
 			if err != nil {
 				return err
 			}
@@ -156,7 +249,7 @@ func (b *bundler) walkFunc(path string, info fs.FileInfo, err error) error {
 	return nil
 }
 
-func (b *bundler) addDirectory(dir string) error {
+func (b *bundle) addDirectory(dir string) error {
 	err := b.walker.Walk(dir, b.walkFunc)
 	if err != nil {
 		return err
@@ -168,7 +261,7 @@ func (b *bundler) addDirectory(dir string) error {
 	return nil
 }
 
-func (b *bundler) addManifest() error {
+func (b *bundle) addManifest() error {
 	manifestJSON, err := b.manifest.ToJSON()
 	if err != nil {
 		return err
@@ -176,7 +269,7 @@ func (b *bundler) addManifest() error {
 	header := &tar.Header{
 		Name: ManifestFilename,
 		Size: int64(len(manifestJSON)),
-		Mode: 0660,
+		Mode: 0666,
 	}
 	err = b.archive.WriteHeader(header)
 	if err != nil {
@@ -186,94 +279,46 @@ func (b *bundler) addManifest() error {
 	return err
 }
 
-func NewManifestFromDirectory(dir string, walker Walker, logger rslog.Logger) (*Manifest, error) {
-	return NewBundleFromDirectory(dir, walker, nil, logger)
+type manifestWalker struct {
+	fs       afero.Fs
+	baseDir  string
+	manifest *Manifest
 }
 
-func NewBundleFromDirectory(dir string, walker Walker, dest io.Writer, logger rslog.Logger) (*Manifest, error) {
-	absDir, err := filepath.Abs(dir)
-	if err != nil {
-		return nil, err
+func newManifestWalker(fs afero.Fs, baseDir string, manifest *Manifest) *manifestWalker {
+	return &manifestWalker{
+		fs:       fs,
+		baseDir:  baseDir,
+		manifest: manifest,
 	}
-	logger.WithField("source_dir", absDir).Infof("Creating bundle from directory")
+}
 
-	var archive *tar.Writer
-	if dest != nil {
-		gzipper := gzip.NewWriter(dest)
-		defer gzipper.Close()
-
-		archive = tar.NewWriter(gzipper)
-		defer archive.Close()
-	}
-
-	oldWD, err := util.Chdir(dir)
+// Walk is an implementation of the Walker interface that traverses
+// only the files listed in the manifest Files section.
+// Walk Chdir's into the provided base directory since
+// manifest file paths are relative.
+func (w *manifestWalker) Walk(_ string, fn filepath.WalkFunc) error {
+	oldWD, err := util.Chdir(w.baseDir)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer util.Chdir(oldWD)
 
-	bundle := &bundler{
-		manifest:    NewManifest(),
-		walker:      walker,
-		archive:     archive,
-		logger:      logger,
-		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
+	// Copy file map since it may be (is) modified during traversal.
+	files := make(FileMap, len(w.manifest.Files))
+	for k, v := range w.manifest.Files {
+		files[k] = v
 	}
-
-	err = bundle.addDirectory(absDir)
-	if err != nil {
-		return nil, fmt.Errorf("Error creating bundle: %w", err)
-	}
-	bundle.manifest.Metadata.AppMode = "static" // TODO: pass this in
-	if dest != nil {
-		err = bundle.addManifest()
-		if err != nil {
-			return nil, err
+	for path := range files {
+		absPath, err := filepath.Abs(path)
+		var fileInfo fs.FileInfo
+		if err == nil {
+			fileInfo, err = w.fs.Stat(absPath)
 		}
-	}
-	return bundle.manifest, nil
-}
-
-func NewBundleFromManifest(manifestPath string, dest io.Writer, logger rslog.Logger) error {
-	manifest, err := ReadManifestFile(manifestPath)
-	if err != nil {
-		return err
-	}
-	dir := filepath.Dir(manifestPath)
-	absDir, err := filepath.Abs(dir)
-	if err != nil {
-		return err
-	}
-	logger.WithField("source_dir", absDir).Infof("Creating bundle from directory")
-
-	gzipper := gzip.NewWriter(dest)
-	defer gzipper.Close()
-
-	archive := tar.NewWriter(gzipper)
-	defer archive.Close()
-
-	bundle := &bundler{
-		manifest:    manifest,
-		walker:      nil,
-		archive:     archive,
-		logger:      logger,
-		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
-	}
-	oldWD, err := util.Chdir(dir)
-	if err != nil {
-		return err
-	}
-	defer util.Chdir(oldWD)
-
-	for path := range manifest.Files {
-		err = bundle.addFile(path)
+		err = fn(absPath, fileInfo, err)
 		if err != nil {
 			return fmt.Errorf("Error adding file '%s' to the bundle: %w", path, err)
 		}
-	}
-	err = bundle.addManifest()
-	if err != nil {
-		return fmt.Errorf("Error adding manifest to the bundle: %w", err)
 	}
 	return nil
 }
