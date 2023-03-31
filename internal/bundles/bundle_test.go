@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -137,6 +138,15 @@ type BundlerSuite struct {
 
 func TestBundlerSuite(t *testing.T) {
 	suite.Run(t, new(BundlerSuite))
+}
+
+func (s *BundlerSuite) SetupSuite() {
+	// Our testdata/bundle_dir needs to contain a non-regular
+	// file, but you can't check a fifo into git of course.
+	tarPath := filepath.Join(s.cwd, "testdata", "symlink_test", "fifo.tar")
+	cmd := exec.Command("tar", "xvf", tarPath)
+	err := cmd.Run()
+	s.Nil(err)
 }
 
 func (s *BundlerSuite) SetupTest() {
