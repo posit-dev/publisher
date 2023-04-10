@@ -1,0 +1,32 @@
+package publish
+
+// Copyright (C) 2023 by Posit Software, PBC.
+
+import (
+	"github.com/rstudio/connect-client/internal/apitypes"
+	"github.com/rstudio/connect-client/internal/publish/apptypes"
+	"github.com/spf13/afero"
+)
+
+type ContentType struct {
+	appMode    apptypes.AppMode
+	entrypoint apitypes.NullString
+	runtimes   []Runtime
+}
+
+// ContentTypeInferer infers as much as possible about the
+// provided content. If inference is succcessful, InferType
+// returns the content type. If it's not successful, it returns
+// (nil, nil), i.e. failing inference is not an error.
+// If there's an error during inferences, it returns (nil, err).
+type ContentTypeInferer interface {
+	InferType(fs afero.Fs, path string) (*ContentType, error)
+}
+
+type Runtime string
+
+const (
+	NoRuntime     Runtime = "none"
+	RRuntime      Runtime = "r"
+	PythonRuntime Runtime = "python"
+)
