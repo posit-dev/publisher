@@ -7,31 +7,34 @@ import (
 	"github.com/spf13/afero"
 )
 
-type FlaskDetector struct{}
+type FastAPIDetector struct{}
 
-var flaskImportNames = []string{
-	"flask", // also matches flask_api, flask_openapi3, etc.
-	"flasgger",
+var fastapiImportNames = []string{
+	"fastapi",
+	"quart",
+	"sanic",
+	"starlette",
+	"vetiver",
 }
 
-func (d *FlaskDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
+func (d *FastAPIDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
 	entrypoint, err := inferEntrypoint(fs, path, "*.py", "app.py")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint != "" {
-		isFlask, err := fileHasPythonImports(fs, entrypoint, flaskImportNames)
+		isFastAPI, err := fileHasPythonImports(fs, entrypoint, fastapiImportNames)
 		if err != nil {
 			return nil, err
 		}
-		if isFlask {
+		if isFastAPI {
 			return &ContentType{
 				entrypoint: entrypoint,
-				appMode:    apptypes.PythonAPIMode,
+				appMode:    apptypes.PythonFastAPIMode,
 				runtimes:   []Runtime{PythonRuntime},
 			}, nil
 		}
-		// else we didn't find a Flask import
+		// else we didn't find a FastAPI import
 	}
 	return nil, nil
 }

@@ -19,8 +19,9 @@ import (
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type baseBundleCmd struct {
-	Exclude   []string `short:"x" help:"list of file patterns to exclude."`
-	SourceDir string   `help:"Path to directory containing files to publish." arg:"" type:"existingdir"`
+	ContentType string   `short:"t" help:"Type of content begin deployed. Default is to auto detect."`
+	Exclude     []string `short:"x" help:"list of file patterns to exclude."`
+	SourceDir   string   `help:"Path to directory containing files to publish." arg:"" type:"existingdir"`
 }
 
 type CreateBundleCmd struct {
@@ -34,7 +35,7 @@ func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.ContentType, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ type WriteManifestCmd struct {
 }
 
 func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.ContentType, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -84,7 +85,7 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.ContentType, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}

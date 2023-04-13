@@ -11,7 +11,6 @@ import (
 )
 
 func fileHasPythonImports(fs afero.Fs, path string, packages []string) (bool, error) {
-
 	f, err := fs.Open(path)
 	if err != nil {
 		return false, err

@@ -3,14 +3,13 @@ package publish
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/publish/apptypes"
 	"github.com/spf13/afero"
 )
 
 type ContentType struct {
-	appMode    apptypes.AppMode
-	entrypoint apitypes.NullString
+	appMode    apptypes.ContentType
+	entrypoint string
 	runtimes   []Runtime
 }
 
@@ -29,4 +28,5 @@ const (
 	NoRuntime     Runtime = "none"
 	RRuntime      Runtime = "r"
 	PythonRuntime Runtime = "python"
+	QuartoRuntime Runtime = "quarto"
 )

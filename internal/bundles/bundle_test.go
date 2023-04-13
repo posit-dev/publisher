@@ -166,14 +166,14 @@ func (s *BundlerSuite) SetupTest() {
 
 func (s *BundlerSuite) TestNewBundlerForDirectory() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, []string{"*.log"}, logger)
+	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, "", []string{"*.log"}, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 }
 
 func (s *BundlerSuite) TestNewBundlerForDirectoryWalkerErr() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, []string{"[Z-A]"}, logger)
+	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, "", []string{"[Z-A]"}, logger)
 	s.NotNil(err)
 	s.Nil(bundler)
 }
@@ -218,7 +218,7 @@ func (s *BundlerSuite) TestCreateBundle() {
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, nil, logger)
+	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, "", nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -228,7 +228,7 @@ func (s *BundlerSuite) TestCreateBundle() {
 
 func (s *BundlerSuite) TestCreateBundleMissingDirectory() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundlerForDirectory(s.fs, "nonexistent", nil, logger)
+	bundler, err := NewBundlerForDirectory(s.fs, "nonexistent", "", nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 	dest := new(bytes.Buffer)
@@ -243,7 +243,7 @@ func (s *BundlerSuite) TestCreateBundleWalkError() {
 	testError := errors.New("test error from Walk")
 	walker.On("Walk", mock.Anything, mock.Anything).Return(testError)
 
-	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, nil, logger)
+	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, "", nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 	bundler.walker = walker
@@ -257,7 +257,7 @@ func (s *BundlerSuite) TestCreateBundleWalkError() {
 
 func (s *BundlerSuite) TestCreateBundleAddManifestError() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, nil, logger)
+	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, "", nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 
@@ -276,7 +276,7 @@ func (s *BundlerSuite) TestCreateManifest() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, nil, logger)
+	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, "", nil, logger)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
@@ -295,7 +295,7 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, nil, logger)
+	bundler, err := NewBundlerForDirectory(s.fs, s.cwd, "", nil, logger)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
@@ -392,7 +392,7 @@ func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundlerForDirectory(fs, dirPath, nil, logger)
+	bundler, err := NewBundlerForDirectory(fs, dirPath, "", nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -412,7 +412,7 @@ func (s *BundlerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundlerForDirectory(fs, dirPath, nil, logger)
+	bundler, err := NewBundlerForDirectory(fs, dirPath, "", nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.ErrorIs(err, os.ErrNotExist)

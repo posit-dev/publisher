@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 
 	"github.com/rstudio/connect-client/internal/debug"
+	"github.com/rstudio/connect-client/internal/publish/apptypes"
 	"github.com/rstudio/connect-client/internal/util"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -25,7 +26,7 @@ type Bundler interface {
 	CreateBundle(archive io.Writer) error
 }
 
-func NewBundlerForDirectory(fs afero.Fs, dir string, ignores []string, logger rslog.Logger) (*bundler, error) {
+func NewBundlerForDirectory(fs afero.Fs, dir string, userContentType string, ignores []string, logger rslog.Logger) (*bundler, error) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, err
@@ -34,8 +35,15 @@ func NewBundlerForDirectory(fs afero.Fs, dir string, ignores []string, logger rs
 	if err != nil {
 		return nil, fmt.Errorf("Error loading ignore list: %w", err)
 	}
+	manifest := NewManifest()
+	contentType, err := apptypes.ContentTypeFromString(userContentType)
+	if err != nil {
+		return nil, err
+	}
+	manifest.Metadata.AppMode = contentType
+
 	return &bundler{
-		manifest:    NewManifest(),
+		manifest:    manifest,
 		fs:          fs,
 		baseDir:     absDir,
 		walker:      walker,
@@ -122,7 +130,6 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error creating bundle: %w", err)
 	}
-	bundle.manifest.Metadata.AppMode = "static" // TODO: pass this in
 	if dest != nil {
 		err = bundle.addManifest()
 		if err != nil {

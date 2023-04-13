@@ -6,45 +6,35 @@ import (
 	"fmt"
 )
 
-// Well-known values for ContentCategory.
-const (
-	CategoryPlot = "plot"
-	CategoryBook = "book" // Deprecated; expect "site" now.
-	CategorySite = "site"
-	CategoryPin  = "pin"
-)
-
-type AppMode int32
+type ContentType string
 
 const (
-	UnknownMode AppMode = iota
-	ShinyMode
-	ShinyRmdMode
-	StaticRmdMode
-	StaticMode
-	PlumberAPIMode
-	TensorFlowModelAPI
-	StaticJupyterMode
-	PythonAPIMode
-	PythonDashMode
-	PythonStreamlitMode
-	PythonBokehMode
-	PythonFastAPIMode
-	ShinyQuartoMode
-	StaticQuartoMode
-	PythonShinyMode
-	JupyterVoilaMode
+	UnknownMode         ContentType = ""
+	ShinyMode           ContentType = "shiny"
+	ShinyRmdMode        ContentType = "rmd-shiny"
+	StaticRmdMode       ContentType = "rmd-static"
+	StaticMode          ContentType = "static"
+	PlumberAPIMode      ContentType = "api"
+	StaticJupyterMode   ContentType = "jupyter-static"
+	PythonAPIMode       ContentType = "python-api"
+	PythonDashMode      ContentType = "python-dash"
+	PythonStreamlitMode ContentType = "python-streamlit"
+	PythonBokehMode     ContentType = "python-bokeh"
+	PythonFastAPIMode   ContentType = "python-fastapi"
+	ShinyQuartoMode     ContentType = "quarto-shiny"
+	StaticQuartoMode    ContentType = "quarto-static"
+	PythonShinyMode     ContentType = "python-shiny"
+	JupyterVoilaMode    ContentType = "jupyter-voila"
 )
 
 // UserAppModes is an enumeration of all app modes that can come from the user
 // (it does not include UnknownMode).
-var UserAppModes = [...]AppMode{
+var UserAppModes = [...]ContentType{
 	ShinyMode,
 	ShinyRmdMode,
 	StaticRmdMode,
 	StaticMode,
 	PlumberAPIMode,
-	TensorFlowModelAPI,
 	StaticJupyterMode,
 	PythonAPIMode,
 	PythonDashMode,
@@ -57,100 +47,49 @@ var UserAppModes = [...]AppMode{
 	JupyterVoilaMode,
 }
 
-type UnknownAppModeError struct {
-	mode string
-}
-
-func (err UnknownAppModeError) Error() string {
-	return fmt.Sprintf("Unrecognized app mode: %s", err.mode)
-}
-
-// AppModeFromString return the app mode numeric value corresponding to the
+// ContentTypeFromString return the normalized string value corresponding to the
 // provided string. UnknownMode and an error are returned if the string does
-// not map to a known app mode.
-func AppModeFromString(s string) (AppMode, error) {
+// not map to a known content type.
+func ContentTypeFromString(s string) (ContentType, error) {
 	switch s {
 	// Plumber APIs were historically the only API type for Connect. With the
-	// addition of Python support, we now have multiple app modes that are
+	// addition of Python support, we now have multiple content types that are
 	// API content. Unfortunately, we have external dependencies that expect
-	// the specific `api` appMode string for Plumber.
-	case "api":
+	// the specific `api` string for Plumber.
+	case "api", "plumber":
 		return PlumberAPIMode, nil
 	case "shiny":
 		return ShinyMode, nil
-	case "rmd-shiny":
+	case "rmd-shiny", "shiny-rmd":
 		return ShinyRmdMode, nil
-	case "rmd-static":
+	case "rmd-static", "rmd", "rmarkdown":
 		return StaticRmdMode, nil
-	case "jupyter-static":
+	case "jupyter-static", "jupyter", "notebook":
 		return StaticJupyterMode, nil
-	case "static":
+	case "static", "html":
 		return StaticMode, nil
-	case "tensorflow-saved-model":
-		return TensorFlowModelAPI, nil
-	case "python-api":
+	case "python-api", "flask", "wsgi":
 		return PythonAPIMode, nil
-	case "python-dash":
+	case "python-dash", "dash":
 		return PythonDashMode, nil
-	case "python-streamlit":
+	case "python-streamlit", "streamlit":
 		return PythonStreamlitMode, nil
-	case "python-bokeh":
+	case "python-bokeh", "bokeh":
 		return PythonBokehMode, nil
-	case "python-fastapi":
+	case "python-fastapi", "fastapi", "asgi":
 		return PythonFastAPIMode, nil
-	case "python-shiny":
+	case "python-shiny", "pyshiny":
 		return PythonShinyMode, nil
 	case "quarto-shiny":
 		return ShinyQuartoMode, nil
-	case "quarto-static":
+	case "quarto-static", "quarto":
 		return StaticQuartoMode, nil
-	case "jupyter-voila":
+	case "jupyter-voila", "voila":
 		return JupyterVoilaMode, nil
+	case "":
+		return UnknownMode, nil
 	default:
-		return UnknownMode, UnknownAppModeError{
-			mode: s,
-		}
-	}
-}
-
-// AppModeToString reverses AppModeFromString; it is not AppMode#String()
-// because most times we want to treat AppMode as numeric.
-func AppModeToString(mode AppMode) string {
-	switch mode {
-	case PlumberAPIMode:
-		return "api"
-	case ShinyMode:
-		return "shiny"
-	case ShinyRmdMode:
-		return "rmd-shiny"
-	case StaticRmdMode:
-		return "rmd-static"
-	case StaticJupyterMode:
-		return "jupyter-static"
-	case StaticMode:
-		return "static"
-	case TensorFlowModelAPI:
-		return "tensorflow-saved-model"
-	case PythonAPIMode:
-		return "python-api"
-	case PythonDashMode:
-		return "python-dash"
-	case PythonStreamlitMode:
-		return "python-streamlit"
-	case PythonBokehMode:
-		return "python-bokeh"
-	case PythonFastAPIMode:
-		return "python-fastapi"
-	case PythonShinyMode:
-		return "python-shiny"
-	case ShinyQuartoMode:
-		return "quarto-shiny"
-	case StaticQuartoMode:
-		return "quarto-static"
-	case JupyterVoilaMode:
-		return "jupyter-voila"
-	default:
-		return "unknown"
+		return UnknownMode, fmt.Errorf("Unrecognized content type: %s", s)
 	}
 }
 
@@ -158,30 +97,29 @@ func AppModeToString(mode AppMode) string {
 // processes. This includes Shiny applications, interactive R Markdown
 // documents, Plumber/Python (flask/fastapi) APIs, and Python apps
 // (Dash, Streamlit, Bokeh, PyShiny, Voila).
-func (mode AppMode) IsWorkerApp() bool {
+func (mode ContentType) IsWorkerApp() bool {
 	return (mode.IsShinyApp() ||
 		mode.IsPythonApp() ||
-		mode.IsAPIApp() ||
-		mode.IsTensorFlowModelAPI())
+		mode.IsAPIApp())
 }
 
 // IsAPIApp returns true for any API apps (currently, Plumber, Flask, or FastAPI).
-func (mode AppMode) IsAPIApp() bool {
+func (mode ContentType) IsAPIApp() bool {
 	return mode.IsPlumberAPI() || mode.IsPythonAPI()
 }
 
 // IsPlumberAPI returns true for Plumber API applications.
-func (mode AppMode) IsPlumberAPI() bool {
+func (mode ContentType) IsPlumberAPI() bool {
 	return mode == PlumberAPIMode
 }
 
 // IsPythonAPI returns true for Python API applications.
-func (mode AppMode) IsPythonAPI() bool {
+func (mode ContentType) IsPythonAPI() bool {
 	return mode == PythonAPIMode || mode == PythonFastAPIMode
 }
 
 // IsPythonApp returns true for Python applications (Dash, Streamlit, Bokeh, Voila)
-func (mode AppMode) IsPythonApp() bool {
+func (mode ContentType) IsPythonApp() bool {
 	switch mode {
 	case PythonDashMode, PythonStreamlitMode, PythonShinyMode, PythonBokehMode, JupyterVoilaMode:
 		return true
@@ -191,70 +129,65 @@ func (mode AppMode) IsPythonApp() bool {
 
 // IsShinyApp returns true for Shiny applications and interactive R Markdown
 // documents.
-func (mode AppMode) IsShinyApp() bool {
-	return mode == ShinyMode || mode == ShinyRmdMode || mode == ShinyQuartoMode
+func (t ContentType) IsShinyApp() bool {
+	return t == ShinyMode || t == ShinyRmdMode || t == ShinyQuartoMode
 }
 
 // IsDashApp returns true for Python Dash applications
-func (mode AppMode) IsDashApp() bool {
-	return mode == PythonDashMode
+func (t ContentType) IsDashApp() bool {
+	return t == PythonDashMode
 }
 
 // IsStreamlitApp returns true for Python Streamlit applications
-func (mode AppMode) IsStreamlitApp() bool {
-	return mode == PythonStreamlitMode
+func (t ContentType) IsStreamlitApp() bool {
+	return t == PythonStreamlitMode
 }
 
 // IsBokehApp returns true for Python Bokeh applications
-func (mode AppMode) IsBokehApp() bool {
-	return mode == PythonBokehMode
+func (t ContentType) IsBokehApp() bool {
+	return t == PythonBokehMode
 }
 
 // IsFastAPIApp returns true for Python FastAPI applications
-func (mode AppMode) IsFastAPIApp() bool {
-	return mode == PythonFastAPIMode
+func (t ContentType) IsFastAPIApp() bool {
+	return t == PythonFastAPIMode
 }
 
 // IsPyShinyApp returns true for Python Shiny applications
-func (mode AppMode) IsPyShinyApp() bool {
+func (mode ContentType) IsPyShinyApp() bool {
 	return mode == PythonShinyMode
 }
 
 // IsVoilaApp returns true for Python Voila interactive notebooks
-func (mode AppMode) IsVoilaApp() bool {
+func (mode ContentType) IsVoilaApp() bool {
 	return mode == JupyterVoilaMode
 }
 
 // IsStaticRmd returns true for any non-interactive R Markdown content.
-func (mode AppMode) IsStaticRmd() bool {
+func (mode ContentType) IsStaticRmd() bool {
 	return mode == StaticRmdMode
 }
 
 // IsStaticJupyter returns true for any non-interactive Jupyter content.
-func (mode AppMode) IsStaticJupyter() bool {
-	return mode == StaticJupyterMode
+func (t ContentType) IsStaticJupyter() bool {
+	return t == StaticJupyterMode
 }
 
 // IsStaticReport returns true for any non-interactive R or Jupyter content.
-func (mode AppMode) IsStaticReport() bool {
-	return mode == StaticRmdMode || mode == StaticJupyterMode || mode == StaticQuartoMode
+func (t ContentType) IsStaticReport() bool {
+	return t == StaticRmdMode || t == StaticJupyterMode || t == StaticQuartoMode
 }
 
 // IsStaticContent returns true for any static content (deployed without
 // source).
-func (mode AppMode) IsStaticContent() bool {
-	return mode == StaticMode
-}
-
-// IsTensorFlowModelAPI returns true for any TensorFlow Model API (deployed without source)
-func (mode AppMode) IsTensorFlowModelAPI() bool {
-	return mode == TensorFlowModelAPI
+func (t ContentType) IsStaticContent() bool {
+	return t == StaticMode
 }
 
 // IsRContent returns true if R is the primary interpreter for this content
 // type.
-func (mode AppMode) IsRContent() bool {
-	switch mode {
+func (t ContentType) IsRContent() bool {
+	switch t {
 	case ShinyMode, ShinyRmdMode, StaticRmdMode, PlumberAPIMode:
 		return true
 	}
@@ -263,8 +196,8 @@ func (mode AppMode) IsRContent() bool {
 
 // IsPythonContent returns true if Python is the primary interpreter for this
 // content type.
-func (mode AppMode) IsPythonContent() bool {
-	switch mode {
+func (t ContentType) IsPythonContent() bool {
+	switch t {
 	case StaticJupyterMode, PythonAPIMode, PythonDashMode, PythonStreamlitMode, PythonBokehMode, PythonFastAPIMode, PythonShinyMode, JupyterVoilaMode:
 		return true
 	}
@@ -273,16 +206,16 @@ func (mode AppMode) IsPythonContent() bool {
 
 // IsQuartoContent return true if Quarto is the primary driver of this content
 // type.
-func (mode AppMode) IsQuartoContent() bool {
-	switch mode {
+func (t ContentType) IsQuartoContent() bool {
+	switch t {
 	case ShinyQuartoMode, StaticQuartoMode:
 		return true
 	}
 	return false
 }
 
-func (mode AppMode) Description() string {
-	switch mode {
+func (t ContentType) Description() string {
+	switch t {
 	case UnknownMode:
 		return "unknown content type"
 	case ShinyMode:
@@ -297,8 +230,6 @@ func (mode AppMode) Description() string {
 		return "static content"
 	case PlumberAPIMode:
 		return "Plumber API"
-	case TensorFlowModelAPI:
-		return "TensorFlow model"
 	case PythonAPIMode:
 		return "Python API"
 	case PythonDashMode:

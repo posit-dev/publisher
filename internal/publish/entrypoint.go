@@ -4,31 +4,47 @@ package publish
 
 import (
 	"path/filepath"
+	"strings"
 
-	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/spf13/afero"
 )
 
-func inferEntrypoint(fs afero.Fs, dir string, suffix string, preferredFilename string) (apitypes.NullString, error) {
-	matchingFiles, err := afero.Glob(fs, filepath.Join(dir, suffix))
+// inferEntrypoint looks for an entrypoint for the provided path.
+// If path is a file, it must end with the specified suffix to be the entrypoint.
+// If it's a directory, it specifies the deployment directory.
+// - If preferredFilename exists in the directory, it is the entrypoint.
+// - If there is only one file with the specified suffix, it is the entrypoint.
+func inferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, error) {
+	isDir, err := afero.IsDir(fs, path)
 	if err != nil {
-		return apitypes.NullString{}, err
+		return "", err
 	}
-	if len(matchingFiles) == 1 {
-		// This must be it
-		path := filepath.Join(dir, matchingFiles[0])
-		return apitypes.NewOptional(path), nil
-	} else {
-		preferredPath := filepath.Join(dir, preferredFilename)
-		exists, err := afero.Exists(fs, preferredPath)
+	if isDir {
+		matchingFiles, err := afero.Glob(fs, filepath.Join(path, suffix))
 		if err != nil {
-			return apitypes.NullString{}, err
+			return "", err
 		}
-		if exists {
+		if len(matchingFiles) == 1 {
+			// This must be it
+			return matchingFiles[0], nil
+		} else {
 			// Favor preferredFilename as an entrypoint
-			return apitypes.NewOptional(preferredPath), nil
+			preferredPath := filepath.Join(path, preferredFilename)
+			exists, err := afero.Exists(fs, preferredPath)
+			if err != nil {
+				return "", err
+			}
+			if exists {
+				return preferredFilename, nil
+			}
+			// else entrypoint is ambiguous
+			return "", nil
 		}
-		// else entrypoint is ambiguous
-		return apitypes.NullString{}, nil
+	} else {
+		fileSuffix := strings.ToLower(filepath.Ext(path))
+		if fileSuffix == suffix {
+			return filepath.Base(path), nil
+		}
 	}
+	return "", nil
 }
