@@ -17,7 +17,10 @@ _uid_args := if "{{ os() }}" == "Linux" {
     }
 
 build: _web
-   just _build
+    just _build
+
+dev: _web_build
+    just _build_dev
 
 certs:
     mkdir -p certs
@@ -40,6 +43,28 @@ test: _web
 [private]
 _build:
     {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client
+
+[private]
+_build_dev:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # translate `just` os/arch strings to the ones `go build` expects
+    os="{{ os() }}"
+    arch="{{ arch() }}"
+
+    # windows and linux strings match
+    if [[ "$os" == "macos" ]]; then
+        os=darwin
+    fi
+
+    if [[ "$arch" == "x86_64" ]]; then
+        arch=amd64
+    elif [[ "$arch" == "aarch64" ]]; then
+        arch=arm64
+    fi
+
+    {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client "$os/$arch"
 
 [private]
 _image:

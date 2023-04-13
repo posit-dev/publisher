@@ -15,5 +15,3 @@ test: build
 
 start:
     yarn start
-
-
