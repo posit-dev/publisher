@@ -27,6 +27,12 @@ your local machine for development and testing purposes.
 - [Just](https://just.systems)
 - [Docker](https://www.docker.com)
 
+If you are using an Apple Silicon (M1) laptop, you may need to set the following environment variable to force Docker Desktop to build amd64 images:
+
+```shell
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+```
+
 ### Running
 
 ```shell
