@@ -19,7 +19,7 @@ _uid_args := if "{{ os() }}" == "Linux" {
 build: _web
     just _build
 
-dev: _web_build
+build-dev: _web_build
     just _build_dev
 
 certs:
@@ -43,6 +43,10 @@ test: _web
 [private]
 _build:
     {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client
+
+[private]
+_web_build:
+    just web/ build
 
 [private]
 _build_dev:
