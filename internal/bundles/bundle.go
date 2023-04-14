@@ -26,7 +26,37 @@ type Bundler interface {
 	CreateBundle(archive io.Writer) error
 }
 
-func NewBundlerForDirectory(fs afero.Fs, dir string, userContentType string, ignores []string, logger rslog.Logger) (*bundler, error) {
+func newManifestFromUserInput(entrypoint string, userContentType string) (*Manifest, error) {
+	manifest := NewManifest()
+	contentType, err := apptypes.ContentTypeFromString(userContentType)
+	if err != nil {
+		return nil, err
+	}
+	manifest.Metadata.AppMode = contentType
+	manifest.Metadata.EntryPoint = entrypoint
+	switch contentType {
+	case apptypes.StaticMode:
+		manifest.Metadata.PrimaryHtml = entrypoint
+	case apptypes.StaticRmdMode, apptypes.ShinyRmdMode:
+		manifest.Metadata.PrimaryRmd = entrypoint
+	}
+	return manifest, nil
+}
+
+func NewBundler(fs afero.Fs, path string, entrypoint string, userContentType string, ignores []string, logger rslog.Logger) (*bundler, error) {
+	var dir string
+	var filename string
+	isDir, err := afero.IsDir(fs, path)
+	if err != nil {
+		return nil, err
+	}
+	if isDir {
+		dir = path
+		filename = ""
+	} else {
+		dir = filepath.Dir(path)
+		filename = filepath.Base(path)
+	}
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, err
@@ -35,17 +65,18 @@ func NewBundlerForDirectory(fs afero.Fs, dir string, userContentType string, ign
 	if err != nil {
 		return nil, fmt.Errorf("Error loading ignore list: %w", err)
 	}
-	manifest := NewManifest()
-	contentType, err := apptypes.ContentTypeFromString(userContentType)
+	if entrypoint == "" {
+		entrypoint = filename
+	}
+	manifest, err := newManifestFromUserInput(entrypoint, userContentType)
 	if err != nil {
 		return nil, err
 	}
-	manifest.Metadata.AppMode = contentType
-
 	return &bundler{
 		manifest:    manifest,
 		fs:          fs,
 		baseDir:     absDir,
+		filename:    filename,
 		walker:      walker,
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
@@ -66,6 +97,7 @@ func NewBundlerForManifest(fs afero.Fs, manifestPath string, logger rslog.Logger
 		manifest:    manifest,
 		fs:          fs,
 		baseDir:     absDir,
+		filename:    "",
 		walker:      newManifestWalker(fs, absDir, manifest),
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
@@ -75,6 +107,7 @@ func NewBundlerForManifest(fs afero.Fs, manifestPath string, logger rslog.Logger
 type bundler struct {
 	fs          afero.Fs  // Filesystem we are walking to get the files
 	baseDir     string    // Directory being bundled
+	filename    string    // Primary file being deployed
 	walker      Walker    // Ignore patterns from CLI and ignore files
 	manifest    *Manifest // Manifest describing the bundle, if provided
 	logger      rslog.Logger
@@ -130,12 +163,31 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error creating bundle: %w", err)
 	}
+	if b.filename != "" {
+		// Ensure that the main file was not excluded
+		_, ok := bundle.manifest.Files[b.filename]
+		if !ok {
+			path := filepath.Join(b.baseDir, b.filename)
+			info, err := b.fs.Stat(path)
+			if err != nil {
+				return nil, err
+			}
+			err = bundle.walkFunc(path, info, nil)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 	if dest != nil {
 		err = bundle.addManifest()
 		if err != nil {
 			return nil, err
 		}
 	}
+	b.logger.WithFields(rslog.Fields{
+		"files":       bundle.numFiles,
+		"total_bytes": bundle.size.ToInt64(),
+	}).Infof("Bundle created")
 	return bundle.manifest, nil
 }
 
@@ -261,10 +313,6 @@ func (b *bundle) addDirectory(dir string) error {
 	if err != nil {
 		return err
 	}
-	b.logger.WithFields(rslog.Fields{
-		"files":       b.numFiles,
-		"total_bytes": b.size.ToInt64(),
-	}).Infof("Bundle created")
 	return nil
 }
 

@@ -20,8 +20,9 @@ import (
 
 type baseBundleCmd struct {
 	ContentType string   `short:"t" help:"Type of content begin deployed. Default is to auto detect."`
+	Entrypoint  string   `help:"Entrypoint for the application. Usually it is the filename of the primary file. For Python Flask and FastAPI, it can be of the form module:object."`
 	Exclude     []string `short:"x" help:"list of file patterns to exclude."`
-	SourceDir   string   `help:"Path to directory containing files to publish." arg:"" type:"existingdir"`
+	Path        string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
 }
 
 type CreateBundleCmd struct {
@@ -35,7 +36,7 @@ func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.ContentType, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, cmd.Entrypoint, cmd.ContentType, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -48,7 +49,7 @@ type WriteManifestCmd struct {
 }
 
 func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.ContentType, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, cmd.Entrypoint, cmd.ContentType, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -56,7 +57,7 @@ func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	manifestPath := filepath.Join(cmd.SourceDir, bundles.ManifestFilename)
+	manifestPath := filepath.Join(cmd.Path, bundles.ManifestFilename)
 	ctx.Logger.Infof("Writing manifest to '%s'", manifestPath)
 	manifestJSON, err := manifest.ToJSON()
 	if err != nil {
@@ -85,7 +86,7 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundlerForDirectory(ctx.Fs, cmd.SourceDir, cmd.ContentType, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, cmd.Entrypoint, cmd.ContentType, cmd.Exclude, ctx.Logger)
 	if err != nil {
 		return err
 	}
