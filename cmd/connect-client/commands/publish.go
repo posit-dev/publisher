@@ -1,5 +1,7 @@
 package commands
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"fmt"
 	"net/url"
@@ -16,10 +18,8 @@ import (
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
-// Copyright (C) 2023 by Posit Software, PBC.
-
 type baseBundleCmd struct {
-	ContentType string   `short:"t" help:"Type of content begin deployed. Default is to auto detect."`
+	ContentType string   `short:"t" help:"Type of content being deployed. Default is to auto detect."`
 	Entrypoint  string   `help:"Entrypoint for the application. Usually it is the filename of the primary file. For Python Flask and FastAPI, it can be of the form module:object."`
 	Exclude     []string `short:"x" help:"list of file patterns to exclude."`
 	Path        string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
@@ -115,7 +115,7 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	}
 	taskLogger := ctx.Logger.WithFields(rslog.Fields{
 		"source":     "server deployment log",
-		"server":     account.Name,
+		"server":     account.URL,
 		"content_id": contentID,
 		"bundle_id":  bundleID,
 		"task_id":    taskID,
