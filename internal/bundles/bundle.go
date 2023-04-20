@@ -27,7 +27,7 @@ type Bundler interface {
 	CreateBundle(archive io.Writer) error
 }
 
-func newManifestFromUserInput(entrypoint string, userContentType string) (*Manifest, error) {
+func newManifestFromUserInput(entrypoint string, userContentType string, pythonVersion string) (*Manifest, error) {
 	manifest := NewManifest()
 	contentType, err := apptypes.ContentTypeFromString(userContentType)
 	if err != nil {
@@ -41,10 +41,19 @@ func newManifestFromUserInput(entrypoint string, userContentType string) (*Manif
 	case apptypes.StaticRmdMode, apptypes.ShinyRmdMode:
 		manifest.Metadata.PrimaryRmd = entrypoint
 	}
+	if pythonVersion != "" {
+		manifest.Python = &Python{
+			Version: pythonVersion,
+			PackageManager: PythonPackageManager{
+				Name:        "pip",
+				PackageFile: "requirements.txt",
+			},
+		}
+	}
 	return manifest, nil
 }
 
-func NewBundler(fs afero.Fs, path string, entrypoint string, userContentType string, ignores []string, logger rslog.Logger) (*bundler, error) {
+func NewBundler(fs afero.Fs, path string, entrypoint string, userContentType string, pythonVersion string, ignores []string, logger rslog.Logger) (*bundler, error) {
 	var dir string
 	var filename string
 	isDir, err := afero.IsDir(fs, path)
@@ -69,7 +78,7 @@ func NewBundler(fs afero.Fs, path string, entrypoint string, userContentType str
 	if entrypoint == "" {
 		entrypoint = filename
 	}
-	manifest, err := newManifestFromUserInput(entrypoint, userContentType)
+	manifest, err := newManifestFromUserInput(entrypoint, userContentType, pythonVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -161,8 +170,10 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 	defer util.Chdir(oldWD)
 
 	if bundle.manifest.Metadata.AppMode == apptypes.UnknownMode ||
-		bundle.manifest.Metadata.EntryPoint == "" {
-		// Auto-detect
+		(bundle.manifest.Metadata.EntryPoint == "" &&
+			bundle.manifest.Metadata.PrimaryRmd == "" &&
+			bundle.manifest.Metadata.PrimaryHtml == "") {
+		b.logger.Infof("Detecting content type...")
 		typeDetector := publish.NewContentTypeDetector()
 
 		// TODO: implement a filtered FS using the ignore list
@@ -175,9 +186,11 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 		}
 		if bundle.manifest.Metadata.AppMode == apptypes.UnknownMode {
 			bundle.manifest.Metadata.AppMode = contentType.AppMode
+			b.logger.Infof("Detected content type: '%s'", contentType.AppMode)
 		}
 		if bundle.manifest.Metadata.EntryPoint == "" {
 			bundle.manifest.Metadata.EntryPoint = contentType.Entrypoint
+			b.logger.Infof("Detected entrypoint: '%s'", contentType.Entrypoint)
 		}
 	}
 	err = bundle.addDirectory(b.baseDir)

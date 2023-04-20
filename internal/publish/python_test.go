@@ -56,7 +56,7 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 	filename := "myapp.py"
 	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, filename, []byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
+	err := afero.WriteFile(fs, filename, []byte("# import some stuffimport flask\napp = flask.Flask(__name__)\n"), 0600)
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
