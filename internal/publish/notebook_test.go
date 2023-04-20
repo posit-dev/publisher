@@ -62,7 +62,6 @@ func notebookWithCell(cellContent string) []byte {
 			"nbformat_minor": 2
 		   }
 	`, string(content))
-	fmt.Println(fileContent)
 	return []byte(fileContent)
 }
 
