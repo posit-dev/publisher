@@ -7,7 +7,15 @@ import (
 	"github.com/spf13/afero"
 )
 
-type FlaskDetector struct{}
+type FlaskDetector struct {
+	inferenceHelper
+}
+
+func NewFlaskDetector() *FlaskDetector {
+	return &FlaskDetector{
+		defaultInferenceHelper{},
+	}
+}
 
 var flaskImportNames = []string{
 	"flask", // also matches flask_api, flask_openapi3, etc.
@@ -15,12 +23,12 @@ var flaskImportNames = []string{
 }
 
 func (d *FlaskDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := inferEntrypoint(fs, path, ".py", "app.py")
+	entrypoint, err := d.InferEntrypoint(fs, path, ".py", "app.py")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint != "" {
-		isFlask, err := fileHasPythonImports(fs, entrypoint, flaskImportNames)
+		isFlask, err := d.FileHasPythonImports(fs, entrypoint, flaskImportNames)
 		if err != nil {
 			return nil, err
 		}

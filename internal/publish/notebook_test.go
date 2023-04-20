@@ -97,7 +97,7 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 	err := afero.WriteFile(fs, filename, notebookWithCell("import sys\nprint(sys.executable)\n"), 0600)
 	s.Nil(err)
 
-	detector := NotebookDetector{}
+	detector := NewNotebookDetector()
 	t, err := detector.InferType(fs, filename)
 	s.Nil(err)
 	s.Equal(&ContentType{
@@ -113,7 +113,7 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 	err := afero.WriteFile(fs, filename, notebookWithCell("import ipywidgets\nprint('hello')\n"), 0600)
 	s.Nil(err)
 
-	detector := NotebookDetector{}
+	detector := NewNotebookDetector()
 	t, err := detector.InferType(fs, filename)
 	s.Nil(err)
 	s.Equal(&ContentType{
@@ -129,7 +129,7 @@ func (s *NotebookDetectorSuite) TestInferTypeNonNotebook() {
 	err := afero.WriteFile(fs, filename, notebookWithCell("import ipywidgets\nprint('hello')\n"), 0600)
 	s.Nil(err)
 
-	detector := NotebookDetector{}
+	detector := NewNotebookDetector()
 	t, err := detector.InferType(fs, filename)
 	s.Nil(err)
 	s.Nil(t)
@@ -138,7 +138,7 @@ func (s *NotebookDetectorSuite) TestInferTypeNonNotebook() {
 func (s *NotebookDetectorSuite) TestInferTypeFsErr() {
 	filename := "my_notebook.ipynb"
 	fs := afero.NewMemMapFs()
-	detector := NotebookDetector{}
+	detector := NewNotebookDetector()
 	t, err := detector.InferType(fs, filename)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
@@ -152,7 +152,7 @@ func (s *NotebookDetectorSuite) TestInferTypeBadNotebook() {
 	err := afero.WriteFile(fs, filename, []byte("import ipywidgets\nprint('hello')\n"), 0600)
 	s.Nil(err)
 
-	detector := NotebookDetector{}
+	detector := NewNotebookDetector()
 	t, err := detector.InferType(fs, filename)
 	s.NotNil(err)
 	s.Nil(t)

@@ -7,7 +7,15 @@ import (
 	"github.com/spf13/afero"
 )
 
-type FastAPIDetector struct{}
+type FastAPIDetector struct {
+	inferenceHelper
+}
+
+func NewFastAPIDetector() *FastAPIDetector {
+	return &FastAPIDetector{
+		defaultInferenceHelper{},
+	}
+}
 
 var fastapiImportNames = []string{
 	"fastapi",
@@ -18,12 +26,12 @@ var fastapiImportNames = []string{
 }
 
 func (d *FastAPIDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := inferEntrypoint(fs, path, ".py", "app.py")
+	entrypoint, err := d.InferEntrypoint(fs, path, ".py", "app.py")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint != "" {
-		isFastAPI, err := fileHasPythonImports(fs, entrypoint, fastapiImportNames)
+		isFastAPI, err := d.FileHasPythonImports(fs, entrypoint, fastapiImportNames)
 		if err != nil {
 			return nil, err
 		}

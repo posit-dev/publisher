@@ -7,15 +7,23 @@ import (
 	"github.com/spf13/afero"
 )
 
-type StaticHTMLDetector struct{}
+type StaticHTMLDetector struct {
+	inferenceHelper
+}
+
+func NewStaticHTMLDetector() *StaticHTMLDetector {
+	return &StaticHTMLDetector{
+		defaultInferenceHelper{},
+	}
+}
 
 func (d *StaticHTMLDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := inferEntrypoint(fs, path, ".html", "index.html")
+	entrypoint, err := d.InferEntrypoint(fs, path, ".html", "index.html")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint == "" {
-		entrypoint, err = inferEntrypoint(fs, path, ".htm", "index.htm")
+		entrypoint, err = d.InferEntrypoint(fs, path, ".htm", "index.htm")
 		if err != nil {
 			return nil, err
 		}

@@ -18,13 +18,14 @@ func TestEntrypointSuite(t *testing.T) {
 	suite.Run(t, new(EntrypointSuite))
 }
 
-// func inferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, error) {
+// func InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, error) {
 func (s *EntrypointSuite) TestInferEntrypointSpecifiedFile() {
 	fs := afero.NewMemMapFs()
 	err := afero.WriteFile(fs, "app.py", []byte{}, 0600)
 	s.Nil(err)
 
-	entrypoint, err := inferEntrypoint(fs, "app.py", ".py", "app.py")
+	h := defaultInferenceHelper{}
+	entrypoint, err := h.InferEntrypoint(fs, "app.py", ".py", "app.py")
 	s.Nil(err)
 	s.Equal("app.py", entrypoint)
 }
@@ -36,7 +37,8 @@ func (s *EntrypointSuite) TestInferEntrypointMatchingPreferredFileAndAnother() {
 	err = afero.WriteFile(fs, "mylib.py", []byte{}, 0600)
 	s.Nil(err)
 
-	entrypoint, err := inferEntrypoint(fs, ".", ".py", "app.py")
+	h := defaultInferenceHelper{}
+	entrypoint, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
 	s.Nil(err)
 	s.Equal("app.py", entrypoint)
 }
@@ -46,7 +48,8 @@ func (s *EntrypointSuite) TestInferEntrypointNonMatchingFile() {
 	err := afero.WriteFile(fs, "app.py", []byte{}, 0600)
 	s.Nil(err)
 
-	entrypoint, err := inferEntrypoint(fs, "app.py", ".ipynb", "index.ipynb")
+	h := defaultInferenceHelper{}
+	entrypoint, err := h.InferEntrypoint(fs, "app.py", ".ipynb", "index.ipynb")
 	s.Nil(err)
 	s.Equal("", entrypoint)
 }
@@ -56,7 +59,8 @@ func (s *EntrypointSuite) TestInferEntrypointOnlyMatchingFile() {
 	err := afero.WriteFile(fs, "myapp.py", []byte{}, 0600)
 	s.Nil(err)
 
-	entrypoint, err := inferEntrypoint(fs, ".", ".py", "app.py")
+	h := defaultInferenceHelper{}
+	entrypoint, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
 	s.Nil(err)
 	s.Equal("myapp.py", entrypoint)
 }
@@ -68,7 +72,8 @@ func (s *EntrypointSuite) TestInferEntrypointMultipleMatchingFiles() {
 	err = afero.WriteFile(fs, "mylib.py", []byte{}, 0600)
 	s.Nil(err)
 
-	entrypoint, err := inferEntrypoint(fs, ".", ".py", "app.py")
+	h := defaultInferenceHelper{}
+	entrypoint, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
 	s.Nil(err)
 	s.Equal("", entrypoint)
 }

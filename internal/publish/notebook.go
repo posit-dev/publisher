@@ -13,7 +13,15 @@ import (
 	"github.com/spf13/afero"
 )
 
-type NotebookDetector struct{}
+type NotebookDetector struct {
+	inferenceHelper
+}
+
+func NewNotebookDetector() *NotebookDetector {
+	return &NotebookDetector{
+		defaultInferenceHelper{},
+	}
+}
 
 var voilaImportNames = []string{
 	"ipywidgets",
@@ -28,7 +36,7 @@ var voilaImportNames = []string{
 }
 
 func (d *NotebookDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := inferEntrypoint(fs, path, ".ipynb", "index.ipynb")
+	entrypoint, err := d.InferEntrypoint(fs, path, ".ipynb", "index.ipynb")
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +45,7 @@ func (d *NotebookDetector) InferType(fs afero.Fs, path string) (*ContentType, er
 		if err != nil {
 			return nil, err
 		}
-		isVoila, err := hasPythonImports(strings.NewReader(code), voilaImportNames)
+		isVoila, err := d.HasPythonImports(strings.NewReader(code), voilaImportNames)
 		if err != nil {
 			return nil, err
 		}

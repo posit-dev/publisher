@@ -10,16 +10,16 @@ import (
 	"github.com/spf13/afero"
 )
 
-func fileHasPythonImports(fs afero.Fs, path string, packages []string) (bool, error) {
+func (h defaultInferenceHelper) FileHasPythonImports(fs afero.Fs, path string, packages []string) (bool, error) {
 	f, err := fs.Open(path)
 	if err != nil {
 		return false, err
 	}
 	defer f.Close()
-	return hasPythonImports(f, packages)
+	return h.HasPythonImports(f, packages)
 }
 
-func hasPythonImports(r io.Reader, packages []string) (bool, error) {
+func (h defaultInferenceHelper) HasPythonImports(r io.Reader, packages []string) (bool, error) {
 	contents, err := io.ReadAll(r)
 	if err != nil {
 		return false, err

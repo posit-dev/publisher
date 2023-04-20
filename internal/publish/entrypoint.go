@@ -9,12 +9,14 @@ import (
 	"github.com/spf13/afero"
 )
 
+type defaultInferenceHelper struct{}
+
 // inferEntrypoint looks for an entrypoint for the provided path.
 // If path is a file, it must end with the specified suffix to be the entrypoint.
 // If it's a directory, it specifies the deployment directory.
 // - If preferredFilename exists in the directory, it is the entrypoint.
 // - If there is only one file with the specified suffix, it is the entrypoint.
-func inferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, error) {
+func (h defaultInferenceHelper) InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, error) {
 	isDir, err := afero.IsDir(fs, path)
 	if err != nil {
 		return "", err
