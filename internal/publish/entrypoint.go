@@ -20,7 +20,7 @@ func inferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename 
 		return "", err
 	}
 	if isDir {
-		matchingFiles, err := afero.Glob(fs, filepath.Join(path, suffix))
+		matchingFiles, err := afero.Glob(fs, filepath.Join(path, "*"+suffix))
 		if err != nil {
 			return "", err
 		}

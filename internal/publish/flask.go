@@ -15,7 +15,7 @@ var flaskImportNames = []string{
 }
 
 func (d *FlaskDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := inferEntrypoint(fs, path, "*.py", "app.py")
+	entrypoint, err := inferEntrypoint(fs, path, ".py", "app.py")
 	if err != nil {
 		return nil, err
 	}

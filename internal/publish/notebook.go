@@ -28,7 +28,7 @@ var voilaImportNames = []string{
 }
 
 func (d *NotebookDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := inferEntrypoint(fs, path, "*.ipynb", "index.ipynb")
+	entrypoint, err := inferEntrypoint(fs, path, ".ipynb", "index.ipynb")
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func getNotebookInputs(r io.Reader) (string, error) {
 		return "", err
 	}
 	cells, ok := notebookContents["cells"].([]any)
-	if !ok {
+	if !ok || len(cells) == 0 {
 		return "", errNoCellsInNotebook
 	}
 	combinedSource := []string{}

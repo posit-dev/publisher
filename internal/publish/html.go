@@ -10,12 +10,12 @@ import (
 type StaticHTMLDetector struct{}
 
 func (d *StaticHTMLDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := inferEntrypoint(fs, path, "*.html", "index.html")
+	entrypoint, err := inferEntrypoint(fs, path, ".html", "index.html")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint == "" {
-		entrypoint, err = inferEntrypoint(fs, path, "*.htm", "index.htm")
+		entrypoint, err = inferEntrypoint(fs, path, ".htm", "index.htm")
 		if err != nil {
 			return nil, err
 		}

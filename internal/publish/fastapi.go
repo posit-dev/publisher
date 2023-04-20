@@ -18,7 +18,7 @@ var fastapiImportNames = []string{
 }
 
 func (d *FastAPIDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := inferEntrypoint(fs, path, "*.py", "app.py")
+	entrypoint, err := inferEntrypoint(fs, path, ".py", "app.py")
 	if err != nil {
 		return nil, err
 	}
