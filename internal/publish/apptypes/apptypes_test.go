@@ -20,7 +20,7 @@ func TestAppTypesSuite(t *testing.T) {
 
 func (s *AppTypesSuite) TestAppMode() {
 	for _, each := range []struct {
-		Mode ContentType
+		Mode AppMode
 		// primary interpreter inference checks
 		RContent      bool
 		PythonContent bool
@@ -407,7 +407,7 @@ func (s *AppTypesSuite) TestAppMode() {
 func (s *AppTypesSuite) TestAppModeStrings() {
 	// Check well-known values
 	for _, each := range []struct {
-		Mode   ContentType
+		Mode   AppMode
 		String string
 	}{
 		{ShinyMode, "shiny"},
@@ -443,7 +443,7 @@ func (s *AppTypesSuite) TestAppModeStrings() {
 
 func (s *AppTypesSuite) TestDescription() {
 	for _, each := range []struct {
-		Mode        ContentType
+		Mode        AppMode
 		Description string
 	}{
 		{UnknownMode, "unknown content type"},

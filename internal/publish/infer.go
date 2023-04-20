@@ -10,7 +10,7 @@ import (
 )
 
 type ContentType struct {
-	AppMode    apptypes.ContentType
+	AppMode    apptypes.AppMode
 	Entrypoint string
 	Runtimes   []Runtime
 }

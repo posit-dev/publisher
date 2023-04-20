@@ -3,37 +3,83 @@ package publish
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
-	"io"
-	"regexp"
-
+	"github.com/rstudio/connect-client/internal/publish/apptypes"
 	"github.com/spf13/afero"
 )
 
-func (h defaultInferenceHelper) FileHasPythonImports(fs afero.Fs, path string, packages []string) (bool, error) {
-	f, err := fs.Open(path)
-	if err != nil {
-		return false, err
-	}
-	defer f.Close()
-	return h.HasPythonImports(f, packages)
+type PythonAppDetector struct {
+	inferenceHelper
+	appMode apptypes.AppMode
+	imports []string
 }
 
-func (h defaultInferenceHelper) HasPythonImports(r io.Reader, packages []string) (bool, error) {
-	contents, err := io.ReadAll(r)
-	if err != nil {
-		return false, err
+func NewPythonAppDetector(appMode apptypes.AppMode, imports []string) *PythonAppDetector {
+	return &PythonAppDetector{
+		inferenceHelper: defaultInferenceHelper{},
+		appMode:         appMode,
+		imports:         imports,
 	}
+}
 
-	for _, pkg := range packages {
-		packageRe := fmt.Sprintf("import %s|from %s.* import", pkg, pkg)
-		matched, err := regexp.Match(packageRe, contents)
-		if err != nil {
-			return false, err
-		}
-		if matched {
-			return true, nil
-		}
+func NewFlaskDetector() *PythonAppDetector {
+	return NewPythonAppDetector(apptypes.PythonAPIMode, []string{
+		"flask", // also matches flask_api, flask_openapi3, etc.
+		"flasgger",
+	})
+}
+
+func NewFastAPIDetector() *PythonAppDetector {
+	return NewPythonAppDetector(apptypes.PythonFastAPIMode, []string{
+		"fastapi",
+		"quart",
+		"sanic",
+		"starlette",
+		"vetiver",
+	})
+}
+
+func NewDashDetector() *PythonAppDetector {
+	return NewPythonAppDetector(apptypes.PythonDashMode, []string{
+		"dash", // also matches dash_core_components, dash_bio, etc.
+	})
+}
+
+func NewStreamlitDetector() *PythonAppDetector {
+	return NewPythonAppDetector(apptypes.PythonStreamlitMode, []string{
+		"streamlit",
+	})
+}
+
+func NewBokehDetector() *PythonAppDetector {
+	return NewPythonAppDetector(apptypes.PythonBokehMode, []string{
+		"bokeh",
+	})
+}
+
+func NewPyShinyDetector() *PythonAppDetector {
+	return NewPythonAppDetector(apptypes.PythonShinyMode, []string{
+		"shiny",
+	})
+}
+
+func (d *PythonAppDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
+	entrypoint, entrypointPath, err := d.InferEntrypoint(fs, path, ".py", "app.py")
+	if err != nil {
+		return nil, err
 	}
-	return false, nil
+	if entrypoint != "" {
+		matches, err := d.FileHasPythonImports(fs, entrypointPath, d.imports)
+		if err != nil {
+			return nil, err
+		}
+		if matches {
+			return &ContentType{
+				Entrypoint: entrypoint,
+				AppMode:    d.appMode,
+				Runtimes:   []Runtime{PythonRuntime},
+			}, nil
+		}
+		// else we didn't find a matching import
+	}
+	return nil, nil
 }

@@ -36,12 +36,12 @@ type Manifest struct {
 
 // Metadata contains details about this deployment (type, etc).
 type Metadata struct {
-	AppMode         apptypes.ContentType `json:"appmode"`          // Selects the runtime for this content.
-	ContentCategory string               `json:"content_category"` // A refinement of the AppMode used by plots and sites
-	EntryPoint      string               `json:"entrypoint"`       // The main file being deployed.
-	PrimaryRmd      string               `json:"primary_rmd"`      // Obsolete - see EntryPoint. The rendering target for Rmd deployments
-	PrimaryHtml     string               `json:"primary_html"`     // Obsolete - see EntryPoint. The default document for static deployments
-	HasParameters   bool                 `json:"has_parameters"`   // True if this is content allows parameter customization.
+	AppMode         apptypes.AppMode `json:"appmode"`          // Selects the runtime for this content.
+	ContentCategory string           `json:"content_category"` // A refinement of the AppMode used by plots and sites
+	EntryPoint      string           `json:"entrypoint"`       // The main file being deployed.
+	PrimaryRmd      string           `json:"primary_rmd"`      // Obsolete - see EntryPoint. The rendering target for Rmd deployments
+	PrimaryHtml     string           `json:"primary_html"`     // Obsolete - see EntryPoint. The default document for static deployments
+	HasParameters   bool             `json:"has_parameters"`   // True if this is content allows parameter customization.
 }
 
 type Environment struct {

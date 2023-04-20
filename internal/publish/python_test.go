@@ -4,9 +4,9 @@ package publish
 
 import (
 	"errors"
-	"strings"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/publish/apptypes"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -21,109 +21,89 @@ func TestPythonSuite(t *testing.T) {
 	suite.Run(t, new(PythonSuite))
 }
 
-func (s *PythonSuite) TestFileHasPythonImports() {
+func (s *PythonSuite) TestInferTypeSpecifiedFile() {
+	filename := "myapp.py"
 	fs := afero.NewMemMapFs()
-	afero.WriteFile(fs, "test.py", []byte("import flask"), 0600)
-
-	h := defaultInferenceHelper{}
-	isFlask, err := h.FileHasPythonImports(fs, "test.py", []string{"flask"})
+	err := afero.WriteFile(fs, filename, []byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
 	s.Nil(err)
-	s.True(isFlask)
+
+	detector := NewFlaskDetector()
+	t, err := detector.InferType(fs, filename)
+	s.Nil(err)
+	s.Equal(&ContentType{
+		AppMode:    apptypes.PythonAPIMode,
+		Entrypoint: filename,
+		Runtimes:   []Runtime{PythonRuntime},
+	}, t)
 }
 
-func (s *PythonSuite) TestFileHasPythonImportsOpenErr() {
-	fs := utiltest.NewMockFs()
-	testError := errors.New("test error from Open")
-	fs.On("Open", mock.Anything).Return(nil, testError)
+func (s *PythonSuite) TestInferTypePreferredFilename() {
+	filename := "app.py"
+	fs := afero.NewMemMapFs()
+	err := afero.WriteFile(fs, filename, []byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
+	s.Nil(err)
 
-	h := defaultInferenceHelper{}
-	isFlask, err := h.FileHasPythonImports(fs, "test.py", []string{"flask"})
+	detector := NewFlaskDetector()
+	t, err := detector.InferType(fs, ".")
+	s.Nil(err)
+	s.Equal(&ContentType{
+		AppMode:    apptypes.PythonAPIMode,
+		Entrypoint: filename,
+		Runtimes:   []Runtime{PythonRuntime},
+	}, t)
+}
+
+func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
+	filename := "myapp.py"
+	fs := afero.NewMemMapFs()
+	err := afero.WriteFile(fs, filename, []byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
+	s.Nil(err)
+
+	detector := NewFlaskDetector()
+	t, err := detector.InferType(fs, ".")
+	s.Nil(err)
+	s.Equal(&ContentType{
+		AppMode:    apptypes.PythonAPIMode,
+		Entrypoint: filename,
+		Runtimes:   []Runtime{PythonRuntime},
+	}, t)
+}
+
+func (s *PythonSuite) TestInferTypeNotFlask() {
+	filename := "app.py"
+	fs := afero.NewMemMapFs()
+	err := afero.WriteFile(fs, filename, []byte("import dash\n"), 0600)
+	s.Nil(err)
+
+	detector := NewFlaskDetector()
+	t, err := detector.InferType(fs, ".")
+	s.Nil(err)
+	s.Nil(t)
+}
+
+func (s *PythonSuite) TestInferTypeEntrypointErr() {
+	inferrer := &MockInferenceHelper{}
+	testError := errors.New("test error from InferEntrypoint")
+	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", "", testError)
+
+	detector := NewFlaskDetector()
+	detector.inferenceHelper = inferrer
+	t, err := detector.InferType(utiltest.NewMockFs(), ".")
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
-	s.False(isFlask)
+	s.Nil(t)
 }
 
-func (s *PythonSuite) TestHasPythonImports() {
-	r := strings.NewReader("import flask")
-	h := defaultInferenceHelper{}
-	isFlask, err := h.HasPythonImports(r, []string{"flask"})
-	s.Nil(err)
-	s.True(isFlask)
-}
+func (s *PythonSuite) TestInferTypeHasImportsErr() {
+	inferrer := &MockInferenceHelper{}
+	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("app.py", "app.py", nil)
+	testError := errors.New("test error from FileHasPythonImports")
+	inferrer.On("FileHasPythonImports", mock.Anything, mock.Anything, mock.Anything).Return(false, testError)
 
-func (s *PythonSuite) TestHasPythonImportsFrom() {
-	r := strings.NewReader("from flask import api")
-	h := defaultInferenceHelper{}
-	isFlask, err := h.HasPythonImports(r, []string{"flask"})
-	s.Nil(err)
-	s.True(isFlask)
-}
-
-func (s *PythonSuite) TestHasPythonImportsSubpackage() {
-	r := strings.NewReader("import flask.api")
-	h := defaultInferenceHelper{}
-	isFlask, err := h.HasPythonImports(r, []string{"flask"})
-	s.Nil(err)
-	s.True(isFlask)
-}
-
-func (s *PythonSuite) TestHasPythonImportsFromSubpackage() {
-	r := strings.NewReader("from flask.api import foo")
-	h := defaultInferenceHelper{}
-	isFlask, err := h.HasPythonImports(r, []string{"flask"})
-	s.Nil(err)
-	s.True(isFlask)
-}
-
-func (s *PythonSuite) TestFileHasPythonImportsRelatedPackage() {
-	fs := afero.NewMemMapFs()
-	afero.WriteFile(fs, "test.py", []byte("import flask_api"), 0600)
-	h := defaultInferenceHelper{}
-	isFlask, err := h.FileHasPythonImports(fs, "test.py", []string{"flask"})
-	s.Nil(err)
-	s.True(isFlask)
-}
-
-func (s *PythonSuite) TestFileHasPythonImportsFromRelatedPackage() {
-	fs := afero.NewMemMapFs()
-	afero.WriteFile(fs, "test.py", []byte("from flask_api import foo"), 0600)
-	h := defaultInferenceHelper{}
-	isFlask, err := h.FileHasPythonImports(fs, "test.py", []string{"flask"})
-	s.Nil(err)
-	s.True(isFlask)
-}
-
-func (s *PythonSuite) TestHasPythonImportsNotPresent() {
-	r := strings.NewReader("import dash")
-	h := defaultInferenceHelper{}
-	isFlask, err := h.HasPythonImports(r, []string{"flask"})
-	s.Nil(err)
-	s.False(isFlask)
-}
-
-func (s *PythonSuite) TestHasPythonImportsMultiple() {
-	r := strings.NewReader("import dash")
-	h := defaultInferenceHelper{}
-	isDash, err := h.HasPythonImports(r, []string{"dash_core_components", "dash"})
-	s.Nil(err)
-	s.True(isDash)
-}
-
-func (s *PythonSuite) TestHasPythonImportsReadErr() {
-	r := utiltest.NewMockReader()
-	testError := errors.New("test error from Read")
-	r.On("Read", mock.Anything).Return(0, testError)
-	h := defaultInferenceHelper{}
-	isFlask, err := h.HasPythonImports(r, []string{""})
+	detector := NewFlaskDetector()
+	detector.inferenceHelper = inferrer
+	t, err := detector.InferType(utiltest.NewMockFs(), ".")
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
-	s.False(isFlask)
-}
-
-func (s *PythonSuite) TestHasPythonImportsRegexpErr() {
-	r := strings.NewReader("")
-	h := defaultInferenceHelper{}
-	isFlask, err := h.HasPythonImports(r, []string{"("})
-	s.NotNil(err)
-	s.False(isFlask)
+	s.Nil(t)
 }

@@ -163,7 +163,7 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 	if bundle.manifest.Metadata.AppMode == apptypes.UnknownMode ||
 		bundle.manifest.Metadata.EntryPoint == "" {
 		// Auto-detect
-		typeDetector := publish.NewAutoContentTyper()
+		typeDetector := publish.NewContentTypeDetector()
 
 		// TODO: implement a filtered FS using the ignore list
 		// and use that when auto detecting, so we don't consider
