@@ -10,9 +10,9 @@ import (
 )
 
 type ContentType struct {
-	appMode    apptypes.ContentType
-	entrypoint string
-	runtimes   []Runtime
+	AppMode    apptypes.ContentType
+	Entrypoint string
+	Runtimes   []Runtime
 }
 
 // ContentTypeInferer infers as much as possible about the
@@ -25,7 +25,7 @@ type ContentTypeInferer interface {
 }
 
 type inferenceHelper interface {
-	InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, error)
+	InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, string, error)
 	HasPythonImports(r io.Reader, packages []string) (bool, error)
 	FileHasPythonImports(fs afero.Fs, path string, packages []string) (bool, error)
 }

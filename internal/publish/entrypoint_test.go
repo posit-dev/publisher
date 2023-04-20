@@ -3,6 +3,7 @@ package publish
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -18,16 +19,16 @@ func TestEntrypointSuite(t *testing.T) {
 	suite.Run(t, new(EntrypointSuite))
 }
 
-// func InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, error) {
 func (s *EntrypointSuite) TestInferEntrypointSpecifiedFile() {
 	fs := afero.NewMemMapFs()
 	err := afero.WriteFile(fs, "app.py", []byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, err := h.InferEntrypoint(fs, "app.py", ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(fs, "app.py", ".py", "app.py")
 	s.Nil(err)
 	s.Equal("app.py", entrypoint)
+	s.Equal("app.py", filepath.Base(entrypointPath))
 }
 
 func (s *EntrypointSuite) TestInferEntrypointMatchingPreferredFileAndAnother() {
@@ -38,9 +39,10 @@ func (s *EntrypointSuite) TestInferEntrypointMatchingPreferredFileAndAnother() {
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
 	s.Nil(err)
 	s.Equal("app.py", entrypoint)
+	s.Equal("app.py", filepath.Base(entrypointPath))
 }
 
 func (s *EntrypointSuite) TestInferEntrypointNonMatchingFile() {
@@ -49,9 +51,10 @@ func (s *EntrypointSuite) TestInferEntrypointNonMatchingFile() {
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, err := h.InferEntrypoint(fs, "app.py", ".ipynb", "index.ipynb")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(fs, "app.py", ".ipynb", "index.ipynb")
 	s.Nil(err)
 	s.Equal("", entrypoint)
+	s.Equal("", entrypointPath)
 }
 
 func (s *EntrypointSuite) TestInferEntrypointOnlyMatchingFile() {
@@ -60,9 +63,10 @@ func (s *EntrypointSuite) TestInferEntrypointOnlyMatchingFile() {
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
 	s.Nil(err)
 	s.Equal("myapp.py", entrypoint)
+	s.Equal("myapp.py", filepath.Base(entrypointPath))
 }
 
 func (s *EntrypointSuite) TestInferEntrypointMultipleMatchingFiles() {
@@ -73,7 +77,8 @@ func (s *EntrypointSuite) TestInferEntrypointMultipleMatchingFiles() {
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
 	s.Nil(err)
 	s.Equal("", entrypoint)
+	s.Equal("", entrypointPath)
 }

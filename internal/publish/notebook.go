@@ -36,12 +36,12 @@ var voilaImportNames = []string{
 }
 
 func (d *NotebookDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := d.InferEntrypoint(fs, path, ".ipynb", "index.ipynb")
+	entrypoint, entrypointPath, err := d.InferEntrypoint(fs, path, ".ipynb", "index.ipynb")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint != "" {
-		code, err := getNotebookFileInputs(fs, entrypoint)
+		code, err := getNotebookFileInputs(fs, entrypointPath)
 		if err != nil {
 			return nil, err
 		}
@@ -50,13 +50,13 @@ func (d *NotebookDetector) InferType(fs afero.Fs, path string) (*ContentType, er
 			return nil, err
 		}
 		t := &ContentType{
-			entrypoint: entrypoint,
-			runtimes:   []Runtime{PythonRuntime},
+			Entrypoint: entrypoint,
+			Runtimes:   []Runtime{PythonRuntime},
 		}
 		if isVoila {
-			t.appMode = apptypes.JupyterVoilaMode
+			t.AppMode = apptypes.JupyterVoilaMode
 		} else {
-			t.appMode = apptypes.StaticJupyterMode
+			t.AppMode = apptypes.StaticJupyterMode
 		}
 		return t, nil
 	}

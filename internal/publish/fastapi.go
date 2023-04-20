@@ -26,20 +26,20 @@ var fastapiImportNames = []string{
 }
 
 func (d *FastAPIDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := d.InferEntrypoint(fs, path, ".py", "app.py")
+	entrypoint, entrypointPath, err := d.InferEntrypoint(fs, path, ".py", "app.py")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint != "" {
-		isFastAPI, err := d.FileHasPythonImports(fs, entrypoint, fastapiImportNames)
+		isFastAPI, err := d.FileHasPythonImports(fs, entrypointPath, fastapiImportNames)
 		if err != nil {
 			return nil, err
 		}
 		if isFastAPI {
 			return &ContentType{
-				entrypoint: entrypoint,
-				appMode:    apptypes.PythonFastAPIMode,
-				runtimes:   []Runtime{PythonRuntime},
+				Entrypoint: entrypoint,
+				AppMode:    apptypes.PythonFastAPIMode,
+				Runtimes:   []Runtime{PythonRuntime},
 			}, nil
 		}
 		// else we didn't find a FastAPI import

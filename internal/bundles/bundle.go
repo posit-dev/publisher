@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 
 	"github.com/rstudio/connect-client/internal/debug"
+	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/publish/apptypes"
 	"github.com/rstudio/connect-client/internal/util"
 
@@ -159,6 +160,26 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 	}
 	defer util.Chdir(oldWD)
 
+	if bundle.manifest.Metadata.AppMode == apptypes.UnknownMode ||
+		bundle.manifest.Metadata.EntryPoint == "" {
+		// Auto-detect
+		typeDetector := publish.NewAutoContentTyper()
+
+		// TODO: implement a filtered FS using the ignore list
+		// and use that when auto detecting, so we don't consider
+		// excluded files when determining the app mode and entrypoint.
+		path := filepath.Join(b.baseDir, b.filename)
+		contentType, err := typeDetector.InferType(b.fs, path)
+		if err != nil {
+			return nil, fmt.Errorf("Error detecting content type: %w", err)
+		}
+		if bundle.manifest.Metadata.AppMode == apptypes.UnknownMode {
+			bundle.manifest.Metadata.AppMode = contentType.AppMode
+		}
+		if bundle.manifest.Metadata.EntryPoint == "" {
+			bundle.manifest.Metadata.EntryPoint = contentType.Entrypoint
+		}
+	}
 	err = bundle.addDirectory(b.baseDir)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating bundle: %w", err)

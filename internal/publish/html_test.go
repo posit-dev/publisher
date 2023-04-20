@@ -31,9 +31,9 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeSpecifiedFile() {
 	t, err := detector.InferType(fs, filename)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		appMode:    apptypes.StaticMode,
-		entrypoint: filename,
-		runtimes:   nil,
+		AppMode:    apptypes.StaticMode,
+		Entrypoint: filename,
+		Runtimes:   nil,
 	}, t)
 }
 
@@ -47,9 +47,9 @@ func (s *StaticHTMLDetectorSuite) TestInferTypePreferredFilename() {
 	t, err := detector.InferType(fs, ".")
 	s.Nil(err)
 	s.Equal(&ContentType{
-		appMode:    apptypes.StaticMode,
-		entrypoint: filename,
-		runtimes:   nil,
+		AppMode:    apptypes.StaticMode,
+		Entrypoint: filename,
+		Runtimes:   nil,
 	}, t)
 }
 
@@ -63,16 +63,16 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeOnlyHTMLFile() {
 	t, err := detector.InferType(fs, ".")
 	s.Nil(err)
 	s.Equal(&ContentType{
-		appMode:    apptypes.StaticMode,
-		entrypoint: filename,
-		runtimes:   nil,
+		AppMode:    apptypes.StaticMode,
+		Entrypoint: filename,
+		Runtimes:   nil,
 	}, t)
 }
 
 func (s *StaticHTMLDetectorSuite) TestInferTypeEntrypointHTMLErr() {
 	inferrer := &MockInferenceHelper{}
 	testError := errors.New("test error from InferEntrypoint")
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, ".html", mock.Anything).Return("", testError)
+	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, ".html", mock.Anything).Return("", "", testError)
 
 	detector := StaticHTMLDetector{inferrer}
 	t, err := detector.InferType(utiltest.NewMockFs(), ".")
@@ -84,8 +84,8 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeEntrypointHTMLErr() {
 func (s *StaticHTMLDetectorSuite) TestInferTypeEntrypointHTMErr() {
 	inferrer := &MockInferenceHelper{}
 	testError := errors.New("test error from InferEntrypoint")
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, ".html", mock.Anything).Return("", nil)
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, ".htm", mock.Anything).Return("", testError)
+	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, ".html", mock.Anything).Return("", "", nil)
+	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, ".htm", mock.Anything).Return("", "", testError)
 
 	detector := StaticHTMLDetector{inferrer}
 	t, err := detector.InferType(utiltest.NewMockFs(), ".")

@@ -23,20 +23,20 @@ var flaskImportNames = []string{
 }
 
 func (d *FlaskDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := d.InferEntrypoint(fs, path, ".py", "app.py")
+	entrypoint, entrypointPath, err := d.InferEntrypoint(fs, path, ".py", "app.py")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint != "" {
-		isFlask, err := d.FileHasPythonImports(fs, entrypoint, flaskImportNames)
+		isFlask, err := d.FileHasPythonImports(fs, entrypointPath, flaskImportNames)
 		if err != nil {
 			return nil, err
 		}
 		if isFlask {
 			return &ContentType{
-				entrypoint: entrypoint,
-				appMode:    apptypes.PythonAPIMode,
-				runtimes:   []Runtime{PythonRuntime},
+				Entrypoint: entrypoint,
+				AppMode:    apptypes.PythonAPIMode,
+				Runtimes:   []Runtime{PythonRuntime},
 			}, nil
 		}
 		// else we didn't find a Flask import

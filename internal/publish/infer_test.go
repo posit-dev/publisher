@@ -27,9 +27,9 @@ type MockInferenceHelper struct {
 	mock.Mock
 }
 
-func (m *MockInferenceHelper) InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, error) {
+func (m *MockInferenceHelper) InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, string, error) {
 	args := m.Called(fs, path, suffix, preferredFilename)
-	return args.String(0), args.Error(1)
+	return args.String(0), args.String(1), args.Error(2)
 }
 
 func (m *MockInferenceHelper) HasPythonImports(r io.Reader, packages []string) (bool, error) {

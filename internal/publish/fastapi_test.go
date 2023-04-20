@@ -31,9 +31,9 @@ func (s *FastAPIDetectorSuite) TestInferTypeSpecifiedFile() {
 	t, err := detector.InferType(fs, filename)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		appMode:    apptypes.PythonFastAPIMode,
-		entrypoint: filename,
-		runtimes:   []Runtime{PythonRuntime},
+		AppMode:    apptypes.PythonFastAPIMode,
+		Entrypoint: filename,
+		Runtimes:   []Runtime{PythonRuntime},
 	}, t)
 }
 
@@ -47,9 +47,9 @@ func (s *FastAPIDetectorSuite) TestInferTypePreferredFilename() {
 	t, err := detector.InferType(fs, ".")
 	s.Nil(err)
 	s.Equal(&ContentType{
-		appMode:    apptypes.PythonFastAPIMode,
-		entrypoint: filename,
-		runtimes:   []Runtime{PythonRuntime},
+		AppMode:    apptypes.PythonFastAPIMode,
+		Entrypoint: filename,
+		Runtimes:   []Runtime{PythonRuntime},
 	}, t)
 }
 
@@ -63,9 +63,9 @@ func (s *FastAPIDetectorSuite) TestInferTypeOnlyPythonFile() {
 	t, err := detector.InferType(fs, ".")
 	s.Nil(err)
 	s.Equal(&ContentType{
-		appMode:    apptypes.PythonFastAPIMode,
-		entrypoint: filename,
-		runtimes:   []Runtime{PythonRuntime},
+		AppMode:    apptypes.PythonFastAPIMode,
+		Entrypoint: filename,
+		Runtimes:   []Runtime{PythonRuntime},
 	}, t)
 }
 
@@ -84,7 +84,7 @@ func (s *FastAPIDetectorSuite) TestInferTypeNotFastAPI() {
 func (s *FastAPIDetectorSuite) TestInferTypeEntrypointErr() {
 	inferrer := &MockInferenceHelper{}
 	testError := errors.New("test error from InferEntrypoint")
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", testError)
+	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", "", testError)
 
 	detector := FastAPIDetector{inferrer}
 	t, err := detector.InferType(utiltest.NewMockFs(), ".")
@@ -95,7 +95,7 @@ func (s *FastAPIDetectorSuite) TestInferTypeEntrypointErr() {
 
 func (s *FastAPIDetectorSuite) TestInferTypeHasImportsErr() {
 	inferrer := &MockInferenceHelper{}
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("app.py", nil)
+	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("app.py", "app.py", nil)
 	testError := errors.New("test error from FileHasPythonImports")
 	inferrer.On("FileHasPythonImports", mock.Anything, mock.Anything, mock.Anything).Return(false, testError)
 

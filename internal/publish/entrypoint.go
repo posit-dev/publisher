@@ -16,37 +16,38 @@ type defaultInferenceHelper struct{}
 // If it's a directory, it specifies the deployment directory.
 // - If preferredFilename exists in the directory, it is the entrypoint.
 // - If there is only one file with the specified suffix, it is the entrypoint.
-func (h defaultInferenceHelper) InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, error) {
+func (h defaultInferenceHelper) InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, string, error) {
 	isDir, err := afero.IsDir(fs, path)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if isDir {
 		matchingFiles, err := afero.Glob(fs, filepath.Join(path, "*"+suffix))
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		if len(matchingFiles) == 1 {
 			// This must be it
-			return matchingFiles[0], nil
+			relPath, err := filepath.Rel(path, matchingFiles[0])
+			return relPath, matchingFiles[0], err
 		} else {
 			// Favor preferredFilename as an entrypoint
 			preferredPath := filepath.Join(path, preferredFilename)
 			exists, err := afero.Exists(fs, preferredPath)
 			if err != nil {
-				return "", err
+				return "", "", err
 			}
 			if exists {
-				return preferredFilename, nil
+				return preferredFilename, preferredPath, nil
 			}
 			// else entrypoint is ambiguous
-			return "", nil
+			return "", "", nil
 		}
 	} else {
 		fileSuffix := strings.ToLower(filepath.Ext(path))
 		if fileSuffix == suffix {
-			return filepath.Base(path), nil
+			return filepath.Base(path), path, nil
 		}
 	}
-	return "", nil
+	return "", "", nil
 }

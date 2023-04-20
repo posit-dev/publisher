@@ -18,20 +18,20 @@ func NewStaticHTMLDetector() *StaticHTMLDetector {
 }
 
 func (d *StaticHTMLDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, err := d.InferEntrypoint(fs, path, ".html", "index.html")
+	entrypoint, _, err := d.InferEntrypoint(fs, path, ".html", "index.html")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint == "" {
-		entrypoint, err = d.InferEntrypoint(fs, path, ".htm", "index.htm")
+		entrypoint, _, err = d.InferEntrypoint(fs, path, ".htm", "index.htm")
 		if err != nil {
 			return nil, err
 		}
 	}
 	if entrypoint != "" {
 		return &ContentType{
-			appMode:    apptypes.StaticMode,
-			entrypoint: entrypoint,
+			AppMode:    apptypes.StaticMode,
+			Entrypoint: entrypoint,
 		}, nil
 	}
 	return nil, nil
