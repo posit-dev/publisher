@@ -8,6 +8,7 @@ import (
 
 type ContentType string
 
+// These values are the strings that will appear in manifest.json.
 const (
 	UnknownMode         ContentType = ""
 	ShinyMode           ContentType = "shiny"
@@ -26,26 +27,6 @@ const (
 	PythonShinyMode     ContentType = "python-shiny"
 	JupyterVoilaMode    ContentType = "jupyter-voila"
 )
-
-// UserAppModes is an enumeration of all app modes that can come from the user
-// (it does not include UnknownMode).
-var UserAppModes = [...]ContentType{
-	ShinyMode,
-	ShinyRmdMode,
-	StaticRmdMode,
-	StaticMode,
-	PlumberAPIMode,
-	StaticJupyterMode,
-	PythonAPIMode,
-	PythonDashMode,
-	PythonStreamlitMode,
-	PythonBokehMode,
-	PythonFastAPIMode,
-	ShinyQuartoMode,
-	StaticQuartoMode,
-	PythonShinyMode,
-	JupyterVoilaMode,
-}
 
 // ContentTypeFromString return the normalized string value corresponding to the
 // provided string. UnknownMode and an error are returned if the string does
