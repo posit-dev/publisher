@@ -427,14 +427,14 @@ func (s *AppTypesSuite) TestAppModeStrings() {
 		{JupyterVoilaMode, "jupyter-voila"},
 	} {
 		comment := fmt.Sprintf("AppMode=%s (%s)", each.Mode, each.String)
-		actual, err := ContentTypeFromString(each.String)
+		actual, err := AppModeFromString(each.String)
 		s.Nil(err, comment)
 		s.Equal(each.Mode, actual, comment)
 		s.Equal(each.String, string(each.Mode), comment)
 	}
 
 	// Check garbage.
-	actual, err := ContentTypeFromString("garbage")
+	actual, err := AppModeFromString("garbage")
 	s.NotNil(err)
 	s.Equal(UnknownMode, actual)
 

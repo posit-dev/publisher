@@ -33,7 +33,7 @@ type baseBundleCmd struct {
 // performs content auto-detection if needed, and produces
 // a ContentType describing the deployment.
 func (cmd *baseBundleCmd) contentTypeFromCLI(fs afero.Fs, logger rslog.Logger) (*publish.ContentType, error) {
-	appMode, err := apptypes.ContentTypeFromString(cmd.ContentType)
+	appMode, err := apptypes.AppModeFromString(cmd.ContentType)
 	if err != nil {
 		return nil, err
 	}

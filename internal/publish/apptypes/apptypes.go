@@ -28,10 +28,10 @@ const (
 	JupyterVoilaMode    AppMode = "jupyter-voila"
 )
 
-// ContentTypeFromString return the normalized string value corresponding to the
+// AppModeFromString return the normalized string value corresponding to the
 // provided string. UnknownMode and an error are returned if the string does
 // not map to a known content type.
-func ContentTypeFromString(s string) (AppMode, error) {
+func AppModeFromString(s string) (AppMode, error) {
 	switch s {
 	// Plumber APIs were historically the only API type for Connect. With the
 	// addition of Python support, we now have multiple content types that are
