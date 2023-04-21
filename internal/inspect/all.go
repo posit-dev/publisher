@@ -1,4 +1,4 @@
-package publish
+package inspect
 
 import (
 	"errors"

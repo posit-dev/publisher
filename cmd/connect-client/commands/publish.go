@@ -13,12 +13,11 @@ import (
 	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/publish"
+	"github.com/rstudio/connect-client/internal/inspect"
 	"github.com/rstudio/connect-client/internal/services/proxy"
 	"github.com/rstudio/connect-client/internal/util"
-	"github.com/spf13/afero"
-
 	"github.com/rstudio/platform-lib/pkg/rslog"
+	"github.com/spf13/afero"
 )
 
 type baseBundleCmd struct {
@@ -32,7 +31,7 @@ type baseBundleCmd struct {
 // contentTypeFromCLI takes the CLI options provided by the user,
 // performs content auto-detection if needed, and produces
 // a ContentType describing the deployment.
-func (cmd *baseBundleCmd) contentTypeFromCLI(fs afero.Fs, logger rslog.Logger) (*publish.ContentType, error) {
+func (cmd *baseBundleCmd) contentTypeFromCLI(fs afero.Fs, logger rslog.Logger) (*inspect.ContentType, error) {
 	appMode, err := apptypes.AppModeFromString(cmd.ContentType)
 	if err != nil {
 		return nil, err
@@ -47,10 +46,10 @@ func (cmd *baseBundleCmd) contentTypeFromCLI(fs afero.Fs, logger rslog.Logger) (
 			entrypoint = filepath.Base(cmd.Path)
 		}
 	}
-	contentType := &publish.ContentType{}
+	contentType := &inspect.ContentType{}
 	if appMode == apptypes.UnknownMode || entrypoint == "" {
 		logger.Infof("Detecting deployment type...")
-		typeDetector := publish.NewContentTypeDetector()
+		typeDetector := inspect.NewContentTypeDetector()
 		contentType, err = typeDetector.InferType(fs, cmd.Path)
 		if err != nil {
 			return nil, fmt.Errorf("Error detecting content type: %w", err)
