@@ -11,9 +11,9 @@ import (
 
 	"github.com/rstudio/connect-client/internal/api_client/clients"
 	"github.com/rstudio/connect-client/internal/apitypes"
+	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/publish"
-	"github.com/rstudio/connect-client/internal/publish/apptypes"
 	"github.com/rstudio/connect-client/internal/services/proxy"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/spf13/afero"

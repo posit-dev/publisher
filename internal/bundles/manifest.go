@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/rstudio/connect-client/internal/publish/apptypes"
+	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/spf13/afero"
 )
 

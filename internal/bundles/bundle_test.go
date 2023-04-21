@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles/bundlestest"
-	"github.com/rstudio/connect-client/internal/publish/apptypes"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
