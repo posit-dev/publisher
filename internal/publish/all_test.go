@@ -35,9 +35,9 @@ func (s *AllSuite) TestInferTypeDirectory() {
 	t, err := detector.InferType(fs, ".")
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:    apptypes.PythonDashMode,
-		Entrypoint: appFilename,
-		Runtimes:   []Runtime{PythonRuntime},
+		AppMode:        apptypes.PythonDashMode,
+		Entrypoint:     appFilename,
+		RequiresPython: true,
 	}, t)
 }
 
@@ -58,7 +58,6 @@ func (s *AllSuite) TestInferTypeFileLowerPriority() {
 	s.Equal(&ContentType{
 		AppMode:    apptypes.StaticMode,
 		Entrypoint: htmlFilename,
-		Runtimes:   nil,
 	}, t)
 }
 
@@ -77,9 +76,9 @@ func (s *AllSuite) TestInferTypeFileHigherPriority() {
 	t, err := detector.InferType(fs, appFilename)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:    apptypes.PythonDashMode,
-		Entrypoint: appFilename,
-		Runtimes:   []Runtime{PythonRuntime},
+		AppMode:        apptypes.PythonDashMode,
+		Entrypoint:     appFilename,
+		RequiresPython: true,
 	}, t)
 }
 
@@ -98,9 +97,9 @@ func (s *AllSuite) TestInferTypeDirectoryPriority() {
 	t, err := detector.InferType(fs, ".")
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:    apptypes.PythonDashMode,
-		Entrypoint: appFilename,
-		Runtimes:   []Runtime{PythonRuntime},
+		AppMode:        apptypes.PythonDashMode,
+		Entrypoint:     appFilename,
+		RequiresPython: true,
 	}, t)
 }
 

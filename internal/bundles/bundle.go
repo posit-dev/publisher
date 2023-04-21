@@ -14,8 +14,6 @@ import (
 	"path/filepath"
 
 	"github.com/rstudio/connect-client/internal/debug"
-	"github.com/rstudio/connect-client/internal/publish"
-	"github.com/rstudio/connect-client/internal/publish/apptypes"
 	"github.com/rstudio/connect-client/internal/util"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -27,33 +25,13 @@ type Bundler interface {
 	CreateBundle(archive io.Writer) error
 }
 
-func newManifestFromUserInput(entrypoint string, userContentType string, pythonVersion string) (*Manifest, error) {
-	manifest := NewManifest()
-	contentType, err := apptypes.ContentTypeFromString(userContentType)
-	if err != nil {
-		return nil, err
-	}
-	manifest.Metadata.AppMode = contentType
-	manifest.Metadata.EntryPoint = entrypoint
-	switch contentType {
-	case apptypes.StaticMode:
-		manifest.Metadata.PrimaryHtml = entrypoint
-	case apptypes.StaticRmdMode, apptypes.ShinyRmdMode:
-		manifest.Metadata.PrimaryRmd = entrypoint
-	}
-	if pythonVersion != "" {
-		manifest.Python = &Python{
-			Version: pythonVersion,
-			PackageManager: PythonPackageManager{
-				Name:        "pip",
-				PackageFile: "requirements.txt",
-			},
-		}
-	}
-	return manifest, nil
-}
-
-func NewBundler(fs afero.Fs, path string, entrypoint string, userContentType string, pythonVersion string, ignores []string, logger rslog.Logger) (*bundler, error) {
+// NewBundler creates a bundler that will archive the directory specified
+// by `path`, or the containing directory if `path` is a file.
+// The provided manifest should contain the metadata for the app,
+// such as the entrypoint, Python version, R package dependencies, etc.
+// The bundler will fill in the `files` section and include the manifest.json
+// in the bundler.
+func NewBundler(fs afero.Fs, path string, manifest *Manifest, ignores []string, logger rslog.Logger) (*bundler, error) {
 	var dir string
 	var filename string
 	isDir, err := afero.IsDir(fs, path)
@@ -74,13 +52,6 @@ func NewBundler(fs afero.Fs, path string, entrypoint string, userContentType str
 	walker, err := NewWalker(fs, dir, ignores)
 	if err != nil {
 		return nil, fmt.Errorf("Error loading ignore list: %w", err)
-	}
-	if entrypoint == "" {
-		entrypoint = filename
-	}
-	manifest, err := newManifestFromUserInput(entrypoint, userContentType, pythonVersion)
-	if err != nil {
-		return nil, err
 	}
 	return &bundler{
 		manifest:    manifest,
@@ -169,30 +140,6 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 	}
 	defer util.Chdir(oldWD)
 
-	if bundle.manifest.Metadata.AppMode == apptypes.UnknownMode ||
-		(bundle.manifest.Metadata.EntryPoint == "" &&
-			bundle.manifest.Metadata.PrimaryRmd == "" &&
-			bundle.manifest.Metadata.PrimaryHtml == "") {
-		b.logger.Infof("Detecting content type...")
-		typeDetector := publish.NewContentTypeDetector()
-
-		// TODO: implement a filtered FS using the ignore list
-		// and use that when auto detecting, so we don't consider
-		// excluded files when determining the app mode and entrypoint.
-		path := filepath.Join(b.baseDir, b.filename)
-		contentType, err := typeDetector.InferType(b.fs, path)
-		if err != nil {
-			return nil, fmt.Errorf("Error detecting content type: %w", err)
-		}
-		if bundle.manifest.Metadata.AppMode == apptypes.UnknownMode {
-			bundle.manifest.Metadata.AppMode = contentType.AppMode
-			b.logger.Infof("Detected content type: '%s'", contentType.AppMode)
-		}
-		if bundle.manifest.Metadata.EntryPoint == "" {
-			bundle.manifest.Metadata.EntryPoint = contentType.Entrypoint
-			b.logger.Infof("Detected entrypoint: '%s'", contentType.Entrypoint)
-		}
-	}
 	err = bundle.addDirectory(b.baseDir)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating bundle: %w", err)

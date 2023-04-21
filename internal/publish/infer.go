@@ -10,9 +10,11 @@ import (
 )
 
 type ContentType struct {
-	AppMode    apptypes.AppMode
-	Entrypoint string
-	Runtimes   []Runtime
+	AppMode        apptypes.AppMode
+	Entrypoint     string
+	RequiresR      bool
+	RequiresPython bool
+	RequiresQuarto bool
 }
 
 // ContentTypeInferer infers as much as possible about the
@@ -29,12 +31,3 @@ type inferenceHelper interface {
 	HasPythonImports(r io.Reader, packages []string) (bool, error)
 	FileHasPythonImports(fs afero.Fs, path string, packages []string) (bool, error)
 }
-
-type Runtime string
-
-const (
-	NoRuntime     Runtime = "none"
-	RRuntime      Runtime = "r"
-	PythonRuntime Runtime = "python"
-	QuartoRuntime Runtime = "quarto"
-)

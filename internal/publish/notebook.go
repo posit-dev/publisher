@@ -50,8 +50,8 @@ func (d *NotebookDetector) InferType(fs afero.Fs, path string) (*ContentType, er
 			return nil, err
 		}
 		t := &ContentType{
-			Entrypoint: entrypoint,
-			Runtimes:   []Runtime{PythonRuntime},
+			Entrypoint:     entrypoint,
+			RequiresPython: true,
 		}
 		if isVoila {
 			t.AppMode = apptypes.JupyterVoilaMode

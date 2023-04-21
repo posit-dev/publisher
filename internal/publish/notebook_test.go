@@ -101,9 +101,9 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 	t, err := detector.InferType(fs, filename)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:    apptypes.StaticJupyterMode,
-		Entrypoint: filename,
-		Runtimes:   []Runtime{PythonRuntime},
+		AppMode:        apptypes.StaticJupyterMode,
+		Entrypoint:     filename,
+		RequiresPython: true,
 	}, t)
 }
 
@@ -117,9 +117,9 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 	t, err := detector.InferType(fs, filename)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:    apptypes.JupyterVoilaMode,
-		Entrypoint: filename,
-		Runtimes:   []Runtime{PythonRuntime},
+		AppMode:        apptypes.JupyterVoilaMode,
+		Entrypoint:     filename,
+		RequiresPython: true,
 	}, t)
 }
 

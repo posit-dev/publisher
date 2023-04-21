@@ -33,7 +33,6 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeSpecifiedFile() {
 	s.Equal(&ContentType{
 		AppMode:    apptypes.StaticMode,
 		Entrypoint: filename,
-		Runtimes:   nil,
 	}, t)
 }
 
@@ -49,7 +48,6 @@ func (s *StaticHTMLDetectorSuite) TestInferTypePreferredFilename() {
 	s.Equal(&ContentType{
 		AppMode:    apptypes.StaticMode,
 		Entrypoint: filename,
-		Runtimes:   nil,
 	}, t)
 }
 
@@ -65,7 +63,6 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeOnlyHTMLFile() {
 	s.Equal(&ContentType{
 		AppMode:    apptypes.StaticMode,
 		Entrypoint: filename,
-		Runtimes:   nil,
 	}, t)
 }
 

@@ -31,9 +31,9 @@ func (s *PythonSuite) TestInferTypeSpecifiedFile() {
 	t, err := detector.InferType(fs, filename)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:    apptypes.PythonAPIMode,
-		Entrypoint: filename,
-		Runtimes:   []Runtime{PythonRuntime},
+		AppMode:        apptypes.PythonAPIMode,
+		Entrypoint:     filename,
+		RequiresPython: true,
 	}, t)
 }
 
@@ -47,9 +47,9 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 	t, err := detector.InferType(fs, ".")
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:    apptypes.PythonAPIMode,
-		Entrypoint: filename,
-		Runtimes:   []Runtime{PythonRuntime},
+		AppMode:        apptypes.PythonAPIMode,
+		Entrypoint:     filename,
+		RequiresPython: true,
 	}, t)
 }
 
@@ -63,9 +63,9 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 	t, err := detector.InferType(fs, ".")
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:    apptypes.PythonAPIMode,
-		Entrypoint: filename,
-		Runtimes:   []Runtime{PythonRuntime},
+		AppMode:        apptypes.PythonAPIMode,
+		Entrypoint:     filename,
+		RequiresPython: true,
 	}, t)
 }
 

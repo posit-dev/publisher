@@ -74,9 +74,9 @@ func (d *PythonAppDetector) InferType(fs afero.Fs, path string) (*ContentType, e
 		}
 		if matches {
 			return &ContentType{
-				Entrypoint: entrypoint,
-				AppMode:    d.appMode,
-				Runtimes:   []Runtime{PythonRuntime},
+				Entrypoint:     entrypoint,
+				AppMode:        d.appMode,
+				RequiresPython: true,
 			}, nil
 		}
 		// else we didn't find a matching import
