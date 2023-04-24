@@ -17,6 +17,10 @@ import (
 // deployment bundles.
 const ManifestFilename = "manifest.json"
 
+// PythonRequirementsFilename is the well-known filename for the
+// Python pip package dependency list.
+const PythonRequirementsFilename = "requirements.txt"
+
 // Manifest contains details about a specific deployment specified in the
 // manifest.json file.
 //
@@ -68,6 +72,7 @@ type PythonPackageManager struct {
 	Name        string `json:"name"`         // Which package manger (always "pip")
 	Version     string `json:"version"`      // Package manager version
 	PackageFile string `json:"package_file"` // Filename listing dependencies; usually "requirements.txt"
+	Packages    []byte `json:"-"`            // Holding place for packages not yet written to requirements.txt
 }
 
 type PackageMap map[string]Package

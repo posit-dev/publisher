@@ -160,6 +160,18 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 		}
 	}
 	if dest != nil {
+		if bundle.manifest.Python != nil {
+			// If there isn't a requirements.txt file in the directory,
+			// bundle the package list from the manifest as requirements.txt.
+			_, haveRequirementsTxt := bundle.manifest.Files[PythonRequirementsFilename]
+			if !haveRequirementsTxt {
+				packages := bundle.manifest.Python.PackageManager.Packages
+				err = bundle.addFile(PythonRequirementsFilename, packages)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
 		err = bundle.addManifest()
 		if err != nil {
 			return nil, err
@@ -297,22 +309,27 @@ func (b *bundle) addDirectory(dir string) error {
 	return nil
 }
 
+func (b *bundle) addFile(name string, content []byte) error {
+	header := &tar.Header{
+		Name: name,
+		Size: int64(len(content)),
+		Mode: 0666,
+	}
+	err := b.archive.WriteHeader(header)
+	if err != nil {
+		return err
+	}
+	_, err = b.archive.Write(content)
+	return err
+
+}
+
 func (b *bundle) addManifest() error {
 	manifestJSON, err := b.manifest.ToJSON()
 	if err != nil {
 		return err
 	}
-	header := &tar.Header{
-		Name: ManifestFilename,
-		Size: int64(len(manifestJSON)),
-		Mode: 0666,
-	}
-	err = b.archive.WriteHeader(header)
-	if err != nil {
-		return err
-	}
-	_, err = b.archive.Write(manifestJSON)
-	return err
+	return b.addFile(ManifestFilename, manifestJSON)
 }
 
 type manifestWalker struct {

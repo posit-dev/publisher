@@ -13,6 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
+	"github.com/rstudio/connect-client/internal/environment"
 	"github.com/rstudio/connect-client/internal/inspect"
 	"github.com/rstudio/connect-client/internal/services/proxy"
 	"github.com/rstudio/connect-client/internal/util"
@@ -23,6 +24,7 @@ import (
 type baseBundleCmd struct {
 	ContentType   string   `short:"t" help:"Type of content being deployed. Default is to auto detect."`
 	Entrypoint    string   `help:"Entrypoint for the application. Usually it is the filename of the primary file. For Python Flask and FastAPI, it can be of the form module:object."`
+	Python        string   `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
 	PythonVersion string   `help:"Version of Python required by this content. Default is the version of Python 3 on your PATH."`
 	Exclude       []string `short:"x" help:"list of file patterns to exclude."`
 	Path          string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
@@ -62,7 +64,7 @@ func (cmd *baseBundleCmd) contentTypeFromCLI(fs afero.Fs, logger rslog.Logger) (
 	if entrypoint != "" {
 		contentType.Entrypoint = entrypoint
 	}
-	if cmd.PythonVersion != "" {
+	if cmd.PythonVersion != "" || appMode.IsPythonContent() {
 		contentType.RequiresPython = true
 	}
 	logger.WithFields(rslog.Fields{
@@ -90,14 +92,32 @@ func (cmd *baseBundleCmd) manifestFromCLI(fs afero.Fs, logger rslog.Logger) (*bu
 	case apptypes.StaticRmdMode, apptypes.ShinyRmdMode:
 		manifest.Metadata.PrimaryRmd = contentType.Entrypoint
 	}
-	// TODO: pip freeze to get packages if needed
-	// TODO: run Python to get version if needed
 	if contentType.RequiresPython {
+		isDir, err := afero.IsDir(fs, cmd.Path)
+		if err != nil {
+			return nil, err
+		}
+		var projectDir string
+		if isDir {
+			projectDir = cmd.Path
+		} else {
+			projectDir = filepath.Dir(cmd.Path)
+		}
+		inspector := environment.NewPythonInspector(fs, projectDir, cmd.Python, cmd.PythonVersion, logger)
+		pythonVersion, err := inspector.GetPythonVersion()
+		if err != nil {
+			return nil, err
+		}
+		packages, err := inspector.GetPythonRequirements()
+		if err != nil {
+			return nil, err
+		}
 		manifest.Python = &bundles.Python{
-			Version: cmd.PythonVersion,
+			Version: pythonVersion,
 			PackageManager: bundles.PythonPackageManager{
 				Name:        "pip",
 				PackageFile: "requirements.txt",
+				Packages:    packages, // will be written to requirements.txt in the bundle
 			},
 		}
 	}

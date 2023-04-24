@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -19,7 +20,7 @@ type PythonInspector interface {
 type defaultPythonInspector struct {
 	executor      pythonExecutor
 	fs            afero.Fs
-	projectPath   string
+	projectDir    string
 	pythonPath    string
 	pythonVersion string
 	logger        rslog.Logger
@@ -46,11 +47,11 @@ func (e *defaultPythonExecutor) runPythonCommand(pythonExecutable string, args [
 	return stdout.Bytes(), nil
 }
 
-func NewPythonInspector(fs afero.Fs, projectPath string, pythonPath string, pythonVersion string, logger rslog.Logger) *defaultPythonInspector {
+func NewPythonInspector(fs afero.Fs, projectDir string, pythonPath string, pythonVersion string, logger rslog.Logger) *defaultPythonInspector {
 	return &defaultPythonInspector{
 		executor:      &defaultPythonExecutor{},
 		fs:            fs,
-		projectPath:   projectPath,
+		projectDir:    projectDir,
 		pythonPath:    pythonPath,
 		pythonVersion: pythonVersion,
 		logger:        logger,
@@ -82,13 +83,13 @@ func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	version := string(output)
+	version := strings.TrimSpace(string(output))
 	i.logger.Infof("Found Python version %s", version)
 	return version, nil
 }
 
 func (i *defaultPythonInspector) GetPythonRequirements() ([]byte, error) {
-	requirementsFilename := filepath.Join(i.projectPath, "requirements.txt")
+	requirementsFilename := filepath.Join(i.projectDir, "requirements.txt")
 	exists, err := afero.Exists(i.fs, requirementsFilename)
 	if err != nil {
 		return nil, err
@@ -98,6 +99,7 @@ func (i *defaultPythonInspector) GetPythonRequirements() ([]byte, error) {
 		return afero.ReadFile(i.fs, requirementsFilename)
 	}
 	pythonExecutable := i.getPythonExecutable()
+	i.logger.Infof("Using Python packages from '%s -m pip freeze'", pythonExecutable)
 	args := []string{"-m", "pip", "freeze"}
 	return i.executor.runPythonCommand(pythonExecutable, args)
 }

@@ -47,7 +47,7 @@ func (s *PythonSuite) TestNewPythonInspector() {
 	fs := afero.NewMemMapFs()
 	logger := rslog.NewDiscardingLogger()
 	inspector := NewPythonInspector(fs, "/myproject", "/usr/bin/python", "3.8.12", logger)
-	s.Equal("/myproject", inspector.projectPath)
+	s.Equal("/myproject", inspector.projectDir)
 	s.Equal("/usr/bin/python", inspector.pythonPath)
 	s.Equal("3.8.12", inspector.pythonVersion)
 	s.Equal(logger, inspector.logger)
