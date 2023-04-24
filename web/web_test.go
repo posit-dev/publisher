@@ -1,5 +1,7 @@
 package web
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"testing"
 )
