@@ -25,12 +25,14 @@ func NewFlaskDetector() *PythonAppDetector {
 	return NewPythonAppDetector(apptypes.PythonAPIMode, []string{
 		"flask", // also matches flask_api, flask_openapi3, etc.
 		"flasgger",
+		"falcon", // must check for this after falcon.asgi (FastAPI)
 	})
 }
 
 func NewFastAPIDetector() *PythonAppDetector {
 	return NewPythonAppDetector(apptypes.PythonFastAPIMode, []string{
 		"fastapi",
+		"falcon.asgi",
 		"quart",
 		"sanic",
 		"starlette",

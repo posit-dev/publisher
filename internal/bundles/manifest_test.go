@@ -79,7 +79,7 @@ func (s *ManifestSuite) TestToJSON() {
 	manifest := NewManifest()
 	manifest.Metadata.AppMode = "static"
 	manifest.Metadata.PrimaryHtml = "main.html"
-	manifest.Metadata.EntryPoint = "main.html"
+	manifest.Metadata.Entrypoint = "main.html"
 
 	manifest.AddFile("main.html", []byte{0x12, 0x34, 0x56})
 	manifestJson, err := manifest.ToJSON()

@@ -20,8 +20,8 @@ func NewContentTypeDetector() *ContentTypeDetector {
 			// ContentType will determine the result.
 			NewNotebookDetector(),
 			NewPyShinyDetector(),
-			NewFlaskDetector(),
 			NewFastAPIDetector(),
+			NewFlaskDetector(),
 			NewDashDetector(),
 			NewStreamlitDetector(),
 			NewBokehDetector(),

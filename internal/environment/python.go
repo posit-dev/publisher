@@ -18,12 +18,11 @@ type PythonInspector interface {
 }
 
 type defaultPythonInspector struct {
-	executor      pythonExecutor
-	fs            afero.Fs
-	projectDir    string
-	pythonPath    string
-	pythonVersion string
-	logger        rslog.Logger
+	executor   pythonExecutor
+	fs         afero.Fs
+	projectDir string
+	pythonPath string
+	logger     rslog.Logger
 }
 
 var _ PythonInspector = &defaultPythonInspector{}
@@ -47,14 +46,13 @@ func (e *defaultPythonExecutor) runPythonCommand(pythonExecutable string, args [
 	return stdout.Bytes(), nil
 }
 
-func NewPythonInspector(fs afero.Fs, projectDir string, pythonPath string, pythonVersion string, logger rslog.Logger) *defaultPythonInspector {
+func NewPythonInspector(fs afero.Fs, projectDir string, pythonPath string, logger rslog.Logger) *defaultPythonInspector {
 	return &defaultPythonInspector{
-		executor:      &defaultPythonExecutor{},
-		fs:            fs,
-		projectDir:    projectDir,
-		pythonPath:    pythonPath,
-		pythonVersion: pythonVersion,
-		logger:        logger,
+		executor:   &defaultPythonExecutor{},
+		fs:         fs,
+		projectDir: projectDir,
+		pythonPath: pythonPath,
+		logger:     logger,
 	}
 }
 
@@ -69,10 +67,6 @@ func (i *defaultPythonInspector) getPythonExecutable() string {
 }
 
 func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
-	if i.pythonVersion != "" {
-		// User-provided version
-		return i.pythonVersion, nil
-	}
 	pythonExecutable := i.getPythonExecutable()
 	args := []string{
 		`-E`, // ignore python-specific environment variables

@@ -74,6 +74,15 @@ func AppModeFromString(s string) (AppMode, error) {
 	}
 }
 
+func (mode *AppMode) UnmarshalText(text []byte) error {
+	value, err := AppModeFromString(string(text))
+	if err != nil {
+		return err
+	}
+	*mode = value
+	return nil
+}
+
 // IsWorkerApp returns true for any content that is serviced by worker
 // processes. This includes Shiny applications, interactive R Markdown
 // documents, Plumber/Python (flask/fastapi) APIs, and Python apps

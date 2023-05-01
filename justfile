@@ -40,6 +40,9 @@ run:
 test: _web
     {{ _with_runner }} go test -race ./...
 
+test-backend:
+    {{ _with_runner }} go test -race ./...
+
 [private]
 _build:
     {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client

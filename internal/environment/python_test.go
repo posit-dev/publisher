@@ -46,26 +46,16 @@ func NewMockPythonExecutor() *MockPythonExecutor {
 func (s *PythonSuite) TestNewPythonInspector() {
 	fs := afero.NewMemMapFs()
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "/myproject", "/usr/bin/python", "3.8.12", logger)
+	inspector := NewPythonInspector(fs, "/myproject", "/usr/bin/python", logger)
 	s.Equal("/myproject", inspector.projectDir)
 	s.Equal("/usr/bin/python", inspector.pythonPath)
-	s.Equal("3.8.12", inspector.pythonVersion)
 	s.Equal(logger, inspector.logger)
-}
-
-func (s *PythonSuite) TestGetPythonVersionGiven() {
-	fs := utiltest.NewMockFs()
-	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "", "3.10.4", logger)
-	version, err := inspector.GetPythonVersion()
-	s.Nil(err)
-	s.Equal("3.10.4", version)
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 	fs := utiltest.NewMockFs()
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "/usr/bin/python3", "", logger)
+	inspector := NewPythonInspector(fs, "", "/usr/bin/python3", logger)
 	executor := NewMockPythonExecutor()
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
@@ -77,7 +67,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	fs := utiltest.NewMockFs()
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "/usr/bin/python3", "", logger)
+	inspector := NewPythonInspector(fs, "", "/usr/bin/python3", logger)
 	executor := NewMockPythonExecutor()
 	testError := errors.New("test error from runPythonCommand")
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(nil, testError)
@@ -91,7 +81,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	fs := utiltest.NewMockFs()
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "", "", logger)
+	inspector := NewPythonInspector(fs, "", "", logger)
 	executor := NewMockPythonExecutor()
 	executor.On("runPythonCommand", "python3", mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
@@ -108,7 +98,7 @@ func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
 	}
 	fs := utiltest.NewMockFs()
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "", "", logger)
+	inspector := NewPythonInspector(fs, "", "", logger)
 	version, err := inspector.GetPythonVersion()
 	s.Nil(err)
 	s.True(strings.HasPrefix(version, "3."))
@@ -127,7 +117,7 @@ func (s *PythonSuite) TestGetRequirementsFromFile() {
 	s.Nil(err)
 
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, baseDir, "", "", logger)
+	inspector := NewPythonInspector(fs, baseDir, "", logger)
 	requirements, err := inspector.GetPythonRequirements()
 	s.Nil(err)
 	s.Equal(fileContent, requirements)
@@ -138,7 +128,7 @@ func (s *PythonSuite) TestGetRequirementsFromFileErr() {
 	testError := errors.New("test error from Stat")
 	fs.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), testError)
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "/anything", "", "", logger)
+	inspector := NewPythonInspector(fs, "/anything", "", logger)
 	requirements, err := inspector.GetPythonRequirements()
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
@@ -149,7 +139,7 @@ func (s *PythonSuite) TestGetPythonRequirementsFromExecutable() {
 	fs := utiltest.NewMockFs()
 	fs.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), os.ErrNotExist)
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "/usr/bin/python3", "", logger)
+	inspector := NewPythonInspector(fs, "", "/usr/bin/python3", logger)
 	executor := NewMockPythonExecutor()
 	freezeOutput := []byte("numpy\npandas\n")
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(freezeOutput, nil)
@@ -163,7 +153,7 @@ func (s *PythonSuite) TestGetPythonRequirementsFromExecutableErr() {
 	fs := utiltest.NewMockFs()
 	fs.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), os.ErrNotExist)
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "/nonexistent/python3", "", logger)
+	inspector := NewPythonInspector(fs, "", "/nonexistent/python3", logger)
 	requirements, err := inspector.GetPythonRequirements()
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)

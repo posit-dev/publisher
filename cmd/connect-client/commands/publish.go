@@ -16,116 +16,139 @@ import (
 	"github.com/rstudio/connect-client/internal/environment"
 	"github.com/rstudio/connect-client/internal/inspect"
 	"github.com/rstudio/connect-client/internal/services/proxy"
+	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
 
-type baseBundleCmd struct {
-	ContentType   string   `short:"t" help:"Type of content being deployed. Default is to auto detect."`
-	Entrypoint    string   `help:"Entrypoint for the application. Usually it is the filename of the primary file. For Python Flask and FastAPI, it can be of the form module:object."`
-	Python        string   `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
-	PythonVersion string   `help:"Version of Python required by this content. Default is the version of Python 3 on your PATH."`
-	Exclude       []string `short:"x" help:"list of file patterns to exclude."`
-	Path          string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
+type BaseBundleCmd struct {
+	Python  string   `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
+	Exclude []string `short:"x" help:"list of file patterns to exclude."`
+	Path    string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
+	Config  string   `help:"Name of metadata directory to load/save (see ./.posit/deployments/)."`
+	// Store for the deployment State that will be served to the UI,
+	// published, written to manifest and metadata files, etc.
+	State state.Deployment `embed:""`
 }
 
-// contentTypeFromCLI takes the CLI options provided by the user,
+// IsBaseBundleCmd exists solely to distinguish CLI command structs
+// that embed BaseBundleCmd from those that don't.
+type IsBaseBundleCmd interface {
+	IsBaseBundleCmd() bool
+}
+
+func (BaseBundleCmd) IsBaseBundleCmd() bool {
+	return true
+}
+
+// stateFromCLI takes the CLI options provided by the user,
 // performs content auto-detection if needed, and produces
-// a ContentType describing the deployment.
-func (cmd *baseBundleCmd) contentTypeFromCLI(fs afero.Fs, logger rslog.Logger) (*inspect.ContentType, error) {
-	appMode, err := apptypes.AppModeFromString(cmd.ContentType)
+// updates cmd.State to reflect all of the information.
+func (cmd *BaseBundleCmd) stateFromCLI(fs afero.Fs, logger rslog.Logger) error {
+	sourceDir, err := util.DirFromPath(fs, cmd.Path)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	entrypoint := cmd.Entrypoint
-	if entrypoint == "" {
-		isDir, err := afero.IsDir(fs, cmd.Path)
-		if err != nil {
-			return nil, err
-		}
-		if !isDir {
-			entrypoint = filepath.Base(cmd.Path)
-		}
+	cmd.State.SourceDir = sourceDir
+	manifest := &cmd.State.Manifest
+	manifest.Version = 1
+	manifest.Packages = make(bundles.PackageMap)
+	manifest.Files = make(bundles.FileMap)
+
+	metadata := &manifest.Metadata
+	if metadata.Entrypoint == "" && cmd.Path != sourceDir {
+		// Provided path is a file. It is the entrypoint.
+		metadata.Entrypoint = filepath.Base(cmd.Path)
 	}
+
 	contentType := &inspect.ContentType{}
-	if appMode == apptypes.UnknownMode || entrypoint == "" {
-		logger.Infof("Detecting deployment type...")
+	if metadata.AppMode == apptypes.UnknownMode || metadata.Entrypoint == "" {
+		logger.Infof("Detecting deployment type and entrypoint...")
 		typeDetector := inspect.NewContentTypeDetector()
 		contentType, err = typeDetector.InferType(fs, cmd.Path)
 		if err != nil {
-			return nil, fmt.Errorf("Error detecting content type: %w", err)
+			return fmt.Errorf("Error detecting content type: %w", err)
+		}
+		// User-provided values override auto detection
+		if metadata.AppMode == apptypes.UnknownMode {
+			metadata.AppMode = contentType.AppMode
+		}
+		if metadata.Entrypoint == "" {
+			metadata.Entrypoint = contentType.Entrypoint
 		}
 	}
-	// User-provided values override auto detection
-	if appMode != "" {
-		contentType.AppMode = appMode
-	}
-	if entrypoint != "" {
-		contentType.Entrypoint = entrypoint
-	}
-	if cmd.PythonVersion != "" || appMode.IsPythonContent() {
-		contentType.RequiresPython = true
+	switch metadata.AppMode {
+	case apptypes.StaticMode:
+		metadata.PrimaryHtml = contentType.Entrypoint
+	case apptypes.StaticRmdMode, apptypes.ShinyRmdMode:
+		metadata.PrimaryRmd = contentType.Entrypoint
 	}
 	logger.WithFields(rslog.Fields{
-		"Entrypoint": contentType.Entrypoint,
-		"AppMode":    contentType.AppMode,
+		"Entrypoint": metadata.Entrypoint,
+		"AppMode":    metadata.AppMode,
 	}).Infof("Deployment type")
-	return contentType, nil
+
+	requiresPython, err := cmd.requiresPython(fs)
+	if err != nil {
+		return err
+	}
+	if requiresPython {
+		err = cmd.inspectPython(fs, logger, manifest)
+		if err != nil {
+			return err
+		}
+	}
+	manifest.ResetEmptyFields()
+	return nil
 }
 
-// manifestFromCLI takes the CLI options provided by the user
-// and produces a stub manifest containing the deployment metadata.
-// The Files section will be empty, to be filled in by the Bundler.
-func (cmd *baseBundleCmd) manifestFromCLI(fs afero.Fs, logger rslog.Logger) (*bundles.Manifest, error) {
-	manifest := bundles.NewManifest()
-	contentType, err := cmd.contentTypeFromCLI(fs, logger)
+func (cmd *BaseBundleCmd) requiresPython(fs afero.Fs) (bool, error) {
+	manifest := &cmd.State.Manifest
+	if manifest.Metadata.AppMode.IsPythonContent() {
+		return true, nil
+	}
+	if cmd.Python != "" {
+		return true, nil
+	}
+	if manifest.Python != nil && manifest.Python.Version != "" {
+		return true, nil
+	}
+	// Presence of requirements.txt implies Python is needed.
+	// This is the preferred approach since it is unambiguous and
+	// doesn't rely on environment inspection.
+	requirementsPath := filepath.Join(cmd.State.SourceDir, bundles.PythonRequirementsFilename)
+	exists, err := afero.Exists(fs, requirementsPath)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
-	manifest.Metadata.AppMode = contentType.AppMode
-	manifest.Metadata.EntryPoint = contentType.Entrypoint
+	return exists, nil
+}
 
-	switch contentType.AppMode {
-	case apptypes.StaticMode:
-		manifest.Metadata.PrimaryHtml = contentType.Entrypoint
-	case apptypes.StaticRmdMode, apptypes.ShinyRmdMode:
-		manifest.Metadata.PrimaryRmd = contentType.Entrypoint
-	}
-	if contentType.RequiresPython {
-		isDir, err := afero.IsDir(fs, cmd.Path)
-		if err != nil {
-			return nil, err
-		}
-		var projectDir string
-		if isDir {
-			projectDir = cmd.Path
-		} else {
-			projectDir = filepath.Dir(cmd.Path)
-		}
-		inspector := environment.NewPythonInspector(fs, projectDir, cmd.Python, cmd.PythonVersion, logger)
+func (cmd *BaseBundleCmd) inspectPython(fs afero.Fs, logger rslog.Logger, manifest *bundles.Manifest) error {
+	inspector := environment.NewPythonInspector(fs, cmd.State.SourceDir, cmd.Python, logger)
+	if manifest.Python.Version == "" {
 		pythonVersion, err := inspector.GetPythonVersion()
 		if err != nil {
-			return nil, err
+			return err
 		}
-		packages, err := inspector.GetPythonRequirements()
-		if err != nil {
-			return nil, err
-		}
-		manifest.Python = &bundles.Python{
-			Version: pythonVersion,
-			PackageManager: bundles.PythonPackageManager{
-				Name:        "pip",
-				PackageFile: "requirements.txt",
-				Packages:    packages, // will be written to requirements.txt in the bundle
-			},
-		}
+		manifest.Python.Version = pythonVersion
 	}
-	return manifest, nil
+	packages, err := inspector.GetPythonRequirements()
+	if err != nil {
+		return err
+	}
+	manifest.Python.PackageManager = bundles.PythonPackageManager{
+		Name:        "pip",
+		PackageFile: bundles.PythonRequirementsFilename,
+	}
+	// Package list will be written to requirements.txt in the bundle, if not already present.
+	cmd.State.PythonRequirements = packages
+	return nil
 }
 
 type CreateBundleCmd struct {
-	baseBundleCmd
+	BaseBundleCmd
 	BundleFile string `help:"Path to a file where the bundle should be written." required:"" type:"path"`
 }
 
@@ -135,11 +158,11 @@ func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	defer bundleFile.Close()
-	baseManifest, err := cmd.manifestFromCLI(ctx.Fs, ctx.Logger)
+	err = cmd.stateFromCLI(ctx.Fs, ctx.Logger)
 	if err != nil {
 		return err
 	}
-	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, baseManifest, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -148,15 +171,15 @@ func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 type WriteManifestCmd struct {
-	baseBundleCmd
+	BaseBundleCmd
 }
 
 func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	baseManifest, err := cmd.manifestFromCLI(ctx.Fs, ctx.Logger)
+	err := cmd.stateFromCLI(ctx.Fs, ctx.Logger)
 	if err != nil {
 		return err
 	}
-	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, baseManifest, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -164,7 +187,7 @@ func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	manifestPath := filepath.Join(cmd.Path, bundles.ManifestFilename)
+	manifestPath := filepath.Join(cmd.State.SourceDir, bundles.ManifestFilename)
 	ctx.Logger.Infof("Writing manifest to '%s'", manifestPath)
 	manifestJSON, err := manifest.ToJSON()
 	if err != nil {
@@ -178,12 +201,12 @@ func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 type PublishCmd struct {
-	baseBundleCmd
-	Name string `short:"n" help:"Nickname of destination publishing account."`
+	BaseBundleCmd
+	AccountName string `short:"n" help:"Nickname of destination publishing account."`
 }
 
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	account, err := ctx.Accounts.GetAccountByName(cmd.Name)
+	account, err := ctx.Accounts.GetAccountByName(cmd.AccountName)
 	if err != nil {
 		return err
 	}
@@ -194,11 +217,11 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
 
-	baseManifest, err := cmd.manifestFromCLI(ctx.Fs, ctx.Logger)
+	err = cmd.stateFromCLI(ctx.Fs, ctx.Logger)
 	if err != nil {
 		return err
 	}
-	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, baseManifest, cmd.Exclude, ctx.Logger)
+	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -245,7 +268,7 @@ type PublishUICmd struct {
 }
 
 func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	account, err := ctx.Accounts.GetAccountByName(cmd.Name)
+	account, err := ctx.Accounts.GetAccountByName(cmd.AccountName)
 	if err != nil {
 		return err
 	}
@@ -254,7 +277,7 @@ func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	svc := proxy.NewProxyService(
-		cmd.Name,
+		cmd.AccountName,
 		serverURL,
 		cmd.Listen,
 		cmd.TLSKeyFile,

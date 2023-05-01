@@ -38,7 +38,7 @@ func (opt Optional[T]) MarshalJSON() ([]byte, error) {
 }
 
 func (opt *Optional[T]) UnmarshalJSON(data []byte) error {
-	if bytes.Equal(data, JSON_NULL) {
+	if bytes.Equal(data, JSON_NULL) || len(data) == 0 {
 		opt.valid = false
 		return nil
 	}
