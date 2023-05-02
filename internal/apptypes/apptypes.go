@@ -67,7 +67,7 @@ func AppModeFromString(s string) (AppMode, error) {
 		return StaticQuartoMode, nil
 	case "jupyter-voila", "voila":
 		return JupyterVoilaMode, nil
-	case "":
+	case "", "unknown":
 		return UnknownMode, nil
 	default:
 		return UnknownMode, fmt.Errorf("Unrecognized content type: %s", s)

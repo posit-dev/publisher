@@ -142,11 +142,7 @@ type connectGetContentDTO struct {
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
 
-func (c *ConnectClient) CreateDeployment(name apitypes.ContentName, title apitypes.NullString) (apitypes.ContentID, error) {
-	body := state.ConnectContent{
-		Name:  name,
-		Title: title,
-	}
+func (c *ConnectClient) CreateDeployment(body state.ConnectContent) (apitypes.ContentID, error) {
 	content := connectGetContentDTO{}
 	err := c.client.Post("/__api__/v1/content", &body, &content)
 	if err != nil {

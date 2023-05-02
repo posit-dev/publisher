@@ -20,23 +20,36 @@ type TargetID struct {
 	ContentName apitypes.ContentName   `json:"content_name"` // Content Name (unique per user)
 
 	// These fields are informational and don't affect future deployments.
-	Username   string                `json:"username"`    // Username, if known
-	BundleId   apitypes.NullBundleID `json:"bundle_id"`   // Bundle ID that was deployed
-	DeployedAt apitypes.NullTime     `json:"deployed_at"` // Date/time bundle was deployed
+	Username   string                `json:"username,omitempty"` // Username, if known
+	BundleId   apitypes.NullBundleID `json:"bundle_id"`          // Bundle ID that was deployed
+	DeployedAt apitypes.NullTime     `json:"deployed_at"`        // Date/time bundle was deployed
 }
 
 type Deployment struct {
-	SourceDir          string            `kong:"-"` // Absolute path to source directory being published
-	Target             TargetID          `kong:"-"` // Identity of previous deployment
-	Manifest           bundles.Manifest  `embed:""` // manifest.json content for this deployment
-	PythonRequirements []byte            `kong:"-"` // Content of requirements.txt to include
-	Connect            ConnectDeployment `embed:""` // Connect metadata for this deployment, if target is Connect
+	SourceDir          string            `kong:"-"`     // Absolute path to source directory being published
+	Target             TargetID          `kong:"-"`     // Identity of previous deployment
+	Manifest           bundles.Manifest  `kong:"embed"` // manifest.json content for this deployment
+	PythonRequirements []byte            `kong:"-"`     // Content of requirements.txt to include
+	Connect            ConnectDeployment `kong:"embed"` // Connect metadata for this deployment, if target is Connect
 }
 
 func NewDeployment() *Deployment {
 	return &Deployment{
 		Manifest: *bundles.NewManifest(),
 	}
+}
+
+// Merge merges the values from another deployment into this one.
+// Usually `d` will have default values, or be preloaded from
+// saved metadata. `other` is typically the CLI arguments.
+func (d *Deployment) Merge(other *Deployment) {
+	if other.SourceDir != "" {
+		d.SourceDir = other.SourceDir
+	}
+	// Target is set during deployment, not from the CLI
+	d.Manifest.Merge(&other.Manifest)
+	d.PythonRequirements = append(d.PythonRequirements, other.PythonRequirements...)
+	d.Connect.Merge(&other.Connect)
 }
 
 // LoadManifest reads the specified manifest file and populates

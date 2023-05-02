@@ -3,7 +3,6 @@ package main
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"encoding/json"
 	"os"
 
 	"github.com/alecthomas/kong"
@@ -11,6 +10,7 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services"
+	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -73,35 +73,37 @@ func main() {
 	}
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
-	_, ok := args.Selected().Target.Interface().(commands.IsBaseBundleCmd)
+	cmd, ok := args.Selected().Target.Interface().(commands.StatefulCommand)
 	if ok {
 		// For these commands, we need to load saved deployment state
-		// from file, then overlay the CLI arguments on top.
-		// To do this, we need to parse the command line to
-		// determine the metadata directory to load from,
-		// load the files, then re-parse the CLI arguments.
-		// This is kind of icky, but is much nicer than writing a
-		// merge function for state.Deployment and its children.
-		sourceDir, err := util.DirFromPath(ctx.Fs, cli.Publish.Path)
+		// from file, then overlay the alread-parsed CLI arguments on top.
+		baseCmd := cmd.GetBaseCmd()
+		sourceDir, err := util.DirFromPath(ctx.Fs, baseCmd.Path)
 		if err != nil {
-			logger.Fatalf("Error checking path %s: %s", cli.Publish.Path, err)
+			logger.Fatalf("Error checking path %s: %s", baseCmd.Path, err)
 		}
-		err = cli.Publish.State.LoadFromFiles(ctx.Fs, sourceDir, getSaveName(cli.Publish.Config, cli.Publish.AccountName), ctx.Logger)
+		saveName := getSaveName(baseCmd.Config, baseCmd.AccountName)
+		savedState := state.NewDeployment()
+		err = savedState.LoadFromFiles(ctx.Fs, sourceDir, saveName, ctx.Logger)
 		if err != nil && !os.IsNotExist(err) {
-			logger.Fatalf("Error loading metadata: %s", err)
+			logger.Fatalf("Error loading metadata '%s': %s", saveName, err)
 		}
-		args = kong.Parse(&cli, kong.Bind(ctx))
-
-		// debugging:
-		cli.Publish.State.Manifest.ResetEmptyFields()
-		data, err := json.MarshalIndent(cli.Publish.State, "", "  ")
+		savedState.Merge(cmd.GetState())
+		cmd.SetState(savedState)
+		err = args.Run(&cli.CommonArgs)
 		if err != nil {
-			logger.Fatalf("Error preparing data: %s", err)
+			logger.Fatalf("Error: %s", err)
 		}
-		os.Stdout.Write(data)
-	}
-	err = args.Run(&cli.CommonArgs)
-	if err != nil {
-		logger.Fatalf("Error: %s", err)
+		// Save metadata
+		logger.Infof("About to save metadata")
+		err = savedState.SaveToFiles(ctx.Fs, sourceDir, saveName, ctx.Logger)
+		if err != nil {
+			logger.Fatalf("Error saving metadata '%s': %s", saveName, err)
+		}
+	} else {
+		err = args.Run(&cli.CommonArgs)
+		if err != nil {
+			logger.Fatalf("Error: %s", err)
+		}
 	}
 }

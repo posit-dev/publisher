@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/rstudio/connect-client/internal/apitypes"
+	"github.com/rstudio/connect-client/internal/state"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
@@ -26,7 +27,7 @@ type User struct {
 type APIClient interface {
 	TestConnection() error
 	TestAuthentication() (*User, error)
-	CreateDeployment(name apitypes.ContentName, title apitypes.NullString) (apitypes.ContentID, error)
+	CreateDeployment(state.ConnectContent) (apitypes.ContentID, error)
 	UploadBundle(apitypes.ContentID, io.Reader) (apitypes.BundleID, error)
 	DeployBundle(apitypes.ContentID, apitypes.BundleID) (apitypes.TaskID, error)
 	WaitForTask(taskID apitypes.TaskID, logWriter io.Writer) error

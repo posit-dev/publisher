@@ -3,9 +3,7 @@ package util
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -30,11 +28,6 @@ func (n Size) String() string {
 
 func (n Size) ToInt64() int64 {
 	return int64(n)
-}
-
-func Exists(path string) bool {
-	_, err := os.Stat(path)
-	return !errors.Is(err, fs.ErrNotExist)
 }
 
 func Chdir(dir string) (string, error) {

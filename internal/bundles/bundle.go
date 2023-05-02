@@ -162,7 +162,6 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 			}
 		}
 	}
-	bundle.manifest.ResetEmptyFields()
 	if dest != nil {
 		if bundle.pythonRequirements != nil {
 			// If there isn't a requirements.txt file in the directory,
@@ -175,6 +174,7 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 				}
 			}
 		}
+		bundle.manifest.ResetEmptyFields()
 		err = bundle.addManifest()
 		if err != nil {
 			return nil, err

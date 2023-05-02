@@ -10,6 +10,7 @@ import (
 	"io"
 	"reflect"
 
+	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/spf13/afero"
 )
@@ -28,35 +29,35 @@ const PythonRequirementsFilename = "requirements.txt"
 // The manifest describes the type of content (its dependencies, how its
 // environment can be recreated (if needed) and how it is served/executed).
 type Manifest struct {
-	Version     int          `json:"version" kong:"-"`                           // Manifest version (always 1)
-	Platform    string       `json:"platform,omitempty" kong:"-"`                // Client R version
-	Metadata    Metadata     `json:"metadata" embed:""`                          // Properties about this deployment. Ignored by shinyapps.io
-	Python      *Python      `json:"python,omitempty" embed:"" prefix:"python-"` // If non-null, specifies the Python version and dependencies
-	Jupyter     *Jupyter     `json:"jupyter,omitempty" embed:""`                 // If non-null, specifies the Jupyter options
-	Quarto      *Quarto      `json:"quarto,omitempty" embed:"" prefix:"quarto-"` // If non-null, specifies the Quarto version and engines
-	Environment *Environment `json:"environment,omitempty" embed:""`             // Information about the execution environment
-	Packages    PackageMap   `json:"packages" kong:"-"`                          // Map of R package name to package details
-	Files       FileMap      `json:"files" kong:"-"`                             // List of file paths contained in the bundle
+	Version     int          `json:"version" kong:"-"`                               // Manifest version (always 1)
+	Platform    string       `json:"platform,omitempty" kong:"-"`                    // Client R version
+	Metadata    Metadata     `json:"metadata" kong:"embed"`                          // Properties about this deployment. Ignored by shinyapps.io
+	Python      *Python      `json:"python,omitempty" kong:"embed,prefix='python-'"` // If non-null, specifies the Python version and dependencies
+	Jupyter     *Jupyter     `json:"jupyter,omitempty" kong:"embed"`                 // If non-null, specifies the Jupyter options
+	Quarto      *Quarto      `json:"quarto,omitempty" kong:"embed,prefix='quarto-'"` // If non-null, specifies the Quarto version and engines
+	Environment *Environment `json:"environment,omitempty" kong:"embed"`             // Information about the execution environment
+	Packages    PackageMap   `json:"packages" kong:"-"`                              // Map of R package name to package details
+	Files       FileMap      `json:"files" kong:"-"`                                 // List of file paths contained in the bundle
 }
 
 // Metadata contains details about this deployment (type, etc).
 type Metadata struct {
-	AppMode         apptypes.AppMode `json:"appmode" short:"t" help:"Type of content being deployed. Default is to auto detect."` // Selects the runtime for this content.
-	ContentCategory string           `json:"content_category,omitempty"`                                                          // A refinement of the AppMode used by plots and sites
-	Entrypoint      string           `json:"entrypoint"`                                                                          // The main file being deployed.
-	PrimaryRmd      string           `json:"primary_rmd,omitempty" kong:"-"`                                                      // The rendering target for Rmd deployments.
-	PrimaryHtml     string           `json:"primary_html,omitempty" kong:"-"`                                                     // The default document for static deployments.
-	HasParameters   bool             `json:"has_parameters,omitempty" kong:"-"`                                                   // True if this is content allows parameter customization.
+	AppMode         apptypes.AppMode  `json:"appmode" short:"t" help:"Type of content being deployed. Default is to auto detect."` // Selects the runtime for this content.
+	ContentCategory string            `json:"content_category,omitempty"`                                                          // A refinement of the AppMode used by plots and sites
+	Entrypoint      string            `json:"entrypoint,omitempty"`                                                                // The main file being deployed.
+	PrimaryRmd      string            `json:"primary_rmd,omitempty" kong:"-"`                                                      // The rendering target for Rmd deployments.
+	PrimaryHtml     string            `json:"primary_html,omitempty" kong:"-"`                                                     // The default document for static deployments.
+	HasParameters   apitypes.NullBool `json:"has_parameters" kong:"-"`                                                             // True if this is content allows parameter customization.
 }
 
 type Environment struct {
-	Image    string `json:"image"`                 // The image to use during content build/execution
-	Prebuilt bool   `json:"prebuilt" negatable:""` // Determines whether Connect should skip the build phase for this content.
+	Image    string `json:"image"`    // The image to use during content build/execution
+	Prebuilt bool   `json:"prebuilt"` // Determines whether Connect should skip the build phase for this content.
 }
 
 type Python struct {
 	Version        string               `json:"version"` // The Python version
-	PackageManager PythonPackageManager `json:"package_manager" embed:""`
+	PackageManager PythonPackageManager `json:"package_manager" kong:"embed"`
 }
 
 type Quarto struct {
@@ -65,15 +66,14 @@ type Quarto struct {
 }
 
 type Jupyter struct {
-	HideAllInput    bool `json:"hide_all_input" negatable:""`    // Hide code cells when rendering
-	HideTaggedInput bool `json:"hide_tagged_input" negatable:""` // Hide the input of cells tagged with "hide_input"
+	HideAllInput    bool `json:"hide_all_input"`    // Hide code cells when rendering
+	HideTaggedInput bool `json:"hide_tagged_input"` // Hide the input of cells tagged with "hide_input"
 }
 
 type PythonPackageManager struct {
 	Name        string `json:"name" kong:"-"`              // Which package manger (always "pip")
 	Version     string `json:"version,omitempty" kong:"-"` // Package manager version
 	PackageFile string `json:"package_file"`               // Filename listing dependencies; usually "requirements.txt"
-	Packages    []byte `json:"-" kong:"-"`                 // Not part of the manifest. Temporary holding place for Python package dependencies.
 }
 
 type PackageMap map[string]Package
@@ -157,6 +157,81 @@ func (manifest *Manifest) Clone() (*Manifest, error) {
 		return nil, err
 	}
 	return ReadManifest(bytes.NewReader(manifestJSON))
+}
+
+func (m *Manifest) Merge(other *Manifest) {
+	m.Version = 1
+	if other.Platform != "" {
+		m.Platform = other.Platform
+	}
+	if other.Metadata.AppMode != apptypes.UnknownMode {
+		m.Metadata.AppMode = other.Metadata.AppMode
+	}
+	if other.Metadata.ContentCategory != "" {
+		m.Metadata.ContentCategory = other.Metadata.ContentCategory
+	}
+	if other.Metadata.Entrypoint != "" {
+		m.Metadata.Entrypoint = other.Metadata.Entrypoint
+	}
+	if other.Metadata.PrimaryRmd != "" {
+		m.Metadata.PrimaryRmd = other.Metadata.PrimaryRmd
+	}
+	if other.Metadata.PrimaryHtml != "" {
+		m.Metadata.PrimaryHtml = other.Metadata.PrimaryHtml
+	}
+	if other.Metadata.HasParameters.Valid() {
+		m.Metadata.HasParameters = other.Metadata.HasParameters
+	}
+	if m.Python == nil {
+		m.Python = other.Python
+	} else if other.Python != nil {
+		if other.Python.Version != "" {
+			m.Python.Version = other.Python.Version
+		}
+		if other.Python.PackageManager.Name != "" {
+			m.Python.PackageManager.Name = other.Python.PackageManager.Name
+		}
+		if other.Python.PackageManager.Version != "" {
+			m.Python.PackageManager.Version = other.Python.PackageManager.Version
+		}
+		if other.Python.PackageManager.PackageFile != "" {
+			m.Python.PackageManager.PackageFile = other.Python.PackageManager.PackageFile
+		}
+	}
+	if m.Jupyter == nil {
+		m.Jupyter = other.Jupyter
+	} else if other.Jupyter != nil {
+		if other.Jupyter.HideAllInput {
+			m.Jupyter.HideAllInput = other.Jupyter.HideAllInput
+		}
+		if other.Jupyter.HideTaggedInput {
+			m.Jupyter.HideTaggedInput = other.Jupyter.HideTaggedInput
+		}
+	}
+	if m.Quarto == nil {
+		m.Quarto = other.Quarto
+	} else if other.Quarto != nil {
+		if other.Quarto.Version != "" {
+			m.Quarto.Version = other.Quarto.Version
+		}
+		m.Quarto.Engines = append(m.Quarto.Engines, other.Quarto.Engines...)
+	}
+	if m.Environment == nil {
+		m.Environment = other.Environment
+	} else if other.Environment != nil {
+		if other.Environment.Image != "" {
+			m.Environment.Image = other.Environment.Image
+		}
+		if other.Environment.Prebuilt {
+			m.Environment.Prebuilt = other.Environment.Prebuilt
+		}
+	}
+	for k, v := range other.Packages {
+		m.Packages[k] = v
+	}
+	for k, v := range other.Files {
+		m.Files[k] = v
+	}
 }
 
 // ResetEmptyFields resets any of the optional sub-structs to nil

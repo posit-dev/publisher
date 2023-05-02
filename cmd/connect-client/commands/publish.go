@@ -23,23 +23,32 @@ import (
 )
 
 type BaseBundleCmd struct {
-	Python  string   `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
-	Exclude []string `short:"x" help:"list of file patterns to exclude."`
-	Path    string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
-	Config  string   `help:"Name of metadata directory to load/save (see ./.posit/deployments/)."`
+	Python      string   `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
+	Exclude     []string `short:"x" help:"list of file patterns to exclude."`
+	Path        string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
+	Config      string   `help:"Name of metadata directory to load/save (see ./.posit/deployments/)."`
+	AccountName string   `short:"n" help:"Nickname of destination publishing account."`
 	// Store for the deployment State that will be served to the UI,
 	// published, written to manifest and metadata files, etc.
-	State state.Deployment `embed:""`
+	State *state.Deployment `kong:"embed"`
 }
 
-// IsBaseBundleCmd exists solely to distinguish CLI command structs
-// that embed BaseBundleCmd from those that don't.
-type IsBaseBundleCmd interface {
-	IsBaseBundleCmd() bool
+type StatefulCommand interface {
+	GetState() *state.Deployment
+	SetState(s *state.Deployment)
+	GetBaseCmd() *BaseBundleCmd
 }
 
-func (BaseBundleCmd) IsBaseBundleCmd() bool {
-	return true
+func (cmd *BaseBundleCmd) GetState() *state.Deployment {
+	return cmd.State
+}
+
+func (cmd *BaseBundleCmd) SetState(s *state.Deployment) {
+	cmd.State = s
+}
+
+func (cmd *BaseBundleCmd) GetBaseCmd() *BaseBundleCmd {
+	return cmd
 }
 
 // stateFromCLI takes the CLI options provided by the user,
@@ -62,11 +71,10 @@ func (cmd *BaseBundleCmd) stateFromCLI(fs afero.Fs, logger rslog.Logger) error {
 		metadata.Entrypoint = filepath.Base(cmd.Path)
 	}
 
-	contentType := &inspect.ContentType{}
 	if metadata.AppMode == apptypes.UnknownMode || metadata.Entrypoint == "" {
 		logger.Infof("Detecting deployment type and entrypoint...")
 		typeDetector := inspect.NewContentTypeDetector()
-		contentType, err = typeDetector.InferType(fs, cmd.Path)
+		contentType, err := typeDetector.InferType(fs, cmd.Path)
 		if err != nil {
 			return fmt.Errorf("Error detecting content type: %w", err)
 		}
@@ -80,9 +88,9 @@ func (cmd *BaseBundleCmd) stateFromCLI(fs afero.Fs, logger rslog.Logger) error {
 	}
 	switch metadata.AppMode {
 	case apptypes.StaticMode:
-		metadata.PrimaryHtml = contentType.Entrypoint
+		metadata.PrimaryHtml = metadata.Entrypoint
 	case apptypes.StaticRmdMode, apptypes.ShinyRmdMode:
-		metadata.PrimaryRmd = contentType.Entrypoint
+		metadata.PrimaryRmd = metadata.Entrypoint
 	}
 	logger.WithFields(rslog.Fields{
 		"Entrypoint": metadata.Entrypoint,
@@ -148,8 +156,8 @@ func (cmd *BaseBundleCmd) inspectPython(fs afero.Fs, logger rslog.Logger, manife
 }
 
 type CreateBundleCmd struct {
-	BaseBundleCmd
-	BundleFile string `help:"Path to a file where the bundle should be written." required:"" type:"path"`
+	*BaseBundleCmd `kong:"embed"`
+	BundleFile     string `help:"Path to a file where the bundle should be written." required:"" type:"path"`
 }
 
 func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
@@ -171,7 +179,7 @@ func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 type WriteManifestCmd struct {
-	BaseBundleCmd
+	*BaseBundleCmd `kong:"embed"`
 }
 
 func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
@@ -201,8 +209,7 @@ func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 type PublishCmd struct {
-	BaseBundleCmd
-	AccountName string `short:"n" help:"Nickname of destination publishing account."`
+	*BaseBundleCmd `kong:"embed"`
 }
 
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
@@ -234,9 +241,8 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	// TODO: name and title
 	// TODO: redeployment option
-	contentID, err := client.CreateDeployment("", apitypes.NullString{})
+	contentID, err := client.CreateDeployment(cmd.State.Connect.Content)
 	if err != nil {
 		return err
 	}
@@ -244,6 +250,18 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
+
+	cmd.State.Target = state.TargetID{
+		ServerType:  account.ServerType,
+		ServerName:  account.Name,
+		ServerURL:   account.URL,
+		ContentId:   apitypes.NewOptional(contentID),
+		ContentName: "",
+		Username:    account.AccountName,
+		BundleId:    apitypes.NewOptional(bundleID),
+		DeployedAt:  apitypes.NewOptional(time.Now()),
+	}
+
 	taskID, err := client.DeployBundle(contentID, bundleID)
 	if err != nil {
 		return err
