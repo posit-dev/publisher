@@ -3,9 +3,7 @@ package state
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/rstudio/connect-client/internal/apitypes"
 )
@@ -40,7 +38,24 @@ type ConnectContent struct {
 
 func (d *ConnectDeployment) Merge(other *ConnectDeployment) {
 	d.Content.Merge(&other.Content)
-	d.Environment = append(d.Environment, other.Environment...)
+	d.Environment = mergeEnvironments(d.Environment, other.Environment)
+}
+
+func mergeEnvironments(oldEnv, newEnv []ConnectEnvironmentVariable) []ConnectEnvironmentVariable {
+	for _, newVar := range newEnv {
+		found := false
+		for i := range oldEnv {
+			if oldEnv[i].Name == newVar.Name {
+				oldEnv[i].Value = newVar.Value
+				found = true
+				break
+			}
+		}
+		if !found {
+			oldEnv = append(oldEnv, newVar)
+		}
+	}
+	return oldEnv
 }
 
 func (d *ConnectContent) Merge(other *ConnectContent) {
@@ -106,47 +121,8 @@ func (d *ConnectContent) Merge(other *ConnectContent) {
 	}
 }
 
-type ConnectEnvironmentVariable struct {
-	Name            string              `json:"name"`
-	Value           apitypes.NullString `json:"value"`
-	fromEnvironment bool
-}
-
-// UnmarshalText is called by the CLI to parse values.
-// Values are of the form NAME=VALUE to specify a name/value pair,
-// or just NAME to specify that VALUE should be pulled from
-// the environment at deployment time. The second form is
-// recommended for secrets, so the value does not appear
-// in logs etc.
-func (v *ConnectEnvironmentVariable) UnmarshalText(text []byte) error {
-	parts := strings.SplitN(string(text), "=", 2)
-	v.Name = parts[0]
-	if len(parts) == 1 {
-		// Just a name. Pull from the environment so
-		// the value never appears on the command line.
-		// This is helpful for private values that come
-		// from the environment and need to be passed through.
-		v.Value = apitypes.NewOptional(os.Getenv(v.Name))
-		v.fromEnvironment = true
-	} else {
-		// Value from the CLI (may be the empty string).
-		v.Value = apitypes.NewOptional(parts[1])
-		v.fromEnvironment = false
-	}
-	return nil
-}
-
-func (v *ConnectEnvironmentVariable) MarshalText() ([]byte, error) {
-	if v.fromEnvironment {
-		return []byte(v.Name), nil
-	} else {
-		s, _ := v.Value.Get()
-		return []byte(fmt.Sprintf("%s=%s", v.Name, s)), nil
-	}
-}
-
-const contentLabel metadataLabel = "content"
-const environmentLabel metadataLabel = "environment"
+const contentLabel MetadataLabel = "content"
+const environmentLabel MetadataLabel = "environment"
 
 func (d *ConnectDeployment) save(serializer deploymentSerializer) error {
 	err := serializer.Save(contentLabel, &d.Content)
@@ -184,7 +160,8 @@ func (d *ConnectDeployment) load(serializer deploymentSerializer) error {
 	d.Environment = append(d.Environment, envVars...)
 
 	// Populate values for variables whose values are pulled from the environment
-	for _, envVar := range d.Environment {
+	for i := range d.Environment {
+		envVar := &d.Environment[i]
 		if !envVar.Value.Valid() {
 			envVar.Value = apitypes.NewOptional(os.Getenv(envVar.Name))
 			envVar.fromEnvironment = true

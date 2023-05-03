@@ -76,14 +76,14 @@ func getMetadataPath(sourceDir string, configName string) string {
 	return filepath.Join(sourceDir, ".posit", "deployments", configName)
 }
 
-type metadataLabel string
+type MetadataLabel string
 
 type deploymentSerializer interface {
-	Save(label metadataLabel, src any) error
-	Load(label metadataLabel, dest any) error
+	Save(label MetadataLabel, src any) error
+	Load(label MetadataLabel, dest any) error
 }
 
-const idLabel metadataLabel = "id"
+const idLabel MetadataLabel = "id"
 
 // LoadFromFiles loads the deployment state from metadata files.
 // This should be called prior to processing higher-precedence

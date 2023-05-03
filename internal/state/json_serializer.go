@@ -27,7 +27,7 @@ func newJsonSerializer(fs afero.Fs, dir string, logger rslog.Logger) *jsonSerial
 
 var _ deploymentSerializer = &jsonSerializer{}
 
-func (s *jsonSerializer) Save(label metadataLabel, src any) error {
+func (s *jsonSerializer) Save(label MetadataLabel, src any) error {
 	path := filepath.Join(s.dir, fmt.Sprintf("%s.json", label))
 	f, err := s.fs.Create(path)
 	if err != nil {
@@ -43,7 +43,7 @@ func (s *jsonSerializer) Save(label metadataLabel, src any) error {
 	return nil
 }
 
-func (s *jsonSerializer) Load(label metadataLabel, dest any) error {
+func (s *jsonSerializer) Load(label MetadataLabel, dest any) error {
 	path := filepath.Join(s.dir, fmt.Sprintf("%s.json", label))
 	f, err := s.fs.Open(path)
 	if err != nil {
