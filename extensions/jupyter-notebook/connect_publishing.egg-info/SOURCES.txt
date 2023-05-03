@@ -1,3 +1,4 @@
+.gitignore
 CONTRIBUTING.md
 LICENSE.md
 MANIFEST.in
@@ -9,6 +10,7 @@ package.json
 pyproject.toml
 setup.cfg
 setup.py
+version.py
 .ipynb_checkpoints/Untitled-checkpoint.ipynb
 connect_publishing/.DS_Store
 connect_publishing/__init__.py
