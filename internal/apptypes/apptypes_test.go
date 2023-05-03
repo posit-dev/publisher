@@ -447,7 +447,7 @@ func (s *AppTypesSuite) TestDescription() {
 		Description string
 	}{
 		{UnknownMode, "unknown content type"},
-		{ShinyMode, "Shiny application"},
+		{ShinyMode, "R Shiny application"},
 		{ShinyRmdMode, "Shiny R Markdown document"},
 		{StaticRmdMode, "R Markdown document"},
 		{StaticMode, "static content"},
