@@ -30,8 +30,6 @@ from rsconnect.http_support import CookieJar
 
 from ssl import SSLError
 
-#from connect_publishing.managers import get_model
-
 try:
     from connect_publishing.version import version as __version__  # noqa
 except ImportError:
@@ -47,7 +45,7 @@ def _jupyter_nbextension_paths():
     return [
         dict(
             section="notebook",
-            # the path is relative to the `rsconnect` directory
+            # the path is relative to the `connect_publishing` directory
             src="static",
             # directory in the `nbextension/` namespace
             dest="connect_publishing",
@@ -184,5 +182,5 @@ def load_jupyter_server_extension(nb_app):
     web_app = nb_app.web_app
     host_pattern = ".*$"
     action_pattern = r"(?P<action>\w+)"
-    route_pattern = url_path_join(web_app.settings["base_url"], r"/rsconnect_jupyter/%s" % action_pattern)
-    web_app.add_handlers(host_pattern, [(route_pattern)])
+    route_pattern = url_path_join(web_app.settings["base_url"], r"/connect_publishing/%s" % action_pattern)
+    #web_app.add_handlers(host_pattern, [(route_pattern)])

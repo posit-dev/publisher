@@ -4,8 +4,7 @@ define([
   'jquery',
   'base/js/namespace',
   'base/js/dialog',
-  'services/contents',
-  './rsconnect'
+  'services/contents'
 ], function ($, Jupyter, Dialog) {
   /***********************************************************************
    * Extension bootstrap (main)
@@ -20,7 +19,7 @@ define([
 
   function init() {
     // construct notification widget
-    notify = Jupyter.notification_area.widget('rsconnect_jupyter');
+    notify = Jupyter.notification_area.widget('connect_publishing');
 
     // create an action that can be invoked from many places (e.g. command
     // palette, button click, keyboard shortcut, etc.)
@@ -59,12 +58,12 @@ define([
   var debug = {
     info: function () {
       var args = [].slice.call(arguments);
-      args.unshift('RSConnect:');
+      args.unshift('Posit Connect:');
       console.info.apply(null, args);
     },
     error: function () {
       var args = [].slice.call(arguments);
-      args.unshift('RSConnect:');
+      args.unshift('Posit Connect:');
       console.error.apply(null, args);
     }
   };
@@ -98,7 +97,7 @@ define([
         // unlikely but possible if we aren't able to save
         debug.error('Failed to save notebook:', err);
         Dialog.modal({
-          title: 'rsconnect_jupyter',
+          title: 'connect_publishing',
           body: 'Failed to save this notebook. Error: ' + err,
           buttons: { Ok: { class: 'btn-primary' } }
         });
