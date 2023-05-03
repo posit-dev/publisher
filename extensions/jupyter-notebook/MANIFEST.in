@@ -1,5 +1,5 @@
 include README.md
-include rsconnect_jupyter/static/*.js
-include rsconnect_jupyter/static/*.json
-include rsconnect_jupyter/static/main.css
-include rsconnect_jupyter/static/images/*.png
+include connect_publishing/static/*.js
+include connect_publishing/static/*.json
+include connect_publishing/static/main.css
+include connect_publishing/static/images/*.png

@@ -36,7 +36,7 @@ define([
         handler: debounce(1000, onPublishClicked)
       },
       'publish',
-      'rsconnect_jupyter'
+      'connect_publishing'
     );
 
     // add a button that invokes the action
