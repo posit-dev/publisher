@@ -6,14 +6,14 @@ define([
   'base/js/events',
   'base/js/namespace',
   'base/js/promises'
-], function(connect, $, events, Jupyter, promises) {
+], function(connect, $, promises) {
   function load_ipython_extension() {
     promises.app_initialized.then(function(app) {
       if (app === 'NotebookApp') {
         // add custom css
         $('<link/>')
           .attr({
-            href: requirejs.toUrl('nbextensions/rsconnect_jupyter/main.css'),
+            href: requirejs.toUrl('nbextensions/connect_publishing/main.css'),
             rel: 'stylesheet',
             type: 'text/css'
           })
