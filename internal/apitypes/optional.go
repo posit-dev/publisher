@@ -23,6 +23,10 @@ func (opt *Optional[T]) Get() (T, bool) {
 	return opt.value, opt.valid
 }
 
+func (opt *Optional[T]) Valid() bool {
+	return opt.valid
+}
+
 var JSON_NULL = []byte("null")
 
 func (opt Optional[T]) MarshalJSON() ([]byte, error) {

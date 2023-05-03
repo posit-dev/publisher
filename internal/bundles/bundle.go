@@ -25,7 +25,26 @@ type Bundler interface {
 	CreateBundle(archive io.Writer) error
 }
 
-func NewBundlerForDirectory(fs afero.Fs, dir string, ignores []string, logger rslog.Logger) (*bundler, error) {
+// NewBundler creates a bundler that will archive the directory specified
+// by `path`, or the containing directory if `path` is a file.
+// The provided manifest should contain the metadata for the app,
+// such as the entrypoint, Python version, R package dependencies, etc.
+// The bundler will fill in the `files` section and include the manifest.json
+// in the bundler.
+func NewBundler(fs afero.Fs, path string, manifest *Manifest, ignores []string, logger rslog.Logger) (*bundler, error) {
+	var dir string
+	var filename string
+	isDir, err := afero.IsDir(fs, path)
+	if err != nil {
+		return nil, err
+	}
+	if isDir {
+		dir = path
+		filename = ""
+	} else {
+		dir = filepath.Dir(path)
+		filename = filepath.Base(path)
+	}
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, err
@@ -35,9 +54,10 @@ func NewBundlerForDirectory(fs afero.Fs, dir string, ignores []string, logger rs
 		return nil, fmt.Errorf("Error loading ignore list: %w", err)
 	}
 	return &bundler{
-		manifest:    NewManifest(),
+		manifest:    manifest,
 		fs:          fs,
 		baseDir:     absDir,
+		filename:    filename,
 		walker:      walker,
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
@@ -58,6 +78,7 @@ func NewBundlerForManifest(fs afero.Fs, manifestPath string, logger rslog.Logger
 		manifest:    manifest,
 		fs:          fs,
 		baseDir:     absDir,
+		filename:    "",
 		walker:      newManifestWalker(fs, absDir, manifest),
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
@@ -67,6 +88,7 @@ func NewBundlerForManifest(fs afero.Fs, manifestPath string, logger rslog.Logger
 type bundler struct {
 	fs          afero.Fs  // Filesystem we are walking to get the files
 	baseDir     string    // Directory being bundled
+	filename    string    // Primary file being deployed
 	walker      Walker    // Ignore patterns from CLI and ignore files
 	manifest    *Manifest // Manifest describing the bundle, if provided
 	logger      rslog.Logger
@@ -122,13 +144,43 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error creating bundle: %w", err)
 	}
-	bundle.manifest.Metadata.AppMode = "static" // TODO: pass this in
+	if b.filename != "" {
+		// Ensure that the main file was not excluded
+		_, ok := bundle.manifest.Files[b.filename]
+		if !ok {
+			path := filepath.Join(b.baseDir, b.filename)
+			info, err := b.fs.Stat(path)
+			if err != nil {
+				return nil, err
+			}
+			err = bundle.walkFunc(path, info, nil)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 	if dest != nil {
+		if bundle.manifest.Python != nil {
+			// If there isn't a requirements.txt file in the directory,
+			// bundle the package list from the manifest as requirements.txt.
+			_, haveRequirementsTxt := bundle.manifest.Files[PythonRequirementsFilename]
+			if !haveRequirementsTxt {
+				packages := bundle.manifest.Python.PackageManager.Packages
+				err = bundle.addFile(PythonRequirementsFilename, packages)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
 		err = bundle.addManifest()
 		if err != nil {
 			return nil, err
 		}
 	}
+	b.logger.WithFields(rslog.Fields{
+		"files":       bundle.numFiles,
+		"total_bytes": bundle.size.ToInt64(),
+	}).Infof("Bundle created")
 	return bundle.manifest, nil
 }
 
@@ -254,11 +306,22 @@ func (b *bundle) addDirectory(dir string) error {
 	if err != nil {
 		return err
 	}
-	b.logger.WithFields(rslog.Fields{
-		"files":       b.numFiles,
-		"total_bytes": b.size.ToInt64(),
-	}).Infof("Bundle created")
 	return nil
+}
+
+func (b *bundle) addFile(name string, content []byte) error {
+	header := &tar.Header{
+		Name: name,
+		Size: int64(len(content)),
+		Mode: 0666,
+	}
+	err := b.archive.WriteHeader(header)
+	if err != nil {
+		return err
+	}
+	_, err = b.archive.Write(content)
+	return err
+
 }
 
 func (b *bundle) addManifest() error {
@@ -266,17 +329,7 @@ func (b *bundle) addManifest() error {
 	if err != nil {
 		return err
 	}
-	header := &tar.Header{
-		Name: ManifestFilename,
-		Size: int64(len(manifestJSON)),
-		Mode: 0666,
-	}
-	err = b.archive.WriteHeader(header)
-	if err != nil {
-		return err
-	}
-	_, err = b.archive.Write(manifestJSON)
-	return err
+	return b.addFile(ManifestFilename, manifestJSON)
 }
 
 type manifestWalker struct {
