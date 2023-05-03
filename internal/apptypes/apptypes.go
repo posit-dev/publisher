@@ -209,7 +209,7 @@ func (t AppMode) Description() string {
 	case UnknownMode:
 		return "unknown content type"
 	case ShinyMode:
-		return "Shiny application"
+		return "R Shiny application"
 	case ShinyRmdMode:
 		return "Shiny R Markdown document"
 	case StaticRmdMode:
