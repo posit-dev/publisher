@@ -34,39 +34,53 @@ type BaseBundleCmd struct {
 }
 
 type StatefulCommand interface {
-	GetState() *state.Deployment
-	SetState(s *state.Deployment)
-	GetBaseCmd() *BaseBundleCmd
+	LoadState(fs afero.Fs, logger rslog.Logger) error
+	SaveState(fs afero.Fs, logger rslog.Logger) error
 }
 
-func (cmd *BaseBundleCmd) GetState() *state.Deployment {
-	return cmd.State
+func (cmd *BaseBundleCmd) getConfigName() string {
+	if cmd.Config != "" {
+		return cmd.Config
+	}
+	if cmd.AccountName != "" {
+		return cmd.AccountName
+	}
+	return "default"
 }
 
-func (cmd *BaseBundleCmd) SetState(s *state.Deployment) {
-	cmd.State = s
-}
-
-func (cmd *BaseBundleCmd) GetBaseCmd() *BaseBundleCmd {
-	return cmd
-}
-
-// stateFromCLI takes the CLI options provided by the user,
-// performs content auto-detection if needed, and produces
-// updates cmd.State to reflect all of the information.
-func (cmd *BaseBundleCmd) stateFromCLI(fs afero.Fs, logger rslog.Logger) error {
+func (cmd *BaseBundleCmd) LoadState(fs afero.Fs, logger rslog.Logger) error {
 	sourceDir, err := util.DirFromPath(fs, cmd.Path)
 	if err != nil {
 		return err
 	}
+	cmd.Config = cmd.getConfigName()
 	cmd.State.SourceDir = sourceDir
+
+	cliState := cmd.State
+	cmd.State = state.NewDeployment()
+	err = cmd.State.LoadFromFiles(fs, sourceDir, cmd.Config, logger)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	cmd.State.Merge(cliState)
+	return nil
+}
+
+func (cmd *BaseBundleCmd) SaveState(fs afero.Fs, logger rslog.Logger) error {
+	return cmd.State.SaveToFiles(fs, cmd.State.SourceDir, cmd.Config, logger)
+}
+
+// stateFromCLI takes the CLI options provided by the user,
+// performs content auto-detection if needed, and
+// updates cmd.State to reflect all of the information.
+func (cmd *BaseBundleCmd) stateFromCLI(fs afero.Fs, logger rslog.Logger) error {
 	manifest := &cmd.State.Manifest
 	manifest.Version = 1
 	manifest.Packages = make(bundles.PackageMap)
 	manifest.Files = make(bundles.FileMap)
 
 	metadata := &manifest.Metadata
-	if metadata.Entrypoint == "" && cmd.Path != sourceDir {
+	if metadata.Entrypoint == "" && cmd.Path != cmd.State.SourceDir {
 		// Provided path is a file. It is the entrypoint.
 		metadata.Entrypoint = filepath.Base(cmd.Path)
 	}

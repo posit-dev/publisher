@@ -10,8 +10,6 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services"
-	"github.com/rstudio/connect-client/internal/state"
-	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
@@ -49,16 +47,6 @@ func makeContext(logger rslog.Logger) (*commands.CLIContext, error) {
 	return ctx, nil
 }
 
-func getSaveName(saveName string, accountName string) string {
-	if saveName != "" {
-		return saveName
-	}
-	if accountName != "" {
-		return accountName
-	}
-	return "default"
-}
-
 func main() {
 	logger := setupLogging()
 	logVersion(logger)
@@ -77,28 +65,17 @@ func main() {
 	if ok {
 		// For these commands, we need to load saved deployment state
 		// from file, then overlay the alread-parsed CLI arguments on top.
-		baseCmd := cmd.GetBaseCmd()
-		sourceDir, err := util.DirFromPath(ctx.Fs, baseCmd.Path)
+		err = cmd.LoadState(ctx.Fs, ctx.Logger)
 		if err != nil {
-			logger.Fatalf("Error checking path %s: %s", baseCmd.Path, err)
+			logger.Fatalf("Error loading saved deployment: %s", err)
 		}
-		saveName := getSaveName(baseCmd.Config, baseCmd.AccountName)
-		savedState := state.NewDeployment()
-		err = savedState.LoadFromFiles(ctx.Fs, sourceDir, saveName, ctx.Logger)
-		if err != nil && !os.IsNotExist(err) {
-			logger.Fatalf("Error loading metadata '%s': %s", saveName, err)
-		}
-		savedState.Merge(cmd.GetState())
-		cmd.SetState(savedState)
 		err = args.Run(&cli.CommonArgs)
 		if err != nil {
 			logger.Fatalf("Error: %s", err)
 		}
-		// Save metadata
-		logger.Infof("About to save metadata")
-		err = savedState.SaveToFiles(ctx.Fs, sourceDir, saveName, ctx.Logger)
+		err = cmd.SaveState(ctx.Fs, ctx.Logger)
 		if err != nil {
-			logger.Fatalf("Error saving metadata '%s': %s", saveName, err)
+			logger.Fatalf("Error saving deployment: %s", err)
 		}
 	} else {
 		err = args.Run(&cli.CommonArgs)
