@@ -1,0 +1,32 @@
+Metadata-Version: 2.1
+Name: connect-publishing
+Version: 0.0.1
+Summary: Posit Connect publishing client UI
+Home-page: http://github.com/rstudio/publishing-client
+Author: Isabel Zimmerman
+Author-email: isabel.zimmerman@posit.co
+License: GPL-2.0
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Provides-Extra: test
+License-File: LICENSE.md
+
+# rsconnect-jupyter
+
+[rsconnect-jupyter](https://www.github.com/rstudio/rsconnect-jupyter/) is a
+plugin for [Jupyter Notebook](https://jupyter.org/) that enables
+publishing notebooks to [Posit
+Connect](https://www.posit.co/products/enterprise/connect/).
+
+# Requirements
+
+- Python 3.7.0 and higher
+- Jupyter Notebook 5.x
+- [pip](https://pypi.org/project/pip/)
+- [wheel](https://pypi.org/project/wheel/)
+- [Posit Connect](https://www.posit.co/download/posit-connect/) v1.7.0
+  or higher, configured with Python support.
+
+# Documentation
+
+See the documentation [on GitHub](docs/docs/index.md) or on [docs.posit.co](https://docs.posit.co/rsconnect-jupyter/).

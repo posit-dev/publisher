@@ -1,0 +1,15 @@
+{
+  "name": "connect_publishing",
+  "version": "0.0.1",
+  "description": "Posit Connect Jupyter UI Plugin",
+  "main": "index.js",
+  "scripts": {
+    "lint": "./node_modules/.bin/eslint ./connect_publishing/static/*.js"
+  },
+  "repository": "git@github.com:rstudio/publishing-client.git",
+  "author": "Isabel Zimmerman <isabel.zimmerman@posit.co>",
+  "license": "GPL-2.0",
+  "devDependencies": {
+    "eslint": "^6.4.0"
+  }
+}

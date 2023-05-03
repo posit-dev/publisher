@@ -1,0 +1,137 @@
+.rsc-icon {
+    font-size: 18px;
+    /* make the existing icon transparent so it is not visible */
+    color: transparent;
+    /* add a background-image. size 40 x 36 */
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAkCAYAAAD7PHgWAAACUUlEQVR42mNgGAWjYBSMVDDzPyvD9GfBDDOez2OY+fwikH4HxH8Ypj9/BRQ/CmR3MUx/ajgwjpv+PIFhxosnQEf8JwLvpZ9D59/nAFq4kkiHIePfQA/l09Zxq66wMcx4tosMxyHhl/q0jNYeHBbfAMo1MEx74QekHRhmvXABpsl4oPh0IP6AonbaSz0aOQ6YhmY8/4vmsG/AzJDOUP+fCae+ya+lgOqOAx38lGHmiwrahd6M55vQHPeTYdZz+wEqPp6HouDpz2LBxQeyA2c+L0XRAwrFGc/sgBkhl2H6iyRgdCvRMrQIJfabQAexwNXPeqIGFDuHpuYvMD1OA2cs+jvwWRpc7bznokCxx3jUz6O3A38wTHrLh1D7rI2A+n/UL1rwWTjz+UZUtS/OEwxx9PRKMZj2UBAnBtUkqBnqNhFpthGufvYLRSD/LhA/g9bdMPwaKn6YyqH9Yj1BB05/HoYUO+UE1D+ksgNfuhKw8BFD32NOJAdeoa8DIdFcj8Oyd8DawxxRGz1zJyI5PKRR4f7MDZyBIOnoCpA9mWHqU1nUhgZGWXkYGuUwXEfb6hBvUng2ASO0QI0KmoA5j4XAITTj+VpwriTURJv+bCKWqDxGy9CYg2TRB6AD2oEOdmSY+VoSWAwJQDzw1AgcXTOe38fiuO/A+lqHlg6kpNH6D9xdoHF/xAxo0RsyHAfsUD1LpU+in/1EBhitayB1LVGOuwqMdhv6505QEx6SCe5gcdRriCeeBTGs+s88CPrJ7/gZpj1VB+PZL8VHBw5GwSigEwAAO8Vb1WEAypEAAAAASUVORK5CYII=);
+    background-size: contain;
+}
+
+.rsc-text-light {
+    opacity: 0.7;
+}
+
+.rsc-label {
+    font-weight: bold;
+}
+
+.rsc-image {
+    float: left;
+    width: 40px;
+    height: 35px;
+}
+
+.rsc-appmode.disabled {
+    opacity: 0.5;
+}
+
+.rsc-fa-icon {
+    font-size: 18px;
+    color: black;
+    padding-left: 10px;
+}
+
+#rsc-log {
+    height: 10rem;
+    margin-top: 1rem;
+    overflow-y: scroll;
+    overflow: break-word;
+}
+
+.rsc-dropbtn {
+  background-color: #3498DB;
+  color: white;
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Dropdown button on hover & focus */
+.rsc-dropbtn:hover, .rsc-dropbtn:focus {
+  background-color: #2980B9;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.rsc-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.rsc-dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  min-width: 240px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+/* Links inside the dropdown */
+.rsc-dropdown-content a {
+  color: black;
+  padding: 8px 16px;
+  text-decoration: none;
+  font-size: 12px;
+  display: block;
+  height: 32px;
+}
+
+/* Change color of dropdown links on hover */
+.rsc-dropdown-content a:hover {
+    background-color: #ddd
+}
+
+/* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+.rsc-show {
+    display:block;
+}
+
+.rsc-file-dialog {
+    margin-left: 1em;
+    display:inline !important;
+}
+
+p {
+    margin-top: 15px;
+}
+
+#file-list-group {
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+#file-list-container {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+#file-list-label {
+    font-size: 1.2em;
+    padding-left: 1em;
+    font-weight: bold;
+}
+
+#rsc-add-files-label {
+    margin-right: 1em;
+    margin-bottom: 2em;
+}
+
+.code {
+    font-family: monospace;
+}
+
+#requirements-txt-container input {
+    margin-right: 1em;
+}
+
+#version-info {
+    font-size: .7em;
+    text-align: right;
+}
+
+
+#hide-input-wrapper {
+    display:flex;
+}
