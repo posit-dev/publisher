@@ -24,7 +24,6 @@ connect_publishing/static/.eslintrc.yml
 connect_publishing/static/connect.js
 connect_publishing/static/index.js
 connect_publishing/static/main.css
-connect_publishing/static/rsconnect.js
 connect_publishing/static/images/publishDocVoila.png
 connect_publishing/static/images/publishDocVoila_2x.png
 connect_publishing/static/images/publishDocWithSource.png

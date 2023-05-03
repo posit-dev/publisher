@@ -185,4 +185,4 @@ def load_jupyter_server_extension(nb_app):
     host_pattern = ".*$"
     action_pattern = r"(?P<action>\w+)"
     route_pattern = url_path_join(web_app.settings["base_url"], r"/rsconnect_jupyter/%s" % action_pattern)
-    web_app.add_handlers(host_pattern, [(route_pattern, EndpointHandler)])
+    web_app.add_handlers(host_pattern, [(route_pattern)])
