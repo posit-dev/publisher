@@ -386,6 +386,7 @@ func (s *AppTypesSuite) TestAppMode() {
 		s.Equal(each.RContent, each.Mode.IsRContent(), comment)
 		s.Equal(each.PythonContent, each.Mode.IsPythonContent(), comment)
 		s.Equal(each.QuartoContent, each.Mode.IsQuartoContent(), comment)
+		s.Equal(each.WorkerApp, each.Mode.IsWorkerApp(), comment)
 		s.Equal(each.APIApp, each.Mode.IsAPIApp(), comment)
 		s.Equal(each.PlumberAPI, each.Mode.IsPlumberAPI(), comment)
 		s.Equal(each.PythonAPI, each.Mode.IsPythonAPI(), comment)
@@ -425,8 +426,9 @@ func (s *AppTypesSuite) TestAppModeStrings() {
 		{StaticQuartoMode, "quarto-static"},
 		{PythonShinyMode, "python-shiny"},
 		{JupyterVoilaMode, "jupyter-voila"},
+		{UnknownMode, ""},
 	} {
-		comment := fmt.Sprintf("AppMode=%s (%s)", each.Mode, each.String)
+		comment := fmt.Sprintf("AppMode=%q (%s)", each.Mode, each.String)
 		actual, err := AppModeFromString(each.String)
 		s.Nil(err, comment)
 		s.Equal(each.Mode, actual, comment)
@@ -439,6 +441,22 @@ func (s *AppTypesSuite) TestAppModeStrings() {
 	s.Equal(UnknownMode, actual)
 
 	s.Equal("", string(UnknownMode))
+}
+
+func (s *AppTypesSuite) TestUnmarshalText() {
+	var mode AppMode
+	err := mode.UnmarshalText([]byte("python-shiny"))
+	s.Nil(err)
+	s.Equal(mode, PythonShinyMode)
+}
+
+func (s *AppTypesSuite) TestUnmarshalTextInvalid() {
+	var mode AppMode
+	err := mode.UnmarshalText([]byte("invalid"))
+	s.NotNil(err)
+	s.ErrorContains(err, "Unrecognized content type")
+	s.ErrorContains(err, "invalid")
+	s.Equal(mode, UnknownMode)
 }
 
 func (s *AppTypesSuite) TestDescription() {
@@ -462,6 +480,7 @@ func (s *AppTypesSuite) TestDescription() {
 		{StaticQuartoMode, "Quarto document"},
 		{PythonShinyMode, "Python Shiny application"},
 		{JupyterVoilaMode, "Voila interactive notebook"},
+		{AppMode("invalid"), "unknown content type"},
 	} {
 		comment := fmt.Sprintf("AppMode=%s", each.Mode)
 		s.Equal(each.Description, each.Mode.Description(), comment)

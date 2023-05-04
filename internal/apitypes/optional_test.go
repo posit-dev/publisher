@@ -167,3 +167,18 @@ func (s *OptionalSuite) TestUnmarshalJSONErr() {
 	err := json.Unmarshal(jsonInput, &data)
 	s.NotNil(err)
 }
+
+func (s *OptionalSuite) TestNotValid() {
+	var value Optional[string]
+	s.Equal(value.Valid(), false)
+}
+
+func (s *OptionalSuite) TestValid() {
+	value := NewOptional("hi there")
+	s.Equal(value.Valid(), true)
+}
+
+func (s *OptionalSuite) TestValidEmpty() {
+	value := NewOptional("")
+	s.Equal(value.Valid(), true)
+}
