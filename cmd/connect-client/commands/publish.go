@@ -23,11 +23,10 @@ import (
 )
 
 type BaseBundleCmd struct {
-	Python      string   `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
-	Exclude     []string `short:"x" help:"list of file patterns to exclude."`
-	Path        string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
-	Config      string   `help:"Name of metadata directory to load/save (see ./.posit/deployments/)."`
-	AccountName string   `short:"n" help:"Nickname of destination publishing account."`
+	Python  string   `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
+	Exclude []string `short:"x" help:"list of file patterns to exclude."`
+	Path    string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
+	Config  string   `help:"Name of metadata directory to load/save (see ./.posit/deployments/)."`
 	// Store for the deployment State that will be served to the UI,
 	// published, written to manifest and metadata files, etc.
 	State *state.Deployment `kong:"embed"`
@@ -42,8 +41,8 @@ func (cmd *BaseBundleCmd) getConfigName() string {
 	if cmd.Config != "" {
 		return cmd.Config
 	}
-	if cmd.AccountName != "" {
-		return cmd.AccountName
+	if cmd.State.Target.AccountName != "" {
+		return cmd.State.Target.AccountName
 	}
 	return "default"
 }
@@ -227,7 +226,7 @@ type PublishCmd struct {
 }
 
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	account, err := ctx.Accounts.GetAccountByName(cmd.AccountName)
+	account, err := ctx.Accounts.GetAccountByName(cmd.State.Target.AccountName)
 	if err != nil {
 		return err
 	}
@@ -255,10 +254,15 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	// TODO: redeployment option
-	contentID, err := client.CreateDeployment(cmd.State.Connect.Content)
-	if err != nil {
-		return err
+
+	var contentID apitypes.ContentID
+	if cmd.State.Target.ContentId != "" {
+		contentID = cmd.State.Target.ContentId
+	} else {
+		contentID, err = client.CreateDeployment(cmd.State.Connect.Content)
+		if err != nil {
+			return err
+		}
 	}
 	bundleID, err := client.UploadBundle(contentID, bundleFile)
 	if err != nil {
@@ -267,9 +271,9 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 
 	cmd.State.Target = state.TargetID{
 		ServerType:  account.ServerType,
-		ServerName:  account.Name,
+		AccountName: account.Name,
 		ServerURL:   account.URL,
-		ContentId:   apitypes.NewOptional(contentID),
+		ContentId:   contentID,
 		ContentName: "",
 		Username:    account.AccountName,
 		BundleId:    apitypes.NewOptional(bundleID),
@@ -300,7 +304,7 @@ type PublishUICmd struct {
 }
 
 func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	account, err := ctx.Accounts.GetAccountByName(cmd.AccountName)
+	account, err := ctx.Accounts.GetAccountByName(cmd.State.Target.AccountName)
 	if err != nil {
 		return err
 	}
@@ -309,7 +313,7 @@ func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	svc := proxy.NewProxyService(
-		cmd.AccountName,
+		cmd.State.Target.AccountName,
 		serverURL,
 		cmd.Listen,
 		cmd.TLSKeyFile,
