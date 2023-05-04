@@ -109,7 +109,7 @@ class EndpointHandler(APIHandler):
 
 
 def load_jupyter_server_extension(nb_app):
-    nb_app.log.info("connect_publishing enabled!")
+    nb_app.log.info("connect_publishing enabled! version: ", __version__)
     web_app = nb_app.web_app
     host_pattern = ".*$"
     action_pattern = r"(?P<action>\w+)"

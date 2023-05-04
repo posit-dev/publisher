@@ -6,7 +6,7 @@ define([
   'base/js/events',
   'base/js/namespace',
   'base/js/promises'
-], function(connect, $, promises) {
+], function(connect, $, events, Jupyter, promises) {
   function load_ipython_extension() {
     promises.app_initialized.then(function(app) {
       if (app === 'NotebookApp') {
