@@ -31,7 +31,7 @@ const PythonRequirementsFilename = "requirements.txt"
 // environment can be recreated (if needed) and how it is served/executed).
 type Manifest struct {
 	Version     int          `json:"version" kong:"-"`                               // Manifest version (always 1)
-	Platform    string       `json:"platform,omitempty" kong:"-"`                    // Client R version
+	Platform    string       `json:"platform,omitempty" name:"r-version"`            // Client R version
 	Metadata    Metadata     `json:"metadata" kong:"embed"`                          // Properties about this deployment. Ignored by shinyapps.io
 	Python      *Python      `json:"python,omitempty" kong:"embed,prefix='python-'"` // If non-null, specifies the Python version and dependencies
 	Jupyter     *Jupyter     `json:"jupyter,omitempty" kong:"embed"`                 // If non-null, specifies the Jupyter options

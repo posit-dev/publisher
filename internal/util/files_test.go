@@ -49,3 +49,28 @@ func (s *FilesSuite) TestDirFromPathFile() {
 	s.Nil(err)
 	s.Equal("/my/dir", dir)
 }
+
+func (s *FilesSuite) TestChdir() {
+	initialWd, err := os.Getwd()
+	s.Nil(err)
+	wd, err := Chdir("/")
+	s.Nil(err)
+	s.Equal(initialWd, wd)
+
+	newWd, err := os.Getwd()
+	s.Nil(err)
+	s.Equal(newWd, "/")
+}
+
+func (s *FilesSuite) TestChdirNonexistent() {
+	initialWd, err := os.Getwd()
+	s.Nil(err)
+	wd, err := Chdir("/nonexistent")
+	s.NotNil(err)
+	s.ErrorIs(err, os.ErrNotExist)
+	s.Equal("", wd)
+
+	newWd, err := os.Getwd()
+	s.Nil(err)
+	s.Equal(initialWd, newWd)
+}

@@ -15,11 +15,13 @@ type LoggerWriter struct {
 	logger rslog.Logger
 }
 
-func NewLoggerWriter(logger rslog.Logger) io.Writer {
+func NewLoggerWriter(logger rslog.Logger) *LoggerWriter {
 	return &LoggerWriter{
 		logger: logger,
 	}
 }
+
+var _ io.Writer = &LoggerWriter{}
 
 func (w *LoggerWriter) Write(data []byte) (int, error) {
 	w.logger.Infof("%s", strings.TrimRight(string(data), "\n"))

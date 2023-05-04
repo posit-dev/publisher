@@ -103,7 +103,7 @@ type bundle struct {
 	manifest *Manifest      // Manifest describing the bundle
 	archive  util.TarWriter // Archive containing the files
 	numFiles int64          // Number of files in the bundle
-	size     util.Size      // Total uncompressed size of the files, in bytes
+	size     int64          // Total uncompressed size of the files, in bytes
 }
 
 var bundleTooLargeError = errors.New("Directory is too large to deploy.")
@@ -182,7 +182,7 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 	}
 	b.logger.WithFields(rslog.Fields{
 		"files":       bundle.numFiles,
-		"total_bytes": bundle.size.ToInt64(),
+		"total_bytes": bundle.size,
 	}).Infof("Bundle created")
 	return bundle.manifest, nil
 }
@@ -263,7 +263,7 @@ func (b *bundle) walkFunc(path string, info fs.FileInfo, err error) error {
 		}
 		b.manifest.AddFile(relPath, fileMD5)
 		b.numFiles++
-		b.size += util.Size(info.Size())
+		b.size += info.Size()
 	} else if info.Mode().Type()&os.ModeSymlink == os.ModeSymlink {
 		pathLogger.Infof("Following symlink")
 		targetPath, err := filepath.EvalSymlinks(path)
