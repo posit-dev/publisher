@@ -12,6 +12,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/spf13/afero"
 )
 
@@ -214,7 +215,7 @@ func (m *Manifest) Merge(other *Manifest) {
 		if other.Quarto.Version != "" {
 			m.Quarto.Version = other.Quarto.Version
 		}
-		m.Quarto.Engines = append(m.Quarto.Engines, other.Quarto.Engines...)
+		m.Quarto.Engines = util.RemoveDuplicates(append(m.Quarto.Engines, other.Quarto.Engines...))
 	}
 	if m.Environment == nil {
 		m.Environment = other.Environment

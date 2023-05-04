@@ -157,7 +157,7 @@ func (d *ConnectDeployment) load(serializer deploymentSerializer) error {
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	d.Environment = append(d.Environment, envVars...)
+	d.Environment = mergeEnvironments(d.Environment, envVars)
 
 	// Populate values for variables whose values are pulled from the environment
 	for i := range d.Environment {
