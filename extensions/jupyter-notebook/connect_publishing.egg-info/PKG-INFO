@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: connect-publishing
-Version: 0.0.2.dev6+g8f76cd1.d20230503
+Version: 0.0.2.dev7+g2d75bc0.d20230503
 Summary: Posit Connect publishing client UI
 Home-page: http://github.com/rstudio/publishing-client
 Author: Isabel Zimmerman

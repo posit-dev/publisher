@@ -31,7 +31,7 @@ define([
     var actionName = actions.register(
       {
         icon: 'fa-cloud-upload',
-        help: 'Publish to Posit Connect',
+        help: 'Launch Posit Connect publishing client',
         help_index: 'zz',
         handler: debounce(1000, onPublishClicked)
       },
@@ -44,7 +44,6 @@ define([
 
     // re-style the toolbar button to have a custom icon
     var $button = $('button[data-jupyter-action="' + actionName + '"]');
-
 
     $button.find('i')
       .addClass('rsc-icon');
@@ -103,18 +102,21 @@ define([
         });
       });
     
-    // const spawn = require('child_process').spawn;
-    // const proc = spawn('ls', ['-nat']);
-    
-    // let output = '';
-    // proc.stdout.on('data', (chunk) => {
-    //   output += chunk.toString();
-    // });
-    // proc.on('exit', () => {
-    //   console.log(output);
-    // });
-    var uiSite = 'http://localhost:5173/';
-    window.open(uiSite, '_blank');
+    // var shell = WScript.CreateObject("WScript.Shell");
+    // shell.Run("command here");
+    const { exec } = require('child_process');
+    exec('cat *.js bad_file | wc -l', (err, stdout, stderr) => {
+      if (err) {
+        // node couldn't execute the command
+        return;
+      }
+
+      // the *entire* stdout and stderr (buffered)
+      console.log(`stdout: ${stdout}`);
+      console.log(`stderr: ${stderr}`);
+    });
+    var uiSite = 'http://localhost:5173/'; 
+    // window.open(uiSite, '_blank');
     console.info(`View publishing client UI at: ${ uiSite }`);
   }
 
