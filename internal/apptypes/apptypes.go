@@ -67,11 +67,20 @@ func AppModeFromString(s string) (AppMode, error) {
 		return StaticQuartoMode, nil
 	case "jupyter-voila", "voila":
 		return JupyterVoilaMode, nil
-	case "":
+	case "", "unknown":
 		return UnknownMode, nil
 	default:
 		return UnknownMode, fmt.Errorf("Unrecognized content type: %s", s)
 	}
+}
+
+func (mode *AppMode) UnmarshalText(text []byte) error {
+	value, err := AppModeFromString(string(text))
+	if err != nil {
+		return err
+	}
+	*mode = value
+	return nil
 }
 
 // IsWorkerApp returns true for any content that is serviced by worker

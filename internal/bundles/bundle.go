@@ -4,6 +4,7 @@ package bundles
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"crypto/md5"
 	"errors"
@@ -31,7 +32,7 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(fs afero.Fs, path string, manifest *Manifest, ignores []string, logger rslog.Logger) (*bundler, error) {
+func NewBundler(fs afero.Fs, path string, manifest *Manifest, ignores []string, pythonRequirements []byte, logger rslog.Logger) (*bundler, error) {
 	var dir string
 	var filename string
 	isDir, err := afero.IsDir(fs, path)
@@ -54,13 +55,14 @@ func NewBundler(fs afero.Fs, path string, manifest *Manifest, ignores []string, 
 		return nil, fmt.Errorf("Error loading ignore list: %w", err)
 	}
 	return &bundler{
-		manifest:    manifest,
-		fs:          fs,
-		baseDir:     absDir,
-		filename:    filename,
-		walker:      walker,
-		logger:      logger,
-		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
+		manifest:           manifest,
+		fs:                 fs,
+		baseDir:            absDir,
+		filename:           filename,
+		walker:             walker,
+		pythonRequirements: pythonRequirements,
+		logger:             logger,
+		debugLogger:        rslog.NewDebugLogger(debug.BundleRegion),
 	}, nil
 }
 
@@ -86,13 +88,14 @@ func NewBundlerForManifest(fs afero.Fs, manifestPath string, logger rslog.Logger
 }
 
 type bundler struct {
-	fs          afero.Fs  // Filesystem we are walking to get the files
-	baseDir     string    // Directory being bundled
-	filename    string    // Primary file being deployed
-	walker      Walker    // Ignore patterns from CLI and ignore files
-	manifest    *Manifest // Manifest describing the bundle, if provided
-	logger      rslog.Logger
-	debugLogger rslog.DebugLogger
+	fs                 afero.Fs  // Filesystem we are walking to get the files
+	baseDir            string    // Directory being bundled
+	filename           string    // Primary file being deployed
+	walker             Walker    // Ignore patterns from CLI and ignore files
+	pythonRequirements []byte    // Pacakges to write to requirements.txt if not already present
+	manifest           *Manifest // Manifest describing the bundle, if provided
+	logger             rslog.Logger
+	debugLogger        rslog.DebugLogger
 }
 
 type bundle struct {
@@ -160,18 +163,18 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 		}
 	}
 	if dest != nil {
-		if bundle.manifest.Python != nil {
+		if bundle.pythonRequirements != nil {
 			// If there isn't a requirements.txt file in the directory,
-			// bundle the package list from the manifest as requirements.txt.
+			// bundle the package list as requirements.txt.
 			_, haveRequirementsTxt := bundle.manifest.Files[PythonRequirementsFilename]
 			if !haveRequirementsTxt {
-				packages := bundle.manifest.Python.PackageManager.Packages
-				err = bundle.addFile(PythonRequirementsFilename, packages)
+				err = bundle.addFile(PythonRequirementsFilename, bundle.pythonRequirements)
 				if err != nil {
 					return nil, err
 				}
 			}
 		}
+		bundle.manifest.ResetEmptyFields()
 		err = bundle.addManifest()
 		if err != nil {
 			return nil, err
@@ -211,19 +214,13 @@ func writeHeaderToTar(info fs.FileInfo, path string, archive util.TarWriter) err
 
 // writeFileContentsToTar writes the contents of the specified file to the archive.
 // It returns the file's md5 hash.
-func writeFileContentsToTar(fs afero.Fs, path string, archive io.Writer) ([]byte, error) {
-	f, err := fs.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+func writeFileContentsToTar(r io.Reader, archive io.Writer) ([]byte, error) {
 	hash := md5.New()
-
 	var dest io.Writer = hash
 	if archive != nil {
 		dest = io.MultiWriter(archive, hash)
 	}
-	_, err = io.Copy(dest, f)
+	_, err := io.Copy(dest, r)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +252,12 @@ func (b *bundle) walkFunc(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		fileMD5, err := writeFileContentsToTar(b.fs, path, b.archive)
+		f, err := b.fs.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		fileMD5, err := writeFileContentsToTar(f, b.archive)
 		if err != nil {
 			return err
 		}
@@ -319,9 +321,15 @@ func (b *bundle) addFile(name string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	_, err = b.archive.Write(content)
-	return err
-
+	f := bytes.NewReader(content)
+	fileMD5, err := writeFileContentsToTar(f, b.archive)
+	if err != nil {
+		return err
+	}
+	if name != ManifestFilename {
+		b.manifest.AddFile(name, fileMD5)
+	}
+	return nil
 }
 
 func (b *bundle) addManifest() error {

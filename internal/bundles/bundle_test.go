@@ -100,19 +100,12 @@ func (s *TarSuite) TestWriteFileContentsToTar() {
 
 	w := utiltest.NewMockTarWriter()
 	w.On("Write", mock.Anything).Return(len(contents), nil)
-	md5sum, err := writeFileContentsToTar(fs, "testfile", w)
+	f, err := fs.Open("testfile")
+	s.Nil(err)
+	defer f.Close()
+	md5sum, err := writeFileContentsToTar(f, w)
 	s.Nil(err)
 	s.Equal([]byte{0x02, 0x08, 0x61, 0xc8, 0xc3, 0xfe, 0x17, 0x7d, 0xa1, 0x9a, 0x7e, 0x95, 0x39, 0xa5, 0xdb, 0xac}, md5sum)
-}
-
-func (s *TarSuite) TestWriteFileContentsToTarOpenErr() {
-	fs := utiltest.NewMockFs()
-	testError := errors.New("test error from Open")
-	fs.On("Open", mock.Anything).Return(nil, testError)
-	w := utiltest.NewMockTarWriter()
-	md5sum, err := writeFileContentsToTar(fs, "testfile", w)
-	s.ErrorIs(err, testError)
-	s.Nil(md5sum)
 }
 
 func (s *TarSuite) TestWriteFileContentsToTarWriteErr() {
@@ -124,7 +117,10 @@ func (s *TarSuite) TestWriteFileContentsToTarWriteErr() {
 	w := utiltest.NewMockTarWriter()
 	testError := errors.New("test error from Write")
 	w.On("Write", mock.Anything).Return(0, testError)
-	md5sum, err := writeFileContentsToTar(fs, "testfile", w)
+	f, err := fs.Open("testfile")
+	s.Nil(err)
+	defer f.Close()
+	md5sum, err := writeFileContentsToTar(f, w)
 	s.ErrorIs(err, testError)
 	s.Nil(md5sum)
 }
@@ -164,12 +160,12 @@ func (s *BundlerSuite) SetupTest() {
 
 	s.manifest = NewManifest()
 	s.manifest.Metadata.AppMode = apptypes.StaticMode
-	s.manifest.Metadata.EntryPoint = "subdir/testfile"
+	s.manifest.Metadata.Entrypoint = "subdir/testfile"
 }
 
 func (s *BundlerSuite) TestNewBundlerDirectory() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), []string{"*.log"}, logger)
+	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), []string{"*.log"}, nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 }
@@ -179,7 +175,7 @@ func (s *BundlerSuite) TestNewBundlerFile() {
 	path := filepath.Join(s.cwd, "app.py")
 	err := afero.WriteFile(s.fs, path, []byte("import flask\napp=flask.Flask(__name)\n"), 0600)
 	s.Nil(err)
-	bundler, err := NewBundler(s.fs, path, NewManifest(), nil, logger)
+	bundler, err := NewBundler(s.fs, path, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 }
@@ -192,7 +188,7 @@ func (s *BundlerSuite) TestNewBundlerExcludedFile() {
 	path := filepath.Join(s.cwd, "app.py")
 	err := afero.WriteFile(s.fs, path, []byte("import flask\napp=flask.Flask(__name)\n"), 0600)
 	s.Nil(err)
-	bundler, err := NewBundler(s.fs, path, NewManifest(), []string{"*.py"}, logger)
+	bundler, err := NewBundler(s.fs, path, NewManifest(), []string{"*.py"}, nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 	manifest, err := bundler.CreateManifest()
@@ -204,7 +200,7 @@ func (s *BundlerSuite) TestNewBundlerExcludedFile() {
 
 func (s *BundlerSuite) TestNewBundlerWalkerErr() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), []string{"[Z-A]"}, logger)
+	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), []string{"[Z-A]"}, nil, logger)
 	s.NotNil(err)
 	s.Nil(bundler)
 }
@@ -252,7 +248,7 @@ func (s *BundlerSuite) TestCreateBundle() {
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundler(s.fs, s.cwd, s.manifest, nil, logger)
+	bundler, err := NewBundler(s.fs, s.cwd, s.manifest, nil, nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -265,7 +261,7 @@ func (s *BundlerSuite) TestCreateBundleAutoDetect() {
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), nil, logger)
+	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -273,9 +269,25 @@ func (s *BundlerSuite) TestCreateBundleAutoDetect() {
 	s.Len(manifest.Files, 1)
 }
 
+func (s *BundlerSuite) TestCreateBundlePythonPackages() {
+	s.makeFileWithContents("app.py", []byte("import flask"))
+	manifest := NewManifest()
+	manifest.Python = &Python{}
+	pythonRequirements := []byte("flask\nnumpy")
+	logger := rslog.NewDiscardingLogger()
+
+	bundler, err := NewBundler(s.fs, s.cwd, manifest, nil, pythonRequirements, logger)
+	s.Nil(err)
+	dest := new(bytes.Buffer)
+	manifestOut, err := bundler.CreateBundle(dest)
+	s.Nil(err)
+	s.NotNil(manifestOut)
+	s.Len(manifestOut.Files, 2)
+}
+
 func (s *BundlerSuite) TestCreateBundleMissingDirectory() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, "nonexistent", NewManifest(), nil, logger)
+	bundler, err := NewBundler(s.fs, "nonexistent", NewManifest(), nil, nil, logger)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(bundler)
@@ -284,7 +296,7 @@ func (s *BundlerSuite) TestCreateBundleMissingDirectory() {
 func (s *BundlerSuite) TestCreateBundleMissingFile() {
 	logger := rslog.NewDiscardingLogger()
 	path := filepath.Join(s.cwd, "nonexistent")
-	bundler, err := NewBundler(s.fs, path, NewManifest(), nil, logger)
+	bundler, err := NewBundler(s.fs, path, NewManifest(), nil, nil, logger)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(bundler)
@@ -296,7 +308,7 @@ func (s *BundlerSuite) TestCreateBundleWalkError() {
 	testError := errors.New("test error from Walk")
 	walker.On("Walk", mock.Anything, mock.Anything).Return(testError)
 
-	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), nil, logger)
+	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 	bundler.walker = walker
@@ -310,7 +322,7 @@ func (s *BundlerSuite) TestCreateBundleWalkError() {
 
 func (s *BundlerSuite) TestCreateBundleAddManifestError() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), nil, logger)
+	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 
@@ -329,7 +341,7 @@ func (s *BundlerSuite) TestCreateManifest() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, s.cwd, s.manifest, nil, logger)
+	bundler, err := NewBundler(s.fs, s.cwd, s.manifest, nil, nil, logger)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
@@ -348,7 +360,7 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, s.cwd, s.manifest, nil, logger)
+	bundler, err := NewBundler(s.fs, s.cwd, s.manifest, nil, nil, logger)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
@@ -445,7 +457,7 @@ func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundler(fs, dirPath, NewManifest(), nil, logger)
+	bundler, err := NewBundler(fs, dirPath, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -465,7 +477,7 @@ func (s *BundlerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundler(fs, dirPath, NewManifest(), nil, logger)
+	bundler, err := NewBundler(fs, dirPath, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.ErrorIs(err, os.ErrNotExist)

@@ -3,7 +3,6 @@ package main
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/alecthomas/kong"
@@ -62,10 +61,26 @@ func main() {
 	}
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
-	err = args.Run(&cli.CommonArgs)
-	if err != nil {
-		logger.Errorf("%s", err)
-		fmt.Println(err)
-		os.Exit(1)
+	cmd, ok := args.Selected().Target.Interface().(commands.StatefulCommand)
+	if ok {
+		// For these commands, we need to load saved deployment state
+		// from file, then overlay the alread-parsed CLI arguments on top.
+		err = cmd.LoadState(ctx.Fs, ctx.Logger)
+		if err != nil {
+			logger.Fatalf("Error loading saved deployment: %s", err)
+		}
+		err = args.Run(&cli.CommonArgs)
+		if err != nil {
+			logger.Fatalf("Error: %s", err)
+		}
+		err = cmd.SaveState(ctx.Fs, ctx.Logger)
+		if err != nil {
+			logger.Fatalf("Error saving deployment: %s", err)
+		}
+	} else {
+		err = args.Run(&cli.CommonArgs)
+		if err != nil {
+			logger.Fatalf("Error: %s", err)
+		}
 	}
 }
