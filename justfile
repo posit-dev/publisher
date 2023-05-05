@@ -41,7 +41,7 @@ test: _web
     just test-backend
 
 test-backend:
-    {{ _with_runner }} go test -race ./... -coverprofile cover.out
+    {{ _with_runner }} go test ./... -covermode set -coverprofile cover.out
 
 go-coverage: test-backend
     go tool cover -html=cover.out
