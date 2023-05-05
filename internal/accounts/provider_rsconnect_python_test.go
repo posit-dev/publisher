@@ -128,7 +128,8 @@ func (s *RsconnectPythonProviderSuite) TestLoadFileError() {
 	logger := rslog.NewDiscardingLogger()
 	provider := newRSConnectPythonProvider(fs, logger)
 	accounts, err := provider.Load()
-	s.Equal(testError, err)
+	s.NotNil(err)
+	s.ErrorIs(err, testError)
 	s.Nil(accounts)
 }
 

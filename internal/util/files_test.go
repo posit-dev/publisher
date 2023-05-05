@@ -59,7 +59,7 @@ func (s *FilesSuite) TestChdir() {
 
 	newWd, err := os.Getwd()
 	s.Nil(err)
-	s.Equal(newWd, "/")
+	s.Equal("/", newWd)
 }
 
 func (s *FilesSuite) TestChdirNonexistent() {

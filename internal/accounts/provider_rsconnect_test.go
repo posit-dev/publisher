@@ -332,7 +332,7 @@ secret: FEDCBA9876543210
 	s.Nil(err)
 	accountList, err := provider.Load()
 	s.Nil(err)
-	s.Equal(2, len(accountList))
+	s.Len(accountList, 2)
 }
 
 func (s *RsconnectProviderLoadSuite) TestLoadNoHome() {
