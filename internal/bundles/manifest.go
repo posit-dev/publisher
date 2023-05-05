@@ -10,7 +10,6 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/spf13/afero"
@@ -31,6 +30,7 @@ const PythonRequirementsFilename = "requirements.txt"
 // environment can be recreated (if needed) and how it is served/executed).
 type Manifest struct {
 	Version     int          `json:"version" kong:"-"`                               // Manifest version (always 1)
+	Locale      string       `json:"locale" kong:"-"`                                // User's locale. Currently unused.
 	Platform    string       `json:"platform,omitempty" name:"r-version"`            // Client R version
 	Metadata    Metadata     `json:"metadata" kong:"embed"`                          // Properties about this deployment. Ignored by shinyapps.io
 	Python      *Python      `json:"python,omitempty" kong:"embed,prefix='python-'"` // If non-null, specifies the Python version and dependencies
@@ -43,12 +43,12 @@ type Manifest struct {
 
 // Metadata contains details about this deployment (type, etc).
 type Metadata struct {
-	AppMode         apptypes.AppMode  `json:"appmode" short:"t" help:"Type of content being deployed. Default is to auto detect."` // Selects the runtime for this content.
-	ContentCategory string            `json:"content_category,omitempty"`                                                          // A refinement of the AppMode used by plots and sites
-	Entrypoint      string            `json:"entrypoint,omitempty"`                                                                // The main file being deployed.
-	PrimaryRmd      string            `json:"primary_rmd,omitempty" kong:"-"`                                                      // The rendering target for Rmd deployments.
-	PrimaryHtml     string            `json:"primary_html,omitempty" kong:"-"`                                                     // The default document for static deployments.
-	HasParameters   apitypes.NullBool `json:"has_parameters" kong:"-"`                                                             // True if this is content allows parameter customization.
+	AppMode         apptypes.AppMode `json:"appmode" short:"t" help:"Type of content being deployed. Default is to auto detect."` // Selects the runtime for this content.
+	ContentCategory string           `json:"content_category,omitempty"`                                                          // A refinement of the AppMode used by plots and sites
+	Entrypoint      string           `json:"entrypoint,omitempty"`                                                                // The main file being deployed.
+	PrimaryRmd      string           `json:"primary_rmd,omitempty" kong:"-"`                                                      // The rendering target for Rmd deployments.
+	PrimaryHtml     string           `json:"primary_html,omitempty" kong:"-"`                                                     // The default document for static deployments.
+	HasParameters   bool             `json:"has_parameters,omitempty" kong:"-"`                                                   // True if this is content allows parameter customization.
 }
 
 type Environment struct {
@@ -180,7 +180,7 @@ func (m *Manifest) Merge(other *Manifest) {
 	if other.Metadata.PrimaryHtml != "" {
 		m.Metadata.PrimaryHtml = other.Metadata.PrimaryHtml
 	}
-	if other.Metadata.HasParameters.Valid() {
+	if other.Metadata.HasParameters {
 		m.Metadata.HasParameters = other.Metadata.HasParameters
 	}
 	if m.Python == nil {

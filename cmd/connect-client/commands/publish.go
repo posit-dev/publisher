@@ -27,6 +27,7 @@ type BaseBundleCmd struct {
 	Exclude []string `short:"x" help:"list of file patterns to exclude."`
 	Path    string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
 	Config  string   `help:"Name of metadata directory to load/save (see ./.posit/deployments/)."`
+	New     bool     `help:"Create a new deployment instead of updating the previous deployment."`
 	// Store for the deployment State that will be served to the UI,
 	// published, written to manifest and metadata files, etc.
 	State *state.Deployment `kong:"embed"`
@@ -52,16 +53,22 @@ func (cmd *BaseBundleCmd) LoadState(fs afero.Fs, logger rslog.Logger) error {
 	if err != nil {
 		return err
 	}
-	cmd.Config = cmd.getConfigName()
 	cmd.State.SourceDir = sourceDir
+	cmd.Config = cmd.getConfigName()
 
 	cliState := cmd.State
 	cmd.State = state.NewDeployment()
-	err = cmd.State.LoadFromFiles(fs, sourceDir, cmd.Config, logger)
-	if err != nil && !os.IsNotExist(err) {
+	err = cmd.State.LoadManifest(fs, sourceDir, logger)
+	if err != nil {
 		return err
 	}
-	cmd.State.Merge(cliState)
+	if !cmd.New {
+		err = cmd.State.LoadFromFiles(fs, sourceDir, cmd.Config, logger)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		cmd.State.Merge(cliState)
+	}
 	return nil
 }
 

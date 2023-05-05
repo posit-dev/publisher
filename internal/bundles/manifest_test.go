@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -129,7 +128,7 @@ func (s *ManifestSuite) TestMergeEmpty() {
 			Entrypoint:      "app.py",
 			PrimaryRmd:      "rmd",
 			PrimaryHtml:     "html",
-			HasParameters:   apitypes.NewOptional(false),
+			HasParameters:   false,
 		},
 	}
 	added := Manifest{}
@@ -162,7 +161,7 @@ func (s *ManifestSuite) TestMergeNonEmpty() {
 			Entrypoint:      "app.py",
 			PrimaryRmd:      "rmd",
 			PrimaryHtml:     "html",
-			HasParameters:   apitypes.NewOptional(false),
+			HasParameters:   false,
 		},
 		Python: &Python{
 			Version: "3.9.1",
@@ -207,7 +206,7 @@ func (s *ManifestSuite) TestMergeNonEmpty() {
 			Entrypoint:      "app.py",
 			PrimaryRmd:      "nope",
 			PrimaryHtml:     "also no",
-			HasParameters:   apitypes.NewOptional(true),
+			HasParameters:   true,
 		},
 		Python: &Python{
 			Version: "3.10.2",
