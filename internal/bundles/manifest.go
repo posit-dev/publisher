@@ -12,7 +12,6 @@ import (
 
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/util"
-	"github.com/spf13/afero"
 )
 
 // ManifestFilename is the well-known manifest.json filename contained within
@@ -115,8 +114,8 @@ func (m *Manifest) WriteManifest(w io.Writer) error {
 }
 
 // WriteManifestFile writes the manifest to a file.
-func (m *Manifest) WriteManifestFile(fs afero.Fs, path string) error {
-	f, err := fs.Create(path)
+func (m *Manifest) WriteManifestFile(path util.Path) error {
+	f, err := path.Create()
 	if err != nil {
 		return err
 	}
@@ -125,8 +124,8 @@ func (m *Manifest) WriteManifestFile(fs afero.Fs, path string) error {
 }
 
 // ReadManifest reads and parses the manifest file stored at path.
-func ReadManifestFile(fs afero.Fs, path string) (*Manifest, error) {
-	f, err := fs.Open(path)
+func ReadManifestFile(path util.Path) (*Manifest, error) {
+	f, err := path.Open()
 	if err != nil {
 		return nil, fmt.Errorf("Cannot open manifest file %s: %w", path, err)
 	}

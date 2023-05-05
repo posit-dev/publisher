@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/gobwas/glob"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/spf13/afero"
 )
 
@@ -44,20 +45,20 @@ func fromSplit(path []string) string {
 }
 
 // New creates a new ignore list.
-func New(fs afero.Fs, cwd string) IgnoreList {
+func New(cwd util.Path) IgnoreList {
 	files := make([]ignoreFile, 1, 4)
 	files[0].globs = make([]glob.Glob, 0, 16)
 	return IgnoreList{
 		files,
-		toSplit(cwd),
-		fs,
+		toSplit(cwd.Path()),
+		cwd.Fs(),
 	}
 }
 
 // From creates a new ignore list and populates the first entry with the
 // contents of the specified file.
-func From(fs afero.Fs, path string) (IgnoreList, error) {
-	ign := New(fs, filepath.Dir(path))
+func From(path util.Path) (IgnoreList, error) {
+	ign := New(path.Dir())
 	err := ign.append(path, nil)
 	return ign, err
 }
@@ -66,11 +67,11 @@ func From(fs afero.Fs, path string) (IgnoreList, error) {
 // new ignore list with the contents of all .gitignore files in that git
 // repository.
 func FromGit(fs afero.Fs) (IgnoreList, error) {
-	wd, err := os.Getwd()
+	wd, err := util.Getwd(fs)
 	if err != nil {
 		return IgnoreList{}, err
 	}
-	ign := New(fs, wd)
+	ign := New(wd)
 	err = ign.AppendGit()
 	return ign, err
 }
@@ -132,8 +133,8 @@ func toRelpath(s string, dir, cwd []string) string {
 	return fromSplit(ss)
 }
 
-func (ign *IgnoreList) append(path string, dir []string) error {
-	f, err := ign.fs.Open(path)
+func (ign *IgnoreList) append(path util.Path, dir []string) error {
+	f, err := path.Open()
 	if err != nil {
 		return err
 	}
@@ -143,10 +144,11 @@ func (ign *IgnoreList) append(path string, dir []string) error {
 	if dir != nil {
 		ignf = &ign.files[0]
 	} else {
-		d, err := filepath.Abs(filepath.Dir(path))
+		absDir, err := path.Dir().Abs()
 		if err != nil {
 			return err
 		}
+		d := absDir.Path()
 		if d != fromSplit(ign.cwd) {
 			dir = toSplit(d)
 			ignf = &ignoreFile{
@@ -175,7 +177,7 @@ func (ign *IgnoreList) append(path string, dir []string) error {
 
 // Append appends the globs in the specified file to the ignore list. Files are
 // expected to have the same format as .gitignore files.
-func (ign *IgnoreList) Append(path string) error {
+func (ign *IgnoreList) Append(path util.Path) error {
 	return ign.append(path, nil)
 }
 
@@ -196,15 +198,13 @@ func (ign *IgnoreList) findGitRoot(cwd []string) (string, error) {
 	return p, nil
 }
 
-func (ign *IgnoreList) appendAll(fname, root string) error {
-	return afero.Walk(
-		ign.fs,
-		root,
-		func(path string, info os.FileInfo, err error) error {
+func (ign *IgnoreList) appendAll(fname string, root util.Path) error {
+	return root.Walk(
+		func(path util.Path, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			if filepath.Base(path) == fname {
+			if path.Base() == fname {
 				err := ign.append(path, nil)
 				if err != nil {
 					return err
@@ -230,11 +230,11 @@ func (ign *IgnoreList) AppendGit() error {
 		return err
 	}
 	if gg := filepath.Join(usr.HomeDir, ".gitignore_global"); ign.exists(gg) {
-		if err = ign.append(gg, toSplit(gitRoot)); err != nil {
+		if err = ign.append(util.NewPath(gg, ign.fs), toSplit(gitRoot)); err != nil {
 			return err
 		}
 	}
-	return ign.appendAll(".gitignore", gitRoot)
+	return ign.appendAll(".gitignore", util.NewPath(gitRoot, ign.fs))
 }
 
 func isPrefix(abspath, dir []string) bool {
@@ -295,19 +295,17 @@ func (ign *IgnoreList) Match(path string) bool {
 // Walk walks the file tree with the specified root and calls fn on each file
 // or directory. Files and directories that match any of the globs in the
 // ignore list are skipped.
-func (ign *IgnoreList) Walk(root string, fn filepath.WalkFunc) error {
-	abs, err := filepath.Abs(root)
+func (ign *IgnoreList) Walk(root util.Path, fn util.WalkFunc) error {
+	abs, err := root.Abs()
 	if err != nil {
 		return err
 	}
-	return afero.Walk(
-		ign.fs,
-		abs,
-		func(path string, info os.FileInfo, err error) error {
+	return abs.Walk(
+		func(path util.Path, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			relPath := toRelpath("", toSplit(path), ign.cwd)
+			relPath := toRelpath("", toSplit(path.Path()), ign.cwd)
 			if ign.match(relPath, info) {
 				if info.IsDir() {
 					return filepath.SkipDir

@@ -65,7 +65,7 @@ func main() {
 	if ok {
 		// For these commands, we need to load saved deployment state
 		// from file, then overlay the alread-parsed CLI arguments on top.
-		err = cmd.LoadState(ctx.Fs, ctx.Logger)
+		err = cmd.LoadState(ctx.Logger)
 		if err != nil {
 			logger.Fatalf("Error loading saved deployment: %s", err)
 		}
@@ -73,7 +73,7 @@ func main() {
 		if err != nil {
 			logger.Fatalf("Error: %s", err)
 		}
-		err = cmd.SaveState(ctx.Fs, ctx.Logger)
+		err = cmd.SaveState(ctx.Logger)
 		if err != nil {
 			logger.Fatalf("Error saving deployment: %s", err)
 		}

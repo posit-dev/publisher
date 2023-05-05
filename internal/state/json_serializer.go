@@ -5,21 +5,18 @@ package state
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
-	"github.com/spf13/afero"
 )
 
 type jsonSerializer struct {
-	fs     afero.Fs
-	dir    string
+	dir    util.Path
 	logger rslog.Logger
 }
 
-func newJsonSerializer(fs afero.Fs, dir string, logger rslog.Logger) *jsonSerializer {
+func newJsonSerializer(dir util.Path, logger rslog.Logger) *jsonSerializer {
 	return &jsonSerializer{
-		fs:     fs,
 		dir:    dir,
 		logger: logger,
 	}
@@ -28,8 +25,8 @@ func newJsonSerializer(fs afero.Fs, dir string, logger rslog.Logger) *jsonSerial
 var _ deploymentSerializer = &jsonSerializer{}
 
 func (s *jsonSerializer) Save(label MetadataLabel, src any) error {
-	path := filepath.Join(s.dir, fmt.Sprintf("%s.json", label))
-	f, err := s.fs.Create(path)
+	path := s.dir.Join(fmt.Sprintf("%s.json", label))
+	f, err := path.Create()
 	if err != nil {
 		return err
 	}
@@ -44,8 +41,8 @@ func (s *jsonSerializer) Save(label MetadataLabel, src any) error {
 }
 
 func (s *jsonSerializer) Load(label MetadataLabel, dest any) error {
-	path := filepath.Join(s.dir, fmt.Sprintf("%s.json", label))
-	f, err := s.fs.Open(path)
+	path := s.dir.Join(fmt.Sprintf("%s.json", label))
+	f, err := path.Open()
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
-	"github.com/spf13/afero"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type ContentType struct {
@@ -23,11 +23,11 @@ type ContentType struct {
 // (nil, nil), i.e. failing inference is not an error.
 // If there's an error during inferences, it returns (nil, err).
 type ContentTypeInferer interface {
-	InferType(fs afero.Fs, path string) (*ContentType, error)
+	InferType(path util.Path) (*ContentType, error)
 }
 
 type inferenceHelper interface {
-	InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, string, error)
+	InferEntrypoint(path util.Path, suffix string, preferredFilename string) (string, util.Path, error)
 	HasPythonImports(r io.Reader, packages []string) (bool, error)
-	FileHasPythonImports(fs afero.Fs, path string, packages []string) (bool, error)
+	FileHasPythonImports(path util.Path, packages []string) (bool, error)
 }

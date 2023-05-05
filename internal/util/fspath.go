@@ -76,12 +76,20 @@ func (p Path) Ext() string {
 	return filepath.Ext(p.path)
 }
 
-func FromSlash(fs afero.Fs, path string) Path {
+func PathFromSlash(fs afero.Fs, path string) Path {
 	return NewPath(filepath.FromSlash(path), fs)
 }
 
-func FromEnvironment(envVar string, fs afero.Fs) Path {
+func PathFromEnvironment(envVar string, fs afero.Fs) Path {
 	return NewPath(os.Getenv(envVar), fs)
+}
+
+func Getwd(fs afero.Fs) (Path, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return Path{}, err
+	}
+	return NewPath(wd, fs), nil
 }
 
 func UserHomeDir(fs afero.Fs) (Path, error) {

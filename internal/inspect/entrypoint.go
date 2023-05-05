@@ -5,11 +5,10 @@ package inspect
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/spf13/afero"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type defaultInferenceHelper struct{}
@@ -19,44 +18,44 @@ type defaultInferenceHelper struct{}
 // If it's a directory, it specifies the deployment directory.
 // - If preferredFilename exists in the directory, it is the entrypoint.
 // - If there is only one file with the specified suffix, it is the entrypoint.
-func (h defaultInferenceHelper) InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, string, error) {
-	isDir, err := afero.IsDir(fs, path)
+func (h defaultInferenceHelper) InferEntrypoint(path util.Path, suffix string, preferredFilename string) (string, util.Path, error) {
+	isDir, err := path.IsDir()
 	if err != nil {
-		return "", "", err
+		return "", util.Path{}, err
 	}
 	if isDir {
-		matchingFiles, err := afero.Glob(fs, filepath.Join(path, "*"+suffix))
+		matchingFiles, err := path.Glob("*" + suffix)
 		if err != nil {
-			return "", "", err
+			return "", util.Path{}, err
 		}
 		if len(matchingFiles) == 1 {
 			// This must be it
-			relPath, err := filepath.Rel(path, matchingFiles[0])
-			return relPath, matchingFiles[0], err
+			relPath, err := matchingFiles[0].Rel(path)
+			return relPath.Path(), matchingFiles[0], err
 		} else {
 			// Favor preferredFilename as an entrypoint
-			preferredPath := filepath.Join(path, preferredFilename)
-			exists, err := afero.Exists(fs, preferredPath)
+			preferredPath := path.Join(preferredFilename)
+			exists, err := preferredPath.Exists()
 			if err != nil {
-				return "", "", err
+				return "", util.Path{}, err
 			}
 			if exists {
 				return preferredFilename, preferredPath, nil
 			}
 			// else entrypoint is ambiguous
-			return "", "", nil
+			return "", util.Path{}, nil
 		}
 	} else {
-		fileSuffix := strings.ToLower(filepath.Ext(path))
+		fileSuffix := strings.ToLower(path.Ext())
 		if fileSuffix == suffix {
-			return filepath.Base(path), path, nil
+			return path.Base(), path, nil
 		}
 	}
-	return "", "", nil
+	return "", util.Path{}, nil
 }
 
-func (h defaultInferenceHelper) FileHasPythonImports(fs afero.Fs, path string, packages []string) (bool, error) {
-	f, err := fs.Open(path)
+func (h defaultInferenceHelper) FileHasPythonImports(path util.Path, packages []string) (bool, error) {
+	f, err := path.Open()
 	if err != nil {
 		return false, err
 	}

@@ -4,9 +4,6 @@ package util
 
 import (
 	"os"
-	"path/filepath"
-
-	"github.com/spf13/afero"
 )
 
 func Chdir(dir string) (string, error) {
@@ -24,14 +21,14 @@ func Chdir(dir string) (string, error) {
 // DirFromPath returns the directory associated with the specified path.
 // If the path is a directory, it is returned.
 // Otherwise, the parent dir of the path is returned.
-func DirFromPath(fs afero.Fs, path string) (string, error) {
-	isDir, err := afero.IsDir(fs, path)
+func DirFromPath(path Path) (Path, error) {
+	isDir, err := path.IsDir()
 	if err != nil {
-		return "", err
+		return Path{}, err
 	}
 	if isDir {
 		return path, nil
 	} else {
-		return filepath.Dir(path), nil
+		return path.Dir(), nil
 	}
 }

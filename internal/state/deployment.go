@@ -3,13 +3,11 @@ package state
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"path/filepath"
-
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/bundles"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
-	"github.com/spf13/afero"
 )
 
 type TargetID struct {
@@ -26,7 +24,7 @@ type TargetID struct {
 }
 
 type Deployment struct {
-	SourceDir          string            `kong:"-"`     // Absolute path to source directory being published
+	SourceDir          util.Path         `kong:"-"`     // Absolute path to source directory being published
 	Target             TargetID          `kong:"embed"` // Identity of previous deployment
 	Manifest           bundles.Manifest  `kong:"embed"` // manifest.json content for this deployment
 	Connect            ConnectDeployment `kong:"embed"` // Connect metadata for this deployment, if target is Connect
@@ -43,7 +41,7 @@ func NewDeployment() *Deployment {
 // Usually `d` will have default values, or be preloaded from
 // saved metadata. `other` is typically the CLI arguments.
 func (d *Deployment) Merge(other *Deployment) {
-	if other.SourceDir != "" {
+	if other.SourceDir.Path() != "" {
 		d.SourceDir = other.SourceDir
 	}
 	if other.Target.AccountName != "" {
@@ -70,15 +68,15 @@ func (d *Deployment) Merge(other *Deployment) {
 // LoadManifest reads the specified manifest file and populates
 // the Manifest field in the deployment state. This can be used
 // to read an arbitrary manifest file.
-func (d *Deployment) LoadManifest(fs afero.Fs, path string, logger rslog.Logger) error {
-	isDir, err := afero.IsDir(fs, path)
+func (d *Deployment) LoadManifest(path util.Path, logger rslog.Logger) error {
+	isDir, err := path.IsDir()
 	if err != nil {
 		return err
 	}
 	if isDir {
-		path = filepath.Join(path, bundles.ManifestFilename)
+		path = path.Join(bundles.ManifestFilename)
 	}
-	manifest, err := bundles.ReadManifestFile(fs, path)
+	manifest, err := bundles.ReadManifestFile(path)
 	if err != nil {
 		return err
 	}
@@ -87,8 +85,8 @@ func (d *Deployment) LoadManifest(fs afero.Fs, path string, logger rslog.Logger)
 	return nil
 }
 
-func getMetadataPath(sourceDir string, configName string) string {
-	return filepath.Join(sourceDir, ".posit", "deployments", configName)
+func getMetadataPath(sourceDir util.Path, configName string) util.Path {
+	return sourceDir.Join(".posit", "deployments", configName)
 }
 
 type MetadataLabel string
@@ -103,9 +101,9 @@ const idLabel MetadataLabel = "id"
 // LoadFromFiles loads the deployment state from metadata files.
 // This should be called prior to processing higher-precedence
 // sources such as the CLI, environment variables, and UI input.
-func (d *Deployment) LoadFromFiles(fs afero.Fs, sourceDir string, configName string, logger rslog.Logger) error {
+func (d *Deployment) LoadFromFiles(sourceDir util.Path, configName string, logger rslog.Logger) error {
 	metaDir := getMetadataPath(sourceDir, configName)
-	serializer := newJsonSerializer(fs, metaDir, logger)
+	serializer := newJsonSerializer(metaDir, logger)
 	return d.Load(serializer)
 }
 
@@ -124,13 +122,13 @@ func (d *Deployment) Load(serializer deploymentSerializer) error {
 	return nil
 }
 
-func (d *Deployment) SaveToFiles(fs afero.Fs, sourceDir string, configName string, logger rslog.Logger) error {
+func (d *Deployment) SaveToFiles(sourceDir util.Path, configName string, logger rslog.Logger) error {
 	metaDir := getMetadataPath(sourceDir, configName)
-	err := fs.MkdirAll(metaDir, 0777)
+	err := metaDir.MkdirAll(0777)
 	if err != nil {
 		return err
 	}
-	serializer := newJsonSerializer(fs, metaDir, logger)
+	serializer := newJsonSerializer(metaDir, logger)
 	return d.Save(serializer)
 }
 

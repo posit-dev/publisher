@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
-	"github.com/spf13/afero"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type NotebookDetector struct {
@@ -35,13 +35,13 @@ var voilaImportNames = []string{
 	"ipywebrtc",
 }
 
-func (d *NotebookDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, entrypointPath, err := d.InferEntrypoint(fs, path, ".ipynb", "index.ipynb")
+func (d *NotebookDetector) InferType(path util.Path) (*ContentType, error) {
+	entrypoint, entrypointPath, err := d.InferEntrypoint(path, ".ipynb", "index.ipynb")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint != "" {
-		code, err := getNotebookFileInputs(fs, entrypointPath)
+		code, err := getNotebookFileInputs(entrypointPath)
 		if err != nil {
 			return nil, err
 		}
@@ -63,8 +63,8 @@ func (d *NotebookDetector) InferType(fs afero.Fs, path string) (*ContentType, er
 	return nil, nil
 }
 
-func getNotebookFileInputs(fs afero.Fs, path string) (string, error) {
-	f, err := fs.Open(path)
+func getNotebookFileInputs(path util.Path) (string, error) {
+	f, err := path.Open()
 	if err != nil {
 		return "", err
 	}
