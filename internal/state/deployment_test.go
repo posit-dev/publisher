@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -34,6 +35,11 @@ func (s *DeploymentSuite) TestMergeEmpty() {
 	orig := NewDeployment()
 	orig.SourceDir = "/my/dir"
 	orig.PythonRequirements = []byte("numpy\npandas\n")
+	orig.Target.AccountName = "my-account"
+	orig.Target.ServerType = accounts.ServerTypeConnect
+	orig.Target.ServerURL = "https://connect.example.com"
+	orig.Target.ContentId = "abc123"
+	orig.Target.ContentName = "super-cool-unique-name"
 
 	merged := orig
 	other := NewDeployment()
@@ -45,14 +51,29 @@ func (s *DeploymentSuite) TestMergeNonEmpty() {
 	orig := NewDeployment()
 	orig.SourceDir = "/my/dir"
 	orig.PythonRequirements = []byte("numpy\npandas\n")
+	orig.Target.AccountName = "my-account"
+	orig.Target.ServerType = accounts.ServerTypeConnect
+	orig.Target.ServerURL = "https://connect.example.com"
+	orig.Target.ContentId = "abc123"
+	orig.Target.ContentName = "super-cool-unique-name"
 
 	merged := orig
 	other := NewDeployment()
 	other.SourceDir = "/other/dir"
 	other.PythonRequirements = []byte("flask\n")
+	other.Target.AccountName = "your-account"
+	other.Target.ServerType = accounts.ServerTypeShinyappsIO
+	other.Target.ServerURL = "https://shinyapps.io"
+	other.Target.ContentId = apitypes.ContentID("99")
+	other.Target.ContentName = apitypes.ContentName("my-app")
 	merged.Merge(other)
-	s.Equal(merged.SourceDir, "/other/dir")
-	s.Equal(merged.PythonRequirements, []byte("numpy\npandas\nflask\n"))
+	s.Equal("/other/dir", merged.SourceDir)
+	s.Equal([]byte("numpy\npandas\nflask\n"), merged.PythonRequirements)
+	s.Equal("your-account", merged.Target.AccountName)
+	s.Equal(accounts.ServerTypeShinyappsIO, merged.Target.ServerType)
+	s.Equal("https://shinyapps.io", merged.Target.ServerURL)
+	s.Equal(apitypes.ContentID("99"), merged.Target.ContentId)
+	s.Equal(apitypes.ContentName("my-app"), merged.Target.ContentName)
 }
 
 func (s *DeploymentSuite) TestLoadManifest() {
