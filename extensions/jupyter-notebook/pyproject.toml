@@ -6,5 +6,5 @@ line-length = 120
 target-version = ["py35"]
 
 [tool.setuptools_scm]
-write_to = "extensions/jupyter-notebook/version.py"
+write_to = "extensions/jupyter-notebook/connect_publishing/version.py"
 root = "../.."

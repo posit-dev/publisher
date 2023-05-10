@@ -1,9 +1,19 @@
-# rsconnect-jupyter
+# connect_publishing Jupyter notebook extension
 
-[rsconnect-jupyter](https://www.github.com/rstudio/rsconnect-jupyter/) is a
+[connect_publishing](https://www.github.com/rstudio/publishing-client/extensions/jupyter-notebook) is a
 plugin for [Jupyter Notebook](https://jupyter.org/) that enables
 publishing notebooks to [Posit
 Connect](https://www.posit.co/products/enterprise/connect/).
+
+# Installation
+
+To install development version:
+
+```
+git clone https://github.com/rstudio/publishing-client.git
+cd publishing-client/extensions/jupyter-notebook
+pip install .
+```
 
 # Requirements
 
@@ -14,6 +24,3 @@ Connect](https://www.posit.co/products/enterprise/connect/).
 - [Posit Connect](https://www.posit.co/download/posit-connect/) v1.7.0
   or higher, configured with Python support.
 
-# Documentation
-
-See the documentation [on GitHub](docs/docs/index.md) or on [docs.posit.co](https://docs.posit.co/rsconnect-jupyter/).

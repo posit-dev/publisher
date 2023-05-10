@@ -43,15 +43,7 @@ image%:
 		--build-arg PY_VERSION=$* \
 		.
 
-test: version-frontend
-	pytest -vv --cov=rsconnect_jupyter tests/
 
-.PHONY: test-selenium
-test-selenium:
-	$(MAKE) -C selenium clean test-env-up jupyter-up test || EXITCODE=$$? ; \
-	$(MAKE) -C selenium jupyter-down || true ; \
-	$(MAKE) -C selenium test-env-down || true ; \
-	exit $$EXITCODE
 
 # NOTE: Wheels won't get built if _any_ file it tries to touch has a timestamp
 # before 1980 (system files) so the $(SOURCE_DATE_EPOCH) current timestamp is
@@ -77,23 +69,10 @@ run: install
 
 .PHONY: install
 install: version-frontend
-	jupyter nbextension uninstall rsconnect_jupyter || true
-	jupyter nbextension install --symlink --user --py rsconnect_jupyter
-	jupyter nbextension enable --py rsconnect_jupyter
-	jupyter serverextension enable --py rsconnect_jupyter
-
-build/mock-connect/bin/flask:
-	bash -c '\
-		mkdir -p build && \
-		virtualenv build/mock-connect && \
-		. build/mock-connect/bin/activate && \
-		pip install flask'
-
-.PHONY: mock-server
-mock-server: build/mock-connect/bin/flask
-	bash -c '\
-		. build/mock-connect/bin/activate && \
-		FLASK_APP=mock_connect.py flask run --host=0.0.0.0'
+	jupyter nbextension uninstall connect_publishing || true
+	jupyter nbextension install --symlink --user --py connect_publishing
+	jupyter nbextension enable --py connect_publishing
+	jupyter serverextension enable --py connect_publishing
 
 .PHONY: yarn
 yarn:
@@ -108,12 +87,12 @@ lint-js:
 
 .PHONY: lint-py
 lint-py:
-	black --check --diff ./rsconnect_jupyter
-	flake8 ./rsconnect_jupyter
+	black --check --diff ./connect_publishing
+	flake8 ./connect_publishing
 
 .PHONY: fmt
 fmt:
-	black ./rsconnect_jupyter
+	black ./connect_publishing
 
 ## Specify that Docker runs with the calling user's uid/gid to avoid file
 ## permission issues on Linux dev hosts.
@@ -128,30 +107,30 @@ version:
 
 .PHONY: version-frontend
 version-frontend:
-	printf '{"version":"%s"}\n' $(VERSION) >rsconnect_jupyter/static/version.json
+	printf '{"version":"%s"}\n' $(VERSION) >connect_publishing/static/version.json
 
-.PHONY: sync-latest-to-s3
-sync-latest-to-s3:
-	aws s3 cp --acl bucket-owner-full-control \
-		$(BDIST_WHEEL) \
-		$(S3_PREFIX)/latest/rsconnect_jupyter-latest-py2.py3-none-any.whl
+# .PHONY: sync-latest-to-s3
+# sync-latest-to-s3:
+# 	aws s3 cp --acl bucket-owner-full-control \
+# 		$(BDIST_WHEEL) \
+# 		$(S3_PREFIX)/latest/rsconnect_jupyter-latest-py2.py3-none-any.whl
 
-.PHONY: sync-latest-docs-to-s3
-sync-latest-docs-to-s3:
-	aws s3 cp --acl bucket-owner-full-control \
-		--recursive \
-		--cache-control max-age=0 \
-		docs/site/ \
-		$(S3_PREFIX)/latest/
+# .PHONY: sync-latest-docs-to-s3
+# sync-latest-docs-to-s3:
+# 	aws s3 cp --acl bucket-owner-full-control \
+# 		--recursive \
+# 		--cache-control max-age=0 \
+# 		docs/site/ \
+# 		$(S3_PREFIX)/latest/
 
-.PHONY: promote-docs-in-s3
-promote-docs-in-s3:
-	aws s3 cp --acl bucket-owner-full-control \
-		--recursive \
-		docs/site/ \
-		s3://docs.rstudio.com/rsconnect-jupyter/rsconnect_jupyter-$(VERSION)/
-	aws s3 cp --acl bucket-owner-full-control \
-		--recursive \
-		--cache-control max-age=300 \
-		docs/site/ \
-		s3://docs.rstudio.com/rsconnect-jupyter/
+# .PHONY: promote-docs-in-s3
+# promote-docs-in-s3:
+# 	aws s3 cp --acl bucket-owner-full-control \
+# 		--recursive \
+# 		docs/site/ \
+# 		s3://docs.rstudio.com/rsconnect-jupyter/rsconnect_jupyter-$(VERSION)/
+# 	aws s3 cp --acl bucket-owner-full-control \
+# 		--recursive \
+# 		--cache-control max-age=300 \
+# 		docs/site/ \
+# 		s3://docs.rstudio.com/rsconnect-jupyter/
