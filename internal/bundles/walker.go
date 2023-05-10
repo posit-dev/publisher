@@ -64,7 +64,7 @@ func (i *walker) Walk(path util.Path, fn util.WalkFunc) error {
 				err = nil
 			}
 			if err != nil {
-				return fmt.Errorf("Error loading .rscignore file '%s': %w", ignorePath, err)
+				return fmt.Errorf("error loading .rscignore file '%s': %w", ignorePath, err)
 			}
 			// Ignore Python environment directories. We check for these
 			// separately because they aren't expressible as gitignore patterns.

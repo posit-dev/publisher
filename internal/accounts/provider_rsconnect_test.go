@@ -5,11 +5,11 @@ package accounts
 import (
 	"errors"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/dcf"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -55,7 +55,7 @@ func (s *RsconnectProviderSuite) TestConfigDirRUserConfig() {
 	s.provider.goos = "linux"
 	dir, err := s.provider.configDir()
 	s.Nil(err)
-	s.Equal("/r/config/R/rsconnect", dir)
+	s.Equal("/r/config/R/rsconnect", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirXdgConfig() {
@@ -63,7 +63,7 @@ func (s *RsconnectProviderSuite) TestConfigDirXdgConfig() {
 	s.provider.goos = "linux"
 	dir, err := s.provider.configDir()
 	s.Nil(err)
-	s.Equal("/home/myconfig/R/rsconnect", dir)
+	s.Equal("/home/myconfig/R/rsconnect", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirLinux() {
@@ -71,14 +71,14 @@ func (s *RsconnectProviderSuite) TestConfigDirLinux() {
 	s.provider.goos = "linux"
 	dir, err := s.provider.configDir()
 	s.Nil(err)
-	s.Equal("/home/somebody/.config/R/rsconnect", dir)
+	s.Equal("/home/somebody/.config/R/rsconnect", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirLinuxNoHome() {
 	s.provider.goos = "linux"
 	dir, err := s.provider.configDir()
 	s.ErrorContains(err, "$HOME is not defined")
-	s.Equal("", dir)
+	s.Equal("", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirMac() {
@@ -86,14 +86,14 @@ func (s *RsconnectProviderSuite) TestConfigDirMac() {
 	s.provider.goos = "darwin"
 	dir, err := s.provider.configDir()
 	s.Nil(err)
-	s.Equal("/Users/somebody/Library/Preferences/org.R-project.R/R/rsconnect", dir)
+	s.Equal("/Users/somebody/Library/Preferences/org.R-project.R/R/rsconnect", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirMacNoHome() {
 	s.provider.goos = "darwin"
 	dir, err := s.provider.configDir()
 	s.ErrorContains(err, "$HOME is not defined")
-	s.Equal("", dir)
+	s.Equal("", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirWindows() {
@@ -101,14 +101,14 @@ func (s *RsconnectProviderSuite) TestConfigDirWindows() {
 	s.provider.goos = "windows"
 	dir, err := s.provider.configDir()
 	s.Nil(err)
-	s.Equal(`C:\Users\somebody\AppData/R/config/R/rsconnect`, dir)
+	s.Equal(`C:\Users\somebody\AppData/R/config/R/rsconnect`, dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirNoHome() {
 	s.provider.goos = "linux"
 	dir, err := s.provider.oldConfigDir()
 	s.ErrorContains(err, "$HOME is not defined")
-	s.Equal("", dir)
+	s.Equal("", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirRUserConfig() {
@@ -117,7 +117,7 @@ func (s *RsconnectProviderSuite) TestOldConfigDirRUserConfig() {
 	s.provider.goos = "linux"
 	dir, err := s.provider.oldConfigDir()
 	s.Nil(err)
-	s.Equal("/r/config/rsconnect", dir)
+	s.Equal("/r/config/rsconnect", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirXdgConfig() {
@@ -126,7 +126,7 @@ func (s *RsconnectProviderSuite) TestOldConfigDirXdgConfig() {
 	s.provider.goos = "linux"
 	dir, err := s.provider.oldConfigDir()
 	s.Nil(err)
-	s.Equal("/home/myconfig/R/rsconnect", dir)
+	s.Equal("/home/myconfig/R/rsconnect", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirLinux() {
@@ -134,7 +134,7 @@ func (s *RsconnectProviderSuite) TestOldConfigDirLinux() {
 	s.provider.goos = "linux"
 	dir, err := s.provider.oldConfigDir()
 	s.Nil(err)
-	s.Equal("/home/somebody/.config/R/rsconnect", dir)
+	s.Equal("/home/somebody/.config/R/rsconnect", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirMac() {
@@ -142,7 +142,7 @@ func (s *RsconnectProviderSuite) TestOldConfigDirMac() {
 	s.provider.goos = "darwin"
 	dir, err := s.provider.oldConfigDir()
 	s.Nil(err)
-	s.Equal("/Users/somebody/Library/Application Support/R/rsconnect", dir)
+	s.Equal("/Users/somebody/Library/Application Support/R/rsconnect", dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirWindows() {
@@ -154,7 +154,7 @@ func (s *RsconnectProviderSuite) TestOldConfigDirWindows() {
 	s.provider.goos = "windows"
 	dir, err := s.provider.oldConfigDir()
 	s.Nil(err)
-	s.Equal(`/Users\somebody\AppData\Roaming/R/rsconnect`, dir)
+	s.Equal(`/Users\somebody\AppData\Roaming/R/rsconnect`, dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestAccountsFromConfigShinyapps() {
@@ -241,7 +241,7 @@ func (s *RsconnectProviderSuite) TestAccountsFromConfigMissingName() {
 	}}
 
 	accounts, err := s.provider.accountsFromConfig(configServers, configAccounts)
-	s.ErrorContains(err, "Missing server name")
+	s.ErrorContains(err, "missing server name")
 	s.Equal([]Account{}, accounts)
 }
 
@@ -251,8 +251,8 @@ type RsconnectProviderLoadSuite struct {
 	envVarHelper utiltest.EnvVarHelper
 	provider     *rsconnectProvider
 	fs           *utiltest.MockFs
-	configDir    string
-	oldConfigDir string
+	configDir    util.Path
+	oldConfigDir util.Path
 }
 
 func TestRsconnectProviderLoadSuite(t *testing.T) {
@@ -278,35 +278,37 @@ func (s *RsconnectProviderLoadSuite) TestLoadNewConfigDir() {
 	fs := afero.NewMemMapFs()
 	logger := rslog.NewDiscardingLogger()
 	provider := newRSConnectProvider(fs, logger)
-	s.loadUsingConfigDir(s.configDir, fs, provider)
+	configDir := util.NewPath(s.configDir.Path(), fs)
+	s.loadUsingConfigDir(configDir, provider)
 }
 
 func (s *RsconnectProviderLoadSuite) TestLoadOldConfigDir() {
 	fs := afero.NewMemMapFs()
 	logger := rslog.NewDiscardingLogger()
 	provider := newRSConnectProvider(fs, logger)
-	s.loadUsingConfigDir(s.oldConfigDir, fs, provider)
+	oldConfigDir := util.NewPath(s.oldConfigDir.Path(), fs)
+	s.loadUsingConfigDir(oldConfigDir, provider)
 }
 
-func (s *RsconnectProviderLoadSuite) loadUsingConfigDir(configDir string, fs afero.Fs, provider *rsconnectProvider) {
-	serverDir := filepath.Join(configDir, "servers")
-	err := fs.MkdirAll(serverDir, 0600)
+func (s *RsconnectProviderLoadSuite) loadUsingConfigDir(configDir util.Path, provider *rsconnectProvider) {
+	serverDir := configDir.Join("servers")
+	err := serverDir.MkdirAll(0600)
 	s.Nil(err)
 
-	connectServerPath := filepath.Join(serverDir, "connect.example.com.dcf")
+	connectServerPath := serverDir.Join("connect.example.com.dcf")
 	connectServerData := []byte(
 		`name: connect.example.com
 url: https://connect.example.com/__api__
 	`)
 
-	err = afero.WriteFile(fs, connectServerPath, connectServerData, 0600)
+	err = connectServerPath.WriteFile(connectServerData, 0600)
 	s.Nil(err)
 
-	accountDir := filepath.Join(configDir, "accounts")
-	err = fs.MkdirAll(accountDir, 0600)
+	accountDir := configDir.Join("accounts")
+	err = accountDir.MkdirAll(0600)
 	s.Nil(err)
 
-	connectAccountPath := filepath.Join(accountDir, "connect.example.com", "rootUser.dcf")
+	connectAccountPath := accountDir.Join("connect.example.com", "rootUser.dcf")
 	connectAccountData := []byte(
 		`username: rootUser
 accountId: 1
@@ -314,12 +316,12 @@ server: connect.example.com
 token: 0123456789ABCDEF
 private_key: FEDCBA9876543210
 	`)
-	err = afero.WriteFile(fs, connectAccountPath, connectAccountData, 0600)
+	err = connectAccountPath.WriteFile(connectAccountData, 0600)
 	s.Nil(err)
 
 	// shinyapps.io doesn't get a server file, just an account file
 
-	shinyappsAccountPath := filepath.Join(configDir, "accounts", "shinyapps.io", "myaccount.dcf")
+	shinyappsAccountPath := configDir.Join("accounts", "shinyapps.io", "myaccount.dcf")
 	shinyappsAccountData := []byte(
 		`name: myaccount
 server: shinyapps.io
@@ -328,7 +330,7 @@ accountId: 456
 token: 0123456789ABCDEF
 secret: FEDCBA9876543210
 	`)
-	err = afero.WriteFile(fs, shinyappsAccountPath, shinyappsAccountData, 0600)
+	err = shinyappsAccountPath.WriteFile(shinyappsAccountData, 0600)
 	s.Nil(err)
 	accountList, err := provider.Load()
 	s.Nil(err)
@@ -352,8 +354,8 @@ func (s *RsconnectProviderLoadSuite) TestLoadOldConfigDirErr() {
 		s.T().Skip()
 	}
 	testError := errors.New("stat error on oldConfigDir")
-	s.fs.On("Stat", s.configDir).Return(utiltest.NewMockFileInfo(), os.ErrNotExist)
-	s.fs.On("Stat", s.oldConfigDir).Return(utiltest.NewMockFileInfo(), testError)
+	s.fs.On("Stat", s.configDir.Path()).Return(utiltest.NewMockFileInfo(), os.ErrNotExist)
+	s.fs.On("Stat", s.oldConfigDir.Path()).Return(utiltest.NewMockFileInfo(), testError)
 
 	accountList, err := s.provider.Load()
 	s.NotNil(err)
@@ -362,8 +364,8 @@ func (s *RsconnectProviderLoadSuite) TestLoadOldConfigDirErr() {
 }
 
 func (s *RsconnectProviderLoadSuite) TestLoadNoOldConfigDir() {
-	s.fs.On("Stat", s.configDir).Return(utiltest.NewMockFileInfo(), os.ErrNotExist)
-	s.fs.On("Stat", s.oldConfigDir).Return(utiltest.NewMockFileInfo(), os.ErrNotExist)
+	s.fs.On("Stat", s.configDir.Path()).Return(utiltest.NewMockFileInfo(), os.ErrNotExist)
+	s.fs.On("Stat", s.oldConfigDir.Path()).Return(utiltest.NewMockFileInfo(), os.ErrNotExist)
 
 	accountList, err := s.provider.Load()
 	s.Nil(err)
@@ -375,9 +377,9 @@ func (s *RsconnectProviderLoadSuite) TestLoadServersFails() {
 	s.provider.dcfReader = dcfReader
 	testError := errors.New("Fake DCF error")
 	dcfReader.On("ReadFiles",
-		mock.MatchedBy(func(s string) bool {
-			return strings.Contains(s, "servers")
-		})).Return(nil, testError)
+		mock.MatchedBy(func(p util.Path) bool {
+			return strings.Contains(p.Path(), "servers")
+		}), "*.dcf").Return(nil, testError)
 
 	accountList, err := s.provider.loadFromConfigDir(s.configDir)
 	s.ErrorIs(err, testError)
@@ -389,13 +391,13 @@ func (s *RsconnectProviderLoadSuite) TestLoadAccountsFails() {
 	s.provider.dcfReader = dcfReader
 	testError := errors.New("Fake DCF error")
 	dcfReader.On("ReadFiles",
-		mock.MatchedBy(func(s string) bool {
-			return strings.Contains(s, "servers")
-		})).Return(nil, nil)
+		mock.MatchedBy(func(p util.Path) bool {
+			return strings.Contains(p.Path(), "servers")
+		}), "*.dcf").Return(nil, nil)
 	dcfReader.On("ReadFiles",
-		mock.MatchedBy(func(s string) bool {
-			return strings.Contains(s, "accounts")
-		})).Return(nil, testError)
+		mock.MatchedBy(func(p util.Path) bool {
+			return strings.Contains(p.Path(), "accounts")
+		}), "*.dcf").Return(nil, testError)
 
 	accountList, err := s.provider.loadFromConfigDir(s.configDir)
 	s.ErrorIs(err, testError)
@@ -406,17 +408,17 @@ func (s *RsconnectProviderLoadSuite) TestLoadAccountsFromConfigFails() {
 	dcfReader := dcf.NewMockFileReader()
 	s.provider.dcfReader = dcfReader
 	dcfReader.On("ReadFiles",
-		mock.MatchedBy(func(s string) bool {
-			return strings.Contains(s, "servers")
-		})).Return(nil, nil)
+		mock.MatchedBy(func(p util.Path) bool {
+			return strings.Contains(p.Path(), "servers")
+		}), "*.dcf").Return(nil, nil)
 
 	badAccounts := dcf.Records{{
 		"server": "nonexistent",
 	}}
 	dcfReader.On("ReadFiles",
-		mock.MatchedBy(func(s string) bool {
-			return strings.Contains(s, "accounts")
-		})).Return(badAccounts, nil)
+		mock.MatchedBy(func(p util.Path) bool {
+			return strings.Contains(p.Path(), "accounts")
+		}), "*.dcf").Return(badAccounts, nil)
 
 	accountList, err := s.provider.loadFromConfigDir(s.configDir)
 	s.NotNil(err)

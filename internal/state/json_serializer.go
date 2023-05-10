@@ -34,7 +34,7 @@ func (s *jsonSerializer) Save(label MetadataLabel, src any) error {
 	encoder := json.NewEncoder(f)
 	err = encoder.Encode(src)
 	if err != nil {
-		return fmt.Errorf("Error writing JSON file %s: %w", path, err)
+		return fmt.Errorf("error writing JSON file %s: %w", path, err)
 	}
 	s.logger.Infof("Saved %s metadata to %s", label, path)
 	return nil
@@ -50,7 +50,7 @@ func (s *jsonSerializer) Load(label MetadataLabel, dest any) error {
 	decoder := json.NewDecoder(f)
 	err = decoder.Decode(dest)
 	if err != nil {
-		return fmt.Errorf("Cannot parse JSON file %s: %w", path, err)
+		return fmt.Errorf("cannot parse JSON file %s: %w", path, err)
 	}
 	s.logger.Infof("Loaded %s metadata from %s", label, path)
 	return nil

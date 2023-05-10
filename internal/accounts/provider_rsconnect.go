@@ -126,7 +126,7 @@ func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts dcf.Recor
 	for _, account := range rscAccounts {
 		serverName := account["server"]
 		if serverName == "" {
-			return accounts, fmt.Errorf("Missing server name in rsconnect account")
+			return accounts, fmt.Errorf("missing server name in rsconnect account")
 		}
 		url, ok := serverNameToURL[serverName]
 		if !ok {
@@ -154,7 +154,7 @@ func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts dcf.Recor
 func (p *rsconnectProvider) Load() ([]Account, error) {
 	configDir, err := p.configDir()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting rsconnect config directory: %w", err)
+		return nil, fmt.Errorf("error getting rsconnect config directory: %w", err)
 	}
 	exists, err := configDir.Exists()
 	if err == nil && exists {

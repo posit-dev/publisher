@@ -98,7 +98,7 @@ func ReadManifest(r io.Reader) (*Manifest, error) {
 	manifest := NewManifest()
 	err := decoder.Decode(&manifest)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot parse manifest: %w", err)
+		return nil, fmt.Errorf("cannot parse manifest: %w", err)
 	}
 	return manifest, nil
 }
@@ -127,7 +127,7 @@ func (m *Manifest) WriteManifestFile(path util.Path) error {
 func ReadManifestFile(path util.Path) (*Manifest, error) {
 	f, err := path.Open()
 	if err != nil {
-		return nil, fmt.Errorf("Cannot open manifest file %s: %w", path, err)
+		return nil, fmt.Errorf("cannot open manifest file %s: %w", path, err)
 	}
 	defer f.Close()
 	return ReadManifest(f)

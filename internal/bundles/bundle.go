@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/md5"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -51,7 +50,7 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	}
 	walker, err := NewWalker(dir, ignores)
 	if err != nil {
-		return nil, fmt.Errorf("Error loading ignore list: %w", err)
+		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
 	return &bundler{
 		manifest:           manifest,
@@ -102,8 +101,6 @@ type bundle struct {
 	size     int64          // Total uncompressed size of the files, in bytes
 }
 
-var bundleTooLargeError = errors.New("Directory is too large to deploy.")
-
 func (b *bundler) CreateManifest() (*Manifest, error) {
 	b.logger.WithField("source_dir", b.baseDir).Infof("Creating manifest from directory")
 	return b.makeBundle(nil)
@@ -141,7 +138,7 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 
 	err = bundle.addDirectory(b.baseDir)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating bundle: %w", err)
+		return nil, fmt.Errorf("error creating bundle: %w", err)
 	}
 	if b.filename != "" {
 		// Ensure that the main file was not excluded
@@ -184,20 +181,20 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 }
 
 // writeHeaderToTar writes a file or directory entry to the tar archive.
-func writeHeaderToTar(info fs.FileInfo, path util.Path, archive util.TarWriter) error {
+func writeHeaderToTar(info fs.FileInfo, path string, archive util.TarWriter) error {
 	if archive == nil {
 		// Just scanning files, not archiving
 		return nil
 	}
-	if path.Path() == "." {
+	if path == "." {
 		// omit root dir
 		return nil
 	}
 	header, err := tar.FileInfoHeader(info, "")
 	if err != nil {
-		return fmt.Errorf("Error creating tarfile header for %s: %w", path, err)
+		return fmt.Errorf("error creating tarfile header for %s: %w", path, err)
 	}
-	header.Name = path.Path()
+	header.Name = path
 	if info.IsDir() {
 		header.Name += "/"
 	}
@@ -238,13 +235,13 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 		"size": info.Size(),
 	})
 	if info.IsDir() {
-		err = writeHeaderToTar(info, relPath, b.archive)
+		err = writeHeaderToTar(info, relPath.Path(), b.archive)
 		if err != nil {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
 		pathLogger.Infof("Adding file")
-		err = writeHeaderToTar(info, relPath, b.archive)
+		err = writeHeaderToTar(info, relPath.Path(), b.archive)
 		if err != nil {
 			return err
 		}
@@ -265,11 +262,11 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 		linkTarget, err := filepath.EvalSymlinks(path.Path())
 		targetPath := util.NewPath(linkTarget, path.Fs())
 		if err != nil {
-			return fmt.Errorf("Error following symlink %s: %w", path, err)
+			return fmt.Errorf("error following symlink %s: %w", path, err)
 		}
 		targetInfo, err := targetPath.Stat()
 		if err != nil {
-			return fmt.Errorf("Error getting target info for symlink %s: %w", targetPath, err)
+			return fmt.Errorf("error getting target info for symlink %s: %w", targetPath, err)
 		}
 		if targetInfo.IsDir() {
 			dirEntries, err := targetPath.ReadDir()
@@ -374,7 +371,7 @@ func (w *manifestWalker) Walk(root util.Path, fn util.WalkFunc) error {
 		}
 		err = fn(absPath, fileInfo, err)
 		if err != nil {
-			return fmt.Errorf("Error adding file '%s' to the bundle: %w", path, err)
+			return fmt.Errorf("error adding file '%s' to the bundle: %w", path, err)
 		}
 	}
 	return nil

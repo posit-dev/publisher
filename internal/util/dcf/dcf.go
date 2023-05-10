@@ -94,14 +94,14 @@ func (d *decoder) Decode(r io.Reader) (Records, error) {
 		} else if trimmedLine != line {
 			// Leading whitespace indicates a continuation line
 			if currentTag == "" {
-				return nil, fmt.Errorf("Couldn't parse DCF data: unexpected continuation on line %d", lineNum)
+				return nil, fmt.Errorf("couldn't parse DCF data: unexpected continuation on line %d", lineNum)
 			}
 			currentRecord[currentTag] += strings.Trim(line, whitespace)
 		} else {
 			// New field in the current record
 			tag, value, ok := strings.Cut(line, ":")
 			if !ok {
-				return nil, fmt.Errorf("Couldn't parse DCF data: missing ':' on line %d", lineNum)
+				return nil, fmt.Errorf("couldn't parse DCF data: missing ':' on line %d", lineNum)
 			}
 			currentRecord[tag] = strings.Trim(value, whitespace)
 			currentTag = tag

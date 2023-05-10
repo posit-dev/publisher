@@ -30,7 +30,7 @@ func NewPath(path string, fs afero.Fs) Path {
 	}
 }
 
-func (p Path) UnmarshalText(data []byte) error {
+func (p *Path) UnmarshalText(data []byte) error {
 	p.path = string(data)
 	p.fs = osFs
 	return nil

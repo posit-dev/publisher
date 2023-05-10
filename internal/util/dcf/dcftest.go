@@ -49,7 +49,7 @@ func (m *MockFileReader) ReadFile(path util.Path) (Records, error) {
 }
 
 func (m *MockFileReader) ReadFiles(path util.Path, pattern string) (Records, error) {
-	args := m.Called(pattern)
+	args := m.Called(path, pattern)
 	records := args.Get(0)
 	if records == nil {
 		return nil, args.Error(1)

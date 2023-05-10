@@ -6,8 +6,8 @@ import (
 	"io"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -27,9 +27,9 @@ type MockInferenceHelper struct {
 	mock.Mock
 }
 
-func (m *MockInferenceHelper) InferEntrypoint(fs afero.Fs, path string, suffix string, preferredFilename string) (string, string, error) {
-	args := m.Called(fs, path, suffix, preferredFilename)
-	return args.String(0), args.String(1), args.Error(2)
+func (m *MockInferenceHelper) InferEntrypoint(path util.Path, suffix string, preferredFilename string) (string, util.Path, error) {
+	args := m.Called(path, suffix, preferredFilename)
+	return args.String(0), args.Get(1).(util.Path), args.Error(2)
 }
 
 func (m *MockInferenceHelper) HasPythonImports(r io.Reader, packages []string) (bool, error) {
@@ -37,7 +37,7 @@ func (m *MockInferenceHelper) HasPythonImports(r io.Reader, packages []string) (
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockInferenceHelper) FileHasPythonImports(fs afero.Fs, path string, packages []string) (bool, error) {
-	args := m.Called(fs, path, packages)
+func (m *MockInferenceHelper) FileHasPythonImports(path util.Path, packages []string) (bool, error) {
+	args := m.Called(path, packages)
 	return args.Bool(0), args.Error(1)
 }
