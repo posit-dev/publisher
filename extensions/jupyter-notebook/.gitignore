@@ -137,7 +137,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-
+Untitled.ipynb
 
 ## RStudio
 *.Rproj

@@ -1,9 +1,8 @@
+import json
+
+from notebook.base.handlers import APIHandler
 from notebook.utils import url_path_join
-from tornado import web
-
-from rsconnect import VERSION
-
-from ssl import SSLError
+from tornado import web, process
 
 try:
     from connect_publishing.version import version as __version__  # noqa
@@ -29,9 +28,39 @@ def _jupyter_nbextension_paths():
         )
     ]
 
+
+# https://github.com/jupyter/notebook/blob/master/notebook/base/handlers.py
+class EndpointHandler(APIHandler):
+    @web.authenticated
+    async def get(self, action):
+        if action == "start_ui":
+            process_output = process.Subprocess(
+                "just /Users/isabelzimmerman/code/github/publishing-client/web/start",
+                shell=True,
+                stdout=process.Subprocess.STREAM,
+                
+            )
+            stdout_future = process_output.stdout.read_until_close()
+            await stdout_future
+            import re
+
+            regex = r"Local:\s*(\S+)"
+            stdout = stdout_future.result().decode("utf-8")
+            match = re.search(regex, stdout)
+
+            self.finish(
+                json.dumps(
+                    {
+                        "data": match.group(),
+                    }
+                )
+            )
+
+
 def load_jupyter_server_extension(nb_app):
     nb_app.log.info("connect_publishing enabled!")
     web_app = nb_app.web_app
     host_pattern = ".*$"
     action_pattern = r"(?P<action>\w+)"
     route_pattern = url_path_join(web_app.settings["base_url"], r"/connect_publishing/%s" % action_pattern)
+    web_app.add_handlers(host_pattern, [(route_pattern, EndpointHandler)])

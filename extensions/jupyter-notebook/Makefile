@@ -1,13 +1,7 @@
 NB_UID := $(shell id -u)
 NB_GID := $(shell id -g)
 
-IMAGE := rstudio/rsconnect-jupyter-py
-NOTEBOOKS_DIR := /notebooks
-PORT := $(shell printenv PORT || echo 9999)
-S3_PREFIX := s3://rstudio-connect-downloads/connect/rsconnect-jupyter
-VERSION := $(shell python setup.py --version 2>/dev/null || echo 'NOTSET')
-
-BDIST_WHEEL := dist/rsconnect_jupyter-$(VERSION)-py2.py3-none-any.whl
+BDIST_WHEEL := dist/connect_publishing-$(VERSION)-py2.py3-none-any.whl
 JUPYTER_LOG_LEVEL ?= INFO
 
 # NOTE: See the `dist` target for why this exists.
@@ -42,8 +36,6 @@ image%:
 		--build-arg NB_GID=$(NB_GID) \
 		--build-arg PY_VERSION=$* \
 		.
-
-
 
 # NOTE: Wheels won't get built if _any_ file it tries to touch has a timestamp
 # before 1980 (system files) so the $(SOURCE_DATE_EPOCH) current timestamp is
@@ -109,28 +101,3 @@ version:
 version-frontend:
 	printf '{"version":"%s"}\n' $(VERSION) >connect_publishing/static/version.json
 
-# .PHONY: sync-latest-to-s3
-# sync-latest-to-s3:
-# 	aws s3 cp --acl bucket-owner-full-control \
-# 		$(BDIST_WHEEL) \
-# 		$(S3_PREFIX)/latest/rsconnect_jupyter-latest-py2.py3-none-any.whl
-
-# .PHONY: sync-latest-docs-to-s3
-# sync-latest-docs-to-s3:
-# 	aws s3 cp --acl bucket-owner-full-control \
-# 		--recursive \
-# 		--cache-control max-age=0 \
-# 		docs/site/ \
-# 		$(S3_PREFIX)/latest/
-
-# .PHONY: promote-docs-in-s3
-# promote-docs-in-s3:
-# 	aws s3 cp --acl bucket-owner-full-control \
-# 		--recursive \
-# 		docs/site/ \
-# 		s3://docs.rstudio.com/rsconnect-jupyter/rsconnect_jupyter-$(VERSION)/
-# 	aws s3 cp --acl bucket-owner-full-control \
-# 		--recursive \
-# 		--cache-control max-age=300 \
-# 		docs/site/ \
-# 		s3://docs.rstudio.com/rsconnect-jupyter/

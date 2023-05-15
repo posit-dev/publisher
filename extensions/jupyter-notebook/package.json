@@ -4,7 +4,7 @@
   "description": "Posit Connect Jupyter UI Plugin",
   "main": "index.js",
   "scripts": {
-    "lint": "./node_modules/.bin/eslint ./connect_publishing/static/*.js"
+    "lint": "./connect_publishing/static/*.js"
   },
   "repository": "git@github.com:rstudio/publishing-client.git",
   "author": "Isabel Zimmerman <isabel.zimmerman@posit.co>",

@@ -2,8 +2,9 @@ define([
   'jquery',
   'base/js/events',
   'base/js/namespace',
-  'base/js/promises'
-], function($, events, Jupyter, promises) {
+  'base/js/promises',
+  'base/js/utils'
+], function ($, events, Jupyter, promises, Utils) {
 
   // avoid 'accessing "actions" on the global IPython/Jupyter is not recommended' warning
   // https://github.com/jupyter/notebook/issues/2401
@@ -11,16 +12,16 @@ define([
 
   // create action that can be reused for buttons, keyboard shortcuts, etc
   var actionName = actions.register({
-      'help': 'Launch Posit Connect publishing client',
-      'help_index': 'zz',
-      'icon': 'fa-cloud-upload',
-      'handler': openUI,
+    'help': 'Launch Posit Connect publishing client',
+    'help_index': 'zz',
+    'icon': 'fa-cloud-upload',
+    'handler': startUI,
 
-    }, 
+  },
     'publish',
     'connect_publishing');
 
-  function openUI() {
+  function openPage(url) {
     var url = 'http://localhost:5173/'
     window.open(url, '_blank');
   }
@@ -30,12 +31,27 @@ define([
     // re-style the toolbar button to have a custom icon
     var $button = $('button[data-jupyter-action="' + actionName + '"]');
     $button.find('i')
-     .addClass('rsc-icon');
+      .addClass('rsc-icon');
 
   }
-  
+
+  function startUI() {
+    var notebookURL = Jupyter.notebook.base_url + 'connect_publishing/start_ui';
+    Utils.ajax(notebookURL, {
+      type: 'GET',
+      success: function (response) {
+        var url = response.data;
+        console.info('url: ', url)
+        openPage(url);
+      },
+      error: function (error) {
+        console.error('Ping failed:', error);
+      }
+    });
+  }
+
   function load_ipython_extension() {
-    promises.app_initialized.then(function(app) {
+    promises.app_initialized.then(function (app) {
       if (app === 'NotebookApp') {
         // add custom css
         $('<link/>')
@@ -55,3 +71,4 @@ define([
     load_ipython_extension: load_ipython_extension
   };
 });
+
