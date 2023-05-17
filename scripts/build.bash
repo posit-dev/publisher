@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euxo pipefail
+
 package=$1
 if [[ -z "$package" ]]; then
   echo "usage: $0 <package-name>"
@@ -54,7 +56,7 @@ do
 		output_name+='.exe'
 	fi
 
-    env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$output_name" -ldflags "-X project.Version=$version" "$package"
+    env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$output_name" -ldflags "-X github.com/rstudio/connect-client/internal/project.Version=$version" "$package"
 	if [ $? -ne 0 ]; then
    		echo 'An error has occurred! Aborting the script execution...'
 		exit 1
