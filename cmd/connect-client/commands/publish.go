@@ -3,6 +3,7 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -232,6 +233,30 @@ type PublishCmd struct {
 	*BaseBundleCmd `kong:"embed"`
 }
 
+type appInfo struct {
+	DashboardURL string `json:"dashboard-url"`
+	DirectURL    string `json:"direct-url"`
+}
+
+func logAppInfo(accountURL string, contentID apitypes.ContentID, logger rslog.Logger) error {
+	appInfo := appInfo{
+		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
+		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
+	}
+	logger.WithFields(rslog.Fields{
+		"dashboardURL": appInfo.DashboardURL,
+		"directURL":    appInfo.DirectURL,
+		"serverURL":    accountURL,
+		"contentID":    contentID,
+	}).Infof("Deployment successful")
+	jsonInfo, err := json.Marshal(appInfo)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Printf("%s\n", jsonInfo)
+	return err
+}
+
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	account, err := ctx.Accounts.GetAccountByName(cmd.State.Target.AccountName)
 	if err != nil {
@@ -313,7 +338,7 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	return nil
+	return logAppInfo(account.URL, contentID, ctx.Logger)
 }
 
 type PublishUICmd struct {
