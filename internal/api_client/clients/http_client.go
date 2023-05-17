@@ -51,6 +51,16 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, logg
 }
 
 var errAuthenticationFailed = errors.New("Unable to log in with the provided credentials.")
+var ErrNotFound = errors.New("server returned Not Found for the requested resource")
+
+type HTTPError struct {
+	URL  string
+	Code int
+}
+
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("unexpected response from the server: %s on URL %s", e.Code, e.URL)
+}
 
 func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyType string) ([]byte, error) {
 	apiURL := util.URLJoin(c.baseURL, path)
@@ -72,7 +82,7 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 	case http.StatusNoContent:
 		return nil, nil
 	default:
-		return nil, fmt.Errorf("Unexpected response from the server: %s on URL %s", resp.Status, req.URL.String())
+		return nil, &HTTPError{URL: apiURL, Code: resp.StatusCode}
 	}
 }
 

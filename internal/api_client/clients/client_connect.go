@@ -56,9 +56,9 @@ func (c *ConnectClient) TestConnection() error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("The server '%s' does not appear to be a Connect server.", c.account.URL)
+		return fmt.Errorf("the server '%s' does not appear to be a Connect server", c.account.URL)
 	} else if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Unexpected response from Connect server: %s", resp.Status)
+		return fmt.Errorf("unexpected response from Connect server: %s", resp.Status)
 	}
 	return nil
 }
@@ -95,13 +95,13 @@ func (c *ConnectClient) TestAuthentication() (*User, error) {
 		return nil, err
 	}
 	if connectUser.Locked {
-		return nil, fmt.Errorf("User account %s is locked.", connectUser.Username)
+		return nil, fmt.Errorf("user account %s is locked", connectUser.Username)
 	}
 	if !connectUser.Confirmed {
-		return nil, fmt.Errorf("User account %s is not confirmed.", connectUser.Username)
+		return nil, fmt.Errorf("user account %s is not confirmed", connectUser.Username)
 	}
 	if !(connectUser.UserRole == "publisher" || connectUser.UserRole == "administrator") {
-		return nil, fmt.Errorf("User account %s with role '%s' does not have permission to publish content.", connectUser.Username, connectUser.UserRole)
+		return nil, fmt.Errorf("user account %s with role '%s' does not have permission to publish content", connectUser.Username, connectUser.UserRole)
 	}
 	return connectUser.toUser(), nil
 }
@@ -149,6 +149,11 @@ func (c *ConnectClient) CreateDeployment(body state.ConnectContent) (apitypes.Co
 		return "", err
 	}
 	return content.GUID, nil
+}
+
+func (c *ConnectClient) UpdateDeployment(contentID apitypes.ContentID, body state.ConnectContent) error {
+	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
+	return c.client.Patch(url, &body, nil)
 }
 
 type bundleMetadataDTO struct {

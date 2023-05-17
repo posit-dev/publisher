@@ -4,6 +4,8 @@ package commands
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"time"
@@ -65,8 +67,8 @@ func (cmd *BaseBundleCmd) LoadState(logger rslog.Logger) error {
 		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
-		cmd.State.Merge(cliState)
 	}
+	cmd.State.Merge(cliState)
 	return nil
 }
 
@@ -94,7 +96,7 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger rslog.Logger) error {
 		typeDetector := inspect.NewContentTypeDetector()
 		contentType, err := typeDetector.InferType(cmd.Path)
 		if err != nil {
-			return fmt.Errorf("Error detecting content type: %w", err)
+			return fmt.Errorf("error detecting content type: %w", err)
 		}
 		// User-provided values override auto detection
 		if metadata.AppMode == apptypes.UnknownMode {
@@ -221,7 +223,7 @@ func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	}
 	err = manifestPath.WriteFile(manifestJSON, 0666)
 	if err != nil {
-		return fmt.Errorf("Error writing manifest file '%s': %w", manifestPath, err)
+		return fmt.Errorf("error writing manifest file '%s': %w", manifestPath, err)
 	}
 	return nil
 }
@@ -251,7 +253,10 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	_, err = bundler.CreateBundle(bundleFile)
-	bundleFile.Seek(0, os.SEEK_SET)
+	if err != nil {
+		return err
+	}
+	bundleFile.Seek(0, io.SeekStart)
 
 	// TODO: factory method to create client based on server type
 	// TODO: timeout option
@@ -261,8 +266,16 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	}
 
 	var contentID apitypes.ContentID
-	if cmd.State.Target.ContentId != "" {
+	if cmd.State.Target.ContentId != "" && !cmd.New {
 		contentID = cmd.State.Target.ContentId
+		err = client.UpdateDeployment(contentID, cmd.State.Connect.Content)
+		if err != nil {
+			httpErr, ok := err.(*clients.HTTPError)
+			if ok && httpErr.Code == http.StatusNotFound {
+				return fmt.Errorf("saved deployment with id %s cound not be found. Redeploying with --new will create a new deployment and discard the old saved metadata", contentID)
+			}
+			return err
+		}
 	} else {
 		contentID, err = client.CreateDeployment(cmd.State.Connect.Content)
 		if err != nil {
