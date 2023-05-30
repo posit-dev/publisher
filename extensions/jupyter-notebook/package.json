@@ -1,10 +1,10 @@
 {
-  "name": "connect_publishing",
+  "name": "connect_jupyternb",
   "version": "0.0.1",
   "description": "Posit Connect Jupyter UI Plugin",
   "main": "index.js",
   "scripts": {
-    "lint": "./connect_publishing/static/*.js"
+    "lint": "./connect_jupyternb/static/*.js"
   },
   "repository": "git@github.com:rstudio/publishing-client.git",
   "author": "Isabel Zimmerman <isabel.zimmerman@posit.co>",

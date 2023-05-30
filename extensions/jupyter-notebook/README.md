@@ -1,6 +1,6 @@
-# connect_publishing Jupyter notebook extension
+# connect_jupyternb Jupyter notebook extension
 
-[connect_publishing](https://www.github.com/rstudio/publishing-client/extensions/jupyter-notebook) is a
+[connect_jupyternb](https://www.github.com/rstudio/publishing-client/extensions/jupyter-notebook) is a
 plugin for [Jupyter Notebook](https://jupyter.org/) that enables
 publishing notebooks to [Posit
 Connect](https://www.posit.co/products/enterprise/connect/).

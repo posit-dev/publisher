@@ -19,10 +19,10 @@ define([
 
   },
     'publish',
-    'connect_publishing');
+    'connect_jupyternb');
 
   function openPage(url) {
-    var url = 'http://localhost:5173/'
+    console.log(url)
     window.open(url, '_blank');
   }
 
@@ -36,7 +36,7 @@ define([
   }
 
   function startUI() {
-    var notebookURL = Jupyter.notebook.base_url + 'connect_publishing/start_ui';
+    var notebookURL = Jupyter.notebook.base_url + 'connect_jupyternb/start_ui';
     Utils.ajax(notebookURL, {
       type: 'GET',
       success: function (response) {
@@ -56,7 +56,7 @@ define([
         // add custom css
         $('<link/>')
           .attr({
-            href: requirejs.toUrl('nbextensions/connect_publishing/main.css'),
+            href: requirejs.toUrl('nbextensions/connect_jupyternb/main.css'),
             rel: 'stylesheet',
             type: 'text/css'
           })

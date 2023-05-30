@@ -1,5 +1,4 @@
 include README.md
-include connect_publishing/static/*.js
-include connect_publishing/static/*.json
-include connect_publishing/static/main.css
-include connect_publishing/static/images/*.png
+include connect_jupyternb/static/*.js
+include connect_jupyternb/static/*.json
+include connect_jupyternb/static/main.css
