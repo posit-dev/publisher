@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euxo pipefail
+set -exo pipefail
 
 package=$1
 if [[ -z "$package" ]]; then
