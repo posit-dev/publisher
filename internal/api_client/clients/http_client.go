@@ -59,7 +59,7 @@ type HTTPError struct {
 }
 
 func (e *HTTPError) Error() string {
-	return fmt.Sprintf("unexpected response from the server: %s on URL %s", e.Code, e.URL)
+	return fmt.Sprintf("unexpected response from the server: %d on URL %s", e.Code, e.URL)
 }
 
 func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyType string) ([]byte, error) {
