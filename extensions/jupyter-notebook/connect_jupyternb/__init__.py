@@ -36,7 +36,7 @@ class EndpointHandler(APIHandler):
         if action == "start_ui":
             nb_url = '../connect/examples/stock-report-jupyter' # find url
             account = 'local' # which account? is there a default?
-            args = ['/Users/isabelzimmerman/code/github/publishing-client/bin/darwin-arm64/connect-client', 'publish-ui', nb_url, '-n', account]
+            args = ['connect-client', 'publish-ui', nb_url, '-n', account]
             
             process = subprocess.Popen(
                 args,
@@ -47,6 +47,7 @@ class EndpointHandler(APIHandler):
 
             while True:
                 chunk = process.stdout.readline().strip() # currently, URL is the onnly thing returned in stdout
+                print("UI url: ", chunk)
                 break
                 # pattern = r'http://\[[^\]]+\]/proxy/local/\?token=[^ ]+'
                 # match = re.search(pattern, chunk)
@@ -55,8 +56,6 @@ class EndpointHandler(APIHandler):
                 #     print(url)
                 #     break
 
-            else: 
-                raise AttributeError("url not found")
             self.finish(
                 json.dumps(
                     {
