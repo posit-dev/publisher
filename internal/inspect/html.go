@@ -4,7 +4,7 @@ package inspect
 
 import (
 	"github.com/rstudio/connect-client/internal/apptypes"
-	"github.com/spf13/afero"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type StaticHTMLDetector struct {
@@ -17,13 +17,13 @@ func NewStaticHTMLDetector() *StaticHTMLDetector {
 	}
 }
 
-func (d *StaticHTMLDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, _, err := d.InferEntrypoint(fs, path, ".html", "index.html")
+func (d *StaticHTMLDetector) InferType(path util.Path) (*ContentType, error) {
+	entrypoint, _, err := d.InferEntrypoint(path, ".html", "index.html")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint == "" {
-		entrypoint, _, err = d.InferEntrypoint(fs, path, ".htm", "index.htm")
+		entrypoint, _, err = d.InferEntrypoint(path, ".htm", "index.htm")
 		if err != nil {
 			return nil, err
 		}

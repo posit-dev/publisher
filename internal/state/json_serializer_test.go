@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -26,10 +27,10 @@ func TestJsonSerializerSuite(t *testing.T) {
 func (s *JsonSerializerSuite) TestNewJsonSerializer() {
 	fs := utiltest.NewMockFs()
 	logger := rslog.NewDiscardingLogger()
-	serializer := newJsonSerializer(fs, "/my/path", logger)
+	path := util.NewPath("/my/path", fs)
+	serializer := newJsonSerializer(path, logger)
 	expected := &jsonSerializer{
-		fs:     fs,
-		dir:    "/my/path",
+		dir:    path,
 		logger: logger,
 	}
 	s.Equal(expected, serializer)
@@ -43,7 +44,8 @@ type testData struct {
 func (s *JsonSerializerSuite) TestSaveLoad() {
 	fs := afero.NewMemMapFs()
 	logger := rslog.NewDiscardingLogger()
-	serializer := newJsonSerializer(fs, "/my/path", logger)
+	path := util.NewPath("/my/path", fs)
+	serializer := newJsonSerializer(path, logger)
 	data := testData{
 		Foo: 1,
 		Bar: "hi there",
@@ -59,7 +61,8 @@ func (s *JsonSerializerSuite) TestSaveLoad() {
 func (s *JsonSerializerSuite) TestLoadMissingFile() {
 	fs := afero.NewMemMapFs()
 	logger := rslog.NewDiscardingLogger()
-	serializer := newJsonSerializer(fs, "/my/path", logger)
+	path := util.NewPath("/my/path", fs)
+	serializer := newJsonSerializer(path, logger)
 	var loadedData testData
 	err := serializer.Load("test", &loadedData)
 	s.NotNil(err)
@@ -75,11 +78,12 @@ func (s *JsonSerializerSuite) TestLoadBadJSON() {
 	s.Nil(err)
 
 	logger := rslog.NewDiscardingLogger()
-	serializer := newJsonSerializer(fs, dir, logger)
+	path := util.NewPath(dir, fs)
+	serializer := newJsonSerializer(path, logger)
 	var loadedData testData
 	err = serializer.Load("test", &loadedData)
 	s.NotNil(err)
-	s.ErrorContains(err, "Cannot parse JSON")
+	s.ErrorContains(err, "cannot parse JSON")
 	s.ErrorContains(err, "test.json")
 }
 
@@ -88,7 +92,8 @@ func (s *JsonSerializerSuite) TestSaveCreateErr() {
 	testError := errors.New("test error from Create")
 	fs.On("Create", mock.Anything).Return(nil, testError)
 	logger := rslog.NewDiscardingLogger()
-	serializer := newJsonSerializer(fs, "/my/path", logger)
+	path := util.NewPath("/my/path", fs)
+	serializer := newJsonSerializer(path, logger)
 	var data testData
 	err := serializer.Save("test", &data)
 	s.NotNil(err)
@@ -104,7 +109,8 @@ func (s *JsonSerializerSuite) TestSaveWriteErr() {
 	f.On("Close").Return(nil)
 
 	logger := rslog.NewDiscardingLogger()
-	serializer := newJsonSerializer(fs, "/my/path", logger)
+	path := util.NewPath("/my/path", fs)
+	serializer := newJsonSerializer(path, logger)
 	var data testData
 	err := serializer.Save("test", &data)
 	s.NotNil(err)

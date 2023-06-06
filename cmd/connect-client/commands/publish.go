@@ -3,10 +3,12 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/rstudio/connect-client/internal/api_client/clients"
@@ -19,61 +21,66 @@ import (
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
-	"github.com/spf13/afero"
 )
 
 type BaseBundleCmd struct {
-	Python      string   `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
-	Exclude     []string `short:"x" help:"list of file patterns to exclude."`
-	Path        string   `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
-	Config      string   `help:"Name of metadata directory to load/save (see ./.posit/deployments/)."`
-	AccountName string   `short:"n" help:"Nickname of destination publishing account."`
+	Python  util.Path `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
+	Exclude []string  `short:"x" help:"list of file patterns to exclude."`
+	Path    util.Path `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
+	Config  string    `help:"Name of metadata directory to load/save (see ./.posit/deployments/)."`
+	New     bool      `help:"Create a new deployment instead of updating the previous deployment."`
 	// Store for the deployment State that will be served to the UI,
 	// published, written to manifest and metadata files, etc.
 	State *state.Deployment `kong:"embed"`
 }
 
 type StatefulCommand interface {
-	LoadState(fs afero.Fs, logger rslog.Logger) error
-	SaveState(fs afero.Fs, logger rslog.Logger) error
+	LoadState(logger rslog.Logger) error
+	SaveState(logger rslog.Logger) error
 }
 
 func (cmd *BaseBundleCmd) getConfigName() string {
 	if cmd.Config != "" {
 		return cmd.Config
 	}
-	if cmd.AccountName != "" {
-		return cmd.AccountName
+	if cmd.State.Target.AccountName != "" {
+		return cmd.State.Target.AccountName
 	}
 	return "default"
 }
 
-func (cmd *BaseBundleCmd) LoadState(fs afero.Fs, logger rslog.Logger) error {
-	sourceDir, err := util.DirFromPath(fs, cmd.Path)
+func (cmd *BaseBundleCmd) LoadState(logger rslog.Logger) error {
+	sourceDir, err := util.DirFromPath(cmd.Path)
 	if err != nil {
 		return err
 	}
-	cmd.Config = cmd.getConfigName()
 	cmd.State.SourceDir = sourceDir
+	cmd.Config = cmd.getConfigName()
 
 	cliState := cmd.State
 	cmd.State = state.NewDeployment()
-	err = cmd.State.LoadFromFiles(fs, sourceDir, cmd.Config, logger)
-	if err != nil && !os.IsNotExist(err) {
+	err = cmd.State.LoadManifest(sourceDir, logger)
+	if err != nil {
 		return err
+	}
+	if !cmd.New {
+		err = cmd.State.LoadFromFiles(sourceDir, cmd.Config, logger)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
 	}
 	cmd.State.Merge(cliState)
 	return nil
 }
 
-func (cmd *BaseBundleCmd) SaveState(fs afero.Fs, logger rslog.Logger) error {
-	return cmd.State.SaveToFiles(fs, cmd.State.SourceDir, cmd.Config, logger)
+func (cmd *BaseBundleCmd) SaveState(logger rslog.Logger) error {
+	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, logger)
 }
 
 // stateFromCLI takes the CLI options provided by the user,
 // performs content auto-detection if needed, and
 // updates cmd.State to reflect all of the information.
-func (cmd *BaseBundleCmd) stateFromCLI(fs afero.Fs, logger rslog.Logger) error {
+func (cmd *BaseBundleCmd) stateFromCLI(logger rslog.Logger) error {
 	manifest := &cmd.State.Manifest
 	manifest.Version = 1
 	manifest.Packages = make(bundles.PackageMap)
@@ -82,15 +89,15 @@ func (cmd *BaseBundleCmd) stateFromCLI(fs afero.Fs, logger rslog.Logger) error {
 	metadata := &manifest.Metadata
 	if metadata.Entrypoint == "" && cmd.Path != cmd.State.SourceDir {
 		// Provided path is a file. It is the entrypoint.
-		metadata.Entrypoint = filepath.Base(cmd.Path)
+		metadata.Entrypoint = cmd.Path.Base()
 	}
 
 	if metadata.AppMode == apptypes.UnknownMode || metadata.Entrypoint == "" {
 		logger.Infof("Detecting deployment type and entrypoint...")
 		typeDetector := inspect.NewContentTypeDetector()
-		contentType, err := typeDetector.InferType(fs, cmd.Path)
+		contentType, err := typeDetector.InferType(cmd.Path)
 		if err != nil {
-			return fmt.Errorf("Error detecting content type: %w", err)
+			return fmt.Errorf("error detecting content type: %w", err)
 		}
 		// User-provided values override auto detection
 		if metadata.AppMode == apptypes.UnknownMode {
@@ -111,12 +118,12 @@ func (cmd *BaseBundleCmd) stateFromCLI(fs afero.Fs, logger rslog.Logger) error {
 		"AppMode":    metadata.AppMode,
 	}).Infof("Deployment type")
 
-	requiresPython, err := cmd.requiresPython(fs)
+	requiresPython, err := cmd.requiresPython()
 	if err != nil {
 		return err
 	}
 	if requiresPython {
-		err = cmd.inspectPython(fs, logger, manifest)
+		err = cmd.inspectPython(logger, manifest)
 		if err != nil {
 			return err
 		}
@@ -125,12 +132,12 @@ func (cmd *BaseBundleCmd) stateFromCLI(fs afero.Fs, logger rslog.Logger) error {
 	return nil
 }
 
-func (cmd *BaseBundleCmd) requiresPython(fs afero.Fs) (bool, error) {
+func (cmd *BaseBundleCmd) requiresPython() (bool, error) {
 	manifest := &cmd.State.Manifest
 	if manifest.Metadata.AppMode.IsPythonContent() {
 		return true, nil
 	}
-	if cmd.Python != "" {
+	if cmd.Python.Path() != "" {
 		return true, nil
 	}
 	if manifest.Python != nil && manifest.Python.Version != "" {
@@ -139,16 +146,16 @@ func (cmd *BaseBundleCmd) requiresPython(fs afero.Fs) (bool, error) {
 	// Presence of requirements.txt implies Python is needed.
 	// This is the preferred approach since it is unambiguous and
 	// doesn't rely on environment inspection.
-	requirementsPath := filepath.Join(cmd.State.SourceDir, bundles.PythonRequirementsFilename)
-	exists, err := afero.Exists(fs, requirementsPath)
+	requirementsPath := cmd.State.SourceDir.Join(bundles.PythonRequirementsFilename)
+	exists, err := requirementsPath.Exists()
 	if err != nil {
 		return false, err
 	}
 	return exists, nil
 }
 
-func (cmd *BaseBundleCmd) inspectPython(fs afero.Fs, logger rslog.Logger, manifest *bundles.Manifest) error {
-	inspector := environment.NewPythonInspector(fs, cmd.State.SourceDir, cmd.Python, logger)
+func (cmd *BaseBundleCmd) inspectPython(logger rslog.Logger, manifest *bundles.Manifest) error {
+	inspector := environment.NewPythonInspector(cmd.State.SourceDir, cmd.Python, logger)
 	if manifest.Python.Version == "" {
 		pythonVersion, err := inspector.GetPythonVersion()
 		if err != nil {
@@ -171,20 +178,20 @@ func (cmd *BaseBundleCmd) inspectPython(fs afero.Fs, logger rslog.Logger, manife
 
 type CreateBundleCmd struct {
 	*BaseBundleCmd `kong:"embed"`
-	BundleFile     string `help:"Path to a file where the bundle should be written." required:"" type:"path"`
+	BundleFile     util.Path `help:"Path to a file where the bundle should be written." required:"" type:"path"`
 }
 
 func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	bundleFile, err := os.Create(cmd.BundleFile)
+	bundleFile, err := cmd.BundleFile.Create()
 	if err != nil {
 		return err
 	}
 	defer bundleFile.Close()
-	err = cmd.stateFromCLI(ctx.Fs, ctx.Logger)
+	err = cmd.stateFromCLI(ctx.Logger)
 	if err != nil {
 		return err
 	}
-	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, ctx.Logger)
+	bundler, err := bundles.NewBundler(cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -197,11 +204,11 @@ type WriteManifestCmd struct {
 }
 
 func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	err := cmd.stateFromCLI(ctx.Fs, ctx.Logger)
+	err := cmd.stateFromCLI(ctx.Logger)
 	if err != nil {
 		return err
 	}
-	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, ctx.Logger)
+	bundler, err := bundles.NewBundler(cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -209,15 +216,15 @@ func (cmd *WriteManifestCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	manifestPath := filepath.Join(cmd.State.SourceDir, bundles.ManifestFilename)
+	manifestPath := cmd.State.SourceDir.Join(bundles.ManifestFilename)
 	ctx.Logger.Infof("Writing manifest to '%s'", manifestPath)
 	manifestJSON, err := manifest.ToJSON()
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(manifestPath, manifestJSON, 0666)
+	err = manifestPath.WriteFile(manifestJSON, 0666)
 	if err != nil {
-		return fmt.Errorf("Error writing manifest file '%s': %w", manifestPath, err)
+		return fmt.Errorf("error writing manifest file '%s': %w", manifestPath, err)
 	}
 	return nil
 }
@@ -226,8 +233,32 @@ type PublishCmd struct {
 	*BaseBundleCmd `kong:"embed"`
 }
 
+type appInfo struct {
+	DashboardURL string `json:"dashboard-url"`
+	DirectURL    string `json:"direct-url"`
+}
+
+func logAppInfo(accountURL string, contentID apitypes.ContentID, logger rslog.Logger) error {
+	appInfo := appInfo{
+		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
+		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
+	}
+	logger.WithFields(rslog.Fields{
+		"dashboardURL": appInfo.DashboardURL,
+		"directURL":    appInfo.DirectURL,
+		"serverURL":    accountURL,
+		"contentID":    contentID,
+	}).Infof("Deployment successful")
+	jsonInfo, err := json.Marshal(appInfo)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Printf("%s\n", jsonInfo)
+	return err
+}
+
 func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	account, err := ctx.Accounts.GetAccountByName(cmd.AccountName)
+	account, err := ctx.Accounts.GetAccountByName(cmd.State.Target.AccountName)
 	if err != nil {
 		return err
 	}
@@ -238,16 +269,19 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
 
-	err = cmd.stateFromCLI(ctx.Fs, ctx.Logger)
+	err = cmd.stateFromCLI(ctx.Logger)
 	if err != nil {
 		return err
 	}
-	bundler, err := bundles.NewBundler(ctx.Fs, cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, ctx.Logger)
+	bundler, err := bundles.NewBundler(cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, ctx.Logger)
 	if err != nil {
 		return err
 	}
 	_, err = bundler.CreateBundle(bundleFile)
-	bundleFile.Seek(0, os.SEEK_SET)
+	if err != nil {
+		return err
+	}
+	bundleFile.Seek(0, io.SeekStart)
 
 	// TODO: factory method to create client based on server type
 	// TODO: timeout option
@@ -255,10 +289,23 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	// TODO: redeployment option
-	contentID, err := client.CreateDeployment(cmd.State.Connect.Content)
-	if err != nil {
-		return err
+
+	var contentID apitypes.ContentID
+	if cmd.State.Target.ContentId != "" && !cmd.New {
+		contentID = cmd.State.Target.ContentId
+		err = client.UpdateDeployment(contentID, cmd.State.Connect.Content)
+		if err != nil {
+			httpErr, ok := err.(*clients.HTTPError)
+			if ok && httpErr.Code == http.StatusNotFound {
+				return fmt.Errorf("saved deployment with id %s cound not be found. Redeploying with --new will create a new deployment and discard the old saved metadata", contentID)
+			}
+			return err
+		}
+	} else {
+		contentID, err = client.CreateDeployment(cmd.State.Connect.Content)
+		if err != nil {
+			return err
+		}
 	}
 	bundleID, err := client.UploadBundle(contentID, bundleFile)
 	if err != nil {
@@ -267,9 +314,9 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 
 	cmd.State.Target = state.TargetID{
 		ServerType:  account.ServerType,
-		ServerName:  account.Name,
+		AccountName: account.Name,
 		ServerURL:   account.URL,
-		ContentId:   apitypes.NewOptional(contentID),
+		ContentId:   contentID,
 		ContentName: "",
 		Username:    account.AccountName,
 		BundleId:    apitypes.NewOptional(bundleID),
@@ -291,7 +338,7 @@ func (cmd *PublishCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 	if err != nil {
 		return err
 	}
-	return nil
+	return logAppInfo(account.URL, contentID, ctx.Logger)
 }
 
 type PublishUICmd struct {
@@ -300,7 +347,7 @@ type PublishUICmd struct {
 }
 
 func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	account, err := ctx.Accounts.GetAccountByName(cmd.AccountName)
+	account, err := ctx.Accounts.GetAccountByName(cmd.State.Target.AccountName)
 	if err != nil {
 		return err
 	}
@@ -309,7 +356,7 @@ func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		return err
 	}
 	svc := proxy.NewProxyService(
-		cmd.AccountName,
+		cmd.State.Target.AccountName,
 		serverURL,
 		cmd.Listen,
 		cmd.TLSKeyFile,

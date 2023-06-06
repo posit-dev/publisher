@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/apitypes"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -93,13 +93,11 @@ func (s *ManifestSuite) TestToJSON() {
 
 func (s *ManifestSuite) TestReadManifestFile() {
 	manifestJson := []byte(`{"version": 1, "platform": "4.1.0"}`)
-	filename := "manifest.json"
-
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, filename, manifestJson, 0600)
+	manifestPath := util.NewPath(ManifestFilename, afero.NewMemMapFs())
+	err := manifestPath.WriteFile(manifestJson, 0600)
 	s.Nil(err)
 
-	manifest, err := ReadManifestFile(fs, filename)
+	manifest, err := ReadManifestFile(manifestPath)
 	s.Nil(err)
 	s.Equal(&Manifest{
 		Version:  1,
@@ -112,7 +110,8 @@ func (s *ManifestSuite) TestReadManifestFile() {
 func (s *ManifestSuite) TestReadManifestFileErr() {
 	fs := utiltest.NewMockFs()
 	fs.On("Open", mock.Anything).Return(nil, os.ErrNotExist)
-	manifest, err := ReadManifestFile(fs, "manifest.json")
+	manifestPath := util.NewPath(ManifestFilename, fs)
+	manifest, err := ReadManifestFile(manifestPath)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(manifest)
 }
@@ -129,7 +128,7 @@ func (s *ManifestSuite) TestMergeEmpty() {
 			Entrypoint:      "app.py",
 			PrimaryRmd:      "rmd",
 			PrimaryHtml:     "html",
-			HasParameters:   apitypes.NewOptional(false),
+			HasParameters:   false,
 		},
 	}
 	added := Manifest{}
@@ -162,7 +161,7 @@ func (s *ManifestSuite) TestMergeNonEmpty() {
 			Entrypoint:      "app.py",
 			PrimaryRmd:      "rmd",
 			PrimaryHtml:     "html",
-			HasParameters:   apitypes.NewOptional(false),
+			HasParameters:   false,
 		},
 		Python: &Python{
 			Version: "3.9.1",
@@ -207,7 +206,7 @@ func (s *ManifestSuite) TestMergeNonEmpty() {
 			Entrypoint:      "app.py",
 			PrimaryRmd:      "nope",
 			PrimaryHtml:     "also no",
-			HasParameters:   apitypes.NewOptional(true),
+			HasParameters:   true,
 		},
 		Python: &Python{
 			Version: "3.10.2",

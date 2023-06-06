@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -23,12 +24,12 @@ func TestPythonSuite(t *testing.T) {
 
 func (s *PythonSuite) TestInferTypeSpecifiedFile() {
 	filename := "myapp.py"
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, filename, []byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
+	path := util.NewPath(filename, afero.NewMemMapFs())
+	err := path.WriteFile([]byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	t, err := detector.InferType(fs, filename)
+	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
 		AppMode:        apptypes.PythonAPIMode,
@@ -39,12 +40,12 @@ func (s *PythonSuite) TestInferTypeSpecifiedFile() {
 
 func (s *PythonSuite) TestInferTypePreferredFilename() {
 	filename := "app.py"
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, filename, []byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
+	path := util.NewPath(filename, afero.NewMemMapFs())
+	err := path.WriteFile([]byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	t, err := detector.InferType(fs, ".")
+	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
 		AppMode:        apptypes.PythonAPIMode,
@@ -55,12 +56,12 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 
 func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 	filename := "myapp.py"
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, filename, []byte("# import some stuffimport flask\napp = flask.Flask(__name__)\n"), 0600)
+	path := util.NewPath(filename, afero.NewMemMapFs())
+	err := path.WriteFile([]byte("# import some stuffimport flask\napp = flask.Flask(__name__)\n"), 0600)
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	t, err := detector.InferType(fs, ".")
+	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
 		AppMode:        apptypes.PythonAPIMode,
@@ -71,12 +72,12 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 
 func (s *PythonSuite) TestInferTypeNotFlask() {
 	filename := "app.py"
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, filename, []byte("import dash\n"), 0600)
+	path := util.NewPath(filename, afero.NewMemMapFs())
+	err := path.WriteFile([]byte("import dash\n"), 0600)
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	t, err := detector.InferType(fs, ".")
+	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Nil(t)
 }
@@ -84,26 +85,32 @@ func (s *PythonSuite) TestInferTypeNotFlask() {
 func (s *PythonSuite) TestInferTypeEntrypointErr() {
 	inferrer := &MockInferenceHelper{}
 	testError := errors.New("test error from InferEntrypoint")
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", "", testError)
+	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything).Return("", util.Path{}, testError)
 
 	detector := NewFlaskDetector()
 	detector.inferenceHelper = inferrer
-	t, err := detector.InferType(utiltest.NewMockFs(), ".")
+	path := util.NewPath(".", utiltest.NewMockFs())
+	t, err := detector.InferType(path)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.Nil(t)
+	inferrer.AssertExpectations(s.T())
 }
 
 func (s *PythonSuite) TestInferTypeHasImportsErr() {
 	inferrer := &MockInferenceHelper{}
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("app.py", "app.py", nil)
+	entrypoint := "app.py"
+	entrypointPath := util.NewPath(entrypoint, nil)
+	inferrer.On("InferEntrypoint", mock.Anything, ".py", mock.Anything).Return(entrypoint, entrypointPath, nil)
 	testError := errors.New("test error from FileHasPythonImports")
-	inferrer.On("FileHasPythonImports", mock.Anything, mock.Anything, mock.Anything).Return(false, testError)
+	inferrer.On("FileHasPythonImports", mock.Anything, mock.Anything).Return(false, testError)
 
 	detector := NewFlaskDetector()
 	detector.inferenceHelper = inferrer
-	t, err := detector.InferType(utiltest.NewMockFs(), ".")
+	path := util.NewPath(".", utiltest.NewMockFs())
+	t, err := detector.InferType(path)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.Nil(t)
+	inferrer.AssertExpectations(s.T())
 }

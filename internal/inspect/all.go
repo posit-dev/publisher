@@ -5,7 +5,7 @@ package inspect
 import (
 	"errors"
 
-	"github.com/spf13/afero"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type ContentTypeDetector struct {
@@ -30,11 +30,11 @@ func NewContentTypeDetector() *ContentTypeDetector {
 	}
 }
 
-var errCantDetectContentType = errors.New("Could not automatically detect content type. Please specify it with the -t option.")
+var errCantDetectContentType = errors.New("could not automatically detect content type. Please specify it with the -t option")
 
-func (t *ContentTypeDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
+func (t *ContentTypeDetector) InferType(path util.Path) (*ContentType, error) {
 	for _, detector := range t.detectors {
-		contentType, err := detector.InferType(fs, path)
+		contentType, err := detector.InferType(path)
 		if err != nil {
 			return nil, err
 		}

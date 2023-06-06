@@ -103,6 +103,6 @@ func (s *AccountListSuite) TestGetAccountByNameNotFound() {
 		logger:    logger,
 	}
 	account, err := accountList.GetAccountByName("myAcct")
-	s.ErrorContains(err, "There is no account named 'myAcct'")
+	s.ErrorContains(err, "there is no account named 'myAcct'")
 	s.Nil(account)
 }

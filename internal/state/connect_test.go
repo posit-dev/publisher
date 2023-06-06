@@ -142,7 +142,7 @@ func (s *ConnectStateSuite) TestMergeEmpty() {
 	merged := orig
 	merged.Merge(&added)
 	s.Equal(orig, merged)
-	s.Equal(merged.Content.Title, "My Best Content Ever!")
+	s.Equal("My Best Content Ever!", merged.Content.Title)
 }
 
 func (s *ConnectStateSuite) TestMergeAll() {
@@ -204,7 +204,7 @@ func (s *ConnectStateSuite) TestMergeAll() {
 	merged := orig
 	merged.Merge(&added)
 	s.Equal(added, merged)
-	s.Equal(merged.Content.Title, "Better than the Best!")
+	s.Equal("Better than the Best!", merged.Content.Title)
 	s.Len(merged.Environment, 2)
-	s.Equal(merged.Environment[0].Value, apitypes.NewOptional("2"))
+	s.Equal(apitypes.NewOptional("2"), merged.Environment[0].Value)
 }

@@ -26,18 +26,21 @@ func (s *FilesSuite) TestDirFromPathDir() {
 	err := fs.MkdirAll("/my/dir", 0700)
 	s.Nil(err)
 
-	dir, err := DirFromPath(fs, "/my/dir")
+	path := NewPath("/my/dir", fs)
+	dir, err := DirFromPath(path)
 	s.Nil(err)
-	s.Equal("/my/dir", dir)
+	s.Equal(path, dir)
 }
 
 func (s *FilesSuite) TestDirFromPathDirErr() {
 	fs := afero.NewMemMapFs()
-	dir, err := DirFromPath(fs, "/nonexistent")
+	path := NewPath("/nonexistent", fs)
+	dir, err := DirFromPath(path)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
-	s.Equal("", dir)
+	s.Equal(Path{}, dir)
 }
+
 func (s *FilesSuite) TestDirFromPathFile() {
 	fs := afero.NewMemMapFs()
 	err := fs.MkdirAll("/my/dir", 0700)
@@ -45,9 +48,10 @@ func (s *FilesSuite) TestDirFromPathFile() {
 	err = afero.WriteFile(fs, "/my/dir/app.py", nil, 0600)
 	s.Nil(err)
 
-	dir, err := DirFromPath(fs, "/my/dir/app.py")
+	path := NewPath("/my/dir/app.py", fs)
+	dir, err := DirFromPath(path)
 	s.Nil(err)
-	s.Equal("/my/dir", dir)
+	s.Equal(path.Dir(), dir)
 }
 
 func (s *FilesSuite) TestChdir() {
@@ -59,7 +63,7 @@ func (s *FilesSuite) TestChdir() {
 
 	newWd, err := os.Getwd()
 	s.Nil(err)
-	s.Equal(newWd, "/")
+	s.Equal("/", newWd)
 }
 
 func (s *FilesSuite) TestChdirNonexistent() {

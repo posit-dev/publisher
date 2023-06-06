@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/md5"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -18,7 +17,6 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
-	"github.com/spf13/afero"
 )
 
 type Bundler interface {
@@ -32,10 +30,10 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(fs afero.Fs, path string, manifest *Manifest, ignores []string, pythonRequirements []byte, logger rslog.Logger) (*bundler, error) {
-	var dir string
+func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequirements []byte, logger rslog.Logger) (*bundler, error) {
+	var dir util.Path
 	var filename string
-	isDir, err := afero.IsDir(fs, path)
+	isDir, err := path.IsDir()
 	if err != nil {
 		return nil, err
 	}
@@ -43,20 +41,19 @@ func NewBundler(fs afero.Fs, path string, manifest *Manifest, ignores []string, 
 		dir = path
 		filename = ""
 	} else {
-		dir = filepath.Dir(path)
-		filename = filepath.Base(path)
+		dir = path.Dir()
+		filename = path.Base()
 	}
-	absDir, err := filepath.Abs(dir)
+	absDir, err := dir.Abs()
 	if err != nil {
 		return nil, err
 	}
-	walker, err := NewWalker(fs, dir, ignores)
+	walker, err := NewWalker(dir, ignores)
 	if err != nil {
-		return nil, fmt.Errorf("Error loading ignore list: %w", err)
+		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
 	return &bundler{
 		manifest:           manifest,
-		fs:                 fs,
 		baseDir:            absDir,
 		filename:           filename,
 		walker:             walker,
@@ -66,30 +63,28 @@ func NewBundler(fs afero.Fs, path string, manifest *Manifest, ignores []string, 
 	}, nil
 }
 
-func NewBundlerForManifest(fs afero.Fs, manifestPath string, logger rslog.Logger) (*bundler, error) {
-	dir := filepath.Dir(manifestPath)
-	absDir, err := filepath.Abs(dir)
+func NewBundlerForManifest(manifestPath util.Path, logger rslog.Logger) (*bundler, error) {
+	dir := manifestPath.Dir()
+	absDir, err := dir.Abs()
 	if err != nil {
 		return nil, err
 	}
-	manifest, err := ReadManifestFile(fs, manifestPath)
+	manifest, err := ReadManifestFile(manifestPath)
 	if err != nil {
 		return nil, err
 	}
 	return &bundler{
 		manifest:    manifest,
-		fs:          fs,
 		baseDir:     absDir,
 		filename:    "",
-		walker:      newManifestWalker(fs, absDir, manifest),
+		walker:      newManifestWalker(absDir, manifest),
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
 	}, nil
 }
 
 type bundler struct {
-	fs                 afero.Fs  // Filesystem we are walking to get the files
-	baseDir            string    // Directory being bundled
+	baseDir            util.Path // Directory being bundled
 	filename           string    // Primary file being deployed
 	walker             Walker    // Ignore patterns from CLI and ignore files
 	pythonRequirements []byte    // Pacakges to write to requirements.txt if not already present
@@ -105,8 +100,6 @@ type bundle struct {
 	numFiles int64          // Number of files in the bundle
 	size     int64          // Total uncompressed size of the files, in bytes
 }
-
-var bundleTooLargeError = errors.New("Directory is too large to deploy.")
 
 func (b *bundler) CreateManifest() (*Manifest, error) {
 	b.logger.WithField("source_dir", b.baseDir).Infof("Creating manifest from directory")
@@ -137,7 +130,7 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 		defer bundle.archive.Close()
 	}
 
-	oldWD, err := util.Chdir(b.baseDir)
+	oldWD, err := util.Chdir(b.baseDir.Path())
 	if err != nil {
 		return nil, err
 	}
@@ -145,14 +138,14 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 
 	err = bundle.addDirectory(b.baseDir)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating bundle: %w", err)
+		return nil, fmt.Errorf("error creating bundle: %w", err)
 	}
 	if b.filename != "" {
 		// Ensure that the main file was not excluded
 		_, ok := bundle.manifest.Files[b.filename]
 		if !ok {
-			path := filepath.Join(b.baseDir, b.filename)
-			info, err := b.fs.Stat(path)
+			path := b.baseDir.Join(b.filename)
+			info, err := path.Stat()
 			if err != nil {
 				return nil, err
 			}
@@ -199,7 +192,7 @@ func writeHeaderToTar(info fs.FileInfo, path string, archive util.TarWriter) err
 	}
 	header, err := tar.FileInfoHeader(info, "")
 	if err != nil {
-		return fmt.Errorf("Error creating tarfile header for %s: %w", path, err)
+		return fmt.Errorf("error creating tarfile header for %s: %w", path, err)
 	}
 	header.Name = path
 	if info.IsDir() {
@@ -228,12 +221,12 @@ func writeFileContentsToTar(r io.Reader, archive io.Writer) ([]byte, error) {
 	return md5sum, nil
 }
 
-func (b *bundle) walkFunc(path string, info fs.FileInfo, err error) error {
+func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 	if err != nil {
 		// Stop walking the tree on errors.
 		return err
 	}
-	relPath, err := filepath.Rel(b.baseDir, path)
+	relPath, err := path.Rel(b.baseDir)
 	if err != nil {
 		return err
 	}
@@ -242,17 +235,17 @@ func (b *bundle) walkFunc(path string, info fs.FileInfo, err error) error {
 		"size": info.Size(),
 	})
 	if info.IsDir() {
-		err = writeHeaderToTar(info, relPath, b.archive)
+		err = writeHeaderToTar(info, relPath.Path(), b.archive)
 		if err != nil {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
 		pathLogger.Infof("Adding file")
-		err = writeHeaderToTar(info, relPath, b.archive)
+		err = writeHeaderToTar(info, relPath.Path(), b.archive)
 		if err != nil {
 			return err
 		}
-		f, err := b.fs.Open(path)
+		f, err := path.Open()
 		if err != nil {
 			return err
 		}
@@ -261,21 +254,22 @@ func (b *bundle) walkFunc(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		b.manifest.AddFile(relPath, fileMD5)
+		b.manifest.AddFile(relPath.Path(), fileMD5)
 		b.numFiles++
 		b.size += info.Size()
 	} else if info.Mode().Type()&os.ModeSymlink == os.ModeSymlink {
 		pathLogger.Infof("Following symlink")
-		targetPath, err := filepath.EvalSymlinks(path)
+		linkTarget, err := filepath.EvalSymlinks(path.Path())
+		targetPath := util.NewPath(linkTarget, path.Fs())
 		if err != nil {
-			return fmt.Errorf("Error following symlink %s: %w", path, err)
+			return fmt.Errorf("error following symlink %s: %w", path, err)
 		}
-		targetInfo, err := b.fs.Stat(targetPath)
+		targetInfo, err := targetPath.Stat()
 		if err != nil {
-			return fmt.Errorf("Error getting target info for symlink %s: %w", targetPath, err)
+			return fmt.Errorf("error getting target info for symlink %s: %w", targetPath, err)
 		}
 		if targetInfo.IsDir() {
-			dirEntries, err := afero.ReadDir(b.fs, targetPath)
+			dirEntries, err := targetPath.ReadDir()
 			if err != nil {
 				return err
 			}
@@ -284,7 +278,7 @@ func (b *bundle) walkFunc(path string, info fs.FileInfo, err error) error {
 			// resolving the link and iterating the directory,
 			// so that it appears as a descendant of the ignore list root dir.
 			for _, entry := range dirEntries {
-				subPath := filepath.Join(path, entry.Name())
+				subPath := path.Join(entry.Name())
 				err = b.walker.Walk(subPath, b.walkFunc)
 				if err != nil {
 					return err
@@ -303,7 +297,7 @@ func (b *bundle) walkFunc(path string, info fs.FileInfo, err error) error {
 	return nil
 }
 
-func (b *bundle) addDirectory(dir string) error {
+func (b *bundle) addDirectory(dir util.Path) error {
 	err := b.walker.Walk(dir, b.walkFunc)
 	if err != nil {
 		return err
@@ -341,14 +335,12 @@ func (b *bundle) addManifest() error {
 }
 
 type manifestWalker struct {
-	fs       afero.Fs
-	baseDir  string
+	baseDir  util.Path
 	manifest *Manifest
 }
 
-func newManifestWalker(fs afero.Fs, baseDir string, manifest *Manifest) *manifestWalker {
+func newManifestWalker(baseDir util.Path, manifest *Manifest) *manifestWalker {
 	return &manifestWalker{
-		fs:       fs,
 		baseDir:  baseDir,
 		manifest: manifest,
 	}
@@ -358,8 +350,8 @@ func newManifestWalker(fs afero.Fs, baseDir string, manifest *Manifest) *manifes
 // only the files listed in the manifest Files section.
 // Walk Chdir's into the provided base directory since
 // manifest file paths are relative.
-func (w *manifestWalker) Walk(_ string, fn filepath.WalkFunc) error {
-	oldWD, err := util.Chdir(w.baseDir)
+func (w *manifestWalker) Walk(root util.Path, fn util.WalkFunc) error {
+	oldWD, err := util.Chdir(w.baseDir.Path())
 	if err != nil {
 		return err
 	}
@@ -370,15 +362,16 @@ func (w *manifestWalker) Walk(_ string, fn filepath.WalkFunc) error {
 	for k, v := range w.manifest.Files {
 		files[k] = v
 	}
-	for path := range files {
-		absPath, err := filepath.Abs(path)
+	for manifestPath := range files {
+		path := util.NewPath(manifestPath, root.Fs())
+		absPath, err := path.Abs()
 		var fileInfo fs.FileInfo
 		if err == nil {
-			fileInfo, err = w.fs.Stat(absPath)
+			fileInfo, err = absPath.Stat()
 		}
 		err = fn(absPath, fileInfo, err)
 		if err != nil {
-			return fmt.Errorf("Error adding file '%s' to the bundle: %w", path, err)
+			return fmt.Errorf("error adding file '%s' to the bundle: %w", path, err)
 		}
 	}
 	return nil

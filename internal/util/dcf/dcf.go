@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/spf13/afero"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type Record map[string]string
@@ -19,8 +19,8 @@ type Decoder interface {
 }
 
 type FileReader interface {
-	ReadFile(path string) (Records, error)
-	ReadFiles(pattern string) (Records, error)
+	ReadFile(path util.Path) (Records, error)
+	ReadFiles(path util.Path, pattern string) (Records, error)
 }
 
 type decoder struct{}
@@ -28,15 +28,13 @@ type decoder struct{}
 var _ Decoder = &decoder{}
 
 type fileReader struct {
-	fs      afero.Fs
 	decoder Decoder
 }
 
 var _ FileReader = &fileReader{}
 
-func NewFileReader(fs afero.Fs) *fileReader {
+func NewFileReader() *fileReader {
 	return &fileReader{
-		fs:      fs,
 		decoder: NewDecoder(),
 	}
 }
@@ -50,8 +48,8 @@ const whitespace = " \t"
 // ReadFiles reads all of the .dcf files in the given directory,
 // returning a single list of records containing the records
 // from all of the files.
-func (r *fileReader) ReadFiles(pattern string) (Records, error) {
-	paths, err := afero.Glob(r.fs, pattern)
+func (r *fileReader) ReadFiles(path util.Path, pattern string) (Records, error) {
+	paths, err := path.Glob(pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +65,8 @@ func (r *fileReader) ReadFiles(pattern string) (Records, error) {
 	return records, nil
 }
 
-func (r *fileReader) ReadFile(path string) (Records, error) {
-	f, err := r.fs.Open(path)
+func (r *fileReader) ReadFile(path util.Path) (Records, error) {
+	f, err := path.Open()
 	if err != nil {
 		return nil, err
 	}
@@ -96,14 +94,14 @@ func (d *decoder) Decode(r io.Reader) (Records, error) {
 		} else if trimmedLine != line {
 			// Leading whitespace indicates a continuation line
 			if currentTag == "" {
-				return nil, fmt.Errorf("Couldn't parse DCF data: unexpected continuation on line %d", lineNum)
+				return nil, fmt.Errorf("couldn't parse DCF data: unexpected continuation on line %d", lineNum)
 			}
 			currentRecord[currentTag] += strings.Trim(line, whitespace)
 		} else {
 			// New field in the current record
 			tag, value, ok := strings.Cut(line, ":")
 			if !ok {
-				return nil, fmt.Errorf("Couldn't parse DCF data: missing ':' on line %d", lineNum)
+				return nil, fmt.Errorf("couldn't parse DCF data: missing ':' on line %d", lineNum)
 			}
 			currentRecord[tag] = strings.Trim(value, whitespace)
 			currentTag = tag

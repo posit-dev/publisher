@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
@@ -21,18 +22,17 @@ func TestAllSuite(t *testing.T) {
 }
 
 func (s *AllSuite) TestInferTypeDirectory() {
-	fs := afero.NewMemMapFs()
-
+	path := util.NewPath(".", afero.NewMemMapFs())
 	htmlFilename := "myfile.html"
-	err := afero.WriteFile(fs, htmlFilename, []byte("<html></html>\n"), 0600)
+	err := path.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
 	s.Nil(err)
 
 	appFilename := "myapp.py"
-	err = afero.WriteFile(fs, appFilename, []byte("import dash\n"), 0600)
+	err = path.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
 	s.Nil(err)
 
 	detector := NewContentTypeDetector()
-	t, err := detector.InferType(fs, ".")
+	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
 		AppMode:        apptypes.PythonDashMode,
@@ -42,18 +42,19 @@ func (s *AllSuite) TestInferTypeDirectory() {
 }
 
 func (s *AllSuite) TestInferTypeFileLowerPriority() {
-	fs := afero.NewMemMapFs()
+	path := util.NewPath(".", afero.NewMemMapFs())
 
 	htmlFilename := "myfile.html"
-	err := afero.WriteFile(fs, htmlFilename, []byte("<html></html>\n"), 0600)
+	htmlPath := path.Join(htmlFilename)
+	err := htmlPath.WriteFile([]byte("<html></html>\n"), 0600)
 	s.Nil(err)
 
-	appFilename := "app.py"
-	err = afero.WriteFile(fs, appFilename, []byte("import dash\n"), 0600)
+	appFilename := "myapp.py"
+	err = path.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
 	s.Nil(err)
 
 	detector := NewContentTypeDetector()
-	t, err := detector.InferType(fs, htmlFilename)
+	t, err := detector.InferType(htmlPath)
 	s.Nil(err)
 	s.Equal(&ContentType{
 		AppMode:    apptypes.StaticMode,
@@ -62,18 +63,19 @@ func (s *AllSuite) TestInferTypeFileLowerPriority() {
 }
 
 func (s *AllSuite) TestInferTypeFileHigherPriority() {
-	fs := afero.NewMemMapFs()
+	path := util.NewPath(".", afero.NewMemMapFs())
 
 	htmlFilename := "myfile.html"
-	err := afero.WriteFile(fs, htmlFilename, []byte("<html></html>\n"), 0600)
+	err := path.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
 	s.Nil(err)
 
 	appFilename := "myapp.py"
-	err = afero.WriteFile(fs, appFilename, []byte("import dash\n"), 0600)
+	appPath := path.Join(appFilename)
+	err = appPath.WriteFile([]byte("import dash\n"), 0600)
 	s.Nil(err)
 
 	detector := NewContentTypeDetector()
-	t, err := detector.InferType(fs, appFilename)
+	t, err := detector.InferType(appPath)
 	s.Nil(err)
 	s.Equal(&ContentType{
 		AppMode:        apptypes.PythonDashMode,
@@ -83,18 +85,18 @@ func (s *AllSuite) TestInferTypeFileHigherPriority() {
 }
 
 func (s *AllSuite) TestInferTypeDirectoryPriority() {
-	fs := afero.NewMemMapFs()
+	path := util.NewPath(".", afero.NewMemMapFs())
 
 	htmlFilename := "myfile.html"
-	err := afero.WriteFile(fs, htmlFilename, []byte("<html></html>\n"), 0600)
+	err := path.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
 	s.Nil(err)
 
 	appFilename := "myapp.py"
-	err = afero.WriteFile(fs, appFilename, []byte("import dash\n"), 0600)
+	err = path.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
 	s.Nil(err)
 
 	detector := NewContentTypeDetector()
-	t, err := detector.InferType(fs, ".")
+	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
 		AppMode:        apptypes.PythonDashMode,
@@ -104,28 +106,24 @@ func (s *AllSuite) TestInferTypeDirectoryPriority() {
 }
 
 func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
-	fs := afero.NewMemMapFs()
-
-	filename := "myfile"
-	err := afero.WriteFile(fs, filename, []byte("This is a text file, silly!\n"), 0600)
+	path := util.NewPath(".", afero.NewMemMapFs())
+	err := path.Join("myfile").WriteFile([]byte("This is a text file, silly!\n"), 0600)
 	s.Nil(err)
 
 	detector := NewContentTypeDetector()
-	t, err := detector.InferType(fs, ".")
+	t, err := detector.InferType(path)
 	s.NotNil(err)
 	s.ErrorIs(err, errCantDetectContentType)
 	s.Nil(t)
 }
 
 func (s *AllSuite) TestInferTypeFileIndeterminate() {
-	fs := afero.NewMemMapFs()
-
-	filename := "myfile"
-	err := afero.WriteFile(fs, filename, []byte("This is a text file, silly!\n"), 0600)
+	path := util.NewPath("myfile", afero.NewMemMapFs())
+	err := path.WriteFile([]byte("This is a text file, silly!\n"), 0600)
 	s.Nil(err)
 
 	detector := NewContentTypeDetector()
-	t, err := detector.InferType(fs, filename)
+	t, err := detector.InferType(path)
 	s.NotNil(err)
 	s.ErrorIs(err, errCantDetectContentType)
 	s.Nil(t)
@@ -134,7 +132,8 @@ func (s *AllSuite) TestInferTypeFileIndeterminate() {
 func (s *AllSuite) TestInferTypeErr() {
 	fs := afero.NewMemMapFs()
 	detector := NewContentTypeDetector()
-	t, err := detector.InferType(fs, "/foo")
+	path := util.NewPath("/foo", fs)
+	t, err := detector.InferType(path)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(t)
