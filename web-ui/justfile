@@ -1,0 +1,22 @@
+default: install lint test build
+
+install *args:
+    npm install {{ args }}
+
+lint *args:
+    npx lint {{ args }}
+
+build *args:
+    quasar build {{ args }}
+
+test-all: build
+    quasar test --unit vitest
+    quasar test --e2e cypress
+    # go test -race ./...
+
+# Will
+test:
+    npx vitest
+
+start:
+    quasar dev
