@@ -32,6 +32,8 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           path: bin/
+      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Client Tests
