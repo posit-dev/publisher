@@ -26,9 +26,6 @@ jobs:
         CLIENT:
           - linux-amd64
           - linux-arm64
-        include:
-          - CLIENT: macos-latest
-          - CLIENT: windows-latest
     runs-on: ${{ matrix.CLIENT }}
     steps:
       - uses: actions/checkout@v3
@@ -53,9 +50,9 @@ jobs:
     needs: build
     strategy:
       matrix:
-        include:
-          - CLIENT: macos-latest
-          - CLIENT: windows-latest
+        CLIENT: 
+          - macos-latest
+          - windows-latest
     runs-on: ${{ matrix.CLIENT }}
     steps:
       - uses: actions/checkout@v3
