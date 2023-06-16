@@ -37,7 +37,9 @@ jobs:
       - name: Run Client Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
-        run: just test/run-client ${CLIENT}
+        run: |
+          just test/build 
+          test/run-client ${CLIENT}
         
         
 
