@@ -37,11 +37,16 @@ jobs:
       - uses: docker/setup-buildx-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
+          limit-access-to-actor: true
       - name: Run Client Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
-          ls -R bin/
+          mv bin/artifact bin/
           just test/build ${CLIENT}
           just test/run-client ${CLIENT}
         
