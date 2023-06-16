@@ -34,10 +34,10 @@ jobs:
       - name: Build Binary
         run: just build
 
-      - name: Run Tests
+      - name: Run Client Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
-        run: just run-client ${CLIENT}
+        run: just test/run-client ${CLIENT}
         
         
 
