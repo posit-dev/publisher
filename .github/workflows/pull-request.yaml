@@ -40,7 +40,7 @@ jobs:
         env:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
-          just test/build 
+          just test/build ${CLIENT}
           just test/run-client ${CLIENT}
         
         

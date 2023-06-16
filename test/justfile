@@ -1,8 +1,8 @@
 export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
 export CONNECT_CONFIG := env_var_or_default("CONNECT_CONFIG", "./gcfg")
 
-build:
-  docker compose build 
+build target:
+  docker compose build {{target}}
 
 init-connect:
 	docker compose pull connect && \
@@ -10,7 +10,6 @@ init-connect:
 
 run-client target:
 	docker compose run --rm --remove-orphans client-{{target}} just test/_test-client {{target}}
-
 
 _test-client target:
   BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
