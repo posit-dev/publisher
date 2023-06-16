@@ -1,16 +1,26 @@
 export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
-export CONNECT_CONFIG := env_var_or_default("CONNECT_CONFIG", "./gcfg")
+export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
 
 build target:
-  docker compose build {{target}}
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux" ]]; then
+    docker compose build {{target}}
+  fi
 
 init-connect:
 	docker compose pull connect && \
 	docker compose up -d connect
 
 run-client target:
-	docker compose run --rm --remove-orphans {{target}} just test/_test-client {{target}}
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux" ]]; then
+    docker compose run --rm --remove-orphans {{target}} just test/_test-client {{target}}
+  elif [[ {{target}} =~ "windows" ]]; then
+    just test/_test-client windows-amd64
+  elif [[{{target}} =~ "macos" ]]; then
+    just test/_test-client darwin-amd64
+  fi
 
 _test-client target:
   BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
-  /libs/bats-core/bin/bats --tap -T ./bats
+  /libs/bats-core/bin/bats --tap -T -r ./bats
