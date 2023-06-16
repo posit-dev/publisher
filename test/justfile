@@ -1,5 +1,5 @@
 export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
-export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
+# export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
 
 build target:
   #!/usr/bin/env bash
@@ -21,6 +21,20 @@ run-client target:
     just test/_test-client darwin-amd64
   fi
 
+run-client-windows-latest:
+  just test/_test-client-windows-amd64
+
+run-client-windows-macos-latest:
+  just test/_test-client-darwin-amd64
+
 _test-client target:
   BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
+  /libs/bats-core/bin/bats --tap -T -r ./bats
+
+_test-client-windows-amd64:
+BINARY_PATH=/publishing-client/bin/windows-amd64/connect-client.exe \
+  /libs/bats-core/bin/bats --tap -T -r ./bats
+
+_test-client-darwin-amd64:
+BINARY_PATH=/publishing-client/bin/darwin-amd64/connect-client \
   /libs/bats-core/bin/bats --tap -T -r ./bats
