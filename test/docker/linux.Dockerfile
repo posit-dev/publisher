@@ -1,14 +1,13 @@
-FROM golang:latest
+FROM ubuntu:jammy-20230425
 VOLUME ${PWD}/../:/publishing-client
 WORKDIR /publishing-client/
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get clean && \
     apt-get update && \
     apt-get install -y \
-    dialog apt-utils \
     curl \
-    git-all \
-    sudo
+    git-all
 
 RUN git clone --depth=1 https://github.com/bats-core/bats-core.git /libs/bats-core && \
     cd /libs/bats-core && \
