@@ -39,16 +39,40 @@ jobs:
       # these are required to run docker on amd64 and arm64 platforms
       - uses: docker/setup-qemu-action@v2
       - uses: docker/setup-buildx-action@v2
-      # use GH Actions BATS for windows and macos
-      - uses: mig4/setup-bats@v1
-        with:
-          bats-version: 1.2.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run Client Tests
+      - name: Run Linux Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
           mv bin/artifact/* bin/ && chmod +x bin/*/*
           just test/build ${CLIENT}
           just test/run-client ${CLIENT}
+
+  test-macos_and_windows-clients:
+    needs: build
+    strategy:
+      matrix:
+        include:
+          - CLIENT: macos-latest
+          - CLIENT: windows-latest
+    runs-on: ${{ matrix.CLIENT }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: extractions/setup-just@v1
+      - uses: actions/download-artifact@v3
+        with:
+          path: bin/
+      # use GH Actions BATS for windows and macos
+      - uses: mig4/setup-bats@v1
+        with:
+          bats-version: 1.2.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run MacOS and Windows Tests
+        env:
+          CLIENT: "${{ matrix.CLIENT }}"
+        run: |
+          mv bin/artifact/* bin/ && chmod +x bin/*/*
+          just test/run-client ${CLIENT}
+
