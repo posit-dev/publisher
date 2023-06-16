@@ -32,8 +32,7 @@ _test-client target:
   /libs/bats-core/bin/bats --tap -T -r ./bats
 
 _test-client-windows-amd64:
-BINARY_PATH=/publishing-client/bin/windows-amd64/connect-client.exe \
-  /libs/bats-core/bin/bats --tap -T -r ./bats
+BINARY_PATH=/publishing-client/bin/windows-amd64/connect-client.exe /libs/bats-core/bin/bats --tap -T -r ./bats
 
 _test-client-darwin-amd64:
 BINARY_PATH=/publishing-client/bin/darwin-amd64/connect-client \
