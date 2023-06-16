@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  linux-amd64:
+  client-linux-amd64:
     platform: linux/amd64
     build:
       context: ./docker
@@ -11,7 +11,7 @@ services:
     environment:
       BUILD-RUNNER: "linux-amd64"
   
-  linux-arm64:
+  client-linux-arm64:
     platform: linux/arm64
     build:
       context: ./docker
