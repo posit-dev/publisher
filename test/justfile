@@ -9,7 +9,7 @@ init-connect:
 	docker compose up -d connect
 
 run-client target:
-	docker compose run --rm --remove-orphans client-{{target}} just test/_test-client {{target}}
+	docker compose run --rm --remove-orphans {{target}} just test/_test-client {{target}}
 
 _test-client target:
   BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
