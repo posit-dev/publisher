@@ -1,0 +1,17 @@
+export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
+export CONNECT_CONFIG := env_var_or_default("CONNECT_CONFIG", "./gcfg")
+
+build:
+  docker compose build 
+
+init-connect:
+	docker compose pull connect && \
+	docker compose up -d connect
+
+run-client target:
+	docker compose run --rm --remove-orphans client-{{target}} just test/_test-client {{target}}
+
+
+_test-client target:
+  BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
+  /libs/bats-core/bin/bats --tap -T ./bats
