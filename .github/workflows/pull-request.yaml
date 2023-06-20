@@ -20,13 +20,13 @@ jobs:
         with:
           path: bin/
   test-linux-clients:
+    runs-on: ubuntu-latest
     needs: build
     strategy:
       matrix:
         CLIENT:
           - linux-amd64
           - linux-arm64
-    runs-on: ${{ matrix.CLIENT }}
     steps:
       - uses: actions/checkout@v3
       - uses: extractions/setup-just@v1
@@ -71,5 +71,6 @@ jobs:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
           mv bin/artifact/* bin/ && chmod +x bin/*/*
+          echo ${CLIENT}
           just test/build ${CLIENT}
           just test/run-client ${CLIENT}
