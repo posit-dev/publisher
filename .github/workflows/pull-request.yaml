@@ -71,4 +71,5 @@ jobs:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
           mv bin/artifact/* bin/ && chmod +x bin/*/*
+          just test/build ${CLIENT}
           just test/run-client ${CLIENT}
