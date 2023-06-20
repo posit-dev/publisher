@@ -25,4 +25,4 @@ run-client target:
 
 _test-client target:
   BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
-  /libs/bats-core/bin/bats --tap -T -r ./bats
+  bats --tap -T -r ./bats

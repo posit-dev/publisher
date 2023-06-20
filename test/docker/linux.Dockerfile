@@ -18,3 +18,4 @@ RUN git clone --depth=1 https://github.com/bats-core/bats-core.git /libs/bats-co
     | tar -C /libs -xz just
 
 ENV PATH=$PATH:/libs
+ENV PATH=$PATH:/libs/bats-core/bin
