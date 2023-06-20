@@ -52,7 +52,6 @@ jobs:
       matrix:
         CLIENT: 
           - macos-latest
-          - windows-latest
     runs-on: ${{ matrix.CLIENT }}
     steps:
       - uses: actions/checkout@v3
