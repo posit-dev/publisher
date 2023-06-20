@@ -1,6 +1,6 @@
 FROM ubuntu:jammy-20230425
 VOLUME ${PWD}/../:/publishing-client
-WORKDIR /publishing-client/
+WORKDIR /publishing-client/test
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \

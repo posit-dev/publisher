@@ -16,11 +16,11 @@ init-connect:
 run-client target:
   #!/usr/bin/env bash
   if [[ {{target}} =~ "linux" ]]; then
-    docker compose run --rm --remove-orphans {{target}} just test/_test-client {{target}}
+    docker compose run --rm --remove-orphans {{target}} just _test-client {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
-    just test/_test-client windows-amd64
+    just _test-client windows-amd64
   elif [[ {{target}} =~ "macos" ]]; then
-    just test/_test-client darwin-amd64
+    just _test-client darwin-amd64
   fi
 
 _test-client target:
