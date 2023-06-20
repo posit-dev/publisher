@@ -19,10 +19,10 @@ run-client target:
     docker compose run --rm --remove-orphans {{target}} just test/_test-client {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
     just test/_test-client windows-amd64
-  elif [[{{target}} =~ "macos" ]]; then
+  elif [[ {{target}} =~ "macos" ]]; then
     just test/_test-client darwin-amd64
   fi
 
 _test-client target:
   BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
-  bats --tap -T -r ./bats
+  bats --tap -T -r ./bats/server-tests/
