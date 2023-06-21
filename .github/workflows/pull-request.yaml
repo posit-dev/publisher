@@ -61,6 +61,7 @@ jobs:
           path: bin/
       # use GH Actions BATS for windows and macos
       # https://github.com/marketplace/actions/setup-bats-libs
+      - uses: PromyLOPh/guix-install-action@v1.4
       - uses: mig4/setup-bats@v1
       - uses: brokenpip3/setup-bats-libs@0.1.0
         with:          
