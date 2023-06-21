@@ -68,11 +68,11 @@ jobs:
         #   assert-path: ${{ github.workspace }}/test/bats-assert
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BATS_SUPPORT_LIB: ${{ github.workspace }}/libs/bats-support/load
-          BATS_ASSERT_LIB: ${{ github.workspace }}/libs/bats-assert/load
       - name: Run MacOS and Windows Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
+          BATS_SUPPORT_LIB: ${{ github.workspace }}/libs/bats-support/load
+          BATS_ASSERT_LIB: ${{ github.workspace }}/libs/bats-assert/load
         run: |
           git clone --depth=1 https://github.com/bats-core/bats-core.git ${{ github.workspace }}/libs/bats-core && \
           cd ${{ github.workspace }}/libs/bats-core && \
@@ -81,5 +81,4 @@ jobs:
           git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
           mv bin/artifact/* bin/ && chmod +x bin/*/*
           echo ${CLIENT}
-          just test/build ${CLIENT}
           just test/run-client ${CLIENT}
