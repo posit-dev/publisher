@@ -79,7 +79,7 @@ jobs:
           ./install.sh ${{ github.workspace }}/libs/bats-core/installation && \
           git clone --depth=1 https://github.com/ztombol/bats-support.git ${{ github.workspace }}/libs/bats-support && \
           git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
-          ll ${{ github.workspace }}/libs/bats-core/bin
+          ls -l ${{ github.workspace }}/libs/bats-core/bin
           echo "${{ github.workspace }}/libs/bats-core/bin" >> $env:GITHUB_PATH
           cd ${{ github.workspace }}/test
           just run-client ${CLIENT}
