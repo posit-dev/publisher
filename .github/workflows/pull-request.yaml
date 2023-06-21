@@ -55,24 +55,33 @@ jobs:
     runs-on: ${{ matrix.CLIENT }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          repository: https://github.com/bats-core/bats-core.git
+
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
           path: bin/
-      # use GH Actions BATS for windows and macos
-      # https://github.com/marketplace/actions/setup-bats-libs
-      - uses: PromyLOPh/guix-install-action@v1.4
-      - uses: mig4/setup-bats@v1
-      - uses: brokenpip3/setup-bats-libs@0.1.0
-        with:          
-          support-path: ${{ github.workspace }}/test/bats-support
-          assert-path: ${{ github.workspace }}/test/bats-assert
+      # # use GH Actions BATS for windows and macos
+      # # https://github.com/marketplace/actions/setup-bats-libs
+      # - uses: mig4/setup-bats@v1
+      # - uses: brokenpip3/setup-bats-libs@0.1.0
+        # with:          
+        #   support-path: ${{ github.workspace }}/test/bats-support
+        #   assert-path: ${{ github.workspace }}/test/bats-assert
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BATS_SUPPORT_LIB: ${{ github.workspace }}/libs/bats-support/load
+          BATS_ASSERT_LIB: ${{ github.workspace }}/libs/bats-assert/load
       - name: Run MacOS and Windows Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
+          git clone --depth=1 https://github.com/bats-core/bats-core.git ${{ github.workspace }}/libs/bats-core && \
+          cd ${{ github.workspace }}/libs/bats-core && \
+          ./install.sh ${{ github.workspace }}/libs/bats-core/installation && \
+          git clone --depth=1 https://github.com/ztombol/bats-support.git ${{ github.workspace }}/libs/bats-support && \
+          git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
           mv bin/artifact/* bin/ && chmod +x bin/*/*
           echo ${CLIENT}
           just test/build ${CLIENT}
