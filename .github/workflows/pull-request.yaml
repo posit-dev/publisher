@@ -68,8 +68,6 @@ jobs:
       - name: Run MacOS and Windows Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
-          BATS_SUPPORT_LIB: /usr/lib/bats-support
-          BATS_ASSERT_LIB: /usr/lib/bats-assert
         run: |
           mv bin/artifact/* bin/ && chmod +x bin/*/*
           echo ${CLIENT}
