@@ -63,14 +63,15 @@ jobs:
       # https://github.com/marketplace/actions/setup-bats-libs
       - uses: mig4/setup-bats@v1
       - uses: brokenpip3/setup-bats-libs@0.1.0
+        with:          
+          support-path: ${{ github.workspace }}/test/bats-support
+          assert-path: ${{ github.workspace }}/test/bats-assert
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run MacOS and Windows Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
-          sudo mkdir /usr/lib/bats-support
-          sudo mkdir /usr/lib/bats-assert
           mv bin/artifact/* bin/ && chmod +x bin/*/*
           echo ${CLIENT}
           just test/build ${CLIENT}
