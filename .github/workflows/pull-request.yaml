@@ -79,5 +79,5 @@ jobs:
           ./install.sh ${{ github.workspace }}/libs/bats-core/installation && \
           git clone --depth=1 https://github.com/ztombol/bats-support.git ${{ github.workspace }}/libs/bats-support && \
           git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
-          pwd
-          just test/run-client ${CLIENT}
+          cd ${{ github.workspace }}/test
+          just run-client ${CLIENT}
