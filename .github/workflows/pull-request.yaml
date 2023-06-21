@@ -73,6 +73,7 @@ jobs:
           CLIENT: "${{ matrix.CLIENT }}"
           BATS_SUPPORT_LIB: ${{ github.workspace }}/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/libs/bats-assert/load
+          PATH: ${PATH}:${{ github.workspace }}/libs/bats-core/bin
         run: |
           git clone --depth=1 https://github.com/bats-core/bats-core.git ${{ github.workspace }}/libs/bats-core && \
           cd ${{ github.workspace }}/libs/bats-core && \
