@@ -69,6 +69,8 @@ jobs:
         env:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
+          sudo mkdir /usr/lib/bats-support
+          sudo mkdir /usr/lib/bats-assert
           mv bin/artifact/* bin/ && chmod +x bin/*/*
           echo ${CLIENT}
           just test/build ${CLIENT}
