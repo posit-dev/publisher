@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-load '/libs/bats-support/load'
-load '/libs/bats-assert/load'
+load ${BATS_SUPPORT_LIB}
+load ${BATS_ASSERT_LIB}
 
 @test "${BINARY_PATH} list servers" {
     run ${BINARY_PATH} list-accounts
