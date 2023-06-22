@@ -30,5 +30,4 @@ _test-client target:
   BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
   BATS_SUPPORT_LIB=$BATS_SUPPORT_LIB \
   BATS_ASSERT_LIB=$BATS_ASSERT_LIB \
-  BATS_PATH=$BATS_PATH \
-  $BATS_PATH/bats --tap -T -r ./bats/server-tests/
+  bats --tap -T -r ./bats/server-tests/
