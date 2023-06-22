@@ -68,6 +68,12 @@ jobs:
         #   assert-path: ${{ github.workspace }}/test/bats-assert
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/checkout@v3
+      - uses: mxschmitt/action-tmate@v3
+        with: 
+          detached: true
+          limit-access-to-actor: true      
       - name: Run MacOS and Windows Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
@@ -80,7 +86,7 @@ jobs:
           git clone --depth=1 https://github.com/ztombol/bats-support.git ${{ github.workspace }}/libs/bats-support && \
           git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
           ls -l ${{ github.workspace }}/libs/bats-core/bin
-          chmod +x ${{ github.workspace }}/libs/bats-core/bin/bats
-          echo "${{ github.workspace }}/libs/bats-core/bin" >> $GITHUB_PATH
-          cd ${{ github.workspace }}/test
+          echo "${{ github.workspace }}/libs/bats-core/bin" >> $GITHUB_PATH && \
+          echo "GITHUB PATH: $GITHUB_PATH" && \
+          cd ${{ github.workspace }}/test && \
           just run-client ${CLIENT}
