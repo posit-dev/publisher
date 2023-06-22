@@ -19,6 +19,7 @@ run-client target:
     docker compose run \
     -e BATS_SUPPORT_LIB="load /libs/bats-support/load" \
     -e BATS_ASSERT_LIB="load /libs/bats-assert/load" \
+    -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
     --rm --remove-orphans {{target}} just _test-client {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
     just _test-client windows-amd64
@@ -27,7 +28,7 @@ run-client target:
   fi
 
 _test-client target:
-  BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
+  BINARY_PATH=$BINARY_PATH \
   BATS_SUPPORT_LIB=$BATS_SUPPORT_LIB \
   BATS_ASSERT_LIB=$BATS_ASSERT_LIB \
   bats --tap -T -r ./bats/server-tests/
