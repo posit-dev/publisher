@@ -87,6 +87,7 @@ jobs:
           git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
           ls -l ${{ github.workspace }}/libs/bats-core/bin
           echo "${{ github.workspace }}/libs/bats-core/bin" >> $GITHUB_PATH && \
+          PATH=$PATH:${{ github.workspace }}/libs/bats-core/bin
           echo "GITHUB PATH: $GITHUB_PATH" && \
           cd ${{ github.workspace }}/test && \
           just run-client ${CLIENT}
