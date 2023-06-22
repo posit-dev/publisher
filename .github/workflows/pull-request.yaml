@@ -55,11 +55,7 @@ jobs:
 
   test-windows-client:
     needs: build
-    strategy:
-      matrix:
-        CLIENT: 
-          - windows-latest
-    runs-on: ${{ matrix.CLIENT }}
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
       - uses: extractions/setup-just@v1
@@ -68,8 +64,6 @@ jobs:
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CLIENT: "${{ matrix.CLIENT }}"
-      
       - uses: mxschmitt/action-tmate@v3
         with: 
           detached: true
@@ -77,24 +71,25 @@ jobs:
 
       - name: Run Windows Tests
         env:
-          CLIENT: "${{ matrix.CLIENT }}"
-          BATS_SUPPORT_LIB: load ${{ github.workspace }}\libs\bats-support\load
-          BATS_ASSERT_LIB: load ${{ github.workspace }}\libs\bats-assert\load
-          BINARY_PATH: ${{ github.workspace }}/bin/windows-amd64/connect-client
+          CLIENT: windows-latest
+          BATS_SUPPORT_LIB: load $env:GITHUB_WORKSPACE\libs\bats-support\load
+          BATS_ASSERT_LIB: load $env:GITHUB_WORKSPACE\libs\bats-assert\load
+          BINARY_PATH: $env:GITHUB_WORKSPACE/bin/windows-amd64/connect-client
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
-          git clone --depth=1 https://github.com/bats-core/bats-core.git ${{ github.workspace }}/libs/bats-core
-          cd ${{ github.workspace }}/libs/bats-core
-          ./install.sh ${{ github.workspace }}/libs/bats-core/installation
-          git clone --depth=1 https://github.com/ztombol/bats-support.git ${{ github.workspace }}/libs/bats-support
-          git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
+          git clone --depth=1 https://github.com/bats-core/bats-core.git $env:GITHUB_WORKSPACE/libs/bats-core
+          cd $env:GITHUB_WORKSPACE/libs/bats-core
+          ./install.sh $env:GITHUB_WORKSPACE/libs/bats-core/installation
+          git clone --depth=1 https://github.com/ztombol/bats-support.git $env:GITHUB_WORKSPACE/libs/bats-support
+          git clone --depth=1 https://github.com/ztombol/bats-assert.git $env:GITHUB_WORKSPACE/libs/bats-assert
           echo $env:PATH
-          $env:PATH +=:${{ github.workspace }}/libs/bats-core/bin' }}
+          $env:PATH +=:$env:GITHUB_WORKSPACE/libs/bats-core/bin
           echo $env:PATH
-          cd ${{ github.workspace }}/test
+          cd $env:GITHUB_WORKSPACE/test
           echo $env:CLIENT
           just run-client $env:CLIENT
                   
+          
   test-linux-clients:
     runs-on: ubuntu-latest
     needs: build
