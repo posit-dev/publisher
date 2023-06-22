@@ -83,13 +83,13 @@ jobs:
           git clone --depth=1 https://github.com/ztombol/bats-support.git $env:GITHUB_WORKSPACE/libs/bats-support
           git clone --depth=1 https://github.com/ztombol/bats-assert.git $env:GITHUB_WORKSPACE/libs/bats-assert
           echo $env:PATH
-          $env:PATH +=:$env:GITHUB_WORKSPACE/libs/bats-core/bin
+          echo $env:GITHUB_WORKSPACE\libs\bats-core\bin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo $env:PATH
           cd $env:GITHUB_WORKSPACE/test
           echo $env:CLIENT
           just run-client $env:CLIENT
                   
-          
+
   test-linux-clients:
     runs-on: ubuntu-latest
     needs: build
