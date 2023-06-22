@@ -82,9 +82,9 @@ jobs:
           ./install.sh $env:GITHUB_WORKSPACE/libs/bats-core/installation
           git clone --depth=1 https://github.com/ztombol/bats-support.git $env:GITHUB_WORKSPACE/libs/bats-support
           git clone --depth=1 https://github.com/ztombol/bats-assert.git $env:GITHUB_WORKSPACE/libs/bats-assert
-          echo $env:PATH
-          echo $env:GITHUB_WORKSPACE\libs\bats-core\bin | Out-File -FilePath $env:PATH -Encoding utf8 -Append
-          echo $env:PATH
+          echo $env:Path
+          $env:Path += ";$env:GITHUB_WORKSPACE\libs\bats-core\bin"
+          echo $env:Path
           cd $env:GITHUB_WORKSPACE/test
           echo $env:CLIENT
           just run-client $env:CLIENT
