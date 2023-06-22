@@ -32,17 +32,12 @@ jobs:
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: mxschmitt/action-tmate@v3
-        with: 
-          detached: true
-          limit-access-to-actor: true
 
       - name: Run Windows Tests
         env:
           CLIENT: windows-latest
           BATS_SUPPORT_LIB: ../../../libs\bats-support\load
           BATS_ASSERT_LIB: ../../../libs\bats-assert\load
-          # BINARY_PATH: D:\a\publishing-client\publishing-client/bin/windows-amd64/connect-client
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
           git clone --depth=1 https://github.com/bats-core/bats-core.git $env:GITHUB_WORKSPACE/libs/bats-core
@@ -83,9 +78,6 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just run-client ${CLIENT}
-
-
-                  
 
   test-linux-clients:
     runs-on: ubuntu-latest
