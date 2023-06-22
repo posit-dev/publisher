@@ -42,7 +42,7 @@ jobs:
         env:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
-          mv bin/artifact/* bin/ && chmod +x bin/*/*
+          cp bin/artifact/* bin/ && chmod +x bin/*/*
           just test/build ${CLIENT}
           just test/run-client ${CLIENT}
 
@@ -77,17 +77,15 @@ jobs:
       - name: Run MacOS and Windows Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
-          BATS_SUPPORT_LIB: ${{ github.workspace }}/libs/bats-support/load
-          BATS_ASSERT_LIB: ${{ github.workspace }}/libs/bats-assert/load
+          BATS_SUPPORT_LIB: load ${{ github.workspace }}/libs/bats-support/load
+          BATS_ASSERT_LIB: load ${{ github.workspace }}/libs/bats-assert/load
         run: |
+          cp bin/artifact/* bin/ && chmod +x bin/*/*
           git clone --depth=1 https://github.com/bats-core/bats-core.git ${{ github.workspace }}/libs/bats-core && \
           cd ${{ github.workspace }}/libs/bats-core && \
           ./install.sh ${{ github.workspace }}/libs/bats-core/installation && \
           git clone --depth=1 https://github.com/ztombol/bats-support.git ${{ github.workspace }}/libs/bats-support && \
           git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
-          ls -l ${{ github.workspace }}/libs/bats-core/bin
-          echo "${{ github.workspace }}/libs/bats-core/bin" >> $GITHUB_PATH && \
           PATH=$PATH:${{ github.workspace }}/libs/bats-core/bin
-          echo "GITHUB PATH: $GITHUB_PATH" && \
           cd ${{ github.workspace }}/test && \
           just run-client ${CLIENT}
