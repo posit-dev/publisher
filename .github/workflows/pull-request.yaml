@@ -40,8 +40,8 @@ jobs:
       - name: Run Windows Tests
         env:
           CLIENT: windows-latest
-          # BATS_SUPPORT_LIB: $env:GITHUB_WORKSPACE\libs\bats-support\load
-          # BATS_ASSERT_LIB: $env:GITHUB_WORKSPACE\libs\bats-assert\load
+          BATS_SUPPORT_LIB: ../../../libs\bats-support\load
+          BATS_ASSERT_LIB: ../../../libs\bats-assert\load
           # BINARY_PATH: D:\a\publishing-client\publishing-client/bin/windows-amd64/connect-client
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
