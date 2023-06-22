@@ -19,12 +19,45 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           path: bin/
-  test-macos_and_windows-clients:
+  test-macos-client:
     needs: build
     strategy:
       matrix:
         CLIENT: 
           - macos-latest
+    runs-on: ${{ matrix.CLIENT }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: extractions/setup-just@v1
+      - uses: actions/download-artifact@v3
+        with:
+          path: bin/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLIENT: "${{ matrix.CLIENT }}"
+
+      - name: Run macos
+        env:
+          CLIENT: "${{ matrix.CLIENT }}"
+          BATS_SUPPORT_LIB: load ${{ github.workspace }}/libs/bats-support/load
+          BATS_ASSERT_LIB: load ${{ github.workspace }}/libs/bats-assert/load
+          BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
+        run: |
+          cp -r bin/artifact/* bin/ && chmod +x bin/*/*
+          git clone --depth=1 https://github.com/bats-core/bats-core.git ${{ github.workspace }}/libs/bats-core
+          cd ${{ github.workspace }}/libs/bats-core
+          ./install.sh ${{ github.workspace }}/libs/bats-core/installation
+          git clone --depth=1 https://github.com/ztombol/bats-support.git ${{ github.workspace }}/libs/bats-support
+          git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
+          PATH="$PATH:${{ github.workspace }}/libs/bats-core/bin"
+          cd ${{ github.workspace }}/test
+          just run-client ${CLIENT}
+
+  test-windows-client:
+    needs: build
+    strategy:
+      matrix:
+        CLIENT: 
           - windows-latest
     runs-on: ${{ matrix.CLIENT }}
     steps:
@@ -36,20 +69,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLIENT: "${{ matrix.CLIENT }}"
-     
+      
       - uses: mxschmitt/action-tmate@v3
         with: 
           detached: true
           limit-access-to-actor: true
 
-      - name: Run MacOS and Windows Tests
+      - name: Run Windows Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
-          BATS_SUPPORT_LIB: load ${{ github.workspace }}/libs/bats-support/load
-          BATS_ASSERT_LIB: load ${{ github.workspace }}/libs/bats-assert/load
-          BIN_TYPE: ${{ env.CLIENT == 'macos-latest' && 'darwin-amd64' || 'windows-amd64' }}
-          # PATH_CMD: ${{ env.CLIENT == 'macos-latest' && 'PATH=$PATH:${{ github.workspace }}/libs/bats-core/bin' || '$env:PATH +=:${{ github.workspace }}/libs/bats-core/bin' }}
-          BINARY_PATH: ${{ github.workspace }}/bin/${BIN_TYPE}/connect-client
+          BATS_SUPPORT_LIB: load ${{ github.workspace }}\libs\bats-support\load
+          BATS_ASSERT_LIB: load ${{ github.workspace }}\libs\bats-assert\load
+          BINARY_PATH: ${{ github.workspace }}/bin/windows-amd64/connect-client
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
           git clone --depth=1 https://github.com/bats-core/bats-core.git ${{ github.workspace }}/libs/bats-core
@@ -57,14 +88,13 @@ jobs:
           ./install.sh ${{ github.workspace }}/libs/bats-core/installation
           git clone --depth=1 https://github.com/ztombol/bats-support.git ${{ github.workspace }}/libs/bats-support
           git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
-          echo ${CLIENT}
-          echo ${PATH}
-          PATH="$PATH:${{ github.workspace }}/libs/bats-core/bin"
-          echo ${PATH}
+          echo $env:PATH
+          $env:PATH +=:${{ github.workspace }}/libs/bats-core/bin' }}
+          echo $env:PATH
           cd ${{ github.workspace }}/test
-          echo ${CLIENT}
-          just run-client ${CLIENT}
-
+          echo $env:CLIENT
+          just run-client $env:CLIENT
+                  
   test-linux-clients:
     runs-on: ubuntu-latest
     needs: build
