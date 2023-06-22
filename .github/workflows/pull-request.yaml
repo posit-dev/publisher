@@ -48,7 +48,7 @@ jobs:
           BATS_SUPPORT_LIB: load ${{ github.workspace }}/libs/bats-support/load
           BATS_ASSERT_LIB: load ${{ github.workspace }}/libs/bats-assert/load
           BIN_TYPE: ${{ env.CLIENT == 'macos-latest' && 'darwin-amd64' || 'windows-amd64' }}
-          SET_PATH: ${{ env.CLIENT == 'macos-latest' && 'PATH=$PATH:${{ github.workspace }}/libs/bats-core/bin' || '$env:PATH +=:${{ github.workspace }}/libs/bats-core/bin' }}
+          # PATH_CMD: ${{ env.CLIENT == 'macos-latest' && 'PATH=$PATH:${{ github.workspace }}/libs/bats-core/bin' || '$env:PATH +=:${{ github.workspace }}/libs/bats-core/bin' }}
           BINARY_PATH: ${{ github.workspace }}/bin/${BIN_TYPE}/connect-client
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
@@ -57,8 +57,12 @@ jobs:
           ./install.sh ${{ github.workspace }}/libs/bats-core/installation
           git clone --depth=1 https://github.com/ztombol/bats-support.git ${{ github.workspace }}/libs/bats-support
           git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
-          $SET_PATH
+          echo ${CLIENT}
+          echo ${PATH}
+          PATH="$PATH:${{ github.workspace }}/libs/bats-core/bin"
+          echo ${PATH}
           cd ${{ github.workspace }}/test
+          echo ${CLIENT}
           just run-client ${CLIENT}
 
   test-linux-clients:
