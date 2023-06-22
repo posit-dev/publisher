@@ -25,6 +25,7 @@ jobs:
       matrix:
         CLIENT: 
           - macos-latest
+          - windows-latest
     runs-on: ${{ matrix.CLIENT }}
     steps:
       - uses: actions/checkout@v3
@@ -32,27 +33,17 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           path: bin/
-      # # use GH Actions BATS for windows and macos
-      # # https://github.com/marketplace/actions/setup-bats-libs
-      # - uses: mig4/setup-bats@v1
-      # - uses: brokenpip3/setup-bats-libs@0.1.0
-        # with:          
-        #   support-path: ${{ github.workspace }}/test/bats-support
-        #   assert-path: ${{ github.workspace }}/test/bats-assert
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLIENT: "${{ matrix.CLIENT }}"
 
-      - uses: mxschmitt/action-tmate@v3
-        with: 
-          detached: true
-          limit-access-to-actor: true      
       - name: Run MacOS and Windows Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
           BATS_SUPPORT_LIB: load ${{ github.workspace }}/libs/bats-support/load
           BATS_ASSERT_LIB: load ${{ github.workspace }}/libs/bats-assert/load
-          BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
+          BIN_TYPE: ${{ env.CLIENT == 'macos-latest' && 'darwin-amd64' || 'windows-amd64' }}
+          BINARY_PATH: ${{ github.workspace }}/bin/${BIN_TYPE}/connect-client
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
           git clone --depth=1 https://github.com/bats-core/bats-core.git ${{ github.workspace }}/libs/bats-core && \
