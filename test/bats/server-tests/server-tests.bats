@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-${BATS_SUPPORT_LIB}
-${BATS_ASSERT_LIB}
+load ${BATS_SUPPORT_LIB}
+load ${BATS_ASSERT_LIB}
 
 @test "${BINARY_PATH} list servers" {
     run ${BINARY_PATH} list-accounts

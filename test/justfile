@@ -17,8 +17,8 @@ run-client target:
   #!/usr/bin/env bash
   if [[ {{target}} =~ "linux" ]]; then
     docker compose run \
-    -e BATS_SUPPORT_LIB="load /libs/bats-support/load" \
-    -e BATS_ASSERT_LIB="load /libs/bats-assert/load" \
+    -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
+    -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
     -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
     --rm --remove-orphans {{target}} just _test-client {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
