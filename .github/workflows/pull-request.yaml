@@ -20,7 +20,6 @@ jobs:
         with:
           path: bin/
 
-
   test-windows-client:
     needs: build
     runs-on: windows-latest
@@ -36,8 +35,8 @@ jobs:
       - name: Run Windows Tests
         env:
           CLIENT: windows-latest
-          BATS_SUPPORT_LIB: ../../../libs\bats-support\load
-          BATS_ASSERT_LIB: ../../../libs\bats-assert\load
+          BATS_SUPPORT_LIB: $env:GITHUB_WORKSPACE\libs\bats-support\load.bash
+          BATS_ASSERT_LIB: $env:GITHUB_WORKSPACE\libs\bats-assert\load.bash
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
           git clone --depth=1 https://github.com/bats-core/bats-core.git $env:GITHUB_WORKSPACE/libs/bats-core
