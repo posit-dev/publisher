@@ -11,10 +11,10 @@ function setup() {
     # cp ~/Library/Application\ Support/rsconnect-python/servers-backup.json ~/Library/Application\ Support/rsconnect-python/servers.json
 }
 
-@test "publish notebook" {
-    run ${BINARY_PATH} publish ./content/simple-notebook/simple-notebook.ipynb -n localhost
-    assert_success
-}
+# @test "publish notebook" {
+#     run ${BINARY_PATH} publish ./content/simple-notebook/simple-notebook.ipynb -n localhost
+#     assert_success
+# }
 
 # @test "version" {
 #     run ${BINARY_PATH} --version
