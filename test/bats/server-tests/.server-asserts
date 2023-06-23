@@ -34,5 +34,5 @@ help_add_account="Flags:
       --certificate=CERTIFICATE    Path to CA certificate bundle.
       --insecure                   Don't validate server certificate."
 
-  version="61748bf"
+  version="level=info msg=\"Client version\" version="
 
