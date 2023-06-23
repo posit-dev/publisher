@@ -23,9 +23,7 @@ Accounts
 
   test-account"
 
-help_add_account="Usage: connect-client add-account
-
-Flags:
+help_add_account="Flags:
   -h, --help                       Show context-sensitive help.
       --debug=DEBUG-FLAG           Enable debug mode (\$CONNECT_DEBUG).
       --version                    Show the client software version and exit.

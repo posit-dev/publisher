@@ -5,10 +5,10 @@ load ${BATS_ASSERT_LIB}
 
 function setup() {
     . ./bats/deploy-tests/.deploy-asserts
-    api_key=$(echo -n admin | md5sum | cut -f1 -d" ")
-    server=http://localhost:3939
-    pwd
-    cp ~/Library/Application\ Support/rsconnect-python/servers-backup.json ~/Library/Application\ Support/rsconnect-python/servers.json
+    # api_key=$(echo -n admin | md5sum | cut -f1 -d" ")
+    # server=http://localhost:3939
+    # pwd
+    # cp ~/Library/Application\ Support/rsconnect-python/servers-backup.json ~/Library/Application\ Support/rsconnect-python/servers.json
 }
 
 @test "publish notebook" {

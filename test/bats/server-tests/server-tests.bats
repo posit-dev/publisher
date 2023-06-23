@@ -5,8 +5,8 @@ load ${BATS_ASSERT_LIB}
 
 function setup() {
     . ./bats/server-tests/.server-asserts
-    api_key=$(echo -n admin | md5sum | cut -f1 -d" ")
-    server=http://localhost:3939
+    # api_key=$(echo -n admin | md5sum | cut -f1 -d" ")
+    # server=http://localhost:3939
 }
 
 @test "list servers" {
