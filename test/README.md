@@ -10,7 +10,11 @@ You can also run the tests against your local environment.
 
 First, build the docker containers needed:
 ```
-just build 
+just build all
+```
+Or if you just want to build one service, you can specify it:
+```
+just build linux-amd64
 ```
 
 Run against linux-amd64 and linux-arm64:
