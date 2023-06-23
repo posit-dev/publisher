@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+CONTENT_TYPE=notebook
+EXPECTED_OUTPUT="simple-notebook"
+CURL_PATH=""
+TEST_FILENAME="simple-notebook.ipynb"
+ENTRYPOINT=
+MIN_PY_VERSION=3.5

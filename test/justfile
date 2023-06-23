@@ -37,6 +37,7 @@ _test-client target:
 
 run-client-local target:
   #!/usr/bin/env bash
+  just run-connect && \
   if [[ ! -d ./libs ]]; then
     git clone --depth=1 https://github.com/bats-core/bats-core.git ./libs/bats-core && \
     ./libs/bats-core/install.sh ./libs/bats-core/installation && \
@@ -46,4 +47,7 @@ run-client-local target:
   BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \
   BATS_ASSERT_LIB={{invocation_directory()}}/libs/bats-assert/load \
   BINARY_PATH=../bin/{{target}}/connect-client \
-  ./libs/bats-core/bin/bats --tap -T -r ./bats/
+  ./libs/bats-core/bin/bats --tap -T -r ./bats/${BATS}
+
+run-connect:
+  docker compose up -d connect

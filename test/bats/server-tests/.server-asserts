@@ -1,0 +1,40 @@
+help="Flags:
+  -h, --help                Show context-sensitive help.
+      --debug=DEBUG-FLAG    Enable debug mode (\$CONNECT_DEBUG).
+      --version             Show the client software version and exit.
+
+Commands:
+  publish <path>
+
+  publish-ui <path>
+
+  create-bundle --bundle-file=PATH <path>
+
+  write-manifest <path>
+
+Accounts
+  account-ui
+
+  add-account
+
+  remove-account
+
+  list-accounts
+
+  test-account"
+
+help_add_account="Usage: connect-client add-account
+
+Flags:
+  -h, --help                       Show context-sensitive help.
+      --debug=DEBUG-FLAG           Enable debug mode (\$CONNECT_DEBUG).
+      --version                    Show the client software version and exit.
+
+  -n, --name=STRING                Nickname for the account.
+  -u, --url=URL                    Server URL.
+  -k, --api-key=STRING             API key.
+      --certificate=CERTIFICATE    Path to CA certificate bundle.
+      --insecure                   Don't validate server certificate."
+
+  version="61748bf"
+
