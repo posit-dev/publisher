@@ -41,7 +41,7 @@ jobs:
         run: |
           cp -r bin\artifact\* bin\ && chmod +x bin\*\*
           just test/bats-install
-          $env:Path += ";$env:GITHUB_WORKSPACE\libs\bats-core\bin"
+          $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
           just run-client $env:CLIENT
@@ -61,13 +61,13 @@ jobs:
       - name: Run macos
         env:
           CLIENT: macos-latest
-          BATS_SUPPORT_LIB: ${{ github.workspace }}/libs/bats-support/load
-          BATS_ASSERT_LIB: ${{ github.workspace }}/libs/bats-assert/load
+          BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
+          BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
           just test/bats-install
-          PATH="$PATH:${{ github.workspace }}/libs/bats-core/bin"
+          PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just run-client ${CLIENT}
 
