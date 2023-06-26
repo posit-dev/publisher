@@ -36,8 +36,8 @@ jobs:
         env:
           CLIENT: windows-latest
           # bats reads the load libraries from relative path only in Windows
-          BATS_SUPPORT_LIB: ..\..\..\libs\bats-support\load.bash
-          BATS_ASSERT_LIB: ..\..\..\libs\bats-assert\load
+          BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
+          BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
         run: |
           cp -r bin\artifact\* bin\ && chmod +x bin\*\*
           just test/bats-install
