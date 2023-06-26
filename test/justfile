@@ -30,12 +30,17 @@ run-client target:
   fi
 
 _test-client target:
-  BINARY_PATH=$BINARY_PATH \
-  BATS_SUPPORT_LIB=$BATS_SUPPORT_LIB \
-  BATS_ASSERT_LIB=$BATS_ASSERT_LIB \
   bats --tap -T -r ./bats/
 
 run-client-local target:
+  #!/usr/bin/env bash
+  just bats-install && \
+  BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \
+  BATS_ASSERT_LIB={{invocation_directory()}}/libs/bats-assert/load \
+  BINARY_PATH=../bin/{{target}}/connect-client \
+  ./libs/bats-core/bin/bats --tap -T -r ./bats/
+
+bats-install:
   #!/usr/bin/env bash
   if [[ ! -d ./libs ]]; then
     git clone --depth=1 https://github.com/bats-core/bats-core.git ./libs/bats-core && \
@@ -43,7 +48,3 @@ run-client-local target:
     git clone --depth=1 https://github.com/ztombol/bats-support.git ./libs/bats-support && \
     git clone --depth=1 https://github.com/ztombol/bats-assert.git ./libs/bats-assert
   fi
-  BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \
-  BATS_ASSERT_LIB={{invocation_directory()}}/libs/bats-assert/load \
-  BINARY_PATH=../bin/{{target}}/connect-client \
-  ./libs/bats-core/bin/bats --tap -T -r ./bats/

@@ -70,11 +70,7 @@ jobs:
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
-          git clone --depth=1 https://github.com/bats-core/bats-core.git ${{ github.workspace }}/libs/bats-core
-          cd ${{ github.workspace }}/libs/bats-core
-          ./install.sh ${{ github.workspace }}/libs/bats-core/installation
-          git clone --depth=1 https://github.com/ztombol/bats-support.git ${{ github.workspace }}/libs/bats-support
-          git clone --depth=1 https://github.com/ztombol/bats-assert.git ${{ github.workspace }}/libs/bats-assert
+          just bats-install
           PATH="$PATH:${{ github.workspace }}/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just run-client ${CLIENT}
