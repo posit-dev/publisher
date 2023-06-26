@@ -16,7 +16,6 @@ define([
     'help_index': 'zz',
     'icon': 'fa-cloud-upload',
     'handler': startUI,
-
   },
     'publish',
     'connect_jupyternb');
@@ -32,21 +31,50 @@ define([
     var $button = $('button[data-jupyter-action="' + actionName + '"]');
     $button.find('i')
       .addClass('rsc-icon');
+  }
 
+  function getRunningPythonPath() {
+    var cmd = 'import sys; print(sys.executable)';
+    var pythonPath = 'python';
+    var result = $.Deferred();
+
+    function handle_output(message) {
+        try {
+            pythonPath = message.content.text.trim();
+            console.log('Using python: ' + pythonPath);
+            result.resolve(pythonPath);
+        } catch (err) {
+            result.reject(err);
+        }
+    }
+    var callbacks = {
+        iopub: {
+            output: handle_output
+        }
+    };
+    Jupyter.notebook.kernel.execute(cmd, callbacks);
+    return result;
   }
 
   function startUI() {
-    var notebookURL = Jupyter.notebook.base_url + 'connect_jupyternb/start_ui';
-    Utils.ajax(notebookURL, {
-      type: 'GET',
-      success: function (response) {
-        var url = response.data;
-        console.info('url: ', url)
-        openPage(url);
-      },
-      error: function (error) {
-        console.error('Ping failed:', error);
-      }
+    getRunningPythonPath().then(function (pythonPath) {
+      var notebookURL = Jupyter.notebook.base_url + 'connect_jupyternb/start_ui';
+      Utils.ajax(notebookURL, {
+        type: 'POST',
+        data: JSON.stringify({
+          python: pythonPath,
+          notebook: Jupyter.notebook.notebook_path,
+        }),
+        success: function (response) {
+          var url = response.data;
+          console.info('url: ', url)
+          openPage(url);
+        },
+        error: function (error) {
+          console.error('Ping failed:', error);
+          alert(error)
+        }
+      });
     });
   }
 

@@ -1,6 +1,8 @@
 import json
 from notebook.base.handlers import APIHandler
 from notebook.utils import url_path_join
+import os
+import shlex
 from tornado import web
 import subprocess
 
@@ -32,21 +34,28 @@ def _jupyter_nbextension_paths():
 # https://github.com/jupyter/notebook/blob/master/notebook/base/handlers.py
 class EndpointHandler(APIHandler):
     @web.authenticated
-    async def get(self, action):
+    async def post(self, action):
         if action == "start_ui":
-            nb_url = '../connect/examples/stock-report-jupyter' # find url
-            account = 'local' # which account? is there a default?
-            args = ['connect-client', 'publish-ui', nb_url, '-n', account]
-            
+            data = self.get_json_body()
+            pythonPath = data["python"]
+            notebookPath = os.path.abspath(data["notebook"])
+
+            args = [
+                "connect-client",
+                "publish-ui",
+                notebookPath,
+                "--python",
+                pythonPath,
+            ]
+            print("Starting:", " ".join(map(shlex.quote, args)))
             process = subprocess.Popen(
-                args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
+                args, stdout=subprocess.PIPE, stderr=None, text=True
             )
 
             while True:
-                chunk = process.stdout.readline().strip() # currently, URL is the onnly thing returned in stdout
+                chunk = (
+                    process.stdout.readline().strip()
+                )  # currently, URL is the onnly thing returned in stdout
                 print("UI url: ", chunk)
                 break
                 # pattern = r'http://\[[^\]]+\]/proxy/local/\?token=[^ ]+'
@@ -64,10 +73,13 @@ class EndpointHandler(APIHandler):
                 )
             )
 
+
 def load_jupyter_server_extension(nb_app):
     nb_app.log.info("connect_jupyternb enabled!")
     web_app = nb_app.web_app
     host_pattern = ".*$"
     action_pattern = r"(?P<action>\w+)"
-    route_pattern = url_path_join(web_app.settings["base_url"], r"/connect_jupyternb/%s" % action_pattern)
+    route_pattern = url_path_join(
+        web_app.settings["base_url"], r"/connect_jupyternb/%s" % action_pattern
+    )
     web_app.add_handlers(host_pattern, [(route_pattern, EndpointHandler)])
