@@ -36,42 +36,29 @@ class EndpointHandler(APIHandler):
     @web.authenticated
     async def post(self, action):
         if action == "start_ui":
-            data = self.get_json_body()
-            pythonPath = data["python"]
-            notebookPath = os.path.abspath(data["notebook"])
+            try:
+                data = self.get_json_body()
+                pythonPath = data["python"]
+                notebookPath = os.path.abspath(data["notebook"])
 
-            args = [
-                "connect-client",
-                "publish-ui",
-                notebookPath,
-                "--python",
-                pythonPath,
-            ]
-            print("Starting:", " ".join(map(shlex.quote, args)))
-            process = subprocess.Popen(
-                args, stdout=subprocess.PIPE, stderr=None, text=True
-            )
-
-            while True:
-                chunk = (
-                    process.stdout.readline().strip()
-                )  # currently, URL is the onnly thing returned in stdout
-                print("UI url: ", chunk)
-                break
-                # pattern = r'http://\[[^\]]+\]/proxy/local/\?token=[^ ]+'
-                # match = re.search(pattern, chunk)
-                # if match:
-                #     url = match.group()
-                #     print(url)
-                #     break
-
-            self.finish(
-                json.dumps(
-                    {
-                        "data": chunk,
-                    }
+                args = [
+                    "connect-client",
+                    "publish-ui",
+                    notebookPath,
+                    "--python",
+                    pythonPath,
+                ]
+                self.log.info("Starting: %s", " ".join(map(shlex.quote, args)))
+                process = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=None, text=True
                 )
-            )
+                # currently, URL is the first thing written to stdout
+                ui_url = process.stdout.readline().strip()
+                self.log.info("UI url: %s", ui_url)
+                self.finish(json.dumps({"ui_url": ui_url}))
+            except Exception as exc:
+                self.log.exception("UI launch failed", exc_info=exc)
+                self.set_status(500, str(exc))
 
 
 def load_jupyter_server_extension(nb_app):

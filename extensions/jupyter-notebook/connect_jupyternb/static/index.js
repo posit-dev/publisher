@@ -66,13 +66,13 @@ define([
           notebook: Jupyter.notebook.notebook_path,
         }),
         success: function (response) {
-          var url = response.data;
-          console.info('url: ', url)
+          var url = response.ui_url;
+          console.info('UI url: ', url)
           openPage(url);
         },
-        error: function (error) {
-          console.error('Ping failed:', error);
-          alert(error)
+        error: function (response) {
+          console.error('UI launch failed:', response.statusText);
+          alert(response.statusText)
         }
       });
     });
