@@ -1,6 +1,6 @@
 <script lang="ts">
-import { Dialog } from 'quasar'
-import { defineComponent } from 'vue'
+import { Dialog } from 'quasar';
+import { defineComponent } from 'vue';
 
 export default defineComponent({
   name: 'DialogWrapper',
@@ -14,13 +14,13 @@ export default defineComponent({
       default: () => ({})
     }
   },
-  setup (props) {
+  setup(props) {
     Dialog.create({
       component: props.component,
 
       // props forwarded to your custom component
       componentProps: props.componentProps
-    })
+    });
   }
-})
+});
 </script>

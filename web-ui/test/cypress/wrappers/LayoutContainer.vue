@@ -1,11 +1,14 @@
 <template>
   <q-layout>
-    <component :is="component" v-bind="$attrs" />
+    <component
+      :is="component"
+      v-bind="$attrs"
+    />
   </q-layout>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent } from 'vue';
 
 export default defineComponent({
   name: 'LayoutContainer',
@@ -16,5 +19,5 @@ export default defineComponent({
       required: true
     }
   }
-})
+});
 </script>

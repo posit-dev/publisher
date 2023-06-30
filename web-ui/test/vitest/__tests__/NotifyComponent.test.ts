@@ -1,19 +1,19 @@
-import { installQuasar } from '@quasar/quasar-app-extension-testing-unit-vitest'
-import { mount } from '@vue/test-utils'
-import { Notify } from 'quasar'
-import { describe, expect, it, vi } from 'vitest'
-import NotifyComponent from './demo/NotifyComponent.vue'
+import { installQuasar } from '@quasar/quasar-app-extension-testing-unit-vitest';
+import { mount } from '@vue/test-utils';
+import { Notify } from 'quasar';
+import { describe, expect, it, vi } from 'vitest';
+import NotifyComponent from './demo/NotifyComponent.vue';
 
-installQuasar({ plugins: { Notify } })
+installQuasar({ plugins: { Notify } });
 
 describe('notify example', () => {
-  it('should call notify on click', async () => {
-    expect(NotifyComponent).toBeTruthy()
+  it('should call notify on click', async() => {
+    expect(NotifyComponent).toBeTruthy();
 
-    const wrapper = mount(NotifyComponent, {})
-    const spy = vi.spyOn(Notify, 'create')
-    expect(spy).not.toHaveBeenCalled()
-    wrapper.trigger('click')
-    expect(spy).toHaveBeenCalled()
-  })
-})
+    const wrapper = mount(NotifyComponent, {});
+    const spy = vi.spyOn(Notify, 'create');
+    expect(spy).not.toHaveBeenCalled();
+    wrapper.trigger('click');
+    expect(spy).toHaveBeenCalled();
+  });
+});

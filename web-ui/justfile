@@ -1,10 +1,10 @@
 default: install lint test build
 
 install *args:
-    npm install {{ args }}
+    pnpm install {{ args }}
 
 lint *args:
-    npx lint {{ args }}
+    pnpm run lint {{ args }}
 
 build *args:
     quasar build {{ args }}
@@ -18,5 +18,9 @@ test-all: build
 test:
     npx vitest
 
-start:
+dev:
+    quasar build
     quasar dev
+
+clean:
+    quasar clean

@@ -1,0 +1,1041 @@
+<template>
+  <q-layout
+    view="hHh lpR fFf"
+    class="q-pa-md bg-grey-9 text-white"
+    style="max-width: 800px"
+  >
+    <q-header
+      elevated
+      class="bg-primary text-white"
+    >
+      <q-toolbar>
+        <q-toolbar-title>
+          <img
+            src="/assets/images/posit-logo-reverse-TM.svg"
+            style="
+              width: 100px;
+              vertical-align: middle;
+            "
+            alt="Posit PBC logo"
+          >
+          Publisher
+        </q-toolbar-title>
+      </q-toolbar>
+    </q-header>
+
+    <q-page-container>
+      <h6 style="margin-top: 0rem; margin-bottom: 1rem;">
+        What would you like to be published and how?
+      </h6>
+      <q-list
+        dark
+        bordered
+        class="rounded-borders"
+      >
+        <q-expansion-item>
+          <template #header>
+            <q-item-section avatar>
+              <q-icon
+                name="img:assets/images/posit-logo-only-unofficial.svg"
+                size="35px"
+              />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Destination</q-item-label>
+              <q-item-label caption>
+                Colorado, updating 'Quarterly Report'
+              </q-item-label>
+            </q-item-section>
+          </template>
+
+          <q-card class="bg-grey-9">
+            <q-card-section>
+              TODO: select from previous deployments or add to existing or new targets
+
+              User selects from a list of deployment targets:
+              Update an existing deployment
+              New deployment on an existing account
+              Create a new account
+
+              Scenarios:
+              - Redeployment of bundle to previous destination
+              - Modification of files include in bundle to previous destination
+              - Content type changed since last deployment
+              - New deployment of bundle w/ same settings as before but to new destination (server or account)
+              - Redeployment of bundle w/ changed settings
+              - New deployment - existing destination/account
+              - New deployment - existing destination, different account than used previously
+              - New deployment - new destination (new account)
+
+              What would you like to deploy:
+              - defaults to previous deployment for this bundle
+              - if content type has changed, it will show as a new deployment
+              - files included by subdirectory except for exclusions
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
+
+        <q-separator />
+
+        <q-expansion-item>
+          <template #header>
+            <q-item-section avatar>
+              <q-icon
+                name="img:assets/images/files-icon.jpg"
+                size="35px"
+              />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Files</q-item-label>
+              <q-item-label caption>
+                {{ calculatedFilesSummary }}
+              </q-item-label>
+            </q-item-section>
+          </template>
+
+          <q-card class="bg-grey-9">
+            <q-card-section>
+              <div class="q-pa-md row q-col-gutter-sm">
+                <q-checkbox
+                  v-model="treeEnableExcluded"
+                  label="Allow Selection of Disabled/Filtered Files"
+                  left-label
+                  dark
+                  @click="updateDisabledQTreeNodes"
+                />
+              </div>
+              <div class="q-pa-md row q-col-gutter-sm">
+                <q-tree
+                  ref="fileTree"
+                  v-model:selected="selected"
+                  v-model:ticked="ticked"
+                  v-model:expanded="expanded"
+                  class="col-12 col-sm-6"
+                  :nodes="qTreeNodes as any"
+                  node-key="key"
+                  tick-strategy="leaf"
+                  dark
+                  dense
+                  @update:ticked="onTick"
+                >
+                  <template #default-header="prop">
+                    <div class="row items-center">
+                      <div
+                        v-if="!prop.node.showDisabled"
+                        class="q-tree__node-header-content"
+                        @click="handleNodeLabelClick(prop.node)"
+                      >
+                        {{ prop.node.label }}
+                      </div>
+                      <div
+                        v-if="prop.node.showDisabled"
+                        class="q-tree__node-header-content disabled"
+                      >
+                        {{ prop.node.label }}
+                      </div>
+                    </div>
+                  </template>
+                </q-tree>
+              </div>
+              <div class="q-pa-md row q-col-gutter-sm">
+                <q-select
+                  v-model="entryPoint"
+                  :options="entryPointOptions"
+                  label="Entry Point File"
+                  map-options
+                  dark
+                  outlined
+                  style="width: 100%"
+                >
+                  <template #append>
+                    <q-icon
+                      name="close"
+                      class="cursor-pointer"
+                      @click.stop.prevent="entryPoint = (null as unknown) as QSelectOption"
+                    />
+                  </template>
+                </q-select>
+              </div>
+              <div class="q-pa-md row q-col-gutter-sm">
+                <div class="col-12 col-sm-6 q-gutter-sm">
+                  <div class="text-h6">
+                    Selected {{ getNumDirs }} directories and {{ getNumFiles }} files (via ticks)
+                  </div>
+                  <div>
+                    <div
+                      v-for="tickedKey in ticked"
+                      :key="tickedKey"
+                    >
+                      {{ getPathFromKey(tickedKey) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
+
+        <q-separator />
+
+        <q-expansion-item>
+          <template #header>
+            <q-item-section avatar>
+              <q-icon
+                name="img:assets/images/python-logo-only.svg"
+                size="35px"
+              />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Python</q-item-label>
+              <q-item-label caption>
+                Python 3.11 and 18 package dependencies
+              </q-item-label>
+            </q-item-section>
+          </template>
+
+          <q-card class="bg-grey-9">
+            <q-card-section>
+              TODO: Show detailed python version and list of package dependencies
+              with ability to add or remove package dependencies. <br><br>
+              QUESTON: Do we allow them to change the target python version?
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
+
+        <q-separator />
+
+        <q-expansion-item>
+          <template #header>
+            <q-item-section avatar>
+              <q-icon
+                name="img:assets/images/info.png"
+                size="35px"
+              />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Common Settings</q-item-label>
+              <q-item-label caption>
+                Description and graphic have been set.
+              </q-item-label>
+            </q-item-section>
+          </template>
+
+          <q-card class="bg-grey-9">
+            <q-card-section>
+              TODO: Common settings, probably off the info panel in dashboard
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
+
+        <q-separator />
+
+        <q-expansion-item>
+          <template #header>
+            <q-item-section avatar>
+              <q-icon
+                name="img:assets/images/settings.png"
+                size="35px"
+              />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Advanced Settings</q-item-label>
+              <q-item-label caption>
+                Using defaults...
+              </q-item-label>
+            </q-item-section>
+          </template>
+
+          <q-card class="bg-grey-9">
+            <q-card-section>
+              TODO: Show list of editable settings (and some as read-only)
+              based on capabilities of target server. <br><br>
+              QUESTION: Do we save updated settings when server target changes
+              and the capabilities no longer allow the setting? (We save so that
+              we can restore back?)
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
+      </q-list>
+      <q-linear-progress
+        v-if="showProgressBar"
+        stripe
+        rounded
+        size="20px"
+        :value="progressValue"
+        color="primary"
+        class="q-mt-sm"
+      />
+      <div class="q-mt-sm fit row wrap justify-end items-start content-start">
+        <q-btn
+          v-if="showDetailsButton"
+          class="q-mt-sm q-ml-sm"
+          color="primary"
+          label="Details..."
+          @click="toggleShowTimeline"
+        />
+        <q-btn
+          :disabled="disablePublishButton"
+          class="q-mt-sm q-ml-sm"
+          color="primary"
+          label="Publish"
+          @click="onClickPublish"
+        />
+      </div>
+      <q-timeline
+        v-if="showTimeline"
+        color="secondary"
+        class="text-body3"
+      >
+        <q-timeline-entry
+          heading
+          class="text-body2"
+          style="font-size: 0.75rem !important;"
+        >
+          Deployment Timeline
+        </q-timeline-entry>
+
+        <q-timeline-entry
+          v-for="step in steps"
+          :key="step.type"
+          :title="step.type"
+          side="left"
+          class="text-body2"
+          avatar="https://cdn.quasar.dev/logo-v2/svg/logo.svg"
+        >
+          <q-expansion-item>
+            <template #header>
+              <q-item-section>
+                <q-item-label>Success - {{ step.log.length }} lines</q-item-label>
+              </q-item-section>
+            </template>
+            <div class="terminal-container">
+              <div
+                v-for="row, ndx in step.log"
+                :key="ndx"
+                class="terminal"
+              >
+                {{ row }}
+              </div>
+            </div>
+          </q-expansion-item>
+        </q-timeline-entry>
+      </q-timeline>
+    </q-page-container>
+  </q-layout>
+</template>
+
+<script setup lang="ts">
+
+import { ref, reactive, computed } from 'vue';
+import type { Ref } from 'vue';
+
+import type { NodeType, DirectoryNode } from './directoryContents';
+import { directoryData } from './directoryContents';
+
+const showDetailsButton = ref(false);
+const showTimeline = ref(false);
+const showProgressBar = ref(false);
+const disablePublishButton = ref(false);
+const progressValue = ref(0);
+const baseDir = ref('/my-project');
+
+function toggleShowDetailsButton() {
+  showDetailsButton.value = !showDetailsButton.value;
+}
+
+function toggleShowProgressBar() {
+  showProgressBar.value = !showProgressBar.value;
+
+  if (showProgressBar.value) {
+    progressValue.value = 0;
+    const interval = setInterval(() => {
+      progressValue.value += 0.1;
+      console.log(progressValue.value);
+      if (progressValue.value > 1) {
+        progressValue.value = 1;
+        clearInterval(interval);
+      }
+    });
+  }
+}
+
+function toggleShowTimeline() {
+  showTimeline.value = !showTimeline.value;
+}
+
+function onClickPublish() {
+  toggleShowProgressBar();
+  toggleShowDetailsButton();
+}
+
+const selected = ref('');
+const ticked = ref([] as number[]);
+const expanded = ref([0] as number[]);
+const treeEnableExcluded = ref(false);
+
+type QSelectOption = {
+  label: string;
+  key: number;
+}
+const entryPoint = ref((null as unknown) as QSelectOption);
+const entryPointOptions = ref([] as QSelectOption[]);
+
+let nextToggleSelectionStateToTrue = true;
+
+// The following line establishes a component ref in $refs that we can work with
+const fileTree = ref(null);
+
+const fileNodesMap = reactive(new Map<number, DirectoryNode>());
+const qTreeNodesMap = reactive(new Map<number, QTreeNode>());
+
+// Acessiblity may be of concern with TREE... keyboard navigation seems to be unavailable. Can
+// submit PRs to help improve...??
+
+// Do not have a way of accessing the tri-state for "leaf" mode, where the subdirectory is
+// manually checked but then is unchecked when one of the children is unchecked. Can do "strict",
+// but then would need to manually check it or not, but no access to implicit? Might check the
+// source code for it...
+
+// LAZY LOADING DOES NOT WORK AS EXPECTED - selection is impacted by lazy status
+// To support lazy loading, maybe switch into a hash, by key
+// with children just being an array of numbers.
+
+// interface TreeNode {
+//   label: string;
+//   type: string;
+//   key: number;
+//   size: string;
+//   time: string;
+//   children?: TreeNode[];
+// }
+
+// interface TreeNode {
+//   label: string;
+//   type: string;
+//   key: number;
+//   size: string;
+//   time: string;
+//   childKeys?: number[];
+// }
+
+interface QTreeNode {
+  label: string;
+  type?: string;
+  key: number;
+  size?: string;
+  time?: string;
+  // lazy: boolean;
+  disabled: boolean;
+  tickable: boolean;
+  showDisabled: boolean;
+  children: QTreeNode[];
+}
+
+// const fileNodesMap = new Map<number, TreeNode>()
+// let nodeNdx = 0
+
+// function convertNodesToMap (nodes: DirectoryNode[]) {
+//   const childKeys: number[] = []
+
+//   nodes.forEach(node => {
+//     const key = nodeNdx++
+
+//     const data:TreeNode = {
+//       label: node.name,
+//       type: node.type,
+//       key,
+//       size: node.size,
+//       time: node.time
+//     }
+//     if (node.contents) {
+//       data.childKeys = convertNodesToMap(node.contents)
+//     }
+//     fileNodesMap.set(key, data)
+//     childKeys.push(key)
+//   })
+//   return childKeys
+// }
+// convertNodesToMap(directoryData)
+
+// const root: QTreeNode = {
+//   label: 'root',
+//   key: 0,
+//   lazy: true
+// }
+// const rootNode = fileNodesMap.get(0)
+// if (rootNode) {
+//   root.label = rootNode.label
+// }
+// const qTreeNodes = ref([root])
+
+// // return the node requested as well as all of its direct children (to save calls)
+// type QDoneFunction = (result:QTreeNode[]) => void
+// type QLazyLoadFunction = { key: number, done: QDoneFunction }
+
+// function onTreeLazyLoad ({ key, done }: QLazyLoadFunction) {
+//   if (!fileNodesMap.has(key)) {
+//     return []
+//   }
+//   const treeNode = fileNodesMap.get(key as number) as TreeNode
+//   const qTreeNode:QTreeNode = {
+//     label: treeNode.label,
+//     type: treeNode.type,
+//     key: treeNode.key,
+//     size: treeNode.size,
+//     time: treeNode.time,
+//     lazy: false,
+//     children: [] as QTreeNode[]
+//   }
+//   if (treeNode.childKeys) {
+//     treeNode.childKeys.forEach(key => {
+//       const node = fileNodesMap.get(key)
+//       if (node) {
+//         qTreeNode.children?.push({
+//           label: node.label,
+//           key: node.key,
+//           lazy: true
+//         } as QTreeNode)
+//       }
+//     })
+//   }
+//   done([qTreeNode] as QTreeNode[])
+// }
+
+function walkQTreeNodes(node: QTreeNode, func: (n: QTreeNode) => unknown) {
+  func(node);
+  node.children.forEach(child => walkQTreeNodes(child, func));
+}
+
+function flipTicked(key: number) {
+  if (!ticked.value.includes(key)) {
+    ticked.value.push(key);
+  } else {
+    ticked.value.splice(ticked.value.indexOf(key), 1);
+  }
+}
+
+function updateEntryPointFileOptions() {
+  const options = [] as QSelectOption[];
+
+  ticked.value.forEach(key => {
+    const fileNode = fileNodesMap.get(key);
+    if (fileNode?.possibleEntryPoint) {
+      options.push({
+        label: fileNode.path,
+        key,
+      } as QSelectOption);
+    }
+  });
+  if (options.length > 1) {
+    entryPointOptions.value.splice(0, entryPointOptions.value.length);
+    options.sort((a: QSelectOption, b: QSelectOption) => {
+      if (a.label > b.label) {
+        return 1;
+      }
+      if (a.label < b.label) {
+        return -1;
+      }
+      return 0;
+    });
+  }
+  entryPointOptions.value = options;
+  if (options.length === 0) {
+    entryPoint.value = (null as unknown) as QSelectOption;
+    return;
+  }
+  if (entryPoint.value) {
+    const found = options.find(x => x.key === entryPoint.value.key);
+    if (!found) {
+      entryPoint.value = (null as unknown) as QSelectOption;
+    }
+  }
+}
+
+function toggleNodeTick(n: QTreeNode) {
+  if (!n.tickable) {
+    return;
+  }
+  if (nextToggleSelectionStateToTrue) {
+    if (!ticked.value.includes(n.key)) {
+      ticked.value.push(n.key);
+    }
+  } else if (ticked.value.includes(n.key)) {
+    // untick it
+    ticked.value.splice(ticked.value.indexOf(n.key), 1);
+
+    if (!treeEnableExcluded.value) {
+      const fileNode = fileNodesMap.get(n.key);
+      if (!fileNode?.contents && fileNode?.excluded) {
+        n.tickable = Boolean(treeEnableExcluded.value);
+        n.showDisabled = !n.tickable;
+      }
+    }
+  }
+}
+
+function handleNodeLabelClick(node: QTreeNode) {
+  if (!node.children.length) {
+    flipTicked(node.key);
+    return;
+  }
+
+  walkQTreeNodes(node, toggleNodeTick);
+
+  nextToggleSelectionStateToTrue = !nextToggleSelectionStateToTrue;
+  forceRefreshOfQTree();
+}
+
+function forceRefreshOfQTree() {
+  if (fileTree.value) {
+    const qtree = fileTree.value as any;
+    qtree.lazy = {};
+  }
+}
+
+function onTick() {
+  updateDisabledQTreeNodes();
+  updateEntryPointFileOptions();
+}
+
+function updateDisabledQTreeNodes() {
+  qTreeNodesMap.forEach((qTreeNode, key) => {
+    // if node is already selected, do nothing
+
+    if (ticked.value.includes(key)) {
+      return;
+    }
+
+    const node = fileNodesMap.get(key);
+    if (!node) {
+      console.log(`node not found for key: ${key}?`);
+      return;
+    }
+    if (!node.contents && node.excluded) {
+      qTreeNode.tickable = Boolean(treeEnableExcluded.value);
+      qTreeNode.showDisabled = !qTreeNode.tickable;
+    }
+  });
+  forceRefreshOfQTree();
+}
+
+function convertNodesToData(nodes: DirectoryNode[], basePath: string): QTreeNode[] {
+  const result:QTreeNode[] = reactive([]);
+
+  nodes.forEach(node => {
+    const data:QTreeNode = reactive({
+      label: node.name,
+      // type: node.type,
+      key: node.key,
+      tickable: true,
+      // size: node.size,
+      // time: node.time
+      disabled: false,
+      showDisabled: false,
+      children: reactive([]) as QTreeNode[]
+    });
+    node.path = `${basePath}/${node.name}`;
+    if (node.key === 0) {
+      data.label = node.path;
+    }
+    if (node.contents) {
+      data.children = convertNodesToData(node.contents, node.path);
+      // data.tickable = false;
+    } else if (node.excluded) {
+      // data.disabled = Boolean(node.excluded && !treeEnableExcluded.value);
+      data.tickable = Boolean(treeEnableExcluded.value);
+      data.showDisabled = !data.tickable;
+    }
+    result.push(data); // For the QTree component
+    qTreeNodesMap.set(node.key, data);
+    fileNodesMap.set(node.key, node); // Build up map of keys to nodes
+  });
+  return result;
+}
+const qTreeNodes = convertNodesToData(directoryData, baseDir.value);
+
+function getPathFromKey(key: number): string {
+  const node = fileNodesMap.get(key);
+  if (node) {
+    return node.path ? node.path : `unknown path (key=${key})`;
+  }
+  return `unknown node/path (key=${key})`;
+}
+
+const getNumOfType = (targetType: NodeType) => {
+  let count = 0;
+  ticked.value.forEach(key => {
+    const node = fileNodesMap.get(key);
+    if (node && node.type === targetType) {
+      count++;
+    }
+  });
+  return count;
+};
+
+const getNumDirs = computed(() => getNumOfType('directory'));
+const getNumFiles = computed(() => getNumOfType('file'));
+const calculatedFilesSummary = computed(() => {
+  // Report.qmd and 2 other files totaling 2.3 MB
+  if (ticked.value.length === 0) {
+    return 'No files selected';
+  }
+  let totalSize = 0;
+  ticked.value.forEach(key => {
+    const node = fileNodesMap.get(key);
+    if (node && node.type === 'file') {
+      totalSize += node.size;
+    }
+  });
+  let totalSizeStr = `${totalSize} bytes`;
+  if (totalSize > 1024 * 1024) {
+    totalSizeStr = `${(totalSize / 1024).toFixed(1)} MB`;
+  } else if (totalSize > 1024) {
+    totalSizeStr = `${(totalSize / 1024).toFixed(1)} KB`;
+  }
+
+  const numFiles = ticked.value.length;
+  if (entryPoint.value) {
+    const node = fileNodesMap.get(entryPoint.value.key);
+    if (node) {
+      if (numFiles === 1) {
+        return `${node.name} (${totalSizeStr})`;
+      }
+      return `${node.name} and ${numFiles - 1} other files totaling ${totalSizeStr}`;
+    }
+  }
+  if (numFiles === 1) {
+    return `${numFiles} file totaling ${totalSizeStr}`;
+  }
+  return `${numFiles} files totaling ${totalSizeStr}`;
+});
+
+let lastTickedValues:number[] = [];
+
+const onTicked = (newestTicked: readonly number[]) => {
+  const difference = newestTicked.filter(x => !lastTickedValues.includes(x));
+  console.log(`ticked = ${newestTicked}, new entries = ${difference}`);
+  // action only if added directories
+  difference.forEach((key:number) => {
+    const childrenKeys:number[] = [];
+    deepKeysOfChildren(key, childrenKeys);
+    childrenKeys.forEach((childKey:number) => {
+      if (!ticked.value.includes(childKey)) {
+        ticked.value.push(childKey);
+      }
+    });
+  });
+  lastTickedValues = [...ticked.value];
+};
+
+const deepKeysOfChildren = (parentKey:number, childrenKeys:number[]) => {
+  const node = fileNodesMap.get(parentKey);
+  if (node) {
+    if (node.childrenKeys) {
+      node.childrenKeys.forEach((key:number) => {
+        childrenKeys.push(key);
+        deepKeysOfChildren(key, childrenKeys);
+      });
+    }
+  }
+};
+
+const steps = [
+  {
+    type: 'Deploy',
+    start: '2023-06-16 10:09:15',
+    log: [
+      'Deploy command: ',
+      ' rsconnect::deployApp(appDir = "~/dev/rprojects/firstShiny/firstShiny",      appFileManifest = "/var/folders/p8/lrgc44n53k92bbdj58jbnmj40000gn/T/0b32-4483-5ec3-28d5",      account = "bill.sager", server = "rsc.radixu.com", appName = "testshiny",      appTitle = "testShiny", launch.browser = function(url) {         message("Deployment completed: ", url)     }, lint = FALSE, metadata = list(asMultiple = FALSE, asStatic = FALSE),      logLevel = "verbose") ',
+      '',
+      'Session information: ',
+      'R version 4.1.2 (2021-11-01)',
+      'Platform: x86_64-apple-darwin17.0 (64-bit)',
+      'Running under: macOS Big Sur 10.16',
+      '',
+      'Matrix products: default',
+      'BLAS:   /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRblas.0.dylib',
+      'LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib',
+      '',
+      'locale:',
+      '[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8',
+      '',
+      'attached base packages:',
+      '[1] stats     graphics  grDevices utils     datasets  methods   base     ',
+      '',
+      'loaded via a namespace (and not attached):',
+      '[1] compiler_4.1.2   rsconnect_0.8.29',
+      'Cookies: ',
+      '[1] "None"',
+      'GET /__api__/applications?filter=account_id:206&filter=name:testshiny&count=100&offset=0 398ms',
+      'POST /__api__/applications 118ms'
+    ]
+  },
+  {
+    type: 'Upload',
+    start: '2023-06-16 10:09:16',
+    log: [
+      '[2023-06-16 10:09:16] Inferring App mode and parameters ',
+      '[2023-06-16 10:09:16] Bundling app dir ',
+      '[2023-06-16 10:09:16] Generate manifest.json ',
+      '[2023-06-16 10:09:16] Starting to perform packrat snapshot ',
+      '',
+      'Adding these packages to packrat:',
+      '                _        ',
+      '    R6            2.5.1  ',
+      '    Rcpp          1.0.10 ',
+      '    base64enc     0.1-3  ',
+      '    bslib         0.4.2  ',
+      '    cachem        1.0.8  ',
+      '    cli           3.6.1  ',
+      '    commonmark    1.9.0  ',
+      '    crayon        1.5.2  ',
+      '    digest        0.6.31 ',
+      '    ellipsis      0.3.2  ',
+      '    fastmap       1.1.1  ',
+      '    fontawesome   0.5.1  ',
+      '    fs            1.6.2  ',
+      '    glue          1.6.2  ',
+      '    htmltools     0.5.5  ',
+      '    httpuv        1.6.10 ',
+      '    jquerylib     0.1.4  ',
+      '    jsonlite      1.8.4  ',
+      '    later         1.3.1  ',
+      '    lifecycle     1.0.3  ',
+      '    magrittr      2.0.3  ',
+      '    memoise       2.0.1  ',
+      '    mime          0.12   ',
+      '    promises      1.2.0.1',
+      '    rappdirs      0.3.3  ',
+      '    rlang         1.1.1  ',
+      '    sass          0.4.6  ',
+      '    shiny         1.7.4  ',
+      '    sourcetools   0.1.7-1',
+      '    withr         2.5.0  ',
+      '    xtable        1.8-4  ',
+      '',
+      '[2023-06-16 10:09:18] Completed performing packrat snapshot ',
+      '[2023-06-16 10:09:18] Writing Rmd index if necessary ',
+      '[2023-06-16 10:09:18] Compressing the bundle ',
+      'POST /__api__/applications/19199/upload 979ms',
+      '[2023-06-16 10:09:19] Saving deployment record for testshiny - bill.sager '
+    ]
+  },
+  {
+    type: 'Deployment',
+    start: '2023-06-16 10:09:19',
+    log: [
+      'POST /__api__/applications/19199/deploy 133ms',
+      'GET /__api__/tasks/srgHlCDZe7mXvHht?first_status=0 99ms',
+      '[Connect] Building Shiny application...',
+      '[Connect] Bundle created with R version 4.1.2 is compatible with environment Local with R version 4.1.1 from /opt/R/4.1.1/bin/R ',
+      '[Connect] Bundle requested R version 4.1.2; using /opt/R/4.1.1/bin/R which has version 4.1.1',
+      '[Connect] 2023/06/16 17:09:19.979538497 [rsc-session] Content GUID: 9b6d2ce3-9cd8-4bf3-8bd4-c2232bbea1f6',
+      '[Connect] 2023/06/16 17:09:19.979572597 [rsc-session] Content ID: 19199',
+      '[Connect] 2023/06/16 17:09:19.979582877 [rsc-session] Bundle ID: 30202',
+      'GET /__api__/tasks/srgHlCDZe7mXvHht?first_status=6 102ms',
+      '[Connect] 2023/06/16 17:09:21.119817213 Running on host: dogfood01',
+      '[Connect] 2023/06/16 17:09:21.134748818 Linux distribution: Ubuntu 18.04.4 LTS (bionic)',
+      '[Connect] 2023/06/16 17:09:21.140709401 Running as user: uid=999(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)',
+      '[Connect] 2023/06/16 17:09:21.140953121 Connect version: 2023.06.0-dev+628',
+      '[Connect] 2023/06/16 17:09:21.140960285 LANG: C.UTF-8',
+      '[Connect] 2023/06/16 17:09:21.140977312 Working directory: /opt/rstudio-connect/mnt/app',
+      '[Connect] 2023/06/16 17:09:21.141616769 Using R 4.1.1',
+      '[Connect] 2023/06/16 17:09:21.141625048 R.home(): /opt/R/4.1.1/lib/R',
+      '[Connect] 2023/06/16 17:09:21.142760379 Using user agent string: "RStudio R (4.1.1 x86_64-pc-linux-gnu x86_64 linux-gnu)" ',
+      '[Connect] 2023/06/16 17:09:21.143262437 # Validating R library read / write permissions --------------------------------',
+      '[Connect] 2023/06/16 17:09:21.147724562 Using R library for packrat bootstrap: /opt/rstudio-connect/mnt/R/4.1.1',
+      '[Connect] 2023/06/16 17:09:21.148199037 # Validating managed packrat installation --------------------------------------',
+      '[Connect] 2023/06/16 17:09:21.148669326 Vendored packrat archive: /opt/rstudio-connect/ext/R/packrat_0.9.1_91ea7f537fb69ce5706114dd8f949fa5b0820efc.tar.gz',
+      '[Connect] 2023/06/16 17:09:21.164071140 Vendored packrat SHA: 91ea7f537fb69ce5706114dd8f949fa5b0820efc',
+      '[Connect] 2023/06/16 17:09:21.170178948 Managed packrat SHA:  91ea7f537fb69ce5706114dd8f949fa5b0820efc',
+      '[Connect] 2023/06/16 17:09:21.171572555 Managed packrat version: 0.9.1',
+      '[Connect] 2023/06/16 17:09:21.172008099 Managed packrat is up-to-date.',
+      '[Connect] 2023/06/16 17:09:21.172354320 # Validating packrat cache read / write permissions ----------------------------',
+      'GET /__api__/tasks/srgHlCDZe7mXvHht?first_status=24 107ms',
+      '[Connect] 2023/06/16 17:09:21.254707168 Using packrat cache directory: /opt/rstudio-connect/mnt/packrat/4.1.1',
+      '[Connect] 2023/06/16 17:09:21.453987315 Audited package hashes with local packrat installation.',
+      '[Connect] 2023/06/16 17:09:21.468230811 Package repository URLs will be overridden with the following values:',
+      '[Connect] 2023/06/16 17:09:21.468822518 - CRAN = "https://packagemanager.posit.co/cran/__linux__/bionic/latest"',
+      '[Connect] 2023/06/16 17:09:21.468830948 - RSPM = "https://packagemanager.posit.co/cran/__linux__/bionic/latest"',
+      '[Connect] 2023/06/16 17:09:21.484662401 Using R package repositories:',
+      '[Connect] 2023/06/16 17:09:21.485066362 - CRAN = "https://packagemanager.posit.co/cran/__linux__/bionic/latest"',
+      '[Connect] 2023/06/16 17:09:21.485502548 # Installing required R packages with packrat::restore() ---------------------',
+      '[Connect] 2023/06/16 17:09:21.555970993 Installing R6 (2.5.1) ... ',
+      '[Connect] 2023/06/16 17:09:21.634397941 Using cached R6.',
+      '[Connect] 2023/06/16 17:09:21.636326451 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:21.636587338 Installing Rcpp (1.0.10) ... ',
+      '[Connect] 2023/06/16 17:09:21.705203475 Using cached Rcpp.',
+      '[Connect] 2023/06/16 17:09:21.707017485 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:21.707187138 Installing base64enc (0.1-3) ... ',
+      '[Connect] 2023/06/16 17:09:21.767995570 Using cached base64enc.',
+      '[Connect] 2023/06/16 17:09:21.769859361 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:21.770079228 Installing cli (3.6.1) ... ',
+      '[Connect] 2023/06/16 17:09:21.828393730 Using cached cli.',
+      '[Connect] 2023/06/16 17:09:21.830694203 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:21.830970788 Installing commonmark (1.9.0) ... ',
+      '[Connect] 2023/06/16 17:09:21.939481306 Using cached commonmark.',
+      '[Connect] 2023/06/16 17:09:21.941622984 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:21.941851646 Installing crayon (1.5.2) ... ',
+      '[Connect] 2023/06/16 17:09:22.010251039 Using cached crayon.',
+      '[Connect] 2023/06/16 17:09:22.012131151 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.012364357 Installing digest (0.6.31) ... ',
+      '[Connect] 2023/06/16 17:09:22.086673983 Using cached digest.',
+      '[Connect] 2023/06/16 17:09:22.088762105 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.089031064 Installing fastmap (1.1.1) ... ',
+      '[Connect] 2023/06/16 17:09:22.144217637 Using cached fastmap.',
+      '[Connect] 2023/06/16 17:09:22.146465285 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.146664712 Installing fs (1.6.2) ... ',
+      '[Connect] 2023/06/16 17:09:22.209281701 Using cached fs.',
+      '[Connect] 2023/06/16 17:09:22.211186594 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.211382788 Installing glue (1.6.2) ... ',
+      '[Connect] 2023/06/16 17:09:22.281792638 Using cached glue.',
+      '[Connect] 2023/06/16 17:09:22.284075259 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.284268960 Installing jsonlite (1.8.4) ... ',
+      'GET /__api__/tasks/srgHlCDZe7mXvHht?first_status=63 102ms',
+      '[Connect] 2023/06/16 17:09:22.360522959 Using cached jsonlite.',
+      '[Connect] 2023/06/16 17:09:22.362384794 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.362599168 Installing magrittr (2.0.3) ... ',
+      '[Connect] 2023/06/16 17:09:22.430701959 Using cached magrittr.',
+      '[Connect] 2023/06/16 17:09:22.432537728 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.432750752 Installing mime (0.12) ... ',
+      '[Connect] 2023/06/16 17:09:22.503043961 Using cached mime.',
+      '[Connect] 2023/06/16 17:09:22.505150177 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.505376733 Installing rappdirs (0.3.3) ... ',
+      '[Connect] 2023/06/16 17:09:22.575696412 Using cached rappdirs.',
+      '[Connect] 2023/06/16 17:09:22.578237951 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.578438960 Installing rlang (1.1.1) ... ',
+      '[Connect] 2023/06/16 17:09:22.651277131 Using cached rlang.',
+      '[Connect] 2023/06/16 17:09:22.653296799 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.653599630 Installing sourcetools (0.1.7-1) ... ',
+      '[Connect] 2023/06/16 17:09:22.707555884 Using cached sourcetools.',
+      '[Connect] 2023/06/16 17:09:22.709473594 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.709716772 Installing withr (2.5.0) ... ',
+      '[Connect] 2023/06/16 17:09:22.777965142 Using cached withr.',
+      '[Connect] 2023/06/16 17:09:22.780007278 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.780266290 Installing xtable (1.8-4) ... ',
+      '[Connect] 2023/06/16 17:09:22.849215227 Using cached xtable.',
+      '[Connect] 2023/06/16 17:09:22.851291680 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.851546228 Installing cachem (1.0.8) ... ',
+      '[Connect] 2023/06/16 17:09:22.908186254 Using cached cachem.',
+      '[Connect] 2023/06/16 17:09:22.910110720 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.910291733 Installing ellipsis (0.3.2) ... ',
+      '[Connect] 2023/06/16 17:09:22.974770466 Using cached ellipsis.',
+      '[Connect] 2023/06/16 17:09:22.976652782 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:22.976905966 Installing later (1.3.1) ... ',
+      '[Connect] 2023/06/16 17:09:23.083606791 Using cached later.',
+      '[Connect] 2023/06/16 17:09:23.085658318 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:23.085860408 Installing lifecycle (1.0.3) ... ',
+      '[Connect] 2023/06/16 17:09:23.154370999 Using cached lifecycle.',
+      '[Connect] 2023/06/16 17:09:23.156234920 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:23.156441233 Installing memoise (2.0.1) ... ',
+      '[Connect] 2023/06/16 17:09:23.222815720 Using cached memoise.',
+      '[Connect] 2023/06/16 17:09:23.225127928 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:23.225417665 Installing htmltools (0.5.5) ... ',
+      '[Connect] 2023/06/16 17:09:23.282362705 Using cached htmltools.',
+      '[Connect] 2023/06/16 17:09:23.284232266 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:23.284473136 Installing promises (1.2.0.1) ... ',
+      'GET /__api__/tasks/srgHlCDZe7mXvHht?first_status=105 101ms',
+      '[Connect] 2023/06/16 17:09:23.482786534 Using cached promises.',
+      '[Connect] 2023/06/16 17:09:23.484689353 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:23.484896309 Installing fontawesome (0.5.1) ... ',
+      '[Connect] 2023/06/16 17:09:23.542210074 Using cached fontawesome.',
+      '[Connect] 2023/06/16 17:09:23.544428521 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:23.547666577 Installing jquerylib (0.1.4) ... ',
+      '[Connect] 2023/06/16 17:09:23.637420285 Using cached jquerylib.',
+      '[Connect] 2023/06/16 17:09:23.639246481 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:23.639520123 Installing sass (0.4.6) ... ',
+      '[Connect] 2023/06/16 17:09:23.692442269 Using cached sass.',
+      '[Connect] 2023/06/16 17:09:23.694266283 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:23.694516432 Installing httpuv (1.6.10) ... ',
+      '[Connect] 2023/06/16 17:09:23.899251053 Using cached httpuv.',
+      '[Connect] 2023/06/16 17:09:23.900926450 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:23.901130418 Installing bslib (0.4.2) ... ',
+      '[Connect] 2023/06/16 17:09:23.983655553 Using cached bslib.',
+      '[Connect] 2023/06/16 17:09:23.985548159 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:23.985823772 Installing shiny (1.7.4) ... ',
+      '[Connect] 2023/06/16 17:09:24.072266432 Using cached shiny.',
+      '[Connect] 2023/06/16 17:09:24.074004811 OK (symlinked cache)',
+      '[Connect] 2023/06/16 17:09:24.074509643 Warning message:',
+      '[Connect] 2023/06/16 17:09:24.074701147 In packrat::restore(overwrite.dirty = TRUE, prompt = FALSE, restart = FALSE) :',
+      '[Connect] 2023/06/16 17:09:24.074707300   The most recent snapshot was generated using R version 4.1.2',
+      '[Connect] Completed packrat build against R version: "4.1.1"',
+      '[Connect] Launching Shiny application...',
+      'GET /__api__/applications/19199/config 96ms'
+    ]
+  },
+  {
+    type: 'Completion',
+    time: '',
+    log: ['Deployment completed: https://rsc.radixu.com/connect/#/apps/9b6d2ce3-9cd8-4bf3-8bd4-c2232bbea1f6']
+  }
+];
+
+// const simple = [
+//   {
+//     label: 'Satisfied customers',
+//     key: '/',
+//     children: [
+//       {
+//         label: 'Good food',
+//         key: '/Good food',
+//         children: [
+//           {
+//             label: 'Quality ingredients',
+//             key: '/Good food/Quality ingredients'
+//           },
+//           {
+//             label: 'Good recipe',
+//             key: '/Good food/Good recipe'
+//           }
+//         ]
+//       },
+//       {
+//         label: 'Good service (disabled node)',
+//         disabled: true,
+//         children: [
+//           { label: 'Prompt attention' },
+//           { label: 'Professional waiter' }
+//         ]
+//       },
+//       {
+//         label: 'Pleasant surroundings',
+//         children: [
+//           { label: 'Happy atmosphere' },
+//           { label: 'Good table presentation' },
+//           { label: 'Pleasing decor' }
+//         ]
+//       }
+//     ]
+//   }
+// ]
+
+</script>
+
+<style>
+.q-timeline__heading-title {
+  font-size: 1rem;
+  padding: unset;
+}
+.q-timeline__title {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+.terminal-container {
+  margin-left: 1rem;
+  padding: 1rem;
+  background-color: darkgray;
+  color: black;
+}
+.terminal {
+  max-width: 100%;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+</style>

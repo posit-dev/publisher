@@ -8,13 +8,13 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
-const { configure } = require('quasar/wrappers')
-const path = require('path')
+const { configure } = require('quasar/wrappers');
+const path = require('path');
 
-module.exports = configure(function (/* ctx */) {
+module.exports = configure(function(/* ctx */) {
   return {
     eslint: {
-      // fix: true,
+      fix: true,
       // include: [],
       // exclude: [],
       // rawOptions: {},
@@ -34,9 +34,7 @@ module.exports = configure(function (/* ctx */) {
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
-    css: [
-      'app.scss'
-    ],
+    css: ['app.scss'],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
     extras: [
@@ -79,17 +77,19 @@ module.exports = configure(function (/* ctx */) {
       // viteVuePluginOptions: {},
 
       vitePlugins: [
-        ['@intlify/vite-plugin-vue-i18n', {
+        [
+          '@intlify/vite-plugin-vue-i18n', {
           // if you want to use Vue I18n Legacy API, you need to set `compositionOnly: false`
           // compositionOnly: false,
 
-          // if you want to use named tokens in your Vue I18n messages, such as 'Hello {name}',
-          // you need to set `runtimeOnly: false`
-          // runtimeOnly: false,
+            // if you want to use named tokens in your Vue I18n messages, such as 'Hello {name}',
+            // you need to set `runtimeOnly: false`
+            runtimeOnly: false,
 
-          // you need to set i18n resource including paths !
-          include: path.resolve(__dirname, './src/i18n/**')
-        }]
+            // you need to set i18n resource including paths !
+            include: path.resolve(__dirname, './src/i18n/**')
+          }
+        ]
       ]
     },
 
@@ -149,9 +149,7 @@ module.exports = configure(function (/* ctx */) {
       prodPort: 3000, // The default port that the production server should use
       // (gets superseded if process.env.PORT is specified at runtime)
 
-      middlewares: [
-        'render' // keep this as last one
-      ]
+      middlewares: ['render'] // keep this as last one
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
@@ -209,12 +207,10 @@ module.exports = configure(function (/* ctx */) {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-browser-extensions/configuring-bex
     bex: {
-      contentScripts: [
-        'my-content-script'
-      ]
+      contentScripts: ['my-content-script']
 
       // extendBexScriptsConf (esbuildConf) {}
       // extendBexManifestJson (json) {}
     }
-  }
-})
+  };
+});
