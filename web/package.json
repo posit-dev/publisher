@@ -21,7 +21,7 @@
     "@vitejs/plugin-vue": "^4.0.0",
     "eslint": "^8.35.0",
     "eslint-plugin-vue": "8",
-    "vite": "^4.1.4",
+    "vite": "^4.1.5",
     "vite-jsconfig-paths": "^2.0.1",
     "vite-plugin-eslint": "^1.8.1",
     "vite-plugin-vuetify": "^1.0.2",
