@@ -1,0 +1,50 @@
+set shell := ["bash", "-uc"]
+
+export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
+# export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
+
+build target:
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "all" ]]; then
+    docker compose build
+    else
+    docker compose build {{target}}
+  fi
+
+init-connect:
+	docker compose pull connect && \
+	docker compose up -d connect
+
+run-client target:
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux" ]]; then
+    docker compose run \
+    -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
+    -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
+    -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
+    --rm --remove-orphans {{target}} just _test-client {{target}}
+  elif [[ {{target}} =~ "windows" ]]; then
+    just _test-client windows-amd64
+  elif [[ {{target}} =~ "macos" ]]; then
+    just _test-client darwin-amd64
+  fi
+
+_test-client target:
+  bats --tap -T -r ./bats/
+
+run-client-local target:
+  #!/usr/bin/env bash
+  just bats-install && \
+  BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \
+  BATS_ASSERT_LIB={{invocation_directory()}}/libs/bats-assert/load \
+  BINARY_PATH=../bin/{{target}}/connect-client \
+  ./libs/bats-core/bin/bats --tap -T -r ./bats/
+
+bats-install:
+  #!/usr/bin/env bash
+  if [[ ! -d ./libs ]]; then
+    git clone --depth=1 https://github.com/bats-core/bats-core.git ./libs/bats-core && \
+    ./libs/bats-core/install.sh ./libs/bats-core/installation && \
+    git clone --depth=1 https://github.com/ztombol/bats-support.git ./libs/bats-support && \
+    git clone --depth=1 https://github.com/ztombol/bats-assert.git ./libs/bats-assert
+  fi
