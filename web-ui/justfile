@@ -19,7 +19,7 @@ test:
     npx vitest
 
 dev:
-    quasar build
+    just install
     quasar dev
 
 clean:

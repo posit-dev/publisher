@@ -469,4 +469,4 @@ module.exports = {
     'vars-on-top': 'off',
     'wrap-iife': 'off',
   }
-}
+};

@@ -43,6 +43,7 @@ const props = withDefaults(
 );
 
 const clickCount = ref(0);
+const bill = ref(15);
 function increment() {
   clickCount.value += 1;
   return clickCount.value;
