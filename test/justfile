@@ -4,7 +4,7 @@ export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:39
 # export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
 
 test target: 
-  just run-connect cli-client {{target}} ui-client {{target}} stop
+  just run-connect cli-client {{target}} ui-client {{target}} test-cypress {{target}} stop
 
 build target:
   #!/usr/bin/env bash
@@ -19,7 +19,6 @@ test-cli target:
 
 test-cypress target:
   #!/usr/bin/env bash
-  just stop
   just ui-client {{target}}
   sleep 5
   CYPRESS_BASE_URL=$(docker logs --tail 2 {{target}}-client-ui | grep '^http.*#.*') \

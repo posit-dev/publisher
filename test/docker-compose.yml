@@ -2,6 +2,8 @@ version: '3'
 
 services:
   linux-amd64:
+    image: client
+    hostname: client
     platform: linux/amd64
     build:
       context: ./docker
@@ -10,9 +12,22 @@ services:
       - ../:/publishing-client
     environment:
       BUILD-RUNNER: "linux-amd64"
+    entrypoint: ''
+
+  linux-amd64-client-ui:
+    extends:
+      service: linux-amd64
+    container_name: linux-amd64-client-ui
+    network_mode: host
+    ports:
+      - 9999:9999
+    command:
+      ../bin/linux-amd64/connect-client account-ui --listen=localhost:9999
   
   linux-arm64:
     platform: linux/arm64
+    ports:
+      - 9999:9999
     build:
       context: ./docker
       dockerfile: linux.Dockerfile
@@ -33,3 +48,18 @@ services:
     environment:
       RSTUDIO_CONNECT_HASTE: "enabled"
       RSC_LICENSE: ${CONNECT_LICENSE}
+
+  cypress:
+    image: cypress/included:12.7.0
+    build:
+      context: ./docker
+      dockerfile: cypress.Dockerfile
+    depends_on: 
+      - linux-amd64-client-ui
+    volumes:
+      - ../:/publishing-client
+    working_dir: /publishing-client/test/
+    network_mode: host
+    environment:
+      CYPRESS_BASE_URL: ${CYPRESS_BASE_URL}
+    entrypoint: cypress run --browser chrome --env CYPRESS_BASE_URL=${CYPRESS_BASE_URL}
