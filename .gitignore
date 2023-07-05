@@ -17,6 +17,3 @@ certs/
 
 # Built Visual Studio Code Extensions
 *.vsix
-
-# Ignore quasar example code
-quasar-example/
