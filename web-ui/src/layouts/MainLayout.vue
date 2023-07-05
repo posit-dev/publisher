@@ -55,10 +55,58 @@
                 <q-checkbox
                   v-model="simulateRedeploymentMode"
                   label="Simulate redeployment view"
-                  left-label
                   dark
                 />
               </div>
+              <div class="q-pa-md row q-col-gutter-lg">
+                <div class="col-12 col-sm-6">
+                  <q-option-group
+                    v-model="destination"
+                    type="radio"
+                    :options="destinationOptions"
+                    dark
+                  >
+                    <template #label="opt">
+                      <div class="q-ma-sm q-pa-sm" style="border: solid; width: 300px; border-radius: 10px;">
+                        <q-item-label class="text-h6" style="text-transform: uppercase">{{ opt.label }}</q-item-label>
+                        <q-item-label caption> {{ opt.account }} </q-item-label>
+                        <q-item-label caption> {{ opt.server }} </q-item-label>
+                      </div>
+                    </template>
+                  </q-option-group>
+                  <div class="q-ma-sm q-pa-sm" style="border: solid; width: 300px; border-radius: 10px; margin-left: 3rem;">
+                    add new server
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <q-option-group
+                    v-model="deploymentMode"
+                    :options="deploymentModeOptions"
+                    type="radio"
+                    dark
+                    class="q-ma-lg"
+                  />
+                  <q-input
+                    v-model="title"
+                    outlined
+                    label="Title"
+                    dark
+                    class="q-ma-lg"
+                    clearable
+                  />
+                  <q-input
+                    v-model="description"
+                    outlined
+                    label="Description"
+                    autogrow
+                    dark
+                    class="q-ma-lg"
+                    clearable
+                    input-style="min-height: 5rem;"
+                  />
+                </div>
+              </div>
+
               TODO: select from previous deployments or add to existing or new targets<br>
               <br>
               User selects from a list of deployment targets:<br>
@@ -473,6 +521,46 @@ const treeEnableExcluded = ref(false);
 const simulateRedeploymentMode = ref(false);
 const filesExpanded = ref(false);
 const acknowledgeDifferences = ref(false);
+const deploymentMode = ref(null);
+const shape = ref(null);
+const title = ref('');
+const description = ref('');
+
+const deploymentModeOptions = [
+  { label: 'New deployment', value: 'new_deployment', color: 'white' },
+  { label: 'Re-deployment', value: 're_deployment', color: 'white' }
+];
+
+const destination = ref(null);
+
+const destinationOptions = [
+  {
+    value: 'op1',
+    label: 'Staging',
+    account: 'bill.sager@posit.co',
+    server: 'https://dogfood.posit.co',
+    icon: 'restaurant_menu',
+    color: 'white'
+  },
+  {
+    value: 'op2',
+    label: 'Production',
+    account: 'bill.sager@posit.co',
+    server: 'https://connect.posit.co',
+    color: 'white'
+  },
+  {
+    value: 'op3',
+    label: 'Development',
+    account: 'bill.sager@posit.co',
+    server: 'https://colorado.posit.co',
+    color: 'white'
+  }
+];
+
+const selectStaging = ref(false);
+const selectProduction = ref(false);
+const selectDevelopment = ref(false);
 
 watch(simulateRedeploymentMode, () => {
   updateDisplayRedeploymentDiffs();
