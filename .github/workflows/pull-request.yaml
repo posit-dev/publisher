@@ -44,7 +44,7 @@ jobs:
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
-          just run-client $env:CLIENT
+          just ui-client $env:CLIENT
           just test-cypress $env:CLIENT
 
   test-macos-client:
@@ -99,5 +99,5 @@ jobs:
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
           cd ${{ github.workspace }}/test
           just build ${CLIENT}
-          just run-client ${CLIENT}
+          just ui-client ${CLIENT}
           just test-cypress ${CLIENT}
