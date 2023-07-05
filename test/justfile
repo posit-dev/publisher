@@ -3,6 +3,9 @@ set shell := ["bash", "-uc"]
 export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
 # export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
 
+test target: 
+  just run-connect cli-client {{target}} ui-client {{target}} stop
+
 build target:
   #!/usr/bin/env bash
   if [[ {{target}} =~ "all" ]]; then
@@ -11,25 +14,57 @@ build target:
     docker compose build {{target}}
   fi
 
-init-connect:
-	docker compose pull connect && \
-	docker compose up -d connect
+test-cli target:
+  just cli-client {{target}}
 
-run-client target:
+test-cypress target:
   #!/usr/bin/env bash
+  just stop
+  just ui-client {{target}}
+  sleep 5
+  CYPRESS_BASE_URL=$(docker logs --tail 2 {{target}}-client-ui | grep '^http.*#.*') \
+  just cypress {{target}}
+
+ui-client target:
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux" ]]; then
+    BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
+    docker compose up -d \
+    {{target}}-client-ui
+  elif [[ {{target}} =~ "windows" ]]; then
+    just _run-ui-client windows-amd64
+  elif [[ {{target}} =~ "macos" ]]; then
+    just _run-ui-client darwin-amd64
+  fi
+
+# _run-ui-client target:
+#   $BINARY_PATH account-ui --listen=localhost:9999
+
+cypress target:
+  #!/usr/bin/env bash
+  docker compose up cypress
+
+cli-client target:
+  #!/usr/bin/env bash
+  timeout 100 bash -c \
+    'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${TARGET_SERVER}/__ping__)" != "200" ]]; \
+        do sleep 5; \
+        echo "waiting for connect..."; \
+        done'
+
   if [[ {{target}} =~ "linux" ]]; then
     docker compose run \
     -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
     -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
     -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
-    --rm --remove-orphans {{target}} just _test-client {{target}}
+    --rm --remove-orphans {{target}} just _test-cli-client {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
-    just _test-client windows-amd64
+    just _test-cli-client windows-amd64
   elif [[ {{target}} =~ "macos" ]]; then
-    just _test-client darwin-amd64
+    just _test-cli-client darwin-amd64
   fi
 
-_test-client target:
+_test-cli-client target:
   BINARY_PATH=$BINARY_PATH \
   BATS_SUPPORT_LIB=$BATS_SUPPORT_LIB \
   BATS_ASSERT_LIB=$BATS_ASSERT_LIB \
@@ -47,7 +82,17 @@ run-client-local target:
   BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \
   BATS_ASSERT_LIB={{invocation_directory()}}/libs/bats-assert/load \
   BINARY_PATH=../bin/{{target}}/connect-client \
-  ./libs/bats-core/bin/bats --tap -T -r ./bats/${BATS}
+  ./libs/bats-core/bin/bats --tap -T -r ./bats/${BATS} && \
+  docker compose down
 
 run-connect:
   docker compose up -d connect
+
+run-cypress:
+  docker compose up --exit-code-from cypress
+
+bash target:
+  docker compose run --rm {{target}} /bin/bash
+
+stop: 
+  docker compose kill

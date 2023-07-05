@@ -49,6 +49,7 @@ jobs:
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
           just run-client $env:CLIENT
+          just test-cypress $env:CLIENT
 
   test-macos-client:
     needs: build
@@ -78,6 +79,7 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just run-client ${CLIENT}
+          just test-cypress ${CLIENT}
 
   test-linux-clients:
     runs-on: ubuntu-latest
@@ -103,5 +105,7 @@ jobs:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
-          just test/build ${CLIENT}
-          just test/run-client ${CLIENT}
+          cd ${{ github.workspace }}/test
+          just build ${CLIENT}
+          just run-client ${CLIENT}
+          just test-cypress ${CLIENT}

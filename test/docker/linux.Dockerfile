@@ -1,4 +1,5 @@
 FROM ubuntu:jammy-20230425
+EXPOSE 9999
 VOLUME ${PWD}/../:/publishing-client
 WORKDIR /publishing-client/test
 
