@@ -29,6 +29,10 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           path: bin/
+      - uses: mxschmitt/action-tmate@v3
+        with: 
+          detached: true
+          limit-access-to-actor: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

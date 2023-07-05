@@ -21,8 +21,16 @@ test-cypress target:
   #!/usr/bin/env bash
   just ui-client {{target}}
   sleep 5
-  CYPRESS_BASE_URL=$(docker logs --tail 2 {{target}}-client-ui | grep '^http.*#.*') \
-  just cypress {{target}}
+  if [[ {{target}} =~ "linux" ]]; then
+    CYPRESS_BASE_URL=$(docker logs --tail 2 {{target}}-client-ui | grep '^http.*#.*') \
+    just cypress {{target}}
+  elif [[ {{target}} =~ "windows" ]]; then
+    $CYPRESS_BASE_URL = Receive-Job \
+    just cypress {{target}}
+  elif [[ {{target}} =~ "macos" ]]; then
+    CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0) \
+    just cypress {{target}}
+  fi
 
 ui-client target:
   #!/usr/bin/env bash
@@ -30,8 +38,10 @@ ui-client target:
     BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
     docker compose up -d \
     {{target}}-client-ui
-  else
-    $BINARY_PATH account-ui --listen=localhost:9999
+  elif [[ {{target}} =~ "windows" ]]; then
+    Start-Job -ScriptBlock {$BINARY_PATH account-ui --listen=localhost:9999}
+  elif [[ {{target}} =~ "macos" ]]; then
+    screen -dmL $BINARY_PATH account-ui --listen=localhost:9999
   fi
 
 # _run-ui-client target:
