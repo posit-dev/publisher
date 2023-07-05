@@ -30,10 +30,8 @@ ui-client target:
     BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
     docker compose up -d \
     {{target}}-client-ui
-  elif [[ {{target}} =~ "windows" ]]; then
-    $BINARY_PATH account-ui windows-amd64 --listen=localhost:9999
-  elif [[ {{target}} =~ "macos" ]]; then
-     $BINARY_PATH account-ui account-ui --listen=localhost:9999
+  else
+    $BINARY_PATH account-ui --listen=localhost:9999
   fi
 
 # _run-ui-client target:
