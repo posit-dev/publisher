@@ -31,9 +31,9 @@ ui-client target:
     docker compose up -d \
     {{target}}-client-ui
   elif [[ {{target}} =~ "windows" ]]; then
-    just _run-ui-client windows-amd64
+    $BINARY_PATH account-ui windows-amd64 --listen=localhost:9999
   elif [[ {{target}} =~ "macos" ]]; then
-    just _run-ui-client darwin-amd64
+     $BINARY_PATH account-ui account-ui --listen=localhost:9999
   fi
 
 # _run-ui-client target:

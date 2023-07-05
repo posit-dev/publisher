@@ -36,6 +36,16 @@ services:
     environment:
       BUILD-RUNNER: "linux-arm64"
   
+  linux-arm64-client-ui:
+    extends:
+      service: linux-arm64
+    container_name: linux-arm64-client-ui
+    network_mode: host
+    ports:
+      - 9999:9999
+    command:
+      ../bin/linux-arm64/connect-client account-ui --listen=localhost:9999
+
   connect:
     hostname: connect
     image: rstudio/rstudio-connect:jammy

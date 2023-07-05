@@ -70,7 +70,7 @@ jobs:
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
-          just run-client ${CLIENT}
+          just ui-client ${CLIENT}
           just test-cypress ${CLIENT}
 
   test-linux-clients:
