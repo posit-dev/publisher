@@ -1,0 +1,42 @@
+# will run recipes: install, lint, build and test
+default: install lint build test
+
+# update javascript/typescript dependencies
+install *args:
+    pnpm install {{ args }}
+
+# lint the source files. Use --fix as an optional argument to fix problems
+lint *args:
+    pnpm run lint {{ args }}
+    # if want to lint other file extensions, follow this example:
+    # pnpx eslint --ext .js,.ts,.vue,.cjs ./ "--fix"
+
+# build the web artifacts for the SPA (into dest/spa)
+build *args:
+    quasar build {{ args }}
+
+# build and perform unit and e2e tests
+test: build test-unit test-e2e
+    # go test -race ./...
+
+# run e2e (Cypress) tests
+test-e2e:
+    quasar test --e2e cypress
+
+# run unit tests one time
+test-unit:
+    # npx vitest run
+    quasar test --unit vitest
+
+# run unit tests in watch mode, re-running as files are changed
+test-unit-watch:
+    npx vitest
+
+# start common UX development flow. Runs install recipe ahead of starting webserver which updates automatically upon file changes
+dev:
+    just install
+    quasar dev
+
+# remove build artifacts
+clean:
+    quasar clean

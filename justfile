@@ -16,7 +16,7 @@ _uid_args := if "{{ os() }}" == "Linux" {
         ""
     }
 
-build: _web
+build: _web_build
     just _build
 
 build-dev: _web_build
@@ -28,14 +28,24 @@ certs:
 
 clean:
     rm -rf ./bin
+    just web/clean
 
 lint:
     ./scripts/fmt-check.bash
     ./scripts/ccheck.py ./scripts/ccheck.config
     go vet -all ./...
+    just web/lint
 
-run:
-    {{ _with_runner }} go run ./cmd/connect-client
+lint-fix:
+    ./scripts/fmt-check.bash
+    # This will fail even though fix flag is supplied (to fix errors).
+    # We could suppress w/ cmd || true, but do we want to?
+    ./scripts/ccheck.py ./scripts/ccheck.config --fix
+    just web/lint --fix
+    go vet -all ./...
+
+run *args:
+    {{ _with_runner }} go run ./cmd/connect-client {{ args }}
 
 test: _web
     just test-backend
@@ -52,7 +62,15 @@ _build:
 
 [private]
 _web_build:
-    just web/ build
+    # output files are written to `web/dist/spa`. Need to place these where
+    # the backend expects them to be.
+    # following line fails:
+    # [vite:esbuild] 
+    # You installed esbuild on another platform than the one you're currently using.
+    # This won't work because esbuild is written with native code and needs to
+    # install a platform-specific binary executable.
+    # {{ _with_runner }}  just web/install && just web/build
+    just web/build
 
 [private]
 _build_dev:
