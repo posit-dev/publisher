@@ -20,9 +20,6 @@ build target:
 
 start-connect:
   docker compose up -d connect
-
-cli-client target:
-  #!/usr/bin/env bash
   # wait for Connect to start
   timeout 100 bash -c \
     'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${TARGET_SERVER}/__ping__)" != "200" ]]; \
@@ -30,6 +27,9 @@ cli-client target:
         echo "waiting for connect..."; \
         done'
   
+
+cli-client target:
+  #!/usr/bin/env bash
   if [[ {{target}} =~ "linux" ]]; then
     docker compose run \
     -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
@@ -60,7 +60,7 @@ ui-client target:
     docker compose up -d \
     {{target}}-client-ui
   elif [[ {{target}} =~ "windows" ]]; then
-   $block = {& $GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe account-ui --listen=localhost:9999}
+   $block = {& $GITHUB_WORKSPACE\\bin\\artifact\\windows-amd64\\connect-client.exe account-ui --listen=localhost:9999}
    start-job -scriptblock $block
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
     screen -S client -dmL $BINARY_PATH account-ui --listen=localhost:9999
@@ -91,8 +91,6 @@ test-cypress target:
 cypress target:
   #!/usr/bin/env bash
   docker compose up cypress
-
-
 
 run-cli-local target:
   #!/usr/bin/env bash

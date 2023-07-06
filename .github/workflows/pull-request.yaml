@@ -48,6 +48,7 @@ jobs:
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
+          just cli-client $env:CLIENT
           just ui-client $env:CLIENT
           just test-cypress $env:CLIENT
 
@@ -79,8 +80,27 @@ jobs:
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
+          just cli-client ${CLIENT}
           just ui-client ${CLIENT}
           just test-cypress ${CLIENT}
+      # Videos are captured whether the suite fails or passes
+      - name: Save videos
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cypress-videos_${CLIENT}_native
+          path: test/cypress/videos
+          if-no-files-found: ignore
+
+      # Screenshots are only captured on failure
+      - name: Save screenshots
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-screenshots_${CLIENT}_native
+          path: test/cypress/screenshots
+          if-no-files-found: ignore
+
 
   test-linux-clients:
     runs-on: ubuntu-latest
@@ -108,5 +128,6 @@ jobs:
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
           cd ${{ github.workspace }}/test
           just build ${CLIENT}
+          just cli-client ${CLIENT}
           just ui-client ${CLIENT}
           just test-cypress ${CLIENT}
