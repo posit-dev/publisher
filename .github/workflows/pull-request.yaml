@@ -88,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: cypress-videos_${CLIENT}_native
+          name: cypress-videos
           path: test/cypress/videos
           if-no-files-found: ignore
 
@@ -97,7 +97,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: failure()
         with:
-          name: cypress-screenshots_${CLIENT}_native
+          name: cypress-screenshots
           path: test/cypress/screenshots
           if-no-files-found: ignore
 

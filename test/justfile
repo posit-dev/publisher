@@ -60,8 +60,7 @@ ui-client target:
     docker compose up -d \
     {{target}}-client-ui
   elif [[ {{target}} =~ "windows" ]]; then
-   $block = {& $GITHUB_WORKSPACE\\bin\\artifact\\windows-amd64\\connect-client.exe account-ui --listen=localhost:9999}
-   start-job -scriptblock $block
+   Start-Process -FilePath "$GITHUB_WORKSPACE\\bin\\artifact\\windows-amd64\\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
     screen -S client -dmL $BINARY_PATH account-ui --listen=localhost:9999
   fi
@@ -74,7 +73,7 @@ test-cypress target:
     CYPRESS_BASE_URL=$(docker logs --tail 2 {{target}}-client-ui | grep '^http.*#.*') \
     just cypress {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
-    $CYPRESS_BASE_URL=Receive-Job -Keep Job23 | grep '^http.*#.[a-z]*' \
+    $CYPRESS_BASE_URL==grep '^http.*#.[a-z]*' .\win-out.txt \
     just cypress {{target}}
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
     echo "GREP!"
@@ -90,6 +89,7 @@ test-cypress target:
 
 cypress target:
   #!/usr/bin/env bash
+  CYPRESS_BASE_URL=$CYPRESS_BASE_URL \
   docker compose up cypress
 
 run-cli-local target:
