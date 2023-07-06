@@ -4,7 +4,10 @@ export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:39
 # export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
 
 test target: 
-  just run-connect cli-client {{target}} ui-client {{target}} test-cypress {{target}} stop
+  just start-connect cli-client {{target}} ui-client {{target}} _test-cypress {{target}} stop
+
+test-local target:
+  just run-cli-local {{target}} ui-client {{target}} _test-cypress {{target}}
 
 build target:
   #!/usr/bin/env bash
@@ -14,10 +17,56 @@ build target:
     docker compose build {{target}}
   fi
 
+
+start-connect:
+  docker compose up -d connect
+
+cli-client target:
+  #!/usr/bin/env bash
+  # wait for Connect to start
+  timeout 100 bash -c \
+    'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${TARGET_SERVER}/__ping__)" != "200" ]]; \
+        do sleep 5; \
+        echo "waiting for connect..."; \
+        done'
+  
+  if [[ {{target}} =~ "linux" ]]; then
+    docker compose run \
+    -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
+    -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
+    -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
+    --rm --remove-orphans {{target}} just _test-cli-client {{target}}
+  elif [[ {{target}} =~ "windows" ]]; then
+    just _test-cli-client windows-amd64
+  elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
+    just _test-cli-client darwin-amd64
+  fi
+
+# TODO see if target is needed
+_test-cli-client target:
+  bats --tap -T -r ./bats/
+
+
+####################
+
+# TODO do we need this?
 test-cli target:
   just cli-client {{target}}
 
-test-cypress target:
+ui-client target:
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux" ]]; then
+    BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
+    docker compose up -d \
+    {{target}}-client-ui
+  elif [[ {{target}} =~ "windows" ]]; then
+   $block = {& $env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe account-ui --listen=localhost:9999}
+   start-job -scriptblock $block
+  elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
+    screen -S client -dmL $BINARY_PATH account-ui --listen=localhost:9999
+  fi
+
+_test-cypress target:
   #!/usr/bin/env bash
   just ui-client {{target}}
   sleep 5
@@ -27,22 +76,12 @@ test-cypress target:
   elif [[ {{target}} =~ "windows" ]]; then
     $CYPRESS_BASE_URL = Receive-Job \
     just cypress {{target}}
-  elif [[ {{target}} =~ "macos" ]]; then
+  elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
     CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0) \
     just cypress {{target}}
   fi
 
-ui-client target:
-  #!/usr/bin/env bash
-  if [[ {{target}} =~ "linux" ]]; then
-    BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
-    docker compose up -d \
-    {{target}}-client-ui
-  elif [[ {{target}} =~ "windows" ]]; then
-    Start-Job -ScriptBlock {$BINARY_PATH account-ui --listen=localhost:9999}
-  elif [[ {{target}} =~ "macos" ]]; then
-    screen -dmL $BINARY_PATH account-ui --listen=localhost:9999
-  fi
+
 
 # _run-ui-client target:
 #   $BINARY_PATH account-ui --listen=localhost:9999
@@ -51,33 +90,11 @@ cypress target:
   #!/usr/bin/env bash
   docker compose up cypress
 
-cli-client target:
+
+
+run-cli-local target:
   #!/usr/bin/env bash
-  timeout 100 bash -c \
-    'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${TARGET_SERVER}/__ping__)" != "200" ]]; \
-        do sleep 5; \
-        echo "waiting for connect..."; \
-        done'
-
-  if [[ {{target}} =~ "linux" ]]; then
-    docker compose run \
-    -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
-    -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
-    -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
-    --rm --remove-orphans {{target}} just _test-cli-client {{target}}
-  elif [[ {{target}} =~ "windows" ]]; then
-    just _test-cli-client windows-amd64
-  elif [[ {{target}} =~ "macos" ]]; then
-    just _test-cli-client darwin-amd64
-  fi
-
-_test-cli-client target:
-  bats --tap -T -r ./bats/
-
-run-ui-local target:
-  #!/usr/bin/env bash
-  just run-connect && \
-  
+  just start-connect && \
   just bats-install && \
   BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \
   BATS_ASSERT_LIB={{invocation_directory()}}/libs/bats-assert/load \
@@ -93,9 +110,6 @@ bats-install:
     git clone --depth=1 https://github.com/ztombol/bats-assert.git ./libs/bats-assert
   fi
 
-run-connect:
-  docker compose up -d connect
-
 run-cypress:
   docker compose up --exit-code-from cypress
 
@@ -104,3 +118,4 @@ bash target:
 
 stop: 
   docker compose kill
+  screen -S client -X quit

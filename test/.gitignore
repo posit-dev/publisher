@@ -1,1 +1,3 @@
 libs/
+cypress/screenshots
+cypress/videos
