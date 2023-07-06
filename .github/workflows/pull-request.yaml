@@ -64,6 +64,7 @@ jobs:
         with: 
           detached: true
           limit-access-to-actor: true
+      - uses: docker-practice/actions-setup-docker@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
