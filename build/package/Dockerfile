@@ -1,7 +1,8 @@
+# To build and run shell: `docker run -it $(docker build -q .)` from within `build/package` subdirectory
 FROM centos:7
 
 RUN yum update -y \
-    && yum install -y curl git openssl mailcap tzdata xz nodejs \
+    && yum install -y curl git openssl mailcap tzdata xz nodejs xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GConf2 nss libXScrnSaver alsa-lib \
     && yum groupinstall -y "Development Tools"
 
 RUN export GOLANG_VERSION=1.20.4 \
@@ -38,5 +39,6 @@ ENV PATH="$PATH:/root/.local/share/pnpm"
 ENV PNPM_HOME="/root/.local/share/pnpm"
 
 # quasar CLI
-RUN pnpm install -g @quasar/cli 
+# hardcoding to npm for now (instead of pnpm)
+RUN npm install -g @quasar/cli 
 RUN quasar --version

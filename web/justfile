@@ -1,26 +1,50 @@
+
+# which package manager to use: [pnpm or npm], and [pnpx or npx]
+# NOTE: pnpm will not work w/ a docker container, mounted on top of
+# the native file system. In this case the following line fails:
+# [vite:esbuild]
+# You installed esbuild on another platform than the one you're currently using.
+# This won't work because esbuild is written with native code and needs to
+# install a platform-specific binary executable.
+_package_manager := "npm"
+_package_manager_exec := "npx"
+
 # will run recipes: install, lint, build and test
-default: install lint build test
+default:
+    just install
+    just lint
+    just build
+    just test
 
 # update javascript/typescript dependencies
-install *args:
-    pnpm install {{ args }}
+install:
+    {{ _package_manager }} install --no-audit
 
-# lint the source files. Use --fix as an optional argument to fix problems
-lint *args:
-    pnpm run lint {{ args }}
+# lint the source files, do not fix the fixable items
+lint:
+    {{ _package_manager }} run lint
     # if want to lint other file extensions, follow this example:
+    # pnpx eslint --ext .js,.ts,.vue,.cjs ./
+
+# lint the source files, fix the fixable items
+lint-fix:
+    {{ _package_manager }} run lint --fix
+    # if want to lint & fix other file extensions, follow this example:
     # pnpx eslint --ext .js,.ts,.vue,.cjs ./ "--fix"
 
 # build the web artifacts for the SPA (into dest/spa)
-build *args:
-    quasar build {{ args }}
+build:
+    quasar build
 
-# build and perform unit and e2e tests
-test: build test-unit test-e2e
-    # go test -race ./...
+# perform unit and e2e tests
+test: test-unit test-e2e
+    go test -race ./...
 
 # run e2e (Cypress) tests
 test-e2e:
+    # install cypress
+    npx cypress install
+    # run the tests
     quasar test --e2e cypress
 
 # run unit tests one time
@@ -30,13 +54,16 @@ test-unit:
 
 # run unit tests in watch mode, re-running as files are changed
 test-unit-watch:
-    npx vitest
+    {{ _package_manager_exec }} vitest
 
 # start common UX development flow. Runs install recipe ahead of starting webserver which updates automatically upon file changes
 dev:
-    just install
     quasar dev
 
-# remove build artifacts
+# remove build artifacts and dependencies
 clean:
+    # Need to install, to be sure we can run quasar CLI command of "clean", which is satisfied only via local node_modules
+    just install
     quasar clean
+    rm -rd node_modules
+

@@ -1,4 +1,5 @@
-default: clean lint test build
+# Clean, install, lint, build and test server & client
+default: clean install lint build post-build-lint test
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
@@ -16,61 +17,73 @@ _uid_args := if "{{ os() }}" == "Linux" {
         ""
     }
 
-build: _web_build
+# Build both the web UX and server for production usage
+build: 
+    {{ _with_runner }} just web/build
     just _build
 
-build-dev: _web_build
+# Build the production web UX and the development server
+build-dev: 
+    {{ _with_runner }} just web/build
     just _build_dev
 
+# Install any supporting packages (such as web UX javascript/typescript dependencies)
+install:
+    {{ _with_runner }} just web/install
+
+# Build the web UX from scratch, lint and test
+web:
+    {{ _with_runner }} just web/clean
+    {{ _with_runner }} just web/
+
+# create the security certificates
 certs:
     mkdir -p certs
     mkcert -cert-file ./certs/localhost-cert.pem -key-file ./certs/localhost-key.pem localhost 127.0.0.1 ::1 0.0.0.0
 
+# Clean the server and web UX build artifacts as well as removing all web UX dependency packages
 clean:
     rm -rf ./bin
-    just web/clean
+    {{ _with_runner }} just web/clean
 
+# Lint the server and the web UX source code, along with checking for copyrights. See `post-build-lint` recipe for linting which requires a build.
 lint:
     ./scripts/fmt-check.bash
     ./scripts/ccheck.py ./scripts/ccheck.config
-    go vet -all ./...
-    just web/lint
+    {{ _with_runner }} just web/lint
 
+# Lint and FIX automatically correctable issues. See `lint` for linting without fixing.
 lint-fix:
-    ./scripts/fmt-check.bash
+    {{ _with_runner }} ./scripts/fmt-check.bash
     # This will fail even though fix flag is supplied (to fix errors).
     # We could suppress w/ cmd || true, but do we want to?
-    ./scripts/ccheck.py ./scripts/ccheck.config --fix
-    just web/lint --fix
+    {{ _with_runner }} ./scripts/ccheck.py ./scripts/ccheck.config --fix
+    {{ _with_runner }} just web/lint --fix
+
+# Lint step which requires the code be built first. Normally want to lint prior to building.
+post-build-lint:
     go vet -all ./...
 
+# Run the publishing client executable
 run *args:
     {{ _with_runner }} go run ./cmd/connect-client {{ args }}
 
-test: _web
+# Run all tests (unit and e2e) on the publishing client as well as web UX
+test:
+    {{ _with_runner }} just web/test
     just test-backend
 
+# Run the tests on the publishing client w/ coverage profiling
 test-backend:
     {{ _with_runner }} go test ./... -covermode set -coverprofile cover.out
 
+# Profile the test code coverage of the Go code
 go-coverage: test-backend
     go tool cover -html=cover.out
 
 [private]
 _build:
     {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client
-
-[private]
-_web_build:
-    # output files are written to `web/dist/spa`. Need to place these where
-    # the backend expects them to be.
-    # following line fails:
-    # [vite:esbuild] 
-    # You installed esbuild on another platform than the one you're currently using.
-    # This won't work because esbuild is written with native code and needs to
-    # install a platform-specific binary executable.
-    # {{ _with_runner }}  just web/install && just web/build
-    just web/build
 
 [private]
 _build_dev:
@@ -103,11 +116,9 @@ _image:
         ./build/package
 
 [private]
-_web:
-    just web/
-
-[private]
-_with_docker *args: _image
+_with_docker *args: 
+    echo "DOCKER environment variable value: ${DOCKER}"
+    just _image
     docker run --rm {{ _interactive }} \
         -e GOCACHE=/work/.cache/go/cache \
         -e GOMODCACHE=/work/.cache/go/mod \
