@@ -17,45 +17,6 @@ _uid_args := if "{{ os() }}" == "Linux" {
     }
 
 build: _web
-    just _build
-
-build-dev: _web_build
-    just _build_dev
-
-certs:
-    mkdir -p certs
-    mkcert -cert-file ./certs/localhost-cert.pem -key-file ./certs/localhost-key.pem localhost 127.0.0.1 ::1 0.0.0.0
-
-clean:
-    rm -rf ./bin
-
-lint:
-    ./scripts/fmt-check.bash
-    ./scripts/ccheck.py ./scripts/ccheck.config
-    go vet -all ./...
-
-run:
-    {{ _with_runner }} go run ./cmd/connect-client
-
-test: _web
-    just test-backend
-
-test-backend:
-    {{ _with_runner }} go test ./... -covermode set -coverprofile cover.out
-
-go-coverage: test-backend
-    go tool cover -html=cover.out
-
-[private]
-_build:
-    {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client
-
-[private]
-_web_build:
-    just web/ build
-
-[private]
-_build_dev:
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -75,6 +36,30 @@ _build_dev:
     fi
 
     {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client "$os/$arch"
+
+certs:
+    mkdir -p certs
+    mkcert -cert-file ./certs/localhost-cert.pem -key-file ./certs/localhost-key.pem localhost 127.0.0.1 ::1 0.0.0.0
+
+clean:
+    rm -rf ./bin
+
+lint:
+    ./scripts/fmt-check.bash
+    ./scripts/ccheck.py ./scripts/ccheck.config
+    go vet -all ./...
+
+run *args:
+    {{ _with_runner }} go run ./cmd/connect-client {{ args }}
+
+test: _web
+    {{ _with_runner }} \
+        go test ./... -covermode set -coverprofile cover.out \
+        && go tool cover -html=cover.out -o coverage.html
+
+[private]
+_build:
+    {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client
 
 [private]
 _image:

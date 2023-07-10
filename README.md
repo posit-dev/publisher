@@ -22,7 +22,7 @@ Connect Client is an application for interfacing with Posit Connect.
 These instructions will give you a copy of the project up and running on
 your local machine for development and testing purposes.
 
-### Prerequisites
+## Prerequisites
 
 - [Just](https://just.systems)
 - [Docker](https://www.docker.com)
@@ -33,7 +33,7 @@ If you are using an Apple Silicon (M1) laptop, you may need to set the following
 export DOCKER_DEFAULT_PLATFORM=linux/amd64
 ```
 
-### Running
+## Running
 
 ```shell
 just run
