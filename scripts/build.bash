@@ -9,11 +9,10 @@ if [[ -z "$package" ]]; then
 fi
 
 package_name=$(basename "$package")
+platforms=("$(go env GOOS)/$(go env GOARCH)")
 version=$(git describe --always --tags)
 
-if [[ -n "$2" ]]; then
-    platforms=("$2")
-else
+if [ "$CI" = "true" ]; then
     platforms=(
         "darwin/amd64"
         "darwin/arm64"

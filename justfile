@@ -17,25 +17,7 @@ _uid_args := if "{{ os() }}" == "Linux" {
     }
 
 build: _web
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    # translate `just` os/arch strings to the ones `go build` expects
-    os="{{ os() }}"
-    arch="{{ arch() }}"
-
-    # windows and linux strings match
-    if [[ "$os" == "macos" ]]; then
-        os=darwin
-    fi
-
-    if [[ "$arch" == "x86_64" ]]; then
-        arch=amd64
-    elif [[ "$arch" == "aarch64" ]]; then
-        arch=arm64
-    fi
-
-    {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client "$os/$arch"
+    {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client
 
 certs:
     mkdir -p certs
@@ -58,10 +40,6 @@ test: _web
         && go tool cover -html=cover.out -o coverage.html
 
 [private]
-_build:
-    {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client
-
-[private]
 _image:
     docker build \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -76,6 +54,7 @@ _web:
 [private]
 _with_docker *args: _image
     docker run --rm {{ _interactive }} \
+        -e CI="${CI:-false}" \
         -e GOCACHE=/work/.cache/go/cache \
         -e GOMODCACHE=/work/.cache/go/mod \
         -v "$(pwd)":/work \
