@@ -32,12 +32,6 @@ RUN export JUST_VERSION=1.13.0 \
 RUN yum install -y http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 RUN yum install -y npm
 
-# pnpm
-RUN export PNPM_VERSION=8.6.6 \
-&& curl -fsSL https://get.pnpm.io/install.sh | sh -
-ENV PATH="$PATH:/root/.local/share/pnpm"
-ENV PNPM_HOME="/root/.local/share/pnpm"
-
 # quasar CLI
 # hardcoding to npm for now (instead of pnpm)
 RUN npm install -g @quasar/cli 

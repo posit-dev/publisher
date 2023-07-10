@@ -18,7 +18,7 @@ default:
 
 # update javascript/typescript dependencies
 install:
-    {{ _package_manager }} install --no-audit
+    export CYPRESS_CACHE_FOLDER="/work/web/test/cypress/.cache" && {{ _package_manager }} install --no-audit
 
 # lint the source files, do not fix the fixable items
 lint:
