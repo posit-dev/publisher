@@ -14,15 +14,17 @@ jobs:
       - uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: image
+      - name: build docker image
         run: just image
-      - name: lint
+      - name: install dependencies
+        run: just install
+      - name: lint the source files
         run: just lint
-      - name: build
+      - name: build the CLI client and Web UX
         run: just build
-      - name: post-build-lint
+      - name: lint the build dependent files
         run: just post-build-lint
-      - name: test
+      - name: run all tests
         run: just test
       - uses: actions/upload-artifact@v3
         with:
