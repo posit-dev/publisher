@@ -41,7 +41,7 @@ certs:
     mkdir -p certs
     mkcert -cert-file ./certs/localhost-cert.pem -key-file ./certs/localhost-key.pem localhost 127.0.0.1 ::1 0.0.0.0
 
-# Clean the server and web UX build artifacts as well as remove all web UX dependency packages
+# Clean the server and web UX build artifacts as well as remove all web UX dependency packages.
 clean:
     rm -rf ./bin
     {{ _with_runner }} just web/clean
