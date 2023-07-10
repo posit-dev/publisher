@@ -37,11 +37,15 @@ export DOCKER_DEFAULT_PLATFORM=linux/amd64
 
 #### Building and Testing
 
-One command to build / test everything (server and client UX)
+Build the DOCKER image:
+- **NOTE:** If you are not using docker (by setting the DOCKER environment variable to "false"), you can skip this step.
+- `just image`
+
+Then... One command to build / test everything (server and client UX)
 `just`
 
-Other recipes can be found by executing `just --list`:
-
+Other recipes can be found by executing `just --list` for the top level project
+```
 build            -- Args: # Build both the web UX and server for production usage
 build-dev        -- Args: # Build the production web UX and the development server
 certs            -- Args: # create the security certificates
@@ -56,8 +60,23 @@ run              -- Args: *args       # Run the publishing client executable
 test             -- Args: # Run all tests (unit and e2e) on the publishing client as well as web UX
 test-backend     -- Args: # Run the tests on the publishing client w/ coverage profiling
 web              -- Args: # Build the web UX from scratch, lint and test
+```
 
-
+Web recipes can be found by changing your working directory to `web` and executing `just --list`:
+```
+Available recipes:
+    build           # build the web artifacts for the SPA (into dest/spa)
+    clean           # remove build artifacts and dependencies
+    default         # will run recipes: install, lint, build, and test
+    dev             # start common UX development flow. Runs install recipe ahead of starting the web server which updates automatically upon file changes
+    install         # update javascript/typescript dependencies
+    lint            # lint the source files, do not fix the fixable items
+    lint-fix        # lint the source files, fix the fixable items
+    test            # perform unit and e2e tests
+    test-e2e        # run e2e (Cypress) tests
+    test-unit       # run unit tests one time
+    test-unit-watch # run unit tests in watch mode, re-running as files are changed
+```
 
 ## Contributing
 

@@ -16,7 +16,7 @@ on:
 #
 
 jobs:
-  build:
+  pr-code-validation:
     runs-on: ubuntu-latest
     defaults:
       run:
