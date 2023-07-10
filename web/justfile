@@ -9,7 +9,7 @@
 _package_manager := "npm"
 _package_manager_exec := "npx"
 
-# will run recipes: install, lint, build and test
+# will run recipes: install, lint, build, and test
 default:
     just install
     just lint
@@ -56,7 +56,7 @@ test-unit:
 test-unit-watch:
     {{ _package_manager_exec }} vitest
 
-# start common UX development flow. Runs install recipe ahead of starting webserver which updates automatically upon file changes
+# start common UX development flow. Runs install recipe ahead of starting the web server which updates automatically upon file changes
 dev:
     quasar dev
 

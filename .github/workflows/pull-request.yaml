@@ -12,6 +12,7 @@ jobs:
       - uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CYPRESS_CACHE_FOLDER: work/web/test/cypress/.cache
       - name: build and test
         run: just
       - uses: actions/upload-artifact@v3

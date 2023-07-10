@@ -41,18 +41,18 @@ certs:
     mkdir -p certs
     mkcert -cert-file ./certs/localhost-cert.pem -key-file ./certs/localhost-key.pem localhost 127.0.0.1 ::1 0.0.0.0
 
-# Clean the server and web UX build artifacts as well as removing all web UX dependency packages
+# Clean the server and web UX build artifacts as well as remove all web UX dependency packages
 clean:
     rm -rf ./bin
     {{ _with_runner }} just web/clean
 
-# Lint the server and the web UX source code, along with checking for copyrights. See `post-build-lint` recipe for linting which requires a build.
+# Lint the server and the web UX source code, along with checking for copyrights. See the `post-build-lint` recipe for linting which requires a build.
 lint:
     ./scripts/fmt-check.bash
     ./scripts/ccheck.py ./scripts/ccheck.config
     {{ _with_runner }} just web/lint
 
-# Lint and FIX automatically correctable issues. See `lint` for linting without fixing.
+# Lint and FIX automatically correctable issues. See the `lint` recipe for linting without fixing.
 lint-fix:
     {{ _with_runner }} ./scripts/fmt-check.bash
     # This will fail even though fix flag is supplied (to fix errors).
@@ -60,7 +60,7 @@ lint-fix:
     {{ _with_runner }} ./scripts/ccheck.py ./scripts/ccheck.config --fix
     {{ _with_runner }} just web/lint --fix
 
-# Lint step which requires the code be built first. Normally want to lint prior to building.
+# Lint step which requires the code to be built first. Normally want to lint prior to building.
 post-build-lint:
     go vet -all ./...
 
