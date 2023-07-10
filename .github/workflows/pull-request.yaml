@@ -15,7 +15,7 @@ jobs:
       - name: build and test
         run: just
         env:
-          CYPRESS_CACHE_FOLDER: work/web/test/cypress/.cache
+          CYPRESS_CACHE_FOLDER: /work/web/test/cypress/.cache
       - uses: actions/upload-artifact@v3
         with:
           path: bin/
