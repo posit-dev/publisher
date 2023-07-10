@@ -18,7 +18,7 @@ default:
 
 # update javascript/typescript dependencies
 install:
-    export CYPRESS_CACHE_FOLDER="/work/web/test/cypress/.cache" && {{ _package_manager }} install --no-audit
+    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache" && {{ _package_manager }} install --no-audit
 
 # lint the source files, do not fix the fixable items
 lint:
@@ -43,9 +43,9 @@ test: test-unit test-e2e
 # run e2e (Cypress) tests
 test-e2e:
     # install cypress
-    npx cypress install
+    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache" && npx cypress install
     # run the tests
-    quasar test --e2e cypress
+    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache" && quasar test --e2e cypress
 
 # run unit tests one time
 test-unit:

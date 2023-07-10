@@ -1,3 +1,15 @@
+# A note on debugging a github step:
+#   You can ssh into the github action environment and poke around by using
+#   https://github.com/marketplace/actions/debugging-with-tmate
+#   Use `limit-access-to-actor: true` so only you can ssh into the environment!
+#  
+#   For example, add this to the jobs list near the end
+# - name: Setup tmate session
+#   if: ${{ failure() }}
+#   uses: mxschmitt/action-tmate@v3
+#   with:
+#     limit-access-to-actor: true
+
 name: Pull Request
 on:
   pull_request
