@@ -81,6 +81,14 @@ test-backend:
 go-coverage: test-backend
     go tool cover -html=cover.out
 
+# Build the image. Typically does not need to be done very often.
+image:
+    docker build \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --pull \
+        --tag {{ _tag }} \
+        ./build/package
+
 [private]
 _build:
     {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client
@@ -108,16 +116,7 @@ _build_dev:
     {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client "$os/$arch"
 
 [private]
-_image:
-    docker build \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --pull \
-        --tag {{ _tag }} \
-        ./build/package
-
-[private]
 _with_docker *args: 
-    just _image
     docker run --rm {{ _interactive }} \
         -e GOCACHE=/work/.cache/go/cache \
         -e GOMODCACHE=/work/.cache/go/mod \

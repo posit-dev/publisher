@@ -18,7 +18,13 @@ default:
 
 # update javascript/typescript dependencies
 install:
-    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache" && {{ _package_manager }} install --no-audit
+    #!/bin/bash
+    set -euo pipefail
+
+    # set this environment variable to keep Cypress from attempting to create
+    # cache within root's home dir.
+    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
+    {{ _package_manager }} install --no-audit
 
 # lint the source files, do not fix the fixable items
 lint:
@@ -42,10 +48,16 @@ test: test-unit test-e2e
 
 # run e2e (Cypress) tests
 test-e2e:
+    #!/bin/bash
+    set -euo pipefail
+
+    # set this environment variable to keep Cypress from attempting to create
+    # cache within root's home dir.
+    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
     # install cypress
-    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache" && npx cypress install
+    npx cypress install
     # run the tests
-    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache" && quasar test --e2e cypress
+    quasar test --e2e cypress
 
 # run unit tests one time
 test-unit:
@@ -62,8 +74,12 @@ dev:
 
 # remove build artifacts and dependencies
 clean:
-    # Need to install, to be sure we can run quasar CLI command of "clean", which is satisfied only via local node_modules
-    just install
-    quasar clean
-    rm -rd node_modules
-
+    # not using quasar clean, as it would require us to have node_modules fully installed. Instead, performing what
+    # it said it was doing...
+    # quasar clean
+    # App • Cleaned build artifact: "/work/web/.quasar"
+    # App • Emptied dist folder
+    # App • Done cleaning build artifacts
+    rm -rdf .quasar
+    rm -rdf dist/spa
+    rm -rdf node_modules

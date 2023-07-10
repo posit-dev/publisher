@@ -14,10 +14,16 @@ jobs:
       - uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Test
-        run: just test
-      - name: Build
+      - name: image
+        run: just image
+      - name: lint
+        run: just lint
+      - name: build
         run: just build
+      - name: post-build-lint
+        run: just post-build-lint
+      - name: test
+        run: just test
       - uses: actions/upload-artifact@v3
         with:
           path: bin/
