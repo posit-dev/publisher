@@ -12,10 +12,8 @@ jobs:
       - uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Test
-        run: just test
-      - name: Build
-        run: just build
+      - name: build and test
+        run: just
       - uses: actions/upload-artifact@v3
         with:
           path: bin/

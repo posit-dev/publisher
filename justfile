@@ -1,5 +1,5 @@
-# Clean, install, lint, build and test server & client
-default: clean install lint build post-build-lint test
+# install, lint, build and test server & client (pre-run 'clean' if switching between use of DOCKER containers)
+default: install lint build post-build-lint test
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
