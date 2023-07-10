@@ -117,7 +117,6 @@ _image:
 
 [private]
 _with_docker *args: 
-    echo "DOCKER environment variable value: ${DOCKER}"
     just _image
     docker run --rm {{ _interactive }} \
         -e GOCACHE=/work/.cache/go/cache \
