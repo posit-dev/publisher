@@ -13,7 +13,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Test
-        run: just test
+        run: |
+          just web/ test
+          just test
       - name: Build
         run: just build
       - uses: actions/upload-artifact@v3

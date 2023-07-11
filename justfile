@@ -50,7 +50,6 @@ _image:
 
 [private]
 _web:
-    just web/ install
     just web/ build
 
 [private]

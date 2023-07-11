@@ -3,13 +3,13 @@ default: install lint test build
 install *args:
     yarn install {{ args }}
 
-lint *args:
+lint *args: install
     yarn lint {{ args }}
 
-build *args:
+build *args: install
     yarn build {{ args }}
 
-test: build
+test: install
     yarn test
     go test -race ./...
 
