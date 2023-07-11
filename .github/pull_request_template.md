@@ -11,7 +11,7 @@
 <!-- What types of changes does your code introduce? Put an `x` in all the boxes that apply. -->
 <!-- If you check more than one box, you may need to refactor this change into separate pull requests -->
 
-- [ ] Bug Fix           <!-- A change which fixes an existing issue --> 
+- [ ] Bug Fix           <!-- A change which fixes an existing issue -->
 - [ ] New Feature       <!-- A change which adds additional functionality -->
 - [ ] Breaking Change   <!-- A breaking change which causes existing functionality to change -->
 
@@ -30,4 +30,3 @@
 <!--- Go over all the following points, and put an `x` in all the boxes that apply: -->
 <!--- If you need clarification on any of these, feel free to ask. We're here to help! -->
 - [ ] I have updated [CHANGELOG.md](../CHANGELOG.md) to cover notable changes.
-- [ ] I have updated all related GitHub issues to reflect their current state.
