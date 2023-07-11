@@ -1,5 +1,7 @@
 default: clean lint test build
 
+ci := "${CI:-false}"
+
 _interactive := `tty -s && echo "-it" || echo ""`
 
 _tag := "rstudio/connect-client:latest"
@@ -35,9 +37,8 @@ run *args:
     {{ _with_runner }} go run ./cmd/connect-client {{ args }}
 
 test: _web
-    {{ _with_runner }} \
-        go test ./... -covermode set -coverprofile cover.out \
-        && go tool cover -html=cover.out -o coverage.html
+    {{ _with_runner }} go test ./... -covermode set -coverprofile cover.out
+    {{ _with_runner }} go tool cover -html=cover.out -o coverage.html
 
 [private]
 _image:
@@ -49,12 +50,12 @@ _image:
 
 [private]
 _web:
-    just web/
+    just web/ build
 
 [private]
 _with_docker *args: _image
     docker run --rm {{ _interactive }} \
-        -e CI="${CI:-false}" \
+        -e CI={{ ci }} \
         -e GOCACHE=/work/.cache/go/cache \
         -e GOMODCACHE=/work/.cache/go/mod \
         -v "$(pwd)":/work \
