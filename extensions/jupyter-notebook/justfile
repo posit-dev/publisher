@@ -1,0 +1,70 @@
+
+version := `python setup.py --version 2>/dev/null || echo 'NOTSET'`
+bdist_wheel := "dist/connect_jupyternb-" + version + "-py2.py3-none-any.whl"
+jupyter_log_level := "INFO"
+image := "rstudio/connect_jupyternb"
+
+# NOTE: See the `dist` target for why this exists.
+export SOURCE_DATE_EPOCH := `date +%s`
+
+export PYTHONPATH := justfile_directory()
+
+all: clean env dist install run
+
+clean:
+	rm -rf build/ dist/ env/ connect_jupyternb.egg-info/
+
+env:
+    #!/bin/bash
+    python3 -m venv ./env
+    . env/bin/activate
+    python -m pip install -U black flake8 pip twine wheel
+
+install:
+    #!/bin/bash
+    . env/bin/activate
+    pip install -e .
+    jupyter nbextension uninstall connect_jupyternb || true
+    jupyter nbextension install --symlink --user --py connect_jupyternb
+    jupyter nbextension enable --py connect_jupyternb
+    jupyter serverextension enable --py connect_jupyternb
+
+# NOTE: Wheels won't get built if _any_ file it tries to touch has a timestamp
+# before 1980 (system files) so the $(SOURCE_DATE_EPOCH) current timestamp is
+# exported as a point of reference instead.
+dist:
+    #!/bin/bash
+    . env/bin/activate
+    rm -vf dist/*.whl
+    python setup.py bdist_wheel
+    twine check {{bdist_wheel}}
+    rm -vf dist/*.egg
+    rm -rvf connect_jupyternb.egg-info
+
+run:
+    #!/bin/bash
+    . env/bin/activate
+    jupyter notebook -y \
+        --log-level={{jupyter_log_level}}
+
+yarn:
+	yarn install
+
+lint: lint-js lint-py
+
+lint-js:
+	npm run lint
+
+lint-py:
+    #!/bin/bash
+    . env/bin/activate
+    black --check --diff ./connect_jupyternb
+    flake8 ./connect_jupyternb
+
+fmt:
+    #!/bin/bash
+    . env/bin/activate
+    black ./connect_jupyternb
+
+version:
+	echo {{version}}
