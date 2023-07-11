@@ -66,7 +66,7 @@ lint-fix:
     # This will fail even though fix flag is supplied (to fix errors).
     # We could suppress w/ cmd || true, but do we want to?
     {{ _with_runner }} ./scripts/ccheck.py ./scripts/ccheck.config --fix
-    {{ _with_runner }} just web/lint --fix
+    {{ _with_runner }} just web/lint-fix
 
 # Lint step which requires the code to be built first. Normally want to lint prior to building.
 post-build-lint:
