@@ -10,11 +10,7 @@ _package_manager := "npm"
 _package_manager_exec := "npx"
 
 # will run recipes: install, lint, build, and test
-default:
-    just install
-    just lint
-    just build
-    just test
+default: install lint build test
 
 # update javascript/typescript dependencies
 install:
