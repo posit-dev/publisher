@@ -21,7 +21,16 @@ lint-fix:
 
 # build the web artifacts for the SPA (into dest/spa)
 build:
-    quasar build
+    #!/bin/bash
+    set -euo pipefail
+
+    if ! quasar build; then
+     echo ""
+     echo "The build has failed."
+     echo "If you encountered the error: 'Global Quasar CLI • ⚠️   Error  Unknown command \"build\"'"
+     echo "Try running 'just install' and then retrying your build command."
+     exit 1
+    fi
 
 # perform unit and e2e tests
 test: test-unit test-e2e

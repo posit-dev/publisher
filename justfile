@@ -27,11 +27,10 @@ build-dev:
     #!/bin/bash
     set -euo pipefail
 
-    if just _build_dev; then
-      echo ""
-    else
+    if ! just _build_dev; then
      echo ""
-     echo "A WEB build is required for the backend to build. Possibly run 'just web/build' and try again."
+     echo "A WEB build is required for the backend to build. Possibly resolve with 'just web/build' or 'just build'."
+     exit 1
     fi
 
 
