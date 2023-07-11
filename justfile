@@ -24,8 +24,16 @@ build:
 
 # Build the production web UX and the development server
 build-dev: 
-    {{ _with_runner }} just web/build
-    just _build_dev
+    #!/bin/bash
+    set -euo pipefail
+
+    if just _build_dev; then
+      echo ""
+    else
+     echo ""
+     echo "A WEB build is required for the backend to build. Possibly run 'just web/build' and try again."
+    fi
+
 
 # Install any supporting packages (such as web UX javascript/typescript dependencies)
 install:
