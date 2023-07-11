@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -23,12 +24,12 @@ func TestStaticHTMLDetectorSuite(t *testing.T) {
 
 func (s *StaticHTMLDetectorSuite) TestInferTypeSpecifiedFile() {
 	filename := "myfile.html"
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, filename, []byte("<html></html>\n"), 0600)
+	path := util.NewPath(filename, afero.NewMemMapFs())
+	err := path.WriteFile([]byte("<html></html>\n"), 0600)
 	s.Nil(err)
 
 	detector := NewStaticHTMLDetector()
-	t, err := detector.InferType(fs, filename)
+	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
 		AppMode:    apptypes.StaticMode,
@@ -38,12 +39,12 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeSpecifiedFile() {
 
 func (s *StaticHTMLDetectorSuite) TestInferTypePreferredFilename() {
 	filename := "index.html"
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, filename, []byte("<html></html>\n"), 0600)
+	path := util.NewPath(".", afero.NewMemMapFs())
+	err := path.Join(filename).WriteFile([]byte("<html></html>\n"), 0600)
 	s.Nil(err)
 
 	detector := NewStaticHTMLDetector()
-	t, err := detector.InferType(fs, ".")
+	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
 		AppMode:    apptypes.StaticMode,
@@ -53,12 +54,12 @@ func (s *StaticHTMLDetectorSuite) TestInferTypePreferredFilename() {
 
 func (s *StaticHTMLDetectorSuite) TestInferTypeOnlyHTMLFile() {
 	filename := "myfile.html"
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, filename, []byte("<html></html>\n"), 0600)
+	path := util.NewPath(".", afero.NewMemMapFs())
+	err := path.Join(filename).WriteFile([]byte("<html></html>\n"), 0600)
 	s.Nil(err)
 
 	detector := NewStaticHTMLDetector()
-	t, err := detector.InferType(fs, ".")
+	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
 		AppMode:    apptypes.StaticMode,
@@ -69,10 +70,11 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeOnlyHTMLFile() {
 func (s *StaticHTMLDetectorSuite) TestInferTypeEntrypointHTMLErr() {
 	inferrer := &MockInferenceHelper{}
 	testError := errors.New("test error from InferEntrypoint")
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, ".html", mock.Anything).Return("", "", testError)
+	inferrer.On("InferEntrypoint", mock.Anything, ".html", mock.Anything).Return("", util.Path{}, testError)
 
 	detector := StaticHTMLDetector{inferrer}
-	t, err := detector.InferType(utiltest.NewMockFs(), ".")
+	path := util.NewPath(".", utiltest.NewMockFs())
+	t, err := detector.InferType(path)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.Nil(t)
@@ -81,11 +83,12 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeEntrypointHTMLErr() {
 func (s *StaticHTMLDetectorSuite) TestInferTypeEntrypointHTMErr() {
 	inferrer := &MockInferenceHelper{}
 	testError := errors.New("test error from InferEntrypoint")
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, ".html", mock.Anything).Return("", "", nil)
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, ".htm", mock.Anything).Return("", "", testError)
+	inferrer.On("InferEntrypoint", mock.Anything, ".html", mock.Anything).Return("", util.Path{}, nil)
+	inferrer.On("InferEntrypoint", mock.Anything, ".htm", mock.Anything).Return("", util.Path{}, testError)
 
 	detector := StaticHTMLDetector{inferrer}
-	t, err := detector.InferType(utiltest.NewMockFs(), ".")
+	path := util.NewPath(".", utiltest.NewMockFs())
+	t, err := detector.InferType(path)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.Nil(t)

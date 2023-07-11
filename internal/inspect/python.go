@@ -4,7 +4,7 @@ package inspect
 
 import (
 	"github.com/rstudio/connect-client/internal/apptypes"
-	"github.com/spf13/afero"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type PythonAppDetector struct {
@@ -25,12 +25,14 @@ func NewFlaskDetector() *PythonAppDetector {
 	return NewPythonAppDetector(apptypes.PythonAPIMode, []string{
 		"flask", // also matches flask_api, flask_openapi3, etc.
 		"flasgger",
+		"falcon", // must check for this after falcon.asgi (FastAPI)
 	})
 }
 
 func NewFastAPIDetector() *PythonAppDetector {
 	return NewPythonAppDetector(apptypes.PythonFastAPIMode, []string{
 		"fastapi",
+		"falcon.asgi",
 		"quart",
 		"sanic",
 		"starlette",
@@ -62,13 +64,13 @@ func NewPyShinyDetector() *PythonAppDetector {
 	})
 }
 
-func (d *PythonAppDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, entrypointPath, err := d.InferEntrypoint(fs, path, ".py", "app.py")
+func (d *PythonAppDetector) InferType(path util.Path) (*ContentType, error) {
+	entrypoint, entrypointPath, err := d.InferEntrypoint(path, ".py", "app.py")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint != "" {
-		matches, err := d.FileHasPythonImports(fs, entrypointPath, d.imports)
+		matches, err := d.FileHasPythonImports(entrypointPath, d.imports)
 		if err != nil {
 			return nil, err
 		}

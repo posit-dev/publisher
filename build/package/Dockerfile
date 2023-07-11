@@ -4,8 +4,8 @@ RUN yum update -y \
     && yum install -y curl git openssl mailcap tzdata xz \
     && yum groupinstall -y "Development Tools"
 
-RUN export GOLANG_VERSION=1.19.5 \
-    && export GOLANG_DOWNLOAD_SHA256=36519702ae2fd573c9869461990ae550c8c0d955cd28d2827a6b159fda81ff95 \
+RUN export GOLANG_VERSION=1.20.4 \
+    && export GOLANG_DOWNLOAD_SHA256=698ef3243972a51ddb4028e4a1ac63dc6d60821bf18e59a807e051fee0a385bd \
     && curl -fsSL "https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz" -o golang.tar.gz \
     && echo "${GOLANG_DOWNLOAD_SHA256}  golang.tar.gz" | sha256sum -c - \
     && tar -C /usr/local -xzf golang.tar.gz \

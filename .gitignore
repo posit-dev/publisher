@@ -1,4 +1,5 @@
 .cache/
+cover.out
 
 bin/
 certs/

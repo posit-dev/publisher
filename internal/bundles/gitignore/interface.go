@@ -3,18 +3,17 @@
 package gitignore
 
 import (
-	"path/filepath"
-
 	"github.com/iriri/minimal/gitignore"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/stretchr/testify/mock"
 )
 
 type GitIgnoreList interface {
-	Append(path string) error
+	Append(path util.Path) error
 	AppendGlob(s string) error
 	AppendGit() error
 	Match(path string) bool
-	Walk(root string, fn filepath.WalkFunc) error
+	Walk(root util.Path, fn util.WalkFunc) error
 }
 
 // Ensure that the gitignore object meets the interface
@@ -24,7 +23,7 @@ type MockGitIgnoreList struct {
 	mock.Mock
 }
 
-func (m *MockGitIgnoreList) Append(path string) error {
+func (m *MockGitIgnoreList) Append(path util.Path) error {
 	args := m.Called(path)
 	return args.Error(0)
 }
@@ -44,7 +43,7 @@ func (m *MockGitIgnoreList) Match(path string) bool {
 	return args.Bool(0)
 }
 
-func (m *MockGitIgnoreList) Walk(root string, fn filepath.WalkFunc) error {
+func (m *MockGitIgnoreList) Walk(root util.Path, fn util.WalkFunc) error {
 	args := m.Called(root, fn)
 	return args.Error(0)
 }

@@ -6,10 +6,10 @@ import (
 	"errors"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -44,28 +44,19 @@ func NewMockPythonExecutor() *MockPythonExecutor {
 }
 
 func (s *PythonSuite) TestNewPythonInspector() {
-	fs := afero.NewMemMapFs()
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "/myproject", "/usr/bin/python", "3.8.12", logger)
-	s.Equal("/myproject", inspector.projectDir)
-	s.Equal("/usr/bin/python", inspector.pythonPath)
-	s.Equal("3.8.12", inspector.pythonVersion)
+	projectDir := util.NewPath("/myproject", nil)
+	pythonPath := util.NewPath("/usr/bin/python", nil)
+	inspector := NewPythonInspector(projectDir, pythonPath, logger)
+	s.Equal(projectDir, inspector.projectDir)
+	s.Equal(pythonPath, inspector.pythonPath)
 	s.Equal(logger, inspector.logger)
 }
 
-func (s *PythonSuite) TestGetPythonVersionGiven() {
-	fs := utiltest.NewMockFs()
-	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "", "3.10.4", logger)
-	version, err := inspector.GetPythonVersion()
-	s.Nil(err)
-	s.Equal("3.10.4", version)
-}
-
 func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
-	fs := utiltest.NewMockFs()
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "/usr/bin/python3", "", logger)
+	pythonPath := util.NewPath("/usr/bin/python3", nil)
+	inspector := NewPythonInspector(util.Path{}, pythonPath, logger)
 	executor := NewMockPythonExecutor()
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
@@ -75,9 +66,10 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
-	fs := utiltest.NewMockFs()
+	projectDir := util.NewPath("/myproject", afero.NewMemMapFs())
+	pythonPath := util.NewPath("/usr/bin/python3", nil)
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "/usr/bin/python3", "", logger)
+	inspector := NewPythonInspector(projectDir, pythonPath, logger)
 	executor := NewMockPythonExecutor()
 	testError := errors.New("test error from runPythonCommand")
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(nil, testError)
@@ -89,15 +81,15 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromPATH() {
-	fs := utiltest.NewMockFs()
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "", "", logger)
+	inspector := NewPythonInspector(util.Path{}, util.Path{}, logger)
 	executor := NewMockPythonExecutor()
 	executor.On("runPythonCommand", "python3", mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
 	version, err := inspector.GetPythonVersion()
 	s.Nil(err)
 	s.Equal("3.10.4", version)
+	executor.AssertExpectations(s.T())
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
@@ -106,28 +98,26 @@ func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
 	if err != nil {
 		s.T().Skip("python3 isn't available on PATH")
 	}
-	fs := utiltest.NewMockFs()
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "", "", logger)
+	inspector := NewPythonInspector(util.Path{}, util.Path{}, logger)
 	version, err := inspector.GetPythonVersion()
 	s.Nil(err)
 	s.True(strings.HasPrefix(version, "3."))
 }
 
 func (s *PythonSuite) TestGetRequirementsFromFile() {
-	fs := afero.NewMemMapFs()
-	baseDir, err := os.Getwd()
+	baseDir, err := util.Getwd(afero.NewMemMapFs())
 	s.Nil(err)
-	err = fs.MkdirAll(baseDir, 0700)
+	err = baseDir.MkdirAll(0700)
 	s.Nil(err)
 
 	fileContent := []byte("numpy\npandas\n")
-	reqPath := filepath.Join(baseDir, "requirements.txt")
-	err = afero.WriteFile(fs, reqPath, fileContent, 0600)
+	reqPath := baseDir.Join("requirements.txt")
+	err = reqPath.WriteFile(fileContent, 0600)
 	s.Nil(err)
 
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, baseDir, "", "", logger)
+	inspector := NewPythonInspector(baseDir, util.Path{}, logger)
 	requirements, err := inspector.GetPythonRequirements()
 	s.Nil(err)
 	s.Equal(fileContent, requirements)
@@ -137,19 +127,20 @@ func (s *PythonSuite) TestGetRequirementsFromFileErr() {
 	fs := utiltest.NewMockFs()
 	testError := errors.New("test error from Stat")
 	fs.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), testError)
+	projectDir := util.NewPath("/anything", fs)
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "/anything", "", "", logger)
+	inspector := NewPythonInspector(projectDir, util.Path{}, logger)
 	requirements, err := inspector.GetPythonRequirements()
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.Nil(requirements)
+	fs.AssertExpectations(s.T())
 }
 
 func (s *PythonSuite) TestGetPythonRequirementsFromExecutable() {
-	fs := utiltest.NewMockFs()
-	fs.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), os.ErrNotExist)
+	pythonPath := util.NewPath("/usr/bin/python3", nil)
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "/usr/bin/python3", "", logger)
+	inspector := NewPythonInspector(util.Path{}, pythonPath, logger)
 	executor := NewMockPythonExecutor()
 	freezeOutput := []byte("numpy\npandas\n")
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(freezeOutput, nil)
@@ -157,13 +148,13 @@ func (s *PythonSuite) TestGetPythonRequirementsFromExecutable() {
 	requirements, err := inspector.GetPythonRequirements()
 	s.Nil(err)
 	s.Equal(freezeOutput, requirements)
+	executor.AssertExpectations(s.T())
 }
 
 func (s *PythonSuite) TestGetPythonRequirementsFromExecutableErr() {
-	fs := utiltest.NewMockFs()
-	fs.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), os.ErrNotExist)
 	logger := rslog.NewDiscardingLogger()
-	inspector := NewPythonInspector(fs, "", "/nonexistent/python3", "", logger)
+	pythonPath := util.NewPath("/nonexistent/python3", nil)
+	inspector := NewPythonInspector(util.Path{}, pythonPath, logger)
 	requirements, err := inspector.GetPythonRequirements()
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)

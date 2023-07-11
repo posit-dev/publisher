@@ -3,11 +3,10 @@ package environment
 import (
 	"bytes"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
-	"github.com/spf13/afero"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
@@ -18,12 +17,10 @@ type PythonInspector interface {
 }
 
 type defaultPythonInspector struct {
-	executor      pythonExecutor
-	fs            afero.Fs
-	projectDir    string
-	pythonPath    string
-	pythonVersion string
-	logger        rslog.Logger
+	executor   pythonExecutor
+	projectDir util.Path
+	pythonPath util.Path
+	logger     rslog.Logger
 }
 
 var _ PythonInspector = &defaultPythonInspector{}
@@ -47,21 +44,19 @@ func (e *defaultPythonExecutor) runPythonCommand(pythonExecutable string, args [
 	return stdout.Bytes(), nil
 }
 
-func NewPythonInspector(fs afero.Fs, projectDir string, pythonPath string, pythonVersion string, logger rslog.Logger) *defaultPythonInspector {
+func NewPythonInspector(projectDir util.Path, pythonPath util.Path, logger rslog.Logger) *defaultPythonInspector {
 	return &defaultPythonInspector{
-		executor:      &defaultPythonExecutor{},
-		fs:            fs,
-		projectDir:    projectDir,
-		pythonPath:    pythonPath,
-		pythonVersion: pythonVersion,
-		logger:        logger,
+		executor:   &defaultPythonExecutor{},
+		projectDir: projectDir,
+		pythonPath: pythonPath,
+		logger:     logger,
 	}
 }
 
 func (i *defaultPythonInspector) getPythonExecutable() string {
-	if i.pythonPath != "" {
+	if i.pythonPath.Path() != "" {
 		// User-provided python executable
-		return i.pythonPath
+		return i.pythonPath.Path()
 	} else {
 		// Use whatever is on PATH
 		return "python3"
@@ -69,10 +64,6 @@ func (i *defaultPythonInspector) getPythonExecutable() string {
 }
 
 func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
-	if i.pythonVersion != "" {
-		// User-provided version
-		return i.pythonVersion, nil
-	}
 	pythonExecutable := i.getPythonExecutable()
 	args := []string{
 		`-E`, // ignore python-specific environment variables
@@ -89,14 +80,14 @@ func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
 }
 
 func (i *defaultPythonInspector) GetPythonRequirements() ([]byte, error) {
-	requirementsFilename := filepath.Join(i.projectDir, "requirements.txt")
-	exists, err := afero.Exists(i.fs, requirementsFilename)
+	requirementsFilename := i.projectDir.Join("requirements.txt")
+	exists, err := requirementsFilename.Exists()
 	if err != nil {
 		return nil, err
 	}
 	if exists {
 		i.logger.Infof("Using Python packages from %s", requirementsFilename)
-		return afero.ReadFile(i.fs, requirementsFilename)
+		return requirementsFilename.ReadFile()
 	}
 	pythonExecutable := i.getPythonExecutable()
 	i.logger.Infof("Using Python packages from '%s -m pip freeze'", pythonExecutable)

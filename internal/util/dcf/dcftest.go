@@ -5,6 +5,7 @@ package dcf
 import (
 	"io"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -37,7 +38,7 @@ func (m *MockDecoder) Decode(r io.Reader) (Records, error) {
 	}
 }
 
-func (m *MockFileReader) ReadFile(path string) (Records, error) {
+func (m *MockFileReader) ReadFile(path util.Path) (Records, error) {
 	args := m.Called(path)
 	records := args.Get(0)
 	if records == nil {
@@ -47,8 +48,8 @@ func (m *MockFileReader) ReadFile(path string) (Records, error) {
 	}
 }
 
-func (m *MockFileReader) ReadFiles(pattern string) (Records, error) {
-	args := m.Called(pattern)
+func (m *MockFileReader) ReadFiles(path util.Path, pattern string) (Records, error) {
+	args := m.Called(path, pattern)
 	records := args.Get(0)
 	if records == nil {
 		return nil, args.Error(1)

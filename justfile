@@ -38,7 +38,13 @@ run:
     {{ _with_runner }} go run ./cmd/connect-client
 
 test: _web
-    {{ _with_runner }} go test -race ./...
+    just test-backend
+
+test-backend:
+    {{ _with_runner }} go test ./... -covermode set -coverprofile cover.out
+
+go-coverage: test-backend
+    go tool cover -html=cover.out
 
 [private]
 _build:

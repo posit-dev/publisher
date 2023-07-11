@@ -119,9 +119,9 @@ func (cmd *accountUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
 }
 
 type AccountCommands struct {
-	AccountUI     accountUICmd     `cmd:"" help:"Serve the account management UI."`
-	AddAccount    addAccountCmd    `cmd:"" help:"Add a publishing account."`
-	RemoveAccount removeAccountCmd `cmd:"" help:"Remove a publishing account. Specify by name or URL."`
-	ListAccounts  listAccountsCmd  `cmd:"" help:"List publishing accounts."`
-	TestAccount   testAccountCmd   `cmd:"" help:"Verify connectivity and credentials for a publishing account."`
+	AccountUI     accountUICmd     `kong:"cmd" help:"Serve the account management UI."`
+	AddAccount    addAccountCmd    `kong:"cmd" help:"Add a publishing account."`
+	RemoveAccount removeAccountCmd `kong:"cmd" help:"Remove a publishing account. Specify by name or URL."`
+	ListAccounts  listAccountsCmd  `kong:"cmd" help:"List publishing accounts."`
+	TestAccount   testAccountCmd   `kong:"cmd" help:"Verify connectivity and credentials for a publishing account."`
 }

@@ -37,7 +37,7 @@ func (s *OptionalSuite) TestOptionalZeroValue() {
 	var opt NullString
 	value, ok := opt.Get()
 	s.Equal(ok, false)
-	s.Equal(value, "")
+	s.Equal("", value)
 }
 
 type optionalData struct {
@@ -156,7 +156,8 @@ func (s *OptionalSuite) TestMarshalJSONAllNull() {
 	data := optionalData{}
 	jsonOutput, err := json.Marshal(&data)
 	s.Nil(err)
-	s.Equal(jsonOutput, []byte(`{"s":null,"i32":null,"i64":null,"f64":null,"guid":null,"i64str":null,"t":null}`))
+	expected := []byte(`{"s":null,"i32":null,"i64":null,"f64":null,"guid":null,"i64str":null,"t":null}`)
+	s.Equal(expected, jsonOutput)
 }
 
 func (s *OptionalSuite) TestUnmarshalJSONErr() {
@@ -166,4 +167,19 @@ func (s *OptionalSuite) TestUnmarshalJSONErr() {
 	}`)
 	err := json.Unmarshal(jsonInput, &data)
 	s.NotNil(err)
+}
+
+func (s *OptionalSuite) TestNotValid() {
+	var value Optional[string]
+	s.Equal(value.Valid(), false)
+}
+
+func (s *OptionalSuite) TestValid() {
+	value := NewOptional("hi there")
+	s.Equal(value.Valid(), true)
+}
+
+func (s *OptionalSuite) TestValidEmpty() {
+	value := NewOptional("")
+	s.Equal(value.Valid(), true)
 }

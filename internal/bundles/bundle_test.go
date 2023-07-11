@@ -18,6 +18,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles/bundlestest"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -100,19 +101,12 @@ func (s *TarSuite) TestWriteFileContentsToTar() {
 
 	w := utiltest.NewMockTarWriter()
 	w.On("Write", mock.Anything).Return(len(contents), nil)
-	md5sum, err := writeFileContentsToTar(fs, "testfile", w)
+	f, err := fs.Open("testfile")
+	s.Nil(err)
+	defer f.Close()
+	md5sum, err := writeFileContentsToTar(f, w)
 	s.Nil(err)
 	s.Equal([]byte{0x02, 0x08, 0x61, 0xc8, 0xc3, 0xfe, 0x17, 0x7d, 0xa1, 0x9a, 0x7e, 0x95, 0x39, 0xa5, 0xdb, 0xac}, md5sum)
-}
-
-func (s *TarSuite) TestWriteFileContentsToTarOpenErr() {
-	fs := utiltest.NewMockFs()
-	testError := errors.New("test error from Open")
-	fs.On("Open", mock.Anything).Return(nil, testError)
-	w := utiltest.NewMockTarWriter()
-	md5sum, err := writeFileContentsToTar(fs, "testfile", w)
-	s.ErrorIs(err, testError)
-	s.Nil(md5sum)
 }
 
 func (s *TarSuite) TestWriteFileContentsToTarWriteErr() {
@@ -124,7 +118,10 @@ func (s *TarSuite) TestWriteFileContentsToTarWriteErr() {
 	w := utiltest.NewMockTarWriter()
 	testError := errors.New("test error from Write")
 	w.On("Write", mock.Anything).Return(0, testError)
-	md5sum, err := writeFileContentsToTar(fs, "testfile", w)
+	f, err := fs.Open("testfile")
+	s.Nil(err)
+	defer f.Close()
+	md5sum, err := writeFileContentsToTar(f, w)
 	s.ErrorIs(err, testError)
 	s.Nil(md5sum)
 }
@@ -133,7 +130,7 @@ type BundlerSuite struct {
 	utiltest.Suite
 
 	fs       afero.Fs
-	cwd      string
+	cwd      util.Path
 	manifest *Manifest
 }
 
@@ -144,15 +141,15 @@ func TestBundlerSuite(t *testing.T) {
 func (s *BundlerSuite) SetupSuite() {
 	// Our testdata/bundle_dir needs to contain a non-regular
 	// file, but you can't check a fifo into git of course.
-	tarPath := filepath.Join(s.cwd, "testdata", "symlink_test", "fifo.tar")
-	cmd := exec.Command("tar", "xvf", tarPath)
+	tarPath := s.cwd.Join("testdata", "symlink_test", "fifo.tar")
+	cmd := exec.Command("tar", "xvf", tarPath.Path())
 	err := cmd.Run()
 	s.Nil(err)
 }
 
 func (s *BundlerSuite) SetupTest() {
 	s.fs = afero.NewMemMapFs()
-	cwd, err := os.Getwd()
+	cwd, err := util.Getwd(s.fs)
 	s.Nil(err)
 	s.cwd = cwd
 
@@ -160,26 +157,26 @@ func (s *BundlerSuite) SetupTest() {
 	// can Chdir there. This is needed because the
 	// gitignore.IgnoreList uses relative paths internally
 	// and expects to be able to call Abs on them.
-	s.fs.MkdirAll(cwd, 0700)
+	s.cwd.MkdirAll(0700)
 
 	s.manifest = NewManifest()
 	s.manifest.Metadata.AppMode = apptypes.StaticMode
-	s.manifest.Metadata.EntryPoint = "subdir/testfile"
+	s.manifest.Metadata.Entrypoint = "subdir/testfile"
 }
 
 func (s *BundlerSuite) TestNewBundlerDirectory() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), []string{"*.log"}, logger)
+	bundler, err := NewBundler(s.cwd, NewManifest(), []string{"*.log"}, nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 }
 
 func (s *BundlerSuite) TestNewBundlerFile() {
 	logger := rslog.NewDiscardingLogger()
-	path := filepath.Join(s.cwd, "app.py")
-	err := afero.WriteFile(s.fs, path, []byte("import flask\napp=flask.Flask(__name)\n"), 0600)
+	path := s.cwd.Join("app.py")
+	err := path.WriteFile([]byte("import flask\napp=flask.Flask(__name)\n"), 0600)
 	s.Nil(err)
-	bundler, err := NewBundler(s.fs, path, NewManifest(), nil, logger)
+	bundler, err := NewBundler(path, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 }
@@ -189,10 +186,10 @@ func (s *BundlerSuite) TestNewBundlerExcludedFile() {
 	// For example, deploying dir/index.ipynb with *.ipynb excluded
 	// to deploy just one notebook out of a collection.
 	logger := rslog.NewDiscardingLogger()
-	path := filepath.Join(s.cwd, "app.py")
-	err := afero.WriteFile(s.fs, path, []byte("import flask\napp=flask.Flask(__name)\n"), 0600)
+	path := s.cwd.Join("app.py")
+	err := path.WriteFile([]byte("import flask\napp=flask.Flask(__name)\n"), 0600)
 	s.Nil(err)
-	bundler, err := NewBundler(s.fs, path, NewManifest(), []string{"*.py"}, logger)
+	bundler, err := NewBundler(path, NewManifest(), []string{"*.py"}, nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 	manifest, err := bundler.CreateManifest()
@@ -204,25 +201,25 @@ func (s *BundlerSuite) TestNewBundlerExcludedFile() {
 
 func (s *BundlerSuite) TestNewBundlerWalkerErr() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), []string{"[Z-A]"}, logger)
+	bundler, err := NewBundler(s.cwd, NewManifest(), []string{"[Z-A]"}, nil, logger)
 	s.NotNil(err)
 	s.Nil(bundler)
 }
 
 func (s *BundlerSuite) TestNewBundlerForManifest() {
 	logger := rslog.NewDiscardingLogger()
-	manifestPath := filepath.Join(s.cwd, ManifestFilename)
-	err := s.manifest.WriteManifestFile(s.fs, manifestPath)
+	manifestPath := s.cwd.Join(ManifestFilename)
+	err := s.manifest.WriteManifestFile(manifestPath)
 	s.Nil(err)
-	bundler, err := NewBundlerForManifest(s.fs, manifestPath, logger)
+	bundler, err := NewBundlerForManifest(manifestPath, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 }
 
 func (s *BundlerSuite) TestNewBundlerForManifestMissingManifestFile() {
 	logger := rslog.NewDiscardingLogger()
-	manifestPath := filepath.Join(s.cwd, ManifestFilename)
-	bundler, err := NewBundlerForManifest(s.fs, manifestPath, logger)
+	manifestPath := s.cwd.Join(ManifestFilename)
+	bundler, err := NewBundlerForManifest(manifestPath, logger)
 	s.NotNil(err)
 	s.Nil(bundler)
 }
@@ -231,17 +228,15 @@ func (s *BundlerSuite) makeFile(path string) {
 	s.makeFileWithContents(path, []byte("content of "+path))
 }
 
-func (s *BundlerSuite) makeFileWithContents(path string, contents []byte) {
-	path = filepath.Join(s.cwd, path)
-	err := s.fs.MkdirAll(filepath.Dir(path), 0700)
+func (s *BundlerSuite) makeFileWithContents(relPath string, contents []byte) {
+	path := s.cwd.Join(relPath)
+	err := path.Dir().MkdirAll(0700)
 	s.Nil(err)
 
-	err = afero.WriteFile(s.fs, path, contents, 0600)
+	err = path.WriteFile(contents, 0600)
 	s.Nil(err)
 
 	md5sum := md5.Sum(contents)
-	relPath, err := filepath.Rel(s.cwd, path)
-	s.Nil(err)
 	s.manifest.AddFile(relPath, md5sum[:])
 }
 
@@ -252,7 +247,7 @@ func (s *BundlerSuite) TestCreateBundle() {
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundler(s.fs, s.cwd, s.manifest, nil, logger)
+	bundler, err := NewBundler(s.cwd, s.manifest, nil, nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -265,7 +260,7 @@ func (s *BundlerSuite) TestCreateBundleAutoDetect() {
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), nil, logger)
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -273,9 +268,26 @@ func (s *BundlerSuite) TestCreateBundleAutoDetect() {
 	s.Len(manifest.Files, 1)
 }
 
-func (s *BundlerSuite) TestCreateBundleMissingDirectory() {
+func (s *BundlerSuite) TestCreateBundlePythonPackages() {
+	s.makeFileWithContents("app.py", []byte("import flask"))
+	manifest := NewManifest()
+	manifest.Python = &Python{}
+	pythonRequirements := []byte("flask\nnumpy")
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, "nonexistent", NewManifest(), nil, logger)
+
+	bundler, err := NewBundler(s.cwd, manifest, nil, pythonRequirements, logger)
+	s.Nil(err)
+	dest := new(bytes.Buffer)
+	manifestOut, err := bundler.CreateBundle(dest)
+	s.Nil(err)
+	s.NotNil(manifestOut)
+	s.Len(manifestOut.Files, 2)
+}
+
+func (s *BundlerSuite) TestCreateBundleMissingDirectory() {
+	path := util.NewPath("/nonexistent", s.fs)
+	logger := rslog.NewDiscardingLogger()
+	bundler, err := NewBundler(path, NewManifest(), nil, nil, logger)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(bundler)
@@ -283,8 +295,8 @@ func (s *BundlerSuite) TestCreateBundleMissingDirectory() {
 
 func (s *BundlerSuite) TestCreateBundleMissingFile() {
 	logger := rslog.NewDiscardingLogger()
-	path := filepath.Join(s.cwd, "nonexistent")
-	bundler, err := NewBundler(s.fs, path, NewManifest(), nil, logger)
+	path := s.cwd.Join("nonexistent")
+	bundler, err := NewBundler(path, NewManifest(), nil, nil, logger)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(bundler)
@@ -296,7 +308,7 @@ func (s *BundlerSuite) TestCreateBundleWalkError() {
 	testError := errors.New("test error from Walk")
 	walker.On("Walk", mock.Anything, mock.Anything).Return(testError)
 
-	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), nil, logger)
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 	bundler.walker = walker
@@ -310,7 +322,7 @@ func (s *BundlerSuite) TestCreateBundleWalkError() {
 
 func (s *BundlerSuite) TestCreateBundleAddManifestError() {
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, s.cwd, NewManifest(), nil, logger)
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 
@@ -329,7 +341,7 @@ func (s *BundlerSuite) TestCreateManifest() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, s.cwd, s.manifest, nil, logger)
+	bundler, err := NewBundler(s.cwd, s.manifest, nil, nil, logger)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
@@ -348,7 +360,7 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	logger := rslog.NewDiscardingLogger()
-	bundler, err := NewBundler(s.fs, s.cwd, s.manifest, nil, logger)
+	bundler, err := NewBundler(s.cwd, s.manifest, nil, nil, logger)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
@@ -376,10 +388,10 @@ func (s *BundlerSuite) TestMultipleCallsFromManifest() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	logger := rslog.NewDiscardingLogger()
-	manifestPath := filepath.Join(s.cwd, ManifestFilename)
-	err := s.manifest.WriteManifestFile(s.fs, manifestPath)
+	manifestPath := s.cwd.Join(ManifestFilename)
+	err := s.manifest.WriteManifestFile(manifestPath)
 	s.Nil(err)
-	bundler, err := NewBundlerForManifest(s.fs, manifestPath, logger)
+	bundler, err := NewBundlerForManifest(manifestPath, logger)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
@@ -407,11 +419,11 @@ func (s *BundlerSuite) TestNewBundleFromManifest() {
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	manifestPath := filepath.Join(s.cwd, "manifest.json")
-	err := s.manifest.WriteManifestFile(s.fs, manifestPath)
+	manifestPath := s.cwd.Join(ManifestFilename)
+	err := s.manifest.WriteManifestFile(manifestPath)
 	s.Nil(err)
 
-	bundler, err := NewBundlerForManifest(s.fs, manifestPath, logger)
+	bundler, err := NewBundlerForManifest(manifestPath, logger)
 	s.Nil(err)
 	manifestOut, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -424,16 +436,16 @@ func (s *BundlerSuite) TestNewBundleFromManifestMissingFile() {
 	logger := rslog.NewDiscardingLogger()
 
 	s.manifest.AddFile("nonexistent", []byte{0})
-	manifestPath := filepath.Join(s.cwd, "manifest.json")
-	err := s.manifest.WriteManifestFile(s.fs, manifestPath)
+	manifestPath := s.cwd.Join(ManifestFilename)
+	err := s.manifest.WriteManifestFile(manifestPath)
 	s.Nil(err)
 
-	bundler, err := NewBundlerForManifest(s.fs, manifestPath, logger)
+	bundler, err := NewBundlerForManifest(manifestPath, logger)
 	s.Nil(err)
 	manifestOut, err := bundler.CreateBundle(dest)
 	s.NotNil(err)
 	s.Nil(manifestOut)
-	s.ErrorContains(err, "Error adding file")
+	s.ErrorContains(err, "error adding file")
 	s.ErrorIs(err, os.ErrNotExist)
 }
 
@@ -441,11 +453,11 @@ func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
 	// afero's MemFs doesn't have symlink support, so we
 	// are using a fixture directory under ./testdata.
 	fs := afero.NewOsFs()
-	dirPath := filepath.Join(s.cwd, "testdata", "symlink_test", "bundle_dir")
+	dirPath := util.NewPath(s.cwd.Path(), fs).Join("testdata", "symlink_test", "bundle_dir")
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundler(fs, dirPath, NewManifest(), nil, logger)
+	bundler, err := NewBundler(dirPath, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -461,11 +473,11 @@ func (s *BundlerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	// afero's MemFs doesn't have symlink support, so we
 	// are using a fixture directory under ./testdata.
 	fs := afero.NewOsFs()
-	dirPath := filepath.Join(s.cwd, "testdata", "symlink_test", "link_target_missing")
+	dirPath := util.NewPath(s.cwd.Path(), fs).Join("testdata", "symlink_test", "link_target_missing")
 	dest := new(bytes.Buffer)
 	logger := rslog.NewDiscardingLogger()
 
-	bundler, err := NewBundler(fs, dirPath, NewManifest(), nil, logger)
+	bundler, err := NewBundler(dirPath, NewManifest(), nil, nil, logger)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.ErrorIs(err, os.ErrNotExist)

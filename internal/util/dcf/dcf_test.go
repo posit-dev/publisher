@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -29,12 +30,13 @@ func (s *DCFSuite) TestReadFile() {
 	fs.On("Open", mock.Anything).Return(f, nil)
 
 	expectedRecords := Records{}
-	r := NewFileReader(fs)
+	r := NewFileReader()
 	decoder := NewMockDecoder()
 	decoder.On("Decode", mock.Anything).Return(expectedRecords, nil)
 	r.decoder = decoder
 
-	records, err := r.ReadFile("nonexistent.dcf")
+	path := util.NewPath("nonexistent.dcf", fs)
+	records, err := r.ReadFile(path)
 	s.Nil(err)
 	s.Equal(records, expectedRecords)
 }
@@ -43,8 +45,10 @@ func (s *DCFSuite) TestReadFileNonexistent() {
 	fs := utiltest.NewMockFs()
 	fs.On("Open", mock.Anything).Return(nil, os.ErrNotExist)
 
-	r := NewFileReader(fs)
-	data, err := r.ReadFile("nonexistent.dcf")
+	r := NewFileReader()
+	path :=
+		util.NewPath("nonexistent.dcf", fs)
+	data, err := r.ReadFile(path)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(data)
 }
@@ -59,8 +63,9 @@ func (s *DCFSuite) TestReadFiles() {
 		{"a": "1"},
 		{"b": "2"},
 	}
-	r := NewFileReader(fs)
-	records, err := r.ReadFiles("*.dcf")
+	r := NewFileReader()
+	path := util.NewPath(".", fs)
+	records, err := r.ReadFiles(path, "*.dcf")
 	s.Nil(err)
 	s.Equal(expectedRecords, records)
 }
@@ -69,8 +74,9 @@ func (s *DCFSuite) TestReadFilesErr() {
 	fs := afero.NewMemMapFs()
 	afero.WriteFile(fs, "a.dcf", []byte(`abc`), 0600)
 
-	r := NewFileReader(fs)
-	records, err := r.ReadFiles("*.dcf")
+	r := NewFileReader()
+	path := util.NewPath(".", fs)
+	records, err := r.ReadFiles(path, "*.dcf")
 	s.NotNil(err)
 	s.Nil(records)
 }

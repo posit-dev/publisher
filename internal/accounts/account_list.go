@@ -58,5 +58,5 @@ func (l *defaultAccountList) GetAccountByName(name string) (*Account, error) {
 			return &account, nil
 		}
 	}
-	return nil, fmt.Errorf("There is no account named '%s'", name)
+	return nil, fmt.Errorf("there is no account named '%s'", name)
 }

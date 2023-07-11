@@ -1,5 +1,7 @@
 package util
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"bytes"
 	"errors"
@@ -11,8 +13,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
-
-// Copyright (C) 2023 by Posit Software, PBC.
 
 type HTTPSuite struct {
 	utiltest.Suite

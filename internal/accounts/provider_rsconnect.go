@@ -4,13 +4,12 @@ package accounts
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/debug"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/dcf"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -29,7 +28,7 @@ func newRSConnectProvider(fs afero.Fs, logger rslog.Logger) *rsconnectProvider {
 	return &rsconnectProvider{
 		fs:          fs,
 		goos:        runtime.GOOS,
-		dcfReader:   dcf.NewFileReader(fs),
+		dcfReader:   dcf.NewFileReader(),
 		logger:      logger,
 		debugLogger: rslog.NewDebugLogger(debug.AccountsRegion),
 	}
@@ -37,67 +36,67 @@ func newRSConnectProvider(fs afero.Fs, logger rslog.Logger) *rsconnectProvider {
 
 // configDir returns the directory where the rsconnect
 // R package stores its configuration.
-func (p *rsconnectProvider) configDir() (string, error) {
+func (p *rsconnectProvider) configDir() (util.Path, error) {
 	// https://github.com/rstudio/rsconnect/blob/main/R/config.R
-	baseDir := os.Getenv("R_USER_CONFIG_DIR")
-	if baseDir != "" {
+	baseDir := util.PathFromEnvironment("R_USER_CONFIG_DIR", p.fs)
+	if baseDir.Path() != "" {
 		p.debugLogger.Debugf("rsconnect: using R_USER_CONFIG_DIR (%s)", baseDir)
 	} else {
-		baseDir = os.Getenv("XDG_CONFIG_HOME")
-		if baseDir != "" {
+		baseDir = util.PathFromEnvironment("XDG_CONFIG_HOME", p.fs)
+		if baseDir.Path() != "" {
 			p.debugLogger.Debugf("rsconnect: using XDG_CONFIG_HOME (%s)", baseDir)
 		}
 	}
-	if baseDir == "" {
+	if baseDir.Path() == "" {
 		switch p.goos {
 		case "windows":
-			baseDir = filepath.Join(os.Getenv("APPDATA"), "R", "config")
+			baseDir = util.PathFromEnvironment("APPDATA", p.fs).Join("R", "config")
 		case "darwin":
-			home, err := os.UserHomeDir()
+			home, err := util.UserHomeDir(p.fs)
 			if err != nil {
-				return "", err
+				return util.Path{}, err
 			}
-			baseDir = filepath.Join(home, "Library", "Preferences", "org.R-project.R")
+			baseDir = home.Join("Library", "Preferences", "org.R-project.R")
 		default:
-			home, err := os.UserHomeDir()
+			home, err := util.UserHomeDir(p.fs)
 			if err != nil {
-				return "", err
+				return util.Path{}, err
 			}
-			baseDir = filepath.Join(home, ".config")
+			baseDir = home.Join(".config")
 		}
 	}
-	return filepath.Join(baseDir, "R", "rsconnect"), nil
+	return baseDir.Join("R", "rsconnect"), nil
 }
 
-func (p *rsconnectProvider) oldConfigDir() (string, error) {
-	homeDir, err := os.UserHomeDir()
+func (p *rsconnectProvider) oldConfigDir() (util.Path, error) {
+	home, err := util.UserHomeDir(p.fs)
 	if err != nil {
-		return "", err
+		return util.Path{}, err
 	}
-	configDir := os.Getenv("R_USER_CONFIG_DIR")
-	if configDir != "" {
+	configDir := util.PathFromEnvironment("R_USER_CONFIG_DIR", p.fs)
+	if configDir.Path() != "" {
 		p.debugLogger.Debugf("rsconnect: using R_USER_CONFIG_DIR (%s)", configDir)
-		configDir = filepath.Join(configDir, "rsconnect")
+		configDir = configDir.Join("rsconnect")
 	} else {
 		switch p.goos {
 		case "windows":
-			configDir = os.Getenv("APPDATA")
+			configDir = util.PathFromEnvironment("APPDATA", p.fs)
 		case "darwin":
-			configDir = filepath.Join(homeDir, "Library", "Application Support")
+			configDir = home.Join("Library", "Application Support")
 		default:
-			configDir = os.Getenv("XDG_CONFIG_HOME")
-			if configDir != "" {
+			configDir = util.PathFromEnvironment("XDG_CONFIG_HOME", p.fs)
+			if configDir.Path() != "" {
 				p.debugLogger.Debugf("rsconnect: using XDG_CONFIG_HOME (%s)", configDir)
 			} else {
-				configDir = filepath.Join(homeDir, ".config")
+				configDir = home.Join(".config")
 			}
 		}
-		configDir = filepath.Join(configDir, "R", "rsconnect")
+		configDir = configDir.Join("R", "rsconnect")
 	}
 	p.debugLogger.Debugf("rsconnect: candidate old config directory is '%s'", configDir)
-	configDir, err = filepath.Abs(configDir)
+	configDir, err = configDir.Abs()
 	if err != nil {
-		return "", err
+		return util.Path{}, err
 	}
 	return configDir, nil
 }
@@ -127,7 +126,7 @@ func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts dcf.Recor
 	for _, account := range rscAccounts {
 		serverName := account["server"]
 		if serverName == "" {
-			return accounts, fmt.Errorf("Missing server name in rsconnect account")
+			return accounts, fmt.Errorf("missing server name in rsconnect account")
 		}
 		url, ok := serverNameToURL[serverName]
 		if !ok {
@@ -155,9 +154,9 @@ func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts dcf.Recor
 func (p *rsconnectProvider) Load() ([]Account, error) {
 	configDir, err := p.configDir()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting rsconnect config directory: %w", err)
+		return nil, fmt.Errorf("error getting rsconnect config directory: %w", err)
 	}
-	exists, err := afero.Exists(p.fs, configDir)
+	exists, err := configDir.Exists()
 	if err == nil && exists {
 		return p.loadFromConfigDir(configDir)
 	}
@@ -166,7 +165,7 @@ func (p *rsconnectProvider) Load() ([]Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	exists, err = afero.Exists(p.fs, oldConfigDir)
+	exists, err = oldConfigDir.Exists()
 	if err != nil {
 		return nil, err
 	}
@@ -190,15 +189,13 @@ func (p *rsconnectProvider) Load() ([]Account, error) {
 
 // Load loads the list of accounts stored by
 // rsconnect, by reading its servers and account DCF files.
-func (p *rsconnectProvider) loadFromConfigDir(configDir string) ([]Account, error) {
+func (p *rsconnectProvider) loadFromConfigDir(configDir util.Path) ([]Account, error) {
 	p.logger.Infof("Loading rsconnect accounts from %s", configDir)
-	serverPattern := filepath.Join(configDir, "servers", "*.dcf")
-	rscServers, err := p.dcfReader.ReadFiles(serverPattern)
+	rscServers, err := p.dcfReader.ReadFiles(configDir.Join("servers"), "*.dcf")
 	if err != nil {
 		return nil, err
 	}
-	accountsPattern := filepath.Join(configDir, "accounts", "*", "*.dcf")
-	rscAccounts, err := p.dcfReader.ReadFiles(accountsPattern)
+	rscAccounts, err := p.dcfReader.ReadFiles(configDir.Join("accounts", "*"), "*.dcf")
 	if err != nil {
 		return nil, err
 	}

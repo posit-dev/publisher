@@ -4,10 +4,10 @@ package inspect
 
 import (
 	"errors"
-	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -23,75 +23,76 @@ func TestEntrypointSuite(t *testing.T) {
 }
 
 func (s *EntrypointSuite) TestInferEntrypointSpecifiedFile() {
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, "app.py", []byte{}, 0600)
+	path := util.NewPath("app.py", afero.NewMemMapFs())
+	err := path.WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(fs, "app.py", ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".py", "app.py")
 	s.Nil(err)
 	s.Equal("app.py", entrypoint)
-	s.Equal("app.py", filepath.Base(entrypointPath))
+	s.Equal("app.py", entrypointPath.Base())
 }
 
 func (s *EntrypointSuite) TestInferEntrypointMatchingPreferredFileAndAnother() {
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, "app.py", []byte{}, 0600)
+	path := util.NewPath(".", afero.NewMemMapFs())
+	err := path.Join("app.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
-	err = afero.WriteFile(fs, "mylib.py", []byte{}, 0600)
+	err = path.Join("mylib.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".py", "app.py")
 	s.Nil(err)
 	s.Equal("app.py", entrypoint)
-	s.Equal("app.py", filepath.Base(entrypointPath))
+	s.Equal("app.py", entrypointPath.Base())
 }
 
 func (s *EntrypointSuite) TestInferEntrypointNonMatchingFile() {
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, "app.py", []byte{}, 0600)
+	path := util.NewPath("app.py", afero.NewMemMapFs())
+	err := path.WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(fs, "app.py", ".ipynb", "index.ipynb")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".ipynb", "index.ipynb")
 	s.Nil(err)
 	s.Equal("", entrypoint)
-	s.Equal("", entrypointPath)
+	s.Equal(util.Path{}, entrypointPath)
 }
 
 func (s *EntrypointSuite) TestInferEntrypointOnlyMatchingFile() {
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, "myapp.py", []byte{}, 0600)
+	path := util.NewPath(".", afero.NewMemMapFs())
+	err := path.Join("myapp.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".py", "app.py")
 	s.Nil(err)
 	s.Equal("myapp.py", entrypoint)
-	s.Equal("myapp.py", filepath.Base(entrypointPath))
+	s.Equal("myapp.py", entrypointPath.Base())
 }
 
 func (s *EntrypointSuite) TestInferEntrypointMultipleMatchingFiles() {
-	fs := afero.NewMemMapFs()
-	err := afero.WriteFile(fs, "myapp.py", []byte{}, 0600)
+	path := util.NewPath(".", afero.NewMemMapFs())
+	err := path.Join("myapp.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
-	err = afero.WriteFile(fs, "mylib.py", []byte{}, 0600)
+	err = path.Join("mylib.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(fs, ".", ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".py", "app.py")
 	s.Nil(err)
 	s.Equal("", entrypoint)
-	s.Equal("", entrypointPath)
+	s.Equal(util.Path{}, entrypointPath)
 }
 
 func (s *EntrypointSuite) TestFileHasPythonImports() {
-	fs := afero.NewMemMapFs()
-	afero.WriteFile(fs, "test.py", []byte("import flask"), 0600)
+	path := util.NewPath("test.py", afero.NewMemMapFs())
+	err := path.WriteFile([]byte("import flask"), 0600)
+	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	isFlask, err := h.FileHasPythonImports(fs, "test.py", []string{"flask"})
+	isFlask, err := h.FileHasPythonImports(path, []string{"flask"})
 	s.Nil(err)
 	s.True(isFlask)
 }
@@ -102,10 +103,12 @@ func (s *EntrypointSuite) TestFileHasPythonImportsOpenErr() {
 	fs.On("Open", mock.Anything).Return(nil, testError)
 
 	h := defaultInferenceHelper{}
-	isFlask, err := h.FileHasPythonImports(fs, "test.py", []string{"flask"})
+	path := util.NewPath("test.py", fs)
+	isFlask, err := h.FileHasPythonImports(path, []string{"flask"})
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.False(isFlask)
+	fs.AssertExpectations(s.T())
 }
 
 func (s *EntrypointSuite) TestHasPythonImports() {
@@ -141,19 +144,21 @@ func (s *EntrypointSuite) TestHasPythonImportsFromSubpackage() {
 }
 
 func (s *EntrypointSuite) TestFileHasPythonImportsRelatedPackage() {
-	fs := afero.NewMemMapFs()
-	afero.WriteFile(fs, "test.py", []byte("import flask_api"), 0600)
+	path := util.NewPath("test.py", afero.NewMemMapFs())
+	err := path.WriteFile([]byte("import flask_api"), 0600)
+	s.Nil(err)
 	h := defaultInferenceHelper{}
-	isFlask, err := h.FileHasPythonImports(fs, "test.py", []string{"flask"})
+	isFlask, err := h.FileHasPythonImports(path, []string{"flask"})
 	s.Nil(err)
 	s.True(isFlask)
 }
 
 func (s *EntrypointSuite) TestFileHasPythonImportsFromRelatedPackage() {
-	fs := afero.NewMemMapFs()
-	afero.WriteFile(fs, "test.py", []byte("from flask_api import foo"), 0600)
+	path := util.NewPath("test.py", afero.NewMemMapFs())
+	err := path.WriteFile([]byte("from flask_api import foo"), 0600)
+	s.Nil(err)
 	h := defaultInferenceHelper{}
-	isFlask, err := h.FileHasPythonImports(fs, "test.py", []string{"flask"})
+	isFlask, err := h.FileHasPythonImports(path, []string{"flask"})
 	s.Nil(err)
 	s.True(isFlask)
 }
@@ -183,6 +188,7 @@ func (s *EntrypointSuite) TestHasPythonImportsReadErr() {
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.False(isFlask)
+	r.AssertExpectations(s.T())
 }
 
 func (s *EntrypointSuite) TestHasPythonImportsRegexpErr() {

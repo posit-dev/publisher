@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
-	"github.com/spf13/afero"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type NotebookDetector struct {
@@ -35,13 +35,13 @@ var voilaImportNames = []string{
 	"ipywebrtc",
 }
 
-func (d *NotebookDetector) InferType(fs afero.Fs, path string) (*ContentType, error) {
-	entrypoint, entrypointPath, err := d.InferEntrypoint(fs, path, ".ipynb", "index.ipynb")
+func (d *NotebookDetector) InferType(path util.Path) (*ContentType, error) {
+	entrypoint, entrypointPath, err := d.InferEntrypoint(path, ".ipynb", "index.ipynb")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint != "" {
-		code, err := getNotebookFileInputs(fs, entrypointPath)
+		code, err := getNotebookFileInputs(entrypointPath)
 		if err != nil {
 			return nil, err
 		}
@@ -63,8 +63,8 @@ func (d *NotebookDetector) InferType(fs afero.Fs, path string) (*ContentType, er
 	return nil, nil
 }
 
-func getNotebookFileInputs(fs afero.Fs, path string) (string, error) {
-	f, err := fs.Open(path)
+func getNotebookFileInputs(path util.Path) (string, error) {
+	f, err := path.Open()
 	if err != nil {
 		return "", err
 	}
@@ -72,7 +72,7 @@ func getNotebookFileInputs(fs afero.Fs, path string) (string, error) {
 	return getNotebookInputs(f)
 }
 
-var errNoCellsInNotebook = errors.New("No cells found in notebook")
+var errNoCellsInNotebook = errors.New("no cells found in notebook")
 
 func getNotebookInputs(r io.Reader) (string, error) {
 	decoder := json.NewDecoder(r)
@@ -91,21 +91,21 @@ func getNotebookInputs(r io.Reader) (string, error) {
 	for cellNum, rawCell := range cells {
 		cell, ok := rawCell.(jsonObject)
 		if !ok {
-			return "", fmt.Errorf("Notebook cell %d is not an object", cellNum)
+			return "", fmt.Errorf("notebook cell %d is not an object", cellNum)
 		}
 		cellType, ok := cell["cell_type"].(string)
 		if !ok {
-			return "", fmt.Errorf("Notebook cell %d is missing cell_type", cellNum)
+			return "", fmt.Errorf("notebook cell %d is missing cell_type", cellNum)
 		}
 		if cellType == "code" {
 			sourceLines, ok := cell["source"].([]any)
 			if !ok {
-				return "", fmt.Errorf("Notebook cell %d has an invalid source", cellNum)
+				return "", fmt.Errorf("notebook cell %d has an invalid source", cellNum)
 			}
 			for lineNum, rawLine := range sourceLines {
 				line, ok := rawLine.(string)
 				if !ok {
-					return "", fmt.Errorf("Notebook cell %d line %d is not a string", cellNum, lineNum)
+					return "", fmt.Errorf("notebook cell %d line %d is not a string", cellNum, lineNum)
 				}
 				combinedSource = append(combinedSource, line)
 			}
