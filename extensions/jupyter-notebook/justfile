@@ -7,6 +7,7 @@ image := "rstudio/connect_jupyternb"
 # NOTE: See the `dist` target for why this exists.
 export SOURCE_DATE_EPOCH := `date +%s`
 
+export JUPYTER_PLATFORM_DIRS := "1"
 export PYTHONPATH := justfile_directory()
 
 all: clean env dist install run
@@ -18,13 +19,12 @@ env:
     #!/bin/bash
     python3 -m venv ./env
     . env/bin/activate
-    python -m pip install -U black flake8 pip twine wheel
+    python -m pip install -U black flake8 pip pytest twine wheel
 
 install:
     #!/bin/bash
     . env/bin/activate
     pip install -e .
-    jupyter nbextension uninstall connect_jupyternb || true
     jupyter nbextension install --symlink --user --py connect_jupyternb
     jupyter nbextension enable --py connect_jupyternb
     jupyter serverextension enable --py connect_jupyternb
@@ -44,8 +44,30 @@ dist:
 run:
     #!/bin/bash
     . env/bin/activate
+
+    # translate `just` os/arch strings to the ones `go build` expects
+    os="{{ os() }}"
+    arch="{{ arch() }}"
+
+    # windows and linux strings match
+    if [[ "$os" == "macos" ]]; then
+        os=darwin
+    fi
+
+    if [[ "$arch" == "x86_64" ]]; then
+        arch=amd64
+    elif [[ "$arch" == "aarch64" ]]; then
+        arch=arm64
+    fi
+
+    export PATH="$(pwd)/../../bin/$os-$arch:$PATH"
     jupyter notebook -y \
         --log-level={{jupyter_log_level}}
+
+test:
+    #!/bin/bash
+    . env/bin/activate
+    pytest ./connect_jupyternb
 
 yarn:
 	yarn install
