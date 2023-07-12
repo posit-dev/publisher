@@ -27,7 +27,7 @@ Just (justfile runner) is used to run commands: [Just](https://just.systems)
 
 See the additional pre-requisites required for development tasks without Docker at: 
 - CLI: TBD
-- UX: `web/README.md`
+- UX: [`web/README.md`](./web/README.md)
 
 If you are using an Apple Silicon (M1) laptop, you may need to set the following environment variable to force Docker Desktop to build amd64 images:
 
