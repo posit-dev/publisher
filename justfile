@@ -1,11 +1,13 @@
-# install, lint, build and test server & client (pre-run 'clean' if switching between use of DOCKER containers)
-default: install lint build post-build-lint test
+# clean, image, install, lint, build and test server & client (pre-run 'clean' if switching between use of DOCKER containers)
+default: clean image install lint build post-build-lint test
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
 _tag := "rstudio/connect-client:latest"
 
-_with_runner := if env_var_or_default("DOCKER", "true") == "true" {
+_use_docker := env_var_or_default("DOCKER", "true")
+
+_with_runner := if "{{ _use_docker }}" == "true" {
         "just _with_docker"
     } else {
         ""
@@ -90,11 +92,16 @@ go-coverage: test-backend
 
 # Build the image. Typically does not need to be done very often.
 image:
-    docker build \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --pull \
-        --tag {{ _tag }} \
-        ./build/package
+    #!/bin/bash
+    set -euo pipefail
+
+    if "{{ _use_docker }}" === "true"; then
+        docker build \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --pull \
+            --tag {{ _tag }} \
+            ./build/package
+    fi
 
 [private]
 _build:

@@ -15,8 +15,10 @@ via the DOCKER environment variable:
 if (DOCKER is undefined || DOCKER === 'true') {
     Tasks will be executed in a docker container using the image `build/package/Dockerfile`
 } else {
-    Docker will NOT be used and tasks will be natively executed
-    ex. `export DOCKER="false" && just`
+    Docker will NOT be used and tasks will be natively executed.
+    This is much faster than using Docker containers on Mac.
+    Recommend adding `export DOCKER="false"` to your bash/zsh profile
+    ex. `DOCKER="false" just`
 }
 
 If using Docker, you must have Docker installed: [Docker](https://www.docker.com)
