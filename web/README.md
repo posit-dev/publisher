@@ -7,7 +7,7 @@ This application is built using:
     - Using Quasar CLI
 - [Just](https://just.systems)
 - [Typescript](https://www.typescriptlang.org/)
-- [Vite](https://vitejs.dev/
+- [Vite](https://vitejs.dev/)
 - [Sass w/ SCSS syntax](https://sass-lang.com/documentation/syntax/)
 - [ESLint](https://eslint.org/)
     - Using almost the same rules as Connect Dashboard project
