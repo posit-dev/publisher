@@ -23,7 +23,7 @@ This application is built using:
     - NOTE: use of nvm is highly recommended:
         - [NVM](https://github.com/nvm-sh/nvm#installing-and-updating)
     - Global version of node is NOT recommended, but...
-        - [NodeJS]https://nodejs.org/en/download
+        - [NodeJS](https://nodejs.org/en/download)
 1. Install Quasar CLI:
     - `npm install -g @quasar/cli`
 2. Install Just:
