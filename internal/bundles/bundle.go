@@ -48,7 +48,7 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	if err != nil {
 		return nil, err
 	}
-	walker, err := NewWalker(dir, ignores)
+	walker, err := NewBundlingWalker(dir, ignores)
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}

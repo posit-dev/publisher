@@ -50,11 +50,11 @@ var standardIgnores = []string{
 	"*_cache/",
 }
 
-type walker struct {
+type bundlingWalker struct {
 	ignoreList gitignore.GitIgnoreList
 }
 
-func (i *walker) Walk(path util.Path, fn util.WalkFunc) error {
+func (i *bundlingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 	return i.ignoreList.Walk(path, func(path util.Path, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			// Load .rscignore from every directory where it exists
@@ -68,7 +68,7 @@ func (i *walker) Walk(path util.Path, fn util.WalkFunc) error {
 			}
 			// Ignore Python environment directories. We check for these
 			// separately because they aren't expressible as gitignore patterns.
-			if isPythonEnvironmentDir(path) {
+			if util.IsPythonEnvironmentDir(path) {
 				return filepath.SkipDir
 			}
 		}
@@ -76,7 +76,7 @@ func (i *walker) Walk(path util.Path, fn util.WalkFunc) error {
 	})
 }
 
-func (i *walker) addGlobs(globs []string) error {
+func (i *bundlingWalker) addGlobs(globs []string) error {
 	for _, pattern := range globs {
 		err := i.ignoreList.AppendGlob(pattern)
 		if err != nil {
@@ -86,13 +86,13 @@ func (i *walker) addGlobs(globs []string) error {
 	return nil
 }
 
-func NewWalker(dir util.Path, ignores []string) (Walker, error) {
+func NewBundlingWalker(dir util.Path, ignores []string) (Walker, error) {
 	gitIgnore := gitignore.New(dir)
-	return newWalker(dir, ignores, &gitIgnore)
+	return newBundlingWalker(dir, ignores, &gitIgnore)
 }
 
-func newWalker(dir util.Path, ignores []string, gitIgnore gitignore.GitIgnoreList) (Walker, error) {
-	walk := &walker{
+func newBundlingWalker(dir util.Path, ignores []string, gitIgnore gitignore.GitIgnoreList) (Walker, error) {
+	walk := &bundlingWalker{
 		ignoreList: gitIgnore,
 	}
 	const errNotInGitRepo = "not in a git repository"
@@ -109,21 +109,4 @@ func newWalker(dir util.Path, ignores []string, gitIgnore gitignore.GitIgnoreLis
 		return nil, err
 	}
 	return walk, nil
-}
-
-var pythonBinPaths = []string{
-	"bin/python",
-	"bin/python3",
-	"Scripts/python.exe",
-	"Scripts/python3.exe",
-}
-
-func isPythonEnvironmentDir(path util.Path) bool {
-	for _, binary := range pythonBinPaths {
-		exists, err := path.Join(binary).Exists()
-		if err == nil && exists {
-			return true
-		}
-	}
-	return false
 }
