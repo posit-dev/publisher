@@ -15,8 +15,10 @@ via the DOCKER environment variable:
 if (DOCKER is undefined || DOCKER === 'true') {
     Tasks will be executed in a docker container using the image `build/package/Dockerfile`
 } else {
-    Docker will NOT be used and tasks will be natively executed
-    ex. `export DOCKER="false" && just`
+    Docker will NOT be used and tasks will be natively executed.
+    This is much faster than using Docker containers on Mac.
+    Recommend adding `export DOCKER="false"` to your bash/zsh profile
+    ex. `DOCKER="false" just`
 }
 
 If using Docker, you must have Docker installed: [Docker](https://www.docker.com)
@@ -25,7 +27,7 @@ Just (justfile runner) is used to run commands: [Just](https://just.systems)
 
 See the additional pre-requisites required for development tasks without Docker at: 
 - CLI: TBD
-- UX: `web/README.md`
+- UX: [`web/README.md`](./web/README.md)
 
 If you are using an Apple Silicon (M1) laptop, you may need to set the following environment variable to force Docker Desktop to build amd64 images:
 
@@ -37,12 +39,19 @@ export DOCKER_DEFAULT_PLATFORM=linux/amd64
 
 #### Building and Testing
 
-Build the DOCKER image:
-- **NOTE:** If you are not using docker (by setting the DOCKER environment variable to "false"), you can skip this step.
-- `just image`
+Simplest approach to perform all of the applicable steps:
+- `DOCKER="true" just` or because DOCKER=true is the default: `just`
+    - This will execute the steps within a docker container, so it minimizes the setup required.
+    - This is the setup which is used by dockerhub actions within CI
+- `DOCKER="false" just`
+    - Best for active development usage. This mode, without docker, greatly improves the I/O performance which should
+      improve your development cycle.
 
-Then... One command to build / test everything (server and client UX)
-`just`
+Building the DOCKER image:
+- If using docker (by either not setting the DOCKER environment variable or setting it to "true"), you'll need
+  to build the DOCKER image. This is done as one of the steps within the `default` recipe, but you can also 
+  perform it with the command `just image`.
+- If you are not using docker, you can skip this step, although performing the recipe is a NO-OP.
 
 Other recipes can be found by executing `just --list` for the top level project
 ```
