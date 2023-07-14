@@ -44,7 +44,7 @@ Simplest approach to perform all of the applicable steps:
     - This will execute the steps within a docker container, so it minimizes the setup required.
     - This is the setup which is used by dockerhub actions within CI
 - `DOCKER="false" just`
-    - Best for active development usage. This mode, without docker, greatly improves the I/O performance which shoud
+    - Best for active development usage. This mode, without docker, greatly improves the I/O performance which should
       improve your development cycle.
 
 Building the DOCKER image:
