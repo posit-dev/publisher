@@ -7,12 +7,12 @@ on:
 #   https://github.com/marketplace/actions/debugging-with-tmate
 #   Use `limit-access-to-actor: true` so only you can ssh into the environment!
 #  
-#   For example, add this to the jobs list near the end
-# - name: Setup tmate session
-#   if: ${{ failure() }}
-#   uses: mxschmitt/action-tmate@v3
-#   with:
-#     limit-access-to-actor: true
+#   For example, to debug a failure, append this to the jobs list within the failing step
+#   - name: Setup tmate session
+#     if: ${{ failure() }}
+#     uses: mxschmitt/action-tmate@v3
+#     with:
+#       limit-access-to-actor: true
 #
 
 jobs:
@@ -41,11 +41,6 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           path: bin/
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
 
   test-windows-client:
     needs: pr-code-validation
