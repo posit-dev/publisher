@@ -71,7 +71,7 @@ lint-fix:
 
 # Lint step which requires the code to be built first. Normally want to lint prior to building.
 post-build-lint:
-    go vet -all ./...
+    {{ _with_runner }} go vet -all ./...
 
 # Run the publishing client executable
 run *args:
@@ -88,7 +88,7 @@ test-backend:
 
 # Profile the test code coverage of the Go code
 go-coverage: test-backend
-    go tool cover -html=cover.out
+    {{ _with_runner }} go tool cover -html=cover.out
 
 # Build the image. Typically does not need to be done very often.
 image:
