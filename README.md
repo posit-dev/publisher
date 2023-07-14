@@ -51,7 +51,7 @@ Building the DOCKER image:
 - If using docker (by either not setting the DOCKER environment variable or setting it to "true"), you'll need
   to build the DOCKER image. This is done as one of the steps within the `default` recipe, but you can also 
   perform it with the command `just image`.
-- If you are not using docker, you can skip this step, although performing the recipe is a NO-OP.gr
+- If you are not using docker, you can skip this step, although performing the recipe is a NO-OP.
 
 Other recipes can be found by executing `just --list` for the top level project
 ```
