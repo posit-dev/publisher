@@ -48,6 +48,7 @@ test-e2e:
     # install cypress
     npx cypress install
     # run the tests
+    sudo chown -R 1001:123 "/root/.npm"
     npx quasar test --e2e cypress
 
 # run unit tests one time

@@ -8,9 +8,9 @@ _tag := "rstudio/connect-client:latest"
 _use_docker := env_var_or_default("DOCKER", "true")
 
 _with_runner := if "{{ _use_docker }}" == "true" {
-        "just _with_docker"
+        "echo 'using docker' && just _with_docker"
     } else {
-        ""
+        "echo 'not using docker - _use_docker = {{ _use_docker }}'"
     }
 
 _uid_args := if "{{ os() }}" == "Linux" {
