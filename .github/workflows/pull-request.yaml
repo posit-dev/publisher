@@ -41,6 +41,11 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           path: bin/
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
   test-windows-client:
     needs: pr-code-validation
