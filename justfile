@@ -5,12 +5,10 @@ _interactive := `tty -s && echo "-it" || echo ""`
 
 _tag := "rstudio/connect-client:latest"
 
-_use_docker := env_var_or_default("DOCKER", "true")
-
-_with_runner := if "{{ _use_docker }}" == "true" {
-        "echo 'using docker' && just _with_docker"
+_with_runner := if env_var_or_default("DOCKER", "true") == "true" {
+        "just _with_docker"
     } else {
-        "echo 'not using docker - _use_docker = {{ _use_docker }}'"
+        ""
     }
 
 _uid_args := if "{{ os() }}" == "Linux" {
@@ -95,7 +93,7 @@ image:
     #!/bin/bash
     set -euo pipefail
 
-    if "{{ _use_docker }}" === "true"; then
+    if "${DOCKER:-true}" == "true" ; then
         docker build \
             --build-arg BUILDKIT_INLINE_CACHE=1 \
             --pull \

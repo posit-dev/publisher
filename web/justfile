@@ -1,3 +1,5 @@
+_use_docker := env_var_or_default("DOCKER", "true")
+
 # will run recipes: install, lint, build, and test
 default: install lint build test
 
@@ -47,8 +49,12 @@ test-e2e:
     export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
     # install cypress
     npx cypress install
-    # run the tests
-    quasar test --e2e cypress
+    if "{{ _use_docker }}" == "true"; then
+      quasar test --e2e cypress
+    else
+      npx quasar test --e2e cypress
+    fi
+
 
 # run unit tests one time
 test-unit:

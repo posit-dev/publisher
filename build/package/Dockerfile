@@ -33,6 +33,6 @@ RUN yum install -y http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.no
 RUN yum install -y npm
 
 # quasar CLI	
-# hardcoding to npm for now (instead of pnpm)	
+# installed globally within docker only, to support CI's needs (seeing errors when installed within the project and executing w/ npx)
 RUN npm install -g @quasar/cli 	
 RUN quasar --version

@@ -24,9 +24,7 @@ This application is built using:
         - [NVM](https://github.com/nvm-sh/nvm#installing-and-updating)
     - Global version of node is NOT recommended, but...
         - [NodeJS](https://nodejs.org/en/download)
-2. Install Quasar CLI:
-    - `npm install -g @quasar/cli`
-3. Install Just:
+2. Install Just:
     - `[Just](https://just.systems/man/en/)
 
 # Building the client
