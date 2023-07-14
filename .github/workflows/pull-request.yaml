@@ -43,7 +43,7 @@ jobs:
           path: bin/
 
   test-windows-client:
-    needs: build
+    needs: pr-code-validation
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
@@ -69,7 +69,7 @@ jobs:
           just run-client $env:CLIENT
 
   test-macos-client:
-    needs: build
+    needs: pr-code-validation
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
@@ -95,7 +95,7 @@ jobs:
 
   test-linux-clients:
     runs-on: ubuntu-latest
-    needs: build
+    needs: pr-code-validation
     strategy:
       matrix:
         CLIENT:
