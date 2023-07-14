@@ -1,57 +1,51 @@
-# Web Application
+# Publishing Client UX
 
-This application is built using [VueJS](https://vuejs.org).
-
-## Getting Started
-
-### Prerequisites
-
+This application is built using:
+- [VueJS](https://vuejs.org)
+    - Vue 3, Composition API w/ Setup API
+- [Quasar Framework V2](https://quasar.dev/)
+    - Using Quasar CLI
 - [Just](https://just.systems)
-- [Node.js](https://nodejs.org/)
-- [Yarn](https://yarnpkg.com/getting-started/install)
+- [Typescript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
+- [Sass w/ SCSS syntax](https://sass-lang.com/documentation/syntax/)
+- [ESLint](https://eslint.org/)
+    - Using almost the same rules as Connect Dashboard project
+- [Pinia](https://pinia.vuejs.org/)
+- [Axios](https://axios-http.com/docs/intro)
+- [Vue-i18n](https://vue-i18n.intlify.dev/)
+- [Vitest](https://vitest.dev/)
+- [Cypress](https://www.cypress.io/)
 
-## Installation
+# Installing the prerequisites
 
-Execute `just install` from this directory to install all dependencies.
+1. Node JS (LTS Version)
+    - NOTE: use of nvm is highly recommended:
+        - [NVM](https://github.com/nvm-sh/nvm#installing-and-updating)
+    - Global version of node is NOT recommended, but...
+        - [NodeJS](https://nodejs.org/en/download)
+2. Install Just:
+    - `[Just](https://just.systems/man/en/)
 
-```
-just install
-```
+# Building the client
 
-## Development
+1. Default recipe will clean, install, lint, build and test
+    - `just`
 
-Execute `just start` from this directory to start a development server using [Vite](https://vitejs.dev). By default, the application is available on port 5173. Go to `http://localhost:5173` to open the application in your browser.
+# Common Developer tasks
 
-```shell
-just start
-```
+All tasks are done through the justfile recipes, present within the `justfile` file.
+They can be displayed at the command line with: `just --list`
 
-## Testing
-
-### Unit Testing
-
-Execute `just test` from this directory to execute the unit test suite. 
-
-The unit test suite consists of JavaScript and Golang tests. Directions to run each language's test suite independently are below.
-
-```
-just test
-```
-
-#### Running JavaScript Unit Tests
-
-Execute `yarn test` ton only execute JavaScript unit tests.
-
-```
-yarn test
-```
-
-#### Running Golang Unit Tests
-
-Execute `go test` to only execute Golang unit tests.
-
-```
-go test
-```
-
-Note: Golang unit tests depend on a built distribution in the `./dist` directory. To rebuild the distribution, execute `just build --mode development`.
+Recipes include:
+build            -- Args: # build the web artifacts for the SPA (into dest/spa)
+clean            -- Args: # remove build artifacts and dependencies
+default          -- Args: # will run recipes: install, lint, build and test
+dev              -- Args: # start common UX development flow. Runs install recipe ahead of starting webserver whic
+install          -- Args: # update javascript/typescript dependencies
+lint             -- Args: # lint the source files, do not fix the fixable items
+lint-fix         -- Args: # lint the source files, fix the fixable items
+test             -- Args: # perform unit and e2e tests
+test-e2e         -- Args: # run e2e (Cypress) tests
+test-unit        -- Args: # run unit tests one time
+test-unit-watch  -- Args: # run unit tests in watch mode, re-running as files are changed

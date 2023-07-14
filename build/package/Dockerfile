@@ -1,7 +1,8 @@
+# To build and run shell: `docker run -it $(docker build -q .)` from within `build/package` subdirectory
 FROM centos:7
 
 RUN yum update -y \
-    && yum install -y curl git openssl mailcap tzdata xz \
+    && yum install -y curl git openssl mailcap tzdata xz nodejs xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GConf2 nss libXScrnSaver alsa-lib \
     && yum groupinstall -y "Development Tools"
 
 RUN export GOLANG_VERSION=1.20.4 \
@@ -26,3 +27,12 @@ RUN export SHELLCHECK_VERSION=0.9.0 \
 RUN export JUST_VERSION=1.13.0 \
     && curl -fsSL https://github.com/casey/just/releases/download/${JUST_VERSION}/just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz \
     | tar -C /usr/local/bin -xz just
+
+# UX stack
+RUN yum install -y http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+RUN yum install -y npm
+
+# quasar CLI	
+# installed globally within docker only, to support CI's needs (seeing errors when installed within the project and executing w/ npx)
+RUN npm install -g @quasar/cli 	
+RUN quasar --version

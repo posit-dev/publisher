@@ -24,6 +24,7 @@ max_read = 4000
 headers = {
     "go": header1,
     "js": header1,
+    "ts": header1,
     "R": header2,
     "py": header2,
     "sh": header2,
