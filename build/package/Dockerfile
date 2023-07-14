@@ -31,3 +31,8 @@ RUN export JUST_VERSION=1.13.0 \
 # UX stack
 RUN yum install -y http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 RUN yum install -y npm
+
+# quasar CLI	
+# hardcoding to npm for now (instead of pnpm)	
+RUN npm install -g @quasar/cli 	
+RUN quasar --version
