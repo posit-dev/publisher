@@ -1,3 +1,5 @@
+<!-- Copyright (C) 2023 by Posit Software, PBC. -->
+
 <template>
   <q-layout
     view="hHh lpR fFf"
@@ -67,14 +69,29 @@
                     dark
                   >
                     <template #label="opt">
-                      <div class="q-ma-sm q-pa-sm" style="border: solid; width: 300px; border-radius: 10px;">
-                        <q-item-label class="text-h6" style="text-transform: uppercase">{{ opt.label }}</q-item-label>
-                        <q-item-label caption> {{ opt.account }} </q-item-label>
-                        <q-item-label caption> {{ opt.server }} </q-item-label>
+                      <div
+                        class="q-ma-sm q-pa-sm"
+                        style="border: solid; width: 300px; border-radius: 10px;"
+                      >
+                        <q-item-label
+                          class="text-h6"
+                          style="text-transform: uppercase"
+                        >
+                          {{ opt.label }}
+                        </q-item-label>
+                        <q-item-label caption>
+                          {{ opt.account }}
+                        </q-item-label>
+                        <q-item-label caption>
+                          {{ opt.server }}
+                        </q-item-label>
                       </div>
                     </template>
                   </q-option-group>
-                  <div class="q-ma-sm q-pa-sm" style="border: solid; width: 300px; border-radius: 10px; margin-left: 3rem;">
+                  <div
+                    class="q-ma-sm q-pa-sm"
+                    style="border: solid; width: 300px; border-radius: 10px; margin-left: 3rem;"
+                  >
                     add new server
                   </div>
                 </div>
@@ -127,7 +144,7 @@
                 <li>New deployment - existing destination, different account than used previously</li>
                 <li>New deployment - new destination (new account)</li>
               </ul>
-<br>
+              <br>
               What would you like to deploy:<br>
               <ul>
                 <li>defaults to previous deployment for this bundle</li>
@@ -576,7 +593,7 @@ const destinationTitle = computed(() => {
     return `Colorado, updating 'Quarterly Report'`;
   }
   return `Colorado, deploying 'Quarterly Report'`;
-})
+});
 
 type QSelectOption = {
   label: string;
