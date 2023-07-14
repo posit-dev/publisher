@@ -39,12 +39,19 @@ export DOCKER_DEFAULT_PLATFORM=linux/amd64
 
 #### Building and Testing
 
-Build the DOCKER image:
-- **NOTE:** If you are not using docker (by setting the DOCKER environment variable to "false"), you can skip this step.
-- `just image`
+Simplest approach to perform all of the applicable steps:
+- `DOCKER="true" just` or because DOCKER=true is the default: `just`
+    - This will execute the steps within a docker container, so it minimizes the setup required.
+    - This is the setup which is used by dockerhub actions within CI
+- `DOCKER="false" just`
+    - Best for active development usage. This mode, without docker, greatly improves the I/O performance which shoud
+      improve your development cycle.
 
-Then... One command to build / test everything (server and client UX)
-`just`
+Building the DOCKER image:
+- If using docker (by either not setting the DOCKER environment variable or setting it to "true"), you'll need
+  to build the DOCKER image. This is done as one of the steps within the `default` recipe, but you can also 
+  perform it with the command `just image`.
+- If you are not using docker, you can skip this step, although performing the recipe is a NO-OP.gr
 
 Other recipes can be found by executing `just --list` for the top level project
 ```
