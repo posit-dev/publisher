@@ -1,5 +1,5 @@
-# install, lint, build and test server & client (pre-run 'clean' if switching between use of DOCKER containers)
-default: install lint build post-build-lint test
+# clean, image, install, lint, build and test server & client (pre-run 'clean' if switching between use of DOCKER containers)
+default: clean image install lint build post-build-lint test
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
@@ -24,8 +24,15 @@ build:
 
 # Build the production web UX and the development server
 build-dev: 
-    {{ _with_runner }} just web/build
-    just _build_dev
+    #!/bin/bash
+    set -euo pipefail
+
+    if ! just _build_dev; then
+     echo ""
+     echo "A WEB build is required for the backend to build. Possibly resolve with 'just web/build' or 'just build'."
+     exit 1
+    fi
+
 
 # Install any supporting packages (such as web UX javascript/typescript dependencies)
 install:
@@ -58,11 +65,11 @@ lint-fix:
     # This will fail even though fix flag is supplied (to fix errors).
     # We could suppress w/ cmd || true, but do we want to?
     {{ _with_runner }} ./scripts/ccheck.py ./scripts/ccheck.config --fix
-    {{ _with_runner }} just web/lint --fix
+    {{ _with_runner }} just web/lint-fix
 
 # Lint step which requires the code to be built first. Normally want to lint prior to building.
 post-build-lint:
-    go vet -all ./...
+    {{ _with_runner }} go vet -all ./...
 
 # Run the publishing client executable
 run *args:
@@ -79,15 +86,20 @@ test-backend:
 
 # Profile the test code coverage of the Go code
 go-coverage: test-backend
-    go tool cover -html=cover.out
+    {{ _with_runner }} go tool cover -html=cover.out
 
 # Build the image. Typically does not need to be done very often.
 image:
-    docker build \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --pull \
-        --tag {{ _tag }} \
-        ./build/package
+    #!/bin/bash
+    set -euo pipefail
+
+    if "${DOCKER:-true}" == "true" ; then
+        docker build \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --pull \
+            --tag {{ _tag }} \
+            ./build/package
+    fi
 
 [private]
 _build:

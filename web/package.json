@@ -5,28 +5,19 @@
   "productName": "Posit Publishing Web UI",
   "author": "Bill Sager <whs@sager.org>",
   "private": true,
-  "scripts": {
-    "lint": "eslint --ext .js,.ts,.vue ./",
-    "test": "echo \"See package.json => scripts for available tests.\" && exit 0",
-    "dev": "quasar dev",
-    "build": "quasar build",
-    "test:unit:ui": "vitest --ui",
-    "test:unit": "vitest",
-    "test:unit:ci": "vitest run",
-    "test:e2e": "cross-env NODE_ENV=test start-test \"quasar dev\" http-get://localhost:9000 \"cypress open --e2e\"",
-    "test:e2e:ci": "cross-env NODE_ENV=test start-test \"quasar dev\" http-get://localhost:9000 \"cypress run --e2e\"",
-    "test:component": "cross-env NODE_ENV=test cypress open --component",
-    "test:component:ci": "cross-env NODE_ENV=test cypress run --component"
-  },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
     "axios": "^1.2.1",
     "pinia": "^2.0.11",
-    "vue-i18n": "^9.2.2"
+    "quasar": "^2.12.0",
+    "vue": "^3.3.4",
+    "vue-i18n": "^9.2.2",
+    "vue-router": "^4.2.2"
   },
   "devDependencies": {
     "@intlify/vite-plugin-vue-i18n": "^3.3.1",
     "@quasar/app-vite": "^1.0.0",
+    "@quasar/cli": "^2.2.1",
     "@quasar/quasar-app-extension-testing": "^2.1.0",
     "@quasar/quasar-app-extension-testing-e2e-cypress": "^5.1.0",
     "@quasar/quasar-app-extension-testing-unit-vitest": "^0.1.0",
@@ -47,12 +38,9 @@
     "eslint-plugin-vue": "^9.0.0",
     "eslint-plugin-vuejs-accessibility": "^2.1.0",
     "lint": "^0.8.19",
-    "quasar": "^2.12.0",
     "test": "^3.3.0",
     "typescript": "^4.5.4",
-    "vitest": "^0.15.0",
-    "vue": "^3.3.4",
-    "vue-router": "^4.2.2"
+    "vitest": "^0.15.0"
   },
   "engines": {
     "node": "^18 || ^16 || ^14.19",

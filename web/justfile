@@ -1,20 +1,7 @@
-
-# which package manager to use: [pnpm or npm], and [pnpx or npx]
-# NOTE: pnpm will not work w/ a docker container, mounted on top of
-# the native file system. In this case the following line fails:
-# [vite:esbuild]
-# You installed esbuild on another platform than the one you're currently using.
-# This won't work because esbuild is written with native code and needs to
-# install a platform-specific binary executable.
-_package_manager := "npm"
-_package_manager_exec := "npx"
+_use_docker := env_var_or_default("DOCKER", "true")
 
 # will run recipes: install, lint, build, and test
-default:
-    just install
-    just lint
-    just build
-    just test
+default: install lint build test
 
 # update javascript/typescript dependencies
 install:
@@ -24,23 +11,29 @@ install:
     # set this environment variable to keep Cypress from attempting to create
     # cache within root's home dir.
     export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
-    {{ _package_manager }} install --no-audit
+    echo "NOTE: npm install may take five minutes or more from within a docker container..."
+    npm install --no-audit
 
 # lint the source files, do not fix the fixable items
 lint:
-    {{ _package_manager }} run lint
-    # if want to lint other file extensions, follow this example:
-    # pnpx eslint --ext .js,.ts,.vue,.cjs ./
+    npx eslint --ext .js,.ts,.vue,.cjs ./
 
 # lint the source files, fix the fixable items
 lint-fix:
-    {{ _package_manager }} run lint --fix
-    # if want to lint & fix other file extensions, follow this example:
-    # pnpx eslint --ext .js,.ts,.vue,.cjs ./ "--fix"
+    npx eslint --ext .js,.ts,.vue,.cjs ./ "--fix"
 
 # build the web artifacts for the SPA (into dest/spa)
 build:
-    quasar build
+    #!/bin/bash
+    set -euo pipefail
+
+    if ! npx quasar build; then
+     echo ""
+     echo "The build has failed."
+     echo "If you encountered the error: 'Global Quasar CLI • ⚠️   Error  Unknown command \"build\"'"
+     echo "Try running 'just install' and then retrying your build command."
+     exit 1
+    fi
 
 # perform unit and e2e tests
 test: test-unit test-e2e
@@ -56,21 +49,25 @@ test-e2e:
     export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
     # install cypress
     npx cypress install
-    # run the tests
-    quasar test --e2e cypress
+    if "{{ _use_docker }}" == "true"; then
+      quasar test --e2e cypress
+    else
+      npx quasar test --e2e cypress
+    fi
+
 
 # run unit tests one time
 test-unit:
     # npx vitest run
-    quasar test --unit vitest
+    npx quasar test --unit vitest
 
 # run unit tests in watch mode, re-running as files are changed
 test-unit-watch:
-    {{ _package_manager_exec }} vitest
+    npx vitest
 
 # start common UX development flow. Runs install recipe ahead of starting the web server which updates automatically upon file changes
 dev:
-    quasar dev
+    npx quasar dev
 
 # remove build artifacts and dependencies
 clean:
