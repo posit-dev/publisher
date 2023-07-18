@@ -1,6 +1,6 @@
 ---
-name: Minimal Issue Template
-about: A minimal issue template.
+name: Issue Template
+about: An issue template.
 title: ''
 labels: ''
 assignees: ''
