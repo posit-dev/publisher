@@ -14,6 +14,6 @@ Description for the issue.
 - 
 
 ```[tasklist]
-### Tasks
+### Acceptance Criteria
 - [ ] Add task or issue references here
 ```
