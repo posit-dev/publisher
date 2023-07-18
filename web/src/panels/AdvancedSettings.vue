@@ -29,6 +29,3 @@
     </q-card>
   </q-expansion-item>
 </template>
-
-<script setup lang="ts">
-</script>

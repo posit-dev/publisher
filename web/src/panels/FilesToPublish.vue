@@ -66,7 +66,7 @@
             v-model:selected="selected"
             v-model:ticked="ticked"
             v-model:expanded="expanded"
-            :nodes="qTreeNodes as any"
+            :nodes="qTreeNodes"
             node-key="key"
             tick-strategy="leaf"
             dark
@@ -148,7 +148,7 @@
               <q-icon
                 name="close"
                 class="cursor-pointer"
-                @click.stop.prevent="entryPoint = (null as unknown) as EntryPointOption"
+                @click.stop.prevent="entryPoint = null"
               />
             </template>
           </q-select>
@@ -156,7 +156,7 @@
         <div class="q-pa-md row q-col-gutter-sm">
           <div class="col-12 col-sm-6 q-gutter-sm">
             <div class="text-h6 q-mb-md q-mr-lg">
-              Selected {{ getNumDirs }} directories and {{ getNumFiles }} files
+              Selected {{ numberOfDirectories }} directories and {{ numberOfFiles }} files
             </div>
             <div>
               <div
@@ -189,7 +189,7 @@
 
 <script setup lang="ts">
 
-import { ref, watch, reactive, computed, onBeforeMount } from 'vue';
+import { ref, Ref, watch, reactive, computed, onBeforeMount } from 'vue';
 
 import type { QSelectOption, QTree } from 'quasar';
 import type { NodeType, DirectoryNode } from '../api/directoryContents';
@@ -219,16 +219,16 @@ interface IAddedOrDeletedFiles {
 }
 
 const selected = ref('');
-const ticked = ref([] as number[]);
-const expanded = ref([0] as number[]);
-const ignoreRules = ref([] as string[]);
+const ticked: Ref<number[]> = ref([]);
+const expanded: Ref<number[]> = ref([0]);
+const ignoreRules: Ref<string[]> = ref([]);
 const treeEnableExcluded = ref(false);
 
 const filesExpanded = ref(false);
 const acknowledgeDifferences = ref(false);
 
-const entryPoint = ref((null as unknown) as EntryPointOption);
-const entryPointOptions = ref([] as EntryPointOption[]);
+const entryPoint = ref<EntryPointOption | null>(null);
+const entryPointOptions: Ref<EntryPointOption[]> = ref([]);
 const simulateReploymentMode = ref(false);
 
 let nextToggleSelectionStateToTrue = true;
@@ -239,7 +239,7 @@ const fileTree = ref(null);
 const fileNodesMap = reactive(new Map<number, DirectoryNode>());
 const qTreeNodesMap = reactive(new Map<number, QTreeNode>());
 
-let qTreeNodes = [] as QTreeNode[];
+let qTreeNodes: QTreeNode[] = [];
 
 watch(
   simulateReploymentMode,
@@ -253,9 +253,9 @@ watch(acknowledgeDifferences, () => {
   onTick();
 });
 
-const getNumDirs = computed(() => getNumOfType('directory'));
+const numberOfDirectories = computed(() => getNumOfType('directory'));
 
-const getNumFiles = computed(() => getNumOfType('file'));
+const numberOfFiles = computed(() => getNumOfType('file'));
 
 // across all nodes
 const addedOrDeletedFiles = computed(() : IAddedOrDeletedFiles => {
@@ -267,7 +267,7 @@ const addedOrDeletedFiles = computed(() : IAddedOrDeletedFiles => {
       added,
       deleted,
       empty: true,
-    } as IAddedOrDeletedFiles;
+    };
   }
 
   Array.from(fileNodesMap.keys()).forEach(key => {
@@ -285,7 +285,7 @@ const addedOrDeletedFiles = computed(() : IAddedOrDeletedFiles => {
     added,
     deleted,
     empty: (added.length === 0 && deleted.length === 0)
-  } as IAddedOrDeletedFiles;
+  };
 });
 
 onBeforeMount(() => {
@@ -313,7 +313,7 @@ function flipTicked(key: number) {
 }
 
 function updateEntryPointFileOptions() {
-  const options = [] as EntryPointOption[];
+  const options: EntryPointOption[] = [];
 
   ticked.value.forEach(key => {
     const fileNode = fileNodesMap.get(key);
@@ -321,7 +321,7 @@ function updateEntryPointFileOptions() {
       options.push({
         label: fileNode.path,
         value: key,
-      } as EntryPointOption);
+      });
     }
   });
   if (options.length > 1) {
@@ -338,13 +338,13 @@ function updateEntryPointFileOptions() {
   }
   entryPointOptions.value = options;
   if (options.length === 0) {
-    entryPoint.value = (null as unknown) as EntryPointOption;
+    entryPoint.value = null;
     return;
   }
-  if (entryPoint.value) {
-    const found = options.find(x => x.value === entryPoint.value.value);
+  if (entryPoint?.value) {
+    const found = options.find(x => x.value === entryPoint.value?.value);
     if (!found) {
-      entryPoint.value = (null as unknown) as EntryPointOption;
+      entryPoint.value = null;
     }
   }
 }
@@ -449,7 +449,11 @@ function handleNodeLabelClick(node: QTreeNode) {
 function forceRefreshOfQTree() {
   if (fileTree.value) {
     /*  eslint-disable @typescript-eslint/no-explicit-any */
-    const qtree = fileTree.value as any;
+    const qtree: any = fileTree.value;
+    // This is a hack to force QTree to re-evaluate changes.
+    // Would be very good to find supported way of doing this.
+    // Need to determine why this is needed? Did I not make the data
+    // reactive????
     qtree.lazy = {};
   }
 }
@@ -505,6 +509,7 @@ function convertNodesToData(nodes: DirectoryNode[]): QTreeNode[] {
       // time: node.time
       disabled: false,
       showDisabled: false,
+      // Is there a better way to do this?
       children: reactive([]) as QTreeNode[],
       deleted: node.deleted,
       new: node.new
@@ -631,8 +636,8 @@ const calculatedFilesSummary = computed(() => {
   }
 
   const numFiles = ticked.value.length;
-  if (entryPoint.value) {
-    const node = fileNodesMap.get(entryPoint.value.value);
+  if (entryPoint?.value) {
+    const node = fileNodesMap.get(entryPoint.value?.value);
     if (node) {
       if (numFiles === 1) {
         return `${node.name} (${totalSizeStr}) from ${baseDir}`;
