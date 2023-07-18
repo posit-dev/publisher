@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 /* eslint-disable */
 
 // Forces TS to apply `@quasar/app-vite` augmentations of `quasar` package

@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import { store } from 'quasar/wrappers';
 import { createPinia } from 'pinia';
 import { Router } from 'vue-router';

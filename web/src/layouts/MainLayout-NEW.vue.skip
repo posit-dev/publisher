@@ -1,0 +1,596 @@
+<!-- Copyright (C) 2023 by Posit Software, PBC. -->
+
+<template>
+  <q-layout
+    view="hHh lpR fFf"
+    class="q-pa-md bg-grey-9 text-white"
+    style="max-width: 800px"
+  >
+    <q-header
+      elevated
+      class="bg-primary text-white"
+    >
+      <q-toolbar>
+        <q-toolbar-title>
+          <img
+            src="/assets/images/posit-logo-reverse-TM.svg"
+            style="
+              width: 100px;
+              vertical-align: middle;
+            "
+            alt="Posit PBC logo"
+          >
+          Publisher
+        </q-toolbar-title>
+      </q-toolbar>
+    </q-header>
+  </q-layout>
+</template>
+
+<script setup lang="ts">
+
+import { ref, watch, reactive, computed } from 'vue';
+
+import type { NodeType, DirectoryNode } from '../api/directoryContents';
+import { directoryData, SampleIncomingRules, baseDir } from '../api/directoryContents';
+
+import { deploymentSteps } from './deploymentSteps';
+
+const showDetailsButton = ref(false);
+const showTimeline = ref(false);
+const showProgressBar = ref(false);
+const disablePublishButton = ref(false);
+const progressValue = ref(0);
+
+function toggleShowDetailsButton() {
+  showDetailsButton.value = !showDetailsButton.value;
+}
+
+function toggleShowProgressBar() {
+  showProgressBar.value = !showProgressBar.value;
+
+  if (showProgressBar.value) {
+    progressValue.value = 0;
+    const interval = setInterval(() => {
+      progressValue.value += 0.1;
+      console.log(progressValue.value);
+      if (progressValue.value > 1) {
+        progressValue.value = 1;
+        clearInterval(interval);
+      }
+    });
+  }
+}
+
+function toggleShowTimeline() {
+  showTimeline.value = !showTimeline.value;
+}
+
+function onClickPublish() {
+  toggleShowProgressBar();
+  toggleShowDetailsButton();
+}
+
+const selected = ref('');
+const ticked = ref([] as number[]);
+const expanded = ref([0] as number[]);
+const ignoreRules = ref([] as string[]);
+const treeEnableExcluded = ref(false);
+const simulateRedeploymentMode = ref(false);
+const filesExpanded = ref(false);
+const acknowledgeDifferences = ref(false);
+const deploymentMode = ref(null);
+const shape = ref(null);
+const title = ref('');
+const description = ref('');
+
+const deploymentModeOptions = [
+  { label: 'New deployment', value: 'new_deployment', color: 'white' },
+  { label: 'Re-deployment', value: 're_deployment', color: 'white' }
+];
+
+const destination = ref(null);
+
+const destinationOptions = [
+  {
+    value: 'op1',
+    label: 'Staging',
+    account: 'bill.sager@posit.co',
+    server: 'https://dogfood.posit.co',
+    icon: 'restaurant_menu',
+    color: 'white'
+  },
+  {
+    value: 'op2',
+    label: 'Production',
+    account: 'bill.sager@posit.co',
+    server: 'https://connect.posit.co',
+    color: 'white'
+  },
+  {
+    value: 'op3',
+    label: 'Development',
+    account: 'bill.sager@posit.co',
+    server: 'https://colorado.posit.co',
+    color: 'white'
+  }
+];
+
+const selectStaging = ref(false);
+const selectProduction = ref(false);
+const selectDevelopment = ref(false);
+
+watch(simulateRedeploymentMode, () => {
+  updateDisplayRedeploymentDiffs();
+});
+
+watch(acknowledgeDifferences, () => {
+  qTreeNodes = convertNodesToData(directoryData);
+  onTick();
+});
+
+const destinationTitle = computed(() => {
+  if (simulateRedeploymentMode.value) {
+    return `Colorado, updating 'Quarterly Report'`;
+  }
+  return `Colorado, deploying 'Quarterly Report'`;
+})
+
+type QSelectOption = {
+  label: string;
+  key: number;
+}
+const entryPoint = ref((null as unknown) as QSelectOption);
+const entryPointOptions = ref([] as QSelectOption[]);
+
+let nextToggleSelectionStateToTrue = true;
+
+// The following line establishes a component ref in $refs that we can work with
+const fileTree = ref(null);
+
+const fileNodesMap = reactive(new Map<number, DirectoryNode>());
+const qTreeNodesMap = reactive(new Map<number, QTreeNode>());
+
+// Acessiblity may be of concern with TREE... keyboard navigation seems to be unavailable. Can
+// submit PRs to help improve...??
+
+interface QTreeNode {
+  label: string;
+  type?: string;
+  key: number;
+  size?: string;
+  time?: string;
+  // lazy: boolean;
+  disabled: boolean;
+  tickable: boolean;
+  showDisabled: boolean;
+  children: QTreeNode[];
+  deleted?: boolean;
+  new?: boolean;
+}
+
+function walkQTreeNodes(node: QTreeNode, func: (n: QTreeNode) => unknown) {
+  func(node);
+  node.children.forEach(child => walkQTreeNodes(child, func));
+}
+
+function flipTicked(key: number) {
+  if (!ticked.value.includes(key)) {
+    ticked.value.push(key);
+  } else {
+    ticked.value.splice(ticked.value.indexOf(key), 1);
+  }
+  onTick();
+}
+
+function updateEntryPointFileOptions() {
+  const options = [] as QSelectOption[];
+
+  ticked.value.forEach(key => {
+    const fileNode = fileNodesMap.get(key);
+    if (fileNode?.possibleEntryPoint) {
+      options.push({
+        label: fileNode.path,
+        key,
+      } as QSelectOption);
+    }
+  });
+  if (options.length > 1) {
+    entryPointOptions.value.splice(0, entryPointOptions.value.length);
+    options.sort((a: QSelectOption, b: QSelectOption) => {
+      if (a.label > b.label) {
+        return 1;
+      }
+      if (a.label < b.label) {
+        return -1;
+      }
+      return 0;
+    });
+  }
+  entryPointOptions.value = options;
+  if (options.length === 0) {
+    entryPoint.value = (null as unknown) as QSelectOption;
+    return;
+  }
+  if (entryPoint.value) {
+    const found = options.find(x => x.key === entryPoint.value.key);
+    if (!found) {
+      entryPoint.value = (null as unknown) as QSelectOption;
+    }
+  }
+}
+
+function updateDisplayRedeploymentDiffs() {
+  // re-convert using current state of simulateRedeploymentMode variable
+  qTreeNodes = convertNodesToData(directoryData);
+  if (simulateRedeploymentMode.value === false) {
+    // remove any ticks for "new" files
+    ticked.value = ticked.value.filter(key => {
+      const node = qTreeNodesMap.get(key);
+      return Boolean(node && !node.new);
+    });
+  }
+  onTick();
+}
+
+function updateIgnoreRules() {
+  const rules: string[] = [];
+
+  // look for non-checked entries and determine if they need to
+  // update the rules or not
+
+  const uncheckedFilePathsButNotFiltered: string[] = [];
+  Array.from(fileNodesMap.keys()).forEach(key => {
+    const node = fileNodesMap.get(key);
+    if (
+      node &&
+      node.type === 'file' &&
+      !ticked.value.includes(key) &&
+      !(node.excluded === true) &&
+      !(node.deleted === true) &&
+      node.path
+    ) {
+      if (node.new === true && simulateRedeploymentMode.value) {
+        uncheckedFilePathsButNotFiltered.push(node.path);
+      } else if (!(node.new === true)) {
+        uncheckedFilePathsButNotFiltered.push(node.path);
+      }
+    }
+  });
+  const checkedNodesButFiltered: string[] = [];
+  ticked.value.forEach(key => {
+    const node = fileNodesMap.get(key);
+    if (node && node.excluded === true && node.path) {
+      checkedNodesButFiltered.push(node.path);
+    }
+  });
+
+  // exclusion rules first
+  SampleIncomingRules.excluding.forEach(path => rules.push(path));
+  uncheckedFilePathsButNotFiltered.forEach(path => {
+    const entry = `${path}`;
+    if (!rules.includes(entry)) {
+      rules.push(`${path}`);
+    }
+  });
+  // then inclusion
+  SampleIncomingRules.including.forEach(path => rules.push(path));
+  checkedNodesButFiltered.forEach(path => {
+    rules.push(`!${path}`);
+  });
+
+  ignoreRules.value = rules;
+}
+
+function toggleNodeTick(n: QTreeNode) {
+  if (!n.tickable) {
+    return;
+  }
+  if (nextToggleSelectionStateToTrue) {
+    if (!ticked.value.includes(n.key)) {
+      ticked.value.push(n.key);
+    }
+  } else if (ticked.value.includes(n.key)) {
+    // untick it
+    ticked.value.splice(ticked.value.indexOf(n.key), 1);
+
+    if (!treeEnableExcluded.value) {
+      const fileNode = fileNodesMap.get(n.key);
+      if (!fileNode?.contents && fileNode?.excluded) {
+        n.tickable = Boolean(treeEnableExcluded.value);
+        n.showDisabled = !n.tickable;
+      }
+    }
+  }
+}
+
+function handleNodeLabelClick(node: QTreeNode) {
+  if (!node.children.length) {
+    flipTicked(node.key);
+    return;
+  }
+
+  walkQTreeNodes(node, toggleNodeTick);
+
+  nextToggleSelectionStateToTrue = !nextToggleSelectionStateToTrue;
+  onTick();
+  forceRefreshOfQTree();
+}
+
+function forceRefreshOfQTree() {
+  if (fileTree.value) {
+    const qtree = fileTree.value as any;
+    qtree.lazy = {};
+  }
+}
+
+function onTick() {
+  updateDisabledQTreeNodes();
+  updateEntryPointFileOptions();
+  updateIgnoreRules();
+}
+
+function updateDisabledQTreeNodes() {
+  qTreeNodesMap.forEach((qTreeNode, key) => {
+    // if node is already selected, do nothing
+
+    if (ticked.value.includes(key)) {
+      return;
+    }
+
+    const node = fileNodesMap.get(key);
+    if (!node) {
+      console.log(`node not found for key: ${key}?`);
+      return;
+    }
+    if (!node.contents && node.excluded) {
+      qTreeNode.tickable = Boolean(treeEnableExcluded.value);
+      qTreeNode.showDisabled = !qTreeNode.tickable;
+    }
+  });
+  forceRefreshOfQTree();
+}
+
+function convertNodesToData(nodes: DirectoryNode[]): QTreeNode[] {
+  const result:QTreeNode[] = reactive([]);
+
+  nodes.forEach(node => {
+    if (!simulateRedeploymentMode.value) {
+      if (node && (node.deleted || node.new)) {
+        return;
+      }
+    }
+    if (acknowledgeDifferences.value) {
+      // we can hide the deleted ones now
+      if (node && node.deleted) {
+        return;
+      }
+    }
+    const data:QTreeNode = reactive({
+      label: node.name,
+      // type: node.type,
+      key: node.key,
+      tickable: true,
+      // size: node.size,
+      // time: node.time
+      disabled: false,
+      showDisabled: false,
+      children: reactive([]) as QTreeNode[],
+      deleted: node.deleted,
+      new: node.new
+    });
+    if (node.key === 0) {
+      data.label = node.path;
+    }
+    if (node.contents) {
+      data.children = convertNodesToData(node.contents);
+      // data.tickable = false;
+    } else if (node.excluded) {
+      data.tickable = Boolean(treeEnableExcluded.value);
+      data.showDisabled = !data.tickable;
+    } else if (node.deleted) {
+      data.tickable = false;
+      data.showDisabled = true;
+    } else if (!ticked.value.includes(node.key)) {
+      // node is included and not a directory, so tick it if it is not already ticked
+      ticked.value.push(node.key);
+    }
+    result.push(data); // For the QTree component
+    qTreeNodesMap.set(node.key, data);
+    fileNodesMap.set(node.key, node); // Build up map of keys to nodes
+  });
+  return result;
+}
+let qTreeNodes = convertNodesToData(directoryData);
+// initialize the dependent variables (updated on click action) for our data
+onTick();
+
+function getPathFromKey(key: number): string {
+  const node = fileNodesMap.get(key);
+  if (node) {
+    return node.path ? node.path : `unknown path (key=${key})`;
+  }
+  return `unknown node/path (key=${key})`;
+}
+
+const getNumOfType = (targetType: NodeType) => {
+  let count = 0;
+  ticked.value.forEach(key => {
+    const node = fileNodesMap.get(key);
+    if (node && node.type === targetType) {
+      count++;
+    }
+  });
+  return count;
+};
+
+const getNumDirs = computed(() => getNumOfType('directory'));
+
+const getNumFiles = computed(() => getNumOfType('file'));
+
+// across all nodes
+const addedOrDeletedFilesDisplayString = computed((): string | null => {
+  if (addedOrDeletedFiles.value?.empty || !simulateRedeploymentMode.value) {
+    return null;
+  }
+
+  if (addedOrDeletedFiles.value) {
+    const { added, deleted } = addedOrDeletedFiles.value;
+
+    if (added.length > 0 && deleted.length > 0) {
+      return 'file(s) added and deleted!';
+    } else if (added.length > 0) {
+      return 'new file(s) found!';
+    } else if (deleted.length > 0) {
+      return 'previous file(s) deleted!';
+    }
+  }
+
+  return null;
+});
+
+interface IAddedOrDeletedFiles {
+  added: number[];
+  deleted: number[];
+  empty: boolean;
+}
+
+// across all nodes
+const addedOrDeletedFiles = computed(() : IAddedOrDeletedFiles => {
+  const added:number[] = [];
+  const deleted:number[] = [];
+
+  if (!simulateRedeploymentMode.value) {
+    return {
+      added,
+      deleted,
+      empty: true,
+    } as IAddedOrDeletedFiles;
+  }
+
+  Array.from(fileNodesMap.keys()).forEach(key => {
+    const node = fileNodesMap.get(key);
+    if (node) {
+      if (node.new) {
+        added.push(node.key);
+      } else if (node.deleted) {
+        deleted.push(node.key);
+      }
+    }
+  });
+
+  return {
+    added,
+    deleted,
+    empty: (added.length === 0 && deleted.length === 0)
+  } as IAddedOrDeletedFiles;
+});
+
+function showChangedBadges(node: QTreeNode) {
+  return (
+    simulateRedeploymentMode.value &&
+    qTreeNodeHasChildren(node) &&
+    !expanded.value.includes(node.key) &&
+    nodeHasHiddenChildrenWithDiffs(node).diffsExist
+  );
+}
+
+function nodeHasHiddenChildrenWithDiffs(node: QTreeNode) {
+  const result = {
+    newNodes: false,
+    deletedNodes: false,
+    diffsExist: false,
+  };
+
+  walkQTreeNodes(node, (childNode: QTreeNode) => {
+    if (!qTreeNodeHasChildren(childNode)) {
+      if (childNode.new) {
+        result.newNodes = true;
+      } else if (childNode.deleted) {
+        result.deletedNodes = true;
+      }
+    }
+  });
+  if (result.newNodes || result.deletedNodes) {
+    result.diffsExist = true;
+  }
+  return result;
+}
+
+function qTreeNodeHasChildren(node: QTreeNode) {
+  return node && node.children.length > 0;
+}
+
+function parentAddedOrDeletedFilesDisplayString(key: number) {
+  const node = qTreeNodesMap.get(key);
+  if (!node) {
+    return '';
+  }
+  if (!qTreeNodeHasChildren(node)) {
+    return '';
+  }
+  const diffs = nodeHasHiddenChildrenWithDiffs(node);
+  if (!diffs.diffsExist) {
+    return '';
+  }
+  if (addedOrDeletedFiles.value.empty) {
+    return '';
+  }
+
+  if (diffs.newNodes && diffs.deletedNodes) {
+    return 'Hidden children: file(s) added and deleted!';
+  } else if (diffs.newNodes) {
+    return 'Hidden children: new file(s) found!';
+  } else if (diffs.deletedNodes) {
+    return 'Hidden children: previous file(s) deleted!';
+  }
+}
+
+const calculatedFilesSummary = computed(() => {
+  // Report.qmd and 2 other files from baseDir totaling 2.3 MB
+  if (ticked.value.length === 0) {
+    return 'No files selected';
+  }
+  let totalSize = 0;
+  ticked.value.forEach(key => {
+    const node = fileNodesMap.get(key);
+    if (node && node.type === 'file') {
+      totalSize += node.size;
+    }
+  });
+  let totalSizeStr = `${totalSize} bytes`;
+  if (totalSize > 1024 * 1024) {
+    totalSizeStr = `${(totalSize / 1024).toFixed(1)} MB`;
+  } else if (totalSize > 1024) {
+    totalSizeStr = `${(totalSize / 1024).toFixed(1)} KB`;
+  }
+
+  const numFiles = ticked.value.length;
+  if (entryPoint.value) {
+    const node = fileNodesMap.get(entryPoint.value.key);
+    if (node) {
+      if (numFiles === 1) {
+        return `${node.name} (${totalSizeStr}) from ${baseDir}`;
+      }
+      return `${node.name} and ${numFiles - 1} other files from ${baseDir} totaling ${totalSizeStr}`;
+    }
+  }
+  if (numFiles === 1) {
+    return `${numFiles} file from ${baseDir} totaling ${totalSizeStr}`;
+  }
+  return `${numFiles} files from ${baseDir} totaling ${totalSizeStr}`;
+});
+
+const deepKeysOfChildren = (parentKey:number, childrenKeys:number[]) => {
+  const node = fileNodesMap.get(parentKey);
+  if (node) {
+    if (node.childrenKeys) {
+      node.childrenKeys.forEach((key:number) => {
+        childrenKeys.push(key);
+        deepKeysOfChildren(key, childrenKeys);
+      });
+    }
+  }
+};
+
+</script>
