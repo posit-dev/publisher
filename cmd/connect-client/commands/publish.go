@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/environment"
 	"github.com/rstudio/connect-client/internal/inspect"
-	"github.com/rstudio/connect-client/internal/services/proxy"
+	"github.com/rstudio/connect-client/internal/services/ui"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -347,23 +346,15 @@ type PublishUICmd struct {
 }
 
 func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
-	account, err := ctx.Accounts.GetAccountByName(cmd.State.Target.AccountName)
-	if err != nil {
-		return err
-	}
-	serverURL, err := url.Parse(account.URL)
-	if err != nil {
-		return err
-	}
-	svc := proxy.NewProxyService(
-		cmd.State.Target.AccountName,
-		serverURL,
+	svc := ui.NewUIService(
+		"/",
 		cmd.Listen,
 		cmd.TLSKeyFile,
 		cmd.TLSCertFile,
 		cmd.Interactive,
 		cmd.AccessLog,
 		ctx.LocalToken,
+		ctx.Fs,
 		ctx.Logger)
 	return svc.Run()
 }
