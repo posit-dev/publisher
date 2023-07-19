@@ -9,5 +9,3 @@ RUN mkdir -p /libs-cypress && \
 
 # ENV ADMIN_API_KEY=${ADMIN_API_KEY}
 ENV PATH=$PATH:/libs-cypress
-
-# CMD cypress run --browser chrome --env api_key=${ADMIN_API_KEY}

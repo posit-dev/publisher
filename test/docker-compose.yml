@@ -64,12 +64,10 @@ services:
     build:
       context: ./docker
       dockerfile: cypress.Dockerfile
-    depends_on: 
-      - linux-amd64-client-ui
+    # depends_on: 
+    #   - linux-amd64-client-ui
     volumes:
       - ../:/publishing-client
     working_dir: /publishing-client/test/
     network_mode: host
-    environment:
-      CYPRESS_BASE_URL: ${CYPRESS_BASE_URL}
-    entrypoint: cypress run --browser chrome --env CYPRESS_BASE_URL=${CYPRESS_BASE_URL}
+    entrypoint: cypress run --env CYPRESS_BASE_URL=${CYPRESS_BASE_URL}

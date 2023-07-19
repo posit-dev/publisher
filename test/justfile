@@ -7,7 +7,10 @@ test target:
   just start-connect cli-client {{target}} ui-client {{target}} test-cypress {{target}} stop
 
 test-local target:
-  just run-cli-local {{target}} ui-client {{target}} test-cypress {{target}}
+  just run-cli-local {{target}} ui-client-local {{target}} test-cypress-local {{target}} stop
+
+test-ui-local target:
+  just test-cypress-local {{target}}
 
 build target:
   #!/usr/bin/env bash
@@ -70,20 +73,49 @@ test-cypress target:
   just ui-client {{target}}
   sleep 5
   if [[ {{target}} =~ "linux" ]]; then
-    CYPRESS_BASE_URL=$(docker logs --tail 2 {{target}}-client-ui | grep '^http.*#.*') \
+    CYPRESS_BASE_URL=$(docker logs --tail 1 {{target}}-client-ui | grep '^http.*#.*') \
     just cypress {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
-    $CYPRESS_BASE_URL==grep '^http.*#.[a-z]*' .\win-out.txt \
+    $CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt \
     just cypress {{target}}
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
     echo "GREP!"
+    sleep 10
     echo "$(egrep '^http.*#.[a-z]*' screenlog.0)"
     CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0) \
     just cypress {{target}}
   fi
 
+test-cypress-local target:
+  #!/usr/bin/env bash
+  just ui-client-local {{target}}
+  sleep 20
+  if [[ {{target}} =~ "linux" ]]; then
+    CYPRESS_BASE_URL=$(docker logs --tail 2 {{target}}-client-ui | grep '^http.*#.*') \
+    just cypress {{target}}
+  elif [[ {{target}} =~ "windows" ]]; then
+    $CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt \
+    just cypress {{target}}
+  elif [[ {{target}} =~ "darwin" ]]; then
+    echo "GREP!"
+    echo "$(egrep '\?token=.*.accounts' screenlog.0)"
+    CYPRESS_BASE_URL=$(egrep '\?token=.*.accounts' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#) \
+    just cypress {{target}}
+  fi
 
-
+ui-client-local target:
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux" ]]; then
+    BINARY_PATH=../bin/{{target}}/connect-client \
+    docker compose up -d \
+    {{target}}-client-ui
+  elif [[ {{target}} =~ "windows" ]]; then
+   BINARY_PATH=../bin/{{target}}/connect-client \
+   Start-Process -FilePath ..\bin\artifact\windows-amd64\connect-client.exe -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
+  elif [[ {{target}} =~ "darwin" ]]; then
+    BINARY_PATH=../bin/{{target}}/connect-client \
+    screen -S client -dmL ../bin/{{target}}/connect-client account-ui --listen=localhost:9999
+  fi
 # _run-ui-client target:
 #   $BINARY_PATH account-ui --listen=localhost:9999
 
@@ -118,4 +150,5 @@ bash target:
 
 stop: 
   docker compose kill
-  screen -S client -X quit
+  rm -rf screenlog.0
+#   screen -S client -p 0 -X quit
