@@ -63,6 +63,7 @@ ui-client target:
     docker compose up -d \
     {{target}}-client-ui
   elif [[ {{target}} =~ "windows" ]]; then
+   set shell := ["powershell.exe", "-c"] \
    Start-Process -FilePath "$GITHUB_WORKSPACE\\bin\\artifact\\windows-amd64\\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
     screen -S client -dmL $BINARY_PATH account-ui --listen=localhost:9999
@@ -76,7 +77,7 @@ test-cypress target:
     CYPRESS_BASE_URL=$(docker logs --tail 1 {{target}}-client-ui | grep '^http.*#.*') \
     just cypress {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
-    set shell := ["powershell.exe", "-c"]
+    set shell := ["powershell.exe", "-c"] \
     $CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt \
     just cypress {{target}}
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
@@ -111,8 +112,8 @@ ui-client-local target:
     docker compose up -d \
     {{target}}-client-ui
   elif [[ {{target}} =~ "windows" ]]; then
-   set shell := ["powershell.exe", "-c"]
-   BINARY_PATH=../bin/{{target}}/connect-client \
+   set shell := ["powershell.exe", "-c"] \
+   BINARY_PATH=../bin/{{target}}/connect-client.exe \
    Start-Process -FilePath ..\bin\artifact\windows-amd64\connect-client.exe -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
   elif [[ {{target}} =~ "darwin" ]]; then
     BINARY_PATH=../bin/{{target}}/connect-client \
