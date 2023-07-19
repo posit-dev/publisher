@@ -44,7 +44,7 @@ jobs:
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
         shell: powershell
         run: |
-          cp -r bin\artifact\* bin\ && chmod +x bin\*\*
+          cp -r bin\artifact\* bin\ -and chmod +x bin\*\*
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
