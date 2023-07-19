@@ -52,8 +52,12 @@ jobs:
           cd $env:GITHUB_WORKSPACE\test
           just cli-client $env:CLIENT
           just ui-client $env:CLIENT
-          just test-cypress $env:CLIENT
-
+          #run cypress directly from windows vm in GH Actions
+          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
+          npx cypress verify
+          npm install cypress --save-dev
+          npx run cypress --env CYPRESS_BASE_URL=$env:CYPRESS_BASE_URL
+          
   test-macos-client:
     needs: build
     runs-on: macos-latest
