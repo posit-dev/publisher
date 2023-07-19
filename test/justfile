@@ -82,7 +82,7 @@ test-cypress target:
     echo "GREP!"
     sleep 10
     echo "$(egrep '^http.*#.[a-z]*' screenlog.0)"
-    CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0) \
+    CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#) \
     just cypress {{target}}
   fi
 
@@ -122,7 +122,7 @@ ui-client-local target:
 cypress target:
   #!/usr/bin/env bash
   CYPRESS_BASE_URL=$CYPRESS_BASE_URL \
-  docker compose up cypress
+  docker compose up --exit-code-from cypress
 
 run-cli-local target:
   #!/usr/bin/env bash
