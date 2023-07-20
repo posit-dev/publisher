@@ -1,17 +1,82 @@
-default: install lint test build
+_use_docker := env_var_or_default("DOCKER", "true")
 
-install *args:
-    yarn install {{ args }}
+# will run recipes: install, lint, build, and test
+default: install lint build test
 
-lint *args:
-    yarn lint {{ args }}
+# update javascript/typescript dependencies
+install:
+    #!/bin/bash
+    set -euo pipefail
 
-build *args:
-    yarn build {{ args }}
+    # set this environment variable to keep Cypress from attempting to create
+    # cache within root's home dir.
+    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
+    echo "NOTE: npm install may take five minutes or more from within a docker container..."
+    npm install --no-audit
 
-test: build
-    yarn test
+# lint the source files, do not fix the fixable items
+lint:
+    npx eslint --ext .js,.ts,.vue,.cjs ./
+
+# lint the source files, fix the fixable items
+lint-fix:
+    npx eslint --ext .js,.ts,.vue,.cjs ./ "--fix"
+
+# build the web artifacts for the SPA (into dest/spa)
+build:
+    #!/bin/bash
+    set -euo pipefail
+
+    if ! npx quasar build; then
+     echo ""
+     echo "The build has failed."
+     echo "If you encountered the error: 'Global Quasar CLI • ⚠️   Error  Unknown command \"build\"'"
+     echo "Try running 'just install' and then retrying your build command."
+     exit 1
+    fi
+
+# perform unit and e2e tests
+test: test-unit test-e2e
     go test -race ./...
 
-start:
-    yarn start
+# run e2e (Cypress) tests
+test-e2e:
+    #!/bin/bash
+    set -euo pipefail
+
+    # set this environment variable to keep Cypress from attempting to create
+    # cache within root's home dir.
+    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
+    # install cypress
+    npx cypress install
+    if "{{ _use_docker }}" == "true"; then
+      quasar test --e2e cypress
+    else
+      npx quasar test --e2e cypress
+    fi
+
+
+# run unit tests one time
+test-unit:
+    # npx vitest run
+    npx quasar test --unit vitest
+
+# run unit tests in watch mode, re-running as files are changed
+test-unit-watch:
+    npx vitest
+
+# start common UX development flow. Runs install recipe ahead of starting the web server which updates automatically upon file changes
+dev:
+    npx quasar dev
+
+# remove build artifacts and dependencies
+clean:
+    # not using quasar clean, as it would require us to have node_modules fully installed. Instead, performing what
+    # it said it was doing...
+    # quasar clean
+    # App • Cleaned build artifact: "/work/web/.quasar"
+    # App • Emptied dist folder
+    # App • Done cleaning build artifacts
+    rm -rdf .quasar
+    rm -rdf dist/spa
+    rm -rdf node_modules

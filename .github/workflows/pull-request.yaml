@@ -1,8 +1,22 @@
 name: Pull Request
 on:
   pull_request
+
+# A note on debugging a github step:
+#   You can ssh into the github action environment and poke around by using
+#   https://github.com/marketplace/actions/debugging-with-tmate
+#   Use `limit-access-to-actor: true` so only you can ssh into the environment!
+#  
+#   For example, to debug a failure, append this to the jobs list within the failing step
+#   - name: Setup tmate session
+#     if: ${{ failure() }}
+#     uses: mxschmitt/action-tmate@v3
+#     with:
+#       limit-access-to-actor: true
+#
+
 jobs:
-  build:
+  pr-code-validation:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -12,10 +26,18 @@ jobs:
       - uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Test
-        run: just test
-      - name: Build
+      - name: build docker image
+        run: just image
+      - name: install dependencies
+        run: just install
+      - name: lint the source files
+        run: just lint
+      - name: build the CLI client and Web UX
         run: just build
+      - name: lint the build dependent files
+        run: just post-build-lint
+      - name: run all tests
+        run: just test
       - uses: actions/upload-artifact@v3
         with:
           path: bin/
@@ -41,7 +63,7 @@ jobs:
 
   test-windows-client:
     runs-on: windows-latest
-    needs: [build, cypress-install]
+    needs: [pr-code-validation, build, cypress-install]
     steps:
       - uses: actions/checkout@v3
       - uses: extractions/setup-just@v1
@@ -81,7 +103,7 @@ jobs:
           browser: chrome
 
   test-macos-client:
-    needs: [build, cypress-install]
+    needs: [pr-code-validation, build, cypress-install]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
@@ -131,7 +153,7 @@ jobs:
 
   test-linux-clients:
     runs-on: ubuntu-latest
-    needs: [build, cypress-install]
+    needs: [pr-code-validation, build, cypress-install]
     strategy:
       matrix:
         CLIENT:

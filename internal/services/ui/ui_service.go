@@ -52,7 +52,7 @@ func newUIHandler(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
 
 	// static files for the local (account list) UI
 	staticHandler := http.FileServer(http.FS(web.Dist)).ServeHTTP
-	staticHandler = middleware.AddPathPrefix("/dist", staticHandler)
+	staticHandler = middleware.AddPathPrefix("/dist/spa", staticHandler)
 	r.HandleFunc("/", staticHandler)
 
 	return r.ServeHTTP
