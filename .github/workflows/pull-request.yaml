@@ -54,7 +54,7 @@ jobs:
           Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
           #run cypress directly from windows vm in GH Actions
           $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
-          ls -la
+          ls
           npm cache verify
           npm install cypress --save-dev
           npx run cypress --env CYPRESS_BASE_URL=$env:CYPRESS_BASE_URL
