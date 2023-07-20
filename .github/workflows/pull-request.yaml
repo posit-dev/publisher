@@ -20,15 +20,40 @@ jobs:
         with:
           path: bin/
 
+  cypress-install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cypress install
+        uses: uses: cypress-io/github-action@v5
+        with:
+          runTests: false
+          build: npm run build
+
+      - name: Save build folder
+        uses: actions/upload-artifact@v3
+        with:
+            name: build
+            if-no-file-found: error
+            path: build
+
   test-windows-client:
     needs: build
     runs-on: windows-latest
+    needs: cypress-install
     steps:
       - uses: actions/checkout@v3
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
           path: bin/
+      - name: Download the build folder
+        uses: actions/download-artifact@v3
+        with:
+          name: build
+          path: build
       # - uses: mxschmitt/action-tmate@v3
       #   with: 
       #     detached: true
@@ -54,14 +79,16 @@ jobs:
           Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
           #run cypress directly from windows vm in GH Actions
           $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
-          ls
-          npm cache verify
-          npm install cypress --save-dev
-          npx run cypress --env CYPRESS_BASE_URL=$env:CYPRESS_BASE_URL
-          
+      - name: Run Cypress Tests (windows)
+        uses: cypress-io/github-action@v5
+        with:
+          start: npm start
+          browser: chrome
+
   test-macos-client:
     needs: build
     runs-on: macos-latest
+    needs: cypress-install
     steps:
       - uses: actions/checkout@v3
       - uses: extractions/setup-just@v1
@@ -72,9 +99,9 @@ jobs:
       #   with: 
       #     detached: true
       #     limit-access-to-actor: true
-      - uses: docker-practice/actions-setup-docker@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - uses: docker-practice/actions-setup-docker@master
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run macos
         env:
@@ -89,7 +116,13 @@ jobs:
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
-          just test-cypress ${CLIENT}
+          # just test-cypress ${CLIENT}
+      - name: Run Cypress Tests (windows)
+        uses: cypress-io/github-action@v5
+        with:
+          start: npm start
+          browser: chrome
+
       # Videos are captured whether the suite fails or passes
       - name: Save videos
         uses: actions/upload-artifact@v3
@@ -111,6 +144,7 @@ jobs:
 
   test-linux-clients:
     runs-on: ubuntu-latest
+    needs: cypress-install
     needs: build
     strategy:
       matrix:
@@ -137,4 +171,9 @@ jobs:
           just build ${CLIENT}
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
-          just test-cypress ${CLIENT}
+          # just test-cypress ${CLIENT}
+      - name: Run Cypress Tests (windows)
+        uses: cypress-io/github-action@v5
+        with:
+          start: npm start
+          browser: chrome
