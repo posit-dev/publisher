@@ -85,13 +85,13 @@ jobs:
           BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
         shell: powershell
-        run: |
-          cp -r bin\artifact\* bin\
-          chmod +x bin\*\*
-          just test/bats-install
+        run:
+          working-directory: test
+          cp -r ../bin\artifact\* bin\
+          chmod +x ../bin\*\*
+          just bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
-          cd $env:GITHUB_WORKSPACE\test
           just cli-client $env:CLIENT
           Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
           #run cypress directly from windows vm in GH Actions
@@ -118,9 +118,10 @@ jobs:
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
-        run: |
-          cp -r bin/artifact/* bin/ && chmod +x bin/*/*
-          just test/bats-install
+        run:
+          working-directory: test
+          cp -r ../bin/artifact/* bin/ && chmod +x ../bin/*/*
+          just bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
@@ -173,9 +174,9 @@ jobs:
       - name: Run Linux Tests
         env:
           CLIENT: "${{ matrix.CLIENT }}"
-        run: |
-          cp -r bin/artifact/* bin/ && chmod +x bin/*/*
-          cd ${{ github.workspace }}/test
+        run:
+          working-directory: test
+          cp -r ../bin/artifact/* bin/ && chmod +x ../bin/*/*
           just build ${CLIENT}
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}

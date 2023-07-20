@@ -13,7 +13,7 @@
     "@faker-js/faker": "^7.6.0",
     "@testing-library/cypress": "^9.0.0",
     "blueimp-md5": "^2.19.0",
-    "cypress": "^12.6.0",
+    "cypress": "^12.17.1",
     "cypress-axe": "^1.4.0",
     "eslint-plugin-cypress": "^2.13.2",
     "eslint-plugin-mocha": "^10.1.0",
