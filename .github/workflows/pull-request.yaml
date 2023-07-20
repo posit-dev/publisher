@@ -79,14 +79,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Windows Tests
+        working-directory: test
         env:
           CLIENT: windows-latest
           # bats reads the load libraries from relative path only in Windows
           BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
         shell: powershell
-        run:
-          working-directory: test
+        run: |
           cp -r ../bin\artifact\* bin\
           chmod +x ../bin\*\*
           just bats-install
@@ -97,6 +97,7 @@ jobs:
           #run cypress directly from windows vm in GH Actions
           $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
       - name: Run Cypress Tests (windows)
+        working-directory: test
         uses: cypress-io/github-action@v5
         with:
           start: npm start
@@ -113,13 +114,13 @@ jobs:
           path: bin/
 
       - name: Run macos
+        working-directory: test
         env:
           CLIENT: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
-        run:
-          working-directory: test
+        run: |
           cp -r ../bin/artifact/* bin/ && chmod +x ../bin/*/*
           just bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
@@ -128,6 +129,7 @@ jobs:
           just ui-client ${CLIENT}
           # just test-cypress ${CLIENT}
       - name: Run Cypress Tests (windows)
+        working-directory: test
         uses: cypress-io/github-action@v5
         with:
           start: npm start
@@ -172,16 +174,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Linux Tests
+        working-directory: test
         env:
           CLIENT: "${{ matrix.CLIENT }}"
-        run:
-          working-directory: test
+        run: |
           cp -r ../bin/artifact/* bin/ && chmod +x ../bin/*/*
           just build ${CLIENT}
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
           # just test-cypress ${CLIENT}
       - name: Run Cypress Tests (windows)
+        working-directory: test
         uses: cypress-io/github-action@v5
         with:
           start: npm start
