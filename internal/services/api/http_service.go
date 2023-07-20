@@ -106,6 +106,10 @@ func (svc *Service) Run() error {
 
 	// Open listener first so the browser can connect
 	listener, err := net.Listen("tcp", svc.listen)
+	if err != nil {
+		return fmt.Errorf("UI server error: %s", err)
+	}
+
 	svc.addr = listener.Addr()
 
 	// Log without the token
