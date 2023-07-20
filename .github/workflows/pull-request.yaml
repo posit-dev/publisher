@@ -98,7 +98,7 @@ jobs:
           $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
       - name: Run Cypress Tests (windows)
         working-directory: test
-        uses: cypress-io/github-action@v5
+      - uses: cypress-io/github-action@v5
         with:
           start: npm start
           browser: chrome
@@ -107,14 +107,13 @@ jobs:
     needs: [pr-code-validation, cypress-install]
     runs-on: macos-latest
     steps:
+      - name: Run macos
+        working-directory: test
       - uses: actions/checkout@v3
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
           path: bin/
-
-      - name: Run macos
-        working-directory: test
         env:
           CLIENT: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
@@ -130,7 +129,7 @@ jobs:
           # just test-cypress ${CLIENT}
       - name: Run Cypress Tests (windows)
         working-directory: test
-        uses: cypress-io/github-action@v5
+      - uses: cypress-io/github-action@v5
         with:
           start: npm start
           browser: chrome
