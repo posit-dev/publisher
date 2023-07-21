@@ -158,6 +158,10 @@ func (p Path) VolumeName(path string) string {
 
 type WalkFunc func(path Path, info fs.FileInfo, err error) error
 
+type Walker interface {
+	Walk(path Path, fn WalkFunc) error
+}
+
 func (p Path) Walk(fn WalkFunc) error {
 	return afero.Walk(p.fs, p.path, func(path string, info fs.FileInfo, err error) error {
 		return fn(NewPath(path, p.fs), info, err)

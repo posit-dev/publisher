@@ -12,10 +12,6 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type Walker interface {
-	Walk(path util.Path, fn util.WalkFunc) error
-}
-
 var standardIgnores = []string{
 	// From rsconnect-python
 	".Rproj.user/",
@@ -86,12 +82,12 @@ func (i *bundlingWalker) addGlobs(globs []string) error {
 	return nil
 }
 
-func NewBundlingWalker(dir util.Path, ignores []string) (Walker, error) {
+func NewBundlingWalker(dir util.Path, ignores []string) (util.Walker, error) {
 	gitIgnore := gitignore.New(dir)
 	return newBundlingWalker(dir, ignores, &gitIgnore)
 }
 
-func newBundlingWalker(dir util.Path, ignores []string, gitIgnore gitignore.GitIgnoreList) (Walker, error) {
+func newBundlingWalker(dir util.Path, ignores []string, gitIgnore gitignore.GitIgnoreList) (util.Walker, error) {
 	walk := &bundlingWalker{
 		ignoreList: gitIgnore,
 	}
