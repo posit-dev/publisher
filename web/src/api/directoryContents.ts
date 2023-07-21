@@ -22,6 +22,7 @@ export type DirectoryNode = {
   childrenKeys?: number[]; // to be added locally
   new?: boolean; // new file detection since last deployment
   deleted?: boolean; // no longer there but included in last deployment
+  changed?: boolean; // changed since last deployment
 }
 
 export const baseDir = '/my-project';
@@ -105,6 +106,7 @@ export const directoryData: DirectoryNode[] = [
             size: 413,
             excluded: true,
             path: '/my-project/python-bokeh/rsconnect-python/python-bokeh.json',
+            changed: true,
           },
           {
             type: 'file',
@@ -132,6 +134,7 @@ export const directoryData: DirectoryNode[] = [
         size: 2048,
         path: '/my-project/python-bokeh/sliders.py',
         possibleEntryPoint: true,
+        changed: true,
       },
       {
         type: 'directory',
@@ -218,3 +221,23 @@ export const directoryData: DirectoryNode[] = [
     ]
   }
 ];
+
+export function flattenDirectoryNodes(nodes: DirectoryNode[]): DirectoryNode[] {
+  const result: DirectoryNode[] = [];
+  nodes.forEach(node => {
+    result.push(node);
+    if (node.contents) {
+      result.push(...flattenDirectoryNodes(node.contents));
+    }
+  });
+  return result;
+}
+
+export const FLATTENED_DIRECTORY_DATA: DirectoryNode[] = flattenDirectoryNodes(directoryData);
+
+export function isFileChanged(node: DirectoryNode) {
+  return node.new || node.deleted || node.changed;
+}
+
+export const FLATTENED_CHANGED_DIRECTORY_DATA: DirectoryNode[] =
+  FLATTENED_DIRECTORY_DATA.filter(isFileChanged);

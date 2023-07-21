@@ -59,6 +59,7 @@
             left-label
             dark
           />
+          <FileDiff />
         </div>
         <div class="q-pa-sm row q-col-gutter-sm">
           <q-tree
@@ -194,6 +195,7 @@ import { ref, Ref, watch, reactive, computed, onBeforeMount } from 'vue';
 import type { QSelectOption, QTree } from 'quasar';
 import type { NodeType, DirectoryNode } from '../api/directoryContents';
 import { directoryData, SampleIncomingRules, baseDir } from '../api/directoryContents';
+import FileDiff from 'components/FileDiff.vue';
 
 type EntryPointOption = QSelectOption<number>;
 
