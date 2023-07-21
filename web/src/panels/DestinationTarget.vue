@@ -118,7 +118,9 @@
 
 <script setup lang="ts">
 
-import { ref, computed } from 'vue';
+import axios from 'axios';
+
+import { ref, computed, onMounted } from 'vue';
 
 import type { DeploymentMode } from './deploymentModes';
 
@@ -171,4 +173,25 @@ const destinationTitle = computed(() => {
   }
   return `Colorado, updating 'Quarterly Report'`;
 });
+
+const testAPI = async() => {
+  try {
+    const ax = axios.create({
+      baseURL: 'http://127.0.0.1:9000',
+    });
+
+    const data = await ax.get(
+      '/api/accounts'
+    );
+    console.log('worked', data);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+onMounted(() => {
+  // Here just to implement a quick attempt at calling an API from the CLI backend.
+  testAPI();
+});
+
 </script>

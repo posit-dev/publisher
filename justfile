@@ -22,10 +22,11 @@ build:
     {{ _with_runner }} just web/build
     just _build
 
-# Build the production web UX and the development server
+# Build the development server using the existing build of the Web UX
 build-dev: 
     #!/bin/bash
     set -euo pipefail
+    export BUILD_MODE=development
 
     if ! just _build_dev; then
      echo ""

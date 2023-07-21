@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/middleware"
 
@@ -18,16 +19,18 @@ import (
 )
 
 type Service struct {
-	handler     http.HandlerFunc
-	listen      string
-	path        string
-	keyFile     string
-	certFile    string
-	openBrowser bool
-	token       services.LocalToken
-	addr        net.Addr
-	logger      rslog.Logger
-	debugLogger rslog.DebugLogger
+	handler       http.HandlerFunc
+	listen        string
+	path          string
+	keyFile       string
+	certFile      string
+	openBrowser   bool
+	openBrowserAt string
+	skipAuth      bool
+	token         services.LocalToken
+	addr          net.Addr
+	logger        rslog.Logger
+	debugLogger   rslog.DebugLogger
 }
 
 var tlsRequiredFilesError = errors.New("TLS requires both a private key file and a certificate chain file")
@@ -39,30 +42,37 @@ func NewService(
 	keyFile string,
 	certFile string,
 	openBrowser bool,
+	openBrowserAt string,
+	skipAuth bool,
 	accessLog bool,
 	token services.LocalToken,
 	logger rslog.Logger,
 	debugLogger rslog.DebugLogger) *Service {
 
-	handler = middleware.AuthRequired(logger, handler)
-	handler = middleware.CookieSession(logger, handler)
-	handler = middleware.LocalTokenSession(token, logger, handler)
+	if !project.ProductionBuild() && !skipAuth {
+		handler = middleware.AuthRequired(logger, handler)
+		handler = middleware.CookieSession(logger, handler)
+		handler = middleware.LocalTokenSession(token, logger, handler)
+	}
+
 	if accessLog {
 		handler = middleware.LogRequest("Access Log", logger, handler)
 	}
 	handler = middleware.PanicRecovery(logger, debugLogger, handler)
 
 	return &Service{
-		handler:     handler,
-		listen:      listen,
-		path:        path,
-		keyFile:     keyFile,
-		certFile:    certFile,
-		openBrowser: openBrowser,
-		token:       token,
-		addr:        nil,
-		logger:      logger,
-		debugLogger: debugLogger,
+		handler:       handler,
+		listen:        listen,
+		path:          path,
+		keyFile:       keyFile,
+		certFile:      certFile,
+		openBrowser:   openBrowser,
+		openBrowserAt: openBrowserAt,
+		skipAuth:      skipAuth,
+		token:         token,
+		addr:          nil,
+		logger:        logger,
+		debugLogger:   debugLogger,
 	}
 }
 
@@ -105,7 +115,7 @@ func (svc *Service) Run() error {
 	}
 
 	// Open listener first so the browser can connect
-	listener, err := net.Listen("tcp", svc.listen)
+	listener, _ := net.Listen("tcp", svc.listen)
 	svc.addr = listener.Addr()
 
 	// Log without the token
@@ -113,12 +123,17 @@ func (svc *Service) Run() error {
 	svc.logger.Infof("UI server URL: %s", appURL.String())
 
 	// Show the user full URL including the token
-	appURL = svc.getURL(true)
-	fmt.Printf("%s\n", appURL.String())
+	if project.ProductionBuild() || !svc.skipAuth {
+		appURL = svc.getURL(true)
+		fmt.Printf("%s\n", appURL.String())
+	}
 
 	if svc.openBrowser {
 		browser.OpenURL(appURL.String())
+	} else if !project.ProductionBuild() && svc.openBrowserAt != "" {
+		browser.OpenURL(svc.openBrowserAt)
 	}
+
 	if isTLS {
 		err = http.ServeTLS(listener, svc.handler, svc.certFile, svc.keyFile)
 	} else {

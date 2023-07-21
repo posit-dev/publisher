@@ -10,6 +10,7 @@ fi
 
 package_name=$(basename "$package")
 version=$(git describe --always --tags)
+productionMode=${BUILD_MODE:-"production"}
 
 if [[ -n "$2" ]]; then
     platforms=("$2")
@@ -56,7 +57,7 @@ do
 		output_name+='.exe'
 	fi
 
-    env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$output_name" -ldflags "-X github.com/rstudio/connect-client/internal/project.Version=$version" "$package"
+    env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$output_name" -ldflags "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$productionMode'" "$package"
 	if [ $? -ne 0 ]; then
    		echo 'An error has occurred! Aborting the script execution...'
 		exit 1
