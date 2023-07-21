@@ -186,11 +186,13 @@ func (ign *IgnoreList) exists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
+var ErrNotInGitRepo = errors.New("not in a git repository")
+
 func (ign *IgnoreList) findGitRoot(cwd []string) (string, error) {
 	p := fromSplit(cwd)
 	for !ign.exists(p + "/.git") {
 		if len(cwd) == 1 {
-			return "", errors.New("not in a git repository")
+			return "", ErrNotInGitRepo
 		}
 		cwd = cwd[:len(cwd)-1]
 		p = fromSplit(cwd)

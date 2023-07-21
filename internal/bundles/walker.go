@@ -91,9 +91,8 @@ func newBundlingWalker(dir util.Path, ignores []string, gitIgnore gitignore.GitI
 	walk := &bundlingWalker{
 		ignoreList: gitIgnore,
 	}
-	const errNotInGitRepo = "not in a git repository"
 	err := gitIgnore.AppendGit()
-	if err != nil && err.Error() != errNotInGitRepo {
+	if err != nil && err != gitignore.ErrNotInGitRepo {
 		return nil, err
 	}
 	err = walk.addGlobs(standardIgnores)
