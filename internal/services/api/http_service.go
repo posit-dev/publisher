@@ -49,7 +49,7 @@ func NewService(
 	logger rslog.Logger,
 	debugLogger rslog.DebugLogger) *Service {
 
-	if !project.ProductionBuild() && !skipAuth {
+	if project.DevelopmentBuild() && !skipAuth {
 		handler = middleware.AuthRequired(logger, handler)
 		handler = middleware.CookieSession(logger, handler)
 		handler = middleware.LocalTokenSession(token, logger, handler)
@@ -122,20 +122,16 @@ func (svc *Service) Run() error {
 
 	svc.addr = listener.Addr()
 
-	// Log without the token
-	appURL := svc.getURL(false)
+	// If not development mode, then you get a token added to the URL
+	appURL := svc.getURL(!project.DevelopmentBuild())
+
 	svc.logger.Infof("UI server URL: %s", appURL.String())
+	fmt.Printf("%s\n", appURL.String())
 
-	// Show the user full URL including the token
-	if project.ProductionBuild() || !svc.skipAuth {
-		appURL = svc.getURL(true)
-		fmt.Printf("%s\n", appURL.String())
-	}
-
-	if svc.openBrowser {
-		browser.OpenURL(appURL.String())
-	} else if !project.ProductionBuild() && svc.openBrowserAt != "" {
+	if project.DevelopmentBuild() && svc.openBrowserAt != "" {
 		browser.OpenURL(svc.openBrowserAt)
+	} else if svc.openBrowser {
+		browser.OpenURL(appURL.String())
 	}
 
 	if isTLS {

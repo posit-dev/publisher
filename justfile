@@ -115,6 +115,8 @@ _build_dev:
     os="{{ os() }}"
     arch="{{ arch() }}"
 
+    echo "Build Mode: ${BUILD_MODE}"
+
     # windows and linux strings match
     if [[ "$os" == "macos" ]]; then
         os=darwin
@@ -124,6 +126,10 @@ _build_dev:
         arch=amd64
     elif [[ "$arch" == "aarch64" ]]; then
         arch=arm64
+    fi
+
+    if [ "${BUILD_MODE}" == "development" ]; then
+        {{ _with_runner }} rm -rdf "$os/$arch"
     fi
 
     {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client "$os/$arch"

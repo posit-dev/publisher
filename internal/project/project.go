@@ -13,6 +13,6 @@ func UserAgent() string {
 	return "connect-client"
 }
 
-func ProductionBuild() bool {
-	return Mode == "production"
+func DevelopmentBuild() bool {
+	return Mode == "development"
 }

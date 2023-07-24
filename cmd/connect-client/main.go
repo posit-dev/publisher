@@ -27,8 +27,8 @@ type cliSpec struct {
 
 func logVersion(logger rslog.Logger) {
 	logger.WithField("version", project.Version).Infof("Client version")
-	logger.WithField("mode", project.Mode).Infof("Production mode")
-	logger.WithField("productionBuild", project.ProductionBuild()).Infof("Production build")
+	logger.WithField("mode", project.Mode).Infof("Development mode")
+	logger.WithField("DevelopmentBuild", project.DevelopmentBuild()).Infof("Development build")
 }
 
 func setupLogging() rslog.Logger {
