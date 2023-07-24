@@ -74,7 +74,7 @@ jobs:
           $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
           just ../web/install
           just ../web/build
-          just ../web/test-e2e
+          just ../web/ci-e2e
 
   test-macos-client:
     runs-on: macos-latest
@@ -108,7 +108,7 @@ jobs:
           just ui-client ${CLIENT}
           just ../web/install
           just ../web/build
-          just ../web/test-e2e
+          just ../web/ci-e2e
 
   test-linux-clients:
     runs-on: ubuntu-latest
@@ -138,6 +138,7 @@ jobs:
           just build ${CLIENT}
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
+          cd ../web/
           just ../web/install
           just ../web/build
-          just ../web/test-e2e
+          just ../web/ci-e2e
