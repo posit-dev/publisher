@@ -75,7 +75,7 @@ jobs:
           echo "CYPRESS BASE URL: $env:CYPRESS_BASE_URL"
           just ../web/install
           just ../web/build
-          just ../web/ci-e2e $env:CLIENT
+          CYPRESS_BASE_URL=$env:CYPRESS_BASE_URL just ../web/ci-e2e $env:CLIENT
 
   test-macos-client:
     runs-on: macos-latest
@@ -102,16 +102,17 @@ jobs:
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
           cp -r ./bin/artifact/* bin/ && chmod +x ./bin/*/*
-          just test/bats-install
-          PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
-          cd ${{ github.workspace }}/test
-          just cli-client ${CLIENT}
-          just ui-client ${CLIENT}
-          export CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#)
-          cat screenlog.0
-          echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
-          just ../web/install
-          just ../web/build
+          just test/bats-install && \
+          PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin" && \
+          cd ${{ github.workspace }}/test && \
+          just cli-client ${CLIENT} && \
+          just ui-client ${CLIENT} && \
+          export CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#) && \
+          ls -la && \
+          cat screenlog.0 && \
+          echo "CYPRESS BASE URL: $CYPRESS_BASE_URL" && \
+          just ../web/install && \
+          just ../web/build && \
           just ../web/ci-e2e ${CLIENT}
 
   test-linux-clients:
