@@ -5,6 +5,7 @@ package util
 import (
 	"errors"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -113,17 +114,17 @@ func (s *SymlinkWalkerSuite) TestNewBundleFromDirectorySymlinks() {
 	}, fileList)
 }
 
-// func (s *SymlinkWalkerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
-// 	// afero's MemFs doesn't have symlink support, so we
-// 	// are using a fixture directory under ./testdata.
-// 	fs := afero.NewOsFs()
-// 	dirPath := util.NewPath(s.cwd.Path(), fs).Join("testdata", "symlink_test", "link_target_missing")
-// 	dest := new(bytes.Buffer)
-// 	logger := rslog.NewDiscardingLogger()
+func (s *SymlinkWalkerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
+	// afero's MemFs doesn't have symlink support, so we
+	// are using a fixture directory under ./testdata.
+	realFS := afero.NewOsFs()
+	dirPath := NewPath(s.cwd.Path(), realFS).Join("testdata", "symlink_test", "link_target_missing")
+	logger := rslog.NewDiscardingLogger()
 
-// 	bundler, err := NewBundler(dirPath, NewManifest(), nil, nil, logger)
-// 	s.Nil(err)
-// 	manifest, err := bundler.CreateBundle(dest)
-// 	s.ErrorIs(err, os.ErrNotExist)
-// 	s.Nil(manifest)
-// }
+	underlyingWalker := &FSWalker{}
+	walker := NewSymlinkWalker(underlyingWalker, logger)
+	err := walker.Walk(dirPath, func(path Path, info fs.FileInfo, err error) error {
+		return nil
+	})
+	s.ErrorIs(err, os.ErrNotExist)
+}
