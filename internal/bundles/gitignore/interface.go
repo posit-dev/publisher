@@ -50,4 +50,4 @@ func (m *MockGitIgnoreList) Walk(root util.Path, fn util.WalkFunc) error {
 
 // Maintain a reference to the original gitignore so it
 // and its license remain in our vendor directory.
-type upstreamGitignore gitignore.IgnoreList
+type _ gitignore.IgnoreList

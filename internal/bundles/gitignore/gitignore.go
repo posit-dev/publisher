@@ -97,6 +97,16 @@ func (ign *IgnoreList) AppendGlob(s string) error {
 	return err
 }
 
+func (ign *IgnoreList) AppendGlobs(globs []string) error {
+	for _, pattern := range globs {
+		err := ign.AppendGlob(pattern)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func toRelpath(s string, dir, cwd []string) string {
 	if s != "" {
 		if s[0] != '/' {

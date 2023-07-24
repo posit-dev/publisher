@@ -1,4 +1,4 @@
-package bundles
+package gitignore
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -54,17 +53,19 @@ var standardIgnores = []string{
 //   - .rscignore files in the specified directory or subdirectories.
 
 type excludingWalker struct {
-	ignoreList gitignore.GitIgnoreList
+	ignoreList GitIgnoreList
 }
 
-func loadRscIgnoreIfPresent(dir util.Path, ignoreList gitignore.GitIgnoreList) error {
-	ignorePath := dir.Join(".rscignore")
+const RscIgnoreFilename = ".rscignore"
+
+func LoadRscIgnoreIfPresent(dir util.Path, ignoreList GitIgnoreList) error {
+	ignorePath := dir.Join(RscIgnoreFilename)
 	err := ignoreList.Append(ignorePath)
 	if errors.Is(err, fs.ErrNotExist) {
 		err = nil
 	}
 	if err != nil {
-		return fmt.Errorf("error loading .rscignore file '%s': %w", ignorePath, err)
+		return fmt.Errorf("error loading ignore file '%s': %w", ignorePath, err)
 	}
 	return nil
 }
@@ -73,7 +74,7 @@ func (i *excludingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 	return i.ignoreList.Walk(path, func(path util.Path, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			// Load .rscignore from every directory where it exists
-			err = loadRscIgnoreIfPresent(path, i.ignoreList)
+			err = LoadRscIgnoreIfPresent(path, i.ignoreList)
 			if err != nil {
 				return err
 			}
@@ -87,36 +88,29 @@ func (i *excludingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 	})
 }
 
-func (i *excludingWalker) addGlobs(globs []string) error {
-	for _, pattern := range globs {
-		err := i.ignoreList.AppendGlob(pattern)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func NewExcludingWalker(dir util.Path, ignores []string) (util.Walker, error) {
-	gitIgnore := gitignore.New(dir)
-	return newExcludingWalker(dir, ignores, &gitIgnore)
+	gitIgnore, err := NewIgnoreList(dir, ignores)
+	if err != nil {
+		return nil, err
+	}
+	return &excludingWalker{
+		ignoreList: gitIgnore,
+	}, nil
 }
 
-func newExcludingWalker(dir util.Path, ignores []string, gitIgnore gitignore.GitIgnoreList) (util.Walker, error) {
-	excluder := &excludingWalker{
-		ignoreList: gitIgnore,
-	}
+func NewIgnoreList(dir util.Path, ignores []string) (GitIgnoreList, error) {
+	gitIgnore := New(dir)
 	err := gitIgnore.AppendGit()
-	if err != nil && err != gitignore.ErrNotInGitRepo {
+	if err != nil && err != ErrNotInGitRepo {
 		return nil, err
 	}
-	err = excluder.addGlobs(standardIgnores)
+	err = gitIgnore.AppendGlobs(standardIgnores)
 	if err != nil {
 		return nil, err
 	}
-	err = excluder.addGlobs(ignores)
+	err = gitIgnore.AppendGlobs(ignores)
 	if err != nil {
 		return nil, err
 	}
-	return excluder, nil
+	return &gitIgnore, nil
 }

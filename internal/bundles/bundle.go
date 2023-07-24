@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/fs"
 
+	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/util"
 
@@ -46,7 +47,7 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	if err != nil {
 		return nil, err
 	}
-	excluder, err := NewExcludingWalker(dir, ignores)
+	excluder, err := gitignore.NewExcludingWalker(dir, ignores)
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
