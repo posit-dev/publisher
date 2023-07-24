@@ -42,35 +42,10 @@ jobs:
         with:
           path: bin/
 
-  cypress-install:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: test
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Cypress install
-        working-directory: test
-      - uses: cypress-io/github-action@v5
-        with:
-          runTests: false
-          build: npm run build
-
-      - name: Save build folder
-        uses: actions/upload-artifact@v3
-        with:
-            name: build
-            if-no-file-found: error
-            path: build
 
   test-windows-client:
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: test
-    needs: [pr-code-validation, cypress-install]
+    needs: pr-code-validation
     steps:
       - uses: actions/checkout@v3
       - uses: extractions/setup-just@v1
@@ -100,28 +75,19 @@ jobs:
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           just cli-client $env:CLIENT
           Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
-          #run cypress directly from windows vm in GH Actions
           $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
-      - name: Run Cypress Tests (windows)
-        uses: cypress-io/github-action@v5
-        with:
-          start: npm start
-          browser: chrome
+          just ../web/test-e2e-e2e
 
   test-macos-client:
-    needs: [pr-code-validation, cypress-install]
+    needs: pr-code-validation
     runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: test
     steps:
+      - name: Run macos
       - uses: actions/checkout@v3
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
           path: bin/
-
-      - name: Run macos
         env:
           CLIENT: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
@@ -134,38 +100,11 @@ jobs:
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
-          # just test-cypress ${CLIENT}
-      - name: Run Cypress Tests (windows)
-        uses: cypress-io/github-action@v5
-        with:
-          start: npm start
-          browser: chrome
-
-      # Videos are captured whether the suite fails or passes
-      - name: Save videos
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: cypress-videos
-          path: test/cypress/videos
-          if-no-files-found: ignore
-
-      # Screenshots are only captured on failure
-      - name: Save screenshots
-        uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: cypress-screenshots
-          path: test/cypress/screenshots
-          if-no-files-found: ignore
-
+          just ../web/test-e2e
 
   test-linux-clients:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: test
-    needs: [pr-code-validation, cypress-install]
+    needs: pr-code-validation
     strategy:
       matrix:
         CLIENT:
@@ -190,9 +129,4 @@ jobs:
           just build ${CLIENT}
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
-          # just test-cypress ${CLIENT}
-      - name: Run Cypress Tests (windows)
-        uses: cypress-io/github-action@v5
-        with:
-          start: npm start
-          browser: chrome
+          just ../web/test-e2e-e2e

@@ -75,17 +75,17 @@ test-cypress target:
   sleep 5
   if [[ {{target}} =~ "linux" ]]; then
     CYPRESS_BASE_URL=$(docker logs --tail 1 {{target}}-client-ui | grep '^http.*#.*') \
-    just cypress {{target}}
+    just ../web/test
   elif [[ {{target}} =~ "windows" ]]; then
     set shell := ["powershell.exe", "-c"] \
     $CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
-    just cypress {{target}}
+    just ../web/test
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
     echo "GREP!"
     sleep 10
     echo "$(egrep '^http.*#.[a-z]*' screenlog.0)"
     CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#) \
-    just cypress {{target}}
+    just ../web/test
   fi
 
 test-cypress-local target:
@@ -94,15 +94,15 @@ test-cypress-local target:
   sleep 20
   if [[ {{target}} =~ "linux" ]]; then
     CYPRESS_BASE_URL=$(docker logs --tail 2 {{target}}-client-ui | grep '^http.*#.*') \
-    just cypress {{target}}
+    just ../web/test {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
     $CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt \
-    just cypress {{target}}
+    just ../web/test {{target}}
   elif [[ {{target}} =~ "darwin" ]]; then
     echo "GREP!"
     echo "$(egrep '\?token=.*.accounts' screenlog.0)"
     CYPRESS_BASE_URL=$(egrep '\?token=.*.accounts' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#) \
-    just cypress {{target}}
+    just ../web/test {{target}}
   fi
 
 ui-client-local target:
@@ -146,7 +146,7 @@ bats-install:
   fi
 
 run-cypress:
-  docker compose up --exit-code-from cypress
+  just ../web/test
 
 bash target:
   docker compose run --rm {{target}} /bin/bash
