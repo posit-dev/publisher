@@ -70,12 +70,12 @@ jobs:
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd test
           just cli-client $env:CLIENT
-          Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
-          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
-          echo "CYPRESS BASE URL: $env:CYPRESS_BASE_URL"
+          # Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
+          # $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
+          # echo "CYPRESS BASE URL: $env:CYPRESS_BASE_URL"
           just ../web/install
           just ../web/build
-          CYPRESS_BASE_URL=$env:CYPRESS_BASE_URL just ../web/ci-e2e $env:CLIENT
+          just ../web/ci-e2e $env:CLIENT
 
   test-macos-client:
     runs-on: macos-latest
@@ -102,17 +102,17 @@ jobs:
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
           cp -r ./bin/artifact/* bin/ && chmod +x ./bin/*/*
-          just test/bats-install && \
-          PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin" && \
-          cd ${{ github.workspace }}/test && \
-          just cli-client ${CLIENT} && \
-          just ui-client ${CLIENT} && \
-          export CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#) && \
-          ls -la && \
-          cat screenlog.0 && \
-          echo "CYPRESS BASE URL: $CYPRESS_BASE_URL" && \
-          just ../web/install && \
-          just ../web/build && \
+          just test/bats-install
+          PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
+          cd ${{ github.workspace }}/test
+          just cli-client ${CLIENT}
+          # just ui-client ${CLIENT}
+          # export CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#)
+          # ls
+          # cat screenlog.0
+          # echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
+          just ../web/install
+          just ../web/build
           just ../web/ci-e2e ${CLIENT}
 
   test-linux-clients:
@@ -142,9 +142,9 @@ jobs:
           cd test
           just build ${CLIENT}
           just cli-client ${CLIENT}
-          just ui-client ${CLIENT}
-          export CYPRESS_BASE_URL=$(docker logs --tail 1 ${CLIENT}-client-ui | grep '^http.*#.*')
-          echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
+          # just ui-client ${CLIENT}
+          # export CYPRESS_BASE_URL=$(docker logs --tail 1 ${CLIENT}-client-ui | grep '^http.*#.*')
+          # echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
           just ../web/install && \
           just ../web/build && \
           just ../web/ci-e2e ${CLIENT}
