@@ -72,6 +72,7 @@ jobs:
           just cli-client $env:CLIENT
           Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
           $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
+          just ../web/install
           just ../web/build
           just ../web/test-e2e
 
@@ -105,6 +106,7 @@ jobs:
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
+          just ../web/install
           just ../web/build
           just ../web/test-e2e
 
@@ -136,5 +138,6 @@ jobs:
           just build ${CLIENT}
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
+          just ../web/install
           just ../web/build
           just ../web/test-e2e
