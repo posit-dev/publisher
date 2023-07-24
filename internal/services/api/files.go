@@ -14,7 +14,7 @@ type File struct {
 	IsDir            bool   `json:"is_dir"`            // true if the file is a directory
 	IsEntrypoint     bool   `json:"is_entrypoint"`     // true if the file is an entrypoint
 	IsRegular        bool   `json:"is_file"`           // true if the file is a regular file
-	Files            []File `json:"files"`             // An array of objects of the same type for each file within the directory.
+	Files            []File `json:"files"`             // an array of objects of the same type for each file within the directory.
 	Links            Links  `json:"_links"`
 }
 
