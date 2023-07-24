@@ -52,11 +52,6 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           path: bin/
-      - name: Download the build folder
-        uses: actions/download-artifact@v3
-        with:
-          name: build
-          path: build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -76,31 +71,39 @@ jobs:
           just cli-client $env:CLIENT
           Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
           $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
-          just ../web/test-e2e-e2e
+          just ../web/test-e2e
 
   test-macos-client:
-    needs: pr-code-validation
     runs-on: macos-latest
+    needs: pr-code-validation
     steps:
-      - name: Run macos
       - uses: actions/checkout@v3
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
           path: bin/
+      # - uses: mxschmitt/action-tmate@v3
+      #   with: 
+      #     detached: true
+      #     limit-access-to-actor: true
+      - uses: docker-practice/actions-setup-docker@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run macos
         env:
           CLIENT: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
-          cp -r ../bin/artifact/* bin/ && chmod +x ../bin/*/*
-          just bats-install
+          cp -r bin/artifact/* bin/ && chmod +x bin/*/*
+          just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
-          just ../web/test-e2e
+          just ../web/test
 
   test-linux-clients:
     runs-on: ubuntu-latest
@@ -129,4 +132,4 @@ jobs:
           just build ${CLIENT}
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
-          just ../web/test-e2e-e2e
+          just ../web/test-e2e
