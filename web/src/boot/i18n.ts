@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import { boot } from 'quasar/wrappers';
 import { createI18n } from 'vue-i18n';
 

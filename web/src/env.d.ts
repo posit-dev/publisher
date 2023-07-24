@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 /* eslint-disable */
 
 declare namespace NodeJS {
