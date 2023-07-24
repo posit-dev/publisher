@@ -63,11 +63,12 @@ jobs:
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
         shell: powershell
         run: |
-          cp -r ../bin\artifact\* bin\
-          chmod +x ../bin\*\*
+          cp -r .\bin\artifact\* bin\
+          chmod +x .\bin\*\*
           just bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
+          cd test
           just cli-client $env:CLIENT
           Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
           $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
@@ -97,13 +98,13 @@ jobs:
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
-          cp -r bin/artifact/* bin/ && chmod +x bin/*/*
+          cp -r ./bin/artifact/* bin/ && chmod +x ./bin/*/*
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
-          just ../web/test
+          just ../web/test-e2e
 
   test-linux-clients:
     runs-on: ubuntu-latest
@@ -128,7 +129,8 @@ jobs:
         env:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
-          cp -r ../bin/artifact/* bin/ && chmod +x ../bin/*/*
+          cp -r ./bin/artifact/* bin/ && chmod +x ./bin/*/*
+          cd test
           just build ${CLIENT}
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
