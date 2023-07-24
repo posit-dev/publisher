@@ -53,12 +53,12 @@ var standardIgnores = []string{
 //   - .rscignore files in the specified directory or subdirectories.
 
 type excludingWalker struct {
-	ignoreList GitIgnoreList
+	ignoreList IgnoreList
 }
 
 const RscIgnoreFilename = ".rscignore"
 
-func LoadRscIgnoreIfPresent(dir util.Path, ignoreList GitIgnoreList) error {
+func LoadRscIgnoreIfPresent(dir util.Path, ignoreList IgnoreList) error {
 	ignorePath := dir.Join(RscIgnoreFilename)
 	err := ignoreList.Append(ignorePath)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -98,7 +98,7 @@ func NewExcludingWalker(dir util.Path, ignores []string) (util.Walker, error) {
 	}, nil
 }
 
-func NewIgnoreList(dir util.Path, ignores []string) (GitIgnoreList, error) {
+func NewIgnoreList(dir util.Path, ignores []string) (IgnoreList, error) {
 	gitIgnore := New(dir)
 	err := gitIgnore.AppendGit()
 	if err != nil && err != ErrNotInGitRepo {

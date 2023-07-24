@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type GitIgnoreList interface {
+type IgnoreList interface {
 	Append(path util.Path) error
 	AppendGlob(s string) error
 	AppendGit() error
@@ -17,7 +17,7 @@ type GitIgnoreList interface {
 }
 
 // Ensure that the gitignore object meets the interface
-var _ GitIgnoreList = &IgnoreList{}
+var _ IgnoreList = &GitIgnoreList{}
 
 type MockGitIgnoreList struct {
 	mock.Mock
