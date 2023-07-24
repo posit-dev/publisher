@@ -75,7 +75,7 @@ jobs:
           echo "CYPRESS BASE URL: $env:CYPRESS_BASE_URL"
           just ../web/install
           just ../web/build
-          just ../web/ci-e2e
+          just ../web/ci-e2e $env:CLIENT
 
   test-macos-client:
     runs-on: macos-latest
@@ -112,7 +112,7 @@ jobs:
           echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
           just ../web/install
           just ../web/build
-          just ../web/ci-e2e
+          just ../web/ci-e2e ${CLIENT}
 
   test-linux-clients:
     runs-on: ubuntu-latest
@@ -146,4 +146,4 @@ jobs:
           echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
           just ../web/install && \
           just ../web/build && \
-          just ../web/ci-e2e
+          just ../web/ci-e2e ${CLIENT}
