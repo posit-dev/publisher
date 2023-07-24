@@ -71,7 +71,8 @@ jobs:
           cd test
           just cli-client $env:CLIENT
           Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
-          export $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
+          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt
+          echo "CYPRESS BASE URL: $env:CYPRESS_BASE_URL"
           just ../web/install
           just ../web/build
           just ../web/ci-e2e
@@ -107,6 +108,7 @@ jobs:
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
           export CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#)
+          echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
           just ../web/install
           just ../web/build
           just ../web/ci-e2e
@@ -140,6 +142,7 @@ jobs:
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
           export CYPRESS_BASE_URL=$(docker logs --tail 1 {{target}}-client-ui | grep '^http.*#.*')
+          echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
           just ../web/install && \
           just ../web/build && \
           just ../web/ci-e2e

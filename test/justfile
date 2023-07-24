@@ -94,15 +94,18 @@ test-cypress-local target:
   sleep 20
   if [[ {{target}} =~ "linux" ]]; then
     CYPRESS_BASE_URL=$(docker logs --tail 2 {{target}}-client-ui | grep '^http.*#.*') \
-    just cypress {{target}}
+    # just cypress {{target}}
+    just ../web/test-e2e
   elif [[ {{target}} =~ "windows" ]]; then
     $CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt \
-    just cypress {{target}}
+    # just cypress {{target}}
+    just ../web/test-e2e
   elif [[ {{target}} =~ "darwin" ]]; then
     echo "GREP!"
     echo "$(egrep '\?token=.*.accounts' screenlog.0)"
     CYPRESS_BASE_URL=$(egrep '\?token=.*.accounts' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#) \
-    just cypress {{target}}
+    # just cypress {{target}}
+    just ../web/test-e2e
   fi
 
 ui-client-local target:
@@ -124,8 +127,10 @@ ui-client-local target:
 
 cypress target:
   #!/usr/bin/env bash
+  # CYPRESS_BASE_URL=$CYPRESS_BASE_URL \
+  # docker compose up cypress
   CYPRESS_BASE_URL=$CYPRESS_BASE_URL \
-  docker compose up cypress
+  just ../web/test-e2e
 
 run-cli-local target:
   #!/usr/bin/env bash
