@@ -4,17 +4,17 @@ package ui
 
 import (
 	"net/http"
+	"net/url"
 
-	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
-	"github.com/rstudio/connect-client/internal/services/middleware"
-	"github.com/rstudio/connect-client/web"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
+
+var APIPrefix string = "api"
 
 func NewUIService(
 	fragment string,
@@ -44,16 +44,14 @@ func NewUIService(
 }
 
 func newUIHandler(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
-	r := http.NewServeMux()
-	api_prefix := "/api/"
+	mux := http.NewServeMux()
+	mux.Handle(ToPath("accounts"), api.NewAccountsController(fs, logger))
+	mux.Handle(ToPath("files"), api.NewFilesController())
+	mux.HandleFunc("/", api.NewStaticController())
+	return mux.ServeHTTP
+}
 
-	accountList := accounts.NewAccountList(fs, logger)
-	r.Handle(api_prefix+"accounts", api.NewAccountListEndpoint(accountList, logger))
-
-	// static files for the local (account list) UI
-	staticHandler := http.FileServer(http.FS(web.Dist)).ServeHTTP
-	staticHandler = middleware.AddPathPrefix("/dist/spa", staticHandler)
-	r.HandleFunc("/", staticHandler)
-
-	return r.ServeHTTP
+func ToPath(elements ...string) string {
+	path, _ := url.JoinPath(APIPrefix, "accounts")
+	return path
 }
