@@ -128,9 +128,13 @@ _build_dev:
         arch=arm64
     fi
 
-    if [ "${BUILD_MODE}" == "development" ]; then
-        {{ _with_runner }} rm -rdf "$os/$arch"
-    fi
+    echo ""
+    echo "Generating a DEVELOPER build of $os/$arch/connect-client."
+    echo ""
+    echo "WARNING: Be sure you have either made a code change or removed the executable"
+    echo "         before running this command, otherwise you will not be building what"
+    echo "         you expect."
+    echo ""
 
     {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client "$os/$arch"
 

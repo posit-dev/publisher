@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -exo pipefail
+set -eo pipefail
 
 package=$1
 if [[ -z "$package" ]]; then
@@ -48,7 +48,6 @@ fi
 
 for platform in "${platforms[@]}"
 do
-    echo "Building $platform"
 	platform_split=(${platform//\// })
 	GOOS=${platform_split[0]}
 	GOARCH=${platform_split[1]}
@@ -56,6 +55,8 @@ do
 	if [ "$GOOS" = "windows" ]; then
 		output_name+='.exe'
 	fi
+
+    echo "Building $output_name"
 
     env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$output_name" -ldflags "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$developmentMode'" "$package"
 	if [ $? -ne 0 ]; then
