@@ -51,13 +51,14 @@ var standardIgnores = []string{
 //   - caller-provided list (e.g. from the CLI)
 //   - .gitignore files in the specified directory, subdirectories, and possibly parents.
 //   - .rscignore files in the specified directory or subdirectories.
-
 type excludingWalker struct {
 	ignoreList IgnoreList
 }
 
 const RscIgnoreFilename = ".rscignore"
 
+// LoadRscIgnoreIfPresent loads the .rscignore file in the specified directory,
+// if it exists, adding the exclusion rules to the specified ignore list.
 func LoadRscIgnoreIfPresent(dir util.Path, ignoreList IgnoreList) error {
 	ignorePath := dir.Join(RscIgnoreFilename)
 	err := ignoreList.Append(ignorePath)
@@ -70,6 +71,8 @@ func LoadRscIgnoreIfPresent(dir util.Path, ignoreList IgnoreList) error {
 	return nil
 }
 
+// Walk traverses the directory at `path`, calling the specified function
+// for every file and directory that does not match the exclusion list.
 func (i *excludingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 	return i.ignoreList.Walk(path, func(path util.Path, info fs.FileInfo, err error) error {
 		if info.IsDir() {
@@ -88,6 +91,10 @@ func (i *excludingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 	})
 }
 
+// NewExcludingWalker returns a Walker that skips excluded files and directories.
+// Exclusions are sourced from the built-in exclusions, gitignore, and the
+// specified ignore list. Python environment directories are also excluded,
+// and .rscignore files are processed as they are encountered.
 func NewExcludingWalker(dir util.Path, ignores []string) (util.Walker, error) {
 	gitIgnore, err := NewIgnoreList(dir, ignores)
 	if err != nil {
@@ -98,6 +105,8 @@ func NewExcludingWalker(dir util.Path, ignores []string) (util.Walker, error) {
 	}, nil
 }
 
+// NewIgnoreList returns an IgnoreList populated with the built-in
+// exclusions, gitignore contents, and the provided ignore list.
 func NewIgnoreList(dir util.Path, ignores []string) (IgnoreList, error) {
 	gitIgnore := New(dir)
 	err := gitIgnore.AppendGit()
