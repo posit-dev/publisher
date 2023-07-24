@@ -57,17 +57,25 @@ type excludingWalker struct {
 	ignoreList gitignore.GitIgnoreList
 }
 
+func loadRscIgnoreIfPresent(dir util.Path, ignoreList gitignore.GitIgnoreList) error {
+	ignorePath := dir.Join(".rscignore")
+	err := ignoreList.Append(ignorePath)
+	if errors.Is(err, fs.ErrNotExist) {
+		err = nil
+	}
+	if err != nil {
+		return fmt.Errorf("error loading .rscignore file '%s': %w", ignorePath, err)
+	}
+	return nil
+}
+
 func (i *excludingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 	return i.ignoreList.Walk(path, func(path util.Path, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			// Load .rscignore from every directory where it exists
-			ignorePath := path.Join(".rscignore")
-			err = i.ignoreList.Append(ignorePath)
-			if errors.Is(err, fs.ErrNotExist) {
-				err = nil
-			}
+			err = loadRscIgnoreIfPresent(path, i.ignoreList)
 			if err != nil {
-				return fmt.Errorf("error loading .rscignore file '%s': %w", ignorePath, err)
+				return err
 			}
 			// Ignore Python environment directories. We check for these
 			// separately because they aren't expressible as gitignore patterns.
