@@ -52,6 +52,6 @@ func newUIHandler(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
 }
 
 func ToPath(elements ...string) string {
-	path, _ := url.JoinPath(APIPrefix, "accounts")
+	path, _ := url.JoinPath(APIPrefix, elements...)
 	return path
 }
