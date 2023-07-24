@@ -46,15 +46,17 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	if err != nil {
 		return nil, err
 	}
-	walker, err := NewBundlingWalker(dir, ignores)
+	excluder, err := NewExcludingWalker(dir, ignores)
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
+	symlinkWalker := util.NewSymlinkWalker(excluder, logger)
+
 	return &bundler{
 		manifest:           manifest,
 		baseDir:            absDir,
 		filename:           filename,
-		walker:             walker,
+		walker:             symlinkWalker,
 		pythonRequirements: pythonRequirements,
 		logger:             logger,
 		debugLogger:        rslog.NewDebugLogger(debug.BundleRegion),

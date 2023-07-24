@@ -46,11 +46,18 @@ var standardIgnores = []string{
 	"*_cache/",
 }
 
-type bundlingWalker struct {
+// excludingWalker is a Walker that excludes files and directories
+// based on a combination of patterns sourced from:
+//   - a built-in exclusion list
+//   - caller-provided list (e.g. from the CLI)
+//   - .gitignore files in the specified directory, subdirectories, and possibly parents.
+//   - .rscignore files in the specified directory or subdirectories.
+
+type excludingWalker struct {
 	ignoreList gitignore.GitIgnoreList
 }
 
-func (i *bundlingWalker) Walk(path util.Path, fn util.WalkFunc) error {
+func (i *excludingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 	return i.ignoreList.Walk(path, func(path util.Path, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			// Load .rscignore from every directory where it exists
@@ -72,7 +79,7 @@ func (i *bundlingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 	})
 }
 
-func (i *bundlingWalker) addGlobs(globs []string) error {
+func (i *excludingWalker) addGlobs(globs []string) error {
 	for _, pattern := range globs {
 		err := i.ignoreList.AppendGlob(pattern)
 		if err != nil {
@@ -82,26 +89,26 @@ func (i *bundlingWalker) addGlobs(globs []string) error {
 	return nil
 }
 
-func NewBundlingWalker(dir util.Path, ignores []string) (util.Walker, error) {
+func NewExcludingWalker(dir util.Path, ignores []string) (util.Walker, error) {
 	gitIgnore := gitignore.New(dir)
-	return newBundlingWalker(dir, ignores, &gitIgnore)
+	return newExcludingWalker(dir, ignores, &gitIgnore)
 }
 
-func newBundlingWalker(dir util.Path, ignores []string, gitIgnore gitignore.GitIgnoreList) (util.Walker, error) {
-	walk := &bundlingWalker{
+func newExcludingWalker(dir util.Path, ignores []string, gitIgnore gitignore.GitIgnoreList) (util.Walker, error) {
+	excluder := &excludingWalker{
 		ignoreList: gitIgnore,
 	}
 	err := gitIgnore.AppendGit()
 	if err != nil && err != gitignore.ErrNotInGitRepo {
 		return nil, err
 	}
-	err = walk.addGlobs(standardIgnores)
+	err = excluder.addGlobs(standardIgnores)
 	if err != nil {
 		return nil, err
 	}
-	err = walk.addGlobs(ignores)
+	err = excluder.addGlobs(ignores)
 	if err != nil {
 		return nil, err
 	}
-	return walk, nil
+	return excluder, nil
 }

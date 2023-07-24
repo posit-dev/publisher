@@ -37,8 +37,8 @@ func (s *WalkerSuite) SetupTest() {
 	cwd.MkdirAll(0700)
 }
 
-func (s *WalkerSuite) TestNewWalker() {
-	w, err := NewBundlingWalker(s.cwd, []string{"*.log"})
+func (s *WalkerSuite) TestNewExcludingWalker() {
+	w, err := NewExcludingWalker(s.cwd, []string{"*.log"})
 	s.Nil(err)
 	s.NotNil(w)
 }
@@ -50,13 +50,13 @@ func (s *WalkerSuite) TestNewWalkerBadGitignore() {
 	err := giPath.WriteFile(data, 0600)
 	s.Nil(err)
 
-	w, err := NewBundlingWalker(s.cwd, nil)
+	w, err := NewExcludingWalker(s.cwd, nil)
 	s.NotNil(err)
 	s.Nil(w)
 }
 
 func (s *WalkerSuite) TestNewWalkerBadIgnore() {
-	w, err := NewBundlingWalker(s.cwd, []string{"[Z-A]"})
+	w, err := NewExcludingWalker(s.cwd, []string{"[Z-A]"})
 	s.NotNil(err)
 	s.Nil(w)
 }
@@ -66,7 +66,7 @@ func (s *WalkerSuite) TestWalkErrorLoadingRscignore() {
 	err := rscIgnorePath.WriteFile([]byte("[Z-A]"), 0600)
 	s.Nil(err)
 
-	w, err := NewBundlingWalker(s.cwd, nil)
+	w, err := NewExcludingWalker(s.cwd, nil)
 	s.Nil(err)
 	s.NotNil(w)
 
@@ -113,7 +113,7 @@ func (s *WalkerSuite) TestWalk() {
 		s.Nil(err)
 	}
 
-	w, err := NewBundlingWalker(s.cwd, nil)
+	w, err := NewExcludingWalker(s.cwd, nil)
 	s.Nil(err)
 	s.NotNil(w)
 
