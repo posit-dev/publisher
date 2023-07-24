@@ -55,12 +55,20 @@ test-e2e:
       npx quasar test --e2e cypress
     fi
 
-ci-e2e:
+ci-e2e {{target}}:
     #!/bin/bash
     set -euo pipefail
+    if [[ {{target}} =~ "linux" ]]; then
+        CYPRESS_BASE_URL=$CYPRESS_BASE_URL \
+        npx quasar test --e2e cypress
+    elif [[ {{target}} =~ "windows" ]]; then
+        CYPRESS_BASE_URL=$env:CYPRESS_BASE_URL
+        npx quasar test --e2e cypress
+    elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
+        CYPRESS_BASE_URL=$CYPRESS_BASE_URL \
+        npx quasar test --e2e cypress
+    fi
     
-    npx quasar test --e2e cypress
-
 # run unit tests one time
 test-unit:
     # npx vitest run
