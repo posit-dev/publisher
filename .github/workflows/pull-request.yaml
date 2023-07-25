@@ -95,14 +95,14 @@ jobs:
           CLIENT: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
-          BINARY_PATH: ${{ github.workspace }}/bin/artifact/darwin-amd64
+          BINARY_PATH: ${{ github.workspace }}/bin/artifact/darwin-amd64/connect-client
         run: |
           cp -r ./bin/artifact/* bin/ && chmod +x ./bin/*/*
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
-          nohup $BINARY_PATH/connect-client account-ui --listen=localhost:9000 > nohup.out 2> nohup.err <&- &
+          nohup $BINARY_PATH account-ui --listen=localhost:9000 > nohup.out 2> nohup.err <&- &
           sleep 5
           ps
           just ../web/install
