@@ -86,10 +86,10 @@ jobs:
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: mxschmitt/action-tmate@v3
-        with: 
-          detached: true
-          limit-access-to-actor: true
+      # - uses: mxschmitt/action-tmate@v3
+      #   with: 
+      #     detached: true
+      #     limit-access-to-actor: true
       - name: Run macos
         env:
           CLIENT: macos-latest
