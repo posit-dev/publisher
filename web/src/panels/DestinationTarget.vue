@@ -175,9 +175,10 @@ const destinationTitle = computed(() => {
 });
 
 const testAPI = async() => {
+  const baseURL = `${location.protocol}//${location.host}${location.pathname}`;
   try {
     const ax = axios.create({
-      baseURL: 'http://127.0.0.1:9000',
+      baseURL,
     });
 
     const data = await ax.get(
