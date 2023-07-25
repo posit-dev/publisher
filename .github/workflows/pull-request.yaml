@@ -88,7 +88,10 @@ jobs:
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          - uses: mxschmitt/action-tmate@v3
+            with: 
+              detached: true
+              limit-access-to-actor: true
       - name: Run macos
         env:
           CLIENT: macos-latest
@@ -102,6 +105,7 @@ jobs:
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
+          ls -la
           export CYPRESS_BASE_URL=$(egrep '\?token=.*.accounts' screenlog.0)
           just ../web/install
           just ../web/build
