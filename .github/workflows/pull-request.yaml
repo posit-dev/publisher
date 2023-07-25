@@ -86,11 +86,6 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           path: bin/
-      # - uses: mxschmitt/action-tmate@v3
-      #   with: 
-      #     detached: true
-      #     limit-access-to-actor: true
-      - uses: docker-practice/actions-setup-docker@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -107,7 +102,7 @@ jobs:
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
-          export CYPRESS_BASE_URL=$(egrep '\?token=.*.accounts' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#)
+          export CYPRESS_BASE_URL=$(egrep '\?token=.*.accounts' screenlog.0)
           just ../web/install
           just ../web/build
           just ../web/ci-e2e ${CLIENT}
