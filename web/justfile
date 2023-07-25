@@ -58,7 +58,10 @@ test-e2e:
 ci-e2e target:
     #!/bin/bash
     set -euo pipefail
-    # CYPRESS_BASE_URL=$CYPRESS_BASE_URL \
+
+    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
+    # install cypress
+    npx cypress install
     npx quasar test --e2e cypress
 
 # run unit tests one time
