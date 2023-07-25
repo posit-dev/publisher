@@ -104,11 +104,8 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
-          just ui-client ${CLIENT}
+          $BINARY_PATH account-ui --listen=localhost:9000 &
           sleep 5
-          ps
-          # ls -la
-          # export CYPRESS_BASE_URL=$(egrep '\?token=.*.accounts' screenlog.0)
           ps
           just ../web/install
           just ../web/build
