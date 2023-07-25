@@ -66,7 +66,7 @@ ui-client target:
    set shell := ["powershell.exe", "-c"] \
    Start-Process -FilePath "$GITHUB_WORKSPACE\\bin\\artifact\\windows-amd64\\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9000" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
-    screen -S client -dmL $BINARY_PATH account-ui --listen=127.0.0.1:9000
+    $BINARY_PATH account-ui --listen=localhost:9000 &
   fi
 
 # test-cypress target:
