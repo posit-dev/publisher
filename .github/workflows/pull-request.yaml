@@ -106,11 +106,6 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
-          # just ui-client ${CLIENT}
-          # export CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' screenlog.0 | sed s#127\.0\.0\.1#host.docker.internal#)
-          # ls
-          # cat screenlog.0
-          # echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
           just ../web/install
           just ../web/build
           just ../web/ci-e2e ${CLIENT}
