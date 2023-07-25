@@ -5,13 +5,12 @@
     type="checkbox"
     dark
     dense
-    keep-color
   >
     <template #label="option">
       {{ option.label }}
       <q-badge
         class="q-ml-xs"
-        :color="option.color"
+        :color="option.tagColor"
       >
         {{ option.status }}
       </q-badge>
@@ -21,7 +20,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { matCheckBox, matCheckBoxOutlineBlank, matAddBox, matDisabledByDefault } from '@quasar/extras/material-icons';
 
 import { DirectoryNode, FLATTENED_CHANGED_DIRECTORY_DATA } from 'src/api/directoryContents';
 
@@ -48,21 +46,16 @@ function filesToQausarOptions(files: DirectoryNode[]): QuasarOption[] {
 
     if (node.deleted) {
       result.disable = true;
-      result.color = 'red';
+      result.tagColor = 'red';
       result.status = 'deleted';
-      result.uncheckedIcon = matDisabledByDefault;
     }
     if (node.changed) {
-      result.color = 'orange';
+      result.tagColor = 'orange';
       result.status = 'changed';
-      result.checkedIcon = matCheckBox;
-      result.uncheckedIcon = matCheckBoxOutlineBlank;
     }
     if (node.new) {
-      result.color = 'green';
+      result.tagColor = 'green';
       result.status = 'new';
-      result.checkedIcon = matAddBox;
-      result.uncheckedIcon = matCheckBoxOutlineBlank;
     }
 
     return result;
