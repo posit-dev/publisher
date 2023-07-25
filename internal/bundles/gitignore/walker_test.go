@@ -73,7 +73,7 @@ func (s *WalkerSuite) TestWalkErrorLoadingRscignore() {
 	err = w.Walk(s.cwd, func(path util.Path, info fs.FileInfo, err error) error {
 		return nil
 	})
-	s.ErrorContains(err, "error loading .rscignore file")
+	s.ErrorContains(err, "error loading ignore file")
 }
 
 func (s *WalkerSuite) TestWalk() {
