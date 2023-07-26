@@ -55,7 +55,7 @@ test-e2e:
       npx quasar test --e2e cypress
     fi
 
-ci-e2e target:
+ci-e2e:
     #!/bin/bash
     set -euo pipefail
 

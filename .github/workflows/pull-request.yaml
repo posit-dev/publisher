@@ -116,7 +116,7 @@ jobs:
           cat nohup.out
           just ../web/install
           just ../web/build
-          CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' nohup.out) just ../web/ci-e2e ${CLIENT}
+          CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' nohup.out) just ../web/ci-e2e
 
   test-linux-clients:
     runs-on: ubuntu-latest
@@ -149,4 +149,4 @@ jobs:
           export CYPRESS_BASE_URL=$(docker logs --tail 1 {{target}}-client-ui | grep '^http.*#.*')
           just ../web/install && \
           just ../web/build && \
-          just ../web/ci-e2e ${CLIENT}
+          just ../web/ci-e2e
