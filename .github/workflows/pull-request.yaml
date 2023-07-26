@@ -71,8 +71,9 @@ jobs:
           cd test
           just cli-client $env:CLIENT
           Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9000" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
-          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' .\win-out.txt \
+          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' win-out.txt \
           echo "$env:CYPRESS_BASE_URL"
+          cat win-out.txt
           just ../web/install
           just ../web/build
           just ../web/ci-e2e $env:CLIENT
@@ -88,10 +89,10 @@ jobs:
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: mxschmitt/action-tmate@v3
-        with: 
-          detached: true
-          limit-access-to-actor: true
+      # - uses: mxschmitt/action-tmate@v3
+      #   with: 
+      #     detached: true
+      #     limit-access-to-actor: true
       - name: Run macos
         env:
           CLIENT: macos-latest
@@ -106,7 +107,9 @@ jobs:
           just cli-client ${CLIENT}
           nohup ${{ github.workspace }}/bin/darwin-amd64/connect-client account-ui --listen=127.0.0.1:9000  > nohup.out 2> nohup.err < /dev/null &
           export CYPRESS_BASE_URL=$(egrep '\?token=.*.accounts' nohup.out)
+          sleep 10
           echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
+          cat nohup.out
           just ../web/install
           just ../web/build
           just ../web/ci-e2e ${CLIENT}
@@ -139,7 +142,6 @@ jobs:
           just build ${CLIENT}
           just cli-client ${CLIENT}
           just ui-client ${CLIENT}
-          sleep 5
           export CYPRESS_BASE_URL=$(docker logs --tail 1 {{target}}-client-ui | grep '^http.*#.*')
           just ../web/install && \
           just ../web/build && \
