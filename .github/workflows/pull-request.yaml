@@ -95,7 +95,7 @@ jobs:
           CLIENT: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
-          BINARY_PATH: ${{ github.workspace }}/bin/artifact/darwin-amd64/connect-client
+          BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
           cp -r ./bin/artifact/* bin/ && chmod +x ./bin/*/*
           just test/bats-install
