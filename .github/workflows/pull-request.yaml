@@ -86,10 +86,10 @@ jobs:
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - uses: mxschmitt/action-tmate@v3
-      #   with: 
-      #     detached: true
-      #     limit-access-to-actor: true
+      - uses: mxschmitt/action-tmate@v3
+        with: 
+          detached: true
+          limit-access-to-actor: true
       - name: Run macos
         env:
           CLIENT: macos-latest
@@ -102,7 +102,7 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just cli-client ${CLIENT}
-          nohup $BINARY_PATH account-ui --listen=localhost:9000 > nohup.out 2> nohup.err <&- &
+          nohup $BINARY_PATH account-ui --listen=localhost:9000  > nohup.out 2> nohup.err < /dev/null &
           sleep 5
           ps
           just ../web/install
