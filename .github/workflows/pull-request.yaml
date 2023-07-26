@@ -100,11 +100,9 @@ jobs:
           cp -r ./bin/artifact/* bin/ && chmod +x ./bin/*/*
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
-          cd ${{ github.workspace }}/test
+          cd test
           just cli-client ${CLIENT}
-          nohup $BINARY_PATH account-ui --listen=localhost:9000  > nohup.out 2> nohup.err < /dev/null &
-          sleep 5
-          ps
+          nohup ${{ github.workspace }}/bin/darwin-amd64/connect-client account-ui --listen=localhost:9000  > nohup.out 2> nohup.err < /dev/null &
           just ../web/install
           just ../web/build
           just ../web/ci-e2e ${CLIENT}
