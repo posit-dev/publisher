@@ -125,7 +125,7 @@ func (svc *Service) Run() error {
 	svc.addr = listener.Addr()
 
 	// If not development mode, then you get a token added to the URL
-	appURL := svc.getURL(!project.DevelopmentBuild())
+	appURL := svc.getURL(!(project.DevelopmentBuild() && svc.skipAuth))
 
 	svc.logger.Infof("UI server URL: %s", appURL.String())
 

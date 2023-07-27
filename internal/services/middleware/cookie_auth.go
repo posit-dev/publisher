@@ -15,7 +15,7 @@ const sessionCookieName string = "connect-client-session"
 
 var cookieKey []byte = securecookie.MustGenerateRandomKey()
 
-var cookieObj = securecookie.MustNew("session", cookieKey, securecookie.Params{
+var cookieObj = securecookie.MustNew("posit-publish-session", cookieKey, securecookie.Params{
 	HTTPOnly: true,
 	Secure:   false, // we currently only serve over http
 	SameSite: securecookie.Lax,
