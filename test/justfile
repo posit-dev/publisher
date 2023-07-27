@@ -90,7 +90,10 @@ ui-client target:
 
 test-cypress-local target:
   #!/usr/bin/env bash
+<<<<<<< HEAD
   
+=======
+>>>>>>> parent of 68dadd7 (cleanup)
   just ui-client-local {{target}}
   sleep 20
   if [[ {{target}} =~ "linux" ]]; then
