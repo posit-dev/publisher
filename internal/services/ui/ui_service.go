@@ -46,12 +46,14 @@ func NewUIService(
 func newUIHandler(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
 	mux := http.NewServeMux()
 	mux.Handle(ToPath("accounts"), api.NewAccountsController(fs, logger))
-	mux.Handle(ToPath("files"), api.NewFilesController())
+	mux.Handle(ToPath("files"), api.NewFilesController(fs, logger))
 	mux.HandleFunc("/", api.NewStaticController())
 	return mux.ServeHTTP
 }
 
 func ToPath(elements ...string) string {
-	path, _ := url.JoinPath(APIPrefix, elements...)
+	prefix := "/" + APIPrefix
+	path, _ := url.JoinPath(prefix, elements...)
+	println(path)
 	return path
 }

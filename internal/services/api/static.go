@@ -9,7 +9,7 @@ import (
 	"github.com/rstudio/connect-client/web"
 )
 
-var prefix string = ""
+var prefix string = "/dist/spa"
 
 func NewStaticController() http.HandlerFunc {
 	fs := http.FS(web.Dist)
