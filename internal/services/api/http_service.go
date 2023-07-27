@@ -49,12 +49,12 @@ func NewService(
 	logger rslog.Logger,
 	debugLogger rslog.DebugLogger) *Service {
 
-	if !(project.DevelopmentBuild() && skipAuth) {
+	if project.DevelopmentBuild() && skipAuth {
+		logger.Warnf("Service is operating in DEVELOPMENT MODE with NO browser to server authentication")
+	} else {
 		handler = middleware.AuthRequired(logger, handler)
 		handler = middleware.CookieSession(logger, handler)
 		handler = middleware.LocalTokenSession(token, logger, handler)
-	} else {
-		logger.Warnf("Service is operating in DEVELOPMENT MODE with NO browser to server authentication")
 	}
 
 	if accessLog {
