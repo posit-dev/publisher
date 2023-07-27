@@ -87,6 +87,17 @@ Available recipes:
     test-unit-watch # run unit tests in watch mode, re-running as files are changed
 ```
 
+#### Development workflow for UX modifications
+
+1. Build and start the vite web server, to support error reporting and hot-reloading: `just web/dev` in one terminal. Keep the terminal window open.
+    - This will launch the `vite` web server on `http://127.0.0.1:9000`
+2. Within a new terminal window, build the development version of the CLI: `just build-dev`. Keep this terminal open, so that you can rebuild as needed.
+3. Within a new terminal window, launch the development version of the CLI for the current platform (with these parameters): `./connect-client publish-ui <PROJECT_PATH> --listen=127.0.0.1:9001 --open-browser-at="http://127.0.0.1:9000" --skip-browser-session-auth`
+    - *Where** `<PROJECT_PATH>` above is replaced with a location of a sample project. For example, with a python project at `~/dev/connect-content/bundles/python-flaskapi`, your complete command line would become: `./connect-client publish-ui ~/dev/connect-content/bundles/python-flaskapi --listen=127.0.0.1:9001 --open-browser-at="http://127.0.0.1:9000" --skip-browser-session-auth`.
+    - This launches the CLI and configures it to listen on port `9001`, while launching a browser to the address which is being served by the `vite` web server.
+
+You now should have a Web UX loaded within the browser, which is loading from the `vite` dev server, but has its APIs serviced from the CLI backend.
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code

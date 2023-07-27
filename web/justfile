@@ -27,6 +27,8 @@ build:
     #!/bin/bash
     set -euo pipefail
 
+    just install
+
     if ! npx quasar build; then
      echo ""
      echo "The build has failed."
