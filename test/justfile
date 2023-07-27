@@ -4,7 +4,7 @@ export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:39
 # export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
 
 test target: 
-  just start-connect cli-client {{target}} ui-client {{target}} test-cypress {{target}} stop
+  just start-connect cli-client {{target}} ui-client {{target}} stop
 
 test-local target:
   just run-cli-local {{target}} ui-client-local {{target}} test-cypress-local {{target}} stop
@@ -19,6 +19,7 @@ build target:
     else
     docker compose build {{target}}
   fi
+
 
 start-connect:
   docker compose up -d connect
@@ -53,7 +54,7 @@ _test-cli-client target:
 
 # TODO do we need this?
 test-cli target:
-   just cli-client {{target}}
+  just cli-client {{target}}
 
 ui-client target:
   #!/usr/bin/env bash
