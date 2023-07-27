@@ -1,0 +1,94 @@
+# will run recipes: clean, validate, build, validate-post and test
+default: clean validate build test
+
+# bootstrap any supporting packages
+bootstrap:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "No bootstrapping required for agent"
+
+# Clean the agent build artifacts 
+clean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    rm -rf ../../bin/**/connect-client
+
+# Build the production agent using the existing build of the Web UX
+build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # translate `just` os/arch strings to the ones `go build` expects
+    os="{{ os() }}"
+    arch="{{ arch() }}"
+
+    # windows and linux strings match
+    if [[ "$os" == "macos" ]]; then
+        os=darwin
+    fi
+
+    if [[ "$arch" == "x86_64" ]]; then
+        arch=amd64
+    elif [[ "$arch" == "aarch64" ]]; then
+        arch=arm64
+    fi
+
+    target=""
+
+    echo ""
+    if [ "${BUILD_MODE:-}" == "development" ]; then
+        echo "Generating a ${BUILD_MODE} build of $os/$arch/connect-client."
+        target="${os}/${arch}"
+    else
+        echo "Generating production builds of connect-client."
+    fi
+
+    # Have to remove linked server executable, so that switching from production 
+    # to development modes (and vise-versa) will work.
+    just clean
+
+    cd ../..
+    if ./scripts/build.bash ./cmd/connect-client "${target}"; then
+        echo "Build was successful"
+    else
+        echo ""
+        echo "An error has occurred while building."
+        echo ""
+        if [ ! -f "web/dist/spa/index.html" ]; then
+            echo "No web SPA artifacts can be found. A web build is required for the backend"
+            echo "to build. Possibly resolve with 'just web/build' or 'just build'."
+        fi
+    fi
+
+# Validate the agent
+validate:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "Validating agent code"
+    cd ../..
+    ./scripts/fmt-check.bash
+
+# Run the tests on the agent w/ coverage profiling 
+test:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "Testing agent code"
+    go test ./... -covermode set -coverprofile cover.out
+
+# Display the test code coverage of the Go code, from last test run
+test-coverage:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    go tool cover -html=cover.out
+
+# Run the publishing agent executable
+run *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    go run . {{ args }}

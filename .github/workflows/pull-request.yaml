@@ -29,13 +29,13 @@ jobs:
       - name: build docker image
         run: just image
       - name: install dependencies
-        run: just install
-      - name: lint the source files
-        run: just lint
+        run: just bootstrap
+      - name: validate the source files
+        run: just validate
       - name: build the CLI client and Web UX
         run: just build
-      - name: lint the build dependent files
-        run: just post-build-lint
+      - name: perform validation after client build
+        run: just validate-post
       - name: run all tests
         run: just test
       - uses: actions/upload-artifact@v3

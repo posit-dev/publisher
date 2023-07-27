@@ -1,10 +1,10 @@
 _use_docker := env_var_or_default("DOCKER", "true")
 
-# will run recipes: install, lint, build, and test
-default: install lint build test
+# will run recipes: bootstrap, validate, build, and test
+default: bootstrap validate build test
 
 # update javascript/typescript dependencies
-install:
+bootstrap:
     #!/bin/bash
     set -euo pipefail
 
@@ -14,12 +14,12 @@ install:
     echo "NOTE: npm install may take five minutes or more from within a docker container..."
     npm install --no-audit
 
-# lint the source files, do not fix the fixable items
-lint:
+# validate the source files, do not fix the fixable items
+validate:
     npx eslint --ext .js,.ts,.vue,.cjs ./
 
-# lint the source files, fix the fixable items
-lint-fix:
+# validate the source files, fix the fixable items
+validate-fix:
     npx eslint --ext .js,.ts,.vue,.cjs ./ "--fix"
 
 # build the web artifacts for the SPA (into dest/spa)
@@ -27,13 +27,13 @@ build:
     #!/bin/bash
     set -euo pipefail
 
-    just install
+    just bootstrap
 
     if ! npx quasar build; then
      echo ""
      echo "The build has failed."
      echo "If you encountered the error: 'Global Quasar CLI • ⚠️   Error  Unknown command \"build\"'"
-     echo "Try running 'just install' and then retrying your build command."
+     echo "Try running 'just bootstrap' and then retrying your build command."
      exit 1
     fi
 
@@ -67,12 +67,15 @@ test-unit:
 test-unit-watch:
     npx vitest
 
-# start common UX development flow. Runs install recipe ahead of starting the web server which updates automatically upon file changes
+# start common UX development flow. Start the web server which updates automatically upon file changes
 dev:
     npx quasar dev
 
 # remove build artifacts and dependencies
 clean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
     # not using quasar clean, as it would require us to have node_modules fully installed. Instead, performing what
     # it said it was doing...
     # quasar clean
