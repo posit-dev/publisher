@@ -20,14 +20,14 @@ services:
     container_name: linux-amd64-client-ui
     network_mode: host
     ports:
-      - 9999:9999
+      - 9000:9000
     command:
-      ../bin/linux-amd64/connect-client account-ui --listen=localhost:9999
+      ../bin/linux-amd64/connect-client account-ui --listen=localhost:9000
   
   linux-arm64:
     platform: linux/arm64
     ports:
-      - 9999:9999
+      - 9000:9000
     build:
       context: ./docker
       dockerfile: linux.Dockerfile
@@ -42,9 +42,9 @@ services:
     container_name: linux-arm64-client-ui
     network_mode: host
     ports:
-      - 9999:9999
+      - 9000:9000
     command:
-      ../bin/linux-arm64/connect-client account-ui --listen=localhost:9999
+      ../bin/linux-arm64/connect-client account-ui --listen=localhost:9000
 
   connect:
     hostname: connect
