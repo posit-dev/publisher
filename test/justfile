@@ -91,7 +91,10 @@ ui-client target:
 test-cypress-local target:
   #!/usr/bin/env bash
 <<<<<<< HEAD
+<<<<<<< HEAD
   
+=======
+>>>>>>> parent of 68dadd7 (cleanup)
 =======
 >>>>>>> parent of 68dadd7 (cleanup)
   just ui-client-local {{target}}
