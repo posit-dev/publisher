@@ -20,7 +20,6 @@ build target:
     docker compose build {{target}}
   fi
 
-
 start-connect:
   docker compose up -d connect
   # wait for Connect to start
@@ -54,7 +53,7 @@ _test-cli-client target:
 
 # TODO do we need this?
 test-cli target:
-  just cli-client {{target}}
+   just cli-client {{target}}
 
 ui-client target:
   #!/usr/bin/env bash
@@ -90,13 +89,6 @@ ui-client target:
 
 test-cypress-local target:
   #!/usr/bin/env bash
-<<<<<<< HEAD
-<<<<<<< HEAD
-  
-=======
->>>>>>> parent of 68dadd7 (cleanup)
-=======
->>>>>>> parent of 68dadd7 (cleanup)
   just ui-client-local {{target}}
   sleep 20
   if [[ {{target}} =~ "linux" ]]; then
