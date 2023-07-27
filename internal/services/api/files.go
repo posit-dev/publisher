@@ -4,23 +4,45 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
 
+type FileType string
+
+const (
+	Regular   FileType = "REGULAR"
+	Directory FileType = "DIR"
+)
+
 type File struct {
-	Pathname         string  `json:"pathname"`          // the pathname
-	Size             int64   `json:"size"`              // nullable; length in bytes for regular files; system-dependent
-	ModifiedDatetime string  `json:"modified_datetime"` // the last modified datetime
-	IsDir            bool    `json:"is_dir"`            // true if the file is a directory
-	IsEntrypoint     bool    `json:"is_entrypoint"`     // true if the file is an entrypoint
-	IsRegular        bool    `json:"is_file"`           // true if the file is a regular file
-	Files            []*File `json:"files"`             // an array of objects of the same type for each file within the directory.
+	FileType         FileType `json:"file_type"`         // the file type
+	Pathname         string   `json:"pathname"`          // the pathname
+	Size             int64    `json:"size"`              // nullable; length in bytes for regular files; system-dependent
+	ModifiedDatetime string   `json:"modified_datetime"` // the last modified datetime
+	IsDir            bool     `json:"is_dir"`            // true if the file is a directory
+	IsEntrypoint     bool     `json:"is_entrypoint"`     // true if the file is an entrypoint
+	IsRegular        bool     `json:"is_file"`           // true if the file is a regular file
+	Files            []*File  `json:"files"`             // an array of objects of the same type for each file within the directory.
 	// Links            Links   `json:"_links"`
+}
+
+func GetFileType(path string, info fs.FileInfo) (FileType, error) {
+	if info.Mode().IsRegular() {
+		return Regular, nil
+	}
+
+	if info.Mode().IsDir() {
+		return Directory, nil
+	}
+
+	return "", fmt.Errorf("the file type for file %s is not supported", path)
 }
 
 func NewFile(afs afero.Fs, path string) (*File, error) {
@@ -29,12 +51,19 @@ func NewFile(afs afero.Fs, path string) (*File, error) {
 		return nil, err
 	}
 
+	filetype, err := GetFileType(path, info)
+	if err != nil {
+		return nil, err
+	}
+
 	return &File{
-		Pathname:  path,
-		Size:      info.Size(),
-		IsDir:     info.Mode().IsDir(),
-		IsRegular: info.Mode().IsRegular(),
-		Files:     make([]*File, 0),
+		FileType:         filetype,
+		Pathname:         path,
+		Size:             info.Size(),
+		ModifiedDatetime: info.ModTime().Format(time.RFC3339),
+		IsDir:            info.Mode().IsDir(),
+		IsRegular:        info.Mode().IsRegular(),
+		Files:            make([]*File, 0),
 	}, nil
 }
 
