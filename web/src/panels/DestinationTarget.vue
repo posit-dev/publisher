@@ -117,12 +117,12 @@
 </template>
 
 <script setup lang="ts">
-
-import axios from 'axios';
-
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 
 import type { DeploymentMode } from './deploymentModes';
+import { useApi } from 'src/api';
+
+const api = useApi();
 
 const title = ref('');
 const description = ref('');
@@ -175,25 +175,13 @@ const destinationTitle = computed(() => {
 });
 
 const testAPI = async() => {
-  const baseURL = `${location.protocol}//${location.host}${location.pathname}`;
   try {
-    const ax = axios.create({
-      baseURL,
-      withCredentials: true,
-    });
-
-    const data = await ax.get(
-      '/api/accounts',
-    );
-    console.log('worked', data);
-  } catch (error) {
-    console.log(error);
+    const response = await api.accounts.list();
+    console.log('worked', response);
+  } catch (err) {
+    console.log(err);
   }
 };
 
-onMounted(() => {
-  // Here just to implement a quick attempt at calling an API from the CLI backend.
-  testAPI();
-});
-
+testAPI();
 </script>

@@ -1,0 +1,63 @@
+# Publishing Client API Wrapper Library
+
+## Usage
+
+```typescript
+import { useApi } from 'src/api';
+
+const api = useApi();
+
+try {
+  const response = await api.accounts.list();
+} catch (err) {
+  // handle the error
+}
+```
+
+## Organization
+
+### `client.ts`
+
+Contains the `PublishingClientApi` class which constructs the `AxiosInstance`,
+passes it down to each of the resources for use, and gathers all of the
+resources. This is the what we interact with.
+
+### `/resources`
+
+Each class in the `resources` folder has methods related to its endpoint.
+
+Example: `/api/accounts` maps to the `resources/Accounts.ts` module.
+
+### `/types`
+
+Holds the types definitions for use in Resources to prevent Resources from
+getting cluttered.
+
+## Patterns
+
+### Limited Exports
+
+Rather than exporting the `AxiosInstance` or the `PublishingClientApi` class a
+constant is exported to prevent more than one client from being created and any
+non-resource-method usage of this library.
+
+We can use the exported `api` constant to access an instance of
+`PublishingClientApi`.
+
+Or we can use the `useApi()` function which follows some of the syntax seen in
+the [Composition API](https://vuejs.org/api/sfc-script-setup.html#useslots-useattrs)
+and other Vue 3 libraries such as [Pinia](https://pinia.vuejs.org/).
+
+### Return All Available Data
+
+Each Resource method returns the full `AxiosResponse`. We can use a
+[destructing assignment](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment)
+to reduce boilerplate and ensure that we do not lose potentially-needed data.
+
+```typescript
+try {
+  const { data } = await api.accounts.list();
+} catch (err) {
+  // handle the error
+}
+```
