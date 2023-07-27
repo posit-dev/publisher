@@ -23,7 +23,7 @@ services:
       - 9000:9000
     command:
       ../bin/linux-amd64/connect-client account-ui --listen=localhost:9000
-  
+
   linux-arm64:
     platform: linux/arm64
     ports:
