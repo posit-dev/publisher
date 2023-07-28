@@ -36,6 +36,6 @@ RUN yum install -y npm
 # installed globally within docker only, to support CI's needs 
 # (seeing errors when installed within the project and executing w/ npx)
 RUN npm install -g @quasar/cli 	
-RUN which quasar
 RUN quasar --version
 RUN echo $PATH
+RUN whereis quasar
