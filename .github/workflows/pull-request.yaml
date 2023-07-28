@@ -61,7 +61,7 @@ jobs:
         if: ${{ steps.cache-docker-image-restore.outputs.cache-hit != 'true' }}
         name: Cache docker image (update)
         id: cache-docker-image-save
-        uses: actions/cache@v3
+        uses: actions/cache/save@v3
         env:
           cache-name: cache-docker-image
         with:
@@ -128,7 +128,7 @@ jobs:
         if: ${{ steps.node_modules.outputs.cache-hit != 'true' }}
         name: Create the cache of UX node_modules (save)
         id: create_node_modules
-        uses: actions/cache@v3
+        uses: actions/cache/save@v3
         env:
           cache-name: node-modules
         with:
