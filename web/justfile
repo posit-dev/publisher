@@ -8,8 +8,8 @@ bootstrap:
     #!/bin/bash
     set -euo pipefail
 
-    # set this environment variable to keep Cypress from attempting to create
-    # cache within root's home dir.
+    # set this environment variable to keep Cypress from attempting
+    # to create a cache within root's home dir.
     export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
     echo "NOTE: npm install may take five minutes or more from within a docker container..."
     npm install --no-audit
