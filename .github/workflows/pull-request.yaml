@@ -241,6 +241,12 @@ jobs:
           path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('/web/package.json') }}
       -
+        name: Download Web-UX Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: web-ux
+          path: ./web/dist/spa
+      -
         name: UX Unit Tests
         run: just web/test-unit
       -
