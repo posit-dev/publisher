@@ -125,8 +125,9 @@ jobs:
         name: Build up node_modules
         run: just web/bootstrap
       - 
+        if: ${{ steps.node_modules.outputs.cache-hit != 'true' }}
         name: Create the cache of UX node_modules (save)
-        id: node_modules
+        id: create_node_modules
         uses: actions/cache@v3
         env:
           cache-name: node-modules
