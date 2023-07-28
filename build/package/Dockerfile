@@ -39,4 +39,3 @@ RUN npm install -g @quasar/cli
 RUN quasar --version
 RUN echo $PATH
 RUN whereis quasar
-ENV PATH="${PATH}:/usr/local/bin"
