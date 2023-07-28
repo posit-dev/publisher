@@ -37,8 +37,11 @@ build:
      exit 1
     fi
 
-# perform unit and e2e tests
-test: test-unit test-e2e
+# perform unit, go race and e2e tests
+test: test-unit test-race test-e2e
+
+# perform race testing
+test-race:
     go test -race ./...
 
 # run e2e (Cypress) tests

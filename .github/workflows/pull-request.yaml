@@ -15,35 +15,303 @@ on:
 #       limit-access-to-actor: true
 #
 
-jobs:
-  pr-code-validation:
+# build docker image: actions/upload-artifact@v3, with path: /bin
+# - build UX
+#   - validate UX
+#   - test UX unit tests
+#   - validate agent
+#   - agent tests
+#   - build agent
+#     - UX e2e tests
+
+jobs: 
+  build-docker-image:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -l {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: extractions/setup-just@v1
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: build docker image
-        run: just image
-      - name: install dependencies
-        run: just bootstrap
-      - name: validate the source files
-        run: just validate
-      - name: build the CLI client and Web UX
-        run: just build
-      - name: perform validation after client build
-        run: just validate-post
-      - name: run all tests
-        run: just test
-      - uses: actions/upload-artifact@v3
+      -
+        name: Build and export image
+        uses: docker/build-push-action@v4
         with:
+          context: .
+          build-args: BUILDKIT_INLINE_CACHE=1 
+          pull: True
+          file: build/package/Dockerfile
+          tags: rstudio/connect-client:latest
+          outputs: type=docker,dest=/tmp/build-image.tar
+      -
+        name: Upload image artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: image-tar
+          path: /tmp/build-image.tar
+
+  build-ux:
+    needs: build-docker-image
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: image-tar
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/build-image.tar
+          docker image ls -a
+      -
+        name: Build the UX
+        run: just build-web
+      -
+        name: Upload image artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-ux
+          path: /web/dist/spa
+
+  validate-ux:
+    needs: build-ux
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: image-tar
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/build-image.tar
+          docker image ls -a
+      -
+        name: Validate the UX
+        run: just web/validate
+
+  test-ux:
+    needs: build-ux
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: image-tar
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/build-image.tar
+          docker image ls -a
+      -
+        name: UX Unit Tests
+        run: just web/test-unit
+      -
+        name: UX Go Race Tests
+        run: just web/test-race
+
+  validate-agent:
+    needs: build-ux
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: image-tar
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/build-image.tar
+          docker image ls -a
+      -
+        name: Validate Agent
+        run: |
+          just validate-agent
+          just validate-post
+
+  agent-tests:
+    needs: build-ux
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: image-tar
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/build-image.tar
+          docker image ls -a
+      - 
+        name: Agent Unit Tests
+        run: just test-agent
+
+  build-agent:
+    needs: build-ux
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: image-tar
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/build-image.tar
+          docker image ls -a
+      -
+        name: Build agent
+        run: just build-agent
+      -
+        name: Agent build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: agent-artifacts
           path: bin/
 
+  ux-e2e-tests:
+    needs: build-agent
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Download docker image
+        uses: actions/download-artifact@v3
+        with:
+          name: image-tar
+          path: /tmp
+      -
+        name: Load image
+        run: |
+          docker load --input /tmp/build-image.tar
+          docker image ls -a
+      -
+        name: Download built agents
+        uses: actions/download-artifact@v3
+        with:
+          name: agent-artifacts
+          path: /bin
+      - 
+        name: UX E2E Tests
+        run: just web/test-e2e
+
   test-windows-client:
-    needs: pr-code-validation
+    needs: build-agent
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
@@ -69,7 +337,7 @@ jobs:
           just run-client $env:CLIENT
 
   test-macos-client:
-    needs: pr-code-validation
+    needs: build-agent
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
@@ -94,7 +362,7 @@ jobs:
           just run-client ${CLIENT}
 
   test-linux-clients:
-    runs-on: ubuntu-latest
+    runs-on: build-agent
     needs: pr-code-validation
     strategy:
       matrix:
