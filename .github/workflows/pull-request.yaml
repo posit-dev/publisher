@@ -362,8 +362,8 @@ jobs:
           just run-client ${CLIENT}
 
   test-linux-clients:
-    runs-on: build-agent
-    needs: pr-code-validation
+    needs: build-agent
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         CLIENT:
