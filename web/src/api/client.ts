@@ -10,6 +10,7 @@ class PublishingClientApi {
   constructor() {
     const client = axios.create({
       baseURL: '/api',
+      withCredentials: true,
     });
 
     this.accounts = new Accounts(client);
