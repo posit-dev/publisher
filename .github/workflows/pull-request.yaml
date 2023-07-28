@@ -118,7 +118,7 @@ jobs:
         env:
           cache-name: node-modules
         with:
-          path: /web/node_modules
+          path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('/web/package.json') }}
       -
         if: ${{ steps.node_modules.outputs.cache-hit != 'true' }}
@@ -132,7 +132,7 @@ jobs:
         env:
           cache-name: node-modules
         with:
-          path: /web/node_modules
+          path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('/web/package.json') }}
       -
         name: Build the UX
@@ -188,7 +188,7 @@ jobs:
         env:
           cache-name: node-modules
         with:
-          path: /web/node_modules
+          path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('/web/package.json') }}
       -
         name: Validate the UX
@@ -238,7 +238,7 @@ jobs:
         env:
           cache-name: node-modules
         with:
-          path: /web/node_modules
+          path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('/web/package.json') }}
       -
         name: UX Unit Tests
@@ -446,7 +446,7 @@ jobs:
         env:
           cache-name: node-modules
         with:
-          path: /web/node_modules
+          path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('/web/package.json') }}
       - 
         name: UX E2E Tests
