@@ -38,7 +38,7 @@ jobs:
         name: Setup Buildx
         uses: docker/setup-buildx-action@v2
       - 
-        name: Build and export image
+        name: Build and Export Docker Image
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -48,7 +48,7 @@ jobs:
           tags: rstudio/connect-client:latest
           outputs: type=docker,dest=/tmp/build-image.tar
       -
-        name: Upload image artifact
+        name: Upload Docker Image Artifact
         uses: actions/upload-artifact@v3
         with:
           name: image-tar
@@ -73,13 +73,13 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       -
-        name: Download artifact
+        name: Download Docker Image Artifact
         uses: actions/download-artifact@v3
         with:
           name: image-tar
           path: /tmp
       -
-        name: Load image
+        name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
@@ -87,7 +87,7 @@ jobs:
         name: Build the UX
         run: just build-web
       -
-        name: Upload image artifact
+        name: Upload Web-UX Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: web-ux
@@ -112,16 +112,19 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       -
-        name: Download artifact
+        name: Download Docker Image Artifact
         uses: actions/download-artifact@v3
         with:
           name: image-tar
           path: /tmp
       -
-        name: Load image
+        name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
+      -
+        name: Bootstrap
+        run: just web/bootstrap
       -
         name: Validate the UX
         run: just web/validate
@@ -145,16 +148,19 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       -
-        name: Download artifact
+        name: Download Docker Image Artifact
         uses: actions/download-artifact@v3
         with:
           name: image-tar
           path: /tmp
       -
-        name: Load image
+        name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
+      -
+        name: Bootstrap
+        run: just web/bootstrap
       -
         name: UX Unit Tests
         run: just web/test-unit
@@ -181,16 +187,22 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       -
-        name: Download artifact
+        name: Download Docker Image Artifact
         uses: actions/download-artifact@v3
         with:
           name: image-tar
           path: /tmp
       -
-        name: Load image
+        name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
+      -
+        name: Download Web-UX SPA Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: web-ux
+          path: ./web/dist/spa
       -
         name: Validate Agent
         run: |
@@ -216,16 +228,22 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       -
-        name: Download artifact
+        name: Download Docker Image Artifact
         uses: actions/download-artifact@v3
         with:
           name: image-tar
           path: /tmp
       -
-        name: Load image
+        name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
+      -
+        name: Download Web-UX SPA Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: web-ux
+          path: ./web/dist/spa
       - 
         name: Agent Unit Tests
         run: just test-agent
@@ -249,16 +267,22 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       -
-        name: Download artifact
+        name: Download Docker Image Artifact
         uses: actions/download-artifact@v3
         with:
           name: image-tar
           path: /tmp
       -
-        name: Load image
+        name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
+      -
+        name: Download Web-UX SPA Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: web-ux
+          path: ./web/dist/spa
       -
         name: Build agent
         run: just build-agent
@@ -288,13 +312,13 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       -
-        name: Download docker image
+        name: Download Docker Image Artifact
         uses: actions/download-artifact@v3
         with:
           name: image-tar
           path: /tmp
       -
-        name: Load image
+        name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
@@ -303,7 +327,10 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: agent-artifacts
-          path: /bin
+          path: ./bin
+      -
+        name: Bootstrap
+        run: just web/bootstrap
       - 
         name: UX E2E Tests
         run: just web/test-e2e
