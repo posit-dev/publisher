@@ -40,7 +40,7 @@ jobs:
       - 
         name: Restore Cache docker image 
         id: cache-docker-image-restore
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: cache-docker-image
         with:
@@ -100,7 +100,7 @@ jobs:
       #     path: /tmp
       - name: Cache docker image (restore)
         id: cache-docker-image
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: cache-docker-image
         with:
@@ -114,7 +114,7 @@ jobs:
       - 
         name: Restore Cache UX node_modules
         id: node_modules
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: node-modules
         with:
@@ -170,7 +170,7 @@ jobs:
       #     path: /tmp
       - name: Restore Cache docker image
         id: cache-docker-image
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: cache-docker-image
         with:
@@ -184,7 +184,7 @@ jobs:
       - 
         name: Restore Cache UX node_modules
         id: node_modules
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: node-modules
         with:
@@ -220,7 +220,7 @@ jobs:
       #     path: /tmp
       - name: Restore Cache docker image
         id: cache-docker-image
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: cache-docker-image
         with:
@@ -234,7 +234,7 @@ jobs:
       - 
         name: Restore Cache UX node_modules
         id: node_modules
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: node-modules
         with:
@@ -279,7 +279,7 @@ jobs:
       #     path: /tmp
       - name: Restore Cache docker image
         id: cache-docker-image
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: cache-docker-image
         with:
@@ -328,7 +328,7 @@ jobs:
       #     path: /tmp
       - name: Restore Cache docker image
         id: cache-docker-image
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: cache-docker-image
         with:
@@ -375,7 +375,7 @@ jobs:
       #     path: /tmp
       - name: Restore Cache docker image
         id: cache-docker-image
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: cache-docker-image
         with:
@@ -428,7 +428,7 @@ jobs:
       #     path: /tmp
       - name: Restore Cache docker image
         id: cache-docker-image
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: cache-docker-image
         with:
@@ -448,7 +448,7 @@ jobs:
       - 
         name: Restore Cache UX node_modules
         id: node_modules
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: node-modules
         with:
@@ -456,7 +456,9 @@ jobs:
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('/web/package.json') }}
       - 
         name: UX E2E Tests
-        run: just web/test-e2e
+        run: |
+          export PATH="/usr/local/bin:$PATH"
+          just web/test-e2e
 
   test-windows-client:
     needs: build-agent
