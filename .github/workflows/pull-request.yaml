@@ -456,9 +456,7 @@ jobs:
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('/web/package.json') }}
       - 
         name: UX E2E Tests
-        run: |
-          export PATH="/usr/local/bin:$PATH"
-          just web/test-e2e
+        run: just web/test-e2e
 
   test-windows-client:
     needs: build-agent
