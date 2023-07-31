@@ -21,8 +21,9 @@ const tokenParameterName string = "token"
 func LocalTokenSession(expectedToken services.LocalToken, logger rslog.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		target := req.URL
-		receivedToken := target.Query().Get(tokenParameterName)
-		if receivedToken != "" {
+		receivedTokens, ok := target.Query()[tokenParameterName]
+		if ok {
+			receivedToken := receivedTokens[0]
 			if expectedToken == services.LocalToken(receivedToken) {
 				// Success
 				logger.Infof("Authenticated via token, creating session")

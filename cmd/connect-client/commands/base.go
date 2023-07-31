@@ -21,7 +21,8 @@ type UIArgs struct {
 }
 
 type CommonArgs struct {
-	Debug debugFlag `help:"Enable debug mode." env:"CONNECT_DEBUG"`
+	Debug debugFlag            `help:"Enable debug mode." env:"CONNECT_DEBUG"`
+	Token *services.LocalToken `help:"Authentication token for the publishing UI. Default auto-generates a token."`
 }
 
 type CLIContext struct {

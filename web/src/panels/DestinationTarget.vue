@@ -179,10 +179,11 @@ const testAPI = async() => {
   try {
     const ax = axios.create({
       baseURL,
+      withCredentials: true,
     });
 
     const data = await ax.get(
-      '/api/accounts'
+      '/api/accounts',
     );
     console.log('worked', data);
   } catch (error) {
