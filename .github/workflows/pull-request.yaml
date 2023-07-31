@@ -466,6 +466,7 @@ jobs:
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
+          name: agent-artifacts
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -495,6 +496,7 @@ jobs:
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
+          name: agent-artifacts
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -525,6 +527,7 @@ jobs:
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
+          name: agent-artifacts
           path: bin/
       # these are required to run docker on amd64 and arm64 platforms
       - uses: docker/setup-qemu-action@v2
