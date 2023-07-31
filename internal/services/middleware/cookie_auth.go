@@ -11,27 +11,27 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-const sessionCookieName string = "connect-client-session"
+const sessionCookieName string = "posit-publish-session"
 
 var cookieKey []byte = securecookie.MustGenerateRandomKey()
 
-var cookieObj = securecookie.MustNew("posit-publish-session", cookieKey, securecookie.Params{
+var cookieObj = securecookie.MustNew(sessionCookieName, cookieKey, securecookie.Params{
 	HTTPOnly: true,
 	Secure:   false, // we currently only serve over http
 	SameSite: securecookie.Lax,
 })
 
-// CookieSession looks for a session cookie.
+// CookieSession looks for a posit-publish-session cookie.
 // If there is a cookie, and it is valid,
 // the session is marked as authenticated.
 // An invalid cookie results in auth failure (401).
 func CookieSession(logger rslog.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		_, err := cookieObj.GetValue(nil, req)
+		_, err := cookieObj.GetValue([]byte(sessionCookieName), req)
 		if err != nil {
 			// Proceed without auth.
 			if err != http.ErrNoCookie {
-				logger.Errorf("Error checking for session cookie: %s", err)
+				logger.Errorf("Error checking for %s cookie: %s", sessionCookieName, err)
 			}
 			next(w, req)
 		} else {
