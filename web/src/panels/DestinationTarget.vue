@@ -176,7 +176,7 @@ const destinationTitle = computed(() => {
 
 const testAPI = async() => {
   try {
-    const response = await api.accounts.list();
+    const response = await api.accounts.getAll();
     console.log('worked', response);
   } catch (err) {
     console.log(err);

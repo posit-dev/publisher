@@ -8,7 +8,7 @@ import { useApi } from 'src/api';
 const api = useApi();
 
 try {
-  const response = await api.accounts.list();
+  const response = await api.accounts.getAll();
 } catch (err) {
   // handle the error
 }
@@ -56,7 +56,7 @@ to reduce boilerplate and ensure that we do not lose potentially-needed data.
 
 ```typescript
 try {
-  const { data } = await api.accounts.list();
+  const { data } = await api.accounts.getAll();
 } catch (err) {
   // handle the error
 }

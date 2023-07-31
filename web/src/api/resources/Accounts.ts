@@ -11,7 +11,7 @@ export default class Accounts {
     this.client = client;
   }
 
-  list() {
+  getAll() {
     return this.client.get<Account[]>('/accounts');
   }
 }
