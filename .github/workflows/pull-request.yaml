@@ -481,7 +481,7 @@ jobs:
           echo $PATH
           pwd
           ls bin
-          cp -r bin\artifact\* bin\ && chmod +x bin\*\*
+          chmod +x bin\*\*
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
@@ -508,7 +508,7 @@ jobs:
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
-          cp -r bin/artifact/* bin/ && chmod +x bin/*/*
+          chmod +x bin/*/*
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
@@ -538,6 +538,6 @@ jobs:
         env:
           CLIENT: "${{ matrix.CLIENT }}"
         run: |
-          cp -r bin/artifact/* bin/ && chmod +x bin/*/*
+          chmod +x bin/*/*
           just test/build ${CLIENT}
           just test/run-client ${CLIENT}
