@@ -55,12 +55,6 @@ test-e2e:
     # install cypress
     npx cypress install
     npx quasar test --e2e cypress
-    # if "{{ _use_docker }}" == "true"; then
-    #   quasar test --e2e cypress
-    # else
-    #   npx quasar test --e2e cypress
-    # fi
-
 
 # run unit tests one time
 test-unit:
