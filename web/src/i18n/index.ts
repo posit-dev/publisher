@@ -2,6 +2,7 @@
 
 import enUS from './en-US';
 
+// eslint-disable-next-line no-restricted-syntax
 export default {
   'en-US': enUS
 };

@@ -396,7 +396,12 @@ module.exports = {
     'no-nested-ternary': 'off',
     'no-new-object': 'off',
     'no-plusplus': 'off',
-    'no-restricted-syntax': 'off',
+    'no-restricted-syntax': [
+      'error', {
+        selector: 'ExportDefaultDeclaration',
+        message: 'Avoid default exports and instead use named exports.'
+      }
+    ],
     'no-tabs': ['error', { allowIndentationTabs: false }], // default
     'no-ternary': 'off',
     'no-trailing-spaces': ['error', { skipBlankLines: false, ignoreComments: false }], // default
