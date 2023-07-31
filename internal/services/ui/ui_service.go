@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var APIPrefix string = "api"
+const APIPrefix string = "api"
 
 func NewUIService(
 	fragment string,
