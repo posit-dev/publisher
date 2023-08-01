@@ -1,5 +1,8 @@
 # Publishing Client API Wrapper Library
 
+A library to enable convenient access to the Publishing Client API and its
+response types.
+
 ## Usage
 
 ```typescript
@@ -24,9 +27,11 @@ resources. This is the what we interact with.
 
 ### `/resources`
 
-Each class in the `resources` folder has methods related to its endpoint.
+Each class in the `resources` folder has methods related to its endpoint. Each
+method has a one-to-one relationship with the API endpoint on the server side.
 
-Example: `/api/accounts` maps to the `resources/Accounts.ts` module.
+Example: `/api/accounts` maps to the `resources/Accounts.ts` module and `GET
+api/accounts` maps to the `api.accounts.getAll()` method.
 
 ### `/types`
 
