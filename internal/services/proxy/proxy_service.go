@@ -22,6 +22,8 @@ func NewProxyService(
 	keyFile string,
 	certFile string,
 	openBrowser bool,
+	openBrowserAt string,
+	skipAuth bool,
 	accessLog bool,
 	token services.LocalToken,
 	logger rslog.Logger) *api.Service {
@@ -36,6 +38,8 @@ func NewProxyService(
 		keyFile,
 		certFile,
 		openBrowser,
+		openBrowserAt,
+		skipAuth,
 		accessLog,
 		token,
 		logger,

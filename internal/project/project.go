@@ -4,10 +4,15 @@ package project
 
 // Version is set by the linker
 var Version string
+var Mode string
 
 func UserAgent() string {
 	if Version != "" {
 		return "connect-client/" + Version
 	}
 	return "connect-client"
+}
+
+func DevelopmentBuild() bool {
+	return Mode == "development"
 }
