@@ -47,7 +47,7 @@ jobs:
     needs: pr-code-validation
     strategy:
       matrix:
-        CLIENT:
+        client:
           - linux-amd64
           - linux-arm64
     steps:
@@ -57,11 +57,11 @@ jobs:
       - 
         name: Setup Just
         uses: extractions/setup-just@v1
-      # - 
-      #   name: Download artifacts
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     path: bin/
+      - 
+        name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: bin/
       # these are required to run docker on amd64 and arm64 platforms
       - 
         name: Setup qemu
@@ -106,7 +106,7 @@ jobs:
         name: Run Linux Tests
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
-          just test/run-client ${CLIENT}
+          just test/run-client ${{ matrix.client }}
     
   test-windows-client:
     needs: pr-code-validation
