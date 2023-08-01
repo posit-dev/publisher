@@ -1,4 +1,4 @@
-# clean, image, bootstrap, validate, build and test agent & client (pre-run 'clean' if switching between use of DOCKER containers)
+# clean, image, bootstrap, validate, build and test agent & client
 default: clean image bootstrap validate build validate-post test
 
 _interactive := `tty -s && echo "-it" || echo ""`
