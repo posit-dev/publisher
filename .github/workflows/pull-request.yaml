@@ -1,6 +1,7 @@
 name: Pull Request
 on:
   pull_request
+  workflow_dispatch:
 
 # A note on debugging a github step:
 #   You can ssh into the github action environment and poke around by using
