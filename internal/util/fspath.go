@@ -292,3 +292,13 @@ func (p Path) ReadlinkIfPossible() (Path, error) {
 	}
 	return NewPath(target, p.fs), nil
 }
+
+type Walker interface {
+	Walk(root Path, fn WalkFunc) error
+}
+
+type FSWalker struct{}
+
+func (w FSWalker) Walk(root Path, fn WalkFunc) error {
+	return root.Walk(fn)
+}
