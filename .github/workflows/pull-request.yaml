@@ -63,14 +63,14 @@ jobs:
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
         shell: powershell
         run: |
+          cd test
           cp -r .\bin\artifact\* bin\
           chmod +x .\bin\*\*
           just bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
-          cd test
           just cli-client $env:CLIENT
-          Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9000" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
+          Start-Process -FilePath "$env:GITHUB_WORKSPACE\bin\artifact\windows-amd64\connect-client.exe" -ArgumentList "account-ui", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
           $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' win-out.txt
           echo "$env:CYPRESS_BASE_URL"
           cat win-out.txt
@@ -102,7 +102,7 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd test
           just cli-client ${CLIENT}
-          nohup ${{ github.workspace }}/bin/darwin-amd64/connect-client account-ui --listen=127.0.0.1:9000  > nohup.out 2> nohup.err < /dev/null &
+          nohup ${{ github.workspace }}/bin/darwin-amd64/connect-client account-ui --listen=127.0.0.1:9999  > nohup.out 2> nohup.err < /dev/null &
           export CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' nohup.out)
           sleep 10
           echo "CYPRESS BASE URL: $CYPRESS_BASE_URL"
