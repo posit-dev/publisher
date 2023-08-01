@@ -103,6 +103,15 @@ You now should have a Web UX loaded within the browser, which is loading from th
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code
 of conduct, and the process for submitting pull requests to us.
 
+### VSCode Setup
+
+If developing using VSCode you can install the recommended extensions and setup
+your workspace with our recommended settings to get started:
+
+```bash
+cp .vscode/recommended.settings.json .vscode/settings.json
+```
+
 ## Versioning
 
 We use [Semantic Versioning](http://semver.org/) for versioning. For the versions
