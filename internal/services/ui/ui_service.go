@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var APIPrefix string = "api"
+const APIPrefix string = "api"
 
 func NewUIService(
 	fragment string,
@@ -45,7 +45,9 @@ func NewUIService(
 
 func newUIHandler(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
 	mux := http.NewServeMux()
+	// /api/accounts
 	mux.Handle(ToPath("accounts"), api.NewAccountsController(fs, logger))
+	// /api/files
 	mux.Handle(ToPath("files"), api.NewFilesController(fs, logger))
 	mux.HandleFunc("/", api.NewStaticController())
 	return mux.ServeHTTP
@@ -54,6 +56,5 @@ func newUIHandler(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
 func ToPath(elements ...string) string {
 	prefix := "/" + APIPrefix
 	path, _ := url.JoinPath(prefix, elements...)
-	println(path)
 	return path
 }
