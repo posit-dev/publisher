@@ -22,17 +22,13 @@ build:
     {{ _with_runner }} just web/build
     just _build
 
-# Build the production web UX and the development server
+# Build the development server using the existing build of the Web UX
 build-dev: 
     #!/bin/bash
     set -euo pipefail
+    export BUILD_MODE=development
 
-    if ! just _build_dev; then
-     echo ""
-     echo "A WEB build is required for the backend to build. Possibly resolve with 'just web/build' or 'just build'."
-     exit 1
-    fi
-
+    just build
 
 # Install any supporting packages (such as web UX javascript/typescript dependencies)
 install:
@@ -103,10 +99,6 @@ image:
 
 [private]
 _build:
-    {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client
-
-[private]
-_build_dev:
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -125,7 +117,31 @@ _build_dev:
         arch=arm64
     fi
 
-    {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client "$os/$arch"
+    target=""
+
+    echo ""
+    if [ "${BUILD_MODE:-}" == "development" ]; then
+        echo "Generating a ${BUILD_MODE} build of $os/$arch/connect-client."
+        target="${os}/${arch}"
+    else
+        echo "Generating production builds of connect-client."
+    fi
+
+    # Have to remove linked server executable, so that switching from production 
+    # to development modes (and vise-versa) will work.
+    rm -rf ./bin
+
+    if {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client "${target}"; then
+        echo "Build was successful"
+    else
+        echo ""
+        echo "An error has occurred while building."
+        echo ""
+        if [ ! -f "web/dist/spa/index.html" ]; then
+            echo "No web SPA artifacts can be found. A web build is required for the backend"
+            echo "to build. Possibly resolve with 'just web/build' or 'just build'."
+        fi
+    fi
 
 [private]
 _with_docker *args: 

@@ -27,6 +27,8 @@ type cliSpec struct {
 
 func logVersion(logger rslog.Logger) {
 	logger.WithField("version", project.Version).Infof("Client version")
+	logger.WithField("mode", project.Mode).Infof("Development mode")
+	logger.WithField("DevelopmentBuild", project.DevelopmentBuild()).Infof("Development build")
 }
 
 func setupLogging() rslog.Logger {
@@ -61,6 +63,9 @@ func main() {
 	}
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
+	if cli.Token != nil {
+		ctx.LocalToken = *cli.Token
+	}
 	cmd, ok := args.Selected().Target.Interface().(commands.StatefulCommand)
 	if ok {
 		// For these commands, we need to load saved deployment state

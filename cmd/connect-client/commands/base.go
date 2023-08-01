@@ -11,15 +11,18 @@ import (
 )
 
 type UIArgs struct {
-	Interactive bool   `short:"i" help:"Launch a browser to show the UI."`
-	Listen      string `help:"Network address to listen on." placeholder:"HOST[:PORT]"`
-	AccessLog   bool   `help:"Log all HTTP requests."`
-	TLSKeyFile  string `help:"Path to TLS private key file for the UI server."`
-	TLSCertFile string `help:"Path to TLS certificate chain file for the UI server."`
+	Interactive            bool   `short:"i" help:"Launch a browser to show the UI at the listen address."`
+	OpenBrowserAt          string `help:"Launch a browser to show the UI at specific network address." placeholder:"HOST[:PORT]" hidden:""`
+	SkipBrowserSessionAuth bool   `help:"Skip Browser Token Auth Checks" hidden:""`
+	Listen                 string `help:"Network address to listen on." placeholder:"HOST[:PORT]"`
+	AccessLog              bool   `help:"Log all HTTP requests."`
+	TLSKeyFile             string `help:"Path to TLS private key file for the UI server."`
+	TLSCertFile            string `help:"Path to TLS certificate chain file for the UI server."`
 }
 
 type CommonArgs struct {
-	Debug debugFlag `help:"Enable debug mode." env:"CONNECT_DEBUG"`
+	Debug debugFlag            `help:"Enable debug mode." env:"CONNECT_DEBUG"`
+	Token *services.LocalToken `help:"Authentication token for the publishing UI. Default auto-generates a token."`
 }
 
 type CLIContext struct {

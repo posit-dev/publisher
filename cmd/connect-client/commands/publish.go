@@ -352,6 +352,8 @@ func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		cmd.TLSKeyFile,
 		cmd.TLSCertFile,
 		cmd.Interactive,
+		cmd.OpenBrowserAt,
+		cmd.SkipBrowserSessionAuth,
 		cmd.AccessLog,
 		ctx.LocalToken,
 		ctx.Fs,
