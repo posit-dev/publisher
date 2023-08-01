@@ -38,7 +38,7 @@ func (w *symlinkWalker) visit(fn WalkFunc) WalkFunc {
 			// Stop walking the tree on errors.
 			return err
 		}
-		if info.Mode().Type()&os.ModeSymlink == os.ModeSymlink {
+		if info.Mode().Type()&os.ModeSymlink != 0 {
 			w.logger.WithField("path", path).Infof("Following symlink")
 			linkTarget, err := filepath.EvalSymlinks(path.Path())
 			targetPath := NewPath(linkTarget, path.Fs())
