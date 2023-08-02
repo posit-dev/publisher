@@ -480,7 +480,7 @@ jobs:
   #         just test/run-client ${CLIENT}
   build-linux-amd64:
     runs-on: ubuntu-latest
-    needs: build-ux
+    needs: build-agent
     strategy:
       matrix:
         client:
@@ -573,12 +573,12 @@ jobs:
       -
         name: Run linux-amd64 Tests
         run: |
-          cp -r bin/artifact/* bin/ && chmod +x bin/*/*
+          chmod +x bin/*/*
           just test/run-client linux-amd64
   
   build-linux-arm64:
     runs-on: ubuntu-latest
-    needs: build-ux
+    needs: build-agent
     strategy:
       matrix:
         client:
@@ -671,6 +671,6 @@ jobs:
       -
         name: Run linux-arm64 Tests
         run: |
-          cp -r bin/artifact/* bin/ && chmod +x bin/*/*
+          chmod +x bin/*/*
           just test/run-client linux-arm64
     
