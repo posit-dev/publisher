@@ -25,8 +25,22 @@ import (
 	"github.com/spf13/afero"
 )
 
+type MatchSource string
+
+const MatchSourceFile MatchSource = "file"
+const MatchSourceBuiltIn MatchSource = "built-in"
+const MatchSourceUser MatchSource = "user"
+
+type Match struct {
+	Source   MatchSource // type of match, e.g. file or a caller-provided value
+	Pattern  string      // exclusion pattern as read from the file
+	glob     glob.Glob   // globs constructed to match the pattern
+	FilePath util.Path   // path to the file where this was defined, empty if not from a file
+	Line     int         // line in the file where this was defined, 0 if not from a file
+}
+
 type ignoreFile struct {
-	globs   []glob.Glob
+	matches []*Match
 	abspath []string
 }
 
@@ -47,7 +61,6 @@ func fromSplit(path []string) string {
 // New creates a new ignore list.
 func New(cwd util.Path) GitIgnoreList {
 	files := make([]ignoreFile, 1, 4)
-	files[0].globs = make([]glob.Glob, 0, 16)
 	return GitIgnoreList{
 		files,
 		toSplit(cwd.Path()),
@@ -86,24 +99,21 @@ func clean(s string) string {
 	return ""
 }
 
-// AppendGlob appends a single glob as a new entry in the ignore list. The root
-// (relevant for matching patterns that begin with "/") is assumed to be the
-// current working directory.
-func (ign *GitIgnoreList) AppendGlob(s string) error {
-	g, err := glob.Compile(clean(s))
-	if err == nil {
-		ign.files[0].globs = append(ign.files[0].globs, g)
-	}
-	return err
-}
-
-func (ign *GitIgnoreList) AppendGlobs(globs []string) error {
-	for _, pattern := range globs {
-		err := ign.AppendGlob(pattern)
+func (ign *GitIgnoreList) AppendGlobs(patterns []string, source MatchSource) error {
+	f := ignoreFile{}
+	for _, pattern := range patterns {
+		g, err := glob.Compile(clean(pattern))
 		if err != nil {
 			return err
 		}
+		match := &Match{
+			Source:  source,
+			Pattern: pattern,
+			glob:    g,
+		}
+		f.matches = append(f.matches, match)
 	}
+	ign.files = append(ign.files, f)
 	return nil
 }
 
@@ -162,16 +172,17 @@ func (ign *GitIgnoreList) append(path util.Path, dir []string) error {
 		if d != fromSplit(ign.cwd) {
 			dir = toSplit(d)
 			ignf = &ignoreFile{
-				make([]glob.Glob, 0, 16),
-				dir,
+				abspath: dir,
 			}
 		} else {
 			ignf = &ign.files[0]
 		}
 	}
 	scn := bufio.NewScanner(bufio.NewReader(f))
+	line := 0
 	for scn.Scan() {
 		s := scn.Text()
+		line++
 		if s == "" || s[0] == '#' {
 			continue
 		}
@@ -179,7 +190,14 @@ func (ign *GitIgnoreList) append(path util.Path, dir []string) error {
 		if err != nil {
 			return err
 		}
-		ignf.globs = append(ignf.globs, g)
+		match := &Match{
+			Source:   MatchSourceFile,
+			Pattern:  s,
+			glob:     g,
+			FilePath: path,
+			Line:     line,
+		}
+		ignf.matches = append(ignf.matches, match)
 	}
 	ign.files = append(ign.files, *ignf)
 	return nil
@@ -234,7 +252,7 @@ func (ign *GitIgnoreList) AppendGit() error {
 	if err != nil {
 		return err
 	}
-	if err = ign.AppendGlob(".git"); err != nil {
+	if err = ign.AppendGlobs([]string{".git"}, MatchSourceBuiltIn); err != nil {
 		return err
 	}
 	usr, err := user.Current()
@@ -261,7 +279,7 @@ func isPrefix(abspath, dir []string) bool {
 	return true
 }
 
-func (ign *GitIgnoreList) match(path string, info os.FileInfo) bool {
+func (ign *GitIgnoreList) match(path string, info os.FileInfo) *Match {
 	ss := make([]string, 0, 4)
 	base := filepath.Base(path)
 	ss = append(ss, path)
@@ -281,26 +299,26 @@ func (ign *GitIgnoreList) match(path string, info os.FileInfo) bool {
 
 	d, err := filepath.Abs(filepath.Dir(path))
 	if err != nil {
-		return false
+		return nil
 	}
 	dir := toSplit(d)
 	for _, f := range ign.files {
 		if isPrefix(f.abspath, dir) || len(f.abspath) == 0 {
-			for _, g := range f.globs {
+			for _, match := range f.matches {
 				for _, s := range ss {
-					if g.Match(s) {
-						return true
+					if match.glob.Match(s) {
+						return match
 					}
 				}
 			}
 		}
 	}
-	return false
+	return nil
 }
 
 // Match returns whether any of the globs in the ignore list match the
 // specified path. Uses the same matching rules as .gitignore files.
-func (ign *GitIgnoreList) Match(path string) bool {
+func (ign *GitIgnoreList) Match(path string) *Match {
 	return ign.match(path, nil)
 }
 
@@ -318,7 +336,7 @@ func (ign *GitIgnoreList) Walk(root util.Path, fn util.WalkFunc) error {
 				return err
 			}
 			relPath := toRelpath("", toSplit(path.Path()), ign.cwd)
-			if ign.match(relPath, info) {
+			if ign.match(relPath, info) != nil {
 				if info.IsDir() {
 					return filepath.SkipDir
 				}
