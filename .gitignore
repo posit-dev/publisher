@@ -4,6 +4,8 @@ cover.out
 bin/
 certs/
 
+.DS_Store
+
 # Visual Studio Code
 .vscode/*
 !.vscode/recommended.settings.json
