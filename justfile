@@ -132,7 +132,7 @@ run-agent *args:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    {{ _with_runner }} go run . {{ args }}
+    {{ _with_runner }} go run ./cmd/connect-client {{ args }}
 
 # Build the image. Typically does not need to be done very often.
 image:
