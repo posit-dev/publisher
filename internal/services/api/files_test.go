@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -22,27 +23,28 @@ func TestFilesSuite(t *testing.T) {
 	suite.Run(t, new(FilesSuite))
 }
 
-func (s *FilesSuite) TestToFiles() {
-	fs := afero.NewOsFs()
+func (s *FilesSuite) Test_toFiles() {
+	afs := afero.NewOsFs()
 	pathname := "."
-	files, err := ToFile(fs, pathname)
+	path := util.NewPath(pathname, afs)
+	files, err := toFile(path, nil)
 	s.NotNil(files)
 	s.NoError(err)
 	s.Equal(files.Pathname, pathname)
 }
 
-func (s *FilesSuite) TestNewFilesController() {
+func (s *FilesSuite) Test_NewFilesController() {
 	req, err := http.NewRequest("GET", "", nil)
 	s.NoError(err)
 	fs := afero.NewMemMapFs()
 	log := rslog.NewDiscardingLogger()
 	rec := httptest.NewRecorder()
-	GetFile(fs, log, rec, req)
+	getFile(fs, log, rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/hal+json", rec.Header().Get("content-type"))
 
-	res := &File{}
+	res := &file{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(res))
@@ -50,7 +52,7 @@ func (s *FilesSuite) TestNewFilesController() {
 	s.Equal(".", res.Pathname)
 }
 
-func (s *FilesSuite) TestNewFilesController_Pathname() {
+func (s *FilesSuite) Test_newFilesController_pathname() {
 	fs := afero.NewMemMapFs()
 	pathname, _ := afero.TempDir(fs, "", "")
 	req, err := http.NewRequest("GET", "?pathname="+pathname, nil)
@@ -58,12 +60,12 @@ func (s *FilesSuite) TestNewFilesController_Pathname() {
 
 	log := rslog.NewDiscardingLogger()
 	rec := httptest.NewRecorder()
-	GetFile(fs, log, rec, req)
+	getFile(fs, log, rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/hal+json", rec.Header().Get("content-type"))
 
-	res := &File{}
+	res := &file{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(res))

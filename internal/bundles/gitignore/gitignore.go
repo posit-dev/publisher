@@ -89,7 +89,7 @@ func clean(s string) string {
 // AppendGlob appends a single glob as a new entry in the ignore list. The root
 // (relevant for matching patterns that begin with "/") is assumed to be the
 // current working directory.
-func (ign *GitIgnoreList) AppendGlob(s string) error {
+func (ign GitIgnoreList) AppendGlob(s string) error {
 	g, err := glob.Compile(clean(s))
 	if err == nil {
 		ign.files[0].globs = append(ign.files[0].globs, g)
@@ -97,7 +97,7 @@ func (ign *GitIgnoreList) AppendGlob(s string) error {
 	return err
 }
 
-func (ign *GitIgnoreList) AppendGlobs(globs []string) error {
+func (ign GitIgnoreList) AppendGlobs(globs []string) error {
 	for _, pattern := range globs {
 		err := ign.AppendGlob(pattern)
 		if err != nil {
@@ -143,7 +143,7 @@ func toRelpath(s string, dir, cwd []string) string {
 	return fromSplit(ss)
 }
 
-func (ign *GitIgnoreList) append(path util.Path, dir []string) error {
+func (ign GitIgnoreList) append(path util.Path, dir []string) error {
 	f, err := path.Open()
 	if err != nil {
 		return err
@@ -187,18 +187,18 @@ func (ign *GitIgnoreList) append(path util.Path, dir []string) error {
 
 // Append appends the globs in the specified file to the ignore list. Files are
 // expected to have the same format as .gitignore files.
-func (ign *GitIgnoreList) Append(path util.Path) error {
+func (ign GitIgnoreList) Append(path util.Path) error {
 	return ign.append(path, nil)
 }
 
-func (ign *GitIgnoreList) exists(path string) bool {
+func (ign GitIgnoreList) exists(path string) bool {
 	_, err := ign.fs.Stat(path)
 	return !os.IsNotExist(err)
 }
 
 var ErrNotInGitRepo = errors.New("not in a git repository")
 
-func (ign *GitIgnoreList) findGitRoot(cwd []string) (string, error) {
+func (ign GitIgnoreList) findGitRoot(cwd []string) (string, error) {
 	p := fromSplit(cwd)
 	for !ign.exists(p + "/.git") {
 		if len(cwd) == 1 {
@@ -210,7 +210,7 @@ func (ign *GitIgnoreList) findGitRoot(cwd []string) (string, error) {
 	return p, nil
 }
 
-func (ign *GitIgnoreList) appendAll(fname string, root util.Path) error {
+func (ign GitIgnoreList) appendAll(fname string, root util.Path) error {
 	return root.Walk(
 		func(path util.Path, info os.FileInfo, err error) error {
 			if err != nil {
@@ -229,7 +229,7 @@ func (ign *GitIgnoreList) appendAll(fname string, root util.Path) error {
 // AppendGit finds the root directory of the current git repository and appends
 // the contents of all .gitignore files in that git repository to the ignore
 // list.
-func (ign *GitIgnoreList) AppendGit() error {
+func (ign GitIgnoreList) AppendGit() error {
 	gitRoot, err := ign.findGitRoot(ign.cwd)
 	if err != nil {
 		return err
@@ -261,7 +261,7 @@ func isPrefix(abspath, dir []string) bool {
 	return true
 }
 
-func (ign *GitIgnoreList) match(path string, info os.FileInfo) bool {
+func (ign GitIgnoreList) match(path string, info os.FileInfo) bool {
 	ss := make([]string, 0, 4)
 	base := filepath.Base(path)
 	ss = append(ss, path)
@@ -300,14 +300,14 @@ func (ign *GitIgnoreList) match(path string, info os.FileInfo) bool {
 
 // Match returns whether any of the globs in the ignore list match the
 // specified path. Uses the same matching rules as .gitignore files.
-func (ign *GitIgnoreList) Match(path string) bool {
+func (ign GitIgnoreList) Match(path string) bool {
 	return ign.match(path, nil)
 }
 
 // Walk walks the file tree with the specified root and calls fn on each file
 // or directory. Files and directories that match any of the globs in the
 // ignore list are skipped.
-func (ign *GitIgnoreList) Walk(root util.Path, fn util.WalkFunc) error {
+func (ign GitIgnoreList) Walk(root util.Path, fn util.WalkFunc) error {
 	abs, err := root.Abs()
 	if err != nil {
 		return err
