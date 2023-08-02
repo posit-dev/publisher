@@ -4,7 +4,7 @@ import { AxiosInstance } from 'axios';
 
 import { Account } from 'src/api/types/accounts';
 
-export default class Accounts {
+export class Accounts {
   private client: AxiosInstance;
 
   constructor(client: AxiosInstance) {
