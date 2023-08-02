@@ -3,6 +3,8 @@ default: clean image bootstrap validate build validate-post test
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
+_ci := "${CI:-false}"
+
 _tag := "rstudio/connect-client:latest"
 
 _with_runner := if env_var_or_default("DOCKER", "true") == "true" {
@@ -19,13 +21,17 @@ _uid_args := if "{{ os() }}" == "Linux" {
 
 # bootstrap any supporting packages (such as go package or web UX javascript/typescript dependencies)
 bootstrap:
-    {{ _with_runner }} just cmd/connect-client/bootstrap
+    # No initialization needed for go code at this time.
+    # bootstrap client
     {{ _with_runner }} just web/bootstrap
 
 # Clean the agent and web UX build artifacts as well as remove all web UX dependency packages.
-clean:
-    just cmd/connect-client/clean
+clean: clean-agent
     just web/clean
+
+# Clean the agent's build artifacts
+clean-agent:
+    rm -rf ./bin/**/connect-client
 
 # create the security certificates
 certs:
@@ -37,7 +43,31 @@ build: build-web build-agent
 
 # Build the production agent using the existing build of the Web UX
 build-agent:
-    {{ _with_runner }} just cmd/connect-client/build
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Have to remove linked server executable, so that switching from production 
+    # to development modes (and vise-versa) will work.
+    just clean-agent
+
+    echo ""
+    if [ "${BUILD_MODE:-}" == "development" ]; then
+        echo "Generating a development build of connect-client."
+    else
+        echo "Generating production builds of connect-client."
+    fi
+
+    if {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client; then
+        echo "Build was successful"
+    else
+        echo ""
+        echo "An error has occurred while building."
+        echo ""
+        if [ ! -f "./web/dist/spa/index.html" ]; then
+            echo "No web SPA artifacts can be found. A web build is required for the backend"
+            echo "to build. Possibly resolve with 'just web/build' or 'just build'."
+        fi
+    fi
 
 # Build the development agent using the existing build of the Web UX
 build-agent-dev: 
@@ -53,20 +83,25 @@ build-web:
 
 # Validate the agent and the web UX source code, along with checking for copyrights. See the `validate-post` recipe for linting which requires a build.
 validate: 
+    #!/usr/bin/env bash
+    set -euo pipefail
+
     ./scripts/ccheck.py ./scripts/ccheck.config
-    {{ _with_runner }} just cmd/connect-client/validate
     {{ _with_runner }} just web/validate
 
 # Validate and FIX automatically correctable issues. See the `validate` recipe for linting without fixing.
 validate-fix:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
     # This will fail even though fix flag is supplied (to fix errors).
     # We could suppress w/ cmd || true, but do we want to?
     {{ _with_runner }} ./scripts/ccheck.py ./scripts/ccheck.config --fix
-    {{ _with_runner }} just cmd/connect-client/validate
     {{ _with_runner }} just web/validate-fix
 
 # Validate step which requires the code to be built first. Normally want to validate prior to building.
 validate-post:
+    {{ _with_runner }} ./scripts/fmt-check.bash
     {{ _with_runner }} go vet -all ./...
 
 # Run all tests (unit and e2e) on the agent as well as web UX
@@ -74,19 +109,30 @@ test: test-agent test-web
 
 # Run the tests on the agent w/ coverage profiling
 test-agent:
-    {{ _with_runner }} just cmd/connect-client/test
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "Testing agent code"
+    {{ _with_runner }} go test ./... -covermode set -coverprofile ./test/go_cover.out
+
+# Display the test code coverage of the Go code, from last test run
+test-agent-coverage:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    {{ _with_runner }} go tool cover -html=./test/go_cover.out -o ./test/go_coverage.html
+    echo "" && echo "To view coverage HTML, open ./test/go_coverage.html with your browser"
 
 # run the tests on the Web UX
 test-web:
     {{ _with_runner }} just web/test
 
-# Display the test code coverage of the Go code, from last test run
-test-agent-coverage: test-agent
-    {{ _with_runner }} just cmd/connect-client/test-coverage
-
-# Run the publishing agent executable
+# Run the publishing agent executable w/ arguments
 run-agent *args:
-    {{ _with_runner }} just cmd/connect-client/run {{ args }}
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    {{ _with_runner }} go run . {{ args }}
 
 # Build the image. Typically does not need to be done very often.
 image:
@@ -105,6 +151,7 @@ image:
 [private]
 _with_docker *args: 
     docker run --rm {{ _interactive }} \
+        -e CI={{ _ci }} \
         -e GOCACHE=/work/.cache/go/cache \
         -e GOMODCACHE=/work/.cache/go/mod \
         -v "$(pwd)":/work \
