@@ -512,7 +512,7 @@ jobs:
         uses: actions/cache/restore@v3
         with: 
           path: /tmp/linux-amd64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-amd64
           CLIENT: "${{ matrix.CLIENT }}"
@@ -537,7 +537,7 @@ jobs:
           cache-name: cache-linux-amd64
         with:
           path: /tmp/linux-amd64-image.tar
-          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
   run-linux-amd64:
     needs: build-linux-amd64
@@ -564,7 +564,7 @@ jobs:
           cache-name: cache-linux-amd64-image
         with:
           path: /tmp/linux-amd64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
       -
         name: Load Docker Image
         run: |
@@ -610,7 +610,7 @@ jobs:
         uses: actions/cache/restore@v3
         with: 
           path: /tmp/linux-arm64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-arm64-image
           CLIENT: "${{ matrix.CLIENT }}"
@@ -635,7 +635,7 @@ jobs:
           cache-name: cache-linux-arm64-image
         with:
           path: /tmp/linux-arm64-image.tar
-          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
   run-linux-arm64:
     needs: build-linux-arm64
@@ -662,7 +662,7 @@ jobs:
           cache-name: cache-linux-arm64-image
         with:
           path: /tmp/linux-arm64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
       -
         name: Load Docker Image
         run: |
