@@ -78,7 +78,7 @@ jobs:
           path: /tmp/linux-amd64-image.tar
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
         env:
-          cache-name: cache-linux-amd64-image
+          cache-name: cache-linux-amd64
           CLIENT: "${{ matrix.CLIENT }}"
       - 
         if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
@@ -86,7 +86,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1 
+          build-args: BUILDKIT_INLINE_CACHE=1
           pull: True
           file: test/docker/linux.Dockerfile
           platforms: linux/amd64
@@ -98,7 +98,7 @@ jobs:
         id: cache-linux-amd64-image-save
         uses: actions/cache/save@v3
         env:
-          cache-name: cache-linux-amd64-image
+          cache-name: cache-linux-amd64
         with:
           path: /tmp/linux-amd64-image.tar
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
