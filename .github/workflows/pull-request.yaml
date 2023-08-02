@@ -580,7 +580,7 @@ jobs:
         name: Run linux-amd64 Tests
         run: |
           chmod +x bin/*/*
-          ls -la ../
+          ls -la bin/
           just test/run-client linux-amd64
   
   build-linux-arm64:
@@ -695,6 +695,6 @@ jobs:
         name: Run linux-arm64 Tests
         run: |
           chmod +x bin/*/*
-          ls -la
+          ls -la bin/
           just test/run-client linux-arm64
     
