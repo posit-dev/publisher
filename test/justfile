@@ -22,7 +22,7 @@ run-client target:
     --platform linux/amd64 \
     -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
     -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
-    -e BINARY_PATH=bin/{{target}}/connect-client \
+    -e BINARY_PATH=bin/agent-artifacts/{{target}}/connect-client \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm rstudio/connect-client-{{target}} just test/_test-client {{target}}
@@ -31,7 +31,7 @@ run-client target:
     --platform linux/arm64 \
     -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
     -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
-    -e BINARY_PATH=bin/{{target}}/connect-client \
+    -e BINARY_PATH=bin/agent-artifacts/{{target}}/connect-client \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm rstudio/connect-client-{{target}} just test/_test-client {{target}}
