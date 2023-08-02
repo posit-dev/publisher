@@ -101,7 +101,7 @@ jobs:
           cache-name: cache-linux-amd64-image
         with:
           path: /tmp/linux-amd64-image.tar
-          key:  ${{ env.cache-name }}-${{ hashFiles('/tmp/linux-amd64-image.tar') }}
+          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
   
   run-linux-amd64:
     needs: build-linux-amd64
@@ -195,7 +195,7 @@ jobs:
           cache-name: cache-linux-arm64-image
         with:
           path: /tmp/linux-arm64-image.tar
-          key:  ${{ env.cache-name }}-${{ hashFiles('/tmp/linux-arm64-image.tar') }}
+          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
       
   run-linux-arm64:
     needs: build-linux-arm64
@@ -217,7 +217,7 @@ jobs:
           cache-name: cache-linux-arm64-image
         with:
           path: /tmp/linux-arm64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('/tmp/linux-arm64-image.tar') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
       -
         name: Load Docker Image
         run: |
