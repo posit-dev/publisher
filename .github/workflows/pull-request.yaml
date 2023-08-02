@@ -694,5 +694,6 @@ jobs:
         name: Run linux-arm64 Tests
         run: |
           chmod +x bin/*/*
+          ll
           just test/run-client linux-arm64
     
