@@ -116,6 +116,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
+        name: Get binary
+        uses: actions/download-artifact@v3
+        with:
+          path: bin/
+      -
         name: Cache docker image (restore)
         id: cache-linux-amd64-image
         uses: actions/cache/restore@v3
@@ -209,6 +214,11 @@ jobs:
         uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Get binary
+        uses: actions/download-artifact@v3
+        with:
+          path: bin/
       -
         name: Cache docker image (restore)
         id: cache-linux-arm64-image
