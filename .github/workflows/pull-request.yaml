@@ -90,7 +90,7 @@ jobs:
           pull: True
           file: test/docker/linux.Dockerfile
           platforms: linux/amd64
-          tags: rstudio/connect-client-linux-amd64:latest
+          tags: linux-amd64:latest
           outputs: type=docker,dest=/tmp/linux-amd64-image.tar
       - 
         if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
@@ -189,7 +189,7 @@ jobs:
           pull: True
           file: test/docker/linux.Dockerfile
           platforms: linux/arm64
-          tags: rstudio/connect-client-linux-arm64:latest
+          tags: linux-arm64:latest
           outputs: type=docker,dest=/tmp/linux-arm64-image.tar
       - 
         if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
