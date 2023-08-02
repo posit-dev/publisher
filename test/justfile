@@ -24,8 +24,8 @@ run-client target:
     -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
     -e BINARY_PATH=bin/{{target}}/connect-client \
     -v "$(pwd)"/../:/publishing-client \
-    -w /publishing-client/\
-    --rm rstudio/connect-client-{{target}} just _test-client {{target}}
+    -w /publishing-client/ \
+    --rm rstudio/connect-client-{{target}} just test/_test-client {{target}}
   elif [[ {{target}} =~ "linux-arm64" ]]; then
     docker run \
     --platform linux/arm64 \
@@ -34,7 +34,7 @@ run-client target:
     -e BINARY_PATH=bin/{{target}}/connect-client \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
-    --rm rstudio/connect-client-{{target}} just _test-client {{target}}
+    --rm rstudio/connect-client-{{target}} just test/_test-client {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
     just _test-client windows-amd64
   elif [[ {{target}} =~ "macos" ]]; then
