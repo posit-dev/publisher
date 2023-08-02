@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+set -exo pipefail
 
 package=$1
 if [[ -z "$package" ]]; then
@@ -9,12 +9,10 @@ if [[ -z "$package" ]]; then
 fi
 
 package_name=$(basename "$package")
+platforms=("$(go env GOOS)/$(go env GOARCH)")
 version=$(git describe --always --tags)
-developmentMode=${BUILD_MODE:-"production"}
 
-if [[ -n "$2" ]]; then
-    platforms=("$2")
-else
+if [ "$CI" = "true" ]; then
     platforms=(
         "darwin/amd64"
         "darwin/arm64"
@@ -48,6 +46,7 @@ fi
 
 for platform in "${platforms[@]}"
 do
+    echo "Building $platform"
 	platform_split=(${platform//\// })
 	GOOS=${platform_split[0]}
 	GOARCH=${platform_split[1]}
@@ -56,9 +55,7 @@ do
 		output_name+='.exe'
 	fi
 
-    echo "Building $output_name"
-
-    env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$output_name" -ldflags "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$developmentMode'" "$package"
+    env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$output_name" -ldflags "-X github.com/rstudio/connect-client/internal/project.Version=$version" "$package"
 	if [ $? -ne 0 ]; then
    		echo 'An error has occurred! Aborting the script execution...'
 		exit 1
