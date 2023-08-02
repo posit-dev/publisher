@@ -480,6 +480,9 @@ jobs:
   #         just test/run-client ${CLIENT}
   build-linux-amd64:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
     needs: build-agent
     strategy:
       matrix:
@@ -524,7 +527,7 @@ jobs:
           context: .
           build-args: BUILDKIT_INLINE_CACHE=1
           pull: True
-          file: test/docker/linux.Dockerfile
+          file: test/docker/Dockerfile
           platforms: linux/amd64
           tags: rstudio/connect-client-linux-amd64:latest
           outputs: type=docker,dest=/tmp/linux-amd64-image.tar
@@ -542,6 +545,9 @@ jobs:
   run-linux-amd64:
     needs: build-linux-amd64
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       -
         name: Checkout
@@ -578,6 +584,9 @@ jobs:
   
   build-linux-arm64:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
     needs: build-agent
     strategy:
       matrix:
@@ -622,7 +631,7 @@ jobs:
           context: .
           build-args: BUILDKIT_INLINE_CACHE=1 
           pull: True
-          file: test/docker/linux.Dockerfile
+          file: test/docker/Dockerfile
           platforms: linux/arm64
           tags: rstudio/connect-client-linux-arm64:latest
           outputs: type=docker,dest=/tmp/linux-arm64-image.tar
@@ -640,6 +649,9 @@ jobs:
   run-linux-arm64:
     needs: build-linux-arm64
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       -
         name: Checkout
