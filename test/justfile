@@ -5,11 +5,11 @@ export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:39
 
 build target:
   #!/usr/bin/env bash
-  if [[ {{target}} =~ "all" ]]; then
-    docker compose build
-    else
-    docker compose build {{target}}
-  fi
+  docker build {{target}} \
+    --build-arg BUILDKIT_INLINE_CACHE=1 \
+    --pull \
+    --tag rstduio/connect-client-{{target}} \
+    ./build/package
 
 init-connect:
 	docker compose pull connect && \
@@ -18,11 +18,11 @@ init-connect:
 run-client target:
   #!/usr/bin/env bash
   if [[ {{target}} =~ "linux" ]]; then
-    docker compose run \
+    docker run \
     -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
     -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
     -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
-    --rm --remove-orphans {{target}} just _test-client {{target}}
+    --rm --remove-orphans rstudio/connect-client-{{target}} just _test-client {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
     just _test-client windows-amd64
   elif [[ {{target}} =~ "macos" ]]; then
