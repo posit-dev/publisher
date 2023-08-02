@@ -357,6 +357,7 @@ func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		cmd.AccessLog,
 		ctx.LocalToken,
 		ctx.Fs,
+		cmd.State,
 		ctx.Logger)
 	return svc.Run()
 }

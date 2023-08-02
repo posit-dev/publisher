@@ -48,7 +48,7 @@ func NewAccountListEndpoint(accountList accounts.AccountList, logger rslog.Logge
 	return func(w http.ResponseWriter, req *http.Request) {
 		accounts, err := accountList.GetAllAccounts()
 		if err != nil {
-			internalError(w, logger, err)
+			InternalError(w, logger, err)
 			return
 		}
 		data := &accountListDTO{}

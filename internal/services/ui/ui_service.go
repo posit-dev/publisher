@@ -9,7 +9,9 @@ import (
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
+	"github.com/rstudio/connect-client/internal/services/api/deployment"
 	"github.com/rstudio/connect-client/internal/services/middleware"
+	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/web"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -27,9 +29,10 @@ func NewUIService(
 	accessLog bool,
 	token services.LocalToken,
 	fs afero.Fs,
+	deploymentState *state.Deployment,
 	logger rslog.Logger) *api.Service {
 
-	handler := newUIHandler(fs, logger)
+	handler := newUIHandler(fs, deploymentState, logger)
 
 	return api.NewService(
 		handler,
@@ -47,12 +50,15 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
+func newUIHandler(fs afero.Fs, deploymentState *state.Deployment, logger rslog.Logger) http.HandlerFunc {
 	r := http.NewServeMux()
 	api_prefix := "/api/"
 
 	accountList := accounts.NewAccountList(fs, logger)
 	r.Handle(api_prefix+"accounts", api.NewAccountListEndpoint(accountList, logger))
+
+	deployment_prefix := api_prefix + "deployment/"
+	r.Handle(deployment_prefix+"files", deployment.NewSelectedFilesEndpoint(deploymentState, logger))
 
 	// static files for the local (account list) UI
 	staticHandler := http.FileServer(http.FS(web.Dist)).ServeHTTP
