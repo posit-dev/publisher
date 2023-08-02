@@ -100,7 +100,7 @@ jobs:
         env:
           cache-name: cache-linux-arm64-image
         with:
-          path: /tmp/build-image.tar
+          path: /tmp/linux-arm64-image.tar
           key: linux-arm64-image-${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
       -
         name: Run Linux Tests
