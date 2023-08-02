@@ -319,7 +319,8 @@ module.exports = {
     strict: 'error',
     'symbol-description': 'error',
     yoda: ['error', 'never'],
-    'no-shadow': [
+    'no-shadow': 'off',
+    '@typescript-eslint/no-shadow': [
       'error',
       {
         builtinGlobals: true,
