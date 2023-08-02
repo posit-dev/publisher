@@ -415,10 +415,6 @@ jobs:
           BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
         run: |
-          echo $PATH
-          pwd
-          ls bin
-          chmod +x bin\*\*
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
@@ -561,6 +557,7 @@ jobs:
         name: Get binary
         uses: actions/download-artifact@v3
         with:
+          name: agent-artifacts
           path: bin/
       -
         name: Cache docker image (restore)
@@ -580,7 +577,7 @@ jobs:
         name: Run linux-amd64 Tests
         run: |
           chmod +x bin/*/*
-          ls -la bin/
+          ls -la bin/agent-artifacts
           just test/run-client linux-amd64
   
   build-linux-arm64:
@@ -666,6 +663,7 @@ jobs:
         name: Get binary
         uses: actions/download-artifact@v3
         with:
+          name: agent-artifacts
           path: bin/
 
       # these are required to run docker on amd64 and arm64 platforms
@@ -695,6 +693,6 @@ jobs:
         name: Run linux-arm64 Tests
         run: |
           chmod +x bin/*/*
-          ls -la bin/
+          ls -la bin/agent-artifacts
           just test/run-client linux-arm64
     
