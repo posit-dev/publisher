@@ -18,7 +18,7 @@ init-connect:
 run-client target:
   #!/usr/bin/env bash
   if [[ {{target}} =~ "linux" ]]; then
-    docker compose run \
+    docker run \
     -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
     -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
     -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
