@@ -108,7 +108,6 @@ jobs:
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
           just test/run-client ${{ matrix.client }}
 
-
   test-linux-arm64:
     runs-on: ubuntu-latest
     needs: pr-code-validation
