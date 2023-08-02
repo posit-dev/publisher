@@ -17,8 +17,18 @@ init-connect:
 
 run-client target:
   #!/usr/bin/env bash
-  if [[ {{target}} =~ "linux" ]]; then
+  if [[ {{target}} =~ "linux-amd64" ]]; then
     docker run \
+    --platform linux/amd64 \
+    -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
+    -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
+    -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
+    -v "$(pwd)"/../:/publishing-client \
+    -w /publishing-client/test \
+    --rm rstudio/connect-client-{{target}} just _test-client {{target}}
+  elif [[ {{target}} =~ "linux-arm64" ]]; then
+    docker run \
+    --platform linux/arm64 \
     -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
     -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
     -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
