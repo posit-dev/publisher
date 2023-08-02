@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 
-import Accounts from 'src/api/resources/Accounts';
+import { Accounts } from 'src/api/resources/Accounts';
 
 class PublishingClientApi {
   accounts: Accounts;

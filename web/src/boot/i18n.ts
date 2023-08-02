@@ -23,6 +23,7 @@ declare module 'vue-i18n' {
 }
 /* eslint-enable @typescript-eslint/no-empty-interface */
 
+// eslint-disable-next-line no-restricted-syntax
 export default boot(({ app }) => {
   const i18n = createI18n({
     locale: 'en-US',

@@ -4,6 +4,7 @@ import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 // https://vitejs.dev/config/
+// eslint-disable-next-line no-restricted-syntax
 export default defineConfig({
   test: {
     environment: 'happy-dom',
