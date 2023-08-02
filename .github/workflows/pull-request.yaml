@@ -42,7 +42,7 @@ jobs:
         with:
           path: bin/
 
-  test-linux-amd64:
+  build-linux-amd64:
     runs-on: ubuntu-latest
     needs: pr-code-validation
     strategy:
@@ -101,14 +101,42 @@ jobs:
           cache-name: cache-linux-amd64-image
         with:
           path: /tmp/linux-amd64-image.tar
-          key:  linux-amd64-${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+  
+  run-linux-amd64:
+    needs: build-linux-amd64
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Cache docker image (restore)
+        id: cache-linux-amd64-image
+        uses: actions/cache/restore@v3
+        env:
+          cache-name: cache-linux-amd64-image
+        with:
+          path: /tmp/linux-amd64-image.tar
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+      -
+        name: Load Docker Image
+        run: |
+          docker load --input /tmp/linux-amd64-image.tar
+          docker image ls -a
       -
         name: Run linux-amd64 Tests
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
-          just test/run-client ${{ matrix.client }}
+          just test/run-client linux-amd64
 
-  test-linux-arm64:
+  
+  build-linux-arm64:
     runs-on: ubuntu-latest
     needs: pr-code-validation
     strategy:
@@ -142,7 +170,7 @@ jobs:
         uses: actions/cache/restore@v3
         with: 
           path: /tmp/linux-arm64-image.tar
-          key: linux-arm64-${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
         env:
           cache-name: cache-linux-arm64-image
           CLIENT: "${{ matrix.CLIENT }}"
@@ -168,11 +196,38 @@ jobs:
         with:
           path: /tmp/linux-arm64-image.tar
           key:  linux-arm64-${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+      
+  run-linux-arm64:
+    needs: build-linux-arm64
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Cache docker image (restore)
+        id: cache-linux-arm64-image
+        uses: actions/cache/restore@v3
+        env:
+          cache-name: cache-linux-arm64-image
+        with:
+          path: /tmp/linux-arm64-image.tar
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/linux.Dockerfile') }}
+      -
+        name: Load Docker Image
+        run: |
+          docker load --input /tmp/linux-arm64-image.tar
+          docker image ls -a
       -
         name: Run linux-arm64 Tests
         run: |
           cp -r bin/artifact/* bin/ && chmod +x bin/*/*
-          just test/run-client ${{ matrix.client }}
+          just test/run-client linux-arm64
     
   test-windows-client:
     needs: pr-code-validation
