@@ -5,7 +5,7 @@ This application is built using:
     - Vue 3, Composition API w/ Setup API
 - [Quasar Framework V2](https://quasar.dev/)
     - Using Quasar CLI
-- [Just](https://just.systems)
+- [Just (justfiles)](https://just.systems)
 - [Typescript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/)
 - [Sass w/ SCSS syntax](https://sass-lang.com/documentation/syntax/)
@@ -29,23 +29,13 @@ This application is built using:
 
 # Building the client
 
-1. Default recipe will clean, install, lint, build and test
+1. Default recipe will clean, image, bootstrap, validate, build and test agent & client
     - `just`
 
 # Common Developer tasks
 
-All tasks are done through the justfile recipes, present within the `justfile` file.
-They can be displayed at the command line with: `just --list`
+All tasks are done through the justfile recipes, present within the top level `justfile` file. Recipes present include macro-operations
+for the multiple projects (Go and Web SPA) included in this repo.
 
-Recipes include:
-build            -- Args: # build the web artifacts for the SPA (into dest/spa)
-clean            -- Args: # remove build artifacts and dependencies
-default          -- Args: # will run recipes: install, lint, build and test
-dev              -- Args: # start common UX development flow. Runs install recipe ahead of starting webserver whic
-install          -- Args: # update javascript/typescript dependencies
-lint             -- Args: # lint the source files, do not fix the fixable items
-lint-fix         -- Args: # lint the source files, fix the fixable items
-test             -- Args: # perform unit and e2e tests
-test-e2e         -- Args: # run e2e (Cypress) tests
-test-unit        -- Args: # run unit tests one time
-test-unit-watch  -- Args: # run unit tests in watch mode, re-running as files are changed
+Specialized recipes for the Go project are located within the `cmd/connect-client/justfile` and
+specialized recipes for the Web project are located within the `web/justfile`.

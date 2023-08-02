@@ -1,0 +1,15 @@
+anyio
+asgiref
+click
+fastapi
+h11
+idna
+pydantic
+pyjwt
+rsconnect-python
+semver
+six
+sniffio
+starlette
+typing-extensions
+uvicorn

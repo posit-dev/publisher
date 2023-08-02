@@ -1,1 +1,3 @@
 libs/
+go_cover.out
+go_coverage.html
