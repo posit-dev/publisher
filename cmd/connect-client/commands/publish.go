@@ -177,7 +177,7 @@ func (cmd *BaseBundleCmd) inspectPython(logger rslog.Logger, manifest *bundles.M
 
 type CreateBundleCmd struct {
 	*BaseBundleCmd `kong:"embed"`
-	BundleFile     util.Path `help:"Path to a file where the bundle should be written." required:"" type:"path"`
+	BundleFile     util.Path `help:"Path to a file where the bundle should be written." kong:"required"`
 }
 
 func (cmd *CreateBundleCmd) Run(args *CommonArgs, ctx *CLIContext) error {
