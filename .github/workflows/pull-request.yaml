@@ -689,15 +689,15 @@ jobs:
         run: |
           docker load --input /tmp/linux-arm64-image.tar
           docker image ls -a
+      - 
+        name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
       -
         name: Run linux-arm64 Tests
         run: |
           chmod +x bin/*/*
           ls -la bin/agent-artifacts
           just test/run-client linux-arm64
-      - 
-        name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
     
