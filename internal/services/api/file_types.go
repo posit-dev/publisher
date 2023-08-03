@@ -1,5 +1,7 @@
 package api
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"fmt"
 	"io/fs"
