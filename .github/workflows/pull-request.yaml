@@ -416,7 +416,7 @@ jobs:
       - 
         name: Run Windows Tests
         env:
-          CLIENT: windows-latest
+          client: windows-latest
           # bats reads the load libraries from relative path only in Windows
           BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
@@ -425,7 +425,7 @@ jobs:
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
-          just run-client $env:CLIENT
+          just run-client $env:client
 
   test-macos-client:
     needs: build-agent
@@ -448,7 +448,7 @@ jobs:
       - 
         name: Run MacOs Tests
         env:
-          CLIENT: macos-latest
+          client: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
@@ -457,7 +457,7 @@ jobs:
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
-          just run-client ${CLIENT}
+          just run-client ${client}
 
   build-linux-amd64:
     runs-on: ubuntu-latest
@@ -465,10 +465,6 @@ jobs:
       run:
         shell: bash -l {0}
     needs: build-agent
-    strategy:
-      matrix:
-        client:
-          - linux-amd64
     steps:
       - 
         name: Checkout
@@ -496,7 +492,7 @@ jobs:
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-amd64-image
-          CLIENT: "${{ matrix.CLIENT }}"
+          client: "linux-amd64"
       - 
         if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
@@ -557,9 +553,11 @@ jobs:
           docker image ls -a
       -
         name: Run linux-amd64 Tests
+        env:
+          client: linux-amd64
         run: |
           chmod +x bin/*/*
-          just test/run-client linux-amd64
+          just test/run-client ${client}
   
   build-linux-arm64:
     runs-on: ubuntu-latest
@@ -567,10 +565,6 @@ jobs:
       run:
         shell: bash -l {0}
     needs: build-agent
-    strategy:
-      matrix:
-        client:
-          - linux-arm64
     steps:
       - 
         name: Checkout
@@ -598,7 +592,7 @@ jobs:
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-arm64-image
-          CLIENT: "${{ matrix.CLIENT }}"
+          client: linux-arm64
       - 
         if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
@@ -669,7 +663,9 @@ jobs:
           docker image ls -a
       -
         name: Run linux-arm64 Tests
+        env:
+          client: linux-arm64
         run: |
           chmod +x bin/*/*
-          just test/run-client linux-arm64
+          just test/run-client ${client}
     
