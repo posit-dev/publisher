@@ -26,7 +26,7 @@ type file struct {
 	Files            []*file  `json:"files"`             // an array of objects of the same type for each file within the directory.
 }
 
-func newFile(path util.Path, ignore gitignore.GitIgnoreList) (*file, error) {
+func newFile(path util.Path, isExcluded bool) (*file, error) {
 	info, err := path.Stat()
 	if err != nil {
 		return nil, err
@@ -44,9 +44,41 @@ func newFile(path util.Path, ignore gitignore.GitIgnoreList) (*file, error) {
 		ModifiedDatetime: info.ModTime().Format(time.RFC3339),
 		IsDir:            info.Mode().IsDir(),
 		IsRegular:        info.Mode().IsRegular(),
-		IsExcluded:       ignore.Match(path.Path()),
+		IsExcluded:       isExcluded,
 		Files:            make([]*file, 0),
 	}, nil
+}
+
+func (f *file) insert(path util.Path, ignore gitignore.GitIgnoreList) (*file, error) {
+
+	if f.Pathname == path.Path() {
+		return f, nil
+	}
+
+	directory := path.Dir()
+	if f.Pathname == directory.Path() {
+		for _, child := range f.Files {
+			if child.Pathname == path.Path() {
+				return child, nil
+			}
+		}
+
+		isExcluded := ignore.Match(path.Path())
+		child, err := newFile(path, isExcluded)
+		if err != nil {
+			return nil, err
+		}
+
+		f.Files = append(f.Files, child)
+		return child, nil
+	}
+
+	parent, err := f.insert(directory, ignore)
+	if err != nil {
+		return nil, err
+	}
+
+	return parent.insert(path, ignore)
 }
 
 func NewFilesController(fs afero.Fs, log rslog.Logger) http.HandlerFunc {
@@ -55,7 +87,6 @@ func NewFilesController(fs afero.Fs, log rslog.Logger) http.HandlerFunc {
 		case http.MethodGet:
 			getFile(fs, log, w, r)
 		default:
-			// todo - 404
 			return
 		}
 	}
@@ -84,57 +115,26 @@ func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	w.Header().Set("content-type", "application/hal+json")
+	w.Header().Set("content-type", "application/json")
 	json.NewEncoder(w).Encode(file)
 }
 
 func toFile(path util.Path, log rslog.Logger) (*file, error) {
 	ignore := gitignore.New(path)
-	root, err := newFile(path, ignore)
+	isExcluded := ignore.Match(path.Path())
+	root, err := newFile(path, isExcluded)
 	if err != nil {
 		return nil, err
 	}
 
 	walker := util.NewSymlinkWalker(util.FSWalker{}, log)
-
 	walker.Walk(path, func(path util.Path, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		_, err = root.Insert(path, ignore)
+		_, err = root.insert(path, ignore)
 		return err
 	})
 
 	return root, nil
-}
-
-func (f *file) Insert(path util.Path, ignore gitignore.GitIgnoreList) (*file, error) {
-
-	if f.Pathname == path.Path() {
-		return f, nil
-	}
-
-	directory := path.Dir()
-	if f.Pathname == directory.Path() {
-		for _, child := range f.Files {
-			if child.Pathname == path.Path() {
-				return child, nil
-			}
-		}
-
-		child, err := newFile(path, ignore)
-		if err != nil {
-			return nil, err
-		}
-
-		f.Files = append(f.Files, child)
-		return child, nil
-	}
-
-	parent, err := f.Insert(directory, ignore)
-	if err != nil {
-		return nil, err
-	}
-
-	return parent.Insert(path, ignore)
 }

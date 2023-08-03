@@ -33,7 +33,7 @@ func (s *FilesSuite) Test_toFiles() {
 	s.Equal(files.Pathname, pathname)
 }
 
-func (s *FilesSuite) Test_NewFilesController() {
+func (s *FilesSuite) Test_getFile() {
 	req, err := http.NewRequest("GET", "", nil)
 	s.NoError(err)
 	fs := afero.NewMemMapFs()
@@ -42,7 +42,7 @@ func (s *FilesSuite) Test_NewFilesController() {
 	getFile(fs, log, rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
-	s.Equal("application/hal+json", rec.Header().Get("content-type"))
+	s.Equal("application/json", rec.Header().Get("content-type"))
 
 	res := &file{}
 	dec := json.NewDecoder(rec.Body)
@@ -52,7 +52,7 @@ func (s *FilesSuite) Test_NewFilesController() {
 	s.Equal(".", res.Pathname)
 }
 
-func (s *FilesSuite) Test_newFilesController_pathname() {
+func (s *FilesSuite) Test_getFile_pathname() {
 	fs := afero.NewMemMapFs()
 	pathname, _ := afero.TempDir(fs, "", "")
 	req, err := http.NewRequest("GET", "?pathname="+pathname, nil)
@@ -63,7 +63,7 @@ func (s *FilesSuite) Test_newFilesController_pathname() {
 	getFile(fs, log, rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
-	s.Equal("application/hal+json", rec.Header().Get("content-type"))
+	s.Equal("application/json", rec.Header().Get("content-type"))
 
 	res := &file{}
 	dec := json.NewDecoder(rec.Body)
