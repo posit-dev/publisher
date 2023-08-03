@@ -19,6 +19,7 @@ import routes from './routes';
  * with the Router instance.
  */
 
+// eslint-disable-next-line no-restricted-syntax
 export default route(function(/* { store, ssrContext } */) {
   const createHistory = process.env.SERVER
     ? createMemoryHistory

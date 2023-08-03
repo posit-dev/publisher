@@ -17,4 +17,5 @@ const routes: RouteRecordRaw[] = [
   }
 ];
 
+// eslint-disable-next-line no-restricted-syntax
 export default routes;

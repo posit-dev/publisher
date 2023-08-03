@@ -12,9 +12,6 @@
 
       <q-item-section>
         <q-item-label>Common Settings</q-item-label>
-        <q-item-label caption>
-          Description and graphic have been set.
-        </q-item-label>
       </q-item-section>
     </template>
 
