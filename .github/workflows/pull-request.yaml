@@ -399,16 +399,22 @@ jobs:
     needs: build-agent
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
+      - 
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+      - 
+        name: Download binary
+        uses: actions/download-artifact@v3
         with:
           name: agent-artifacts
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run Windows Tests
+      - 
+        name: Run Windows Tests
         env:
           CLIENT: windows-latest
           # bats reads the load libraries from relative path only in Windows
@@ -425,16 +431,22 @@ jobs:
     needs: build-agent
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+      - 
+        name: Download binary
+        uses: actions/download-artifact@v3
         with:
           name: agent-artifacts
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run macos
+      - 
+        name: Run MacOs Tests
         env:
           CLIENT: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
@@ -447,33 +459,6 @@ jobs:
           cd ${{ github.workspace }}/test
           just run-client ${CLIENT}
 
-  # test-linux-clients:
-  #   needs: build-agent
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       CLIENT:
-  #         - linux-amd64
-  #         - linux-arm64
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: extractions/setup-just@v1
-  #     - uses: actions/download-artifact@v3
-  #       with:
-  #         name: agent-artifacts
-  #         path: bin/
-  #     # these are required to run docker on amd64 and arm64 platforms
-  #     - uses: docker/setup-qemu-action@v2
-  #     - uses: docker/setup-buildx-action@v2
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #     - name: Run Linux Tests
-  #       env:
-  #         CLIENT: "${{ matrix.CLIENT }}"
-  #       run: |
-  #         chmod +x bin/*/*
-  #         just test/build ${CLIENT}
-  #         just test/run-client ${CLIENT}
   build-linux-amd64:
     runs-on: ubuntu-latest
     defaults:
@@ -488,9 +473,6 @@ jobs:
       - 
         name: Checkout
         uses: actions/checkout@v3
-      - 
-        name: Setup Just
-        uses: extractions/setup-just@v1
       - 
         name: Download artifacts
         uses: actions/download-artifact@v3
@@ -595,9 +577,6 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
       - 
-        name: Setup Just
-        uses: extractions/setup-just@v1
-      - 
         name: Download artifacts
         uses: actions/download-artifact@v3
         with:
@@ -689,11 +668,6 @@ jobs:
         run: |
           docker load --input /tmp/linux-arm64-image.tar
           docker image ls -a
-      - 
-        name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
       -
         name: Run linux-arm64 Tests
         run: |

@@ -2,13 +2,21 @@ set shell := ["bash", "-uc"]
 
 export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
 # export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
+_tag := "rstudio/connect-client"
 
 build target:
   #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux-amd64" ]]; then
+    _platform="linux/amd64"
+  elif [[ {{target}} =~ "linux-arm64" ]]; then
+    _platform="linux/arm64"
+  fi
+
   docker build \
+    --platform "${_platform}" \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
     --pull \
-    --tag rstudio/connect-client-{{target}} \
+    --tag {{_tag}}-{{target}}:latest \
     ./docker
 
 init-connect:
@@ -18,23 +26,19 @@ init-connect:
 run-client target:
   #!/usr/bin/env bash
   if [[ {{target}} =~ "linux-amd64" ]]; then
+    _platform="linux/amd64"
+  elif [[ {{target}} =~ "linux-arm64" ]]; then
+    _platform="linux/arm64"
+  fi
+  if [[ {{target}} =~ "linux" ]]; then
     docker run \
-    --platform linux/amd64 \
+    --platform "${_platform}" \
     -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
     -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
     -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
-    --rm rstudio/connect-client-{{target}} just test/_test-client {{target}}
-  elif [[ {{target}} =~ "linux-arm64" ]]; then
-    docker run \
-    --platform linux/arm64 \
-    -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
-    -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
-    -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
-    -v "$(pwd)":/publishing-client \
-    -w /publishing-client/ \
-    --rm rstudio/connect-client-{{target}} just test/_test-client {{target}}
+    --rm {{_tag}}-{{target}} just test/_test-client {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
     just _test-client windows-amd64
   elif [[ {{target}} =~ "macos" ]]; then
