@@ -93,22 +93,27 @@ func NewFilesController(fs afero.Fs, log rslog.Logger) http.HandlerFunc {
 }
 
 func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Request) {
-	var pathname string
+	var p pathname
 	if q := r.URL.Query(); q.Has("pathname") {
-		pathname = q.Get("pathname")
+		p = pathname(q.Get("pathname"))
 	} else {
-		pathname = "."
+		p = pathname(".")
 	}
 
-	// todo - validate that the pathname is within the working directory
-	//
-	// https://www.stackhawk.com/blog/golang-path-traversal-guide-examples-and-prevention/
-	//
-	// Attack Vectors:
-	//	- '../' or './src/../../'; i.e., escape the working directory
-	// 	- '/' or '/home'; i.e., absolute directories outside of working directory
+	ok, err := p.isSafe(log)
+	if err != nil {
+		internalError(w, log, err)
+		return
+	}
 
-	path := util.NewPath(pathname, afs)
+	// if pathname is not safe, return 403 - Forbidden
+	if !ok {
+		log.Warnf("the pathname is not safe %s", p)
+		w.WriteHeader(403)
+		return
+	}
+
+	path := util.NewPath(string(p), afs)
 	file, err := toFile(path, log)
 	if err != nil {
 		internalError(w, log, err)
