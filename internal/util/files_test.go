@@ -78,3 +78,19 @@ func (s *FilesSuite) TestChdirNonexistent() {
 	s.Nil(err)
 	s.Equal(initialWd, newWd)
 }
+
+func (s *FilesSuite) TestIsPythonEnvironmentDir() {
+	cwd, err := Getwd(afero.NewMemMapFs())
+	s.Nil(err)
+	dir := cwd.Join("testdir")
+	dir.Join("bin").MkdirAll(0777)
+	err = dir.Join("bin", "python").WriteFile(nil, 0777)
+	s.Nil(err)
+	s.True(IsPythonEnvironmentDir(dir))
+}
+
+func (s *FilesSuite) TestIsPythonEnvironmentDirNoItIsnt() {
+	cwd, err := Getwd(afero.NewMemMapFs())
+	s.Nil(err)
+	s.False(IsPythonEnvironmentDir(cwd))
+}

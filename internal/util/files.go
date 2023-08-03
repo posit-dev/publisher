@@ -32,3 +32,20 @@ func DirFromPath(path Path) (Path, error) {
 		return path.Dir(), nil
 	}
 }
+
+var pythonBinPaths = []string{
+	"bin/python",
+	"bin/python3",
+	"Scripts/python.exe",
+	"Scripts/python3.exe",
+}
+
+func IsPythonEnvironmentDir(path Path) bool {
+	for _, binary := range pythonBinPaths {
+		exists, err := path.Join(binary).Exists()
+		if err == nil && exists {
+			return true
+		}
+	}
+	return false
+}

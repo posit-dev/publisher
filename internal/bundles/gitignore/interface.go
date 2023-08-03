@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type GitIgnoreList interface {
+type IgnoreList interface {
 	Append(path util.Path) error
 	AppendGlob(s string) error
 	AppendGit() error
@@ -17,7 +17,7 @@ type GitIgnoreList interface {
 }
 
 // Ensure that the gitignore object meets the interface
-var _ GitIgnoreList = &IgnoreList{}
+var _ IgnoreList = &GitIgnoreList{}
 
 type MockGitIgnoreList struct {
 	mock.Mock
@@ -50,4 +50,4 @@ func (m *MockGitIgnoreList) Walk(root util.Path, fn util.WalkFunc) error {
 
 // Maintain a reference to the original gitignore so it
 // and its license remain in our vendor directory.
-type upstreamGitignore gitignore.IgnoreList
+type _ gitignore.IgnoreList
