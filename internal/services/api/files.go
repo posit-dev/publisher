@@ -26,7 +26,7 @@ type file struct {
 	Files            []*file  `json:"files"`             // an array of objects of the same type for each file within the directory.
 }
 
-func newFile(path util.Path, ignore gitignore.IgnoreList) (*file, error) {
+func newFile(path util.Path, ignore gitignore.GitIgnoreList) (*file, error) {
 	info, err := path.Stat()
 	if err != nil {
 		return nil, err
@@ -101,14 +101,14 @@ func toFile(path util.Path, log rslog.Logger) (*file, error) {
 		if err != nil {
 			return err
 		}
-		_, err = root.insert(path, ignore)
+		_, err = root.Insert(path, ignore)
 		return err
 	})
 
 	return root, nil
 }
 
-func (f *file) insert(path util.Path, ignore gitignore.GitIgnoreList) (*file, error) {
+func (f *file) Insert(path util.Path, ignore gitignore.GitIgnoreList) (*file, error) {
 
 	if f.Pathname == path.Path() {
 		return f, nil
@@ -131,10 +131,10 @@ func (f *file) insert(path util.Path, ignore gitignore.GitIgnoreList) (*file, er
 		return child, nil
 	}
 
-	parent, err := f.insert(directory, ignore)
+	parent, err := f.Insert(directory, ignore)
 	if err != nil {
 		return nil, err
 	}
 
-	return parent.insert(path, ignore)
+	return parent.Insert(path, ignore)
 }
