@@ -152,7 +152,6 @@ func (s *BundlerSuite) SetupTest() {
 	cwd, err := util.Getwd(s.fs)
 	s.Nil(err)
 	s.cwd = cwd
-
 	// Create a virtual version of the cwd so NewBundleFrom*
 	// can Chdir there. This is needed because the
 	// gitignore.IgnoreList uses relative paths internally

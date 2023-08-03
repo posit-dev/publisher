@@ -1,4 +1,4 @@
-package bundles
+package gitignore
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -37,8 +37,8 @@ func (s *WalkerSuite) SetupTest() {
 	cwd.MkdirAll(0700)
 }
 
-func (s *WalkerSuite) TestNewWalker() {
-	w, err := NewWalker(s.cwd, []string{"*.log"})
+func (s *WalkerSuite) TestNewExcludingWalker() {
+	w, err := NewExcludingWalker(s.cwd, []string{"*.log"})
 	s.Nil(err)
 	s.NotNil(w)
 }
@@ -50,27 +50,15 @@ func (s *WalkerSuite) TestNewWalkerBadGitignore() {
 	err := giPath.WriteFile(data, 0600)
 	s.Nil(err)
 
-	w, err := NewWalker(s.cwd, nil)
+	w, err := NewExcludingWalker(s.cwd, nil)
 	s.NotNil(err)
 	s.Nil(w)
 }
 
 func (s *WalkerSuite) TestNewWalkerBadIgnore() {
-	w, err := NewWalker(s.cwd, []string{"[Z-A]"})
+	w, err := NewExcludingWalker(s.cwd, []string{"[Z-A]"})
 	s.NotNil(err)
 	s.Nil(w)
-}
-
-func (s *WalkerSuite) TestIsPythonEnvironmentDir() {
-	dir := s.cwd.Join("testdir")
-	dir.Join("bin").MkdirAll(0777)
-	err := dir.Join("bin", "python").WriteFile(nil, 0777)
-	s.Nil(err)
-	s.True(isPythonEnvironmentDir(dir))
-}
-
-func (s *WalkerSuite) TestIsPythonEnvironmentDirNoItIsnt() {
-	s.False(isPythonEnvironmentDir(s.cwd))
 }
 
 func (s *WalkerSuite) TestWalkErrorLoadingRscignore() {
@@ -78,14 +66,14 @@ func (s *WalkerSuite) TestWalkErrorLoadingRscignore() {
 	err := rscIgnorePath.WriteFile([]byte("[Z-A]"), 0600)
 	s.Nil(err)
 
-	w, err := NewWalker(s.cwd, nil)
+	w, err := NewExcludingWalker(s.cwd, nil)
 	s.Nil(err)
 	s.NotNil(w)
 
 	err = w.Walk(s.cwd, func(path util.Path, info fs.FileInfo, err error) error {
 		return nil
 	})
-	s.ErrorContains(err, "error loading .rscignore file")
+	s.ErrorContains(err, "error loading ignore file")
 }
 
 func (s *WalkerSuite) TestWalk() {
@@ -125,7 +113,7 @@ func (s *WalkerSuite) TestWalk() {
 		s.Nil(err)
 	}
 
-	w, err := NewWalker(s.cwd, nil)
+	w, err := NewExcludingWalker(s.cwd, nil)
 	s.Nil(err)
 	s.NotNil(w)
 

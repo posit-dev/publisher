@@ -10,9 +10,8 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
-	"path/filepath"
 
+	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/util"
 
@@ -48,15 +47,17 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	if err != nil {
 		return nil, err
 	}
-	walker, err := NewWalker(dir, ignores)
+	excluder, err := gitignore.NewExcludingWalker(dir, ignores)
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
+	symlinkWalker := util.NewSymlinkWalker(excluder, logger)
+
 	return &bundler{
 		manifest:           manifest,
 		baseDir:            absDir,
 		filename:           filename,
-		walker:             walker,
+		walker:             symlinkWalker,
 		pythonRequirements: pythonRequirements,
 		logger:             logger,
 		debugLogger:        rslog.NewDebugLogger(debug.BundleRegion),
@@ -84,11 +85,11 @@ func NewBundlerForManifest(manifestPath util.Path, logger rslog.Logger) (*bundle
 }
 
 type bundler struct {
-	baseDir            util.Path // Directory being bundled
-	filename           string    // Primary file being deployed
-	walker             Walker    // Ignore patterns from CLI and ignore files
-	pythonRequirements []byte    // Pacakges to write to requirements.txt if not already present
-	manifest           *Manifest // Manifest describing the bundle, if provided
+	baseDir            util.Path   // Directory being bundled
+	filename           string      // Primary file being deployed
+	walker             util.Walker // Ignore patterns from CLI and ignore files
+	pythonRequirements []byte      // Pacakges to write to requirements.txt if not already present
+	manifest           *Manifest   // Manifest describing the bundle, if provided
 	logger             rslog.Logger
 	debugLogger        rslog.DebugLogger
 }
@@ -257,40 +258,6 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 		b.manifest.AddFile(relPath.Path(), fileMD5)
 		b.numFiles++
 		b.size += info.Size()
-	} else if info.Mode().Type()&os.ModeSymlink == os.ModeSymlink {
-		pathLogger.Infof("Following symlink")
-		linkTarget, err := filepath.EvalSymlinks(path.Path())
-		targetPath := util.NewPath(linkTarget, path.Fs())
-		if err != nil {
-			return fmt.Errorf("error following symlink %s: %w", path, err)
-		}
-		targetInfo, err := targetPath.Stat()
-		if err != nil {
-			return fmt.Errorf("error getting target info for symlink %s: %w", targetPath, err)
-		}
-		if targetInfo.IsDir() {
-			dirEntries, err := targetPath.ReadDir()
-			if err != nil {
-				return err
-			}
-			// Iterate over the directory entries here, constructing
-			// a path that goes through the symlink rather than
-			// resolving the link and iterating the directory,
-			// so that it appears as a descendant of the ignore list root dir.
-			for _, entry := range dirEntries {
-				subPath := path.Join(entry.Name())
-				err = b.walker.Walk(subPath, b.walkFunc)
-				if err != nil {
-					return err
-				}
-			}
-		} else {
-			// Handle all non-directory symlink targets normally
-			err = b.walkFunc(path, targetInfo, nil)
-			if err != nil {
-				return err
-			}
-		}
 	} else {
 		pathLogger.Warnf("Skipping non-regular file")
 	}

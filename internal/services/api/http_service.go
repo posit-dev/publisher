@@ -33,7 +33,7 @@ type Service struct {
 	debugLogger   rslog.DebugLogger
 }
 
-var tlsRequiredFilesError = errors.New("TLS requires both a private key file and a certificate chain file")
+var errTlsRequiredFiles error = errors.New("TLS requires both a private key file and a certificate chain file")
 
 func NewService(
 	handler http.HandlerFunc,
@@ -83,7 +83,7 @@ func (svc *Service) isTLS() (bool, error) {
 		return true, nil
 	} else if svc.keyFile != "" || svc.certFile != "" {
 		// It's an error to only provide one of the files
-		return false, tlsRequiredFilesError
+		return false, errTlsRequiredFiles
 	} else {
 		return false, nil
 	}
