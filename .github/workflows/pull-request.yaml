@@ -492,16 +492,16 @@ jobs:
         name: Set platform variable
         run: |
           if [ ${{ matrix.client }} == linux-amd64 ]; then
-            echo "{platform}=linux/amd64" >> $GITHUB_ENV
+            echo "platform=linux/amd64" >> $GITHUB_ENV
           elif [ ${{ matrix.client }} == linux-arm64 ]; then
-            echo "{platform}=linux/arm64" >> $GITHUB_ENV
+            echo "platform=linux/arm64" >> $GITHUB_ENV
           fi
       - 
-        name: Restore Cached linux-amd64 image
+        name: Restore Cached ${{ matrix.client }} image
         id: cache-linux-image-restore
         uses: actions/cache/restore@v3
         with: 
-          path: /tmp/linux-amd64-image.tar
+          path: /tmp/${{ matrix.client }}-image.tar
           key: ${{ env.cache-name }}-${{ matrix.client }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-image-restore
@@ -514,11 +514,11 @@ jobs:
           build-args: BUILDKIT_INLINE_CACHE=1
           pull: True
           file: test/docker/Dockerfile
-          platforms: linux/amd64
+          platforms: ${{ env.platform }} 
           tags: rstudio/connect-client-${{ matrix.client }}:latest
           outputs: type=docker,dest=/tmp/${{ matrix.client }}-image.tar
       - 
-        if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
+        if: ${{ steps.cache-linux-image-restore.outputs.cache-hit != 'true' }}
         name: Cache docker image (update)
         id: cache-linux-image-save
         uses: actions/cache/save@v3
