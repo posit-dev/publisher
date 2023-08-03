@@ -492,7 +492,7 @@ jobs:
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-amd64-image
-          client: "linux-amd64"
+          client: linux-amd64
       - 
         if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
@@ -584,7 +584,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - 
-        name: Restore Cached linux-amd64 image
+        name: Restore Cached linux-arm64 image
         id: cache-linux-arm64-restore
         uses: actions/cache/restore@v3
         with: 
