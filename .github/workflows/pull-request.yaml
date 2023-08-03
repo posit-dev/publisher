@@ -459,7 +459,7 @@ jobs:
           cd ${{ github.workspace }}/test
           just run-client ${CLIENT}
 
-  build-linux-amd64:
+  build-linux-images:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -469,108 +469,6 @@ jobs:
       matrix:
         client:
           - linux-amd64
-    steps:
-      - 
-        name: Checkout
-        uses: actions/checkout@v3
-      - 
-        name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: bin/
-      # these are required to run docker on amd64 and arm64 platforms
-      - 
-        name: Setup qemu
-        uses: docker/setup-qemu-action@v2
-      - 
-        name: Setup buildx
-        uses: docker/setup-buildx-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - 
-        name: Restore Cached linux-amd64 image
-        id: cache-linux-amd64-restore
-        uses: actions/cache/restore@v3
-        with: 
-          path: /tmp/linux-amd64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
-        env:
-          cache-name: cache-linux-amd64-image
-          CLIENT: "${{ matrix.CLIENT }}"
-      - 
-        if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
-        name: Build and Export Docker Image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          build-args: BUILDKIT_INLINE_CACHE=1
-          pull: True
-          file: test/docker/Dockerfile
-          platforms: linux/amd64
-          tags: rstudio/connect-client-linux-amd64:latest
-          outputs: type=docker,dest=/tmp/linux-amd64-image.tar
-      - 
-        if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
-        name: Cache docker image (update)
-        id: cache-linux-amd64-image-save
-        uses: actions/cache/save@v3
-        env:
-          cache-name: cache-linux-amd64-image
-        with:
-          path: /tmp/linux-amd64-image.tar
-          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
-
-  run-linux-amd64:
-    needs: build-linux-amd64
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: Setup Just
-        uses: extractions/setup-just@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Get binary
-        uses: actions/download-artifact@v3
-        with:
-          name: agent-artifacts
-          path: bin/
-      -
-        name: Cache docker image (restore)
-        id: cache-linux-amd64-image
-        uses: actions/cache/restore@v3
-        env:
-          cache-name: cache-linux-amd64-image
-        with:
-          path: /tmp/linux-amd64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
-      -
-        name: Load Docker Image
-        run: |
-          docker load --input /tmp/linux-amd64-image.tar
-          docker image ls -a
-      -
-        name: Run linux-amd64 Tests
-        run: |
-          chmod +x bin/*/*
-          ls -la bin/agent-artifacts
-          just test/run-client linux-amd64
-  
-  build-linux-arm64:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    needs: build-agent
-    strategy:
-      matrix:
-        client:
           - linux-arm64
     steps:
       - 
@@ -591,44 +489,56 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - 
+        name: Set platform variable
+        run: |
+          if [ ${{ matrix.client }} == linux-amd64 ]; then
+            echo "{platform}=linux/amd64" >> $GITHUB_ENV
+          elif [ ${{ matrix.client }} == linux-arm64 ]; then
+            echo "{platform}=linux/arm64" >> $GITHUB_ENV
+          fi
+      - 
         name: Restore Cached linux-amd64 image
-        id: cache-linux-arm64-restore
+        id: cache-linux-image-restore
         uses: actions/cache/restore@v3
         with: 
-          path: /tmp/linux-arm64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+          path: /tmp/linux-amd64-image.tar
+          key: ${{ env.cache-name }}-${{ matrix.client }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
-          cache-name: cache-linux-arm64-image
-          CLIENT: "${{ matrix.CLIENT }}"
+          cache-name: cache-linux-image-restore
       - 
-        if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
+        if: ${{ steps.cache-linux-image-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1 
+          build-args: BUILDKIT_INLINE_CACHE=1
           pull: True
           file: test/docker/Dockerfile
-          platforms: linux/arm64
-          tags: rstudio/connect-client-linux-arm64:latest
-          outputs: type=docker,dest=/tmp/linux-arm64-image.tar
+          platforms: linux/amd64
+          tags: rstudio/connect-client-${{ matrix.client }}:latest
+          outputs: type=docker,dest=/tmp/${{ matrix.client }}-image.tar
       - 
-        if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
+        if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
         name: Cache docker image (update)
-        id: cache-linux-arm64-image-save
+        id: cache-linux-image-save
         uses: actions/cache/save@v3
         env:
-          cache-name: cache-linux-arm64-image
+          cache-name: cache-linux-image
         with:
-          path: /tmp/linux-arm64-image.tar
-          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+          path: /tmp/${{ matrix.client }}-image.tar
+          key:  ${{ env.cache-name }}-${{ matrix.client }}-${{ hashFiles('test/docker/Dockerfile') }}
 
-  run-linux-arm64:
-    needs: build-linux-arm64
+  run-linux:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -l {0}
+    needs: build-linux-images
+    strategy:
+      matrix:
+        client:
+          - linux-amd64
+          - linux-arm64
     steps:
       -
         name: Checkout
@@ -644,34 +554,135 @@ jobs:
         with:
           name: agent-artifacts
           path: bin/
-
-      # these are required to run docker on amd64 and arm64 platforms
-      - 
-        name: Setup qemu
-        uses: docker/setup-qemu-action@v2
-      - 
-        name: Setup buildx
-        uses: docker/setup-buildx-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Cache docker image (restore)
-        id: cache-linux-arm64-image
+        id: cache-linux-image
         uses: actions/cache/restore@v3
         env:
-          cache-name: cache-linux-arm64-image
+          cache-name: cache-linux-image
         with:
-          path: /tmp/linux-arm64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+          path: /tmp/${{ matrix.client }}-image.tar
+          key: ${{ env.cache-name }}-${{ matrix.client }}-${{ hashFiles('test/docker/Dockerfile') }}
       -
         name: Load Docker Image
         run: |
-          docker load --input /tmp/linux-arm64-image.tar
+          docker load --input /tmp/${{ matrix.client }}-image.tar
           docker image ls -a
       -
-        name: Run linux-arm64 Tests
+        name: Run ${{ matrix.client }} Tests
         run: |
           chmod +x bin/*/*
-          ls -la bin/agent-artifacts
-          just test/run-client linux-arm64
+          just test/run-client ${{ matrix.client }}
+  
+  # build-linux-arm64:
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0}
+  #   needs: build-agent
+  #   strategy:
+  #     matrix:
+  #       client:
+  #         - linux-arm64
+  #   steps:
+  #     - 
+  #       name: Checkout
+  #       uses: actions/checkout@v3
+  #     - 
+  #       name: Download artifacts
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         path: bin/
+  #     # these are required to run docker on amd64 and arm64 platforms
+  #     - 
+  #       name: Setup qemu
+  #       uses: docker/setup-qemu-action@v2
+  #     - 
+  #       name: Setup buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - 
+  #       name: Restore Cached linux-amd64 image
+  #       id: cache-linux-arm64-restore
+  #       uses: actions/cache/restore@v3
+  #       with: 
+  #         path: /tmp/linux-arm64-image.tar
+  #         key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+  #       env:
+  #         cache-name: cache-linux-arm64-image
+  #         CLIENT: "${{ matrix.CLIENT }}"
+  #     - 
+  #       if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
+  #       name: Build and Export Docker Image
+  #       uses: docker/build-push-action@v3
+  #       with:
+  #         context: .
+  #         build-args: BUILDKIT_INLINE_CACHE=1 
+  #         pull: True
+  #         file: test/docker/Dockerfile
+  #         platforms: linux/arm64
+  #         tags: rstudio/connect-client-linux-arm64:latest
+  #         outputs: type=docker,dest=/tmp/linux-arm64-image.tar
+  #     - 
+  #       if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
+  #       name: Cache docker image (update)
+  #       id: cache-linux-arm64-image-save
+  #       uses: actions/cache/save@v3
+  #       env:
+  #         cache-name: cache-linux-arm64-image
+  #       with:
+  #         path: /tmp/linux-arm64-image.tar
+  #         key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+
+  # run-linux-arm64:
+  #   needs: build-linux-arm64
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0}
+  #   steps:
+  #     -
+  #       name: Checkout
+  #       uses: actions/checkout@v3
+  #     -
+  #       name: Setup Just
+  #       uses: extractions/setup-just@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     -
+  #       name: Get binary
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: agent-artifacts
+  #         path: bin/
+
+  #     # these are required to run docker on amd64 and arm64 platforms
+  #     - 
+  #       name: Setup qemu
+  #       uses: docker/setup-qemu-action@v2
+  #     - 
+  #       name: Setup buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     -
+  #       name: Cache docker image (restore)
+  #       id: cache-linux-arm64-image
+  #       uses: actions/cache/restore@v3
+  #       env:
+  #         cache-name: cache-linux-arm64-image
+  #       with:
+  #         path: /tmp/linux-arm64-image.tar
+  #         key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+  #     -
+  #       name: Load Docker Image
+  #       run: |
+  #         docker load --input /tmp/linux-arm64-image.tar
+  #         docker image ls -a
+  #     -
+  #       name: Run linux-arm64 Tests
+  #       run: |
+  #         chmod +x bin/*/*
+  #         just test/run-client linux-arm64
     
