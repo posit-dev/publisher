@@ -554,6 +554,12 @@ jobs:
         with:
           name: agent-artifacts
           path: bin/
+      - 
+        name: Setup qemu
+        uses: docker/setup-qemu-action@v2
+      - 
+        name: Setup buildx
+        uses: docker/setup-buildx-action@v2
       -
         name: Cache docker image (restore)
         id: cache-linux-image
