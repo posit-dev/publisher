@@ -5,6 +5,19 @@ export enum DeploymentFileType {
     DIRECTORY = 'DIR',
 }
 
+export enum ExclusionMatchSource {
+    FILE = 'file',
+    BUILT_IN = 'built-in',
+    USER = 'user',
+}
+
+export type ExclusionMatch = {
+    source: ExclusionMatchSource
+    pattern: string
+    file_path: string
+    line: number
+}
+
 export type DeploymentFile = {
     file_type: DeploymentFileType
     pathname: string
@@ -16,4 +29,5 @@ export type DeploymentFile = {
     is_file: boolean
     is_excluded: boolean
     files: DeploymentFile[]
+    exclusion: ExclusionMatch | null
 }
