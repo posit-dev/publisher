@@ -67,12 +67,6 @@ jobs:
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('build/package/Dockerfile') }}
-      # -
-      #   name: Upload Docker Image Artifact
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: image-tar
-      #     path: /tmp/build-image.tar
 
   build-ux:
     needs: build-docker-image
@@ -342,6 +336,10 @@ jobs:
         name: Build agent
         run: just build-agent
       -
+        name: Make agents executable
+        run |
+          chmod +x bin\*\*
+      -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -382,6 +380,10 @@ jobs:
         with:
           name: agent-artifacts
           path: ./bin
+      -
+        name: Make agents executable
+        run |
+          chmod +x bin\*\*
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -394,12 +396,6 @@ jobs:
       - 
         name: UX E2E Tests
         run: PATH="${PATH}:/usr/local/bin" just web/test-e2e
-      - 
-        name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
 
   test-windows-client:
     needs: build-agent
@@ -419,6 +415,10 @@ jobs:
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Make agents executable
+        run |
+          chmod +x bin\*\*
       - 
         name: Run Windows Tests
         env:
@@ -451,6 +451,10 @@ jobs:
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Make agents executable
+        run |
+          chmod +x bin\*\*
       - 
         name: Run MacOs Tests
         env:
@@ -459,7 +463,6 @@ jobs:
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
-          chmod +x bin/*/*
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
@@ -544,6 +547,10 @@ jobs:
           name: agent-artifacts
           path: bin/
       -
+        name: Make agents executable
+        run |
+          chmod +x bin\*\*
+      -
         name: Cache docker image (restore)
         id: cache-linux-amd64-image
         uses: actions/cache/restore@v3
@@ -562,7 +569,6 @@ jobs:
         env:
           client: linux-amd64
         run: |
-          chmod +x bin/*/*
           just test/run-client ${client}
   
   build-linux-arm64:
@@ -643,6 +649,10 @@ jobs:
         with:
           name: agent-artifacts
           path: bin/
+      -
+        name: Make agents executable
+        run |
+          chmod +x bin\*\*
 
       # these are required to run docker on amd64 and arm64 platforms
       - 
@@ -672,6 +682,5 @@ jobs:
         env:
           client: linux-arm64
         run: |
-          chmod +x bin/*/*
           just test/run-client ${client}
     
