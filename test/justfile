@@ -61,7 +61,7 @@ ui-client target:
     ./bin/{{target}}/connect-client publish-ui ./test/sample-content/fastapi-simple/ --listen=localhost:9999
   elif [[ {{target}} =~ "windows" ]]; then
     set shell := ["powershell.exe", "-c"] \
-    Start-Process -FilePath "$GITHUB_WORKSPACE\\bin\\artifact\\windows-amd64\\connect-client.exe" -ArgumentList "publish-ui", "sample-content/fastapi-simple/", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
+    Start-Process -FilePath "bin\\windows-amd64\\connect-client.exe" -ArgumentList "publish-ui", "sample-content\\fastapi-simple\\", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
     nohup bin/darwin-amd64/connect-client publish-ui ./sample-content/fastapi-simple/  > nohup.out 2> nohup.err < /dev/null &
   fi
