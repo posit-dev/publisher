@@ -53,6 +53,7 @@ test-e2e:
     # cache within root's home dir.
     export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
     # install cypress
+    echo "CYPRESS URL: ${CYPRESS_BASE_URL}"
     npx cypress install
 
     npx quasar test --e2e cypress

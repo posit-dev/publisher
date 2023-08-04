@@ -437,7 +437,8 @@ jobs:
         env:
           client: windows-latest
         run: |
-          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' ./test/win-out.txt
+          just test/ui-client $env:client
+          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' test/win-out.txt
           just web/build
           just web/test-e2e
 
@@ -482,7 +483,7 @@ jobs:
         run: |
           just test/ui-client ${client}
           just web/build
-          CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' nohup.out) just web/test-e2e
+          CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' ./test/nohup.out) just web/test-e2e
 
 
   build-linux-amd64:
@@ -593,8 +594,8 @@ jobs:
           client: linux-amd64
         run: |
           just test/ui-client ${client}
-          export CYPRESS_BASE_URL=$(docker logs --tail 1  rstudio/connect-client-{{target}}| grep '^http.*#.*')
           just web/build && \
+          CYPRESS_BASE_URL=$(docker logs --tail 1  rstudio/connect-client-{{target}}| grep '^http.*#.*') \
           just web/test-e2e
         
   
@@ -716,6 +717,6 @@ jobs:
           client: linux-arm64
         run: |
           just test/ui-client ${client}
-          export CYPRESS_BASE_URL=$(docker logs --tail 1  rstudio/connect-client-{{target}}| grep '^http.*#.*')
           just web/build && \
+          CYPRESS_BASE_URL=$(docker logs --tail 1  rstudio/connect-client-{{target}}| grep '^http.*#.*') \
           just web/test-e2e
