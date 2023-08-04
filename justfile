@@ -160,17 +160,16 @@ start-agent-for-e2e:
     # remove \r from string when executed through docker
     GOARCH="${GOARCH%%[[:cntrl:]]}"
 
+    # base of repository in a docker container is mapped to /work
+    BASEDIR="."
     if "${DOCKER:-true}" == "true" ; then
-        {{ _with_runner }} /work/bin/$GOOS-$GOARCH/connect-client publish-ui \
-            /work/test/sample-content/fastapi-simple \
-            --listen=127.0.0.1:9000 \
-            --token=abc123
-    else
-        ./bin/$GOOS-$GOARCH/connect-client publish-ui \
-            ./test/sample-content/fastapi-simple \
-            --listen=127.0.0.1:9000 \
-            --token=abc123
+        BASEDIR="/work"
     fi
+
+    {{ _with_runner }} $BASEDIR/bin/$GOOS-$GOARCH/connect-client publish-ui \
+        $BASEDIR/test/sample-content/fastapi-simple \
+        --listen=127.0.0.1:9000 \
+        --token=abc123
     
 [private]
 _with_docker *args: 
