@@ -437,7 +437,7 @@ jobs:
         env:
           client: windows-latest
         run: |
-          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' win-out.txt
+          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' ./test/win-out.txt
           just web/build
           just web/test-e2e
 
