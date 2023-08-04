@@ -340,7 +340,7 @@ jobs:
         run: just build-agent
       -
         name: Make agents executable
-        run |
+        run: |
           chmod +x bin\*\*
       -
         name: Agent build artifacts
@@ -385,7 +385,7 @@ jobs:
           path: ./bin
       -
         name: Make agents executable
-        run |
+        run: |
           chmod +x bin\*\*
       - 
         name: Restore Cache UX node_modules
@@ -420,7 +420,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Make agents executable
-        run |
+        run: |
           chmod +x bin\*\*
       - 
         name: Run Windows Tests
@@ -456,7 +456,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Make agents executable
-        run |
+        run: |
           chmod +x bin\*\*
       - 
         name: Run MacOs Tests
@@ -551,7 +551,7 @@ jobs:
           path: bin/
       -
         name: Make agents executable
-        run |
+        run: |
           chmod +x bin\*\*
       -
         name: Cache docker image (restore)
@@ -654,7 +654,7 @@ jobs:
           path: bin/
       -
         name: Make agents executable
-        run |
+        run: |
           chmod +x bin\*\*
 
       # these are required to run docker on amd64 and arm64 platforms
