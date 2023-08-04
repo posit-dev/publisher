@@ -160,10 +160,17 @@ start-agent-for-e2e:
     # remove \r from string when executed through docker
     GOARCH="${GOARCH%%[[:cntrl:]]}"
 
-    {{ _with_runner }} ./bin/$GOOS-$GOARCH/connect-client publish-ui \
-        ./test/sample-content/fastapi-simple \
-        --listen=127.0.0.1:9000 \
-        --token=abc123
+    if "${DOCKER:-true}" == "true" ; then
+        {{ _with_runner }} /work/bin/$GOOS-$GOARCH/connect-client publish-ui \
+            /work/test/sample-content/fastapi-simple \
+            --listen=127.0.0.1:9000 \
+            --token=abc123
+    else
+        ./bin/$GOOS-$GOARCH/connect-client publish-ui \
+            ./test/sample-content/fastapi-simple \
+            --listen=127.0.0.1:9000 \
+            --token=abc123
+    fi
     
 [private]
 _with_docker *args: 
