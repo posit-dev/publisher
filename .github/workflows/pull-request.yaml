@@ -596,7 +596,8 @@ jobs:
         run: |
           just test/ui-client ${client}
           just web/build && \
-          CYPRESS_BASE_URL=$(docker logs --tail 1  rstudio/connect-client-${client}| grep '^http.*#.*') \
+          DOCKER_CONTAINER=$(docker container ls | grep -w rstudio/connect-client-${client} | awk '{print $1}')
+          CYPRESS_BASE_URL=$(docker logs --tail 1 ${DOCKER_CONTAINER} | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*") \
           just web/test-ci-e2e
         
   
@@ -719,5 +720,6 @@ jobs:
         run: |
           just test/ui-client ${client}
           just web/build && \
-          CYPRESS_BASE_URL=$(docker logs --tail 1  rstudio/connect-client-${client}| grep '^http.*#.*') \
+          DOCKER_CONTAINER=$(docker container ls | grep -w rstudio/connect-client-${client} | awk '{print $1}')
+          CYPRESS_BASE_URL=$(docker logs --tail 1 ${DOCKER_CONTAINER} | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*") \
           just web/test-ci-e2e
