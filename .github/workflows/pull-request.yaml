@@ -420,7 +420,7 @@ jobs:
         run: |
           chmod -R +x ./bin/**/connect-client
       - 
-        name: Run Windows Tests
+        name: Run Windows CLI Tests
         env:
           client: windows-latest
           # bats reads the load libraries from relative path only in Windows
@@ -432,6 +432,15 @@ jobs:
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
           just run-client $env:client
+      -
+        name: Run Windows Cypress Tests
+        env:
+          client: windows-latest
+        run: |
+          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' win-out.txt
+          just web/install
+          just web/build
+          just web/test-e2e
 
   test-macos-client:
     needs: build-agent
@@ -456,7 +465,7 @@ jobs:
         run: |
           chmod -R +x ./bin/**/connect-client
       - 
-        name: Run MacOs Tests
+        name: Run MacOs CLI Tests
         env:
           client: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
@@ -467,6 +476,17 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just run-client ${client}
+      -
+        name: Run MacOS Cypress Tests
+        env:
+          client: macos-latest
+        run: |
+          just test/ui-client ${client}
+          just ../web/install
+          just ../web/build
+          export CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' nohup.out) 
+          just web/test-e2e
+
 
   build-linux-amd64:
     runs-on: ubuntu-latest
@@ -565,11 +585,22 @@ jobs:
           docker load --input /tmp/linux-amd64-image.tar
           docker image ls -a
       -
-        name: Run linux-amd64 Tests
+        name: Run linux-amd64 CLI Tests
         env:
           client: linux-amd64
         run: |
           just test/run-client ${client}
+      -
+        name: Run linux-amd64 Cypress Tests
+        env:
+          client: linux-amd64
+        run: |
+          just test/ui-client ${client}
+          export CYPRESS_BASE_URL=$(docker logs --tail 1  rstudio/connect-client-{{target}}| grep '^http.*#.*')
+          just ../web/install && \
+          just ../web/build && \
+          just ../web/test-e2e
+        
   
   build-linux-arm64:
     runs-on: ubuntu-latest
@@ -678,9 +709,18 @@ jobs:
           docker load --input /tmp/linux-arm64-image.tar
           docker image ls -a
       -
-        name: Run linux-arm64 Tests
+        name: Run linux-arm64 CLI Tests
         env:
           client: linux-arm64
         run: |
           just test/run-client ${client}
-    
+      -
+        name: Run linux-arm64 Cypress Tests
+        env:
+          client: linux-arm64
+        run: |
+          just test/ui-client ${client}
+          export CYPRESS_BASE_URL=$(docker logs --tail 1  rstudio/connect-client-{{target}}| grep '^http.*#.*')
+          just ../web/install && \
+          just ../web/build && \
+          just ../web/test-e2e
