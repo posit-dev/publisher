@@ -62,5 +62,7 @@ do
 	if [ $? -ne 0 ]; then
    		echo 'An error has occurred! Aborting the script execution...'
 		exit 1
+    else
+        chmod +x "$output_name"
 	fi
 done
