@@ -1,0 +1,349 @@
+
+
+./bin/darwin-amd64/connect-client publish-ui \
+test/sample-content/fastapi-simple \
+--listen=127.0.0.1:9001 \
+--open-browser-at="http://127.0.0.1:9000" \
+--skip-browser-session-auth
+
+
+DOCKER=false just build-web build-agent-dev
+
+Created an api-key (ePQAGQw0XNTkKvtW3PmH8J2LdcoLnHpx) on https://rsc.radixu.com/ (dogfood)
+
+Use the CLI to add an account:
+
+./bin/darwin-amd64/connect-client add-account \
+ --name=Dogfood \
+ --url=https://rsc.radixu.com/ \
+ --api-key=ePQAGQw0XNTkKvtW3PmH8J2LdcoLnHpx \
+ --insecure
+
+./bin/darwin-amd64/connect-client list-accounts
+
+time="2023-08-02T23:33:59.750Z" level=info msg="Client version" version=edb7562
+time="2023-08-02T23:33:59.750Z" level=info msg="Development mode" mode=development
+time="2023-08-02T23:33:59.750Z" level=info msg="Development build" DevelopmentBuild=true
+time="2023-08-02T23:33:59.753Z" level=info msg="Loading rsconnect accounts from /Users/billsager/Library/Preferences/org.R-project.R/R/rsconnect"
+time="2023-08-02T23:33:59.757Z" level=info msg="Loading rsconnect-python accounts from /Users/billsager/Library/Application Support/rsconnect-python/servers.json"
+
+Nickname: "colorado.posit.co"
+    Server URL: https://colorado.posit.co/rsc
+    Configured via: RStudio IDE/rsconnect
+    Authentication: RStudio IDE/rsconnect token+key
+
+Nickname: "connect.localtest.me"
+    Server URL: https://connect.localtest.me/rsc/dev-password-k8s
+    Configured via: RStudio IDE/rsconnect
+    Authentication: RStudio IDE/rsconnect token+key
+
+Nickname: "localhost"
+    Server URL: http://localhost:3939
+    Configured via: RStudio IDE/rsconnect
+    Authentication: RStudio IDE/rsconnect token+key
+
+Nickname: "rsc.radixu.com"
+    Server URL: https://rsc.radixu.com
+    Configured via: RStudio IDE/rsconnect
+    Authentication: RStudio IDE/rsconnect token+key
+
+Nickname: "bar"
+    Server URL: http://connect.remote
+    Configured via: rsconnect-python
+    Authentication: Connect API key
+    Insecure mode (TLS host/certificate validation disabled)
+
+Nickname: "connect"
+    Server URL: https://connect.remote:6443
+    Configured via: rsconnect-python
+    Authentication: Connect API key
+    Insecure mode (TLS host/certificate validation disabled)
+
+Nickname: "dogfood"
+    Server URL: https://rsc.radixu.com
+    Configured via: rsconnect-python
+    Authentication: Connect API key
+    Insecure mode (TLS host/certificate validation disabled)
+
+Nickname: "foo"
+    Server URL: http://connect.local
+    Configured via: rsconnect-python
+    Authentication: Connect API key
+    Client TLS certificate data provided
+
+./bin/darwin-amd64/connect-client publish \
+test/sample-content/fastapi-simple \
+ --account-name=dogfood \
+ --name="First Connect-Client Test" \
+ --debug=all 
+
+time="2023-08-02T23:23:27.883Z" level=info msg="Client version" version=edb7562
+time="2023-08-02T23:23:27.884Z" level=info msg="Development mode" mode=development
+time="2023-08-02T23:23:27.884Z" level=info msg="Development build" DevelopmentBuild=true
+time="2023-08-02T23:23:27.888Z" level=info msg="Loaded manifest from test/sample-content/fastapi-simple/manifest.json"
+time="2023-08-02T23:23:27.888Z" level=info msg="Loading rsconnect accounts from /Users/billsager/Library/Preferences/org.R-project.R/R/rsconnect"
+time="2023-08-02T23:23:27.904Z" level=info msg="Loading rsconnect-python accounts from /Users/billsager/Library/Application Support/rsconnect-python/servers.json"
+time="2023-08-02T23:23:27.904Z" level=info msg="Deployment type" AppMode=python-fastapi Entrypoint=simple
+time="2023-08-02T23:23:27.904Z" level=info msg="Using Python packages from test/sample-content/fastapi-simple/requirements.txt"
+time="2023-08-02T23:23:27.905Z" level=info msg="Creating bundle from directory" source_dir=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple
+time="2023-08-02T23:23:27.905Z" level=info msg="Adding file" path=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/meta.yaml size=63
+time="2023-08-02T23:23:27.908Z" level=info msg="Adding file" path=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/requirements.in size=124
+time="2023-08-02T23:23:27.909Z" level=info msg="Adding file" path=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/requirements.txt size=235
+time="2023-08-02T23:23:27.909Z" level=info msg="Adding file" path=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/simple.py size=369
+time="2023-08-02T23:23:27.910Z" level=info msg="Bundle created" files=4 total_bytes=791
+time="2023-08-02T23:23:28.396Z" level=fatal msg="Error: unexpected response from the server: 400 on URL https://rsc.radixu.com/__api__/v1/content"
+
+ ./bin/darwin-amd64/connect-client test-account --name=dogfood
+time="2023-08-02T23:24:57.819Z" level=info msg="Client version" version=edb7562
+time="2023-08-02T23:24:57.820Z" level=info msg="Development mode" mode=development
+time="2023-08-02T23:24:57.820Z" level=info msg="Development build" DevelopmentBuild=true
+time="2023-08-02T23:24:57.822Z" level=info msg="Loading rsconnect accounts from /Users/billsager/Library/Preferences/org.R-project.R/R/rsconnect"
+time="2023-08-02T23:24:57.826Z" level=info msg="Loading rsconnect-python accounts from /Users/billsager/Library/Application Support/rsconnect-python/servers.json"
+time="2023-08-02T23:24:57.826Z" level=info msg="Testing connection to https://rsc.radixu.com"
+time="2023-08-02T23:24:58.313Z" level=info msg="Testing Connect API key authentication to https://rsc.radixu.com"
+Name:     Bill Sager
+Username: bill.sager
+ID:       3be5e66d-b767-4912-89be-fb958467111e
+Email:    bill.sager@posit.co
+
+rsconnect deploy api \     
+> --name=dogfood \
+> test/sample-content/fastapi-simple
+    Warning: the existing manifest.json file will not be used or considered.
+Validating server...    [OK]
+Validating app mode...  [OK]
+Making bundle ...       [OK]
+Deploying bundle ...    [OK]
+Saving deployed information...  [OK]
+Building Python API...
+Bundle created with Python version 3.9.10 is compatible with environment Local with Python version 3.9.7 from /opt/Python/3.9.7/bin/python3.9 
+Bundle requested Python version 3.9.10; using /opt/Python/3.9.7/bin/python3.9 which has version 3.9.7
+2023/08/02 23:29:22.586527494 [rsc-session] Content GUID: ef5aca13-ebb4-4298-a257-9d97952e6126
+2023/08/02 23:29:22.586577301 [rsc-session] Content ID: 22001
+2023/08/02 23:29:22.586585338 [rsc-session] Bundle ID: 33837
+2023/08/02 23:29:23.118971484 Running on host: dogfood01
+2023/08/02 23:29:23.129668672 Linux distribution: Ubuntu 18.04.4 LTS (bionic)
+2023/08/02 23:29:23.132266339 Running as user: uid=999(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)
+2023/08/02 23:29:23.132281960 Connect version: 2023.08.0-dev+2
+2023/08/02 23:29:23.132316297 LANG: C.UTF-8
+2023/08/02 23:29:23.132319896 Working directory: /opt/rstudio-connect/mnt/app
+2023/08/02 23:29:23.132590738 Building environment using Python 3.9.7 (default, Sep 16 2021, 13:09:58) [GCC 7.5.0] at /opt/Python/3.9.7/bin/python3.9
+2023/08/02 23:29:23.149862523 Creating environment: zU7vHVxkQuWZW6IY8h1pVw
+2023/08/02 23:29:45.413297780 Requirement already satisfied: pip in /opt/rstudio-connect/mnt/python-environments/pip/3.9.7/zU7vHVxkQuWZW6IY8h1pVw/lib/python3.9/site-packages (21.2.3)
+2023/08/02 23:29:45.700508486 Collecting pip
+2023/08/02 23:29:45.738227948   Using cached pip-23.2.1-py3-none-any.whl (2.1 MB)
+2023/08/02 23:29:45.781378598 Requirement already satisfied: setuptools in /opt/rstudio-connect/mnt/python-environments/pip/3.9.7/zU7vHVxkQuWZW6IY8h1pVw/lib/python3.9/site-packages (57.4.0)
+2023/08/02 23:29:46.494531183 Collecting setuptools
+2023/08/02 23:29:46.515686593   Using cached setuptools-68.0.0-py3-none-any.whl (804 kB)
+2023/08/02 23:29:46.529689455 Requirement already satisfied: wheel in /opt/Python/3.9.7/lib/python3.9/site-packages (0.37.0)
+2023/08/02 23:29:46.640337728 Collecting wheel
+2023/08/02 23:29:46.651666902   Using cached wheel-0.41.0-py3-none-any.whl (64 kB)
+2023/08/02 23:29:46.935791609 Installing collected packages: wheel, setuptools, pip
+2023/08/02 23:29:46.936016120   Attempting uninstall: wheel
+2023/08/02 23:29:46.936382186     Found existing installation: wheel 0.37.0
+2023/08/02 23:29:46.944368597     Not uninstalling wheel at /opt/Python/3.9.7/lib/python3.9/site-packages, outside environment /opt/rstudio-connect/mnt/app/python/env
+2023/08/02 23:29:46.944382288     Can't uninstall 'wheel'. No files were found to uninstall.
+2023/08/02 23:29:47.825745026   Attempting uninstall: setuptools
+2023/08/02 23:29:47.826046737     Found existing installation: setuptools 57.4.0
+2023/08/02 23:29:53.005080114     Uninstalling setuptools-57.4.0:
+2023/08/02 23:29:53.458038060       Successfully uninstalled setuptools-57.4.0
+2023/08/02 23:29:59.937241239   Attempting uninstall: pip
+2023/08/02 23:29:59.937456843     Found existing installation: pip 21.2.3
+2023/08/02 23:30:16.020116027     Uninstalling pip-21.2.3:
+2023/08/02 23:30:16.303981285       Successfully uninstalled pip-21.2.3
+2023/08/02 23:30:32.105996016 Successfully installed pip-23.2.1 setuptools-68.0.0 wheel-0.41.0
+2023/08/02 23:30:35.467433767 Collecting anyio==3.6.2 (from -r python/requirements.txt (line 1))
+2023/08/02 23:30:35.485694646   Using cached anyio-3.6.2-py3-none-any.whl (80 kB)
+2023/08/02 23:30:35.590976203 Collecting asgiref==3.6.0 (from -r python/requirements.txt (line 2))
+2023/08/02 23:30:35.599516223   Using cached asgiref-3.6.0-py3-none-any.whl (23 kB)
+2023/08/02 23:30:35.698409051 Collecting click==8.1.3 (from -r python/requirements.txt (line 3))
+2023/08/02 23:30:35.707794127   Using cached click-8.1.3-py3-none-any.whl (96 kB)
+2023/08/02 23:30:35.939470384 Collecting fastapi==0.95.2 (from -r python/requirements.txt (line 4))
+2023/08/02 23:30:35.939484124   Obtaining dependency information for fastapi==0.95.2 from https://files.pythonhosted.org/packages/4e/1a/04887c641b67e6649bde845b9a631f73a7abfbe3afda83957e09b95d88eb/fastapi-0.95.2-py3-none-any.whl.metadata
+2023/08/02 23:30:35.949545457   Using cached fastapi-0.95.2-py3-none-any.whl.metadata (24 kB)
+2023/08/02 23:30:36.033087104 Collecting h11==0.14.0 (from -r python/requirements.txt (line 5))
+2023/08/02 23:30:36.041136640   Using cached h11-0.14.0-py3-none-any.whl (58 kB)
+2023/08/02 23:30:36.137883757 Collecting idna==3.4 (from -r python/requirements.txt (line 6))
+2023/08/02 23:30:36.146440917   Using cached idna-3.4-py3-none-any.whl (61 kB)
+2023/08/02 23:30:36.462111192 Collecting pydantic==1.10.7 (from -r python/requirements.txt (line 7))
+2023/08/02 23:30:36.526726963   Downloading pydantic-1.10.7-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.2 MB)
+2023/08/02 23:30:36.606657350      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 42.3 MB/s eta 0:00:00
+2023/08/02 23:30:36.712039914 Collecting pyjwt==2.7.0 (from -r python/requirements.txt (line 8))
+2023/08/02 23:30:36.726192402   Using cached PyJWT-2.7.0-py3-none-any.whl (22 kB)
+2023/08/02 23:30:36.809220280 Collecting semver==2.13.0 (from -r python/requirements.txt (line 9))
+2023/08/02 23:30:36.818197432   Using cached semver-2.13.0-py2.py3-none-any.whl (12 kB)
+2023/08/02 23:30:36.821377057 Requirement already satisfied: six==1.16.0 in /opt/Python/3.9.7/lib/python3.9/site-packages (from -r python/requirements.txt (line 10)) (1.16.0)
+2023/08/02 23:30:36.911572135 Collecting sniffio==1.3.0 (from -r python/requirements.txt (line 11))
+2023/08/02 23:30:36.920499955   Using cached sniffio-1.3.0-py3-none-any.whl (10 kB)
+2023/08/02 23:30:37.068180179 Collecting starlette==0.27.0 (from -r python/requirements.txt (line 12))
+2023/08/02 23:30:37.068675916   Obtaining dependency information for starlette==0.27.0 from https://files.pythonhosted.org/packages/58/f8/e2cca22387965584a409795913b774235752be4176d276714e15e1a58884/starlette-0.27.0-py3-none-any.whl.metadata
+2023/08/02 23:30:37.081941795   Downloading starlette-0.27.0-py3-none-any.whl.metadata (5.8 kB)
+2023/08/02 23:30:37.171333846 Collecting typing-extensions==4.5.0 (from -r python/requirements.txt (line 13))
+2023/08/02 23:30:37.180219685   Using cached typing_extensions-4.5.0-py3-none-any.whl (27 kB)
+2023/08/02 23:30:37.278266477 Collecting uvicorn==0.22.0 (from -r python/requirements.txt (line 14))
+2023/08/02 23:30:37.302845290   Using cached uvicorn-0.22.0-py3-none-any.whl (58 kB)
+2023/08/02 23:30:37.397283874 Collecting waitress==1.4.3 (from -r python/requirements.txt (line 15))
+2023/08/02 23:30:37.406243926   Using cached waitress-1.4.3-py2.py3-none-any.whl (148 kB)
+2023/08/02 23:30:37.499524516 Collecting bjoern==3.1.0 (from -r python/requirements.txt (line 16))
+2023/08/02 23:30:37.499969600   Using cached bjoern-3.1.0-cp39-cp39-linux_x86_64.whl
+2023/08/02 23:30:37.785645973 Using cached fastapi-0.95.2-py3-none-any.whl (56 kB)
+2023/08/02 23:30:37.794852089 Using cached starlette-0.27.0-py3-none-any.whl (66 kB)
+2023/08/02 23:30:38.225487322 Installing collected packages: waitress, bjoern, typing-extensions, sniffio, semver, pyjwt, idna, h11, click, asgiref, uvicorn, pydantic, anyio, starlette, fastapi
+2023/08/02 23:30:48.953538866 Successfully installed anyio-3.6.2 asgiref-3.6.0 bjoern-3.1.0 click-8.1.3 fastapi-0.95.2 h11-0.14.0 idna-3.4 pydantic-1.10.7 pyjwt-2.7.0 semver-2.13.0 sniffio-1.3.0 starlette-0.27.0 typing-extensions-4.5.0 uvicorn-0.22.0 waitress-1.4.3
+2023/08/02 23:30:51.558104833 Packages in the environment: anyio==3.6.2, appdirs==1.4.4, asgiref==3.6.0, bjoern==3.1.0, certifi==2021.10.8, click==8.1.3, distlib, fastapi==0.95.2, filelock, h11==0.14.0, idna==3.4, pydantic==1.10.7, PyJWT==2.7.0, semver==2.13.0, six, sniffio==1.3.0, starlette==0.27.0, typing_extensions==4.5.0, uvicorn==0.22.0, virtualenv, waitress==1.4.3, 
+2023/08/02 23:30:51.560032939 Creating lockfile: python/requirements.txt.lock
+Completed Python build against Python version: '3.9.7'
+Launching Python API...
+Deployment completed successfully.
+         Dashboard content URL: https://rsc.radixu.com/connect/#/apps/ef5aca13-ebb4-4298-a257-9d97952e6126
+         Direct content URL: https://rsc.radixu.com/content/ef5aca13-ebb4-4298-a257-9d97952e6126/
+
+./bin/darwin-amd64/connect-client publish \
+test/sample-content/fastapi-simple \
+ --account-name=dogfood \
+ --title="First Connect-Client Test" \
+--debug=all
+time="2023-08-03T16:23:40.221Z" level=info msg="Client version" version=3703f04
+time="2023-08-03T16:23:40.222Z" level=info msg="Development mode" mode=
+time="2023-08-03T16:23:40.222Z" level=info msg="Development build" DevelopmentBuild=false
+time="2023-08-03T16:23:40.225Z" level=info msg="Loaded manifest from test/sample-content/fastapi-simple/manifest.json"
+time="2023-08-03T16:23:40.225Z" level=info msg="Loaded id metadata from test/sample-content/fastapi-simple/.posit/deployments/dogfood/id.json"
+time="2023-08-03T16:23:40.225Z" level=info msg="Loaded content metadata from test/sample-content/fastapi-simple/.posit/deployments/dogfood/content.json"
+time="2023-08-03T16:23:40.226Z" level=info msg="Loading rsconnect accounts from /Users/billsager/Library/Preferences/org.R-project.R/R/rsconnect"
+time="2023-08-03T16:23:40.241Z" level=info msg="Loading rsconnect-python accounts from /Users/billsager/Library/Application Support/rsconnect-python/servers.json"
+time="2023-08-03T16:23:40.241Z" level=info msg="Deployment type" AppMode=python-fastapi Entrypoint=simple
+time="2023-08-03T16:23:40.241Z" level=info msg="Using Python packages from test/sample-content/fastapi-simple/requirements.txt"
+time="2023-08-03T16:23:40.241Z" level=info msg="Creating bundle from directory" source_dir=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple
+time="2023-08-03T16:23:40.245Z" level=info msg="Adding file" path=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/.posit/deployments/dogfood/content.json size=329
+time="2023-08-03T16:23:40.245Z" level=info msg="Adding file" path=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/.posit/deployments/dogfood/id.json size=228
+time="2023-08-03T16:23:40.245Z" level=info msg="Adding file" path=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/meta.yaml size=63
+time="2023-08-03T16:23:40.246Z" level=info msg="Adding file" path=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/requirements.in size=124
+time="2023-08-03T16:23:40.246Z" level=info msg="Adding file" path=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/requirements.txt size=235
+time="2023-08-03T16:23:40.247Z" level=info msg="Adding file" path=/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/simple.py size=369
+time="2023-08-03T16:23:40.247Z" level=info msg="Bundle created" files=6 total_bytes=1348
+time="2023-08-03T16:23:42.488Z" level=info msg="Building FastAPI application..." bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:42.488Z" level=info msg="Bundle created with Python version 3.8.12 is compatible with environment Local with Python version 3.8.1 from /opt/Python/3.8.1/bin/python3.8 " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:42.488Z" level=info msg="Bundle requested Python version 3.8.12; using /opt/Python/3.8.1/bin/python3.8 which has version 3.8.1" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:42.488Z" level=info msg="2023/08/03 16:23:42.643272084 [rsc-session] Content GUID: 59c84392-e7d0-4117-914a-fcbc5a7a8bc7" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:42.488Z" level=info msg="2023/08/03 16:23:42.643335119 [rsc-session] Content ID: 22040" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:42.488Z" level=info msg="2023/08/03 16:23:42.643342658 [rsc-session] Bundle ID: 33895" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="Building FastAPI application..." bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="Bundle created with Python version 3.8.12 is compatible with environment Local with Python version 3.8.1 from /opt/Python/3.8.1/bin/python3.8 " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="Bundle requested Python version 3.8.12; using /opt/Python/3.8.1/bin/python3.8 which has version 3.8.1" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="2023/08/03 16:23:42.643272084 [rsc-session] Content GUID: 59c84392-e7d0-4117-914a-fcbc5a7a8bc7" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="2023/08/03 16:23:42.643335119 [rsc-session] Content ID: 22040" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="2023/08/03 16:23:42.643342658 [rsc-session] Bundle ID: 33895" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="2023/08/03 16:23:42.847458486 Running on host: dogfood01" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="2023/08/03 16:23:42.917524784 Linux distribution: Ubuntu 18.04.4 LTS (bionic)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="2023/08/03 16:23:42.928770308 Running as user: uid=999(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="2023/08/03 16:23:42.928782839 Connect version: 2023.08.0-dev+2" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.191Z" level=info msg="2023/08/03 16:23:42.928813456 LANG: C.UTF-8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.192Z" level=info msg="2023/08/03 16:23:42.928814795 Working directory: /opt/rstudio-connect/mnt/app" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.192Z" level=info msg="2023/08/03 16:23:42.928823176 Building environment using Python 3.8.1 (default, Jan  8 2020, 22:29:32) [GCC 7.3.0] at /opt/Python/3.8.1/bin/python3.8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.192Z" level=info msg="2023/08/03 16:23:42.946097681 Skipped packages: rsconnect-python==1.17.0" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.192Z" level=info msg="2023/08/03 16:23:42.946111223 Using cached environment: Pa5tKYxKMSNr6xGrmbr8Nw" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.990Z" level=info msg="Building FastAPI application..." bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.990Z" level=info msg="Bundle created with Python version 3.8.12 is compatible with environment Local with Python version 3.8.1 from /opt/Python/3.8.1/bin/python3.8 " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.990Z" level=info msg="Bundle requested Python version 3.8.12; using /opt/Python/3.8.1/bin/python3.8 which has version 3.8.1" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.990Z" level=info msg="2023/08/03 16:23:42.643272084 [rsc-session] Content GUID: 59c84392-e7d0-4117-914a-fcbc5a7a8bc7" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.990Z" level=info msg="2023/08/03 16:23:42.643335119 [rsc-session] Content ID: 22040" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.990Z" level=info msg="2023/08/03 16:23:42.643342658 [rsc-session] Bundle ID: 33895" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.990Z" level=info msg="2023/08/03 16:23:42.847458486 Running on host: dogfood01" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.990Z" level=info msg="2023/08/03 16:23:42.917524784 Linux distribution: Ubuntu 18.04.4 LTS (bionic)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.991Z" level=info msg="2023/08/03 16:23:42.928770308 Running as user: uid=999(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.991Z" level=info msg="2023/08/03 16:23:42.928782839 Connect version: 2023.08.0-dev+2" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.991Z" level=info msg="2023/08/03 16:23:42.928813456 LANG: C.UTF-8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.991Z" level=info msg="2023/08/03 16:23:42.928814795 Working directory: /opt/rstudio-connect/mnt/app" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.991Z" level=info msg="2023/08/03 16:23:42.928823176 Building environment using Python 3.8.1 (default, Jan  8 2020, 22:29:32) [GCC 7.3.0] at /opt/Python/3.8.1/bin/python3.8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.991Z" level=info msg="2023/08/03 16:23:42.946097681 Skipped packages: rsconnect-python==1.17.0" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:43.991Z" level=info msg="2023/08/03 16:23:42.946111223 Using cached environment: Pa5tKYxKMSNr6xGrmbr8Nw" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="Building FastAPI application..." bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="Bundle created with Python version 3.8.12 is compatible with environment Local with Python version 3.8.1 from /opt/Python/3.8.1/bin/python3.8 " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="Bundle requested Python version 3.8.12; using /opt/Python/3.8.1/bin/python3.8 which has version 3.8.1" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="2023/08/03 16:23:42.643272084 [rsc-session] Content GUID: 59c84392-e7d0-4117-914a-fcbc5a7a8bc7" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="2023/08/03 16:23:42.643335119 [rsc-session] Content ID: 22040" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="2023/08/03 16:23:42.643342658 [rsc-session] Bundle ID: 33895" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="2023/08/03 16:23:42.847458486 Running on host: dogfood01" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="2023/08/03 16:23:42.917524784 Linux distribution: Ubuntu 18.04.4 LTS (bionic)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="2023/08/03 16:23:42.928770308 Running as user: uid=999(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="2023/08/03 16:23:42.928782839 Connect version: 2023.08.0-dev+2" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.772Z" level=info msg="2023/08/03 16:23:42.928813456 LANG: C.UTF-8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.773Z" level=info msg="2023/08/03 16:23:42.928814795 Working directory: /opt/rstudio-connect/mnt/app" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.773Z" level=info msg="2023/08/03 16:23:42.928823176 Building environment using Python 3.8.1 (default, Jan  8 2020, 22:29:32) [GCC 7.3.0] at /opt/Python/3.8.1/bin/python3.8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.773Z" level=info msg="2023/08/03 16:23:42.946097681 Skipped packages: rsconnect-python==1.17.0" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:44.773Z" level=info msg="2023/08/03 16:23:42.946111223 Using cached environment: Pa5tKYxKMSNr6xGrmbr8Nw" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="Building FastAPI application..." bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="Bundle created with Python version 3.8.12 is compatible with environment Local with Python version 3.8.1 from /opt/Python/3.8.1/bin/python3.8 " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="Bundle requested Python version 3.8.12; using /opt/Python/3.8.1/bin/python3.8 which has version 3.8.1" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="2023/08/03 16:23:42.643272084 [rsc-session] Content GUID: 59c84392-e7d0-4117-914a-fcbc5a7a8bc7" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="2023/08/03 16:23:42.643335119 [rsc-session] Content ID: 22040" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="2023/08/03 16:23:42.643342658 [rsc-session] Bundle ID: 33895" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="2023/08/03 16:23:42.847458486 Running on host: dogfood01" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="2023/08/03 16:23:42.917524784 Linux distribution: Ubuntu 18.04.4 LTS (bionic)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="2023/08/03 16:23:42.928770308 Running as user: uid=999(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="2023/08/03 16:23:42.928782839 Connect version: 2023.08.0-dev+2" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.487Z" level=info msg="2023/08/03 16:23:42.928813456 LANG: C.UTF-8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.488Z" level=info msg="2023/08/03 16:23:42.928814795 Working directory: /opt/rstudio-connect/mnt/app" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.488Z" level=info msg="2023/08/03 16:23:42.928823176 Building environment using Python 3.8.1 (default, Jan  8 2020, 22:29:32) [GCC 7.3.0] at /opt/Python/3.8.1/bin/python3.8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.488Z" level=info msg="2023/08/03 16:23:42.946097681 Skipped packages: rsconnect-python==1.17.0" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.488Z" level=info msg="2023/08/03 16:23:42.946111223 Using cached environment: Pa5tKYxKMSNr6xGrmbr8Nw" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.488Z" level=info msg="2023/08/03 16:23:45.525177972 Packages in the environment: aiofiles==23.1.0, anyio==3.6.2, asgiref==3.6.0, certifi==2019.11.28, click==8.1.3, fastapi==0.95.2, h11==0.14.0, idna==3.4, pydantic==1.10.7, PyJWT==2.7.0, semver==2.13.0, six==1.16.0, sniffio==1.3.0, starlette==0.27.0, typing_extensions==4.5.0, uvicorn==0.22.0, virtualenv==16.7.5, websockets==11.0.3, " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:45.488Z" level=info msg="2023/08/03 16:23:45.528540168 Creating lockfile: python/requirements.txt.lock" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.360Z" level=info msg="Building FastAPI application..." bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.360Z" level=info msg="Bundle created with Python version 3.8.12 is compatible with environment Local with Python version 3.8.1 from /opt/Python/3.8.1/bin/python3.8 " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.360Z" level=info msg="Bundle requested Python version 3.8.12; using /opt/Python/3.8.1/bin/python3.8 which has version 3.8.1" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.360Z" level=info msg="2023/08/03 16:23:42.643272084 [rsc-session] Content GUID: 59c84392-e7d0-4117-914a-fcbc5a7a8bc7" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.360Z" level=info msg="2023/08/03 16:23:42.643335119 [rsc-session] Content ID: 22040" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.360Z" level=info msg="2023/08/03 16:23:42.643342658 [rsc-session] Bundle ID: 33895" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.360Z" level=info msg="2023/08/03 16:23:42.847458486 Running on host: dogfood01" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.360Z" level=info msg="2023/08/03 16:23:42.917524784 Linux distribution: Ubuntu 18.04.4 LTS (bionic)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.361Z" level=info msg="2023/08/03 16:23:42.928770308 Running as user: uid=999(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.361Z" level=info msg="2023/08/03 16:23:42.928782839 Connect version: 2023.08.0-dev+2" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.361Z" level=info msg="2023/08/03 16:23:42.928813456 LANG: C.UTF-8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.361Z" level=info msg="2023/08/03 16:23:42.928814795 Working directory: /opt/rstudio-connect/mnt/app" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.361Z" level=info msg="2023/08/03 16:23:42.928823176 Building environment using Python 3.8.1 (default, Jan  8 2020, 22:29:32) [GCC 7.3.0] at /opt/Python/3.8.1/bin/python3.8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.361Z" level=info msg="2023/08/03 16:23:42.946097681 Skipped packages: rsconnect-python==1.17.0" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.361Z" level=info msg="2023/08/03 16:23:42.946111223 Using cached environment: Pa5tKYxKMSNr6xGrmbr8Nw" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.361Z" level=info msg="2023/08/03 16:23:45.525177972 Packages in the environment: aiofiles==23.1.0, anyio==3.6.2, asgiref==3.6.0, certifi==2019.11.28, click==8.1.3, fastapi==0.95.2, h11==0.14.0, idna==3.4, pydantic==1.10.7, PyJWT==2.7.0, semver==2.13.0, six==1.16.0, sniffio==1.3.0, starlette==0.27.0, typing_extensions==4.5.0, uvicorn==0.22.0, virtualenv==16.7.5, websockets==11.0.3, " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:46.361Z" level=info msg="2023/08/03 16:23:45.528540168 Creating lockfile: python/requirements.txt.lock" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="Building FastAPI application..." bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="Bundle created with Python version 3.8.12 is compatible with environment Local with Python version 3.8.1 from /opt/Python/3.8.1/bin/python3.8 " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="Bundle requested Python version 3.8.12; using /opt/Python/3.8.1/bin/python3.8 which has version 3.8.1" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.643272084 [rsc-session] Content GUID: 59c84392-e7d0-4117-914a-fcbc5a7a8bc7" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.643335119 [rsc-session] Content ID: 22040" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.643342658 [rsc-session] Bundle ID: 33895" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.847458486 Running on host: dogfood01" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.917524784 Linux distribution: Ubuntu 18.04.4 LTS (bionic)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.928770308 Running as user: uid=999(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.928782839 Connect version: 2023.08.0-dev+2" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.928813456 LANG: C.UTF-8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.928814795 Working directory: /opt/rstudio-connect/mnt/app" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.928823176 Building environment using Python 3.8.1 (default, Jan  8 2020, 22:29:32) [GCC 7.3.0] at /opt/Python/3.8.1/bin/python3.8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.946097681 Skipped packages: rsconnect-python==1.17.0" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:42.946111223 Using cached environment: Pa5tKYxKMSNr6xGrmbr8Nw" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.183Z" level=info msg="2023/08/03 16:23:45.525177972 Packages in the environment: aiofiles==23.1.0, anyio==3.6.2, asgiref==3.6.0, certifi==2019.11.28, click==8.1.3, fastapi==0.95.2, h11==0.14.0, idna==3.4, pydantic==1.10.7, PyJWT==2.7.0, semver==2.13.0, six==1.16.0, sniffio==1.3.0, starlette==0.27.0, typing_extensions==4.5.0, uvicorn==0.22.0, virtualenv==16.7.5, websockets==11.0.3, " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:47.184Z" level=info msg="2023/08/03 16:23:45.528540168 Creating lockfile: python/requirements.txt.lock" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.045Z" level=info msg="Building FastAPI application..." bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.045Z" level=info msg="Bundle created with Python version 3.8.12 is compatible with environment Local with Python version 3.8.1 from /opt/Python/3.8.1/bin/python3.8 " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.045Z" level=info msg="Bundle requested Python version 3.8.12; using /opt/Python/3.8.1/bin/python3.8 which has version 3.8.1" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.045Z" level=info msg="2023/08/03 16:23:42.643272084 [rsc-session] Content GUID: 59c84392-e7d0-4117-914a-fcbc5a7a8bc7" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.045Z" level=info msg="2023/08/03 16:23:42.643335119 [rsc-session] Content ID: 22040" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.045Z" level=info msg="2023/08/03 16:23:42.643342658 [rsc-session] Bundle ID: 33895" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.045Z" level=info msg="2023/08/03 16:23:42.847458486 Running on host: dogfood01" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.045Z" level=info msg="2023/08/03 16:23:42.917524784 Linux distribution: Ubuntu 18.04.4 LTS (bionic)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.046Z" level=info msg="2023/08/03 16:23:42.928770308 Running as user: uid=999(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.046Z" level=info msg="2023/08/03 16:23:42.928782839 Connect version: 2023.08.0-dev+2" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.046Z" level=info msg="2023/08/03 16:23:42.928813456 LANG: C.UTF-8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.046Z" level=info msg="2023/08/03 16:23:42.928814795 Working directory: /opt/rstudio-connect/mnt/app" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.046Z" level=info msg="2023/08/03 16:23:42.928823176 Building environment using Python 3.8.1 (default, Jan  8 2020, 22:29:32) [GCC 7.3.0] at /opt/Python/3.8.1/bin/python3.8" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.046Z" level=info msg="2023/08/03 16:23:42.946097681 Skipped packages: rsconnect-python==1.17.0" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.046Z" level=info msg="2023/08/03 16:23:42.946111223 Using cached environment: Pa5tKYxKMSNr6xGrmbr8Nw" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.046Z" level=info msg="2023/08/03 16:23:45.525177972 Packages in the environment: aiofiles==23.1.0, anyio==3.6.2, asgiref==3.6.0, certifi==2019.11.28, click==8.1.3, fastapi==0.95.2, h11==0.14.0, idna==3.4, pydantic==1.10.7, PyJWT==2.7.0, semver==2.13.0, six==1.16.0, sniffio==1.3.0, starlette==0.27.0, typing_extensions==4.5.0, uvicorn==0.22.0, virtualenv==16.7.5, websockets==11.0.3, " bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.046Z" level=info msg="2023/08/03 16:23:45.528540168 Creating lockfile: python/requirements.txt.lock" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.046Z" level=info msg="Completed Python build against Python version: '3.8.1'" bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.047Z" level=info msg="Launching FastAPI application..." bundle_id=33895 content_id=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 server="https://rsc.radixu.com" source="server deployment log" task_id=PDq3Y68HPjEdf5g5
+time="2023-08-03T16:23:48.047Z" level=info msg="Deployment successful" contentID=59c84392-e7d0-4117-914a-fcbc5a7a8bc7 dashboardURL="https://rsc.radixu.com/connect/#/apps/59c84392-e7d0-4117-914a-fcbc5a7a8bc7" directURL="https://rsc.radixu.com/content/59c84392-e7d0-4117-914a-fcbc5a7a8bc7" serverURL="https://rsc.radixu.com"
+{"dashboard-url":"https://rsc.radixu.com/connect/#/apps/59c84392-e7d0-4117-914a-fcbc5a7a8bc7","direct-url":"https://rsc.radixu.com/content/59c84392-e7d0-4117-914a-fcbc5a7a8bc7"}
+time="2023-08-03T16:23:48.048Z" level=info msg="Saved id metadata to test/sample-content/fastapi-simple/.posit/deployments/dogfood/id.json"
+time="2023-08-03T16:23:48.048Z" level=info msg="Saved content metadata to test/sample-content/fastapi-simple/.posit/deployments/dogfood/content.json"
+

@@ -147,7 +147,24 @@ image:
             ./build/package
     fi
 
+# Start the agent and show the UI
+start-agent-for-e2e:
+    #!/bin/bash
+    set -exuo pipefail
 
+    GOOS=$({{ _with_runner }} go env GOOS)
+    # remove \r from string when executed through docker
+    GOOS="${GOOS%%[[:cntrl:]]}"
+
+    GOARCH=$({{ _with_runner }} go env GOARCH)
+    # remove \r from string when executed through docker
+    GOARCH="${GOARCH%%[[:cntrl:]]}"
+
+    {{ _with_runner }} ./bin/$GOOS-$GOARCH/connect-client publish-ui \
+        ./test/sample-content/fastapi-simple \
+        --listen=127.0.0.1:9000 \
+        --token=abc123
+    
 [private]
 _with_docker *args: 
     docker run --rm {{ _interactive }} \
