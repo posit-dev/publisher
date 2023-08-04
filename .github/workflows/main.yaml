@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 # A note on debugging a github step:
 #   You can ssh into the github action environment and poke around by using
@@ -398,60 +399,60 @@ jobs:
         run: PATH="${PATH}:/usr/local/bin" just web/test-e2e
 
   test-windows-client:
-    needs: build-agent
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
-        with:
-          name: agent-artifacts
-          path: bin/
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run Windows Tests
-        env:
-          CLIENT: windows-latest
-          # bats reads the load libraries from relative path only in Windows
-          BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
-          BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
-        run: |
-          echo $PATH
-          pwd
-          ls bin
-          chmod +x bin\*\*
-          just test/bats-install
-          $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
-          $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
-          cd $env:GITHUB_WORKSPACE\test
-          just run-client $env:CLIENT
-
+      needs: build-agent
+      runs-on: windows-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: extractions/setup-just@v1
+        - uses: actions/download-artifact@v3
+          with:
+            name: agent-artifacts
+            path: bin/
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+        - name: Run Windows Tests
+          env:
+            CLIENT: windows-latest
+            # bats reads the load libraries from relative path only in Windows
+            BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
+            BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
+          run: |
+            echo $PATH
+            pwd
+            ls bin
+            chmod +x bin\*\*
+            just test/bats-install
+            $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
+            $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
+            cd $env:GITHUB_WORKSPACE\test
+            just run-client $env:CLIENT
+    
   test-macos-client:
-    needs: build-agent
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
-        with:
-          name: agent-artifacts
-          path: bin/
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run macos
-        env:
-          CLIENT: macos-latest
-          BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
-          BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
-          BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
-        run: |
-          chmod +x bin/*/*
-          just test/bats-install
-          PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
-          cd ${{ github.workspace }}/test
-          just run-client ${CLIENT}
+      needs: build-agent
+      runs-on: macos-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: extractions/setup-just@v1
+        - uses: actions/download-artifact@v3
+          with:
+            name: agent-artifacts
+            path: bin/
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+        - name: Run macos
+          env:
+            CLIENT: macos-latest
+            BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
+            BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
+            BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
+          run: |
+            chmod +x bin/*/*
+            just test/bats-install
+            PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
+            cd ${{ github.workspace }}/test
+            just run-client ${CLIENT}
 
   test-linux-clients:
     needs: build-agent

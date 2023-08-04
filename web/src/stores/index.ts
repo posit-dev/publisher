@@ -24,6 +24,7 @@ declare module 'pinia' {
  * with the Store instance.
  */
 
+// eslint-disable-next-line no-restricted-syntax
 export default store((/* { ssrContext } */) => {
   const pinia = createPinia();
 

@@ -18,6 +18,7 @@ import axios from 'axios';
 // for each client)
 const api = axios.create({ baseURL: 'https://api.example.com' });
 
+// eslint-disable-next-line no-restricted-syntax
 export default boot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
 

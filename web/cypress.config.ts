@@ -2,6 +2,7 @@ import registerCodeCoverageTasks from '@cypress/code-coverage/task';
 import { injectQuasarDevServerConfig } from '@quasar/quasar-app-extension-testing-e2e-cypress/cct-dev-server';
 import { defineConfig } from 'cypress';
 
+// eslint-disable-next-line no-restricted-syntax
 export default defineConfig({
   fixturesFolder: 'test/cypress/fixtures',
   screenshotsFolder: 'test/cypress/screenshots',
