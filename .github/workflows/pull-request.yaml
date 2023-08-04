@@ -482,8 +482,7 @@ jobs:
         run: |
           just test/ui-client ${client}
           just web/build
-          export CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' nohup.out) 
-          just web/test-e2e
+          CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' nohup.out) just web/test-e2e
 
 
   build-linux-amd64:
