@@ -160,6 +160,8 @@ start-agent-for-e2e:
     # remove \r from string when executed through docker
     GOARCH="${GOARCH%%[[:cntrl:]]}"
 
+    echo "Working directory is $(pwd)"
+
     ./bin/$GOOS-$GOARCH/connect-client publish-ui \
         ./test/sample-content/fastapi-simple \
         --listen=127.0.0.1:9000 \

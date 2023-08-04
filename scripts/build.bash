@@ -63,6 +63,7 @@ do
    		echo 'An error has occurred! Aborting the script execution...'
 		exit 1
     else
+        echo "Making $output_name executable"
         chmod +x "$output_name"
 	fi
 done
