@@ -338,7 +338,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod +x bin\*\*
+          chmod -R +x bin
       -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
@@ -383,7 +383,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod +x bin\*\*
+          chmod -r +x bin
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -418,7 +418,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod +x bin\*\*
+          chmod -r +x bin
       - 
         name: Run Windows Tests
         env:
@@ -454,7 +454,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod +x bin\*\*
+          chmod -r +x bin
       - 
         name: Run MacOs Tests
         env:
@@ -549,7 +549,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod +x bin\*\*
+          chmod -r +x bin
       -
         name: Cache docker image (restore)
         id: cache-linux-amd64-image
@@ -652,7 +652,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod +x bin\*\*
+          chmod -r +x bin
 
       # these are required to run docker on amd64 and arm64 platforms
       - 
