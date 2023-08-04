@@ -338,13 +338,19 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin/**/connect-client
+          sudo chmod -R +x ./bin/**/connect-client
       -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
         with:
           name: agent-artifacts
           path: bin/
+      - 
+        name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
   ux-e2e-tests:
     needs: build-agent
