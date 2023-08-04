@@ -35,7 +35,7 @@ type Match struct {
 	Source   MatchSource // type of match, e.g. file or a caller-provided value
 	Pattern  string      // exclusion pattern as read from the file
 	glob     glob.Glob   // globs constructed to match the pattern
-	FilePath util.Path   // path to the file where this was defined, empty if not from a file
+	FilePath string      // path to the file where this was defined, empty if not from a file
 	Line     int         // line in the file where this was defined, 0 if not from a file
 }
 
@@ -194,7 +194,7 @@ func (ign *GitIgnoreList) append(path util.Path, dir []string) error {
 			Source:   MatchSourceFile,
 			Pattern:  s,
 			glob:     g,
-			FilePath: path,
+			FilePath: path.Path(),
 			Line:     line,
 		}
 		ignf.matches = append(ignf.matches, match)
