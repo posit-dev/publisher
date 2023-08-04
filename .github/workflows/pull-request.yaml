@@ -338,7 +338,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x bin
+          chmod -R +x ./bin/**/connect-client
       -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
@@ -383,7 +383,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -r +x bin
+          chmod -R +x ./bin/**/connect-client
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -418,7 +418,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -r +x bin
+          chmod -R +x ./bin/**/connect-client
       - 
         name: Run Windows Tests
         env:
@@ -454,7 +454,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -r +x bin
+          chmod -R +x ./bin/**/connect-client
       - 
         name: Run MacOs Tests
         env:
@@ -549,7 +549,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -r +x bin
+          chmod -R +x ./bin/**/connect-client
       -
         name: Cache docker image (restore)
         id: cache-linux-amd64-image
@@ -652,7 +652,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -r +x bin
+          chmod -R +x ./bin/**/connect-client
 
       # these are required to run docker on amd64 and arm64 platforms
       - 
