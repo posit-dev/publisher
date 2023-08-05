@@ -341,7 +341,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin/**/connect-client
+          sudo chmod -R +x ./bin/**/connect-client
       -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
