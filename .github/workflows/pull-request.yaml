@@ -345,12 +345,6 @@ jobs:
         with:
           name: agent-artifacts
           path: bin/
-      - 
-        name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
 
   ux-e2e-tests:
     needs: build-agent
@@ -402,6 +396,12 @@ jobs:
       - 
         name: UX E2E Tests
         run: PATH="${PATH}:/usr/local/bin" just web/test-e2e
+      - 
+        name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
   test-windows-client:
     needs: build-agent
