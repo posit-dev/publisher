@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -196,7 +195,7 @@ func (s *BundlerSuite) TestNewBundlerExcludedFile() {
 	s.Nil(err)
 	s.Equal([]string{
 		"app.py",
-	}, getManifestFilenames(manifest))
+	}, manifest.GetFilenames())
 }
 
 func (s *BundlerSuite) TestNewBundlerWalkerErr() {
@@ -350,7 +349,7 @@ func (s *BundlerSuite) TestCreateManifest() {
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
-	}, getManifestFilenames(manifest))
+	}, manifest.GetFilenames())
 }
 
 func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
@@ -369,7 +368,7 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
-	}, getManifestFilenames(manifest))
+	}, manifest.GetFilenames())
 
 	dest := new(bytes.Buffer)
 	manifest2, err := bundler.CreateBundle(dest)
@@ -378,7 +377,7 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
-	}, getManifestFilenames(manifest2))
+	}, manifest2.GetFilenames())
 }
 
 func (s *BundlerSuite) TestMultipleCallsFromManifest() {
@@ -400,7 +399,7 @@ func (s *BundlerSuite) TestMultipleCallsFromManifest() {
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
-	}, getManifestFilenames(manifest))
+	}, manifest.GetFilenames())
 
 	dest := new(bytes.Buffer)
 	manifest2, err := bundler.CreateBundle(dest)
@@ -409,7 +408,7 @@ func (s *BundlerSuite) TestMultipleCallsFromManifest() {
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
-	}, getManifestFilenames(manifest2))
+	}, manifest2.GetFilenames())
 }
 
 func (s *BundlerSuite) TestNewBundleFromManifest() {
@@ -427,7 +426,7 @@ func (s *BundlerSuite) TestNewBundleFromManifest() {
 	s.Nil(err)
 	manifestOut, err := bundler.CreateBundle(dest)
 	s.Nil(err)
-	s.Equal(getManifestFilenames(s.manifest), getManifestFilenames(manifestOut))
+	s.Equal(s.manifest.GetFilenames(), manifestOut.GetFilenames())
 	s.Greater(dest.Len(), 0)
 }
 
@@ -466,7 +465,7 @@ func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
 		"linked_dir/testfile",
 		"linked_file",
 		"somefile",
-	}, getManifestFilenames(manifest))
+	}, manifest.GetFilenames())
 }
 
 func (s *BundlerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
@@ -482,13 +481,4 @@ func (s *BundlerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	manifest, err := bundler.CreateBundle(dest)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(manifest)
-}
-
-func getManifestFilenames(m *Manifest) []string {
-	names := []string{}
-	for name := range m.Files {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
 }

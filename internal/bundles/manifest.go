@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/util"
@@ -251,4 +252,13 @@ func (manifest *Manifest) ResetEmptyFields() {
 	if reflect.DeepEqual(manifest.Environment, &Environment{}) {
 		manifest.Environment = nil
 	}
+}
+
+func (manifest *Manifest) GetFilenames() []string {
+	names := []string{}
+	for name := range manifest.Files {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
