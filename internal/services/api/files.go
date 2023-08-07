@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/services/api/pathnames"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -93,14 +94,14 @@ func NewFilesController(fs afero.Fs, log rslog.Logger) http.HandlerFunc {
 }
 
 func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Request) {
-	var p pathname
+	var p pathnames.Pathname
 	if q := r.URL.Query(); q.Has("pathname") {
-		p = pathname(q.Get("pathname"))
+		p = pathnames.Create(q.Get("pathname"), afs )
 	} else {
-		p = pathname(".")
+		p = pathnames.Create(".", afs)
 	}
 
-	ok, err := p.isSafe(log)
+	ok, err := p.IsSafe()
 	if err != nil {
 		internalError(w, log, err)
 		return
