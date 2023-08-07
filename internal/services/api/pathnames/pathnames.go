@@ -3,12 +3,12 @@ package pathnames
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
 
@@ -22,10 +22,14 @@ func Create(s string, afs afero.Fs) Pathname {
 	return Pathname{s, afs}
 }
 
+func (p Pathname) String() string {
+	return p.v
+}
+
 // isSafe returns (true, nil) if the path is safe
 //
 // When the pathname is not safe, the consumer should avoid accessing the information that the pathname points to.
-func (p Pathname) IsSafe() (bool, error) {
+func (p Pathname) IsSafe(log rslog.Logger) (bool, error) {
 
 	p = p.clean()
 	s, err := p.isSymlink()
@@ -33,7 +37,8 @@ func (p Pathname) IsSafe() (bool, error) {
 		return false, err
 	}
 	if s {
-		return false, fmt.Errorf("the provided pathname '%s' is a symlink", p)
+		log.Errorf("the provided pathname '%s' is a symlink", p)
+		return false, nil
 	}
 
 	t, err := p.isTrusted()
@@ -41,7 +46,8 @@ func (p Pathname) IsSafe() (bool, error) {
 		return false, err
 	}
 	if !t {
-		return false, fmt.Errorf("the provided pathname '%s' is not trusted", p)
+		log.Errorf("the provided pathname '%s' is not trusted", p)
+		return false, nil
 	}
 
 	return true, nil

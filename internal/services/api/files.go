@@ -101,7 +101,7 @@ func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Requ
 		p = pathnames.Create(".", afs)
 	}
 
-	ok, err := p.IsSafe()
+	ok, err := p.IsSafe(log)
 	if err != nil {
 		internalError(w, log, err)
 		return
@@ -109,12 +109,13 @@ func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Requ
 
 	// if pathname is not safe, return 403 - Forbidden
 	if !ok {
-		log.Warnf("the pathname is not safe %s", p)
-		w.WriteHeader(403)
+		log.Warnf("the pathname '%s' is not safe", p)
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(http.StatusText(http.StatusForbidden)))
 		return
 	}
 
-	path := util.NewPath(string(p), afs)
+	path := util.NewPath(p.String(), afs)
 	file, err := toFile(path, log)
 	if err != nil {
 		internalError(w, log, err)
@@ -126,6 +127,7 @@ func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Requ
 }
 
 func toFile(path util.Path, log rslog.Logger) (*file, error) {
+	path = path.Clean()
 	ignore := gitignore.New(path)
 	isExcluded := ignore.Match(path.Path())
 	root, err := newFile(path, isExcluded)

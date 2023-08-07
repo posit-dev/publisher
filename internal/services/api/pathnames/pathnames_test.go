@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,7 +25,8 @@ func (s *PathnamesSuite) TestIsSafe() {
 	afs := afero.NewMemMapFs()
 	afs.Create("pathname")
 	p := Create("pathname", afs)
-	ok, err := p.IsSafe()
+	log := rslog.NewDiscardingLogger()
+	ok, err := p.IsSafe(log)
 	s.Nil(err)
 	s.True(ok)
 }
