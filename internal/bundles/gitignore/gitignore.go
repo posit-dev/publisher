@@ -32,11 +32,11 @@ const MatchSourceBuiltIn MatchSource = "built-in"
 const MatchSourceUser MatchSource = "user"
 
 type Match struct {
-	Source   MatchSource // type of match, e.g. file or a caller-provided value
-	Pattern  string      // exclusion pattern as read from the file
+	Source   MatchSource `json:"source"`  // type of match, e.g. file or a caller-provided value
+	Pattern  string      `json:"pattern"` // exclusion pattern as read from the file
 	glob     glob.Glob   // globs constructed to match the pattern
-	FilePath string      // path to the file where this was defined, empty if not from a file
-	Line     int         // line in the file where this was defined, 0 if not from a file
+	FilePath string      `json:"file_path"` // path to the file where this was defined, empty if not from a file
+	Line     int         `json:"line"`      // line in the file where this was defined, 0 if not from a file
 }
 
 type ignoreFile struct {
