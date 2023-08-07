@@ -53,14 +53,17 @@ func (s *FilesSuite) Test_getFile() {
 }
 
 func (s *FilesSuite) Test_getFile_pathname() {
-	fs := afero.NewMemMapFs()
-	pathname, _ := afero.TempDir(fs, "", "")
+	afs := afero.NewMemMapFs()
+	pathname := "pathname"
+	_, err := afs.Create(pathname)
+	s.NoError(err)
+
 	req, err := http.NewRequest("GET", "?pathname="+pathname, nil)
 	s.NoError(err)
 
 	log := rslog.NewDiscardingLogger()
 	rec := httptest.NewRecorder()
-	getFile(fs, log, rec, req)
+	getFile(afs, log, rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
