@@ -27,7 +27,6 @@ export type DeploymentFile = {
     is_dir: boolean
     is_entrypoint: boolean
     is_file: boolean
-    is_excluded: boolean
     files: DeploymentFile[]
     exclusion: ExclusionMatch | null
 }
