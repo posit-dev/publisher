@@ -25,6 +25,7 @@ func NewSelectedFilesEndpoint(deploymentState *state.Deployment, logger rslog.Lo
 			err := decoder.Decode(&input)
 			if err != nil {
 				api.BadRequestJson(w, req, logger, err)
+				return
 			}
 			// Clear out existing files, then save the new ones.
 			manifest := &deploymentState.Manifest
@@ -43,6 +44,7 @@ func NewSelectedFilesEndpoint(deploymentState *state.Deployment, logger rslog.Lo
 			json.NewEncoder(w).Encode(deploymentState)
 		} else {
 			api.MethodNotAllowed(w, req, logger)
+			return
 		}
 	}
 }
