@@ -1,26 +1,6 @@
 version: '3'
 
 services:
-  linux-amd64:
-    platform: linux/amd64
-    build:
-      context: ./docker
-      dockerfile: linux.Dockerfile
-    volumes: 
-      - ../:/publishing-client
-    environment:
-      BUILD-RUNNER: "linux-amd64"
-  
-  linux-arm64:
-    platform: linux/arm64
-    build:
-      context: ./docker
-      dockerfile: linux.Dockerfile
-    volumes: 
-      - ../:/publishing-client
-    environment:
-      BUILD-RUNNER: "linux-arm64"
-  
   connect:
     hostname: connect
     image: rstudio/rstudio-connect:jammy
