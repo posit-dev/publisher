@@ -13,7 +13,7 @@ import (
 )
 
 type Pathname struct {
-	v string
+	v   string
 	afs afero.Fs
 }
 

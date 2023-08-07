@@ -31,7 +31,6 @@ func (s *PathnamesSuite) TestIsSafe() {
 	s.True(ok)
 }
 
-
 func (s *PathnamesSuite) TestClean() {
 	sep := os.PathSeparator
 	builder := strings.Builder{}
