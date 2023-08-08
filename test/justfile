@@ -93,6 +93,23 @@ local-ui-client target:
     just _test-client darwin-amd64
   fi
 
+ui-client target:
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux-amd64" ]]; then
+    _platform="linux/amd64"
+  elif [[ {{target}} =~ "linux-arm64" ]]; then
+    _platform="linux/arm64"
+  fi
+  if [[ {{target}} =~ "linux" ]]; then
+    docker run \
+    --platform "${_platform}" \
+    -e DOCKER="false" \
+    -v "$(pwd)"/../:/publishing-client \
+    -w /publishing-client/ \
+    --rm {{_tag}}-{{target}} \
+    just web/test-ci-e2e
+  fi
+
 _test-client target:
   bats --tap -T -r ./bats/
 

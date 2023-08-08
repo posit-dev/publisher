@@ -594,7 +594,7 @@ jobs:
           DOCKER: "false"
         run: |
           just web/build && \
-          just web/test-e2e
+          just test/ui-client ${client}
   
   build-linux-arm64:
     runs-on: ubuntu-latest
@@ -715,4 +715,4 @@ jobs:
           DOCKER: "false"
         run: |
           just web/build && \
-          just web/test-e2e
+          just test/ui-client ${client}
