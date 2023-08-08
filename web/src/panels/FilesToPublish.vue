@@ -42,7 +42,7 @@ const files = ref<QTreeNode[]>([]);
 function fileToTreeNode(file: DeploymentFile): QTreeNode {
   const node: QTreeNode = {
     key: file.pathname,
-    label: file.pathname,
+    label: file.base_name,
     children: file.files.map(fileToTreeNode),
   };
 
