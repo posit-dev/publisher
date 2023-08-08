@@ -12,5 +12,5 @@ export type DeploymentFile = {
     is_entrypoint: boolean
     is_file: boolean
     is_excluded: boolean
-    files: File[]
+    files: DeploymentFile[]
 }
