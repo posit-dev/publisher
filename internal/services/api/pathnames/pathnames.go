@@ -3,27 +3,27 @@ package pathnames
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"io/fs"
 	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
 
 type Pathname struct {
-	v   string
-	afs afero.Fs
+	path util.Path
+	afs  afero.Fs
 }
 
 // Create returns a new instance of Pathname
 func Create(s string, afs afero.Fs) Pathname {
-	return Pathname{s, afs}
+	p := util.NewPath(s, afs)
+	return Pathname{p, afs}
 }
 
 func (p Pathname) String() string {
-	return p.v
+	return p.path.String()
 }
 
 // isSafe returns (true, nil) if the path is safe
@@ -55,26 +55,24 @@ func (p Pathname) IsSafe(log rslog.Logger) (bool, error) {
 
 // clean returns the cleaned pathname
 func (p Pathname) clean() Pathname {
-	return Create(filepath.Clean(p.v), p.afs)
+	path := p.path.Clean()
+	p.path = path
+	return p
 }
 
-// isSymlink returns true, nil if the path is a symlink
+// isSymlink returns (true, nil) if the path is a symlink
 func (p Pathname) isSymlink() (bool, error) {
-	_, err := os.Stat(p.v)
+	l, ok, err := p.path.LstatIfPossible()
 	if err != nil {
-		op := err.(*fs.PathError).Op
-		switch op {
-		case "stat":
-			return false, nil
-		case "lstat":
-			// skip
-		default:
-			return false, err
+		// if an error occurs and lstat is called, check if the error op is lstat
+		if ok {
+			perr, ok := err.(*os.PathError)
+			// if cast is ok and err op is lstat, return (false, nil) since it is not a symlink
+			if ok && perr.Op == "lstat" {
+				return false, nil
+			}
 		}
-	}
-
-	l, err := os.Lstat(p.v)
-	if err != nil {
+		// otherwise, return (false, err) if lstat was not called.
 		return false, err
 	}
 	return (l.Mode() & os.ModeSymlink) != 0, nil
@@ -82,21 +80,21 @@ func (p Pathname) isSymlink() (bool, error) {
 
 // isTrusted returns true, nil if the path is trusted
 func (p Pathname) isTrusted() (bool, error) {
-	tr := "."
-	_, err := filepath.Rel(tr, p.v)
+	root := util.NewPath(".", p.afs) // todo - replace this with the target directory
+	_, err := p.path.Rel(root)
 	if err != nil {
 		return false, err
 	}
 
-	tra, err := filepath.Abs(tr)
+	aroot, err := root.Abs()
 	if err != nil {
 		return false, err
 	}
 
-	va, err := filepath.Abs(p.v)
+	apath, err := p.path.Abs()
 	if err != nil {
 		return false, err
 	}
 
-	return strings.HasPrefix(va, tra), nil
+	return strings.HasPrefix(apath.String(), aroot.String()), nil
 }

@@ -4,6 +4,7 @@ package pathnames
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -42,7 +43,8 @@ func (s *PathnamesSuite) TestClean() {
 	afs := afero.NewMemMapFs()
 	p := Create(builder.String(), afs)
 	c := p.clean()
-	e := Create("pathname/pathname", afs)
+
+	e := Create(filepath.Join("pathname", "pathname"), afs)
 	s.Equal(e, c)
 }
 
@@ -105,8 +107,8 @@ func (s *PathnamesSuite) TestIsSymlink_False_FileMissing() {
 }
 
 type isTrustedTest struct {
-	v string
-	e bool
+	path string // the target pathname
+	exp  bool   // the expected result
 }
 
 var isTrustedTests = []isTrustedTest{
@@ -131,8 +133,8 @@ var isTrustedTests = []isTrustedTest{
 
 func (s *PathnamesSuite) TestIsTrusted() {
 	for _, t := range isTrustedTests {
-		p := Create(t.v, nil)
-		r, _ := p.isTrusted()
-		s.Equalf(t.e, r, "%s should be %t, found %t", t.v, t.e, r)
+		p := Create(t.path, nil)
+		res, _ := p.isTrusted()
+		s.Equalf(t.exp, res, "%s should be %t, found %t", t.path, t.exp, res)
 	}
 }
