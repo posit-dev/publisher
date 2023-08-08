@@ -6,6 +6,7 @@ export enum DeploymentFileType {
 export type DeploymentFile = {
     file_type: DeploymentFileType
     pathname: string
+    base_name: string
     size: number
     modified_datetime: string
     is_dir: boolean
