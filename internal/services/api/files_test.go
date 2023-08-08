@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/util"
@@ -54,10 +55,8 @@ func (s *FilesSuite) Test_getFile() {
 
 func (s *FilesSuite) Test_getFile_pathname() {
 	afs := afero.NewMemMapFs()
-	pathname := "pathname"
-	_, err := afs.Create(pathname)
-	s.NoError(err)
-
+	pathname, _ := afero.TempDir(afs, "", "")
+	basename := filepath.Base(pathname)
 	req, err := http.NewRequest("GET", "?pathname="+pathname, nil)
 	s.NoError(err)
 
@@ -74,4 +73,5 @@ func (s *FilesSuite) Test_getFile_pathname() {
 	s.NoError(dec.Decode(res))
 
 	s.Equal(pathname, res.Pathname)
+	s.Equal(basename, res.BaseName)
 }
