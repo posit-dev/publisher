@@ -18,6 +18,7 @@
     <q-card class="bg-grey-9">
       <q-card-section>
         <q-tree
+          v-model:ticked="filesStore.filesToPublish"
           :nodes="files"
           node-key="key"
           tick-strategy="leaf"
@@ -34,8 +35,10 @@ import type { QTree, QTreeNode } from 'quasar';
 import { ref } from 'vue';
 
 import { useApi, DeploymentFile } from 'src/api';
+import { useFilesStore } from 'src/stores/files';
 
 const api = useApi();
+const filesStore = useFilesStore();
 
 const files = ref<QTreeNode[]>([]);
 
