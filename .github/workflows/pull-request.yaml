@@ -156,6 +156,12 @@ jobs:
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
+      -
+        name: Download Web-UX Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: web-ux
+          path: ./web/dist/spa
       - 
         name: Restore Cache UX node_modules
         id: node_modules
