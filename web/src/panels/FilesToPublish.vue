@@ -46,11 +46,11 @@ const filesStore = useFilesStore();
 const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);
 
-function fileToTreeNode(file: DeploymentFile): QTreeNode {
+function fileToTreeNode(file: DeploymentFile, isParent = false): QTreeNode {
   const node: QTreeNode = {
     [NODE_KEY]: file.pathname,
-    label: file.base_name,
-    children: file.files.map(fileToTreeNode),
+    label: isParent ? file.pathname : file.base_name,
+    children: file.files.map(child => fileToTreeNode(child)),
   };
 
   return node;
@@ -60,7 +60,7 @@ async function getFiles() {
   const response = await api.files.get({ pathname: 'web/src/api' });
   const file = response.data;
 
-  files.value = [fileToTreeNode(file)];
+  files.value = [fileToTreeNode(file, true)];
 
   if (file.is_dir) {
     // start with the top level directory expanded
