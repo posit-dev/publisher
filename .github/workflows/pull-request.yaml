@@ -715,4 +715,4 @@ jobs:
           DOCKER: "false"
         run: |
           just web/build && \
-          # just web/test-e2e
+          just web/test-e2e
