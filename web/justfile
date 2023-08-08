@@ -54,6 +54,7 @@ test-e2e:
     export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
     # install cypress
     npx cypress install
+
     npx quasar test --e2e cypress
 
 # run unit tests one time
