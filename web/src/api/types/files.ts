@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 export enum DeploymentFileType {
     REGULAR = 'REGULAR',
     DIRECTORY = 'DIR',

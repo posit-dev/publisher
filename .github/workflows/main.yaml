@@ -20,9 +20,8 @@ on:
 
 # build docker image: actions/upload-artifact@v3, with path: /bin
 # - build UX
-#   - validate UX
+#   - validate codebase
 #   - test UX unit tests
-#   - validate agent
 #   - agent tests
 #   - build agent
 #     - UX e2e tests
@@ -132,7 +131,7 @@ jobs:
           name: web-ux
           path: ./web/dist/spa
 
-  validate-ux:
+  validate-codebase:
     needs: build-ux
     runs-on: ubuntu-latest
     defaults:
@@ -160,6 +159,12 @@ jobs:
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
+      -
+        name: Download Web-UX Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: web-ux
+          path: ./web/dist/spa
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -170,8 +175,10 @@ jobs:
           path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
       -
-        name: Validate the UX
-        run: just web/validate
+        name: Validate the codebase
+        run: |
+          just validate
+          just validate-post
 
   test-ux:
     needs: build-ux
@@ -222,46 +229,6 @@ jobs:
       -
         name: UX Go Race Tests
         run: just web/test-race
-
-  validate-agent:
-    needs: build-ux
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      - 
-        name: Setup Just
-        uses: extractions/setup-just@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Restore Cache docker image
-        id: cache-docker-image
-        uses: actions/cache/restore@v3
-        env:
-          cache-name: cache-docker-image
-        with:
-          path: /tmp/build-image.tar
-          key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('/tmp/build-image.tar') }}
-      -
-        name: Load Docker Image
-        run: |
-          docker load --input /tmp/build-image.tar
-          docker image ls -a
-      -
-        name: Download Web-UX SPA Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: web-ux
-          path: ./web/dist/spa
-      -
-        name: Validate Agent
-        run: |
-          just validate-agent
-          just validate-post
 
   agent-tests:
     needs: build-ux
