@@ -96,12 +96,12 @@ func NewFilesController(fs afero.Fs, log rslog.Logger) http.HandlerFunc {
 func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Request) {
 	var p pathnames.Pathname
 	if q := r.URL.Query(); q.Has("pathname") {
-		p = pathnames.Create(q.Get("pathname"), afs)
+		p = pathnames.Create(q.Get("pathname"), afs, log)
 	} else {
-		p = pathnames.Create(".", afs)
+		p = pathnames.Create(".", afs, log)
 	}
 
-	ok, err := p.IsSafe(log)
+	ok, err := p.IsSafe()
 	if err != nil {
 		internalError(w, log, err)
 		return

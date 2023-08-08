@@ -4,8 +4,6 @@ package pathnames
 
 import (
 	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -16,36 +14,24 @@ import (
 
 type PathnamesSuite struct {
 	utiltest.Suite
+	log rslog.Logger
 }
 
 func TestPathnamesSuite(t *testing.T) {
 	suite.Run(t, new(PathnamesSuite))
 }
 
+func (s *PathnamesSuite) SetupSuite() {
+	s.log = rslog.NewDiscardingLogger()
+}
+
 func (s *PathnamesSuite) TestIsSafe() {
 	afs := afero.NewMemMapFs()
 	afs.Create("pathname")
-	p := Create("pathname", afs)
-	log := rslog.NewDiscardingLogger()
-	ok, err := p.IsSafe(log)
+	p := Create("pathname", afs, s.log)
+	ok, err := p.IsSafe()
 	s.Nil(err)
 	s.True(ok)
-}
-
-func (s *PathnamesSuite) TestClean() {
-	sep := os.PathSeparator
-	builder := strings.Builder{}
-	builder.WriteString("pathname")
-	builder.WriteString(string(sep))
-	builder.WriteString(string(sep))
-	builder.WriteString("pathname")
-
-	afs := afero.NewMemMapFs()
-	p := Create(builder.String(), afs)
-	c := p.clean()
-
-	e := Create(filepath.Join("pathname", "pathname"), afs)
-	s.Equal(e, c)
 }
 
 func (s *PathnamesSuite) TestIsSymlink_True() {
@@ -70,7 +56,7 @@ func (s *PathnamesSuite) TestIsSymlink_True() {
 	defer os.Remove(l.Name())
 
 	afs := afero.NewOsFs()
-	p := Create(l.Name(), afs)
+	p := Create(l.Name(), afs, s.log)
 	ok, err := p.isSymlink()
 	s.Nil(err)
 	s.True(ok)
@@ -85,7 +71,7 @@ func (s *PathnamesSuite) TestIsSymlink_False_FileFound() {
 	defer os.Remove(f.Name())
 
 	afs := afero.NewOsFs()
-	p := Create(f.Name(), afs)
+	p := Create(f.Name(), afs, s.log)
 	ok, err := p.isSymlink()
 	s.Nil(err)
 	s.False(ok)
@@ -100,7 +86,7 @@ func (s *PathnamesSuite) TestIsSymlink_False_FileMissing() {
 	os.Remove(f.Name())
 
 	afs := afero.NewOsFs()
-	p := Create(f.Name(), afs)
+	p := Create(f.Name(), afs, s.log)
 	ok, err := p.isSymlink()
 	s.Nil(err)
 	s.False(ok)
@@ -133,7 +119,7 @@ var isTrustedTests = []isTrustedTest{
 
 func (s *PathnamesSuite) TestIsTrusted() {
 	for _, t := range isTrustedTests {
-		p := Create(t.path, nil)
+		p := Create(t.path, nil, s.log)
 		res, _ := p.isTrusted()
 		s.Equalf(t.exp, res, "%s should be %t, found %t", t.path, t.exp, res)
 	}
