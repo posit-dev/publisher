@@ -17,9 +17,8 @@ on:
 
 # build docker image: actions/upload-artifact@v3, with path: /bin
 # - build UX
-#   - validate UX
+#   - validate codebase
 #   - test UX unit tests
-#   - validate agent
 #   - agent tests
 #   - build agent
 #     - UX e2e tests
