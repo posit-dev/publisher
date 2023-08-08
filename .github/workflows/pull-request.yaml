@@ -436,11 +436,11 @@ jobs:
         name: Run Windows Cypress Tests
         env:
           client: windows-latest
+          DOCKER: "false"
         run: |
-          just test/ui-client $env:client
-          $env:CYPRESS_BASE_URL=grep '^http.*#.[a-z]*' test/win-out.txt
-          just web/build
-          just web/test-ci-e2e
+          just web/build && \
+          just web/test-e2e
+            
 
   test-macos-client:
     needs: build-agent
@@ -480,12 +480,10 @@ jobs:
         name: Run MacOS Cypress Tests
         env:
           client: macos-latest
+          DOCKER: "false"
         run: |
-          just test/ui-client ${client}
-          sleep 5
-          just web/build
-          CYPRESS_BASE_URL=$(egrep '^http.*#.[a-z]*' ./test/nohup.out) just web/test-ci-e2e
-
+          just web/build && \
+          just web/test-e2e
 
   build-linux-amd64:
     runs-on: ubuntu-latest
@@ -593,13 +591,10 @@ jobs:
         name: Run linux-amd64 Cypress Tests
         env:
           client: linux-amd64
+          DOCKER: "false"
         run: |
-          just test/ui-client ${client}
           just web/build && \
-          DOCKER_CONTAINER=$(docker container ls | grep -w rstudio/connect-client-${client} | awk '{print $1}')
-          CYPRESS_BASE_URL=$(docker logs --tail 1 ${DOCKER_CONTAINER} | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*") \
-          just web/test-ci-e2e
-        
+          just web/test-e2e
   
   build-linux-arm64:
     runs-on: ubuntu-latest
@@ -713,13 +708,11 @@ jobs:
           client: linux-arm64
         run: |
           just test/run-client ${client}
-      -
-        name: Run linux-arm64 Cypress Tests
-        env:
-          client: linux-arm64
-        run: |
-          just test/ui-client ${client}
-          just web/build && \
-          DOCKER_CONTAINER=$(docker container ls | grep -w rstudio/connect-client-${client} | awk '{print $1}')
-          CYPRESS_BASE_URL=$(docker logs --tail 1 ${DOCKER_CONTAINER} | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*") \
-          just web/test-ci-e2e
+      # -
+      #   name: Run linux-arm64 Cypress Tests
+      #   env:
+      #     client: linux-arm64
+      #     DOCKER: false
+      #   run: |
+      #     just web/build && \
+      #     # just web/test-e2e

@@ -15,6 +15,7 @@ build target:
   docker build \
     --platform "${_platform}" \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
+    --build-arg platform={{target}} \
     --pull \
     --tag {{_tag}}-{{target}}:latest \
     ./docker
@@ -45,7 +46,7 @@ run-client target:
     just _test-client darwin-amd64
   fi
 
-ui-client target:
+build-binary target:
   #!/usr/bin/env bash
   if [[ {{target}} =~ "linux-amd64" ]]; then
     _platform="linux/amd64"
@@ -79,6 +80,17 @@ local-ui-client target:
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
     ../bin/darwin-amd64/connect-client publish-ui \
     sample-content/fastapi-simple --listen=127.0.0.1:9999
+  fi
+    docker run \
+    --platform "${_platform}" \
+    -v "$(pwd)"/../:/publishing-client \
+    -w /publishing-client/ \
+    -e DOCKER="false" \
+    --rm {{_tag}}-{{target}} just build
+  elif [[ {{target}} =~ "windows" ]]; then
+    just _test-client windows-amd64
+  elif [[ {{target}} =~ "macos" ]]; then
+    just _test-client darwin-amd64
   fi
 
 _test-client target:
