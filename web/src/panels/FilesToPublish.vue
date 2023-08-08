@@ -19,6 +19,7 @@
       <q-card-section>
         <q-tree
           v-model:ticked="filesStore.filesToPublish"
+          v-model:expanded="expanded"
           :nodes="files"
           :node-key="NODE_KEY"
           tick-strategy="leaf"
@@ -43,6 +44,7 @@ const api = useApi();
 const filesStore = useFilesStore();
 
 const files = ref<QTreeNode[]>([]);
+const expanded = ref<string[]>([]);
 
 function fileToTreeNode(file: DeploymentFile): QTreeNode {
   const node: QTreeNode = {
@@ -56,7 +58,14 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
 
 async function getFiles() {
   const response = await api.files.get({ pathname: 'web/src/api' });
-  files.value = [fileToTreeNode(response.data)];
+  const file = response.data;
+
+  files.value = [fileToTreeNode(file)];
+
+  if (file.is_dir) {
+    // start with the top level directory expanded
+    expanded.value = [file.pathname];
+  }
 }
 
 getFiles();
