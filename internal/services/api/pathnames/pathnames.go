@@ -62,9 +62,9 @@ func (p Pathname) isSymlink() (bool, error) {
 	if err != nil {
 		// if an error occurs and lstat is called, check if the error op is lstat
 		if ok {
-			perr, ok := err.(*os.PathError)
+			perr, pok := err.(*os.PathError)
 			// if cast is ok and err op is lstat, return (false, nil) since it is not a symlink
-			if ok && perr.Op == "lstat" {
+			if pok && perr.Op == "lstat" {
 				return false, nil
 			}
 		}
@@ -79,19 +79,19 @@ func (p Pathname) isTrusted() (bool, error) {
 	root := util.NewPath(".", p.afs) // todo - replace this with the target directory
 	_, err := p.path.Rel(root)
 	if err != nil {
-		p.log.Warnf("%v")
+		p.log.Warnf("%v", err)
 		return false, nil
 	}
 
 	aroot, err := root.Abs()
 	if err != nil {
-		p.log.Warnf("%v")
+		p.log.Warnf("%v", err)
 		return false, nil
 	}
 
 	apath, err := p.path.Abs()
 	if err != nil {
-		p.log.Warnf("%v")
+		p.log.Warnf("%v", err)
 		return false, nil
 	}
 
