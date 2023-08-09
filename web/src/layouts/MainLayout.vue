@@ -10,16 +10,11 @@
       elevated
       class="bg-primary text-white"
     >
-      <q-toolbar>
+        <WhitePositLogo
+          class="posit-logo"
+          alt="Posit PBC Logo"
+        />
         <q-toolbar-title>
-          <img
-            src="/assets/images/posit-logo-reverse-TM.svg"
-            style="
-              width: 100px;
-              vertical-align: middle;
-            "
-            alt="Posit PBC logo"
-          >
           Publisher
         </q-toolbar-title>
       </q-toolbar>
@@ -27,24 +22,24 @@
 
     <q-page-container>
       <h6 style="margin-top: 0rem; margin-bottom: 1rem;">
-        What would you like to be published and how?
-      </h6>
-      <q-list
-        dark
-        bordered
-        class="rounded-borders"
-      >
-        <DestinationTarget />
-        <q-separator />
-        <FilesToPublish />
-        <q-separator />
-        <PythonProject />
-        <q-separator />
-        <CommonSettings />
-        <q-separator />
-        <AdvancedSettings />
-      </q-list>
-      <PublishProcess />
+          What would you like to be published and how?
+        </h6>
+        <q-list
+          dark
+          bordered
+          class="rounded-borders"
+        >
+          <DestinationTarget />
+          <q-separator />
+          <FilesToPublish />
+          <q-separator />
+          <PythonProject />
+          <q-separator />
+          <CommonSettings />
+          <q-separator />
+          <AdvancedSettings />
+        </q-list>
+        <PublishProcess />
     </q-page-container>
   </q-layout>
 </template>
@@ -58,4 +53,12 @@ import CommonSettings from '../panels/CommonSettings.vue';
 import AdvancedSettings from '../panels/AdvancedSettings.vue';
 import PublishProcess from '../panels/PublishProcess.vue';
 
+import WhitePositLogo from 'components/WhitePositLogo.vue';
 </script>
+
+<style lang="scss">
+.posit-logo {
+  max-height: 26px;
+  width: auto;
+}
+</style>
