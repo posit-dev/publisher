@@ -3,8 +3,7 @@
 <template>
   <q-layout
     view="hHh lpR fFf"
-    class="q-pa-md bg-grey-9 text-white"
-    style="max-width: 800px"
+    class="bg-grey-9 text-white"
   >
     <q-header
       elevated
