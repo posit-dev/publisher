@@ -439,7 +439,7 @@ jobs:
           DOCKER: "false"
         run: |
           just web/build
-          just web/test-ci-e2e ${client}
+          just web/test-ci-e2e $env:client
             
 
   test-macos-client:
@@ -525,7 +525,9 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+            platform=linux-amd64
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/amd64
@@ -636,7 +638,9 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1 
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+            platform=linux-arm64
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/arm64
