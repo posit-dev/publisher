@@ -17,6 +17,7 @@ import (
 type file struct {
 	FileType         fileType         `json:"file_type"`         // the file type
 	Pathname         string           `json:"pathname"`          // the pathname
+	BaseName         string   `json:"base_name"`         // the file name
 	Size             int64            `json:"size"`              // nullable; length in bytes for regular files; system-dependent
 	ModifiedDatetime string           `json:"modified_datetime"` // the last modified datetime
 	IsDir            bool             `json:"is_dir"`            // true if the file is a directory
@@ -39,6 +40,7 @@ func newFile(path util.Path, exclusion *gitignore.Match) (*file, error) {
 
 	return &file{
 		FileType:         filetype,
+		BaseName:         path.Base(),
 		Pathname:         path.Path(),
 		Size:             info.Size(),
 		ModifiedDatetime: info.ModTime().Format(time.RFC3339),

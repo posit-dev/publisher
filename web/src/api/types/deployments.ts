@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import { ServerType } from 'src/api/types/accounts';
 import { ConnectDeployment } from 'src/api/types/connect';
 import { Manifest } from 'src/api/types/manifest';

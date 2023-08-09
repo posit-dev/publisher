@@ -17,8 +17,56 @@
 
     <q-card class="bg-grey-9">
       <q-card-section>
-        TODO: file selection for deployment
+        <q-tree
+          v-model:ticked="filesStore.filesToPublish"
+          v-model:expanded="expanded"
+          :nodes="files"
+          :node-key="NODE_KEY"
+          tick-strategy="leaf"
+          dark
+          dense
+        />
       </q-card-section>
     </q-card>
   </q-expansion-item>
 </template>
+
+<script setup lang="ts">
+import type { QTree, QTreeNode } from 'quasar';
+import { ref } from 'vue';
+
+import { useApi, DeploymentFile } from 'src/api';
+import { useFilesStore } from 'src/stores/files';
+
+const NODE_KEY = 'key';
+
+const api = useApi();
+const filesStore = useFilesStore();
+
+const files = ref<QTreeNode[]>([]);
+const expanded = ref<string[]>([]);
+
+function fileToTreeNode(file: DeploymentFile): QTreeNode {
+  const node: QTreeNode = {
+    [NODE_KEY]: file.pathname,
+    label: file.base_name,
+    children: file.files.map(fileToTreeNode),
+  };
+
+  return node;
+}
+
+async function getFiles() {
+  const response = await api.files.get({ pathname: 'web/src/api' });
+  const file = response.data;
+
+  files.value = [fileToTreeNode(file)];
+
+  if (file.is_dir) {
+    // start with the top level directory expanded
+    expanded.value = [file.pathname];
+  }
+}
+
+getFiles();
+</script>

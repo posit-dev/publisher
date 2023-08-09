@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import { AppMode } from 'src/api/types/apptypes';
 
 export type ManifestMetadata = {
