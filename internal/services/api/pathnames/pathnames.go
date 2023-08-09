@@ -14,7 +14,7 @@ import (
 type Pathname struct {
 	path util.Path
 	afs  afero.Fs
-	log rslog.Logger
+	log  rslog.Logger
 }
 
 // Create returns a new instance of Pathname
