@@ -3,6 +3,7 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -17,19 +18,31 @@ import (
 
 type FilesSuite struct {
 	utiltest.Suite
+	log rslog.Logger
 }
 
 func TestFilesSuite(t *testing.T) {
 	suite.Run(t, new(FilesSuite))
 }
 
+func (s *FilesSuite) SetupSuite() {
+	s.log = rslog.NewDiscardingLogger()
+}
+
 func (s *FilesSuite) TestEndpoint() {
-	reqBody := strings.NewReader(`{"files": ["app.py", "requirements.txt"]}`)
-	req, err := http.NewRequest("PUT", "/api/deployment/files", reqBody)
+	var b body = body{
+		Files: []string{
+			"app.py",
+			"requirements.txt",
+		},
+	}
+	j, _ := json.Marshal(b)
+	br := bytes.NewReader(j)
+	req, err := http.NewRequest("PUT", "", br)
+
 	s.NoError(err)
-	var deploymentState state.Deployment
-	logger := rslog.NewDiscardingLogger()
-	handler := NewSelectedFilesEndpoint(&deploymentState, logger)
+	d := state.NewDeployment()
+	handler := NewFilesController(d, s.log)
 
 	w := httptest.NewRecorder()
 	handler(w, req)
@@ -38,21 +51,18 @@ func (s *FilesSuite) TestEndpoint() {
 
 	decoder := json.NewDecoder(resp.Body)
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&deploymentState)
+	err = decoder.Decode(d)
 	s.NoError(err)
-	expectedFilenames := []string{
-		"app.py",
-		"requirements.txt",
-	}
-	s.Equal(expectedFilenames, deploymentState.Manifest.GetFilenames())
+
+	res := d.Manifest.GetFilenames()
+	s.Equal(b.Files, res)
 }
 
 func (s *FilesSuite) TestEndpointBadMethod() {
-	req, err := http.NewRequest("DELETE", "/api/deployment/files", nil)
+	req, err := http.NewRequest("DELETE", "", nil)
 	s.NoError(err)
-	var deploymentState state.Deployment
-	logger := rslog.NewDiscardingLogger()
-	handler := NewSelectedFilesEndpoint(&deploymentState, logger)
+	d := state.NewDeployment()
+	handler := NewFilesController(d, s.log)
 
 	w := httptest.NewRecorder()
 	handler(w, req)
@@ -61,12 +71,13 @@ func (s *FilesSuite) TestEndpointBadMethod() {
 }
 
 func (s *FilesSuite) TestEndpointInvalidBody() {
-	body := strings.NewReader(`{"foo": ["app.py", "requirements.txt"]}`)
-	req, err := http.NewRequest("PUT", "/api/deployment/files", body)
+	body := strings.NewReader(`{
+		"invalid": []
+	}`)
+	req, err := http.NewRequest("PUT", "", body)
 	s.NoError(err)
-	var deploymentState state.Deployment
-	logger := rslog.NewDiscardingLogger()
-	handler := NewSelectedFilesEndpoint(&deploymentState, logger)
+	d := state.NewDeployment()
+	handler := NewFilesController(d, s.log)
 
 	w := httptest.NewRecorder()
 	handler(w, req)

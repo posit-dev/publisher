@@ -50,14 +50,14 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(afs afero.Fs, state *state.Deployment, logger rslog.Logger) http.HandlerFunc {
+func newUIHandler(afs afero.Fs, state *state.Deployment, log rslog.Logger) http.HandlerFunc {
 	mux := http.NewServeMux()
 	// /api/accounts
-	mux.Handle(ToPath("accounts"), api.NewAccountsController(afs, logger))
+	mux.Handle(ToPath("accounts"), api.NewAccountsController(afs, log))
 	// /api/files
-	mux.Handle(ToPath("files"), api.NewFilesController(afs, logger))
+	mux.Handle(ToPath("files"), api.NewFilesController(afs, log))
 	// /api/deployment/files
-	mux.Handle(ToPath("deployment", "files"), deployment.NewSelectedFilesEndpoint(state, logger))
+	mux.Handle(ToPath("deployment", "files"), deployment.NewFilesController(state, log))
 	mux.HandleFunc("/", api.NewStaticController())
 	return mux.ServeHTTP
 }
