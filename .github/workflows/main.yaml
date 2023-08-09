@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 # A note on debugging a github step:
 #   You can ssh into the github action environment and poke around by using
@@ -19,9 +20,8 @@ on:
 
 # build docker image: actions/upload-artifact@v3, with path: /bin
 # - build UX
-#   - validate UX
+#   - validate codebase
 #   - test UX unit tests
-#   - validate agent
 #   - agent tests
 #   - build agent
 #     - UX e2e tests
@@ -69,12 +69,6 @@ jobs:
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('build/package/Dockerfile') }}
-      # -
-      #   name: Upload Docker Image Artifact
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: image-tar
-      #     path: /tmp/build-image.tar
 
   build-ux:
     needs: build-docker-image
@@ -137,7 +131,7 @@ jobs:
           name: web-ux
           path: ./web/dist/spa
 
-  validate-ux:
+  validate-codebase:
     needs: build-ux
     runs-on: ubuntu-latest
     defaults:
@@ -165,6 +159,12 @@ jobs:
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
+      -
+        name: Download Web-UX Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: web-ux
+          path: ./web/dist/spa
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -175,8 +175,10 @@ jobs:
           path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
       -
-        name: Validate the UX
-        run: just web/validate
+        name: Validate the codebase
+        run: |
+          just validate
+          just validate-post
 
   test-ux:
     needs: build-ux
@@ -227,46 +229,6 @@ jobs:
       -
         name: UX Go Race Tests
         run: just web/test-race
-
-  validate-agent:
-    needs: build-ux
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      - 
-        name: Setup Just
-        uses: extractions/setup-just@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Restore Cache docker image
-        id: cache-docker-image
-        uses: actions/cache/restore@v3
-        env:
-          cache-name: cache-docker-image
-        with:
-          path: /tmp/build-image.tar
-          key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('/tmp/build-image.tar') }}
-      -
-        name: Load Docker Image
-        run: |
-          docker load --input /tmp/build-image.tar
-          docker image ls -a
-      -
-        name: Download Web-UX SPA Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: web-ux
-          path: ./web/dist/spa
-      -
-        name: Validate Agent
-        run: |
-          just validate-agent
-          just validate-post
 
   agent-tests:
     needs: build-ux
@@ -344,6 +306,10 @@ jobs:
         name: Build agent
         run: just build-agent
       -
+        name: Make agents executable
+        run: |
+          sudo chmod -R +x ./bin/**/connect-client
+      -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -384,6 +350,10 @@ jobs:
         with:
           name: agent-artifacts
           path: ./bin
+      -
+        name: Make agents executable
+        run: |
+          chmod -R +x ./bin/**/connect-client
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -401,82 +371,286 @@ jobs:
     needs: build-agent
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
+      - 
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+      - 
+        name: Download binary
+        uses: actions/download-artifact@v3
         with:
           name: agent-artifacts
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run Windows Tests
+      -
+        name: Make agents executable
+        run: |
+          chmod -R +x ./bin/**/connect-client
+      - 
+        name: Run Windows Tests
         env:
-          CLIENT: windows-latest
+          client: windows-latest
           # bats reads the load libraries from relative path only in Windows
           BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
         run: |
-          echo $PATH
-          pwd
-          ls bin
-          chmod +x bin\*\*
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
-          just run-client $env:CLIENT
+          just run-client $env:client
 
   test-macos-client:
     needs: build-agent
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Setup Just
+        uses: extractions/setup-just@v1
+      - 
+        name: Download binary
+        uses: actions/download-artifact@v3
         with:
           name: agent-artifacts
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run macos
+      -
+        name: Make agents executable
+        run: |
+          chmod -R +x ./bin/**/connect-client
+      - 
+        name: Run MacOs Tests
         env:
-          CLIENT: macos-latest
+          client: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
-          chmod +x bin/*/*
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
-          just run-client ${CLIENT}
+          just run-client ${client}
 
-  test-linux-clients:
-    needs: build-agent
+  build-linux-amd64:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        CLIENT:
-          - linux-amd64
-          - linux-arm64
+    defaults:
+      run:
+        shell: bash -l {0}
+    needs: build-agent
     steps:
-      - uses: actions/checkout@v3
-      - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
+      - 
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: bin/
+      # these are required to run docker on amd64 and arm64 platforms
+      - 
+        name: Setup qemu
+        uses: docker/setup-qemu-action@v2
+      - 
+        name: Setup buildx
+        uses: docker/setup-buildx-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - 
+        name: Restore Cached linux-amd64 image
+        id: cache-linux-amd64-restore
+        uses: actions/cache/restore@v3
+        with: 
+          path: /tmp/linux-amd64-image.tar
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+        env:
+          cache-name: cache-linux-amd64-image
+          client: linux-amd64
+      - 
+        if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
+        name: Build and Export Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          build-args: BUILDKIT_INLINE_CACHE=1
+          pull: True
+          file: test/docker/Dockerfile
+          platforms: linux/amd64
+          tags: rstudio/connect-client-linux-amd64:latest
+          outputs: type=docker,dest=/tmp/linux-amd64-image.tar
+      - 
+        if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
+        name: Cache docker image (update)
+        id: cache-linux-amd64-image-save
+        uses: actions/cache/save@v3
+        env:
+          cache-name: cache-linux-amd64-image
+        with:
+          path: /tmp/linux-amd64-image.tar
+          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+
+  run-linux-amd64:
+    needs: build-linux-amd64
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Get binary
+        uses: actions/download-artifact@v3
         with:
           name: agent-artifacts
           path: bin/
+      -
+        name: Make agents executable
+        run: |
+          chmod -R +x ./bin/**/connect-client
+      -
+        name: Cache docker image (restore)
+        id: cache-linux-amd64-image
+        uses: actions/cache/restore@v3
+        env:
+          cache-name: cache-linux-amd64-image
+        with:
+          path: /tmp/linux-amd64-image.tar
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+      -
+        name: Load Docker Image
+        run: |
+          docker load --input /tmp/linux-amd64-image.tar
+          docker image ls -a
+      -
+        name: Run linux-amd64 Tests
+        env:
+          client: linux-amd64
+        run: |
+          just test/run-client ${client}
+  
+  build-linux-arm64:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    needs: build-agent
+    steps:
+      - 
+        name: Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: bin/
       # these are required to run docker on amd64 and arm64 platforms
-      - uses: docker/setup-qemu-action@v2
-      - uses: docker/setup-buildx-action@v2
+      - 
+        name: Setup qemu
+        uses: docker/setup-qemu-action@v2
+      - 
+        name: Setup buildx
+        uses: docker/setup-buildx-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run Linux Tests
+      - 
+        name: Restore Cached linux-arm64 image
+        id: cache-linux-arm64-restore
+        uses: actions/cache/restore@v3
+        with: 
+          path: /tmp/linux-arm64-image.tar
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
-          CLIENT: "${{ matrix.CLIENT }}"
+          cache-name: cache-linux-arm64-image
+          client: linux-arm64
+      - 
+        if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
+        name: Build and Export Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          build-args: BUILDKIT_INLINE_CACHE=1 
+          pull: True
+          file: test/docker/Dockerfile
+          platforms: linux/arm64
+          tags: rstudio/connect-client-linux-arm64:latest
+          outputs: type=docker,dest=/tmp/linux-arm64-image.tar
+      - 
+        if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
+        name: Cache docker image (update)
+        id: cache-linux-arm64-image-save
+        uses: actions/cache/save@v3
+        env:
+          cache-name: cache-linux-arm64-image
+        with:
+          path: /tmp/linux-arm64-image.tar
+          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+
+  run-linux-arm64:
+    needs: build-linux-arm64
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Get binary
+        uses: actions/download-artifact@v3
+        with:
+          name: agent-artifacts
+          path: bin/
+      -
+        name: Make agents executable
         run: |
-          chmod +x bin/*/*
-          just test/build ${CLIENT}
-          just test/run-client ${CLIENT}
+          chmod -R +x ./bin/**/connect-client
+
+      # these are required to run docker on amd64 and arm64 platforms
+      - 
+        name: Setup qemu
+        uses: docker/setup-qemu-action@v2
+      - 
+        name: Setup buildx
+        uses: docker/setup-buildx-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Cache docker image (restore)
+        id: cache-linux-arm64-image
+        uses: actions/cache/restore@v3
+        env:
+          cache-name: cache-linux-arm64-image
+        with:
+          path: /tmp/linux-arm64-image.tar
+          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+      -
+        name: Load Docker Image
+        run: |
+          docker load --input /tmp/linux-arm64-image.tar
+          docker image ls -a
+      -
+        name: Run linux-arm64 Tests
+        env:
+          client: linux-arm64
+        run: |
+          just test/run-client ${client}
+    

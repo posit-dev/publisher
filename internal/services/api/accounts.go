@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
+	"github.com/spf13/afero"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 )
@@ -43,10 +44,11 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 	}
 }
 
-// NewAccountListEndpoint returns a handler for the account list.
-func NewAccountListEndpoint(accountList accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
+// NewAccountsController returns a handler for the account list.
+func NewAccountsController(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
+	lister := accounts.NewAccountList(fs, logger)
 	return func(w http.ResponseWriter, req *http.Request) {
-		accounts, err := accountList.GetAllAccounts()
+		accounts, err := lister.GetAllAccounts()
 		if err != nil {
 			InternalError(w, logger, err)
 			return

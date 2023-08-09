@@ -4,19 +4,19 @@ package ui
 
 import (
 	"net/http"
+	"net/url"
 
-	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployment"
-	"github.com/rstudio/connect-client/internal/services/middleware"
 	"github.com/rstudio/connect-client/internal/state"
-	"github.com/rstudio/connect-client/web"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
+
+const APIPrefix string = "api"
 
 func NewUIService(
 	fragment string,
@@ -50,20 +50,20 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(fs afero.Fs, deploymentState *state.Deployment, logger rslog.Logger) http.HandlerFunc {
-	r := http.NewServeMux()
-	api_prefix := "/api/"
+func newUIHandler(afs afero.Fs, state *state.Deployment, logger rslog.Logger) http.HandlerFunc {
+	mux := http.NewServeMux()
+	// /api/accounts
+	mux.Handle(ToPath("accounts"), api.NewAccountsController(afs, logger))
+	// /api/files
+	mux.Handle(ToPath("files"), api.NewFilesController(afs, logger))
+	// /api/deployment/files
+	mux.Handle(ToPath("deployment", "files"), deployment.NewSelectedFilesEndpoint(state, logger))
+	mux.HandleFunc("/", api.NewStaticController())
+	return mux.ServeHTTP
+}
 
-	accountList := accounts.NewAccountList(fs, logger)
-	r.Handle(api_prefix+"accounts", api.NewAccountListEndpoint(accountList, logger))
-
-	deployment_prefix := api_prefix + "deployment/"
-	r.Handle(deployment_prefix+"files", deployment.NewSelectedFilesEndpoint(deploymentState, logger))
-
-	// static files for the local (account list) UI
-	staticHandler := http.FileServer(http.FS(web.Dist)).ServeHTTP
-	staticHandler = middleware.AddPathPrefix("/dist/spa", staticHandler)
-	r.HandleFunc("/", staticHandler)
-
-	return r.ServeHTTP
+func ToPath(elements ...string) string {
+	prefix := "/" + APIPrefix
+	path, _ := url.JoinPath(prefix, elements...)
+	return path
 }

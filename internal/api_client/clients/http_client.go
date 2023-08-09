@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -56,10 +57,11 @@ var ErrNotFound = errors.New("server returned Not Found for the requested resour
 type HTTPError struct {
 	URL  string
 	Code int
+	Body string
 }
 
 func (e *HTTPError) Error() string {
-	return fmt.Sprintf("unexpected response from the server: %d on URL %s", e.Code, e.URL)
+	return fmt.Sprintf("unexpected response from the server: %d on URL %s (%s)", e.Code, e.URL, strings.TrimSpace(e.Body))
 }
 
 func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyType string) ([]byte, error) {
@@ -82,7 +84,23 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 	case http.StatusNoContent:
 		return nil, nil
 	default:
-		return nil, &HTTPError{URL: apiURL, Code: resp.StatusCode}
+		// Log the message body, if available
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			body = nil
+		}
+		errMessage := string(body)
+
+		// If this was a Connect API error, there might be
+		// a helpful error field in the json body.
+		var errResponse struct {
+			Error string `json:"error"`
+		}
+		err = json.Unmarshal(body, &errResponse)
+		if err == nil && errResponse.Error != "" {
+			errMessage = errResponse.Error
+		}
+		return nil, &HTTPError{URL: apiURL, Code: resp.StatusCode, Body: errMessage}
 	}
 }
 
