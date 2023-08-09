@@ -26,7 +26,7 @@ type TargetID struct {
 type Deployment struct {
 	SourceDir          util.Path         `json:"source_path" kong:"-"`         // Absolute path to source directory being published
 	Target             TargetID          `json:"target" kong:"embed"`          // Identity of previous deployment
-	Manifest           bundles.Manifest  `json:"mainfest" kong:"embed"`        // manifest.json content for this deployment
+	Manifest           bundles.Manifest  `json:"manifest" kong:"embed"`        // manifest.json content for this deployment
 	Connect            ConnectDeployment `json:"connect" kong:"embed"`         // Connect metadata for this deployment, if target is Connect
 	PythonRequirements []byte            `json:"python_requirements" kong:"-"` // Content of requirements.txt to include
 }
