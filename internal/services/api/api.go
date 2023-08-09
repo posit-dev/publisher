@@ -9,7 +9,7 @@ import (
 )
 
 func InternalError(w http.ResponseWriter, logger rslog.Logger, err error) {
-	status := http.StatusMethodNotAllowed
+	status := http.StatusInternalServerError
 	text := http.StatusText(status)
 	w.WriteHeader(status)
 	w.Write([]byte(text))
