@@ -439,7 +439,7 @@ jobs:
           DOCKER: "false"
         run: |
           just web/build
-          just web/test-e2e
+          just web/test-ci-e2e ${client}
             
 
   test-macos-client:
@@ -483,7 +483,7 @@ jobs:
           DOCKER: "false"
         run: |
           just web/build && \
-          just web/test-e2e
+          just web/test-ci-e2e ${client}
 
   build-linux-amd64:
     runs-on: ubuntu-latest

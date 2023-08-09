@@ -58,13 +58,9 @@ build-binary target:
     --platform "${_platform}" \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
+    -e DOCKER="false" \
     --rm -it {{_tag}}-{{target}} \
-    ./bin/{{target}}/connect-client publish-ui ./test/sample-content/fastapi-simple/ --listen=localhost:9999
-  elif [[ {{target}} =~ "windows" ]]; then
-    set shell := ["powershell.exe", "-c"] \
-    Start-Process -FilePath "bin\\windows-amd64\\connect-client.exe" -ArgumentList "publish-ui", "sample-content\\fastapi-simple\\", "--listen=localhost:9999" -WindowStyle Hidden -RedirectStandardOutput ./win-out.txt
-  elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
-    nohup bin/darwin-amd64/connect-client publish-ui ./sample-content/fastapi-simple/  > nohup.out 2> nohup.err < /dev/null &
+    just build
   fi
 
 local-ui-client target:
@@ -107,7 +103,7 @@ ui-client target:
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \
-    just web/test-ci-e2e
+    just web/test-ci-e2e {{target}}
   fi
 
 _test-client target:
