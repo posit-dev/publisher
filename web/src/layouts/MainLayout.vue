@@ -9,6 +9,7 @@
       elevated
       class="bg-primary text-white"
     >
+      <q-toolbar class="max-width-md q-mx-auto">
         <WhitePositLogo
           class="posit-logo"
           alt="Posit PBC Logo"
@@ -20,7 +21,11 @@
     </q-header>
 
     <q-page-container>
-      <h6 style="margin-top: 0rem; margin-bottom: 1rem;">
+      <q-page
+        class="max-width-md q-mx-auto"
+        padding
+      >
+        <h6 class="q-mt-none q-mb-md">
           What would you like to be published and how?
         </h6>
         <q-list
@@ -39,12 +44,12 @@
           <AdvancedSettings />
         </q-list>
         <PublishProcess />
+      </q-page>
     </q-page-container>
   </q-layout>
 </template>
 
 <script setup lang="ts">
-
 import DestinationTarget from '../panels/DestinationTarget.vue';
 import FilesToPublish from '../panels/FilesToPublish.vue';
 import PythonProject from '../panels/PythonProject.vue';
