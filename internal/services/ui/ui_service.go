@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
@@ -18,41 +20,39 @@ const APIPrefix string = "api"
 
 func NewUIService(
 	fragment string,
-	listen string,
-	keyFile string,
-	certFile string,
-	openBrowser bool,
-	openBrowserAt string,
-	skipAuth bool,
-	accessLog bool,
+	ui cli_types.UIArgs,
+	publish *cli_types.PublishArgs,
 	token services.LocalToken,
 	fs afero.Fs,
+	lister accounts.AccountList,
 	logger rslog.Logger) *api.Service {
 
-	handler := newUIHandler(fs, logger)
+	handler := newUIHandler(publish, fs, lister, logger)
 
 	return api.NewService(
+		publish.State,
 		handler,
-		listen,
+		ui.Listen,
 		fragment,
-		keyFile,
-		certFile,
-		openBrowser,
-		openBrowserAt,
-		skipAuth,
-		accessLog,
+		ui.TLSKeyFile,
+		ui.TLSCertFile,
+		ui.Interactive,
+		ui.OpenBrowserAt,
+		ui.SkipBrowserSessionAuth,
+		ui.AccessLog,
 		token,
 		logger,
 		rslog.NewDebugLogger(debug.UIRegion),
 	)
 }
 
-func newUIHandler(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
+func newUIHandler(publishArgs *cli_types.PublishArgs, fs afero.Fs, lister accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
 	mux := http.NewServeMux()
 	// /api/accounts
-	mux.Handle(ToPath("accounts"), api.NewAccountsController(fs, logger))
+	mux.Handle(ToPath("accounts"), api.NewAccountsController(lister, logger))
 	// /api/files
 	mux.Handle(ToPath("files"), api.NewFilesController(fs, logger))
+	mux.Handle(ToPath("publish"), api.NewPublishController(publishArgs, lister, logger))
 	mux.HandleFunc("/", api.NewStaticController())
 	return mux.ServeHTTP
 }
