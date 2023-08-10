@@ -130,7 +130,11 @@ func getFile(cwd util.Path, afs afero.Fs, log rslog.Logger, w http.ResponseWrite
 
 func toFile(cwd util.Path, path util.Path, log rslog.Logger) (*file, error) {
 	path = path.Clean()
-	ignore := gitignore.New(cwd)
+	ignore, err := gitignore.From(cwd.Join(".gitignore"))
+	if err != nil {
+		return nil, err
+	}
+
 	isExcluded := ignore.Match(path.Path())
 	root, err := newFile(path, isExcluded)
 	if err != nil {
