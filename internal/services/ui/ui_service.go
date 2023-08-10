@@ -9,6 +9,8 @@ import (
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
+	"github.com/rstudio/connect-client/internal/services/api/deployment"
+	"github.com/rstudio/connect-client/internal/state"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -27,9 +29,10 @@ func NewUIService(
 	accessLog bool,
 	token services.LocalToken,
 	fs afero.Fs,
+	deploymentState *state.Deployment,
 	logger rslog.Logger) *api.Service {
 
-	handler := newUIHandler(fs, logger)
+	handler := newUIHandler(fs, deploymentState, logger)
 
 	return api.NewService(
 		handler,
@@ -47,12 +50,16 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
+func newUIHandler(afs afero.Fs, state *state.Deployment, log rslog.Logger) http.HandlerFunc {
 	mux := http.NewServeMux()
 	// /api/accounts
-	mux.Handle(ToPath("accounts"), api.NewAccountsController(fs, logger))
+	mux.Handle(ToPath("accounts"), api.NewAccountsController(afs, log))
 	// /api/files
-	mux.Handle(ToPath("files"), api.NewFilesController(fs, logger))
+	mux.Handle(ToPath("files"), api.NewFilesController(afs, log))
+	// /api/deployment
+	mux.Handle(ToPath("deployment"), deployment.NewDeploymentController(state, log))
+	// /api/deployment/files
+	mux.Handle(ToPath("deployment", "files"), deployment.NewFilesController(state, log))
 	mux.HandleFunc("/", api.NewStaticController())
 	return mux.ServeHTTP
 }

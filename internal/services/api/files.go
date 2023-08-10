@@ -120,7 +120,7 @@ func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Requ
 	path := util.NewPath(p.String(), afs)
 	file, err := toFile(path, log)
 	if err != nil {
-		internalError(w, log, err)
+		InternalError(w, log, err)
 		return
 	}
 

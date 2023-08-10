@@ -83,7 +83,7 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger rslog.Logger) error {
 	manifest := &cmd.State.Manifest
 	manifest.Version = 1
 	manifest.Packages = make(bundles.PackageMap)
-	manifest.Files = make(bundles.FileMap)
+	manifest.Files = make(bundles.ManifestFileMap)
 
 	metadata := &manifest.Metadata
 	if metadata.Entrypoint == "" && cmd.Path != cmd.State.SourceDir {
@@ -357,6 +357,7 @@ func (cmd *PublishUICmd) Run(args *CommonArgs, ctx *CLIContext) error {
 		cmd.AccessLog,
 		ctx.LocalToken,
 		ctx.Fs,
+		cmd.State,
 		ctx.Logger)
 	return svc.Run()
 }

@@ -51,7 +51,7 @@ func (s *ManifestSuite) TestAddFile() {
 	manifest := NewManifest()
 	manifest.AddFile("test.Rmd", []byte{0x00, 0x01, 0x02})
 	manifest.AddFile("subdir/test.Rmd", []byte{0x03, 0x04, 0x05})
-	s.Equal(manifest.Files, FileMap{
+	s.Equal(manifest.Files, ManifestFileMap{
 		"test.Rmd":        ManifestFile{Checksum: "000102"},
 		"subdir/test.Rmd": ManifestFile{Checksum: "030405"},
 	})
@@ -65,7 +65,7 @@ func (s *ManifestSuite) TestReadManifest() {
 		Version:  1,
 		Platform: "4.1.0",
 		Packages: PackageMap{},
-		Files:    FileMap{},
+		Files:    ManifestFileMap{},
 	}, manifest)
 }
 
@@ -103,7 +103,7 @@ func (s *ManifestSuite) TestReadManifestFile() {
 		Version:  1,
 		Platform: "4.1.0",
 		Packages: PackageMap{},
-		Files:    FileMap{},
+		Files:    ManifestFileMap{},
 	}, manifest)
 }
 
@@ -121,7 +121,7 @@ func (s *ManifestSuite) TestMergeEmpty() {
 		Version:  1,
 		Platform: "4.1.0",
 		Packages: PackageMap{},
-		Files:    FileMap{},
+		Files:    ManifestFileMap{},
 		Metadata: Metadata{
 			AppMode:         "python-fastapi",
 			ContentCategory: "",
@@ -150,7 +150,7 @@ func (s *ManifestSuite) TestMergeNonEmpty() {
 				},
 			},
 		},
-		Files: FileMap{
+		Files: ManifestFileMap{
 			"app.py": ManifestFile{
 				Checksum: "abc123",
 			},
@@ -195,7 +195,7 @@ func (s *ManifestSuite) TestMergeNonEmpty() {
 				},
 			},
 		},
-		Files: FileMap{
+		Files: ManifestFileMap{
 			"app.py": ManifestFile{
 				Checksum: "987654",
 			},
