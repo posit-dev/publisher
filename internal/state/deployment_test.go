@@ -93,7 +93,7 @@ func (s *DeploymentSuite) TestLoadManifest() {
 		Version:  1,
 		Platform: "4.1.0",
 		Packages: bundles.PackageMap{},
-		Files:    bundles.FileMap{},
+		Files:    bundles.ManifestFileMap{},
 	}, deployment.Manifest)
 }
 
@@ -114,7 +114,7 @@ func (s *DeploymentSuite) TestLoadManifestDir() {
 		Version:  1,
 		Platform: "4.1.0",
 		Packages: bundles.PackageMap{},
-		Files:    bundles.FileMap{},
+		Files:    bundles.ManifestFileMap{},
 	}, deployment.Manifest)
 }
 

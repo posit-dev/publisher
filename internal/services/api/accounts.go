@@ -50,7 +50,7 @@ func NewAccountsController(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		accounts, err := lister.GetAllAccounts()
 		if err != nil {
-			internalError(w, logger, err)
+			InternalError(w, logger, err)
 			return
 		}
 		data := &accountListDTO{}

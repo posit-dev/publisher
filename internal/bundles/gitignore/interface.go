@@ -10,9 +10,9 @@ import (
 
 type IgnoreList interface {
 	Append(path util.Path) error
-	AppendGlob(s string) error
+	AppendGlobs(patterns []string, source MatchSource) error
 	AppendGit() error
-	Match(path string) bool
+	Match(path string) *Match
 	Walk(root util.Path, fn util.WalkFunc) error
 }
 
@@ -28,8 +28,8 @@ func (m *MockGitIgnoreList) Append(path util.Path) error {
 	return args.Error(0)
 }
 
-func (m *MockGitIgnoreList) AppendGlob(s string) error {
-	args := m.Called(s)
+func (m *MockGitIgnoreList) AppendGlobs(patterns []string, source MatchSource) error {
+	args := m.Called(patterns, source)
 	return args.Error(0)
 }
 
