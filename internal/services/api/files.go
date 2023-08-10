@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/services/api/pathnames"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -95,22 +96,28 @@ func NewFilesController(fs afero.Fs, log rslog.Logger) http.HandlerFunc {
 }
 
 func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Request) {
-	var pathname string
+	var p pathnames.Pathname
 	if q := r.URL.Query(); q.Has("pathname") {
-		pathname = q.Get("pathname")
+		p = pathnames.Create(q.Get("pathname"), afs, log)
 	} else {
-		pathname = "."
+		p = pathnames.Create(".", afs, log)
 	}
 
-	// todo - validate that the pathname is within the working directory
-	//
-	// https://www.stackhawk.com/blog/golang-path-traversal-guide-examples-and-prevention/
-	//
-	// Attack Vectors:
-	//	- '../' or './src/../../'; i.e., escape the working directory
-	// 	- '/' or '/home'; i.e., absolute directories outside of working directory
+	ok, err := p.IsSafe()
+	if err != nil {
+		internalError(w, log, err)
+		return
+	}
 
-	path := util.NewPath(pathname, afs)
+	// if pathname is not safe, return 403 - Forbidden
+	if !ok {
+		log.Warnf("the pathname '%s' is not safe", p)
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(http.StatusText(http.StatusForbidden)))
+		return
+	}
+
+	path := util.NewPath(p.String(), afs)
 	file, err := toFile(path, log)
 	if err != nil {
 		internalError(w, log, err)
@@ -122,6 +129,7 @@ func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Requ
 }
 
 func toFile(path util.Path, log rslog.Logger) (*file, error) {
+	path = path.Clean()
 	ignore := gitignore.New(path)
 	isExcluded := ignore.Match(path.Path())
 	root, err := newFile(path, isExcluded)
