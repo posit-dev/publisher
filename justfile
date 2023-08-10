@@ -81,6 +81,10 @@ build-agent-dev:
 build-web:
     {{ _with_runner }} just web/build
 
+# Build the developer stack
+build-dev:
+    {{ _with_runner }} just clean image bootstrap build-web build-agent-dev
+
 # Validate the agent and the web UX source code, along with checking for copyrights. See the `validate-post` recipe for linting which requires a build.
 validate: 
     #!/usr/bin/env bash
