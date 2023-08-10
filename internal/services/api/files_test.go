@@ -33,7 +33,7 @@ func (s *FilesSuite) TestToFile() {
 	afs := afero.NewOsFs()
 	pathname := "."
 	path := util.NewPath(pathname, afs)
-	files, err := toFile(path, nil)
+	files, err := toFile(path, path, nil)
 	s.NotNil(files)
 	s.NoError(err)
 	s.Equal(files.Pathname, pathname)
@@ -42,9 +42,10 @@ func (s *FilesSuite) TestToFile() {
 func (s *FilesSuite) TestGetFile() {
 	req, err := http.NewRequest("GET", "", nil)
 	s.NoError(err)
-	fs := afero.NewMemMapFs()
+	afs := afero.NewMemMapFs()
+	cwd := util.NewPath(".", afs)
 	rec := httptest.NewRecorder()
-	getFile(fs, s.log, rec, req)
+	getFile(cwd, afs, s.log, rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
@@ -59,6 +60,7 @@ func (s *FilesSuite) TestGetFile() {
 
 func (s *FilesSuite) TestGetFile_WithPathname() {
 	afs := afero.NewMemMapFs()
+	cwd := util.NewPath(".", afs)
 	pathname := "pathname"
 	basename := filepath.Base(pathname)
 	afs.Create(pathname)
@@ -67,7 +69,7 @@ func (s *FilesSuite) TestGetFile_WithPathname() {
 	s.NoError(err)
 
 	rec := httptest.NewRecorder()
-	getFile(afs, s.log, rec, req)
+	getFile(cwd, afs, s.log, rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
