@@ -325,7 +325,7 @@ func (w *manifestWalker) Walk(root util.Path, fn util.WalkFunc) error {
 	defer util.Chdir(oldWD)
 
 	// Copy file map since it may be (is) modified during traversal.
-	files := make(FileMap, len(w.manifest.Files))
+	files := make(ManifestFileMap, len(w.manifest.Files))
 	for k, v := range w.manifest.Files {
 		files[k] = v
 	}
