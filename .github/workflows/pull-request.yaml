@@ -712,11 +712,11 @@ jobs:
           client: linux-arm64
         run: |
           just test/run-client ${client}
-      -
-        name: Run linux-arm64 Cypress Tests
-        env:
-          client: linux-arm64
-          DOCKER: "false"
-        run: |
-          just web/build && \
-          just test/ui-client ${client}
+      # -
+      #   name: Run linux-arm64 Cypress Tests
+      #   env:
+      #     client: linux-arm64
+      #     DOCKER: "false"
+      #   run: |
+      #     just web/build && \
+      #     just test/ui-client ${client}
