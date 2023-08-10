@@ -58,4 +58,17 @@ import CommonSettings from '../panels/CommonSettings.vue';
 import AdvancedSettings from '../panels/AdvancedSettings.vue';
 import PublishProcess from '../panels/PublishProcess.vue';
 
+import { useEventStore } from 'src/stores/events';
+import { onBeforeUnmount } from 'vue';
+
+// setup our event store which will receive server side events
+const eventStore = useEventStore();
+eventStore.enableConnectionDebugMode();
+eventStore.initConnection('/api/events');
+
+// Have to be sure to close connection or it will be leaked on agent (if it continues to run)
+onBeforeUnmount(() => {
+  eventStore.closeConnection();
+});
+
 </script>
