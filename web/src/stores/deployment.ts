@@ -3,7 +3,10 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
-import api, { Deployment } from 'src/api';
+import api, { Deployment, ManifestFile } from 'src/api';
+import { CanceledError } from 'axios';
+
+let fileSyncController: AbortController | undefined;
 
 export const useDeploymentStore = defineStore('deployment', () => {
   const deployment = ref<Deployment>();
@@ -11,8 +14,29 @@ export const useDeploymentStore = defineStore('deployment', () => {
   const files = computed<string[]>({
     get: () => Object.keys(deployment.value?.manifest.files ?? {}),
     set: async(selectedFiles) => {
-      const { data } = await api.deployment.setFiles(selectedFiles);
-      deployment.value = data;
+      const changed = selectedFiles.reduce((acc, file) => {
+        acc[file] = { checksum: '' };
+        return acc;
+      }, {} as Record<string, ManifestFile>);
+      if (deployment.value) {
+        deployment.value.manifest.files = changed;
+      }
+
+      if (fileSyncController) {
+        fileSyncController.abort();
+      }
+      fileSyncController = new AbortController();
+      try {
+        const { data } = await api.deployment.setFiles(
+          selectedFiles,
+          { signal: fileSyncController.signal }
+        );
+        deployment.value = data;
+      } catch (err) {
+        if (err instanceof CanceledError) {
+          // ignore
+        }
+      }
     }
   });
 
