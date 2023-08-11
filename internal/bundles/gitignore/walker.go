@@ -113,11 +113,11 @@ func NewIgnoreList(dir util.Path, ignores []string) (IgnoreList, error) {
 	if err != nil && err != ErrNotInGitRepo {
 		return nil, err
 	}
-	err = gitIgnore.AppendGlobs(standardIgnores)
+	err = gitIgnore.AppendGlobs(standardIgnores, MatchSourceBuiltIn)
 	if err != nil {
 		return nil, err
 	}
-	err = gitIgnore.AppendGlobs(ignores)
+	err = gitIgnore.AppendGlobs(ignores, MatchSourceUser)
 	if err != nil {
 		return nil, err
 	}

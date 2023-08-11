@@ -16,7 +16,7 @@ export type Target = {
 }
 
 export type Deployment = {
-    source_dir: string;
+    source_path: string;
     target: Target;
     manifest: Manifest;
     connect: ConnectDeployment;

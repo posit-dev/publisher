@@ -16,19 +16,19 @@ import (
 )
 
 type file struct {
-	FileType         fileType `json:"file_type"`         // the file type
-	BaseName         string   `json:"base_name"`         // the file name
-	Pathname         string   `json:"pathname"`          // the pathname
-	Size             int64    `json:"size"`              // nullable; length in bytes for regular files; system-dependent
-	ModifiedDatetime string   `json:"modified_datetime"` // the last modified datetime
-	IsDir            bool     `json:"is_dir"`            // true if the file is a directory
-	IsEntrypoint     bool     `json:"is_entrypoint"`     // true if the file is an entrypoint
-	IsRegular        bool     `json:"is_file"`           // true if the file is a regular file
-	IsExcluded       bool     `json:"is_excluded"`       // true if the file is excluded
-	Files            []*file  `json:"files"`             // an array of objects of the same type for each file within the directory.
+	FileType         fileType         `json:"file_type"`         // the file type
+	Pathname         string           `json:"pathname"`          // the pathname
+	BaseName         string           `json:"base_name"`         // the file name
+	Size             int64            `json:"size"`              // nullable; length in bytes for regular files; system-dependent
+	ModifiedDatetime string           `json:"modified_datetime"` // the last modified datetime
+	IsDir            bool             `json:"is_dir"`            // true if the file is a directory
+	IsEntrypoint     bool             `json:"is_entrypoint"`     // true if the file is an entrypoint
+	IsRegular        bool             `json:"is_file"`           // true if the file is a regular file
+	Exclusion        *gitignore.Match `json:"exclusion"`         // object describing the reason for exclusion, null if not excluded
+	Files            []*file          `json:"files"`             // an array of objects of the same type for each file within the directory.
 }
 
-func newFile(path util.Path, isExcluded bool) (*file, error) {
+func newFile(path util.Path, exclusion *gitignore.Match) (*file, error) {
 	info, err := path.Stat()
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func newFile(path util.Path, isExcluded bool) (*file, error) {
 		ModifiedDatetime: info.ModTime().Format(time.RFC3339),
 		IsDir:            info.Mode().IsDir(),
 		IsRegular:        info.Mode().IsRegular(),
-		IsExcluded:       isExcluded,
+		Exclusion:        exclusion,
 		Files:            make([]*file, 0),
 	}, nil
 }
@@ -66,8 +66,8 @@ func (f *file) insert(path util.Path, ignore gitignore.GitIgnoreList) (*file, er
 			}
 		}
 
-		isExcluded := ignore.Match(path.Path())
-		child, err := newFile(path, isExcluded)
+		exclusion := ignore.Match(path.Path())
+		child, err := newFile(path, exclusion)
 		if err != nil {
 			return nil, err
 		}
@@ -130,13 +130,10 @@ func getFile(cwd util.Path, afs afero.Fs, log rslog.Logger, w http.ResponseWrite
 
 func toFile(cwd util.Path, path util.Path, log rslog.Logger) (*file, error) {
 	path = path.Clean()
-	ignore, err := gitignore.From(cwd.Join(".gitignore"))
-	if err != nil {
-		return nil, err
-	}
+	ignore := gitignore.New(cwd.Join(".gitignore"))
 
-	isExcluded := ignore.Match(path.Path())
-	root, err := newFile(path, isExcluded)
+	exclusion := ignore.Match(path.Path())
+	root, err := newFile(path, exclusion)
 	if err != nil {
 		return nil, err
 	}
