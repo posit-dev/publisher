@@ -12,6 +12,8 @@ import (
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
+
+	"github.com/r3labs/sse/v2"
 )
 
 const APIPrefix string = "api"
@@ -30,6 +32,9 @@ func NewUIService(
 	logger rslog.Logger) *api.Service {
 
 	handler := newUIHandler(fs, logger)
+
+	server := sse.New()
+	server.CreateStream("messages")
 
 	return api.NewService(
 		handler,
