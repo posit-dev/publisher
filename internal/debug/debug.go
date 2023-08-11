@@ -2,7 +2,9 @@ package debug
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import "github.com/rstudio/platform-lib/pkg/rslog"
+import (
+	"github.com/rstudio/platform-lib/pkg/rslog"
+)
 
 const (
 	AllRegions rslog.ProductRegion = iota
