@@ -4,8 +4,9 @@ import { CanceledError } from 'axios';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
-import api, { Deployment, ManifestFile } from 'src/api';
+import api, { Deployment } from 'src/api';
 import { CancelController } from 'src/api/utils/CancelController';
+import { deploymentToPathnames, pathnamesToManifestFiles } from 'src/api/utils';
 
 const fileSyncCancelController = new CancelController();
 
@@ -13,14 +14,10 @@ export const useDeploymentStore = defineStore('deployment', () => {
   const deployment = ref<Deployment>();
 
   const files = computed<string[]>({
-    get: () => Object.keys(deployment.value?.manifest.files ?? {}),
+    get: () => deploymentToPathnames(deployment.value),
     set: async(selectedFiles) => {
-      const changed = selectedFiles.reduce((acc, file) => {
-        acc[file] = { checksum: '' };
-        return acc;
-      }, {} as Record<string, ManifestFile>);
       if (deployment.value) {
-        deployment.value.manifest.files = changed;
+        deployment.value.manifest.files = pathnamesToManifestFiles(selectedFiles);
       }
 
       fileSyncCancelController.cancelPrevious(async() => {
