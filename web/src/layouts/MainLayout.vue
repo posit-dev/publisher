@@ -64,7 +64,8 @@ import { onBeforeUnmount } from 'vue';
 // setup our event store which will receive server side events
 const eventStore = useEventStore();
 eventStore.enableConnectionDebugMode();
-eventStore.initConnection('/api/events');
+eventStore.initConnection('/api/events?stream=messages');
+console.log(eventStore.getConnectionStatus());
 
 // Have to be sure to close connection or it will be leaked on agent (if it continues to run)
 onBeforeUnmount(() => {

@@ -7,27 +7,33 @@
       color="primary"
       label="Publish"
     />
-    <div class="q-mt-sm q-ml-sm">
-      <h4>Open Events</h4>
-      <p
-        v-for="(evt, ndx) in eventStore.openEvents"
-        :key="ndx"
-      >
-        {{ evt.data.msg }}
-      </p>
-
-
-    </div>
-    <q-infinite-scroll @load="onLoad" :offset="250">
-      <div v-for="(item, index) in items" :key="index" class="caption">
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum repellendus sit voluptate voluptas eveniet porro. Rerum blanditiis perferendis totam, ea at omnis vel numquam exercitationem aut, natus minima, porro labore.</p>
-      </div>
-      <template v-slot:loading>
-        <div class="row justify-center q-my-md">
-          <q-spinner-dots color="primary" size="40px" />
-        </div>
-      </template>
-    </q-infinite-scroll>
+  </div>
+  <div class="column q-mt-sm q-ml-sm">
+    <h4>Open Events</h4>
+    <p
+      v-for="(evt, ndx) in eventStore.openEvents"
+      :key="ndx"
+    >
+      {{ evt.data }}
+    </p>
+  </div>
+  <div class="column q-mt-sm q-ml-sm">
+    <h4>Open Error Events</h4>
+    <p
+      v-for="(msg, ndx) in eventStore.errorEvents"
+      :key="ndx"
+    >
+      {{ msg }}
+    </p>
+  </div>
+  <div class="column q-mt-sm q-ml-sm">
+    <h4>Message Events</h4>
+    <p
+      v-for="(msg, ndx) in eventStore.dataEvents"
+      :key="ndx"
+    >
+      {{ msg.type }} @ {{ msg.time }}: {{ msg.data }}
+    </p>
   </div>
 </template>
 

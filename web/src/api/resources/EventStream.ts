@@ -7,14 +7,20 @@ import {
   MethodResult,
   EventStatus,
   MockMessage,
+  EventStreamMessage,
+  isEventStreamMessage,
 } from 'src/api/types/events';
+
+export type OurMessageEvent = {
+  data: string,
+}
 
 export class EventStream {
   private mockMessages = <MockMessage[] | null>null;
   private mockingActive = false;
   private eventSource = <EventSource | null>null;
   private isOpen = false;
-  private lastError = <Event | null>null;
+  private lastError = <string | null>null;
   private debugEnabled = false;
 
   private openCallbacks = <OnOpenEventSourceCallback[]>[];
@@ -34,34 +40,38 @@ export class EventStream {
 
   private onRawOpenCallback() {
     this.logMsg(`received RawOpenCallback`);
+    this.isOpen = true;
     this.openCallbacks.forEach(cb => cb());
   }
 
-  private onErrorRawCallback(e: Event) {
+  private onErrorRawCallback(e) {
     // errors are fatal, connection is down.
-    this.logMsg(`received ErrorRawCallback: ${e}`);
-    this.lastError = e;
+    // not receiving anything of value from calling parameters. only : {"isTrusted":true}
+    this.logMsg(`received ErrorRawCallback: ${JSON.stringify(e)}`);
     this.isOpen = false;
-    this.errorCallbacks.forEach(cb => cb(e));
+    this.lastError = `unknown error with connection ${Date.now()}`;
+    this.errorCallbacks.forEach(cb => cb(this.lastError));
   }
 
   private onMessageRawCallback(msg: MessageEvent) {
-    this.logMsg(`received MessageRawCallback: ${msg}`);
+    this.logMsg(`received MessageRawCallback (for real): ${msg.data}`);
+    const parsed: EventStreamMessage = JSON.parse(msg.data);
+    if (!isEventStreamMessage(parsed)) {
+      const errorMsg = `Invalid EventStreamMessage received: ${msg.data}`;
+      this.errorCallbacks.forEach(cb => cb(errorMsg));
+      return;
+    }
     // we will stop propogation if the callback returns false;
-    this.messageCallbacks.every(cb => cb(msg));
+    this.messageCallbacks.every(cb => cb(parsed));
   }
 
   private initializeConnection(url: string, withCredentials: boolean): MethodResult {
     if (!this.mockingActive) {
       this.logMsg(`initializing non-mocking connection to ${url}, with credentials: ${withCredentials}`);
       this.eventSource = new EventSource(url, { withCredentials: withCredentials });
-      // this.eventSource.addEventListener('open', EventSystemOpen, false);
-      // this.eventSource.addEventListener('error', EventSystemError, false);
-      // this.eventSource.addEventListener('message', GotServerEventMessage, false);
-      // this.eventSource.addEventListener('CustomType', GotCustomType, false);
-
       this.eventSource.onopen = () => this.onRawOpenCallback();
-      this.eventSource.onerror = (e: Event) => this.onErrorRawCallback(e);
+      // nothing good seems to come with the error data. Only get {"isTrusted":true}
+      this.eventSource.onerror = (e) => this.onErrorRawCallback(e);
       this.eventSource.onmessage = (msg: MessageEvent) => this.onMessageRawCallback(msg);
     } else if (this.mockMessages) {
       this.logMsg(`initializing mocked connection to ${url}, with credentials: ${withCredentials}, loading ${this.mockMessages.length} messages`);
@@ -116,7 +126,6 @@ export class EventStream {
   }
 
   public addOpenEventCallback(cb: OnOpenEventSourceCallback) {
-    this.isOpen = true;
     this.openCallbacks.push(cb);
     this.logMsg(`adding OpenEventCallback: ${cb}`);
   }
