@@ -128,9 +128,14 @@ func getFile(cwd util.Path, afs afero.Fs, log rslog.Logger, w http.ResponseWrite
 	json.NewEncoder(w).Encode(file)
 }
 
+const ignoreFileName = ".gitignore"
+
 func toFile(cwd util.Path, path util.Path, log rslog.Logger) (*file, error) {
 	path = path.Clean()
-	ignore := gitignore.New(cwd.Join(".gitignore"))
+	ignore, err := gitignore.From(cwd.Join(ignoreFileName))
+	if err != nil {
+		log.Warnf("failed to load %s file", ignoreFileName)
+	}
 
 	exclusion := ignore.Match(path.Path())
 	root, err := newFile(path, exclusion)
