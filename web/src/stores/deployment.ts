@@ -1,12 +1,13 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
+import { CanceledError } from 'axios';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
 import api, { Deployment, ManifestFile } from 'src/api';
-import { CanceledError } from 'axios';
+import { CancelController } from 'src/api/utils/CancelController';
 
-let fileSyncController: AbortController | undefined;
+const fileSyncCancelController = new CancelController();
 
 export const useDeploymentStore = defineStore('deployment', () => {
   const deployment = ref<Deployment>();
@@ -22,21 +23,19 @@ export const useDeploymentStore = defineStore('deployment', () => {
         deployment.value.manifest.files = changed;
       }
 
-      if (fileSyncController) {
-        fileSyncController.abort();
-      }
-      fileSyncController = new AbortController();
-      try {
-        const { data } = await api.deployment.setFiles(
-          selectedFiles,
-          { signal: fileSyncController.signal }
-        );
-        deployment.value = data;
-      } catch (err) {
-        if (err instanceof CanceledError) {
-          // ignore
+      fileSyncCancelController.cancelPrevious(async() => {
+        try {
+          const { data } = await api.deployment.setFiles(
+            selectedFiles,
+            { signal: fileSyncCancelController.signal }
+          );
+          deployment.value = data;
+        } catch (err) {
+          if (err instanceof CanceledError) {
+            // ignore
+          }
         }
-      }
+      });
     }
   });
 
