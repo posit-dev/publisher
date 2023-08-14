@@ -60,7 +60,7 @@ test-e2e:
 test-ci-e2e target:
     #!/bin/bash
     set -euo pipefail
-
+    just build
     # set this environment variable to keep Cypress from attempting to create
     # cache within root's home dir.
     export CYPRESS_CACHE_FOLDER="./test/cypress/{{target}}/.cache"

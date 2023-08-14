@@ -405,7 +405,6 @@ jobs:
           client: windows-latest
           DOCKER: "false"
         run: |
-          just web/build
           just web/test-ci-e2e $env:client
             
 
@@ -449,7 +448,6 @@ jobs:
           client: macos-latest
           DOCKER: "false"
         run: |
-          just web/build && \
           just web/test-ci-e2e ${client}
 
   build-linux-amd64:
@@ -562,7 +560,6 @@ jobs:
           client: linux-amd64
           DOCKER: "false"
         run: |
-          just web/build && \
           just test/ui-client ${client}
   
   build-linux-arm64:
