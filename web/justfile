@@ -10,7 +10,7 @@ bootstrap:
 
     # set this environment variable to keep Cypress from attempting
     # to create a cache within root's home dir.
-    export CYPRESS_CACHE_FOLDER="./test/cypress//new.cache"
+    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
     echo "NOTE: npm install may take five minutes or more from within a docker container..."
     npm install --no-audit
 
@@ -53,8 +53,8 @@ test-e2e:
     # cache within root's home dir.
     export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
     # install cypress
-
     npx cypress install
+
     npx quasar test --e2e cypress
 
 test-ci-e2e target:
@@ -63,6 +63,7 @@ test-ci-e2e target:
     just build
     # set this environment variable to keep Cypress from attempting to create
     # cache within root's home dir.
+    # use a different cache per os
     export CYPRESS_CACHE_FOLDER="./test/cypress/{{target}}/.cache"
     # install cypress
     npx cypress install
