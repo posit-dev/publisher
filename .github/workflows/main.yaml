@@ -367,7 +367,7 @@ jobs:
         name: UX E2E Tests
         run: PATH="${PATH}:/usr/local/bin" just web/test-e2e
 
-  test-windows-client:
+  test-windows:
     needs: build-agent
     runs-on: windows-latest
     steps:
@@ -390,9 +390,9 @@ jobs:
         run: |
           chmod -R +x ./bin/**/connect-client
       - 
-        name: Run Windows Tests
+        name: Run Windows CLI Tests
         env:
-          client: windows-latest
+          os: windows-latest
           # bats reads the load libraries from relative path only in Windows
           BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
@@ -401,9 +401,17 @@ jobs:
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
-          just run-client $env:client
+          just run-client $env:os
+      -
+        name: Run Windows Cypress Tests
+        env:
+          os: windows-latest
+          DOCKER: "false"
+        run: |
+          just web/test-ci-e2e $env:os
+            
 
-  test-macos-client:
+  test-macos:
     needs: build-agent
     runs-on: macos-latest
     steps:
@@ -426,9 +434,9 @@ jobs:
         run: |
           chmod -R +x ./bin/**/connect-client
       - 
-        name: Run MacOs Tests
+        name: Run MacOs CLI Tests
         env:
-          client: macos-latest
+          os: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
@@ -436,7 +444,14 @@ jobs:
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
-          just run-client ${client}
+          just run-client ${os}
+      -
+        name: Run MacOS Cypress Tests
+        env:
+          os: macos-latest
+          DOCKER: "false"
+        run: |
+          just web/test-ci-e2e ${os}
 
   build-linux-amd64:
     runs-on: ubuntu-latest
@@ -471,14 +486,16 @@ jobs:
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-amd64-image
-          client: linux-amd64
+          os: linux-amd64
       - 
         if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+            platform=linux-amd64
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/amd64
@@ -495,7 +512,7 @@ jobs:
           path: /tmp/linux-amd64-image.tar
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
-  run-linux-amd64:
+  test-linux-amd64:
     needs: build-linux-amd64
     runs-on: ubuntu-latest
     defaults:
@@ -535,12 +552,19 @@ jobs:
           docker load --input /tmp/linux-amd64-image.tar
           docker image ls -a
       -
-        name: Run linux-amd64 Tests
+        name: Run linux-amd64 CLI Tests
         env:
-          client: linux-amd64
+          os: linux-amd64
         run: |
-          just test/run-client ${client}
-  
+          just test/run-client ${os}
+      -
+        name: Run linux-amd64 Cypress Tests
+        env:
+          os: linux-amd64
+          DOCKER: "false"
+        run: |
+          just test/ui-client ${os}
+
   build-linux-arm64:
     runs-on: ubuntu-latest
     defaults:
@@ -574,14 +598,16 @@ jobs:
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-arm64-image
-          client: linux-arm64
+          os: linux-arm64
       - 
         if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1 
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+            platform=linux-arm64
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/arm64
@@ -598,7 +624,7 @@ jobs:
           path: /tmp/linux-arm64-image.tar
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
-  run-linux-arm64:
+  test-linux-arm64:
     needs: build-linux-arm64
     runs-on: ubuntu-latest
     defaults:
@@ -648,9 +674,16 @@ jobs:
           docker load --input /tmp/linux-arm64-image.tar
           docker image ls -a
       -
-        name: Run linux-arm64 Tests
+        name: Run linux-arm64 CLI Tests
         env:
-          client: linux-arm64
+          os: linux-arm64
         run: |
-          just test/run-client ${client}
-    
+          just test/run-client ${os}
+      # -
+      #   name: Run linux-arm64 Cypress Tests
+      #   env:
+      #     os: linux-arm64
+      #     DOCKER: "false"
+      #   run: |
+      #     just web/build && \
+      #     just test/ui-client ${os}
