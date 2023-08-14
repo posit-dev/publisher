@@ -69,12 +69,6 @@ jobs:
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('build/package/Dockerfile') }}
-      # -
-      #   name: Upload Docker Image Artifact
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: image-tar
-      #     path: /tmp/build-image.tar
 
   build-ux:
     needs: build-docker-image
@@ -312,6 +306,10 @@ jobs:
         name: Build agent
         run: just build-agent
       -
+        name: Make agents executable
+        run: |
+          sudo chmod -R +x ./bin/**/connect-client
+      -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -352,6 +350,10 @@ jobs:
         with:
           name: agent-artifacts
           path: ./bin
+      -
+        name: Make agents executable
+        run: |
+          chmod -R +x ./bin/**/connect-client
       - 
         name: Restore Cache UX node_modules
         id: node_modules
