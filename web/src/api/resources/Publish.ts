@@ -9,7 +9,7 @@ export class Publish {
     this.client = client;
   }
 
-  initiatePublish() {
+  start() {
     return this.client.post('/publish');
   }
 }
