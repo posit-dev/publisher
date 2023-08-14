@@ -5,25 +5,23 @@ import { defineStore } from 'pinia';
 import { Ref, computed, ref } from 'vue';
 
 import api, { Deployment } from 'src/api';
-import { CancelController } from 'src/api/utils/CancelController';
 import { deploymentToPathnames, pathnamesToManifestFiles } from 'src/api/utils';
-import { debounce } from 'quasar';
-
-const fileSyncCancelController = new CancelController();
+import { requestOnce } from 'src/utils/requestOnce';
 
 /**
  * Set the files on the server side.
  * Debounced to avoid API calls on every state change.
  * In progress API calls are cancelled to avoid de-syncing the deployment state.
  */
-const setFilesOnServer = debounce((
+const setFilesOnServer = requestOnce(async(
+  signal: AbortSignal,
   files: string[],
   deploymentState: Ref<Deployment | undefined>
-) => fileSyncCancelController.cancelPrevious(async() => {
+) => {
   try {
     const { data } = await api.deployment.setFiles(
       files,
-      { signal: fileSyncCancelController.signal }
+      { signal: signal }
     );
     deploymentState.value = data;
   } catch (err) {
@@ -31,7 +29,7 @@ const setFilesOnServer = debounce((
       // ignore
     }
   }
-}), 0);
+}, 250);
 
 export const useDeploymentStore = defineStore('deployment', () => {
   const deployment = ref<Deployment>();
