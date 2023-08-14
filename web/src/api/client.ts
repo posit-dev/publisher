@@ -3,11 +3,13 @@
 import axios from 'axios';
 
 import { Accounts } from 'src/api/resources/Accounts';
+import { Deployment } from 'src/api/resources/Deployment';
 import { Files } from 'src/api/resources/Files';
 import { Publish } from 'src/api/resources/Publish';
 
 class PublishingClientApi {
   accounts: Accounts;
+  deployment: Deployment;
   files: Files;
   publish: Publish;
 
@@ -18,6 +20,7 @@ class PublishingClientApi {
     });
 
     this.accounts = new Accounts(client);
+    this.deployment = new Deployment(client);
     this.files = new Files(client);
     this.publish = new Publish(client);
   }

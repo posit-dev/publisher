@@ -48,7 +48,7 @@ func NewAccountsController(lister accounts.AccountList, logger rslog.Logger) htt
 	return func(w http.ResponseWriter, req *http.Request) {
 		accounts, err := lister.GetAllAccounts()
 		if err != nil {
-			internalError(w, logger, err)
+			InternalError(w, logger, err)
 			return
 		}
 		data := &accountListDTO{}
