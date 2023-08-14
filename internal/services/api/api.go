@@ -8,10 +8,26 @@ import (
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
-const internalErrorMsg = "Internal server error"
+func InternalError(w http.ResponseWriter, logger rslog.Logger, err error) {
+	status := http.StatusInternalServerError
+	text := http.StatusText(status)
+	w.WriteHeader(status)
+	w.Write([]byte(text))
+	logger.Errorf("%s: %s", text, err)
+}
 
-func internalError(w http.ResponseWriter, logger rslog.Logger, err error) {
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte(internalErrorMsg))
-	logger.Errorf("%s: %s", internalErrorMsg, err)
+func MethodNotAllowed(w http.ResponseWriter, req *http.Request, logger rslog.Logger) {
+	status := http.StatusMethodNotAllowed
+	text := http.StatusText(status)
+	w.WriteHeader(status)
+	w.Write([]byte(text))
+	logger.Errorf("%s %s: %s", req.Method, req.URL.String(), text)
+}
+
+func BadRequestJson(w http.ResponseWriter, req *http.Request, logger rslog.Logger, err error) {
+	status := http.StatusBadRequest
+	text := http.StatusText(status)
+	w.WriteHeader(status)
+	w.Write([]byte(text + err.Error()))
+	logger.Errorf("%s %s: %s: %s", req.Method, req.URL.String(), text, err)
 }

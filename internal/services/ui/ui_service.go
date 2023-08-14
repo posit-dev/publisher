@@ -11,6 +11,7 @@ import (
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
+	"github.com/rstudio/connect-client/internal/services/api/deployment"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -46,13 +47,17 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(publishArgs *cli_types.PublishArgs, fs afero.Fs, lister accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
+func newUIHandler(publishArgs *cli_types.PublishArgs, afs afero.Fs, lister accounts.AccountList, log rslog.Logger) http.HandlerFunc {
 	mux := http.NewServeMux()
 	// /api/accounts
-	mux.Handle(ToPath("accounts"), api.NewAccountsController(lister, logger))
+	mux.Handle(ToPath("accounts"), api.NewAccountsController(lister, log))
 	// /api/files
-	mux.Handle(ToPath("files"), api.NewFilesController(fs, logger))
-	mux.Handle(ToPath("publish"), api.NewPublishController(publishArgs, lister, logger))
+	mux.Handle(ToPath("files"), api.NewFilesController(afs, log))
+	// /api/deployment
+	mux.Handle(ToPath("deployment"), deployment.NewDeploymentController(publishArgs.State, log))
+	// /api/deployment/files
+	mux.Handle(ToPath("deployment", "files"), deployment.NewFilesController(publishArgs.State, log))
+	mux.Handle(ToPath("publish"), api.NewPublishController(publishArgs, lister, log))
 	mux.HandleFunc("/", api.NewStaticController())
 	return mux.ServeHTTP
 }

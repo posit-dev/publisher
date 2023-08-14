@@ -9,24 +9,26 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/services/api/pathnames"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
 
 type file struct {
-	FileType         fileType `json:"file_type"`         // the file type
-	Pathname         string   `json:"pathname"`          // the pathname
-	Size             int64    `json:"size"`              // nullable; length in bytes for regular files; system-dependent
-	ModifiedDatetime string   `json:"modified_datetime"` // the last modified datetime
-	IsDir            bool     `json:"is_dir"`            // true if the file is a directory
-	IsEntrypoint     bool     `json:"is_entrypoint"`     // true if the file is an entrypoint
-	IsRegular        bool     `json:"is_file"`           // true if the file is a regular file
-	IsExcluded       bool     `json:"is_excluded"`       // true if the file is excluded
-	Files            []*file  `json:"files"`             // an array of objects of the same type for each file within the directory.
+	FileType         fileType         `json:"file_type"`         // the file type
+	Pathname         string           `json:"pathname"`          // the pathname
+	BaseName         string           `json:"base_name"`         // the file name
+	Size             int64            `json:"size"`              // nullable; length in bytes for regular files; system-dependent
+	ModifiedDatetime string           `json:"modified_datetime"` // the last modified datetime
+	IsDir            bool             `json:"is_dir"`            // true if the file is a directory
+	IsEntrypoint     bool             `json:"is_entrypoint"`     // true if the file is an entrypoint
+	IsRegular        bool             `json:"is_file"`           // true if the file is a regular file
+	Exclusion        *gitignore.Match `json:"exclusion"`         // object describing the reason for exclusion, null if not excluded
+	Files            []*file          `json:"files"`             // an array of objects of the same type for each file within the directory.
 }
 
-func newFile(path util.Path, isExcluded bool) (*file, error) {
+func newFile(path util.Path, exclusion *gitignore.Match) (*file, error) {
 	info, err := path.Stat()
 	if err != nil {
 		return nil, err
@@ -39,17 +41,18 @@ func newFile(path util.Path, isExcluded bool) (*file, error) {
 
 	return &file{
 		FileType:         filetype,
+		BaseName:         path.Base(),
 		Pathname:         path.Path(),
 		Size:             info.Size(),
 		ModifiedDatetime: info.ModTime().Format(time.RFC3339),
 		IsDir:            info.Mode().IsDir(),
 		IsRegular:        info.Mode().IsRegular(),
-		IsExcluded:       isExcluded,
+		Exclusion:        exclusion,
 		Files:            make([]*file, 0),
 	}, nil
 }
 
-func (f *file) insert(path util.Path, ignore gitignore.GitIgnoreList) (*file, error) {
+func (f *file) insert(path util.Path, ignore gitignore.IgnoreList) (*file, error) {
 
 	if f.Pathname == path.Path() {
 		return f, nil
@@ -63,8 +66,8 @@ func (f *file) insert(path util.Path, ignore gitignore.GitIgnoreList) (*file, er
 			}
 		}
 
-		isExcluded := ignore.Match(path.Path())
-		child, err := newFile(path, isExcluded)
+		exclusion := ignore.Match(path.Path())
+		child, err := newFile(path, exclusion)
 		if err != nil {
 			return nil, err
 		}
@@ -93,25 +96,31 @@ func NewFilesController(fs afero.Fs, log rslog.Logger) http.HandlerFunc {
 }
 
 func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Request) {
-	var pathname string
+	var p pathnames.Pathname
 	if q := r.URL.Query(); q.Has("pathname") {
-		pathname = q.Get("pathname")
+		p = pathnames.Create(q.Get("pathname"), afs, log)
 	} else {
-		pathname = "."
+		p = pathnames.Create(".", afs, log)
 	}
 
-	// todo - validate that the pathname is within the working directory
-	//
-	// https://www.stackhawk.com/blog/golang-path-traversal-guide-examples-and-prevention/
-	//
-	// Attack Vectors:
-	//	- '../' or './src/../../'; i.e., escape the working directory
-	// 	- '/' or '/home'; i.e., absolute directories outside of working directory
+	ok, err := p.IsSafe()
+	if err != nil {
+		InternalError(w, log, err)
+		return
+	}
 
-	path := util.NewPath(pathname, afs)
+	// if pathname is not safe, return 403 - Forbidden
+	if !ok {
+		log.Warnf("the pathname '%s' is not safe", p)
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(http.StatusText(http.StatusForbidden)))
+		return
+	}
+
+	path := util.NewPath(p.String(), afs)
 	file, err := toFile(path, log)
 	if err != nil {
-		internalError(w, log, err)
+		InternalError(w, log, err)
 		return
 	}
 
@@ -120,9 +129,13 @@ func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Requ
 }
 
 func toFile(path util.Path, log rslog.Logger) (*file, error) {
-	ignore := gitignore.New(path)
-	isExcluded := ignore.Match(path.Path())
-	root, err := newFile(path, isExcluded)
+	path = path.Clean()
+	ignore, err := gitignore.NewIgnoreList(path, nil)
+	if err != nil {
+		return nil, err
+	}
+	exclusion := ignore.Match(path.Path())
+	root, err := newFile(path, exclusion)
 	if err != nil {
 		return nil, err
 	}

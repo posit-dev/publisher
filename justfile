@@ -81,6 +81,10 @@ build-agent-dev:
 build-web:
     {{ _with_runner }} just web/build
 
+# Build the developer stack
+build-dev:
+    {{ _with_runner }} just clean image bootstrap build-web build-agent-dev
+
 # Validate the agent and the web UX source code, along with checking for copyrights. See the `validate-post` recipe for linting which requires a build.
 validate: 
     #!/usr/bin/env bash
@@ -147,7 +151,26 @@ image:
             ./build/package
     fi
 
+# Start the agent and show the UI
+start-agent-for-e2e:
+    #!/bin/bash
+    set -exuo pipefail
 
+    GOOS=$({{ _with_runner }} go env GOOS)
+    # remove \r from string when executed through docker
+    GOOS="${GOOS%%[[:cntrl:]]}"
+
+    GOARCH=$({{ _with_runner }} go env GOARCH)
+    # remove \r from string when executed through docker
+    GOARCH="${GOARCH%%[[:cntrl:]]}"
+
+    echo "Working directory is $(pwd)"
+
+    ./bin/$GOOS-$GOARCH/connect-client publish-ui \
+        ./test/sample-content/fastapi-simple \
+        --listen=127.0.0.1:9000 \
+        --token=abc123
+    
 [private]
 _with_docker *args: 
     docker run --rm {{ _interactive }} \

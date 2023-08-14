@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/util"
@@ -17,13 +18,18 @@ import (
 
 type FilesSuite struct {
 	utiltest.Suite
+	log rslog.Logger
 }
 
 func TestFilesSuite(t *testing.T) {
 	suite.Run(t, new(FilesSuite))
 }
 
-func (s *FilesSuite) Test_toFiles() {
+func (s *FilesSuite) SetupSuite() {
+	s.log = rslog.NewDiscardingLogger()
+}
+
+func (s *FilesSuite) TestToFile() {
 	afs := afero.NewOsFs()
 	pathname := "."
 	path := util.NewPath(pathname, afs)
@@ -33,13 +39,12 @@ func (s *FilesSuite) Test_toFiles() {
 	s.Equal(files.Pathname, pathname)
 }
 
-func (s *FilesSuite) Test_getFile() {
+func (s *FilesSuite) TestGetFile() {
 	req, err := http.NewRequest("GET", "", nil)
 	s.NoError(err)
 	fs := afero.NewMemMapFs()
-	log := rslog.NewDiscardingLogger()
 	rec := httptest.NewRecorder()
-	getFile(fs, log, rec, req)
+	getFile(fs, s.log, rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
@@ -52,15 +57,17 @@ func (s *FilesSuite) Test_getFile() {
 	s.Equal(".", res.Pathname)
 }
 
-func (s *FilesSuite) Test_getFile_pathname() {
-	fs := afero.NewMemMapFs()
-	pathname, _ := afero.TempDir(fs, "", "")
+func (s *FilesSuite) TestGetFile_WithPathname() {
+	afs := afero.NewMemMapFs()
+	pathname := "pathname"
+	basename := filepath.Base(pathname)
+	afs.Create(pathname)
+
 	req, err := http.NewRequest("GET", "?pathname="+pathname, nil)
 	s.NoError(err)
 
-	log := rslog.NewDiscardingLogger()
 	rec := httptest.NewRecorder()
-	getFile(fs, log, rec, req)
+	getFile(afs, s.log, rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
@@ -71,4 +78,5 @@ func (s *FilesSuite) Test_getFile_pathname() {
 	s.NoError(dec.Decode(res))
 
 	s.Equal(pathname, res.Pathname)
+	s.Equal(basename, res.BaseName)
 }

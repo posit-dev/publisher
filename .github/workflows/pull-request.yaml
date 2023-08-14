@@ -17,9 +17,8 @@ on:
 
 # build docker image: actions/upload-artifact@v3, with path: /bin
 # - build UX
-#   - validate UX
+#   - validate codebase
 #   - test UX unit tests
-#   - validate agent
 #   - agent tests
 #   - build agent
 #     - UX e2e tests
@@ -67,12 +66,6 @@ jobs:
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('build/package/Dockerfile') }}
-      # -
-      #   name: Upload Docker Image Artifact
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: image-tar
-      #     path: /tmp/build-image.tar
 
   build-ux:
     needs: build-docker-image
@@ -135,7 +128,7 @@ jobs:
           name: web-ux
           path: ./web/dist/spa
 
-  validate-ux:
+  validate-codebase:
     needs: build-ux
     runs-on: ubuntu-latest
     defaults:
@@ -163,6 +156,12 @@ jobs:
         run: |
           docker load --input /tmp/build-image.tar
           docker image ls -a
+      -
+        name: Download Web-UX Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: web-ux
+          path: ./web/dist/spa
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -173,8 +172,10 @@ jobs:
           path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
       -
-        name: Validate the UX
-        run: just web/validate
+        name: Validate the codebase
+        run: |
+          just validate
+          just validate-post
 
   test-ux:
     needs: build-ux
@@ -225,46 +226,6 @@ jobs:
       -
         name: UX Go Race Tests
         run: just web/test-race
-
-  validate-agent:
-    needs: build-ux
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      - 
-        name: Setup Just
-        uses: extractions/setup-just@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Restore Cache docker image
-        id: cache-docker-image
-        uses: actions/cache/restore@v3
-        env:
-          cache-name: cache-docker-image
-        with:
-          path: /tmp/build-image.tar
-          key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('/tmp/build-image.tar') }}
-      -
-        name: Load Docker Image
-        run: |
-          docker load --input /tmp/build-image.tar
-          docker image ls -a
-      -
-        name: Download Web-UX SPA Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: web-ux
-          path: ./web/dist/spa
-      -
-        name: Validate Agent
-        run: |
-          just validate-agent
-          just validate-post
 
   agent-tests:
     needs: build-ux
@@ -342,6 +303,10 @@ jobs:
         name: Build agent
         run: just build-agent
       -
+        name: Make agents executable
+        run: |
+          sudo chmod -R +x ./bin/**/connect-client
+      -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -382,6 +347,10 @@ jobs:
         with:
           name: agent-artifacts
           path: ./bin
+      -
+        name: Make agents executable
+        run: |
+          chmod -R +x ./bin/**/connect-client
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -413,6 +382,10 @@ jobs:
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Make agents executable
+        run: |
+          chmod -R +x ./bin/**/connect-client
       - 
         name: Run Windows Tests
         env:
@@ -445,6 +418,10 @@ jobs:
           path: bin/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Make agents executable
+        run: |
+          chmod -R +x ./bin/**/connect-client
       - 
         name: Run MacOs Tests
         env:
@@ -453,7 +430,6 @@ jobs:
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
         run: |
-          chmod +x bin/*/*
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
@@ -538,6 +514,10 @@ jobs:
           name: agent-artifacts
           path: bin/
       -
+        name: Make agents executable
+        run: |
+          chmod -R +x ./bin/**/connect-client
+      -
         name: Cache docker image (restore)
         id: cache-linux-amd64-image
         uses: actions/cache/restore@v3
@@ -556,7 +536,6 @@ jobs:
         env:
           client: linux-amd64
         run: |
-          chmod +x bin/*/*
           just test/run-client ${client}
   
   build-linux-arm64:
@@ -637,6 +616,10 @@ jobs:
         with:
           name: agent-artifacts
           path: bin/
+      -
+        name: Make agents executable
+        run: |
+          chmod -R +x ./bin/**/connect-client
 
       # these are required to run docker on amd64 and arm64 platforms
       - 
@@ -666,6 +649,5 @@ jobs:
         env:
           client: linux-arm64
         run: |
-          chmod +x bin/*/*
           just test/run-client ${client}
     

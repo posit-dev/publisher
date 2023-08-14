@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/util"
@@ -28,16 +29,16 @@ const PythonRequirementsFilename = "requirements.txt"
 // The manifest describes the type of content (its dependencies, how its
 // environment can be recreated (if needed) and how it is served/executed).
 type Manifest struct {
-	Version     int          `json:"version" kong:"-"`                               // Manifest version (always 1)
-	Locale      string       `json:"locale" kong:"-"`                                // User's locale. Currently unused.
-	Platform    string       `json:"platform,omitempty" name:"r-version"`            // Client R version
-	Metadata    Metadata     `json:"metadata" kong:"embed"`                          // Properties about this deployment. Ignored by shinyapps.io
-	Python      *Python      `json:"python,omitempty" kong:"embed,prefix='python-'"` // If non-null, specifies the Python version and dependencies
-	Jupyter     *Jupyter     `json:"jupyter,omitempty" kong:"embed"`                 // If non-null, specifies the Jupyter options
-	Quarto      *Quarto      `json:"quarto,omitempty" kong:"embed,prefix='quarto-'"` // If non-null, specifies the Quarto version and engines
-	Environment *Environment `json:"environment,omitempty" kong:"embed"`             // Information about the execution environment
-	Packages    PackageMap   `json:"packages" kong:"-"`                              // Map of R package name to package details
-	Files       FileMap      `json:"files" kong:"-"`                                 // List of file paths contained in the bundle
+	Version     int             `json:"version" kong:"-"`                               // Manifest version (always 1)
+	Locale      string          `json:"locale" kong:"-"`                                // User's locale. Currently unused.
+	Platform    string          `json:"platform,omitempty" name:"r-version"`            // Client R version
+	Metadata    Metadata        `json:"metadata" kong:"embed"`                          // Properties about this deployment. Ignored by shinyapps.io
+	Python      *Python         `json:"python,omitempty" kong:"embed,prefix='python-'"` // If non-null, specifies the Python version and dependencies
+	Jupyter     *Jupyter        `json:"jupyter,omitempty" kong:"embed"`                 // If non-null, specifies the Jupyter options
+	Quarto      *Quarto         `json:"quarto,omitempty" kong:"embed,prefix='quarto-'"` // If non-null, specifies the Quarto version and engines
+	Environment *Environment    `json:"environment,omitempty" kong:"embed"`             // Information about the execution environment
+	Packages    PackageMap      `json:"packages" kong:"-"`                              // Map of R package name to package details
+	Files       ManifestFileMap `json:"files" kong:"-"`                                 // List of file paths contained in the bundle
 }
 
 // Metadata contains details about this deployment (type, etc).
@@ -86,10 +87,18 @@ type Package struct {
 	Description DescriptionMap // A collection of key:value fields from the DESCRIPTION file
 }
 
-type FileMap map[string]ManifestFile
+type ManifestFileMap map[string]ManifestFile
+
+func NewManifestFileMap() ManifestFileMap {
+	return ManifestFileMap{}
+}
 
 type ManifestFile struct {
 	Checksum string `json:"checksum"`
+}
+
+func NewManifestFile() ManifestFile {
+	return ManifestFile{}
 }
 
 // ReadManifest reads and parses the manifest.
@@ -137,7 +146,7 @@ func NewManifest() *Manifest {
 	return &Manifest{
 		Version:  1,
 		Packages: make(PackageMap),
-		Files:    make(FileMap),
+		Files:    make(ManifestFileMap),
 	}
 }
 
@@ -251,4 +260,13 @@ func (manifest *Manifest) ResetEmptyFields() {
 	if reflect.DeepEqual(manifest.Environment, &Environment{}) {
 		manifest.Environment = nil
 	}
+}
+
+func (manifest *Manifest) GetFilenames() []string {
+	names := []string{}
+	for name := range manifest.Files {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }

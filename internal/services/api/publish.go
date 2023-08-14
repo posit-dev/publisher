@@ -15,7 +15,7 @@ func NewPublishController(publishArgs *cli_types.PublishArgs, lister accounts.Ac
 		case http.MethodPost:
 			err := publish.Publish(publishArgs, lister, logger)
 			if err != nil {
-				internalError(w, logger, err)
+				InternalError(w, logger, err)
 			}
 		default:
 			return

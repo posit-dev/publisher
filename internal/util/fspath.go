@@ -3,6 +3,7 @@ package util
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"encoding/json"
 	"io"
 	"io/fs"
 	"os"
@@ -46,6 +47,14 @@ func (p Path) Path() string {
 
 func (p Path) Fs() afero.Fs {
 	return p.fs
+}
+
+func (p Path) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.path)
+}
+
+func (p *Path) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, &p.path)
 }
 
 func (p Path) WithPath(path string) Path {
