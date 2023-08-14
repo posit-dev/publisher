@@ -33,7 +33,7 @@ func (s *FilesSuite) TestToFile() {
 	afs := afero.NewOsFs()
 	pathname := "."
 	path := util.NewPath(pathname, afs)
-	files, err := toFile(path, path, nil)
+	files, err := toFile(path, path, s.log)
 	s.NotNil(files)
 	s.NoError(err)
 	s.Equal(files.Pathname, pathname)
