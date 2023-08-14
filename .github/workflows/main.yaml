@@ -69,6 +69,12 @@ jobs:
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('build/package/Dockerfile') }}
+      # -
+      #   name: Upload Docker Image Artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: image-tar
+      #     path: /tmp/build-image.tar
 
   build-ux:
     needs: build-docker-image
@@ -306,10 +312,6 @@ jobs:
         name: Build agent
         run: just build-agent
       -
-        name: Make agents executable
-        run: |
-          sudo chmod -R +x ./bin/**/connect-client
-      -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -350,10 +352,6 @@ jobs:
         with:
           name: agent-artifacts
           path: ./bin
-      -
-        name: Make agents executable
-        run: |
-          chmod -R +x ./bin/**/connect-client
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -390,7 +388,7 @@ jobs:
         run: |
           chmod -R +x ./bin/**/connect-client
       - 
-        name: Run Windows Tests
+        name: Run Windows CLI Tests
         env:
           client: windows-latest
           # bats reads the load libraries from relative path only in Windows
@@ -402,6 +400,14 @@ jobs:
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
           just run-client $env:client
+      -
+        name: Run Windows Cypress Tests
+        env:
+          client: windows-latest
+          DOCKER: "false"
+        run: |
+          just web/build
+          just web/test-ci-e2e $env:client
 
   test-macos-client:
     needs: build-agent
@@ -426,7 +432,7 @@ jobs:
         run: |
           chmod -R +x ./bin/**/connect-client
       - 
-        name: Run MacOs Tests
+        name: Run MacOs CLI Tests
         env:
           client: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
@@ -437,6 +443,14 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just run-client ${client}
+      -
+        name: Run MacOS Cypress Tests
+        env:
+          client: macos-latest
+          DOCKER: "false"
+        run: |
+          just web/build && \
+          just web/test-ci-e2e ${client}
 
   build-linux-amd64:
     runs-on: ubuntu-latest
@@ -478,7 +492,9 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+            platform=linux-amd64
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/amd64
@@ -535,11 +551,19 @@ jobs:
           docker load --input /tmp/linux-amd64-image.tar
           docker image ls -a
       -
-        name: Run linux-amd64 Tests
+        name: Run linux-amd64 CLI Tests
         env:
           client: linux-amd64
         run: |
           just test/run-client ${client}
+      -
+        name: Run linux-amd64 Cypress Tests
+        env:
+          client: linux-amd64
+          DOCKER: "false"
+        run: |
+          just web/build && \
+          just test/ui-client ${client}
   
   build-linux-arm64:
     runs-on: ubuntu-latest
@@ -581,7 +605,9 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1 
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+            platform=linux-arm64
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/arm64
@@ -648,9 +674,16 @@ jobs:
           docker load --input /tmp/linux-arm64-image.tar
           docker image ls -a
       -
-        name: Run linux-arm64 Tests
+        name: Run linux-arm64 CLI Tests
         env:
           client: linux-arm64
         run: |
           just test/run-client ${client}
-    
+      # -
+      #   name: Run linux-arm64 Cypress Tests
+      #   env:
+      #     client: linux-arm64
+      #     DOCKER: "false"
+      #   run: |
+      #     just web/build && \
+      #     just test/ui-client ${client}
