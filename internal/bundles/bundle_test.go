@@ -209,7 +209,7 @@ func (s *BundlerSuite) TestNewBundlerForManifest() {
 	manifestPath := s.cwd.Join(ManifestFilename)
 	err := s.manifest.WriteManifestFile(manifestPath)
 	s.Nil(err)
-	bundler, err := NewBundlerForManifest(manifestPath, logger)
+	bundler, err := NewBundlerForManifestFile(manifestPath, logger)
 	s.Nil(err)
 	s.NotNil(bundler)
 }
@@ -217,7 +217,7 @@ func (s *BundlerSuite) TestNewBundlerForManifest() {
 func (s *BundlerSuite) TestNewBundlerForManifestMissingManifestFile() {
 	logger := rslog.NewDiscardingLogger()
 	manifestPath := s.cwd.Join(ManifestFilename)
-	bundler, err := NewBundlerForManifest(manifestPath, logger)
+	bundler, err := NewBundlerForManifestFile(manifestPath, logger)
 	s.NotNil(err)
 	s.Nil(bundler)
 }
@@ -389,7 +389,7 @@ func (s *BundlerSuite) TestMultipleCallsFromManifest() {
 	manifestPath := s.cwd.Join(ManifestFilename)
 	err := s.manifest.WriteManifestFile(manifestPath)
 	s.Nil(err)
-	bundler, err := NewBundlerForManifest(manifestPath, logger)
+	bundler, err := NewBundlerForManifestFile(manifestPath, logger)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
@@ -421,7 +421,7 @@ func (s *BundlerSuite) TestNewBundleFromManifest() {
 	err := s.manifest.WriteManifestFile(manifestPath)
 	s.Nil(err)
 
-	bundler, err := NewBundlerForManifest(manifestPath, logger)
+	bundler, err := NewBundlerForManifestFile(manifestPath, logger)
 	s.Nil(err)
 	manifestOut, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -438,7 +438,7 @@ func (s *BundlerSuite) TestNewBundleFromManifestMissingFile() {
 	err := s.manifest.WriteManifestFile(manifestPath)
 	s.Nil(err)
 
-	bundler, err := NewBundlerForManifest(manifestPath, logger)
+	bundler, err := NewBundlerForManifestFile(manifestPath, logger)
 	s.Nil(err)
 	manifestOut, err := bundler.CreateBundle(dest)
 	s.NotNil(err)

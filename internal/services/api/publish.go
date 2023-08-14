@@ -15,7 +15,7 @@ func NewPublishController(publishArgs *cli_types.PublishArgs, lister accounts.Ac
 	return func(w http.ResponseWriter, req *http.Request) {
 		switch req.Method {
 		case http.MethodPost:
-			err := publish.Publish(publishArgs, lister, logger)
+			err := publish.PublishManifestFiles(publishArgs, lister, logger)
 			if err != nil {
 				InternalError(w, logger, err)
 			}

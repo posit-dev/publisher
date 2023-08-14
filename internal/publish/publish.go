@@ -80,7 +80,23 @@ func logAppInfo(accountURL string, contentID apitypes.ContentID, logger rslog.Lo
 	return err
 }
 
-func Publish(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger rslog.Logger) error {
+func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger rslog.Logger) error {
+	bundler, err := bundles.NewBundlerForManifest(cmd.Path, &cmd.State.Manifest, logger)
+	if err != nil {
+		return err
+	}
+	return publish(cmd, bundler, lister, logger)
+}
+
+func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger rslog.Logger) error {
+	bundler, err := bundles.NewBundler(cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, logger)
+	if err != nil {
+		return err
+	}
+	return publish(cmd, bundler, lister, logger)
+}
+
+func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister accounts.AccountList, logger rslog.Logger) error {
 	account, err := lister.GetAccountByName(cmd.State.Target.AccountName)
 	if err != nil {
 		return err
@@ -92,10 +108,6 @@ func Publish(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger rsl
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
 
-	bundler, err := bundles.NewBundler(cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, logger)
-	if err != nil {
-		return err
-	}
 	_, err = bundler.CreateBundle(bundleFile)
 	if err != nil {
 		return err

@@ -20,7 +20,7 @@ import (
 
 type Bundler interface {
 	CreateManifest() (*Manifest, error)
-	CreateBundle(archive io.Writer) error
+	CreateBundle(archive io.Writer) (*Manifest, error)
 }
 
 // NewBundler creates a bundler that will archive the directory specified
@@ -64,13 +64,17 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	}, nil
 }
 
-func NewBundlerForManifest(manifestPath util.Path, logger rslog.Logger) (*bundler, error) {
+func NewBundlerForManifestFile(manifestPath util.Path, logger rslog.Logger) (*bundler, error) {
 	dir := manifestPath.Dir()
-	absDir, err := dir.Abs()
+	manifest, err := ReadManifestFile(manifestPath)
 	if err != nil {
 		return nil, err
 	}
-	manifest, err := ReadManifestFile(manifestPath)
+	return NewBundlerForManifest(dir, manifest, logger)
+}
+
+func NewBundlerForManifest(dir util.Path, manifest *Manifest, logger rslog.Logger) (*bundler, error) {
+	absDir, err := dir.Abs()
 	if err != nil {
 		return nil, err
 	}
