@@ -51,6 +51,7 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
     [NODE_KEY]: file.pathname,
     label: file.base_name,
     children: file.files.map(fileToTreeNode),
+    tickable: !file.exclusion,
   };
 
   return node;
