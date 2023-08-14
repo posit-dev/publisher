@@ -203,7 +203,7 @@ func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) e
 
 type PublishUICmd struct {
 	PublishCmd `kong:"embed"`
-	ui         cli_types.UIArgs
+	cli_types.UIArgs
 }
 
 func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) error {
@@ -213,7 +213,7 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context)
 	}
 	svc := ui.NewUIService(
 		"/",
-		cmd.ui,
+		cmd.UIArgs,
 		&cmd.PublishArgs,
 		ctx.LocalToken,
 		ctx.Fs,
