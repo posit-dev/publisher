@@ -29,7 +29,7 @@ const setFilesOnServer = requestOnce(async(
       // ignore
     }
   }
-}, 250);
+}, 500);
 
 export const useDeploymentStore = defineStore('deployment', () => {
   const deployment = ref<Deployment>();
