@@ -4,10 +4,12 @@ package commands
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
+	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/environment"
 	"github.com/rstudio/connect-client/internal/inspect"
@@ -65,6 +67,27 @@ func (cmd *BaseBundleCmd) SaveState(logger rslog.Logger) error {
 	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, logger)
 }
 
+func listFiles(dir util.Path, log rslog.Logger) (bundles.ManifestFileMap, error) {
+	files := make(bundles.ManifestFileMap)
+
+	ignore, err := gitignore.NewIgnoreList(dir, nil)
+	if err != nil {
+		return nil, err
+	}
+	walker := util.NewSymlinkWalker(ignore, log)
+	err = walker.Walk(dir, func(path util.Path, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		files[path.Path()] = bundles.NewManifestFile()
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
 // stateFromCLI takes the CLI options provided by the user,
 // performs content auto-detection if needed, and
 // updates cmd.State to reflect all of the information.
@@ -72,7 +95,6 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger rslog.Logger) error {
 	manifest := &cmd.State.Manifest
 	manifest.Version = 1
 	manifest.Packages = make(bundles.PackageMap)
-	manifest.Files = make(bundles.ManifestFileMap)
 
 	metadata := &manifest.Metadata
 	if metadata.Entrypoint == "" && cmd.Path != cmd.State.SourceDir {
@@ -105,6 +127,12 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger rslog.Logger) error {
 		"Entrypoint": metadata.Entrypoint,
 		"AppMode":    metadata.AppMode,
 	}).Infof("Deployment type")
+
+	files, err := listFiles(cmd.State.SourceDir, logger)
+	if err != nil {
+		return err
+	}
+	manifest.Files = files
 
 	requiresPython, err := cmd.requiresPython()
 	if err != nil {
@@ -198,7 +226,7 @@ func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) e
 	if err != nil {
 		return err
 	}
-	return publish.Publish(&cmd.PublishArgs, ctx.Accounts, ctx.Logger)
+	return publish.PublishDirectory(&cmd.PublishArgs, ctx.Accounts, ctx.Logger)
 }
 
 type PublishUICmd struct {
