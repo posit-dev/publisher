@@ -26,7 +26,7 @@ func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logge
 		return err
 	}
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundler(cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, logger)
+	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, logger)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logge
 }
 
 func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, logger rslog.Logger) error {
-	bundler, err := bundles.NewBundler(cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, logger)
+	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, logger)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func logAppInfo(accountURL string, contentID apitypes.ContentID, logger rslog.Lo
 }
 
 func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger rslog.Logger) error {
-	bundler, err := bundles.NewBundlerForManifest(cmd.Path, &cmd.State.Manifest, logger)
+	bundler, err := bundles.NewBundlerForManifest(cmd.State.SourceDir, &cmd.State.Manifest, logger)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,8 @@ func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountLis
 }
 
 func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger rslog.Logger) error {
-	bundler, err := bundles.NewBundler(cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, logger)
+	logger.Infof("Publishing from directory %s", cmd.State.SourceDir)
+	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, logger)
 	if err != nil {
 		return err
 	}
