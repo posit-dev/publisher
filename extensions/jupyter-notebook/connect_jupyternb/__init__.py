@@ -47,6 +47,8 @@ class EndpointHandler(APIHandler):
                     notebookPath,
                     "--python",
                     pythonPath,
+                    "-n",
+                    "dogfood",  # cheating, no target selection in the UI yet
                 ]
                 self.log.info("Starting: %s", " ".join(map(shlex.quote, args)))
                 process = subprocess.Popen(
