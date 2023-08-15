@@ -12,6 +12,9 @@
 
       <q-item-section>
         <q-item-label>Files</q-item-label>
+        <q-item-label caption>
+          {{ fileSummary }}
+        </q-item-label>
       </q-item-section>
     </template>
 
@@ -33,7 +36,7 @@
 
 <script setup lang="ts">
 import type { QTree, QTreeNode } from 'quasar';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 import { useApi, DeploymentFile } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
@@ -57,6 +60,16 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
   return node;
 }
 
+const fileSummary = computed(() => {
+  const count = deploymentStore.files.length;
+  const path = deploymentStore.deployment ? deploymentStore.deployment.source_path : 'unknown';
+
+  if (count) {
+    return `${count} files selected from ${path}`;
+  }
+  return '';
+});
+
 async function getFiles() {
   const response = await api.files.get();
   const file = response.data;
@@ -70,4 +83,5 @@ async function getFiles() {
 }
 
 getFiles();
+
 </script>

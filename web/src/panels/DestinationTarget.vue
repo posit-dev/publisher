@@ -12,6 +12,9 @@
 
       <q-item-section>
         <q-item-label>Destination</q-item-label>
+        <q-item-label caption>
+          {{ destinationTitle }}
+        </q-item-label>
       </q-item-section>
     </template>
 
@@ -22,3 +25,22 @@
     </q-card>
   </q-expansion-item>
 </template>
+
+<script setup lang="ts">
+
+import { computed } from 'vue';
+
+import { useDeploymentStore } from 'src/stores/deployment';
+
+const deploymentStore = useDeploymentStore();
+
+const destinationTitle = computed(() => {
+  const accountName = deploymentStore.deployment?.target.account_name;
+
+  if (accountName) {
+    return `New deployment on ${accountName}`;
+  }
+  return '';
+});
+
+</script>
