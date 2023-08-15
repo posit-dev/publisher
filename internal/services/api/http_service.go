@@ -132,6 +132,7 @@ func (svc *Service) Run() error {
 	appURL := svc.getURL(!(project.DevelopmentBuild() && svc.skipAuth))
 
 	svc.logger.Infof("UI server URL: %s", appURL.String())
+	fmt.Println(appURL.String())
 
 	if project.DevelopmentBuild() && svc.openBrowserAt != "" {
 		browser.OpenURL(svc.openBrowserAt)
