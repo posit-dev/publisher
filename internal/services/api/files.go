@@ -52,7 +52,7 @@ func newFile(path util.Path, exclusion *gitignore.Match) (*file, error) {
 	}, nil
 }
 
-func (f *file) insert(path util.Path, ignore gitignore.IgnoreList) (*file, error) {
+func (f *file) insert(path util.Path, ignore gitignore.GitIgnoreList) (*file, error) {
 
 	if f.Pathname == path.Path() {
 		return f, nil
@@ -84,26 +84,26 @@ func (f *file) insert(path util.Path, ignore gitignore.IgnoreList) (*file, error
 	return parent.insert(path, ignore)
 }
 
-func NewFilesController(fs afero.Fs, log rslog.Logger) http.HandlerFunc {
+func NewFilesController(cwd util.Path, fs afero.Fs, log rslog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			getFile(fs, log, w, r)
+			getFile(cwd, fs, log, w, r)
 		default:
 			return
 		}
 	}
 }
 
-func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Request) {
+func getFile(cwd util.Path, afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Request) {
 	var p pathnames.Pathname
 	if q := r.URL.Query(); q.Has("pathname") {
 		p = pathnames.Create(q.Get("pathname"), afs, log)
 	} else {
-		p = pathnames.Create(".", afs, log)
+		p = pathnames.Create(cwd.String(), afs, log)
 	}
 
-	ok, err := p.IsSafe()
+	ok, err := p.IsSafe(cwd)
 	if err != nil {
 		InternalError(w, log, err)
 		return
@@ -118,7 +118,7 @@ func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Requ
 	}
 
 	path := util.NewPath(p.String(), afs)
-	file, err := toFile(path, log)
+	file, err := toFile(cwd, path, log)
 	if err != nil {
 		InternalError(w, log, err)
 		return
@@ -128,12 +128,15 @@ func getFile(afs afero.Fs, log rslog.Logger, w http.ResponseWriter, r *http.Requ
 	json.NewEncoder(w).Encode(file)
 }
 
-func toFile(path util.Path, log rslog.Logger) (*file, error) {
+const ignoreFileName = ".gitignore"
+
+func toFile(cwd util.Path, path util.Path, log rslog.Logger) (*file, error) {
 	path = path.Clean()
-	ignore, err := gitignore.NewIgnoreList(path, nil)
+	ignore, err := gitignore.From(cwd.Join(ignoreFileName))
 	if err != nil {
-		return nil, err
+		log.Warnf("failed to load %s file", ignoreFileName)
 	}
+
 	exclusion := ignore.Match(path.Path())
 	root, err := newFile(path, exclusion)
 	if err != nil {

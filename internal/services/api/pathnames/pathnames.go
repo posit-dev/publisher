@@ -31,7 +31,7 @@ func (p Pathname) String() string {
 // isSafe returns (true, nil) if the path is safe
 //
 // When the pathname is not safe, the consumer should avoid accessing the information that the pathname points to.
-func (p Pathname) IsSafe() (bool, error) {
+func (p Pathname) IsSafe(cwd util.Path) (bool, error) {
 
 	s, err := p.isSymlink()
 	if err != nil {
@@ -43,7 +43,7 @@ func (p Pathname) IsSafe() (bool, error) {
 		return false, nil
 	}
 
-	t, err := p.isTrusted()
+	t, err := p.isTrusted(cwd)
 	if err != nil {
 		p.log.Errorf("failure when checking trust: %v", err)
 		return false, err
@@ -75,15 +75,14 @@ func (p Pathname) isSymlink() (bool, error) {
 }
 
 // isTrusted returns true, nil if the path is trusted
-func (p Pathname) isTrusted() (bool, error) {
-	root := util.NewPath(".", p.afs) // todo - replace this with the target directory
-	_, err := p.path.Rel(root)
+func (p Pathname) isTrusted(cwd util.Path) (bool, error) {
+	_, err := p.path.Rel(cwd)
 	if err != nil {
 		p.log.Warnf("%v", err)
 		return false, nil
 	}
 
-	aroot, err := root.Abs()
+	aroot, err := cwd.Abs()
 	if err != nil {
 		p.log.Warnf("%v", err)
 		return false, nil
