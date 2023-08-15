@@ -57,6 +57,18 @@ test-e2e:
 
     npx quasar test --e2e cypress
 
+test-ci-e2e target:
+    #!/bin/bash
+    set -euo pipefail
+    just build
+    # set this environment variable to keep Cypress from attempting to create
+    # cache within root's home dir.
+    # use a different cache per os
+    export CYPRESS_CACHE_FOLDER="./test/cypress/{{target}}/.cache"
+    # install cypress
+    npx cypress install
+    npx quasar test --e2e cypress
+
 # run unit tests one time
 test-unit:
     # npx vitest run
