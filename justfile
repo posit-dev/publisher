@@ -91,13 +91,6 @@ validate:
     set -euo pipefail
 
     ./scripts/ccheck.py ./scripts/ccheck.config
-    echo $?
-    exitCode = $(echo $?)
-    if "$exitCode" != "0" ; then
-        echo "DETECTION: The process has exited in error: ${exitCode}"
-        exit $exitCode
-    fi
-
     {{ _with_runner }} just web/validate
 
 # Validate and FIX automatically correctable issues. See the `validate` recipe for linting without fixing.

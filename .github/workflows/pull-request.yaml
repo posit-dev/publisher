@@ -174,8 +174,7 @@ jobs:
       -
         name: Validate the codebase
         run: |
-          just validate
-          just validate-post
+          just validate && just validate-post
 
   test-ux:
     needs: build-ux
