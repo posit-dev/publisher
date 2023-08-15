@@ -258,6 +258,7 @@ func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, logWriter io.Writer)
 			}
 			return nil
 		}
+		previous = task
 		time.Sleep(500 * time.Millisecond)
 	}
 }
