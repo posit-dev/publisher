@@ -20,7 +20,7 @@ import (
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
-func CreateBundle(cmd *cli_types.PublishArgs, dest util.Path, logger rslog.Logger) error {
+func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logger rslog.Logger) error {
 	bundleFile, err := dest.Create()
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func CreateBundle(cmd *cli_types.PublishArgs, dest util.Path, logger rslog.Logge
 	return err
 }
 
-func WriteManifest(cmd *cli_types.PublishArgs, logger rslog.Logger) error {
+func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, logger rslog.Logger) error {
 	bundler, err := bundles.NewBundler(cmd.Path, &cmd.State.Manifest, cmd.Exclude, nil, logger)
 	if err != nil {
 		return err
@@ -101,6 +101,16 @@ func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister account
 	if err != nil {
 		return err
 	}
+	// TODO: factory method to create client based on server type
+	// TODO: timeout option
+	client, err := clients.NewConnectClient(account, 2*time.Minute, logger)
+	if err != nil {
+		return err
+	}
+	return publishWithClient(cmd, bundler, account, client, logger)
+}
+
+func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, logger rslog.Logger) error {
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return err
@@ -113,13 +123,6 @@ func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister account
 		return err
 	}
 	bundleFile.Seek(0, io.SeekStart)
-
-	// TODO: factory method to create client based on server type
-	// TODO: timeout option
-	client, err := clients.NewConnectClient(account, 2*time.Minute, logger)
-	if err != nil {
-		return err
-	}
 
 	var contentID apitypes.ContentID
 	if cmd.State.Target.ContentId != "" && !cmd.New {
