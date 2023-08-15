@@ -97,6 +97,7 @@ type deploymentSerializer interface {
 }
 
 const idLabel MetadataLabel = "id"
+const manifestLabel MetadataLabel = "manifest"
 
 // LoadFromFiles loads the deployment state from metadata files.
 // This should be called prior to processing higher-precedence
@@ -109,6 +110,10 @@ func (d *Deployment) LoadFromFiles(sourceDir util.Path, configName string, logge
 
 func (d *Deployment) Load(serializer deploymentSerializer) error {
 	err := serializer.Load(idLabel, &d.Target)
+	if err != nil {
+		return err
+	}
+	err = serializer.Load(manifestLabel, &d.Manifest)
 	if err != nil {
 		return err
 	}
@@ -134,6 +139,10 @@ func (d *Deployment) SaveToFiles(sourceDir util.Path, configName string, logger 
 
 func (d *Deployment) Save(serializer deploymentSerializer) error {
 	err := serializer.Save(idLabel, &d.Target)
+	if err != nil {
+		return err
+	}
+	err = serializer.Save(manifestLabel, &d.Manifest)
 	if err != nil {
 		return err
 	}
