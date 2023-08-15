@@ -173,9 +173,6 @@ start-agent-for-e2e:
     
 [private]
 _with_docker *args: 
-    #!/bin/bash
-    set -euo pipefail
-
     docker run --rm {{ _interactive }} \
         -e CI={{ _ci }} \
         -e GOCACHE=/work/.cache/go/cache \
