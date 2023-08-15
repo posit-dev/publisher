@@ -58,7 +58,7 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
 }
 
 async function getFiles() {
-  const response = await api.files.get({ pathname: 'web/src/api' });
+  const response = await api.files.get();
   const file = response.data;
 
   files.value = [fileToTreeNode(file)];

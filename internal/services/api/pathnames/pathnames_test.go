@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -29,7 +30,8 @@ func (s *PathnamesSuite) TestIsSafe() {
 	afs := afero.NewMemMapFs()
 	afs.Create("pathname")
 	p := Create("pathname", afs, s.log)
-	ok, err := p.IsSafe()
+	target := util.NewPath("", afs)
+	ok, err := p.IsSafe(target)
 	s.Nil(err)
 	s.True(ok)
 }
@@ -120,7 +122,8 @@ var isTrustedTests = []isTrustedTest{
 func (s *PathnamesSuite) TestIsTrusted() {
 	for _, t := range isTrustedTests {
 		p := Create(t.path, nil, s.log)
-		res, _ := p.isTrusted()
+		target := util.NewPath(".", nil)
+		res, _ := p.isTrusted(target)
 		s.Equalf(t.exp, res, "%s should be %t, found %t", t.path, t.exp, res)
 	}
 }
