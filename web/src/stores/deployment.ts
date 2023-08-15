@@ -1,5 +1,3 @@
-// Copyright (C) 2023 by Posit Software, PBC.
-
 import { CanceledError } from 'axios';
 import { defineStore } from 'pinia';
 import { Ref, computed, ref } from 'vue';
