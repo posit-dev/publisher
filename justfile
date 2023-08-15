@@ -91,6 +91,13 @@ validate:
     set -euo pipefail
 
     ./scripts/ccheck.py ./scripts/ccheck.config
+    echo $?
+    exitCode = $(echo $?)
+    if "$exitCode" != "0" ; then
+        echo "DETECTION: The process has exited in error: ${exitCode}"
+        exit $exitCode
+    fi
+
     {{ _with_runner }} just web/validate
 
 # Validate and FIX automatically correctable issues. See the `validate` recipe for linting without fixing.
@@ -100,7 +107,7 @@ validate-fix:
 
     # This will fail even though fix flag is supplied (to fix errors).
     # We could suppress w/ cmd || true, but do we want to?
-    {{ _with_runner }} ./scripts/ccheck.py ./scripts/ccheck.config --fix
+    ./scripts/ccheck.py ./scripts/ccheck.config --fix
     {{ _with_runner }} just web/validate-fix
 
 # Validate step which requires the code to be built first. Normally want to validate prior to building.
@@ -174,7 +181,7 @@ start-agent-for-e2e:
 [private]
 _with_docker *args: 
     #!/bin/bash
-    set -exuo pipefail
+    set -euo pipefail
 
     docker run --rm {{ _interactive }} \
         -e CI={{ _ci }} \
