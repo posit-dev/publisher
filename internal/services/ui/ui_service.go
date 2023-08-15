@@ -55,7 +55,7 @@ func newUIHandler(afs afero.Fs, state *state.Deployment, log rslog.Logger) http.
 	// /api/accounts
 	mux.Handle(ToPath("accounts"), api.NewAccountsController(afs, log))
 	// /api/files
-	mux.Handle(ToPath("files"), api.NewFilesController(afs, log))
+	mux.Handle(ToPath("files"), api.NewFilesController(state.SourceDir, afs, log))
 	// /api/deployment
 	mux.Handle(ToPath("deployment"), deployment.NewDeploymentController(state, log))
 	// /api/deployment/files
