@@ -10,6 +10,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients"
+	"github.com/rstudio/connect-client/internal/cli_types"
 )
 
 type addAccountCmd struct {
@@ -20,7 +21,7 @@ type addAccountCmd struct {
 	Insecure    bool     `help:"Don't validate server certificate."`
 }
 
-func (cmd *addAccountCmd) Run(args *CommonArgs) error {
+func (cmd *addAccountCmd) Run(args *cli_types.CommonArgs) error {
 	return nil
 }
 
@@ -28,7 +29,7 @@ type removeAccountCmd struct {
 	Name string `short:"n" help:"Nickname of account to remove."`
 }
 
-func (cmd *removeAccountCmd) Run(args *CommonArgs) error {
+func (cmd *removeAccountCmd) Run(args *cli_types.CommonArgs) error {
 	return nil
 }
 
@@ -36,7 +37,7 @@ type testAccountCmd struct {
 	Name string `short:"n" help:"Nickname of account to test."`
 }
 
-func (cmd *testAccountCmd) Run(args *CommonArgs, ctx *CLIContext) error {
+func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) error {
 	account, err := ctx.Accounts.GetAccountByName(cmd.Name)
 	if err != nil {
 		return err
@@ -73,7 +74,7 @@ func (cmd *testAccountCmd) Run(args *CommonArgs, ctx *CLIContext) error {
 
 type listAccountsCmd struct{}
 
-func (cmd *listAccountsCmd) Run(args *CommonArgs, ctx *CLIContext) error {
+func (cmd *listAccountsCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) error {
 	accounts, err := ctx.Accounts.GetAllAccounts()
 	if err != nil {
 		return err

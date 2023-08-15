@@ -28,7 +28,7 @@ type APIClient interface {
 	TestConnection() error
 	TestAuthentication() (*User, error)
 	CreateDeployment(state.ConnectContent) (apitypes.ContentID, error)
-	GetDeploymentByName(apitypes.ContentName) (apitypes.ContentID, error)
+	UpdateDeployment(apitypes.ContentID, state.ConnectContent) error
 	UploadBundle(apitypes.ContentID, io.Reader) (apitypes.BundleID, error)
 	DeployBundle(apitypes.ContentID, apitypes.BundleID) (apitypes.TaskID, error)
 	WaitForTask(taskID apitypes.TaskID, logWriter io.Writer) error
