@@ -23,7 +23,12 @@ const disablePublishingAction = ref(false);
 
 const onPublish = async() => {
   disablePublishingAction.value = true;
-  await api.publish.start();
+  try {
+    await api.publish.start();
+  } catch (e) {
+    // Temporary until we determine the mechanism to notify users of general errors.
+    console.log('An error has occurred when calling publish.start:', e);
+  }
   disablePublishingAction.value = false;
 };
 
