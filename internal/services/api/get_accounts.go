@@ -44,8 +44,8 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 	}
 }
 
-// NewAccountsController returns a handler for the account list.
-func NewAccountsController(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
+// GetAccountsHandlerFunc returns a handler for the account list.
+func GetAccountsHandlerFunc(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
 	lister := accounts.NewAccountList(fs, logger)
 	return func(w http.ResponseWriter, req *http.Request) {
 		accounts, err := lister.GetAllAccounts()
