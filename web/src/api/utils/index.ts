@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import { Deployment } from 'src/api/types/deployments';
 import { ManifestFile } from 'src/api/types/manifest';
 
