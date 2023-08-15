@@ -202,7 +202,7 @@ func (cmd *CreateBundleCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Conte
 	if err != nil {
 		return err
 	}
-	return publish.CreateBundle(&cmd.PublishArgs, cmd.BundleFile, ctx.Logger)
+	return publish.CreateBundleFromDirectory(&cmd.PublishArgs, cmd.BundleFile, ctx.Logger)
 }
 
 type WriteManifestCmd struct {
@@ -214,7 +214,7 @@ func (cmd *WriteManifestCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Cont
 	if err != nil {
 		return err
 	}
-	return publish.WriteManifest(&cmd.PublishArgs, ctx.Logger)
+	return publish.WriteManifestFromDirectory(&cmd.PublishArgs, ctx.Logger)
 }
 
 type PublishCmd struct {
