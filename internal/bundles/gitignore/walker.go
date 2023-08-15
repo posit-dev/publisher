@@ -43,6 +43,8 @@ var standardIgnores = []string{
 	// Less precise than rsconnect, which checks for a
 	// matching Rmd filename in the same directory.
 	"*_cache/",
+	".ipynb_checkpoints/",
+	".posit/",
 }
 
 // excludingWalker is a Walker that excludes files and directories

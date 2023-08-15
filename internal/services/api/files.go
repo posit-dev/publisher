@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"time"
@@ -52,7 +53,7 @@ func newFile(path util.Path, exclusion *gitignore.Match) (*file, error) {
 	}, nil
 }
 
-func (f *file) insert(path util.Path, ignore gitignore.GitIgnoreList) (*file, error) {
+func (f *file) insert(path util.Path, ignore gitignore.IgnoreList) (*file, error) {
 
 	if f.Pathname == path.Path() {
 		return f, nil
@@ -128,13 +129,11 @@ func getFile(cwd util.Path, afs afero.Fs, log rslog.Logger, w http.ResponseWrite
 	json.NewEncoder(w).Encode(file)
 }
 
-const ignoreFileName = ".gitignore"
-
 func toFile(cwd util.Path, path util.Path, log rslog.Logger) (*file, error) {
 	path = path.Clean()
-	ignore, err := gitignore.From(cwd.Join(ignoreFileName))
+	ignore, err := gitignore.NewIgnoreList(path, nil)
 	if err != nil {
-		log.Warnf("failed to load %s file", ignoreFileName)
+		return nil, fmt.Errorf("Failed to load ignore list: %w", err)
 	}
 
 	exclusion := ignore.Match(path.Path())
