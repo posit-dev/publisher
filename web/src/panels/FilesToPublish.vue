@@ -1,46 +1,28 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-expansion-item>
-    <template #header>
-      <q-item-section avatar>
-        <q-icon
-          name="img:assets/images/files-icon.jpg"
-          size="35px"
-        />
-      </q-item-section>
-
-      <q-item-section>
-        <q-item-label>Files</q-item-label>
-        <q-item-label
-          v-if="fileSummary"
-          caption
-        >
-          {{ fileSummary }}
-        </q-item-label>
-      </q-item-section>
-    </template>
-
-    <q-card class="bg-grey-9">
-      <q-card-section>
-        <q-tree
-          v-model:ticked="deploymentStore.files"
-          v-model:expanded="expanded"
-          :nodes="files"
-          :node-key="NODE_KEY"
-          tick-strategy="leaf"
-          dark
-          dense
-        />
-      </q-card-section>
-    </q-card>
-  </q-expansion-item>
+  <LayoutPanel
+    title="Files"
+    :subtitle="fileSummary"
+    icon="img:assets/images/files-icon.jpg"
+  >
+    <q-tree
+      v-model:ticked="deploymentStore.files"
+      v-model:expanded="expanded"
+      :nodes="files"
+      :node-key="NODE_KEY"
+      tick-strategy="leaf"
+      dark
+      dense
+    />
+  </LayoutPanel>
 </template>
 
 <script setup lang="ts">
 import type { QTree, QTreeNode } from 'quasar';
 import { ref, computed } from 'vue';
 
+import LayoutPanel from 'components/LayoutPanel.vue';
 import { useApi, DeploymentFile } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
 
