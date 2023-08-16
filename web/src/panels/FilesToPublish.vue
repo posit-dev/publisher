@@ -18,7 +18,7 @@
     <q-card class="bg-grey-9">
       <q-card-section>
         <q-tree
-          v-model:ticked="filesStore.filesToPublish"
+          v-model:ticked="deploymentStore.files"
           v-model:expanded="expanded"
           :nodes="files"
           :node-key="NODE_KEY"
@@ -36,12 +36,12 @@ import type { QTree, QTreeNode } from 'quasar';
 import { ref } from 'vue';
 
 import { useApi, DeploymentFile } from 'src/api';
-import { useFilesStore } from 'src/stores/files';
+import { useDeploymentStore } from 'src/stores/deployment';
 
 const NODE_KEY = 'key';
 
 const api = useApi();
-const filesStore = useFilesStore();
+const deploymentStore = useDeploymentStore();
 
 const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);
@@ -51,13 +51,14 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
     [NODE_KEY]: file.pathname,
     label: file.base_name,
     children: file.files.map(fileToTreeNode),
+    tickable: !file.exclusion,
   };
 
   return node;
 }
 
 async function getFiles() {
-  const response = await api.files.get({ pathname: 'web/src/api' });
+  const response = await api.files.get();
   const file = response.data;
 
   files.value = [fileToTreeNode(file)];

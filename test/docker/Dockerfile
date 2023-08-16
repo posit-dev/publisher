@@ -1,13 +1,40 @@
 FROM ubuntu:jammy-20230425
 VOLUME ${PWD}/../:/publishing-client
 WORKDIR /publishing-client/test
+ARG platform
+ENV platform $platform
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     apt-get update && \
     apt-get install -y \
     curl \
-    git-all
+    git-all \
+    npm \
+    xvfb \
+    libnss3 \
+    libatk1.0-0 \
+    libgtk2.0-0 \
+    libgtk-3-0 \
+    libgbm-dev \
+    libnotify-dev \
+    libgconf-2-4 \
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libxtst6 \
+    xauth \
+    xvfb
+
+RUN export GOLANG_VERSION=1.20.4 \
+    && export GOLANG_DOWNLOAD_SHA256=698ef3243972a51ddb4028e4a1ac63dc6d60821bf18e59a807e051fee0a385bd \
+    && curl -fsSL "https://go.dev/dl/go${GOLANG_VERSION}.${platform}.tar.gz" -o golang.tar.gz \
+    && tar -C /usr/local -xzf golang.tar.gz \
+    && rm golang.tar.gz
+ENV PATH="$PATH:/usr/local/go/bin"
+
+RUN npm install -g n && \
+    n stable
 
 RUN git clone --depth=1 https://github.com/bats-core/bats-core.git /libs/bats-core && \
     cd /libs/bats-core && \
