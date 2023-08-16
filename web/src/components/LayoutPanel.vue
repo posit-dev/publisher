@@ -10,6 +10,12 @@
 
       <q-item-section>
         <q-item-label>{{ title }}</q-item-label>
+        <q-item-label
+          v-if="subtitle"
+          caption
+        >
+          {{ subtitle }}
+        </q-item-label>
       </q-item-section>
     </template>
 
@@ -23,8 +29,9 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
-  title: { required: true, type: String },
-  icon: { required: true, type: String }
-});
+defineProps<{
+  title: string
+  subtitle?: string
+  icon: string
+}>();
 </script>
