@@ -16,6 +16,12 @@
         >
           {{ subtitle }}
         </q-item-label>
+        <q-tooltip
+          v-if="tooltip"
+          anchor="top middle"
+        >
+          {{ tooltip }}
+        </q-tooltip>
       </q-item-section>
     </template>
 
@@ -33,5 +39,6 @@ defineProps<{
   title: string
   subtitle?: string
   icon: string
+  tooltip?: string
 }>();
 </script>
