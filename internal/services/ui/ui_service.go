@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/gorilla/mux"
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
@@ -61,16 +62,28 @@ func newUIHandler(afs afero.Fs, deployment *state.Deployment, log rslog.Logger) 
 	filesService := files.CreateFilesService(base, afs, log)
 	pathsService := paths.CreatePathsService(base, afs, log)
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	// /api/accounts
-	mux.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(afs, log))
+	mux.
+		Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(afs, log)).
+		Methods("GET")
+
 	// /api/files
-	mux.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log))
+	mux.
+		Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log)).
+		Methods("GET")
+
 	// /api/deployment
-	mux.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService))
+	mux.
+		Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService)).
+		Methods("GET")
+
 	// /api/deployment/files
-	mux.Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log))
-	mux.HandleFunc("/", api.NewStaticController())
+	mux.
+		Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log)).
+		Methods("POST")
+
+	api.RegisterStaticFiles(mux)
 
 	return mux.ServeHTTP
 }

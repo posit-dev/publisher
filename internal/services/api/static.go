@@ -5,14 +5,15 @@ package api
 import (
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/rstudio/connect-client/internal/services/middleware"
 	"github.com/rstudio/connect-client/web"
 )
 
 var prefix string = "/dist/spa"
 
-func NewStaticController() http.HandlerFunc {
-	fs := http.FS(web.Dist)
-	serv := http.FileServer(fs)
-	return middleware.AddPathPrefix(prefix, serv.ServeHTTP)
+func RegisterStaticFiles(router *mux.Router) {
+	router.
+		PathPrefix("/").
+		Handler(middleware.AddPathPrefix(prefix, http.FileServer(http.FS(web.Dist)).ServeHTTP))
 }
