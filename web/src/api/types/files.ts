@@ -18,18 +18,15 @@ export type ExclusionMatch = {
     line: number
 }
 
-export type FileInfo = {
+export type DeploymentFile = {
+  file_type: DeploymentFileType
+  pathname: string
+  base_name: string
   size: number
+  modified_datetime: string
+  is_dir: boolean
   is_entrypoint: boolean
+  is_file: boolean
+  files: DeploymentFile[]
   exclusion: ExclusionMatch | null
-}
-
-export type DeploymentFile = FileInfo & {
-    file_type: DeploymentFileType
-    pathname: string
-    base_name: string
-    modified_datetime: string
-    is_dir: boolean
-    is_file: boolean
-    files: DeploymentFile[]
 }

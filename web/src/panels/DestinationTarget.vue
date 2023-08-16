@@ -12,7 +12,10 @@
 
       <q-item-section>
         <q-item-label>Destination</q-item-label>
-        <q-item-label caption>
+        <q-item-label
+          v-if="destinationTitle"
+          caption
+        >
           {{ destinationTitle }}
         </q-item-label>
       </q-item-section>

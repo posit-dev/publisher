@@ -12,7 +12,10 @@
 
       <q-item-section>
         <q-item-label>Files</q-item-label>
-        <q-item-label caption>
+        <q-item-label
+          v-if="fileSummary"
+          caption
+        >
           {{ fileSummary }}
         </q-item-label>
       </q-item-section>
@@ -36,7 +39,6 @@
 
 <script setup lang="ts">
 import type { QTree, QTreeNode } from 'quasar';
-import type { FileInfo } from 'src/api/types/files';
 import { ref, computed } from 'vue';
 
 import { useApi, DeploymentFile } from 'src/api';
@@ -49,6 +51,9 @@ const deploymentStore = useDeploymentStore();
 
 const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);
+
+type FileInfo = Pick<DeploymentFile, 'size' | 'is_entrypoint' | 'exclusion'>;
+
 const fileMap = ref(new Map<string, FileInfo>());
 
 const selectedFileTotalSize = computed(() : string => {
@@ -70,10 +75,12 @@ const selectedFileTotalSize = computed(() : string => {
 
 const fileSummary = computed(() => {
   const count = deploymentStore.files.length;
-  const path = deploymentStore.deployment ? deploymentStore.deployment.source_path : 'unknown';
+  const path = deploymentStore.deployment?.source_path;
 
   if (count) {
     return `${count} files selected from ${path} (total = ${selectedFileTotalSize.value})`;
+  } else if (path) {
+    return `No files have been selected from ${path}`;
   }
   return '';
 });
@@ -97,7 +104,7 @@ function populateFileMap(file: DeploymentFile) {
     exclusion: file.exclusion,
   };
   fileMap.value.set(file.pathname, info);
-  file.files.map(populateFileMap);
+  file.files.forEach(populateFileMap);
 }
 
 async function getFiles() {
