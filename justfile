@@ -83,7 +83,7 @@ build-web:
 
 # Build the developer stack
 build-dev:
-    {{ _with_runner }} just clean image bootstrap build-web build-agent-dev
+    just clean image bootstrap build-web build-agent-dev
 
 # Validate the agent and the web UX source code, along with checking for copyrights. See the `validate-post` recipe for linting which requires a build.
 validate: 
@@ -100,7 +100,7 @@ validate-fix:
 
     # This will fail even though fix flag is supplied (to fix errors).
     # We could suppress w/ cmd || true, but do we want to?
-    {{ _with_runner }} ./scripts/ccheck.py ./scripts/ccheck.config --fix
+    ./scripts/ccheck.py ./scripts/ccheck.config --fix
     {{ _with_runner }} just web/validate-fix
 
 # Validate step which requires the code to be built first. Normally want to validate prior to building.

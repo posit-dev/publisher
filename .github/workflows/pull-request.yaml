@@ -94,7 +94,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -107,7 +106,8 @@ jobs:
       -
         if: ${{ steps.node_modules.outputs.cache-hit != 'true' }}
         name: Build up node_modules
-        run: just web/bootstrap
+        run: |
+          just web/bootstrap
       - 
         if: ${{ steps.node_modules.outputs.cache-hit != 'true' }}
         name: Create the cache of UX node_modules (save)
@@ -120,7 +120,8 @@ jobs:
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
       -
         name: Build the UX
-        run: just build-web
+        run: |
+          just build-web
       -
         name: Upload Web-UX Artifacts
         uses: actions/upload-artifact@v3
@@ -155,7 +156,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       -
         name: Download Web-UX Artifacts
         uses: actions/download-artifact@v3
@@ -173,9 +173,9 @@ jobs:
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
       -
         name: Validate the codebase
+        # Docker run will only fail step if last command fails... so must do multiple commands as one.
         run: |
-          just validate
-          just validate-post
+          just validate && just validate-post
 
   test-ux:
     needs: build-ux
@@ -204,7 +204,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -222,10 +221,12 @@ jobs:
           path: ./web/dist/spa
       -
         name: UX Unit Tests
-        run: just web/test-unit
+        run: |
+          just web/test-unit
       -
         name: UX Go Race Tests
-        run: just web/test-race
+        run: |
+          just web/test-race
 
   agent-tests:
     needs: build-ux
@@ -254,7 +255,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       -
         name: Download Web-UX SPA Artifacts
         uses: actions/download-artifact@v3
@@ -263,7 +263,8 @@ jobs:
           path: ./web/dist/spa
       - 
         name: Agent Unit Tests
-        run: just test-agent
+        run: |
+          just test-agent
 
   build-agent:
     needs: build-ux
@@ -292,7 +293,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       -
         name: Download Web-UX SPA Artifacts
         uses: actions/download-artifact@v3
@@ -301,7 +301,8 @@ jobs:
           path: ./web/dist/spa
       -
         name: Build agent
-        run: just build-agent
+        run: |
+          just build-agent
       -
         name: Make agents executable
         run: |
@@ -340,7 +341,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       -
         name: Download built agents
         uses: actions/download-artifact@v3
@@ -362,7 +362,8 @@ jobs:
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
       - 
         name: UX E2E Tests
-        run: PATH="${PATH}:/usr/local/bin" just web/test-e2e
+        run: |
+          PATH="${PATH}:/usr/local/bin" just web/test-e2e
 
   test-windows:
     needs: build-agent
@@ -393,6 +394,7 @@ jobs:
           # bats reads the load libraries from relative path only in Windows
           BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
+        # WARNING: Docker run will only fail step if last command fails...
         run: |
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
@@ -437,6 +439,7 @@ jobs:
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
+        # WARNING Docker run will only fail step if last command fails... 
         run: |
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
@@ -547,7 +550,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/linux-amd64-image.tar
-          docker image ls -a
       -
         name: Run linux-amd64 CLI Tests
         env:
@@ -561,7 +563,7 @@ jobs:
           DOCKER: "false"
         run: |
           just test/ui-client ${os}
-  
+
   build-linux-arm64:
     runs-on: ubuntu-latest
     defaults:
@@ -669,7 +671,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/linux-arm64-image.tar
-          docker image ls -a
       -
         name: Run linux-arm64 CLI Tests
         env:
