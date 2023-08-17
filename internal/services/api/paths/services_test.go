@@ -1,4 +1,4 @@
-package pathnames
+package paths
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -13,30 +13,36 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type PathnamesSuite struct {
+type ServicesSuite struct {
 	utiltest.Suite
 	log rslog.Logger
 }
 
-func TestPathnamesSuite(t *testing.T) {
-	suite.Run(t, new(PathnamesSuite))
+func TestServicesSuite(t *testing.T) {
+	suite.Run(t, new(ServicesSuite))
 }
 
-func (s *PathnamesSuite) SetupSuite() {
+func (s *ServicesSuite) SetupSuite() {
 	s.log = rslog.NewDiscardingLogger()
 }
 
-func (s *PathnamesSuite) TestIsSafe() {
+func (s *ServicesSuite) TestCreatePathsService() {
 	afs := afero.NewMemMapFs()
-	afs.Create("pathname")
-	p := Create("pathname", afs, s.log)
-	target := util.NewPath("", afs)
-	ok, err := p.IsSafe(target)
-	s.Nil(err)
-	s.True(ok)
+	base := util.NewPath("", afs)
+	service := CreatePathsService(base, afs, s.log)
+	s.NotNil(service)
 }
 
-func (s *PathnamesSuite) TestIsSymlink_True() {
+func (s *ServicesSuite) TestPathsService_IsSafe() {
+	afs := afero.NewMemMapFs()
+	base := util.NewPath("", afs)
+	service := CreatePathsService(base, afs, s.log)
+	ok, err := service.IsSafe(base)
+	s.True(ok)
+	s.Nil(err)
+}
+
+func (s *ServicesSuite) TestPathsService_isSymlink_True() {
 	f, err := os.CreateTemp("", "file")
 	if err != nil {
 		s.Nil(err)
@@ -58,13 +64,17 @@ func (s *PathnamesSuite) TestIsSymlink_True() {
 	defer os.Remove(l.Name())
 
 	afs := afero.NewOsFs()
-	p := Create(l.Name(), afs, s.log)
-	ok, err := p.isSymlink()
+
+	fpath := util.NewPath(f.Name(), afs)
+	lpath := util.NewPath(l.Name(), afs)
+
+	ps := PathsService{fpath, afs, s.log}
+	ok, err := ps.isSymlink(lpath)
 	s.Nil(err)
 	s.True(ok)
 }
 
-func (s *PathnamesSuite) TestIsSymlink_False_FileFound() {
+func (s *ServicesSuite) TestPathsService_isSymlink_False_FileFound() {
 	f, err := os.CreateTemp("", "file")
 	if err != nil {
 		s.Nil(err)
@@ -73,13 +83,17 @@ func (s *PathnamesSuite) TestIsSymlink_False_FileFound() {
 	defer os.Remove(f.Name())
 
 	afs := afero.NewOsFs()
-	p := Create(f.Name(), afs, s.log)
-	ok, err := p.isSymlink()
+
+	fpath := util.NewPath(f.Name(), afs)
+	lpath := util.NewPath(f.Name(), afs)
+
+	ps := PathsService{fpath, afs, s.log}
+	ok, err := ps.isSymlink(lpath)
 	s.Nil(err)
 	s.False(ok)
 }
 
-func (s *PathnamesSuite) TestIsSymlink_False_FileMissing() {
+func (s *ServicesSuite) TestPathsService_isSymlink_False_FileMissing() {
 	f, err := os.CreateTemp("", "file")
 	if err != nil {
 		s.Nil(err)
@@ -88,8 +102,12 @@ func (s *PathnamesSuite) TestIsSymlink_False_FileMissing() {
 	os.Remove(f.Name())
 
 	afs := afero.NewOsFs()
-	p := Create(f.Name(), afs, s.log)
-	ok, err := p.isSymlink()
+
+	fpath := util.NewPath(f.Name(), afs)
+	lpath := util.NewPath("Not Found", afs)
+
+	ps := PathsService{fpath, afs, s.log}
+	ok, err := ps.isSymlink(lpath)
 	s.Nil(err)
 	s.False(ok)
 }
@@ -119,11 +137,15 @@ var isTrustedTests = []isTrustedTest{
 	{"./dir/../../", false},
 }
 
-func (s *PathnamesSuite) TestIsTrusted() {
+func (s *ServicesSuite) TestPathsService_isTrusted() {
 	for _, t := range isTrustedTests {
-		p := Create(t.path, nil, s.log)
-		target := util.NewPath(".", nil)
-		res, _ := p.isTrusted(target)
+		afs := afero.NewMemMapFs()
+
+		fpath := util.NewPath("", afs)
+		tpath := util.NewPath(t.path, afs)
+
+		ps := PathsService{fpath, afs, s.log}
+		res, _ := ps.isTrusted(tpath)
 		s.Equalf(t.exp, res, "%s should be %t, found %t", t.path, t.exp, res)
 	}
 }

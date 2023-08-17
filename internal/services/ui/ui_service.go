@@ -9,8 +9,11 @@ import (
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
-	"github.com/rstudio/connect-client/internal/services/api/deployment"
+	"github.com/rstudio/connect-client/internal/services/api/deployments"
+	"github.com/rstudio/connect-client/internal/services/api/files"
+	"github.com/rstudio/connect-client/internal/services/api/paths"
 	"github.com/rstudio/connect-client/internal/state"
+	"github.com/rstudio/connect-client/internal/util"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -50,17 +53,25 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(afs afero.Fs, state *state.Deployment, log rslog.Logger) http.HandlerFunc {
+func newUIHandler(afs afero.Fs, deployment *state.Deployment, log rslog.Logger) http.HandlerFunc {
+
+	var base util.Path = deployment.SourceDir
+
+	deploymentsService := deployments.CreateDeploymentsService(deployment)
+	filesService := files.CreateFilesService(base, afs, log)
+	pathsService := paths.CreatePathsService(base, afs, log)
+
 	mux := http.NewServeMux()
 	// /api/accounts
-	mux.Handle(ToPath("accounts"), api.NewAccountsController(afs, log))
+	mux.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(afs, log))
 	// /api/files
-	mux.Handle(ToPath("files"), api.NewFilesController(state.SourceDir, afs, log))
+	mux.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log))
 	// /api/deployment
-	mux.Handle(ToPath("deployment"), deployment.NewDeploymentController(state, log))
+	mux.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService))
 	// /api/deployment/files
-	mux.Handle(ToPath("deployment", "files"), deployment.NewFilesController(state, log))
+	mux.Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log))
 	mux.HandleFunc("/", api.NewStaticController())
+
 	return mux.ServeHTTP
 }
 
