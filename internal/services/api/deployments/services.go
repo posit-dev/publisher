@@ -1,5 +1,7 @@
 package deployments
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/state"
