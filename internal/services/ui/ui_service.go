@@ -52,7 +52,7 @@ func newUIHandler(publishArgs *cli_types.PublishArgs, afs afero.Fs, lister accou
 	// /api/accounts
 	mux.Handle(ToPath("accounts"), api.NewAccountsController(lister, log))
 	// /api/files
-	mux.Handle(ToPath("files"), api.NewFilesController(afs, log))
+	mux.Handle(ToPath("files"), api.NewFilesController(state.SourceDir, afs, log))
 	// /api/deployment
 	mux.Handle(ToPath("deployment"), deployment.NewDeploymentController(publishArgs.State, log))
 	// /api/deployment/files

@@ -94,7 +94,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -107,7 +106,8 @@ jobs:
       -
         if: ${{ steps.node_modules.outputs.cache-hit != 'true' }}
         name: Build up node_modules
-        run: just web/bootstrap
+        run: |
+          just web/bootstrap
       - 
         if: ${{ steps.node_modules.outputs.cache-hit != 'true' }}
         name: Create the cache of UX node_modules (save)
@@ -120,7 +120,8 @@ jobs:
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
       -
         name: Build the UX
-        run: just build-web
+        run: |
+          just build-web
       -
         name: Upload Web-UX Artifacts
         uses: actions/upload-artifact@v3
@@ -155,7 +156,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       -
         name: Download Web-UX Artifacts
         uses: actions/download-artifact@v3
@@ -173,9 +173,9 @@ jobs:
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
       -
         name: Validate the codebase
+        # Docker run will only fail step if last command fails... so must do multiple commands as one.
         run: |
-          just validate
-          just validate-post
+          just validate && just validate-post
 
   test-ux:
     needs: build-ux
@@ -204,7 +204,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       - 
         name: Restore Cache UX node_modules
         id: node_modules
@@ -222,10 +221,12 @@ jobs:
           path: ./web/dist/spa
       -
         name: UX Unit Tests
-        run: just web/test-unit
+        run: |
+          just web/test-unit
       -
         name: UX Go Race Tests
-        run: just web/test-race
+        run: |
+          just web/test-race
 
   agent-tests:
     needs: build-ux
@@ -254,7 +255,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       -
         name: Download Web-UX SPA Artifacts
         uses: actions/download-artifact@v3
@@ -263,7 +263,8 @@ jobs:
           path: ./web/dist/spa
       - 
         name: Agent Unit Tests
-        run: just test-agent
+        run: |
+          just test-agent
 
   build-agent:
     needs: build-ux
@@ -292,7 +293,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       -
         name: Download Web-UX SPA Artifacts
         uses: actions/download-artifact@v3
@@ -301,7 +301,8 @@ jobs:
           path: ./web/dist/spa
       -
         name: Build agent
-        run: just build-agent
+        run: |
+          just build-agent
       -
         name: Make agents executable
         run: |
@@ -340,7 +341,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-          docker image ls -a
       -
         name: Download built agents
         uses: actions/download-artifact@v3
@@ -362,9 +362,10 @@ jobs:
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
       - 
         name: UX E2E Tests
-        run: PATH="${PATH}:/usr/local/bin" just web/test-e2e
+        run: |
+          PATH="${PATH}:/usr/local/bin" just web/test-e2e
 
-  test-windows-client:
+  test-windows:
     needs: build-agent
     runs-on: windows-latest
     steps:
@@ -387,20 +388,29 @@ jobs:
         run: |
           chmod -R +x ./bin/**/connect-client
       - 
-        name: Run Windows Tests
+        name: Run Windows CLI Tests
         env:
-          client: windows-latest
+          os: windows-latest
           # bats reads the load libraries from relative path only in Windows
           BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
+        # WARNING: Docker run will only fail step if last command fails...
         run: |
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
-          just run-client $env:client
+          just run-client $env:os
+      -
+        name: Run Windows Cypress Tests
+        env:
+          os: windows-latest
+          DOCKER: "false"
+        run: |
+          just web/test-ci-e2e $env:os
+            
 
-  test-macos-client:
+  test-macos:
     needs: build-agent
     runs-on: macos-latest
     steps:
@@ -423,17 +433,25 @@ jobs:
         run: |
           chmod -R +x ./bin/**/connect-client
       - 
-        name: Run MacOs Tests
+        name: Run MacOs CLI Tests
         env:
-          client: macos-latest
+          os: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
+        # WARNING Docker run will only fail step if last command fails... 
         run: |
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
-          just run-client ${client}
+          just run-client ${os}
+      -
+        name: Run MacOS Cypress Tests
+        env:
+          os: macos-latest
+          DOCKER: "false"
+        run: |
+          just web/test-ci-e2e ${os}
 
   build-linux-amd64:
     runs-on: ubuntu-latest
@@ -468,14 +486,16 @@ jobs:
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-amd64-image
-          client: linux-amd64
+          os: linux-amd64
       - 
         if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+            platform=linux-amd64
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/amd64
@@ -492,7 +512,7 @@ jobs:
           path: /tmp/linux-amd64-image.tar
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
-  run-linux-amd64:
+  test-linux-amd64:
     needs: build-linux-amd64
     runs-on: ubuntu-latest
     defaults:
@@ -530,14 +550,20 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/linux-amd64-image.tar
-          docker image ls -a
       -
-        name: Run linux-amd64 Tests
+        name: Run linux-amd64 CLI Tests
         env:
-          client: linux-amd64
+          os: linux-amd64
         run: |
-          just test/run-client ${client}
-  
+          just test/run-client ${os}
+      -
+        name: Run linux-amd64 Cypress Tests
+        env:
+          os: linux-amd64
+          DOCKER: "false"
+        run: |
+          just test/ui-client ${os}
+
   build-linux-arm64:
     runs-on: ubuntu-latest
     defaults:
@@ -571,14 +597,16 @@ jobs:
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-arm64-image
-          client: linux-arm64
+          os: linux-arm64
       - 
         if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1 
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+            platform=linux-arm64
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/arm64
@@ -595,7 +623,7 @@ jobs:
           path: /tmp/linux-arm64-image.tar
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
-  run-linux-arm64:
+  test-linux-arm64:
     needs: build-linux-arm64
     runs-on: ubuntu-latest
     defaults:
@@ -643,11 +671,17 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/linux-arm64-image.tar
-          docker image ls -a
       -
-        name: Run linux-arm64 Tests
+        name: Run linux-arm64 CLI Tests
         env:
-          client: linux-arm64
+          os: linux-arm64
         run: |
-          just test/run-client ${client}
-    
+          just test/run-client ${os}
+      # -
+      #   name: Run linux-arm64 Cypress Tests
+      #   env:
+      #     os: linux-arm64
+      #     DOCKER: "false"
+      #   run: |
+      #     just web/build && \
+      #     just test/ui-client ${os}
