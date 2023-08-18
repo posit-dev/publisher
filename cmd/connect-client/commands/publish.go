@@ -49,10 +49,6 @@ func (cmd *BaseBundleCmd) LoadState(logger rslog.Logger) error {
 
 	cliState := cmd.State
 	cmd.State = state.NewDeployment()
-	// err = cmd.State.LoadManifest(sourceDir, logger)
-	// if err != nil {
-	// 	return err
-	// }
 	if !cmd.New {
 		err = cmd.State.LoadFromFiles(sourceDir, cmd.Config, logger)
 		if err != nil && !os.IsNotExist(err) {
