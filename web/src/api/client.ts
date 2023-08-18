@@ -11,7 +11,10 @@ import { Publish } from 'src/api/resources/Publish';
 
 const camelCaseInterceptor = (response: AxiosResponse): AxiosResponse => {
   if (response.data && response.headers['content-type'] === 'application/json') {
-    response.data = camelcaseKeys(response.data, { stopPaths: ['manifest.files'], deep: true });
+    response.data = camelcaseKeys(
+      response.data,
+      { stopPaths: response.config.ignoreCamelCase, deep: true }
+    );
   }
   return response;
 };

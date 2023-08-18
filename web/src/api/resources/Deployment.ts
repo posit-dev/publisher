@@ -11,15 +11,25 @@ export class Deployment {
     this.client = client;
   }
 
+  private createConfig(config?: AxiosRequestConfig): AxiosRequestConfig {
+    return {
+      ignoreCamelCase: ['manifest.files', 'manifest.packages'],
+      ...config,
+    };
+  }
+
   get() {
-    return this.client.get<DeploymentState>('/deployment');
+    return this.client.get<DeploymentState>(
+      '/deployment',
+      this.createConfig()
+    );
   }
 
   setFiles(files: string[], config?: AxiosRequestConfig<DeploymentState>) {
     return this.client.put<DeploymentState>(
       '/deployment/files',
       { files: files },
-      config
+      this.createConfig(config)
     );
   }
 }
