@@ -5,11 +5,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted } from 'vue';
 import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
 import { useLogger } from './utils/logger';
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router';
 
 const logger = useLogger();
 const router = useRouter();
