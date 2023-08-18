@@ -49,7 +49,7 @@ func LogRequest(msg string, logger rslog.Logger, next http.HandlerFunc) http.Han
 		startTime := time.Now()
 		writer := NewStatusCapturingResponseWriter(w)
 		next(writer, req)
-		elapsedMs := time.Now().Sub(startTime).Milliseconds()
+		elapsedMs := time.Since(startTime).Milliseconds()
 
 		fieldLogger := logger.WithFields(rslog.Fields{
 			"method":      req.Method,

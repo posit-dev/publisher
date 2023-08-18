@@ -11,7 +11,9 @@ import (
 
 // AuthRequired verifies that the session has been
 // marked as authenticated by one of the auth middlewares.
-const authenticatedContextKey string = "authenticated"
+type authenticatedContextKeyType string
+
+const authenticatedContextKey authenticatedContextKeyType = "authenticated"
 
 func AuthRequired(logger rslog.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
