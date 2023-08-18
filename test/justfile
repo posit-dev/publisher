@@ -75,18 +75,8 @@ local-ui-client target:
     ..\bin\artifact\windows-amd64\connect-client.exe publish-ui test/content/simple-notebook/ --listen=localhost:9999
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
     ../bin/darwin-amd64/connect-client publish-ui \
-    sample-content/fastapi-simple --listen=127.0.0.1:9999
-  fi
-    docker run \
-    --platform "${_platform}" \
-    -v "$(pwd)"/../:/publishing-client \
-    -w /publishing-client/ \
-    -e DOCKER="false" \
-    --rm {{_tag}}-{{target}} just build
-  elif [[ {{target}} =~ "windows" ]]; then
-    just _test-client windows-amd64
-  elif [[ {{target}} =~ "macos" ]]; then
-    just _test-client darwin-amd64
+    sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123 &
+    just ui-client darwin-amd64
   fi
 
 ui-client target:
@@ -104,6 +94,8 @@ ui-client target:
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \
     just web/test-ci-e2e {{target}}
+  elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
+    DOCKER="false" just ../web/test-ci-e2e {{target}}
   fi
 
 _test-client target:

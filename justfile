@@ -167,7 +167,7 @@ start-agent-for-e2e:
     echo "Working directory is $(pwd)"
 
     ./bin/$GOOS-$GOARCH/connect-client publish-ui \
-        ./test/sample-content/fastapi-simple \
+        test/sample-content/fastapi-simple \
         --listen=127.0.0.1:9000 \
         --token=abc123
     
