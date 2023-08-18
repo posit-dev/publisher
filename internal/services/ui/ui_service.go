@@ -11,7 +11,9 @@ import (
 	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
-	"github.com/rstudio/connect-client/internal/services/api/deployment"
+	"github.com/rstudio/connect-client/internal/services/api/deployments"
+	"github.com/rstudio/connect-client/internal/services/api/files"
+	"github.com/rstudio/connect-client/internal/services/api/paths"
 
 	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
@@ -28,7 +30,7 @@ func NewUIService(
 	lister accounts.AccountList,
 	logger rslog.Logger) *api.Service {
 
-	handler := newUIHandler(publish, fs, lister, logger)
+	handler := newUIHandler(fs, publish, lister, logger)
 
 	return api.NewService(
 		publish.State,
@@ -47,18 +49,27 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(publishArgs *cli_types.PublishArgs, afs afero.Fs, lister accounts.AccountList, log rslog.Logger) http.HandlerFunc {
+func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log rslog.Logger) http.HandlerFunc {
+
+	deployment := publishArgs.State
+	base := deployment.SourceDir
+
+	deploymentsService := deployments.CreateDeploymentsService(deployment)
+	filesService := files.CreateFilesService(base, afs, log)
+	pathsService := paths.CreatePathsService(base, afs, log)
+
 	mux := http.NewServeMux()
 	// /api/accounts
-	mux.Handle(ToPath("accounts"), api.NewAccountsController(lister, log))
+	mux.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(lister, log))
 	// /api/files
-	mux.Handle(ToPath("files"), api.NewFilesController(publishArgs.State.SourceDir, afs, log))
+	mux.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log))
 	// /api/deployment
-	mux.Handle(ToPath("deployment"), deployment.NewDeploymentController(publishArgs.State, log))
+	mux.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService))
 	// /api/deployment/files
-	mux.Handle(ToPath("deployment", "files"), deployment.NewFilesController(publishArgs.State, log))
-	mux.Handle(ToPath("publish"), api.NewPublishController(publishArgs, lister, log))
+	mux.Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log))
+	mux.Handle(ToPath("publish"), api.PostPublishHandlerFunc(publishArgs, lister, log))
 	mux.HandleFunc("/", api.NewStaticController())
+
 	return mux.ServeHTTP
 }
 

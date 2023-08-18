@@ -43,8 +43,8 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 	}
 }
 
-// NewAccountsController returns a handler for the account list.
-func NewAccountsController(lister accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
+// GetAccountsHandlerFunc returns a handler for the account list.
+func GetAccountsHandlerFunc(lister accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		accounts, err := lister.GetAllAccounts()
 		if err != nil {

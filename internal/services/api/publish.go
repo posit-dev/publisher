@@ -11,7 +11,7 @@ import (
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
-func NewPublishController(publishArgs *cli_types.PublishArgs, lister accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
+func PostPublishHandlerFunc(publishArgs *cli_types.PublishArgs, lister accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		switch req.Method {
 		case http.MethodPost:
