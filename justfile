@@ -1,5 +1,5 @@
 # clean, image, bootstrap, validate, build and test agent & client
-default: clean image bootstrap validate build validate-post test
+default: clean image bootstrap validate build test
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
@@ -85,7 +85,7 @@ build-web:
 build-dev:
     just clean image bootstrap build-web build-agent-dev
 
-# Validate the agent and the web UX source code, along with checking for copyrights. See the `validate-post` recipe for linting which requires a build.
+# Validate the agent and the web UX source code, along with checking for copyrights.
 validate:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -107,6 +107,7 @@ validate-agent:
     fi
     {{ _with_runner }} staticcheck ./...
     {{ _with_runner }} go vet -all ./...
+    {{ _with_runner }} ./scripts/fmt-check.bash
     rm -f ${web_dir}/placeholder
 
 # Validate and FIX automatically correctable issues. See the `validate` recipe for linting without fixing.
@@ -118,11 +119,6 @@ validate-fix:
     # We could suppress w/ cmd || true, but do we want to?
     ./scripts/ccheck.py ./scripts/ccheck.config --fix
     {{ _with_runner }} just web/validate-fix
-
-# Validate step which requires the code to be built first. Normally want to validate prior to building.
-validate-post:
-    {{ _with_runner }} ./scripts/fmt-check.bash
-    {{ _with_runner }} go vet -all ./...
 
 # Run all tests (unit and e2e) on the agent as well as web UX
 test: test-agent test-web
