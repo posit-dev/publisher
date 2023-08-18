@@ -17,15 +17,15 @@ type CommonArgs struct {
 	Token *services.LocalToken `help:"Authentication token for the publishing UI. Default auto-generates a token."`
 }
 
-type Context struct {
+type CLIContext struct {
 	Accounts   accounts.AccountList
 	LocalToken services.LocalToken
 	Fs         afero.Fs
 	Logger     rslog.Logger
 }
 
-func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, logger rslog.Logger) *Context {
-	return &Context{
+func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, logger rslog.Logger) *CLIContext {
+	return &CLIContext{
 		Accounts:   accountList,
 		LocalToken: token,
 		Fs:         fs,

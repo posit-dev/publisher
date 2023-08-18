@@ -193,7 +193,7 @@ type CreateBundleCmd struct {
 	BundleFile     util.Path `help:"Path to a file where the bundle should be written." kong:"required"`
 }
 
-func (cmd *CreateBundleCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) error {
+func (cmd *CreateBundleCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	err := cmd.stateFromCLI(ctx.Logger)
 	if err != nil {
 		return err
@@ -205,7 +205,7 @@ type WriteManifestCmd struct {
 	*BaseBundleCmd `kong:"embed"`
 }
 
-func (cmd *WriteManifestCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) error {
+func (cmd *WriteManifestCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	err := cmd.stateFromCLI(ctx.Logger)
 	if err != nil {
 		return err
@@ -217,7 +217,7 @@ type PublishCmd struct {
 	*BaseBundleCmd `kong:"embed"`
 }
 
-func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) error {
+func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	err := cmd.stateFromCLI(ctx.Logger)
 	if err != nil {
 		return err
@@ -230,7 +230,7 @@ type PublishUICmd struct {
 	cli_types.UIArgs
 }
 
-func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) error {
+func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	err := cmd.stateFromCLI(ctx.Logger)
 	if err != nil {
 		return err

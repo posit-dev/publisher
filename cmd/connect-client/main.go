@@ -39,7 +39,7 @@ func setupLogging() rslog.Logger {
 	return logger
 }
 
-func makeContext(logger rslog.Logger) (*cli_types.Context, error) {
+func makeContext(logger rslog.Logger) (*cli_types.CLIContext, error) {
 	fs := afero.NewOsFs()
 	accountList := accounts.NewAccountList(fs, logger)
 	token, err := services.NewLocalToken()

@@ -37,7 +37,7 @@ type testAccountCmd struct {
 	Name string `short:"n" help:"Nickname of account to test."`
 }
 
-func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) error {
+func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	account, err := ctx.Accounts.GetAccountByName(cmd.Name)
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Contex
 
 type listAccountsCmd struct{}
 
-func (cmd *listAccountsCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.Context) error {
+func (cmd *listAccountsCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	accounts, err := ctx.Accounts.GetAllAccounts()
 	if err != nil {
 		return err
