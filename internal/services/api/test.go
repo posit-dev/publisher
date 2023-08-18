@@ -1,5 +1,7 @@
 package api
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
