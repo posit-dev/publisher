@@ -46,7 +46,7 @@ build-agent:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    # Have to remove linked server executable, so that switching from production 
+    # Have to remove linked server executable, so that switching from production
     # to development modes (and vise-versa) will work.
     just clean-agent
 
@@ -70,7 +70,7 @@ build-agent:
     fi
 
 # Build the development agent using the existing build of the Web UX
-build-agent-dev: 
+build-agent-dev:
     #!/bin/bash
     set -euo pipefail
     export BUILD_MODE=development
@@ -86,12 +86,28 @@ build-dev:
     just clean image bootstrap build-web build-agent-dev
 
 # Validate the agent and the web UX source code, along with checking for copyrights. See the `validate-post` recipe for linting which requires a build.
-validate: 
+validate:
     #!/usr/bin/env bash
     set -euo pipefail
 
     ./scripts/ccheck.py ./scripts/ccheck.config
     {{ _with_runner }} just web/validate
+    just validate-agent
+
+validate-agent:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # there must be files in web/dist/spa for go vet
+    # so it can compile web/web.go which embeds it.
+    web_dir=web/dist/spa
+    if [[ ! -e ${web_dir} ]]; then
+        mkdir -p web/dist/spa
+        echo "placeholder" > ${web_dir}/placeholder
+    fi
+    {{ _with_runner }} staticcheck ./...
+    {{ _with_runner }} go vet -all ./...
+    rm -f ${web_dir}/placeholder
 
 # Validate and FIX automatically correctable issues. See the `validate` recipe for linting without fixing.
 validate-fix:
@@ -170,9 +186,9 @@ start-agent-for-e2e:
         ./test/sample-content/fastapi-simple \
         --listen=127.0.0.1:9000 \
         --token=abc123
-    
+
 [private]
-_with_docker *args: 
+_with_docker *args:
     docker run --rm {{ _interactive }} \
         -e CI={{ _ci }} \
         -e GOCACHE=/work/.cache/go/cache \
