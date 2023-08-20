@@ -30,5 +30,5 @@ RUN export JUST_VERSION=1.14.0 \
     | tar -C /usr/local/bin -xz just
 
 # UX stack
-RUN yum install epel-release
+RUN yum install -y epel-release
 RUN yum install -y npm
