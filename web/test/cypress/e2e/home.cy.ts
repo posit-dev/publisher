@@ -18,11 +18,9 @@ describe('Check Files', () => {
   it('files should be listed', () => {
     cy.contains('.q-item__label', 'Files').should('be.visible')
       .click();
-    cy.get('.q-tree__node-header-content').contains('fastapi-simple')
+    cy.get('.q-tree__node-header-content').contains('fastapi-simple');
   });
 });
-
-
 
 // ** The following code is an example to show you how to write some tests for your home page **
 //
