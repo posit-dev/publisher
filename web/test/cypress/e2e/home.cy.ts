@@ -4,17 +4,12 @@
 // This test will pass when run against a clean Quasar project
 describe('Landing', () => {
   beforeEach(() => {
-    cy.visit('http://127.0.0.1:9000/?token=abc123');
-  });
   it('.should() - assert that <title> is correct', () => {
     cy.title().should('include', 'Posit Publishing Web UI');
   });
 });
 
 describe('Check Files', () => {
-  beforeEach(() => {
-    cy.visit('http://127.0.0.1:9000/?token=abc123');
-  });
   it('files should be listed', () => {
     cy.contains('.q-item__label', 'Files').should('be.visible')
       .click();
