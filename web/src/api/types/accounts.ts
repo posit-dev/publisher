@@ -20,9 +20,9 @@ export enum AccountAuthType {
 }
 
 export type Account = {
-    account_name: string;
-    auth_type: AccountAuthType;
-    ca_cert: string;
+    accountName: string;
+    authType: AccountAuthType;
+    caCert: string;
     insecure: boolean;
     name: string;
     source: AccountSource;
