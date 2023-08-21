@@ -30,5 +30,6 @@ RUN export JUST_VERSION=1.14.0 \
     | tar -C /usr/local/bin -xz just
 
 # UX stack
-RUN yum install epel-release
-RUN yum install -y npm
+RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
+RUN yum -y install nodejs
+RUN node -v && npm version && npx -v
