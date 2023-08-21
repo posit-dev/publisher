@@ -102,7 +102,7 @@ validate-agent:
     # so it can compile web/web.go which embeds it.
     web_dir=web/dist/spa
     if [[ ! -e ${web_dir} ]]; then
-        mkdir -p web/dist/spa
+        mkdir -p ${web_dir}
         echo "placeholder" > ${web_dir}/placeholder
     fi
     {{ _with_runner }} staticcheck ./...
