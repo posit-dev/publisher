@@ -3,7 +3,6 @@
 
 // This test will pass when run against a clean Quasar project
 describe('Landing', () => {
-  beforeEach(() => {
   it('.should() - assert that <title> is correct', () => {
     cy.title().should('include', 'Posit Publishing Web UI');
   });
