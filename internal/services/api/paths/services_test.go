@@ -68,7 +68,7 @@ func (s *ServicesSuite) TestPathsService_isSymlink_True() {
 	fpath := util.NewPath(f.Name(), afs)
 	lpath := util.NewPath(l.Name(), afs)
 
-	ps := PathsService{fpath, afs, s.log}
+	ps := pathsService{fpath, afs, s.log}
 	ok, err := ps.isSymlink(lpath)
 	s.Nil(err)
 	s.True(ok)
@@ -87,7 +87,7 @@ func (s *ServicesSuite) TestPathsService_isSymlink_False_FileFound() {
 	fpath := util.NewPath(f.Name(), afs)
 	lpath := util.NewPath(f.Name(), afs)
 
-	ps := PathsService{fpath, afs, s.log}
+	ps := pathsService{fpath, afs, s.log}
 	ok, err := ps.isSymlink(lpath)
 	s.Nil(err)
 	s.False(ok)
@@ -106,7 +106,7 @@ func (s *ServicesSuite) TestPathsService_isSymlink_False_FileMissing() {
 	fpath := util.NewPath(f.Name(), afs)
 	lpath := util.NewPath("Not Found", afs)
 
-	ps := PathsService{fpath, afs, s.log}
+	ps := pathsService{fpath, afs, s.log}
 	ok, err := ps.isSymlink(lpath)
 	s.Nil(err)
 	s.False(ok)
@@ -144,7 +144,7 @@ func (s *ServicesSuite) TestPathsService_isTrusted() {
 		fpath := util.NewPath("", afs)
 		tpath := util.NewPath(t.path, afs)
 
-		ps := PathsService{fpath, afs, s.log}
+		ps := pathsService{fpath, afs, s.log}
 		res, _ := ps.isTrusted(tpath)
 		s.Equalf(t.exp, res, "%s should be %t, found %t", t.path, t.exp, res)
 	}

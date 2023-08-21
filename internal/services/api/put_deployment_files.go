@@ -14,7 +14,7 @@ type PutDeploymentFilesRequestBody struct {
 	Files []string `json:"files"`
 }
 
-func PutDeploymentFilesHandlerFunc(deploymentsService deployments.IDeploymentsService, log rslog.Logger) http.HandlerFunc {
+func PutDeploymentFilesHandlerFunc(deploymentsService deployments.DeploymentsService, log rslog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dec := json.NewDecoder(r.Body)
 		dec.DisallowUnknownFields()

@@ -12,7 +12,7 @@ import (
 	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
-func GetFileHandlerFunc(base util.Path, filesService files.IFilesService, pathsService paths.IPathsService, log rslog.Logger) http.HandlerFunc {
+func GetFileHandlerFunc(base util.Path, filesService files.FilesService, pathsService paths.PathsService, log rslog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var p util.Path
 		if q := r.URL.Query(); q.Has("pathname") {

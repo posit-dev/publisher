@@ -11,21 +11,21 @@ import (
 	"github.com/spf13/afero"
 )
 
-type IPathsService interface {
+type PathsService interface {
 	IsSafe(p util.Path) (bool, error)
 }
 
-func CreatePathsService(base util.Path, afs afero.Fs, log rslog.Logger) IPathsService {
-	return PathsService{base, afs, log}
+func CreatePathsService(base util.Path, afs afero.Fs, log rslog.Logger) PathsService {
+	return pathsService{base, afs, log}
 }
 
-type PathsService struct {
+type pathsService struct {
 	base util.Path
 	afs  afero.Fs
 	log  rslog.Logger
 }
 
-func (s PathsService) IsSafe(p util.Path) (bool, error) {
+func (s pathsService) IsSafe(p util.Path) (bool, error) {
 	symlink, err := s.isSymlink(p)
 	if err != nil {
 		s.log.Errorf("failure when checking symlink: %v", err)
@@ -49,7 +49,7 @@ func (s PathsService) IsSafe(p util.Path) (bool, error) {
 	return true, nil
 }
 
-func (s PathsService) isSymlink(p util.Path) (bool, error) {
+func (s pathsService) isSymlink(p util.Path) (bool, error) {
 	l, ok, err := p.LstatIfPossible()
 	if err != nil {
 		// if an error occurs and lstat is called, check if the error op is lstat
@@ -67,7 +67,7 @@ func (s PathsService) isSymlink(p util.Path) (bool, error) {
 
 }
 
-func (s PathsService) isTrusted(p util.Path) (bool, error) {
+func (s pathsService) isTrusted(p util.Path) (bool, error) {
 	_, err := p.Rel(s.base)
 	if err != nil {
 		s.log.Warnf("%v", err)
