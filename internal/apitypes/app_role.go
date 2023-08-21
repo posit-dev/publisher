@@ -24,6 +24,6 @@ func AppRoleFromString(s string) (AppRole, error) {
 	case string(AppRoleNone):
 		return AppRoleNone, nil
 	default:
-		return AppRoleNone, fmt.Errorf("Invalid app user role: '%s'", s)
+		return AppRoleNone, fmt.Errorf("invalid app user role: '%s'", s)
 	}
 }

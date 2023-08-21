@@ -40,8 +40,8 @@ func NewTokenAuthenticator(token, secret, privateKey string) AuthMethod {
 	}
 }
 
-var errMissingToken = errors.New("Token authentication requires a token")
-var errMissingKeyOrSecret = errors.New("Token authentication requires secret or private key")
+var errMissingToken = errors.New("token authentication requires a token")
+var errMissingKeyOrSecret = errors.New("token authentication requires secret or private key")
 
 func (a *tokenAuthenticator) AddAuthHeaders(req *http.Request) error {
 	if a.token == "" {
