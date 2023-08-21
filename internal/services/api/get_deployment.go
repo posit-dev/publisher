@@ -9,7 +9,7 @@ import (
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 )
 
-func GetDeploymentHandlerFunc(deploymentsService deployments.IDeploymentsService) http.HandlerFunc {
+func GetDeploymentHandlerFunc(deploymentsService deployments.DeploymentsService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		d := deploymentsService.GetDeployment()
 		w.Header().Set("content-type", "application/json")

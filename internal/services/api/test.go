@@ -13,7 +13,7 @@ import (
 
 type MockDeploymentsService struct {
 	mock.Mock
-	deployments.IDeploymentsService
+	deployments.DeploymentsService
 }
 
 func (m *MockDeploymentsService) GetDeployment() *state.Deployment {
@@ -28,7 +28,7 @@ func (m *MockDeploymentsService) SetDeploymentFiles(files []string) *state.Deplo
 
 type MockFilesService struct {
 	mock.Mock
-	files.IFilesService
+	files.FilesService
 }
 
 func (m *MockFilesService) GetFile(p util.Path) (*files.File, error) {
@@ -38,7 +38,7 @@ func (m *MockFilesService) GetFile(p util.Path) (*files.File, error) {
 
 type MockPathsService struct {
 	mock.Mock
-	paths.IPathsService
+	paths.PathsService
 }
 
 func (m *MockPathsService) IsSafe(p util.Path) (bool, error) {
