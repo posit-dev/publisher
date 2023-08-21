@@ -31,3 +31,33 @@ func (s *ServicesSuite) TestCreateFilesService() {
 	service := CreateFilesService(base, afs, s.log)
 	s.NotNil(service)
 }
+
+func (s *ServicesSuite) TestGetFile() {
+	afs := afero.NewMemMapFs()
+	base := util.NewPath("", afs)
+	service := CreateFilesService(base, afs, s.log)
+	s.NotNil(service)
+	file, err := service.GetFile(base)
+	s.Nil(err)
+	s.NotNil(file)
+}
+
+func (s *ServicesSuite) TestGetFileUsingSampleContent() {
+	afs := afero.NewOsFs()
+	base := util.NewPath("../../../../test/sample-content/fastapi-simple", afs)
+	service := CreateFilesService(base, afs, s.log)
+	s.NotNil(service)
+	file, err := service.GetFile(base)
+	s.Nil(err)
+	s.NotNil(file)
+}
+
+func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
+	afs := afero.NewOsFs()
+	base := util.NewPath("../../../../test/sample-content/fastapi-simple/", afs)
+	service := CreateFilesService(base, afs, s.log)
+	s.NotNil(service)
+	file, err := service.GetFile(base)
+	s.Nil(err)
+	s.NotNil(file)
+}
