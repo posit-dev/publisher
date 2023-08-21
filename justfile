@@ -104,11 +104,11 @@ validate-agent:
     if [[ ! -e ${web_dir} ]]; then
         mkdir -p ${web_dir}
         echo "placeholder" > ${web_dir}/placeholder
+        trap "rm -f ${web_dir}/placeholder" EXIT
     fi
     {{ _with_runner }} staticcheck ./...
     {{ _with_runner }} go vet -all ./...
     {{ _with_runner }} ./scripts/fmt-check.bash
-    rm -f ${web_dir}/placeholder
 
 # Validate and FIX automatically correctable issues. See the `validate` recipe for linting without fixing.
 validate-fix:
