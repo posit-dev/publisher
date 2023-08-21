@@ -11,17 +11,17 @@ import (
 	"github.com/spf13/afero"
 )
 
-type IFilesService interface {
+type FilesService interface {
 	GetFile(path util.Path) (*File, error)
 }
 
-func CreateFilesService(base util.Path, afs afero.Fs, log rslog.Logger) IFilesService {
+func CreateFilesService(base util.Path, afs afero.Fs, log rslog.Logger) FilesService {
 	f := base.Join(".gitignore")
 	ignore, err := gitignore.NewIgnoreList(f, nil)
 	if err != nil {
 		log.Warnf("failed to load .gitignore file")
 	}
-	return FilesService{
+	return filesService{
 		base:   base,
 		afs:    afs,
 		log:    log,
@@ -29,14 +29,14 @@ func CreateFilesService(base util.Path, afs afero.Fs, log rslog.Logger) IFilesSe
 	}
 }
 
-type FilesService struct {
+type filesService struct {
 	base   util.Path
 	afs    afero.Fs
 	log    rslog.Logger
 	ignore gitignore.IgnoreList
 }
 
-func (s FilesService) GetFile(p util.Path) (*File, error) {
+func (s filesService) GetFile(p util.Path) (*File, error) {
 	p = p.Clean()
 	m := s.ignore.Match(p.String())
 	file, err := CreateFile(p, m)

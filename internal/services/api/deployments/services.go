@@ -7,24 +7,24 @@ import (
 	"github.com/rstudio/connect-client/internal/state"
 )
 
-type IDeploymentsService interface {
+type DeploymentsService interface {
 	GetDeployment() *state.Deployment
 	SetDeploymentFiles(files []string) *state.Deployment
 }
 
-func CreateDeploymentsService(deployment *state.Deployment) IDeploymentsService {
-	return &DeploymentsService{deployment: deployment}
+func CreateDeploymentsService(deployment *state.Deployment) DeploymentsService {
+	return &deploymentsService{deployment: deployment}
 }
 
-type DeploymentsService struct {
+type deploymentsService struct {
 	deployment *state.Deployment
 }
 
-func (s DeploymentsService) GetDeployment() *state.Deployment {
+func (s deploymentsService) GetDeployment() *state.Deployment {
 	return s.deployment
 }
 
-func (s DeploymentsService) SetDeploymentFiles(files []string) *state.Deployment {
+func (s deploymentsService) SetDeploymentFiles(files []string) *state.Deployment {
 	mfm := bundles.NewManifestFileMap()
 	for _, file := range files {
 		// We'll save the file path, but leave reading the
