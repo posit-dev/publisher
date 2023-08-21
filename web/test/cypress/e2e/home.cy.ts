@@ -11,6 +11,17 @@ describe('Landing', () => {
   });
 });
 
+describe('Check Files', () => {
+  beforeEach(() => {
+    cy.visit('http://127.0.0.1:9000/?token=abc123');
+  });
+  it('files should be listed', () => {
+    cy.contains('.q-item__label', 'Files').should('be.visible')
+      .click();
+    cy.get('.q-tree__node-header-content').contains('fastapi-simple');
+  });
+});
+
 // ** The following code is an example to show you how to write some tests for your home page **
 //
 // describe('Home page tests', () => {
