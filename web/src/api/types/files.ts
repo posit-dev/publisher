@@ -14,19 +14,19 @@ export enum ExclusionMatchSource {
 export type ExclusionMatch = {
     source: ExclusionMatchSource
     pattern: string
-    file_path: string
+    filePath: string
     line: number
 }
 
 export type DeploymentFile = {
-  file_type: DeploymentFileType
-  pathname: string
-  base_name: string
-  size: number
-  modified_datetime: string
-  is_dir: boolean
-  is_entrypoint: boolean
-  is_file: boolean
-  files: DeploymentFile[]
-  exclusion: ExclusionMatch | null
+    fileType: DeploymentFileType
+    pathname: string
+    baseName: string
+    size: number
+    modifiedDatetime: string
+    isDir: boolean
+    isEntrypoint: boolean
+    isFile: boolean
+    files: DeploymentFile[]
+    exclusion: ExclusionMatch | null
 }

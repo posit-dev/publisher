@@ -4,27 +4,27 @@ import { AppMode } from 'src/api/types/apptypes';
 
 export type ManifestMetadata = {
     appmode: AppMode;
-    content_category?: string;
+    contentCategory?: string;
     entrypoint?: string;
-    primary_rmd?: string;
-    primary_html: string;
-    has_paramters?: boolean;
+    primaryRmd?: string;
+    primaryHtml: string;
+    hasParamters?: boolean;
 }
 
 export type PythonPackageManager = {
     name: string;
     version?: string;
-    package_file: string;
+    packageFile: string;
 }
 
 export type PythonManifest = {
     version: string;
-    package_manager: PythonPackageManager;
+    packageManager: PythonPackageManager;
 }
 
 export type JupyterManifest = {
-    hide_all_input: boolean;
-    hide_tagged_input: boolean;
+    hideAllInput: boolean;
+    hideTaggedInput: boolean;
 }
 
 export type QuartoManifest = {

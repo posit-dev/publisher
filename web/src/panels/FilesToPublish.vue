@@ -34,7 +34,7 @@ const deploymentStore = useDeploymentStore();
 const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);
 
-type FileInfo = Pick<DeploymentFile, 'size' | 'is_entrypoint' | 'exclusion'>;
+type FileInfo = Pick<DeploymentFile, 'size' | 'isEntrypoint' | 'exclusion'>;
 
 const fileMap = ref(new Map<string, FileInfo>());
 
@@ -57,7 +57,7 @@ const selectedFileTotalSize = computed(() : string => {
 
 const fileSummary = computed(() => {
   const count = deploymentStore.files.length;
-  const path = deploymentStore.deployment?.source_path;
+  const path = deploymentStore.deployment?.sourcePath;
 
   if (count) {
     return `${count} files selected from ${path} (total = ${selectedFileTotalSize.value})`;
@@ -70,7 +70,7 @@ const fileSummary = computed(() => {
 function fileToTreeNode(file: DeploymentFile): QTreeNode {
   const node: QTreeNode = {
     [NODE_KEY]: file.pathname,
-    label: file.base_name,
+    label: file.baseName,
     children: file.files.map(fileToTreeNode),
     tickable: !file.exclusion,
   };
@@ -81,8 +81,7 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
 function populateFileMap(file: DeploymentFile) {
   const info = {
     size: file.size,
-    // eslint-disable-next-line camelcase
-    is_entrypoint: file.is_entrypoint,
+    isEntrypoint: file.isEntrypoint,
     exclusion: file.exclusion,
   };
   fileMap.value.set(file.pathname, info);
@@ -98,7 +97,7 @@ async function getFiles() {
   // updates fileMap
   populateFileMap(file);
 
-  if (file.is_dir) {
+  if (file.isDir) {
     // start with the top level directory expanded
     expanded.value = [file.pathname];
   }
