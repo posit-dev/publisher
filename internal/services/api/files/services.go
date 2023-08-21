@@ -37,6 +37,7 @@ type FilesService struct {
 }
 
 func (s FilesService) GetFile(p util.Path) (*File, error) {
+	p = p.Clean()
 	m := s.ignore.Match(p.String())
 	file, err := CreateFile(p, m)
 	if err != nil {
@@ -48,7 +49,7 @@ func (s FilesService) GetFile(p util.Path) (*File, error) {
 		if err != nil {
 			return err
 		}
-		_, err = file.insert(path, s.ignore)
+		_, err = file.insert(path.Clean(), s.ignore)
 		return err
 	})
 
