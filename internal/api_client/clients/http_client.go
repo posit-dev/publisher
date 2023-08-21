@@ -51,7 +51,7 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, logg
 	}, nil
 }
 
-var errAuthenticationFailed = errors.New("Unable to log in with the provided credentials.")
+var errAuthenticationFailed = errors.New("unable to log in with the provided credentials")
 var ErrNotFound = errors.New("server returned Not Found for the requested resource")
 
 type HTTPError struct {
@@ -169,7 +169,7 @@ func loadCACertificates(path string, logger rslog.Logger) (*x509.CertPool, error
 	certPool := x509.NewCertPool()
 	ok := certPool.AppendCertsFromPEM(certificate)
 	if !ok {
-		return nil, fmt.Errorf("No PEM certificates were found in the certificate file '%s'", path)
+		return nil, fmt.Errorf("no PEM certificates were found in the certificate file '%s'", path)
 	}
 	return certPool, nil
 }

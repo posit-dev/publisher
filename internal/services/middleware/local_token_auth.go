@@ -27,7 +27,6 @@ func LocalTokenSession(expectedToken services.LocalToken, logger rslog.Logger, n
 			if expectedToken == services.LocalToken(receivedToken) {
 				// Success
 				logger.Infof("Authenticated via token, creating session")
-				req = authenticatedRequest(req)
 				setCookie(w)
 				values := target.Query()
 				values.Del(tokenParameterName)

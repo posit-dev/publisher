@@ -8,6 +8,7 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/rstudio/connect-client/cmd/connect-client/commands"
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/platform-lib/pkg/rslog"
@@ -15,7 +16,7 @@ import (
 )
 
 type cliSpec struct {
-	commands.CommonArgs
+	cli_types.CommonArgs
 	commands.AccountCommands `group:"Accounts"`
 
 	Publish       commands.PublishCmd       `kong:"cmd" help:"Publish a project."`
@@ -38,14 +39,14 @@ func setupLogging() rslog.Logger {
 	return logger
 }
 
-func makeContext(logger rslog.Logger) (*commands.CLIContext, error) {
+func makeContext(logger rslog.Logger) (*cli_types.CLIContext, error) {
 	fs := afero.NewOsFs()
 	accountList := accounts.NewAccountList(fs, logger)
 	token, err := services.NewLocalToken()
 	if err != nil {
 		return nil, err
 	}
-	ctx := commands.NewCLIContext(accountList, token, fs, logger)
+	ctx := cli_types.NewCLIContext(accountList, token, fs, logger)
 	return ctx, nil
 }
 
@@ -59,7 +60,7 @@ func main() {
 		logger.Fatalf("Error initializing client: %s", err)
 	}
 	cli := cliSpec{
-		CommonArgs: commands.CommonArgs{},
+		CommonArgs: cli_types.CommonArgs{},
 	}
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))

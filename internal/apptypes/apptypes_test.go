@@ -454,7 +454,7 @@ func (s *AppTypesSuite) TestUnmarshalTextInvalid() {
 	var mode AppMode
 	err := mode.UnmarshalText([]byte("invalid"))
 	s.NotNil(err)
-	s.ErrorContains(err, "Unrecognized content type")
+	s.ErrorContains(err, "unrecognized content type")
 	s.ErrorContains(err, "invalid")
 	s.Equal(mode, UnknownMode)
 }

@@ -1,4 +1,4 @@
-package commands
+package cli_types
 
 import "github.com/rstudio/connect-client/internal/debug"
 
