@@ -29,7 +29,6 @@
     "@vitest/ui": "^0.15.0",
     "@vue/test-utils": "^2.0.0",
     "autoprefixer": "^10.4.2",
-    "build": "^0.1.4",
     "cypress": "^12.17.0",
     "eslint": "^8.10.0",
     "eslint-config-standard": "^17.0.0",
@@ -39,8 +38,6 @@
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-vue": "^9.0.0",
     "eslint-plugin-vuejs-accessibility": "^2.1.0",
-    "lint": "^1.1.2",
-    "test": "^3.3.0",
     "typescript": "^4.5.4",
     "vitest": "^0.15.0"
   },
