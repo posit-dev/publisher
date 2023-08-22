@@ -3,28 +3,33 @@ package cli_types
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"log/slog"
+
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
 
 type CommonArgs struct {
-	Debug debugFlag            `help:"Enable debug mode." env:"CONNECT_DEBUG"`
+	Debug bool                 `help:"Enable debug mode." env:"CONNECT_DEBUG"`
 	Token *services.LocalToken `help:"Authentication token for the publishing UI. Default auto-generates a token."`
+}
+
+type Log interface {
+	*slog.Logger
 }
 
 type CLIContext struct {
 	Accounts   accounts.AccountList
 	LocalToken services.LocalToken
 	Fs         afero.Fs
-	Logger     rslog.Logger
+	Logger     *slog.Logger
 }
 
-func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, logger rslog.Logger) *CLIContext {
+func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, logger *slog.Logger) *CLIContext {
 	return &CLIContext{
 		Accounts:   accountList,
 		LocalToken: token,
@@ -37,7 +42,7 @@ type UIArgs struct {
 	Interactive            bool   `short:"i" help:"Launch a browser to show the UI at the listen address."`
 	OpenBrowserAt          string `help:"Launch a browser to show the UI at specific network address." placeholder:"HOST[:PORT]" hidden:""`
 	SkipBrowserSessionAuth bool   `help:"Skip Browser Token Auth Checks" hidden:""`
-	Listen                 string `help:"Network address to listen on." placeholder:"HOST:PORT" default:"localhost:0"`
+	Listen                 string `help:"Network address to listen on." placeholder:"HOST[:PORT]"`
 	AccessLog              bool   `help:"Log all HTTP requests."`
 	TLSKeyFile             string `help:"Path to TLS private key file for the UI server."`
 	TLSCertFile            string `help:"Path to TLS certificate chain file for the UI server."`

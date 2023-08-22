@@ -9,10 +9,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"log/slog"
+
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -20,7 +21,7 @@ import (
 
 type GetFileHandlerFuncSuite struct {
 	utiltest.Suite
-	log rslog.Logger
+	log *slog.Logger
 }
 
 func TestGetFileHandlerFuncSuite(t *testing.T) {
@@ -28,7 +29,7 @@ func TestGetFileHandlerFuncSuite(t *testing.T) {
 }
 
 func (s *GetFileHandlerFuncSuite) SetupSuite() {
-	s.log = rslog.NewDiscardingLogger()
+	s.log = slog.Default()
 }
 
 func (s *GetFileHandlerFuncSuite) TestGetFileHandlerFunc() {

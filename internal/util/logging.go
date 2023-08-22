@@ -4,18 +4,17 @@ package util
 
 import (
 	"io"
+	"log/slog"
 	"strings"
-
-	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
 // LoggerWriter is an adapter that provides an
-// io.Writer interface to rslog.Logger.
+// io.Writer interface to *slog.Logger.
 type LoggerWriter struct {
-	logger rslog.Logger
+	logger *slog.Logger
 }
 
-func NewLoggerWriter(logger rslog.Logger) *LoggerWriter {
+func NewLoggerWriter(logger *slog.Logger) *LoggerWriter {
 	return &LoggerWriter{
 		logger: logger,
 	}
@@ -24,6 +23,6 @@ func NewLoggerWriter(logger rslog.Logger) *LoggerWriter {
 var _ io.Writer = &LoggerWriter{}
 
 func (w *LoggerWriter) Write(data []byte) (int, error) {
-	w.logger.Infof("%s", strings.TrimRight(string(data), "\n"))
+	w.logger.Info(strings.TrimRight(string(data), "\n"))
 	return len(data), nil
 }
