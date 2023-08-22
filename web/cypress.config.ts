@@ -13,7 +13,7 @@ export default defineConfig({
       registerCodeCoverageTasks(on, config);
       return config;
     },
-    baseUrl: 'http://127.0.0.1:9000/',
+    baseUrl: 'http://127.0.0.1:9000/?token=abc123',
     supportFile: 'test/cypress/support/e2e.ts',
     specPattern: 'test/cypress/e2e/**/*.cy.{js,jsx,ts,tsx}'
   },
