@@ -29,8 +29,8 @@ func (s *FilesSuite) TestCreateFile() {
 	afs := afero.NewMemMapFs()
 	pathname := "."
 	path := util.NewPath(pathname, afs)
-	file, err := CreateFile(path, nil)
+	file, err := CreateFile(path, path, nil)
 	s.NotNil(file)
 	s.NoError(err)
-	s.Equal(file.Pathname, pathname)
+	s.Equal(file.Rel, pathname)
 }

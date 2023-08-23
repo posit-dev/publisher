@@ -64,6 +64,12 @@ func (cmd *BaseBundleCmd) SaveState(logger rslog.Logger) error {
 }
 
 func listFiles(dir util.Path, log rslog.Logger) (bundles.ManifestFileMap, error) {
+
+	dir, err := dir.Abs()
+	if err != nil {
+		return nil, err
+	}
+
 	files := make(bundles.ManifestFileMap)
 
 	ignore, err := gitignore.NewIgnoreList(dir, nil)
@@ -75,7 +81,11 @@ func listFiles(dir util.Path, log rslog.Logger) (bundles.ManifestFileMap, error)
 		if err != nil {
 			return err
 		}
-		files[path.Path()] = bundles.NewManifestFile()
+		rel, err := path.Rel(dir)
+		if err != nil {
+			return err
+		}
+		files[rel.Path()] = bundles.NewManifestFile()
 		return nil
 	})
 	if err != nil {
