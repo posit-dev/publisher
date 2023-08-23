@@ -2,11 +2,12 @@ package environment
 
 import (
 	"bytes"
+	"fmt"
+	"log/slog"
 	"os/exec"
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
@@ -20,7 +21,7 @@ type defaultPythonInspector struct {
 	executor   pythonExecutor
 	projectDir util.Path
 	pythonPath util.Path
-	logger     rslog.Logger
+	logger     *slog.Logger
 }
 
 var _ PythonInspector = &defaultPythonInspector{}
@@ -44,7 +45,7 @@ func (e *defaultPythonExecutor) runPythonCommand(pythonExecutable string, args [
 	return stdout.Bytes(), nil
 }
 
-func NewPythonInspector(projectDir util.Path, pythonPath util.Path, logger rslog.Logger) *defaultPythonInspector {
+func NewPythonInspector(projectDir util.Path, pythonPath util.Path, logger *slog.Logger) *defaultPythonInspector {
 	return &defaultPythonInspector{
 		executor:   &defaultPythonExecutor{},
 		projectDir: projectDir,
@@ -75,7 +76,7 @@ func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
 		return "", err
 	}
 	version := strings.TrimSpace(string(output))
-	i.logger.Infof("Found Python version %s", version)
+	i.logger.Info("Detected Python", "version", version)
 	return version, nil
 }
 
@@ -86,11 +87,12 @@ func (i *defaultPythonInspector) GetPythonRequirements() ([]byte, error) {
 		return nil, err
 	}
 	if exists {
-		i.logger.Infof("Using Python packages from %s", requirementsFilename)
+		i.logger.Info("Using Python packages", "source", requirementsFilename)
 		return requirementsFilename.ReadFile()
 	}
 	pythonExecutable := i.getPythonExecutable()
-	i.logger.Infof("Using Python packages from '%s -m pip freeze'", pythonExecutable)
+	source := fmt.Sprintf("'%s -m pip freeze'", pythonExecutable)
+	i.logger.Info("Using Python packages", "source", source)
 	args := []string{"-m", "pip", "freeze"}
 	return i.executor.runPythonCommand(pythonExecutable, args)
 }

@@ -8,14 +8,14 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
 
-	"github.com/rstudio/platform-lib/pkg/rslog"
+	"log/slog"
+
 	"github.com/spf13/afero"
 )
 
@@ -28,7 +28,7 @@ func NewUIService(
 	token services.LocalToken,
 	fs afero.Fs,
 	lister accounts.AccountList,
-	logger rslog.Logger) *api.Service {
+	logger *slog.Logger) *api.Service {
 
 	handler := newUIHandler(fs, publish, lister, logger)
 
@@ -45,11 +45,10 @@ func NewUIService(
 		ui.AccessLog,
 		token,
 		logger,
-		rslog.NewDebugLogger(debug.UIRegion),
 	)
 }
 
-func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log rslog.Logger) http.HandlerFunc {
+func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log *slog.Logger) http.HandlerFunc {
 
 	deployment := publishArgs.State
 	base := deployment.SourceDir

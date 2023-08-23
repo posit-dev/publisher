@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -14,20 +15,18 @@ import (
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
-
-	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
 type ConnectClient struct {
 	client  HTTPClient
 	account *accounts.Account
-	logger  rslog.Logger
+	logger  *slog.Logger
 }
 
 func NewConnectClient(
 	account *accounts.Account,
 	timeout time.Duration,
-	logger rslog.Logger) (*ConnectClient, error) {
+	logger *slog.Logger) (*ConnectClient, error) {
 
 	httpClient, err := NewDefaultHTTPClient(account, timeout, logger)
 	if err != nil {
@@ -42,7 +41,7 @@ func NewConnectClient(
 
 func (c *ConnectClient) TestConnection() error {
 	// Make a client without auth so we're just testing the connection.
-	c.logger.Infof("Testing connection to %s", c.account.URL)
+	c.logger.Info("Testing connection", "url", c.account.URL)
 	acctWithoutAuth := *(c.account)
 	acctWithoutAuth.AuthType = accounts.AuthTypeNone
 	client, err := newHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.logger)
@@ -88,7 +87,7 @@ func (u *UserDTO) toUser() *User {
 }
 
 func (c *ConnectClient) TestAuthentication() (*User, error) {
-	c.logger.Infof("Testing %s authentication to %s", c.account.AuthType.Description(), c.account.URL)
+	c.logger.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
 	err := c.client.Get("/__api__/v1/user", &connectUser)
 	if err != nil {

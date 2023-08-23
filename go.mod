@@ -7,7 +7,6 @@ require (
 	github.com/chmike/securecookie v1.3.4
 	github.com/iriri/minimal/gitignore v0.3.2
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
-	github.com/rstudio/platform-lib/pkg/rslog v1.6.0
 	golang.org/x/net v0.7.0
 )
 
@@ -18,6 +17,7 @@ require (
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
+	github.com/rstudio/platform-lib/pkg/rslog v1.6.0 // indirect
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/spf13/afero v1.9.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
