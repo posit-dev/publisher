@@ -1,18 +1,22 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import {
-  OnOpenEventSourceCallback,
-  OnErrorEventSourceCallback,
   OnMessageEventSourceCallback,
   MethodResult,
   EventStatus,
   MockMessage,
   EventStreamMessage,
   isEventStreamMessage,
+  EventSubscriptionTargets,
 } from 'src/api/types/events';
 
 export type OurMessageEvent = {
   data: string,
+}
+
+export type CallbackQueueEntry = {
+  eventType: EventSubscriptionTargets,
+  callback: OnMessageEventSourceCallback,
 }
 
 export class EventStream {
@@ -23,9 +27,7 @@ export class EventStream {
   private lastError = <string | null>null;
   private debugEnabled = false;
 
-  private openCallbacks = <OnOpenEventSourceCallback[]>[];
-  private errorCallbacks = <OnErrorEventSourceCallback[]>[];
-  private messageCallbacks = <OnMessageEventSourceCallback[]>[];
+  private subscriptions = <CallbackQueueEntry[]>[];
 
   private logMsg(msg: string) {
     if (this.debugEnabled) {
@@ -38,19 +40,81 @@ export class EventStream {
     return error;
   }
 
+  private matchEvent(
+    subscriptionType: EventSubscriptionTargets,
+    incomingEventType: EventSubscriptionTargets
+  ) {
+    console.log(`MatchEvent: subscription type: ${subscriptionType}, incomingType: ${incomingEventType}`);
+    if (subscriptionType.indexOf('*') === 0) {
+      console.log('matched on *');
+      return true;
+    }
+    const wildCardIndex = subscriptionType.indexOf('/*');
+    if (wildCardIndex > 0 && subscriptionType.length === wildCardIndex + 2) {
+      const basePath = subscriptionType.substring(0, wildCardIndex);
+      if (incomingEventType.indexOf(basePath) === 0) {
+        console.log('matched on start of string');
+        return true;
+      }
+    }
+    const globIndex = subscriptionType.indexOf('/**/');
+    if (globIndex > 0) {
+      const parts = subscriptionType.split('/**/');
+      if (
+        incomingEventType.indexOf(parts[0]) === 0 &&
+        incomingEventType.indexOf(parts[1]) === incomingEventType.length - parts[1].length
+      ) {
+        console.log('matched on glob');
+        return true;
+      }
+    }
+
+    // no wild-card. Must match exactly
+    console.log(`matching on exact string: ${subscriptionType === incomingEventType}`);
+    return subscriptionType === incomingEventType;
+  }
+
+  private dispatchMessage(msg: EventStreamMessage) {
+    let numMatched = 0;
+    this.subscriptions.forEach(entry => {
+      if (this.matchEvent(entry.eventType, msg.type)) {
+        numMatched++;
+        entry.callback(msg);
+      }
+    });
+    if (numMatched === 0) {
+      this.dispatchMessage({
+        type: 'errors/unknownEvent',
+        time: new Date().toString(),
+        data: {
+          event: msg,
+        },
+      });
+    }
+  }
+
   private onRawOpenCallback() {
     this.logMsg(`received RawOpenCallback`);
     this.isOpen = true;
-    this.openCallbacks.forEach(cb => cb());
+    this.dispatchMessage({
+      type: 'open/sse',
+      time: new Date().toString(),
+      data: {},
+    });
   }
 
-  private onErrorRawCallback(e) {
+  private onErrorRawCallback(e: Event) {
     // errors are fatal, connection is down.
     // not receiving anything of value from calling parameters. only : {"isTrusted":true}
     this.logMsg(`received ErrorRawCallback: ${JSON.stringify(e)}`);
     this.isOpen = false;
     this.lastError = `unknown error with connection ${Date.now()}`;
-    this.errorCallbacks.forEach(cb => cb(this.lastError));
+    const now = new Date();
+    this.dispatchMessage({
+      type: 'errors/open',
+      time: now.toString(),
+      data: `{ msg: ${this.lastError} }`,
+    });
   }
 
   private onMessageRawCallback(msg: MessageEvent) {
@@ -58,11 +122,15 @@ export class EventStream {
     const parsed: EventStreamMessage = JSON.parse(msg.data);
     if (!isEventStreamMessage(parsed)) {
       const errorMsg = `Invalid EventStreamMessage received: ${msg.data}`;
-      this.errorCallbacks.forEach(cb => cb(errorMsg));
+      const now = new Date();
+      this.dispatchMessage({
+        type: 'errors/open',
+        time: now.toString(),
+        data: `{ msg: "${errorMsg}" }`,
+      });
       return;
     }
-    // we will stop propogation if the callback returns false;
-    this.messageCallbacks.every(cb => cb(parsed));
+    this.dispatchMessage(parsed);
   }
 
   private initializeConnection(url: string, withCredentials: boolean): MethodResult {
@@ -125,19 +193,23 @@ export class EventStream {
     );
   }
 
-  public addOpenEventCallback(cb: OnOpenEventSourceCallback) {
-    this.openCallbacks.push(cb);
-    this.logMsg(`adding OpenEventCallback: ${cb}`);
+  public addEventMonitorCallback(
+    target: EventSubscriptionTargets,
+    cb: OnMessageEventSourceCallback
+  ) {
+    this.subscriptions.push({
+      eventType: target,
+      callback: cb,
+    });
   }
 
-  public addErrorEventCallback(cb: OnErrorEventSourceCallback) {
-    this.errorCallbacks.push(cb);
-    this.logMsg(`adding ErrorEventCallback: ${cb}`);
-  }
-
-  public addMessageEventCallback(cb: OnMessageEventSourceCallback) {
-    this.messageCallbacks.push(cb);
-    this.logMsg(`adding MessageEventCallback: ${cb}`);
+  public delEventFilterCallback(cb: OnMessageEventSourceCallback) {
+    const index = this.subscriptions.findIndex(entry => entry.callback === cb);
+    if (index >= 0) {
+      this.subscriptions.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 
   public status() : EventStatus {

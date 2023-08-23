@@ -21,16 +21,18 @@ import (
 const APIPrefix string = "api"
 
 func PublishPing(eventServer *sse.Server) {
-	sendError := false
+	mode := 0
 
 	for {
 		// Publish a payload to the messages stream
 		data := ""
 
-		if sendError {
-			data = fmt.Sprintf("{ \"type\": \"log\", \"time\": \"%s\", \"data\": \"XYZ\" }", time.Now().UTC())
-		} else {
-			data = fmt.Sprintf("{ \"type\": \"error\", \"time\": \"%s\", \"data\": \"Woops!\" }", time.Now().UTC())
+		if mode == 0 {
+			data = fmt.Sprintf("{ \"type\": \"errors/fileSystem\", \"time\": \"%s\", \"data\": { \"path\": \"/usr/projects/shiny223\" } }", time.Now().UTC())
+		} else if mode == 1 {
+			data = fmt.Sprintf("{ \"type\": \"publishing/appCreation/log\", \"time\": \"%s\", \"data\": { \"msg\": \"App creation log message!\" } }", time.Now().UTC())
+		} else if mode == 2 {
+			data = fmt.Sprintf("{ \"type\": \"totally/unknown/event\", \"time\": \"%s\", \"data\": { \"msg\": \"Waa Haa Haa!\" } }", time.Now().UTC())
 		}
 		eventServer.Publish("messages",
 			&sse.Event{
@@ -38,7 +40,11 @@ func PublishPing(eventServer *sse.Server) {
 				Event: []byte("message"),
 			},
 		)
-		sendError = !sendError
+		// switch between modes.
+		mode += 1
+		if mode > 2 {
+			mode = 0
+		}
 		time.Sleep(1000 * time.Millisecond)
 	}
 }
