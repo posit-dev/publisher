@@ -48,19 +48,8 @@ module.exports = {
     'generator-star-spacing': 'off',
     // allow paren-less arrow functions
     'arrow-parens': 'off',
-    // 'one-var': 'off',
-    // 'multiline-ternary': 'off',
-
-    'import/first': 'off',
-    'import/default': 'error',
-    'import/export': 'error',
-    'import/extensions': 'off',
-    'import/no-unresolved': 'off',
-    'import/no-extraneous-dependencies': 'off',
 
     'prefer-promise-reject-errors': 'off',
-
-    // quotes: ['warn', 'single', { avoidEscape: true }],
 
     '@typescript-eslint/no-non-null-assertion': 'off',
 
@@ -86,16 +75,6 @@ module.exports = {
     // from Connect project:
     // VUE project
     // manually-enabled rules
-    // 'vuejs-accessibility/label-has-for': [
-    //   2,
-    //   {
-    //     components: ['Label'],
-    //     required: {
-    //       every: ['id'],
-    //     },
-    //     allowChildren: false,
-    //   },
-    // ],
 
     // All styling warnings within vue style guide should be promoted to
     // errors, since that is our pattern with prettier
@@ -199,18 +178,6 @@ module.exports = {
     // 'vuejs-accessibility/no-onchange': 0,
     // 'vuejs-accessibility/interactive-supports-focus': ['warn'],
 
-    // Verifies that all named imports are part of the set of named
-    // exports in the referenced module.
-    // 'import/named': ['error'],
-    // The core 'import/named' rules
-    // does not work with type definitions
-    'import/named': 'off',
-
-    // Enforces names exist at the time they are dereferenced,
-    // when imported as a full namespace
-    // (i.e. import * as foo from './foo'; foo.bar();
-    // will report if bar is not exported by ./foo.).
-    'import/namespace': ['error'],
     'prefer-const': ['error'],
 
     eqeqeq: ['error', 'smart'],
@@ -421,7 +388,6 @@ module.exports = {
     'wrap-regex': 'off',
 
     // Enabled Non-Stylistic ESLint Rules:
-    // 'arrow-parens': ['error', 'as-needed'],
     'arrow-spacing': ['error', { before: true, after: true }], // default
     'block-scoped-var': 'error',
     'dot-notation': 'error',
