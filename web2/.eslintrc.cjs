@@ -294,7 +294,6 @@ module.exports = {
     'prefer-numeric-literals': 'error',
     'prefer-spread': 'error',
     radix: 'error',
-    strict: 'error',
     'symbol-description': 'error',
     yoda: ['error', 'never'],
     'no-shadow': 'off',
