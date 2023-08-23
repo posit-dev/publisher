@@ -15,12 +15,14 @@ const prefix = "dist/spa"
 
 type handler struct{}
 
+// A Handler instance
 var Handler handler = handler{}
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	InsertPrefix(prefix, http.FileServer(http.FS(dist))).ServeHTTP(w, r)
 }
 
+// A modified version of http.TrimPrefix
 func InsertPrefix(prefix string, h http.Handler) http.Handler {
 	if prefix == "" {
 		return h

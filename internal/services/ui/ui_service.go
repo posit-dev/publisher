@@ -32,7 +32,7 @@ func NewUIService(
 	lister accounts.AccountList,
 	logger rslog.Logger) *api.Service {
 
-	handler := newUIHandler(fs, publish, lister, logger)
+	handler := RouterHandlerFunc(fs, publish, lister, logger)
 
 	return api.NewService(
 		publish.State,
@@ -51,7 +51,7 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log rslog.Logger) http.HandlerFunc {
+func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log rslog.Logger) http.HandlerFunc {
 
 	deployment := publishArgs.State
 	base := deployment.SourceDir
