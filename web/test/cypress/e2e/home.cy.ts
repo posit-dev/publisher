@@ -22,6 +22,26 @@ describe('Check Files', () => {
   });
 });
 
+describe('Publish', () => {
+  it('hit the publish button', () => {
+    cy.visit('');
+    cy.get('.block').contains('Publish')
+      .click();
+  });
+});
+
+describe('Check Connect Deployment', () => {
+  it('check deployment', () => {
+    cy.visit('http://localhost:3939/connect/#/login');
+    cy.get('#username').type('admin');
+    cy.get('#password').type('password');
+    cy.get('button[data-automation="login-panel-submit"]')
+      .click();
+    cy.get('td[data-automation="content-row-icon-title-cell"]')
+      .contains('Untitled');
+  });
+});
+
 // ** The following code is an example to show you how to write some tests for your home page **
 //
 // describe('Home page tests', () => {

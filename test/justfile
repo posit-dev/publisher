@@ -24,6 +24,7 @@ init-connect:
 	docker compose pull connect && \
 	docker compose up -d connect
 
+
 run-client target:
   #!/usr/bin/env bash
   if [[ {{target}} =~ "linux-amd64" ]]; then
@@ -54,7 +55,7 @@ build-binary target:
     _platform="linux/arm64"
   fi
   if [[ {{target}} =~ "linux" ]]; then
-    docker run -d \
+    docker run \
     --platform "${_platform}" \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
@@ -74,23 +75,24 @@ local-ui-client target:
     set shell := ["powershell.exe", "-c"] \
     ..\bin\artifact\windows-amd64\connect-client.exe publish-ui test/content/simple-notebook/ --listen=localhost:9999
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
-    ../bin/darwin-amd64/connect-client publish-ui \
-    sample-content/fastapi-simple --listen=127.0.0.1:9999
+    just init-connect
+    just ../web/test-ci-e2e {{target}}
   fi
-    docker run \
-    --platform "${_platform}" \
-    -v "$(pwd)"/../:/publishing-client \
-    -w /publishing-client/ \
-    -e DOCKER="false" \
-    --rm {{_tag}}-{{target}} just build
-  elif [[ {{target}} =~ "windows" ]]; then
-    just _test-client windows-amd64
-  elif [[ {{target}} =~ "macos" ]]; then
-    just _test-client darwin-amd64
-  fi
+  #   docker run \
+  #   --platform "${_platform}" \
+  #   -v "$(pwd)"/../:/publishing-client \
+  #   -w /publishing-client/ \
+  #   -e DOCKER="false" \
+  #   --rm {{_tag}}-{{target}} just build
+  # elif [[ {{target}} =~ "windows" ]]; then
+  #   just _test-client windows-amd64
+  # elif [[ {{target}} =~ "macos" ]]; then
+  #   just _test-client darwin-amd64
+  # fi
 
 ui-client target:
   #!/usr/bin/env bash
+
   if [[ {{target}} =~ "linux-amd64" ]]; then
     _platform="linux/amd64"
   elif [[ {{target}} =~ "linux-arm64" ]]; then
