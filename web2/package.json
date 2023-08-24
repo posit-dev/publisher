@@ -8,7 +8,8 @@
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint --ext .js,.ts,.vue,.cjs .",
-    "fix": "eslint --ext .js,.ts,.vue,.cjs . --fix"
+    "fix": "eslint --ext .js,.ts,.vue,.cjs . --fix",
+    "cypress:open": "cypress open"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.5",
