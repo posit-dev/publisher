@@ -362,6 +362,8 @@ jobs:
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
       -
         name: UX E2E Tests
+        env: 
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
           PATH="${PATH}:/usr/local/bin" just web/test-e2e
 
@@ -399,15 +401,16 @@ jobs:
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
-          just test\run-client $env:os
+          just test/run-client $env:os
       -
         name: Run Windows Cypress Tests
         env:
           os: windows-latest
           DOCKER: "false"
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
-          just test\init-connect
-          just web\test-ci-e2e $env:os
+          just test/init-connect
+          just web/test-ci-e2e $env:os
 
 
   test-macos:
@@ -448,6 +451,7 @@ jobs:
       - 
         name: Setup docker and docker-compose (missing on MacOS)
         run: |
+          brew reinstall qemu
           brew install docker docker-compose
           
           # Link the Docker Compose v2 plugin so it's understood by the docker CLI
@@ -460,6 +464,7 @@ jobs:
         env:
           os: macos-latest
           DOCKER: "false"
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
           just test/init-connect
           just web/test-ci-e2e ${os}
@@ -572,6 +577,7 @@ jobs:
         env:
           os: linux-amd64
           DOCKER: "false"
+          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
           just test/ui-client ${os}
 
@@ -693,6 +699,7 @@ jobs:
       #   env:
       #     os: linux-arm64
       #     DOCKER: "false"
+      #     CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
       #   run: |
       #     just web/build && \
       #     just test/ui-client ${os}
