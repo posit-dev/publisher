@@ -15,9 +15,11 @@
     "camelcase-keys": "^9.0.0",
     "decamelize-keys": "^2.0.1",
     "pinia": "^2.1.6",
+    "quasar": "^2.12.5",
     "vue": "^3.3.4"
   },
   "devDependencies": {
+    "@quasar/vite-plugin": "^1.4.1",
     "@typescript-eslint/eslint-plugin": "^6.4.1",
     "@typescript-eslint/parser": "^6.4.1",
     "@vitejs/plugin-vue": "^4.2.3",
