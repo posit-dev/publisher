@@ -61,8 +61,8 @@ module.exports = {
 
     '@typescript-eslint/naming-convention': [
       'error',
-      { selector: ['variableLike', 'classProperty', 'typeProperty'], format: ['camelCase'] },
-      { selector: 'variable', modifiers: ['const'], format: ['camelCase', 'UPPER_CASE'] }
+      { selector: ['variableLike', 'classProperty', 'typeProperty'], format: ['camelCase'], leadingUnderscore: 'allow' },
+      { selector: 'variable', modifiers: ['const'], format: ['camelCase', 'UPPER_CASE'], leadingUnderscore: 'allow' }
     ],
 
     // The core 'no-unused-vars' rules (in the eslint:recommended ruleset)
