@@ -15,7 +15,7 @@
           alt="Posit PBC Logo"
         />
         <q-toolbar-title>
-          Publisher
+          Publish Your Project
         </q-toolbar-title>
       </q-toolbar>
     </q-header>
@@ -26,13 +26,15 @@
         padding
       >
         <h6 class="q-mt-none q-mb-md">
-          What would you like to be published and how?
+          Update the settings below and click Publish to start the process.
         </h6>
         <q-list
           dark
           bordered
           class="rounded-borders"
         >
+          <ContentTarget />
+          <q-separator />
           <DestinationTarget />
           <q-separator />
           <FilesToPublish />
@@ -50,6 +52,7 @@
 </template>
 
 <script setup lang="ts">
+import ContentTarget from '../panels/ContentTarget.vue';
 import DestinationTarget from '../panels/DestinationTarget.vue';
 import FilesToPublish from '../panels/FilesToPublish.vue';
 import PythonProject from '../panels/PythonProject.vue';

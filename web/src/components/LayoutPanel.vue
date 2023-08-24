@@ -1,7 +1,10 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-expansion-item>
+  <q-expansion-item
+    :default-opened="defaultOpen"
+    :expand-icon="expandIcon"
+  >
     <template #header>
       <q-item-section avatar>
         <q-icon
@@ -42,5 +45,7 @@ defineProps<{
   subtitle?: string
   icon: string
   tooltip?: string
+  defaultOpen?: boolean
+  expandIcon: string
 }>();
 </script>
