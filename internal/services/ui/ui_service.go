@@ -14,6 +14,7 @@ import (
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
+	"github.com/rstudio/connect-client/internal/services/middleware"
 	"github.com/rstudio/connect-client/web"
 
 	"github.com/gorilla/mux"
@@ -81,7 +82,7 @@ func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister 
 
 	// GET /
 	r.PathPrefix("/").
-		Handler(web.Handler).
+		Handler(middleware.InsertPrefix(web.Handler, web.Prefix)).
 		Methods("GET")
 
 	return r.ServeHTTP
