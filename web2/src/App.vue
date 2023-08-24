@@ -55,6 +55,19 @@ import CommonSettings from 'src/components/panels/CommonSettings.vue';
 import AdvancedSettings from 'src/components/panels/AdvancedSettings.vue';
 import PublishProcess from 'src/components/PublishProcess.vue';
 import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
+
+import { useApi } from 'src/api';
+import { useDeploymentStore } from 'src/stores/deployment';
+
+const api = useApi();
+const deploymentStore = useDeploymentStore();
+
+const getInitialDeploymentState = async() => {
+  const { data: deployment } = await api.deployment.get();
+  deploymentStore.deployment = deployment;
+};
+
+getInitialDeploymentState();
 </script>
 
 <style lang="scss" scoped>
