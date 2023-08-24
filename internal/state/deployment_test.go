@@ -4,6 +4,7 @@ package state
 
 import (
 	"errors"
+	"log/slog"
 	"os"
 	"testing"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -85,7 +85,7 @@ func (s *DeploymentSuite) TestLoadManifest() {
 	s.Nil(err)
 
 	deployment := NewDeployment()
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	path := util.NewPath(filename, fs)
 	err = deployment.LoadManifest(path, logger)
 	s.Nil(err)
@@ -106,7 +106,7 @@ func (s *DeploymentSuite) TestLoadManifestDir() {
 	s.Nil(err)
 
 	deployment := NewDeployment()
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	path := util.NewPath(filename, fs).Dir()
 	err = deployment.LoadManifest(path, logger)
 	s.Nil(err)
@@ -121,7 +121,7 @@ func (s *DeploymentSuite) TestLoadManifestDir() {
 func (s *DeploymentSuite) TestLoadManifestNonexistentDir() {
 	fs := afero.NewMemMapFs()
 	deployment := NewDeployment()
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	path := util.NewPath("/nonexistent", fs)
 	err := deployment.LoadManifest(path, logger)
 	s.NotNil(err)
@@ -133,7 +133,7 @@ func (s *DeploymentSuite) TestLoadManifestNonexistentFile() {
 	dir := "/my/dir"
 	fs.MkdirAll(dir, 0700)
 	deployment := NewDeployment()
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	path := util.NewPath(dir, fs)
 	err := deployment.LoadManifest(path, logger)
 	s.NotNil(err)
@@ -143,7 +143,7 @@ func (s *DeploymentSuite) TestLoadManifestNonexistentFile() {
 func (s *DeploymentSuite) TestSaveLoad() {
 	fs := afero.NewMemMapFs()
 	dir := "/my/dir"
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	deployment := NewDeployment()
 	deployment.Target.ServerType = accounts.ServerTypeConnect
 
@@ -161,7 +161,7 @@ func (s *DeploymentSuite) TestSaveToFilesErr() {
 	fs := utiltest.NewMockFs()
 	testError := errors.New("test error from MkdirAll")
 	fs.On("MkdirAll", mock.Anything, mock.Anything).Return(testError)
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	deployment := NewDeployment()
 	path := util.NewPath("/nonexistent", fs)
 	err := deployment.SaveToFiles(path, "staging", logger)

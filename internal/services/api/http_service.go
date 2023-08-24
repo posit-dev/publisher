@@ -15,8 +15,9 @@ import (
 	"github.com/rstudio/connect-client/internal/services/middleware"
 	"github.com/rstudio/connect-client/internal/state"
 
+	"log/slog"
+
 	"github.com/pkg/browser"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
 type Service struct {
@@ -31,8 +32,7 @@ type Service struct {
 	skipAuth      bool
 	token         services.LocalToken
 	addr          net.Addr
-	logger        rslog.Logger
-	debugLogger   rslog.DebugLogger
+	logger        *slog.Logger
 }
 
 var errTlsRequiredFiles error = errors.New("TLS requires both a private key file and a certificate chain file")
@@ -49,11 +49,10 @@ func NewService(
 	skipAuth bool,
 	accessLog bool,
 	token services.LocalToken,
-	logger rslog.Logger,
-	debugLogger rslog.DebugLogger) *Service {
+	logger *slog.Logger) *Service {
 
 	if project.DevelopmentBuild() && skipAuth {
-		logger.Warnf("Service is operating in DEVELOPMENT MODE with NO browser to server authentication")
+		logger.Warn("Service is operating in DEVELOPMENT MODE with NO browser to server authentication")
 	} else {
 		handler = middleware.AuthRequired(logger, handler)
 		handler = middleware.CookieSession(logger, handler)
@@ -63,7 +62,7 @@ func NewService(
 	if accessLog {
 		handler = middleware.LogRequest("Access Log", logger, handler)
 	}
-	handler = middleware.PanicRecovery(logger, debugLogger, handler)
+	handler = middleware.PanicRecovery(logger, handler)
 
 	return &Service{
 		state:         state,
@@ -78,7 +77,6 @@ func NewService(
 		token:         token,
 		addr:          nil,
 		logger:        logger,
-		debugLogger:   debugLogger,
 	}
 }
 
@@ -131,7 +129,7 @@ func (svc *Service) Run() error {
 	// If not development mode, then you get a token added to the URL
 	appURL := svc.getURL(!(project.DevelopmentBuild() && svc.skipAuth))
 
-	svc.logger.Infof("UI server URL: %s", appURL.String())
+	svc.logger.Info("UI server running", "url", appURL.String())
 	fmt.Println(appURL.String())
 
 	if project.DevelopmentBuild() && svc.openBrowserAt != "" {

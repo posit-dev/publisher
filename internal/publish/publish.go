@@ -10,6 +10,8 @@ import (
 	"os"
 	"time"
 
+	"log/slog"
+
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients"
 	"github.com/rstudio/connect-client/internal/apitypes"
@@ -17,10 +19,9 @@ import (
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
-func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logger rslog.Logger) error {
+func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logger *slog.Logger) error {
 	bundleFile, err := dest.Create()
 	if err != nil {
 		return err
@@ -34,7 +35,7 @@ func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logge
 	return err
 }
 
-func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, logger rslog.Logger) error {
+func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, logger *slog.Logger) error {
 	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, logger)
 	if err != nil {
 		return err
@@ -44,7 +45,7 @@ func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, logger rslog.Logger)
 		return err
 	}
 	manifestPath := cmd.State.SourceDir.Join(bundles.ManifestFilename)
-	logger.Infof("Writing manifest to '%s'", manifestPath)
+	logger.Info("Writing manifest", "path", manifestPath)
 	manifestJSON, err := manifest.ToJSON()
 	if err != nil {
 		return err
@@ -61,17 +62,17 @@ type appInfo struct {
 	DirectURL    string `json:"direct-url"`
 }
 
-func logAppInfo(accountURL string, contentID apitypes.ContentID, logger rslog.Logger) error {
+func logAppInfo(accountURL string, contentID apitypes.ContentID, logger *slog.Logger) error {
 	appInfo := appInfo{
 		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
 		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
 	}
-	logger.WithFields(rslog.Fields{
-		"dashboardURL": appInfo.DashboardURL,
-		"directURL":    appInfo.DirectURL,
-		"serverURL":    accountURL,
-		"contentID":    contentID,
-	}).Infof("Deployment successful")
+	logger.With(
+		"dashboardURL", appInfo.DashboardURL,
+		"directURL", appInfo.DirectURL,
+		"serverURL", accountURL,
+		"contentID", contentID,
+	).Info("Deployment successful")
 	jsonInfo, err := json.Marshal(appInfo)
 	if err != nil {
 		return err
@@ -80,7 +81,7 @@ func logAppInfo(accountURL string, contentID apitypes.ContentID, logger rslog.Lo
 	return err
 }
 
-func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger rslog.Logger) error {
+func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger *slog.Logger) error {
 	bundler, err := bundles.NewBundlerForManifest(cmd.State.SourceDir, &cmd.State.Manifest, logger)
 	if err != nil {
 		return err
@@ -88,8 +89,8 @@ func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountLis
 	return publish(cmd, bundler, lister, logger)
 }
 
-func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger rslog.Logger) error {
-	logger.Infof("Publishing from directory %s", cmd.State.SourceDir)
+func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger *slog.Logger) error {
+	logger.Info("Publishing from directory", "path", cmd.State.SourceDir)
 	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, logger)
 	if err != nil {
 		return err
@@ -97,7 +98,7 @@ func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, l
 	return publish(cmd, bundler, lister, logger)
 }
 
-func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister accounts.AccountList, logger rslog.Logger) error {
+func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister accounts.AccountList, logger *slog.Logger) error {
 	account, err := lister.GetAccountByName(cmd.State.Target.AccountName)
 	if err != nil {
 		return err
@@ -111,7 +112,7 @@ func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister account
 	return publishWithClient(cmd, bundler, account, client, logger)
 }
 
-func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, logger rslog.Logger) error {
+func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, logger *slog.Logger) error {
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return err
@@ -162,13 +163,13 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 	if err != nil {
 		return err
 	}
-	taskLogger := logger.WithFields(rslog.Fields{
-		"source":     "server deployment log",
-		"server":     account.URL,
-		"content_id": contentID,
-		"bundle_id":  bundleID,
-		"task_id":    taskID,
-	})
+	taskLogger := logger.With(
+		"source", "server deployment log",
+		"server", account.URL,
+		"content_id", contentID,
+		"bundle_id", bundleID,
+		"task_id", taskID,
+	)
 	err = client.WaitForTask(taskID, util.NewLoggerWriter(taskLogger))
 	if err != nil {
 		return err

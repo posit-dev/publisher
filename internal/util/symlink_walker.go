@@ -5,21 +5,20 @@ package util
 import (
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
-
-	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
 type symlinkWalker struct {
 	walker Walker
-	logger rslog.Logger
+	logger *slog.Logger
 }
 
 // NewSymlinkWalker creates a SymlinkWalker, an instance of the
 // Walker interface that resolves symlinks before passing info
 // to the callback function.
-func NewSymlinkWalker(walker Walker, logger rslog.Logger) *symlinkWalker {
+func NewSymlinkWalker(walker Walker, logger *slog.Logger) *symlinkWalker {
 	return &symlinkWalker{
 		walker: walker,
 		logger: logger,
@@ -39,7 +38,7 @@ func (w *symlinkWalker) visit(fn WalkFunc) WalkFunc {
 			return err
 		}
 		if info.Mode().Type()&os.ModeSymlink != 0 {
-			w.logger.WithField("path", path).Infof("Following symlink")
+			w.logger.Info("Following symlink", "path", path)
 			linkTarget, err := filepath.EvalSymlinks(path.Path())
 			targetPath := NewPath(linkTarget, path.Fs())
 			if err != nil {

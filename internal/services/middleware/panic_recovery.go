@@ -6,17 +6,17 @@ import (
 	"net/http"
 	"runtime"
 
-	"github.com/rstudio/platform-lib/pkg/rslog"
+	"log/slog"
 )
 
-func PanicRecovery(logger rslog.Logger, debugLogger rslog.DebugLogger, next http.HandlerFunc) http.HandlerFunc {
+func PanicRecovery(logger *slog.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				buf := make([]byte, 2048)
 				n := runtime.Stack(buf, false)
-				logger.Errorf("Internal server error: %s", err)
-				debugLogger.Debugf("Stack: \n%s", buf[:n])
+				logger.Error("Internal server error", "error", err)
+				logger.Debug("Stacktrace for previous error", "stack", buf[:n])
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte("Internal Server Error"))
 			}

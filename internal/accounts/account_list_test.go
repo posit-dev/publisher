@@ -4,10 +4,10 @@ package accounts
 
 import (
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/util/utiltest"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,7 +39,7 @@ func (s *AccountListSuite) SetupSuite() {
 }
 
 func (s *AccountListSuite) TestNewAccountList() {
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	fs := utiltest.NewMockFs()
 	accountList := NewAccountList(fs, logger)
 	s.Len(accountList.providers, 3)
@@ -47,7 +47,7 @@ func (s *AccountListSuite) TestNewAccountList() {
 }
 
 func (s *AccountListSuite) TestGetAllAccounts() {
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	accountList := defaultAccountList{
 		providers: []AccountProvider{&s.provider1, &s.emptyProvider, &s.provider2},
 		logger:    logger,
@@ -63,7 +63,7 @@ func (s *AccountListSuite) TestGetAllAccounts() {
 }
 
 func (s *AccountListSuite) TestGetAllAccountsErr() {
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 
 	accountList := defaultAccountList{
 		providers: []AccountProvider{&s.provider1, &s.erringProvider},
@@ -75,7 +75,7 @@ func (s *AccountListSuite) TestGetAllAccountsErr() {
 }
 
 func (s *AccountListSuite) TestGetAccountByName() {
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	accountList := defaultAccountList{
 		providers: []AccountProvider{&s.emptyProvider, &s.provider1},
 		logger:    logger,
@@ -86,7 +86,7 @@ func (s *AccountListSuite) TestGetAccountByName() {
 }
 
 func (s *AccountListSuite) TestGetAccountByNameErr() {
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	accountList := defaultAccountList{
 		providers: []AccountProvider{&s.erringProvider},
 		logger:    logger,
@@ -97,7 +97,7 @@ func (s *AccountListSuite) TestGetAccountByNameErr() {
 }
 
 func (s *AccountListSuite) TestGetAccountByNameNotFound() {
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	accountList := defaultAccountList{
 		providers: []AccountProvider{},
 		logger:    logger,
