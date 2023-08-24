@@ -1,18 +1,39 @@
-# Vue 3 + TypeScript + Vite
+# Publishing Client UX
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+This application is built using:
+- [VueJS](https://vuejs.org)
+    - Vue 3, Composition API w/ Setup API
+- [Quasar Framework V2](https://quasar.dev/)
+- [Just (justfiles)](https://just.systems)
+- [Typescript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
+- [Sass w/ SCSS syntax](https://sass-lang.com/documentation/syntax/)
+- [ESLint](https://eslint.org/)
+    - Using almost the same rules as Connect Dashboard project
+- [Pinia](https://pinia.vuejs.org/)
+- [Axios](https://axios-http.com/docs/intro)
+- [Vitest](https://vitest.dev/)
+- [Cypress](https://www.cypress.io/)
 
-## Recommended IDE Setup
+# Installing the prerequisites
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+1. Node JS (LTS Version)
+    - NOTE: use of nvm is highly recommended:
+        - [NVM](https://github.com/nvm-sh/nvm#installing-and-updating)
+    - Global version of node is NOT recommended, but...
+        - [NodeJS](https://nodejs.org/en/download)
+2. Install Just:
+    - `[Just](https://just.systems/man/en/)
 
-## Type Support For `.vue` Imports in TS
+# Building the client
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+1. Default recipe will clean, image, bootstrap, validate, build and test agent & client
+    - `just`
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+# Common Developer tasks
 
-1. Disable the built-in TypeScript Extension
-   1. Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-   2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+All tasks are done through the justfile recipes, present within the top level `justfile` file. Recipes present include macro-operations
+for the multiple projects (Go and Web SPA) included in this repo.
+
+Specialized recipes for the Go project are located within the `cmd/connect-client/justfile` and
+specialized recipes for the Web project are located within the `web/justfile`.
