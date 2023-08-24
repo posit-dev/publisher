@@ -99,7 +99,7 @@ async function getFiles() {
 
   if (file.isDir) {
     // start with the top level directory expanded
-    expanded.value = [file.id];
+    expanded.value = [file.rel];
   }
 }
 

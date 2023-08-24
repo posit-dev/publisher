@@ -10,20 +10,21 @@ import (
 )
 
 type File struct {
-	Id               string           `json:"id"`
+	// public fields
+	Id               string           `json:"id"`                // a logical (non-universally-unique) identifier
 	FileType         fileType         `json:"file_type"`         // the file type
-	Abs              string           `json:"abs"`               // the absolute path
 	Base             string           `json:"base"`              // the base name
-	Rel              string           `json:"rel"`               // the relative path to the project root, which is used as the identifier
-	Dir              string           `json:"dir"`               // the path dir
-	Root             string           `json:"root"`              // the root path as provided by the caller
-	Size             int64            `json:"size"`              // nullable; length in bytes for regular files; system-dependent
-	ModifiedDatetime string           `json:"modified_datetime"` // the last modified datetime
+	Exclusion        *gitignore.Match `json:"exclusion"`         // object describing the reason for exclusion, null if not excluded
+	Files            []*File          `json:"files"`             // an array of objects of the same type for each file within the directory.
 	IsDir            bool             `json:"is_dir"`            // true if the file is a directory
 	IsEntrypoint     bool             `json:"is_entrypoint"`     // true if the file is an entrypoint
 	IsRegular        bool             `json:"is_file"`           // true if the file is a regular file
-	Exclusion        *gitignore.Match `json:"exclusion"`         // object describing the reason for exclusion, null if not excluded
-	Files            []*File          `json:"files"`             // an array of objects of the same type for each file within the directory.
+	ModifiedDatetime string           `json:"modified_datetime"` // the last modified datetime
+	Rel              string           `json:"rel"`               // the relative path to the project root, which is used as the identifier
+	Size             int64            `json:"size"`              // nullable; length in bytes for regular files; system-dependent
+
+	// internal fields
+	Abs string // the absolute path
 }
 
 func CreateFile(root util.Path, path util.Path, exclusion *gitignore.Match) (*File, error) {
@@ -51,17 +52,15 @@ func CreateFile(root util.Path, path util.Path, exclusion *gitignore.Match) (*Fi
 	return &File{
 		Id:               rel.Path(),
 		FileType:         filetype,
-		Abs:              abs.Path(),
-		Root:             root.Path(),
 		Rel:              rel.Path(),
 		Base:             path.Base(),
-		Dir:              path.Dir().Path(),
 		Size:             info.Size(),
 		ModifiedDatetime: info.ModTime().Format(time.RFC3339),
 		IsDir:            info.Mode().IsDir(),
 		IsRegular:        info.Mode().IsRegular(),
 		Exclusion:        exclusion,
 		Files:            make([]*File, 0),
+		Abs:              abs.Path(),
 	}, nil
 }
 

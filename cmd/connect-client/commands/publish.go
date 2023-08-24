@@ -74,13 +74,13 @@ func createManifestFileMapFromSourceDir(sourceDir util.Path, log *slog.Logger) (
 	}
 
 	// grab the absolute path for use in file tree walk
-	abs, err := sourceDir.Abs()
+	root, err := sourceDir.Abs()
 	if err != nil {
 		return nil, err
 	}
 
 	walker := util.NewSymlinkWalker(ignore, log)
-	err = walker.Walk(abs, func(path util.Path, info fs.FileInfo, err error) error {
+	err = walker.Walk(root, func(path util.Path, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -90,7 +90,7 @@ func createManifestFileMapFromSourceDir(sourceDir util.Path, log *slog.Logger) (
 		// a future improvement can ask the user for preference on file listing
 		// if this occurs, downstream references to this value must be changed to
 		// recognize non-relative paths
-		rel, err := path.Rel(abs)
+		rel, err := path.Rel(root)
 		if err != nil {
 			return err
 		}
