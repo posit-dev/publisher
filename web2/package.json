@@ -11,6 +11,7 @@
     "fix": "eslint --ext .js,.ts,.vue,.cjs . --fix"
   },
   "dependencies": {
+    "@quasar/extras": "^1.16.5",
     "axios": "^1.4.0",
     "camelcase-keys": "^9.0.0",
     "decamelize-keys": "^2.0.1",
