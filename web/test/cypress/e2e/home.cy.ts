@@ -37,8 +37,11 @@ describe('Check Connect Deployment', () => {
     cy.get('#password').type('password');
     cy.get('button[data-automation="login-panel-submit"]')
       .click();
+    cy.get('#rs_radio_cop-visibility_editor')
+      .click();
     cy.get('td[data-automation="content-row-icon-title-cell"]')
-      .contains('Untitled');
+      .contains('Untitled')
+      .click();
   });
 });
 
