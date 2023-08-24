@@ -10,13 +10,13 @@ import (
 )
 
 type File struct {
-	FileType fileType `json:"file_type"` // the file type
-
-	Abs  string `json:"abs"`       // the absolute path
-	Base string `json:"base_name"` // the base name
-	Rel  string `json:"pathname"`  // the relative path to the project root
-	Root string `json:"root"`      // the root path as provided by the caller
-
+	Id               string           `json:"id"`
+	FileType         fileType         `json:"file_type"`         // the file type
+	Abs              string           `json:"abs"`               // the absolute path
+	Base             string           `json:"base"`              // the base name
+	Rel              string           `json:"rel"`               // the relative path to the project root, which is used as the identifier
+	Dir              string           `json:"dir"`               // the path dir
+	Root             string           `json:"root"`              // the root path as provided by the caller
 	Size             int64            `json:"size"`              // nullable; length in bytes for regular files; system-dependent
 	ModifiedDatetime string           `json:"modified_datetime"` // the last modified datetime
 	IsDir            bool             `json:"is_dir"`            // true if the file is a directory
@@ -27,8 +27,16 @@ type File struct {
 }
 
 func CreateFile(root util.Path, path util.Path, exclusion *gitignore.Match) (*File, error) {
-	abs, _ := path.Abs()
-	rel, _ := path.Rel(root)
+
+	abs, err := path.Abs()
+	if err != nil {
+		return nil, err
+	}
+
+	rel, err := path.Rel(root)
+	if err != nil {
+		return nil, err
+	}
 
 	info, err := path.Stat()
 	if err != nil {
@@ -41,13 +49,13 @@ func CreateFile(root util.Path, path util.Path, exclusion *gitignore.Match) (*Fi
 	}
 
 	return &File{
-		FileType: filetype,
-
-		Abs:  abs.String(),
-		Root: root.String(),
-		Rel:  rel.String(),
-		Base: path.Base(),
-
+		Id:               rel.Path(),
+		FileType:         filetype,
+		Abs:              abs.Path(),
+		Root:             root.Path(),
+		Rel:              rel.Path(),
+		Base:             path.Base(),
+		Dir:              path.Dir().Path(),
 		Size:             info.Size(),
 		ModifiedDatetime: info.ModTime().Format(time.RFC3339),
 		IsDir:            info.Mode().IsDir(),
