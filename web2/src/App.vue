@@ -31,7 +31,7 @@
           bordered
           class="rounded-borders"
         >
-          <!-- <DestinationTarget />
+          <DestinationTarget />
           <q-separator />
           <FilesToPublish />
           <q-separator />
@@ -39,7 +39,7 @@
           <q-separator />
           <CommonSettings />
           <q-separator />
-          <AdvancedSettings /> -->
+          <AdvancedSettings />
         </q-list>
         <PublishProcess />
       </q-page>
@@ -48,7 +48,13 @@
 </template>
 
 <script setup lang="ts">
-import WhitePositLogo from './components/icons/WhitePositLogo.vue';
+import DestinationTarget from 'src/components/panels/DestinationTarget.vue';
+import FilesToPublish from 'src/components/panels/FilesToPublish.vue';
+import PythonProject from 'src/components/panels/PythonProject.vue';
+import CommonSettings from 'src/components/panels/CommonSettings.vue';
+import AdvancedSettings from 'src/components/panels/AdvancedSettings.vue';
+import PublishProcess from 'src/components/PublishProcess.vue';
+import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 </script>
 
 <style lang="scss" scoped>
