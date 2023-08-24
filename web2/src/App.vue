@@ -1,44 +1,59 @@
 <template>
-  <div>
-    <a
-      href="https://vitejs.dev"
-      target="_blank"
+  <q-layout
+    view="hHh lpR fFf"
+    class="bg-grey-9 text-white"
+  >
+    <q-header
+      elevated
+      class="bg-primary text-white"
     >
-      <img
-        src="/vite.svg"
-        class="logo"
-        alt="Vite logo"
+      <q-toolbar class="max-width-md q-mx-auto">
+        <WhitePositLogo
+          class="posit-logo"
+          alt="Posit PBC Logo"
+        />
+        <q-toolbar-title>
+          Publisher
+        </q-toolbar-title>
+      </q-toolbar>
+    </q-header>
+
+    <q-page-container>
+      <q-page
+        class="max-width-md q-mx-auto"
+        padding
       >
-    </a>
-    <a
-      href="https://vuejs.org/"
-      target="_blank"
-    >
-      <img
-        src="./assets/vue.svg"
-        class="logo vue"
-        alt="Vue logo"
-      >
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+        <h6 class="q-mt-none q-mb-md">
+          What would you like to be published and how?
+        </h6>
+        <q-list
+          dark
+          bordered
+          class="rounded-borders"
+        >
+          <!-- <DestinationTarget />
+          <q-separator />
+          <FilesToPublish />
+          <q-separator />
+          <PythonProject />
+          <q-separator />
+          <CommonSettings />
+          <q-separator />
+          <AdvancedSettings /> -->
+        </q-list>
+        <PublishProcess />
+      </q-page>
+    </q-page-container>
+  </q-layout>
 </template>
 
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue';
+import WhitePositLogo from './components/icons/WhitePositLogo.vue';
 </script>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+<style lang="scss" scoped>
+.posit-logo {
+  max-height: 26px;
+  width: auto;
 }
 </style>
