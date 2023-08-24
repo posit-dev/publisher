@@ -90,6 +90,11 @@ local-ui-client target:
   #   just _test-client darwin-amd64
   # fi
 
+ui-test target:
+  #!/usr/bin/env bash
+  just init-connect
+  just ../web/test-ci-e2e {{target}}
+
 ui-client target:
   #!/usr/bin/env bash
 
@@ -107,11 +112,6 @@ ui-client target:
     --rm {{_tag}}-{{target}} \
     just ui-test {{target}}
   fi
-
-ui-test target:
-  #!/usr/bin/env bash
-  just init-connect
-  just ../web/test-ci-e2e {{target}}
 
 _test-client target:
   bats --tap -T -r ./bats/
