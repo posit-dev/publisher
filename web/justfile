@@ -52,6 +52,7 @@ test-e2e:
     # set this environment variable to keep Cypress from attempting to create
     # cache within root's home dir.
     export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
+    export CI_TEST_SERVER="--account-name=localhost"
     # install cypress
     npx cypress install
 
