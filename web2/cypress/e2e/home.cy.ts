@@ -1,6 +1,6 @@
 describe('Landing', () => {
   beforeEach(() => {
-    cy.visit('');
+    cy.visit('/');
   });
   it('.should() - assert that <title> is correct', () => {
     cy.title().should('include', 'Posit Publishing Web UI');
@@ -9,7 +9,7 @@ describe('Landing', () => {
 
 describe('Check Files', () => {
   beforeEach(() => {
-    cy.visit('');
+    cy.visit('/');
   });
   it('files should be listed', () => {
     cy.contains('.q-item__label', 'Files').should('be.visible')
