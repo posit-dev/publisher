@@ -28,6 +28,7 @@
     "@vitejs/plugin-vue": "^4.2.3",
     "cypress": "^12.17.4",
     "eslint": "^8.47.0",
+    "eslint-plugin-cypress": "^2.14.0",
     "eslint-plugin-vue": "^9.17.0",
     "sass": "^1.66.1",
     "typescript": "^5.0.2",
