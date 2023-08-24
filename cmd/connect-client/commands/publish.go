@@ -7,6 +7,8 @@ import (
 	"io/fs"
 	"os"
 
+	"log/slog"
+
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
@@ -17,12 +19,11 @@ import (
 	"github.com/rstudio/connect-client/internal/services/ui"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
 type StatefulCommand interface {
-	LoadState(logger rslog.Logger) error
-	SaveState(logger rslog.Logger) error
+	LoadState(logger *slog.Logger) error
+	SaveState(logger *slog.Logger) error
 }
 
 type BaseBundleCmd struct {
@@ -39,7 +40,7 @@ func (cmd *BaseBundleCmd) getConfigName() string {
 	return "default"
 }
 
-func (cmd *BaseBundleCmd) LoadState(logger rslog.Logger) error {
+func (cmd *BaseBundleCmd) LoadState(logger *slog.Logger) error {
 	sourceDir, err := util.DirFromPath(cmd.Path)
 	if err != nil {
 		return err
@@ -59,11 +60,11 @@ func (cmd *BaseBundleCmd) LoadState(logger rslog.Logger) error {
 	return nil
 }
 
-func (cmd *BaseBundleCmd) SaveState(logger rslog.Logger) error {
+func (cmd *BaseBundleCmd) SaveState(logger *slog.Logger) error {
 	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, logger)
 }
 
-func listFiles(dir util.Path, log rslog.Logger) (bundles.ManifestFileMap, error) {
+func listFiles(dir util.Path, log *slog.Logger) (bundles.ManifestFileMap, error) {
 	files := make(bundles.ManifestFileMap)
 
 	ignore, err := gitignore.NewIgnoreList(dir, nil)
@@ -87,7 +88,7 @@ func listFiles(dir util.Path, log rslog.Logger) (bundles.ManifestFileMap, error)
 // stateFromCLI takes the CLI options provided by the user,
 // performs content auto-detection if needed, and
 // updates cmd.State to reflect all of the information.
-func (cmd *BaseBundleCmd) stateFromCLI(logger rslog.Logger) error {
+func (cmd *BaseBundleCmd) stateFromCLI(logger *slog.Logger) error {
 	manifest := &cmd.State.Manifest
 	manifest.Version = 1
 	manifest.Packages = make(bundles.PackageMap)
@@ -99,7 +100,7 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger rslog.Logger) error {
 	}
 
 	if metadata.AppMode == apptypes.UnknownMode || metadata.Entrypoint == "" {
-		logger.Infof("Detecting deployment type and entrypoint...")
+		logger.Info("Detecting deployment type and entrypoint...")
 		typeDetector := inspect.NewContentTypeDetector()
 		contentType, err := typeDetector.InferType(cmd.Path)
 		if err != nil {
@@ -119,10 +120,7 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger rslog.Logger) error {
 	case apptypes.StaticRmdMode, apptypes.ShinyRmdMode:
 		metadata.PrimaryRmd = metadata.Entrypoint
 	}
-	logger.WithFields(rslog.Fields{
-		"Entrypoint": metadata.Entrypoint,
-		"AppMode":    metadata.AppMode,
-	}).Infof("Deployment type")
+	logger.Info("Deployment type", "Entrypoint", metadata.Entrypoint, "AppMode", metadata.AppMode)
 
 	files, err := listFiles(cmd.State.SourceDir, logger)
 	if err != nil {
@@ -166,7 +164,7 @@ func (cmd *BaseBundleCmd) requiresPython() (bool, error) {
 	return exists, nil
 }
 
-func (cmd *BaseBundleCmd) inspectPython(logger rslog.Logger, manifest *bundles.Manifest) error {
+func (cmd *BaseBundleCmd) inspectPython(logger *slog.Logger, manifest *bundles.Manifest) error {
 	inspector := environment.NewPythonInspector(cmd.State.SourceDir, cmd.Python, logger)
 	if manifest.Python.Version == "" {
 		pythonVersion, err := inspector.GetPythonVersion()

@@ -3,12 +3,12 @@ package ui
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"log/slog"
 	"net/http"
 	"net/url"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
@@ -17,7 +17,6 @@ import (
 	"github.com/rstudio/connect-client/web"
 
 	"github.com/gorilla/mux"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
 
@@ -30,7 +29,7 @@ func NewUIService(
 	token services.LocalToken,
 	fs afero.Fs,
 	lister accounts.AccountList,
-	logger rslog.Logger) *api.Service {
+	logger *slog.Logger) *api.Service {
 
 	handler := RouterHandlerFunc(fs, publish, lister, logger)
 
@@ -47,11 +46,10 @@ func NewUIService(
 		ui.AccessLog,
 		token,
 		logger,
-		rslog.NewDebugLogger(debug.UIRegion),
 	)
 }
 
-func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log rslog.Logger) http.HandlerFunc {
+func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log *slog.Logger) http.HandlerFunc {
 
 	deployment := publishArgs.State
 	base := deployment.SourceDir
