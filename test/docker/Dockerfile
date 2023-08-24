@@ -24,7 +24,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libasound2 \
     libxtst6 \
     xauth \
-    xvfb
+    xvfb \
+    python3 \
+    python3-pip
 
 RUN export GOLANG_VERSION=1.20.4 \
     && export GOLANG_DOWNLOAD_SHA256=698ef3243972a51ddb4028e4a1ac63dc6d60821bf18e59a807e051fee0a385bd \
@@ -32,6 +34,7 @@ RUN export GOLANG_VERSION=1.20.4 \
     && tar -C /usr/local -xzf golang.tar.gz \
     && rm golang.tar.gz
 ENV PATH="$PATH:/usr/local/go/bin"
+ENV PATH="$PATH:"
 
 RUN npm install -g n && \
     n stable

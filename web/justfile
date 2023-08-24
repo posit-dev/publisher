@@ -69,7 +69,7 @@ test-ci-e2e target:
     # use a different cache per os
     export CYPRESS_CACHE_FOLDER="./test/cypress/{{target}}/.cache"
     export CI_TEST_SERVER="--account-name=localhost"
-    python ../test/fixtures/setup.py
+    python3 ../test/fixtures/setup.py
     # install cypress
     npx cypress install
     npx quasar test --e2e cypress

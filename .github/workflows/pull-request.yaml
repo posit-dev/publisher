@@ -454,9 +454,12 @@ jobs:
       - 
         name: Setup docker and docker-compose (missing on MacOS)
         run: |
-          brew reinstall qemu
+          # Workaround for https://github.com/actions/runner-images/issues/8104
+          brew remove --ignore-dependencies qemu
+          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
+          brew install ./qemu.rb
           brew install docker docker-compose
-          
+            
           # Link the Docker Compose v2 plugin so it's understood by the docker CLI
           mkdir -p ~/.docker/cli-plugins
           ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
