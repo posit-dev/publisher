@@ -399,8 +399,7 @@ jobs:
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
-          cd $env:GITHUB_WORKSPACE\test
-          just run-client $env:os
+          just test\run-client $env:os
       -
         name: Run Windows Cypress Tests
         env:
@@ -446,6 +445,16 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just run-client ${os}
+      - 
+        name: Setup docker and docker-compose (missing on MacOS)
+        run: |
+          brew install docker docker-compose
+          
+          # Link the Docker Compose v2 plugin so it's understood by the docker CLI
+          mkdir -p ~/.docker/cli-plugins
+          ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
+          
+          colima start
       -
         name: Run MacOS Cypress Tests
         env:

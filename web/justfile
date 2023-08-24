@@ -54,6 +54,7 @@ test-e2e:
     export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
     export CI_TEST_SERVER="--account-name=localhost"
     python ../test/fixtures/setup.py
+    just ../test/init-connect
     # install cypress
     npx cypress install
 
