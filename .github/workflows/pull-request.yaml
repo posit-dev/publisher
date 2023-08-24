@@ -409,8 +409,11 @@ jobs:
           DOCKER: "false"
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
-          just test/init-connect
-          just web/test-ci-e2e $env:os
+          cd test
+          docker compose pull connect --platform linux/amd64
+          docker compose up -d connect
+          just init-connect
+          just ../web/test-ci-e2e $env:os
 
 
   test-macos:

@@ -110,7 +110,7 @@ ui-client target:
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \
-    just ui-test {{target}}
+    just test/ui-test {{target}}
   fi
 
 _test-client target:

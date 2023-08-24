@@ -10,6 +10,7 @@ services:
     volumes:
       - $PWD/docker/rstudio-connect.gcfg:/etc/rstudio-connect/rstudio-connect.gcfg
     privileged: true
+    platform: linux/amd64
     environment:
       RSTUDIO_CONNECT_HASTE: "enabled"
       RSC_LICENSE: ${CONNECT_LICENSE}
