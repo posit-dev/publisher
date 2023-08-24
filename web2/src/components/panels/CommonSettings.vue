@@ -3,7 +3,7 @@
 <template>
   <LayoutPanel
     title="Common Settings"
-    icon="img:assets/images/info.png"
+    icon="img:images/info.png"
   >
     TODO: Common settings, probably off the info panel in dashboard
   </LayoutPanel>

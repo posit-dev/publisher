@@ -4,7 +4,7 @@
   <LayoutPanel
     title="Destination"
     :subtitle="destinationTitle"
-    icon="img:assets/images/posit-logo-only-unofficial.svg"
+    icon="img:images/posit-logo-only-unofficial.svg"
   >
     TODO: select from previous deployments or add to existing or new targets
   </LayoutPanel>

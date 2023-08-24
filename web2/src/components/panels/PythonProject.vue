@@ -3,7 +3,7 @@
 <template>
   <LayoutPanel
     title="Python"
-    icon="img:assets/images/python-logo-only.svg"
+    icon="img:images/python-logo-only.svg"
   >
     TODO: Show detailed python version and list of package dependencies
     with ability to add or remove package dependencies.

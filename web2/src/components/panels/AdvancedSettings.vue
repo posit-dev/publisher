@@ -3,7 +3,7 @@
 <template>
   <LayoutPanel
     title="Advanced Settings"
-    icon="img:assets/images/settings.png"
+    icon="img:images/settings.png"
   >
     TODO: Show list of editable settings (and some as read-only)
     based on capabilities of target server.

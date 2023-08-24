@@ -4,7 +4,7 @@
   <LayoutPanel
     title="Files"
     :subtitle="fileSummary"
-    icon="img:assets/images/files-icon.jpg"
+    icon="img:/images/files-icon.jpg"
   >
     <q-tree
       v-model:ticked="deploymentStore.files"
