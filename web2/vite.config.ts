@@ -16,5 +16,16 @@ export default defineConfig({
     alias: {
       src: fileURLToPath(new URL('./src', import.meta.url)),
     }
+  },
+  server: {
+    open: false,
+    proxy: {
+      // proxy all requests starting with /apii to CLI
+      '/api': {
+        target: 'http://127.0.0.1:9001',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   }
 });
