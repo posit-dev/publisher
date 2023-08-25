@@ -22,7 +22,7 @@ func CreateFilesService(base util.Path, afs afero.Fs, log *slog.Logger) FilesSer
 		log.Warn("failed to load .gitignore file")
 	}
 	return filesService{
-		base:   base,
+		root:   base,
 		afs:    afs,
 		log:    log,
 		ignore: ignore,
@@ -30,7 +30,7 @@ func CreateFilesService(base util.Path, afs afero.Fs, log *slog.Logger) FilesSer
 }
 
 type filesService struct {
-	base   util.Path
+	root   util.Path
 	afs    afero.Fs
 	log    *slog.Logger
 	ignore gitignore.IgnoreList
@@ -39,7 +39,7 @@ type filesService struct {
 func (s filesService) GetFile(p util.Path) (*File, error) {
 	p = p.Clean()
 	m := s.ignore.Match(p.String())
-	file, err := CreateFile(p, m)
+	file, err := CreateFile(s.root, p, m)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (s filesService) GetFile(p util.Path) (*File, error) {
 		if err != nil {
 			return err
 		}
-		_, err = file.insert(path.Clean(), s.ignore)
+		_, err = file.insert(s.root, path, s.ignore)
 		return err
 	})
 

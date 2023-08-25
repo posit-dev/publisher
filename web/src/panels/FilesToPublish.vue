@@ -69,8 +69,8 @@ const fileSummary = computed(() => {
 
 function fileToTreeNode(file: DeploymentFile): QTreeNode {
   const node: QTreeNode = {
-    [NODE_KEY]: file.pathname,
-    label: file.baseName,
+    [NODE_KEY]: file.id,
+    label: file.base,
     children: file.files.map(fileToTreeNode),
     tickable: !file.exclusion,
   };
@@ -84,7 +84,7 @@ function populateFileMap(file: DeploymentFile) {
     isEntrypoint: file.isEntrypoint,
     exclusion: file.exclusion,
   };
-  fileMap.value.set(file.pathname, info);
+  fileMap.value.set(file.id, info);
   file.files.forEach(populateFileMap);
 }
 
@@ -99,7 +99,7 @@ async function getFiles() {
 
   if (file.isDir) {
     // start with the top level directory expanded
-    expanded.value = [file.pathname];
+    expanded.value = [file.rel];
   }
 }
 
