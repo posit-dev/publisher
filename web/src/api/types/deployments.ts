@@ -5,20 +5,20 @@ import { ConnectDeployment } from 'src/api/types/connect';
 import { Manifest } from 'src/api/types/manifest';
 
 export type Target = {
-    account_name: string;
-    server_type: ServerType
-    server_url: string;
-    content_id: string;
-    content_name: string;
+    accountName: string;
+    serverType: ServerType
+    serverUrl: string;
+    contentId: string;
+    contentName: string;
     username: string;
-    bundle_id: string | null;
-    deployed_at: number | null;
+    bundleId: string | null;
+    deployedAt: number | null;
 }
 
 export type Deployment = {
-    source_path: string;
+    sourcePath: string;
     target: Target;
     manifest: Manifest;
     connect: ConnectDeployment;
-    python_requirements: string[];
+    pythonRequirements: string[];
 }

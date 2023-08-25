@@ -8,29 +8,27 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/dcf"
 
-	"github.com/rstudio/platform-lib/pkg/rslog"
+	"log/slog"
+
 	"github.com/spf13/afero"
 )
 
 type rsconnectProvider struct {
-	fs          afero.Fs
-	goos        string
-	dcfReader   dcf.FileReader
-	logger      rslog.Logger
-	debugLogger rslog.DebugLogger
+	fs        afero.Fs
+	goos      string
+	dcfReader dcf.FileReader
+	logger    *slog.Logger
 }
 
-func newRSConnectProvider(fs afero.Fs, logger rslog.Logger) *rsconnectProvider {
+func newRSConnectProvider(fs afero.Fs, logger *slog.Logger) *rsconnectProvider {
 	return &rsconnectProvider{
-		fs:          fs,
-		goos:        runtime.GOOS,
-		dcfReader:   dcf.NewFileReader(),
-		logger:      logger,
-		debugLogger: rslog.NewDebugLogger(debug.AccountsRegion),
+		fs:        fs,
+		goos:      runtime.GOOS,
+		dcfReader: dcf.NewFileReader(),
+		logger:    logger,
 	}
 }
 
@@ -40,11 +38,11 @@ func (p *rsconnectProvider) configDir() (util.Path, error) {
 	// https://github.com/rstudio/rsconnect/blob/main/R/config.R
 	baseDir := util.PathFromEnvironment("R_USER_CONFIG_DIR", p.fs)
 	if baseDir.Path() != "" {
-		p.debugLogger.Debugf("rsconnect: using R_USER_CONFIG_DIR (%s)", baseDir)
+		p.logger.Debug("rsconnect: using R_USER_CONFIG_DIR", "path", baseDir)
 	} else {
 		baseDir = util.PathFromEnvironment("XDG_CONFIG_HOME", p.fs)
 		if baseDir.Path() != "" {
-			p.debugLogger.Debugf("rsconnect: using XDG_CONFIG_HOME (%s)", baseDir)
+			p.logger.Debug("rsconnect: using XDG_CONFIG_HOME", "path", baseDir)
 		}
 	}
 	if baseDir.Path() == "" {
@@ -75,7 +73,7 @@ func (p *rsconnectProvider) oldConfigDir() (util.Path, error) {
 	}
 	configDir := util.PathFromEnvironment("R_USER_CONFIG_DIR", p.fs)
 	if configDir.Path() != "" {
-		p.debugLogger.Debugf("rsconnect: using R_USER_CONFIG_DIR (%s)", configDir)
+		p.logger.Debug("rsconnect: using R_USER_CONFIG_DIR", "path", configDir)
 		configDir = configDir.Join("rsconnect")
 	} else {
 		switch p.goos {
@@ -86,14 +84,14 @@ func (p *rsconnectProvider) oldConfigDir() (util.Path, error) {
 		default:
 			configDir = util.PathFromEnvironment("XDG_CONFIG_HOME", p.fs)
 			if configDir.Path() != "" {
-				p.debugLogger.Debugf("rsconnect: using XDG_CONFIG_HOME (%s)", configDir)
+				p.logger.Debug("rsconnect: using XDG_CONFIG_HOME", "path", configDir)
 			} else {
 				configDir = home.Join(".config")
 			}
 		}
 		configDir = configDir.Join("R", "rsconnect")
 	}
-	p.debugLogger.Debugf("rsconnect: candidate old config directory is '%s'", configDir)
+	p.logger.Debug("rsconnect: candidate old config directory", "path", configDir)
 	configDir, err = configDir.Abs()
 	if err != nil {
 		return util.Path{}, err
@@ -160,7 +158,7 @@ func (p *rsconnectProvider) Load() ([]Account, error) {
 	if err == nil && exists {
 		return p.loadFromConfigDir(configDir)
 	}
-	p.debugLogger.Debugf("rsconnect config directory '%s' does not exist, checking old config directory", configDir)
+	p.logger.Debug("rsconnect config directory does not exist, checking old config directory", "path", configDir)
 	oldConfigDir, err := p.oldConfigDir()
 	if err != nil {
 		return nil, err
@@ -170,7 +168,7 @@ func (p *rsconnectProvider) Load() ([]Account, error) {
 		return nil, err
 	}
 	if !exists {
-		p.debugLogger.Debugf("Old rsconnect config directory does not exist")
+		p.logger.Debug("Old rsconnect config directory does not exist")
 		return nil, nil
 	}
 
@@ -178,7 +176,7 @@ func (p *rsconnectProvider) Load() ([]Account, error) {
 	// oldConfigDir, err = filepath.EvalSymlinks(oldConfigDir)
 	// if err != nil {
 	// 	if errors.Is(err, fs.ErrNotExist) {
-	// 		p.debugLogger.Debugf("Old rsconnect config directory does not exist")
+	// 		p.logger.Debug("Old rsconnect config directory does not exist")
 	// 		return nil, nil
 	// 	} else {
 	// 		return nil, fmt.Errorf("Error getting old rsconnect config directory: %s", err)
@@ -190,7 +188,7 @@ func (p *rsconnectProvider) Load() ([]Account, error) {
 // Load loads the list of accounts stored by
 // rsconnect, by reading its servers and account DCF files.
 func (p *rsconnectProvider) loadFromConfigDir(configDir util.Path) ([]Account, error) {
-	p.logger.Infof("Loading rsconnect accounts from %s", configDir)
+	p.logger.Info("Loading rsconnect accounts", "path", configDir)
 	rscServers, err := p.dcfReader.ReadFiles(configDir.Join("servers"), "*.dcf")
 	if err != nil {
 		return nil, err

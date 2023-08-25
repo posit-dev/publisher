@@ -4,41 +4,42 @@ package files
 
 import (
 	"io/fs"
+	"log/slog"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
 
-type IFilesService interface {
+type FilesService interface {
 	GetFile(path util.Path) (*File, error)
 }
 
-func CreateFilesService(base util.Path, afs afero.Fs, log rslog.Logger) IFilesService {
+func CreateFilesService(base util.Path, afs afero.Fs, log *slog.Logger) FilesService {
 	f := base.Join(".gitignore")
 	ignore, err := gitignore.NewIgnoreList(f, nil)
 	if err != nil {
-		log.Warnf("failed to load .gitignore file")
+		log.Warn("failed to load .gitignore file")
 	}
-	return FilesService{
-		base:   base,
+	return filesService{
+		root:   base,
 		afs:    afs,
 		log:    log,
 		ignore: ignore,
 	}
 }
 
-type FilesService struct {
-	base   util.Path
+type filesService struct {
+	root   util.Path
 	afs    afero.Fs
-	log    rslog.Logger
+	log    *slog.Logger
 	ignore gitignore.IgnoreList
 }
 
-func (s FilesService) GetFile(p util.Path) (*File, error) {
+func (s filesService) GetFile(p util.Path) (*File, error) {
+	p = p.Clean()
 	m := s.ignore.Match(p.String())
-	file, err := CreateFile(p, m)
+	file, err := CreateFile(s.root, p, m)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +49,7 @@ func (s FilesService) GetFile(p util.Path) (*File, error) {
 		if err != nil {
 			return err
 		}
-		_, err = file.insert(path, s.ignore)
+		_, err = file.insert(s.root, path, s.ignore)
 		return err
 	})
 

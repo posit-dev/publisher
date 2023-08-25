@@ -3,53 +3,51 @@ package paths
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"log/slog"
 	"os"
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
 
-type IPathsService interface {
+type PathsService interface {
 	IsSafe(p util.Path) (bool, error)
 }
 
-func CreatePathsService(base util.Path, afs afero.Fs, log rslog.Logger) IPathsService {
-	return PathsService{base, afs, log}
+func CreatePathsService(base util.Path, afs afero.Fs, log *slog.Logger) PathsService {
+	return pathsService{base, afs, log}
 }
 
-type PathsService struct {
+type pathsService struct {
 	base util.Path
 	afs  afero.Fs
-	log  rslog.Logger
+	log  *slog.Logger
 }
 
-func (s PathsService) IsSafe(p util.Path) (bool, error) {
+func (s pathsService) IsSafe(p util.Path) (bool, error) {
 	symlink, err := s.isSymlink(p)
 	if err != nil {
-		s.log.Errorf("failure when checking symlink: %v", err)
 		return false, err
 	}
 	if symlink {
-		s.log.Warnf("the provided pathname '%s' is a symlink", p)
+		s.log.Warn("the provided pathname  is a symlink", "path", p)
 		return false, nil
 	}
 
 	trusted, err := s.isTrusted(p)
 	if err != nil {
-		s.log.Errorf("failure when checking trust: %v", err)
 		return false, err
 	}
 	if !trusted {
-		s.log.Warnf("the provided pathname '%s' is not trusted", p)
+		s.log.Warn("the provided pathname is not trusted", "path", p)
 		return false, nil
 	}
 
 	return true, nil
 }
 
-func (s PathsService) isSymlink(p util.Path) (bool, error) {
+func (s pathsService) isSymlink(p util.Path) (bool, error) {
 	l, ok, err := p.LstatIfPossible()
 	if err != nil {
 		// if an error occurs and lstat is called, check if the error op is lstat
@@ -67,23 +65,20 @@ func (s PathsService) isSymlink(p util.Path) (bool, error) {
 
 }
 
-func (s PathsService) isTrusted(p util.Path) (bool, error) {
+func (s pathsService) isTrusted(p util.Path) (bool, error) {
 	_, err := p.Rel(s.base)
 	if err != nil {
-		s.log.Warnf("%v", err)
-		return false, nil
+		return false, err
 	}
 
 	absbase, err := s.base.Abs()
 	if err != nil {
-		s.log.Warnf("%v", err)
-		return false, nil
+		return false, err
 	}
 
 	abspath, err := p.Abs()
 	if err != nil {
-		s.log.Warnf("%v", err)
-		return false, nil
+		return false, err
 	}
 
 	return strings.HasPrefix(abspath.String(), absbase.String()), nil

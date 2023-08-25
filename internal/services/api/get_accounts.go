@@ -4,10 +4,8 @@ package api
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
-
-	"github.com/rstudio/platform-lib/pkg/rslog"
-	"github.com/spf13/afero"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 )
@@ -45,12 +43,11 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 }
 
 // GetAccountsHandlerFunc returns a handler for the account list.
-func GetAccountsHandlerFunc(fs afero.Fs, logger rslog.Logger) http.HandlerFunc {
-	lister := accounts.NewAccountList(fs, logger)
+func GetAccountsHandlerFunc(lister accounts.AccountList, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		accounts, err := lister.GetAllAccounts()
 		if err != nil {
-			InternalError(w, logger, err)
+			InternalError(w, req, logger, err)
 			return
 		}
 		data := &accountListDTO{}

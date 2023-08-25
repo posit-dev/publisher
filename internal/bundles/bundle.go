@@ -12,15 +12,14 @@ import (
 	"io/fs"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
-	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/util"
 
-	"github.com/rstudio/platform-lib/pkg/rslog"
+	"log/slog"
 )
 
 type Bundler interface {
 	CreateManifest() (*Manifest, error)
-	CreateBundle(archive io.Writer) error
+	CreateBundle(archive io.Writer) (*Manifest, error)
 }
 
 // NewBundler creates a bundler that will archive the directory specified
@@ -29,7 +28,7 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequirements []byte, logger rslog.Logger) (*bundler, error) {
+func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequirements []byte, logger *slog.Logger) (*bundler, error) {
 	var dir util.Path
 	var filename string
 	isDir, err := path.IsDir()
@@ -60,27 +59,29 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 		walker:             symlinkWalker,
 		pythonRequirements: pythonRequirements,
 		logger:             logger,
-		debugLogger:        rslog.NewDebugLogger(debug.BundleRegion),
 	}, nil
 }
 
-func NewBundlerForManifest(manifestPath util.Path, logger rslog.Logger) (*bundler, error) {
+func NewBundlerForManifestFile(manifestPath util.Path, logger *slog.Logger) (*bundler, error) {
 	dir := manifestPath.Dir()
-	absDir, err := dir.Abs()
-	if err != nil {
-		return nil, err
-	}
 	manifest, err := ReadManifestFile(manifestPath)
 	if err != nil {
 		return nil, err
 	}
+	return NewBundlerForManifest(dir, manifest, logger)
+}
+
+func NewBundlerForManifest(dir util.Path, manifest *Manifest, logger *slog.Logger) (*bundler, error) {
+	absDir, err := dir.Abs()
+	if err != nil {
+		return nil, err
+	}
 	return &bundler{
-		manifest:    manifest,
-		baseDir:     absDir,
-		filename:    "",
-		walker:      newManifestWalker(absDir, manifest),
-		logger:      logger,
-		debugLogger: rslog.NewDebugLogger(debug.BundleRegion),
+		manifest: manifest,
+		baseDir:  absDir,
+		filename: "",
+		walker:   newManifestWalker(absDir, manifest),
+		logger:   logger,
 	}, nil
 }
 
@@ -90,8 +91,7 @@ type bundler struct {
 	walker             util.Walker // Ignore patterns from CLI and ignore files
 	pythonRequirements []byte      // Pacakges to write to requirements.txt if not already present
 	manifest           *Manifest   // Manifest describing the bundle, if provided
-	logger             rslog.Logger
-	debugLogger        rslog.DebugLogger
+	logger             *slog.Logger
 }
 
 type bundle struct {
@@ -103,12 +103,12 @@ type bundle struct {
 }
 
 func (b *bundler) CreateManifest() (*Manifest, error) {
-	b.logger.WithField("source_dir", b.baseDir).Infof("Creating manifest from directory")
+	b.logger.Info("Creating manifest from directory", "source_dir", b.baseDir)
 	return b.makeBundle(nil)
 }
 
 func (b *bundler) CreateBundle(archive io.Writer) (*Manifest, error) {
-	b.logger.WithField("source_dir", b.baseDir).Infof("Creating bundle from directory")
+	b.logger.Info("Creating bundle from directory", "source_dir", b.baseDir)
 	return b.makeBundle(archive)
 }
 
@@ -174,10 +174,7 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 			return nil, err
 		}
 	}
-	b.logger.WithFields(rslog.Fields{
-		"files":       bundle.numFiles,
-		"total_bytes": bundle.size,
-	}).Infof("Bundle created")
+	b.logger.Info("Bundle created", "files", bundle.numFiles, "total_bytes", bundle.size)
 	return bundle.manifest, nil
 }
 
@@ -231,17 +228,17 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 	if err != nil {
 		return err
 	}
-	pathLogger := b.logger.WithFields(rslog.Fields{
-		"path": path,
-		"size": info.Size(),
-	})
+	pathLogger := b.logger.With(
+		"path", path,
+		"size", info.Size(),
+	)
 	if info.IsDir() {
 		err = writeHeaderToTar(info, relPath.Path(), b.archive)
 		if err != nil {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
-		pathLogger.Infof("Adding file")
+		pathLogger.Info("Adding file")
 		err = writeHeaderToTar(info, relPath.Path(), b.archive)
 		if err != nil {
 			return err
@@ -259,7 +256,7 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 		b.numFiles++
 		b.size += info.Size()
 	} else {
-		pathLogger.Warnf("Skipping non-regular file")
+		pathLogger.Warn("Skipping non-regular file")
 	}
 	return nil
 }

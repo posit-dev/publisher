@@ -4,12 +4,14 @@ package clients
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -21,7 +23,6 @@ import (
 	"github.com/rstudio/connect-client/internal/api_client/auth"
 	"github.com/rstudio/connect-client/internal/util"
 
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -38,9 +39,10 @@ type HTTPClient interface {
 type defaultHTTPClient struct {
 	client  *http.Client
 	baseURL string
+	logger  *slog.Logger
 }
 
-func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, logger rslog.Logger) (*defaultHTTPClient, error) {
+func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, logger *slog.Logger) (*defaultHTTPClient, error) {
 	baseClient, err := newHTTPClientForAccount(account, timeout, logger)
 	if err != nil {
 		return nil, err
@@ -48,10 +50,11 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, logg
 	return &defaultHTTPClient{
 		client:  baseClient,
 		baseURL: account.URL,
+		logger:  logger,
 	}, nil
 }
 
-var errAuthenticationFailed = errors.New("Unable to log in with the provided credentials.")
+var errAuthenticationFailed = errors.New("unable to log in with the provided credentials")
 var ErrNotFound = errors.New("server returned Not Found for the requested resource")
 
 type HTTPError struct {
@@ -106,14 +109,20 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 
 func (c *defaultHTTPClient) doJSON(method string, path string, body any, into any) error {
 	reqBody := io.Reader(nil)
+	bodyJSON := []byte(nil)
+	var err error
+
 	if body != nil {
-		bodyJSON, err := json.Marshal(body)
+		bodyJSON, err = json.Marshal(body)
 		if err != nil {
 			return err
 		}
 		reqBody = bytes.NewReader(bodyJSON)
 	}
 	respBody, err := c.do(method, path, reqBody, "application/json")
+	if c.logger.Enabled(context.Background(), slog.LevelDebug) {
+		c.logger.Debug("API request", "method", method, "path", path, "body", string(bodyJSON), "response", string(respBody), "error", err)
+	}
 	if err != nil {
 		return err
 	}
@@ -157,11 +166,11 @@ func (c *defaultHTTPClient) Delete(path string) error {
 	return c.doJSON("DELETE", path, nil, nil)
 }
 
-func loadCACertificates(path string, logger rslog.Logger) (*x509.CertPool, error) {
+func loadCACertificates(path string, logger *slog.Logger) (*x509.CertPool, error) {
 	if path == "" {
 		return nil, nil
 	}
-	logger.Infof("Loading CA certificate from %s", path)
+	logger.Info("Loading CA certificate", "path", path)
 	certificate, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("Error reading certificate file: %s", err)
@@ -169,12 +178,12 @@ func loadCACertificates(path string, logger rslog.Logger) (*x509.CertPool, error
 	certPool := x509.NewCertPool()
 	ok := certPool.AppendCertsFromPEM(certificate)
 	if !ok {
-		return nil, fmt.Errorf("No PEM certificates were found in the certificate file '%s'", path)
+		return nil, fmt.Errorf("no PEM certificates were found in the certificate file '%s'", path)
 	}
 	return certPool, nil
 }
 
-func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, logger rslog.Logger) (*http.Client, error) {
+func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, logger *slog.Logger) (*http.Client, error) {
 	cookieJar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})

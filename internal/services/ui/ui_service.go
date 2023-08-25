@@ -6,16 +6,16 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/rstudio/connect-client/internal/debug"
+	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
-	"github.com/rstudio/connect-client/internal/state"
-	"github.com/rstudio/connect-client/internal/util"
 
-	"github.com/rstudio/platform-lib/pkg/rslog"
+	"log/slog"
+
 	"github.com/spf13/afero"
 )
 
@@ -23,39 +23,35 @@ const APIPrefix string = "api"
 
 func NewUIService(
 	fragment string,
-	listen string,
-	keyFile string,
-	certFile string,
-	openBrowser bool,
-	openBrowserAt string,
-	skipAuth bool,
-	accessLog bool,
+	ui cli_types.UIArgs,
+	publish *cli_types.PublishArgs,
 	token services.LocalToken,
 	fs afero.Fs,
-	deploymentState *state.Deployment,
-	logger rslog.Logger) *api.Service {
+	lister accounts.AccountList,
+	logger *slog.Logger) *api.Service {
 
-	handler := newUIHandler(fs, deploymentState, logger)
+	handler := newUIHandler(fs, publish, lister, logger)
 
 	return api.NewService(
+		publish.State,
 		handler,
-		listen,
+		ui.Listen,
 		fragment,
-		keyFile,
-		certFile,
-		openBrowser,
-		openBrowserAt,
-		skipAuth,
-		accessLog,
+		ui.TLSKeyFile,
+		ui.TLSCertFile,
+		ui.Interactive,
+		ui.OpenBrowserAt,
+		ui.SkipBrowserSessionAuth,
+		ui.AccessLog,
 		token,
 		logger,
-		rslog.NewDebugLogger(debug.UIRegion),
 	)
 }
 
-func newUIHandler(afs afero.Fs, deployment *state.Deployment, log rslog.Logger) http.HandlerFunc {
+func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log *slog.Logger) http.HandlerFunc {
 
-	var base util.Path = deployment.SourceDir
+	deployment := publishArgs.State
+	base := deployment.SourceDir
 
 	deploymentsService := deployments.CreateDeploymentsService(deployment)
 	filesService := files.CreateFilesService(base, afs, log)
@@ -63,13 +59,14 @@ func newUIHandler(afs afero.Fs, deployment *state.Deployment, log rslog.Logger) 
 
 	mux := http.NewServeMux()
 	// /api/accounts
-	mux.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(afs, log))
+	mux.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(lister, log))
 	// /api/files
 	mux.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log))
 	// /api/deployment
 	mux.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService))
 	// /api/deployment/files
 	mux.Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log))
+	mux.Handle(ToPath("publish"), api.PostPublishHandlerFunc(publishArgs, lister, log))
 	mux.HandleFunc("/", api.NewStaticController())
 
 	return mux.ServeHTTP

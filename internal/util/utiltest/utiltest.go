@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func captureStderr(fn func()) (string, error) {
+func CaptureStderr(fn func()) (string, error) {
 	oldStderr := os.Stderr
 	stderr, err := os.CreateTemp("", "")
 	if err != nil {
@@ -19,7 +19,7 @@ func captureStderr(fn func()) (string, error) {
 
 	fn()
 
-	_, err = stderr.Seek(0, os.SEEK_SET)
+	_, err = stderr.Seek(0, io.SeekStart)
 	if err != nil {
 		return "", err
 	}

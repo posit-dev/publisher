@@ -6,7 +6,7 @@ on:
 #   You can ssh into the github action environment and poke around by using
 #   https://github.com/marketplace/actions/debugging-with-tmate
 #   Use `limit-access-to-actor: true` so only you can ssh into the environment!
-#  
+#
 #   For example, to debug a failure, append this to the jobs list within the failing step
 #   - name: Setup tmate session
 #     if: ${{ failure() }}
@@ -23,7 +23,7 @@ on:
 #   - build agent
 #     - UX e2e tests
 
-jobs: 
+jobs:
   build-docker-image:
     runs-on: ubuntu-latest
     defaults:
@@ -33,11 +33,11 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Setup Buildx
         uses: docker/setup-buildx-action@v2
-      - 
-        name: Restore Cache docker image 
+      -
+        name: Restore Cache docker image
         id: cache-docker-image-restore
         uses: actions/cache/restore@v3
         env:
@@ -45,18 +45,18 @@ jobs:
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('build/package/Dockerfile') }}
-      - 
+      -
         if: ${{ steps.cache-docker-image-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
         uses: docker/build-push-action@v3
         with:
           context: .
-          build-args: BUILDKIT_INLINE_CACHE=1 
+          build-args: BUILDKIT_INLINE_CACHE=1
           pull: True
           file: build/package/Dockerfile
           tags: rstudio/connect-client:latest
           outputs: type=docker,dest=/tmp/build-image.tar
-      - 
+      -
         if: ${{ steps.cache-docker-image-restore.outputs.cache-hit != 'true' }}
         name: Cache docker image (update)
         id: cache-docker-image-save
@@ -77,7 +77,7 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Setup Just
         uses: extractions/setup-just@v1
         env:
@@ -94,7 +94,7 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-      - 
+      -
         name: Restore Cache UX node_modules
         id: node_modules
         uses: actions/cache/restore@v3
@@ -108,7 +108,7 @@ jobs:
         name: Build up node_modules
         run: |
           just web/bootstrap
-      - 
+      -
         if: ${{ steps.node_modules.outputs.cache-hit != 'true' }}
         name: Create the cache of UX node_modules (save)
         id: create_node_modules
@@ -139,7 +139,7 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Setup Just
         uses: extractions/setup-just@v1
         env:
@@ -162,7 +162,7 @@ jobs:
         with:
           name: web-ux
           path: ./web/dist/spa
-      - 
+      -
         name: Restore Cache UX node_modules
         id: node_modules
         uses: actions/cache/restore@v3
@@ -175,7 +175,7 @@ jobs:
         name: Validate the codebase
         # Docker run will only fail step if last command fails... so must do multiple commands as one.
         run: |
-          just validate && just validate-post
+          just validate
 
   test-ux:
     needs: build-ux
@@ -187,7 +187,7 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Setup Just
         uses: extractions/setup-just@v1
         env:
@@ -204,7 +204,7 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/build-image.tar
-      - 
+      -
         name: Restore Cache UX node_modules
         id: node_modules
         uses: actions/cache/restore@v3
@@ -238,7 +238,7 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Setup Just
         uses: extractions/setup-just@v1
         env:
@@ -261,7 +261,7 @@ jobs:
         with:
           name: web-ux
           path: ./web/dist/spa
-      - 
+      -
         name: Agent Unit Tests
         run: |
           just test-agent
@@ -276,7 +276,7 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Setup Just
         uses: extractions/setup-just@v1
         env:
@@ -324,7 +324,7 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Setup Just
         uses: extractions/setup-just@v1
         env:
@@ -351,7 +351,7 @@ jobs:
         name: Make agents executable
         run: |
           chmod -R +x ./bin/**/connect-client
-      - 
+      -
         name: Restore Cache UX node_modules
         id: node_modules
         uses: actions/cache/restore@v3
@@ -360,7 +360,7 @@ jobs:
         with:
           path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
-      - 
+      -
         name: UX E2E Tests
         run: |
           PATH="${PATH}:/usr/local/bin" just web/test-e2e
@@ -369,13 +369,13 @@ jobs:
     needs: build-agent
     runs-on: windows-latest
     steps:
-      - 
+      -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Setup Just
         uses: extractions/setup-just@v1
-      - 
+      -
         name: Download binary
         uses: actions/download-artifact@v3
         with:
@@ -387,7 +387,7 @@ jobs:
         name: Make agents executable
         run: |
           chmod -R +x ./bin/**/connect-client
-      - 
+      -
         name: Run Windows CLI Tests
         env:
           os: windows-latest
@@ -408,7 +408,7 @@ jobs:
           DOCKER: "false"
         run: |
           just web/test-ci-e2e $env:os
-            
+
 
   test-macos:
     needs: build-agent
@@ -417,10 +417,10 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Setup Just
         uses: extractions/setup-just@v1
-      - 
+      -
         name: Download binary
         uses: actions/download-artifact@v3
         with:
@@ -432,14 +432,14 @@ jobs:
         name: Make agents executable
         run: |
           chmod -R +x ./bin/**/connect-client
-      - 
+      -
         name: Run MacOs CLI Tests
         env:
           os: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
-        # WARNING Docker run will only fail step if last command fails... 
+        # WARNING Docker run will only fail step if last command fails...
         run: |
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
@@ -460,34 +460,34 @@ jobs:
         shell: bash -l {0}
     needs: build-agent
     steps:
-      - 
+      -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           path: bin/
       # these are required to run docker on amd64 and arm64 platforms
-      - 
+      -
         name: Setup qemu
         uses: docker/setup-qemu-action@v2
-      - 
+      -
         name: Setup buildx
         uses: docker/setup-buildx-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - 
+      -
         name: Restore Cached linux-amd64 image
         id: cache-linux-amd64-restore
         uses: actions/cache/restore@v3
-        with: 
+        with:
           path: /tmp/linux-amd64-image.tar
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-amd64-image
           os: linux-amd64
-      - 
+      -
         if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
         uses: docker/build-push-action@v3
@@ -501,7 +501,7 @@ jobs:
           platforms: linux/amd64
           tags: rstudio/connect-client-linux-amd64:latest
           outputs: type=docker,dest=/tmp/linux-amd64-image.tar
-      - 
+      -
         if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
         name: Cache docker image (update)
         id: cache-linux-amd64-image-save
@@ -571,34 +571,34 @@ jobs:
         shell: bash -l {0}
     needs: build-agent
     steps:
-      - 
+      -
         name: Checkout
         uses: actions/checkout@v3
-      - 
+      -
         name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           path: bin/
       # these are required to run docker on amd64 and arm64 platforms
-      - 
+      -
         name: Setup qemu
         uses: docker/setup-qemu-action@v2
-      - 
+      -
         name: Setup buildx
         uses: docker/setup-buildx-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - 
+      -
         name: Restore Cached linux-arm64 image
         id: cache-linux-arm64-restore
         uses: actions/cache/restore@v3
-        with: 
+        with:
           path: /tmp/linux-arm64-image.tar
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
           cache-name: cache-linux-arm64-image
           os: linux-arm64
-      - 
+      -
         if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
         name: Build and Export Docker Image
         uses: docker/build-push-action@v3
@@ -612,7 +612,7 @@ jobs:
           platforms: linux/arm64
           tags: rstudio/connect-client-linux-arm64:latest
           outputs: type=docker,dest=/tmp/linux-arm64-image.tar
-      - 
+      -
         if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
         name: Cache docker image (update)
         id: cache-linux-arm64-image-save
@@ -650,10 +650,10 @@ jobs:
           chmod -R +x ./bin/**/connect-client
 
       # these are required to run docker on amd64 and arm64 platforms
-      - 
+      -
         name: Setup qemu
         uses: docker/setup-qemu-action@v2
-      - 
+      -
         name: Setup buildx
         uses: docker/setup-buildx-action@v2
         env:

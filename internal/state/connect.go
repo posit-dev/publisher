@@ -14,7 +14,7 @@ type ConnectDeployment struct {
 }
 
 type ConnectContent struct {
-	Name               apitypes.ContentName `json:"name"`
+	Name               apitypes.ContentName `json:"name,omitempty"`
 	Title              string               `json:"title,omitempty"`
 	Description        string               `json:"description,omitempty"`
 	AccessType         string               `json:"access_type,omitempty"`

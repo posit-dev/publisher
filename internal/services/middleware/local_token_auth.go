@@ -3,11 +3,10 @@ package middleware
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/services"
-
-	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
 // LocalToken looks for a `token` query parameter. If
@@ -18,7 +17,7 @@ import (
 // session cookie. A mismatch is an auth failure (401).
 const tokenParameterName string = "token"
 
-func LocalTokenSession(expectedToken services.LocalToken, logger rslog.Logger, next http.HandlerFunc) http.HandlerFunc {
+func LocalTokenSession(expectedToken services.LocalToken, logger *slog.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		target := req.URL
 		receivedTokens, ok := target.Query()[tokenParameterName]
@@ -26,8 +25,7 @@ func LocalTokenSession(expectedToken services.LocalToken, logger rslog.Logger, n
 			receivedToken := receivedTokens[0]
 			if expectedToken == services.LocalToken(receivedToken) {
 				// Success
-				logger.Infof("Authenticated via token, creating session")
-				req = authenticatedRequest(req)
+				logger.Info("Authenticated via token, creating session")
 				setCookie(w)
 				values := target.Query()
 				values.Del(tokenParameterName)
@@ -36,7 +34,7 @@ func LocalTokenSession(expectedToken services.LocalToken, logger rslog.Logger, n
 				w.WriteHeader(http.StatusMovedPermanently)
 			} else {
 				// Failure
-				logger.Errorf("Invalid authentication token: '%s'", receivedToken)
+				logger.Error("Invalid authentication token", "token", receivedToken)
 				w.WriteHeader(http.StatusUnauthorized)
 			}
 		} else {

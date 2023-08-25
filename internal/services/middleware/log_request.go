@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rstudio/platform-lib/pkg/rslog"
+	"log/slog"
 )
 
 type statusCapturingResponseWriter struct {
@@ -44,26 +44,26 @@ func (w *statusCapturingResponseWriter) GetBytesSent() int64 {
 }
 
 // LogRequest logs request info to the specified logger.
-func LogRequest(msg string, logger rslog.Logger, next http.HandlerFunc) http.HandlerFunc {
+func LogRequest(msg string, logger *slog.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		startTime := time.Now()
 		writer := NewStatusCapturingResponseWriter(w)
 		next(writer, req)
-		elapsedMs := time.Now().Sub(startTime).Milliseconds()
+		elapsedMs := time.Since(startTime).Milliseconds()
 
-		fieldLogger := logger.WithFields(rslog.Fields{
-			"method":      req.Method,
-			"url":         req.URL.String(),
-			"elapsed_ms":  elapsedMs,
-			"status":      writer.GetStatus(),
-			"req_size":    req.ContentLength,
-			"resp_size":   writer.GetBytesSent(),
-			"client_addr": req.RemoteAddr,
-		})
+		fieldLogger := logger.With(
+			"method", req.Method,
+			"url", req.URL.String(),
+			"elapsed_ms", elapsedMs,
+			"status", writer.GetStatus(),
+			"req_size", req.ContentLength,
+			"resp_size", writer.GetBytesSent(),
+			"client_addr", req.RemoteAddr,
+		)
 		correlationId := writer.Header().Get("X-Correlation-Id")
 		if correlationId != "" {
-			fieldLogger = fieldLogger.WithField("X-Correlation-Id", correlationId)
+			fieldLogger = fieldLogger.With("X-Correlation-Id", correlationId)
 		}
-		fieldLogger.Infof("%s", msg)
+		fieldLogger.Info(msg)
 	}
 }

@@ -70,7 +70,7 @@ func AppModeFromString(s string) (AppMode, error) {
 	case "", "unknown":
 		return UnknownMode, nil
 	default:
-		return UnknownMode, fmt.Errorf("Unrecognized content type: %s", s)
+		return UnknownMode, fmt.Errorf("unrecognized content type: %s", s)
 	}
 }
 
