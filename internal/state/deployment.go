@@ -68,7 +68,7 @@ func (d *Deployment) Merge(other *Deployment) {
 // LoadManifest reads the specified manifest file and populates
 // the Manifest field in the deployment state. This can be used
 // to read an arbitrary manifest file.
-func (d *Deployment) LoadManifest(path util.Path, logger events.Logger) error {
+func (d *Deployment) LoadManifest(path util.Path, log events.Logger) error {
 	isDir, err := path.IsDir()
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (d *Deployment) LoadManifest(path util.Path, logger events.Logger) error {
 		return err
 	}
 	d.Manifest = *manifest
-	logger.Info("Loaded manifest", "path", path)
+	log.Info("Loaded manifest", "path", path)
 	return nil
 }
 
@@ -102,9 +102,9 @@ const manifestLabel MetadataLabel = "manifest"
 // LoadFromFiles loads the deployment state from metadata files.
 // This should be called prior to processing higher-precedence
 // sources such as the CLI, environment variables, and UI input.
-func (d *Deployment) LoadFromFiles(sourceDir util.Path, configName string, logger events.Logger) error {
+func (d *Deployment) LoadFromFiles(sourceDir util.Path, configName string, log events.Logger) error {
 	metaDir := getMetadataPath(sourceDir, configName)
-	serializer := newJsonSerializer(metaDir, logger)
+	serializer := newJsonSerializer(metaDir, log)
 	return d.Load(serializer)
 }
 
@@ -127,13 +127,13 @@ func (d *Deployment) Load(serializer deploymentSerializer) error {
 	return nil
 }
 
-func (d *Deployment) SaveToFiles(sourceDir util.Path, configName string, logger events.Logger) error {
+func (d *Deployment) SaveToFiles(sourceDir util.Path, configName string, log events.Logger) error {
 	metaDir := getMetadataPath(sourceDir, configName)
 	err := metaDir.MkdirAll(0777)
 	if err != nil {
 		return err
 	}
-	serializer := newJsonSerializer(metaDir, logger)
+	serializer := newJsonSerializer(metaDir, log)
 	return d.Save(serializer)
 }
 

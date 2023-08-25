@@ -29,13 +29,13 @@ type proxy struct {
 func NewProxy(
 	targetURL *url.URL,
 	sourcePath string,
-	logger events.Logger) *httputil.ReverseProxy {
+	log events.Logger) *httputil.ReverseProxy {
 
 	p := proxy{
 		targetURL:  targetURL.String(),
 		sourcePath: sourcePath,
 		baseProxy:  httputil.NewSingleHostReverseProxy(targetURL),
-		logger:     logger,
+		logger:     log,
 	}
 	return p.asReverseProxy()
 }

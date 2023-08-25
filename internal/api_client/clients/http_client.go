@@ -43,15 +43,15 @@ type defaultHTTPClient struct {
 	logger  events.Logger
 }
 
-func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, logger events.Logger) (*defaultHTTPClient, error) {
-	baseClient, err := newHTTPClientForAccount(account, timeout, logger)
+func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log events.Logger) (*defaultHTTPClient, error) {
+	baseClient, err := newHTTPClientForAccount(account, timeout, log)
 	if err != nil {
 		return nil, err
 	}
 	return &defaultHTTPClient{
 		client:  baseClient,
 		baseURL: account.URL,
-		logger:  logger,
+		logger:  log,
 	}, nil
 }
 
@@ -167,11 +167,11 @@ func (c *defaultHTTPClient) Delete(path string) error {
 	return c.doJSON("DELETE", path, nil, nil)
 }
 
-func loadCACertificates(path string, logger events.Logger) (*x509.CertPool, error) {
+func loadCACertificates(path string, log events.Logger) (*x509.CertPool, error) {
 	if path == "" {
 		return nil, nil
 	}
-	logger.Info("Loading CA certificate", "path", path)
+	log.Info("Loading CA certificate", "path", path)
 	certificate, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("Error reading certificate file: %s", err)
@@ -184,14 +184,14 @@ func loadCACertificates(path string, logger events.Logger) (*x509.CertPool, erro
 	return certPool, nil
 }
 
-func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, logger events.Logger) (*http.Client, error) {
+func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, log events.Logger) (*http.Client, error) {
 	cookieJar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})
 	if err != nil {
 		return nil, err
 	}
-	certPool, err := loadCACertificates(account.Certificate, logger)
+	certPool, err := loadCACertificates(account.Certificate, log)
 	if err != nil {
 		return nil, err
 	}

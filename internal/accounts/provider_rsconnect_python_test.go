@@ -44,7 +44,7 @@ func (s *RsconnectPythonProviderSuite) TestNewRSConnectPythonProvider() {
 	fs := utiltest.NewMockFs()
 	provider := newRSConnectPythonProvider(fs, logger)
 	s.Equal(fs, provider.fs)
-	s.Equal(logger, provider.logger)
+	s.Equal(logger, provider.log)
 }
 
 func (s *RsconnectPythonProviderSuite) TestConfigDirNoHome() {

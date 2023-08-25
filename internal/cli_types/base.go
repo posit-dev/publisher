@@ -28,12 +28,12 @@ type CLIContext struct {
 	Logger     events.Logger
 }
 
-func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, logger events.Logger) *CLIContext {
+func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, log events.Logger) *CLIContext {
 	return &CLIContext{
 		Accounts:   accountList,
 		LocalToken: token,
 		Fs:         fs,
-		Logger:     logger,
+		Logger:     log,
 	}
 }
 

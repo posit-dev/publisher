@@ -27,16 +27,16 @@ type ConnectClient struct {
 func NewConnectClient(
 	account *accounts.Account,
 	timeout time.Duration,
-	logger events.Logger) (*ConnectClient, error) {
+	log events.Logger) (*ConnectClient, error) {
 
-	httpClient, err := NewDefaultHTTPClient(account, timeout, logger)
+	httpClient, err := NewDefaultHTTPClient(account, timeout, log)
 	if err != nil {
 		return nil, err
 	}
 	return &ConnectClient{
 		client:  httpClient,
 		account: account,
-		logger:  logger,
+		logger:  log,
 	}, nil
 }
 
@@ -239,7 +239,7 @@ func (c *ConnectClient) getTask(taskID apitypes.TaskID, previous *taskDTO) (*tas
 	return &task, nil
 }
 
-func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, logger events.Logger) error {
+func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, log events.Logger) error {
 	var previous *taskDTO
 	var op events.EventOp
 
@@ -249,7 +249,7 @@ func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, logger events.Logger
 			return err
 		}
 		for _, line := range task.Output {
-			logger.Info(line,
+			log.Info(line,
 				events.LogKeyOp, op,
 				events.LogKeyPhase, events.LogPhase,
 				"source", "serverLog")

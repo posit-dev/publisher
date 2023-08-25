@@ -8,26 +8,26 @@ import (
 	"github.com/rstudio/connect-client/internal/events"
 )
 
-func InternalError(w http.ResponseWriter, req *http.Request, logger events.Logger, err error) {
+func InternalError(w http.ResponseWriter, req *http.Request, log events.Logger, err error) {
 	status := http.StatusInternalServerError
 	text := http.StatusText(status)
 	w.WriteHeader(status)
 	w.Write([]byte(text))
-	logger.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)
+	log.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)
 }
 
-func MethodNotAllowed(w http.ResponseWriter, req *http.Request, logger events.Logger) {
+func MethodNotAllowed(w http.ResponseWriter, req *http.Request, log events.Logger) {
 	status := http.StatusMethodNotAllowed
 	text := http.StatusText(status)
 	w.WriteHeader(status)
 	w.Write([]byte(text))
-	logger.Error(text, "method", req.Method, "url", req.URL.String())
+	log.Error(text, "method", req.Method, "url", req.URL.String())
 }
 
-func BadRequestJson(w http.ResponseWriter, req *http.Request, logger events.Logger, err error) {
+func BadRequestJson(w http.ResponseWriter, req *http.Request, log events.Logger, err error) {
 	status := http.StatusBadRequest
 	text := http.StatusText(status)
 	w.WriteHeader(status)
 	w.Write([]byte(text + err.Error()))
-	logger.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)
+	log.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)
 }

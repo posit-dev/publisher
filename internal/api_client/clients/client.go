@@ -32,7 +32,7 @@ type APIClient interface {
 	UpdateDeployment(apitypes.ContentID, state.ConnectContent) error
 	UploadBundle(apitypes.ContentID, io.Reader) (apitypes.BundleID, error)
 	DeployBundle(apitypes.ContentID, apitypes.BundleID) (apitypes.TaskID, error)
-	WaitForTask(taskID apitypes.TaskID, logger events.Logger) error
+	WaitForTask(taskID apitypes.TaskID, log events.Logger) error
 }
 
 // PublishingClient provides higher-level client methods that work

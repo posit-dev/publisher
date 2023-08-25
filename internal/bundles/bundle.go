@@ -27,7 +27,7 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequirements []byte, logger events.Logger) (*bundler, error) {
+func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequirements []byte, log events.Logger) (*bundler, error) {
 	var dir util.Path
 	var filename string
 	isDir, err := path.IsDir()
@@ -49,7 +49,7 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
-	symlinkWalker := util.NewSymlinkWalker(excluder, logger.Logger)
+	symlinkWalker := util.NewSymlinkWalker(excluder, log.Logger)
 
 	return &bundler{
 		manifest:           manifest,
@@ -57,20 +57,20 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 		filename:           filename,
 		walker:             symlinkWalker,
 		pythonRequirements: pythonRequirements,
-		logger:             logger,
+		logger:             log,
 	}, nil
 }
 
-func NewBundlerForManifestFile(manifestPath util.Path, logger events.Logger) (*bundler, error) {
+func NewBundlerForManifestFile(manifestPath util.Path, log events.Logger) (*bundler, error) {
 	dir := manifestPath.Dir()
 	manifest, err := ReadManifestFile(manifestPath)
 	if err != nil {
 		return nil, err
 	}
-	return NewBundlerForManifest(dir, manifest, logger)
+	return NewBundlerForManifest(dir, manifest, log)
 }
 
-func NewBundlerForManifest(dir util.Path, manifest *Manifest, logger events.Logger) (*bundler, error) {
+func NewBundlerForManifest(dir util.Path, manifest *Manifest, log events.Logger) (*bundler, error) {
 	absDir, err := dir.Abs()
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func NewBundlerForManifest(dir util.Path, manifest *Manifest, logger events.Logg
 		baseDir:  absDir,
 		filename: "",
 		walker:   newManifestWalker(absDir, manifest),
-		logger:   logger,
+		logger:   log,
 	}, nil
 }
 

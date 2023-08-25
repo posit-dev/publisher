@@ -31,7 +31,7 @@ func (s *AccountEnvVarProviderSuite) TeardownTest() {
 func (s *AccountEnvVarProviderSuite) TestNewEnvVarProvider() {
 	logger := events.DefaultLogger()
 	provider := newEnvVarProvider(logger)
-	s.Equal(logger, provider.logger)
+	s.Equal(logger, provider.log)
 }
 
 func (s *AccountEnvVarProviderSuite) TestLoadAll() {

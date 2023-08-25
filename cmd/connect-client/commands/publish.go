@@ -21,8 +21,8 @@ import (
 )
 
 type StatefulCommand interface {
-	LoadState(logger events.Logger) error
-	SaveState(logger events.Logger) error
+	LoadState(log events.Logger) error
+	SaveState(log events.Logger) error
 }
 
 type BaseBundleCmd struct {
@@ -39,7 +39,7 @@ func (cmd *BaseBundleCmd) getConfigName() string {
 	return "default"
 }
 
-func (cmd *BaseBundleCmd) LoadState(logger events.Logger) error {
+func (cmd *BaseBundleCmd) LoadState(log events.Logger) error {
 	sourceDir, err := util.DirFromPath(cmd.Path)
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func (cmd *BaseBundleCmd) LoadState(logger events.Logger) error {
 	cliState := cmd.State
 	cmd.State = state.NewDeployment()
 	if !cmd.New {
-		err = cmd.State.LoadFromFiles(sourceDir, cmd.Config, logger)
+		err = cmd.State.LoadFromFiles(sourceDir, cmd.Config, log)
 		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
@@ -59,8 +59,8 @@ func (cmd *BaseBundleCmd) LoadState(logger events.Logger) error {
 	return nil
 }
 
-func (cmd *BaseBundleCmd) SaveState(logger events.Logger) error {
-	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, logger)
+func (cmd *BaseBundleCmd) SaveState(log events.Logger) error {
+	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, log)
 }
 
 func listFiles(dir util.Path, log events.Logger) (bundles.ManifestFileMap, error) {
@@ -87,7 +87,7 @@ func listFiles(dir util.Path, log events.Logger) (bundles.ManifestFileMap, error
 // stateFromCLI takes the CLI options provided by the user,
 // performs content auto-detection if needed, and
 // updates cmd.State to reflect all of the information.
-func (cmd *BaseBundleCmd) stateFromCLI(logger events.Logger) error {
+func (cmd *BaseBundleCmd) stateFromCLI(log events.Logger) error {
 	manifest := &cmd.State.Manifest
 	manifest.Version = 1
 	manifest.Packages = make(bundles.PackageMap)
@@ -99,7 +99,7 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger events.Logger) error {
 	}
 
 	if metadata.AppMode == apptypes.UnknownMode || metadata.Entrypoint == "" {
-		logger.Info("Detecting deployment type and entrypoint...")
+		log.Info("Detecting deployment type and entrypoint...")
 		typeDetector := inspect.NewContentTypeDetector()
 		contentType, err := typeDetector.InferType(cmd.Path)
 		if err != nil {
@@ -119,9 +119,9 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger events.Logger) error {
 	case apptypes.StaticRmdMode, apptypes.ShinyRmdMode:
 		metadata.PrimaryRmd = metadata.Entrypoint
 	}
-	logger.Info("Deployment type", "Entrypoint", metadata.Entrypoint, "AppMode", metadata.AppMode)
+	log.Info("Deployment type", "Entrypoint", metadata.Entrypoint, "AppMode", metadata.AppMode)
 
-	files, err := listFiles(cmd.State.SourceDir, logger)
+	files, err := listFiles(cmd.State.SourceDir, log)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger events.Logger) error {
 		return err
 	}
 	if requiresPython {
-		err = cmd.inspectPython(logger, manifest)
+		err = cmd.inspectPython(log, manifest)
 		if err != nil {
 			return err
 		}
@@ -163,8 +163,8 @@ func (cmd *BaseBundleCmd) requiresPython() (bool, error) {
 	return exists, nil
 }
 
-func (cmd *BaseBundleCmd) inspectPython(logger events.Logger, manifest *bundles.Manifest) error {
-	inspector := environment.NewPythonInspector(cmd.State.SourceDir, cmd.Python, logger)
+func (cmd *BaseBundleCmd) inspectPython(log events.Logger, manifest *bundles.Manifest) error {
+	inspector := environment.NewPythonInspector(cmd.State.SourceDir, cmd.Python, log)
 	if manifest.Python.Version == "" {
 		pythonVersion, err := inspector.GetPythonVersion()
 		if err != nil {

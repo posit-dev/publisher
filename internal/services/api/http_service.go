@@ -48,20 +48,20 @@ func NewService(
 	skipAuth bool,
 	accessLog bool,
 	token services.LocalToken,
-	logger events.Logger) *Service {
+	log events.Logger) *Service {
 
 	if project.DevelopmentBuild() && skipAuth {
-		logger.Warn("Service is operating in DEVELOPMENT MODE with NO browser to server authentication")
+		log.Warn("Service is operating in DEVELOPMENT MODE with NO browser to server authentication")
 	} else {
-		handler = middleware.AuthRequired(logger, handler)
-		handler = middleware.CookieSession(logger, handler)
-		handler = middleware.LocalTokenSession(token, logger, handler)
+		handler = middleware.AuthRequired(log, handler)
+		handler = middleware.CookieSession(log, handler)
+		handler = middleware.LocalTokenSession(token, log, handler)
 	}
 
 	if accessLog {
-		handler = middleware.LogRequest("Access Log", logger, handler)
+		handler = middleware.LogRequest("Access Log", log, handler)
 	}
-	handler = middleware.PanicRecovery(logger, handler)
+	handler = middleware.PanicRecovery(log, handler)
 
 	return &Service{
 		state:         state,
@@ -75,7 +75,7 @@ func NewService(
 		skipAuth:      skipAuth,
 		token:         token,
 		addr:          nil,
-		logger:        logger,
+		logger:        log,
 	}
 }
 

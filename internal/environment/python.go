@@ -45,12 +45,12 @@ func (e *defaultPythonExecutor) runPythonCommand(pythonExecutable string, args [
 	return stdout.Bytes(), nil
 }
 
-func NewPythonInspector(projectDir util.Path, pythonPath util.Path, logger events.Logger) *defaultPythonInspector {
+func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log events.Logger) *defaultPythonInspector {
 	return &defaultPythonInspector{
 		executor:   &defaultPythonExecutor{},
 		projectDir: projectDir,
 		pythonPath: pythonPath,
-		logger:     logger,
+		logger:     log,
 	}
 }
 

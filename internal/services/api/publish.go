@@ -11,13 +11,13 @@ import (
 	"github.com/rstudio/connect-client/internal/publish"
 )
 
-func PostPublishHandlerFunc(publishArgs *cli_types.PublishArgs, lister accounts.AccountList, logger events.Logger) http.HandlerFunc {
+func PostPublishHandlerFunc(publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log events.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		switch req.Method {
 		case http.MethodPost:
-			err := publish.PublishManifestFiles(publishArgs, lister, logger)
+			err := publish.PublishManifestFiles(publishArgs, lister, log)
 			if err != nil {
-				InternalError(w, req, logger, err)
+				InternalError(w, req, log, err)
 			}
 		default:
 			return

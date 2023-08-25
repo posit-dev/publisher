@@ -25,14 +25,14 @@ type defaultAccountList struct {
 
 var _ AccountList = &defaultAccountList{}
 
-func NewAccountList(fs afero.Fs, logger events.Logger) *defaultAccountList {
+func NewAccountList(fs afero.Fs, log events.Logger) *defaultAccountList {
 	return &defaultAccountList{
 		providers: []AccountProvider{
-			newEnvVarProvider(logger),
-			newRSConnectProvider(fs, logger),
-			newRSConnectPythonProvider(fs, logger),
+			newEnvVarProvider(log),
+			newRSConnectProvider(fs, log),
+			newRSConnectPythonProvider(fs, log),
 		},
-		logger: logger,
+		logger: log,
 	}
 }
 

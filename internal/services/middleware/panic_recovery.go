@@ -9,14 +9,14 @@ import (
 	"github.com/rstudio/connect-client/internal/events"
 )
 
-func PanicRecovery(logger events.Logger, next http.HandlerFunc) http.HandlerFunc {
+func PanicRecovery(log events.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				buf := make([]byte, 2048)
 				n := runtime.Stack(buf, false)
-				logger.Error("Internal server error", "error", err)
-				logger.Debug("Stacktrace for previous error", "stack", buf[:n])
+				log.Error("Internal server error", "error", err)
+				log.Debug("Stacktrace for previous error", "stack", buf[:n])
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte("Internal Server Error"))
 			}

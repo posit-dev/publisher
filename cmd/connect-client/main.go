@@ -28,26 +28,26 @@ type cliSpec struct {
 	Version       commands.VersionFlag      `help:"Show the client software version and exit."`
 }
 
-func logVersion(logger events.Logger) {
-	logger.Info("Client version", "version", project.Version)
-	logger.Info("Development mode", "mode", project.Mode)
-	logger.Info("Development build", "DevelopmentBuild", project.DevelopmentBuild())
+func logVersion(log events.Logger) {
+	log.Info("Client version", "version", project.Version)
+	log.Info("Development mode", "mode", project.Mode)
+	log.Info("Development build", "DevelopmentBuild", project.DevelopmentBuild())
 }
 
-func makeContext(logger events.Logger) (*cli_types.CLIContext, error) {
+func makeContext(log events.Logger) (*cli_types.CLIContext, error) {
 	fs := afero.NewOsFs()
-	accountList := accounts.NewAccountList(fs, logger)
+	accountList := accounts.NewAccountList(fs, log)
 	token, err := services.NewLocalToken()
 	if err != nil {
 		return nil, err
 	}
-	ctx := cli_types.NewCLIContext(accountList, token, fs, logger)
+	ctx := cli_types.NewCLIContext(accountList, token, fs, log)
 	return ctx, nil
 }
 
-func Fatal(logger events.Logger, msg string, err error, args ...any) {
+func Fatal(log events.Logger, msg string, err error, args ...any) {
 	args = append([]any{"error", err.Error()}, args...)
-	logger.Error(msg, args...)
+	log.Error(msg, args...)
 	os.Exit(1)
 }
 

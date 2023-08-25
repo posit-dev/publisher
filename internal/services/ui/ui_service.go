@@ -27,9 +27,9 @@ func NewUIService(
 	token services.LocalToken,
 	fs afero.Fs,
 	lister accounts.AccountList,
-	logger events.Logger) *api.Service {
+	log events.Logger) *api.Service {
 
-	handler := newUIHandler(fs, publish, lister, logger)
+	handler := newUIHandler(fs, publish, lister, log)
 
 	return api.NewService(
 		publish.State,
@@ -43,7 +43,7 @@ func NewUIService(
 		ui.SkipBrowserSessionAuth,
 		ui.AccessLog,
 		token,
-		logger,
+		log,
 	)
 }
 

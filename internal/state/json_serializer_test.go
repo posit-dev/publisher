@@ -30,8 +30,8 @@ func (s *JsonSerializerSuite) TestNewJsonSerializer() {
 	path := util.NewPath("/my/path", fs)
 	serializer := newJsonSerializer(path, logger)
 	expected := &jsonSerializer{
-		dir:    path,
-		logger: logger,
+		dir: path,
+		log: logger,
 	}
 	s.Equal(expected, serializer)
 }

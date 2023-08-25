@@ -20,13 +20,13 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logger events.Logger) error {
+func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, log events.Logger) error {
 	bundleFile, err := dest.Create()
 	if err != nil {
 		return err
 	}
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, logger)
+	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, log)
 	if err != nil {
 		return err
 	}
@@ -34,8 +34,8 @@ func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logge
 	return err
 }
 
-func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, logger events.Logger) error {
-	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, logger)
+func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, log events.Logger) error {
+	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, log)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, logger events.Logger
 		return err
 	}
 	manifestPath := cmd.State.SourceDir.Join(bundles.ManifestFilename)
-	logger.Info("Writing manifest", "path", manifestPath)
+	log.Info("Writing manifest", "path", manifestPath)
 	manifestJSON, err := manifest.ToJSON()
 	if err != nil {
 		return err
@@ -61,12 +61,12 @@ type appInfo struct {
 	DirectURL    string `json:"direct-url"`
 }
 
-func logAppInfo(accountURL string, contentID apitypes.ContentID, logger events.Logger) error {
+func logAppInfo(accountURL string, contentID apitypes.ContentID, log events.Logger) error {
 	appInfo := appInfo{
 		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
 		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
 	}
-	logger.With(
+	log.With(
 		"dashboardURL", appInfo.DashboardURL,
 		"directURL", appInfo.DirectURL,
 		"serverURL", accountURL,
@@ -80,38 +80,38 @@ func logAppInfo(accountURL string, contentID apitypes.ContentID, logger events.L
 	return err
 }
 
-func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger events.Logger) error {
-	bundler, err := bundles.NewBundlerForManifest(cmd.State.SourceDir, &cmd.State.Manifest, logger)
+func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountList, log events.Logger) error {
+	bundler, err := bundles.NewBundlerForManifest(cmd.State.SourceDir, &cmd.State.Manifest, log)
 	if err != nil {
 		return err
 	}
-	return publish(cmd, bundler, lister, logger)
+	return publish(cmd, bundler, lister, log)
 }
 
-func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger events.Logger) error {
-	logger.Info("Publishing from directory", "path", cmd.State.SourceDir)
-	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, logger)
+func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, log events.Logger) error {
+	log.Info("Publishing from directory", "path", cmd.State.SourceDir)
+	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, log)
 	if err != nil {
 		return err
 	}
-	return publish(cmd, bundler, lister, logger)
+	return publish(cmd, bundler, lister, log)
 }
 
-func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister accounts.AccountList, logger events.Logger) error {
+func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister accounts.AccountList, log events.Logger) error {
 	account, err := lister.GetAccountByName(cmd.State.Target.AccountName)
 	if err != nil {
 		return err
 	}
 	// TODO: factory method to create client based on server type
 	// TODO: timeout option
-	client, err := clients.NewConnectClient(account, 2*time.Minute, logger)
+	client, err := clients.NewConnectClient(account, 2*time.Minute, log)
 	if err != nil {
 		return err
 	}
-	return publishWithClient(cmd, bundler, account, client, logger)
+	return publishWithClient(cmd, bundler, account, client, log)
 }
 
-func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, logger events.Logger) error {
+func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, log events.Logger) error {
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return events.ErrToAgentError(events.OpPublishCreateBundle, err)
@@ -165,7 +165,7 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 	if err != nil {
 		return events.ErrToAgentError(events.OpPublishDeployBundle, err)
 	}
-	taskLogger := logger.With(
+	taskLogger := log.With(
 		"source", "server deployment log",
 		"server", account.URL,
 		"content_id", contentID,
@@ -176,5 +176,5 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 	if err != nil {
 		return err
 	}
-	return logAppInfo(account.URL, contentID, logger)
+	return logAppInfo(account.URL, contentID, log)
 }

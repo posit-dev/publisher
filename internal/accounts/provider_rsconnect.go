@@ -22,12 +22,12 @@ type rsconnectProvider struct {
 	logger    events.Logger
 }
 
-func newRSConnectProvider(fs afero.Fs, logger events.Logger) *rsconnectProvider {
+func newRSConnectProvider(fs afero.Fs, log events.Logger) *rsconnectProvider {
 	return &rsconnectProvider{
 		fs:        fs,
 		goos:      runtime.GOOS,
 		dcfReader: dcf.NewFileReader(),
-		logger:    logger,
+		logger:    log,
 	}
 }
 

@@ -15,7 +15,7 @@ type authenticatedContextKeyType string
 
 const authenticatedContextKey authenticatedContextKeyType = "authenticated"
 
-func AuthRequired(logger events.Logger, next http.HandlerFunc) http.HandlerFunc {
+func AuthRequired(log events.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if !isRequestAuthenticated(req) {
 			w.WriteHeader(http.StatusUnauthorized)

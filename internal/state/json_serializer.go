@@ -11,14 +11,14 @@ import (
 )
 
 type jsonSerializer struct {
-	dir    util.Path
-	logger events.Logger
+	dir util.Path
+	log events.Logger
 }
 
-func newJsonSerializer(dir util.Path, logger events.Logger) *jsonSerializer {
+func newJsonSerializer(dir util.Path, log events.Logger) *jsonSerializer {
 	return &jsonSerializer{
-		dir:    dir,
-		logger: logger,
+		dir: dir,
+		log: log,
 	}
 }
 
@@ -36,7 +36,7 @@ func (s *jsonSerializer) Save(label MetadataLabel, src any) error {
 	if err != nil {
 		return fmt.Errorf("error writing JSON file %s: %w", path, err)
 	}
-	s.logger.Info("Saved metadata", "key", label, "path", path)
+	s.log.Info("Saved metadata", "key", label, "path", path)
 	return nil
 }
 
@@ -52,6 +52,6 @@ func (s *jsonSerializer) Load(label MetadataLabel, dest any) error {
 	if err != nil {
 		return fmt.Errorf("cannot parse JSON file %s: %w", path, err)
 	}
-	s.logger.Info("Loaded metadata", "key", label, "path", path)
+	s.log.Info("Loaded metadata", "key", label, "path", path)
 	return nil
 }

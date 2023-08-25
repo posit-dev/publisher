@@ -9,12 +9,12 @@ import (
 )
 
 type envVarProvider struct {
-	logger events.Logger
+	log events.Logger
 }
 
-func newEnvVarProvider(logger events.Logger) *envVarProvider {
+func newEnvVarProvider(log events.Logger) *envVarProvider {
 	return &envVarProvider{
-		logger: logger,
+		log: log,
 	}
 }
 
@@ -33,6 +33,6 @@ func (p *envVarProvider) Load() ([]Account, error) {
 		ApiKey:      os.Getenv("CONNECT_API_KEY"),
 	}
 	account.AuthType = account.InferAuthType()
-	p.logger.Info("Creating account from CONNECT_SERVER", "name", account.Name, "url", serverURL)
+	p.log.Info("Creating account from CONNECT_SERVER", "name", account.Name, "url", serverURL)
 	return []Account{account}, nil
 }

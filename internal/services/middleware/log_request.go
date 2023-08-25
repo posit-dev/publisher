@@ -44,14 +44,14 @@ func (w *statusCapturingResponseWriter) GetBytesSent() int64 {
 }
 
 // LogRequest logs request info to the specified logger.
-func LogRequest(msg string, logger events.Logger, next http.HandlerFunc) http.HandlerFunc {
+func LogRequest(msg string, log events.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		startTime := time.Now()
 		writer := NewStatusCapturingResponseWriter(w)
 		next(writer, req)
 		elapsedMs := time.Since(startTime).Milliseconds()
 
-		fieldLogger := logger.With(
+		fieldLogger := log.With(
 			"method", req.Method,
 			"url", req.URL.String(),
 			"elapsed_ms", elapsedMs,

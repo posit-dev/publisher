@@ -17,7 +17,7 @@ import (
 // session cookie. A mismatch is an auth failure (401).
 const tokenParameterName string = "token"
 
-func LocalTokenSession(expectedToken services.LocalToken, logger events.Logger, next http.HandlerFunc) http.HandlerFunc {
+func LocalTokenSession(expectedToken services.LocalToken, log events.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		target := req.URL
 		receivedTokens, ok := target.Query()[tokenParameterName]
@@ -25,7 +25,7 @@ func LocalTokenSession(expectedToken services.LocalToken, logger events.Logger, 
 			receivedToken := receivedTokens[0]
 			if expectedToken == services.LocalToken(receivedToken) {
 				// Success
-				logger.Info("Authenticated via token, creating session")
+				log.Info("Authenticated via token, creating session")
 				setCookie(w)
 				values := target.Query()
 				values.Del(tokenParameterName)
@@ -34,7 +34,7 @@ func LocalTokenSession(expectedToken services.LocalToken, logger events.Logger, 
 				w.WriteHeader(http.StatusMovedPermanently)
 			} else {
 				// Failure
-				logger.Error("Invalid authentication token", "token", receivedToken)
+				log.Error("Invalid authentication token", "token", receivedToken)
 				w.WriteHeader(http.StatusUnauthorized)
 			}
 		} else {

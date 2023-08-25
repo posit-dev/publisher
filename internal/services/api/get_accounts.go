@@ -43,11 +43,11 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 }
 
 // GetAccountsHandlerFunc returns a handler for the account list.
-func GetAccountsHandlerFunc(lister accounts.AccountList, logger events.Logger) http.HandlerFunc {
+func GetAccountsHandlerFunc(lister accounts.AccountList, log events.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		accounts, err := lister.GetAllAccounts()
 		if err != nil {
-			InternalError(w, req, logger, err)
+			InternalError(w, req, log, err)
 			return
 		}
 		data := &accountListDTO{}
