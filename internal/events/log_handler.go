@@ -91,7 +91,7 @@ func (h *SSEHandler) Handle(ctx context.Context, rec slog.Record) error {
 	}
 
 	// TODO: debugging
-	fmt.Println(string(eventJSON))
+	fmt.Println("SSE would send: ", string(eventJSON))
 	return nil
 
 	h.server.Publish("messages",

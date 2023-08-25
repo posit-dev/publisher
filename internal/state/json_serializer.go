@@ -5,17 +5,17 @@ package state
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type jsonSerializer struct {
 	dir    util.Path
-	logger *slog.Logger
+	logger events.Logger
 }
 
-func newJsonSerializer(dir util.Path, logger *slog.Logger) *jsonSerializer {
+func newJsonSerializer(dir util.Path, logger events.Logger) *jsonSerializer {
 	return &jsonSerializer{
 		dir:    dir,
 		logger: logger,

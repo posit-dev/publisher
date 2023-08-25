@@ -12,9 +12,8 @@ import (
 	"io/fs"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/util"
-
-	"log/slog"
 )
 
 type Bundler interface {
@@ -28,7 +27,7 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequirements []byte, logger *slog.Logger) (*bundler, error) {
+func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequirements []byte, logger events.Logger) (*bundler, error) {
 	var dir util.Path
 	var filename string
 	isDir, err := path.IsDir()
@@ -50,7 +49,7 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
-	symlinkWalker := util.NewSymlinkWalker(excluder, logger)
+	symlinkWalker := util.NewSymlinkWalker(excluder, logger.Logger)
 
 	return &bundler{
 		manifest:           manifest,
@@ -62,7 +61,7 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	}, nil
 }
 
-func NewBundlerForManifestFile(manifestPath util.Path, logger *slog.Logger) (*bundler, error) {
+func NewBundlerForManifestFile(manifestPath util.Path, logger events.Logger) (*bundler, error) {
 	dir := manifestPath.Dir()
 	manifest, err := ReadManifestFile(manifestPath)
 	if err != nil {
@@ -71,7 +70,7 @@ func NewBundlerForManifestFile(manifestPath util.Path, logger *slog.Logger) (*bu
 	return NewBundlerForManifest(dir, manifest, logger)
 }
 
-func NewBundlerForManifest(dir util.Path, manifest *Manifest, logger *slog.Logger) (*bundler, error) {
+func NewBundlerForManifest(dir util.Path, manifest *Manifest, logger events.Logger) (*bundler, error) {
 	absDir, err := dir.Abs()
 	if err != nil {
 		return nil, err
@@ -91,7 +90,7 @@ type bundler struct {
 	walker             util.Walker // Ignore patterns from CLI and ignore files
 	pythonRequirements []byte      // Pacakges to write to requirements.txt if not already present
 	manifest           *Manifest   // Manifest describing the bundle, if provided
-	logger             *slog.Logger
+	logger             events.Logger
 }
 
 type bundle struct {

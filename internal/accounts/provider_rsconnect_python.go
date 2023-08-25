@@ -11,17 +11,16 @@ import (
 	"runtime"
 	"sort"
 
-	"log/slog"
-
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/spf13/afero"
 )
 
 type rsconnectPythonProvider struct {
 	fs     afero.Fs
-	logger *slog.Logger
+	logger events.Logger
 }
 
-func newRSConnectPythonProvider(fs afero.Fs, logger *slog.Logger) *rsconnectPythonProvider {
+func newRSConnectPythonProvider(fs afero.Fs, logger events.Logger) *rsconnectPythonProvider {
 	return &rsconnectPythonProvider{
 		fs:     fs,
 		logger: logger,

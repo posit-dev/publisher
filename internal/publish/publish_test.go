@@ -5,13 +5,12 @@ import (
 	"errors"
 	"testing"
 
-	"log/slog"
-
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients/clienttest"
 	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/cli_types"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -22,7 +21,7 @@ import (
 
 type PublishSuite struct {
 	utiltest.Suite
-	log *slog.Logger
+	log events.Logger
 	fs  afero.Fs
 	cwd util.Path
 }
@@ -32,7 +31,7 @@ func TestPublishSuite(t *testing.T) {
 }
 
 func (s *PublishSuite) SetupTest() {
-	s.log = slog.Default()
+	s.log = events.DefaultLogger()
 	s.fs = afero.NewMemMapFs()
 	cwd, err := util.Getwd(s.fs)
 	s.Nil(err)

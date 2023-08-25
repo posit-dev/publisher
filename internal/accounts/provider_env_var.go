@@ -3,15 +3,16 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"log/slog"
 	"os"
+
+	"github.com/rstudio/connect-client/internal/events"
 )
 
 type envVarProvider struct {
-	logger *slog.Logger
+	logger events.Logger
 }
 
-func newEnvVarProvider(logger *slog.Logger) *envVarProvider {
+func newEnvVarProvider(logger events.Logger) *envVarProvider {
 	return &envVarProvider{
 		logger: logger,
 	}

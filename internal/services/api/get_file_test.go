@@ -9,8 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"log/slog"
-
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -21,7 +20,7 @@ import (
 
 type GetFileHandlerFuncSuite struct {
 	utiltest.Suite
-	log *slog.Logger
+	log events.Logger
 }
 
 func TestGetFileHandlerFuncSuite(t *testing.T) {
@@ -29,7 +28,7 @@ func TestGetFileHandlerFuncSuite(t *testing.T) {
 }
 
 func (s *GetFileHandlerFuncSuite) SetupSuite() {
-	s.log = slog.Default()
+	s.log = events.DefaultLogger()
 }
 
 func (s *GetFileHandlerFuncSuite) TestGetFileHandlerFunc() {

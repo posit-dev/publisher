@@ -3,10 +3,10 @@ package paths
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"log/slog"
 	"os"
 	"strings"
 
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/spf13/afero"
 )
@@ -15,14 +15,14 @@ type PathsService interface {
 	IsSafe(p util.Path) (bool, error)
 }
 
-func CreatePathsService(base util.Path, afs afero.Fs, log *slog.Logger) PathsService {
+func CreatePathsService(base util.Path, afs afero.Fs, log events.Logger) PathsService {
 	return pathsService{base, afs, log}
 }
 
 type pathsService struct {
 	base util.Path
 	afs  afero.Fs
-	log  *slog.Logger
+	log  events.Logger
 }
 
 func (s pathsService) IsSafe(p util.Path) (bool, error) {

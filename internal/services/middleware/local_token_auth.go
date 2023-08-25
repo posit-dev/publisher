@@ -3,9 +3,9 @@ package middleware
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"log/slog"
 	"net/http"
 
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/services"
 )
 
@@ -17,7 +17,7 @@ import (
 // session cookie. A mismatch is an auth failure (401).
 const tokenParameterName string = "token"
 
-func LocalTokenSession(expectedToken services.LocalToken, logger *slog.Logger, next http.HandlerFunc) http.HandlerFunc {
+func LocalTokenSession(expectedToken services.LocalToken, logger events.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		target := req.URL
 		receivedTokens, ok := target.Query()[tokenParameterName]

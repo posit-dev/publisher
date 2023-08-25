@@ -8,14 +8,12 @@ import (
 	"log/slog"
 
 	"github.com/alecthomas/kong"
-	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/cmd/connect-client/commands"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services"
-	"github.com/rstudio/connect-client/internal/util"
 	"github.com/spf13/afero"
 )
 
@@ -30,21 +28,13 @@ type cliSpec struct {
 	Version       commands.VersionFlag      `help:"Show the client software version and exit."`
 }
 
-func logVersion(logger *slog.Logger) {
+func logVersion(logger events.Logger) {
 	logger.Info("Client version", "version", project.Version)
 	logger.Info("Development mode", "mode", project.Mode)
 	logger.Info("Development build", "DevelopmentBuild", project.DevelopmentBuild())
 }
 
-func newLogger(level slog.Leveler) *slog.Logger {
-	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
-	var sseServer *sse.Server // TODO: create the server
-	sseHandler := events.NewSSEHandler(sseServer, &events.SSEHandlerOptions{Level: level})
-	multiHandler := util.NewMultiHandler(stderrHandler, sseHandler)
-	return slog.New(multiHandler)
-}
-
-func makeContext(logger *slog.Logger) (*cli_types.CLIContext, error) {
+func makeContext(logger events.Logger) (*cli_types.CLIContext, error) {
 	fs := afero.NewOsFs()
 	accountList := accounts.NewAccountList(fs, logger)
 	token, err := services.NewLocalToken()
@@ -55,14 +45,14 @@ func makeContext(logger *slog.Logger) (*cli_types.CLIContext, error) {
 	return ctx, nil
 }
 
-func Fatal(logger *slog.Logger, msg string, err error, args ...any) {
+func Fatal(logger events.Logger, msg string, err error, args ...any) {
 	args = append([]any{"error", err.Error()}, args...)
 	logger.Error(msg, args...)
 	os.Exit(1)
 }
 
 func main() {
-	logger := newLogger(slog.LevelInfo)
+	logger := events.NewLogger(slog.LevelInfo, nil)
 	logVersion(logger)
 
 	ctx, err := makeContext(logger)
@@ -75,7 +65,7 @@ func main() {
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
 	if cli.Debug {
-		ctx.Logger = newLogger(slog.LevelDebug)
+		ctx.Logger = events.NewLogger(slog.LevelDebug, nil)
 	}
 	if cli.Token != nil {
 		ctx.LocalToken = *cli.Token

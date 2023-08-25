@@ -21,6 +21,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/auth"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/util"
 
 	"golang.org/x/net/publicsuffix"
@@ -39,10 +40,10 @@ type HTTPClient interface {
 type defaultHTTPClient struct {
 	client  *http.Client
 	baseURL string
-	logger  *slog.Logger
+	logger  events.Logger
 }
 
-func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, logger *slog.Logger) (*defaultHTTPClient, error) {
+func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, logger events.Logger) (*defaultHTTPClient, error) {
 	baseClient, err := newHTTPClientForAccount(account, timeout, logger)
 	if err != nil {
 		return nil, err
@@ -166,7 +167,7 @@ func (c *defaultHTTPClient) Delete(path string) error {
 	return c.doJSON("DELETE", path, nil, nil)
 }
 
-func loadCACertificates(path string, logger *slog.Logger) (*x509.CertPool, error) {
+func loadCACertificates(path string, logger events.Logger) (*x509.CertPool, error) {
 	if path == "" {
 		return nil, nil
 	}
@@ -183,7 +184,7 @@ func loadCACertificates(path string, logger *slog.Logger) (*x509.CertPool, error
 	return certPool, nil
 }
 
-func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, logger *slog.Logger) (*http.Client, error) {
+func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, logger events.Logger) (*http.Client, error) {
 	cookieJar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})

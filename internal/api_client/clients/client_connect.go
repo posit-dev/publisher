@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 )
@@ -20,13 +20,13 @@ import (
 type ConnectClient struct {
 	client  HTTPClient
 	account *accounts.Account
-	logger  *slog.Logger
+	logger  events.Logger
 }
 
 func NewConnectClient(
 	account *accounts.Account,
 	timeout time.Duration,
-	logger *slog.Logger) (*ConnectClient, error) {
+	logger events.Logger) (*ConnectClient, error) {
 
 	httpClient, err := NewDefaultHTTPClient(account, timeout, logger)
 	if err != nil {

@@ -4,9 +4,9 @@ package files
 
 import (
 	"io/fs"
-	"log/slog"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/spf13/afero"
 )
@@ -15,7 +15,7 @@ type FilesService interface {
 	GetFile(path util.Path) (*File, error)
 }
 
-func CreateFilesService(base util.Path, afs afero.Fs, log *slog.Logger) FilesService {
+func CreateFilesService(base util.Path, afs afero.Fs, log events.Logger) FilesService {
 	f := base.Join(".gitignore")
 	ignore, err := gitignore.NewIgnoreList(f, nil)
 	if err != nil {
@@ -32,7 +32,7 @@ func CreateFilesService(base util.Path, afs afero.Fs, log *slog.Logger) FilesSer
 type filesService struct {
 	base   util.Path
 	afs    afero.Fs
-	log    *slog.Logger
+	log    events.Logger
 	ignore gitignore.IgnoreList
 }
 
@@ -44,7 +44,7 @@ func (s filesService) GetFile(p util.Path) (*File, error) {
 		return nil, err
 	}
 
-	walker := util.NewSymlinkWalker(util.FSWalker{}, s.log)
+	walker := util.NewSymlinkWalker(util.FSWalker{}, s.log.Logger)
 	err = walker.Walk(p, func(path util.Path, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err

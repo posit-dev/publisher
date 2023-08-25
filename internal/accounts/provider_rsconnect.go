@@ -8,10 +8,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/dcf"
-
-	"log/slog"
 
 	"github.com/spf13/afero"
 )
@@ -20,10 +19,10 @@ type rsconnectProvider struct {
 	fs        afero.Fs
 	goos      string
 	dcfReader dcf.FileReader
-	logger    *slog.Logger
+	logger    events.Logger
 }
 
-func newRSConnectProvider(fs afero.Fs, logger *slog.Logger) *rsconnectProvider {
+func newRSConnectProvider(fs afero.Fs, logger events.Logger) *rsconnectProvider {
 	return &rsconnectProvider{
 		fs:        fs,
 		goos:      runtime.GOOS,

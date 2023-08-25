@@ -5,8 +5,7 @@ package files
 import (
 	"testing"
 
-	"log/slog"
-
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -15,7 +14,7 @@ import (
 
 type FilesSuite struct {
 	utiltest.Suite
-	log *slog.Logger
+	log events.Logger
 }
 
 func TestFilesSuite(t *testing.T) {
@@ -23,7 +22,7 @@ func TestFilesSuite(t *testing.T) {
 }
 
 func (s *FilesSuite) SetupSuite() {
-	s.log = slog.Default()
+	s.log = events.DefaultLogger()
 }
 
 func (s *FilesSuite) TestCreateFile() {

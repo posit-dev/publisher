@@ -10,18 +10,17 @@ import (
 	"os"
 	"time"
 
-	"log/slog"
-
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients"
 	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/cli_types"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logger *slog.Logger) error {
+func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logger events.Logger) error {
 	bundleFile, err := dest.Create()
 	if err != nil {
 		return err
@@ -35,7 +34,7 @@ func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, logge
 	return err
 }
 
-func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, logger *slog.Logger) error {
+func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, logger events.Logger) error {
 	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, logger)
 	if err != nil {
 		return err
@@ -62,7 +61,7 @@ type appInfo struct {
 	DirectURL    string `json:"direct-url"`
 }
 
-func logAppInfo(accountURL string, contentID apitypes.ContentID, logger *slog.Logger) error {
+func logAppInfo(accountURL string, contentID apitypes.ContentID, logger events.Logger) error {
 	appInfo := appInfo{
 		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
 		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
@@ -81,7 +80,7 @@ func logAppInfo(accountURL string, contentID apitypes.ContentID, logger *slog.Lo
 	return err
 }
 
-func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger *slog.Logger) error {
+func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger events.Logger) error {
 	bundler, err := bundles.NewBundlerForManifest(cmd.State.SourceDir, &cmd.State.Manifest, logger)
 	if err != nil {
 		return err
@@ -89,7 +88,7 @@ func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountLis
 	return publish(cmd, bundler, lister, logger)
 }
 
-func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger *slog.Logger) error {
+func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, logger events.Logger) error {
 	logger.Info("Publishing from directory", "path", cmd.State.SourceDir)
 	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, logger)
 	if err != nil {
@@ -98,7 +97,7 @@ func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, l
 	return publish(cmd, bundler, lister, logger)
 }
 
-func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister accounts.AccountList, logger *slog.Logger) error {
+func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister accounts.AccountList, logger events.Logger) error {
 	account, err := lister.GetAccountByName(cmd.State.Target.AccountName)
 	if err != nil {
 		return err
@@ -112,7 +111,7 @@ func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister account
 	return publishWithClient(cmd, bundler, account, client, logger)
 }
 
-func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, logger *slog.Logger) error {
+func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, logger events.Logger) error {
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return err
@@ -163,14 +162,14 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 	if err != nil {
 		return err
 	}
-	taskLogger := logger.With(
-		"source", "server deployment log",
-		"server", account.URL,
-		"content_id", contentID,
-		"bundle_id", bundleID,
-		"task_id", taskID,
-	)
-	err = client.WaitForTask(taskID, util.NewLoggerWriter(taskLogger))
+	// taskLogger := events.Logger{Logger: logger.With(
+	// 	"source", "server deployment log",
+	// 	"server", account.URL,
+	// 	"content_id", contentID,
+	// 	"bundle_id", bundleID,
+	// 	"task_id", taskID,
+	// )}
+	err = client.WaitForTask(taskID, nil)
 	if err != nil {
 		return err
 	}

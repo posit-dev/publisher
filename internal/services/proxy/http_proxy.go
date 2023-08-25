@@ -11,13 +11,15 @@ import (
 	"strings"
 
 	"log/slog"
+
+	"github.com/rstudio/connect-client/internal/events"
 )
 
 type proxy struct {
 	targetURL  string
 	sourcePath string
 	baseProxy  *httputil.ReverseProxy
-	logger     *slog.Logger
+	logger     events.Logger
 }
 
 // NewProxy creates a proxy that will accept requests
@@ -27,7 +29,7 @@ type proxy struct {
 func NewProxy(
 	targetURL *url.URL,
 	sourcePath string,
-	logger *slog.Logger) *httputil.ReverseProxy {
+	logger events.Logger) *httputil.ReverseProxy {
 
 	p := proxy{
 		targetURL:  targetURL.String(),

@@ -4,12 +4,12 @@ package accounts
 
 import (
 	"errors"
-	"log/slog"
 	"os"
 	"runtime"
 	"strings"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/dcf"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -29,7 +29,7 @@ func TestRsconnectProviderSuite(t *testing.T) {
 }
 
 func (s *RsconnectProviderSuite) SetupSuite() {
-	logger := slog.Default()
+	logger := events.DefaultLogger()
 	fs := utiltest.NewMockFs()
 	s.provider = newRSConnectProvider(fs, logger)
 }
@@ -43,7 +43,7 @@ func (s *RsconnectProviderSuite) TeardownTest() {
 }
 
 func (s *RsconnectProviderSuite) TestNewRSConnectProvider() {
-	logger := slog.Default()
+	logger := events.DefaultLogger()
 	fs := utiltest.NewMockFs()
 	provider := newRSConnectProvider(fs, logger)
 	s.Equal(fs, provider.fs)
@@ -261,7 +261,7 @@ func TestRsconnectProviderLoadSuite(t *testing.T) {
 
 func (s *RsconnectProviderLoadSuite) SetupTest() {
 	s.envVarHelper.Setup("HOME", "R_USER_CONFIG_DIR", "XDG_CONFIG_HOME", "APPDATA")
-	logger := slog.Default()
+	logger := events.DefaultLogger()
 	s.fs = utiltest.NewMockFs()
 	s.provider = newRSConnectProvider(s.fs, logger)
 
@@ -276,7 +276,7 @@ func (s *RsconnectProviderLoadSuite) SetupTest() {
 
 func (s *RsconnectProviderLoadSuite) TestLoadNewConfigDir() {
 	fs := afero.NewMemMapFs()
-	logger := slog.Default()
+	logger := events.DefaultLogger()
 	provider := newRSConnectProvider(fs, logger)
 	configDir := util.NewPath(s.configDir.Path(), fs)
 	s.loadUsingConfigDir(configDir, provider)
@@ -284,7 +284,7 @@ func (s *RsconnectProviderLoadSuite) TestLoadNewConfigDir() {
 
 func (s *RsconnectProviderLoadSuite) TestLoadOldConfigDir() {
 	fs := afero.NewMemMapFs()
-	logger := slog.Default()
+	logger := events.DefaultLogger()
 	provider := newRSConnectProvider(fs, logger)
 	oldConfigDir := util.NewPath(s.oldConfigDir.Path(), fs)
 	s.loadUsingConfigDir(oldConfigDir, provider)

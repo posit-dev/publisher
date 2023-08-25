@@ -12,6 +12,12 @@ type Logger struct {
 	*slog.Logger
 }
 
+func DefaultLogger() Logger {
+	return Logger{
+		slog.Default(),
+	}
+}
+
 func NewLogger(level slog.Leveler, sseServer *sse.Server) Logger {
 	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
 	if sseServer != nil {

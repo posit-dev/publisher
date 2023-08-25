@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"runtime"
 
-	"log/slog"
+	"github.com/rstudio/connect-client/internal/events"
 )
 
-func PanicRecovery(logger *slog.Logger, next http.HandlerFunc) http.HandlerFunc {
+func PanicRecovery(logger events.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
