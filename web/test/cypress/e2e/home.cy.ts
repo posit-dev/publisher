@@ -39,6 +39,8 @@ describe('Check Connect Deployment', () => {
       .click();
     cy.get('#rs_radio_cop-visibility_editor')
       .click();
+    cy.get('h1[data-automation="content-list-title"]')
+      .contains('Your Content');
     cy.get('td[data-automation="content-row-icon-title-cell"]')
       .contains('Untitled')
       .click();

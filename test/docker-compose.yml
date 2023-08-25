@@ -14,3 +14,8 @@ services:
     environment:
       RSTUDIO_CONNECT_HASTE: "enabled"
       RSC_LICENSE: ${CONNECT_LICENSE}
+    
+  connect-docker:
+    extends:
+      connect
+    network_mode: host

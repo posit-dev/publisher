@@ -1,4 +1,5 @@
 FROM ubuntu:jammy-20230425
+EXPOSE 9000
 VOLUME ${PWD}/../:/publishing-client
 WORKDIR /publishing-client/test
 ARG platform
@@ -26,7 +27,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     xauth \
     xvfb \
     python3 \
-    python3-pip
+    python3-pip \
+    python-is-python3
 
 RUN export GOLANG_VERSION=1.20.4 \
     && export GOLANG_DOWNLOAD_SHA256=698ef3243972a51ddb4028e4a1ac63dc6d60821bf18e59a807e051fee0a385bd \

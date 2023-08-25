@@ -412,9 +412,7 @@ jobs:
           cd test
           docker compose pull connect --platform linux/amd64
           docker compose up -d connect
-          just init-connect
-          just ../web/test-ci-e2e $env:os
-
+          just ui-test $env:os
 
   test-macos:
     needs: build-agent
@@ -472,8 +470,7 @@ jobs:
           DOCKER: "false"
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
-          just test/init-connect
-          just web/test-ci-e2e ${os}
+          just test/ui-test ${os}
 
   build-linux-amd64:
     runs-on: ubuntu-latest
@@ -585,8 +582,8 @@ jobs:
           DOCKER: "false"
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
-          just test/ui-client ${os}
-
+          just test/ui-test ${os}
+          
   build-linux-arm64:
     runs-on: ubuntu-latest
     defaults:
