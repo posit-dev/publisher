@@ -19,9 +19,12 @@ export type ExclusionMatch = {
 }
 
 export type DeploymentFile = {
+    id: string
     fileType: DeploymentFileType
-    pathname: string
-    baseName: string
+    abs: string
+    base: string
+    rel: string
+    root: string
     size: number
     modifiedDatetime: string
     isDir: boolean

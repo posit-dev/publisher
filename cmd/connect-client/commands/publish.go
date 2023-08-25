@@ -64,19 +64,39 @@ func (cmd *BaseBundleCmd) SaveState(logger *slog.Logger) error {
 	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, logger)
 }
 
-func listFiles(dir util.Path, log *slog.Logger) (bundles.ManifestFileMap, error) {
+func createManifestFileMapFromSourceDir(sourceDir util.Path, log *slog.Logger) (bundles.ManifestFileMap, error) {
+
 	files := make(bundles.ManifestFileMap)
 
-	ignore, err := gitignore.NewIgnoreList(dir, nil)
+	ignore, err := gitignore.NewIgnoreList(sourceDir, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	// grab the absolute path for use in file tree walk
+	root, err := sourceDir.Abs()
+	if err != nil {
+		return nil, err
+	}
+
 	walker := util.NewSymlinkWalker(ignore, log)
-	err = walker.Walk(dir, func(path util.Path, info fs.FileInfo, err error) error {
+	err = walker.Walk(root, func(path util.Path, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		files[path.Path()] = bundles.NewManifestFile()
+
+		// assume the paths listed in the manifest are relative
+		//
+		// a future improvement can ask the user for preference on file listing
+		// if this occurs, downstream references to this value must be changed to
+		// recognize non-relative paths
+		rel, err := path.Rel(root)
+		if err != nil {
+			return err
+		}
+
+		// use the relative file path when creating the manifest
+		files[rel.Path()] = bundles.NewManifestFile()
 		return nil
 	})
 	if err != nil {
@@ -122,11 +142,11 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger *slog.Logger) error {
 	}
 	logger.Info("Deployment type", "Entrypoint", metadata.Entrypoint, "AppMode", metadata.AppMode)
 
-	files, err := listFiles(cmd.State.SourceDir, logger)
+	manifestFiles, err := createManifestFileMapFromSourceDir(cmd.State.SourceDir, logger)
 	if err != nil {
 		return err
 	}
-	manifest.Files = files
+	manifest.Files = manifestFiles
 
 	requiresPython, err := cmd.requiresPython()
 	if err != nil {
