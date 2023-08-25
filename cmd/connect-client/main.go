@@ -8,11 +8,14 @@ import (
 	"log/slog"
 
 	"github.com/alecthomas/kong"
+	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/cmd/connect-client/commands"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/spf13/afero"
 )
 
@@ -34,7 +37,11 @@ func logVersion(logger *slog.Logger) {
 }
 
 func newLogger(level slog.Leveler) *slog.Logger {
-	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
+	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
+	var sseServer *sse.Server // TODO: create the server
+	sseHandler := events.NewSSEHandler(sseServer, &events.SSEHandlerOptions{Level: level})
+	multiHandler := util.NewMultiHandler(stderrHandler, sseHandler)
+	return slog.New(multiHandler)
 }
 
 func makeContext(logger *slog.Logger) (*cli_types.CLIContext, error) {
