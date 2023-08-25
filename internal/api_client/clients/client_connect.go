@@ -4,6 +4,7 @@ package clients
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -238,22 +239,27 @@ func (c *ConnectClient) getTask(taskID apitypes.TaskID, previous *taskDTO) (*tas
 	return &task, nil
 }
 
-func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, logWriter io.Writer) error {
+func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, logger events.Logger) error {
 	var previous *taskDTO
+	var op events.EventOp
+
 	for {
 		task, err := c.getTask(taskID, previous)
 		if err != nil {
 			return err
 		}
 		for _, line := range task.Output {
-			_, err = fmt.Fprintln(logWriter, line)
-			if err != nil {
-				return err
-			}
+			logger.Info(line,
+				events.LogKeyOp, op,
+				events.LogKeyPhase, events.LogPhase,
+				"source", "serverLog")
 		}
 		if task.Finished {
 			if task.Error != "" {
-				return fmt.Errorf("Error from the server: %s", task.Error)
+				// TODO: make these errors more specific, maybe by
+				// using the Connect error codes from the logs.
+				err := errors.New(task.Error)
+				return events.NewAgentError(events.DeploymentFailedCode, err, nil)
 			}
 			return nil
 		}

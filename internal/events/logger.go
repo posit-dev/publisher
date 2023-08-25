@@ -29,6 +29,12 @@ func NewLogger(level slog.Leveler, sseServer *sse.Server) Logger {
 	}
 }
 
+func WrapStandardLogger(standardLogger *slog.Logger) Logger {
+	return Logger{
+		Logger: standardLogger,
+	}
+}
+
 func (l Logger) Start(msg string, op EventOp) {
 	l.Info(msg, LogKeyOp, op, LogKeyPhase, StartPhase)
 }
@@ -43,4 +49,8 @@ func (l Logger) Status(msg string, op EventOp) {
 
 func (l Logger) Progress(msg string, op EventOp, done float32, total float32) {
 	l.Info(msg, LogKeyOp, op, LogKeyPhase, ProgressPhase, "done", done, "total", total)
+}
+
+func (l Logger) With(args ...any) Logger {
+	return WrapStandardLogger(l.Logger.With(args...))
 }

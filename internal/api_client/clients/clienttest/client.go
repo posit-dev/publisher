@@ -7,6 +7,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/api_client/clients"
 	"github.com/rstudio/connect-client/internal/apitypes"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/stretchr/testify/mock"
 )
@@ -56,7 +57,7 @@ func (m *MockClient) DeployBundle(cid apitypes.ContentID, bid apitypes.BundleID)
 	return args.Get(0).(apitypes.TaskID), args.Error(1)
 }
 
-func (m *MockClient) WaitForTask(taskID apitypes.TaskID, w io.Writer) error {
-	args := m.Called(taskID, w)
+func (m *MockClient) WaitForTask(taskID apitypes.TaskID, log events.Logger) error {
+	args := m.Called(taskID, log)
 	return args.Error(0)
 }

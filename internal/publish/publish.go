@@ -114,16 +114,19 @@ func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister account
 func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, logger events.Logger) error {
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
-		return err
+		return events.ErrToAgentError(events.OpPublishCreateBundle, err)
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
 
 	_, err = bundler.CreateBundle(bundleFile)
 	if err != nil {
-		return err
+		return events.ErrToAgentError(events.OpPublishCreateBundle, err)
 	}
-	bundleFile.Seek(0, io.SeekStart)
+	_, err = bundleFile.Seek(0, io.SeekStart)
+	if err != nil {
+		return events.ErrToAgentError(events.OpPublishCreateBundle, err)
+	}
 
 	var contentID apitypes.ContentID
 	if cmd.State.Target.ContentId != "" && !cmd.New {
@@ -139,12 +142,12 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 	} else {
 		contentID, err = client.CreateDeployment(cmd.State.Connect.Content)
 		if err != nil {
-			return err
+			return events.ErrToAgentError(events.OpPublishCreateDeployment, err)
 		}
 	}
 	bundleID, err := client.UploadBundle(contentID, bundleFile)
 	if err != nil {
-		return err
+		return events.ErrToAgentError(events.OpPublishUploadBundle, err)
 	}
 
 	cmd.State.Target = state.TargetID{
@@ -160,16 +163,16 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 
 	taskID, err := client.DeployBundle(contentID, bundleID)
 	if err != nil {
-		return err
+		return events.ErrToAgentError(events.OpPublishDeployBundle, err)
 	}
-	// taskLogger := events.Logger{Logger: logger.With(
-	// 	"source", "server deployment log",
-	// 	"server", account.URL,
-	// 	"content_id", contentID,
-	// 	"bundle_id", bundleID,
-	// 	"task_id", taskID,
-	// )}
-	err = client.WaitForTask(taskID, nil)
+	taskLogger := logger.With(
+		"source", "server deployment log",
+		"server", account.URL,
+		"content_id", contentID,
+		"bundle_id", bundleID,
+		"task_id", taskID,
+	)
+	err = client.WaitForTask(taskID, taskLogger)
 	if err != nil {
 		return err
 	}

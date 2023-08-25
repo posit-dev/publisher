@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/rstudio/connect-client/internal/apitypes"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/state"
 )
 
@@ -31,7 +32,7 @@ type APIClient interface {
 	UpdateDeployment(apitypes.ContentID, state.ConnectContent) error
 	UploadBundle(apitypes.ContentID, io.Reader) (apitypes.BundleID, error)
 	DeployBundle(apitypes.ContentID, apitypes.BundleID) (apitypes.TaskID, error)
-	WaitForTask(taskID apitypes.TaskID, logWriter io.Writer) error
+	WaitForTask(taskID apitypes.TaskID, logger events.Logger) error
 }
 
 // PublishingClient provides higher-level client methods that work
