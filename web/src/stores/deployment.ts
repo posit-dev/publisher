@@ -5,7 +5,7 @@ import { defineStore } from 'pinia';
 import { Ref, computed, ref } from 'vue';
 
 import api, { Deployment } from 'src/api';
-import { deploymentToPathnames, pathnamesToManifestFiles } from 'src/api/utils';
+import { deploymentToPaths, pathToManifestFiles } from 'src/api/utils';
 import { requestOnce } from 'src/utils/requestOnce';
 
 /**
@@ -35,11 +35,11 @@ export const useDeploymentStore = defineStore('deployment', () => {
   const deployment = ref<Deployment>();
 
   const files = computed<string[]>({
-    get: () => deploymentToPathnames(deployment.value),
+    get: () => deploymentToPaths(deployment.value),
     set: async(selectedFiles) => {
       // Update the deployment state immediately before sending to server
       if (deployment.value) {
-        deployment.value.manifest.files = pathnamesToManifestFiles(selectedFiles);
+        deployment.value.manifest.files = pathToManifestFiles(selectedFiles);
       }
 
       setFilesOnServer(selectedFiles, deployment);
