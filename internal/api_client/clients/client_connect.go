@@ -240,22 +240,22 @@ func (c *ConnectClient) getTask(taskID apitypes.TaskID, previous *taskDTO) (*tas
 	return &task, nil
 }
 
-func eventOpFromLogLine(currentOp events.EventOp, line string) events.EventOp {
+func eventOpFromLogLine(currentOp events.Operation, line string) events.Operation {
 	if match, _ := regexp.MatchString("Building (Shiny application|Plumber API).*", line); match {
-		return events.OpPublishRestoreREnv
+		return events.PublishRestoreREnvOp
 	} else if match, _ := regexp.MatchString("Building (.* application|.* API|Jupyter notebook).*", line); match {
-		return events.OpPublishRestorePythonEnv
+		return events.PublishRestorePythonEnvOp
 	} else if match, _ := regexp.MatchString("Launching .* (application|API|notebook)", line); match {
-		return events.OpPublishRunContent
+		return events.PublishRunContentOp
 	} else if match, _ := regexp.MatchString("(Building|Launching) static content", line); match {
-		return events.OpPublishRunContent
+		return events.PublishRunContentOp
 	}
 	return currentOp
 }
 
 func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, log events.Logger) error {
 	var previous *taskDTO
-	var op events.EventOp
+	var op events.Operation
 
 	for {
 		task, err := c.getTask(taskID, previous)

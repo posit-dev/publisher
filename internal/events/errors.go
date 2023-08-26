@@ -14,8 +14,8 @@ type ErrorData map[string]any
 
 type EventableError interface {
 	error
-	SetOperation(op EventOp)
-	GetOperation() EventOp
+	SetOperation(op Operation)
+	GetOperation() Operation
 	ToEvent() AgentEvent
 }
 
@@ -23,7 +23,7 @@ type AgentError struct {
 	Code ErrorCode `json:"-"`
 	Err  error
 	Data EventData
-	Op   EventOp `json:"-"`
+	Op   Operation `json:"-"`
 }
 
 func NewAgentError(code ErrorCode, err error, details any) *AgentError {
@@ -52,11 +52,11 @@ func (e *AgentError) ToEvent() AgentEvent {
 	}
 }
 
-func (e *AgentError) SetOperation(op EventOp) {
+func (e *AgentError) SetOperation(op Operation) {
 	e.Op = op
 }
 
-func (e *AgentError) GetOperation() EventOp {
+func (e *AgentError) GetOperation() Operation {
 	return e.Op
 }
 
@@ -64,7 +64,7 @@ func (e *AgentError) Error() string {
 	return e.Err.Error()
 }
 
-func ErrToAgentError(op EventOp, err error) EventableError {
+func ErrToAgentError(op Operation, err error) EventableError {
 	e, ok := err.(EventableError)
 	if !ok {
 		e = NewAgentError(UnknownErrorCode, err, nil)

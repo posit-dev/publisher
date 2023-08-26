@@ -16,30 +16,30 @@ type AgentEvent struct {
 	Data EventData
 }
 
-type EventPhase string
-type EventOp string
+type Phase string
+type Operation string
 
 const (
-	StartPhase    EventPhase = "start"
-	ProgressPhase EventPhase = "progress"
-	SuccessPhase  EventPhase = "success"
-	FailurePhase  EventPhase = "failure"
-	LogPhase      EventPhase = "log"
+	StartPhase    Phase = "start"
+	ProgressPhase Phase = "progress"
+	SuccessPhase  Phase = "success"
+	FailurePhase  Phase = "failure"
+	LogPhase      Phase = "log"
 )
 
 const (
-	OpAgent EventOp = "agent"
+	AgentOp Operation = "agent"
 
-	OpPublishCreateDeployment EventOp = "publish/createDeployment"
-	OpPublishCreateBundle     EventOp = "publish/createBundle"
-	OpPublishUploadBundle     EventOp = "publish/uploadBundle"
-	OpPublishDeployBundle     EventOp = "publish/deployBundle"
-	OpPublishRestorePythonEnv EventOp = "publish/restorePythonEnv"
-	OpPublishRestoreREnv      EventOp = "publish/restoreREnv"
-	OpPublishRunContent       EventOp = "publish/runContent"
-	OpPublishSetVanityUrl     EventOp = "publish/setVanityURL"
+	PublishCreateDeploymentOp Operation = "publish/createDeployment"
+	PublishCreateBundleOp     Operation = "publish/createBundle"
+	PublishUploadBundleOp     Operation = "publish/uploadBundle"
+	PublishDeployBundleOp     Operation = "publish/deployBundle"
+	PublishRestorePythonEnvOp Operation = "publish/restorePythonEnv"
+	PublishRestoreREnvOp      Operation = "publish/restoreREnv"
+	PublishRunContentOp       Operation = "publish/runContent"
+	PublishSetVanityUrlOp     Operation = "publish/setVanityURL"
 )
 
-func EventTypeOf(op EventOp, phase EventPhase) EventType {
+func EventTypeOf(op Operation, phase Phase) EventType {
 	return fmt.Sprintf("%s/%s", op, phase)
 }

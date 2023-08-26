@@ -59,15 +59,15 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	// to use in the event "Type" field, e.g.
 	// log.Info("a message", "op", "publish/restore")
 	// will create an SSE event with Type: "publish/restore/log".
-	op := OpAgent
+	op := AgentOp
 	phase := LogPhase
 
 	handleAttr := func(attr slog.Attr) bool {
 		switch attr.Key {
 		case LogKeyOp:
-			op = EventOp(attr.Value.String())
+			op = Operation(attr.Value.String())
 		case LogKeyPhase:
-			phase = EventPhase(attr.Value.String())
+			phase = Phase(attr.Value.String())
 		case "": // skip empty attrs
 		default:
 			event.Data[attr.Key] = attr.Value.Any()
