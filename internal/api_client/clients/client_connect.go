@@ -278,6 +278,7 @@ func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, log events.Logger) e
 				err := errors.New(task.Error)
 				return events.NewAgentError(events.DeploymentFailedCode, err, nil)
 			}
+			log.Success("Done")
 			return nil
 		}
 		previous = task
