@@ -35,20 +35,32 @@ func WrapStandardLogger(standardLogger *slog.Logger) Logger {
 	}
 }
 
-func (l Logger) Start(msg string, op EventOp) {
-	l.Info(msg, LogKeyOp, op, LogKeyPhase, StartPhase)
+func (l Logger) Start(msg string, args ...any) {
+	l.Info(msg, append([]any{LogKeyPhase, StartPhase}, args...)...)
 }
 
-func (l Logger) Success(msg string, op EventOp) {
-	l.Info(msg, LogKeyOp, op, LogKeyPhase, SuccessPhase)
+func (l Logger) Success(msg string, args ...any) {
+	l.Info(msg, append([]any{LogKeyPhase, SuccessPhase}, args...)...)
 }
 
-func (l Logger) Status(msg string, op EventOp) {
-	l.Info(msg, LogKeyOp, op, LogKeyPhase, ProgressPhase)
+func (l Logger) Status(msg string, args ...any) {
+	l.Info(msg, append([]any{LogKeyPhase, ProgressPhase}, args...)...)
 }
 
-func (l Logger) Progress(msg string, op EventOp, done float32, total float32) {
-	l.Info(msg, LogKeyOp, op, LogKeyPhase, ProgressPhase, "done", done, "total", total)
+func (l Logger) Progress(msg string, done float32, total float32, args ...any) {
+	l.Info(msg, append([]any{LogKeyPhase, ProgressPhase, "done", done, "total", total}, args...)...)
+}
+
+func (l Logger) Failure(err error) {
+	if agentError, ok := err.(EventableError); ok {
+		l.Error(err.Error(), LogKeyOp, agentError.GetOperation(), LogKeyPhase, FailurePhase)
+	} else {
+		// We shouldn't get here, because callers who use Failure
+		// (the Publish routine) will wrap all errors in AgentErrors.
+		// But just in case, log it anyway.
+		l.Debug("Received a non-eventable error in Logger.Failure; see the following error entry")
+		l.Error(err.Error(), LogKeyPhase, FailurePhase)
+	}
 }
 
 func (l Logger) With(args ...any) Logger {

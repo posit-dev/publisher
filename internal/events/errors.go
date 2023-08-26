@@ -15,6 +15,7 @@ type ErrorData map[string]any
 type EventableError interface {
 	error
 	SetOperation(op EventOp)
+	GetOperation() EventOp
 	ToEvent() AgentEvent
 }
 
@@ -55,6 +56,10 @@ func (e *AgentError) SetOperation(op EventOp) {
 	e.Op = op
 }
 
+func (e *AgentError) GetOperation() EventOp {
+	return e.Op
+}
+
 func (e *AgentError) Error() string {
 	return e.Err.Error()
 }
@@ -62,7 +67,7 @@ func (e *AgentError) Error() string {
 func ErrToAgentError(op EventOp, err error) EventableError {
 	e, ok := err.(EventableError)
 	if !ok {
-		e = NewAgentError(CodeUnknownError, err, nil)
+		e = NewAgentError(UnknownErrorCode, err, nil)
 	}
 	e.SetOperation(op)
 	return e

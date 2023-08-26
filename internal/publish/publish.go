@@ -108,10 +108,22 @@ func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister account
 	if err != nil {
 		return err
 	}
-	return publishWithClient(cmd, bundler, account, client, log)
+	err = publishWithClient(cmd, bundler, account, client, log)
+	if err != nil {
+		log.Failure(err)
+	}
+	return nil
+}
+
+type DeploymentNotFoundDetails struct {
+	ContentID apitypes.ContentID
 }
 
 func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, log events.Logger) error {
+	log = log.With(
+		"server", account.URL,
+		events.LogKeyOp, events.OpPublishCreateBundle)
+	log.Start("Creating bundle")
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return events.ErrToAgentError(events.OpPublishCreateBundle, err)
@@ -127,28 +139,46 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 	if err != nil {
 		return events.ErrToAgentError(events.OpPublishCreateBundle, err)
 	}
+	log.Success("Done creating bundle")
 
 	var contentID apitypes.ContentID
 	if cmd.State.Target.ContentId != "" && !cmd.New {
 		contentID = cmd.State.Target.ContentId
+		log = log.With(
+			events.LogKeyOp, events.OpPublishCreateDeployment,
+			"content_id", contentID)
+		log.Start("Updating deployment")
 		err = client.UpdateDeployment(contentID, cmd.State.Connect.Content)
 		if err != nil {
 			httpErr, ok := err.(*clients.HTTPError)
 			if ok && httpErr.Code == http.StatusNotFound {
-				return fmt.Errorf("saved deployment with id %s cound not be found. Redeploying with --new will create a new deployment and discard the old saved metadata", contentID)
+				details := DeploymentNotFoundDetails{
+					ContentID: contentID,
+				}
+				return events.NewAgentError(events.DeploymentNotFoundCode, err, details)
 			}
-			return err
+			return events.ErrToAgentError(events.OpPublishCreateDeployment, err)
 		}
+		log.Success("Updated deployment")
 	} else {
+		log = log.With(events.LogKeyOp, events.OpPublishCreateDeployment)
+		log.Start("Creating deployment")
 		contentID, err = client.CreateDeployment(cmd.State.Connect.Content)
 		if err != nil {
 			return events.ErrToAgentError(events.OpPublishCreateDeployment, err)
 		}
+		log = log.With("content_id", contentID)
+		log.Success("Created deployment")
 	}
+
+	log = log.With(events.LogKeyOp, events.OpPublishUploadBundle)
+	log.Start("Uploading deployment bundle")
 	bundleID, err := client.UploadBundle(contentID, bundleFile)
 	if err != nil {
 		return events.ErrToAgentError(events.OpPublishUploadBundle, err)
 	}
+	log.Success("Uploaded deployment bundle")
+	log = log.With("bundle_id", bundleID)
 
 	cmd.State.Target = state.TargetID{
 		ServerType:  account.ServerType,
@@ -161,20 +191,20 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 		DeployedAt:  apitypes.NewOptional(time.Now()),
 	}
 
+	log = log.With(events.LogKeyOp, events.OpPublishDeployBundle)
+	log.Start("Deploying bundle")
 	taskID, err := client.DeployBundle(contentID, bundleID)
 	if err != nil {
 		return events.ErrToAgentError(events.OpPublishDeployBundle, err)
 	}
-	taskLogger := log.With(
-		"source", "server deployment log",
-		"server", account.URL,
-		"content_id", contentID,
-		"bundle_id", bundleID,
-		"task_id", taskID,
-	)
+	log.Success("Initiated bundle deployment")
+	log = log.With("task_id", taskID)
+
+	taskLogger := log.With("source", "serverLog")
 	err = client.WaitForTask(taskID, taskLogger)
 	if err != nil {
 		return err
 	}
+	log = log.With(events.LogKeyOp, events.OpAgent)
 	return logAppInfo(account.URL, contentID, log)
 }

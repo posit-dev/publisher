@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	"github.com/r3labs/sse/v2"
 )
@@ -64,9 +65,9 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	handleAttr := func(attr slog.Attr) bool {
 		switch attr.Key {
 		case LogKeyOp:
-			op = EventOp(attr.String())
+			op = EventOp(attr.Value.String())
 		case LogKeyPhase:
-			phase = EventPhase(attr.String())
+			phase = EventPhase(attr.Value.String())
 		case "": // skip empty attrs
 		default:
 			event.Data[attr.Key] = attr.Value.Any()
@@ -105,7 +106,7 @@ func (h *SSEHandler) Handle(ctx context.Context, rec slog.Record) error {
 
 func (h *SSEHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	newH := *h
-	newH.attrs = append(append([]slog.Attr(nil), newH.attrs...), attrs...)
+	newH.attrs = append(slices.Clip(newH.attrs), attrs...)
 	return &newH
 }
 

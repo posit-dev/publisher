@@ -5,6 +5,7 @@ package util
 import (
 	"context"
 	"log/slog"
+	"slices"
 )
 
 type MultiHandler struct {
@@ -47,9 +48,7 @@ func (m *MultiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 		// Copy the attributes for each handler, because
 		// each handler is allowed to assume that it owns the slice.
 		// See the slog.Handler interface docs.
-		attrsCopy := make([]slog.Attr, 0, len(attrs))
-		copy(attrsCopy, attrs)
-		handlers = append(handlers, h.WithAttrs(attrsCopy))
+		handlers = append(handlers, h.WithAttrs(slices.Clip(attrs)))
 	}
 	return NewMultiHandler(handlers...)
 }

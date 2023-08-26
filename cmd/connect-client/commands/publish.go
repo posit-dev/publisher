@@ -5,8 +5,10 @@ package commands
 import (
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 
+	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
@@ -246,11 +248,22 @@ type PublishUICmd struct {
 	cli_types.UIArgs
 }
 
+func makeSSELogger(debug bool) events.Logger {
+	eventServer := sse.New()
+	eventServer.CreateStream("messages")
+	logLevel := slog.LevelInfo
+	if debug {
+		logLevel = slog.LevelDebug
+	}
+	return events.NewLogger(logLevel, eventServer)
+}
+
 func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	err := cmd.stateFromCLI(ctx.Logger)
 	if err != nil {
 		return err
 	}
+	logger := makeSSELogger(args.Debug)
 	svc := ui.NewUIService(
 		"/",
 		cmd.UIArgs,
@@ -258,6 +271,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		ctx.LocalToken,
 		ctx.Fs,
 		ctx.Accounts,
-		ctx.Logger)
+		logger)
 	return svc.Run()
 }

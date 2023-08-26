@@ -23,7 +23,7 @@ const (
 	StartPhase    EventPhase = "start"
 	ProgressPhase EventPhase = "progress"
 	SuccessPhase  EventPhase = "success"
-	ErrorPhase    EventPhase = "error"
+	FailurePhase  EventPhase = "failure"
 	LogPhase      EventPhase = "log"
 )
 

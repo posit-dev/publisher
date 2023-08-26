@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -239,6 +240,19 @@ func (c *ConnectClient) getTask(taskID apitypes.TaskID, previous *taskDTO) (*tas
 	return &task, nil
 }
 
+func eventOpFromLogLine(currentOp events.EventOp, line string) events.EventOp {
+	if match, _ := regexp.MatchString("Building (Shiny application|Plumber API).*", line); match {
+		return events.OpPublishRestoreREnv
+	} else if match, _ := regexp.MatchString("Building (.* application|.* API|Jupyter notebook).*", line); match {
+		return events.OpPublishRestorePythonEnv
+	} else if match, _ := regexp.MatchString("Launching .* (application|API|notebook)", line); match {
+		return events.OpPublishRunContent
+	} else if match, _ := regexp.MatchString("(Building|Launching) static content", line); match {
+		return events.OpPublishRunContent
+	}
+	return currentOp
+}
+
 func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, log events.Logger) error {
 	var previous *taskDTO
 	var op events.EventOp
@@ -249,10 +263,13 @@ func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, log events.Logger) e
 			return err
 		}
 		for _, line := range task.Output {
-			log.Info(line,
-				events.LogKeyOp, op,
-				events.LogKeyPhase, events.LogPhase,
-				"source", "serverLog")
+			nextOp := eventOpFromLogLine(op, line)
+			if nextOp != op {
+				log.Success("Done")
+				op = nextOp
+				log = log.With(events.LogKeyOp, op)
+			}
+			log.Info(line, events.LogKeyOp, op)
 		}
 		if task.Finished {
 			if task.Error != "" {

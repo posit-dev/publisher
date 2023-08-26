@@ -144,5 +144,9 @@ func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitEr
 	client.On("DeployBundle", myContentID, myBundleID).Return(myTaskID, deployErr)
 	client.On("WaitForTask", myTaskID, mock.Anything).Return(waitErr)
 	err = publishWithClient(cmd, bundler, account, client, s.log)
-	s.Equal(expectedErr, err)
+	if expectedErr == nil {
+		s.NoError(err)
+	} else {
+		s.Equal(expectedErr.Error(), err.Error())
+	}
 }
