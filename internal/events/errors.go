@@ -72,7 +72,3 @@ func ErrToAgentError(op Operation, err error) EventableError {
 	e.SetOperation(op)
 	return e
 }
-
-type HTTPErrorDetails struct {
-	Status int
-}

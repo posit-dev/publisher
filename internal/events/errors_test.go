@@ -51,10 +51,14 @@ func (s *EventsSuite) TestGoErrorWithAttrs() {
 	}, event.Data)
 }
 
+type testErrorDetails struct {
+	Status int
+}
+
 func (s *EventsSuite) TestErrorDetails() {
 	// in the callee
 	err := errors.New("An internal publishing server error occurred")
-	details := HTTPErrorDetails{Status: 500}
+	details := testErrorDetails{Status: 500}
 	returnedErr := NewAgentError(ServerError, err, details)
 
 	// in the caller
@@ -70,10 +74,9 @@ func (s *EventsSuite) TestErrorDetails() {
 }
 
 func (s *EventsSuite) TestErrorObjectAndDetails() {
-	// in the callee (note, an HTTPErrorDetails and an os.PathError don't go together,
-	// we just need a details object and an error that is a struct)
+	// in the callee
 	_, err := os.Stat("/nonexistent")
-	details := HTTPErrorDetails{Status: 500}
+	details := testErrorDetails{Status: 500}
 	returnedErr := NewAgentError(ServerError, err, details)
 
 	// in the caller
