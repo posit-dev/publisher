@@ -7,7 +7,7 @@ export function debounce<F extends DebounceFn>(
   fn: F,
   wait?: number
 ): ((...args: Parameters<F>) => void) {
-  let timeoutId: number | undefined;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
   return (...args) => {
     clearTimeout(timeoutId);
