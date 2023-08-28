@@ -265,7 +265,9 @@ func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, log events.Logger) e
 		for _, line := range task.Output {
 			nextOp := eventOpFromLogLine(op, line)
 			if nextOp != op {
-				log.Success("Done")
+				if op != "" {
+					log.Success("Done")
+				}
 				op = nextOp
 				log = log.With(events.LogKeyOp, op)
 			}
