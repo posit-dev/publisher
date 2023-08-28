@@ -34,9 +34,9 @@ def config_dirname(platform=sys.platform, env=os.environ):
         base_dir = env.get("APPDATA", home)
 
     if base_dir == home:
-        return join(base_dir, ".rsconnect-python")
+        return join(base_dir, ".rsconnect-python/servers.json")
     else:
-        return join(base_dir, "rsconnect-python")
+        return join(base_dir, "rsconnect-python/servers.json")
 
 def copyfile(server_json):
     source_path = server_json  # Replace with the path of the source file
