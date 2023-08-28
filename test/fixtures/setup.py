@@ -34,16 +34,19 @@ def config_dirname(platform=sys.platform, env=os.environ):
         base_dir = env.get("APPDATA", home)
 
     if base_dir == home:
-        return join(base_dir, ".rsconnect-python/servers.json")
+        return join(base_dir, ".rsconnect-python")
     else:
-        return join(base_dir, "rsconnect-python/servers.json")
+        return join(base_dir, "rsconnect-python")
 
 def copyfile(server_json):
     source_path = server_json  # Replace with the path of the source file
     destination_path = config_dirname()  # Replace with the destination directory path
+    desitination_file = os.path.josin(destination_path, "servers.json")
 
     # Copy the file to the destination
-    shutil.copy(source_path, destination_path)
+    shutil.copy(source_path, desitination_file)
+
+    
 
     print("File copied successfully.")
 
