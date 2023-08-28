@@ -271,7 +271,7 @@ func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, log events.Logger) e
 				op = nextOp
 				log = log.With(events.LogKeyOp, op)
 			}
-			log.Info(line, events.LogKeyOp, op)
+			log.Info(line)
 		}
 		if task.Finished {
 			if task.Error != "" {
