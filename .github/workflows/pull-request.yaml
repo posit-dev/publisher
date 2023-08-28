@@ -366,343 +366,349 @@ jobs:
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
           PATH="${PATH}:/usr/local/bin" just web/test-e2e
-
-  test-windows:
-    needs: build-agent
-    runs-on: windows-latest
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: Setup Just
-        uses: extractions/setup-just@v1
-      -
-        name: Download binary
-        uses: actions/download-artifact@v3
-        with:
-          name: agent-artifacts
-          path: bin/
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Make agents executable
-        run: |
-          chmod -R +x ./bin/**/connect-client
-      -
-        name: Run Windows CLI Tests
-        env:
-          os: windows-latest
-          # bats reads the load libraries from relative path only in Windows
-          BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
-          BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
-        # WARNING: Docker run will only fail step if last command fails...
-        run: |
-          just test/bats-install
-          $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
-          $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
-          just test/run-client $env:os
-      -
-        name: Run Windows Cypress Tests
-        env:
-          os: windows-latest
-          DOCKER: "false"
-          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
-        run: |
-          cd test
-          docker compose pull connect --platform linux/amd64
-          docker compose up -d connect
-          just ui-test $env:os
-
-  test-macos:
-    needs: build-agent
-    runs-on: macos-latest
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: Setup Just
-        uses: extractions/setup-just@v1
-      -
-        name: Download binary
-        uses: actions/download-artifact@v3
-        with:
-          name: agent-artifacts
-          path: bin/
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Make agents executable
-        run: |
-          chmod -R +x ./bin/**/connect-client
-      -
-        name: Run MacOs CLI Tests
-        env:
-          os: macos-latest
-          BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
-          BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
-          BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
-        # WARNING Docker run will only fail step if last command fails...
-        run: |
-          just test/bats-install
-          PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
-          cd ${{ github.workspace }}/test
-          just run-client ${os}
       - 
-        name: Setup docker and docker-compose (missing on MacOS)
-        run: |
-          # Workaround for https://github.com/actions/runner-images/issues/8104
-          brew remove --ignore-dependencies qemu
-          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
-          brew install ./qemu.rb
-          brew install docker docker-compose
+        name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+
+  # test-windows:
+  #   needs: build-agent
+  #   runs-on: windows-latest
+  #   steps:
+  #     -
+  #       name: Checkout
+  #       uses: actions/checkout@v3
+  #     -
+  #       name: Setup Just
+  #       uses: extractions/setup-just@v1
+  #     -
+  #       name: Download binary
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: agent-artifacts
+  #         path: bin/
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     -
+  #       name: Make agents executable
+  #       run: |
+  #         chmod -R +x ./bin/**/connect-client
+  #     -
+  #       name: Run Windows CLI Tests
+  #       env:
+  #         os: windows-latest
+  #         # bats reads the load libraries from relative path only in Windows
+  #         BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
+  #         BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
+  #       # WARNING: Docker run will only fail step if last command fails...
+  #       run: |
+  #         just test/bats-install
+  #         $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
+  #         $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
+  #         just test/run-client $env:os
+  #     -
+  #       name: Run Windows Cypress Tests
+  #       env:
+  #         os: windows-latest
+  #         DOCKER: "false"
+  #         CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+  #       run: |
+  #         cd test
+  #         docker compose pull connect --platform linux/amd64
+  #         docker compose up -d connect
+  #         just ui-test $env:os
+
+  # test-macos:
+  #   needs: build-agent
+  #   runs-on: macos-latest
+  #   steps:
+  #     -
+  #       name: Checkout
+  #       uses: actions/checkout@v3
+  #     -
+  #       name: Setup Just
+  #       uses: extractions/setup-just@v1
+  #     -
+  #       name: Download binary
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: agent-artifacts
+  #         path: bin/
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     -
+  #       name: Make agents executable
+  #       run: |
+  #         chmod -R +x ./bin/**/connect-client
+  #     -
+  #       name: Run MacOs CLI Tests
+  #       env:
+  #         os: macos-latest
+  #         BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
+  #         BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
+  #         BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
+  #       # WARNING Docker run will only fail step if last command fails...
+  #       run: |
+  #         just test/bats-install
+  #         PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
+  #         cd ${{ github.workspace }}/test
+  #         just run-client ${os}
+  #     - 
+  #       name: Setup docker and docker-compose (missing on MacOS)
+  #       run: |
+  #         # Workaround for https://github.com/actions/runner-images/issues/8104
+  #         brew remove --ignore-dependencies qemu
+  #         curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
+  #         brew install ./qemu.rb
+  #         brew install docker docker-compose
             
-          # Link the Docker Compose v2 plugin so it's understood by the docker CLI
-          mkdir -p ~/.docker/cli-plugins
-          ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
+  #         # Link the Docker Compose v2 plugin so it's understood by the docker CLI
+  #         mkdir -p ~/.docker/cli-plugins
+  #         ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
           
-          colima start
-      -
-        name: Run MacOS Cypress Tests
-        env:
-          os: macos-latest
-          DOCKER: "false"
-          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
-        run: |
-          just test/ui-test ${os}
+  #         colima start
+  #     -
+  #       name: Run MacOS Cypress Tests
+  #       env:
+  #         os: macos-latest
+  #         DOCKER: "false"
+  #         CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+  #       run: |
+  #         just test/ui-test ${os}
 
-  build-linux-amd64:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    needs: build-agent
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: bin/
-      # these are required to run docker on amd64 and arm64 platforms
-      -
-        name: Setup qemu
-        uses: docker/setup-qemu-action@v2
-      -
-        name: Setup buildx
-        uses: docker/setup-buildx-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Restore Cached linux-amd64 image
-        id: cache-linux-amd64-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: /tmp/linux-amd64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
-        env:
-          cache-name: cache-linux-amd64-image
-          os: linux-amd64
-      -
-        if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
-        name: Build and Export Docker Image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
-            platform=linux-amd64
-          pull: True
-          file: test/docker/Dockerfile
-          platforms: linux/amd64
-          tags: rstudio/connect-client-linux-amd64:latest
-          outputs: type=docker,dest=/tmp/linux-amd64-image.tar
-      -
-        if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
-        name: Cache docker image (update)
-        id: cache-linux-amd64-image-save
-        uses: actions/cache/save@v3
-        env:
-          cache-name: cache-linux-amd64-image
-        with:
-          path: /tmp/linux-amd64-image.tar
-          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+  # build-linux-amd64:
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0}
+  #   needs: build-agent
+  #   steps:
+  #     -
+  #       name: Checkout
+  #       uses: actions/checkout@v3
+  #     -
+  #       name: Download artifacts
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         path: bin/
+  #     # these are required to run docker on amd64 and arm64 platforms
+  #     -
+  #       name: Setup qemu
+  #       uses: docker/setup-qemu-action@v2
+  #     -
+  #       name: Setup buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     -
+  #       name: Restore Cached linux-amd64 image
+  #       id: cache-linux-amd64-restore
+  #       uses: actions/cache/restore@v3
+  #       with:
+  #         path: /tmp/linux-amd64-image.tar
+  #         key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+  #       env:
+  #         cache-name: cache-linux-amd64-image
+  #         os: linux-amd64
+  #     -
+  #       if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
+  #       name: Build and Export Docker Image
+  #       uses: docker/build-push-action@v3
+  #       with:
+  #         context: .
+  #         build-args: |
+  #           BUILDKIT_INLINE_CACHE=1
+  #           platform=linux-amd64
+  #         pull: True
+  #         file: test/docker/Dockerfile
+  #         platforms: linux/amd64
+  #         tags: rstudio/connect-client-linux-amd64:latest
+  #         outputs: type=docker,dest=/tmp/linux-amd64-image.tar
+  #     -
+  #       if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
+  #       name: Cache docker image (update)
+  #       id: cache-linux-amd64-image-save
+  #       uses: actions/cache/save@v3
+  #       env:
+  #         cache-name: cache-linux-amd64-image
+  #       with:
+  #         path: /tmp/linux-amd64-image.tar
+  #         key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
-  test-linux-amd64:
-    needs: build-linux-amd64
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: Setup Just
-        uses: extractions/setup-just@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Get binary
-        uses: actions/download-artifact@v3
-        with:
-          name: agent-artifacts
-          path: bin/
-      -
-        name: Make agents executable
-        run: |
-          chmod -R +x ./bin/**/connect-client
-      -
-        name: Cache docker image (restore)
-        id: cache-linux-amd64-image
-        uses: actions/cache/restore@v3
-        env:
-          cache-name: cache-linux-amd64-image
-        with:
-          path: /tmp/linux-amd64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
-      -
-        name: Load Docker Image
-        run: |
-          docker load --input /tmp/linux-amd64-image.tar
-      -
-        name: Run linux-amd64 CLI Tests
-        env:
-          os: linux-amd64
-        run: |
-          just test/run-client ${os}
-      -
-        name: Run linux-amd64 Cypress Tests
-        env:
-          os: linux-amd64
-          DOCKER: "false"
-          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
-        run: |
-          just test/ui-test ${os}
+  # test-linux-amd64:
+  #   needs: build-linux-amd64
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0}
+  #   steps:
+  #     -
+  #       name: Checkout
+  #       uses: actions/checkout@v3
+  #     -
+  #       name: Setup Just
+  #       uses: extractions/setup-just@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     -
+  #       name: Get binary
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: agent-artifacts
+  #         path: bin/
+  #     -
+  #       name: Make agents executable
+  #       run: |
+  #         chmod -R +x ./bin/**/connect-client
+  #     -
+  #       name: Cache docker image (restore)
+  #       id: cache-linux-amd64-image
+  #       uses: actions/cache/restore@v3
+  #       env:
+  #         cache-name: cache-linux-amd64-image
+  #       with:
+  #         path: /tmp/linux-amd64-image.tar
+  #         key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+  #     -
+  #       name: Load Docker Image
+  #       run: |
+  #         docker load --input /tmp/linux-amd64-image.tar
+  #     -
+  #       name: Run linux-amd64 CLI Tests
+  #       env:
+  #         os: linux-amd64
+  #       run: |
+  #         just test/run-client ${os}
+  #     -
+  #       name: Run linux-amd64 Cypress Tests
+  #       env:
+  #         os: linux-amd64
+  #         DOCKER: "false"
+  #         CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+  #       run: |
+  #         just test/ui-test ${os}
           
-  build-linux-arm64:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    needs: build-agent
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: bin/
-      # these are required to run docker on amd64 and arm64 platforms
-      -
-        name: Setup qemu
-        uses: docker/setup-qemu-action@v2
-      -
-        name: Setup buildx
-        uses: docker/setup-buildx-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Restore Cached linux-arm64 image
-        id: cache-linux-arm64-restore
-        uses: actions/cache/restore@v3
-        with:
-          path: /tmp/linux-arm64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
-        env:
-          cache-name: cache-linux-arm64-image
-          os: linux-arm64
-      -
-        if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
-        name: Build and Export Docker Image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
-            platform=linux-arm64
-          pull: True
-          file: test/docker/Dockerfile
-          platforms: linux/arm64
-          tags: rstudio/connect-client-linux-arm64:latest
-          outputs: type=docker,dest=/tmp/linux-arm64-image.tar
-      -
-        if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
-        name: Cache docker image (update)
-        id: cache-linux-arm64-image-save
-        uses: actions/cache/save@v3
-        env:
-          cache-name: cache-linux-arm64-image
-        with:
-          path: /tmp/linux-arm64-image.tar
-          key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+  # build-linux-arm64:
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0}
+  #   needs: build-agent
+  #   steps:
+  #     -
+  #       name: Checkout
+  #       uses: actions/checkout@v3
+  #     -
+  #       name: Download artifacts
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         path: bin/
+  #     # these are required to run docker on amd64 and arm64 platforms
+  #     -
+  #       name: Setup qemu
+  #       uses: docker/setup-qemu-action@v2
+  #     -
+  #       name: Setup buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     -
+  #       name: Restore Cached linux-arm64 image
+  #       id: cache-linux-arm64-restore
+  #       uses: actions/cache/restore@v3
+  #       with:
+  #         path: /tmp/linux-arm64-image.tar
+  #         key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+  #       env:
+  #         cache-name: cache-linux-arm64-image
+  #         os: linux-arm64
+  #     -
+  #       if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
+  #       name: Build and Export Docker Image
+  #       uses: docker/build-push-action@v3
+  #       with:
+  #         context: .
+  #         build-args: |
+  #           BUILDKIT_INLINE_CACHE=1
+  #           platform=linux-arm64
+  #         pull: True
+  #         file: test/docker/Dockerfile
+  #         platforms: linux/arm64
+  #         tags: rstudio/connect-client-linux-arm64:latest
+  #         outputs: type=docker,dest=/tmp/linux-arm64-image.tar
+  #     -
+  #       if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
+  #       name: Cache docker image (update)
+  #       id: cache-linux-arm64-image-save
+  #       uses: actions/cache/save@v3
+  #       env:
+  #         cache-name: cache-linux-arm64-image
+  #       with:
+  #         path: /tmp/linux-arm64-image.tar
+  #         key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
-  test-linux-arm64:
-    needs: build-linux-arm64
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: Setup Just
-        uses: extractions/setup-just@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Get binary
-        uses: actions/download-artifact@v3
-        with:
-          name: agent-artifacts
-          path: bin/
-      -
-        name: Make agents executable
-        run: |
-          chmod -R +x ./bin/**/connect-client
+  # test-linux-arm64:
+  #   needs: build-linux-arm64
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       shell: bash -l {0}
+  #   steps:
+  #     -
+  #       name: Checkout
+  #       uses: actions/checkout@v3
+  #     -
+  #       name: Setup Just
+  #       uses: extractions/setup-just@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     -
+  #       name: Get binary
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: agent-artifacts
+  #         path: bin/
+  #     -
+  #       name: Make agents executable
+  #       run: |
+  #         chmod -R +x ./bin/**/connect-client
 
-      # these are required to run docker on amd64 and arm64 platforms
-      -
-        name: Setup qemu
-        uses: docker/setup-qemu-action@v2
-      -
-        name: Setup buildx
-        uses: docker/setup-buildx-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Cache docker image (restore)
-        id: cache-linux-arm64-image
-        uses: actions/cache/restore@v3
-        env:
-          cache-name: cache-linux-arm64-image
-        with:
-          path: /tmp/linux-arm64-image.tar
-          key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
-      -
-        name: Load Docker Image
-        run: |
-          docker load --input /tmp/linux-arm64-image.tar
-      -
-        name: Run linux-arm64 CLI Tests
-        env:
-          os: linux-arm64
-        run: |
-          just test/run-client ${os}
-      # -
-      #   name: Run linux-arm64 Cypress Tests
-      #   env:
-      #     os: linux-arm64
-      #     DOCKER: "false"
-      #     CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
-      #   run: |
-      #     just web/build && \
-      #     just test/ui-client ${os}
+  #     # these are required to run docker on amd64 and arm64 platforms
+  #     -
+  #       name: Setup qemu
+  #       uses: docker/setup-qemu-action@v2
+  #     -
+  #       name: Setup buildx
+  #       uses: docker/setup-buildx-action@v2
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     -
+  #       name: Cache docker image (restore)
+  #       id: cache-linux-arm64-image
+  #       uses: actions/cache/restore@v3
+  #       env:
+  #         cache-name: cache-linux-arm64-image
+  #       with:
+  #         path: /tmp/linux-arm64-image.tar
+  #         key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
+  #     -
+  #       name: Load Docker Image
+  #       run: |
+  #         docker load --input /tmp/linux-arm64-image.tar
+  #     -
+  #       name: Run linux-arm64 CLI Tests
+  #       env:
+  #         os: linux-arm64
+  #       run: |
+  #         just test/run-client ${os}
+  #     # -
+  #     #   name: Run linux-arm64 Cypress Tests
+  #     #   env:
+  #     #     os: linux-arm64
+  #     #     DOCKER: "false"
+  #     #     CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+  #     #   run: |
+  #     #     just web/build && \
+  #     #     just test/ui-client ${os}
