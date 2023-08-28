@@ -360,18 +360,32 @@ jobs:
         with:
           path: ./web/node_modules
           key: ${{ runner.os }}-node-modules-${{ env.cache-name }}-${{ hashFiles('./web/package.json') }}
+      # -
+      #   name: UX E2E Tests
+      #   env: 
+      #     CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+      #   run: |
+      #     PATH="${PATH}:/usr/local/bin" just web/test-e2e
+
       -
-        name: UX E2E Tests
-        env: 
-          CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
-        run: |
-          PATH="${PATH}:/usr/local/bin" just web/test-e2e
-      - 
-        name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+        name: Save videos
+        uses: actions/upload-artifact@v3
+        if: always()
         with:
-          limit-access-to-actor: true
+          name: cypress-videos_${{ vars.JOB_NAME }}
+          path: web/test/cypress/videos
+          if-no-files-found: ignore
+
+      -
+        name: Save screenshots
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cypress-screenshots_${{ vars.JOB_NAME }}
+          path: web/test/cypress/screenshots
+          if-no-files-found: ignore
+
+
 
   # test-windows:
   #   needs: build-agent
