@@ -6,5 +6,5 @@ import (
 	"embed"
 )
 
-//go:embed dist/spa
+//go:embed dist
 var Dist embed.FS
