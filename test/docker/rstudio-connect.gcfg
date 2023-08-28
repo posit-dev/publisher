@@ -17,6 +17,7 @@ NoWarning = true
 Enabled = true
 Executable = /opt/python/3.8.17/bin/python
 Executable = /opt/python/3.9.17/bin/python
+VersionMatching = nearest
 
 [Authentication]
 BasicAuth = true

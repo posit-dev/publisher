@@ -38,7 +38,7 @@ run-client target:
   if [[ {{target}} =~ "linux" ]]; then
     docker run \
     --platform "${_platform}" \
-    --name {{_tag}}-{{target}} \
+    --name {{target}} \
     -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
     -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
     -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
