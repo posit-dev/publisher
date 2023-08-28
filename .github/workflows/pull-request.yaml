@@ -385,13 +385,6 @@ jobs:
           path: web/test/cypress/screenshots
           if-no-files-found: ignore
 
-      - 
-        name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
-
   test-windows:
     needs: build-agent
     runs-on: windows-latest
@@ -432,6 +425,8 @@ jobs:
         env:
           os: windows-latest
           DOCKER: "false"
+          # Needed for Docker on Windows
+          DOCKER_CLI_EXPERIMENTAL: "enabled"
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
           cd test
