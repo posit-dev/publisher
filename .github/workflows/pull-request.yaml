@@ -425,14 +425,17 @@ jobs:
         env:
           os: windows-latest
           DOCKER: "false"
-          # Needed for Docker on Windows
-          DOCKER_CLI_EXPERIMENTAL: "enabled"
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
+          echo '{"experimental": true}' | sudo tee -a /etc/docker/daemon.json
           cd test
-          docker compose pull connect --platform linux/amd64
-          docker compose up -d connect
           just ui-test $env:os
+      -
+        name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
   test-macos:
     needs: build-agent
