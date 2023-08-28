@@ -1,5 +1,7 @@
 package events
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 const (
 	AuthenticationFailedCode  ErrorCode = "authFailed"            // Couldn't authenticate to publishing server
 	OperationTimedOutCode     ErrorCode = "timeout"               // HTTP request to publishing server timed out
