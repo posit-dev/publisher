@@ -4,22 +4,15 @@ import os
 import sys
 from os.path import dirname, join
 
-def get_hash(username):
+def copyfile(server_json):
+    # source_path = server_json  # Replace with the path of the source file
+    destination_path = config_dirname()  # Replace with the destination directory path
+    # desitination_file = os.path.join(destination_path, "servers.json")
+    print(destination_path)
+    # Copy the file to the destination
+    shutil.copy(server_json, destination_path)
+    print("File copied successfully.")
 
-    # Calculate the MD5 hash for the username to get an API Key
-    md5_hash = hashlib.md5(username.encode()).hexdigest()
-    print("MD5 hash:", md5_hash)
-    return md5_hash
-
-def replace_apikey(username):
-    with open(server_json, 'r') as file:
-        server = file.read()
-    api_key = server.replace('API_KEY', get_hash(username))
-
-    # Open the file for writing and overwrite with the modified content
-    with open(server_json, 'w') as file:
-        file.write(api_key)
-    
 def config_dirname(platform=sys.platform, env=os.environ):
     """Get the user's configuration directory path for this platform."""
     home = env.get("HOME", "~")
@@ -34,21 +27,29 @@ def config_dirname(platform=sys.platform, env=os.environ):
         base_dir = env.get("APPDATA", home)
 
     if base_dir == home:
-        return join(base_dir, ".rsconnect-python")
+        os.makedirs(base_dir+"/.rsconnect-python/")
+        base_dir=base_dir+"/.rsconnect-python"
+        return join(base_dir)
     else:
-        return join(base_dir, "rsconnect-python")
+        os.makedirs(base_dir+"/rsconnect-python/")
+        base_dir=base_dir+"/rsconnect-python"
+        return join(base_dir)
 
-def copyfile(server_json):
-    source_path = server_json  # Replace with the path of the source file
-    destination_path = config_dirname()  # Replace with the destination directory path
-    desitination_file = os.path.join(destination_path, "servers.json")
+def replace_apikey(username):
+    with open(server_json, 'r') as file:
+        server = file.read()
+    api_key = server.replace('API_KEY', get_hash(username))
 
-    # Copy the file to the destination
-    shutil.copy(source_path, desitination_file)
+    # Open the file for writing and overwrite with the modified content
+    with open(server_json, 'w') as file:
+        file.write(api_key)
 
-    
+def get_hash(username):
 
-    print("File copied successfully.")
+    # Calculate the MD5 hash for the username to get an API Key
+    md5_hash = hashlib.md5(username.encode()).hexdigest()
+    print("MD5 hash:", md5_hash)
+    return md5_hash
 
 server_json = '../test/fixtures/servers.json'
 copyfile(server_json)
