@@ -127,7 +127,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: web-ux
-          path: ./web/dist/spa
+          path: ./web/dist
 
   validate-codebase:
     needs: build-ux
@@ -161,7 +161,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: web-ux
-          path: ./web/dist/spa
+          path: ./web/dist
       -
         name: Restore Cache UX node_modules
         id: node_modules
@@ -218,7 +218,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: web-ux
-          path: ./web/dist/spa
+          path: ./web/dist
       -
         name: UX Unit Tests
         run: |
@@ -260,7 +260,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: web-ux
-          path: ./web/dist/spa
+          path: ./web/dist
       -
         name: Agent Unit Tests
         run: |
@@ -298,7 +298,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: web-ux
-          path: ./web/dist/spa
+          path: ./web/dist
       -
         name: Build agent
         run: |
