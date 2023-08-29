@@ -7,11 +7,11 @@ import (
 	"os"
 
 	"github.com/r3labs/sse/v2"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/connect-client/internal/logging"
 )
 
 type Logger struct {
-	util.Logger
+	logging.Logger
 }
 
 func DefaultLogger() Logger {
@@ -24,7 +24,7 @@ func NewLogger(level slog.Leveler, sseServer *sse.Server) Logger {
 	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
 	if sseServer != nil {
 		sseHandler := NewSSEHandler(sseServer, &SSEHandlerOptions{Level: level})
-		multiHandler := util.NewMultiHandler(stderrHandler, sseHandler)
+		multiHandler := logging.NewMultiHandler(stderrHandler, sseHandler)
 		return Logger{slog.New(multiHandler)}
 	} else {
 		return Logger{slog.New(stderrHandler)}

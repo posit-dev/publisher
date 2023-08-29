@@ -8,7 +8,8 @@ import (
 	"testing"
 
 	"github.com/r3labs/sse/v2"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/logging/loggingtest"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -34,11 +35,11 @@ func (s *LoggerSuite) TestNewLoggerNoSSE() {
 
 func (s *LoggerSuite) TestNewLoggerWithSSE() {
 	log := NewLogger(slog.LevelInfo, sse.New())
-	s.IsType(log.Handler(), &util.MultiHandler{})
+	s.IsType(log.Handler(), &logging.MultiHandler{})
 }
 
 func (s *LoggerSuite) TestStart() {
-	baseLogger := utiltest.NewMockLogger()
+	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On("Info", "message", LogKeyPhase, StartPhase, "arg", "value")
 
 	log := Logger{baseLogger}
@@ -47,7 +48,7 @@ func (s *LoggerSuite) TestStart() {
 }
 
 func (s *LoggerSuite) TestSuccess() {
-	baseLogger := utiltest.NewMockLogger()
+	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On("Info", "message", LogKeyPhase, SuccessPhase, "arg", "value")
 
 	log := Logger{baseLogger}
@@ -56,7 +57,7 @@ func (s *LoggerSuite) TestSuccess() {
 }
 
 func (s *LoggerSuite) TestStatus() {
-	baseLogger := utiltest.NewMockLogger()
+	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On("Info", "message", LogKeyPhase, ProgressPhase, "arg", "value")
 
 	log := Logger{baseLogger}
@@ -65,7 +66,7 @@ func (s *LoggerSuite) TestStatus() {
 }
 
 func (s *LoggerSuite) TestProgress() {
-	baseLogger := utiltest.NewMockLogger()
+	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On(
 		"Info", "message",
 		LogKeyPhase, ProgressPhase,
@@ -79,7 +80,7 @@ func (s *LoggerSuite) TestProgress() {
 }
 
 func (s *LoggerSuite) TestFailureGoError() {
-	baseLogger := utiltest.NewMockLogger()
+	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On("Error", "test error", LogKeyPhase, FailurePhase)
 	baseLogger.On("Debug", mock.AnythingOfType("string"))
 
@@ -90,7 +91,7 @@ func (s *LoggerSuite) TestFailureGoError() {
 }
 
 func (s *LoggerSuite) TestFailureAgentError() {
-	baseLogger := utiltest.NewMockLogger()
+	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On(
 		"Error", "test error",
 		LogKeyOp, PublishDeployBundleOp,
@@ -105,7 +106,7 @@ func (s *LoggerSuite) TestFailureAgentError() {
 }
 
 func (s *LoggerSuite) TestWith() {
-	baseLogger := utiltest.NewMockLogger()
+	baseLogger := loggingtest.NewMockLogger()
 	expectedLogger := slog.Default()
 	baseLogger.On("With", "arg", "value", "arg2", "value2").Return(expectedLogger)
 	log := Logger{baseLogger}

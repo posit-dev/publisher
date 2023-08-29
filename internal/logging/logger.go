@@ -1,4 +1,4 @@
-package util
+package logging
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -7,6 +7,7 @@ import (
 	"log/slog"
 )
 
+// Logger is an interface that describes `slog.Logger`
 type Logger interface {
 	Error(msg string, args ...any)
 	Warn(msg string, args ...any)
@@ -19,3 +20,5 @@ type Logger interface {
 	With(args ...any) *slog.Logger
 	WithGroup(name string) *slog.Logger
 }
+
+var _ Logger = &slog.Logger{}

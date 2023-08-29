@@ -7,17 +7,19 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/rstudio/connect-client/internal/logging"
 )
 
 type symlinkWalker struct {
 	walker Walker
-	logger Logger
+	logger logging.Logger
 }
 
 // NewSymlinkWalker creates a SymlinkWalker, an instance of the
 // Walker interface that resolves symlinks before passing info
 // to the callback function.
-func NewSymlinkWalker(walker Walker, logger Logger) *symlinkWalker {
+func NewSymlinkWalker(walker Walker, logger logging.Logger) *symlinkWalker {
 	return &symlinkWalker{
 		walker: walker,
 		logger: logger,

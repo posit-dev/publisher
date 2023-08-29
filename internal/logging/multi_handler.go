@@ -1,4 +1,4 @@
-package util
+package logging
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -12,7 +12,10 @@ type MultiHandler struct {
 	handlers []slog.Handler
 }
 
-func NewMultiHandler(handlers ...slog.Handler) slog.Handler {
+// Asser that MultiHandler implements the slog.Handler interface
+var _ slog.Handler = &MultiHandler{}
+
+func NewMultiHandler(handlers ...slog.Handler) *MultiHandler {
 	return &MultiHandler{
 		handlers: handlers,
 	}

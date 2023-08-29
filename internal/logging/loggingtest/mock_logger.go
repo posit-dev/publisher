@@ -1,4 +1,6 @@
-package utiltest
+package loggingtest
+
+// Copyright (C) 2023 by Posit Software, PBC.
 
 import (
 	"context"
