@@ -106,3 +106,43 @@ func (s *AccountListSuite) TestGetAccountByNameNotFound() {
 	s.ErrorContains(err, "there is no account named 'myAcct'")
 	s.Nil(account)
 }
+
+func (s *AccountListSuite) TestGetAccountsByServerType() {
+	logger := slog.Default()
+
+	account := Account{Name: "name", ServerType: ServerTypeConnect}
+	accounts := []Account{account}
+	provider := new(MockAccountProvider)
+	provider.On("Load").Return(accounts, nil)
+
+	providers := []AccountProvider{provider}
+
+	accountList := defaultAccountList{
+		providers: providers,
+		logger:    logger,
+	}
+
+	res, err := accountList.GetAccountsByServerType(ServerTypeConnect)
+	s.Nil(err)
+	s.Equal(account, res[0])
+}
+
+func (s *AccountListSuite) TestGetAccountsByServerType_Empty() {
+	logger := slog.Default()
+
+	account := Account{Name: "name", ServerType: ServerTypeConnect}
+	accounts := []Account{account}
+	provider := new(MockAccountProvider)
+	provider.On("Load").Return(accounts, nil)
+
+	providers := []AccountProvider{provider}
+
+	accountList := defaultAccountList{
+		providers: providers,
+		logger:    logger,
+	}
+
+	res, err := accountList.GetAccountsByServerType(ServerTypeCloud)
+	s.Nil(err)
+	s.Empty(res)
+}
