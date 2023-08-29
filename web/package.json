@@ -6,7 +6,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint --ext .js,.ts,.vue,.cjs .",
+    "lint-fix": "eslint --ext .js,.ts,.vue,.cjs . --fix",
+    "test:unit": "vitest",
     "test:e2e": "start-server-and-test dev http-get://0.0.0.0:5173 cypress:run",
+    "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },
   "dependencies": {
