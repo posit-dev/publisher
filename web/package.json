@@ -4,6 +4,11 @@
   "description": "A Posit, PBC. project",
   "private": true,
   "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "test:e2e": "start-server-and-test dev http-get://0.0.0.0:5173 cypress:run",
+    "cypress:run": "cypress run"
+  },
   "dependencies": {
     "@quasar/extras": "^1.16.5",
     "axios": "^1.4.0",
@@ -24,6 +29,7 @@
     "eslint-plugin-cypress": "^2.14.0",
     "eslint-plugin-vue": "^9.17.0",
     "sass": "^1.66.1",
+    "start-server-and-test": "^2.0.0",
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
     "vitest": "^0.34.2",
