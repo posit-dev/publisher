@@ -65,7 +65,10 @@ test-ci-e2e target:
 
 # run unit tests one time
 test-unit:
-    # npx vitest run
+    npx vitest run
+
+# run unit tests in watch mode, re-running as files are changed
+test-unit-watch:
     npx vitest
 
 # start common UX development flow. Start the web server which updates automatically upon file changes
