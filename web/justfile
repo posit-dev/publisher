@@ -16,11 +16,11 @@ bootstrap:
 
 # validate the source files, do not fix the fixable items
 validate:
-    npx eslint --ext .js,.ts,.vue,.cjs ./
+    npm run lint
 
 # validate the source files, fix the fixable items
 validate-fix:
-    npx eslint --ext .js,.ts,.vue,.cjs ./ "--fix"
+    npm run lint-fix
 
 # build the web artifacts for the SPA (into dest/spa)
 build:
@@ -29,7 +29,7 @@ build:
 
     just bootstrap
 
-    npx vue-tsc && npx vite build
+    npm run build
 
 # perform unit, go race and e2e tests
 test: test-unit test-race test-e2e
@@ -49,7 +49,7 @@ test-e2e:
     # install cypress
     npx cypress install
 
-    npx cypress run
+    npm run test:e2e
 
 test-ci-e2e target:
     #!/bin/bash
@@ -61,19 +61,20 @@ test-ci-e2e target:
     export CYPRESS_CACHE_FOLDER="./cypress/{{target}}/.cache"
     # install cypress
     npx cypress install
-    npx cypress run
+
+    npm run test:e2e
 
 # run unit tests one time
 test-unit:
-    npx vitest run
+    npm run test:unit run
 
 # run unit tests in watch mode, re-running as files are changed
 test-unit-watch:
-    npx vitest
+    npm run test:unit
 
 # start common UX development flow. Start the web server which updates automatically upon file changes
 dev:
-    npx vite
+    npm run dev
 
 # remove build artifacts and dependencies
 clean:
