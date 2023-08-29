@@ -10,7 +10,6 @@ import (
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type ErrorCode string
-type ErrorData map[string]any
 
 type EventableError interface {
 	error
