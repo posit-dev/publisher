@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-//go:embed dist/spa
+//go:embed dist
 var dist embed.FS
 
 const Prefix = "/dist/spa"

@@ -1,30 +1,12 @@
-import registerCodeCoverageTasks from '@cypress/code-coverage/task';
-import { injectQuasarDevServerConfig } from '@quasar/quasar-app-extension-testing-e2e-cypress/cct-dev-server';
 import { defineConfig } from 'cypress';
 
 // eslint-disable-next-line no-restricted-syntax
 export default defineConfig({
-  fixturesFolder: 'test/cypress/fixtures',
-  screenshotsFolder: 'test/cypress/screenshots',
-  videosFolder: 'test/cypress/videos',
-  video: true,
   e2e: {
-    setupNodeEvents(on, config) {
-      registerCodeCoverageTasks(on, config);
-      return config;
+    baseUrl: 'http://localhost:5173',
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    setupNodeEvents(_on, _config) {
+      // implement node event listeners here
     },
-    baseUrl: 'http://127.0.0.1:9000/?token=abc123',
-    supportFile: 'test/cypress/support/e2e.ts',
-    specPattern: 'test/cypress/e2e/**/*.cy.{js,jsx,ts,tsx}'
   },
-  component: {
-    setupNodeEvents(on, config) {
-      registerCodeCoverageTasks(on, config);
-      return config;
-    },
-    supportFile: 'test/cypress/support/component.ts',
-    specPattern: 'src/**/*.cy.{js,jsx,ts,tsx}',
-    indexHtmlFile: 'test/cypress/support/component-index.html',
-    devServer: injectQuasarDevServerConfig()
-  }
 });

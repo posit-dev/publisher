@@ -1,6 +1,6 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { debounce } from 'quasar';
+import { debounce } from 'src/utils/debounce';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SignalFn = (signal: AbortSignal, ...args: any[]) => unknown;
