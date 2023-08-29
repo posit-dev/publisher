@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type LoggingSuite struct {
+type MultiHandlerSuite struct {
 	utiltest.Suite
 }
 
-func TestLoggingSuite(t *testing.T) {
-	suite.Run(t, new(LoggingSuite))
+func TestMultiHanlderSuite(t *testing.T) {
+	suite.Run(t, new(MultiHandlerSuite))
 }
