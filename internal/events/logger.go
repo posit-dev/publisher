@@ -11,7 +11,7 @@ import (
 )
 
 type Logger struct {
-	*slog.Logger
+	util.Logger
 }
 
 func DefaultLogger() Logger {

@@ -127,7 +127,7 @@ func (p *proxy) logRequest(msg string, req *http.Request) {
 type headerName string
 
 func (p *proxy) logHeader(msg string, header http.Header) {
-	ctx := context.Background()
+	log := p.logger
 	for name, values := range header {
 		var value string
 		if name == "Cookie" || name == "Authorization" {
@@ -139,7 +139,7 @@ func (p *proxy) logHeader(msg string, header http.Header) {
 				value = fmt.Sprintf("%v", values)
 			}
 		}
-		ctx = context.WithValue(ctx, headerName(name), value)
+		log = log.With(headerName(name), value)
 	}
-	p.logger.DebugContext(ctx, msg)
+	log.Debug(msg)
 }

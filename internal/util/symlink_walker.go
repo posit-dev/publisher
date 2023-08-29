@@ -5,20 +5,19 @@ package util
 import (
 	"fmt"
 	"io/fs"
-	"log/slog"
 	"os"
 	"path/filepath"
 )
 
 type symlinkWalker struct {
 	walker Walker
-	logger *slog.Logger
+	logger Logger
 }
 
 // NewSymlinkWalker creates a SymlinkWalker, an instance of the
 // Walker interface that resolves symlinks before passing info
 // to the callback function.
-func NewSymlinkWalker(walker Walker, logger *slog.Logger) *symlinkWalker {
+func NewSymlinkWalker(walker Walker, logger Logger) *symlinkWalker {
 	return &symlinkWalker{
 		walker: walker,
 		logger: logger,
