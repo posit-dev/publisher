@@ -14,7 +14,10 @@ import (
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
+	"github.com/rstudio/connect-client/internal/services/middleware"
+	"github.com/rstudio/connect-client/web"
 
+	"github.com/gorilla/mux"
 	"github.com/spf13/afero"
 )
 
@@ -29,7 +32,7 @@ func NewUIService(
 	lister accounts.AccountList,
 	log logging.Logger) *api.Service {
 
-	handler := newUIHandler(fs, publish, lister, log)
+	handler := RouterHandlerFunc(fs, publish, lister, log)
 
 	return api.NewService(
 		publish.State,
@@ -47,8 +50,7 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
-
+func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
 	deployment := publishArgs.State
 	base := deployment.SourceDir
 
@@ -56,19 +58,33 @@ func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accou
 	filesService := files.CreateFilesService(base, afs, log)
 	pathsService := paths.CreatePathsService(base, afs, log)
 
-	mux := http.NewServeMux()
-	// /api/accounts
-	mux.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(lister, log))
-	// /api/files
-	mux.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log))
-	// /api/deployment
-	mux.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService))
-	// /api/deployment/files
-	mux.Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log))
-	mux.Handle(ToPath("publish"), api.PostPublishHandlerFunc(publishArgs, lister, log))
-	mux.HandleFunc("/", api.NewStaticController())
+	r := mux.NewRouter()
+	// GET /api/accounts
+	r.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(lister, log)).
+		Methods(http.MethodGet)
 
-	return mux.ServeHTTP
+	// GET /api/files
+	r.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log)).
+		Methods(http.MethodGet)
+
+	// GET /api/deployment
+	r.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService)).
+		Methods(http.MethodGet)
+
+	// PUT /api/deployment/files
+	r.Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log)).
+		Methods(http.MethodPut)
+
+	// GET /api/publish
+	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(publishArgs, lister, log)).
+		Methods(http.MethodGet)
+
+	// GET /
+	r.PathPrefix("/").
+		Handler(middleware.InsertPrefix(web.Handler, web.Prefix)).
+		Methods("GET")
+
+	return r.ServeHTTP
 }
 
 func ToPath(elements ...string) string {
