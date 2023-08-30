@@ -52,8 +52,9 @@ test-e2e:
     # set this environment variable to keep Cypress from attempting to create
     # cache within root's home dir.
     export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
-    export CI_TEST_SERVER="--account-name=localhost"
-    python ../test/fixtures/setup.py
+    export CI_TEST_SERVER="--account-name=connect"
+    # needed to configure the account-name
+    python ../test/setup/client-setup.py
     just ../test/init-connect
     # install cypress
     npx cypress install
@@ -68,8 +69,10 @@ test-ci-e2e target:
     # cache within root's home dir.
     # use a different cache per os
     export CYPRESS_CACHE_FOLDER="./test/cypress/{{target}}/.cache"
-    export CI_TEST_SERVER="--account-name=localhost"
-    python3 ../test/fixtures/setup.py
+    export CI_TEST_SERVER="--account-name=connect"
+    export CYPRESS_CONNECT_ADDRESS="http://$CONNECT_IP:3939/connect/\#/login"
+    # needed to configure the account-name
+    # python ../test/setup/client-setup.py
     # install cypress
     npx cypress install
     npx quasar test --e2e cypress

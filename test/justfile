@@ -16,17 +16,44 @@ build target:
     --platform "${_platform}" \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
     --build-arg platform={{target}} \
+    --build-arg FUZZBUCKET_CREDENTIALS="$FUZZBUCKET_CREDENTIALS" \
+    --build-arg FUZZBUCKET_URL="$FUZZBUCKET_URL" \
+    --build-arg FUZZBUCKET_SSH_KEY="$FUZZBUCKET_SSH_KEY" \
     --pull \
     --tag {{_tag}}-{{target}}:latest \
     ./docker
 
-init-connect:
-	docker compose pull connect && \
-	docker compose up -d connect
+build-clean target:
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux-amd64" ]]; then
+    _platform="linux/amd64"
+  elif [[ {{target}} =~ "linux-arm64" ]]; then
+    _platform="linux/arm64"
+  fi
 
-init-connect-docker:
-	docker compose pull connect-docker && \
-	docker compose up -d connect-docker
+  docker build \
+    --no-cache \
+    --platform "${_platform}" \
+    --build-arg BUILDKIT_INLINE_CACHE=1 \
+    --build-arg platform={{target}} \
+    --pull \
+    --progress=plain \
+    --tag {{_tag}}-{{target}}:latest \
+    ./docker
+
+
+init-connect target:
+  #!/usr/bin/env bash
+  pip install -r ./setup/requirements.txt
+  echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
+  chmod 600 .fuzzbucket-ssh-key
+  export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
+  export CONNECT_VERSION=$(curl https://cdn.posit.co/connect/latest-packages.json | 
+    jq ".packages[0].version")
+  export CONNECT_IP="$(python setup/connect-setup.py)"
+  ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@$CONNECT_IP "${SSH_OPTIONS}" sudo -E UNATTENDED=1 bash installer-ci.sh ${CONNECT_VERSION}
+  python setup/client-setup.py
+  just ../web/test-ci-e2e {{target}}
 
 run-client target:
   #!/usr/bin/env bash
@@ -68,22 +95,12 @@ build-binary target:
     just build
   fi
 
-
-  #   docker run \
-  #   --platform "${_platform}" \
-  #   -v "$(pwd)"/../:/publishing-client \
-  #   -w /publishing-client/ \
-  #   -e DOCKER="false" \
-  #   --rm {{_tag}}-{{target}} just build
-  # elif [[ {{target}} =~ "windows" ]]; then
-  #   just _test-client windows-amd64
-  # elif [[ {{target}} =~ "macos" ]]; then
-  #   just _test-client darwin-amd64
-  # fi
+setup target:
+  just init-connect {{target}}
+  just ../web/test-ci-e2e {{target}}
 
 ui-test target:
   #!/usr/bin/env bash
-  just init-connect
   if [[ {{target}} =~ "linux-amd64" ]]; then
     _platform="linux/amd64"
   elif [[ {{target}} =~ "linux-arm64" ]]; then
@@ -99,11 +116,10 @@ ui-test target:
       -e DOCKER="false" \
       -p 9000:9000 \
       --rm {{_tag}}-{{target}} \
-      just web/test-ci-e2e {{target}}
+      just test/init-connect {{target}}
   else
     export DOCKER="false"
-    just init-connect
-    just ../web/test-ci-e2e {{target}}
+    just init-connect {{target}}
   fi
 
 bash target:
@@ -117,7 +133,7 @@ bash target:
     docker run -it \
       --platform "${_platform}" \
       -v "$(pwd)"/../:/publishing-client \
-      -w /publishing-client/ \
+      -w /publishing-client/test \
       -e DOCKER="false" \
       --rm {{_tag}}-{{target}} \
       /bin/bash

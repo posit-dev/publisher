@@ -3,7 +3,7 @@
     "runnerCommand": "vitest run"
   },
   "e2e-cypress": {
-    "runnerCommand": "cross-env NODE_ENV=test start-test \"just ../../start-agent-for-e2e\" http-get://google.com \"cypress run --e2e\""
+    "runnerCommand": "cross-env NODE_ENV=test start-test \"just ../../start-agent-for-e2e\" http-get://google.com \"cypress run --e2e --env CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS\""
   },
   "component-cypress": {
     "runnerCommand": "cross-env NODE_ENV=test cypress run --component"

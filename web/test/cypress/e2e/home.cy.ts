@@ -4,7 +4,7 @@
 // This test will pass when run against a clean Quasar project
 describe('Landing', () => {
   beforeEach(() => {
-    cy.visit('');
+    cy.visit('http://127.0.0.1:9000/?token=abc123');
   });
   it('.should() - assert that <title> is correct', () => {
     cy.title().should('include', 'Posit Publishing Web UI');
@@ -13,7 +13,7 @@ describe('Landing', () => {
 
 describe('Check Files', () => {
   beforeEach(() => {
-    cy.visit('');
+    cy.visit('http://127.0.0.1:9000/?token=abc123');
   });
   it('files should be listed', () => {
     cy.contains('.q-item__label', 'Files').should('be.visible')
@@ -24,7 +24,7 @@ describe('Check Files', () => {
 
 describe('Publish', () => {
   it('hit the publish button', () => {
-    cy.visit('');
+    cy.visit('http://127.0.0.1:9000/?token=abc123');
     cy.get('.block').contains('Publish')
       .click();
   });
@@ -32,7 +32,7 @@ describe('Publish', () => {
 
 describe('Check Connect Deployment', () => {
   it('check deployment', () => {
-    cy.visit('http://localhost:3939/connect/#/login');
+    cy.visit(Cypress.env('CYPRESS_CONNECT_ADDRESS'));
     cy.get('#username').type('admin');
     cy.get('#password').type('password');
     cy.get('button[data-automation="login-panel-submit"]')

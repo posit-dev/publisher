@@ -414,7 +414,9 @@ jobs:
           # bats reads the load libraries from relative path only in Windows
           BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
-        # WARNING: Docker run will only fail step if last command fails...
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
@@ -427,7 +429,7 @@ jobs:
           DOCKER: "false"
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
         run: |
-          echo '{"experimental": true}' | sudo tee -a /etc/docker/daemon.json
+          pip install fuzzbucket-client
           cd test
           just ui-test $env:os
       -
@@ -466,26 +468,15 @@ jobs:
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
-        # WARNING Docker run will only fail step if last command fails...
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
+          pip install fuzzbucket-client
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just run-client ${os}
-      - 
-        name: Setup docker and docker-compose (missing on MacOS)
-        run: |
-          # Workaround for https://github.com/actions/runner-images/issues/8104
-          brew remove --ignore-dependencies qemu
-          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
-          brew install ./qemu.rb
-          brew install docker docker-compose
-            
-          # Link the Docker Compose v2 plugin so it's understood by the docker CLI
-          mkdir -p ~/.docker/cli-plugins
-          ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
-          
-          colima start
       -
         name: Run MacOS Cypress Tests
         env:
@@ -538,6 +529,9 @@ jobs:
           build-args: |
             BUILDKIT_INLINE_CACHE=1
             platform=linux-amd64
+            FUZZBUCKET_SSH_KEY=${{ secrets.FUZZBUCKET_SSH_KEY }}
+            FUZZBUCKET_URL=${{ secrets.FUZZBUCKET_URL }}
+            FUZZBUCKET_CREDENTIALS=${{ secrets.FUZZBUCKET_CREDENTIALS }}
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/amd64
@@ -604,6 +598,9 @@ jobs:
           os: linux-amd64
           DOCKER: "false"
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
           just test/ui-test ${os}
           

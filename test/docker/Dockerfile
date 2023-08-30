@@ -3,7 +3,14 @@ EXPOSE 9000
 VOLUME ${PWD}/../:/publishing-client
 WORKDIR /publishing-client/test
 ARG platform
-ENV platform $platform
+ARG FUZZBUCKET_SSH_KEY
+ARG FUZZBUCKET_URL
+ARG FUZZBUCKET_CREDENTIALS
+
+ENV platform=$platform
+ENV FUZZBUCKET_SSH_KEY=$FUZZBUCKET_SSH_KEY
+ENV FUZZBUCKET_URL=$FUZZBUCKET_URL
+ENV FUZZBUCKET_CREDENTIALS=$FUZZBUCKET_CREDENTIALS
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
@@ -28,7 +35,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     xvfb \
     python3 \
     python3-pip \
-    python-is-python3
+    python-is-python3 \
+    jq
 
 RUN export GOLANG_VERSION=1.20.4 \
     && export GOLANG_DOWNLOAD_SHA256=698ef3243972a51ddb4028e4a1ac63dc6d60821bf18e59a807e051fee0a385bd \
