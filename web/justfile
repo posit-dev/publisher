@@ -38,6 +38,19 @@ test: test-unit test-race test-e2e
 test-race:
     go test -race ./...
 
+# run e2e (Cypress) tests against dev server
+test-e2e-dev:
+    #!/bin/bash
+    set -euo pipefail
+
+    # set this environment variable to keep Cypress from attempting to create
+    # cache within root's home dir.
+    export CYPRESS_CACHE_FOLDER="./cypress/.cache"
+    # install cypress
+    npx cypress install
+
+    npm run test:e2e:dev
+
 # run e2e (Cypress) tests
 test-e2e:
     #!/bin/bash
@@ -49,9 +62,9 @@ test-e2e:
     # install cypress
     npx cypress install
 
-    npm run test:e2e
+    npm run test:e2e:ci
 
-test-ci-e2e target:
+build-and-test-ci-e2e target:
     #!/bin/bash
     set -euo pipefail
     just build
@@ -62,7 +75,7 @@ test-ci-e2e target:
     # install cypress
     npx cypress install
 
-    npm run test:e2e
+    npm run test:e2e:ci
 
 # run unit tests one time
 test-unit:

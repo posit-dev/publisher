@@ -410,7 +410,7 @@ jobs:
           os: windows-latest
           DOCKER: "false"
         run: |
-          just web/test-ci-e2e $env:os
+          just web/build-and-test-ci-e2e $env:os
 
 
   test-macos:
@@ -454,7 +454,7 @@ jobs:
           os: macos-latest
           DOCKER: "false"
         run: |
-          just web/test-ci-e2e ${os}
+          just web/build-and-test-ci-e2e ${os}
 
   build-linux-amd64:
     runs-on: ubuntu-latest
