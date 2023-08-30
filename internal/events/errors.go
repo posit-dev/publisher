@@ -12,9 +12,12 @@ import (
 type ErrorCode = types.ErrorCode
 
 func ErrorToEvent(e types.EventableError) AgentEvent {
+	data := e.GetData()
+	data["msg"] = e.Error()
+
 	return AgentEvent{
 		Time: time.Now().UTC(),
 		Type: fmt.Sprintf("%s/failure/%s", e.GetOperation(), e.GetCode()),
-		Data: EventData(e.GetData()),
+		Data: data,
 	}
 }

@@ -36,6 +36,10 @@ const (
 	PublishSetVanityUrlOp     Operation = "publish/setVanityURL"
 )
 
-func EventTypeOf(op Operation, phase Phase) EventType {
-	return fmt.Sprintf("%s/%s", op, phase)
+func EventTypeOf(op Operation, phase Phase, errCode ErrorCode) EventType {
+	if phase == logging.FailurePhase && errCode != "" {
+		return fmt.Sprintf("%s/%s/%s", op, phase, errCode)
+	} else {
+		return fmt.Sprintf("%s/%s", op, phase)
+	}
 }

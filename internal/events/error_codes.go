@@ -3,11 +3,12 @@ package events
 // Copyright (C) 2023 by Posit Software, PBC.
 
 const (
-	AuthenticationFailedCode  ErrorCode = "authFailed"            // Couldn't authenticate to publishing server
-	OperationTimedOutCode     ErrorCode = "timeout"               // HTTP request to publishing server timed out
-	ServerError               ErrorCode = "serverError"           // HTTP 5xx code from publishing server
-	VanityURLNotAvailableCode ErrorCode = "vanityURLNotAvailable" // Vanity URL already in use
-	DeploymentNotFoundCode    ErrorCode = "deploymentNotFound"    // Could not find deployment to update
+	AuthenticationFailedCode  ErrorCode = "authFailedErr"            // Couldn't authenticate to publishing server
+	PermissionsCode           ErrorCode = "permissionErr"            // Server responded with 403 forbidden
+	OperationTimedOutCode     ErrorCode = "timeoutErr"               // HTTP request to publishing server timed out
+	ServerErrorCode           ErrorCode = "serverErr"                // HTTP 5xx code from publishing server
+	VanityURLNotAvailableCode ErrorCode = "vanityURLNotAvailableErr" // Vanity URL already in use
+	DeploymentNotFoundCode    ErrorCode = "deploymentNotFoundErr"    // Could not find deployment to update
 
 	// Server failed to deploy the bundle.
 	// This will eventually need to become more specific

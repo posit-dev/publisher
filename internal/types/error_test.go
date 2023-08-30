@@ -39,11 +39,10 @@ func (s *ErrorSuite) TestUsage() {
 	agentErr.SetOperation(op)
 
 	// Everything is available via the serialization getters
-	s.Equal(err.Error(), agentErr.Error())
+	s.Equal("an error occurred", agentErr.Error())
 	s.Equal(agentErr.GetCode(), code)
-	s.Equal(agentErr.GetData(), ErrorData{
-		"Msg":      "an error occurred",
+	s.Equal(ErrorData{
 		"Metadata": "Some metadata",
-	})
+	}, agentErr.GetData())
 	s.Equal(op, agentErr.GetOperation())
 }

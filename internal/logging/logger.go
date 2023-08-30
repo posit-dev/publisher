@@ -23,8 +23,9 @@ const (
 // LogKeyOp should be followed by an Operation,
 // and LogKeyPhase should be followed by a Phase.
 const (
-	LogKeyOp    = "event_op"
-	LogKeyPhase = "event_phase"
+	LogKeyOp      = "event_op"
+	LogKeyPhase   = "event_phase"
+	LogKeyErrCode = "error_code"
 )
 
 type Logger struct {
@@ -59,7 +60,15 @@ func (l Logger) Progress(msg string, done float32, total float32, args ...any) {
 
 func (l Logger) Failure(err error) {
 	if agentError, ok := err.(types.EventableError); ok {
-		l.Error(err.Error(), LogKeyOp, agentError.GetOperation(), LogKeyPhase, FailurePhase)
+		args := []any{
+			LogKeyOp, agentError.GetOperation(),
+			LogKeyPhase, FailurePhase,
+			LogKeyErrCode, agentError.GetCode(),
+		}
+		for k, v := range agentError.GetData() {
+			args = append(args, k, v)
+		}
+		l.Error(err.Error(), args...)
 	} else {
 		// We shouldn't get here, because callers who use Failure
 		// (the Publish routine) will wrap all errors in AgentErrors.

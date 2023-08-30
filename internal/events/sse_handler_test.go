@@ -136,7 +136,11 @@ func (s *SSEHandlerSuite) TestHandleWithAttrs() {
 	rec.AddAttrs(
 		slog.Attr{
 			Key:   logging.LogKeyPhase,
-			Value: slog.StringValue(string(logging.SuccessPhase)),
+			Value: slog.StringValue(string(logging.FailurePhase)),
+		},
+		slog.Attr{
+			Key:   logging.LogKeyErrCode,
+			Value: slog.StringValue(string("myErrCode")),
 		},
 		slog.Attr{
 			Key:   "random_number",
@@ -155,7 +159,7 @@ func (s *SSEHandlerSuite) TestHandleWithAttrs() {
 		s.NoError(err)
 		s.Equal("log message", event.Data["Message"])
 		s.Equal("INFO", event.Data["Level"])
-		s.Equal("someOperation/step/success", event.Type)
+		s.Equal("someOperation/step/failure/myErrCode", event.Type)
 		s.Equal(float64(123), event.Data["random_number"])
 	})
 	err = handlerWithAttrs.Handle(context.Background(), rec)

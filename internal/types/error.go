@@ -26,13 +26,17 @@ type AgentError struct {
 const UnknownErrorCode ErrorCode = "unknown"
 
 func NewAgentError(code ErrorCode, err error, details any) *AgentError {
-	var data ErrorData
-	mapstructure.Decode(err, &data)
-	if details != nil {
-		mapstructure.Decode(details, &data)
+	data := make(ErrorData)
+	if err != nil {
+		mapstructure.Decode(err, &data)
 	}
-	data["Msg"] = err.Error()
-
+	if details != nil {
+		detailMap := make(ErrorData)
+		mapstructure.Decode(details, &detailMap)
+		for k, v := range detailMap {
+			data[k] = v
+		}
+	}
 	return &AgentError{
 		Code: code,
 		Err:  err,

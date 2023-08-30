@@ -11,6 +11,7 @@ import (
 
 	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 )
 
 type SSEServer interface {
@@ -66,6 +67,7 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	// will create an SSE event with Type: "publish/restore/log".
 	op := AgentOp
 	phase := logging.LogPhase
+	errCode := types.UnknownErrorCode
 
 	handleAttr := func(attr slog.Attr) bool {
 		switch attr.Key {
@@ -73,6 +75,8 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 			op = Operation(attr.Value.String())
 		case logging.LogKeyPhase:
 			phase = Phase(attr.Value.String())
+		case logging.LogKeyErrCode:
+			errCode = ErrorCode(attr.Value.String())
 		case "": // skip empty attrs
 		default:
 			event.Data[attr.Key] = attr.Value.Any()
@@ -85,7 +89,7 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	}
 	// Then the ones from this specific message.
 	rec.Attrs(handleAttr)
-	event.Type = EventTypeOf(op, phase)
+	event.Type = EventTypeOf(op, phase, errCode)
 	return event
 }
 

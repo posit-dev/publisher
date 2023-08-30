@@ -165,7 +165,7 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 		})
 		if err != nil {
 			httpErr, ok := err.(*clients.HTTPError)
-			if ok && httpErr.Code == http.StatusNotFound {
+			if ok && httpErr.Status == http.StatusNotFound {
 				details := DeploymentNotFoundDetails{
 					ContentID: contentID,
 				}

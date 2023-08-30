@@ -93,7 +93,8 @@ func (s *LoggingSuite) TestFailureAgentError() {
 	baseLogger.On(
 		"Error", "test error",
 		LogKeyOp, op,
-		LogKeyPhase, FailurePhase)
+		LogKeyPhase, FailurePhase,
+		LogKeyErrCode, types.UnknownErrorCode)
 
 	log := Logger{baseLogger}
 	baseErr := errors.New("test error")

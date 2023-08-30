@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -16,12 +15,13 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/auth"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 
 	"golang.org/x/net/publicsuffix"
@@ -55,17 +55,22 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log 
 	}, nil
 }
 
-var errAuthenticationFailed = errors.New("unable to log in with the provided credentials")
-var ErrNotFound = errors.New("server returned Not Found for the requested resource")
-
 type HTTPError struct {
-	URL  string
-	Code int
-	Body string
+	URL    string
+	Method string
+	Status int
+}
+
+func NewHTTPError(url, method string, status int) *HTTPError {
+	return &HTTPError{
+		URL:    url,
+		Method: method,
+		Status: status,
+	}
 }
 
 func (e *HTTPError) Error() string {
-	return fmt.Sprintf("unexpected response from the server: %d on URL %s (%s)", e.Code, e.URL, strings.TrimSpace(e.Body))
+	return "unexpected response from the server"
 }
 
 func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyType string) ([]byte, error) {
@@ -76,35 +81,39 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
+		if e, ok := err.(net.Error); ok && e.Timeout() {
+			return nil, types.NewAgentError(events.OperationTimedOutCode, err, nil)
+		}
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	switch resp.StatusCode {
-	case http.StatusUnauthorized:
-		return nil, errAuthenticationFailed
 	case http.StatusOK, http.StatusCreated, http.StatusAccepted:
 		return io.ReadAll(resp.Body)
 	case http.StatusNoContent:
 		return nil, nil
 	default:
-		// Log the message body, if available
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			body = nil
-		}
-		errMessage := string(body)
+		// If this was a Connect API error, there should be
+		// helpful error information in the json body.
+		var errDetails map[string]any
 
-		// If this was a Connect API error, there might be
-		// a helpful error field in the json body.
-		var errResponse struct {
-			Error string `json:"error"`
+		body, err := io.ReadAll(resp.Body)
+		if err == nil {
+			_ = json.Unmarshal(body, &errDetails)
 		}
-		err = json.Unmarshal(body, &errResponse)
-		if err == nil && errResponse.Error != "" {
-			errMessage = errResponse.Error
+		errCode := events.ServerErrorCode
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			errCode = events.AuthenticationFailedCode
+		case http.StatusForbidden:
+			errCode = events.PermissionsCode
 		}
-		return nil, &HTTPError{URL: apiURL, Code: resp.StatusCode, Body: errMessage}
+		err = types.NewAgentError(
+			errCode,
+			NewHTTPError(apiURL, method, resp.StatusCode),
+			errDetails)
+		return nil, err
 	}
 }
 
