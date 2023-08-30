@@ -10,7 +10,7 @@ import (
 //go:embed dist
 var dist embed.FS
 
-const Prefix = "/dist/spa"
+const Prefix = "/dist"
 
 type handler struct{}
 

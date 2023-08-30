@@ -63,7 +63,7 @@ build-agent:
         echo ""
         echo "An error has occurred while building."
         echo ""
-        if [ ! -f "./web/dist/spa/index.html" ]; then
+        if [ ! -f "./web/dist/index.html" ]; then
             echo "No web SPA artifacts can be found. A web build is required for the backend"
             echo "to build. Possibly resolve with 'just web/build' or 'just build'."
         fi
@@ -98,9 +98,9 @@ validate-agent:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    # there must be files in web/dist/spa for go vet
+    # there must be files in web/dist for go vet
     # so it can compile web/web.go which embeds it.
-    web_dir=web/dist/spa
+    web_dir=web/dist
     if [[ ! -e ${web_dir} ]]; then
         mkdir -p ${web_dir}
         echo "placeholder" > ${web_dir}/placeholder
