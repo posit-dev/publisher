@@ -5,7 +5,7 @@ package accounts
 import (
 	"fmt"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/spf13/afero"
 )
 
@@ -20,12 +20,12 @@ type AccountList interface {
 
 type defaultAccountList struct {
 	providers []AccountProvider
-	logger    events.Logger
+	logger    logging.Logger
 }
 
 var _ AccountList = &defaultAccountList{}
 
-func NewAccountList(fs afero.Fs, log events.Logger) *defaultAccountList {
+func NewAccountList(fs afero.Fs, log logging.Logger) *defaultAccountList {
 	return &defaultAccountList{
 		providers: []AccountProvider{
 			newEnvVarProvider(log),

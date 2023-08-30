@@ -4,23 +4,23 @@ package state
 
 import (
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type TargetID struct {
-	AccountName string               `json:"account_name" short:"n" help:"Nickname of destination publishing account."` // Nickname
-	ServerType  accounts.ServerType  `json:"server_type" kong:"-"`                                                      // Which type of API this server provides
-	ServerURL   string               `json:"server_url" kong:"-"`                                                       // Server URL
-	ContentId   apitypes.ContentID   `json:"content_id" help:"Unique ID of content item to update."`                    // Content ID (GUID for Connect)
-	ContentName apitypes.ContentName `json:"content_name" help:"Name of content item to update."`                       // Content Name (unique per user)
+	AccountName string              `json:"account_name" short:"n" help:"Nickname of destination publishing account."` // Nickname
+	ServerType  accounts.ServerType `json:"server_type" kong:"-"`                                                      // Which type of API this server provides
+	ServerURL   string              `json:"server_url" kong:"-"`                                                       // Server URL
+	ContentId   types.ContentID     `json:"content_id" help:"Unique ID of content item to update."`                    // Content ID (GUID for Connect)
+	ContentName types.ContentName   `json:"content_name" help:"Name of content item to update."`                       // Content Name (unique per user)
 
 	// These fields are informational and don't affect future deployments.
-	Username   string                `json:"username,omitempty" kong:"-"` // Username, if known
-	BundleId   apitypes.NullBundleID `json:"bundle_id" kong:"-"`          // Bundle ID that was deployed
-	DeployedAt apitypes.NullTime     `json:"deployed_at" kong:"-"`        // Date/time bundle was deployed
+	Username   string             `json:"username,omitempty" kong:"-"` // Username, if known
+	BundleId   types.NullBundleID `json:"bundle_id" kong:"-"`          // Bundle ID that was deployed
+	DeployedAt types.NullTime     `json:"deployed_at" kong:"-"`        // Date/time bundle was deployed
 }
 
 type Deployment struct {
@@ -68,7 +68,7 @@ func (d *Deployment) Merge(other *Deployment) {
 // LoadManifest reads the specified manifest file and populates
 // the Manifest field in the deployment state. This can be used
 // to read an arbitrary manifest file.
-func (d *Deployment) LoadManifest(path util.Path, log events.Logger) error {
+func (d *Deployment) LoadManifest(path util.Path, log logging.Logger) error {
 	isDir, err := path.IsDir()
 	if err != nil {
 		return err
@@ -102,7 +102,7 @@ const manifestLabel MetadataLabel = "manifest"
 // LoadFromFiles loads the deployment state from metadata files.
 // This should be called prior to processing higher-precedence
 // sources such as the CLI, environment variables, and UI input.
-func (d *Deployment) LoadFromFiles(sourceDir util.Path, configName string, log events.Logger) error {
+func (d *Deployment) LoadFromFiles(sourceDir util.Path, configName string, log logging.Logger) error {
 	metaDir := getMetadataPath(sourceDir, configName)
 	serializer := newJsonSerializer(metaDir, log)
 	return d.Load(serializer)
@@ -127,7 +127,7 @@ func (d *Deployment) Load(serializer deploymentSerializer) error {
 	return nil
 }
 
-func (d *Deployment) SaveToFiles(sourceDir util.Path, configName string, log events.Logger) error {
+func (d *Deployment) SaveToFiles(sourceDir util.Path, configName string, log logging.Logger) error {
 	metaDir := getMetadataPath(sourceDir, configName)
 	err := metaDir.MkdirAll(0777)
 	if err != nil {

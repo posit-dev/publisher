@@ -8,7 +8,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
@@ -27,7 +27,7 @@ func NewUIService(
 	token services.LocalToken,
 	fs afero.Fs,
 	lister accounts.AccountList,
-	log events.Logger) *api.Service {
+	log logging.Logger) *api.Service {
 
 	handler := newUIHandler(fs, publish, lister, log)
 
@@ -47,7 +47,7 @@ func NewUIService(
 	)
 }
 
-func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log events.Logger) http.HandlerFunc {
+func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
 
 	deployment := publishArgs.State
 	base := deployment.SourceDir

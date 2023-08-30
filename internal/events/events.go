@@ -5,10 +5,13 @@ package events
 import (
 	"fmt"
 	"time"
+
+	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 )
 
 type EventType = string
-type EventData map[string]any
+type EventData = types.ErrorData
 
 type AgentEvent struct {
 	Time time.Time
@@ -16,16 +19,9 @@ type AgentEvent struct {
 	Data EventData
 }
 
-type Phase string
-type Operation string
-
-const (
-	StartPhase    Phase = "start"
-	ProgressPhase Phase = "progress"
-	SuccessPhase  Phase = "success"
-	FailurePhase  Phase = "failure"
-	LogPhase      Phase = "log"
-)
+// We use Operation and Phase to construct the event Type.
+type Operation = types.Operation
+type Phase = logging.Phase
 
 const (
 	AgentOp Operation = "agent"

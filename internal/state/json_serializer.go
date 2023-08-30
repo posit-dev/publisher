@@ -6,16 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type jsonSerializer struct {
 	dir util.Path
-	log events.Logger
+	log logging.Logger
 }
 
-func newJsonSerializer(dir util.Path, log events.Logger) *jsonSerializer {
+func newJsonSerializer(dir util.Path, log logging.Logger) *jsonSerializer {
 	return &jsonSerializer{
 		dir: dir,
 		log: log,

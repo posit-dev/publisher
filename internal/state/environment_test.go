@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/apitypes"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,7 +32,7 @@ func (s *EnvironmentSuite) TestMarshalTextFromEnv() {
 func (s *EnvironmentSuite) TestMarshalTextWithValue() {
 	v := ConnectEnvironmentVariable{
 		Name:  "FOO",
-		Value: apitypes.NewOptional("abc"),
+		Value: types.NewOptional("abc"),
 	}
 	out, err := v.MarshalText()
 	s.Nil(err)
@@ -42,7 +42,7 @@ func (s *EnvironmentSuite) TestMarshalTextWithValue() {
 func (s *EnvironmentSuite) TestMarshalTextEmptyValue() {
 	v := ConnectEnvironmentVariable{
 		Name:  "FOO",
-		Value: apitypes.NewOptional(""),
+		Value: types.NewOptional(""),
 	}
 	out, err := v.MarshalText()
 	s.Nil(err)
@@ -56,7 +56,7 @@ func (s *EnvironmentSuite) TestUnmarshalTextFromEnvironment() {
 	s.Nil(err)
 	expected := ConnectEnvironmentVariable{
 		Name:            "FOO",
-		Value:           apitypes.NewOptional("42"),
+		Value:           types.NewOptional("42"),
 		fromEnvironment: true,
 	}
 	s.Equal(expected, v)
@@ -68,7 +68,7 @@ func (s *EnvironmentSuite) TestUnmarshalTextWithValue() {
 	s.Nil(err)
 	expected := ConnectEnvironmentVariable{
 		Name:  "FOO",
-		Value: apitypes.NewOptional("42"),
+		Value: types.NewOptional("42"),
 	}
 	s.Equal(expected, v)
 }
@@ -79,7 +79,7 @@ func (s *EnvironmentSuite) TestUnmarshalTextEmptyValue() {
 	s.Nil(err)
 	expected := ConnectEnvironmentVariable{
 		Name:  "FOO",
-		Value: apitypes.NewOptional(""),
+		Value: types.NewOptional(""),
 	}
 	s.Equal(expected, v)
 }

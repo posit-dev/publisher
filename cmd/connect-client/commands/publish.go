@@ -16,6 +16,7 @@ import (
 	"github.com/rstudio/connect-client/internal/environment"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/inspect"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/services/ui"
 	"github.com/rstudio/connect-client/internal/state"
@@ -23,8 +24,8 @@ import (
 )
 
 type StatefulCommand interface {
-	LoadState(log events.Logger) error
-	SaveState(log events.Logger) error
+	LoadState(log logging.Logger) error
+	SaveState(log logging.Logger) error
 }
 
 type BaseBundleCmd struct {
@@ -41,7 +42,7 @@ func (cmd *BaseBundleCmd) getConfigName() string {
 	return "default"
 }
 
-func (cmd *BaseBundleCmd) LoadState(log events.Logger) error {
+func (cmd *BaseBundleCmd) LoadState(log logging.Logger) error {
 	sourceDir, err := util.DirFromPath(cmd.Path)
 	if err != nil {
 		return err
@@ -61,11 +62,11 @@ func (cmd *BaseBundleCmd) LoadState(log events.Logger) error {
 	return nil
 }
 
-func (cmd *BaseBundleCmd) SaveState(log events.Logger) error {
+func (cmd *BaseBundleCmd) SaveState(log logging.Logger) error {
 	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, log)
 }
 
-func createManifestFileMapFromSourceDir(sourceDir util.Path, log events.Logger) (bundles.ManifestFileMap, error) {
+func createManifestFileMapFromSourceDir(sourceDir util.Path, log logging.Logger) (bundles.ManifestFileMap, error) {
 	files := make(bundles.ManifestFileMap)
 
 	ignore, err := gitignore.NewIgnoreList(sourceDir, nil)
@@ -79,7 +80,7 @@ func createManifestFileMapFromSourceDir(sourceDir util.Path, log events.Logger) 
 		return nil, err
 	}
 
-	walker := util.NewSymlinkWalker(ignore, log.Logger)
+	walker := util.NewSymlinkWalker(ignore, log.BaseLogger)
 	err = walker.Walk(root, func(path util.Path, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -108,7 +109,7 @@ func createManifestFileMapFromSourceDir(sourceDir util.Path, log events.Logger) 
 // stateFromCLI takes the CLI options provided by the user,
 // performs content auto-detection if needed, and
 // updates cmd.State to reflect all of the information.
-func (cmd *BaseBundleCmd) stateFromCLI(log events.Logger) error {
+func (cmd *BaseBundleCmd) stateFromCLI(log logging.Logger) error {
 	manifest := &cmd.State.Manifest
 	manifest.Version = 1
 	manifest.Packages = make(bundles.PackageMap)
@@ -184,7 +185,7 @@ func (cmd *BaseBundleCmd) requiresPython() (bool, error) {
 	return exists, nil
 }
 
-func (cmd *BaseBundleCmd) inspectPython(log events.Logger, manifest *bundles.Manifest) error {
+func (cmd *BaseBundleCmd) inspectPython(log logging.Logger, manifest *bundles.Manifest) error {
 	inspector := environment.NewPythonInspector(cmd.State.SourceDir, cmd.Python, log)
 	if manifest.Python.Version == "" {
 		pythonVersion, err := inspector.GetPythonVersion()
@@ -248,14 +249,14 @@ type PublishUICmd struct {
 	cli_types.UIArgs
 }
 
-func makeSSELogger(debug bool) events.Logger {
+func makeSSELogger(debug bool) logging.Logger {
 	eventServer := sse.New()
 	eventServer.CreateStream("messages")
 	logLevel := slog.LevelInfo
 	if debug {
 		logLevel = slog.LevelDebug
 	}
-	return events.NewLogger(logLevel, eventServer)
+	return events.NewLoggerWithSSE(logLevel, eventServer)
 }
 
 func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {

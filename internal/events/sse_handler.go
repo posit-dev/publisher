@@ -10,7 +10,17 @@ import (
 	"slices"
 
 	"github.com/r3labs/sse/v2"
+	"github.com/rstudio/connect-client/internal/logging"
 )
+
+type SSEServer interface {
+	Close()
+	CreateStream(id string) *sse.Stream
+	RemoveStream(id string)
+	StreamExists(id string) bool
+	Publish(id string, event *sse.Event)
+	TryPublish(id string, event *sse.Event) bool
+}
 
 type SSEHandlerOptions struct {
 	Level slog.Leveler
@@ -18,11 +28,13 @@ type SSEHandlerOptions struct {
 
 type SSEHandler struct {
 	opts   SSEHandlerOptions
-	server *sse.Server
+	server SSEServer
 	attrs  []slog.Attr
 }
 
-func NewSSEHandler(server *sse.Server, opts *SSEHandlerOptions) slog.Handler {
+var _ slog.Handler = &SSEHandler{}
+
+func NewSSEHandler(server SSEServer, opts *SSEHandlerOptions) *SSEHandler {
 	h := &SSEHandler{
 		server: server,
 	}
@@ -39,13 +51,6 @@ func (h *SSEHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return level >= h.opts.Level.Level()
 }
 
-type LogKey string
-
-const (
-	LogKeyOp    = "event_op"
-	LogKeyPhase = "event_phase"
-)
-
 func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	event := &AgentEvent{
 		Time: rec.Time,
@@ -60,13 +65,13 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	// log.Info("a message", "op", "publish/restore")
 	// will create an SSE event with Type: "publish/restore/log".
 	op := AgentOp
-	phase := LogPhase
+	phase := logging.LogPhase
 
 	handleAttr := func(attr slog.Attr) bool {
 		switch attr.Key {
-		case LogKeyOp:
+		case logging.LogKeyOp:
 			op = Operation(attr.Value.String())
-		case LogKeyPhase:
+		case logging.LogKeyPhase:
 			phase = Phase(attr.Value.String())
 		case "": // skip empty attrs
 		default:
@@ -92,8 +97,7 @@ func (h *SSEHandler) Handle(ctx context.Context, rec slog.Record) error {
 	}
 
 	// TODO: debugging
-	fmt.Println("SSE would send: ", string(eventJSON))
-	return nil
+	fmt.Println("SSE will send: ", string(eventJSON))
 
 	h.server.Publish("messages",
 		&sse.Event{

@@ -5,14 +5,14 @@ package accounts
 import (
 	"os"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 )
 
 type envVarProvider struct {
-	log events.Logger
+	log logging.Logger
 }
 
-func newEnvVarProvider(log events.Logger) *envVarProvider {
+func newEnvVarProvider(log logging.Logger) *envVarProvider {
 	return &envVarProvider{
 		log: log,
 	}

@@ -1,4 +1,4 @@
-package events
+package logging
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -7,38 +7,34 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/r3labs/sse/v2"
-	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/logging/loggingtest"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
-type LoggerSuite struct {
+type LoggingSuite struct {
 	utiltest.Suite
 }
 
-func TestLoggerSuite(t *testing.T) {
-	suite.Run(t, new(LoggerSuite))
+func TestLoggingSuite(t *testing.T) {
+	suite.Run(t, new(LoggingSuite))
 }
 
-func (s *LoggerSuite) TestDefaultLogger() {
+func (s *LoggingSuite) TestDefaultLogger() {
 	log := DefaultLogger()
-	s.NotNil(log.Logger)
+	s.NotNil(log.BaseLogger)
 }
 
-func (s *LoggerSuite) TestNewLoggerNoSSE() {
-	log := NewLogger(slog.LevelInfo, nil)
-	s.IsType(log.Handler(), &slog.TextHandler{})
+func (s *LoggingSuite) TestFromStdLogger() {
+	stdLogger := slog.Default()
+	log := FromStdLogger(stdLogger)
+	s.NotNil(log.BaseLogger)
+	s.Equal(stdLogger, log.BaseLogger)
 }
 
-func (s *LoggerSuite) TestNewLoggerWithSSE() {
-	log := NewLogger(slog.LevelInfo, sse.New())
-	s.IsType(log.Handler(), &logging.MultiHandler{})
-}
-
-func (s *LoggerSuite) TestStart() {
+func (s *LoggingSuite) TestStart() {
 	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On("Info", "message", LogKeyPhase, StartPhase, "arg", "value")
 
@@ -47,7 +43,7 @@ func (s *LoggerSuite) TestStart() {
 	s.Assert()
 }
 
-func (s *LoggerSuite) TestSuccess() {
+func (s *LoggingSuite) TestSuccess() {
 	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On("Info", "message", LogKeyPhase, SuccessPhase, "arg", "value")
 
@@ -56,7 +52,7 @@ func (s *LoggerSuite) TestSuccess() {
 	s.Assert()
 }
 
-func (s *LoggerSuite) TestStatus() {
+func (s *LoggingSuite) TestStatus() {
 	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On("Info", "message", LogKeyPhase, ProgressPhase, "arg", "value")
 
@@ -65,7 +61,7 @@ func (s *LoggerSuite) TestStatus() {
 	s.Assert()
 }
 
-func (s *LoggerSuite) TestProgress() {
+func (s *LoggingSuite) TestProgress() {
 	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On(
 		"Info", "message",
@@ -79,7 +75,7 @@ func (s *LoggerSuite) TestProgress() {
 	s.Assert()
 }
 
-func (s *LoggerSuite) TestFailureGoError() {
+func (s *LoggingSuite) TestFailureGoError() {
 	baseLogger := loggingtest.NewMockLogger()
 	baseLogger.On("Error", "test error", LogKeyPhase, FailurePhase)
 	baseLogger.On("Debug", mock.AnythingOfType("string"))
@@ -90,22 +86,24 @@ func (s *LoggerSuite) TestFailureGoError() {
 	s.Assert()
 }
 
-func (s *LoggerSuite) TestFailureAgentError() {
+func (s *LoggingSuite) TestFailureAgentError() {
 	baseLogger := loggingtest.NewMockLogger()
+	op := types.Operation("testOp")
+
 	baseLogger.On(
 		"Error", "test error",
-		LogKeyOp, PublishDeployBundleOp,
+		LogKeyOp, op,
 		LogKeyPhase, FailurePhase)
 
 	log := Logger{baseLogger}
 	baseErr := errors.New("test error")
-	err := NewAgentError(UnknownErrorCode, baseErr, nil)
-	err.SetOperation(PublishDeployBundleOp)
+	err := types.NewAgentError(types.UnknownErrorCode, baseErr, nil)
+	err.SetOperation(op)
 	log.Failure(err)
 	s.Assert()
 }
 
-func (s *LoggerSuite) TestWith() {
+func (s *LoggingSuite) TestWith() {
 	baseLogger := loggingtest.NewMockLogger()
 	expectedLogger := slog.Default()
 	baseLogger.On("With", "arg", "value", "arg2", "value2").Return(expectedLogger)

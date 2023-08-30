@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func GetFileHandlerFunc(base util.Path, filesService files.FilesService, pathsService paths.PathsService, log events.Logger) http.HandlerFunc {
+func GetFileHandlerFunc(base util.Path, filesService files.FilesService, pathsService paths.PathsService, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var p util.Path
 		if q := r.URL.Query(); q.Has("pathname") {

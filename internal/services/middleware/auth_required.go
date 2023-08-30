@@ -6,7 +6,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 )
 
 // AuthRequired verifies that the session has been
@@ -15,7 +15,7 @@ type authenticatedContextKeyType string
 
 const authenticatedContextKey authenticatedContextKeyType = "authenticated"
 
-func AuthRequired(log events.Logger, next http.HandlerFunc) http.HandlerFunc {
+func AuthRequired(log logging.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if !isRequestAuthenticated(req) {
 			w.WriteHeader(http.StatusUnauthorized)

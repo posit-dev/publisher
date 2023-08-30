@@ -7,11 +7,11 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients/clienttest"
-	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -21,7 +21,7 @@ import (
 
 type PublishSuite struct {
 	utiltest.Suite
-	log events.Logger
+	log logging.Logger
 	fs  afero.Fs
 	cwd util.Path
 }
@@ -31,7 +31,7 @@ func TestPublishSuite(t *testing.T) {
 }
 
 func (s *PublishSuite) SetupTest() {
-	s.log = events.DefaultLogger()
+	s.log = logging.DefaultLogger()
 	s.fs = afero.NewMemMapFs()
 	cwd, err := util.Getwd(s.fs)
 	s.Nil(err)
@@ -134,9 +134,9 @@ func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitEr
 		URL:        "https://connect.example.com",
 	}
 
-	myContentID := apitypes.ContentID("myContentID")
-	myBundleID := apitypes.BundleID("myBundleID")
-	myTaskID := apitypes.TaskID("myTaskID")
+	myContentID := types.ContentID("myContentID")
+	myBundleID := types.BundleID("myBundleID")
+	myTaskID := types.TaskID("myTaskID")
 
 	client := clienttest.NewMockClient()
 	client.On("CreateDeployment", mock.Anything).Return(myContentID, createErr)

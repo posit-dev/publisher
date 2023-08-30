@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 )
 
@@ -14,7 +14,7 @@ type PutDeploymentFilesRequestBody struct {
 	Files []string `json:"files"`
 }
 
-func PutDeploymentFilesHandlerFunc(deploymentsService deployments.DeploymentsService, log events.Logger) http.HandlerFunc {
+func PutDeploymentFilesHandlerFunc(deploymentsService deployments.DeploymentsService, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dec := json.NewDecoder(r.Body)
 		dec.DisallowUnknownFields()

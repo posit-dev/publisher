@@ -8,7 +8,6 @@ const (
 	ServerError               ErrorCode = "serverError"           // HTTP 5xx code from publishing server
 	VanityURLNotAvailableCode ErrorCode = "vanityURLNotAvailable" // Vanity URL already in use
 	DeploymentNotFoundCode    ErrorCode = "deploymentNotFound"    // Could not find deployment to update
-	UnknownErrorCode          ErrorCode = "unknown"               // Other (unknown) error
 
 	// Server failed to deploy the bundle.
 	// This will eventually need to become more specific

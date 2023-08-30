@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -26,7 +26,7 @@ func TestJsonSerializerSuite(t *testing.T) {
 
 func (s *JsonSerializerSuite) TestNewJsonSerializer() {
 	fs := utiltest.NewMockFs()
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	path := util.NewPath("/my/path", fs)
 	serializer := newJsonSerializer(path, logger)
 	expected := &jsonSerializer{
@@ -43,7 +43,7 @@ type testData struct {
 
 func (s *JsonSerializerSuite) TestSaveLoad() {
 	fs := afero.NewMemMapFs()
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	path := util.NewPath("/my/path", fs)
 	serializer := newJsonSerializer(path, logger)
 	data := testData{
@@ -60,7 +60,7 @@ func (s *JsonSerializerSuite) TestSaveLoad() {
 
 func (s *JsonSerializerSuite) TestLoadMissingFile() {
 	fs := afero.NewMemMapFs()
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	path := util.NewPath("/my/path", fs)
 	serializer := newJsonSerializer(path, logger)
 	var loadedData testData
@@ -77,7 +77,7 @@ func (s *JsonSerializerSuite) TestLoadBadJSON() {
 	err = afero.WriteFile(fs, filepath.Join(dir, "test.json"), []byte(""), 0600)
 	s.Nil(err)
 
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	path := util.NewPath(dir, fs)
 	serializer := newJsonSerializer(path, logger)
 	var loadedData testData
@@ -91,7 +91,7 @@ func (s *JsonSerializerSuite) TestSaveCreateErr() {
 	fs := utiltest.NewMockFs()
 	testError := errors.New("test error from Create")
 	fs.On("Create", mock.Anything).Return(nil, testError)
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	path := util.NewPath("/my/path", fs)
 	serializer := newJsonSerializer(path, logger)
 	var data testData
@@ -108,7 +108,7 @@ func (s *JsonSerializerSuite) TestSaveWriteErr() {
 	f.On("Write", mock.Anything).Return(0, testError)
 	f.On("Close").Return(nil)
 
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	path := util.NewPath("/my/path", fs)
 	serializer := newJsonSerializer(path, logger)
 	var data testData

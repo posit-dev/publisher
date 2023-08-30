@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/middleware"
@@ -31,7 +31,7 @@ type Service struct {
 	skipAuth      bool
 	token         services.LocalToken
 	addr          net.Addr
-	logger        events.Logger
+	logger        logging.Logger
 }
 
 var errTlsRequiredFiles error = errors.New("TLS requires both a private key file and a certificate chain file")
@@ -48,7 +48,7 @@ func NewService(
 	skipAuth bool,
 	accessLog bool,
 	token services.LocalToken,
-	log events.Logger) *Service {
+	log logging.Logger) *Service {
 
 	if project.DevelopmentBuild() && skipAuth {
 		log.Warn("Service is operating in DEVELOPMENT MODE with NO browser to server authentication")

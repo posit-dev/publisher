@@ -4,7 +4,7 @@ package cli_types
 
 import (
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
@@ -18,17 +18,17 @@ type CommonArgs struct {
 }
 
 type Log interface {
-	events.Logger
+	logging.Logger
 }
 
 type CLIContext struct {
 	Accounts   accounts.AccountList
 	LocalToken services.LocalToken
 	Fs         afero.Fs
-	Logger     events.Logger
+	Logger     logging.Logger
 }
 
-func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, log events.Logger) *CLIContext {
+func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, log logging.Logger) *CLIContext {
 	return &CLIContext{
 		Accounts:   accountList,
 		LocalToken: token,

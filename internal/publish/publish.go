@@ -12,15 +12,16 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients"
-	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, log events.Logger) error {
+func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, log logging.Logger) error {
 	bundleFile, err := dest.Create()
 	if err != nil {
 		return err
@@ -34,7 +35,7 @@ func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, log e
 	return err
 }
 
-func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, log events.Logger) error {
+func WriteManifestFromDirectory(cmd *cli_types.PublishArgs, log logging.Logger) error {
 	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, log)
 	if err != nil {
 		return err
@@ -61,7 +62,7 @@ type appInfo struct {
 	DirectURL    string `json:"direct-url"`
 }
 
-func logAppInfo(accountURL string, contentID apitypes.ContentID, log events.Logger) error {
+func logAppInfo(accountURL string, contentID types.ContentID, log logging.Logger) error {
 	appInfo := appInfo{
 		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
 		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
@@ -80,7 +81,7 @@ func logAppInfo(accountURL string, contentID apitypes.ContentID, log events.Logg
 	return err
 }
 
-func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountList, log events.Logger) error {
+func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) error {
 	bundler, err := bundles.NewBundlerForManifest(cmd.State.SourceDir, &cmd.State.Manifest, log)
 	if err != nil {
 		return err
@@ -88,7 +89,7 @@ func PublishManifestFiles(cmd *cli_types.PublishArgs, lister accounts.AccountLis
 	return publish(cmd, bundler, lister, log)
 }
 
-func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, log events.Logger) error {
+func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) error {
 	log.Info("Publishing from directory", "path", cmd.State.SourceDir)
 	bundler, err := bundles.NewBundler(cmd.State.SourceDir, &cmd.State.Manifest, cmd.Exclude, nil, log)
 	if err != nil {
@@ -97,7 +98,7 @@ func PublishDirectory(cmd *cli_types.PublishArgs, lister accounts.AccountList, l
 	return publish(cmd, bundler, lister, log)
 }
 
-func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister accounts.AccountList, log events.Logger) error {
+func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister accounts.AccountList, log logging.Logger) error {
 	account, err := lister.GetAccountByName(cmd.State.Target.AccountName)
 	if err != nil {
 		return err
@@ -116,46 +117,46 @@ func publish(cmd *cli_types.PublishArgs, bundler bundles.Bundler, lister account
 }
 
 type DeploymentNotFoundDetails struct {
-	ContentID apitypes.ContentID
+	ContentID types.ContentID
 }
 
-func withLog[T any](op events.Operation, msg string, log events.Logger, fn func() (T, error)) (value T, err error) {
-	log = log.With(events.LogKeyOp, op)
+func withLog[T any](op events.Operation, msg string, log logging.Logger, fn func() (T, error)) (value T, err error) {
+	log = log.With(logging.LogKeyOp, op)
 	log.Start(msg)
 	value, err = fn()
 	if err != nil {
 		// Using implicit return values here since we
 		// can't construct an empty T{}
-		err = events.ErrToAgentError(op, err)
+		err = types.ErrToAgentError(op, err)
 		return
 	}
 	log.Success("Done " + msg)
 	return value, nil
 }
 
-func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, log events.Logger) error {
+func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, log logging.Logger) error {
 	log = log.With(
 		"server", account.URL,
-		events.LogKeyOp, events.PublishCreateBundleOp)
+		logging.LogKeyOp, events.PublishCreateBundleOp)
 	log.Start("Creating bundle")
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
-		return events.ErrToAgentError(events.PublishCreateBundleOp, err)
+		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
 
 	_, err = bundler.CreateBundle(bundleFile)
 	if err != nil {
-		return events.ErrToAgentError(events.PublishCreateBundleOp, err)
+		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
 	}
 	_, err = bundleFile.Seek(0, io.SeekStart)
 	if err != nil {
-		return events.ErrToAgentError(events.PublishCreateBundleOp, err)
+		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
 	}
 	log.Success("Done creating bundle")
 
-	var contentID apitypes.ContentID
+	var contentID types.ContentID
 	if cmd.State.Target.ContentId != "" && !cmd.New {
 		contentID = cmd.State.Target.ContentId
 		log = log.With("content_id", contentID)
@@ -168,12 +169,12 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 				details := DeploymentNotFoundDetails{
 					ContentID: contentID,
 				}
-				return events.NewAgentError(events.DeploymentNotFoundCode, err, details)
+				return types.NewAgentError(events.DeploymentNotFoundCode, err, details)
 			}
 			return err
 		}
 	} else {
-		contentID, err = withLog(events.PublishCreateDeploymentOp, "Creating deployment", log, func() (apitypes.ContentID, error) {
+		contentID, err = withLog(events.PublishCreateDeploymentOp, "Creating deployment", log, func() (types.ContentID, error) {
 			return client.CreateDeployment(cmd.State.Connect.Content)
 		})
 		if err != nil {
@@ -182,7 +183,7 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 		log = log.With("content_id", contentID)
 	}
 
-	bundleID, err := withLog(events.PublishUploadBundleOp, "Uploading deployment bundle", log, func() (apitypes.BundleID, error) {
+	bundleID, err := withLog(events.PublishUploadBundleOp, "Uploading deployment bundle", log, func() (types.BundleID, error) {
 		return client.UploadBundle(contentID, bundleFile)
 	})
 	if err != nil {
@@ -197,11 +198,11 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 		ContentId:   contentID,
 		ContentName: "",
 		Username:    account.AccountName,
-		BundleId:    apitypes.NewOptional(bundleID),
-		DeployedAt:  apitypes.NewOptional(time.Now()),
+		BundleId:    types.NewOptional(bundleID),
+		DeployedAt:  types.NewOptional(time.Now()),
 	}
 
-	taskID, err := withLog(events.PublishDeployBundleOp, "Initiating bundle deployment", log, func() (apitypes.TaskID, error) {
+	taskID, err := withLog(events.PublishDeployBundleOp, "Initiating bundle deployment", log, func() (types.TaskID, error) {
 		return client.DeployBundle(contentID, bundleID)
 	})
 	if err != nil {
@@ -214,6 +215,6 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 	if err != nil {
 		return err
 	}
-	log = log.With(events.LogKeyOp, events.AgentOp)
+	log = log.With(logging.LogKeyOp, events.AgentOp)
 	return logAppInfo(account.URL, contentID, log)
 }

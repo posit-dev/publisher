@@ -12,6 +12,7 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/spf13/afero"
@@ -28,13 +29,13 @@ type cliSpec struct {
 	Version       commands.VersionFlag      `help:"Show the client software version and exit."`
 }
 
-func logVersion(log events.Logger) {
+func logVersion(log logging.Logger) {
 	log.Info("Client version", "version", project.Version)
 	log.Info("Development mode", "mode", project.Mode)
 	log.Info("Development build", "DevelopmentBuild", project.DevelopmentBuild())
 }
 
-func makeContext(log events.Logger) (*cli_types.CLIContext, error) {
+func makeContext(log logging.Logger) (*cli_types.CLIContext, error) {
 	fs := afero.NewOsFs()
 	accountList := accounts.NewAccountList(fs, log)
 	token, err := services.NewLocalToken()
@@ -45,14 +46,14 @@ func makeContext(log events.Logger) (*cli_types.CLIContext, error) {
 	return ctx, nil
 }
 
-func Fatal(log events.Logger, msg string, err error, args ...any) {
+func Fatal(log logging.Logger, msg string, err error, args ...any) {
 	args = append([]any{"error", err.Error()}, args...)
 	log.Error(msg, args...)
 	os.Exit(1)
 }
 
 func main() {
-	logger := events.NewLogger(slog.LevelInfo, nil)
+	logger := events.NewLoggerWithSSE(slog.LevelInfo, nil)
 	logVersion(logger)
 
 	ctx, err := makeContext(logger)
@@ -65,7 +66,7 @@ func main() {
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
 	if cli.Debug {
-		ctx.Logger = events.NewLogger(slog.LevelDebug, nil)
+		ctx.Logger = events.NewLoggerWithSSE(slog.LevelDebug, nil)
 	}
 	if cli.Token != nil {
 		ctx.LocalToken = *cli.Token

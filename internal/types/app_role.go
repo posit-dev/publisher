@@ -1,6 +1,6 @@
-// Copyright (C) 2023 by Posit Software, PBC.
+package types
 
-package apitypes
+// Copyright (C) 2023 by Posit Software, PBC.
 
 import "fmt"
 

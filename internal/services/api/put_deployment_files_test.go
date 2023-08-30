@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
@@ -18,7 +18,7 @@ import (
 
 type PutDeploymentFilesHandlerFuncSuite struct {
 	utiltest.Suite
-	log events.Logger
+	log logging.Logger
 }
 
 func TestPutDeploymentFilesHandlerFuncSuite(t *testing.T) {
@@ -26,7 +26,7 @@ func TestPutDeploymentFilesHandlerFuncSuite(t *testing.T) {
 }
 
 func (s *PutDeploymentFilesHandlerFuncSuite) SetupSuite() {
-	s.log = events.DefaultLogger()
+	s.log = logging.DefaultLogger()
 }
 
 func (s *PutDeploymentFilesHandlerFuncSuite) TestPutDeploymentFilesHandlerFunc() {

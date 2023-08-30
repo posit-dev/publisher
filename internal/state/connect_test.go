@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/apitypes"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -31,15 +31,15 @@ func (s *ConnectStateSuite) TestLoad() {
 	serializer.On("Load", environmentLabel, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		envVars := args.Get(1).(*[]ConnectEnvironmentVariable)
 		*envVars = []ConnectEnvironmentVariable{
-			{Name: "FOO", Value: apitypes.NewOptional("1")},
+			{Name: "FOO", Value: types.NewOptional("1")},
 			{Name: "BAR"},
 		}
 	})
 	err = deployment.load(serializer)
 	s.Nil(err)
 	expectedEnv := []ConnectEnvironmentVariable{
-		{Name: "FOO", Value: apitypes.NewOptional("1"), fromEnvironment: false},
-		{Name: "BAR", Value: apitypes.NewOptional("2"), fromEnvironment: true},
+		{Name: "FOO", Value: types.NewOptional("1"), fromEnvironment: false},
+		{Name: "BAR", Value: types.NewOptional("2"), fromEnvironment: true},
 	}
 	s.Equal(expectedEnv, deployment.Environment)
 	serializer.AssertExpectations(s.T())
@@ -71,7 +71,7 @@ func (s *ConnectStateSuite) TestLoadEnvErr() {
 func (s *ConnectStateSuite) TestSave() {
 	deployment := ConnectDeployment{
 		Environment: []ConnectEnvironmentVariable{
-			{Name: "FOO", Value: apitypes.NewOptional("1")},
+			{Name: "FOO", Value: types.NewOptional("1")},
 		},
 	}
 	serializer := NewMockSerializer()
@@ -97,7 +97,7 @@ func (s *ConnectStateSuite) TestSaveContentErr() {
 func (s *ConnectStateSuite) TestSaveEnvErr() {
 	deployment := ConnectDeployment{
 		Environment: []ConnectEnvironmentVariable{
-			{Name: "FOO", Value: apitypes.NewOptional("1")},
+			{Name: "FOO", Value: types.NewOptional("1")},
 		},
 	}
 	serializer := NewMockSerializer()
@@ -117,25 +117,25 @@ func (s *ConnectStateSuite) TestMergeEmpty() {
 			Title:              "My Best Content Ever!",
 			Description:        "Need I say more?",
 			AccessType:         "acl",
-			ConnectionTimeout:  apitypes.NewOptional[int32](1),
-			ReadTimeout:        apitypes.NewOptional[int32](2),
-			InitTimeout:        apitypes.NewOptional[int32](3),
-			IdleTimeout:        apitypes.NewOptional[int32](4),
-			MaxProcesses:       apitypes.NewOptional[int32](5),
-			MinProcesses:       apitypes.NewOptional[int32](6),
-			MaxConnsPerProcess: apitypes.NewOptional[int32](7),
-			LoadFactor:         apitypes.NewOptional[float64](0.5),
+			ConnectionTimeout:  types.NewOptional[int32](1),
+			ReadTimeout:        types.NewOptional[int32](2),
+			InitTimeout:        types.NewOptional[int32](3),
+			IdleTimeout:        types.NewOptional[int32](4),
+			MaxProcesses:       types.NewOptional[int32](5),
+			MinProcesses:       types.NewOptional[int32](6),
+			MaxConnsPerProcess: types.NewOptional[int32](7),
+			LoadFactor:         types.NewOptional[float64](0.5),
 			RunAs:              "me",
-			RunAsCurrentUser:   apitypes.NewOptional(true),
-			MemoryRequest:      apitypes.NewOptional[int64](1000),
-			MemoryLimit:        apitypes.NewOptional[int64](1001),
-			CPURequest:         apitypes.NewOptional[float64](0.25),
-			CPULimit:           apitypes.NewOptional[float64](0.75),
+			RunAsCurrentUser:   types.NewOptional(true),
+			MemoryRequest:      types.NewOptional[int64](1000),
+			MemoryLimit:        types.NewOptional[int64](1001),
+			CPURequest:         types.NewOptional[float64](0.25),
+			CPULimit:           types.NewOptional[float64](0.75),
 			ServiceAccountName: "my-service-account",
 			DefaultImageName:   "my-super-duper-content-image",
 		},
 		Environment: []ConnectEnvironmentVariable{
-			{Name: "FOO", Value: apitypes.NewOptional("1")},
+			{Name: "FOO", Value: types.NewOptional("1")},
 		},
 	}
 	added := ConnectDeployment{}
@@ -152,25 +152,25 @@ func (s *ConnectStateSuite) TestMergeAll() {
 			Title:              "My Best Content Ever!",
 			Description:        "Need I say more?",
 			AccessType:         "acl",
-			ConnectionTimeout:  apitypes.NewOptional[int32](1),
-			ReadTimeout:        apitypes.NewOptional[int32](2),
-			InitTimeout:        apitypes.NewOptional[int32](3),
-			IdleTimeout:        apitypes.NewOptional[int32](4),
-			MaxProcesses:       apitypes.NewOptional[int32](5),
-			MinProcesses:       apitypes.NewOptional[int32](6),
-			MaxConnsPerProcess: apitypes.NewOptional[int32](7),
-			LoadFactor:         apitypes.NewOptional[float64](0.5),
+			ConnectionTimeout:  types.NewOptional[int32](1),
+			ReadTimeout:        types.NewOptional[int32](2),
+			InitTimeout:        types.NewOptional[int32](3),
+			IdleTimeout:        types.NewOptional[int32](4),
+			MaxProcesses:       types.NewOptional[int32](5),
+			MinProcesses:       types.NewOptional[int32](6),
+			MaxConnsPerProcess: types.NewOptional[int32](7),
+			LoadFactor:         types.NewOptional[float64](0.5),
 			RunAs:              "me",
-			RunAsCurrentUser:   apitypes.NewOptional(true),
-			MemoryRequest:      apitypes.NewOptional[int64](1000),
-			MemoryLimit:        apitypes.NewOptional[int64](1001),
-			CPURequest:         apitypes.NewOptional[float64](0.25),
-			CPULimit:           apitypes.NewOptional[float64](0.75),
+			RunAsCurrentUser:   types.NewOptional(true),
+			MemoryRequest:      types.NewOptional[int64](1000),
+			MemoryLimit:        types.NewOptional[int64](1001),
+			CPURequest:         types.NewOptional[float64](0.25),
+			CPULimit:           types.NewOptional[float64](0.75),
 			ServiceAccountName: "my-service-account",
 			DefaultImageName:   "my-super-duper-content-image",
 		},
 		Environment: []ConnectEnvironmentVariable{
-			{Name: "FOO", Value: apitypes.NewOptional("1")},
+			{Name: "FOO", Value: types.NewOptional("1")},
 		},
 	}
 	added := ConnectDeployment{
@@ -179,26 +179,26 @@ func (s *ConnectStateSuite) TestMergeAll() {
 			Title:              "Better than the Best!",
 			Description:        "Indeed",
 			AccessType:         "logged_in",
-			ConnectionTimeout:  apitypes.NewOptional[int32](11),
-			ReadTimeout:        apitypes.NewOptional[int32](12),
-			InitTimeout:        apitypes.NewOptional[int32](13),
-			IdleTimeout:        apitypes.NewOptional[int32](14),
-			MaxProcesses:       apitypes.NewOptional[int32](15),
-			MinProcesses:       apitypes.NewOptional[int32](16),
-			MaxConnsPerProcess: apitypes.NewOptional[int32](17),
-			LoadFactor:         apitypes.NewOptional[float64](0.1),
+			ConnectionTimeout:  types.NewOptional[int32](11),
+			ReadTimeout:        types.NewOptional[int32](12),
+			InitTimeout:        types.NewOptional[int32](13),
+			IdleTimeout:        types.NewOptional[int32](14),
+			MaxProcesses:       types.NewOptional[int32](15),
+			MinProcesses:       types.NewOptional[int32](16),
+			MaxConnsPerProcess: types.NewOptional[int32](17),
+			LoadFactor:         types.NewOptional[float64](0.1),
 			RunAs:              "you",
-			RunAsCurrentUser:   apitypes.NewOptional(false),
-			MemoryRequest:      apitypes.NewOptional[int64](9000),
-			MemoryLimit:        apitypes.NewOptional[int64](9001),
-			CPURequest:         apitypes.NewOptional[float64](1.5),
-			CPULimit:           apitypes.NewOptional[float64](2.5),
+			RunAsCurrentUser:   types.NewOptional(false),
+			MemoryRequest:      types.NewOptional[int64](9000),
+			MemoryLimit:        types.NewOptional[int64](9001),
+			CPURequest:         types.NewOptional[float64](1.5),
+			CPULimit:           types.NewOptional[float64](2.5),
 			ServiceAccountName: "your-service-account",
 			DefaultImageName:   "different-content-image",
 		},
 		Environment: []ConnectEnvironmentVariable{
-			{Name: "FOO", Value: apitypes.NewOptional("2")},
-			{Name: "BAR", Value: apitypes.NewOptional("42")},
+			{Name: "FOO", Value: types.NewOptional("2")},
+			{Name: "BAR", Value: types.NewOptional("42")},
 		},
 	}
 	merged := orig
@@ -206,5 +206,5 @@ func (s *ConnectStateSuite) TestMergeAll() {
 	s.Equal(added, merged)
 	s.Equal("Better than the Best!", merged.Content.Title)
 	s.Len(merged.Environment, 2)
-	s.Equal(apitypes.NewOptional("2"), merged.Environment[0].Value)
+	s.Equal(types.NewOptional("2"), merged.Environment[0].Value)
 }

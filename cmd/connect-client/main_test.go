@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 )
 
@@ -20,7 +20,7 @@ func TestMainSuite(t *testing.T) {
 }
 
 func (s *MainSuite) TestMakeContext() {
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	ctx, err := makeContext(logger)
 	s.Nil(err)
 	s.NotNil(ctx.Accounts)

@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -64,16 +64,16 @@ func (s *DeploymentSuite) TestMergeNonEmpty() {
 	other.Target.AccountName = "your-account"
 	other.Target.ServerType = accounts.ServerTypeShinyappsIO
 	other.Target.ServerURL = "https://shinyapps.io"
-	other.Target.ContentId = apitypes.ContentID("99")
-	other.Target.ContentName = apitypes.ContentName("my-app")
+	other.Target.ContentId = types.ContentID("99")
+	other.Target.ContentName = types.ContentName("my-app")
 	merged.Merge(other)
 	s.Equal(other.SourceDir, merged.SourceDir)
 	s.Equal([]byte("numpy\npandas\nflask\n"), merged.PythonRequirements)
 	s.Equal("your-account", merged.Target.AccountName)
 	s.Equal(accounts.ServerTypeShinyappsIO, merged.Target.ServerType)
 	s.Equal("https://shinyapps.io", merged.Target.ServerURL)
-	s.Equal(apitypes.ContentID("99"), merged.Target.ContentId)
-	s.Equal(apitypes.ContentName("my-app"), merged.Target.ContentName)
+	s.Equal(types.ContentID("99"), merged.Target.ContentId)
+	s.Equal(types.ContentName("my-app"), merged.Target.ContentName)
 }
 
 func (s *DeploymentSuite) TestLoadManifest() {
@@ -85,7 +85,7 @@ func (s *DeploymentSuite) TestLoadManifest() {
 	s.Nil(err)
 
 	deployment := NewDeployment()
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	path := util.NewPath(filename, fs)
 	err = deployment.LoadManifest(path, logger)
 	s.Nil(err)
@@ -106,7 +106,7 @@ func (s *DeploymentSuite) TestLoadManifestDir() {
 	s.Nil(err)
 
 	deployment := NewDeployment()
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	path := util.NewPath(filename, fs).Dir()
 	err = deployment.LoadManifest(path, logger)
 	s.Nil(err)
@@ -121,7 +121,7 @@ func (s *DeploymentSuite) TestLoadManifestDir() {
 func (s *DeploymentSuite) TestLoadManifestNonexistentDir() {
 	fs := afero.NewMemMapFs()
 	deployment := NewDeployment()
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	path := util.NewPath("/nonexistent", fs)
 	err := deployment.LoadManifest(path, logger)
 	s.NotNil(err)
@@ -133,7 +133,7 @@ func (s *DeploymentSuite) TestLoadManifestNonexistentFile() {
 	dir := "/my/dir"
 	fs.MkdirAll(dir, 0700)
 	deployment := NewDeployment()
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	path := util.NewPath(dir, fs)
 	err := deployment.LoadManifest(path, logger)
 	s.NotNil(err)
@@ -143,7 +143,7 @@ func (s *DeploymentSuite) TestLoadManifestNonexistentFile() {
 func (s *DeploymentSuite) TestSaveLoad() {
 	fs := afero.NewMemMapFs()
 	dir := "/my/dir"
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	deployment := NewDeployment()
 	deployment.Target.ServerType = accounts.ServerTypeConnect
 
@@ -161,7 +161,7 @@ func (s *DeploymentSuite) TestSaveToFilesErr() {
 	fs := utiltest.NewMockFs()
 	testError := errors.New("test error from MkdirAll")
 	fs.On("MkdirAll", mock.Anything, mock.Anything).Return(testError)
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 	deployment := NewDeployment()
 	path := util.NewPath("/nonexistent", fs)
 	err := deployment.SaveToFiles(path, "staging", logger)

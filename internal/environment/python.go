@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -21,7 +21,7 @@ type defaultPythonInspector struct {
 	executor   pythonExecutor
 	projectDir util.Path
 	pythonPath util.Path
-	logger     events.Logger
+	logger     logging.Logger
 }
 
 var _ PythonInspector = &defaultPythonInspector{}
@@ -45,7 +45,7 @@ func (e *defaultPythonExecutor) runPythonCommand(pythonExecutable string, args [
 	return stdout.Bytes(), nil
 }
 
-func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log events.Logger) *defaultPythonInspector {
+func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.Logger) *defaultPythonInspector {
 	return &defaultPythonInspector{
 		executor:   &defaultPythonExecutor{},
 		projectDir: projectDir,

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
@@ -24,7 +24,7 @@ func (s *CLIContextSuite) TestNewCLIContext() {
 	accountList := &accounts.MockAccountList{}
 	token := services.LocalToken("abc123")
 	fs := utiltest.NewMockFs()
-	logger := events.DefaultLogger()
+	logger := logging.DefaultLogger()
 
 	ctx := NewCLIContext(accountList, token, fs, logger)
 	s.Equal(accountList, ctx.Accounts)
