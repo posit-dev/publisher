@@ -419,9 +419,7 @@ jobs:
           # bats reads the load libraries from relative path only in Windows
           BATS_SUPPORT_LIB: ..\..\libs\bats-support\load.bash
           BATS_ASSERT_LIB: ..\..\libs\bats-assert\load
-          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
-          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
-          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
+
         run: |
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
@@ -433,6 +431,9 @@ jobs:
           os: windows-latest
           DOCKER: "false"
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
           pip install fuzzbucket-client
           cd test
@@ -478,9 +479,7 @@ jobs:
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
           BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
-          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
-          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
-          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
+
         run: |
           pip install fuzzbucket-client
           just test/bats-install
@@ -493,6 +492,9 @@ jobs:
           os: macos-latest
           DOCKER: "false"
           CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
           just test/ui-test ${os}
 

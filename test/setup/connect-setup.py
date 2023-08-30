@@ -2,10 +2,6 @@ import subprocess
 import json
 import requests
 import time
-import os
-
-FUZZBUCKET_URL=os.environ["FUZZBUCKET_URL"]
-FUZZBUCKET_CREDENTIALS=os.environ["FUZZBUCKET_CREDENTIALS"]
 
 alias = "perftest-connect-20230518"
 box_name = "connect-ci"

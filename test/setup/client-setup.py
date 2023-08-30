@@ -2,7 +2,7 @@ import hashlib
 import shutil
 import os
 import sys
-from os.path import dirname, join
+from os.path import join
 
 server_txt = 'setup/servers.txt'
 server_json = 'setup/servers.json'
