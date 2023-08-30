@@ -181,7 +181,9 @@ start-agent-for-e2e:
     ./bin/$GOOS-$GOARCH/connect-client publish-ui \
         ./test/sample-content/fastapi-simple \
         --listen=127.0.0.1:9000 \
-        --token=abc123 
+        --token=abc123 \
+        ${CI_TEST_SERVER}
+
 [private]
 _with_docker *args:
     docker run --rm {{ _interactive }} \

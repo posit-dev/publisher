@@ -438,12 +438,6 @@ jobs:
           pip install fuzzbucket-client
           cd test
           just ui-test $env:os
-      -
-        name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
 
   test-macos:
     needs: build-agent

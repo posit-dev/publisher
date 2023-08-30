@@ -16,9 +16,6 @@ def copyfile(server_txt, server_json):
     # Copy the file to the destination
     shutil.move(server_json, destination_path)
     print("File copied successfully.")
-    with open(destination_path+"/servers.json", "r") as file:
-            contents = file.read()
-            print(contents)
 
 def config_dirname(platform=sys.platform, env=os.environ):
     """Get the user's configuration directory path for this platform."""
@@ -73,4 +70,3 @@ def get_hash(username):
 
 replace_apikey('admin')
 copyfile(server_txt, server_json)
-print()
