@@ -76,6 +76,10 @@ test-unit-watch:
 dev:
     npm run dev
 
+# start a locally run production build of the web Ux
+preview:
+    npm run preview
+
 # remove build artifacts and dependencies
 clean:
     #!/usr/bin/env bash
