@@ -44,7 +44,7 @@ func (s filesService) GetFile(p util.Path) (*File, error) {
 		return nil, err
 	}
 
-	walker := util.NewSymlinkWalker(util.FSWalker{}, s.log.BaseLogger)
+	walker := util.NewSymlinkWalker(util.FSWalker{}, s.log)
 	err = walker.Walk(p, func(path util.Path, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err

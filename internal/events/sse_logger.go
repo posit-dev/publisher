@@ -10,7 +10,17 @@ import (
 	"github.com/rstudio/connect-client/internal/logging"
 )
 
-func NewLoggerWithSSE(level slog.Leveler, sseServer *sse.Server) logging.Logger {
+func NewLoggerWithSSE(debug bool) logging.Logger {
+	eventServer := sse.New()
+	eventServer.CreateStream("messages")
+	logLevel := slog.LevelInfo
+	if debug {
+		logLevel = slog.LevelDebug
+	}
+	return NewLogger(logLevel, eventServer)
+}
+
+func NewLogger(level slog.Leveler, sseServer *sse.Server) logging.Logger {
 	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
 	if sseServer != nil {
 		sseHandler := NewSSEHandler(sseServer, &SSEHandlerOptions{Level: level})

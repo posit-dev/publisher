@@ -49,7 +49,7 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
-	symlinkWalker := util.NewSymlinkWalker(excluder, log.BaseLogger)
+	symlinkWalker := util.NewSymlinkWalker(excluder, log)
 
 	return &bundler{
 		manifest:           manifest,

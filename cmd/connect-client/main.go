@@ -53,7 +53,7 @@ func Fatal(log logging.Logger, msg string, err error, args ...any) {
 }
 
 func main() {
-	logger := events.NewLoggerWithSSE(slog.LevelInfo, nil)
+	logger := events.NewLogger(slog.LevelInfo, nil)
 	logVersion(logger)
 
 	ctx, err := makeContext(logger)
@@ -66,7 +66,7 @@ func main() {
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
 	if cli.Debug {
-		ctx.Logger = events.NewLoggerWithSSE(slog.LevelDebug, nil)
+		ctx.Logger = events.NewLogger(slog.LevelDebug, nil)
 	}
 	if cli.Token != nil {
 		ctx.LocalToken = *cli.Token

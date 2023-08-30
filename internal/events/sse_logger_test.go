@@ -21,11 +21,11 @@ func TestLoggerSuite(t *testing.T) {
 }
 
 func (s *LoggerSuite) TestNewLoggerNoSSE() {
-	log := NewLoggerWithSSE(slog.LevelInfo, nil)
+	log := NewLogger(slog.LevelInfo, nil)
 	s.IsType(log.Handler(), &slog.TextHandler{})
 }
 
 func (s *LoggerSuite) TestNewLoggerWithSSE() {
-	log := NewLoggerWithSSE(slog.LevelInfo, sse.New())
+	log := NewLogger(slog.LevelInfo, sse.New())
 	s.IsType(log.Handler(), &logging.MultiHandler{})
 }

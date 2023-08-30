@@ -5,10 +5,8 @@ package commands
 import (
 	"fmt"
 	"io/fs"
-	"log/slog"
 	"os"
 
-	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
@@ -80,7 +78,7 @@ func createManifestFileMapFromSourceDir(sourceDir util.Path, log logging.Logger)
 		return nil, err
 	}
 
-	walker := util.NewSymlinkWalker(ignore, log.BaseLogger)
+	walker := util.NewSymlinkWalker(ignore, log)
 	err = walker.Walk(root, func(path util.Path, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -249,22 +247,12 @@ type PublishUICmd struct {
 	cli_types.UIArgs
 }
 
-func makeSSELogger(debug bool) logging.Logger {
-	eventServer := sse.New()
-	eventServer.CreateStream("messages")
-	logLevel := slog.LevelInfo
-	if debug {
-		logLevel = slog.LevelDebug
-	}
-	return events.NewLoggerWithSSE(logLevel, eventServer)
-}
-
 func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	err := cmd.stateFromCLI(ctx.Logger)
 	if err != nil {
 		return err
 	}
-	logger := makeSSELogger(args.Debug)
+	logger := events.NewLoggerWithSSE(args.Debug)
 	svc := ui.NewUIService(
 		"/",
 		cmd.UIArgs,

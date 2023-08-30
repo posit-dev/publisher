@@ -13,13 +13,13 @@ import (
 
 type symlinkWalker struct {
 	walker Walker
-	logger logging.BaseLogger
+	logger logging.Logger
 }
 
 // NewSymlinkWalker creates a SymlinkWalker, an instance of the
 // Walker interface that resolves symlinks before passing info
 // to the callback function.
-func NewSymlinkWalker(walker Walker, logger logging.BaseLogger) *symlinkWalker {
+func NewSymlinkWalker(walker Walker, logger logging.Logger) *symlinkWalker {
 	return &symlinkWalker{
 		walker: walker,
 		logger: logger,
