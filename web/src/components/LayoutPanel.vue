@@ -46,6 +46,6 @@ defineProps<{
   icon: string
   tooltip?: string
   defaultOpen?: boolean
-  expandIcon: string
+  expandIcon?: string
 }>();
 </script>
