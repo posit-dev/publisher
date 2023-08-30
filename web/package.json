@@ -11,7 +11,7 @@
     "lint": "eslint --ext .js,.ts,.vue,.cjs .",
     "lint-fix": "eslint --ext .js,.ts,.vue,.cjs . --fix",
     "test:unit": "vitest",
-    "test:e2e": "start-server-and-test dev http-get://google.com cypress:run",
+    "test:e2e": "start-server-and-test dev http-get://localhost:9000 cypress:run",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },
