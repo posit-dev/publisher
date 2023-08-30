@@ -17,8 +17,12 @@ export default defineConfig({
       src: fileURLToPath(new URL('./src', import.meta.url)),
     }
   },
+  preview: {
+    port: 9000,
+  },
   server: {
     open: false,
+    port: 9000,
     proxy: {
       // proxy all requests starting with /apii to CLI
       '/api': {
