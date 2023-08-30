@@ -78,7 +78,7 @@ func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister 
 
 	// GET /api/publish
 	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(publishArgs, lister, log)).
-		Methods(http.MethodGet)
+		Methods(http.MethodPost)
 
 	// GET /
 	r.PathPrefix("/").
