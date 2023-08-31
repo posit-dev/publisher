@@ -27,12 +27,15 @@
 import { ref } from 'vue';
 import { useApi } from 'src/api';
 
+const emit = defineEmits(['publish']);
+
 const api = useApi();
 const title = ref('');
 
 const disablePublishingAction = ref(false);
 
 const onPublish = async() => {
+  emit('publish');
   disablePublishingAction.value = true;
   try {
     await api.publish.start();
