@@ -22,7 +22,7 @@ func TestServicesSuite(t *testing.T) {
 }
 
 func (s *ServicesSuite) SetupSuite() {
-	s.log = logging.DefaultLogger()
+	s.log = logging.New()
 }
 
 func (s *ServicesSuite) TestCreateFilesService() {

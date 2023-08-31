@@ -54,7 +54,7 @@ func (s *SymlinkWalkerSuite) TestWalkNoSymlinks() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	underlyingWalker := &FSWalker{}
-	log := logging.DefaultLogger()
+	log := logging.New()
 	walker := NewSymlinkWalker(underlyingWalker, log)
 	sourcePath := s.cwd.Join("subdir")
 	fileList := []string{}
@@ -78,7 +78,7 @@ func (s *SymlinkWalkerSuite) TestWalkError() {
 	badFS.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), testError)
 
 	underlyingWalker := &FSWalker{}
-	log := logging.DefaultLogger()
+	log := logging.New()
 	walker := NewSymlinkWalker(underlyingWalker, log)
 	sourcePath := NewPath(".", badFS)
 	err := walker.Walk(sourcePath, func(path Path, info fs.FileInfo, err error) error {
@@ -92,7 +92,7 @@ func (s *SymlinkWalkerSuite) TestNewBundleFromDirectorySymlinks() {
 	// are using a fixture directory under ./testdata.
 	realFS := afero.NewOsFs()
 	sourcePath := NewPath(s.cwd.Path(), realFS).Join("testdata", "symlink_test", "bundle_dir")
-	log := logging.DefaultLogger()
+	log := logging.New()
 
 	underlyingWalker := &FSWalker{}
 	walker := NewSymlinkWalker(underlyingWalker, log)
@@ -119,7 +119,7 @@ func (s *SymlinkWalkerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	// are using a fixture directory under ./testdata.
 	realFS := afero.NewOsFs()
 	dirPath := NewPath(s.cwd.Path(), realFS).Join("testdata", "symlink_test", "link_target_missing")
-	log := logging.DefaultLogger()
+	log := logging.New()
 
 	underlyingWalker := &FSWalker{}
 	walker := NewSymlinkWalker(underlyingWalker, log)

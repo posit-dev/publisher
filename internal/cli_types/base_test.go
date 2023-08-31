@@ -24,7 +24,7 @@ func (s *CLIContextSuite) TestNewCLIContext() {
 	accountList := &accounts.MockAccountList{}
 	token := services.LocalToken("abc123")
 	fs := utiltest.NewMockFs()
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 
 	ctx := NewCLIContext(accountList, token, fs, logger)
 	s.Equal(accountList, ctx.Accounts)

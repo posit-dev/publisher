@@ -32,7 +32,7 @@ type Logger struct {
 	BaseLogger
 }
 
-func DefaultLogger() Logger {
+func New() Logger {
 	return Logger{
 		slog.Default(),
 	}

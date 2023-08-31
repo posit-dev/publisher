@@ -44,7 +44,7 @@ func NewMockPythonExecutor() *MockPythonExecutor {
 }
 
 func (s *PythonSuite) TestNewPythonInspector() {
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	projectDir := util.NewPath("/myproject", nil)
 	pythonPath := util.NewPath("/usr/bin/python", nil)
 	inspector := NewPythonInspector(projectDir, pythonPath, logger)
@@ -54,7 +54,7 @@ func (s *PythonSuite) TestNewPythonInspector() {
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	pythonPath := util.NewPath("/usr/bin/python3", nil)
 	inspector := NewPythonInspector(util.Path{}, pythonPath, logger)
 	executor := NewMockPythonExecutor()
@@ -68,7 +68,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	projectDir := util.NewPath("/myproject", afero.NewMemMapFs())
 	pythonPath := util.NewPath("/usr/bin/python3", nil)
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	inspector := NewPythonInspector(projectDir, pythonPath, logger)
 	executor := NewMockPythonExecutor()
 	testError := errors.New("test error from runPythonCommand")
@@ -81,7 +81,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromPATH() {
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	inspector := NewPythonInspector(util.Path{}, util.Path{}, logger)
 	executor := NewMockPythonExecutor()
 	executor.On("runPythonCommand", "python3", mock.Anything).Return([]byte("3.10.4"), nil)
@@ -98,7 +98,7 @@ func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
 	if err != nil {
 		s.T().Skip("python3 isn't available on PATH")
 	}
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	inspector := NewPythonInspector(util.Path{}, util.Path{}, logger)
 	version, err := inspector.GetPythonVersion()
 	s.Nil(err)
@@ -116,7 +116,7 @@ func (s *PythonSuite) TestGetRequirementsFromFile() {
 	err = reqPath.WriteFile(fileContent, 0600)
 	s.Nil(err)
 
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	inspector := NewPythonInspector(baseDir, util.Path{}, logger)
 	requirements, err := inspector.GetPythonRequirements()
 	s.Nil(err)
@@ -128,7 +128,7 @@ func (s *PythonSuite) TestGetRequirementsFromFileErr() {
 	testError := errors.New("test error from Stat")
 	fs.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), testError)
 	projectDir := util.NewPath("/anything", fs)
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	inspector := NewPythonInspector(projectDir, util.Path{}, logger)
 	requirements, err := inspector.GetPythonRequirements()
 	s.NotNil(err)
@@ -139,7 +139,7 @@ func (s *PythonSuite) TestGetRequirementsFromFileErr() {
 
 func (s *PythonSuite) TestGetPythonRequirementsFromExecutable() {
 	pythonPath := util.NewPath("/usr/bin/python3", nil)
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	inspector := NewPythonInspector(util.Path{}, pythonPath, logger)
 	executor := NewMockPythonExecutor()
 	freezeOutput := []byte("numpy\npandas\n")
@@ -152,7 +152,7 @@ func (s *PythonSuite) TestGetPythonRequirementsFromExecutable() {
 }
 
 func (s *PythonSuite) TestGetPythonRequirementsFromExecutableErr() {
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	pythonPath := util.NewPath("/nonexistent/python3", nil)
 	inspector := NewPythonInspector(util.Path{}, pythonPath, logger)
 	requirements, err := inspector.GetPythonRequirements()

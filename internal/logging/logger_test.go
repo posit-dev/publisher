@@ -23,7 +23,7 @@ func TestLoggingSuite(t *testing.T) {
 }
 
 func (s *LoggingSuite) TestDefaultLogger() {
-	log := DefaultLogger()
+	log := New()
 	s.NotNil(log.BaseLogger)
 }
 

@@ -28,7 +28,7 @@ func TestGetFileHandlerFuncSuite(t *testing.T) {
 }
 
 func (s *GetFileHandlerFuncSuite) SetupSuite() {
-	s.log = logging.DefaultLogger()
+	s.log = logging.New()
 }
 
 func (s *GetFileHandlerFuncSuite) TestGetFileHandlerFunc() {

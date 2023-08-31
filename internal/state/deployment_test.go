@@ -85,7 +85,7 @@ func (s *DeploymentSuite) TestLoadManifest() {
 	s.Nil(err)
 
 	deployment := NewDeployment()
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	path := util.NewPath(filename, fs)
 	err = deployment.LoadManifest(path, logger)
 	s.Nil(err)
@@ -106,7 +106,7 @@ func (s *DeploymentSuite) TestLoadManifestDir() {
 	s.Nil(err)
 
 	deployment := NewDeployment()
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	path := util.NewPath(filename, fs).Dir()
 	err = deployment.LoadManifest(path, logger)
 	s.Nil(err)
@@ -121,7 +121,7 @@ func (s *DeploymentSuite) TestLoadManifestDir() {
 func (s *DeploymentSuite) TestLoadManifestNonexistentDir() {
 	fs := afero.NewMemMapFs()
 	deployment := NewDeployment()
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	path := util.NewPath("/nonexistent", fs)
 	err := deployment.LoadManifest(path, logger)
 	s.NotNil(err)
@@ -133,7 +133,7 @@ func (s *DeploymentSuite) TestLoadManifestNonexistentFile() {
 	dir := "/my/dir"
 	fs.MkdirAll(dir, 0700)
 	deployment := NewDeployment()
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	path := util.NewPath(dir, fs)
 	err := deployment.LoadManifest(path, logger)
 	s.NotNil(err)
@@ -143,7 +143,7 @@ func (s *DeploymentSuite) TestLoadManifestNonexistentFile() {
 func (s *DeploymentSuite) TestSaveLoad() {
 	fs := afero.NewMemMapFs()
 	dir := "/my/dir"
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	deployment := NewDeployment()
 	deployment.Target.ServerType = accounts.ServerTypeConnect
 
@@ -161,7 +161,7 @@ func (s *DeploymentSuite) TestSaveToFilesErr() {
 	fs := utiltest.NewMockFs()
 	testError := errors.New("test error from MkdirAll")
 	fs.On("MkdirAll", mock.Anything, mock.Anything).Return(testError)
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	deployment := NewDeployment()
 	path := util.NewPath("/nonexistent", fs)
 	err := deployment.SaveToFiles(path, "staging", logger)

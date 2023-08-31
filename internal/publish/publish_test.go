@@ -31,7 +31,7 @@ func TestPublishSuite(t *testing.T) {
 }
 
 func (s *PublishSuite) SetupTest() {
-	s.log = logging.DefaultLogger()
+	s.log = logging.New()
 	s.fs = afero.NewMemMapFs()
 	cwd, err := util.Getwd(s.fs)
 	s.Nil(err)

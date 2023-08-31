@@ -27,7 +27,7 @@ func TestRsconnectPythonProviderSuite(t *testing.T) {
 
 func (s *RsconnectPythonProviderSuite) SetupSuite() {
 	fs := utiltest.NewMockFs()
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	s.provider = newRSConnectPythonProvider(fs, logger)
 }
 
@@ -40,7 +40,7 @@ func (s *RsconnectPythonProviderSuite) TeardownTest() {
 }
 
 func (s *RsconnectPythonProviderSuite) TestNewRSConnectPythonProvider() {
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	fs := utiltest.NewMockFs()
 	provider := newRSConnectPythonProvider(fs, logger)
 	s.Equal(fs, provider.fs)
@@ -113,7 +113,7 @@ func (s *RsconnectPythonProviderSuite) TestLoadNonexistentFile() {
 	os.Setenv("HOME", "/home/me")
 	fs := utiltest.NewMockFs()
 	fs.On("Open", mock.Anything).Return(nil, os.ErrNotExist)
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	provider := newRSConnectPythonProvider(fs, logger)
 	accounts, err := provider.Load()
 	s.Nil(err)
@@ -125,7 +125,7 @@ func (s *RsconnectPythonProviderSuite) TestLoadFileError() {
 	testError := errors.New("kaboom!")
 	fs := utiltest.NewMockFs()
 	fs.On("Open", mock.Anything).Return(nil, testError)
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	provider := newRSConnectPythonProvider(fs, logger)
 	accounts, err := provider.Load()
 	s.NotNil(err)
@@ -141,7 +141,7 @@ func (s *RsconnectPythonProviderSuite) TestLoadBadFile() {
 	err = afero.WriteFile(fs, serverPath, []byte{}, 0600)
 	s.Nil(err)
 
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	provider := newRSConnectPythonProvider(fs, logger)
 	accounts, err := provider.Load()
 	s.NotNil(err)
@@ -174,7 +174,7 @@ func (s *RsconnectPythonProviderSuite) TestLoad() {
 	err = afero.WriteFile(fs, serverPath, data, 0600)
 	s.Nil(err)
 
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	provider := newRSConnectPythonProvider(fs, logger)
 	accounts, err := provider.Load()
 	s.Nil(err)

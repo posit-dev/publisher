@@ -22,7 +22,7 @@ func TestFilesSuite(t *testing.T) {
 }
 
 func (s *FilesSuite) SetupSuite() {
-	s.log = logging.DefaultLogger()
+	s.log = logging.New()
 }
 
 func (s *FilesSuite) TestCreateFile() {

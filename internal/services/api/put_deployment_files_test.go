@@ -26,7 +26,7 @@ func TestPutDeploymentFilesHandlerFuncSuite(t *testing.T) {
 }
 
 func (s *PutDeploymentFilesHandlerFuncSuite) SetupSuite() {
-	s.log = logging.DefaultLogger()
+	s.log = logging.New()
 }
 
 func (s *PutDeploymentFilesHandlerFuncSuite) TestPutDeploymentFilesHandlerFunc() {

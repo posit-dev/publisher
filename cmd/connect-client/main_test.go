@@ -20,7 +20,7 @@ func TestMainSuite(t *testing.T) {
 }
 
 func (s *MainSuite) TestMakeContext() {
-	logger := logging.DefaultLogger()
+	logger := logging.New()
 	ctx, err := makeContext(logger)
 	s.Nil(err)
 	s.NotNil(ctx.Accounts)
