@@ -45,7 +45,7 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 // GetAccountsHandlerFunc returns a handler for the account list.
 func GetAccountsHandlerFunc(lister accounts.AccountList, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		accounts, err := lister.GetAllAccounts()
+		accounts, err := lister.GetAccountsByServerType(accounts.ServerTypeConnect)
 		if err != nil {
 			InternalError(w, req, logger, err)
 			return
@@ -54,6 +54,8 @@ func GetAccountsHandlerFunc(lister accounts.AccountList, logger *slog.Logger) ht
 		for _, acct := range accounts {
 			data.Accounts = append(data.Accounts, toAccountDTO(&acct))
 		}
+
+		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(data)
 	}
 }
