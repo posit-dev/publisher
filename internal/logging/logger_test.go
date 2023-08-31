@@ -94,11 +94,15 @@ func (s *LoggingSuite) TestFailureAgentError() {
 		"Error", "test error",
 		LogKeyOp, op,
 		LogKeyPhase, FailurePhase,
-		LogKeyErrCode, types.UnknownErrorCode)
+		LogKeyErrCode, types.UnknownErrorCode,
+		"Metadata", "some metadata")
 
 	log := Logger{baseLogger}
 	baseErr := errors.New("test error")
-	err := types.NewAgentError(types.UnknownErrorCode, baseErr, nil)
+	errData := struct {
+		Metadata string
+	}{"some metadata"}
+	err := types.NewAgentError(types.UnknownErrorCode, baseErr, &errData)
 	err.SetOperation(op)
 	log.Failure(err)
 	s.Assert()

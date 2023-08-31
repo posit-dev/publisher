@@ -5,8 +5,6 @@ package main
 import (
 	"os"
 
-	"log/slog"
-
 	"github.com/alecthomas/kong"
 	"github.com/rstudio/connect-client/cmd/connect-client/commands"
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -53,7 +51,7 @@ func Fatal(log logging.Logger, msg string, err error, args ...any) {
 }
 
 func main() {
-	logger := events.NewLogger(slog.LevelInfo, nil)
+	logger := events.NewLogger(false)
 	logVersion(logger)
 
 	ctx, err := makeContext(logger)
@@ -66,7 +64,7 @@ func main() {
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
 	if cli.Debug {
-		ctx.Logger = events.NewLogger(slog.LevelDebug, nil)
+		ctx.Logger = events.NewLogger(true)
 	}
 	if cli.Token != nil {
 		ctx.LocalToken = *cli.Token
