@@ -24,11 +24,11 @@ func (s *CLIContextSuite) TestNewCLIContext() {
 	accountList := &accounts.MockAccountList{}
 	token := services.LocalToken("abc123")
 	fs := utiltest.NewMockFs()
-	logger := logging.New()
+	log := logging.New()
 
-	ctx := NewCLIContext(accountList, token, fs, logger)
+	ctx := NewCLIContext(accountList, token, fs, log)
 	s.Equal(accountList, ctx.Accounts)
 	s.Equal(token, ctx.LocalToken)
-	s.Equal(logger, ctx.Logger)
+	s.Equal(log, ctx.Logger)
 	accountList.AssertNotCalled(s.T(), "GetAllAccounts")
 }

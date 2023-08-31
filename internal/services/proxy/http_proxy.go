@@ -19,7 +19,7 @@ type proxy struct {
 	targetURL  string
 	sourcePath string
 	baseProxy  *httputil.ReverseProxy
-	logger     logging.Logger
+	log        logging.Logger
 }
 
 // NewProxy creates a proxy that will accept requests
@@ -35,7 +35,7 @@ func NewProxy(
 		targetURL:  targetURL.String(),
 		sourcePath: sourcePath,
 		baseProxy:  httputil.NewSingleHostReverseProxy(targetURL),
-		logger:     log,
+		log:        log,
 	}
 	return p.asReverseProxy()
 }
@@ -99,13 +99,13 @@ func (p *proxy) modifyResponse(resp *http.Response) error {
 			return err
 		}
 		resp.Header.Set("Location", newLocation)
-		p.logger.Debug("Rewrite Location", "old", location, "new", newLocation)
+		p.log.Debug("Rewrite Location", "old", location, "new", newLocation)
 	}
 	return nil
 }
 
 func (p *proxy) handleError(w http.ResponseWriter, req *http.Request, err error) {
-	p.logger.Error("Proxy error", "url", req.URL, "error", err)
+	p.log.Error("Proxy error", "url", req.URL, "error", err)
 	w.WriteHeader(http.StatusBadGateway)
 }
 
@@ -118,8 +118,8 @@ func (p *proxy) stripSourcePrefix(req *http.Request) {
 }
 
 func (p *proxy) logRequest(msg string, req *http.Request) {
-	if p.logger.Enabled(context.Background(), slog.LevelDebug) {
-		p.logger.Debug(msg, "method", req.Method, "url", req.URL.String())
+	if p.log.Enabled(context.Background(), slog.LevelDebug) {
+		p.log.Debug(msg, "method", req.Method, "url", req.URL.String())
 		p.logHeader("Request headers", req.Header)
 	}
 }
@@ -127,7 +127,7 @@ func (p *proxy) logRequest(msg string, req *http.Request) {
 type headerName string
 
 func (p *proxy) logHeader(msg string, header http.Header) {
-	log := p.logger
+	log := p.log
 	for name, values := range header {
 		var value string
 		if name == "Cookie" || name == "Authorization" {

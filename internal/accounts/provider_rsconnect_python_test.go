@@ -27,8 +27,8 @@ func TestRsconnectPythonProviderSuite(t *testing.T) {
 
 func (s *RsconnectPythonProviderSuite) SetupSuite() {
 	fs := utiltest.NewMockFs()
-	logger := logging.New()
-	s.provider = newRSConnectPythonProvider(fs, logger)
+	log := logging.New()
+	s.provider = newRSConnectPythonProvider(fs, log)
 }
 
 func (s *RsconnectPythonProviderSuite) SetupTest() {
@@ -40,11 +40,11 @@ func (s *RsconnectPythonProviderSuite) TeardownTest() {
 }
 
 func (s *RsconnectPythonProviderSuite) TestNewRSConnectPythonProvider() {
-	logger := logging.New()
+	log := logging.New()
 	fs := utiltest.NewMockFs()
-	provider := newRSConnectPythonProvider(fs, logger)
+	provider := newRSConnectPythonProvider(fs, log)
 	s.Equal(fs, provider.fs)
-	s.Equal(logger, provider.log)
+	s.Equal(log, provider.log)
 }
 
 func (s *RsconnectPythonProviderSuite) TestConfigDirNoHome() {
@@ -113,8 +113,8 @@ func (s *RsconnectPythonProviderSuite) TestLoadNonexistentFile() {
 	os.Setenv("HOME", "/home/me")
 	fs := utiltest.NewMockFs()
 	fs.On("Open", mock.Anything).Return(nil, os.ErrNotExist)
-	logger := logging.New()
-	provider := newRSConnectPythonProvider(fs, logger)
+	log := logging.New()
+	provider := newRSConnectPythonProvider(fs, log)
 	accounts, err := provider.Load()
 	s.Nil(err)
 	s.Nil(accounts)
@@ -125,8 +125,8 @@ func (s *RsconnectPythonProviderSuite) TestLoadFileError() {
 	testError := errors.New("kaboom!")
 	fs := utiltest.NewMockFs()
 	fs.On("Open", mock.Anything).Return(nil, testError)
-	logger := logging.New()
-	provider := newRSConnectPythonProvider(fs, logger)
+	log := logging.New()
+	provider := newRSConnectPythonProvider(fs, log)
 	accounts, err := provider.Load()
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
@@ -141,8 +141,8 @@ func (s *RsconnectPythonProviderSuite) TestLoadBadFile() {
 	err = afero.WriteFile(fs, serverPath, []byte{}, 0600)
 	s.Nil(err)
 
-	logger := logging.New()
-	provider := newRSConnectPythonProvider(fs, logger)
+	log := logging.New()
+	provider := newRSConnectPythonProvider(fs, log)
 	accounts, err := provider.Load()
 	s.NotNil(err)
 	s.Nil(accounts)
@@ -174,8 +174,8 @@ func (s *RsconnectPythonProviderSuite) TestLoad() {
 	err = afero.WriteFile(fs, serverPath, data, 0600)
 	s.Nil(err)
 
-	logger := logging.New()
-	provider := newRSConnectPythonProvider(fs, logger)
+	log := logging.New()
+	provider := newRSConnectPythonProvider(fs, log)
 	accounts, err := provider.Load()
 	s.Nil(err)
 	s.Equal([]Account{

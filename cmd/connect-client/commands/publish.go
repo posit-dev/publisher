@@ -252,7 +252,7 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 	if err != nil {
 		return err
 	}
-	logger := events.NewLoggerWithSSE(args.Debug)
+	log := events.NewLoggerWithSSE(args.Debug)
 	svc := ui.NewUIService(
 		"/",
 		cmd.UIArgs,
@@ -260,6 +260,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		ctx.LocalToken,
 		ctx.Fs,
 		ctx.Accounts,
-		logger)
+		log)
 	return svc.Run()
 }

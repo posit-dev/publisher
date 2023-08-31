@@ -21,7 +21,7 @@ type defaultPythonInspector struct {
 	executor   pythonExecutor
 	projectDir util.Path
 	pythonPath util.Path
-	logger     logging.Logger
+	log        logging.Logger
 }
 
 var _ PythonInspector = &defaultPythonInspector{}
@@ -50,7 +50,7 @@ func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.
 		executor:   &defaultPythonExecutor{},
 		projectDir: projectDir,
 		pythonPath: pythonPath,
-		logger:     log,
+		log:        log,
 	}
 }
 
@@ -76,7 +76,7 @@ func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
 		return "", err
 	}
 	version := strings.TrimSpace(string(output))
-	i.logger.Info("Detected Python", "version", version)
+	i.log.Info("Detected Python", "version", version)
 	return version, nil
 }
 
@@ -87,12 +87,12 @@ func (i *defaultPythonInspector) GetPythonRequirements() ([]byte, error) {
 		return nil, err
 	}
 	if exists {
-		i.logger.Info("Using Python packages", "source", requirementsFilename)
+		i.log.Info("Using Python packages", "source", requirementsFilename)
 		return requirementsFilename.ReadFile()
 	}
 	pythonExecutable := i.getPythonExecutable()
 	source := fmt.Sprintf("'%s -m pip freeze'", pythonExecutable)
-	i.logger.Info("Using Python packages", "source", source)
+	i.log.Info("Using Python packages", "source", source)
 	args := []string{"-m", "pip", "freeze"}
 	return i.executor.runPythonCommand(pythonExecutable, args)
 }

@@ -31,7 +31,7 @@ type Service struct {
 	skipAuth      bool
 	token         services.LocalToken
 	addr          net.Addr
-	logger        logging.Logger
+	log           logging.Logger
 }
 
 var errTlsRequiredFiles error = errors.New("TLS requires both a private key file and a certificate chain file")
@@ -75,7 +75,7 @@ func NewService(
 		skipAuth:      skipAuth,
 		token:         token,
 		addr:          nil,
-		logger:        log,
+		log:           log,
 	}
 }
 
@@ -128,7 +128,7 @@ func (svc *Service) Run() error {
 	// If not development mode, then you get a token added to the URL
 	appURL := svc.getURL(!(project.DevelopmentBuild() && svc.skipAuth))
 
-	svc.logger.Info("UI server running", "url", appURL.String())
+	svc.log.Info("UI server running", "url", appURL.String())
 	fmt.Println(appURL.String())
 
 	if project.DevelopmentBuild() && svc.openBrowserAt != "" {

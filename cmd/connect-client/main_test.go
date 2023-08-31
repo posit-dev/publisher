@@ -20,10 +20,10 @@ func TestMainSuite(t *testing.T) {
 }
 
 func (s *MainSuite) TestMakeContext() {
-	logger := logging.New()
-	ctx, err := makeContext(logger)
+	log := logging.New()
+	ctx, err := makeContext(log)
 	s.Nil(err)
 	s.NotNil(ctx.Accounts)
 	s.NotEqual(ctx.LocalToken, "")
-	s.Equal(logger, ctx.Logger)
+	s.Equal(log, ctx.Logger)
 }

@@ -29,14 +29,14 @@ func (s *AccountEnvVarProviderSuite) TeardownTest() {
 }
 
 func (s *AccountEnvVarProviderSuite) TestNewEnvVarProvider() {
-	logger := logging.New()
-	provider := newEnvVarProvider(logger)
-	s.Equal(logger, provider.log)
+	log := logging.New()
+	provider := newEnvVarProvider(log)
+	s.Equal(log, provider.log)
 }
 
 func (s *AccountEnvVarProviderSuite) TestLoadAll() {
-	logger := logging.New()
-	provider := newEnvVarProvider(logger)
+	log := logging.New()
+	provider := newEnvVarProvider(log)
 	os.Setenv("CONNECT_SERVER", "https://connect.example.com:1234")
 	os.Setenv("CONNECT_API_KEY", "0123456789ABCDEF0123456789ABCDEF")
 	os.Setenv("CONNECT_INSECURE", "1")
@@ -56,8 +56,8 @@ func (s *AccountEnvVarProviderSuite) TestLoadAll() {
 }
 
 func (s *AccountEnvVarProviderSuite) TestLoadSome() {
-	logger := logging.New()
-	provider := newEnvVarProvider(logger)
+	log := logging.New()
+	provider := newEnvVarProvider(log)
 	os.Setenv("CONNECT_SERVER", "https://connect.example.com:1234")
 	accountList, err := provider.Load()
 	s.Nil(err)
@@ -74,8 +74,8 @@ func (s *AccountEnvVarProviderSuite) TestLoadSome() {
 }
 
 func (s *AccountEnvVarProviderSuite) TestLoadNone() {
-	logger := logging.New()
-	provider := newEnvVarProvider(logger)
+	log := logging.New()
+	provider := newEnvVarProvider(log)
 	accountList, err := provider.Load()
 	s.Nil(err)
 	s.Nil(accountList)

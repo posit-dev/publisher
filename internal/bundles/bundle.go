@@ -57,7 +57,7 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 		filename:           filename,
 		walker:             symlinkWalker,
 		pythonRequirements: pythonRequirements,
-		logger:             log,
+		log:                log,
 	}, nil
 }
 
@@ -80,7 +80,7 @@ func NewBundlerForManifest(dir util.Path, manifest *Manifest, log logging.Logger
 		baseDir:  absDir,
 		filename: "",
 		walker:   newManifestWalker(absDir, manifest),
-		logger:   log,
+		log:      log,
 	}, nil
 }
 
@@ -90,7 +90,7 @@ type bundler struct {
 	walker             util.Walker // Ignore patterns from CLI and ignore files
 	pythonRequirements []byte      // Pacakges to write to requirements.txt if not already present
 	manifest           *Manifest   // Manifest describing the bundle, if provided
-	logger             logging.Logger
+	log                logging.Logger
 }
 
 type bundle struct {
@@ -102,12 +102,12 @@ type bundle struct {
 }
 
 func (b *bundler) CreateManifest() (*Manifest, error) {
-	b.logger.Info("Creating manifest from directory", "source_dir", b.baseDir)
+	b.log.Info("Creating manifest from directory", "source_dir", b.baseDir)
 	return b.makeBundle(nil)
 }
 
 func (b *bundler) CreateBundle(archive io.Writer) (*Manifest, error) {
-	b.logger.Info("Creating bundle from directory", "source_dir", b.baseDir)
+	b.log.Info("Creating bundle from directory", "source_dir", b.baseDir)
 	return b.makeBundle(archive)
 }
 
@@ -173,7 +173,7 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 			return nil, err
 		}
 	}
-	b.logger.Info("Bundle created", "files", bundle.numFiles, "total_bytes", bundle.size)
+	b.log.Info("Bundle created", "files", bundle.numFiles, "total_bytes", bundle.size)
 	return bundle.manifest, nil
 }
 
@@ -227,7 +227,7 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 	if err != nil {
 		return err
 	}
-	pathLogger := b.logger.With(
+	pathLogger := b.log.With(
 		"path", path,
 		"size", info.Size(),
 	)

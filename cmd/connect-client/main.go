@@ -51,12 +51,12 @@ func Fatal(log logging.Logger, msg string, err error, args ...any) {
 }
 
 func main() {
-	logger := events.NewLogger(false)
-	logVersion(logger)
+	log := events.NewLogger(false)
+	logVersion(log)
 
-	ctx, err := makeContext(logger)
+	ctx, err := makeContext(log)
 	if err != nil {
-		Fatal(logger, "Error initializing client", err)
+		Fatal(log, "Error initializing client", err)
 	}
 	cli := cliSpec{
 		CommonArgs: cli_types.CommonArgs{},
@@ -75,20 +75,20 @@ func main() {
 		// from file, then overlay the alread-parsed CLI arguments on top.
 		err = cmd.LoadState(ctx.Logger)
 		if err != nil {
-			Fatal(logger, "Error loading saved deployment", err)
+			Fatal(log, "Error loading saved deployment", err)
 		}
 		err = args.Run(&cli.CommonArgs)
 		if err != nil {
-			Fatal(logger, "Error running command", err)
+			Fatal(log, "Error running command", err)
 		}
 		err = cmd.SaveState(ctx.Logger)
 		if err != nil {
-			Fatal(logger, "Error saving deployment", err)
+			Fatal(log, "Error saving deployment", err)
 		}
 	} else {
 		err = args.Run(&cli.CommonArgs)
 		if err != nil {
-			Fatal(logger, "Error running command", err)
+			Fatal(log, "Error running command", err)
 		}
 	}
 }

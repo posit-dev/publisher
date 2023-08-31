@@ -40,7 +40,7 @@ type HTTPClient interface {
 type defaultHTTPClient struct {
 	client  *http.Client
 	baseURL string
-	logger  logging.Logger
+	log     logging.Logger
 }
 
 func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (*defaultHTTPClient, error) {
@@ -51,7 +51,7 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log 
 	return &defaultHTTPClient{
 		client:  baseClient,
 		baseURL: account.URL,
-		logger:  log,
+		log:     log,
 	}, nil
 }
 
@@ -130,8 +130,8 @@ func (c *defaultHTTPClient) doJSON(method string, path string, body any, into an
 		reqBody = bytes.NewReader(bodyJSON)
 	}
 	respBody, err := c.do(method, path, reqBody, "application/json")
-	if c.logger.Enabled(context.Background(), slog.LevelDebug) {
-		c.logger.Debug("API request", "method", method, "path", path, "body", string(bodyJSON), "response", string(respBody), "error", err)
+	if c.log.Enabled(context.Background(), slog.LevelDebug) {
+		c.log.Debug("API request", "method", method, "path", path, "body", string(bodyJSON), "response", string(respBody), "error", err)
 	}
 	if err != nil {
 		return err

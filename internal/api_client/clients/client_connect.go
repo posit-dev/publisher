@@ -23,7 +23,7 @@ import (
 type ConnectClient struct {
 	client  HTTPClient
 	account *accounts.Account
-	logger  logging.Logger
+	log     logging.Logger
 }
 
 func NewConnectClient(
@@ -38,16 +38,16 @@ func NewConnectClient(
 	return &ConnectClient{
 		client:  httpClient,
 		account: account,
-		logger:  log,
+		log:     log,
 	}, nil
 }
 
 func (c *ConnectClient) TestConnection() error {
 	// Make a client without auth so we're just testing the connection.
-	c.logger.Info("Testing connection", "url", c.account.URL)
+	c.log.Info("Testing connection", "url", c.account.URL)
 	acctWithoutAuth := *(c.account)
 	acctWithoutAuth.AuthType = accounts.AuthTypeNone
-	client, err := newHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.logger)
+	client, err := newHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.log)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (u *UserDTO) toUser() *User {
 }
 
 func (c *ConnectClient) TestAuthentication() (*User, error) {
-	c.logger.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
+	c.log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
 	err := c.client.Get("/__api__/v1/user", &connectUser)
 	if err != nil {

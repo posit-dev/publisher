@@ -20,7 +20,7 @@ type AccountList interface {
 
 type defaultAccountList struct {
 	providers []AccountProvider
-	logger    logging.Logger
+	log       logging.Logger
 }
 
 var _ AccountList = &defaultAccountList{}
@@ -32,7 +32,7 @@ func NewAccountList(fs afero.Fs, log logging.Logger) *defaultAccountList {
 			newRSConnectProvider(fs, log),
 			newRSConnectPythonProvider(fs, log),
 		},
-		logger: log,
+		log: log,
 	}
 }
 

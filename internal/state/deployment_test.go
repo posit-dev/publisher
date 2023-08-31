@@ -85,9 +85,9 @@ func (s *DeploymentSuite) TestLoadManifest() {
 	s.Nil(err)
 
 	deployment := NewDeployment()
-	logger := logging.New()
+	log := logging.New()
 	path := util.NewPath(filename, fs)
-	err = deployment.LoadManifest(path, logger)
+	err = deployment.LoadManifest(path, log)
 	s.Nil(err)
 	s.Equal(bundles.Manifest{
 		Version:  1,
@@ -106,9 +106,9 @@ func (s *DeploymentSuite) TestLoadManifestDir() {
 	s.Nil(err)
 
 	deployment := NewDeployment()
-	logger := logging.New()
+	log := logging.New()
 	path := util.NewPath(filename, fs).Dir()
-	err = deployment.LoadManifest(path, logger)
+	err = deployment.LoadManifest(path, log)
 	s.Nil(err)
 	s.Equal(bundles.Manifest{
 		Version:  1,
@@ -121,9 +121,9 @@ func (s *DeploymentSuite) TestLoadManifestDir() {
 func (s *DeploymentSuite) TestLoadManifestNonexistentDir() {
 	fs := afero.NewMemMapFs()
 	deployment := NewDeployment()
-	logger := logging.New()
+	log := logging.New()
 	path := util.NewPath("/nonexistent", fs)
-	err := deployment.LoadManifest(path, logger)
+	err := deployment.LoadManifest(path, log)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
 }
@@ -133,9 +133,9 @@ func (s *DeploymentSuite) TestLoadManifestNonexistentFile() {
 	dir := "/my/dir"
 	fs.MkdirAll(dir, 0700)
 	deployment := NewDeployment()
-	logger := logging.New()
+	log := logging.New()
 	path := util.NewPath(dir, fs)
-	err := deployment.LoadManifest(path, logger)
+	err := deployment.LoadManifest(path, log)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
 }
@@ -143,16 +143,16 @@ func (s *DeploymentSuite) TestLoadManifestNonexistentFile() {
 func (s *DeploymentSuite) TestSaveLoad() {
 	fs := afero.NewMemMapFs()
 	dir := "/my/dir"
-	logger := logging.New()
+	log := logging.New()
 	deployment := NewDeployment()
 	deployment.Target.ServerType = accounts.ServerTypeConnect
 
 	configName := "staging"
 	path := util.NewPath(dir, fs)
-	err := deployment.SaveToFiles(path, configName, logger)
+	err := deployment.SaveToFiles(path, configName, log)
 	s.Nil(err)
 	loadedData := *deployment
-	err = deployment.LoadFromFiles(path, configName, logger)
+	err = deployment.LoadFromFiles(path, configName, log)
 	s.Nil(err)
 	s.Equal(deployment, &loadedData)
 }
@@ -161,10 +161,10 @@ func (s *DeploymentSuite) TestSaveToFilesErr() {
 	fs := utiltest.NewMockFs()
 	testError := errors.New("test error from MkdirAll")
 	fs.On("MkdirAll", mock.Anything, mock.Anything).Return(testError)
-	logger := logging.New()
+	log := logging.New()
 	deployment := NewDeployment()
 	path := util.NewPath("/nonexistent", fs)
-	err := deployment.SaveToFiles(path, "staging", logger)
+	err := deployment.SaveToFiles(path, "staging", log)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	fs.AssertExpectations(s.T())

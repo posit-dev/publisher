@@ -38,8 +38,8 @@ func New() Logger {
 	}
 }
 
-func FromStdLogger(logger *slog.Logger) Logger {
-	return Logger{logger}
+func FromStdLogger(log *slog.Logger) Logger {
+	return Logger{log}
 }
 
 func (l Logger) Start(msg string, args ...any) {

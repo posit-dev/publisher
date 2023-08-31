@@ -13,16 +13,16 @@ import (
 
 type symlinkWalker struct {
 	walker Walker
-	logger logging.Logger
+	log    logging.Logger
 }
 
 // NewSymlinkWalker creates a SymlinkWalker, an instance of the
 // Walker interface that resolves symlinks before passing info
 // to the callback function.
-func NewSymlinkWalker(walker Walker, logger logging.Logger) *symlinkWalker {
+func NewSymlinkWalker(walker Walker, log logging.Logger) *symlinkWalker {
 	return &symlinkWalker{
 		walker: walker,
-		logger: logger,
+		log:    log,
 	}
 }
 
@@ -39,7 +39,7 @@ func (w *symlinkWalker) visit(fn WalkFunc) WalkFunc {
 			return err
 		}
 		if info.Mode().Type()&os.ModeSymlink != 0 {
-			w.logger.Info("Following symlink", "path", path)
+			w.log.Info("Following symlink", "path", path)
 			linkTarget, err := filepath.EvalSymlinks(path.Path())
 			targetPath := NewPath(linkTarget, path.Fs())
 			if err != nil {
