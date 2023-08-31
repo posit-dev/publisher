@@ -25,7 +25,7 @@ func TestErrorsSuite(t *testing.T) {
 func (s *ErrorsSuite) TestGoError() {
 	err := errors.New("an error occurred")
 	agentErr := types.ErrToAgentError(PublishRestoreREnvOp, err)
-	event := ErrorToEvent(agentErr)
+	event := NewAgentEvent(agentErr)
 
 	s.NotEqual(time.Time{}, event.Time)
 	s.Equal("publish/restoreREnv/failure/unknown", event.Type)
@@ -38,7 +38,7 @@ func (s *ErrorsSuite) TestGoErrorWithAttrs() {
 	_, err := os.Stat("/nonexistent")
 	s.NotNil(err)
 	agentErr := types.ErrToAgentError(PublishRestoreREnvOp, err)
-	event := ErrorToEvent(agentErr)
+	event := NewAgentEvent(agentErr)
 
 	s.NotEqual(time.Time{}, event.Time)
 	s.Equal("publish/restoreREnv/failure/unknown", event.Type)
@@ -62,7 +62,7 @@ func (s *ErrorsSuite) TestErrorDetails() {
 
 	// in the caller
 	agentErr := types.ErrToAgentError(PublishRestorePythonEnvOp, returnedErr)
-	event := ErrorToEvent(agentErr)
+	event := NewAgentEvent(agentErr)
 
 	s.NotEqual(time.Time{}, event.Time)
 	s.Equal("publish/restorePythonEnv/failure/serverErr", event.Type)
@@ -80,7 +80,7 @@ func (s *ErrorsSuite) TestErrorObjectAndDetails() {
 
 	// in the caller
 	agentErr := types.ErrToAgentError(PublishRestorePythonEnvOp, returnedErr)
-	event := ErrorToEvent(agentErr)
+	event := NewAgentEvent(agentErr)
 
 	s.NotEqual(time.Time{}, event.Time)
 	s.Equal("publish/restorePythonEnv/failure/serverErr", event.Type)

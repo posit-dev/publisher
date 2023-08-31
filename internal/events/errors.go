@@ -9,9 +9,7 @@ import (
 	"github.com/rstudio/connect-client/internal/types"
 )
 
-type ErrorCode = types.ErrorCode
-
-func ErrorToEvent(e types.EventableError) AgentEvent {
+func NewAgentEvent(e types.EventableError) AgentEvent {
 	data := e.GetData()
 	data["msg"] = e.Error()
 

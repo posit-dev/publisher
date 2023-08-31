@@ -2,6 +2,10 @@ package events
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
+import "github.com/rstudio/connect-client/internal/types"
+
+type ErrorCode = types.ErrorCode
+
 const (
 	AuthenticationFailedCode  ErrorCode = "authFailedErr"            // Couldn't authenticate to publishing server
 	PermissionsCode           ErrorCode = "permissionErr"            // Server responded with 403 forbidden
