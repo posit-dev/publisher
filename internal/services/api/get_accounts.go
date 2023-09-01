@@ -4,9 +4,8 @@ package api
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
-
-	"github.com/rstudio/platform-lib/pkg/rslog"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 )
@@ -44,17 +43,19 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 }
 
 // GetAccountsHandlerFunc returns a handler for the account list.
-func GetAccountsHandlerFunc(lister accounts.AccountList, logger rslog.Logger) http.HandlerFunc {
+func GetAccountsHandlerFunc(lister accounts.AccountList, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		accounts, err := lister.GetAllAccounts()
+		accounts, err := lister.GetAccountsByServerType(accounts.ServerTypeConnect)
 		if err != nil {
-			InternalError(w, logger, err)
+			InternalError(w, req, logger, err)
 			return
 		}
 		data := &accountListDTO{}
 		for _, acct := range accounts {
 			data.Accounts = append(data.Accounts, toAccountDTO(&acct))
 		}
+
+		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(data)
 	}
 }

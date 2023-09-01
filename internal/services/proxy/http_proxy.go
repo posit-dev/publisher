@@ -3,24 +3,21 @@ package proxy
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/debug"
-
-	"github.com/rstudio/platform-lib/pkg/rslog"
+	"log/slog"
 )
 
 type proxy struct {
-	targetURL          string
-	sourcePath         string
-	baseProxy          *httputil.ReverseProxy
-	logger             rslog.Logger
-	debugLogger        rslog.DebugLogger
-	headersDebugLogger rslog.DebugLogger
+	targetURL  string
+	sourcePath string
+	baseProxy  *httputil.ReverseProxy
+	logger     *slog.Logger
 }
 
 // NewProxy creates a proxy that will accept requests
@@ -30,15 +27,13 @@ type proxy struct {
 func NewProxy(
 	targetURL *url.URL,
 	sourcePath string,
-	logger rslog.Logger) *httputil.ReverseProxy {
+	logger *slog.Logger) *httputil.ReverseProxy {
 
 	p := proxy{
-		targetURL:          targetURL.String(),
-		sourcePath:         sourcePath,
-		baseProxy:          httputil.NewSingleHostReverseProxy(targetURL),
-		logger:             logger,
-		debugLogger:        rslog.NewDebugLogger(debug.ProxyRegion),
-		headersDebugLogger: rslog.NewDebugLogger(debug.ProxyHeadersRegion),
+		targetURL:  targetURL.String(),
+		sourcePath: sourcePath,
+		baseProxy:  httputil.NewSingleHostReverseProxy(targetURL),
+		logger:     logger,
 	}
 	return p.asReverseProxy()
 }
@@ -102,13 +97,13 @@ func (p *proxy) modifyResponse(resp *http.Response) error {
 			return err
 		}
 		resp.Header.Set("Location", newLocation)
-		p.debugLogger.Debugf("Rewrite Location %s to %s", location, newLocation)
+		p.logger.Debug("Rewrite Location", "old", location, "new", newLocation)
 	}
 	return nil
 }
 
 func (p *proxy) handleError(w http.ResponseWriter, req *http.Request, err error) {
-	p.logger.Errorf("Proxy error on %s: %s", req.URL, err)
+	p.logger.Error("Proxy error", "url", req.URL, "error", err)
 	w.WriteHeader(http.StatusBadGateway)
 }
 
@@ -121,31 +116,28 @@ func (p *proxy) stripSourcePrefix(req *http.Request) {
 }
 
 func (p *proxy) logRequest(msg string, req *http.Request) {
-	if p.debugLogger.Enabled() {
-		p.debugLogger.WithFields(rslog.Fields{
-			"method": req.Method,
-			"url":    req.URL.String(),
-		}).Debugf("%s", msg)
+	if p.logger.Enabled(context.Background(), slog.LevelDebug) {
+		p.logger.Debug(msg, "method", req.Method, "url", req.URL.String())
+		p.logHeader("Request headers", req.Header)
 	}
-	p.logHeader("Request headers", req.Header)
 }
 
+type headerName string
+
 func (p *proxy) logHeader(msg string, header http.Header) {
-	if p.headersDebugLogger.Enabled() {
-		fields := rslog.Fields{}
-		for name, values := range header {
-			var value string
-			if name == "Cookie" || name == "Authorization" {
-				value = "REDACTED"
+	ctx := context.Background()
+	for name, values := range header {
+		var value string
+		if name == "Cookie" || name == "Authorization" {
+			value = "REDACTED"
+		} else {
+			if len(values) == 1 {
+				value = values[0]
 			} else {
-				if len(values) == 1 {
-					value = values[0]
-				} else {
-					value = fmt.Sprintf("%v", values)
-				}
+				value = fmt.Sprintf("%v", values)
 			}
-			fields[name] = value
 		}
-		p.headersDebugLogger.WithFields(fields).Debugf("%s", msg)
+		ctx = context.WithValue(ctx, headerName(name), value)
 	}
+	p.logger.DebugContext(ctx, msg)
 }

@@ -9,10 +9,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"log/slog"
+
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -20,7 +21,7 @@ import (
 
 type GetFileHandlerFuncSuite struct {
 	utiltest.Suite
-	log rslog.Logger
+	log *slog.Logger
 }
 
 func TestGetFileHandlerFuncSuite(t *testing.T) {
@@ -28,7 +29,7 @@ func TestGetFileHandlerFuncSuite(t *testing.T) {
 }
 
 func (s *GetFileHandlerFuncSuite) SetupSuite() {
-	s.log = rslog.NewDiscardingLogger()
+	s.log = slog.Default()
 }
 
 func (s *GetFileHandlerFuncSuite) TestGetFileHandlerFunc() {
@@ -48,7 +49,7 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFunc() {
 
 	afs := afero.NewMemMapFs()
 	base := util.NewPath("", afs)
-	src := &files.File{Pathname: base.String()}
+	src := &files.File{Rel: base.String()}
 
 	filesService := new(MockFilesService)
 	filesService.On("GetFile", mock.Anything).Return(src, nil)
@@ -73,7 +74,7 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFunc() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(res))
 
-	s.Equal(src.Pathname, res.Pathname)
+	s.Equal(src.Rel, res.Rel)
 }
 
 func (s *GetFileHandlerFuncSuite) TestHandlerFuncUsingPathname() {
@@ -81,7 +82,7 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFuncUsingPathname() {
 	base := util.NewPath("", afs)
 
 	pathname := "pathname"
-	src := &files.File{Pathname: pathname}
+	src := &files.File{Rel: pathname}
 
 	filesService := new(MockFilesService)
 	filesService.On("GetFile", mock.Anything).Return(src, nil)
@@ -106,7 +107,7 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFuncUsingPathname() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(res))
 
-	s.Equal(src.Pathname, res.Pathname)
+	s.Equal(src.Rel, res.Rel)
 }
 
 func (s *GetFileHandlerFuncSuite) TestHandlerFuncIsSafeReturnsError() {
@@ -154,7 +155,7 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFuncIsSafeReturnsFalse() {
 func (s *GetFileHandlerFuncSuite) TestHandlerFuncGetFileReturnsError() {
 	afs := afero.NewMemMapFs()
 	base := util.NewPath("", afs)
-	src := &files.File{Pathname: base.String()}
+	src := &files.File{Rel: base.String()}
 
 	filesService := new(MockFilesService)
 	filesService.On("GetFile", mock.Anything).Return(src, errors.New(""))

@@ -5,6 +5,7 @@ package util
 import (
 	"errors"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/util/utiltest"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -54,7 +54,7 @@ func (s *SymlinkWalkerSuite) TestWalkNoSymlinks() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	underlyingWalker := &FSWalker{}
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	walker := NewSymlinkWalker(underlyingWalker, logger)
 	sourcePath := s.cwd.Join("subdir")
 	fileList := []string{}
@@ -78,7 +78,7 @@ func (s *SymlinkWalkerSuite) TestWalkError() {
 	badFS.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), testError)
 
 	underlyingWalker := &FSWalker{}
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 	walker := NewSymlinkWalker(underlyingWalker, logger)
 	sourcePath := NewPath(".", badFS)
 	err := walker.Walk(sourcePath, func(path Path, info fs.FileInfo, err error) error {
@@ -92,7 +92,7 @@ func (s *SymlinkWalkerSuite) TestNewBundleFromDirectorySymlinks() {
 	// are using a fixture directory under ./testdata.
 	realFS := afero.NewOsFs()
 	sourcePath := NewPath(s.cwd.Path(), realFS).Join("testdata", "symlink_test", "bundle_dir")
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 
 	underlyingWalker := &FSWalker{}
 	walker := NewSymlinkWalker(underlyingWalker, logger)
@@ -119,7 +119,7 @@ func (s *SymlinkWalkerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	// are using a fixture directory under ./testdata.
 	realFS := afero.NewOsFs()
 	dirPath := NewPath(s.cwd.Path(), realFS).Join("testdata", "symlink_test", "link_target_missing")
-	logger := rslog.NewDiscardingLogger()
+	logger := slog.Default()
 
 	underlyingWalker := &FSWalker{}
 	walker := NewSymlinkWalker(underlyingWalker, logger)

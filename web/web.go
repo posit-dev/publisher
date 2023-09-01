@@ -4,7 +4,19 @@ package web
 
 import (
 	"embed"
+	"net/http"
 )
 
-//go:embed dist/spa
-var Dist embed.FS
+//go:embed dist
+var dist embed.FS
+
+const Prefix = "/dist"
+
+type handler struct{}
+
+// A Handler instance
+var Handler handler = handler{}
+
+func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	http.FileServer(http.FS(dist)).ServeHTTP(w, r)
+}

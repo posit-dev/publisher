@@ -10,17 +10,17 @@ bootstrap:
 
     # set this environment variable to keep Cypress from attempting
     # to create a cache within root's home dir.
-    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
+    export CYPRESS_CACHE_FOLDER="./cypress/.cache"
     echo "NOTE: npm install may take five minutes or more from within a docker container..."
     npm install --no-audit
 
 # validate the source files, do not fix the fixable items
 validate:
-    npx eslint --ext .js,.ts,.vue,.cjs ./
+    npm run lint
 
 # validate the source files, fix the fixable items
 validate-fix:
-    npx eslint --ext .js,.ts,.vue,.cjs ./ "--fix"
+    npm run lint-fix
 
 # build the web artifacts for the SPA (into dest/spa)
 build:
@@ -29,13 +29,7 @@ build:
 
     just bootstrap
 
-    if ! npx quasar build; then
-     echo ""
-     echo "The build has failed."
-     echo "If you encountered the error: 'Global Quasar CLI • ⚠️   Error  Unknown command \"build\"'"
-     echo "Try running 'just bootstrap' and then retrying your build command."
-     exit 1
-    fi
+    npm run build
 
 # perform unit, go race and e2e tests
 test: test-unit test-race test-e2e
@@ -44,6 +38,19 @@ test: test-unit test-race test-e2e
 test-race:
     go test -race ./...
 
+# run e2e (Cypress) tests against dev server
+test-e2e-dev:
+    #!/bin/bash
+    set -euo pipefail
+
+    # set this environment variable to keep Cypress from attempting to create
+    # cache within root's home dir.
+    export CYPRESS_CACHE_FOLDER="./cypress/.cache"
+    # install cypress
+    npx cypress install
+
+    npm run test:e2e:dev
+
 # run e2e (Cypress) tests
 test-e2e:
     #!/bin/bash
@@ -51,36 +58,40 @@ test-e2e:
 
     # set this environment variable to keep Cypress from attempting to create
     # cache within root's home dir.
-    export CYPRESS_CACHE_FOLDER="./test/cypress/.cache"
+    export CYPRESS_CACHE_FOLDER="./cypress/.cache"
     # install cypress
     npx cypress install
 
-    npx quasar test --e2e cypress
+    npm run test:e2e:ci
 
-test-ci-e2e target:
+build-and-test-ci-e2e target:
     #!/bin/bash
     set -euo pipefail
     just build
     # set this environment variable to keep Cypress from attempting to create
     # cache within root's home dir.
     # use a different cache per os
-    export CYPRESS_CACHE_FOLDER="./test/cypress/{{target}}/.cache"
+    export CYPRESS_CACHE_FOLDER="./cypress/{{target}}/.cache"
     # install cypress
     npx cypress install
-    npx quasar test --e2e cypress
+
+    npm run test:e2e:ci
 
 # run unit tests one time
 test-unit:
-    # npx vitest run
-    npx quasar test --unit vitest
+    npm run test:unit run
 
 # run unit tests in watch mode, re-running as files are changed
 test-unit-watch:
-    npx vitest
+    npm run test:unit
 
 # start common UX development flow. Start the web server which updates automatically upon file changes
 dev:
-    npx quasar dev
+    npm run dev
+
+# start a locally run production build of the web Ux
+preview:
+    npm run preview
 
 # remove build artifacts and dependencies
 clean:
@@ -94,5 +105,5 @@ clean:
     # App • Emptied dist folder
     # App • Done cleaning build artifacts
     rm -rdf .quasar
-    rm -rdf dist/spa
+    rm -rdf dist
     rm -rdf node_modules

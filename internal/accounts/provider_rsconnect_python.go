@@ -11,23 +11,20 @@ import (
 	"runtime"
 	"sort"
 
-	"github.com/rstudio/connect-client/internal/debug"
+	"log/slog"
 
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 )
 
 type rsconnectPythonProvider struct {
-	fs          afero.Fs
-	logger      rslog.Logger
-	debugLogger rslog.DebugLogger
+	fs     afero.Fs
+	logger *slog.Logger
 }
 
-func newRSConnectPythonProvider(fs afero.Fs, logger rslog.Logger) *rsconnectPythonProvider {
+func newRSConnectPythonProvider(fs afero.Fs, logger *slog.Logger) *rsconnectPythonProvider {
 	return &rsconnectPythonProvider{
-		fs:          fs,
-		logger:      logger,
-		debugLogger: rslog.NewDebugLogger(debug.AccountsRegion),
+		fs:     fs,
+		logger: logger,
 	}
 }
 
@@ -47,7 +44,7 @@ func (p *rsconnectPythonProvider) configDir(goos string) (string, error) {
 	case "linux":
 		baseDir = os.Getenv("XDG_CONFIG_HOME")
 		if baseDir != "" {
-			p.debugLogger.Debugf("rsconnect-python: using XDG_CONFIG_HOME (%s)", baseDir)
+			p.logger.Debug("rsconnect-python: using XDG_CONFIG_HOME", "dir", baseDir)
 		}
 	case "windows":
 		baseDir = os.Getenv("APPDATA")
@@ -134,12 +131,12 @@ func (p *rsconnectPythonProvider) Load() ([]Account, error) {
 	data, err := afero.ReadFile(p.fs, path)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			p.debugLogger.Debugf("rsconnect-python config file does not exist (%s), checking old config directory", path)
+			p.logger.Debug("rsconnect-python config file does not exist, checking old config directory", "path", path)
 			return nil, nil
 		}
 		return nil, err
 	}
-	p.logger.Infof("Loading rsconnect-python accounts from %s", path)
+	p.logger.Info("Loading rsconnect-python accounts", "path", path)
 	accounts, err := p.decodeServerStore(data)
 	if err != nil {
 		return nil, err

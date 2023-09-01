@@ -3,11 +3,12 @@ package state
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"log/slog"
+
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 )
 
 type TargetID struct {
@@ -68,7 +69,7 @@ func (d *Deployment) Merge(other *Deployment) {
 // LoadManifest reads the specified manifest file and populates
 // the Manifest field in the deployment state. This can be used
 // to read an arbitrary manifest file.
-func (d *Deployment) LoadManifest(path util.Path, logger rslog.Logger) error {
+func (d *Deployment) LoadManifest(path util.Path, logger *slog.Logger) error {
 	isDir, err := path.IsDir()
 	if err != nil {
 		return err
@@ -81,7 +82,7 @@ func (d *Deployment) LoadManifest(path util.Path, logger rslog.Logger) error {
 		return err
 	}
 	d.Manifest = *manifest
-	logger.Infof("Loaded manifest from %s", path)
+	logger.Info("Loaded manifest", "path", path)
 	return nil
 }
 
@@ -102,7 +103,7 @@ const manifestLabel MetadataLabel = "manifest"
 // LoadFromFiles loads the deployment state from metadata files.
 // This should be called prior to processing higher-precedence
 // sources such as the CLI, environment variables, and UI input.
-func (d *Deployment) LoadFromFiles(sourceDir util.Path, configName string, logger rslog.Logger) error {
+func (d *Deployment) LoadFromFiles(sourceDir util.Path, configName string, logger *slog.Logger) error {
 	metaDir := getMetadataPath(sourceDir, configName)
 	serializer := newJsonSerializer(metaDir, logger)
 	return d.Load(serializer)
@@ -127,7 +128,7 @@ func (d *Deployment) Load(serializer deploymentSerializer) error {
 	return nil
 }
 
-func (d *Deployment) SaveToFiles(sourceDir util.Path, configName string, logger rslog.Logger) error {
+func (d *Deployment) SaveToFiles(sourceDir util.Path, configName string, logger *slog.Logger) error {
 	metaDir := getMetadataPath(sourceDir, configName)
 	err := metaDir.MkdirAll(0777)
 	if err != nil {

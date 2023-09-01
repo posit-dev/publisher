@@ -4,7 +4,6 @@ This application is built using:
 - [VueJS](https://vuejs.org)
     - Vue 3, Composition API w/ Setup API
 - [Quasar Framework V2](https://quasar.dev/)
-    - Using Quasar CLI
 - [Just (justfiles)](https://just.systems)
 - [Typescript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/)
@@ -13,7 +12,6 @@ This application is built using:
     - Using almost the same rules as Connect Dashboard project
 - [Pinia](https://pinia.vuejs.org/)
 - [Axios](https://axios-http.com/docs/intro)
-- [Vue-i18n](https://vue-i18n.intlify.dev/)
 - [Vitest](https://vitest.dev/)
 - [Cypress](https://www.cypress.io/)
 

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"log/slog"
+
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients/clienttest"
 	"github.com/rstudio/connect-client/internal/apitypes"
@@ -13,7 +15,6 @@ import (
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
-	"github.com/rstudio/platform-lib/pkg/rslog"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -21,7 +22,7 @@ import (
 
 type PublishSuite struct {
 	utiltest.Suite
-	log rslog.Logger
+	log *slog.Logger
 	fs  afero.Fs
 	cwd util.Path
 }
@@ -31,7 +32,7 @@ func TestPublishSuite(t *testing.T) {
 }
 
 func (s *PublishSuite) SetupTest() {
-	s.log = rslog.NewDiscardingLogger()
+	s.log = slog.Default()
 	s.fs = afero.NewMemMapFs()
 	cwd, err := util.Getwd(s.fs)
 	s.Nil(err)

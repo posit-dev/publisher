@@ -8,6 +8,7 @@ import (
 
 type MockAccountList struct {
 	mock.Mock
+	AccountList
 }
 
 func (m *MockAccountList) GetAllAccounts() ([]Account, error) {
@@ -18,6 +19,11 @@ func (m *MockAccountList) GetAllAccounts() ([]Account, error) {
 func (m *MockAccountList) GetAccountByName(name string) (*Account, error) {
 	args := m.Called(name)
 	return args.Get(0).(*Account), args.Error(1)
+}
+
+func (m *MockAccountList) GetAccountsByServerType(serverType ServerType) ([]Account, error) {
+	args := m.Called(serverType)
+	return args.Get(0).([]Account), args.Error(1)
 }
 
 type MockAccountProvider struct {

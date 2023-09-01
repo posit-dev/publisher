@@ -3,19 +3,21 @@ package ui
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"log/slog"
 	"net/http"
 	"net/url"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/debug"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
+	"github.com/rstudio/connect-client/internal/services/middleware"
+	"github.com/rstudio/connect-client/web"
 
-	"github.com/rstudio/platform-lib/pkg/rslog"
+	"github.com/gorilla/mux"
 	"github.com/spf13/afero"
 )
 
@@ -28,9 +30,9 @@ func NewUIService(
 	token services.LocalToken,
 	fs afero.Fs,
 	lister accounts.AccountList,
-	logger rslog.Logger) *api.Service {
+	logger *slog.Logger) *api.Service {
 
-	handler := newUIHandler(fs, publish, lister, logger)
+	handler := RouterHandlerFunc(fs, publish, lister, logger)
 
 	return api.NewService(
 		publish.State,
@@ -45,11 +47,10 @@ func NewUIService(
 		ui.AccessLog,
 		token,
 		logger,
-		rslog.NewDebugLogger(debug.UIRegion),
 	)
 }
 
-func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log rslog.Logger) http.HandlerFunc {
+func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log *slog.Logger) http.HandlerFunc {
 
 	deployment := publishArgs.State
 	base := deployment.SourceDir
@@ -58,19 +59,33 @@ func newUIHandler(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accou
 	filesService := files.CreateFilesService(base, afs, log)
 	pathsService := paths.CreatePathsService(base, afs, log)
 
-	mux := http.NewServeMux()
-	// /api/accounts
-	mux.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(lister, log))
-	// /api/files
-	mux.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log))
-	// /api/deployment
-	mux.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService))
-	// /api/deployment/files
-	mux.Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log))
-	mux.Handle(ToPath("publish"), api.PostPublishHandlerFunc(publishArgs, lister, log))
-	mux.HandleFunc("/", api.NewStaticController())
+	r := mux.NewRouter()
+	// GET /api/accounts
+	r.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(lister, log)).
+		Methods(http.MethodGet)
 
-	return mux.ServeHTTP
+	// GET /api/files
+	r.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log)).
+		Methods(http.MethodGet)
+
+	// GET /api/deployment
+	r.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService)).
+		Methods(http.MethodGet)
+
+	// PUT /api/deployment/files
+	r.Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log)).
+		Methods(http.MethodPut)
+
+	// POST /api/publish
+	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(publishArgs, lister, log)).
+		Methods(http.MethodPost)
+
+	// GET /
+	r.PathPrefix("/").
+		Handler(middleware.InsertPrefix(web.Handler, web.Prefix)).
+		Methods("GET")
+
+	return r.ServeHTTP
 }
 
 func ToPath(elements ...string) string {
