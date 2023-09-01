@@ -1,94 +1,55 @@
 module.exports = {
-  // https://eslint.org/docs/user-guide/configuring#configuration-cascading-and-hierarchy
-  // This option interrupts the configuration hierarchy at this file
-  // Remove this if you have an higher level ESLint config file (it usually happens into a monorepos)
   root: true,
-
-  // https://eslint.vuejs.org/user-guide/#how-to-use-a-custom-parser
-  // Must use parserOptions instead of "parser" to allow vue-eslint-parser to keep working
-  // `parser: 'vue-eslint-parser'` is already included with any 'plugin:vue/**' config and should be omitted
-  parserOptions: {
-    parser: require.resolve('@typescript-eslint/parser'),
-    extraFileExtensions: ['.vue', 'cjs'],
-  },
 
   env: {
     browser: true,
-    es2021: true,
-    node: true,
-    jest: true,
-    'vue/setup-compiler-macros': true
+    es2021: true
   },
 
-  // Rules order is important, please avoid shuffling them
   extends: [
-    // Base ESLint recommended rules
+    // Core rules for common problems
+    // https://eslint.org/docs/latest/use/configure/configuration-files#using-eslintrecommended
     'eslint:recommended',
 
-    // https://github.com/typescript-eslint/typescript-eslint/tree/master/packages/eslint-plugin#usage
-    // ESLint typescript rules
+    // Typescript recommended rules
+    // https://typescript-eslint.io/linting/configs#recommended-configurations
     'plugin:@typescript-eslint/recommended',
 
-    // Uncomment any of the lines below to choose desired strictness,
-    // but leave only one uncommented!
-    // See https://eslint.vuejs.org/rules/#available-rules
-    'plugin:vue/vue3-essential', // Priority A: Essential (Error Prevention)
-    'plugin:vue/vue3-strongly-recommended', // Priority B: Strongly Recommended (Improving Readability)
-    'plugin:vue/vue3-recommended', // Priority C: Recommended (Minimizing Arbitrary Choices and Cognitive Overhead)
-
-    // brought over from connect
-    // 'plugin:vuejs-accessibility/recommended',
-
-    'standard',
-
-    // Needed to support cypress source linting
-    'plugin:cypress/recommended'
+    // Includes vue3-essential and vue3-strongly-recommended
+    // https://eslint.vuejs.org/user-guide/#bundle-configurations
+    'plugin:vue/vue3-recommended'
   ],
 
-  plugins: [
-    // required to apply rules which need type information
-    '@typescript-eslint',
-
-    // https://eslint.vuejs.org/user-guide/#why-doesn-t-it-work-on-vue-files
-    // required to lint *.vue files
-    'vue',
-
-    // brought over from connect
-    // 'vuejs-accessibility'
+  overrides: [
+    {
+      env: {
+        node: true
+      },
+      files: ['.eslintrc.{js,cjs}'],
+      parserOptions: {
+        sourceType: 'script'
+      }
+    }
   ],
 
-  globals: {
-    ga: 'readonly', // Google Analytics
-    cordova: 'readonly',
-    __statics: 'readonly',
-    __QUASAR_SSR__: 'readonly',
-    __QUASAR_SSR_SERVER__: 'readonly',
-    __QUASAR_SSR_CLIENT__: 'readonly',
-    __QUASAR_SSR_PWA__: 'readonly',
-    process: 'readonly',
-    Capacitor: 'readonly',
-    chrome: 'readonly'
+  parserOptions: {
+    ecmaVersion: 'latest',
+    parser: '@typescript-eslint/parser',
+    sourceType: 'module'
   },
 
-  // add your custom rules here
+  plugins: [
+    '@typescript-eslint',
+    'vue'
+  ],
+
   rules: {
     // allow async-await
     'generator-star-spacing': 'off',
     // allow paren-less arrow functions
     'arrow-parens': 'off',
-    // 'one-var': 'off',
-    // 'multiline-ternary': 'off',
-
-    'import/first': 'off',
-    'import/default': 'error',
-    'import/export': 'error',
-    'import/extensions': 'off',
-    'import/no-unresolved': 'off',
-    'import/no-extraneous-dependencies': 'off',
 
     'prefer-promise-reject-errors': 'off',
-
-    // quotes: ['warn', 'single', { avoidEscape: true }],
 
     '@typescript-eslint/no-non-null-assertion': 'off',
 
@@ -100,8 +61,8 @@ module.exports = {
 
     '@typescript-eslint/naming-convention': [
       'error',
-      { selector: ['variableLike', 'classProperty', 'typeProperty'], format: ['camelCase'] },
-      { selector: 'variable', modifiers: ['const'], format: ['camelCase', 'UPPER_CASE'] }
+      { selector: ['variableLike', 'classProperty', 'typeProperty'], format: ['camelCase'], leadingUnderscore: 'allow' },
+      { selector: 'variable', modifiers: ['const'], format: ['camelCase', 'UPPER_CASE'], leadingUnderscore: 'allow' }
     ],
 
     // The core 'no-unused-vars' rules (in the eslint:recommended ruleset)
@@ -114,16 +75,6 @@ module.exports = {
     // from Connect project:
     // VUE project
     // manually-enabled rules
-    // 'vuejs-accessibility/label-has-for': [
-    //   2,
-    //   {
-    //     components: ['Label'],
-    //     required: {
-    //       every: ['id'],
-    //     },
-    //     allowChildren: false,
-    //   },
-    // ],
 
     // All styling warnings within vue style guide should be promoted to
     // errors, since that is our pattern with prettier
@@ -227,18 +178,6 @@ module.exports = {
     // 'vuejs-accessibility/no-onchange': 0,
     // 'vuejs-accessibility/interactive-supports-focus': ['warn'],
 
-    // Verifies that all named imports are part of the set of named
-    // exports in the referenced module.
-    // 'import/named': ['error'],
-    // The core 'import/named' rules
-    // does not work with type definitions
-    'import/named': 'off',
-
-    // Enforces names exist at the time they are dereferenced,
-    // when imported as a full namespace
-    // (i.e. import * as foo from './foo'; foo.bar();
-    // will report if bar is not exported by ./foo.).
-    'import/namespace': ['error'],
     'prefer-const': ['error'],
 
     eqeqeq: ['error', 'smart'],
@@ -322,7 +261,6 @@ module.exports = {
     'prefer-numeric-literals': 'error',
     'prefer-spread': 'error',
     radix: 'error',
-    strict: 'error',
     'symbol-description': 'error',
     yoda: ['error', 'never'],
     'no-shadow': 'off',
@@ -443,14 +381,13 @@ module.exports = {
     'space-in-parens': ['error', 'never'],
     'space-infix-ops': 'error',
     'space-unary-ops': ['error', { words: true, nonwords: false }],
-    'spaced-comment': ['error', 'always'],
+    'spaced-comment': ['error', 'always', { markers: ['/'] }],
     'switch-colon-spacing': ['error', { after: true, before: false }],
     'template-tag-spacing': 'error',
     'unicode-bom': 'off',
     'wrap-regex': 'off',
 
     // Enabled Non-Stylistic ESLint Rules:
-    // 'arrow-parens': ['error', 'as-needed'],
     'arrow-spacing': ['error', { before: true, after: true }], // default
     'block-scoped-var': 'error',
     'dot-notation': 'error',

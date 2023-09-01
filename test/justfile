@@ -103,7 +103,7 @@ ui-client target:
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \
-    just web/test-ci-e2e {{target}}
+    just web/build-and-test-ci-e2e {{target}}
   fi
 
 _test-client target:

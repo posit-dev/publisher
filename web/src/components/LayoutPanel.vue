@@ -38,9 +38,10 @@
 
 <script setup lang="ts">
 defineProps<{
-  title: string
-  subtitle?: string
-  icon: string
-  tooltip?: string
-}>();
+    title: string
+    subtitle?: string
+    icon: string
+    tooltip?: string
+  }>();
 </script>
+
