@@ -2,7 +2,7 @@
 FROM centos:7
 
 RUN yum update -y \
-    && yum install -y curl git openssl mailcap tzdata xz nodejs xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GConf2 nss libXScrnSaver alsa-lib \
+    && yum install -y curl git openssl mailcap tzdata xz nodejs xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GConf2 nss libXScrnSaver alsa-lib python3 \
     && yum groupinstall -y "Development Tools"
 
 RUN export GOLANG_VERSION=1.21.0 \

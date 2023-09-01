@@ -164,15 +164,19 @@ image:
     fi
 
 # Start the agent and show the UI
+# NOTE: this must be called from within a docker container if so 
+# needed (it will not automatically use a running if defined)
+# This is because this recipe is called from the web/justfile, which
+# is already executing within a docker container (if configured to use)
 start-agent-for-e2e:
     #!/bin/bash
     set -exuo pipefail
 
-    GOOS=$({{ _with_runner }} go env GOOS)
+    GOOS=$(go env GOOS)
     # remove \r from string when executed through docker
     GOOS="${GOOS%%[[:cntrl:]]}"
 
-    GOARCH=$({{ _with_runner }} go env GOARCH)
+    GOARCH=$(go env GOARCH)
     # remove \r from string when executed through docker
     GOARCH="${GOARCH%%[[:cntrl:]]}"
 
