@@ -18,17 +18,32 @@
           style=""
           class="text-white row"
         >
-          <q-btn flat @click="menu = !menu" dense icon="menu">
+          <q-btn
+            flat
+            dense
+            icon="menu"
+            @click="menu = !menu"
+          >
             <q-menu dark>
               <q-list style="min-width: 100px">
-                <q-item clickable v-close-popup>
+                <q-item
+                  v-close-popup
+                  clickable
+                >
                   <q-item-section>Overview</q-item-section>
                 </q-item>
-                <q-item clickable v-close-popup @click="showDebug = !showDebug">
+                <q-item
+                  v-close-popup
+                  clickable
+                  @click="showDebug = !showDebug"
+                >
                   <q-item-section>{{ !showDebug ? "Show Debug Console" : "Hide Debug Console" }} </q-item-section>
                 </q-item>
-                <q-separator dark/>
-                <q-item clickable v-close-popup>
+                <q-separator dark />
+                <q-item
+                  v-close-popup
+                  clickable
+                >
                   <q-item-section>About</q-item-section>
                 </q-item>
               </q-list>
@@ -67,18 +82,28 @@
             {label: 'Diagnostics', value: 'diagnostics'}
           ]"
         />
-        <q-btn icon="close" flat @click="showDebug = false"></q-btn>
+        <q-btn
+          icon="close"
+          flat
+          @click="showDebug = false"
+        />
       </q-toolbar>
-      <q-scroll-area class="fit" >
+      <q-scroll-area class="fit">
         <div class="q-pa-sm">
-          <div v-for="n in 50" :key="n" dark>{{ debugModel }} log: drawer {{ n }} / 50</div>
+          <div
+            v-for="n in 50"
+            :key="n"
+            ark
+          >
+            {{ debugModel }} log: drawer {{ n }} / 50
+          </div>
         </div>
       </q-scroll-area>
     </q-drawer>
 
     <q-page-container>
       <q-page
-v-if="!showPublishing"
+        v-if="!showPublishing"
         class="max-width-md q-mx-auto"
         padding
       >
@@ -91,12 +116,24 @@ v-if="!showPublishing"
           align="justify"
           narrow-indicator
         >
-          <q-tab name="newDeployment" label="New Deployment" dark />
-          <q-tab name="updateDeployment" label="Update Existing Deployment" dark />
+          <q-tab
+            name="newDeployment"
+            label="New Deployment"
+            dark
+          />
+          <q-tab
+            name="updateDeployment"
+            label="Update Existing Deployment"
+            dark
+          />
         </q-tabs>
         <q-separator />
 
-        <q-tab-panels v-model="tab" animated dark>
+        <q-tab-panels
+          v-model="tab"
+          animated
+          dark
+        >
           <q-tab-panel name="newDeployment">
             <div class="q-mx-md q-mb-md">
               Your project will be published to the Posit Connect server as a new deployment.
@@ -112,17 +149,35 @@ v-if="!showPublishing"
               <div class="q-mx-md q-mt-xl q-mb-sm">
                 Customize your deployment on the server by expanding any of the sections below.
               </div>
-              <q-separator dark class="q-mx-md"/>
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
               <DestinationTarget />
-              <q-separator dark class="q-mx-md" />
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
               <FilesToPublish />
-              <q-separator dark class="q-mx-md" />
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
               <PythonProject />
-              <q-separator dark class="q-mx-md" />
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
               <CommonSettings />
-              <q-separator dark class="q-mx-md" />
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
               <AdvancedSettings />
-              <q-separator dark class="q-mx-md" />
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
             </q-list>
           </q-tab-panel>
 
@@ -142,17 +197,35 @@ v-if="!showPublishing"
               <div class="q-mx-md q-mt-xl q-mb-sm">
                 Customize your deployment on the server by expanding any of the sections below.
               </div>
-              <q-separator dark class="q-mx-md"/>
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
               <DestinationTarget />
-              <q-separator dark class="q-mx-md" />
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
               <FilesToPublish />
-              <q-separator dark class="q-mx-md" />
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
               <PythonProject />
-              <q-separator dark class="q-mx-md" />
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
               <CommonSettings />
-              <q-separator dark class="q-mx-md" />
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
               <AdvancedSettings />
-              <q-separator dark class="q-mx-md" />
+              <q-separator
+                dark
+                class="q-mx-md"
+              />
             </q-list>
           </q-tab-panel>
         </q-tab-panels>
@@ -177,10 +250,22 @@ v-if="!showPublishing"
           align="justify"
           narrow-indicator
         >
-          <q-tab name="summary" label="Summary View" dark />
-          <q-tab name="advanced" label="Advanced View" dark />
+          <q-tab
+            name="summary"
+            label="Summary View"
+            dark
+          />
+          <q-tab
+            name="advanced"
+            label="Advanced View"
+            dark
+          />
         </q-tabs>
-        <q-tab-panels v-model="publishingTab" animated dark>
+        <q-tab-panels
+          v-model="publishingTab"
+          animated
+          dark
+        >
           <q-tab-panel name="summary">
             <q-stepper
               v-model="activeSummaryStep"
@@ -282,14 +367,17 @@ v-if="!showPublishing"
                 available at https://connect.abc.com/my-project
               </q-step>
             </q-stepper>
-            <q-banner v-if="activeSummaryStep === 9" class="bg-purple-8 text-white q-px-lg">
+            <q-banner
+              v-if="activeSummaryStep === 9"
+              class="bg-purple-8 text-white q-px-lg"
+            >
               Your project has been successfully deployed to the server and is
               available at https://connect.abc.com/my-project
             </q-banner>
           </q-tab-panel>
           <q-tab-panel name="advanced">
             <div
-              v-for="(log, index)  in advancedLog"
+              v-for="(log, index) in advancedLog"
               :key="index"
             >
               <div
@@ -297,7 +385,12 @@ v-if="!showPublishing"
                 class="bg-primary text-white q-mt-md q-pa-sm"
               >
                 <span style="font-weight: bold;">{{ log.msg }}</span>
-                <q-icon name="check_circle" class="q-ml-sm" size="sm" color="blue-grey-11"/>
+                <q-icon
+                  name="check_circle"
+                  class="q-ml-sm"
+                  size="sm"
+                  color="blue-grey-11"
+                />
               </div>
               <div
                 v-if="log.type === 'info' && index % 2"
@@ -306,7 +399,7 @@ v-if="!showPublishing"
               >
                 <div class="row">
                   <div class="col-3">
-                    {{  log.time }}
+                    {{ log.time }}
                   </div>
                   <!-- <div class="col-1">
                     <q-icon name="info" class="q-ml-md" size="sm" color="blue-grey-11"/>
