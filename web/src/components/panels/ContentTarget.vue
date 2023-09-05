@@ -41,7 +41,7 @@ const onPublish = async() => {
   emit('publish');
   disablePublishingAction.value = true;
   try {
-    await api.publish.start();
+    // await api.publish.start();
   } catch (e) {
     // Temporary until we determine the mechanism to notify users of general errors.
     console.log('An error has occurred when calling publish.start:', e);
