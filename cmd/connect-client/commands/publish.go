@@ -7,14 +7,14 @@ import (
 	"io/fs"
 	"os"
 
-	"log/slog"
-
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/environment"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/inspect"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/services/ui"
 	"github.com/rstudio/connect-client/internal/state"
@@ -22,8 +22,8 @@ import (
 )
 
 type StatefulCommand interface {
-	LoadState(logger *slog.Logger) error
-	SaveState(logger *slog.Logger) error
+	LoadState(log logging.Logger) error
+	SaveState(log logging.Logger) error
 }
 
 type BaseBundleCmd struct {
@@ -40,7 +40,7 @@ func (cmd *BaseBundleCmd) getConfigName() string {
 	return "default"
 }
 
-func (cmd *BaseBundleCmd) LoadState(logger *slog.Logger) error {
+func (cmd *BaseBundleCmd) LoadState(log logging.Logger) error {
 	sourceDir, err := util.DirFromPath(cmd.Path)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (cmd *BaseBundleCmd) LoadState(logger *slog.Logger) error {
 	cliState := cmd.State
 	cmd.State = state.NewDeployment()
 	if !cmd.New {
-		err = cmd.State.LoadFromFiles(sourceDir, cmd.Config, logger)
+		err = cmd.State.LoadFromFiles(sourceDir, cmd.Config, log)
 		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
@@ -60,12 +60,11 @@ func (cmd *BaseBundleCmd) LoadState(logger *slog.Logger) error {
 	return nil
 }
 
-func (cmd *BaseBundleCmd) SaveState(logger *slog.Logger) error {
-	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, logger)
+func (cmd *BaseBundleCmd) SaveState(log logging.Logger) error {
+	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, log)
 }
 
-func createManifestFileMapFromSourceDir(sourceDir util.Path, log *slog.Logger) (bundles.ManifestFileMap, error) {
-
+func createManifestFileMapFromSourceDir(sourceDir util.Path, log logging.Logger) (bundles.ManifestFileMap, error) {
 	files := make(bundles.ManifestFileMap)
 
 	ignore, err := gitignore.NewIgnoreList(sourceDir, nil)
@@ -108,7 +107,7 @@ func createManifestFileMapFromSourceDir(sourceDir util.Path, log *slog.Logger) (
 // stateFromCLI takes the CLI options provided by the user,
 // performs content auto-detection if needed, and
 // updates cmd.State to reflect all of the information.
-func (cmd *BaseBundleCmd) stateFromCLI(logger *slog.Logger) error {
+func (cmd *BaseBundleCmd) stateFromCLI(log logging.Logger) error {
 	manifest := &cmd.State.Manifest
 	manifest.Version = 1
 	manifest.Packages = make(bundles.PackageMap)
@@ -120,7 +119,7 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger *slog.Logger) error {
 	}
 
 	if metadata.AppMode == apptypes.UnknownMode || metadata.Entrypoint == "" {
-		logger.Info("Detecting deployment type and entrypoint...")
+		log.Info("Detecting deployment type and entrypoint...")
 		typeDetector := inspect.NewContentTypeDetector()
 		contentType, err := typeDetector.InferType(cmd.Path)
 		if err != nil {
@@ -140,9 +139,9 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger *slog.Logger) error {
 	case apptypes.StaticRmdMode, apptypes.ShinyRmdMode:
 		metadata.PrimaryRmd = metadata.Entrypoint
 	}
-	logger.Info("Deployment type", "Entrypoint", metadata.Entrypoint, "AppMode", metadata.AppMode)
+	log.Info("Deployment type", "Entrypoint", metadata.Entrypoint, "AppMode", metadata.AppMode)
 
-	manifestFiles, err := createManifestFileMapFromSourceDir(cmd.State.SourceDir, logger)
+	manifestFiles, err := createManifestFileMapFromSourceDir(cmd.State.SourceDir, log)
 	if err != nil {
 		return err
 	}
@@ -153,7 +152,7 @@ func (cmd *BaseBundleCmd) stateFromCLI(logger *slog.Logger) error {
 		return err
 	}
 	if requiresPython {
-		err = cmd.inspectPython(logger, manifest)
+		err = cmd.inspectPython(log, manifest)
 		if err != nil {
 			return err
 		}
@@ -184,8 +183,8 @@ func (cmd *BaseBundleCmd) requiresPython() (bool, error) {
 	return exists, nil
 }
 
-func (cmd *BaseBundleCmd) inspectPython(logger *slog.Logger, manifest *bundles.Manifest) error {
-	inspector := environment.NewPythonInspector(cmd.State.SourceDir, cmd.Python, logger)
+func (cmd *BaseBundleCmd) inspectPython(log logging.Logger, manifest *bundles.Manifest) error {
+	inspector := environment.NewPythonInspector(cmd.State.SourceDir, cmd.Python, log)
 	if manifest.Python.Version == "" {
 		pythonVersion, err := inspector.GetPythonVersion()
 		if err != nil {
@@ -253,6 +252,7 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 	if err != nil {
 		return err
 	}
+	log := events.NewLoggerWithSSE(args.Debug)
 	svc := ui.NewUIService(
 		"/",
 		cmd.UIArgs,
@@ -260,6 +260,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		ctx.LocalToken,
 		ctx.Fs,
 		ctx.Accounts,
-		ctx.Logger)
+		log)
 	return svc.Run()
 }

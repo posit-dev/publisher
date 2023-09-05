@@ -1,4 +1,4 @@
-package apitypes
+package types
 
 import "time"
 

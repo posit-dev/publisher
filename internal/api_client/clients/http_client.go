@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -16,11 +15,13 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/auth"
+	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 
 	"golang.org/x/net/publicsuffix"
@@ -39,32 +40,37 @@ type HTTPClient interface {
 type defaultHTTPClient struct {
 	client  *http.Client
 	baseURL string
-	logger  *slog.Logger
+	log     logging.Logger
 }
 
-func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, logger *slog.Logger) (*defaultHTTPClient, error) {
-	baseClient, err := newHTTPClientForAccount(account, timeout, logger)
+func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (*defaultHTTPClient, error) {
+	baseClient, err := newHTTPClientForAccount(account, timeout, log)
 	if err != nil {
 		return nil, err
 	}
 	return &defaultHTTPClient{
 		client:  baseClient,
 		baseURL: account.URL,
-		logger:  logger,
+		log:     log,
 	}, nil
 }
 
-var errAuthenticationFailed = errors.New("unable to log in with the provided credentials")
-var ErrNotFound = errors.New("server returned Not Found for the requested resource")
-
 type HTTPError struct {
-	URL  string
-	Code int
-	Body string
+	URL    string
+	Method string
+	Status int
+}
+
+func NewHTTPError(url, method string, status int) *HTTPError {
+	return &HTTPError{
+		URL:    url,
+		Method: method,
+		Status: status,
+	}
 }
 
 func (e *HTTPError) Error() string {
-	return fmt.Sprintf("unexpected response from the server: %d on URL %s (%s)", e.Code, e.URL, strings.TrimSpace(e.Body))
+	return "unexpected response from the server"
 }
 
 func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyType string) ([]byte, error) {
@@ -75,35 +81,39 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
+		if e, ok := err.(net.Error); ok && e.Timeout() {
+			return nil, types.NewAgentError(events.OperationTimedOutCode, err, nil)
+		}
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	switch resp.StatusCode {
-	case http.StatusUnauthorized:
-		return nil, errAuthenticationFailed
 	case http.StatusOK, http.StatusCreated, http.StatusAccepted:
 		return io.ReadAll(resp.Body)
 	case http.StatusNoContent:
 		return nil, nil
 	default:
-		// Log the message body, if available
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			body = nil
-		}
-		errMessage := string(body)
+		// If this was a Connect API error, there should be
+		// helpful error information in the json body.
+		var errDetails map[string]any
 
-		// If this was a Connect API error, there might be
-		// a helpful error field in the json body.
-		var errResponse struct {
-			Error string `json:"error"`
+		body, err := io.ReadAll(resp.Body)
+		if err == nil {
+			_ = json.Unmarshal(body, &errDetails)
 		}
-		err = json.Unmarshal(body, &errResponse)
-		if err == nil && errResponse.Error != "" {
-			errMessage = errResponse.Error
+		errCode := events.ServerErrorCode
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			errCode = events.AuthenticationFailedCode
+		case http.StatusForbidden:
+			errCode = events.PermissionsCode
 		}
-		return nil, &HTTPError{URL: apiURL, Code: resp.StatusCode, Body: errMessage}
+		err = types.NewAgentError(
+			errCode,
+			NewHTTPError(apiURL, method, resp.StatusCode),
+			errDetails)
+		return nil, err
 	}
 }
 
@@ -120,8 +130,8 @@ func (c *defaultHTTPClient) doJSON(method string, path string, body any, into an
 		reqBody = bytes.NewReader(bodyJSON)
 	}
 	respBody, err := c.do(method, path, reqBody, "application/json")
-	if c.logger.Enabled(context.Background(), slog.LevelDebug) {
-		c.logger.Debug("API request", "method", method, "path", path, "body", string(bodyJSON), "response", string(respBody), "error", err)
+	if c.log.Enabled(context.Background(), slog.LevelDebug) {
+		c.log.Debug("API request", "method", method, "path", path, "body", string(bodyJSON), "response", string(respBody), "error", err)
 	}
 	if err != nil {
 		return err
@@ -166,11 +176,11 @@ func (c *defaultHTTPClient) Delete(path string) error {
 	return c.doJSON("DELETE", path, nil, nil)
 }
 
-func loadCACertificates(path string, logger *slog.Logger) (*x509.CertPool, error) {
+func loadCACertificates(path string, log logging.Logger) (*x509.CertPool, error) {
 	if path == "" {
 		return nil, nil
 	}
-	logger.Info("Loading CA certificate", "path", path)
+	log.Info("Loading CA certificate", "path", path)
 	certificate, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("Error reading certificate file: %s", err)
@@ -183,14 +193,14 @@ func loadCACertificates(path string, logger *slog.Logger) (*x509.CertPool, error
 	return certPool, nil
 }
 
-func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, logger *slog.Logger) (*http.Client, error) {
+func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, log logging.Logger) (*http.Client, error) {
 	cookieJar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})
 	if err != nil {
 		return nil, err
 	}
-	certPool, err := loadCACertificates(account.Certificate, logger)
+	certPool, err := loadCACertificates(account.Certificate, log)
 	if err != nil {
 		return nil, err
 	}

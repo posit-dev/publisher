@@ -3,10 +3,10 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"log/slog"
 	"os"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,14 +29,14 @@ func (s *AccountEnvVarProviderSuite) TeardownTest() {
 }
 
 func (s *AccountEnvVarProviderSuite) TestNewEnvVarProvider() {
-	logger := slog.Default()
-	provider := newEnvVarProvider(logger)
-	s.Equal(logger, provider.logger)
+	log := logging.New()
+	provider := newEnvVarProvider(log)
+	s.Equal(log, provider.log)
 }
 
 func (s *AccountEnvVarProviderSuite) TestLoadAll() {
-	logger := slog.Default()
-	provider := newEnvVarProvider(logger)
+	log := logging.New()
+	provider := newEnvVarProvider(log)
 	os.Setenv("CONNECT_SERVER", "https://connect.example.com:1234")
 	os.Setenv("CONNECT_API_KEY", "0123456789ABCDEF0123456789ABCDEF")
 	os.Setenv("CONNECT_INSECURE", "1")
@@ -56,8 +56,8 @@ func (s *AccountEnvVarProviderSuite) TestLoadAll() {
 }
 
 func (s *AccountEnvVarProviderSuite) TestLoadSome() {
-	logger := slog.Default()
-	provider := newEnvVarProvider(logger)
+	log := logging.New()
+	provider := newEnvVarProvider(log)
 	os.Setenv("CONNECT_SERVER", "https://connect.example.com:1234")
 	accountList, err := provider.Load()
 	s.Nil(err)
@@ -74,8 +74,8 @@ func (s *AccountEnvVarProviderSuite) TestLoadSome() {
 }
 
 func (s *AccountEnvVarProviderSuite) TestLoadNone() {
-	logger := slog.Default()
-	provider := newEnvVarProvider(logger)
+	log := logging.New()
+	provider := newEnvVarProvider(log)
 	accountList, err := provider.Load()
 	s.Nil(err)
 	s.Nil(accountList)

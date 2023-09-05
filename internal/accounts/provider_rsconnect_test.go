@@ -4,12 +4,12 @@ package accounts
 
 import (
 	"errors"
-	"log/slog"
 	"os"
 	"runtime"
 	"strings"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/dcf"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -29,9 +29,9 @@ func TestRsconnectProviderSuite(t *testing.T) {
 }
 
 func (s *RsconnectProviderSuite) SetupSuite() {
-	logger := slog.Default()
+	log := logging.New()
 	fs := utiltest.NewMockFs()
-	s.provider = newRSConnectProvider(fs, logger)
+	s.provider = newRSConnectProvider(fs, log)
 }
 
 func (s *RsconnectProviderSuite) SetupTest() {
@@ -43,11 +43,11 @@ func (s *RsconnectProviderSuite) TeardownTest() {
 }
 
 func (s *RsconnectProviderSuite) TestNewRSConnectProvider() {
-	logger := slog.Default()
+	log := logging.New()
 	fs := utiltest.NewMockFs()
-	provider := newRSConnectProvider(fs, logger)
+	provider := newRSConnectProvider(fs, log)
 	s.Equal(fs, provider.fs)
-	s.Equal(logger, provider.logger)
+	s.Equal(log, provider.log)
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirRUserConfig() {
@@ -261,9 +261,9 @@ func TestRsconnectProviderLoadSuite(t *testing.T) {
 
 func (s *RsconnectProviderLoadSuite) SetupTest() {
 	s.envVarHelper.Setup("HOME", "R_USER_CONFIG_DIR", "XDG_CONFIG_HOME", "APPDATA")
-	logger := slog.Default()
+	log := logging.New()
 	s.fs = utiltest.NewMockFs()
-	s.provider = newRSConnectProvider(s.fs, logger)
+	s.provider = newRSConnectProvider(s.fs, log)
 
 	// Record some config paths so we don't need to keep inventing them
 	var err error
@@ -276,16 +276,16 @@ func (s *RsconnectProviderLoadSuite) SetupTest() {
 
 func (s *RsconnectProviderLoadSuite) TestLoadNewConfigDir() {
 	fs := afero.NewMemMapFs()
-	logger := slog.Default()
-	provider := newRSConnectProvider(fs, logger)
+	log := logging.New()
+	provider := newRSConnectProvider(fs, log)
 	configDir := util.NewPath(s.configDir.Path(), fs)
 	s.loadUsingConfigDir(configDir, provider)
 }
 
 func (s *RsconnectProviderLoadSuite) TestLoadOldConfigDir() {
 	fs := afero.NewMemMapFs()
-	logger := slog.Default()
-	provider := newRSConnectProvider(fs, logger)
+	log := logging.New()
+	provider := newRSConnectProvider(fs, log)
 	oldConfigDir := util.NewPath(s.oldConfigDir.Path(), fs)
 	s.loadUsingConfigDir(oldConfigDir, provider)
 }

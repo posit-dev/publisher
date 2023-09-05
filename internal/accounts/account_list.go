@@ -4,8 +4,8 @@ package accounts
 
 import (
 	"fmt"
-	"log/slog"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/spf13/afero"
 )
 
@@ -21,19 +21,19 @@ type AccountList interface {
 
 type defaultAccountList struct {
 	providers []AccountProvider
-	logger    *slog.Logger
+	log       logging.Logger
 }
 
 var _ AccountList = &defaultAccountList{}
 
-func NewAccountList(fs afero.Fs, logger *slog.Logger) *defaultAccountList {
+func NewAccountList(fs afero.Fs, log logging.Logger) *defaultAccountList {
 	return &defaultAccountList{
 		providers: []AccountProvider{
-			newEnvVarProvider(logger),
-			newRSConnectProvider(fs, logger),
-			newRSConnectPythonProvider(fs, logger),
+			newEnvVarProvider(log),
+			newRSConnectProvider(fs, log),
+			newRSConnectPythonProvider(fs, log),
 		},
-		logger: logger,
+		log: log,
 	}
 }
 

@@ -6,8 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"log/slog"
-
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -16,7 +15,7 @@ import (
 
 type ServicesSuite struct {
 	utiltest.Suite
-	log *slog.Logger
+	log logging.Logger
 }
 
 func TestServicesSuite(t *testing.T) {
@@ -24,7 +23,7 @@ func TestServicesSuite(t *testing.T) {
 }
 
 func (s *ServicesSuite) SetupSuite() {
-	s.log = slog.Default()
+	s.log = logging.New()
 }
 
 func (s *ServicesSuite) TestCreatePathsService() {

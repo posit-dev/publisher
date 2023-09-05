@@ -5,13 +5,13 @@ package util
 import (
 	"errors"
 	"io/fs"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -54,8 +54,8 @@ func (s *SymlinkWalkerSuite) TestWalkNoSymlinks() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	underlyingWalker := &FSWalker{}
-	logger := slog.Default()
-	walker := NewSymlinkWalker(underlyingWalker, logger)
+	log := logging.New()
+	walker := NewSymlinkWalker(underlyingWalker, log)
 	sourcePath := s.cwd.Join("subdir")
 	fileList := []string{}
 
@@ -78,8 +78,8 @@ func (s *SymlinkWalkerSuite) TestWalkError() {
 	badFS.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), testError)
 
 	underlyingWalker := &FSWalker{}
-	logger := slog.Default()
-	walker := NewSymlinkWalker(underlyingWalker, logger)
+	log := logging.New()
+	walker := NewSymlinkWalker(underlyingWalker, log)
 	sourcePath := NewPath(".", badFS)
 	err := walker.Walk(sourcePath, func(path Path, info fs.FileInfo, err error) error {
 		return err
@@ -92,10 +92,10 @@ func (s *SymlinkWalkerSuite) TestNewBundleFromDirectorySymlinks() {
 	// are using a fixture directory under ./testdata.
 	realFS := afero.NewOsFs()
 	sourcePath := NewPath(s.cwd.Path(), realFS).Join("testdata", "symlink_test", "bundle_dir")
-	logger := slog.Default()
+	log := logging.New()
 
 	underlyingWalker := &FSWalker{}
-	walker := NewSymlinkWalker(underlyingWalker, logger)
+	walker := NewSymlinkWalker(underlyingWalker, log)
 	fileList := []string{}
 
 	err := walker.Walk(sourcePath, func(path Path, info fs.FileInfo, err error) error {
@@ -119,10 +119,10 @@ func (s *SymlinkWalkerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	// are using a fixture directory under ./testdata.
 	realFS := afero.NewOsFs()
 	dirPath := NewPath(s.cwd.Path(), realFS).Join("testdata", "symlink_test", "link_target_missing")
-	logger := slog.Default()
+	log := logging.New()
 
 	underlyingWalker := &FSWalker{}
-	walker := NewSymlinkWalker(underlyingWalker, logger)
+	walker := NewSymlinkWalker(underlyingWalker, log)
 	err := walker.Walk(dirPath, func(path Path, info fs.FileInfo, err error) error {
 		return nil
 	})

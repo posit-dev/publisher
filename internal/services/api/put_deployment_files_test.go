@@ -9,8 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"log/slog"
-
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
@@ -19,7 +18,7 @@ import (
 
 type PutDeploymentFilesHandlerFuncSuite struct {
 	utiltest.Suite
-	log *slog.Logger
+	log logging.Logger
 }
 
 func TestPutDeploymentFilesHandlerFuncSuite(t *testing.T) {
@@ -27,7 +26,7 @@ func TestPutDeploymentFilesHandlerFuncSuite(t *testing.T) {
 }
 
 func (s *PutDeploymentFilesHandlerFuncSuite) SetupSuite() {
-	s.log = slog.Default()
+	s.log = logging.New()
 }
 
 func (s *PutDeploymentFilesHandlerFuncSuite) TestPutDeploymentFilesHandlerFunc() {

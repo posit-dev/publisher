@@ -3,9 +3,8 @@ package cli_types
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"log/slog"
-
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
@@ -19,22 +18,22 @@ type CommonArgs struct {
 }
 
 type Log interface {
-	*slog.Logger
+	logging.Logger
 }
 
 type CLIContext struct {
 	Accounts   accounts.AccountList
 	LocalToken services.LocalToken
 	Fs         afero.Fs
-	Logger     *slog.Logger
+	Logger     logging.Logger
 }
 
-func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, logger *slog.Logger) *CLIContext {
+func NewCLIContext(accountList accounts.AccountList, token services.LocalToken, fs afero.Fs, log logging.Logger) *CLIContext {
 	return &CLIContext{
 		Accounts:   accountList,
 		LocalToken: token,
 		Fs:         fs,
-		Logger:     logger,
+		Logger:     log,
 	}
 }
 

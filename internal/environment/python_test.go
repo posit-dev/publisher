@@ -4,12 +4,12 @@ package environment
 
 import (
 	"errors"
-	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -44,19 +44,19 @@ func NewMockPythonExecutor() *MockPythonExecutor {
 }
 
 func (s *PythonSuite) TestNewPythonInspector() {
-	logger := slog.Default()
+	log := logging.New()
 	projectDir := util.NewPath("/myproject", nil)
 	pythonPath := util.NewPath("/usr/bin/python", nil)
-	inspector := NewPythonInspector(projectDir, pythonPath, logger)
+	inspector := NewPythonInspector(projectDir, pythonPath, log)
 	s.Equal(projectDir, inspector.projectDir)
 	s.Equal(pythonPath, inspector.pythonPath)
-	s.Equal(logger, inspector.logger)
+	s.Equal(log, inspector.log)
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
-	logger := slog.Default()
+	log := logging.New()
 	pythonPath := util.NewPath("/usr/bin/python3", nil)
-	inspector := NewPythonInspector(util.Path{}, pythonPath, logger)
+	inspector := NewPythonInspector(util.Path{}, pythonPath, log)
 	executor := NewMockPythonExecutor()
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
@@ -68,8 +68,8 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	projectDir := util.NewPath("/myproject", afero.NewMemMapFs())
 	pythonPath := util.NewPath("/usr/bin/python3", nil)
-	logger := slog.Default()
-	inspector := NewPythonInspector(projectDir, pythonPath, logger)
+	log := logging.New()
+	inspector := NewPythonInspector(projectDir, pythonPath, log)
 	executor := NewMockPythonExecutor()
 	testError := errors.New("test error from runPythonCommand")
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(nil, testError)
@@ -81,8 +81,8 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromPATH() {
-	logger := slog.Default()
-	inspector := NewPythonInspector(util.Path{}, util.Path{}, logger)
+	log := logging.New()
+	inspector := NewPythonInspector(util.Path{}, util.Path{}, log)
 	executor := NewMockPythonExecutor()
 	executor.On("runPythonCommand", "python3", mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
@@ -98,8 +98,8 @@ func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
 	if err != nil {
 		s.T().Skip("python3 isn't available on PATH")
 	}
-	logger := slog.Default()
-	inspector := NewPythonInspector(util.Path{}, util.Path{}, logger)
+	log := logging.New()
+	inspector := NewPythonInspector(util.Path{}, util.Path{}, log)
 	version, err := inspector.GetPythonVersion()
 	s.Nil(err)
 	s.True(strings.HasPrefix(version, "3."))
@@ -116,8 +116,8 @@ func (s *PythonSuite) TestGetRequirementsFromFile() {
 	err = reqPath.WriteFile(fileContent, 0600)
 	s.Nil(err)
 
-	logger := slog.Default()
-	inspector := NewPythonInspector(baseDir, util.Path{}, logger)
+	log := logging.New()
+	inspector := NewPythonInspector(baseDir, util.Path{}, log)
 	requirements, err := inspector.GetPythonRequirements()
 	s.Nil(err)
 	s.Equal(fileContent, requirements)
@@ -128,8 +128,8 @@ func (s *PythonSuite) TestGetRequirementsFromFileErr() {
 	testError := errors.New("test error from Stat")
 	fs.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), testError)
 	projectDir := util.NewPath("/anything", fs)
-	logger := slog.Default()
-	inspector := NewPythonInspector(projectDir, util.Path{}, logger)
+	log := logging.New()
+	inspector := NewPythonInspector(projectDir, util.Path{}, log)
 	requirements, err := inspector.GetPythonRequirements()
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
@@ -139,8 +139,8 @@ func (s *PythonSuite) TestGetRequirementsFromFileErr() {
 
 func (s *PythonSuite) TestGetPythonRequirementsFromExecutable() {
 	pythonPath := util.NewPath("/usr/bin/python3", nil)
-	logger := slog.Default()
-	inspector := NewPythonInspector(util.Path{}, pythonPath, logger)
+	log := logging.New()
+	inspector := NewPythonInspector(util.Path{}, pythonPath, log)
 	executor := NewMockPythonExecutor()
 	freezeOutput := []byte("numpy\npandas\n")
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(freezeOutput, nil)
@@ -152,9 +152,9 @@ func (s *PythonSuite) TestGetPythonRequirementsFromExecutable() {
 }
 
 func (s *PythonSuite) TestGetPythonRequirementsFromExecutableErr() {
-	logger := slog.Default()
+	log := logging.New()
 	pythonPath := util.NewPath("/nonexistent/python3", nil)
-	inspector := NewPythonInspector(util.Path{}, pythonPath, logger)
+	inspector := NewPythonInspector(util.Path{}, pythonPath, log)
 	requirements, err := inspector.GetPythonRequirements()
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)

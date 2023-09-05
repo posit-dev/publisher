@@ -7,12 +7,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/apitypes"
+	"github.com/rstudio/connect-client/internal/types"
 )
 
 type ConnectEnvironmentVariable struct {
-	Name            string              `json:"name"`
-	Value           apitypes.NullString `json:"value"`
+	Name            string           `json:"name"`
+	Value           types.NullString `json:"value"`
 	fromEnvironment bool
 }
 
@@ -30,11 +30,11 @@ func (v *ConnectEnvironmentVariable) UnmarshalText(text []byte) error {
 		// the value never appears on the command line.
 		// This is helpful for private values that come
 		// from the environment and need to be passed through.
-		v.Value = apitypes.NewOptional(os.Getenv(v.Name))
+		v.Value = types.NewOptional(os.Getenv(v.Name))
 		v.fromEnvironment = true
 	} else {
 		// Value from the CLI (may be the empty string).
-		v.Value = apitypes.NewOptional(parts[1])
+		v.Value = types.NewOptional(parts[1])
 		v.fromEnvironment = false
 	}
 	return nil

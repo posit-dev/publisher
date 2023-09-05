@@ -4,10 +4,10 @@ package api
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/logging"
 )
 
 // accountGetDTO is the format of returned account data.
@@ -43,11 +43,11 @@ func toAccountDTO(acct *accounts.Account) *accountGetDTO {
 }
 
 // GetAccountsHandlerFunc returns a handler for the account list.
-func GetAccountsHandlerFunc(lister accounts.AccountList, logger *slog.Logger) http.HandlerFunc {
+func GetAccountsHandlerFunc(lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		accounts, err := lister.GetAccountsByServerType(accounts.ServerTypeConnect)
 		if err != nil {
-			InternalError(w, req, logger, err)
+			InternalError(w, req, log, err)
 			return
 		}
 		data := &accountListDTO{}

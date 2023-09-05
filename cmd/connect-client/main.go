@@ -5,12 +5,12 @@ package main
 import (
 	"os"
 
-	"log/slog"
-
 	"github.com/alecthomas/kong"
 	"github.com/rstudio/connect-client/cmd/connect-client/commands"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
+	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/spf13/afero"
@@ -27,40 +27,36 @@ type cliSpec struct {
 	Version       commands.VersionFlag      `help:"Show the client software version and exit."`
 }
 
-func logVersion(logger *slog.Logger) {
-	logger.Info("Client version", "version", project.Version)
-	logger.Info("Development mode", "mode", project.Mode)
-	logger.Info("Development build", "DevelopmentBuild", project.DevelopmentBuild())
+func logVersion(log logging.Logger) {
+	log.Info("Client version", "version", project.Version)
+	log.Info("Development mode", "mode", project.Mode)
+	log.Info("Development build", "DevelopmentBuild", project.DevelopmentBuild())
 }
 
-func newLogger(level slog.Leveler) *slog.Logger {
-	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
-}
-
-func makeContext(logger *slog.Logger) (*cli_types.CLIContext, error) {
+func makeContext(log logging.Logger) (*cli_types.CLIContext, error) {
 	fs := afero.NewOsFs()
-	accountList := accounts.NewAccountList(fs, logger)
+	accountList := accounts.NewAccountList(fs, log)
 	token, err := services.NewLocalToken()
 	if err != nil {
 		return nil, err
 	}
-	ctx := cli_types.NewCLIContext(accountList, token, fs, logger)
+	ctx := cli_types.NewCLIContext(accountList, token, fs, log)
 	return ctx, nil
 }
 
-func Fatal(logger *slog.Logger, msg string, err error, args ...any) {
+func Fatal(log logging.Logger, msg string, err error, args ...any) {
 	args = append([]any{"error", err.Error()}, args...)
-	logger.Error(msg, args...)
+	log.Error(msg, args...)
 	os.Exit(1)
 }
 
 func main() {
-	logger := newLogger(slog.LevelInfo)
-	logVersion(logger)
+	log := events.NewLogger(false)
+	logVersion(log)
 
-	ctx, err := makeContext(logger)
+	ctx, err := makeContext(log)
 	if err != nil {
-		Fatal(logger, "Error initializing client", err)
+		Fatal(log, "Error initializing client", err)
 	}
 	cli := cliSpec{
 		CommonArgs: cli_types.CommonArgs{},
@@ -68,7 +64,7 @@ func main() {
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
 	if cli.Debug {
-		ctx.Logger = newLogger(slog.LevelDebug)
+		ctx.Logger = events.NewLogger(true)
 	}
 	if cli.Token != nil {
 		ctx.LocalToken = *cli.Token
@@ -79,20 +75,20 @@ func main() {
 		// from file, then overlay the alread-parsed CLI arguments on top.
 		err = cmd.LoadState(ctx.Logger)
 		if err != nil {
-			Fatal(logger, "Error loading saved deployment", err)
+			Fatal(log, "Error loading saved deployment", err)
 		}
 		err = args.Run(&cli.CommonArgs)
 		if err != nil {
-			Fatal(logger, "Error running command", err)
+			Fatal(log, "Error running command", err)
 		}
 		err = cmd.SaveState(ctx.Logger)
 		if err != nil {
-			Fatal(logger, "Error saving deployment", err)
+			Fatal(log, "Error saving deployment", err)
 		}
 	} else {
 		err = args.Run(&cli.CommonArgs)
 		if err != nil {
-			Fatal(logger, "Error running command", err)
+			Fatal(log, "Error running command", err)
 		}
 	}
 }

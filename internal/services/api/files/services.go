@@ -4,9 +4,9 @@ package files
 
 import (
 	"io/fs"
-	"log/slog"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/spf13/afero"
 )
@@ -15,7 +15,7 @@ type FilesService interface {
 	GetFile(path util.Path) (*File, error)
 }
 
-func CreateFilesService(base util.Path, afs afero.Fs, log *slog.Logger) FilesService {
+func CreateFilesService(base util.Path, afs afero.Fs, log logging.Logger) FilesService {
 	f := base.Join(".gitignore")
 	ignore, err := gitignore.NewIgnoreList(f, nil)
 	if err != nil {
@@ -32,7 +32,7 @@ func CreateFilesService(base util.Path, afs afero.Fs, log *slog.Logger) FilesSer
 type filesService struct {
 	root   util.Path
 	afs    afero.Fs
-	log    *slog.Logger
+	log    logging.Logger
 	ignore gitignore.IgnoreList
 }
 

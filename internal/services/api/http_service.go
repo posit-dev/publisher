@@ -10,12 +10,11 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/middleware"
 	"github.com/rstudio/connect-client/internal/state"
-
-	"log/slog"
 
 	"github.com/pkg/browser"
 )
@@ -32,7 +31,7 @@ type Service struct {
 	skipAuth      bool
 	token         services.LocalToken
 	addr          net.Addr
-	logger        *slog.Logger
+	log           logging.Logger
 }
 
 var errTlsRequiredFiles error = errors.New("TLS requires both a private key file and a certificate chain file")
@@ -49,20 +48,20 @@ func NewService(
 	skipAuth bool,
 	accessLog bool,
 	token services.LocalToken,
-	logger *slog.Logger) *Service {
+	log logging.Logger) *Service {
 
 	if project.DevelopmentBuild() && skipAuth {
-		logger.Warn("Service is operating in DEVELOPMENT MODE with NO browser to server authentication")
+		log.Warn("Service is operating in DEVELOPMENT MODE with NO browser to server authentication")
 	} else {
-		handler = middleware.AuthRequired(logger, handler)
-		handler = middleware.CookieSession(logger, handler)
-		handler = middleware.LocalTokenSession(token, logger, handler)
+		handler = middleware.AuthRequired(log, handler)
+		handler = middleware.CookieSession(log, handler)
+		handler = middleware.LocalTokenSession(token, log, handler)
 	}
 
 	if accessLog {
-		handler = middleware.LogRequest("Access Log", logger, handler)
+		handler = middleware.LogRequest("Access Log", log, handler)
 	}
-	handler = middleware.PanicRecovery(logger, handler)
+	handler = middleware.PanicRecovery(log, handler)
 
 	return &Service{
 		state:         state,
@@ -76,7 +75,7 @@ func NewService(
 		skipAuth:      skipAuth,
 		token:         token,
 		addr:          nil,
-		logger:        logger,
+		log:           log,
 	}
 }
 
@@ -129,7 +128,7 @@ func (svc *Service) Run() error {
 	// If not development mode, then you get a token added to the URL
 	appURL := svc.getURL(!(project.DevelopmentBuild() && svc.skipAuth))
 
-	svc.logger.Info("UI server running", "url", appURL.String())
+	svc.log.Info("UI server running", "url", appURL.String())
 	fmt.Println(appURL.String())
 
 	if project.DevelopmentBuild() && svc.openBrowserAt != "" {

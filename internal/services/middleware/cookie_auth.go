@@ -3,11 +3,11 @@ package middleware
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/chmike/securecookie"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -25,13 +25,13 @@ var cookieObj = securecookie.MustNew(sessionCookieName, cookieKey, securecookie.
 // If there is a cookie, and it is valid,
 // the session is marked as authenticated.
 // An invalid cookie results in auth failure (401).
-func CookieSession(logger *slog.Logger, next http.HandlerFunc) http.HandlerFunc {
+func CookieSession(log logging.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		_, err := cookieObj.GetValue([]byte(sessionCookieName), req)
 		if err != nil {
 			// Proceed without auth.
 			if err != http.ErrNoCookie {
-				logger.Error("Error checking for cookie", "name", sessionCookieName, "error", err)
+				log.Error("Error checking for cookie", "name", sessionCookieName, "error", err)
 			}
 			next(w, req)
 		} else {

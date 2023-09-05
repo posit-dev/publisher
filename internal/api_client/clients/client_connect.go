@@ -4,47 +4,50 @@ package clients
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/apitypes"
 	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type ConnectClient struct {
 	client  HTTPClient
 	account *accounts.Account
-	logger  *slog.Logger
+	log     logging.Logger
 }
 
 func NewConnectClient(
 	account *accounts.Account,
 	timeout time.Duration,
-	logger *slog.Logger) (*ConnectClient, error) {
+	log logging.Logger) (*ConnectClient, error) {
 
-	httpClient, err := NewDefaultHTTPClient(account, timeout, logger)
+	httpClient, err := NewDefaultHTTPClient(account, timeout, log)
 	if err != nil {
 		return nil, err
 	}
 	return &ConnectClient{
 		client:  httpClient,
 		account: account,
-		logger:  logger,
+		log:     log,
 	}, nil
 }
 
 func (c *ConnectClient) TestConnection() error {
 	// Make a client without auth so we're just testing the connection.
-	c.logger.Info("Testing connection", "url", c.account.URL)
+	c.log.Info("Testing connection", "url", c.account.URL)
 	acctWithoutAuth := *(c.account)
 	acctWithoutAuth.AuthType = accounts.AuthTypeNone
-	client, err := newHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.logger)
+	client, err := newHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.log)
 	if err != nil {
 		return err
 	}
@@ -63,17 +66,17 @@ func (c *ConnectClient) TestConnection() error {
 }
 
 type UserDTO struct {
-	Email       string            `json:"email"`
-	Username    string            `json:"username"`
-	FirstName   string            `json:"first_name"`
-	LastName    string            `json:"last_name"`
-	UserRole    string            `json:"user_role"`
-	CreatedTime apitypes.Time     `json:"created_time"`
-	UpdatedTime apitypes.Time     `json:"updated_time"`
-	ActiveTime  apitypes.NullTime `json:"active_time"`
-	Confirmed   bool              `json:"confirmed"`
-	Locked      bool              `json:"locked"`
-	GUID        apitypes.UserID   `json:"guid"`
+	Email       string         `json:"email"`
+	Username    string         `json:"username"`
+	FirstName   string         `json:"first_name"`
+	LastName    string         `json:"last_name"`
+	UserRole    string         `json:"user_role"`
+	CreatedTime types.Time     `json:"created_time"`
+	UpdatedTime types.Time     `json:"updated_time"`
+	ActiveTime  types.NullTime `json:"active_time"`
+	Confirmed   bool           `json:"confirmed"`
+	Locked      bool           `json:"locked"`
+	GUID        types.UserID   `json:"guid"`
 }
 
 func (u *UserDTO) toUser() *User {
@@ -87,7 +90,7 @@ func (u *UserDTO) toUser() *User {
 }
 
 func (c *ConnectClient) TestAuthentication() (*User, error) {
-	c.logger.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
+	c.log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
 	err := c.client.Get("/__api__/v1/user", &connectUser)
 	if err != nil {
@@ -106,42 +109,42 @@ func (c *ConnectClient) TestAuthentication() (*User, error) {
 }
 
 type connectGetContentDTO struct {
-	GUID               apitypes.ContentID    `json:"guid"`
-	Name               apitypes.ContentName  `json:"name"`
-	Title              apitypes.NullString   `json:"title"`
-	Description        string                `json:"description"`
-	AccessType         string                `json:"access_type"`
-	ConnectionTimeout  apitypes.NullInt32    `json:"connection_timeout"`
-	ReadTimeout        apitypes.NullInt32    `json:"read_timeout"`
-	InitTimeout        apitypes.NullInt32    `json:"init_timeout"`
-	IdleTimeout        apitypes.NullInt32    `json:"idle_timeout"`
-	MaxProcesses       apitypes.NullInt32    `json:"max_processes"`
-	MinProcesses       apitypes.NullInt32    `json:"min_processes"`
-	MaxConnsPerProcess apitypes.NullInt32    `json:"max_conns_per_process"`
-	LoadFactor         apitypes.NullFloat64  `json:"load_factor"`
-	Created            apitypes.Time         `json:"created_time"`
-	LastDeployed       apitypes.Time         `json:"last_deployed_time"`
-	BundleId           apitypes.NullInt64Str `json:"bundle_id"`
-	AppMode            apptypes.AppMode      `json:"app_mode"`
-	ContentCategory    string                `json:"content_category"`
-	Parameterized      bool                  `json:"parameterized"`
-	ClusterName        apitypes.NullString   `json:"cluster_name"`
-	ImageName          apitypes.NullString   `json:"image_name"`
-	RVersion           apitypes.NullString   `json:"r_version"`
-	PyVersion          apitypes.NullString   `json:"py_version"`
-	QuartoVersion      apitypes.NullString   `json:"quarto_version"`
-	RunAs              apitypes.NullString   `json:"run_as"`
-	RunAsCurrentUser   bool                  `json:"run_as_current_user"`
-	OwnerGUID          apitypes.GUID         `json:"owner_guid"`
-	ContentURL         string                `json:"content_url"`
-	DashboardURL       string                `json:"dashboard_url"`
-	Role               string                `json:"app_role"`
-	Id                 apitypes.Int64Str     `json:"id"`
+	GUID               types.ContentID    `json:"guid"`
+	Name               types.ContentName  `json:"name"`
+	Title              types.NullString   `json:"title"`
+	Description        string             `json:"description"`
+	AccessType         string             `json:"access_type"`
+	ConnectionTimeout  types.NullInt32    `json:"connection_timeout"`
+	ReadTimeout        types.NullInt32    `json:"read_timeout"`
+	InitTimeout        types.NullInt32    `json:"init_timeout"`
+	IdleTimeout        types.NullInt32    `json:"idle_timeout"`
+	MaxProcesses       types.NullInt32    `json:"max_processes"`
+	MinProcesses       types.NullInt32    `json:"min_processes"`
+	MaxConnsPerProcess types.NullInt32    `json:"max_conns_per_process"`
+	LoadFactor         types.NullFloat64  `json:"load_factor"`
+	Created            types.Time         `json:"created_time"`
+	LastDeployed       types.Time         `json:"last_deployed_time"`
+	BundleId           types.NullInt64Str `json:"bundle_id"`
+	AppMode            apptypes.AppMode   `json:"app_mode"`
+	ContentCategory    string             `json:"content_category"`
+	Parameterized      bool               `json:"parameterized"`
+	ClusterName        types.NullString   `json:"cluster_name"`
+	ImageName          types.NullString   `json:"image_name"`
+	RVersion           types.NullString   `json:"r_version"`
+	PyVersion          types.NullString   `json:"py_version"`
+	QuartoVersion      types.NullString   `json:"quarto_version"`
+	RunAs              types.NullString   `json:"run_as"`
+	RunAsCurrentUser   bool               `json:"run_as_current_user"`
+	OwnerGUID          types.GUID         `json:"owner_guid"`
+	ContentURL         string             `json:"content_url"`
+	DashboardURL       string             `json:"dashboard_url"`
+	Role               string             `json:"app_role"`
+	Id                 types.Int64Str     `json:"id"`
 	// Tags         []tagOutputDTO    `json:"tags,omitempty"`
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
 
-func (c *ConnectClient) CreateDeployment(body state.ConnectContent) (apitypes.ContentID, error) {
+func (c *ConnectClient) CreateDeployment(body state.ConnectContent) (types.ContentID, error) {
 	content := connectGetContentDTO{}
 	err := c.client.Post("/__api__/v1/content", &body, &content)
 	if err != nil {
@@ -150,35 +153,35 @@ func (c *ConnectClient) CreateDeployment(body state.ConnectContent) (apitypes.Co
 	return content.GUID, nil
 }
 
-func (c *ConnectClient) UpdateDeployment(contentID apitypes.ContentID, body state.ConnectContent) error {
+func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body state.ConnectContent) error {
 	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
 	return c.client.Patch(url, &body, nil)
 }
 
 type bundleMetadataDTO struct {
-	BundleSource       apitypes.NullString `json:"source"`
-	BundleSourceRepo   apitypes.NullString `json:"source_repo"`
-	BundleSourceBranch apitypes.NullString `json:"source_branch"`
-	BundleSourceCommit apitypes.NullString `json:"source_commit"`
-	BundleArchiveMD5   apitypes.NullString `json:"archive_md5"`
-	BundleArchiveSHA1  apitypes.NullString `json:"archive_sha1"`
+	BundleSource       types.NullString `json:"source"`
+	BundleSourceRepo   types.NullString `json:"source_repo"`
+	BundleSourceBranch types.NullString `json:"source_branch"`
+	BundleSourceCommit types.NullString `json:"source_commit"`
+	BundleArchiveMD5   types.NullString `json:"archive_md5"`
+	BundleArchiveSHA1  types.NullString `json:"archive_sha1"`
 }
 
 type connectGetBundleDTO struct {
-	Id            apitypes.BundleID   `json:"id"`
-	ContentGUID   apitypes.ContentID  `json:"content_guid"`
-	Created       time.Time           `json:"created_time"`
-	ClusterName   apitypes.NullString `json:"cluster_name"`
-	ImageName     apitypes.NullString `json:"image_name"`
-	RVersion      apitypes.NullString `json:"r_version"`
-	PyVersion     apitypes.NullString `json:"py_version"`
-	QuartoVersion apitypes.NullString `json:"quarto_version"`
-	Active        bool                `json:"active"`
-	Size          int64               `json:"size"`
-	Metadata      bundleMetadataDTO   `json:"metadata"`
+	Id            types.BundleID    `json:"id"`
+	ContentGUID   types.ContentID   `json:"content_guid"`
+	Created       time.Time         `json:"created_time"`
+	ClusterName   types.NullString  `json:"cluster_name"`
+	ImageName     types.NullString  `json:"image_name"`
+	RVersion      types.NullString  `json:"r_version"`
+	PyVersion     types.NullString  `json:"py_version"`
+	QuartoVersion types.NullString  `json:"quarto_version"`
+	Active        bool              `json:"active"`
+	Size          int64             `json:"size"`
+	Metadata      bundleMetadataDTO `json:"metadata"`
 }
 
-func (c *ConnectClient) UploadBundle(contentID apitypes.ContentID, body io.Reader) (apitypes.BundleID, error) {
+func (c *ConnectClient) UploadBundle(contentID types.ContentID, body io.Reader) (types.BundleID, error) {
 	url := fmt.Sprintf("/__api__/v1/content/%s/bundles", contentID)
 	resp, err := c.client.PostRaw(url, body, "application/gzip")
 	if err != nil {
@@ -193,14 +196,14 @@ func (c *ConnectClient) UploadBundle(contentID apitypes.ContentID, body io.Reade
 }
 
 type deployInputDTO struct {
-	BundleID apitypes.BundleID `json:"bundle_id"`
+	BundleID types.BundleID `json:"bundle_id"`
 }
 
 type deployOutputDTO struct {
-	TaskID apitypes.TaskID `json:"task_id"`
+	TaskID types.TaskID `json:"task_id"`
 }
 
-func (c *ConnectClient) DeployBundle(contentId apitypes.ContentID, bundleId apitypes.BundleID) (apitypes.TaskID, error) {
+func (c *ConnectClient) DeployBundle(contentId types.ContentID, bundleId types.BundleID) (types.TaskID, error) {
 	body := deployInputDTO{
 		BundleID: bundleId,
 	}
@@ -215,16 +218,16 @@ func (c *ConnectClient) DeployBundle(contentId apitypes.ContentID, bundleId apit
 
 // From Connect's api/v1/tasks/dto.go
 type taskDTO struct {
-	Id       apitypes.TaskID `json:"id"`
-	Output   []string        `json:"output"`
-	Result   any             `json:"result"`
-	Finished bool            `json:"finished"`
-	Code     int32           `json:"code"`
-	Error    string          `json:"error"`
-	Last     int32           `json:"last"`
+	Id       types.TaskID `json:"id"`
+	Output   []string     `json:"output"`
+	Result   any          `json:"result"`
+	Finished bool         `json:"finished"`
+	Code     int32        `json:"code"`
+	Error    string       `json:"error"`
+	Last     int32        `json:"last"`
 }
 
-func (c *ConnectClient) getTask(taskID apitypes.TaskID, previous *taskDTO) (*taskDTO, error) {
+func (c *ConnectClient) getTask(taskID types.TaskID, previous *taskDTO) (*taskDTO, error) {
 	var task taskDTO
 	var firstLine int32
 	if previous != nil {
@@ -238,23 +241,47 @@ func (c *ConnectClient) getTask(taskID apitypes.TaskID, previous *taskDTO) (*tas
 	return &task, nil
 }
 
-func (c *ConnectClient) WaitForTask(taskID apitypes.TaskID, logWriter io.Writer) error {
+func eventOpFromLogLine(currentOp events.Operation, line string) events.Operation {
+	if match, _ := regexp.MatchString("Building (Shiny application|Plumber API).*", line); match {
+		return events.PublishRestoreREnvOp
+	} else if match, _ := regexp.MatchString("Building (.* application|.* API|Jupyter notebook).*", line); match {
+		return events.PublishRestorePythonEnvOp
+	} else if match, _ := regexp.MatchString("Launching .* (application|API|notebook)", line); match {
+		return events.PublishRunContentOp
+	} else if match, _ := regexp.MatchString("(Building|Launching) static content", line); match {
+		return events.PublishRunContentOp
+	}
+	return currentOp
+}
+
+func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) error {
 	var previous *taskDTO
+	var op events.Operation
+
 	for {
 		task, err := c.getTask(taskID, previous)
 		if err != nil {
 			return err
 		}
 		for _, line := range task.Output {
-			_, err = fmt.Fprintln(logWriter, line)
-			if err != nil {
-				return err
+			nextOp := eventOpFromLogLine(op, line)
+			if nextOp != op {
+				if op != "" {
+					log.Success("Done")
+				}
+				op = nextOp
+				log = log.With(logging.LogKeyOp, op)
 			}
+			log.Info(line)
 		}
 		if task.Finished {
 			if task.Error != "" {
-				return fmt.Errorf("Error from the server: %s", task.Error)
+				// TODO: make these errors more specific, maybe by
+				// using the Connect error codes from the logs.
+				err := errors.New(task.Error)
+				return types.NewAgentError(events.DeploymentFailedCode, err, nil)
 			}
+			log.Success("Done")
 			return nil
 		}
 		previous = task

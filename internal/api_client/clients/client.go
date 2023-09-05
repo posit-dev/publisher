@@ -3,8 +3,9 @@ package clients
 import (
 	"io"
 
-	"github.com/rstudio/connect-client/internal/apitypes"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
+	"github.com/rstudio/connect-client/internal/types"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
@@ -17,7 +18,7 @@ type UserID string
 
 // Simplified user structure common to all servers
 type User struct {
-	Id        apitypes.UserID
+	Id        types.UserID
 	Username  string
 	FirstName string
 	LastName  string
@@ -27,11 +28,11 @@ type User struct {
 type APIClient interface {
 	TestConnection() error
 	TestAuthentication() (*User, error)
-	CreateDeployment(state.ConnectContent) (apitypes.ContentID, error)
-	UpdateDeployment(apitypes.ContentID, state.ConnectContent) error
-	UploadBundle(apitypes.ContentID, io.Reader) (apitypes.BundleID, error)
-	DeployBundle(apitypes.ContentID, apitypes.BundleID) (apitypes.TaskID, error)
-	WaitForTask(taskID apitypes.TaskID, logWriter io.Writer) error
+	CreateDeployment(state.ConnectContent) (types.ContentID, error)
+	UpdateDeployment(types.ContentID, state.ConnectContent) error
+	UploadBundle(types.ContentID, io.Reader) (types.BundleID, error)
+	DeployBundle(types.ContentID, types.BundleID) (types.TaskID, error)
+	WaitForTask(taskID types.TaskID, log logging.Logger) error
 }
 
 // PublishingClient provides higher-level client methods that work

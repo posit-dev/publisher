@@ -3,17 +3,18 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"log/slog"
 	"os"
+
+	"github.com/rstudio/connect-client/internal/logging"
 )
 
 type envVarProvider struct {
-	logger *slog.Logger
+	log logging.Logger
 }
 
-func newEnvVarProvider(logger *slog.Logger) *envVarProvider {
+func newEnvVarProvider(log logging.Logger) *envVarProvider {
 	return &envVarProvider{
-		logger: logger,
+		log: log,
 	}
 }
 
@@ -32,6 +33,6 @@ func (p *envVarProvider) Load() ([]Account, error) {
 		ApiKey:      os.Getenv("CONNECT_API_KEY"),
 	}
 	account.AuthType = account.InferAuthType()
-	p.logger.Info("Creating account from CONNECT_SERVER", "name", account.Name, "url", serverURL)
+	p.log.Info("Creating account from CONNECT_SERVER", "name", account.Name, "url", serverURL)
 	return []Account{account}, nil
 }

@@ -3,11 +3,11 @@ package main
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 )
 
@@ -20,10 +20,10 @@ func TestMainSuite(t *testing.T) {
 }
 
 func (s *MainSuite) TestMakeContext() {
-	logger := slog.Default()
-	ctx, err := makeContext(logger)
+	log := logging.New()
+	ctx, err := makeContext(log)
 	s.Nil(err)
 	s.NotNil(ctx.Accounts)
 	s.NotEqual(ctx.LocalToken, "")
-	s.Equal(logger, ctx.Logger)
+	s.Equal(log, ctx.Logger)
 }

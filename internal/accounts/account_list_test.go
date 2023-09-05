@@ -4,9 +4,9 @@ package accounts
 
 import (
 	"errors"
-	"log/slog"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,18 +39,18 @@ func (s *AccountListSuite) SetupSuite() {
 }
 
 func (s *AccountListSuite) TestNewAccountList() {
-	logger := slog.Default()
+	log := logging.New()
 	fs := utiltest.NewMockFs()
-	accountList := NewAccountList(fs, logger)
+	accountList := NewAccountList(fs, log)
 	s.Len(accountList.providers, 3)
-	s.Equal(logger, accountList.logger)
+	s.Equal(log, accountList.log)
 }
 
 func (s *AccountListSuite) TestGetAllAccounts() {
-	logger := slog.Default()
+	log := logging.New()
 	accountList := defaultAccountList{
 		providers: []AccountProvider{&s.provider1, &s.emptyProvider, &s.provider2},
-		logger:    logger,
+		log:       log,
 	}
 	allAccounts, err := accountList.GetAllAccounts()
 	s.Nil(err)
@@ -63,11 +63,11 @@ func (s *AccountListSuite) TestGetAllAccounts() {
 }
 
 func (s *AccountListSuite) TestGetAllAccountsErr() {
-	logger := slog.Default()
+	log := logging.New()
 
 	accountList := defaultAccountList{
 		providers: []AccountProvider{&s.provider1, &s.erringProvider},
-		logger:    logger,
+		log:       log,
 	}
 	allAccounts, err := accountList.GetAllAccounts()
 	s.Nil(allAccounts)
@@ -75,10 +75,10 @@ func (s *AccountListSuite) TestGetAllAccountsErr() {
 }
 
 func (s *AccountListSuite) TestGetAccountByName() {
-	logger := slog.Default()
+	log := logging.New()
 	accountList := defaultAccountList{
 		providers: []AccountProvider{&s.emptyProvider, &s.provider1},
-		logger:    logger,
+		log:       log,
 	}
 	account, err := accountList.GetAccountByName("myAcct")
 	s.Nil(err)
@@ -86,10 +86,10 @@ func (s *AccountListSuite) TestGetAccountByName() {
 }
 
 func (s *AccountListSuite) TestGetAccountByNameErr() {
-	logger := slog.Default()
+	log := logging.New()
 	accountList := defaultAccountList{
 		providers: []AccountProvider{&s.erringProvider},
-		logger:    logger,
+		log:       log,
 	}
 	account, err := accountList.GetAccountByName("myAcct")
 	s.ErrorIs(err, s.testError)
@@ -97,10 +97,10 @@ func (s *AccountListSuite) TestGetAccountByNameErr() {
 }
 
 func (s *AccountListSuite) TestGetAccountByNameNotFound() {
-	logger := slog.Default()
+	log := logging.New()
 	accountList := defaultAccountList{
 		providers: []AccountProvider{},
-		logger:    logger,
+		log:       log,
 	}
 	account, err := accountList.GetAccountByName("myAcct")
 	s.ErrorContains(err, "there is no account named 'myAcct'")

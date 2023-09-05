@@ -3,12 +3,12 @@ package ui
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"log/slog"
 	"net/http"
 	"net/url"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
@@ -30,9 +30,9 @@ func NewUIService(
 	token services.LocalToken,
 	fs afero.Fs,
 	lister accounts.AccountList,
-	logger *slog.Logger) *api.Service {
+	log logging.Logger) *api.Service {
 
-	handler := RouterHandlerFunc(fs, publish, lister, logger)
+	handler := RouterHandlerFunc(fs, publish, lister, log)
 
 	return api.NewService(
 		publish.State,
@@ -46,12 +46,11 @@ func NewUIService(
 		ui.SkipBrowserSessionAuth,
 		ui.AccessLog,
 		token,
-		logger,
+		log,
 	)
 }
 
-func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log *slog.Logger) http.HandlerFunc {
-
+func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
 	deployment := publishArgs.State
 	base := deployment.SourceDir
 
