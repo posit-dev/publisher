@@ -108,7 +108,7 @@ func (s *AccountListSuite) TestGetAccountByNameNotFound() {
 }
 
 func (s *AccountListSuite) TestGetAccountsByServerType() {
-	logger := slog.Default()
+	log := logging.New()
 
 	account := Account{Name: "name", ServerType: ServerTypeConnect}
 	accounts := []Account{account}
@@ -119,7 +119,7 @@ func (s *AccountListSuite) TestGetAccountsByServerType() {
 
 	accountList := defaultAccountList{
 		providers: providers,
-		logger:    logger,
+		log:       log,
 	}
 
 	res, err := accountList.GetAccountsByServerType(ServerTypeConnect)
@@ -128,7 +128,7 @@ func (s *AccountListSuite) TestGetAccountsByServerType() {
 }
 
 func (s *AccountListSuite) TestGetAccountsByServerType_Empty() {
-	logger := slog.Default()
+	log := logging.New()
 
 	account := Account{Name: "name", ServerType: ServerTypeConnect}
 	accounts := []Account{account}
@@ -139,7 +139,7 @@ func (s *AccountListSuite) TestGetAccountsByServerType_Empty() {
 
 	accountList := defaultAccountList{
 		providers: providers,
-		logger:    logger,
+		log:       log,
 	}
 
 	res, err := accountList.GetAccountsByServerType(ServerTypeCloud)
