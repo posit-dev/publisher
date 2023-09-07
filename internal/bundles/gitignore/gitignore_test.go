@@ -75,4 +75,17 @@ func (s *GitIgnoreSuite) TestMatch() {
 	s.Equal("*.bak", m.Pattern)
 	s.Equal("", m.FilePath)
 	s.Equal(0, m.Line)
+
+	ignoredir := s.cwd.Join("ignoredir")
+	err = ignoredir.MkdirAll(0700)
+	s.NoError(err)
+	err = ign.AppendGlobs([]string{"ignoredir/"}, MatchSourceUser)
+	s.NoError(err)
+
+	m = ign.Match(ignoredir.Path())
+	s.NotNil(m)
+	s.Equal(MatchSourceUser, m.Source)
+	s.Equal("ignoredir/", m.Pattern)
+	s.Equal("", m.FilePath)
+	s.Equal(0, m.Line)
 }

@@ -319,7 +319,8 @@ func (ign *GitIgnoreList) match(path string, info os.FileInfo) *Match {
 // Match returns whether any of the globs in the ignore list match the
 // specified path. Uses the same matching rules as .gitignore files.
 func (ign *GitIgnoreList) Match(path string) *Match {
-	return ign.match(path, nil)
+	stat, _ := ign.fs.Stat(path)
+	return ign.match(path, stat)
 }
 
 // Walk walks the file tree with the specified root and calls fn on each file
