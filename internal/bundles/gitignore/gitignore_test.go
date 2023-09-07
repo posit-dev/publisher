@@ -58,12 +58,12 @@ func (s *GitIgnoreSuite) TestMatch() {
 
 	// Match returns nil if no match
 	m, err := ign.Match("app.py")
-	s.Nil(err)
+	s.NoError(err)
 	s.Nil(m)
 
 	// File matches include file info
 	m, err = ign.Match(".Rhistory")
-	s.Nil(err)
+	s.NoError(err)
 	s.NotNil(m)
 	s.Equal(MatchSourceFile, m.Source)
 	s.Equal(".Rhistory", m.Pattern)
@@ -72,7 +72,7 @@ func (s *GitIgnoreSuite) TestMatch() {
 
 	// Non-file matches don't include file info
 	m, err = ign.Match("app.py.bak")
-	s.Nil(err)
+	s.NoError(err)
 	s.NotNil(m)
 	s.Equal(MatchSourceUser, m.Source)
 	s.Equal("*.bak", m.Pattern)
@@ -86,7 +86,7 @@ func (s *GitIgnoreSuite) TestMatch() {
 	s.NoError(err)
 
 	m, err = ign.Match(ignoredir.Path())
-	s.Nil(err)
+	s.NoError(err)
 	s.NotNil(m)
 	s.Equal(MatchSourceUser, m.Source)
 	s.Equal("ignoredir/", m.Pattern)
