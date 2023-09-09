@@ -2,9 +2,17 @@
 <template>
   <div
     class="q-mx-md q-my-lg row justify-between"
-    style="align-items: flex-start;"
+    style="align-items: flex-start; flex-direction: row-reverse;"
   >
+    <q-btn
+      :disable="disablePublishingAction"
+      class=""
+      color="primary"
+      label="Publish"
+      @click="onPublish"
+    />
     <q-input
+      v-if="showTitle"
       v-model="title"
       label="Title"
       square
@@ -15,25 +23,19 @@
       hint="Enter a title for your content on the server"
       class="col-8"
     />
-    <q-btn
-      :disable="disablePublishingAction"
-      class=""
-      color="primary"
-      label="Publish"
-      @click="onPublish"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-
 import { ref } from 'vue';
-import { useApi } from 'src/api';
+
+defineProps<{
+  showTitle: boolean
+}>();
 
 const emit = defineEmits(['publish']);
 
-const api = useApi();
-const title = ref('');
+const title = ref('fastapi-simple');
 
 const disablePublishingAction = ref(false);
 

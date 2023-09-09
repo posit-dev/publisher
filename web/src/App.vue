@@ -36,9 +36,24 @@
                   v-close-popup
                   clickable
                   class="q-my-sm"
+                >
+                  <q-item-section>Posit Publishing FAQs</q-item-section>
+                </q-item>
+                <q-separator dark />
+                <q-item
+                  v-close-popup
+                  clickable
+                  class="q-my-sm"
                   @click="showDebug = !showDebug"
                 >
                   <q-item-section>{{ !showDebug ? "Show Debug Console" : "Hide Debug Console" }} </q-item-section>
+                </q-item>
+                <q-item
+                  v-close-popup
+                  clickable
+                  class="q-my-sm"
+                >
+                  <q-item-section>Create Diagnostic Bundle</q-item-section>
                 </q-item>
                 <q-separator dark />
                 <q-item
@@ -147,6 +162,7 @@
               class="rounded-borders"
             >
               <ContentTarget
+                :show-title="true"
                 @publish="onPublish"
               />
               <div class="q-mx-md q-mt-xl q-mb-sm">
@@ -161,7 +177,7 @@
                 dark
                 class="q-mx-md"
               />
-              <FilesToPublish />
+              <FilesToPublish :redeploy="false" />
               <q-separator
                 dark
                 class="q-mx-md"
@@ -171,7 +187,7 @@
                 dark
                 class="q-mx-md"
               />
-              <CommonSettings />
+              <CommonSettings :redeploy="false" />
               <q-separator
                 dark
                 class="q-mx-md"
@@ -195,6 +211,7 @@
               class="rounded-borders"
             >
               <ContentTarget
+                :show-title="false"
                 @publish="onPublish"
               />
               <div class="q-mx-md q-mt-xl q-mb-sm">
@@ -204,12 +221,7 @@
                 dark
                 class="q-mx-md"
               />
-              <DestinationTarget />
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-              <FilesToPublish />
+              <FilesToPublish :redeploy="true" />
               <q-separator
                 dark
                 class="q-mx-md"
@@ -219,7 +231,7 @@
                 dark
                 class="q-mx-md"
               />
-              <CommonSettings />
+              <CommonSettings :redeploy="true" />
               <q-separator
                 dark
                 class="q-mx-md"
@@ -263,7 +275,7 @@
           class="row center"
         >
           <div class="q-ma-md col-8">
-            Publishing 'My special project' to Dogfood
+            Publishing 'fastapi-simple' to Dogfood
             <q-spinner-ios
               v-if="publishingInProgress"
               color="yellow"
@@ -305,14 +317,14 @@
                 class="q-pa-sm"
                 style="margin-bottom: 0px; margin-top: 0;"
               >
-                Publishing 'My special project' to Dogfood...
+                Publishing 'fastapi-simple' to Dogfood...
               </h6>
               <h6
                 v-if="!publishingInProgress"
                 class="q-pa-sm"
                 style="margin-bottom: 0px; margin-top: 0;"
               >
-                'My special project' has been published to Dogfood
+                'fastapi-simple' has been published to Dogfood
               </h6>
               <div class="row items-center">
                 <ul class="col-8">
@@ -450,7 +462,7 @@
                 :done="activeSummaryStep >= 8"
               >
                 Your project has been successfully deployed to the server and is
-                available at https://connect.abc.com/my-project
+                available at https://rsc.radixu.com/connect/my-project
               </q-step>
             </q-stepper>
           </q-tab-panel>
@@ -480,9 +492,16 @@
                 />
               </div>
             </div>
+            <q-separator
+              dark
+              class="q-ma-md"
+            />
+            <div class="text-center q-mt-md" style="font-size: larger">
+              Publish 'fastapi-simple' to Dogfood
+            </div>
             <q-list
               dark
-              class=""
+              class="q-mt-md"
               bordered
             >
               <div
@@ -504,7 +523,7 @@
                   class="q-my-sm"
                   dark
                   dense
-                  style="font-family: monospace; font-size: smaller; line-height: 1rem;"
+                  style="line-height: 1rem;"
                 >
                   <q-item-section>
                     {{ log.msg }}
@@ -554,7 +573,9 @@ import PythonProject from 'src/components/panels/PythonProject.vue';
 import CommonSettings from 'src/components/panels/CommonSettings.vue';
 import AdvancedSettings from 'src/components/panels/AdvancedSettings.vue';
 // import PublishProcess from 'src/components/PublishProcess.vue';
-import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
+// import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
+
+// import { matMenu } from '@quasar/extras/material-icons';
 
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 
@@ -1058,7 +1079,7 @@ const advancedLog:LogEntry[] = [
   },
   {
     type: 'info',
-    msg: 'Deployment successful!',
+    msg: 'Deployment successful! Accessible @ https://rsc.radixu.com/connect/my-project',
     data: {
       time: '2023-08-31T17:55:23.894Z',
       contentID: '673e277c-0148-42eb-b2a2-d70f8e6b455d',

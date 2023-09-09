@@ -30,7 +30,7 @@
       </q-item-section>
     </template>
 
-    <q-card class="bg-grey-9">
+    <q-card dark>
       <q-card-section>
         <slot />
         <!-- TODO: select from previous deployments or add to existing or new targets -->

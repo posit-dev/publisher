@@ -6,7 +6,62 @@
     :subtitle="fileSummary"
     icon="img:/images/files-icon.jpg"
   >
+    <q-banner v-if="redeploy" dark class="bg-blue-8 text-white q-ma-sm">
+      TODO: File Diff is going to be revisited (as perhaps a list organized by new, deleted, updated and unchanged).
+      File Tree needs to have options to allow overriding of excluded/soft-filtered entries.
+    </q-banner>
+    <div v-if="redeploy">
+      <q-tabs
+        v-model="tab"
+        dense
+        class="text-grey"
+        active-color="white"
+        active
+        indicator-color="primary"
+        align="justify"
+        narrow-indicator
+      >
+        <q-tab
+          name="fileTree"
+          label="File Tree View (current)"
+          dark
+        />
+        <q-tab
+          name="fileDiff"
+          label="File Diff View (since last deployment)"
+          dark
+        />
+      </q-tabs>
+      <q-separator />
+      <q-tab-panels
+        v-model="tab"
+        animated
+        dark
+      >
+        <q-tab-panel name="fileDiff">
+          <FileDiff />
+        </q-tab-panel>
+      </q-tab-panels>
+      <q-tab-panels
+        v-model="tab"
+        animated
+        dark
+      >
+        <q-tab-panel name="fileTree">
+          <q-tree
+            v-model:ticked="deploymentStore.files"
+            v-model:expanded="expanded"
+            :nodes="files"
+            :node-key="NODE_KEY"
+            tick-strategy="leaf"
+            dark
+            dense
+          />
+        </q-tab-panel>
+      </q-tab-panels>
+    </div>
     <q-tree
+      v-if="!redeploy"
       v-model:ticked="deploymentStore.files"
       v-model:expanded="expanded"
       :nodes="files"
@@ -14,6 +69,16 @@
       tick-strategy="leaf"
       dark
       dense
+    />
+    <q-select
+      v-model="entryPoint"
+      :options="['db.py', 'entry.py', 'help.py', 'main.py', 'setup.py']"
+      label="Entry Point File"
+      map-options
+      dark
+      outlined
+      style="width: 100%"
+      class="q-ma-sm q-mt-md"
     />
   </LayoutPanel>
 </template>
@@ -23,8 +88,13 @@ import type { QTree, QTreeNode } from 'quasar';
 import { ref, computed } from 'vue';
 
 import LayoutPanel from 'src/components/LayoutPanel.vue';
+import FileDiff from 'src/components/FileDiff.vue';
 import { useApi, DeploymentFile } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
+
+const props = defineProps({
+  redeploy: { type: Boolean, required: true }
+});
 
 const NODE_KEY = 'key';
 
@@ -33,10 +103,13 @@ const deploymentStore = useDeploymentStore();
 
 const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);
+const tab = ref('fileDiff');
 
 type FileInfo = Pick<DeploymentFile, 'size' | 'isEntrypoint' | 'exclusion'>;
 
 const fileMap = ref(new Map<string, FileInfo>());
+
+const entryPoint = ref('main.py');
 
 const selectedFileTotalSize = computed(() : string => {
   let totalSize = 0;
@@ -60,7 +133,10 @@ const fileSummary = computed(() => {
   const path = deploymentStore.deployment?.sourcePath;
 
   if (count) {
-    return `${count} files selected from ${path} (total = ${selectedFileTotalSize.value})`;
+    if (!props.redeploy) {
+      return `${entryPoint.value} (entrypoint) and ${count - 1} files selected from ${path} (total = ${selectedFileTotalSize.value}).`;
+    }
+    return `${entryPoint.value} (entrypoint) and ${count - 1} files selected from ${path} (total = ${selectedFileTotalSize.value}). WARNING: 1 file removed since last deployment.`;
   } else if (path) {
     return `No files have been selected from ${path}`;
   }
