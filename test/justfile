@@ -1,7 +1,7 @@
 set shell := ["bash", "-uc"]
 
 export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
-# export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
+
 _tag := "rstudio/connect-client"
 
 build target:
@@ -16,13 +16,43 @@ build target:
     --platform "${_platform}" \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
     --build-arg platform={{target}} \
+    --build-arg FUZZBUCKET_CREDENTIALS="$FUZZBUCKET_CREDENTIALS" \
+    --build-arg FUZZBUCKET_URL="$FUZZBUCKET_URL" \
+    --build-arg FUZZBUCKET_SSH_KEY="$FUZZBUCKET_SSH_KEY" \
     --pull \
     --tag {{_tag}}-{{target}}:latest \
     ./docker
 
-init-connect:
-	docker compose pull connect && \
-	docker compose up -d connect
+build-clean target:
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux-amd64" ]]; then
+    _platform="linux/amd64"
+  elif [[ {{target}} =~ "linux-arm64" ]]; then
+    _platform="linux/arm64"
+  fi
+
+  docker build \
+    --no-cache \
+    --platform "${_platform}" \
+    --build-arg BUILDKIT_INLINE_CACHE=1 \
+    --build-arg platform={{target}} \
+    --pull \
+    --progress=plain \
+    --tag {{_tag}}-{{target}}:latest \
+    ./docker
+
+init-connect target:
+  #!/usr/bin/env bash
+  pip install -r ./setup/requirements.txt
+  echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
+  chmod 600 .fuzzbucket-ssh-key
+  export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
+  export CONNECT_VERSION=$(curl https://cdn.posit.co/connect/latest-packages.json | 
+    jq ".packages[0].version")
+  export CONNECT_IP="$(python setup/connect-setup.py)"
+  ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@$CONNECT_IP "${SSH_OPTIONS}" sudo -E UNATTENDED=1 bash installer-ci.sh ${CONNECT_VERSION}
+  python setup/client-setup.py
+  just ../web/build-and-test-ci-e2e {{target}}
 
 run-client target:
   #!/usr/bin/env bash
@@ -40,10 +70,8 @@ run-client target:
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} just test/_test-client {{target}}
-  elif [[ {{target}} =~ "windows" ]]; then
-    just _test-client windows-amd64
-  elif [[ {{target}} =~ "macos" ]]; then
-    just _test-client darwin-amd64
+  else
+    just _test-client {{target}}
   fi
 
 build-binary target:
@@ -62,6 +90,7 @@ build-binary target:
     --rm -it {{_tag}}-{{target}} \
     just build
   fi
+
 
 local-ui-client target:
   #!/usr/bin/env bash
@@ -124,4 +153,21 @@ bats-install:
     ./libs/bats-core/install.sh ./libs/bats-core/installation && \
     git clone --depth=1 https://github.com/ztombol/bats-support.git ./libs/bats-support && \
     git clone --depth=1 https://github.com/ztombol/bats-assert.git ./libs/bats-assert
+  fi
+
+bash target:
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux-amd64" ]]; then
+  _platform="linux/amd64"
+  elif [[ {{target}} =~ "linux-arm64" ]]; then
+  _platform="linux/arm64"
+  fi
+  if [[ {{target}} =~ "linux" ]]; then
+    docker run -it \
+      --platform "${_platform}" \
+      -v "$(pwd)"/../:/publishing-client \
+      -w /publishing-client/test \
+      -e DOCKER="false" \
+      --rm {{_tag}}-{{target}} \
+      /bin/bash
   fi
