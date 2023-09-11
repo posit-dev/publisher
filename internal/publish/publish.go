@@ -136,8 +136,6 @@ func withLog[T any](op events.Operation, msg string, label string, log logging.L
 
 func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, log logging.Logger) error {
 	log.Info("Starting deployment to server", "server", account.URL)
-	log = log.With(logging.LogKeyOp, events.PublishCreateBundleOp)
-	log.Start("Creating bundle")
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
@@ -145,7 +143,10 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
 
-	_, err = bundler.CreateBundle(bundleFile)
+	_, err = withLog(events.PublishCreateBundleOp, "Creating bundle", "filename", log, func() (any, error) {
+		_, err := bundler.CreateBundle(bundleFile)
+		return bundleFile.Name(), err
+	})
 	if err != nil {
 		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
 	}
@@ -153,7 +154,6 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 	if err != nil {
 		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
 	}
-	log.Success("Done creating bundle")
 
 	var contentID types.ContentID
 	if cmd.State.Target.ContentId != "" && !cmd.New {
