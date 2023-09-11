@@ -241,17 +241,71 @@ func (c *ConnectClient) getTask(taskID types.TaskID, previous *taskDTO) (*taskDT
 	return &task, nil
 }
 
+var buildAPIPattern = regexp.MustCompile("Building (Shiny application|Plumber API).*")
+var buildAppPattern = regexp.MustCompile("Building (.* application|.* API|Jupyter notebook).*")
+var launchPattern = regexp.MustCompile("Launching .* (application|API|notebook)")
+var staticPattern = regexp.MustCompile("(Building|Launching) static content")
+
 func eventOpFromLogLine(currentOp events.Operation, line string) events.Operation {
-	if match, _ := regexp.MatchString("Building (Shiny application|Plumber API).*", line); match {
+	if match := buildAPIPattern.MatchString(line); match {
 		return events.PublishRestoreREnvOp
-	} else if match, _ := regexp.MatchString("Building (.* application|.* API|Jupyter notebook).*", line); match {
+	} else if match := buildAppPattern.MatchString(line); match {
 		return events.PublishRestorePythonEnvOp
-	} else if match, _ := regexp.MatchString("Launching .* (application|API|notebook)", line); match {
+	} else if match := launchPattern.MatchString(line); match {
 		return events.PublishRunContentOp
-	} else if match, _ := regexp.MatchString("(Building|Launching) static content", line); match {
+	} else if match := staticPattern.MatchString(line); match {
 		return events.PublishRunContentOp
 	}
 	return currentOp
+}
+
+type runtime string
+
+const (
+	rRuntime      runtime = "r"
+	pythonRuntime runtime = "python"
+)
+
+type packageStatus string
+
+const (
+	downloadAndInstallPackage packageStatus = "download+install"
+	downloadPackage           packageStatus = "download"
+	installPackage            packageStatus = "install"
+)
+
+var rPackagePattern = regexp.MustCompile(`Installing ([[:word:]\.]+) (\(\S+\)) ...`)
+var pythonDownloadingPackagePattern = regexp.MustCompile(`Downloading (\S+)-(\S+)-`)
+var pythonCollectingPackagePattern = regexp.MustCompile(`Collecting (\S+)==(\S+)`)
+var pythonInstallingPackagePattern = regexp.MustCompile(`Found existing installation: (\S+) (\S+)`)
+
+type packageEvent struct {
+	runtime runtime
+	status  packageStatus
+	name    string
+	version string
+}
+
+func makePackageEvent(match []string, rt runtime, status packageStatus) *packageEvent {
+	return &packageEvent{
+		runtime: rt,
+		status:  status,
+		name:    match[1],
+		version: match[2],
+	}
+}
+
+func packageEventFromLogLine(line string) *packageEvent {
+	if match := rPackagePattern.FindStringSubmatch(line); match != nil {
+		return makePackageEvent(match, rRuntime, downloadAndInstallPackage)
+	} else if match := pythonDownloadingPackagePattern.FindStringSubmatch(line); match != nil {
+		return makePackageEvent(match, pythonRuntime, downloadPackage)
+	} else if match := pythonCollectingPackagePattern.FindStringSubmatch(line); match != nil {
+		return makePackageEvent(match, pythonRuntime, downloadPackage)
+	} else if match := pythonInstallingPackagePattern.FindStringSubmatch(line); match != nil {
+		return makePackageEvent(match, pythonRuntime, installPackage)
+	}
+	return nil
 }
 
 func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) error {
@@ -264,6 +318,7 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 			return err
 		}
 		for _, line := range task.Output {
+			// Detect state transitions from certain matching log lines.
 			nextOp := eventOpFromLogLine(op, line)
 			if nextOp != op {
 				if op != "" {
@@ -273,6 +328,16 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 				log = log.With(logging.LogKeyOp, op)
 			}
 			log.Info(line)
+
+			// Log a progress event for certain matching log lines.
+			event := packageEventFromLogLine(line)
+			if event != nil {
+				log.Status("Package restore",
+					"runtime", event.runtime,
+					"status", event.status,
+					"name", event.name,
+					"version", event.version)
+			}
 		}
 		if task.Finished {
 			if task.Error != "" {
