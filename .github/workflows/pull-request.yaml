@@ -446,7 +446,9 @@ jobs:
           FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
           FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
-          setx CONNECT_IP="$(cat connect_ip.txt)"
+          $env:CONNECT_IP="$(cat connect_ip.txt)"
+          cat connect_ip.txt
+          echo $CONNECT_IP
           just test/publishing-tests $env:os
 
   test-macos:
