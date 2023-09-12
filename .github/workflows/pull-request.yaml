@@ -387,7 +387,7 @@ jobs:
           echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
           chmod 600 .fuzzbucket-ssh-key
           export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
-          export CONNECT_IP="$(python setup/connect-setup.py)"
+          export CONNECT_IP="$(python ./test/setup/connect-setup.py)"
           echo ${CONNECT_IP} > connect_ip.txt
       -
         name: Upload connect_ip file
