@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -247,23 +248,30 @@ var launchPattern = regexp.MustCompile("Launching .* (application|API|notebook)"
 var staticPattern = regexp.MustCompile("(Building|Launching) static content")
 
 func eventOpFromLogLine(currentOp events.Operation, line string) events.Operation {
-	if match := buildRPattern.MatchString(line); match {
+	match := buildRPattern.MatchString(line)
+	if match || strings.Contains(line, "Bundle created with R version") {
 		return events.PublishRestoreREnvOp
-	} else if match := buildPythonPattern.MatchString(line); match {
+	}
+	match = buildPythonPattern.MatchString(line)
+	if match || strings.Contains(line, "Bundle requested Python version") {
 		return events.PublishRestorePythonEnvOp
-	} else if match := launchPattern.MatchString(line); match {
+	}
+	match = launchPattern.MatchString(line)
+	if match {
 		return events.PublishRunContentOp
-	} else if match := staticPattern.MatchString(line); match {
+	}
+	match = staticPattern.MatchString(line)
+	if match {
 		return events.PublishRunContentOp
 	}
 	return currentOp
 }
 
-type runtime string
+type packageRuntime string
 
 const (
-	rRuntime      runtime = "r"
-	pythonRuntime runtime = "python"
+	rRuntime      packageRuntime = "r"
+	pythonRuntime packageRuntime = "python"
 )
 
 type packageStatus string
@@ -274,19 +282,18 @@ const (
 	installPackage            packageStatus = "install"
 )
 
-var rPackagePattern = regexp.MustCompile(`Installing ([[:word:]\.]+) (\(\S+\)) ...`)
-var pythonDownloadingPackagePattern = regexp.MustCompile(`Downloading (\S+)-(\S+)-`)
+var rPackagePattern = regexp.MustCompile(`Installing ([[:word:]\.]+) \((\S+)\) ...`)
 var pythonCollectingPackagePattern = regexp.MustCompile(`Collecting (\S+)==(\S+)`)
 var pythonInstallingPackagePattern = regexp.MustCompile(`Found existing installation: (\S+) ()\S+`)
 
 type packageEvent struct {
-	runtime runtime
+	runtime packageRuntime
 	status  packageStatus
 	name    string
 	version string
 }
 
-func makePackageEvent(match []string, rt runtime, status packageStatus) *packageEvent {
+func makePackageEvent(match []string, rt packageRuntime, status packageStatus) *packageEvent {
 	return &packageEvent{
 		runtime: rt,
 		status:  status,
@@ -298,8 +305,6 @@ func makePackageEvent(match []string, rt runtime, status packageStatus) *package
 func packageEventFromLogLine(line string) *packageEvent {
 	if match := rPackagePattern.FindStringSubmatch(line); match != nil {
 		return makePackageEvent(match, rRuntime, downloadAndInstallPackage)
-	} else if match := pythonDownloadingPackagePattern.FindStringSubmatch(line); match != nil {
-		return makePackageEvent(match, pythonRuntime, downloadPackage)
 	} else if match := pythonCollectingPackagePattern.FindStringSubmatch(line); match != nil {
 		return makePackageEvent(match, pythonRuntime, downloadPackage)
 	} else if match := pythonInstallingPackagePattern.FindStringSubmatch(line); match != nil {
@@ -308,7 +313,7 @@ func packageEventFromLogLine(line string) *packageEvent {
 	return nil
 }
 
-func (c *ConnectClient) handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (types.Operation, error) {
+func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (types.Operation, error) {
 	var nextOp types.Operation
 
 	for _, line := range task.Output {
@@ -354,7 +359,7 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 		if err != nil {
 			return err
 		}
-		op, err = c.handleTaskUpdate(task, op, log)
+		op, err = handleTaskUpdate(task, op, log)
 		if task.Finished {
 			return err
 		}

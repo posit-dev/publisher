@@ -3,6 +3,7 @@ package clients
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"io/fs"
 	"testing"
 	"time"
@@ -56,8 +57,6 @@ type taskTest struct {
 }
 
 func (s *ConnectClientSuite) TestWaitForTask() {
-	account := &accounts.Account{}
-	timeout := 10 * time.Second
 	log := loggingtest.NewMockLogger()
 
 	str := mock.AnythingOfType("string")
@@ -66,25 +65,29 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 	log.On("Info", str)
 	log.On("Info", str, str, anything)
 
-	expectedPackages := [][]string{
-		{string(installPackage), "wheel", ""},
-		{string(installPackage), "setuptools", ""},
-		{string(installPackage), "pip", ""},
-		{string(downloadPackage), "anyio", "3.6.2"},
-		{string(downloadPackage), "argon2-cffi", "21.3.0"},
+	expectedPackages := []struct {
+		rt      packageRuntime
+		status  packageStatus
+		name    string
+		version string
+	}{
+		{pythonRuntime, installPackage, "wheel", ""},
+		{pythonRuntime, installPackage, "setuptools", ""},
+		{pythonRuntime, installPackage, "pip", ""},
+		{pythonRuntime, downloadPackage, "anyio", "3.6.2"},
+		{pythonRuntime, downloadPackage, "argon2-cffi", "21.3.0"},
+		{rRuntime, downloadAndInstallPackage, "R6", "2.5.1"},
+		{rRuntime, downloadAndInstallPackage, "Rcpp", "1.0.10"},
 	}
 	for _, pkg := range expectedPackages {
 		log.On("Status",
 			"Package restore",
-			"runtime", pythonRuntime,
-			"status", packageStatus(pkg[0]),
-			"name", pkg[1],
-			"version", pkg[2])
+			"runtime", pkg.rt,
+			"status", pkg.status,
+			"name", pkg.name,
+			"version", pkg.version)
 	}
 	log.On("WithArgs", str, anything).Return(log)
-
-	client, err := NewConnectClient(account, timeout, log)
-	s.NoError(err)
 	taskID := types.TaskID("W3YpnrwUOQJxL5DS")
 
 	tests := []taskTest{
@@ -153,7 +156,7 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 					"2023/09/12 12:12:08.083943365 Collecting argon2-cffi==21.3.0 (from -r python/requirements.txt (line 2))",
 					"2023/09/12 12:12:08.100883289   Using cached argon2_cffi-21.3.0-py3-none-any.whl (14 kB)",
 				},
-				Last: 41,
+				Last: 43,
 			},
 			nextOp: events.PublishRestorePythonEnvOp,
 		},
@@ -173,11 +176,13 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 					"2023/09/12 12:13:42.994165519 Creating lockfile: python/requirements.txt.lock",
 					"Completed Python build against Python version: '3.11.3'		",
 				},
-				Last: 52,
+				Last: 54,
 			},
 			nextOp: events.PublishRestorePythonEnvOp,
 		},
 		{
+			// This doesn't really make sense to come next,
+			// in fact it is from a different log, but here it is anyway.
 			task: taskDTO{
 				Id: taskID,
 				Output: []string{
@@ -197,14 +202,77 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 					"2023/09/12 12:13:44.714819234 Bootstrapping environment using Python 3.11.3 (main, Jun  4 2023, 22:34:28) [GCC 11.3.0] at /opt/python/3.11.3/bin/python3.11",
 					"2023/09/12 12:13:44.716751212 Running content with the Python virtual environment /opt/rstudio-connect/mnt/app/python/env (/opt/rstudio-connect/mnt/python-environments/pip/3.11.3/AbrY5VfQZ5r97HDk5puHtA)				},",
 				},
-				Last: 67,
+				Finished: true,
+				Last:     69,
 			},
 			nextOp: events.PublishRunContentOp,
 		},
+
+		{
+			task: taskDTO{
+				Id: taskID,
+				Output: []string{
+					"Bundle created with R version 4.3.0, Python version 3.11.3, and Quarto version 0.9.105 is compatible with environment Local with R version 4.3.1 from /opt/R/4.3.1/bin/R, Python version 3.11.3 from /opt/python/3.11.3/bin/python3.11, and Quarto version 1.3.450 from /opt/quarto/1.3.450/bin/quarto",
+					"Bundle requested R version 4.3.0; using /opt/R/4.3.1/bin/R which has version 4.3.1",
+					"Performing manifest.json to packrat transformation.",
+					"Rewriting .Rprofile to disable renv activation.",
+					"2023/09/12 17:02:42.966434822 [rsc-session] Content GUID: 067f9077-b831-4cff-bcd2-ee0797f27cb8",
+					"2023/09/12 17:02:42.966484486 [rsc-session] Content ID: 24275",
+					"2023/09/12 17:02:42.966491187 [rsc-session] Bundle ID: 41387",
+					"2023/09/12 17:02:42.966495586 [rsc-session] Job Key: MjLGWJMm4mkQCxRo",
+					"2023/09/12 17:02:44.214759306 Running on host: dogfood01",
+					"2023/09/12 17:02:44.240099958 Linux distribution: Ubuntu 22.04.2 LTS (jammy)",
+					"2023/09/12 17:02:44.243027005 Running as user: uid=1031(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)",
+					"2023/09/12 17:02:44.243096083 Connect version: 2023.08.0-dev+835",
+					"2023/09/12 17:02:44.243134910 LANG: C.UTF-8",
+					"2023/09/12 17:02:44.243454938 Working directory: /opt/rstudio-connect/mnt/app",
+					"2023/09/12 17:02:44.243650732 Using R 4.3.1",
+					"2023/09/12 17:02:44.243656003 R.home(): /opt/R/4.3.1/lib/R",
+					"2023/09/12 17:02:44.244676467 Using user agent string: 'RStudio R (4.3.1 x86_64-pc-linux-gnu x86_64 linux-gnu)'",
+					"2023/09/12 17:02:44.245211912 # Validating R library read / write permissions --------------------------------",
+					"2023/09/12 17:02:44.249695973 Using R library for packrat bootstrap: /opt/rstudio-connect/mnt/R/4.3.1",
+					"2023/09/12 17:02:44.250108685 # Validating managed packrat installation --------------------------------------",
+					"2023/09/12 17:02:44.250391017 Vendored packrat archive: /opt/rstudio-connect/ext/R/packrat_0.9.1-1_ac6bc33bce3869513cbe1ce14a697dfa807d9c41.tar.gz",
+					"2023/09/12 17:02:44.262948547 Vendored packrat SHA: ac6bc33bce3869513cbe1ce14a697dfa807d9c41",
+					"2023/09/12 17:02:44.276923165 Managed packrat SHA:  ac6bc33bce3869513cbe1ce14a697dfa807d9c41",
+					"2023/09/12 17:02:44.278612673 Managed packrat version: 0.9.1.1",
+					"2023/09/12 17:02:44.279320329 Managed packrat is up-to-date.",
+					"2023/09/12 17:02:44.279664142 # Validating packrat cache read / write permissions ----------------------------",
+					"2023/09/12 17:02:44.643930307 Using packrat cache directory: /opt/rstudio-connect/mnt/packrat/4.3.1",
+					"2023/09/12 17:02:44.644104262 # Setting packrat options and preparing lockfile -------------------------------",
+					"2023/09/12 17:02:44.807459260 Audited package hashes with local packrat installation.",
+					"2023/09/12 17:02:44.809608665 # Resolving R package repositories ---------------------------------------------",
+					"2023/09/12 17:02:44.827081713 Received repositories from Connect's configuration:",
+					`2023/09/12 17:02:44.827696151 - CRAN = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"`,
+					`2023/09/12 17:02:44.827703834 - RSPM = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"`,
+					"2023/09/12 17:02:45.034481466 Received repositories from published content:",
+					`2023/09/12 17:02:45.036517369 - CRAN = "https://cran.rstudio.com"`,
+					"2023/09/12 17:02:45.041604661 Combining repositories from configuration and content.",
+					"2023/09/12 17:02:45.041811490 Packages will be installed using the following repositories:",
+					`2023/09/12 17:02:45.042593774 - CRAN = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"`,
+					`2023/09/12 17:02:45.042601638 - RSPM = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"`,
+					`2023/09/12 17:02:45.042624054 - CRAN.1 = "https://cran.rstudio.com"`,
+					"2023/09/12 17:02:45.061047966 # Installing required R packages with `packrat::restore()` ---------------------",
+					"2023/09/12 17:02:45.096309315 Warning in packrat::restore(overwrite.dirty = TRUE, prompt = FALSE, restart = FALSE) :",
+					"2023/09/12 17:02:45.096320185   The most recent snapshot was generated using R version 4.3.0",
+					"2023/09/12 17:02:45.141302848 Installing R6 (2.5.1) ...",
+					"2023/09/12 17:02:45.177720769 Using cached R6.",
+					"2023/09/12 17:02:45.179592403 	OK (symlinked cache)",
+					"2023/09/12 17:02:45.179785920 Installing Rcpp (1.0.10) ...",
+					"2023/09/12 17:02:45.224715974 Using cached Rcpp.",
+					"2023/09/12 17:02:45.227149420 	OK (symlinked cache)",
+					"Completed packrat build against R version: '4.3.1'",
+				},
+				Last: 119,
+			},
+			nextOp: events.PublishRestoreREnvOp,
+		},
 	}
 	op := events.AgentOp
+	var err error
+
 	for _, test := range tests {
-		op, err = client.handleTaskUpdate(&test.task, op, log)
+		op, err = handleTaskUpdate(&test.task, op, log)
 		if test.err != nil {
 			s.ErrorIs(err, test.err)
 		} else {
@@ -212,5 +280,40 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 		}
 		s.Equal(test.nextOp, op)
 	}
+	log.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestWaitForTaskErr() {
+	log := loggingtest.NewMockLogger()
+
+	str := mock.AnythingOfType("string")
+	anything := mock.Anything
+	log.On("Success", "Done")
+	log.On("Info", str)
+	log.On("Info", str, str, anything)
+	log.On("WithArgs", str, anything).Return(log)
+
+	task := taskDTO{
+		Id: types.TaskID("W3YpnrwUOQJxL5DS"),
+		Output: []string{
+			"Building Jupyter notebook...",
+			"Bundle created with Python version 3.11.3 is compatible with environment Local with Python version 3.11.3 from /opt/python/3.11.3/bin/python3.11",
+			"Bundle requested Python version 3.11.3; using /opt/python/3.11.3/bin/python3.11 which has version 3.11.3",
+			"2023/09/12 13:34:48.308740036 Execution halted",
+			"Build error: exit status 1",
+		},
+		Finished: true,
+		Error:    "exit status 1",
+		Last:     5,
+	}
+
+	op := events.AgentOp
+	op, err := handleTaskUpdate(&task, op, log)
+	s.Equal(&types.AgentError{
+		Code: events.DeploymentFailedCode,
+		Err:  errors.New("exit status 1"),
+		Data: types.ErrorData{},
+	}, err)
+	s.Equal(events.PublishRestorePythonEnvOp, op)
 	log.AssertExpectations(s.T())
 }
