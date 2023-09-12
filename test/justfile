@@ -131,7 +131,7 @@ ui-client target:
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \
-    just init-connect {{target}}
+    just test/init-connect {{target}}
   fi
 
 _test-client target:
