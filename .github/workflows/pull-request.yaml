@@ -365,6 +365,34 @@ jobs:
         run: |
           PATH="${PATH}:/usr/local/bin" just web/test-e2e
 
+  start-connect:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
+      - 
+        name: run Connect in fuzzbucket
+        env: 
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
+        run: |
+          pip install -r ./test/setup/requirements.txt
+          echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
+          chmod 600 .fuzzbucket-ssh-key
+          export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
+          export CONNECT_IP="$(python setup/connect-setup.py)"
+          echo ${CONNECT_IP} > connect_ip.txt
+      -
+        name: Upload connect_ip file
+        uses: actions/upload-artifact@v3
+        with:
+          name: connect_ip
+          path: connect_ip.txt
+
   test-windows:
     needs: build-agent
     runs-on: windows-latest
@@ -401,6 +429,11 @@ jobs:
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
           just run-client $env:os
+      - 
+        name: Download connect_ip
+        uses: actions/download-artifact@v3
+        with:
+          name: connect_ip
       -
         name: Run Windows Cypress Tests
         env:
@@ -410,7 +443,8 @@ jobs:
           FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
           FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
-          just test/init-connect $env:os
+          export CONNECT_IP="$(cat connect_ip.txt)"
+          just test/publishing-tests $env:os
 
 
   test-macos:
@@ -453,16 +487,19 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just run-client ${os}
+      - 
+        name: Download connect_ip
+        uses: actions/download-artifact@v3
+        with:
+          name: connect_ip 
       -
         name: Run MacOS Cypress Tests
         env:
           os: macos-latest
           DOCKER: "false"
-          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
-          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
-          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
-          just test/init-connect ${os}
+          export CONNECT_IP="$(cat connect_ip.txt)"
+          just test/publishing-tests ${os}
 
   build-linux-amd64:
     runs-on: ubuntu-latest
@@ -567,15 +604,18 @@ jobs:
           os: linux-amd64
         run: |
           just test/run-client ${os}
+      - 
+        name: Download connect_ip
+        uses: actions/download-artifact@v3
+        with:
+          name: connect_ip 
       -
         name: Run linux-amd64 Cypress Tests
         env:
           os: linux-amd64
           DOCKER: "false"
-          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
-          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
-          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
+          export CONNECT_IP="$(cat connect_ip.txt)"
           just test/ui-client ${os}
 
   build-linux-arm64:
@@ -685,6 +725,11 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/linux-arm64-image.tar
+      - 
+        name: Download connect_ip
+        uses: actions/download-artifact@v3
+        with:
+          name: connect_ip 
       -
         name: Run linux-arm64 CLI Tests
         env:
@@ -696,10 +741,7 @@ jobs:
         env:
           os: linux-arm64
           DOCKER: "false"
-          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
-          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
-          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
-
         run: |
-          just web/build && \
+          export CONNECT_IP="$(cat connect_ip.txt)"
           just test/ui-client ${os}
+          

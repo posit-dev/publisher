@@ -41,20 +41,20 @@ build-clean target:
     --tag {{_tag}}-{{target}}:latest \
     ./docker
 
-init-connect target:
+local_init-connect:
   #!/usr/bin/env bash
   pip install -r ./setup/requirements.txt
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
   chmod 600 .fuzzbucket-ssh-key
-  if [[ {{target}} =~ "windows" ]]; then
-    $env:SSH_OPTIONS="-i.fuzzbucket-ssh-key"
-    $env:CONNECT_IP=$(python setup/connect-setup.py)
-  else
-    export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
-    export CONNECT_IP="$(python setup/connect-setup.py)"
-  fi
+  export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
+  export CONNECT_IP="$(python setup/connect-setup.py)"
+
+publishing-tests target:
+  #!/usr/bin/env bash
+  pip install -r ./setup/requirements.txt
+  source ./environments/.basic
+  export CMD_ARGS="$CMD_ARGS" 
   python setup/client-setup.py
-  source ./environments/.basic && \
   just ../web/build-and-test-ci-e2e {{target}}
 
 run-client target:
@@ -132,10 +132,13 @@ ui-client target:
     docker run \
     --platform "${_platform}" \
     -e DOCKER="false" \
+    -e FUZZBUCKET_CREDENTIALS=$FUZZBUCKET_CREDENTIALS \
+    -e FUZZBUCKET_URL=$FUZZBUCKET_URL \
+    -e FUZZBUCKET_SSH_KEY=$FUZZBUCKET_SSH_KEY \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \
-    just test/init-connect {{target}}
+    just test/publishing-tests {{target}}
   fi
 
 _test-client target:
