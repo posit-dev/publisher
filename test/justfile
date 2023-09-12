@@ -41,13 +41,14 @@ build-clean target:
     --tag {{_tag}}-{{target}}:latest \
     ./docker
 
-local_init-connect:
+local_init-connect target:
   #!/usr/bin/env bash
   pip install -r ./setup/requirements.txt
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
   chmod 600 .fuzzbucket-ssh-key
-  export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
-  export CONNECT_IP="$(python setup/connect-setup.py)"
+  export SSH_OPTIONS="-i.fuzzbucket-ssh-key" && \
+  export CONNECT_IP="$(python setup/connect-setup.py)" && \
+  just publishing-tests {{target}}
 
 publishing-tests target:
   #!/usr/bin/env bash
