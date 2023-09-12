@@ -132,9 +132,7 @@ ui-client target:
     docker run \
     --platform "${_platform}" \
     -e DOCKER="false" \
-    -e FUZZBUCKET_CREDENTIALS=$FUZZBUCKET_CREDENTIALS \
-    -e FUZZBUCKET_URL=$FUZZBUCKET_URL \
-    -e FUZZBUCKET_SSH_KEY=$FUZZBUCKET_SSH_KEY \
+    -e CONNECT_IP=$CONNECT_IP \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \

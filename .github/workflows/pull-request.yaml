@@ -446,7 +446,7 @@ jobs:
           FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
           FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
-          export CONNECT_IP="$(cat connect_ip.txt)"
+          set CONNECT_IP="$(cat connect_ip.txt)"
           just test/publishing-tests $env:os
 
 
@@ -739,11 +739,29 @@ jobs:
           os: linux-arm64
         run: |
           just test/run-client ${os}
+      # -
+      #   name: Run linux-arm64 Cypress Tests
+      #   env:
+      #     os: linux-arm64
+      #     DOCKER: "false"
+      #   run: |
+      #     export CONNECT_IP="$(cat connect_ip.txt)"
+      #     just test/ui-client ${os}
+
+  teardown-connect:
+    runs-on: ubuntu-latest
+    steps:
       -
-        name: Run linux-arm64 Cypress Tests
-        env:
-          os: linux-arm64
-          DOCKER: "false"
+        name: python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
+      - 
+        name: Teardown Fuzzbucket
+        env: 
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
-          export CONNECT_IP="$(cat connect_ip.txt)"
-          just test/ui-client ${os}
+          pip install fuzzbucket-client
+          fuzzbucket-client rm connect-ci
