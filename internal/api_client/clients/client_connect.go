@@ -325,6 +325,7 @@ func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (ty
 			}
 			op = nextOp
 			log = log.WithArgs(logging.LogKeyOp, op)
+			log.Start("Starting")
 		}
 		log.Info(line)
 
