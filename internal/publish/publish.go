@@ -67,7 +67,7 @@ func logAppInfo(accountURL string, contentID types.ContentID, log logging.Logger
 		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
 		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
 	}
-	log.With(
+	log.WithArgs(
 		"dashboardURL", appInfo.DashboardURL,
 		"directURL", appInfo.DirectURL,
 		"serverURL", accountURL,
@@ -121,7 +121,7 @@ type DeploymentNotFoundDetails struct {
 }
 
 func withLog[T any](op events.Operation, msg string, label string, log logging.Logger, fn func() (T, error)) (value T, err error) {
-	log = log.With(logging.LogKeyOp, op)
+	log = log.WithArgs(logging.LogKeyOp, op)
 	log.Start(msg)
 	value, err = fn()
 	if err != nil {
@@ -206,11 +206,11 @@ func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, acco
 		return err
 	}
 
-	taskLogger := log.With("source", "serverLog")
+	taskLogger := log.WithArgs("source", "serverLog")
 	err = client.WaitForTask(taskID, taskLogger)
 	if err != nil {
 		return err
 	}
-	log = log.With(logging.LogKeyOp, events.AgentOp)
+	log = log.WithArgs(logging.LogKeyOp, events.AgentOp)
 	return logAppInfo(account.URL, contentID, log)
 }

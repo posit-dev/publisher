@@ -241,15 +241,15 @@ func (c *ConnectClient) getTask(taskID types.TaskID, previous *taskDTO) (*taskDT
 	return &task, nil
 }
 
-var buildAPIPattern = regexp.MustCompile("Building (Shiny application|Plumber API).*")
-var buildAppPattern = regexp.MustCompile("Building (.* application|.* API|Jupyter notebook).*")
+var buildRPattern = regexp.MustCompile("Building (Shiny application|Plumber API|R Markdown document).*")
+var buildPythonPattern = regexp.MustCompile("Building (.* application|.* API|Jupyter notebook).*")
 var launchPattern = regexp.MustCompile("Launching .* (application|API|notebook)")
 var staticPattern = regexp.MustCompile("(Building|Launching) static content")
 
 func eventOpFromLogLine(currentOp events.Operation, line string) events.Operation {
-	if match := buildAPIPattern.MatchString(line); match {
+	if match := buildRPattern.MatchString(line); match {
 		return events.PublishRestoreREnvOp
-	} else if match := buildAppPattern.MatchString(line); match {
+	} else if match := buildPythonPattern.MatchString(line); match {
 		return events.PublishRestorePythonEnvOp
 	} else if match := launchPattern.MatchString(line); match {
 		return events.PublishRunContentOp
@@ -277,7 +277,7 @@ const (
 var rPackagePattern = regexp.MustCompile(`Installing ([[:word:]\.]+) (\(\S+\)) ...`)
 var pythonDownloadingPackagePattern = regexp.MustCompile(`Downloading (\S+)-(\S+)-`)
 var pythonCollectingPackagePattern = regexp.MustCompile(`Collecting (\S+)==(\S+)`)
-var pythonInstallingPackagePattern = regexp.MustCompile(`Found existing installation: (\S+) (\S+)`)
+var pythonInstallingPackagePattern = regexp.MustCompile(`Found existing installation: (\S+) ()\S+`)
 
 type packageEvent struct {
 	runtime runtime
@@ -308,6 +308,43 @@ func packageEventFromLogLine(line string) *packageEvent {
 	return nil
 }
 
+func (c *ConnectClient) handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (types.Operation, error) {
+	var nextOp types.Operation
+
+	for _, line := range task.Output {
+		// Detect state transitions from certain matching log lines.
+		nextOp = eventOpFromLogLine(op, line)
+		if nextOp != op {
+			if op != "" {
+				log.Success("Done")
+			}
+			op = nextOp
+			log = log.WithArgs(logging.LogKeyOp, op)
+		}
+		log.Info(line)
+
+		// Log a progress event for certain matching log lines.
+		event := packageEventFromLogLine(line)
+		if event != nil {
+			log.Status("Package restore",
+				"runtime", event.runtime,
+				"status", event.status,
+				"name", event.name,
+				"version", event.version)
+		}
+	}
+	if task.Finished {
+		if task.Error != "" {
+			// TODO: make these errors more specific, maybe by
+			// using the Connect error codes from the logs.
+			err := errors.New(task.Error)
+			return nextOp, types.NewAgentError(events.DeploymentFailedCode, err, nil)
+		}
+		log.Success("Done")
+	}
+	return nextOp, nil
+}
+
 func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) error {
 	var previous *taskDTO
 	var op events.Operation
@@ -317,37 +354,9 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 		if err != nil {
 			return err
 		}
-		for _, line := range task.Output {
-			// Detect state transitions from certain matching log lines.
-			nextOp := eventOpFromLogLine(op, line)
-			if nextOp != op {
-				if op != "" {
-					log.Success("Done")
-				}
-				op = nextOp
-				log = log.With(logging.LogKeyOp, op)
-			}
-			log.Info(line)
-
-			// Log a progress event for certain matching log lines.
-			event := packageEventFromLogLine(line)
-			if event != nil {
-				log.Status("Package restore",
-					"runtime", event.runtime,
-					"status", event.status,
-					"name", event.name,
-					"version", event.version)
-			}
-		}
+		op, err = c.handleTaskUpdate(task, op, log)
 		if task.Finished {
-			if task.Error != "" {
-				// TODO: make these errors more specific, maybe by
-				// using the Connect error codes from the logs.
-				err := errors.New(task.Error)
-				return types.NewAgentError(events.DeploymentFailedCode, err, nil)
-			}
-			log.Success("Done")
-			return nil
+			return err
 		}
 		previous = task
 		time.Sleep(500 * time.Millisecond)
