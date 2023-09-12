@@ -100,14 +100,14 @@
     },
     "jupyterlab": {
         "discovery": {
-        "server": {
-            "managers": [
-                "pip"
-            ],
-            "base": {
-                "name": "connect_jupyterlab"
+            "server": {
+                "managers": [
+                    "pip"
+                ],
+                "base": {
+                    "name": "connect_jupyterlab"
+                }
             }
-        }
         },
         "extension": true,
         "outputDir": "connect_jupyterlab/labextension"
