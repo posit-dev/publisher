@@ -72,6 +72,7 @@ build-and-test-ci-e2e target:
     # cache within root's home dir.
     # use a different cache per os
     export CYPRESS_CACHE_FOLDER="./cypress/{{target}}/.cache"
+    export CYPRESS_CONNECT_ADDRESS="http://$CONNECT_IP:3939/connect/\#/login"
     # install cypress
     npx cypress install
 

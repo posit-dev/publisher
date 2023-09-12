@@ -181,11 +181,10 @@ start-agent-for-e2e:
     GOARCH="${GOARCH%%[[:cntrl:]]}"
 
     echo "Working directory is $(pwd)"
+    echo "COMMAND ARGS: ${CMD_ARGS}"
 
     ./bin/$GOOS-$GOARCH/connect-client publish-ui \
-        ./test/sample-content/fastapi-simple \
-        --listen=127.0.0.1:9000 \
-        --token=abc123
+        ${CMD_ARGS}
 
 [private]
 _with_docker *args:

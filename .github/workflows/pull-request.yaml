@@ -406,8 +406,11 @@ jobs:
         env:
           os: windows-latest
           DOCKER: "false"
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
-          just web/build-and-test-ci-e2e $env:os
+          just test/init-connect $env:os
 
 
   test-macos:
@@ -450,8 +453,11 @@ jobs:
         env:
           os: macos-latest
           DOCKER: "false"
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
-          just web/build-and-test-ci-e2e ${os}
+          just test/init-connect ${os}
 
   build-linux-amd64:
     runs-on: ubuntu-latest
@@ -561,6 +567,9 @@ jobs:
         env:
           os: linux-amd64
           DOCKER: "false"
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
           just test/ui-client ${os}
 
@@ -677,11 +686,15 @@ jobs:
           os: linux-arm64
         run: |
           just test/run-client ${os}
-      # -
-      #   name: Run linux-arm64 Cypress Tests
-      #   env:
-      #     os: linux-arm64
-      #     DOCKER: "false"
-      #   run: |
-      #     just web/build && \
-      #     just test/ui-client ${os}
+      -
+        name: Run linux-arm64 Cypress Tests
+        env:
+          os: linux-arm64
+          DOCKER: "false"
+          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
+
+        run: |
+          just web/build && \
+          just test/ui-client ${os}

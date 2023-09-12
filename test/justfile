@@ -47,11 +47,10 @@ init-connect target:
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
   chmod 600 .fuzzbucket-ssh-key
   export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
-  export CONNECT_VERSION=$(curl https://cdn.posit.co/connect/latest-packages.json | 
-    jq ".packages[0].version")
   export CONNECT_IP="$(python setup/connect-setup.py)"
-  ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@$CONNECT_IP "${SSH_OPTIONS}" sudo -E UNATTENDED=1 bash installer-ci.sh ${CONNECT_VERSION}
   python setup/client-setup.py
+  source ./environments/.basic && \
+  export CMD_ARGS="$CMD_ARGS" && \
   just ../web/build-and-test-ci-e2e {{target}}
 
 run-client target:
