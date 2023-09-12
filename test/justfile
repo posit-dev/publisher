@@ -46,11 +46,15 @@ init-connect target:
   pip install -r ./setup/requirements.txt
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
   chmod 600 .fuzzbucket-ssh-key
-  export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
-  export CONNECT_IP="$(python setup/connect-setup.py)"
+  if [[ {{target}} =~ "windows" ]]; then
+    $env:SSH_OPTIONS="-i.fuzzbucket-ssh-key"
+    $env:CONNECT_IP=$(python setup/connect-setup.py)
+  else
+    export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
+    export CONNECT_IP="$(python setup/connect-setup.py)"
+  fi
   python setup/client-setup.py
   source ./environments/.basic && \
-  export CMD_ARGS="$CMD_ARGS" && \
   just ../web/build-and-test-ci-e2e {{target}}
 
 run-client target:
