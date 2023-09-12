@@ -81,7 +81,7 @@ build-binary target:
     _platform="linux/arm64"
   fi
   if [[ {{target}} =~ "linux" ]]; then
-    docker run -d \
+    docker run \
     --platform "${_platform}" \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
