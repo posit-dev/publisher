@@ -421,6 +421,11 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
       -
+        name: python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11        
+      -
         name: Setup Just
         uses: extractions/setup-just@v1
       -
