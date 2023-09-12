@@ -56,6 +56,10 @@ The `jlpm` command is JupyterLab's pinned version of
 ```bash
 # Clone the repo to your local environment
 # Change directory to the connect_jupyterlab directory
+# Create environment
+conda create -p ./env python=3.11 nodejs=18
+conda activate ./env
+
 # Install package in development mode
 pip install -e ".[test]"
 # Link your development version of the extension with JupyterLab

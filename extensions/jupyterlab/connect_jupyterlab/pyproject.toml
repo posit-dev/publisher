@@ -29,6 +29,7 @@ dynamic = ["version", "description", "authors", "urls", "keywords"]
 [project.optional-dependencies]
 test = [
     "coverage",
+    "jupyterlab>=4.0.0,<5",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
