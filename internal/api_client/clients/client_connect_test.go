@@ -61,6 +61,7 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 
 	str := mock.AnythingOfType("string")
 	anything := mock.Anything
+	log.On("Start", "Starting")
 	log.On("Success", "Done")
 	log.On("Info", str)
 	log.On("Info", str, str, anything)
@@ -288,6 +289,7 @@ func (s *ConnectClientSuite) TestWaitForTaskErr() {
 
 	str := mock.AnythingOfType("string")
 	anything := mock.Anything
+	log.On("Start", "Starting")
 	log.On("Success", "Done")
 	log.On("Info", str)
 	log.On("Info", str, str, anything)
