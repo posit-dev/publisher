@@ -12,6 +12,7 @@ list_command = "fuzzbucket-client -j list"
 create_command = "fuzzbucket-client create -c " + alias + " -n " + box_name
 remove_command = "fuzzbucket-client rm " + box_name
 ssh_options = "-i.fuzzbucket-ssh-key"
+print("SSH OPTIONS: " + ssh_options)
 # connect_version =   $(curl https://cdn.posit.co/connect/latest-packages.json | 
 #     jq ".packages[0].version")
 
@@ -73,6 +74,7 @@ def connect_ready(box_name, max_attempts, interval):
 api_key=get_api_key('admin')
 latest_connect=get_latest_connect_version()
 install_connect = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@" + get_ip(box_name) + " " + ssh_options + " sudo -E UNATTENDED=1 bash installer-ci.sh " + latest_connect
+
 response = connect_ready(box_name, 20, 5)
 
 if response:
