@@ -76,7 +76,7 @@ build-and-test-ci-e2e target:
     # install cypress
     npx cypress install
     if [[ {{target}} =~ "windows" ]]; then
-        npm run test-win:2e2:ci
+        npm run test-win:e2e:ci
     else
         npm run test:e2e:ci
     fi
