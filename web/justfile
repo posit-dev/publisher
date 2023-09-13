@@ -75,7 +75,7 @@ build-and-test-ci-e2e target:
     export CYPRESS_CONNECT_ADDRESS="http://$CONNECT_IP:3939/connect/\#/login"
     # install cypress
     npx cypress install
-    if [[ {{target}} ~= "windows" ]]; then
+    if [[ {{target}} =~ "windows" ]]; then
         npm run test-win:2e2:ci
     else
         npm run test:e2e:ci
