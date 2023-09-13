@@ -61,7 +61,7 @@ def connect_ready(box_name, max_attempts, interval):
             response = requests.get("http://"+connect_box+":3939/__ping__")
             if response.status_code == 200:
                 if latest_connect != get_current_connect_version(get_ip(box_name), api_key):
-                    logging.info("Installing Connect...")
+                    print("Installing Connect on " + connect_box)
                     subprocess.check_output(install_connect, shell=True, text=True)
                 return response.text
         except requests.RequestException:

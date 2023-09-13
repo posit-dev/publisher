@@ -2,6 +2,7 @@ import hashlib
 import shutil
 import os
 import sys
+from datetime import datetime
 from os.path import join
 
 server_txt = 'setup/servers.txt'
@@ -9,13 +10,19 @@ server_json = 'setup/servers.json'
 shutil.copy(server_txt, server_json)
 
 def copyfile(server_txt, server_json):
-    # source_path = server_json  # Replace with the path of the source file
-    destination_path = config_dirname()  # Replace with the destination directory path
-    # desitination_file = os.path.join(destination_path, "servers.json")
+    destination_path = config_dirname()
     print(destination_path)
-    # Copy the file to the destination
-    shutil.move(server_json, destination_path)
-    print("File copied successfully.")
+
+    server_file = destination_path+"/"+"servers.json"
+
+    if not os.path.exists(server_file):
+        shutil.move(server_json, server_file)
+        print("File copied successfully to " + destination_path)
+    else:
+        # with open(server_file, 'w'): pass
+        shutil.move(server_file, server_file+"_"+datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        shutil.move(server_json, destination_path)
+        print("File copied successfully to " + destination_path)
 
 def config_dirname(platform=sys.platform, env=os.environ):
     """Get the user's configuration directory path for this platform."""
@@ -32,13 +39,18 @@ def config_dirname(platform=sys.platform, env=os.environ):
 
     if base_dir == home:
         try:
-            os.makedirs(base_dir+"/.rsconnect-python/")
+            if not os.path.exists(base_dir+"/.rsconnect-python/"):
+                os.makedirs(base_dir+"/.rsconnect-python/")
         except OSError:
             pass
         base_dir=base_dir+"/.rsconnect-python"
         return join(base_dir)
     else:
-        os.makedirs(base_dir+"/rsconnect-python/")
+        try:
+            if not os.path.exists(base_dir+"/rsconnect-python/"):
+                os.makedirs(base_dir+"/rsconnect-python/")
+        except OSError:
+            pass
         base_dir=base_dir+"/rsconnect-python"
         return join(base_dir)
 
@@ -56,11 +68,7 @@ def replace_apikey(username):
     connect_ip = server.replace('CONNECT_IP', os.environ['CONNECT_IP'])
     with open(server_json, 'w') as file:
         file.write(connect_ip)
-        file.close()
-
-    # Open the file for writing and overwrite with the modified content
-    
- 
+        file.close()  
 
 def get_hash(username):
 
