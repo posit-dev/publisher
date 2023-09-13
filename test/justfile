@@ -54,8 +54,8 @@ publishing-tests target:
   #!/usr/bin/env bash
   pip install -r ./setup/requirements.txt
   source ./environments/.basic
-  export CMD_ARGS="$CMD_ARGS" 
   python setup/client-setup.py
+  export CMD_ARGS="$CMD_ARGS"
   just ../web/build-and-test-ci-e2e {{target}}
 
 run-client target:

@@ -32,7 +32,7 @@ describe('Publish', () => {
 });
 
 describe('Check Connect Deployment', () => {
-  it('check deployment', () => {
+  it('check deployment', { baseUrl: null }, () => {
     cy.visit(Cypress.env('CYPRESS_CONNECT_ADDRESS'));
     cy.get('#username').type('admin');
     cy.get('#password').type('password');
