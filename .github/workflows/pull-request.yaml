@@ -740,14 +740,14 @@ jobs:
           os: linux-arm64
         run: |
           just test/run-client ${os}
-      # -
-      #   name: Run linux-arm64 Cypress Tests
-      #   env:
-      #     os: linux-arm64
-      #     DOCKER: "false"
-      #   run: |
-      #     export CONNECT_IP="$(cat connect_ip.txt)"
-      #     just test/ui-client ${os}
+      -
+        name: Run linux-arm64 Cypress Tests
+        env:
+          os: linux-arm64
+          DOCKER: "false"
+        run: |
+          export CONNECT_IP="$(cat connect_ip.txt)"
+          just test/ui-client ${os}
 
   teardown-connect:
     runs-on: ubuntu-latest
