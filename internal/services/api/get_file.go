@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/services/api/files"
-	"github.com/rstudio/connect-client/internal/services/api/paths"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/services/api/files"
+	"github.com/rstudio/publishing-client/internal/services/api/paths"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 func GetFileHandlerFunc(base util.Path, filesService files.FilesService, pathsService paths.PathsService, log logging.Logger) http.HandlerFunc {

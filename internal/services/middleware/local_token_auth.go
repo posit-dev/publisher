@@ -5,8 +5,8 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/services"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/services"
 )
 
 // LocalToken looks for a `token` query parameter. If

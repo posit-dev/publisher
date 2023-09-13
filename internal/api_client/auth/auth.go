@@ -5,7 +5,7 @@ package auth
 import (
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/publishing-client/internal/accounts"
 )
 
 type AuthMethod interface {

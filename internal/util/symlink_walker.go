@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/logging"
 )
 
 type symlinkWalker struct {

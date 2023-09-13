@@ -6,7 +6,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/logging"
 )
 
 // AuthRequired verifies that the session has been

@@ -5,7 +5,7 @@ package accounts
 import (
 	"fmt"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/logging"
 	"github.com/spf13/afero"
 )
 

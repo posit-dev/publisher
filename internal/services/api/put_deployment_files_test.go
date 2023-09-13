@@ -9,9 +9,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/state"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/state"
+	"github.com/rstudio/publishing-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )

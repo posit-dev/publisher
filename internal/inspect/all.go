@@ -5,7 +5,7 @@ package inspect
 import (
 	"errors"
 
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 type ContentTypeDetector struct {

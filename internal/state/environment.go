@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/publishing-client/internal/types"
 )
 
 type ConnectEnvironmentVariable struct {

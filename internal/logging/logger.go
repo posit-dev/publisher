@@ -5,7 +5,7 @@ package logging
 import (
 	"log/slog"
 
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/publishing-client/internal/types"
 )
 
 // Phase indicates which part of an Operation we are performing

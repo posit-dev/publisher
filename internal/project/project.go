@@ -8,9 +8,9 @@ var Mode string
 
 func UserAgent() string {
 	if Version != "" {
-		return "connect-client/" + Version
+		return "publishing-client/" + Version
 	}
-	return "connect-client"
+	return "publishing-client"
 }
 
 func DevelopmentBuild() bool {

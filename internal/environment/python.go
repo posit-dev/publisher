@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.

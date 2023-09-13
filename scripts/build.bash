@@ -57,7 +57,7 @@ do
 	fi
 
     env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$output_name" -ldflags \
-        "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$developmentMode'" \
+        "-X 'github.com/rstudio/publishing-client/internal/project.Version=$version' -X 'github.com/rstudio/publishing-client/internal/project.Mode=$developmentMode'" \
         "$package"
 	if [ $? -ne 0 ]; then
    		echo 'An error has occurred! Aborting the script execution...'

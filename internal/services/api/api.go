@@ -5,7 +5,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/logging"
 )
 
 func InternalError(w http.ResponseWriter, req *http.Request, log logging.Logger, err error) {

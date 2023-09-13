@@ -5,7 +5,7 @@ _interactive := `tty -s && echo "-it" || echo ""`
 
 _ci := "${CI:-false}"
 
-_tag := "rstudio/connect-client:latest"
+_tag := "rstudio/publishing-client:latest"
 
 _with_runner := if env_var_or_default("DOCKER", "true") == "true" {
         "just _with_docker"
@@ -31,7 +31,7 @@ clean: clean-agent
 
 # Clean the agent's build artifacts
 clean-agent:
-    rm -rf ./bin/**/connect-client
+    rm -rf ./bin/**/publishing-client
 
 # create the security certificates
 certs:
@@ -52,12 +52,12 @@ build-agent:
 
     echo ""
     if [ "${BUILD_MODE:-}" == "development" ]; then
-        echo "Generating a development build of connect-client."
+        echo "Generating a development build of publishing-client."
     else
-        echo "Generating production builds of connect-client."
+        echo "Generating production builds of publishing-client."
     fi
 
-    if {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client; then
+    if {{ _with_runner }} ./scripts/build.bash ./cmd/publishing-client; then
         echo "Build was successful"
     else
         echo ""
@@ -148,7 +148,7 @@ run-agent *args:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    {{ _with_runner }} go run ./cmd/connect-client {{ args }}
+    {{ _with_runner }} go run ./cmd/publishing-client {{ args }}
 
 # Build the image. Typically does not need to be done very often.
 image:
@@ -164,7 +164,7 @@ image:
     fi
 
 # Start the agent and show the UI
-# NOTE: this must be called from within a docker container if so 
+# NOTE: this must be called from within a docker container if so
 # needed (it will not automatically use a running if defined)
 # This is because this recipe is called from the web/justfile, which
 # is already executing within a docker container (if configured to use)
@@ -182,7 +182,7 @@ start-agent-for-e2e:
 
     echo "Working directory is $(pwd)"
 
-    ./bin/$GOOS-$GOARCH/connect-client publish-ui \
+    ./bin/$GOOS-$GOARCH/publishing-client publish-ui \
         ./test/sample-content/fastapi-simple \
         --listen=127.0.0.1:9000 \
         --token=abc123

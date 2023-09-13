@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/types"
 )
 
 type EventType = string

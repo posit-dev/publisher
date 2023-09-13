@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 type LocalToken string

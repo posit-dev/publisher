@@ -5,10 +5,10 @@ package api
 import (
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/publish"
+	"github.com/rstudio/publishing-client/internal/accounts"
+	"github.com/rstudio/publishing-client/internal/cli_types"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/publish"
 )
 
 func PostPublishHandlerFunc(publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) http.HandlerFunc {

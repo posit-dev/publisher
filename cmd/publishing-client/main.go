@@ -6,13 +6,13 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
-	"github.com/rstudio/connect-client/cmd/connect-client/commands"
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/project"
-	"github.com/rstudio/connect-client/internal/services"
+	"github.com/rstudio/publishing-client/cmd/publishing-client/commands"
+	"github.com/rstudio/publishing-client/internal/accounts"
+	"github.com/rstudio/publishing-client/internal/cli_types"
+	"github.com/rstudio/publishing-client/internal/events"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/project"
+	"github.com/rstudio/publishing-client/internal/services"
 	"github.com/spf13/afero"
 )
 

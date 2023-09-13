@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/services/api/deployments"
+	"github.com/rstudio/publishing-client/internal/services/api/deployments"
 )
 
 func GetDeploymentHandlerFunc(deploymentsService deployments.DeploymentsService) http.HandlerFunc {

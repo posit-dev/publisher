@@ -8,7 +8,7 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 var standardIgnores = []string{

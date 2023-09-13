@@ -5,7 +5,7 @@ package dcf
 import (
 	"io"
 
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/util"
 	"github.com/stretchr/testify/mock"
 )
 

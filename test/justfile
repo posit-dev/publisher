@@ -2,7 +2,7 @@ set shell := ["bash", "-uc"]
 
 export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
 # export API_KEY := env_var_or_default("PERFTEST_API_KEY", `echo -n admin | md5sum | cut -f1 -d" "`)
-_tag := "rstudio/connect-client"
+_tag := "rstudio/publishing-client"
 
 build target:
   #!/usr/bin/env bash
@@ -36,7 +36,7 @@ run-client target:
     --platform "${_platform}" \
     -e BATS_SUPPORT_LIB="/libs/bats-support/load" \
     -e BATS_ASSERT_LIB="/libs/bats-assert/load" \
-    -e BINARY_PATH=/publishing-client/bin/{{target}}/connect-client \
+    -e BINARY_PATH=/publishing-client/bin/{{target}}/publishing-client \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} just test/_test-client {{target}}
@@ -69,12 +69,12 @@ local-ui-client target:
     docker run \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
-    --rm {{_tag}}-{{target}} ../bin/{{target}}/connect-client publish-ui ./test/content/simple-notebook/ --listen=localhost:9999
+    --rm {{_tag}}-{{target}} ../bin/{{target}}/publishing-client publish-ui ./test/content/simple-notebook/ --listen=localhost:9999
   elif [[ {{target}} =~ "windows" ]]; then
     set shell := ["powershell.exe", "-c"] \
-    ..\bin\artifact\windows-amd64\connect-client.exe publish-ui test/content/simple-notebook/ --listen=localhost:9999
+    ..\bin\artifact\windows-amd64\publishing-client.exe publish-ui test/content/simple-notebook/ --listen=localhost:9999
   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
-    ../bin/darwin-amd64/connect-client publish-ui \
+    ../bin/darwin-amd64/publishing-client publish-ui \
     sample-content/fastapi-simple --listen=127.0.0.1:9999
   fi
     docker run \
@@ -114,7 +114,7 @@ run-client-local target:
   just bats-install && \
   BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \
   BATS_ASSERT_LIB={{invocation_directory()}}/libs/bats-assert/load \
-  BINARY_PATH=../bin/{{target}}/connect-client \
+  BINARY_PATH=../bin/{{target}}/publishing-client \
   ./libs/bats-core/bin/bats --tap -T -r ./bats/
 
 bats-install:

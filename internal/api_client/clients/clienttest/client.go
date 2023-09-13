@@ -5,10 +5,10 @@ package clienttest
 import (
 	"io"
 
-	"github.com/rstudio/connect-client/internal/api_client/clients"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/state"
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/publishing-client/internal/api_client/clients"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/state"
+	"github.com/rstudio/publishing-client/internal/types"
 	"github.com/stretchr/testify/mock"
 )
 

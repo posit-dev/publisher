@@ -10,8 +10,8 @@ import (
 	"slices"
 
 	"github.com/r3labs/sse/v2"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/types"
 )
 
 type SSEServer interface {

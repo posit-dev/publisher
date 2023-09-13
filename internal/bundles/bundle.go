@@ -11,9 +11,9 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/bundles/gitignore"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 type Bundler interface {

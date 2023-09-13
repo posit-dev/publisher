@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/logging"
 )
 
 type statusCapturingResponseWriter struct {

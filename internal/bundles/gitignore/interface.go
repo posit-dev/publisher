@@ -4,7 +4,7 @@ package gitignore
 
 import (
 	"github.com/iriri/minimal/gitignore"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/util"
 	"github.com/stretchr/testify/mock"
 )
 

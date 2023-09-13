@@ -57,7 +57,7 @@ jobs:
           build-args: BUILDKIT_INLINE_CACHE=1
           pull: True
           file: build/package/Dockerfile
-          tags: rstudio/connect-client:latest
+          tags: rstudio/publishing-client:latest
           outputs: type=docker,dest=/tmp/build-image.tar
       -
         if: ${{ steps.cache-docker-image-restore.outputs.cache-hit != 'true' }}
@@ -309,7 +309,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          sudo chmod -R +x ./bin/**/connect-client
+          sudo chmod -R +x ./bin/**/publishing-client
       -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
@@ -353,7 +353,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin/**/connect-client
+          chmod -R +x ./bin/**/publishing-client
       -
         name: Restore Cache UX node_modules
         id: node_modules
@@ -389,7 +389,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin/**/connect-client
+          chmod -R +x ./bin/**/publishing-client
       -
         name: Run Windows CLI Tests
         env:
@@ -401,7 +401,7 @@ jobs:
         run: |
           just test/bats-install
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
-          $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
+          $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\publishing-client"
           cd $env:GITHUB_WORKSPACE\test
           just run-client $env:os
       -
@@ -434,14 +434,14 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin/**/connect-client
+          chmod -R +x ./bin/**/publishing-client
       -
         name: Run MacOs CLI Tests
         env:
           os: macos-latest
           BATS_SUPPORT_LIB: ${{ github.workspace }}/test/libs/bats-support/load
           BATS_ASSERT_LIB: ${{ github.workspace }}/test/libs/bats-assert/load
-          BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/connect-client
+          BINARY_PATH: ${{ github.workspace }}/bin/darwin-amd64/publishing-client
         # WARNING Docker run will only fail step if last command fails...
         run: |
           just test/bats-install
@@ -502,7 +502,7 @@ jobs:
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/amd64
-          tags: rstudio/connect-client-linux-amd64:latest
+          tags: rstudio/publishing-client-linux-amd64:latest
           outputs: type=docker,dest=/tmp/linux-amd64-image.tar
       -
         if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
@@ -539,7 +539,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin/**/connect-client
+          chmod -R +x ./bin/**/publishing-client
       -
         name: Cache docker image (restore)
         id: cache-linux-amd64-image
@@ -613,7 +613,7 @@ jobs:
           pull: True
           file: test/docker/Dockerfile
           platforms: linux/arm64
-          tags: rstudio/connect-client-linux-arm64:latest
+          tags: rstudio/publishing-client-linux-arm64:latest
           outputs: type=docker,dest=/tmp/linux-arm64-image.tar
       -
         if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
@@ -650,7 +650,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin/**/connect-client
+          chmod -R +x ./bin/**/publishing-client
 
       # these are required to run docker on amd64 and arm64 platforms
       -

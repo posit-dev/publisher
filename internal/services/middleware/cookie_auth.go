@@ -7,8 +7,8 @@ import (
 
 	"github.com/chmike/securecookie"
 
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 const sessionCookieName string = "posit-publish-session"

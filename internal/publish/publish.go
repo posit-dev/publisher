@@ -10,15 +10,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/api_client/clients"
-	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/state"
-	"github.com/rstudio/connect-client/internal/types"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/accounts"
+	"github.com/rstudio/publishing-client/internal/api_client/clients"
+	"github.com/rstudio/publishing-client/internal/bundles"
+	"github.com/rstudio/publishing-client/internal/cli_types"
+	"github.com/rstudio/publishing-client/internal/events"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/state"
+	"github.com/rstudio/publishing-client/internal/types"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 func CreateBundleFromDirectory(cmd *cli_types.PublishArgs, dest util.Path, log logging.Logger) error {

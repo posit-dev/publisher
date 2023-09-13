@@ -9,8 +9,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/apptypes"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 type NotebookDetector struct {

@@ -11,8 +11,8 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/apptypes"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 // ManifestFilename is the well-known manifest.json filename contained within

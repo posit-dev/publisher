@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/r3labs/sse/v2"
-	"github.com/rstudio/connect-client/internal/events/eventstest"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/rstudio/publishing-client/internal/events/eventstest"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )

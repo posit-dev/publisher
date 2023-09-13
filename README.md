@@ -10,7 +10,7 @@ your local machine for development and testing purposes.
 ### Prerequisites
 
 NOTE: This project has been configured to use docker by default, which minimizes
-the prerequisites which need to be installed. Use of docker can be controlled 
+the prerequisites which need to be installed. Use of docker can be controlled
 via the DOCKER environment variable:
 if (DOCKER is undefined || DOCKER === 'true') {
     Tasks will be executed in a docker container using the image `build/package/Dockerfile`
@@ -25,7 +25,7 @@ If using Docker, you must have Docker installed: [Docker](https://www.docker.com
 
 Just (justfile runner) is used to run commands: [Just](https://just.systems)
 
-See the additional pre-requisites required for development tasks without Docker at: 
+See the additional pre-requisites required for development tasks without Docker at:
 - CLI: TBD
 - UX: [`web/README.md`](./web/README.md)
 
@@ -49,16 +49,16 @@ Simplest approach to perform all of the applicable steps:
 
 Building the DOCKER image:
 - If using docker (by either not setting the DOCKER environment variable or setting it to "true"), you'll need
-  to build the DOCKER image. This is done as one of the steps within the `default` recipe, but you can also 
+  to build the DOCKER image. This is done as one of the steps within the `default` recipe, but you can also
   perform it with the command `just image`.
 - If you are not using docker, you can skip this step, although performing the recipe is a NO-OP.
 
 #### Justfiles
 
 All tasks are done through the justfile recipes, present within the top level `justfile` file. Recipes present include macro-operations
-for the multiple projects (Go and Web SPA) included in this repo. 
+for the multiple projects (Go and Web SPA) included in this repo.
 
-Specialized recipes for the Go project are located within the `cmd/connect-client/justfile` and 
+Specialized recipes for the Go project are located within the `cmd/publishing-client/justfile` and
 specialized recipes for the Web project are located within the `web/justfile`.
 
 The top level `justfile` recipes can be displayed from within the top level repo subdirectory by issuing the command: `just --list`
@@ -72,8 +72,8 @@ If you want to build the development version the easiest (after switching branch
 1. Build and start the vite web server, to support error reporting and hot-reloading: `just web/dev` in one terminal. Keep the terminal window open.
     - This will launch the `vite` web server on `http://127.0.0.1:9000`
 2. Within a new terminal window, build the development version of the CLI: `just build-dev`. Keep this terminal open, so that you can rebuild as needed.
-3. Within a new terminal window, launch the development version of the CLI for the current platform (with these parameters): `./connect-client publish-ui <PROJECT_PATH> --listen=127.0.0.1:9001 --open-browser-at="http://127.0.0.1:9000" --skip-browser-session-auth`
-    - *Where** `<PROJECT_PATH>` above is replaced with a location of a sample project. For example, with a python project at `~/dev/connect-content/bundles/python-flaskapi`, your complete command line would become: `./connect-client publish-ui ~/dev/connect-content/bundles/python-flaskapi --listen=127.0.0.1:9001 --open-browser-at="http://127.0.0.1:9000" --skip-browser-session-auth`.
+3. Within a new terminal window, launch the development version of the CLI for the current platform (with these parameters): `./publishing-client publish-ui <PROJECT_PATH> --listen=127.0.0.1:9001 --open-browser-at="http://127.0.0.1:9000" --skip-browser-session-auth`
+    - *Where** `<PROJECT_PATH>` above is replaced with a location of a sample project. For example, with a python project at `~/dev/connect-content/bundles/python-flaskapi`, your complete command line would become: `./publishing-client publish-ui ~/dev/connect-content/bundles/python-flaskapi --listen=127.0.0.1:9001 --open-browser-at="http://127.0.0.1:9000" --skip-browser-session-auth`.
     - This launches the CLI and configures it to listen on port `9001`, while launching a browser to the address which is being served by the `vite` web server.
 
 You now should have a Web UX loaded within the browser, which is loading from the `vite` dev server, but has its APIs serviced from the CLI backend.

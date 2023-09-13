@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/r3labs/sse/v2"
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/logging"
 )
 
 func logLevel(debug bool) slog.Level {

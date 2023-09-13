@@ -3,11 +3,11 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/rstudio/connect-client/internal/services/api/deployments"
-	"github.com/rstudio/connect-client/internal/services/api/files"
-	"github.com/rstudio/connect-client/internal/services/api/paths"
-	"github.com/rstudio/connect-client/internal/state"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/services/api/deployments"
+	"github.com/rstudio/publishing-client/internal/services/api/files"
+	"github.com/rstudio/publishing-client/internal/services/api/paths"
+	"github.com/rstudio/publishing-client/internal/state"
+	"github.com/rstudio/publishing-client/internal/util"
 	"github.com/stretchr/testify/mock"
 )
 

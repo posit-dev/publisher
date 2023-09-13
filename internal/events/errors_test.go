@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/types"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/rstudio/publishing-client/internal/types"
+	"github.com/rstudio/publishing-client/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
 

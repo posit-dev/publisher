@@ -17,12 +17,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/api_client/auth"
-	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/types"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/accounts"
+	"github.com/rstudio/publishing-client/internal/api_client/auth"
+	"github.com/rstudio/publishing-client/internal/events"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/types"
+	"github.com/rstudio/publishing-client/internal/util"
 
 	"golang.org/x/net/publicsuffix"
 )

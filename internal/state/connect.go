@@ -5,7 +5,7 @@ package state
 import (
 	"os"
 
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/publishing-client/internal/types"
 )
 
 type ConnectDeployment struct {

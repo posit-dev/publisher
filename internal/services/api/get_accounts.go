@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/accounts"
+	"github.com/rstudio/publishing-client/internal/logging"
 )
 
 // accountGetDTO is the format of returned account data.

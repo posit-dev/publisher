@@ -3,9 +3,9 @@ package clients
 import (
 	"io"
 
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/state"
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/state"
+	"github.com/rstudio/publishing-client/internal/types"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.

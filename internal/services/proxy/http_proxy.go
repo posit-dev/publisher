@@ -12,7 +12,7 @@ import (
 
 	"log/slog"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/logging"
 )
 
 type proxy struct {

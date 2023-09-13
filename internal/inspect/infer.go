@@ -5,8 +5,8 @@ package inspect
 import (
 	"io"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/apptypes"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 type ContentType struct {

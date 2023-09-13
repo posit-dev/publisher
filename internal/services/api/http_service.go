@@ -10,11 +10,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/project"
-	"github.com/rstudio/connect-client/internal/services"
-	"github.com/rstudio/connect-client/internal/services/middleware"
-	"github.com/rstudio/connect-client/internal/state"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/project"
+	"github.com/rstudio/publishing-client/internal/services"
+	"github.com/rstudio/publishing-client/internal/services/middleware"
+	"github.com/rstudio/publishing-client/internal/state"
 
 	"github.com/pkg/browser"
 )

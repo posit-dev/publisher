@@ -5,7 +5,7 @@ package commands
 import (
 	"fmt"
 
-	"github.com/rstudio/connect-client/internal/project"
+	"github.com/rstudio/publishing-client/internal/project"
 
 	"github.com/alecthomas/kong"
 )

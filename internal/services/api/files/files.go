@@ -5,8 +5,8 @@ package files
 import (
 	"time"
 
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/bundles/gitignore"
+	"github.com/rstudio/publishing-client/internal/util"
 )
 
 type File struct {

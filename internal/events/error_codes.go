@@ -2,7 +2,7 @@ package events
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import "github.com/rstudio/connect-client/internal/types"
+import "github.com/rstudio/publishing-client/internal/types"
 
 type ErrorCode = types.ErrorCode
 

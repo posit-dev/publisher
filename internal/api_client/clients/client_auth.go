@@ -5,7 +5,7 @@ package clients
 import (
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/api_client/auth"
+	"github.com/rstudio/publishing-client/internal/api_client/auth"
 )
 
 type AuthenticatedTransport struct {

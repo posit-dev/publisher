@@ -5,7 +5,7 @@ package accounts
 import (
 	"os"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/logging"
 )
 
 type envVarProvider struct {

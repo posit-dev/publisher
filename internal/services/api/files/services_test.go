@@ -5,9 +5,9 @@ package files
 import (
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/rstudio/publishing-client/internal/logging"
+	"github.com/rstudio/publishing-client/internal/util"
+	"github.com/rstudio/publishing-client/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 )

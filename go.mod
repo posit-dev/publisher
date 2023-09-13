@@ -1,4 +1,4 @@
-module github.com/rstudio/connect-client
+module github.com/rstudio/publishing-client
 
 go 1.21
 
