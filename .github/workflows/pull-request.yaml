@@ -41,7 +41,7 @@ jobs:
         id: cache-docker-image-restore
         uses: actions/cache/restore@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-docker-image
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('build/package/Dockerfile') }}
@@ -62,7 +62,7 @@ jobs:
         id: cache-docker-image-save
         uses: actions/cache/save@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-docker-image
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('build/package/Dockerfile') }}
@@ -86,7 +86,7 @@ jobs:
         id: cache-docker-image
         uses: actions/cache/restore@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-docker-image
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('/tmp/build-image.tar') }}
@@ -148,7 +148,7 @@ jobs:
         id: cache-docker-image
         uses: actions/cache/restore@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-docker-image
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('/tmp/build-image.tar') }}
@@ -196,7 +196,7 @@ jobs:
         id: cache-docker-image
         uses: actions/cache/restore@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-docker-image
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('/tmp/build-image.tar') }}
@@ -247,7 +247,7 @@ jobs:
         id: cache-docker-image
         uses: actions/cache/restore@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-docker-image
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('/tmp/build-image.tar') }}
@@ -285,7 +285,7 @@ jobs:
         id: cache-docker-image
         uses: actions/cache/restore@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-docker-image
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('/tmp/build-image.tar') }}
@@ -333,7 +333,7 @@ jobs:
         id: cache-docker-image
         uses: actions/cache/restore@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-docker-image
         with:
           path: /tmp/build-image.tar
           key: ${{ runner.os }}-docker-image-${{ env.cache-name }}-${{ hashFiles('/tmp/build-image.tar') }}
@@ -485,7 +485,7 @@ jobs:
           path: /tmp/linux-amd64-image.tar
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-linux-amd64-image
           os: linux-amd64
       -
         if: ${{ steps.cache-linux-amd64-restore.outputs.cache-hit != 'true' }}
@@ -507,7 +507,7 @@ jobs:
         id: cache-linux-amd64-image-save
         uses: actions/cache/save@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-linux-amd64-image
         with:
           path: /tmp/linux-amd64-image.tar
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
@@ -542,7 +542,7 @@ jobs:
         id: cache-linux-amd64-image
         uses: actions/cache/restore@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-linux-amd64-image
         with:
           path: /tmp/linux-amd64-image.tar
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
@@ -596,7 +596,7 @@ jobs:
           path: /tmp/linux-arm64-image.tar
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-linux-arm64-image
           os: linux-arm64
       -
         if: ${{ steps.cache-linux-arm64-restore.outputs.cache-hit != 'true' }}
@@ -618,7 +618,7 @@ jobs:
         id: cache-linux-arm64-image-save
         uses: actions/cache/save@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-linux-arm64-image
         with:
           path: /tmp/linux-arm64-image.tar
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
@@ -663,7 +663,7 @@ jobs:
         id: cache-linux-arm64-image
         uses: actions/cache/restore@v3
         env:
-          cache-name: cache-${{ github.ref }}
+          cache-name: cache-linux-arm64-image
         with:
           path: /tmp/linux-arm64-image.tar
           key: ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
