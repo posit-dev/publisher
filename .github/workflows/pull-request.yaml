@@ -510,7 +510,7 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    needs: build-agent
+    # needs: build-agent
     steps:
       -
         name: Checkout
@@ -627,7 +627,7 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    needs: build-agent
+    # needs: build-agent
     steps:
       -
         name: Checkout
