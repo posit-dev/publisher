@@ -565,7 +565,7 @@ jobs:
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
   test-linux-amd64:
-    needs: build-linux-amd64
+    needs:  [build-agent, build-linux-amd64]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -627,7 +627,7 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    # needs: build-agent
+    needs: build-agent
     steps:
       -
         name: Checkout
@@ -682,7 +682,7 @@ jobs:
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
   test-linux-arm64:
-    needs: build-linux-arm64
+    needs:  [build-agent, build-linux-arm64]
     runs-on: ubuntu-latest
     defaults:
       run:
