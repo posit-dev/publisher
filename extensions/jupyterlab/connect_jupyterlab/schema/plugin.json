@@ -1,0 +1,16 @@
+{
+    "jupyter.lab.toolbars": {
+      "Notebook": [
+        {
+          "name": "posit-publish",
+          "command": "posit:publish",
+          "args": { "origin": "toolbar" }
+        }
+      ]
+    },
+    "title": "@rstudio/posit-publish",
+    "description": "@rstudio/posit-publish settings.",
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }

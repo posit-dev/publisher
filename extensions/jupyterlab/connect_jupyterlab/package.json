@@ -59,6 +59,7 @@
     },
     "dependencies": {
         "@jupyterlab/application": "^4.0.0",
+        "@jupyterlab/apputils": "^4.1.5",
         "@jupyterlab/coreutils": "^6.0.0",
         "@jupyterlab/services": "^7.0.0"
     },
@@ -110,7 +111,8 @@
             }
         },
         "extension": true,
-        "outputDir": "connect_jupyterlab/labextension"
+        "outputDir": "connect_jupyterlab/labextension",
+        "schemaDir": "schema"
     },
     "eslintIgnore": [
         "node_modules",
