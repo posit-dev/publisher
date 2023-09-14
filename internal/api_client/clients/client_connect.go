@@ -321,13 +321,17 @@ func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (ty
 		nextOp = eventOpFromLogLine(op, line)
 		if nextOp != op {
 			if op != "" {
-				log.Success("Done")
+				log.Success("Done", logging.LogKeyOp, op)
+			}
+
+			if nextOp == "" {
+				fmt.Println("nextOp is empty")
 			}
 			op = nextOp
-			log = log.WithArgs(logging.LogKeyOp, op)
-			log.Start("Starting")
+			log.Start(line, logging.LogKeyOp, op)
+		} else {
+			log.Info(line, logging.LogKeyOp, op)
 		}
-		log.Info(line)
 
 		// Log a progress event for certain matching log lines.
 		event := packageEventFromLogLine(line)
@@ -336,7 +340,8 @@ func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (ty
 				"runtime", event.runtime,
 				"status", event.status,
 				"name", event.name,
-				"version", event.version)
+				"version", event.version,
+				logging.LogKeyOp, op)
 		}
 	}
 	if task.Finished {
@@ -344,16 +349,16 @@ func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (ty
 			// TODO: make these errors more specific, maybe by
 			// using the Connect error codes from the logs.
 			err := errors.New(task.Error)
-			return nextOp, types.NewAgentError(events.DeploymentFailedCode, err, nil)
+			return op, types.NewAgentError(events.DeploymentFailedCode, err, nil)
 		}
-		log.Success("Done")
+		log.Success("Done", logging.LogKeyOp, op)
 	}
-	return nextOp, nil
+	return op, nil
 }
 
 func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) error {
 	var previous *taskDTO
-	var op events.Operation
+	var op events.Operation = events.PublishOp
 
 	for {
 		task, err := c.getTask(taskID, previous)
@@ -361,7 +366,7 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 			return err
 		}
 		op, err = handleTaskUpdate(task, op, log)
-		if task.Finished {
+		if err != nil || task.Finished {
 			return err
 		}
 		previous = task

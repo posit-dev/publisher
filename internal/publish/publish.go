@@ -67,12 +67,13 @@ func logAppInfo(accountURL string, contentID types.ContentID, log logging.Logger
 		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
 		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
 	}
-	log.WithArgs(
+	log.Success("Deployment successful",
+		logging.LogKeyOp, events.PublishOp,
 		"dashboardURL", appInfo.DashboardURL,
 		"directURL", appInfo.DirectURL,
 		"serverURL", accountURL,
 		"contentID", contentID,
-	).Info("Deployment successful")
+	)
 	jsonInfo, err := json.Marshal(appInfo)
 	if err != nil {
 		return err
@@ -135,7 +136,10 @@ func withLog[T any](op events.Operation, msg string, label string, log logging.L
 }
 
 func publishWithClient(cmd *cli_types.PublishArgs, bundler bundles.Bundler, account *accounts.Account, client clients.APIClient, log logging.Logger) error {
-	log.Info("Starting deployment to server", "server", account.URL)
+	log.Start("Starting deployment to server",
+		logging.LogKeyOp, events.PublishOp,
+		"server", account.URL,
+	)
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
