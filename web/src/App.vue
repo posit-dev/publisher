@@ -890,7 +890,6 @@ import { useDeploymentStore } from 'src/stores/deployment';
 const api = useApi();
 const deploymentStore = useDeploymentStore();
 
-const tab = ref('newDeployment');
 const publishingTab = ref('summary');
 const menu = ref(false);
 const showDebug = ref(false);
