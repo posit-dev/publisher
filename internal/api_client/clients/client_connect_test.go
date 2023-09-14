@@ -61,9 +61,12 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 
 	str := mock.AnythingOfType("string")
 	anything := mock.Anything
-	log.On("Start", "Starting")
-	log.On("Success", "Done")
-	log.On("Info", str)
+	log.On("Start", "Building Jupyter notebook...", logging.LogKeyOp, events.PublishRestorePythonEnvOp)
+	log.On("Start", "Launching Jupyter notebook...", logging.LogKeyOp, events.PublishRunContentOp)
+	log.On("Start", "Bundle created with R version 4.3.0, Python version 3.11.3, and Quarto version 0.9.105 is compatible with environment Local with R version 4.3.1 from /opt/R/4.3.1/bin/R, Python version 3.11.3 from /opt/python/3.11.3/bin/python3.11, and Quarto version 1.3.450 from /opt/quarto/1.3.450/bin/quarto", logging.LogKeyOp, events.PublishRestoreREnvOp)
+	log.On("Success", "Done", logging.LogKeyOp, events.PublishRestorePythonEnvOp)
+	log.On("Success", "Done", logging.LogKeyOp, events.PublishRunContentOp)
+	log.On("Success", "Done", logging.LogKeyOp, events.AgentOp)
 	log.On("Info", str, str, anything)
 
 	expectedPackages := []struct {
@@ -81,14 +84,18 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 		{rRuntime, downloadAndInstallPackage, "Rcpp", "1.0.10"},
 	}
 	for _, pkg := range expectedPackages {
+		op := events.PublishRestorePythonEnvOp
+		if pkg.rt == rRuntime {
+			op = events.PublishRestoreREnvOp
+		}
 		log.On("Status",
 			"Package restore",
 			"runtime", pkg.rt,
 			"status", pkg.status,
 			"name", pkg.name,
-			"version", pkg.version)
+			"version", pkg.version,
+			logging.LogKeyOp, op)
 	}
-	log.On("WithArgs", str, anything).Return(log)
 	taskID := types.TaskID("W3YpnrwUOQJxL5DS")
 
 	tests := []taskTest{
@@ -289,11 +296,9 @@ func (s *ConnectClientSuite) TestWaitForTaskErr() {
 
 	str := mock.AnythingOfType("string")
 	anything := mock.Anything
-	log.On("Start", "Starting")
-	log.On("Success", "Done")
-	log.On("Info", str)
+
+	log.On("Start", "Building Jupyter notebook...", logging.LogKeyOp, events.PublishRestorePythonEnvOp)
 	log.On("Info", str, str, anything)
-	log.On("WithArgs", str, anything).Return(log)
 
 	task := taskDTO{
 		Id: types.TaskID("W3YpnrwUOQJxL5DS"),
@@ -309,12 +314,13 @@ func (s *ConnectClientSuite) TestWaitForTaskErr() {
 		Last:     5,
 	}
 
-	op := events.AgentOp
+	op := events.Operation("")
 	op, err := handleTaskUpdate(&task, op, log)
 	s.Equal(&types.AgentError{
 		Code: events.DeploymentFailedCode,
 		Err:  errors.New("exit status 1"),
 		Data: types.ErrorData{},
+		Op:   events.PublishRestorePythonEnvOp,
 	}, err)
 	s.Equal(events.PublishRestorePythonEnvOp, op)
 	log.AssertExpectations(s.T())
