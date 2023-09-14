@@ -17,6 +17,8 @@ type PublishReponse struct {
 	LocalID state.LocalDeploymentID `json:"local_id"` // Unique ID of this publishing operation. Only valid for this run of the agent.
 }
 
+var publishFn = publish.PublishManifestFiles
+
 func PostPublishHandlerFunc(publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		localID, err := state.NewLocalID()
@@ -34,7 +36,7 @@ func PostPublishHandlerFunc(publishArgs *cli_types.PublishArgs, lister accounts.
 
 		go func() {
 			log = log.WithArgs("local_id", localID)
-			err := publish.PublishManifestFiles(publishArgs, lister, log)
+			err := publishFn(publishArgs, lister, log)
 			if err != nil {
 				log.Error("Deployment failed", "error", err.Error())
 			}
