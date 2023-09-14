@@ -22,13 +22,13 @@ func TestLoggingSuite(t *testing.T) {
 }
 
 func (s *LoggingSuite) TestDefaultLogger() {
-	log := New()
+	log := New().(logger)
 	s.NotNil(log.BaseLogger)
 }
 
 func (s *LoggingSuite) TestFromStdLogger() {
 	stdLogger := slog.Default()
-	log := FromStdLogger(stdLogger)
+	log := FromStdLogger(stdLogger).(logger)
 	s.NotNil(log.BaseLogger)
 	s.Equal(stdLogger, log.BaseLogger)
 }
@@ -37,7 +37,7 @@ func (s *LoggingSuite) TestStart() {
 	baseLogger := NewMockBaseLogger()
 	baseLogger.On("Info", "message", LogKeyPhase, StartPhase, "arg", "value")
 
-	log := loggerImpl{baseLogger}
+	log := logger{baseLogger}
 	log.Start("message", "arg", "value")
 	baseLogger.AssertExpectations(s.T())
 }
@@ -46,7 +46,7 @@ func (s *LoggingSuite) TestSuccess() {
 	baseLogger := NewMockBaseLogger()
 	baseLogger.On("Info", "message", LogKeyPhase, SuccessPhase, "arg", "value")
 
-	log := loggerImpl{baseLogger}
+	log := logger{baseLogger}
 	log.Success("message", "arg", "value")
 	baseLogger.AssertExpectations(s.T())
 }
@@ -55,7 +55,7 @@ func (s *LoggingSuite) TestStatus() {
 	baseLogger := NewMockBaseLogger()
 	baseLogger.On("Info", "message", LogKeyPhase, ProgressPhase, "arg", "value")
 
-	log := loggerImpl{baseLogger}
+	log := logger{baseLogger}
 	log.Status("message", "arg", "value")
 	baseLogger.AssertExpectations(s.T())
 }
@@ -69,7 +69,7 @@ func (s *LoggingSuite) TestProgress() {
 		"total", float32(100),
 		"arg", "value")
 
-	log := loggerImpl{baseLogger}
+	log := logger{baseLogger}
 	log.Progress("message", 20, 100, "arg", "value")
 	baseLogger.AssertExpectations(s.T())
 }
@@ -79,7 +79,7 @@ func (s *LoggingSuite) TestFailureGoError() {
 	baseLogger.On("Error", "test error", LogKeyPhase, FailurePhase)
 	baseLogger.On("Debug", mock.AnythingOfType("string"))
 
-	log := loggerImpl{baseLogger}
+	log := logger{baseLogger}
 	err := errors.New("test error")
 	log.Failure(err)
 	baseLogger.AssertExpectations(s.T())
@@ -96,7 +96,7 @@ func (s *LoggingSuite) TestFailureAgentError() {
 		LogKeyErrCode, types.UnknownErrorCode,
 		"Metadata", "some metadata")
 
-	log := loggerImpl{baseLogger}
+	log := logger{baseLogger}
 	baseErr := errors.New("test error")
 	errData := struct {
 		Metadata string
@@ -111,7 +111,7 @@ func (s *LoggingSuite) TestWith() {
 	baseLogger := NewMockBaseLogger()
 	expectedLogger := slog.Default()
 	baseLogger.On("With", "arg", "value", "arg2", "value2").Return(expectedLogger)
-	log := loggerImpl{baseLogger}
+	log := logger{baseLogger}
 	actualLogger := log.WithArgs("arg", "value", "arg2", "value2")
-	s.Equal(loggerImpl{expectedLogger}, actualLogger)
+	s.Equal(logger{expectedLogger}, actualLogger)
 }

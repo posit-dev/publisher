@@ -38,37 +38,37 @@ type Logger interface {
 	WithArgs(args ...any) Logger
 }
 
-type loggerImpl struct {
+type logger struct {
 	BaseLogger
 }
 
-func New() loggerImpl {
-	return loggerImpl{
+func New() Logger {
+	return logger{
 		slog.Default(),
 	}
 }
 
-func FromStdLogger(log *slog.Logger) loggerImpl {
-	return loggerImpl{log}
+func FromStdLogger(log *slog.Logger) Logger {
+	return logger{log}
 }
 
-func (l loggerImpl) Start(msg string, args ...any) {
+func (l logger) Start(msg string, args ...any) {
 	l.Info(msg, append([]any{LogKeyPhase, StartPhase}, args...)...)
 }
 
-func (l loggerImpl) Success(msg string, args ...any) {
+func (l logger) Success(msg string, args ...any) {
 	l.Info(msg, append([]any{LogKeyPhase, SuccessPhase}, args...)...)
 }
 
-func (l loggerImpl) Status(msg string, args ...any) {
+func (l logger) Status(msg string, args ...any) {
 	l.Info(msg, append([]any{LogKeyPhase, ProgressPhase}, args...)...)
 }
 
-func (l loggerImpl) Progress(msg string, done float32, total float32, args ...any) {
+func (l logger) Progress(msg string, done float32, total float32, args ...any) {
 	l.Info(msg, append([]any{LogKeyPhase, ProgressPhase, "done", done, "total", total}, args...)...)
 }
 
-func (l loggerImpl) Failure(err error) {
+func (l logger) Failure(err error) {
 	if agentError, ok := err.(types.EventableError); ok {
 		args := []any{
 			LogKeyOp, agentError.GetOperation(),
@@ -88,6 +88,6 @@ func (l loggerImpl) Failure(err error) {
 	}
 }
 
-func (l loggerImpl) WithArgs(args ...any) Logger {
-	return loggerImpl{l.BaseLogger.With(args...)}
+func (l logger) WithArgs(args ...any) Logger {
+	return logger{l.BaseLogger.With(args...)}
 }
