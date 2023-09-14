@@ -5,6 +5,7 @@
     title="Python"
     icon="img:images/python-logo-only.svg"
     subtitle="Python v3.8.15 and 16 package dependencies"
+    group="main"
   >
     <div>
       <div style="" class="q-ma-sm">

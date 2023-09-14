@@ -5,6 +5,7 @@
     title="Files"
     :subtitle="fileSummary"
     icon="img:/images/files-icon.jpg"
+    group="main"
   >
     <q-banner v-if="redeploy" dark class="bg-blue-8 text-white q-ma-sm">
       TODO: File Diff is going to be revisited (as perhaps a list organized by new, deleted, updated and unchanged).
@@ -72,7 +73,7 @@
     />
     <q-select
       v-model="entryPoint"
-      :options="['db.py', 'entry.py', 'help.py', 'main.py', 'setup.py']"
+      :options="entryPointOptions"
       label="Entry Point File"
       map-options
       dark
@@ -108,8 +109,9 @@ const tab = ref('fileDiff');
 type FileInfo = Pick<DeploymentFile, 'size' | 'isEntrypoint' | 'exclusion'>;
 
 const fileMap = ref(new Map<string, FileInfo>());
+const entryPointOptions = ref(<string[]>[]);
 
-const entryPoint = ref('main.py');
+const entryPoint = ref('');
 
 const selectedFileTotalSize = computed(() : string => {
   let totalSize = 0;
@@ -117,6 +119,12 @@ const selectedFileTotalSize = computed(() : string => {
     const fileInfo = fileMap.value.get(fileName);
     if (fileInfo) {
       totalSize += fileInfo.size;
+    }
+    if (fileName.endsWith('.py') && !entryPointOptions.value.includes(fileName)) {
+      entryPointOptions.value.push(fileName);
+      if (entryPoint.value === '') {
+        entryPoint.value = fileName;
+      }
     }
   });
   let totalSizeStr = `${totalSize} bytes`;

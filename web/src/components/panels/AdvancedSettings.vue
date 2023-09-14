@@ -5,11 +5,8 @@
     title="Advanced Settings"
     subtitle="Vanity URL, Tags and Environment Vars set"
     icon="img:images/settings.png"
+    group="main"
   >
-    <div class="q-ma-md">
-      Set values for these settings to maximize your control over the deployment and 
-      runtime of your project.
-    </div>
     <q-input
       v-model="vanityURL"
       label="Vanity URL"

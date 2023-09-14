@@ -1,27 +1,27 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 <template>
   <div
-    class="q-mx-md q-my-lg row justify-between"
-    style="align-items: flex-start; flex-direction: row-reverse;"
+    class="q-my-lg row justify-between"
+    style="align-items: flex-start;"
   >
-    <q-btn
-      :disable="disablePublishingAction"
-      class=""
-      color="primary"
-      label="Publish"
-      @click="onPublish"
-    />
     <q-input
       v-if="showTitle"
       v-model="title"
       label="Title"
-      square
       outlined
       dense
       dark
       clearable
       hint="Enter a title for your content on the server"
-      class="col-8"
+      style="min-width: 75%"
+    />
+    <q-btn
+      :disable="disablePublishingAction"
+      color="primary"
+      label="Publish"
+      @click="onPublish"
+      padding="8px 30px"
+      class="q-ml-xs"
     />
   </div>
 </template>

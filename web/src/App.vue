@@ -23,7 +23,7 @@
             icon="menu"
             @click="menu = !menu"
           >
-            <q-menu dark>
+            <q-menu dark max-height="400px">
               <q-list style="min-width: 100px" class="q-pa-sm">
                 <q-item
                   v-close-popup
@@ -44,9 +44,8 @@
                   v-close-popup
                   clickable
                   class="q-my-sm"
-                  @click="showDebug = !showDebug"
                 >
-                  <q-item-section>{{ !showDebug ? "Show Debug Console" : "Hide Debug Console" }} </q-item-section>
+                  <q-item-section>Show Agent Console</q-item-section>
                 </q-item>
                 <q-item
                   v-close-popup
@@ -68,7 +67,7 @@
           </q-btn>
         </div>
         <q-toolbar-title>
-          Publisher
+          Posit Publisher
         </q-toolbar-title>
       </q-toolbar>
     </q-header>
@@ -121,129 +120,63 @@
     <q-page-container>
       <q-page
         v-if="!showPublishing"
-        class="max-width-md q-mx-auto"
+        class=""
         padding
       >
-        <q-tabs
-          v-model="tab"
-          dense
-          class="text-grey"
-          active-color="white"
-          active
-          indicator-color="primary"
-          align="justify"
-          narrow-indicator
-        >
-          <q-tab
-            name="newDeployment"
-            label="New Deployment"
-            dark
-          />
-          <q-tab
-            name="updateDeployment"
-            label="Update Existing Deployment"
-            dark
-          />
-        </q-tabs>
-        <q-separator />
-
-        <q-tab-panels
-          v-model="tab"
-          animated
+        <div class="row justify-center">
+          <div style="width: 60%">
+            <q-btn-toggle
+              v-model="deployMode"
+              no-caps
+              unelevated
+              dark
+              size="1rem"
+              padding="2px"
+              spread
+              toggle-color="primary"
+              color="white"
+              text-color="primary"
+              :options="[
+                {label: 'New Deployment', value: 'new'},
+                {label: 'Existing Deployment', value: 'update'}
+              ]"
+              style="border: 1px solid #027be3;"
+            />
+          </div>
+        </div>
+        <q-list
           dark
+          class="rounded-borders"
         >
-          <q-tab-panel name="newDeployment">
-            <div class="q-mx-md q-mb-md">
-              Your project will be published to the Posit Connect server as a new deployment.
-              Update the information below and then click the Publish button to begin the process.
-            </div>
-            <q-list
+          <ContentTarget
+            :show-title="true"
+            @publish="onPublish"
+          />
+          <q-separator
+            dark
+          />
+          <div
+            style="border: solid darkgray 1px; border-radius: 5px; padding: 0 5px;"
+          >
+            <DestinationTarget />
+            <q-separator
               dark
-              class="rounded-borders"
-            >
-              <ContentTarget
-                :show-title="true"
-                @publish="onPublish"
-              />
-              <div class="q-mx-md q-mt-xl q-mb-sm">
-                Customize your deployment on the server by expanding any of the sections below.
-              </div>
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-              <DestinationTarget />
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-              <FilesToPublish :redeploy="false" />
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-              <PythonProject />
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-              <CommonSettings :redeploy="false" />
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-              <AdvancedSettings />
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-            </q-list>
-          </q-tab-panel>
-
-          <q-tab-panel name="updateDeployment">
-            <div class="q-mx-md q-mb-md">
-              Your project will be published to the Posit Connect server as an update to the existing
-              instance of this deployment. Update the information below and then click the Publish
-              button to begin the process.
-            </div>
-            <q-list
+            />
+            <FilesToPublish :redeploy="deployMode == 'update'" />
+            <q-separator
               dark
-              class="rounded-borders"
-            >
-              <ContentTarget
-                :show-title="false"
-                @publish="onPublish"
-              />
-              <div class="q-mx-md q-mt-xl q-mb-sm">
-                Customize your deployment on the server by expanding any of the sections below.
-              </div>
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-              <FilesToPublish :redeploy="true" />
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-              <PythonProject />
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-              <CommonSettings :redeploy="true" />
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-              <AdvancedSettings />
-              <q-separator
-                dark
-                class="q-mx-md"
-              />
-            </q-list>
-          </q-tab-panel>
-        </q-tab-panels>
+            />
+            <PythonProject />
+            <q-separator
+              dark
+            />
+            <CommonSettings :redeploy="deployMode == 'update'" />
+            <q-separator
+              dark
+            />
+            <AdvancedSettings />
+          </div>
+        </q-list>
       </q-page>
       <q-page
         v-if="showPublishing"
@@ -251,7 +184,380 @@
         padding
         dark
       >
-        <!-- <q-banner
+        <div>
+          <q-btn
+            color="primary"
+            icon="arrow_back"
+            label="Back"
+            :disabled="publishingInProgress"
+            @click="showPublishing = false"
+          />
+          <h6
+            v-if="publishingInProgress"
+            class="q-pa-sm"
+            style="margin-bottom: 0px; margin-top: 0;"
+          >
+            Publishing 'fastapi-simple' to Dogfood...
+          </h6>
+          <h6
+            v-if="!publishingInProgress"
+            class="q-pa-sm"
+            style="margin-bottom: 0px; margin-top: 0;"
+          >
+            'fastapi-simple' has been published to Dogfood
+          </h6>
+          <div class="row items-center">
+            <ul class="col-9">
+              <li>Target: Dogfood Posit Connect Server as 'admin'</li>
+              <li>Files: 5 files from project/XYZ</li>
+              <li>Python: Version 3.9.5</li>
+              <li>Environment: 15 python packages to be installed</li>
+              <li>Vanity URL: http://dogfood:3939/my-project</li>
+            </ul>
+            <div
+              v-if="publishingInProgress"
+              class="col-1 items-center"
+            >
+              <q-spinner-gears
+                color="light-blue-3"
+                size="75px"
+                class="q-ml-sm"
+              />
+              <q-btn
+                color="primary"
+                label="Cancel"
+                class="q-mt-sm"
+              />
+            </div>
+          </div>
+        </div>
+        <q-stepper
+          v-model="activeSummaryStep"
+          vertical
+          animated
+          dark
+          flat
+          :header-nav="!publishingInProgress"
+          style="background-color: unset;"
+        >
+          <q-step
+            :name="1"
+            title="Create Deployment"
+            icon="create_new_folder"
+            active-icon="create_new_folder"
+            color="grey-5"
+            active-color="light-blue-3"
+            done-color="white"
+            :done="!publishingInProgress || (activeSummaryStep >= 1 && publishingInProgress)"
+            :header-nav="true"
+            @click="resetStep(1)"
+          >
+            <div style="font-weight: bold;">
+              Registering the deployment object with the Posit Connect Server.
+            </div>
+            <q-list
+              v-if="!publishingInProgress"
+              dark
+              class="q-mt-sm"
+              style="background-color: rgb(48,48,48);"
+            >
+              <div
+                v-for="(log, index) in createDeploymentLog"
+                :key="index"
+              >
+                <q-item
+                  class="q-my-sm"
+                  dark
+                  dense
+                  style="line-height: 1rem; color: white"
+                >
+                  <q-item-section>
+                    {{ log.msg }}
+                  </q-item-section>
+                </q-item>
+              </div>
+            </q-list>
+          </q-step>
+          <q-step
+            :name="2"
+            title="Create Bundle"
+            icon="compress"
+            active-icon="compress"
+            color="grey-5"
+            active-color="light-blue-3"
+            done-color="white"
+            :done="!publishingInProgress || (activeSummaryStep >= 2 && publishingInProgress)"
+            @click="resetStep(2)"
+          >
+            <div style="font-weight: bold;">
+              Collecting and bundling up the files included in your project, so that
+              they can be uploaded to the server within a bundle.
+            </div>
+
+            <q-list
+              v-if="!publishingInProgress"
+              dark
+              class="q-mt-sm"
+              style="background-color: rgb(48,48,48);"
+            >
+              <div
+                v-for="(log, index) in createBundleLog"
+                :key="index"
+              >
+                <q-item
+                  class="q-my-sm"
+                  dark
+                  dense
+                  style="line-height: 1rem; color: white"
+                >
+                  <q-item-section>
+                    {{ log.msg }}
+                  </q-item-section>
+                </q-item>
+              </div>
+            </q-list>
+          </q-step>
+          <q-step
+            :name="3"
+            title="Upload Bundle"
+            icon="login"
+            active-icon="login"
+            color="grey-5"
+            active-color="light-blue-3"
+            done-color="white"
+            :done="!publishingInProgress || (activeSummaryStep >= 3 && publishingInProgress)"
+            @click="resetStep(3)"
+          >
+            <div style="font-weight: bold;">
+              Transferring the files from your local workstation to the server.
+            </div>
+
+            <q-list
+              v-if="!publishingInProgress"
+              dark
+              class="q-mt-sm"
+              style="background-color: rgb(48,48,48);"
+            >
+              <div
+                v-for="(log, index) in uploadBundleLog"
+                :key="index"
+              >
+                <q-item
+                  class="q-my-sm"
+                  dark
+                  dense
+                  style="line-height: 1rem; color: white"
+                >
+                  <q-item-section>
+                    {{ log.msg }}
+                  </q-item-section>
+                </q-item>
+              </div>
+            </q-list>
+          </q-step>
+          <q-step
+            :name="4"
+            title="Deploy Bundle"
+            icon="publish"
+            active-icon="publish"
+            color="grey-5"
+            active-color="light-blue-3"
+            done-color="white"
+            :done="!publishingInProgress || (activeSummaryStep >= 4 && publishingInProgress)"
+            @click="resetStep(4)"
+          >
+            <div style="font-weight: bold;">
+              Associating the uploaded bundle with the deployment object.
+            </div>
+
+            <q-list
+              v-if="!publishingInProgress"
+              dark
+              class="q-mt-sm"
+              style="background-color: rgb(48,48,48);"
+            >
+              <div
+                v-for="(log, index) in deployBundleLog"
+                :key="index"
+              >
+                <q-item
+                  class="q-my-sm"
+                  dark
+                  dense
+                  style="line-height: 1rem; color: white"
+                >
+                  <q-item-section>
+                    {{ log.msg }}
+                  </q-item-section>
+                </q-item>
+              </div>
+            </q-list>
+          </q-step>
+          <q-step
+            :name="5"
+            title="Restore Python Environment"
+            :caption="pythonRestoreStatus"
+            icon="move_down"
+            active-icon="move_down"
+            color="grey-5"
+            active-color="light-blue-3"
+            done-color="white"
+            :done="!publishingInProgress || (activeSummaryStep >= 5 && publishingInProgress)"
+            @click="resetStep(5)"
+          >
+            <div style="font-weight: bold;">
+              Installing the dependent python packages on the server in order
+              to reproduce your runtime environment.
+            </div>
+
+            <q-list
+              v-if="!publishingInProgress"
+              dark
+              class="q-mt-sm"
+              style="background-color: rgb(48,48,48);"
+            >
+              <div
+                v-for="(log, index) in restorePythonLog"
+                :key="index"
+              >
+                <q-item
+                  class="q-my-sm"
+                  dark
+                  dense
+                  style="line-height: 1rem; color: white"
+                >
+                  <q-item-section>
+                    {{ log.msg }}
+                  </q-item-section>
+                </q-item>
+              </div>
+            </q-list>
+          </q-step>
+          <q-step
+            :name="6"
+            title="Run Content"
+            icon="sync"
+            active-icon="sync"
+            color="grey-5"
+            active-color="light-blue-3"
+            done-color="white"
+            :done="!publishingInProgress || (activeSummaryStep >= 6 && publishingInProgress)"
+            @click="resetStep(6)"
+          >
+            <div style="font-weight: bold;">
+              Performing execution checks ahead of applying settings.
+            </div>
+
+            <q-list
+              v-if="!publishingInProgress"
+              dark
+              class="q-mt-sm"
+              style="background-color: rgb(48,48,48);"
+            >
+              <div
+                v-for="(log, index) in runContentLog"
+                :key="index"
+              >
+                <q-item
+                  class="q-my-sm"
+                  dark
+                  dense
+                  style="line-height: 1rem; color: white"
+                >
+                  <q-item-section>
+                    {{ log.msg }}
+                  </q-item-section>
+                </q-item>
+              </div>
+            </q-list>
+          </q-step>
+          <q-step
+            :name="7"
+            title="Set Vanity URL"
+            icon="settings"
+            active-icon="settings"
+            color="grey-5"
+            active-color="light-blue-3"
+            done-color="white"
+            :done="!publishingInProgress || (activeSummaryStep >= 7 && publishingInProgress)"
+            @click="resetStep(7)"
+          >
+            <div style="font-weight: bold;">
+              Configuring the Vanity URL for your content.
+            </div>
+
+            <q-list
+              v-if="!publishingInProgress"
+              dark
+              class="q-mt-sm"
+              style="background-color: rgb(48,48,48);"
+            >
+              <div
+                v-for="(log, index) in setVanityURLLog"
+                :key="index"
+              >
+                <q-item
+                  class="q-my-sm"
+                  dark
+                  dense
+                  style="line-height: 1rem; color: white"
+                >
+                  <q-item-section>
+                    {{ log.msg }}
+                  </q-item-section>
+                </q-item>
+              </div>
+            </q-list>
+          </q-step>
+          <q-step
+            :name="8"
+            title="Wrapping up Deployment"
+            icon="checklist"
+            active-icon="checklist"
+            caption="Success"
+            color="grey-5"
+            active-color="light-blue-3"
+            done-color="white"
+            :done="!publishingInProgress || (activeSummaryStep >= 8 && publishingInProgress)"
+            @click="resetStep(8)"
+          >
+            <div style="font-weight: bold;">
+              Your project has been successfully deployed to the server and is
+              available at https://rsc.radixu.com/connect/my-project
+            </div>
+
+            <q-list
+              v-if="!publishingInProgress"
+              dark
+              class="q-mt-sm"
+              style="background-color: rgb(48,48,48);"
+            >
+              <div
+                v-for="(log, index) in wrapUpDeploymentLog"
+                :key="index"
+              >
+                <q-item
+                  class="q-my-sm"
+                  dark
+                  dense
+                  style="line-height: 1rem; color: white"
+                >
+                  <q-item-section>
+                    {{ log.msg }}
+                  </q-item-section>
+                </q-item>
+              </div>
+            </q-list>
+          </q-step>
+        </q-stepper>
+      </q-page>
+      <!-- <q-page
+        v-if="false"
+        class="max-width-md q-mx-auto"
+        padding
+        dark
+      >
+        <q-banner
           v-if="activeSummaryStep === 9"
           class="bg-primary text-white q-px-lg"
         >
@@ -284,8 +590,7 @@
             />
           </div>
         </div> -->
-        
-        <q-tabs
+        <!-- <q-tabs
           v-model="publishingTab"
           dense
           class="text-grey"
@@ -529,7 +834,7 @@
                     {{ log.msg }}
                   </q-item-section>
                 </q-item>
-                <!-- <q-expansion-item
+                <q-expansion-item
                   v-if="log.type === 'info'"
                   dense
                   dense-toggle
@@ -555,12 +860,12 @@
                       {{ log.data[key] }}
                     </div>
                   </q-item>
-                </q-expansion-item> -->
+                </q-expansion-item>
               </div>
             </q-list>
           </q-tab-panel>
         </q-tab-panels>
-      </q-page>
+      </q-page> -->
     </q-page-container>
   </q-layout>
 </template>
@@ -594,6 +899,7 @@ const showPublishing = ref(false);
 const activeSummaryStep = ref(0);
 const pythonRestoreStatus = ref('');
 const publishingInProgress = ref(true);
+const deployMode = ref('new');
 
 const windowWidth = ref(window.innerWidth);
 const windowHeight = ref(window.innerHeight);
@@ -602,9 +908,17 @@ const handleResize = () => {
   windowWidth.value = window.innerWidth;
   windowHeight.value = window.innerHeight;
 };
+let lastClicked = -1;
+const resetStep = (step: number) => {
+  console.log(`current lastClicked = ${lastClicked}, with resetStep(${step})`);
+  if (!publishingInProgress.value && lastClicked === step) {
+    activeSummaryStep.value = 0;
+    console.log(`reset lastClicked to ${step}`);
+    lastClicked = 0;
+  } else {
+    lastClicked = step;
+  }
 
-const onExit = () => {
-  window.location.href = 'http://dogfood:3939/my-special-app';
 };
 
 const getInitialDeploymentState = async() => {
@@ -691,8 +1005,7 @@ type LogEntry = {
   msg: string,
   data: NameValuePairsMap,
 }
-
-const advancedLog:LogEntry[] = [
+const createDeploymentLog:LogEntry[] = [
   {
     type: 'event',
     msg: 'Create Deployment',
@@ -714,6 +1027,9 @@ const advancedLog:LogEntry[] = [
       time: '2023-08-31T17:55:19.792Z',
     }
   },
+];
+
+const createBundleLog:LogEntry[] = [
   {
     type: 'event',
     msg: 'Create Bundle',
@@ -779,6 +1095,9 @@ const advancedLog:LogEntry[] = [
       totalBytes: 791,
     },
   },
+];
+
+const uploadBundleLog:LogEntry[] = [
   {
     type: 'event',
     msg: 'Upload Bundle',
@@ -793,6 +1112,9 @@ const advancedLog:LogEntry[] = [
       time: '2023-08-31T17:55:19.797Z',
     }
   },
+];
+
+const deployBundleLog:LogEntry[] = [
   {
     type: 'event',
     msg: 'Deploy Bundle',
@@ -865,6 +1187,27 @@ const advancedLog:LogEntry[] = [
     msg: 'Bundle ID: 39787',
     data: {
       time: '2023-08-31T17:55:21.066Z',
+      bundleId: 39787,
+      contentId: '673e277c-0148-42eb-b2a2-d70f8e6b455d',
+      server: 'https://rsc.radixu.com',
+      source: 'server deployment log',
+      taskId: 'p8HpEBKjvRphdVPz',
+    },
+  },
+];
+const runContentLog:LogEntry[] = [
+  {
+    type: 'event',
+    msg: 'Run Content',
+    data: {
+      time: '2023-08-31T17:55:23.894Z',
+    }
+  },
+  {
+    type: 'info',
+    msg: 'Launching FastAPI application...',
+    data: {
+      time: '2023-08-31T17:55:23.894Z',
       bundleId: 39787,
       contentId: '673e277c-0148-42eb-b2a2-d70f8e6b455d',
       server: 'https://rsc.radixu.com',
@@ -956,6 +1299,8 @@ const advancedLog:LogEntry[] = [
       taskId: 'p8HpEBKjvRphdVPz',
     },
   },
+];
+const restorePythonLog:LogEntry[] = [
   {
     type: 'event',
     msg: 'Restore Python Environment',
@@ -1035,25 +1380,8 @@ const advancedLog:LogEntry[] = [
       taskId: 'p8HpEBKjvRphdVPz',
     },
   },
-  {
-    type: 'event',
-    msg: 'Run Content',
-    data: {
-      time: '2023-08-31T17:55:23.894Z',
-    }
-  },
-  {
-    type: 'info',
-    msg: 'Launching FastAPI application...',
-    data: {
-      time: '2023-08-31T17:55:23.894Z',
-      bundleId: 39787,
-      contentId: '673e277c-0148-42eb-b2a2-d70f8e6b455d',
-      server: 'https://rsc.radixu.com',
-      source: 'server deployment log',
-      taskId: 'p8HpEBKjvRphdVPz',
-    },
-  },
+];
+const setVanityURLLog:LogEntry[] = [
   {
     type: 'event',
     msg: 'Set Vanity URL',
@@ -1070,6 +1398,8 @@ const advancedLog:LogEntry[] = [
       path: 'http://dogfood:3939/my-special-app'
     }
   },
+];
+const wrapUpDeploymentLog:LogEntry[] = [
   {
     type: 'event',
     msg: 'Wrapping up Deployment',

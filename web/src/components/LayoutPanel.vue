@@ -4,28 +4,30 @@
   <q-expansion-item
     :default-opened="defaultOpen"
     :expand-icon="expandIcon"
+    header-style="padding: unset;"
+    :group="props.group"
   >
     <template #header>
       <q-item-section avatar>
         <q-icon
-          :name="icon"
+          :name="props.icon"
           size="35px"
         />
       </q-item-section>
 
       <q-item-section>
-        <q-item-label>{{ title }}</q-item-label>
+        <q-item-label>{{ props.title }}</q-item-label>
         <q-item-label
-          v-if="subtitle"
+          v-if="props.subtitle"
           caption
         >
-          {{ subtitle }}
+          {{ props.subtitle }}
         </q-item-label>
         <q-tooltip
-          v-if="tooltip"
+          v-if="props.tooltip"
           anchor="top middle"
         >
-          {{ tooltip }}
+          {{ props.tooltip }}
         </q-tooltip>
       </q-item-section>
     </template>
@@ -40,13 +42,15 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  title: string
-  subtitle?: string
-  icon: string
-  tooltip?: string
-  defaultOpen?: boolean
-  expandIcon?: string
-}>();
+
+const props = defineProps({
+  title: { type: String, required: true },
+  subtitle: { type: String, required: false, default: null },
+  icon: { type: String, required: true },
+  tooltip: { type: String, required: false, default: null },
+  defaultOpen: { type: Boolean, required: false, default: false },
+  expandIcon: { type: String, required: false, default: null },
+  group: { type: String, required: false, default: null },
+});
 </script>
 

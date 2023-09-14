@@ -5,6 +5,7 @@
     title="Destination"
     :subtitle="destinationTitle"
     icon="img:images/posit-logo-only-unofficial.svg"
+    group="main"
   >
     <div class="row  text-grey">
       <div
@@ -113,7 +114,11 @@ const deploymentStore = useDeploymentStore();
 
 const destinationTitle = computed(() => {
   const accountName = deploymentStore.deployment?.target.accountName;
-  if (accountName) {
+  if (dogfoodSelected.value) {
+    return `New deployment on Dogfood`;
+  } else if (coloradoSelected.value) {
+    return `New deployment on Colorado`;
+  } else if (accountName) {
     return `New deployment on ${accountName}`;
   }
   return '';

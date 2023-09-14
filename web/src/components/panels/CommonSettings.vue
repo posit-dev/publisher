@@ -1,12 +1,14 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <LayoutPanel title="Common Settings" subtitle="Name and Description are set" icon="img:images/info.png">
-    <div class="q-ma-md">
-      It is common to set values for these settings.
-    </div>
-
-    <q-input v-if="props.redeploy" v-model="contentID" label="Content ID" square outlined dense dark clearable
+  <LayoutPanel
+    title="Common Settings"
+    subtitle="Name and Description are set"
+    icon="img:images/info.png"
+    group="main"
+  >
+    <q-input
+      v-if="props.redeploy" v-model="contentID" label="Content ID" square outlined dense dark clearable
       hint="Specify the target content ID to be updated" class="q-ma-md" />
     <q-input v-model="contentName" label="Name" square outlined dense dark clearable
       hint="Name your project (different from providing a title)." class="q-ma-md" />
@@ -38,5 +40,6 @@ const updateValue = (values: any[number]) => {
   if (values) {
     thumbnailImage.value = values[0];
   }
-}
+};
+
 </script>
