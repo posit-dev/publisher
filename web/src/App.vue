@@ -122,13 +122,9 @@
             :key="ndx"
             dark
           >
-            <div
-              v-for="key in Object.keys(logMsg)"
-              :key="key+ndx"
-              dark
-            >
-              <span style="font-weight: bold; color: green;">{{ key }}:</span> {{ logMsg[key] }}
-            </div>
+            <span style="font-weight: bold; color: green;">type:</span> {{ logMsg.type }}
+            <span style="font-weight: bold; color: green;">time:</span> {{ logMsg.time }}
+            <span style="font-weight: bold; color: green;">data:</span> {{ logMsg.data }}
             <p />
           </div>
           <p ref="agentLogEnd"> &nbsp; </p>
@@ -157,7 +153,9 @@
                 </div>
               </div>
               <div v-if="key != 'data'">
-                <span style="font-weight: bold; color: green;">{{ key }}:</span> {{ logMsg[key] }}
+                <span style="font-weight: bold; color: green;">type:</span> {{ logMsg.type }}
+                <span style="font-weight: bold; color: green;">time:</span> {{ logMsg.time }}
+                <span style="font-weight: bold; color: green;">data:</span> {{ logMsg.data }}
               </div>
             </div>
             <p />
@@ -172,13 +170,9 @@
             :key="ndx"
             dark
           >
-            <div
-              v-for="key in Object.keys(logMsg)"
-              :key="key+ndx"
-              dark
-            >
-              <span style="font-weight: bold; color: green;">{{ key }}:</span> {{ logMsg[key] }}
-            </div>
+            <span style="font-weight: bold; color: green;">type:</span> {{ logMsg.type }}
+            <span style="font-weight: bold; color: green;">time:</span> {{ logMsg.time }}
+            <span style="font-weight: bold; color: green;">data:</span> {{ logMsg.data }}
             <p />
           </div>
         </div>
@@ -191,13 +185,9 @@
             :key="ndx"
             dark
           >
-            <div
-              v-for="key in Object.keys(logMsg)"
-              :key="key+ndx"
-              dark
-            >
-              <span style="font-weight: bold; color: green;">{{ key }}:</span> {{ logMsg[key] }}
-            </div>
+            <span style="font-weight: bold; color: green;">type:</span> {{ logMsg.type }}
+            <span style="font-weight: bold; color: green;">time:</span> {{ logMsg.time }}
+            <span style="font-weight: bold; color: green;">data:</span> {{ logMsg.data }}
             <p />
           </div>
         </div>
@@ -210,13 +200,9 @@
             :key="ndx"
             dark
           >
-            <div
-              v-for="key in Object.keys(logMsg)"
-              :key="key+ndx"
-              dark
-            >
-              <span style="font-weight: bold; color: green;">{{ key }}:</span> {{ logMsg[key] }}
-            </div>
+            <span style="font-weight: bold; color: green;">type:</span> {{ logMsg.type }}
+            <span style="font-weight: bold; color: green;">time:</span> {{ logMsg.time }}
+            <span style="font-weight: bold; color: green;">data:</span> {{ logMsg.data }}
             <p />
           </div>
         </div>
@@ -264,7 +250,7 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
 import { useEventStore } from 'src/stores/events';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { scroll as qScroll } from 'quasar';
 const { getScrollTarget, setVerticalScrollPosition } = qScroll;
@@ -311,7 +297,7 @@ onMounted(() => {
   setInterval(() => {
     if (agentLogEnd.value && lastAgentLogLength !== eventStore.agentLog.length) {
       lastAgentLogLength = eventStore.agentLog.length;
-      const el = agentLogEnd.value;
+      const el = agentLogEnd.value as HTMLDivElement;
       const target = getScrollTarget(el);
       const offset = el.offsetTop;
       const duration = 1000;
