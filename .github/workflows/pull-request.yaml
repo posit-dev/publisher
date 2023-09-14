@@ -397,7 +397,7 @@ jobs:
           path: connect_ip.txt
 
   test-windows:
-    needs: build-agent
+    needs: [build-agent, start-connect]
     runs-on: windows-latest
     steps:
       -
@@ -452,7 +452,7 @@ jobs:
           just test/publishing-tests $env:os
 
   test-macos:
-    needs: build-agent
+    needs: [build-agent, start-connect]
     runs-on: macos-latest
     steps:
       -
@@ -565,7 +565,7 @@ jobs:
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
   test-linux-amd64:
-    needs:  [build-agent, build-linux-amd64]
+    needs:  [build-agent, build-linux-amd64, start-connect]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -681,7 +681,7 @@ jobs:
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
   test-linux-arm64:
-    needs:  [build-agent, build-linux-arm64]
+    needs:  [build-agent, build-linux-arm64, start-connect]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -748,22 +748,22 @@ jobs:
       #     export CONNECT_IP="$(cat connect_ip.txt)"
       #     just test/ui-client ${os}
 
-  teardown-connect:
-    runs-on: ubuntu-latest
-    needs: [test-linux-arm64, test-linux-amd64, test-windows, test-macos]
-    if: always()
-    steps:
-      -
-        name: python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
-      - 
-        name: Teardown Fuzzbucket
-        env: 
-          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
-          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
-          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
-        run: |
-          pip install fuzzbucket-client
-          fuzzbucket-client rm connect-ci
+  # teardown-connect:
+  #   runs-on: ubuntu-latest
+  #   needs: [test-linux-arm64, test-linux-amd64, test-windows, test-macos]
+  #   if: always()
+  #   steps:
+  #     -
+  #       name: python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: 3.11
+  #     - 
+  #       name: Teardown Fuzzbucket
+  #       env: 
+  #         FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+  #         FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+  #         FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
+  #       run: |
+  #         pip install fuzzbucket-client
+  #         fuzzbucket-client rm connect-ci
