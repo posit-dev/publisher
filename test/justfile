@@ -1,7 +1,7 @@
 set shell := ["bash", "-uc"]
 
 export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
-export CONNECT_API_KEY := env_var_or_default('SAVED_API_KEY', `echo -n admin | md5sum | cut -f1 -d" "`)
+
 _tag := "rstudio/connect-client"
 
 build target:
@@ -48,6 +48,7 @@ local_init-connect target:
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
   chmod 600 .fuzzbucket-ssh-key
   export SSH_OPTIONS="-i.fuzzbucket-ssh-key" && \
+  export CONNECT_API_KEY=$(echo -n admin | md5sum | cut -f1 -d" ") && \
   export CONNECT_SERVER="http://$(python setup/connect-setup.py):3939" && \
   export TEST_SCENARIO="${TEST_SCENARIO}" && \
   just publishing-tests {{target}} clean
