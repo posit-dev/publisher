@@ -47,10 +47,11 @@ local_init-connect target:
   pip install -r ./setup/requirements.txt
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
   chmod 600 .fuzzbucket-ssh-key
-  export SSH_OPTIONS="-i.fuzzbucket-ssh-key" && \
-  export CONNECT_API_KEY=$(echo -n admin | md5sum | cut -f1 -d" ") && \
-  export CONNECT_SERVER="http://$(python setup/connect-setup.py):3939" && \
-  export TEST_SCENARIO="${TEST_SCENARIO}" && \
+  export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
+  export TEST_SCENARIO=${TEST_SCENARIO}
+  export CONNECT_API_KEY="$(python ./setup/gen_apikey.py 'admin')"
+  echo "CONNECT_API_KEY: ${CONNECT_API_KEY}"
+  export CONNECT_SERVER="http://$(python setup/connect-setup.py):3939"
   just publishing-tests {{target}} clean
 
 # use this when testing against linux os
@@ -63,9 +64,10 @@ docker_init-connect target:
   fi
   if [[ {{target}} =~ "linux" ]]; then
     docker run \
-    --platform "${_platform}" \
+    --platform ${_platform} \
     -e DOCKER="false" \
-    -e CONNECT_SERVER="${CONNECT_SERVER}" \
+    -e CONNECT_SERVER=${CONNECT_SERVER} \
+    -e CONNECT_API_KEY=${CONNECT_API_KEY} \
     -e TEST_SCENARIO=${TEST_SCENARIO} \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
@@ -77,6 +79,10 @@ publishing-tests target:
   #!/usr/bin/env bash
   echo "TEST SCENARIO: ${TEST_SCENARIO}"
   pip install -r ./setup/requirements.txt
+  export CONNECT_API_KEY=${CONNECT_API_KEY}
+  export CONNECT_SERVER=${CONNECT_SERVER}
+  source ./environments/.basic
+  export CMD_ARGS="${CMD_ARGS}"
   # python setup/client-setup.py
   if [[ ${TEST_SCENARIO} == "all_deployments" ]]; then
     deployments=$(python deploy_helper.py)
@@ -85,17 +91,10 @@ publishing-tests target:
     do
       DEPLOYMENT=./test/sample-content/python/$i
       echo "DEPLOYMENT:${DEPLOYMENT}"
-      source ./environments/.${TEST_SCENARIO}
-      export CMD_ARGS="${CMD_ARGS}" && \
-      export CONNECT_API_KEY=$(echo -n admin | md5sum | cut -f1 -d" ") && \
-      export CONNECT_SERVER="${CONNECT_SERVER}" && \
       just ../web/build-and-test-ci-e2e {{target}}
     done
   else
-      source ./environments/.basic
-      export CMD_ARGS="${CMD_ARGS}" && \
-      export CONNECT_API_KEY=$(echo -n admin | md5sum | cut -f1 -d" ") && \
-      export CONNECT_SERVER="${CONNECT_SERVER}" && \
+
       just ../web/build-and-test-ci-e2e {{target}}
   fi
 
