@@ -446,9 +446,9 @@ jobs:
           FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
           FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
-          $env:CONNECT_IP="$(cat connect_ip.txt)"
+          $env:CONNECT_SERVER="$(cat connect_ip.txt)"
           cat connect_ip.txt
-          echo $CONNECT_IP
+          echo $CONNECT_SERVER
           just test/publishing-tests $env:os
 
   test-macos:
@@ -620,7 +620,7 @@ jobs:
           os: linux-amd64
           DOCKER: "false"
         run: |
-          export CONNECT_IP="$(cat connect_ip.txt)"
+          export CONNECT_SERVER="$(cat connect_ip.txt)"
           export TEST_SCENARIO="all_deployments"
           just test/docker_init-connect ${os}
 

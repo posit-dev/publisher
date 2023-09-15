@@ -48,6 +48,8 @@ local_init-connect target:
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
   chmod 600 .fuzzbucket-ssh-key
   export SSH_OPTIONS="-i.fuzzbucket-ssh-key" && \
+  export CONNECT_API_KEY=$(echo -n admin | md5sum | cut -f1 -d" ") && \
+  export CONNECT_SERVER="http://$(python setup/connect-setup.py):3939" && \
   export TEST_SCENARIO="${TEST_SCENARIO}" && \
   just publishing-tests {{target}} clean
 
@@ -63,6 +65,7 @@ docker_init-connect target:
     docker run \
     --platform "${_platform}" \
     -e DOCKER="false" \
+    -e CONNECT_SERVER="${CONNECT_SERVER}" \
     -e TEST_SCENARIO=${TEST_SCENARIO} \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
@@ -85,14 +88,14 @@ publishing-tests target:
       source ./environments/.${TEST_SCENARIO}
       export CMD_ARGS="${CMD_ARGS}" && \
       export CONNECT_API_KEY=$(echo -n admin | md5sum | cut -f1 -d" ") && \
-      export CONNECT_SERVER="http://$(python setup/connect-setup.py):3939" && \
+      export CONNECT_SERVER="${CONNECT_SERVER}" && \
       just ../web/build-and-test-ci-e2e {{target}}
     done
   else
       source ./environments/.basic
       export CMD_ARGS="${CMD_ARGS}" && \
       export CONNECT_API_KEY=$(echo -n admin | md5sum | cut -f1 -d" ") && \
-      export CONNECT_SERVER="http://$(python setup/connect-setup.py):3939" && \
+      export CONNECT_SERVER="${CONNECT_SERVER}" && \
       just ../web/build-and-test-ci-e2e {{target}}
   fi
 
