@@ -51,7 +51,7 @@ local_init-connect target:
   export TEST_SCENARIO=${TEST_SCENARIO}
   export CONNECT_API_KEY="$(python ./setup/gen_apikey.py 'admin')"
   export CONNECT_SERVER="http://$(python setup/connect-setup.py):3939"
-  just ../web/build 
+  just ../web/build
   just publishing-tests {{target}} clean
 
 # use this when testing against linux os
@@ -72,7 +72,7 @@ docker_init-connect target:
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \
-    just test/local_init-connect {{target}} clean
+    just test/publishing-tests {{target}} clean
   fi
 
 publishing-tests target:
