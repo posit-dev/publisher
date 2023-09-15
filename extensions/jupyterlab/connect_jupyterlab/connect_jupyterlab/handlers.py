@@ -6,12 +6,15 @@ import tornado
 
 
 class RouteHandler(APIHandler):
-    # The following decorator should be present on all verb methods
-    # (head, get, post, patch, put, delete, options) to ensure
-    # only authorized user can request the Jupyter server
     @tornado.web.authenticated
     def post(self):
+        """post initiates the publishing process. Details TBD."""
         self.finish(json.dumps({"data": "POST /connect-jupyterlab/publish endpoint!"}))
+
+    @tornado.web.authenticated
+    def get(self):
+        """get returns the status of the publishing process. Details TBD."""
+        self.finish(json.dumps({"data": "GET /connect-jupyterlab/publish endpoint!"}))
 
 
 def setup_handlers(web_app):
