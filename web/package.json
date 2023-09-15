@@ -16,8 +16,8 @@
     "test-win:e2e:ci": "start-server-and-test --expect 401 'just ../start-agent-for-e2e' http-get://127.0.0.1:9000 cypress-win:run:ci",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
-    "cypress:run:ci": "cypress run --env publishing-token=abc123,CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS --browser chrome",
-    "cypress-win:run:ci": "cypress run --env publishing-token=abc123,CYPRESS_CONNECT_ADDRESS=%CYPRESS_CONNECT_ADDRESS% --browser chrome"
+    "cypress:run:ci": "cypress run --env publishing-token=abc123,CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS",
+    "cypress-win:run:ci": "cypress run --env publishing-token=abc123,CYPRESS_CONNECT_ADDRESS=%CYPRESS_CONNECT_ADDRESS%"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.5",
