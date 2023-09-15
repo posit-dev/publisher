@@ -77,6 +77,7 @@ docker_init-connect target:
 
 publishing-tests target:
   #!/usr/bin/env bash
+  just ../web/build
   echo "TEST SCENARIO: ${TEST_SCENARIO}"
   pip install -r ./setup/requirements.txt
   export CONNECT_API_KEY=${CONNECT_API_KEY}
@@ -95,7 +96,7 @@ publishing-tests target:
     done
   else
       source ./environments/.basic
-      export CMD_ARGS="${CMD_ARGS}"    
+      export CMD_ARGS="${CMD_ARGS}"
       just ../web/build-and-test-ci-e2e {{target}}
   fi
 
