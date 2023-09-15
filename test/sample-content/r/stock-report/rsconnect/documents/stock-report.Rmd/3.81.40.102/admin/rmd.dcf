@@ -1,0 +1,13 @@
+name: rmd
+title: rmd
+username: admin
+account: admin
+server: 3.81.40.102
+hostUrl: http://3.81.40.102:3939/__api__
+appId: 2
+bundleId: 2
+url: http://3.81.40.102:3939/content/8f023de3-b00d-449f-8a09-7982abb67a00/
+when: 1664807637.75403
+lastSyncTime: 1664807637.75408
+asMultiple: FALSE
+asStatic: FALSE

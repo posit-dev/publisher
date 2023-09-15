@@ -1,0 +1,28 @@
+---
+title: "Portfolio Updates"
+output: blastula::blastula_email
+---
+
+Hi Team,
+  
+Here is information on the **`r params$portfolio`** as of `r Sys.Date()`:
+
+```{r}
+# embed a table with some of the numeric data in the email 
+sign_formatter <- formatter("span",
+  style = x ~ formattable::style(color = ifelse(x > 0, "green",
+    ifelse(x < 0, "red", "black")
+  ))
+)
+
+portfolio_selected %>%
+  arrange(desc(date)) %>%
+  head() %>%
+  format_table(
+    x = .,
+    list(returns = sign_formatter)
+  )
+```
+
+
+Let me know if you have any questions!

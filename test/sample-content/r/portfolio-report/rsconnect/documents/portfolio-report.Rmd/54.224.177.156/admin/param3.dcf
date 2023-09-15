@@ -1,0 +1,13 @@
+name: param3
+title: param
+username: admin
+account: admin
+server: 54.224.177.156
+hostUrl: http://54.224.177.156:3939/__api__
+appId: 4
+bundleId: 4
+url: http://54.224.177.156:3939/content/2c8888b4-ee15-4f31-84ca-0b65d0941494/
+when: 1664568102.06082
+lastSyncTime: 1664568102.06083
+asMultiple: FALSE
+asStatic: FALSE

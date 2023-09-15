@@ -1,0 +1,26 @@
+{
+    "id": "FA57FEA9",
+    "path": "~/work/connect/examples/portfolio-report/portfolio-report.Rmd",
+    "project_path": null,
+    "type": "r_markdown",
+    "hash": "1141882008",
+    "contents": "",
+    "dirty": false,
+    "created": 1664804971067.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "9,30",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1661350385,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1661350385,
+    "read_only": false,
+    "read_only_alternatives": []
+}

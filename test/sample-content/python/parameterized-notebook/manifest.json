@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "locale": "en_US.UTF-8",
+  "metadata": {
+    "appmode": "jupyter-static",
+    "entrypoint": "parameterized-notebook.ipynb",
+    "has_parameter": true
+  },
+  "python": {
+    "version": "3.10.8",
+    "package_manager": {
+      "name": "pip",
+      "version": "22.3",
+      "package_file": "requirements.txt"
+    }
+  },
+  "files": {
+    "parameterized-notebook.ipynb": {
+      "checksum": "0bf344b210cd5d16a92044642cae34fc"
+    },
+    "requirements.txt": {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e"
+    }
+  }
+}

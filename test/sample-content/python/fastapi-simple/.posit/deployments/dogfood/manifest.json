@@ -1,0 +1,1 @@
+{"version":1,"locale":"","metadata":{"appmode":"python-fastapi","entrypoint":"simple.py"},"python":{"version":"3.11.4","package_manager":{"name":"pip","package_file":"requirements.txt"}},"packages":{},"files":{".":{"checksum":""},"meta.yaml":{"checksum":""},"requirements.in":{"checksum":""},"requirements.txt":{"checksum":""},"simple.py":{"checksum":""}}}

@@ -1,0 +1,91 @@
+---
+title: "Version and deploy your model with vetiver"
+format:
+  html:
+    toc: true
+---
+
+# Outline
+
+This Jump Start example provides an example for you to follow along with to:
+
+- Version a trained model using [pins](https://docs.posit.co/connect/user/pins/)
+- Deploy the model as an API
+
+# Prework: Environment Variables
+
+Prior to beginning, environment variables must be set in your development environment for vetiver to work on Connect.
+
+1.  Create an API key for Posit Connect: [Learn How](https://docs.posit.co/connect/user/api-keys/)
+2.  Create a `.Renviron` file in your working directory to store the API key and Posit Connect server address variables.
+
+Example `.Renviron` file contents:
+
+```{verbatim}
+CONNECT_SERVER="<your-connect-server>"
+CONNECT_API_KEY="<your-connect-api-key>"
+```
+
+Need help? Learn more about [environment variables and managing them in R](https://rviews.rstudio.com/2017/04/19/r-for-enterprise-understanding-r-s-startup/).
+
+# Create a vetiver model
+
+For this example, let’s work with data on fuel efficiency for cars to predict miles per gallon.
+
+```{r}
+car_mod <- lm(mpg ~ ., data = mtcars)
+```
+
+This model uses the `lm()` function in base R, but you can use vetiver with [many kinds of models trained in R](https://vetiver.rstudio.com/get-started/#installation).
+
+We can create a `vetiver_model()` in R from the trained model; a vetiver model object collects the information needed to store, version, and deploy a trained model.
+
+```{r}
+library(vetiver)
+v <- vetiver_model(car_mod, "cars-mpg")
+v
+```
+
+Think of this vetiver model as a deployable model object.
+
+# Store and version your model
+
+You can store and version your model by using Connect as a pins "board". 
+
+:::{.callout-tip}
+For more on using pins, see the pins tutorial Jump Start example. 
+:::
+
+When we write the vetiver model to our board, the binary model object is stored on our board together with necessary metadata, like the packages needed to make a prediction and the model's input data prototype for checking new data at prediction time.
+
+```{r}
+library(pins)
+board <- board_rsconnect()
+board %>% vetiver_pin_write(v)
+```
+
+:::{.callout-note}
+Note that the model was stored as `my.username/cars-mpg`, where `my.username` is _your_ username on your Connect server.
+:::
+
+If you train a different model (say, a different kind of model or with updated data) you can store the new model in the same pin; you will have access to both.
+
+# Deploy your model
+
+You can deploy your model with the function `vetiver_deploy_rsconnect()`.
+
+:::{.callout-tip}
+*Before you run the next code chunk*: Update `my.username` to your own username on your Connect server.
+For real applications, the username for the pin and the account deploying the model API do not have to be the same.
+:::
+
+```{r}
+library(plumber)
+vetiver_deploy_rsconnect(
+  board = board, 
+  name = "my.username/pin_name",
+  account = "my.username"
+)
+```
+
+Now you can interact with the visual documentation for your deployed model at its new URL on Connect, or [even get predictions from R](https://docs.posit.co/connect/user/vetiver/#predict-from-your-model-endpoint).

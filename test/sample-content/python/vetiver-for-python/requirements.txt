@@ -1,0 +1,5 @@
+pins
+python-dotenv
+rsconnect-python==1.14.0
+scikit-learn
+vetiver>=0.2.0

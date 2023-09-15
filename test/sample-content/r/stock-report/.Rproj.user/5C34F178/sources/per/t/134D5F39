@@ -1,0 +1,26 @@
+{
+    "id": "134D5F39",
+    "path": "~/work/connect/test/performance-test/load-test-plumber/plumber.R",
+    "project_path": null,
+    "type": "r_source",
+    "hash": "2867115700",
+    "contents": "",
+    "dirty": false,
+    "created": 1664805179689.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "28,24",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1664551276,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1664551276,
+    "read_only": false,
+    "read_only_alternatives": []
+}

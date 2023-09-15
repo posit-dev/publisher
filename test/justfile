@@ -1,7 +1,7 @@
 set shell := ["bash", "-uc"]
 
 export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
-
+export CONNECT_API_KEY := env_var_or_default('SAVED_API_KEY', `echo -n admin | md5sum | cut -f1 -d" "`)
 _tag := "rstudio/connect-client"
 
 build target:
@@ -41,22 +41,61 @@ build-clean target:
     --tag {{_tag}}-{{target}}:latest \
     ./docker
 
+# use this to test your local os
 local_init-connect target:
   #!/usr/bin/env bash
   pip install -r ./setup/requirements.txt
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
   chmod 600 .fuzzbucket-ssh-key
   export SSH_OPTIONS="-i.fuzzbucket-ssh-key" && \
-  export CONNECT_IP="$(python setup/connect-setup.py)" && \
-  just publishing-tests {{target}}
+  export CONNECT_SERVER="http://$(python setup/connect-setup.py):3939" && \
+  export TEST_SCENARIO="${TEST_SCENARIO}" && \
+  just publishing-tests {{target}} clean
+
+# use this when testing against linux os
+docker_init-connect target:
+  #!/usr/bin/env bash
+  if [[ {{target}} =~ "linux-amd64" ]]; then
+    _platform="linux/amd64"
+  elif [[ {{target}} =~ "linux-arm64" ]]; then
+    _platform="linux/arm64"
+  fi
+  if [[ {{target}} =~ "linux" ]]; then
+    docker run \
+    --platform "${_platform}" \
+    -e DOCKER="false" \
+    -e TEST_SCENARIO=${TEST_SCENARIO} \
+    -v "$(pwd)"/../:/publishing-client \
+    -w /publishing-client/ \
+    --rm {{_tag}}-{{target}} \
+    just test/local_init-connect {{target}} clean
+  fi
 
 publishing-tests target:
   #!/usr/bin/env bash
+  echo "TEST SCENARIO: ${TEST_SCENARIO}"
   pip install -r ./setup/requirements.txt
-  source ./environments/.basic
-  python setup/client-setup.py
-  export CMD_ARGS="$CMD_ARGS"
-  just ../web/build-and-test-ci-e2e {{target}}
+  # python setup/client-setup.py
+  if [[ ${TEST_SCENARIO} == "all_deployments" ]]; then
+    deployments=$(python deploy_helper.py)
+    echo "deployments: ${deployments}"
+    for i in ${deployments}
+    do
+      DEPLOYMENT=./test/sample-content/python/$i
+      echo "DEPLOYMENT:${DEPLOYMENT}"
+      source ./environments/.${TEST_SCENARIO}
+      export CMD_ARGS="${CMD_ARGS}"
+      just ../web/build-and-test-ci-e2e {{target}}
+    done
+  else
+      source ./environments/.basic
+      export CMD_ARGS="${CMD_ARGS}"
+      just ../web/build-and-test-ci-e2e {{target}}
+  fi
+
+clean:
+  #!/usr/bin/env bash
+  rm -rf ./sample-content/python/*/rsconnect-python/
 
 run-client target:
   #!/usr/bin/env bash
@@ -96,49 +135,32 @@ build-binary target:
   fi
 
 
-local-ui-client target:
-  #!/usr/bin/env bash
-  if [[ {{target}} =~ "linux" ]]; then
-    docker run \
-    -v "$(pwd)"/../:/publishing-client \
-    -w /publishing-client/ \
-    --rm {{_tag}}-{{target}} ../bin/{{target}}/connect-client publish-ui ./test/content/simple-notebook/ --listen=localhost:9999
-  elif [[ {{target}} =~ "windows" ]]; then
-    set shell := ["powershell.exe", "-c"] \
-    ..\bin\artifact\windows-amd64\connect-client.exe publish-ui test/content/simple-notebook/ --listen=localhost:9999
-  elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
-    ../bin/darwin-amd64/connect-client publish-ui \
-    sample-content/fastapi-simple --listen=127.0.0.1:9999
-  fi
-    docker run \
-    --platform "${_platform}" \
-    -v "$(pwd)"/../:/publishing-client \
-    -w /publishing-client/ \
-    -e DOCKER="false" \
-    --rm {{_tag}}-{{target}} just build
-  elif [[ {{target}} =~ "windows" ]]; then
-    just _test-client windows-amd64
-  elif [[ {{target}} =~ "macos" ]]; then
-    just _test-client darwin-amd64
-  fi
+# local-ui-client target:
+#   #!/usr/bin/env bash
+#   if [[ {{target}} =~ "linux" ]]; then
+#     docker run \
+#     -v "$(pwd)"/../:/publishing-client \
+#     -w /publishing-client/ \
+#     --rm {{_tag}}-{{target}} ../bin/{{target}}/connect-client publish-ui ./test/content/simple-notebook/ --listen=localhost:9999
+#   elif [[ {{target}} =~ "windows" ]]; then
+#     set shell := ["powershell.exe", "-c"] \
+#     ..\bin\artifact\windows-amd64\connect-client.exe publish-ui test/content/simple-notebook/ --listen=localhost:9999
+#   elif [[ {{target}} =~ "macos" || {{target}} =~ "darwin" ]]; then
+#     ../bin/darwin-amd64/connect-client publish-ui \
+#     sample-content/fastapi-simple --listen=127.0.0.1:9999
+#   fi
+#     docker run \
+#     --platform "${_platform}" \
+#     -v "$(pwd)"/../:/publishing-client \
+#     -w /publishing-client/ \
+#     -e DOCKER="false" \
+#     --rm {{_tag}}-{{target}} just build
+#   elif [[ {{target}} =~ "windows" ]]; then
+#     just _test-client windows-amd64
+#   elif [[ {{target}} =~ "macos" ]]; then
+#     just _test-client darwin-amd64
+#   fi
 
-ui-client target:
-  #!/usr/bin/env bash
-  if [[ {{target}} =~ "linux-amd64" ]]; then
-    _platform="linux/amd64"
-  elif [[ {{target}} =~ "linux-arm64" ]]; then
-    _platform="linux/arm64"
-  fi
-  if [[ {{target}} =~ "linux" ]]; then
-    docker run \
-    --platform "${_platform}" \
-    -e DOCKER="false" \
-    -e CONNECT_IP=$CONNECT_IP \
-    -v "$(pwd)"/../:/publishing-client \
-    -w /publishing-client/ \
-    --rm {{_tag}}-{{target}} \
-    just test/publishing-tests {{target}}
-  fi
 
 _test-client target:
   bats --tap -T -r ./bats/

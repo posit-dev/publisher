@@ -1,0 +1,13 @@
+name: portfolio-report-email
+title: portfolio-report-email
+username: kevin
+account: kevin
+server: 54.90.175.44
+hostUrl: http://54.90.175.44:3939/__api__
+appId: 25
+bundleId: 25
+url: http://54.90.175.44:3939/content/db06f8ba-5809-46f5-8d73-b0cb3af27fb9/
+when: 1668704051.78865
+lastSyncTime: 1668704051.78866
+asMultiple: FALSE
+asStatic: FALSE

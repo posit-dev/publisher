@@ -1,0 +1,106 @@
+---
+title: "Version and deploy your model with vetiver"
+format:
+  html:
+    toc: true
+---
+
+# Outline
+
+This Jump Start example provides an example for you to follow along with to:
+
+- Version a trained model using [pins](https://docs.posit.co/connect/user/pins/)
+- Deploy the model as an API
+
+# Prework: Environment Variables
+
+Prior to beginning, environment variables must be set in your development environment for vetiver to work on Connect.
+
+1.  Create an API key for Posit Connect: [Learn How](https://docs.posit.co/connect/user/api-keys/)
+2.  Create a `.env` file in your working directory to store the API key and Posit Connect server address variables.
+
+Example `.env` file contents:
+
+```{verbatim}
+CONNECT_SERVER=<your-connect-server>
+CONNECT_API_KEY=<your-connect-api-key>
+```
+
+# Create a vetiver model
+
+For this example, let’s work with data on fuel efficiency for cars to predict miles per gallon.
+
+```{python}
+from vetiver.data import mtcars
+from sklearn import linear_model
+
+car_mod = linear_model.LinearRegression().fit(mtcars.drop(columns="mpg"), mtcars["mpg"])
+```
+
+This model uses the `LinearRegression()` model in scikit-learn, but you can use vetiver with [many kinds of models trained in Python](https://vetiver.rstudio.com/get-started/#installation).
+
+We can create a `VetiverModel()` in Python from the trained model; a vetiver model object collects the information needed to store, version, and deploy a trained model.
+
+```{python}
+from vetiver import VetiverModel
+v = VetiverModel(car_mod, model_name = "my.username/cars-mpg", 
+                ptype_data = mtcars)
+v.description
+```
+
+Think of this vetiver model as a deployable model object.
+
+:::{.callout-note}
+Note that the model was stored as `my.username/cars-mpg`, where `my.username` is _your_ username on your Connect server.
+:::
+
+# Store and version your model
+
+You can store and version your model by using Connect as a pins "board". 
+
+:::{.callout-tip}
+For more on using pins for Python, see the [Connect pins docs](https://docs.posit.co/connect/user/python-pins/). 
+:::
+
+When we write the vetiver model to our board, the binary model object is stored on our board together with necessary metadata, like the packages needed to make a prediction and the model's input data prototype for checking new data at prediction time.
+
+```{python}
+import os
+from pins import board_rsconnect
+from vetiver import vetiver_pin_write
+from dotenv import load_dotenv
+
+load_dotenv()
+
+rsc_server = os.getenv("CONNECT_SERVER")
+rsc_key = os.getenv("CONNECT_API_KEY")
+
+board = board_rsconnect(api_key = rsc_key, server_url = rsc_server, allow_pickle_read = True)
+vetiver_pin_write(board, v)
+```
+
+If you train a different model (say, a different kind of model or with updated data) you can store the new model in the same pin; you will have access to both.
+
+# Deploy your model
+
+You can deploy your model with the function `deploy_rsconnect()`.
+
+:::{.callout-tip}
+*Before you run the next code chunk*: Update `my.username` to your own username on your Connect server.
+:::
+
+```{python}
+from rsconnect.api import RSConnectServer
+from vetiver import deploy_rsconnect
+
+connect_server = RSConnectServer(url = rsc_server, api_key = rsc_key)
+
+deploy_rsconnect(
+  connect_server = connect_server, 
+  board = board, 
+  pin_name = "my.username/cars-mpg"
+)
+```
+  
+Now you can interact with the visual documentation for your deployed model at its new URL on Connect, or [even get predictions from Python](https://docs.posit.co/connect/user/vetiver/#predict-from-your-model-endpoint).
+  

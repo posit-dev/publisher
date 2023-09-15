@@ -1,0 +1,126 @@
+---
+title: "Pins Tutorial: Usage and Deployment"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+`r if(Sys.getenv('CONNECT_SERVER') == '') { "<h4>ERROR: You must set the CONNECT_SERVER environment variable</h4>\n" }` `r if(Sys.getenv('CONNECT_API_KEY') == '') { "<h4>ERROR: You must set the CONNECT_API_KEY environment variable</h4>\n" }` `r if(Sys.getenv('CONNECT_API_KEY') == '' || Sys.getenv('CONNECT_SERVER') == '') { knitr::knit_exit() }`
+
+# Purpose
+
+This document provides a follow-along example of:
+
+-   Creating a pin on Posit Connect
+-   Retrieving a pin from Posit Connect
+-   Publishing content that uses a pin to Posit Connect
+
+# Prework - Environment Variables
+
+Prior to beginning, environment variables must be set in your development environment for pins to work.
+
+1.  Create an API key from Posit Connect: [Learn How](https://docs.posit.co/connect/user/api-keys/)\
+2.  Create a `.Renviron` file in this directory to store the API key and Posit Connect server address variables.
+
+```{=html}
+<!-- -->
+```
+    # Example .Renviron file contents
+
+    CONNECT_SERVER="<your-connect-server>"
+    CONNECT_API_KEY="<your-connect-api-key>"
+
+Need help? Learn more about [environment variables and managing them in R](https://rviews.rstudio.com/2017/04/19/r-for-enterprise-understanding-r-s-startup/).
+
+# Creating a pin
+
+Let's say we are running an important analysis that involves body temperature measurements of beavers. Let's look at our data first.
+
+```{r}
+library(datasets)
+head(beaver1)
+```
+
+Nice looking data!
+
+Now we want to pin this data to Posit Connect so it is also accessible to our colleagues for their important work and we don't have to email this around as a csv file. Let's get started!
+
+## Register the board
+
+First, **register the board** so your session knows that it can place content on your Connect board:
+
+```{r}
+board <- pins::board_connect(auth = "envvar")
+```
+
+## Pin the data
+
+Now we want to **pin our data** to Posit Connect.
+
+*Before you run this code chunk*: Update the `name = "mydata"` parameter to give your pin a unique name identifier on the server.
+
+```{r}
+pins::pin_write(board, beaver1, name = "mydata", description = "Beaver Body Temperature Measurements")
+```
+
+Take a moment to switch to the Posit Connect content dashboard and give yourself a pat on the back. **Your data is now pinned!**
+
+## Visit your new pin
+
+From the dashboard, you can adjust the user access permissions, add collaborators, and even give your pin a custom content URL.
+
+```{r, echo=FALSE, out.width = '100%', out.extra = 'style="background-color: #447099; padding:5px;"'}
+knitr::include_graphics("images/pinned_to_connect.png")
+```
+
+# Retrieving a pin
+
+Now let's pretend you're a colleague and you want to access this data for your own analysis.
+
+Feel free to put on a hat if it helps you to get into character. Keep in mind that your colleague won't have access to your environment with your API key -- this is by design! We don't recommend you share API keys with other people. For someone else to retrieve your pin, two things need to happen:
+
+1.  ***You need*** to give them permission by adjusting the **Access Settings** on your Pin in the Posit Connect content dashboard.
+2.  ***They need*** to generate an API key from their own Posit Connect account, just like you did way back in the **Prework** section.
+
+When you view your pin on Connect, you'll notice there is some header information included for pin retrieval. Let's copy that code into our analysis and retrieve the Pin.
+
+Replace the code section below with the sample from your own pin:
+
+```{r}
+# Example Retrieval Code:
+
+# library(pins)
+# board <- board_connect(server = "https://posit-server.com")
+# pin_read(board, "my.username/my.pin") 
+```
+
+Now you, or anyone you have shared the pin with, can access this information in a secure, versioned manner.
+
+Fun fact! Pins seek to make it both easy and fast to share data. Pins will automatically cache remote pins locally so it's fast to access data, but will always check to ensure that it's up-to-date so you're never using stale data.
+
+# Using pins in content
+
+So you think you're hot stuff and off and running? For now, perhaps. But let's say you want to publish something to Posit Connect (like this RMD file), which creates or updates a pin. A good reason for this would be because you want to use Connect's scheduling feature to make an ETL (extract, transform, and load) process that keeps your pin up-to-date. That way, downstream apps or analyses can point to this current pin and stay current and you don't have to re-deploy that app or analysis every time the data updates! Now *that's* working smart!
+
+## Try publishing
+
+Go ahead, try **publishing this document to your Posit Connect server** right now.
+
+**If your server is configured to allow it, you shouldn't need to provide your `CONNECT_SERVER` and `CONNECT_API_KEY` environment variables again.**
+
+But if you see this error message:
+
+```{r, echo=FALSE, out.width = '100%', out.extra = 'style="background-color: #447099; padding:5px;"'}
+knitr::include_graphics("images/env_var_error.png")
+```
+
+Simply go to the Posit Connect content settings panel, select the **Vars** option and create environment variables for `CONNECT_API_KEY` and `CONNECT_SERVER` - values will appear in plain text until you hit **Save**.
+
+Click the **Refresh Report** button to re-render your document with the new environment variables in place. Hold breath... and...
+
+```{r, echo=FALSE, out.width = '100%', out.extra = 'style="background-color: #447099; padding:5px;"'}
+knitr::include_graphics("images/deploy_success.png")
+```
+
+Voilà! Congratulations! You're a pinning machine. **You've now deployed content that includes references to a pinned object.**. You're ready to incorporate pins as part of a more efficient workflow. Congratulations!

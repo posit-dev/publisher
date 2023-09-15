@@ -1,0 +1,13 @@
+name: portfolio-report
+title: portfolio-report
+username: admin
+account: admin
+server: 54.196.215.149
+hostUrl: http://54.196.215.149:3939/__api__
+appId: 39
+bundleId: 42
+url: http://54.196.215.149:3939/content/856ae898-4aef-4155-964d-9d4e772e8221/
+when: 1661350397.65685
+lastSyncTime: 1661350397.65685
+asMultiple: TRUE
+asStatic: FALSE

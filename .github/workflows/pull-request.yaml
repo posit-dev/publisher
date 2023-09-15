@@ -502,7 +502,8 @@ jobs:
           os: macos-latest
           DOCKER: "false"
         run: |
-          export CONNECT_IP="$(cat connect_ip.txt)"
+          export CONNECT_SERVER="$(cat connect_ip.txt)"
+          export TEST_SCENARIO="all_deployments"
           just test/publishing-tests ${os}
 
   build-linux-amd64:
@@ -620,7 +621,8 @@ jobs:
           DOCKER: "false"
         run: |
           export CONNECT_IP="$(cat connect_ip.txt)"
-          just test/ui-client ${os}
+          export TEST_SCENARIO="all_deployments"
+          just test/docker_init-connect ${os}
 
   build-linux-arm64:
     runs-on: ubuntu-latest

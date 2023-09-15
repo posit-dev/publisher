@@ -1,0 +1,189 @@
+---
+title: "Portfolio Report"
+params:
+  date:
+    input: date
+    label: Start Date
+    value: '2010-01-01'
+  mar:
+    input: slider
+    label: Min Acceptable Rate
+    min: 0
+    max: 0.1
+    step: 0.001
+    value: 0.008
+  portfolio:
+    choices:
+    - balanced_portfolio_returns
+    - aggressive_portfolio_returns
+    - conservative_portfolio_returns
+    input: select
+    label: portfolio
+    value: balanced_portfolio_returns
+  portfolioName:
+    input: text
+    label: title
+    value: Balanced
+  window:
+    input: numeric
+    label: Rolling Window
+    min: 6
+    max: 36
+    value: 12
+resource_files:
+  - "returns.rds"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(blastula)
+library(dplyr)
+library(flexdashboard)
+library(formattable)
+library(plotly)
+
+library(openxlsx)
+library(PerformanceAnalytics)
+library(xts)
+library(zoo)
+
+returns <- readRDS("returns.rds")
+```
+
+```{r}
+MAR <- params$mar
+# run our calculations
+
+portfolio_selected <- as_tibble(returns[[params$portfolio]]) %>%
+  select(date, returns) %>%
+  collect() %>%
+  mutate(date = as.Date(date)) %>%
+  filter(date >= params$date)
+
+ts_prepare <- xts::xts(portfolio_selected$returns, order.by = portfolio_selected$date)
+
+rolling_sortino <-
+  ts_prepare %>%
+  rollapply(params$window, function(x) SortinoRatio(x, MAR = MAR)) %>%
+  `colnames<-`("24-rolling")
+
+
+sortino_byhand <-
+  portfolio_selected %>%
+  mutate(ratio = mean(returns - MAR) / sqrt(sum(pmin(returns - MAR, 0)^2) / nrow(.))) %>%
+  mutate(status = ifelse(returns < MAR, "down", "up"))
+```
+
+
+Sortino Ratio Report for `r params$portfolioName` Portfolio
+=================================
+
+Row 
+-----------------------------------------------------------------------
+
+### Rolling Sortino
+
+```{r}
+plot_ly() %>%
+  add_lines(
+    x = index(rolling_sortino), y = as.numeric(rolling_sortino),
+    hovertemplate = "Sortino: %{y:.2r}", name = ""
+  ) %>%
+  layout(
+    hovermode = "x",
+    xaxis = list(
+      hoverformat = '%A, %b %d, %Y',
+      tickformat = '%b %Y',
+      rangeslider = list(visible = TRUE),
+      rangeselector = list(
+        x = 0, y = 1, xanchor = 'left', yanchor = "top", font = list(size = 9),
+        buttons = list(
+          list(count = 1, label = 'RESET', step = 'all'),
+          list(count = 1, label = '1 YR', step = 'year', stepmode = 'backward'),
+          list(count = 3, label = '3 MO', step = 'month', stepmode = 'backward'),
+          list(count = 1, label = '1 MO', step = 'month', stepmode = 'backward')
+        )        
+      )
+    )
+  )
+```
+
+
+Row
+-------------------------------------
+
+### Scatterplot
+
+```{r}
+portfolio_scatter <- ggplot(sortino_byhand, aes(x = date, y = returns, color = status) )+
+  geom_point() +
+  geom_vline(xintercept = as.numeric(as.Date("2016-11-30")), color = "blue") +
+  geom_hline(yintercept = MAR, color = "purple", linetype = "dotted") +
+  scale_color_manual(values = c("tomato", "chartreuse3")) +
+  theme(legend.position = "none") + ylab("percent monthly returns")
+
+ggplotly(portfolio_scatter) %>% 
+  add_annotations(
+    text = "Trump", x = as.numeric(as.Date("2016-11-30")), 
+    y = -.05, xshift = -10, textangle = -90, showarrow = FALSE
+  )
+```
+
+
+### Histogram
+
+```{r}
+p <- ggplot(sortino_byhand, aes(x = returns)) +
+  geom_histogram(alpha = 0.25, binwidth = .01, fill = "cornflowerblue") +
+  geom_vline(xintercept = MAR, color = "green")
+ggplotly(p) %>%
+  add_annotations(text = "MAR", x = MAR, y = 10, xshift = 10, showarrow = FALSE, textangle = -90)
+```
+
+### Density
+
+```{r}
+sortino_density_plot <- ggplot(sortino_byhand, aes(x = returns)) +
+  stat_density(geom = "line", size = 1, color = "cornflowerblue")
+
+shaded_area_data <- ggplot_build(sortino_density_plot)$data[[1]] %>%
+  filter(x < MAR)
+
+sortino_density_plot <-
+  sortino_density_plot +
+  geom_area(data = shaded_area_data, aes(x = x, y = y), fill = "pink", alpha = 0.5) +
+  geom_segment(
+    data = shaded_area_data, aes(x = MAR, y = 0, xend = MAR, yend = y),
+    color = "red", linetype = "dotted"
+  )
+
+ggplotly(sortino_density_plot) %>%
+  add_annotations(
+    x = MAR, y = 5, text = paste("MAR =", MAR, sep = ""), textangle = -90
+  ) %>%
+  add_annotations(
+    x = (MAR - .02), y = .1, text = "Downside", 
+    xshift = -20, yshift = 10, showarrow = FALSE
+  )
+```
+
+```{r, echo = FALSE}
+portfolio_file <- paste(params$portfolio, Sys.Date(), ".xlsx", sep = "")
+write.xlsx(portfolio_selected, file = portfolio_file)
+```
+
+```{r, echo = FALSE}
+# have the report send out an email with 
+# important results included in-line
+render_connect_email(input = "portfolio-report-email.Rmd") %>%
+  attach_connect_email(
+    subject = sprintf("%s portfolio Sortino report",params$portfolioName),
+    attach_output = TRUE,
+    attachments = c(portfolio_file)
+)
+```

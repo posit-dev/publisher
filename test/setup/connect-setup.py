@@ -9,7 +9,7 @@ import logging
 alias = "perftest-connect-20230518"
 box_name = "connect-ci"
 list_command = "fuzzbucket-client -j list"
-create_command = "fuzzbucket-client create -c " + alias + " -n " + box_name
+create_command = "fuzzbucket-client create -c -S 40 " + alias + " -n " + box_name
 remove_command = "fuzzbucket-client rm " + box_name
 ssh_options = "-i.fuzzbucket-ssh-key"
 
@@ -37,7 +37,8 @@ def get_current_connect_version(connect_ip, api_key):
 
 def check_existing_boxes(box_name):
     output = subprocess.check_output(list_command, shell=True, text=True)
-    if "\"boxes\": {}" not in output:
+    # use the existing box if one exists
+    if box_name+"\": {" in output:
         boxes = json.loads(output)
         connect_ip = boxes["boxes"][box_name]["public_ip"]
     else:

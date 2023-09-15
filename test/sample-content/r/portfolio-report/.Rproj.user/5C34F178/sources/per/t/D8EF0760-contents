@@ -1,0 +1,19 @@
+library(connectapi)
+client <- connect(
+  server = 'https://connect.localtest.me/rsc/dev-ldap-local-groups/',
+  api_key = 'P5Z5BFjMibHAncY061EhEp4Xe8PQbfLA'
+)
+all_content <- get_content(client, limit = Inf)
+
+matrix <- as.matrix(all_content$guid)
+
+print(paste0(matrix))
+
+for (r in 1:nrow(matrix))
+  for (c in 1:ncol(matrix))
+    set_schedule_minute(get_variant_schedule(get_variant_default(content_item(client, matrix[r,c]))),
+                        n = 1,
+                        start_time = Sys.time(),
+                        activate = TRUE,
+                        email = TRUE,
+                        timezone = Sys.timezone())

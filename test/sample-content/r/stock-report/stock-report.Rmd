@@ -1,0 +1,139 @@
+---
+title: Stock Email Report
+output: 
+  html_document:
+    code_folding: hide
+---
+  
+# Report for TSLA on `r Sys.Date()`
+
+## Summary{.tabset}
+
+```{r, echo=TRUE, message=FALSE}
+library(blastula)
+library(DT)
+library(formattable)
+library(ggthemes)
+library(quantmod)
+library(dplyr)
+library(plotly)
+
+prices <- round(getSymbols("TSLA", auto.assign = FALSE, src = "yahoo"), 2)
+close <- Cl(xts::last(prices))
+open <- Op(xts::last(prices))
+
+recent <- xts::last(prices, n = 90)
+recent_nv <- recent[, -5]
+
+prices_df <- prices %>%
+  as_tibble() %>%
+  mutate(
+    Date = index(prices), 
+    Direction = ifelse(TSLA.Close >= TSLA.Open, 'Increasing', 'Decreasing')
+  )
+```
+
+The stock closed `r ifelse(close>open,'up','down')` at `r close` dollars per share yesterday.
+
+
+### Price History
+
+The chart below is made with the `quantmod` and `plotly` R packages. An API returns all of the price history based on the stock tick symbol "TSLA.".
+
+
+```{r build_plot, echo=TRUE, warning=FALSE, message=FALSE}
+fig1 <- plot_ly(prices_df) %>%
+  add_trace(
+    type = "candlestick", x = ~Date, name = "TSLA",
+    open = ~TSLA.Open, close = ~TSLA.Close,
+    high = ~TSLA.High, low = ~TSLA.Low,
+    increasing = list(line = list(color = '#17BECF')),
+    decreasing = list(line = list(color = '#7F7F7F'))
+  ) %>% 
+  layout(yaxis = list(title = "Price"))
+
+fig2 <- plot_ly(prices_df) %>%
+  add_bars(
+    x = ~Date, y = ~TSLA.Volume, name = "TSLA Volume",
+    color = ~Direction, colors = c('#17BECF', '#7F7F7F')
+  ) %>%
+  layout(yaxis = list(title = "Volume"), xaxis = list(title = ""))
+
+subplot(
+  fig1, fig2, heights = c(0.7, 0.2), nrows = 2,
+  shareX = TRUE, titleY = TRUE
+) %>%
+  layout(
+    hovermode = "x", margin = list(t = 80),
+    title = paste("Tesla from", min(prices_df$Date), "to", max(prices_df$Date)),
+    xaxis = list(
+      rangeselector = list(
+        x = 0, y = 1, xanchor = 'left', yanchor = "top",
+        visible = TRUE, font = list(size = 9),
+        buttons = list(
+          list(count = 1, label = 'RESET', step = 'all'),
+          list(count = 1, label = '1 YR', step = 'year', stepmode = 'backward'),
+          list(count = 3, label = '3 MO', step = 'month', stepmode = 'backward'),
+          list(count = 1, label = '1 MO', step = 'month', stepmode = 'backward')
+        )        
+      )
+    ),
+    legend = list(
+      x = 1, y = 1, xanchor = 'right',
+      orientation = 'h', font = list(size = 10)
+    )
+  )
+```
+
+### Raw Data
+
+The table below displays the daily price data for the stock. A concise, interactive table is created with the `DT` package. 
+
+  
+```{r show_data, echo=TRUE}
+recent %>%
+  as_tibble() %>%
+  mutate(TSLA.Volume = TSLA.Volume / 1000000) %>%
+  datatable() %>%
+  formatCurrency(c("TSLA.Open", "TSLA.High", "TSLA.Low", "TSLA.Close"), digits = 2) %>%
+  formatRound("TSLA.Volume", digits = 0)
+```
+
+## Legacy Information
+
+This report also creates a CSV file with the relevant information updated by R. The file feeds a legacy report that will slowly be replaced.
+
+```{r write_csv, echo=TRUE}
+fname <- sprintf("%s.csv", Sys.Date())
+write.csv(recent, file = fname)
+rmarkdown::output_metadata$set(rsc_output_files = list(fname))
+```
+
+[Link to CSV](`r fname`)
+
+## Email
+
+This report also produces an email that is sent to key stakeholders with summary
+information if the price change is above 50 cents. 
+
+```{r send_email, warning = FALSE, message = FALSE, echo = TRUE}
+# Calculate the total change
+close <- Cl(xts::last(prices, n = 2))
+diff <- round(as.numeric(close[2]) - as.numeric(close[1]), 2)
+subject <- sprintf("TSLA is %s today by $%g!", 
+        ifelse(diff > 0,"up", "down"), 
+        abs(diff))
+
+# If the change is above a certain threshold, send an email to stake holders
+# with key results embedded directly in the email
+if (abs(diff) > 0.5) {
+  render_connect_email(input = "stock-report-email.Rmd") %>%
+  attach_connect_email(
+    subject = subject,
+    attach_output = TRUE,
+    attachments = c(fname)
+)
+} else {
+  blastula::suppress_scheduled_email()
+}
+```

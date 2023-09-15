@@ -1,0 +1,3 @@
+plumber::plumb(file='~/work/connect/test/performance-test/load-test-plumber/plumber.R')$run()
+plumb(file='~/work/connect/test/performance-test/load-test-plumber/plumber.R')$run()
+install.packages("stringi")

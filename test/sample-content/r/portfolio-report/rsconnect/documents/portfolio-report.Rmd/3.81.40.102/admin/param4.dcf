@@ -1,0 +1,13 @@
+name: param4
+title: param
+username: admin
+account: admin
+server: 3.81.40.102
+hostUrl: http://3.81.40.102:3939/__api__
+appId: 13
+bundleId: 13
+url: http://3.81.40.102:3939/content/647efa80-4315-44b0-84f8-23c817eee11b/
+when: 1664804999.81635
+lastSyncTime: 1664804999.81636
+asMultiple: FALSE
+asStatic: FALSE

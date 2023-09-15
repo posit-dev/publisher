@@ -67,12 +67,12 @@ test-e2e:
 build-and-test-ci-e2e target:
     #!/bin/bash
     set -euo pipefail
-    just build
+    # just build
     # set this environment variable to keep Cypress from attempting to create
     # cache within root's home dir.
     # use a different cache per os
     export CYPRESS_CACHE_FOLDER="./cypress/{{target}}/.cache"
-    export CYPRESS_CONNECT_ADDRESS="http://$CONNECT_IP:3939/connect/\#/login"
+    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
     # install cypress
     npx cypress install
     if [[ {{target}} =~ "windows" ]]; then
