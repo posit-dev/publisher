@@ -26,7 +26,7 @@
         v-if="currentView === 'configure'"
         @publish="onPublish"
       />
-      <PublishContent
+      <PublishProcess
         v-if="currentView === 'publish'"
         @back="onConfigure"
       />
@@ -40,7 +40,7 @@ import { ref } from 'vue';
 
 import AppMenu from 'src/components/AppMenu.vue';
 import ConfigurePublish from 'src/components/configurePublish/ConfigurePublish.vue';
-import PublishContent from 'src/components/publishProcess/PublishContent.vue';
+import PublishProcess from 'src/components/publishProcess/PublishProcess.vue';
 // import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 import { useApi } from 'src/api';
