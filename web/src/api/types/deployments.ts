@@ -22,3 +22,5 @@ export type Deployment = {
     connect: ConnectDeployment;
     pythonRequirements: string[];
 }
+
+export type DeploymentModeType = 'new' | 'update';

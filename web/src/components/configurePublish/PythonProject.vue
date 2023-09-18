@@ -3,7 +3,7 @@
 <template>
   <LayoutPanel
     title="Python"
-    icon="img:images/python-logo-only.svg"
+    icon="img:images/publisher-python.svg"
   >
     TODO: Show detailed python version and list of package dependencies
     with ability to add or remove package dependencies.
@@ -11,6 +11,6 @@
 </template>
 
 <script setup lang="ts">
-import LayoutPanel from 'src/components/LayoutPanel.vue';
+import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
 </script>
 

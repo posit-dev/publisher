@@ -4,7 +4,7 @@
   <LayoutPanel
     title="Destination"
     :subtitle="destinationTitle"
-    icon="img:images/posit-logo-only-unofficial.svg"
+    icon="img:images/publisher-destination.svg"
   >
     TODO: select from previous deployments or add to existing or new targets
   </LayoutPanel>
@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import LayoutPanel from 'src/components/LayoutPanel.vue';
+import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
 import { useDeploymentStore } from 'src/stores/deployment';
 
 const deploymentStore = useDeploymentStore();
