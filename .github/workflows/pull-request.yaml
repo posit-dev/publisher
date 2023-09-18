@@ -448,6 +448,7 @@ jobs:
         run: |
           $env:CONNECT_SERVER="http://$(cat connect_ip.txt):3939"
           $env:CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
+          $env:TEST_SCENARIO="all_deployments"
           just test/publishing-tests $env:os
 
   test-macos:
