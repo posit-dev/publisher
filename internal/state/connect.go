@@ -17,23 +17,23 @@ type ConnectContent struct {
 	Name               types.ContentName `json:"name"`
 	Title              string            `json:"title,omitempty"`
 	Description        string            `json:"description"`
-	AccessType         string            `json:"access_type"`
-	ConnectionTimeout  types.NullInt32   `json:"connection_timeout,omitempty"`
-	ReadTimeout        types.NullInt32   `json:"read_timeout,omitempty"`
-	InitTimeout        types.NullInt32   `json:"init_timeout,omitempty"`
-	IdleTimeout        types.NullInt32   `json:"idle_timeout,omitempty"`
-	MaxProcesses       types.NullInt32   `json:"max_processes,omitempty"`
-	MinProcesses       types.NullInt32   `json:"min_processes,omitempty"`
-	MaxConnsPerProcess types.NullInt32   `json:"max_conns_per_process,omitempty" kong:"name='max-connections'"`
-	LoadFactor         types.NullFloat64 `json:"load_factor,omitempty"`
-	RunAs              string            `json:"run_as,omitempty"`
-	RunAsCurrentUser   types.NullBool    `json:"run_as_current_user,omitempty"`
-	MemoryRequest      types.NullInt64   `json:"memory_request,omitempty"`
-	MemoryLimit        types.NullInt64   `json:"memory_limit,omitempty"`
-	CPURequest         types.NullFloat64 `json:"cpu_request,omitempty"`
-	CPULimit           types.NullFloat64 `json:"cpu_limit,omitempty"`
-	ServiceAccountName string            `json:"service_account_name,omitempty"`
-	DefaultImageName   string            `json:"default_image_name,omitempty"`
+	AccessType         string
+	ConnectionTimeout  types.NullInt32
+	ReadTimeout        types.NullInt32
+	InitTimeout        types.NullInt32
+	IdleTimeout        types.NullInt32
+	MaxProcesses       types.NullInt32
+	MinProcesses       types.NullInt32
+	MaxConnsPerProcess types.NullInt32
+	LoadFactor         types.NullFloat64
+	RunAs              string
+	RunAsCurrentUser   types.NullBool
+	MemoryRequest      types.NullInt64
+	MemoryLimit        types.NullInt64
+	CPURequest         types.NullFloat64
+	CPULimit           types.NullFloat64
+	ServiceAccountName string
+	DefaultImageName   string
 }
 
 func (d *ConnectDeployment) Merge(other *ConnectDeployment) {
