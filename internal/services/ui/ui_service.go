@@ -9,6 +9,7 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
@@ -76,7 +77,8 @@ func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister 
 		Methods(http.MethodPut)
 
 	// POST /api/publish
-	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(publishArgs, lister, log)).
+	publisher := publish.New(publishArgs)
+	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(publisher, publishArgs, lister, log)).
 		Methods(http.MethodPost)
 
 	// GET /

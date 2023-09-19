@@ -24,6 +24,19 @@ func TestPublishHandlerFuncSuite(t *testing.T) {
 	suite.Run(t, new(PublishHandlerFuncSuite))
 }
 
+type mockPublisher struct {
+	suite *PublishHandlerFuncSuite
+	args  *cli_types.PublishArgs
+}
+
+func (m *mockPublisher) PublishManifestFiles(lister accounts.AccountList, log logging.Logger) error {
+	m.suite.NotNil(m.args)
+	m.suite.NotNil(lister)
+	m.suite.NotNil(log)
+	m.suite.NotEqual(state.LocalDeploymentID(""), m.args.State.LocalID)
+	return nil
+}
+
 func (s *PublishHandlerFuncSuite) TestPublishHandlerFunc() {
 	publishArgs := &cli_types.PublishArgs{
 		State: state.NewDeployment(),
@@ -35,12 +48,12 @@ func (s *PublishHandlerFuncSuite) TestPublishHandlerFunc() {
 	req, err := http.NewRequest("POST", "/api/publish", nil)
 	s.NoError(err)
 
-	publishFn = func(args *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) error {
-		s.NotNil(args)
-		s.NotEqual(state.LocalDeploymentID(""), args.State.LocalID)
-		return nil
+	publisher := &mockPublisher{
+		suite: s,
+		args:  publishArgs,
 	}
-	handler := PostPublishHandlerFunc(publishArgs, nil, log)
+	lister := &accounts.MockAccountList{}
+	handler := PostPublishHandlerFunc(publisher, publishArgs, lister, log)
 	handler(rec, req)
 
 	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
