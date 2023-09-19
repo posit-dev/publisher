@@ -51,7 +51,7 @@ func LogRequest(msg string, log logging.Logger, next http.HandlerFunc) http.Hand
 		next(writer, req)
 		elapsedMs := time.Since(startTime).Milliseconds()
 
-		fieldLogger := log.With(
+		fieldLogger := log.WithArgs(
 			"method", req.Method,
 			"url", req.URL.String(),
 			"elapsed_ms", elapsedMs,
@@ -62,7 +62,7 @@ func LogRequest(msg string, log logging.Logger, next http.HandlerFunc) http.Hand
 		)
 		correlationId := writer.Header().Get("X-Correlation-Id")
 		if correlationId != "" {
-			fieldLogger = fieldLogger.With("X-Correlation-Id", correlationId)
+			fieldLogger = fieldLogger.WithArgs("X-Correlation-Id", correlationId)
 		}
 		fieldLogger.Info(msg)
 	}

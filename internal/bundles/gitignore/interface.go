@@ -12,7 +12,7 @@ type IgnoreList interface {
 	Append(path util.Path) error
 	AppendGlobs(patterns []string, source MatchSource) error
 	AppendGit() error
-	Match(path string) *Match
+	Match(path string) (*Match, error)
 	Walk(root util.Path, fn util.WalkFunc) error
 }
 
@@ -38,15 +38,17 @@ func (m *MockGitIgnoreList) AppendGit() error {
 	return args.Error(0)
 }
 
-func (m *MockGitIgnoreList) Match(path string) bool {
+func (m *MockGitIgnoreList) Match(path string) (*Match, error) {
 	args := m.Called(path)
-	return args.Bool(0)
+	return args.Get(0).(*Match), args.Error(1)
 }
 
 func (m *MockGitIgnoreList) Walk(root util.Path, fn util.WalkFunc) error {
 	args := m.Called(root, fn)
 	return args.Error(0)
 }
+
+var _ IgnoreList = &MockGitIgnoreList{}
 
 // Maintain a reference to the original gitignore so it
 // and its license remain in our vendor directory.

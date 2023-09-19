@@ -9,7 +9,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/logging/loggingtest"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -24,8 +23,8 @@ func TestMultiHanlderSuite(t *testing.T) {
 }
 
 func (s *MultiHandlerSuite) TestNewMultiHandler() {
-	h1 := loggingtest.NewMockHandler()
-	h2 := loggingtest.NewMockHandler()
+	h1 := NewMockHandler()
+	h2 := NewMockHandler()
 
 	multiHandler := NewMultiHandler(h1, h2)
 	s.Equal([]slog.Handler{h1, h2}, multiHandler.handlers)
@@ -44,8 +43,8 @@ func (s *MultiHandlerSuite) TestEnabled() {
 }
 
 func (s *MultiHandlerSuite) TestHandle() {
-	h1 := loggingtest.NewMockHandler()
-	h2 := loggingtest.NewMockHandler()
+	h1 := NewMockHandler()
+	h2 := NewMockHandler()
 
 	h1.On("Enabled", mock.Anything, slog.LevelInfo).Return(true)
 	h2.On("Enabled", mock.Anything, slog.LevelInfo).Return(false)
@@ -57,11 +56,12 @@ func (s *MultiHandlerSuite) TestHandle() {
 		Message: "message",
 	}
 	multiHandler.Handle(context.Background(), record)
-	s.Assert()
+	h1.AssertExpectations(s.T())
+	h2.AssertExpectations(s.T())
 }
 
 func (s *MultiHandlerSuite) TestHandleError() {
-	baseHandler := loggingtest.NewMockHandler()
+	baseHandler := NewMockHandler()
 	testError := errors.New("test error from Handle")
 	baseHandler.On("Enabled", mock.Anything, slog.LevelInfo).Return(true)
 	baseHandler.On("Handle", mock.Anything, mock.Anything).Return(testError)
@@ -73,14 +73,14 @@ func (s *MultiHandlerSuite) TestHandleError() {
 	}
 	err := multiHandler.Handle(context.Background(), record)
 	s.ErrorIs(err, testError)
-	s.Assert()
+	baseHandler.AssertExpectations(s.T())
 }
 
 func (s *MultiHandlerSuite) TestWithAttrs() {
-	h1 := loggingtest.NewMockHandler()
-	h2 := loggingtest.NewMockHandler()
-	h1WithAttrs := loggingtest.NewMockHandler()
-	h2WithAttrs := loggingtest.NewMockHandler()
+	h1 := NewMockHandler()
+	h2 := NewMockHandler()
+	h1WithAttrs := NewMockHandler()
+	h2WithAttrs := NewMockHandler()
 
 	attr := slog.Attr{
 		Key:   "att",
@@ -93,27 +93,29 @@ func (s *MultiHandlerSuite) TestWithAttrs() {
 	multiHandler := NewMultiHandler(h1, h2)
 	returnedHandler := multiHandler.WithAttrs(attrs)
 	s.Equal(NewMultiHandler(h1WithAttrs, h2WithAttrs), returnedHandler)
-	s.Assert()
+	h1.AssertExpectations(s.T())
+	h2.AssertExpectations(s.T())
 }
 
 func (s *MultiHandlerSuite) TestWithGroup() {
-	h1 := loggingtest.NewMockHandler()
-	h2 := loggingtest.NewMockHandler()
-	h1WithGroup := loggingtest.NewMockHandler()
-	h2WithGroup := loggingtest.NewMockHandler()
+	h1 := NewMockHandler()
+	h2 := NewMockHandler()
+	h1WithGroup := NewMockHandler()
+	h2WithGroup := NewMockHandler()
 	h1.On("WithGroup", "group").Return(h1WithGroup)
 	h2.On("WithGroup", "group").Return(h2WithGroup)
 
 	multiHandler := NewMultiHandler(h1, h2)
 	returnedHandler := multiHandler.WithGroup("group")
 	s.Equal(NewMultiHandler(h1WithGroup, h2WithGroup), returnedHandler)
-	s.Assert()
+	h1.AssertExpectations(s.T())
+	h2.AssertExpectations(s.T())
 }
 
 func (s *MultiHandlerSuite) TestWithGroupEmptyName() {
-	baseHandler := loggingtest.NewMockHandler()
+	baseHandler := NewMockHandler()
 	multiHandler := NewMultiHandler(baseHandler)
 	returnedHandler := multiHandler.WithGroup("")
 	s.Equal(multiHandler, returnedHandler)
-	s.Assert()
+	baseHandler.AssertExpectations(s.T())
 }
