@@ -8,7 +8,8 @@ import { KernelMessage, ServiceManager } from '@jupyterlab/services';
 import { JSONObject } from '@lumino/coreutils';
 import { requestAPI } from './handler';
 
-const command = 'posit:publish';
+const PACKAGE_NAME = 'connect_jupyterlab';
+const COMMAND_NAME = 'posit:publish';
 
 async function runPython(
   code: string,
@@ -80,7 +81,7 @@ async function getPublishStatus(): Promise<JSONObject> {
     return data;
   } catch (reason) {
     console.error(
-      `The connect_jupyterlab server extension appears to be missing.\n${reason}`
+      `The ${PACKAGE_NAME} server extension appears to be missing.\n${reason}`
     );
     return {};
   }
@@ -88,30 +89,32 @@ async function getPublishStatus(): Promise<JSONObject> {
 
 function makePublishCommand(manager: ServiceManager.IManager) {
   return async function (args: any) {
-    console.log(`${command} command has been called from ${args['origin']}.`);
+    console.log(
+      `${COMMAND_NAME} command has been called from ${args['origin']}.`
+    );
     const pythonPath = await getRunningPythonPath(manager);
     console.log('Kernel python path is', pythonPath);
     const pythonVersion = await getRunningPythonVersion(manager);
-    console.log('Python version is', pythonVersion);
+    console.log('Kernel python version is', pythonVersion);
     const status = await getPublishStatus();
-    console.log('deployment status: ', status);
+    console.log('Publishing status: ', status);
   };
 }
 
 /**
- * Initialization data for the connect_jupyterlab extension.
+ * Initialization data for the extension.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
-  id: 'connect_jupyterlab:plugin',
+  id: `${PACKAGE_NAME}:plugin`,
   description: 'A JupyterLab extension for publishing to Posit Connect.',
   autoStart: true,
   requires: [ICommandPalette],
   activate: (app: JupyterFrontEnd, palette: ICommandPalette) => {
-    console.log('JupyterLab extension connect_jupyterlab is activated!');
+    console.log(`Activating JupyterLab extension ${PACKAGE_NAME}`);
     const { serviceManager, commands } = app;
 
     // Add a command
-    commands.addCommand(command, {
+    commands.addCommand(COMMAND_NAME, {
       label: 'Publish',
       caption: 'Publish to Posit Connect',
       iconClass: 'rsc-icon',
@@ -120,7 +123,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     // Add the command to the command palette
     const category = 'notebook';
-    palette.addItem({ command, category, args: { origin: 'palette' } });
+    palette.addItem({
+      command: COMMAND_NAME,
+      category,
+      args: { origin: 'palette' }
+    });
   }
 };
 

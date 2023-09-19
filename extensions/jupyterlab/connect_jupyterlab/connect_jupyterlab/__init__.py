@@ -3,24 +3,24 @@ try:
 except ImportError:
     # Fallback when using the package in dev mode without installing
     # in editable mode with pip. It is highly recommended to install
-    # the package from a stable release or in editable mode: https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs
+    # the package from a stable release or in editable mode:
+    # https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs
     import warnings
+
     warnings.warn("Importing 'connect_jupyterlab' outside a proper installation.")
     __version__ = "dev"
+
 from .handlers import setup_handlers
+
+PACKAGE_NAME = "connect_jupyterlab"
 
 
 def _jupyter_labextension_paths():
-    return [{
-        "src": "labextension",
-        "dest": "connect_jupyterlab"
-    }]
+    return [{"src": "labextension", "dest": PACKAGE_NAME}]
 
 
 def _jupyter_server_extension_points():
-    return [{
-        "module": "connect_jupyterlab"
-    }]
+    return [{"module": PACKAGE_NAME}]
 
 
 def _load_jupyter_server_extension(server_app):
@@ -32,5 +32,6 @@ def _load_jupyter_server_extension(server_app):
         JupyterLab application instance
     """
     setup_handlers(server_app.web_app)
-    name = "connect_jupyterlab"
-    server_app.log.info(f"Registered {name} server extension")
+    server_app.log.info(
+        f"Registered {PACKAGE_NAME} server extension, version {__version__}"
+    )

@@ -9,6 +9,7 @@ class RouteHandler(APIHandler):
     @tornado.web.authenticated
     def post(self):
         """post initiates the publishing process. Details TBD."""
+        self.log.info("Launching publishing UI")
         self.finish(json.dumps({"data": "POST /connect-jupyterlab/publish endpoint!"}))
 
     @tornado.web.authenticated
