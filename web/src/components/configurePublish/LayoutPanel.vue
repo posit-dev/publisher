@@ -12,11 +12,7 @@
         avatar
         class="q-ml-sm"
       >
-        <q-icon
-          :name="props.icon"
-          :style="props.iconStyle"
-          size="35px"
-        />
+        <slot name="avatar" />
       </q-item-section>
 
       <q-item-section>
@@ -50,8 +46,6 @@
 const props = defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, required: false, default: null },
-  icon: { type: String, required: true },
-  iconStyle: { type: String, required: false, default: '' },
   tooltip: { type: String, required: false, default: null },
   defaultOpen: { type: Boolean, required: false, default: false },
   expandIcon: { type: String, required: false, default: null },

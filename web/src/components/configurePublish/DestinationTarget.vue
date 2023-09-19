@@ -4,8 +4,10 @@
   <LayoutPanel
     title="Destination"
     :subtitle="destinationTitle"
-    icon="img:images/publisher-destination.svg"
   >
+    <template #avatar>
+      <PublisherDestinationLogo />
+    </template>
     TODO: select from previous deployments or add to existing or new targets
   </LayoutPanel>
 </template>
@@ -14,6 +16,8 @@
 import { computed } from 'vue';
 
 import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
+import PublisherDestinationLogo from 'src/components/icons/PublisherDestinationLogo.vue';
+
 import { useDeploymentStore } from 'src/stores/deployment';
 
 const deploymentStore = useDeploymentStore();

@@ -10,13 +10,13 @@
       class="bg-primary text-white"
     >
       <q-toolbar class="max-width-md q-pa-none">
-        <!-- <WhitePositLogo
+        <AppMenu />
+        <WhitePositLogo
           class="posit-logo"
           alt="Posit PBC Logo"
-        /> -->
-        <AppMenu />
+        />
         <q-toolbar-title class="q-pl-xs">
-          Posit Publisher
+          Publisher
         </q-toolbar-title>
       </q-toolbar>
     </q-header>
@@ -41,7 +41,7 @@ import { ref } from 'vue';
 import AppMenu from 'src/components/AppMenu.vue';
 import ConfigurePublish from 'src/components/configurePublish/ConfigurePublish.vue';
 import PublishProcess from 'src/components/publishProcess/PublishProcess.vue';
-// import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
+import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
