@@ -4,12 +4,13 @@ import json
 import requests
 import time
 import logging
+import os
 
 # use the perftest fuzzbucket instance since it already has all the deps
-alias = "perftest-connect-20230518"
-box_name = "connect-ci"
+alias = "ubuntu22-publishing-client"
+box_name = "connect-publishing-client"
 list_command = "fuzzbucket-client -j list"
-create_command = "fuzzbucket-client create -c -S 40 " + alias + " -n " + box_name
+create_command = "fuzzbucket-client create -c -S 20 -t m5.2xlarge " + alias + " -n " + box_name
 remove_command = "fuzzbucket-client rm " + box_name
 ssh_options = "-i.fuzzbucket-ssh-key"
 
@@ -22,10 +23,14 @@ def get_api_key(username):
     api_key = hashlib.md5(username.encode()).hexdigest()
     return api_key
 
-def get_latest_connect_version():
-    response = requests.get("https://cdn.posit.co/connect/latest-packages.json")
-    latest_connect = response.json()['packages'][0]['version']
-    return latest_connect
+def get_connect_version():
+    if "CONNECT_VERSION" in os.environ:
+        connect_version=os.environ['CONNECT_VERSION']
+        return connect_version
+    else:
+        response = requests.get("https://cdn.posit.co/connect/latest-packages.json")
+        connect_version = response.json()['packages'][0]['version']
+        return connect_version
 
 def get_current_connect_version(connect_ip, api_key):
     response = requests.get(
@@ -53,17 +58,20 @@ def get_ip(box_name):
     connect_ip = check_existing_boxes(box_name)
     return connect_ip
 
+# check if fuzzbucket is up and taking requests
 def connect_ready(box_name, max_attempts, interval):
     connect_box=get_ip(box_name)
+    update_config="fuzzbucket-client ssh " + alias + " " + ssh_options + " sudo sed -i 's/CONNECT_IP/" + connect_box + "/g' /etc/rstudio-connect/rstudio-connect.gcfg"
     attempts = 0
     while attempts < max_attempts:
         try:
             logging.info("Checking Connect Status")
             response = requests.get("http://"+connect_box+":3939/__ping__")
             if response.status_code == 200:
-                if latest_connect != get_current_connect_version(get_ip(box_name), api_key):
+                if connect_version != get_current_connect_version(get_ip(box_name), api_key):
                     logging.info("Installing Connect on " + connect_box)
                     subprocess.check_output(install_connect, shell=True, text=True)
+                    subprocess.check_output(update_config, shell=True, text=True)
                 return response.text
         except requests.RequestException:
             pass
@@ -73,9 +81,8 @@ def connect_ready(box_name, max_attempts, interval):
     return None
 
 api_key=get_api_key('admin')
-latest_connect=get_latest_connect_version()
-install_connect = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@" + get_ip(box_name) + " " + ssh_options + " sudo -E UNATTENDED=1 bash installer-ci.sh " + latest_connect
-
+connect_version=get_connect_version()
+install_connect = "fuzzbucket-client ssh " + alias + " " + ssh_options + " sudo -E UNATTENDED=1 bash installer-ci.sh -d " + connect_version
 response = connect_ready(box_name, 20, 5)
 
 if response:
