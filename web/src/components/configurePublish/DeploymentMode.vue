@@ -27,7 +27,7 @@ import { PropType } from 'vue';
 import { useModelWrapper } from 'src/utils/modelWrapper.ts';
 import type { DeploymentModeType } from 'src/api/types/deployments.ts';
 
-const emit = defineEmits([<string>'update:modelValue']);
+const emit = defineEmits(['update:modelValue']);
 
 const props = defineProps({
   modelValue: {

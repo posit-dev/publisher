@@ -45,10 +45,10 @@
 
 const props = defineProps({
   title: { type: String, required: true },
-  subtitle: { type: String, required: false, default: null },
-  tooltip: { type: String, required: false, default: null },
+  subtitle: { type: String, required: false, default: undefined },
+  tooltip: { type: String, required: false, default: undefined },
   defaultOpen: { type: Boolean, required: false, default: false },
-  expandIcon: { type: String, required: false, default: null },
-  group: { type: String, required: false, default: null },
+  expandIcon: { type: String, required: false, default: undefined },
+  group: { type: String, required: false, default: undefined },
 });
 </script>

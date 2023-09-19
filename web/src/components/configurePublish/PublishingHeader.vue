@@ -13,7 +13,7 @@
       dark
       clearable
       hint="Enter a title for your content on the server"
-      style="min-width: 75%"
+      class="col-9"
     />
     <q-btn
       color="primary"
@@ -30,7 +30,7 @@
 import { ref } from 'vue';
 import { useApi } from 'src/api';
 
-const emit = defineEmits([<string>'publish']);
+const emit = defineEmits(['publish']);
 
 const api = useApi();
 const title = ref('');
