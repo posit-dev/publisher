@@ -1,3 +1,5 @@
+<!-- Copyright (C) 2023 by Posit Software, PBC. -->
+
 <template>
   <q-page
     class="max-width-md q-mx-auto"
