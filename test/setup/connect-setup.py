@@ -14,10 +14,6 @@ create_command = "fuzzbucket-client create -c -S 20 -t m5.2xlarge " + alias + " 
 remove_command = "fuzzbucket-client rm " + box_name
 ssh_options = "-i.fuzzbucket-ssh-key"
 
-# connect_version =   $(curl https://cdn.posit.co/connect/latest-packages.json | 
-#     jq ".packages[0].version")
-
-
 def get_api_key(username):
     # Calculate the MD5 hash for the username to get an API Key
     api_key = hashlib.md5(username.encode()).hexdigest()

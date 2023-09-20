@@ -1,1 +1,1 @@
-CMD_ARGS="./test/sample-content/python/fastapi-simple --listen=localhost:9000 --token=abc123 -n env"
+CMD_ARGS="${DEPLOYMENT} --listen=localhost:9000 --token=abc123 -n env"

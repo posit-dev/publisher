@@ -181,7 +181,6 @@ start-agent-for-e2e:
     GOARCH="${GOARCH%%[[:cntrl:]]}"
 
     echo "Working directory is $(pwd)"
-    echo "COMMAND ARGS: ${CMD_ARGS}"
 
     ./bin/$GOOS-$GOARCH/connect-client publish-ui \
         ${CMD_ARGS}
