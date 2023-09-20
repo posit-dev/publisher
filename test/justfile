@@ -105,7 +105,7 @@ docker_publishing-tests target:
     -e DOCKER="false" \
     -e CONNECT_SERVER=${CONNECT_SERVER} \
     -e CONNECT_API_KEY=${CONNECT_API_KEY} \
-    -e CMD_ARGS=${CMD_ARGS} \
+    -e CMD_ARGS="${CMD_ARGS}" \
     -e TEST_SCENARIO=${TEST_SCENARIO} \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
@@ -135,7 +135,7 @@ docker_test-cli target:
     --rm {{_tag}}-{{target}} just test/_test-client {{target}}
   fi
 
-local_test-cli target:
+test-cli target:
   #!/usr/bin/env bash
   just bats-install && \
   BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \

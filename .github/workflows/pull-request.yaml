@@ -379,7 +379,7 @@ jobs:
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
-          just test-cli $env:os
+          just test/test-cli $env:os
       - 
         name: Download connect_ip
         uses: actions/download-artifact@v3
@@ -438,7 +438,7 @@ jobs:
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
-          just test-cli ${os}
+          just test/test-cli ${os}
       - 
         name: Download connect_ip
         uses: actions/download-artifact@v3
