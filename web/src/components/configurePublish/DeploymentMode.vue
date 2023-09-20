@@ -4,7 +4,7 @@
   <div class="row justify-center">
     <div style="width: 60%">
       <q-btn-toggle
-        v-model="deployMode"
+        v-model="value"
         no-caps
         unelevated
         dark
@@ -22,10 +22,9 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType, computed } from 'vue';
 
-import { useModelWrapper } from 'src/utils/modelWrapper.ts';
-import type { DeploymentModeType } from 'src/api/types/deployments.ts';
+import { DeploymentModeType } from 'src/api/types/deployments.ts';
 
 const emit = defineEmits(['update:modelValue']);
 
@@ -36,11 +35,18 @@ const props = defineProps({
   },
 });
 
-const deployMode = useModelWrapper(props, emit);
-
 const options = [
-  { label: 'New Deployment', value: 'new' },
-  { label: 'Existing Deployment', value: 'update' }
+  { label: 'New Deployment', value: <DeploymentModeType>'new' },
+  { label: 'Existing Deployment', value: <DeploymentModeType>'update' }
 ];
+
+const value = computed({
+  get() {
+    return props.modelValue;
+  },
+  set(newValue) {
+    emit('update:modelValue', newValue);
+  }
+});
 
 </script>
