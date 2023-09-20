@@ -379,7 +379,7 @@ jobs:
           $env:Path += ";$env:GITHUB_WORKSPACE\test\libs\bats-core\bin"
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
-          just test-cli $env:os
+          just test-cli windows-amd64
       - 
         name: Download connect_ip
         uses: actions/download-artifact@v3
@@ -397,8 +397,7 @@ jobs:
           $env:CONNECT_SERVER="http://$(cat connect_ip.txt):3939"
           $env:CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
           $env:TEST_SCENARIO="basic"
-          just test/publishing-tests $env:os
-
+          just test/publishing-tests windows-amd64
   test-macos:
     needs: [build-agent, start-connect]
     runs-on: macos-latest
@@ -438,7 +437,7 @@ jobs:
           just test/bats-install
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
-          just test-cli ${os}
+          just test-cli darwin-amd64
       - 
         name: Download connect_ip
         uses: actions/download-artifact@v3
@@ -453,7 +452,7 @@ jobs:
           export CONNECT_SERVER="http://$(cat connect_ip.txt):3939"
           export CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
           export TEST_SCENARIO="basic"
-          just test/publishing-tests ${os}
+          just test/publishing-tests darwin-amd64
 
   build-linux-amd64:
     runs-on: ubuntu-latest
