@@ -3,13 +3,16 @@
 <template>
   <LayoutPanel
     title="Advanced Settings"
-    icon="img:images/settings.png"
   >
+    <template #avatar>
+      <PublisherAdvancedLogo />
+    </template>
     TODO: Show list of editable settings (and some as read-only)
     based on capabilities of target server.
   </LayoutPanel>
 </template>
 
 <script setup lang="ts">
-import LayoutPanel from 'src/components/LayoutPanel.vue';
+import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
+import PublisherAdvancedLogo from 'src/components/icons/PublisherAdvancedLogo.vue';
 </script>
