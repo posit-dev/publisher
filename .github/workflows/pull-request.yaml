@@ -394,7 +394,7 @@ jobs:
           FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
           FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         run: |
-          $env:CONNECT_SERVER="http://$(cat connect_ip.txt):3939"
+          $env:CONNECT_SERVER="$(cat connect_ip.txt)"
           $env:CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
           $env:TEST_SCENARIO="basic"
           just test/publishing-tests windows-amd64
@@ -449,7 +449,7 @@ jobs:
           os: macos-latest
           DOCKER: "false"
         run: |
-          export CONNECT_SERVER="http://$(cat connect_ip.txt):3939"
+          export CONNECT_SERVER="$(cat connect_ip.txt)"
           export CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
           export TEST_SCENARIO="basic"
           just test/publishing-tests darwin-amd64
@@ -568,7 +568,7 @@ jobs:
           os: linux-amd64
           DOCKER: "false"
         run: |
-          export CONNECT_SERVER="http://$(cat connect_ip.txt):3939"
+          export CONNECT_SERVER="$(cat connect_ip.txt)"
           export CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
           export TEST_SCENARIO="basic"
           just test/docker_publishing-tests ${os}
