@@ -572,7 +572,7 @@ jobs:
           export CONNECT_SERVER="http://$(cat connect_ip.txt):3939"
           export CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
           export TEST_SCENARIO="basic"
-          just test/docker_init-connect ${os}
+          just test/docker_publishing-tests ${os}
 
   build-linux-arm64:
     runs-on: ubuntu-latest
@@ -698,5 +698,5 @@ jobs:
       #     DOCKER: "false"
       #   run: |
       #     export CONNECT_IP="$(cat connect_ip.txt)"
-      #     just test/ui-client ${os}
+      #     just test/docker_publishing-tests ${os}
 

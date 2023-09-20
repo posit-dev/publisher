@@ -57,7 +57,7 @@ def get_ip(box_name):
 # check if fuzzbucket is up and taking requests
 def connect_ready(box_name, max_attempts, interval):
     connect_box=get_ip(box_name)
-    update_config="fuzzbucket-client ssh " + alias + " " + ssh_options + " sudo sed -i 's/CONNECT_IP/" + connect_box + "/g' /etc/rstudio-connect/rstudio-connect.gcfg"
+    update_config="fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo sed -i 's/CONNECT_IP/" + connect_box + "/g' /etc/rstudio-connect/rstudio-connect.gcfg"
     attempts = 0
     while attempts < max_attempts:
         try:
@@ -78,10 +78,10 @@ def connect_ready(box_name, max_attempts, interval):
 
 api_key=get_api_key('admin')
 connect_version=get_connect_version()
-install_connect = "fuzzbucket-client ssh " + alias + " " + ssh_options + " sudo -E UNATTENDED=1 bash installer-ci.sh -d " + connect_version
+install_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo -E UNATTENDED=1 bash installer-ci.sh -d " + connect_version
 response = connect_ready(box_name, 20, 5)
 
 if response:
-    print(get_ip(box_name))
+    print("http://" + get_ip(box_name) + ":3939")
 else:
     print("Server did not respond after multiple attempts.")

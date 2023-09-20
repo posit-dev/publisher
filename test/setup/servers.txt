@@ -1,9 +1,0 @@
-{
-    "connect": {
-        "name": "connect",
-        "url": "http://CONNECT_IP:3939",
-        "api_key": "API_KEY",
-        "insecure": false,
-        "ca_cert": null
-    }
-}

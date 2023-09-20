@@ -1,6 +1,7 @@
 set shell := ["bash", "-uc"]
 
-export TARGET_SERVER := env_var_or_default("TARGET_SERVER", "http://localhost:3939")
+export TEST_SCENARIO := env_var_or_default("TEST_SCENARIO", "basic")
+export CONTENT := env_var_or_default("CONTENT", "./test/sample-content/python/fastapi-simple")
 
 _tag := "rstudio/connect-client"
 
@@ -23,26 +24,7 @@ build target:
     --tag {{_tag}}-{{target}}:latest \
     ./docker
 
-build-clean target:
-  #!/usr/bin/env bash
-  if [[ {{target}} =~ "linux-amd64" ]]; then
-    _platform="linux/amd64"
-  elif [[ {{target}} =~ "linux-arm64" ]]; then
-    _platform="linux/arm64"
-  fi
-
-  docker build \
-    --no-cache \
-    --platform "${_platform}" \
-    --build-arg BUILDKIT_INLINE_CACHE=1 \
-    --build-arg platform={{target}} \
-    --pull \
-    --progress=plain \
-    --tag {{_tag}}-{{target}}:latest \
-    ./docker
-
-# use this to test your local os
-local_init-connect target:
+init-connect-and-publish target:
   #!/usr/bin/env bash
   pip install -r ./setup/requirements.txt
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
@@ -50,12 +32,65 @@ local_init-connect target:
   export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
   export TEST_SCENARIO=${TEST_SCENARIO}
   export CONNECT_API_KEY="$(python ./setup/gen_apikey.py 'admin')"
-  export CONNECT_SERVER="http://$(python setup/connect-setup.py):3939"
-  just ../web/build
+  export CONNECT_SERVER="$(python setup/connect_setup.py)"
   just publishing-tests {{target}} clean
 
-# use this when testing against linux os
-docker_init-connect target:
+docker_init-connect-and-publish target:
+  #!/usr/bin/env bash
+  pip install -r ./setup/requirements.txt
+  echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
+  chmod 600 .fuzzbucket-ssh-key
+  export SSH_OPTIONS="-i.fuzzbucket-ssh-key" && \
+  export TEST_SCENARIO=${TEST_SCENARIO} && \
+  export CONNECT_API_KEY="$(python ./setup/gen_apikey.py 'admin')" && \
+  export CONNECT_SERVER="$(python setup/connect_setup.py)" && \
+  if [[ {{target}} =~ "linux-amd64" ]]; then
+    _platform="linux/amd64"
+  elif [[ {{target}} =~ "linux-arm64" ]]; then
+    _platform="linux/arm64"
+  fi
+  if [[ {{target}} =~ "linux" ]]; then
+    source ./environments/.${TEST_SCENARIO} && \
+    export CMD_ARGS="${CMD_ARGS}" && \
+    docker run \
+    --platform ${_platform} \
+    -e DOCKER="false" \
+    -e CONNECT_SERVER=${CONNECT_SERVER} \
+    -e CONNECT_API_KEY=${CONNECT_API_KEY} \
+    -e CMD_ARGS="${CMD_ARGS}" \
+    -e TEST_SCENARIO=${TEST_SCENARIO} \
+    -v "$(pwd)"/../:/publishing-client \
+    -w /publishing-client/ \
+    --rm {{_tag}}-{{target}} \
+    just test/publishing-tests {{target}}
+  fi
+
+publishing-tests target:
+  #!/usr/bin/env bash
+  just ../web/build
+  echo "TEST SCENARIO: ${TEST_SCENARIO}" && \
+  pip install -r ./setup/requirements.txt && \
+  export CONNECT_API_KEY=${CONNECT_API_KEY} && \
+  export CONNECT_SERVER=${CONNECT_SERVER} && \
+  if [[ ${TEST_SCENARIO} == "all_content" ]]; then
+    content=$(python deploy_helper.py)
+    echo "contents: ${content}"
+    for i in ${content}
+    do
+      CONTENT=./test/sample-content/python/$i
+      source ./environments/.${TEST_SCENARIO}
+      export CMD_ARGS="${CMD_ARGS}"
+      echo "CONTENT:${CONTENT}"
+      just ../web/build-and-test-ci-e2e {{target}}
+    done
+  else
+      source ./environments/.${TEST_SCENARIO}
+      export CMD_ARGS="${CMD_ARGS}"
+      just ../web/build-and-test-ci-e2e {{target}}
+  fi
+
+
+docker_publishing-tests target:
   #!/usr/bin/env bash
   if [[ {{target}} =~ "linux-amd64" ]]; then
     _platform="linux/amd64"
@@ -63,48 +98,26 @@ docker_init-connect target:
     _platform="linux/arm64"
   fi
   if [[ {{target}} =~ "linux" ]]; then
+    source ./environments/.${TEST_SCENARIO}
+    export CMD_ARGS="${CMD_ARGS}"
     docker run \
     --platform ${_platform} \
     -e DOCKER="false" \
     -e CONNECT_SERVER=${CONNECT_SERVER} \
     -e CONNECT_API_KEY=${CONNECT_API_KEY} \
+    -e CMD_ARGS=${CMD_ARGS} \
     -e TEST_SCENARIO=${TEST_SCENARIO} \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \
-    just test/publishing-tests {{target}} clean
-  fi
-
-publishing-tests target:
-  #!/usr/bin/env bash
-  just ../web/build
-  echo "TEST SCENARIO: ${TEST_SCENARIO}"
-  pip install -r ./setup/requirements.txt
-  export CONNECT_API_KEY=${CONNECT_API_KEY}
-  export CONNECT_SERVER=${CONNECT_SERVER}
-  # python setup/client-setup.py
-  if [[ ${TEST_SCENARIO} == "all_deployments" ]]; then
-    deployments=$(python deploy_helper.py)
-    echo "deployments: ${deployments}"
-    for i in ${deployments}
-    do
-      DEPLOYMENT=./test/sample-content/python/$i
-      source ./environments/.all_deployments
-      export CMD_ARGS="${CMD_ARGS}"
-      echo "DEPLOYMENT:${DEPLOYMENT}"
-      just ../web/build-and-test-ci-e2e {{target}}
-    done
-  else
-      source ./environments/.basic
-      export CMD_ARGS="${CMD_ARGS}"
-      just ../web/build-and-test-ci-e2e {{target}}
+    just test/publishing-tests {{target}}
   fi
 
 clean:
   #!/usr/bin/env bash
   rm -rf ./sample-content/python/*/rsconnect-python/
 
-run-client target:
+docker_test-cli target:
   #!/usr/bin/env bash
   if [[ {{target}} =~ "linux-amd64" ]]; then
     _platform="linux/amd64"
@@ -120,8 +133,23 @@ run-client target:
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} just test/_test-client {{target}}
-  else
-    just _test-client {{target}}
+  fi
+
+local_test-cli target:
+  #!/usr/bin/env bash
+  just bats-install && \
+  BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \
+  BATS_ASSERT_LIB={{invocation_directory()}}/libs/bats-assert/load \
+  BINARY_PATH=../bin/{{target}}/connect-client \
+  ./libs/bats-core/bin/bats --tap -T -r ./bats/
+
+bats-install:
+  #!/usr/bin/env bash
+  if [[ ! -d ./libs ]]; then
+    git clone --depth=1 https://github.com/bats-core/bats-core.git ./libs/bats-core && \
+    ./libs/bats-core/install.sh ./libs/bats-core/installation && \
+    git clone --depth=1 https://github.com/ztombol/bats-support.git ./libs/bats-support && \
+    git clone --depth=1 https://github.com/ztombol/bats-assert.git ./libs/bats-assert
   fi
 
 build-binary target:
@@ -143,23 +171,6 @@ build-binary target:
 
 _test-client target:
   bats --tap -T -r ./bats/
-
-run-client-local target:
-  #!/usr/bin/env bash
-  just bats-install && \
-  BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \
-  BATS_ASSERT_LIB={{invocation_directory()}}/libs/bats-assert/load \
-  BINARY_PATH=../bin/{{target}}/connect-client \
-  ./libs/bats-core/bin/bats --tap -T -r ./bats/
-
-bats-install:
-  #!/usr/bin/env bash
-  if [[ ! -d ./libs ]]; then
-    git clone --depth=1 https://github.com/bats-core/bats-core.git ./libs/bats-core && \
-    ./libs/bats-core/install.sh ./libs/bats-core/installation && \
-    git clone --depth=1 https://github.com/ztombol/bats-support.git ./libs/bats-support && \
-    git clone --depth=1 https://github.com/ztombol/bats-assert.git ./libs/bats-assert
-  fi
 
 bash target:
   #!/usr/bin/env bash
