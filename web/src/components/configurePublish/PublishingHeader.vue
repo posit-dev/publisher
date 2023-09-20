@@ -2,8 +2,7 @@
 
 <template>
   <div
-    class="q-my-lg row justify-between"
-    style="align-items: flex-start;"
+    class="q-my-lg row justify-between items-start"
   >
     <q-input
       v-model="title"

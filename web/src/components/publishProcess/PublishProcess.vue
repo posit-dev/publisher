@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 
-const emit = defineEmits([<string>'back']);
+const emit = defineEmits(['back']);
 
 const onBackButton = () => {
   emit('back');

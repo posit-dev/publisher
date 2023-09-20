@@ -42,7 +42,7 @@ import AdvancedSettings from 'src/components/configurePublish/AdvancedSettings.v
 
 import type { DeploymentModeType } from 'src/api/types/deployments.ts';
 
-const emit = defineEmits([<string>'publish']);
+const emit = defineEmits(['publish']);
 
 const deploymentMode = ref<DeploymentModeType>('new');
 

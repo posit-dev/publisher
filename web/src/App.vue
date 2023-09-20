@@ -9,7 +9,7 @@
       elevated
       class="bg-primary text-white"
     >
-      <q-toolbar class="max-width-md q-pa-none">
+      <q-toolbar class="max-width-md q-pa-auto">
         <AppMenu />
         <WhitePositLogo
           class="posit-logo"
@@ -48,7 +48,7 @@ import { useDeploymentStore } from 'src/stores/deployment';
 
 type viewType = 'configure' | 'publish';
 
-const currentView = ref(<viewType>'configure');
+const currentView = ref<viewType>('configure');
 const api = useApi();
 const deploymentStore = useDeploymentStore();
 

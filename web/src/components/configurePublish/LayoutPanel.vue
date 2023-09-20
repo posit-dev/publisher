@@ -4,8 +4,8 @@
   <q-expansion-item
     :default-opened="defaultOpen"
     :expand-icon="expandIcon"
-    header-style="padding: unset;"
-    :group="props.group"
+    header-class="q-px-none"
+    :group="group"
   >
     <template #header>
       <q-item-section
@@ -16,18 +16,18 @@
       </q-item-section>
 
       <q-item-section>
-        <q-item-label>{{ props.title }}</q-item-label>
+        <q-item-label>{{ title }}</q-item-label>
         <q-item-label
-          v-if="props.subtitle"
+          v-if="subtitle"
           caption
         >
-          {{ props.subtitle }}
+          {{ subtitle }}
         </q-item-label>
         <q-tooltip
-          v-if="props.tooltip"
+          v-if="tooltip"
           anchor="top middle"
         >
-          {{ props.tooltip }}
+          {{ tooltip }}
         </q-tooltip>
       </q-item-section>
     </template>
@@ -43,7 +43,7 @@
 
 <script setup lang="ts">
 
-const props = defineProps({
+defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, required: false, default: undefined },
   tooltip: { type: String, required: false, default: undefined },

@@ -5,9 +5,7 @@
     <q-btn
       flat
       icon="menu"
-
       class="q-px-xs"
-      @click="menu = !menu"
     >
       <q-menu
         dark
@@ -64,10 +62,3 @@
     </q-btn>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue';
-
-const menu = ref(false);
-
-</script>
