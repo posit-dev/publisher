@@ -139,7 +139,7 @@ func (p *proxy) logHeader(msg string, header http.Header) {
 				value = fmt.Sprintf("%v", values)
 			}
 		}
-		log = log.With(headerName(name), value)
+		log = log.WithArgs(headerName(name), value)
 	}
 	log.Debug(msg)
 }

@@ -3,61 +3,42 @@ package loggingtest
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"context"
-	"log/slog"
-
-	"github.com/stretchr/testify/mock"
+	"github.com/rstudio/publishing-client/internal/logging"
 )
 
 type MockLogger struct {
-	mock.Mock
+	logging.MockBaseLogger
 }
 
 func NewMockLogger() *MockLogger {
 	return &MockLogger{}
 }
 
-func (m *MockLogger) Error(msg string, args ...any) {
+func (m *MockLogger) Start(msg string, args ...any) {
 	mockArgs := append([]any{msg}, args...)
 	m.Called(mockArgs...)
 }
 
-func (m *MockLogger) Warn(msg string, args ...any) {
+func (m *MockLogger) Success(msg string, args ...any) {
 	mockArgs := append([]any{msg}, args...)
 	m.Called(mockArgs...)
 }
 
-func (m *MockLogger) Info(msg string, args ...any) {
+func (m *MockLogger) Status(msg string, args ...any) {
 	mockArgs := append([]any{msg}, args...)
 	m.Called(mockArgs...)
 }
 
-func (m *MockLogger) Debug(msg string, args ...any) {
-	mockArgs := append([]any{msg}, args...)
+func (m *MockLogger) Progress(msg string, done float32, total float32, args ...any) {
+	mockArgs := append([]any{msg, done, total}, args...)
 	m.Called(mockArgs...)
 }
 
-func (m *MockLogger) Log(ctx context.Context, level slog.Level, msg string, args ...any) {
-	mockArgs := append([]any{ctx, level, msg}, args...)
-	m.Called(mockArgs...)
+func (m *MockLogger) Failure(err error) {
+	m.Called(err)
 }
 
-func (m *MockLogger) Handler() slog.Handler {
-	mockArgs := m.Called()
-	return mockArgs.Get(0).(slog.Handler)
-}
-
-func (m *MockLogger) Enabled(ctx context.Context, level slog.Level) bool {
-	args := m.Called(ctx, level)
-	return args.Bool(0)
-}
-
-func (m *MockLogger) With(args ...any) *slog.Logger {
+func (m *MockLogger) WithArgs(args ...any) logging.Logger {
 	mockArgs := m.Called(args...)
-	return mockArgs.Get(0).(*slog.Logger)
-}
-
-func (m *MockLogger) WithGroup(name string) *slog.Logger {
-	mockArgs := m.Called(name)
-	return mockArgs.Get(0).(*slog.Logger)
+	return mockArgs.Get(0).(logging.Logger)
 }
