@@ -6,39 +6,75 @@ These tests will run the `connect-client` binary in the following environments:
 * linux-amd64 (Local Docker & Github Actions)
 * linux-arm64 (Local Docker & Github Actions)
 
-To run the tests against your local environment (replace `darwin-amd64` with the proper binary):
 
-We can run CLI tests or UI tests. 
+
+## Binaries
+First you'll need the `connect-client` binary to test with. If testing on your local OS, outside of Docker, in the root directory run:
+```
+just build
+```
+
+If you want to run tests against a linux binary in Docker, in this directory run:
+
+```
+just build-binary linux-amd64
+```
+(also works with `linux-arm64`)
 
 ## CLI Tests
 
 To run CLI tests run the following command (replace `darwin-arm64` with your local OS and architecture).  This will run the CLI tests located in `./bats/`:
 
 ```
-just local_test-cli darwin-amd64
+just test-cli darwin-amd64
 ```
 
-To run against a linux os, first, build the docker containers needed (also works with `linux-arm64`):
+To run against a Linux OS, first, build the docker containers needed:
 ```
 just build linux-amd64
 ```
 
-Start Connect and run publishing tests on `linux-amd64`:
+Now you can run the tests:
+
 ```
-just docker_init-connect linux-amd64 
+just docker_test-cli linux-amd64
+```
+(also works with `linux-arm64`)
+
+## Publishing UI Tests to Connect
+
+To run these tests locally, you'll need:
+* access to Connect Fuzzbucket Credentials
+* environment variables set for `FUZZBUCKET_CREDENTIALS` and `FUZZBUCKET_URL`.
+
+To run the Publishing UI tests run the following command (replace `darwin-arm64` with your local OS and architecture).  This will start Connect in a fuzzbucket instance and run the Publish UI tests located in `../web/cypress/test`:
+
+```
+just init-connect-and-publish darwin-arm64
 ```
 
-By default the justfile sets `TEST_SCENARIO=basic` which loads the `environment/.basic` environment which sets the command arguments used to start the `connect-client` and deploys only the `fastapi-sample` content. If you'd like to run against all content available set `CONTENT=all_content` which will deploy all the content under `./sample-content/`. If you want to run a single deployment, set `CONTENT` to the path of any content you'd like to deploy, i.e.
+To run against a Linux OS first, build the docker containers needed (also works with `linux-arm64`):
 ```
-CONTENT="test/sample-content/python/stock-dashboard-python/" just local_init-connect darwin-arm64
+just build linux-amd64
 ```
 
+Now you can run the tests:
 
-These commands will build/use a docker container running the specified linux platform.
+```
+just docker_init-connect-and-publish linux-amd64
+```
 
+By default the `justfile` sets `TEST_SCENARIO=basic`. This loads the `environment/.basic` environment which sets the command arguments used to start the `connect-client`. By default we only deploy the `fastapi-sample` content. If you'd like to run against all content available set `CONTENT=all_content` which will deploy all the content under `./sample-content/`. If you want to run a single deployment, set `CONTENT` to the path of any content you'd like to deploy.
 
-Running locally installs BATS locally in the `test/libs` directory (.gitignore'd).
+All Content Test:
+```
+CONTENT=all_content just init-connect-and-publish darwin-arm64
+```
 
-Github Actions will use the virtual environment runners to test against `windows-amd64` and `darwin-amd64`.
+Single Content Test:
+```
+CONTENT="test/sample-content/python/stock-dashboard-python/" just init-connect-and-publish darwin-arm64
+```
+
 
 
