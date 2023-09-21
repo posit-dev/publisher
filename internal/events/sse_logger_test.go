@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"testing"
 
+	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
@@ -35,6 +36,7 @@ func (s *LoggerSuite) TestNewLoggerDebug() {
 }
 
 func (s *LoggerSuite) TestNewLoggerWithSSE() {
-	log := NewLoggerWithSSE(false)
+	sseServer := sse.New()
+	log := NewLoggerWithSSE(false, sseServer)
 	s.IsType(log.Handler(), &logging.MultiHandler{})
 }
