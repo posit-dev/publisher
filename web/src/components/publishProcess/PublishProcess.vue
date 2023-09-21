@@ -12,6 +12,7 @@
         color="primary"
         icon="arrow_back"
         label="Back"
+        data-automation="BackToConfiguration"
         @click="onBackButton"
       />
     </div>
