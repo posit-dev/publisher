@@ -396,7 +396,6 @@ jobs:
         run: |
           $env:CONNECT_SERVER="$(cat connect_ip.txt)"
           $env:CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
-          $env:TEST_SCENARIO="basic"
           just test/publishing-tests windows-amd64
   test-macos:
     needs: [build-agent, start-connect]
@@ -451,7 +450,6 @@ jobs:
         run: |
           export CONNECT_SERVER="$(cat connect_ip.txt)"
           export CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
-          export TEST_SCENARIO="basic"
           just test/publishing-tests darwin-amd64
 
   build-linux-amd64:
@@ -570,7 +568,6 @@ jobs:
         run: |
           export CONNECT_SERVER="$(cat connect_ip.txt)"
           export CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
-          export TEST_SCENARIO="basic"
           just test/docker_publishing-tests ${os}
 
   build-linux-arm64:
