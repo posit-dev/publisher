@@ -46,6 +46,7 @@ var standardIgnores = []string{
 
 	// Other
 	".ipynb_checkpoints/",
+	".posit/",
 }
 
 // excludingWalker is a Walker that excludes files and directories
