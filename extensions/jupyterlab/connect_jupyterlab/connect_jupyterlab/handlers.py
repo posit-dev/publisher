@@ -53,7 +53,6 @@ def launch_ui(
         pythonPath,
         "--python-version",
         pythonVersion,
-        "--skip-browser-session-auth",
         "-n",
         "local",  # cheating, no target selection in the UI yet
     ]
