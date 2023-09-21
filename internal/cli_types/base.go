@@ -13,8 +13,9 @@ import (
 )
 
 type CommonArgs struct {
-	Debug bool                 `help:"Enable debug mode." env:"CONNECT_DEBUG"`
-	Token *services.LocalToken `help:"Authentication token for the publishing UI. Default auto-generates a token."`
+	Debug   bool                 `help:"Enable debug mode." env:"CONNECT_DEBUG"`
+	Profile string               `help:"Enable CPU profiling"`
+	Token   *services.LocalToken `help:"Authentication token for the publishing UI. Default auto-generates a token."`
 }
 
 type Log interface {

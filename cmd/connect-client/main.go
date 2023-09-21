@@ -4,6 +4,7 @@ package main
 
 import (
 	"os"
+	"runtime/pprof"
 
 	"github.com/alecthomas/kong"
 	"github.com/rstudio/connect-client/cmd/connect-client/commands"
@@ -63,6 +64,14 @@ func main() {
 	}
 	// Dispatch to the Run() method of the selected command.
 	args := kong.Parse(&cli, kong.Bind(ctx))
+	if cli.Profile != "" {
+		f, err := os.Create(cli.Profile)
+		if err != nil {
+			Fatal(log, "Error creating file for profile data", err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 	if cli.Debug {
 		ctx.Logger = events.NewLogger(true)
 	}
