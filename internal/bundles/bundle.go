@@ -227,7 +227,7 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 	if err != nil {
 		return err
 	}
-	pathLogger := b.log.With(
+	pathLogger := b.log.WithArgs(
 		"path", path,
 		"size", info.Size(),
 	)
