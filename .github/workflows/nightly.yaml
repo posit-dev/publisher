@@ -1,12 +1,9 @@
 name: Nightly
+
 on:
-    pull_request
-
-
-# on:
-#   schedule:
-#     - cron: "0 09 * * *" # Runs 11 AM UTC == 2 AM PDT
-#   workflow_dispatch:
+  schedule:
+    - cron: "0 09 * * *" # Runs 11 AM UTC == 2 AM PDT
+  workflow_dispatch:
 
 # A note on debugging a github step:
 #   You can ssh into the github action environment and poke around by using
