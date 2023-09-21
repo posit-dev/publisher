@@ -86,7 +86,7 @@ test-ui-only target:
     export CYPRESS_CACHE_FOLDER="./cypress/{{target}}/.cache"
     export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
     npx cypress install
-    npm test:e2e:ui-only
+    npm run test:e2e:ui-only
 
 # run unit tests one time
 test-unit:
