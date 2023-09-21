@@ -113,11 +113,11 @@ func NewExcludingWalker(dir util.Path, ignores []string) (util.Walker, error) {
 // exclusions, gitignore contents, and the provided ignore list.
 func NewIgnoreList(dir util.Path, ignores []string) (IgnoreList, error) {
 	gitIgnore := New(dir)
-	//err := gitIgnore.AppendGit()
-	// if err != nil && err != ErrNotInGitRepo {
-	// 	return nil, err
-	// }
-	err := gitIgnore.AppendGlobs(standardIgnores, MatchSourceBuiltIn)
+	err := gitIgnore.AppendGit()
+	if err != nil && err != ErrNotInGitRepo {
+		return nil, err
+	}
+	err = gitIgnore.AppendGlobs(standardIgnores, MatchSourceBuiltIn)
 	if err != nil {
 		return nil, err
 	}

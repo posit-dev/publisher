@@ -16,7 +16,6 @@ import (
 	"bufio"
 	"errors"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -61,6 +60,12 @@ func fromSplit(path []string) string {
 // New creates a new ignore list.
 func New(cwd util.Path) GitIgnoreList {
 	files := make([]ignoreFile, 1, 4)
+	absPath, err := cwd.Abs()
+	if err != nil {
+		absPath = cwd
+	}
+	files[0].abspath = toSplit(absPath.Path())
+
 	return GitIgnoreList{
 		files,
 		toSplit(cwd.Path()),
@@ -216,16 +221,16 @@ func (ign *GitIgnoreList) exists(path string) bool {
 
 var ErrNotInGitRepo = errors.New("not in a git repository")
 
-func (ign *GitIgnoreList) findGitRoot(cwd []string) (string, error) {
+func (ign *GitIgnoreList) findGitRoot(cwd []string) (util.Path, error) {
 	p := fromSplit(cwd)
 	for !ign.exists(p + "/.git") {
 		if len(cwd) == 1 {
-			return "", ErrNotInGitRepo
+			return util.Path{}, ErrNotInGitRepo
 		}
 		cwd = cwd[:len(cwd)-1]
 		p = fromSplit(cwd)
 	}
-	return p, nil
+	return util.NewPath(p, ign.fs), nil
 }
 
 func (ign *GitIgnoreList) appendAll(fname string, root util.Path) error {
@@ -248,23 +253,33 @@ func (ign *GitIgnoreList) appendAll(fname string, root util.Path) error {
 // the contents of all .gitignore files in that git repository to the ignore
 // list.
 func (ign *GitIgnoreList) AppendGit() error {
-	gitRoot, err := ign.findGitRoot(ign.cwd)
-	if err != nil {
+	if err := ign.AppendGlobs([]string{".git"}, MatchSourceBuiltIn); err != nil {
 		return err
 	}
-	if err = ign.AppendGlobs([]string{".git"}, MatchSourceBuiltIn); err != nil {
-		return err
-	}
-	usr, err := user.Current()
-	if err != nil {
-		return err
-	}
-	if gg := filepath.Join(usr.HomeDir, ".gitignore_global"); ign.exists(gg) {
-		if err = ign.append(util.NewPath(gg, ign.fs), toSplit(gitRoot)); err != nil {
+	// Add all .gitignore files, from this directory
+	// up to the git root.
+	dir := util.NewPath(fromSplit(ign.cwd), ign.fs)
+	for dir.Base() != "" {
+		ignorePath := dir.Join(".gitignore")
+		exists, err := ignorePath.Exists()
+		if err != nil {
 			return err
 		}
+		if exists {
+			ign.append(ignorePath, nil)
+		}
+		// See if we've reached the git root
+		exists, err = dir.Join(".git").Exists()
+		if err != nil {
+			return err
+		}
+		if exists {
+			// Reached git root
+			return nil
+		}
+		dir = dir.Dir()
 	}
-	return ign.appendAll(".gitignore", util.NewPath(gitRoot, ign.fs))
+	return ErrNotInGitRepo
 }
 
 func isPrefix(abspath, dir []string) bool {
