@@ -1,6 +1,6 @@
 set shell := ["bash", "-uc"]
 
-export TEST_SCENARIO := env_var_or_default("TEST_SCENARIO", "basic")
+export TEST_ENVIRONMENT := env_var_or_default("TEST_ENVIRONMENT", "basic")
 export CONTENT := env_var_or_default("CONTENT", "./test/sample-content/python/fastapi-simple")
 
 _tag := "rstudio/connect-client"
@@ -30,7 +30,7 @@ init-connect-and-publish target:
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
   chmod 600 .fuzzbucket-ssh-key
   export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
-  export TEST_SCENARIO=${TEST_SCENARIO}
+  export TEST_ENVIRONMENT=${TEST_ENVIRONMENT}
   export CONNECT_API_KEY="$(python ./setup/gen_apikey.py 'admin')"
   export CONNECT_SERVER="$(python setup/connect_setup.py)"
   just publishing-tests {{target}} clean
@@ -41,7 +41,7 @@ docker_init-connect-and-publish target:
   echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
   chmod 600 .fuzzbucket-ssh-key
   export SSH_OPTIONS="-i.fuzzbucket-ssh-key" && \
-  export TEST_SCENARIO=${TEST_SCENARIO} && \
+  export TEST_ENVIRONMENT=${TEST_ENVIRONMENT} && \
   export CONNECT_API_KEY="$(python ./setup/gen_apikey.py 'admin')" && \
   export CONNECT_SERVER="$(python setup/connect_setup.py)" && \
   if [[ {{target}} =~ "linux-amd64" ]]; then
@@ -50,7 +50,7 @@ docker_init-connect-and-publish target:
     _platform="linux/arm64"
   fi
   if [[ {{target}} =~ "linux" ]]; then
-    source ./environments/.${TEST_SCENARIO} && \
+    source ./environments/.basic && \
     export CMD_ARGS="${CMD_ARGS}" && \
     docker run \
     --platform ${_platform} \
@@ -58,7 +58,7 @@ docker_init-connect-and-publish target:
     -e CONNECT_SERVER=${CONNECT_SERVER} \
     -e CONNECT_API_KEY=${CONNECT_API_KEY} \
     -e CMD_ARGS="${CMD_ARGS}" \
-    -e TEST_SCENARIO=${TEST_SCENARIO} \
+    -e TEST_ENVIRONMENT=${TEST_ENVIRONMENT} \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \
@@ -68,23 +68,22 @@ docker_init-connect-and-publish target:
 publishing-tests target:
   #!/usr/bin/env bash
   just ../web/build
-  echo "TEST SCENARIO: ${TEST_SCENARIO}" && \
+  echo "TEST ENV: ${TEST_ENVIRONMENT}" && \
   pip install -r ./setup/requirements.txt && \
   export CONNECT_API_KEY=${CONNECT_API_KEY} && \
   export CONNECT_SERVER=${CONNECT_SERVER} && \
-  if [[ ${TEST_SCENARIO} == "all_content" ]]; then
+  if [[ ${CONTENT} == "all_content" ]]; then
     content=$(python deploy_helper.py)
     echo "contents: ${content}"
     for i in ${content}
     do
       CONTENT=./test/sample-content/python/$i
-      source ./environments/.${TEST_SCENARIO}
-      export CMD_ARGS="${CMD_ARGS}"
-      echo "CONTENT:${CONTENT}"
+      source ./environments/.basic
+      export CMD_ARGS="${CMD_ARGS}" && \
       just ../web/build-and-test-ci-e2e {{target}}
     done
   else
-      source ./environments/.${TEST_SCENARIO}
+      source ./environments/.${TEST_ENVIRONMENT}
       export CMD_ARGS="${CMD_ARGS}"
       just ../web/build-and-test-ci-e2e {{target}}
   fi
@@ -98,7 +97,7 @@ docker_publishing-tests target:
     _platform="linux/arm64"
   fi
   if [[ {{target}} =~ "linux" ]]; then
-    source ./environments/.${TEST_SCENARIO}
+    source ./environments/.${TEST_ENVIRONMENT}
     export CMD_ARGS="${CMD_ARGS}"
     docker run \
     --platform ${_platform} \
@@ -106,7 +105,7 @@ docker_publishing-tests target:
     -e CONNECT_SERVER=${CONNECT_SERVER} \
     -e CONNECT_API_KEY=${CONNECT_API_KEY} \
     -e CMD_ARGS="${CMD_ARGS}" \
-    -e TEST_SCENARIO=${TEST_SCENARIO} \
+    -e TEST_ENVIRONMENT=${TEST_ENVIRONMENT} \
     -v "$(pwd)"/../:/publishing-client \
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} \
