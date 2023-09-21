@@ -4,8 +4,10 @@
   <LayoutPanel
     title="Files"
     :subtitle="fileSummary"
-    icon="img:/images/files-icon.jpg"
   >
+    <template #avatar>
+      <PublisherFolderLogo />
+    </template>
     <q-tree
       v-model:ticked="deploymentStore.files"
       v-model:expanded="expanded"
@@ -22,7 +24,9 @@
 import type { QTree, QTreeNode } from 'quasar';
 import { ref, computed } from 'vue';
 
-import LayoutPanel from 'src/components/LayoutPanel.vue';
+import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
+import PublisherFolderLogo from 'src/components/icons/PublisherFolderLogo.vue';
+
 import { useApi, DeploymentFile } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
 

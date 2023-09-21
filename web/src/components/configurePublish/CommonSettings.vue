@@ -3,13 +3,16 @@
 <template>
   <LayoutPanel
     title="Common Settings"
-    icon="img:images/info.png"
   >
+    <template #avatar>
+      <PublisherSettingsLogo />
+    </template>
     TODO: Common settings, probably off the info panel in dashboard
   </LayoutPanel>
 </template>
 
 <script setup lang="ts">
-import LayoutPanel from 'src/components/LayoutPanel.vue';
+import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
+import PublisherSettingsLogo from 'src/components/icons/PublisherSettingsLogo.vue';
 </script>
 

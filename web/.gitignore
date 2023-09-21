@@ -26,3 +26,4 @@ dist-ssr
 
 .nyc_output
 coverage/
+vite.config.ts.*
