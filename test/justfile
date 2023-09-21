@@ -26,7 +26,7 @@ build target:
 
 ui-tests target:
   #!/usr/bin/env bash
-  just web/build
+  just ../web/build
   source ./environments/.${TEST_ENVIRONMENT}
   export CMD_ARGS="${CMD_ARGS}"
   just ../web/test-ui-only {{target}}
