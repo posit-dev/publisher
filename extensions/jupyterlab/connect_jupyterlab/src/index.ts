@@ -8,7 +8,6 @@ import { IDocumentManager } from '@jupyterlab/docmanager';
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 import { KernelMessage } from '@jupyterlab/services';
 import { IKernelConnection } from '@jupyterlab/services/lib/kernel/kernel';
-import { LabIcon } from '@jupyterlab/ui-components';
 import { JSONObject } from '@lumino/coreutils';
 import { Widget } from '@lumino/widgets';
 
@@ -123,7 +122,7 @@ class IFrameWidget extends Widget {
     this.id = 'posit-publishing-ui-' + IFrameWidget.unique;
     this.title.label = 'Publish ' + notebookPath.split('/').at(-1);
     this.title.closable = true;
-    this.title.icon = LabIcon.resolveElement({ iconClass: 'rsc-icon' });
+    // this.title.icon = LabIcon.resolveElement({ iconClass: 'rsc-icon' }); // nope
     this.addClass('jp-posit-publishing-view');
 
     const iframe = document.createElement('iframe');
@@ -181,8 +180,7 @@ function makePublishCommand(
         pythonVersion
       );
       console.log(agentInfo);
-      // const url = agentInfo.url;
-      const url = 'http://localhost:3939';
+      const url = agentInfo.url;
       console.log(`Publishing agent serving at ${url}`);
 
       // The widget is a singleton; if it's open, activate it.
