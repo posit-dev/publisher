@@ -14,8 +14,10 @@
     "test:e2e:dev": "start-server-and-test dev http-get://localhost:9000 cypress:run",
     "test:e2e:ci": "start-server-and-test --expect 401 'just ../start-agent-for-e2e' http-get://127.0.0.1:9000 cypress:run:ci",
     "test-win:e2e:ci": "start-server-and-test --expect 401 'just ../start-agent-for-e2e' http-get://127.0.0.1:9000 cypress-win:run:ci",
+    "test:e2e:ui-only": "start-server-and-test --expect 401 'just ../start-agent-for-e2e' http-get://127.0.0.1:9000 cypress:run:ui-only",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
+    "cypress:run:ui-only": "cypress run --spec ./cypress/e2e/home.cy.ts --env publishing-token=abc123",
     "cypress:run:ci": "cypress run --env publishing-token=abc123,CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS",
     "cypress-win:run:ci": "cypress run --env publishing-token=abc123,CYPRESS_CONNECT_ADDRESS=%CYPRESS_CONNECT_ADDRESS%"
   },

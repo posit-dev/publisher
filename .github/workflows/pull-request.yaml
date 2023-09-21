@@ -313,40 +313,9 @@ jobs:
         with:
           name: agent-artifacts
           path: bin/
-
-  start-connect:
-    runs-on: ubuntu-latest
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
-      - 
-        name: run Connect in fuzzbucket
-        env: 
-          FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
-          FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
-          FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
-        run: |
-          pip install -r ./test/setup/requirements.txt
-          echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
-          chmod 600 .fuzzbucket-ssh-key
-          export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
-          export CONNECT_IP="$(python ./test/setup/connect_setup.py)"
-          echo ${CONNECT_IP} > connect_ip.txt
-      -
-        name: Upload connect_ip file
-        uses: actions/upload-artifact@v3
-        with:
-          name: connect_ip
-          path: connect_ip.txt
-
+  
   test-windows:
-    needs: [build-agent, start-connect]
+    needs: build-agent
     runs-on: windows-latest
     steps:
       -
@@ -380,11 +349,6 @@ jobs:
           $env:BINARY_PATH = "$env:GITHUB_WORKSPACE\bin\windows-amd64\connect-client"
           cd $env:GITHUB_WORKSPACE\test
           just test-cli windows-amd64
-      - 
-        name: Download connect_ip
-        uses: actions/download-artifact@v3
-        with:
-          name: connect_ip
       -
         name: Run Windows Cypress Tests
         env:
@@ -396,9 +360,9 @@ jobs:
         run: |
           $env:CONNECT_SERVER="$(cat connect_ip.txt)"
           $env:CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
-          just test/publishing-tests windows-amd64
+          just test/ui-tests windows-amd64
   test-macos:
-    needs: [build-agent, start-connect]
+    needs: build-agent
     runs-on: macos-latest
     steps:
       -
@@ -437,11 +401,6 @@ jobs:
           PATH="$PATH:${{ github.workspace }}/test/libs/bats-core/bin"
           cd ${{ github.workspace }}/test
           just test-cli darwin-amd64
-      - 
-        name: Download connect_ip
-        uses: actions/download-artifact@v3
-        with:
-          name: connect_ip 
       -
         name: Run MacOS Cypress Tests
         env:
@@ -450,7 +409,7 @@ jobs:
         run: |
           export CONNECT_SERVER="$(cat connect_ip.txt)"
           export CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
-          just test/publishing-tests darwin-amd64
+          just test/ui-tests darwin-amd64
 
   build-linux-amd64:
     runs-on: ubuntu-latest
@@ -512,7 +471,7 @@ jobs:
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
   test-linux-amd64:
-    needs:  [build-agent, build-linux-amd64, start-connect]
+    needs:  [build-agent, build-linux-amd64]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -555,11 +514,6 @@ jobs:
           os: linux-amd64
         run: |
           just test/docker_test-cli ${os}
-      - 
-        name: Download connect_ip
-        uses: actions/download-artifact@v3
-        with:
-          name: connect_ip
       -
         name: Run linux-amd64 Cypress Tests
         env:
@@ -568,7 +522,7 @@ jobs:
         run: |
           export CONNECT_SERVER="$(cat connect_ip.txt)"
           export CONNECT_API_KEY="$(python ./test/setup/gen_apikey.py 'admin')"
-          just test/docker_publishing-tests ${os}
+          just test/ui-tests ${os}
 
   build-linux-arm64:
     runs-on: ubuntu-latest
@@ -629,7 +583,7 @@ jobs:
           key:  ${{ env.cache-name }}-${{ hashFiles('test/docker/Dockerfile') }}
 
   test-linux-arm64:
-    needs:  [build-agent, build-linux-arm64, start-connect]
+    needs:  [build-agent, build-linux-arm64]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -676,11 +630,6 @@ jobs:
         name: Load Docker Image
         run: |
           docker load --input /tmp/linux-arm64-image.tar
-      - 
-        name: Download connect_ip
-        uses: actions/download-artifact@v3
-        with:
-          name: connect_ip 
       -
         name: Run linux-arm64 CLI Tests
         env:
@@ -695,4 +644,3 @@ jobs:
       #   run: |
       #     export CONNECT_IP="$(cat connect_ip.txt)"
       #     just test/docker_publishing-tests ${os}
-

@@ -24,6 +24,12 @@ build target:
     --tag {{_tag}}-{{target}}:latest \
     ./docker
 
+ui-tests target:
+  #!/usr/bin/env bash
+  source ./environments/.${TEST_ENVIRONMENT}
+  export CMD_ARGS="${CMD_ARGS}"
+  just ../web/test-ui-only {{target}}
+
 init-connect-and-publish target:
   #!/usr/bin/env bash
   pip install -r ./setup/requirements.txt
@@ -80,12 +86,12 @@ publishing-tests target:
       CONTENT=./test/sample-content/python/$i
       source ./environments/.basic
       export CMD_ARGS="${CMD_ARGS}" && \
-      just ../web/build-and-test-ci-e2e {{target}}
+      just ../web/test-ci-e2e {{target}}
     done
   else
       source ./environments/.${TEST_ENVIRONMENT}
       export CMD_ARGS="${CMD_ARGS}"
-      just ../web/build-and-test-ci-e2e {{target}}
+      just ../web/test-ci-e2e {{target}}
   fi
 
 

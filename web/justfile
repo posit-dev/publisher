@@ -64,10 +64,9 @@ test-e2e:
 
     npm run test:e2e:ci
 
-build-and-test-ci-e2e target:
+test-ci-e2e target:
     #!/bin/bash
     set -euo pipefail
-    # just build
     # set this environment variable to keep Cypress from attempting to create
     # cache within root's home dir.
     # use a different cache per os
@@ -80,6 +79,14 @@ build-and-test-ci-e2e target:
     else
         npm run test:e2e:ci
     fi
+
+test-ui-only target:
+    #!/bin/bash
+    set -euo pipefail
+    export CYPRESS_CACHE_FOLDER="./cypress/{{target}}/.cache"
+    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
+    npx cypress install
+    npm test:e2e:ui-only
 
 # run unit tests one time
 test-unit:
