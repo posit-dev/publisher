@@ -84,7 +84,7 @@ test-ui-only target:
     #!/bin/bash
     set -euo pipefail
     export CYPRESS_CACHE_FOLDER="./cypress/{{target}}/.cache"
-    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
+    
     npx cypress install
     npm run test:e2e:ui-only
 
