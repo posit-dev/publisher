@@ -279,19 +279,6 @@ onBeforeUnmount(() => {
   eventStore.closeConnection();
 });
 
-// const agentLogLength = computed(() => {
-//   return eventStore.agentLog.values.length;
-// });
-
-// watch(agentLogLength, () => {
-//   if (agentLogEnd.value) {
-//     const el = agentLogEnd.value;
-//     const target = getScrollTarget(el);
-//     const offset = el.offsetTop;
-//     const duration = 0;
-//     setVerticalScrollPosition(target, offset, duration);
-//   }
-// });
 let lastAgentLogLength = -1;
 onMounted(() => {
   setInterval(() => {
