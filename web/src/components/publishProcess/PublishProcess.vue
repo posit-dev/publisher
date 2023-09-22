@@ -50,7 +50,7 @@ const props = defineProps({
   }
 });
 
-const agentLogEnd = ref(null);
+const agentLogEnd = ref<HTMLDivElement | null>(null);
 
 const emit = defineEmits(['back']);
 
