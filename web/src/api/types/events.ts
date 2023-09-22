@@ -6,9 +6,6 @@ export enum EventSourceReadyState {
   CLOSED = 2,
 }
 
-// export const isSomeStringEnum =
-//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//   <T>(e: T) => (token: any): token is T[keyof T] => Object.values(e).includes(token as T[keyof T]);
 
 export enum EventStreamMessageTypes {
   ERROR = 'error',
