@@ -33,7 +33,7 @@ export class EventStream {
 
   private logMsg(msg: string) {
     if (this.debugEnabled) {
-      console.debug(`DEBUG: ${msg}`);
+      console.log(`DEBUG: ${msg}`);
     }
   }
 
