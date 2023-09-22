@@ -6,24 +6,13 @@ import {
   OnMessageEventSourceCallback,
   MethodResult,
   EventStatus,
-  MockMessage,
   EventStreamMessage,
   isEventStreamMessage,
-  EventSubscriptionTargets,
+  EventSubscriptionTarget,
+  CallbackQueueEntry,
 } from 'src/api/types/events.ts';
 
-export type OurMessageEvent = {
-  data: string,
-}
-
-export type CallbackQueueEntry = {
-  eventType: EventSubscriptionTargets,
-  callback: OnMessageEventSourceCallback,
-}
-
 export class EventStream {
-  private mockMessages = <MockMessage[] | null>null;
-  private mockingActive = false;
   private eventSource = <EventSource | null>null;
   private isOpen = false;
   private lastError = <string | null>null;
@@ -43,8 +32,8 @@ export class EventStream {
   }
 
   private matchEvent(
-    subscriptionType: EventSubscriptionTargets,
-    incomingEventType: EventSubscriptionTargets
+    subscriptionType: EventSubscriptionTarget,
+    incomingEventType: EventSubscriptionTarget
   ) {
     this.logMsg(`MatchEvent: subscription type: ${subscriptionType}, incomingType: ${incomingEventType}`);
     if (subscriptionType.indexOf('*') === 0) {
@@ -52,6 +41,7 @@ export class EventStream {
       return true;
     }
     const wildCardIndex = subscriptionType.indexOf('/*');
+    // Does the wildcard live at the very end of the subscription type?
     if (wildCardIndex > 0 && subscriptionType.length === wildCardIndex + 2) {
       const basePath = subscriptionType.substring(0, wildCardIndex);
       if (incomingEventType.indexOf(basePath) === 0) {
@@ -59,9 +49,15 @@ export class EventStream {
         return true;
       }
     }
+    // Are we using a glob, which is meant to be in the middle of two strings
+    // which need to be matched
     const globIndex = subscriptionType.indexOf('/**/');
     if (globIndex > 0) {
+      // split our subscription type string into two parts (before and after the glob characters)
       const parts = subscriptionType.split('/**/');
+      // to match, we must make sure we find that the incoming event type starts
+      // exactly with our first part and ends with exactly our second part, regardless of how
+      // many characters in the incoming event type are "consumed" by our glob query.
       if (
         incomingEventType.indexOf(parts[0]) === 0 &&
         incomingEventType.indexOf(parts[1]) === incomingEventType.length - parts[1].length
@@ -116,18 +112,15 @@ export class EventStream {
     this.dispatchMessage({
       type: 'errors/open',
       time: now.toString(),
-      data: `{ msg: ${this.lastError} }`,
+      data: { msg: `${this.lastError}` },
     });
   }
 
   private parseMessageData(data: string) : EventStreamMessage | null {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rawObj: any = JSON.parse(data);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const obj: any = camelcaseKeys(rawObj);
-    // Type safety guard!
+    const rawObj = JSON.parse(data);
+    const obj = camelcaseKeys(rawObj);
     if (isEventStreamMessage(obj)) {
-      return obj as EventStreamMessage;
+      return obj;
     }
     return null;
   }
@@ -141,7 +134,7 @@ export class EventStream {
       this.dispatchMessage({
         type: 'errors/open',
         time: now.toString(),
-        data: `{ msg: "${errorMsg}" }`,
+        data: { msg: `${errorMsg}` },
       });
       return;
     }
@@ -150,19 +143,12 @@ export class EventStream {
   }
 
   private initializeConnection(url: string, withCredentials: boolean): MethodResult {
-    if (!this.mockingActive) {
-      this.logMsg(`initializing non-mocking connection to ${url}, with credentials: ${withCredentials}`);
-      this.eventSource = new EventSource(url, { withCredentials: withCredentials });
-      this.eventSource.onopen = () => this.onRawOpenCallback();
-      // nothing good seems to come with the error data. Only get {"isTrusted":true}
-      this.eventSource.onerror = (e) => this.onErrorRawCallback(e);
-      this.eventSource.onmessage = (msg: MessageEvent) => this.onMessageRawCallback(msg);
-    } else if (this.mockMessages) {
-      this.logMsg(`initializing mocked connection to ${url}, with credentials: ${withCredentials}, loading ${this.mockMessages.length} messages`);
-      this.mockMessages.forEach(msg => {
-        this.onMessageRawCallback(new MessageEvent('message', { data: msg.data }));
-      });
-    }
+    this.logMsg(`initializing connection to ${url}, with credentials: ${withCredentials}`);
+    this.eventSource = new EventSource(url, { withCredentials: withCredentials });
+    this.eventSource.onopen = () => this.onRawOpenCallback();
+    // nothing good seems to come with the error data. Only get {"isTrusted":true}
+    this.eventSource.onerror = (e) => this.onErrorRawCallback(e);
+    this.eventSource.onmessage = (msg: MessageEvent) => this.onMessageRawCallback(msg);
     return {
       ok: true,
     };
@@ -192,7 +178,7 @@ export class EventStream {
   }
 
   public close(): MethodResult {
-    if (this.isOpen && !this.mockingActive && this.eventSource !== null) {
+    if (this.isOpen && this.eventSource !== null) {
       this.eventSource.close();
       this.eventSource = null;
       this.isOpen = false;
@@ -210,7 +196,7 @@ export class EventStream {
   }
 
   public addEventMonitorCallback(
-    targets: EventSubscriptionTargets[],
+    targets: EventSubscriptionTarget[],
     cb: OnMessageEventSourceCallback
   ) {
     for (const t in targets) {
@@ -257,22 +243,5 @@ export class EventStream {
     if (val) {
       this.logMsg(`debug logging is enabled!`);
     }
-  }
-
-  public pushMockMessage(msg: MockMessage): MethodResult {
-    if (this.eventSource !== null) {
-      return this.logError(
-        `pushMockMessage`,
-        {
-          ok: false,
-          error: `Unable to push mock message when EventSource is not null (and active).`,
-        }
-      );
-    }
-    this.mockingActive = true;
-    this.onMessageRawCallback(new MessageEvent(msg.type, { data: msg.data }));
-    return {
-      ok: true,
-    };
   }
 }

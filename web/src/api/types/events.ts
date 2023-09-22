@@ -6,22 +6,18 @@ export enum EventSourceReadyState {
   CLOSED = 2,
 }
 
-
-export enum EventStreamMessageTypes {
+export enum EventStreamMessageType {
   ERROR = 'error',
   LOG = 'log',
 }
 
 export type EventStreamMessage = {
-  type: EventSubscriptionTargets,
+  type: EventSubscriptionTarget,
   time: string,
-  // needed until we define the real types
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data?: any,
+  data: object,
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isEventStreamMessage(o: any): o is EventStreamMessage {
+export function isEventStreamMessage(o: object): o is EventStreamMessage {
   return (
     'type' in o &&
     'time' in o &&
@@ -37,20 +33,20 @@ export type MethodResult = {
 }
 
 export type EventStatus = {
-  isOpen: boolean | undefined,
+  isOpen?: boolean,
   eventSource: string,
-  withCredentials: boolean | undefined,
-  readyState: EventSourceReadyState | undefined,
+  withCredentials?: boolean,
+  readyState?: EventSourceReadyState,
   url: string | null,
   lastError: string | null,
 }
 
-export type MockMessage = {
-  type: string,
-  data: string,
+export type CallbackQueueEntry = {
+  eventType: EventSubscriptionTarget,
+  callback: OnMessageEventSourceCallback,
 }
 
-export type EventSubscriptionTargets =
+export type EventSubscriptionTarget =
   '*' | // all events
 
   'agent/log' | // agent console log messages
