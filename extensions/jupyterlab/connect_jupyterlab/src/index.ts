@@ -201,6 +201,7 @@ function makePublishCommand(
       await publish(args['origin']);
     } catch (err) {
       // TODO, obv
+      console.error('An error occurred during publishing:', err);
       alert(err);
     }
   };
