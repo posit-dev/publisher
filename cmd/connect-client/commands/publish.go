@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 
+	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
@@ -252,7 +253,10 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 	if err != nil {
 		return err
 	}
-	log := events.NewLoggerWithSSE(args.Debug)
+	eventServer := sse.New()
+	eventServer.CreateStream("messages")
+
+	log := events.NewLoggerWithSSE(args.Debug, eventServer)
 	svc := ui.NewUIService(
 		"/",
 		cmd.UIArgs,
@@ -260,6 +264,7 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		ctx.LocalToken,
 		ctx.Fs,
 		ctx.Accounts,
-		log)
+		log,
+		eventServer)
 	return svc.Run()
 }
