@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+set -e
 
 package=$1
-if [[ -z "$package" ]]; then
-  echo "usage: $0 <package-name>"
+version=$2
+if [[ -z "$package" || -z "$version" ]]; then
+  echo "usage: $0 <package-name> <version>"
   exit 1
 fi
+echo "Package: $package"
+echo "Version: $version"
 
-package_name=$(basename "$package")
+name=$(basename "$package")
+echo "Name: $name"
+
+mode=${MODE:-"dev"}
+echo "Mode: $mode"
+
 platforms=("$(go env GOOS)/$(go env GOARCH)")
-version=$(git describe --always --tags)
-developmentMode=${BUILD_MODE:-"production"}
-
 if [ "$CI" = "true" ]; then
     platforms=(
         "darwin/amd64"
@@ -47,23 +52,31 @@ fi
 
 for platform in "${platforms[@]}"
 do
-    echo "Building $platform"
+    echo "Building: $platform"
 	platform_split=(${platform//\// })
 	GOOS=${platform_split[0]}
 	GOARCH=${platform_split[1]}
-	output_name='./bin/'$GOOS'-'$GOARCH/$package_name
+
+    executable=./bin/$GOOS-$GOARCH/$name-$version
 	if [ "$GOOS" = "windows" ]; then
-		output_name+='.exe'
+		executable+='.exe'
+    else
+        executable+='.bin'
 	fi
 
-    env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$output_name" -ldflags \
-        "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$developmentMode'" \
+    if [ ! -d "./web/dist" ]; then
+        echo "Error: Missing frontend distribution. Run just web/build." 1>&2
+        exit 1
+    fi
+
+    env\
+        GOOS="$GOOS"\
+        GOARCH="$GOARCH"\
+        go build\
+        -o "$executable"\
+        -ldflags "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$mode'"\
         "$package"
-	if [ $? -ne 0 ]; then
-   		echo 'An error has occurred! Aborting the script execution...'
-		exit 1
-    else
-        echo "Making $output_name executable"
-        chmod +x "$output_name"
-	fi
+
+    echo "Executable: $executable"
+    chmod +x "$executable"
 done

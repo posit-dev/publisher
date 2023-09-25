@@ -5,6 +5,8 @@ _interactive := `tty -s && echo "-it" || echo ""`
 
 _ci := "${CI:-false}"
 
+_mode := "${MODE:-dev}"
+
 _tag := "rstudio/connect-client:latest"
 
 _with_runner := if env_var_or_default("DOCKER", "true") == "true" {
@@ -21,69 +23,37 @@ _uid_args := if "{{ os() }}" == "Linux" {
 
 # bootstrap any supporting packages (such as go package or web UX javascript/typescript dependencies)
 bootstrap:
-    # No initialization needed for go code at this time.
-    # bootstrap client
+    #!/usr/bin/env bash
+    set -euo pipefail
+
     {{ _with_runner }} just web/bootstrap
 
-# Clean the agent and web UX build artifacts as well as remove all web UX dependency packages.
-clean: clean-agent
-    just web/clean
+# Remove built artifacts
+clean:
+    #!/usr/bin/env bash
+    set -euo pipefail
 
-# Clean the agent's build artifacts
-clean-agent:
-    rm -rf ./bin/**/connect-client
+    {{ _with_runner }} just web/clean
+    {{ _with_runner }} rm -rf ./bin
 
 # create the security certificates
 certs:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
     mkdir -p certs
     mkcert -cert-file ./certs/localhost-cert.pem -key-file ./certs/localhost-key.pem localhost 127.0.0.1 ::1 0.0.0.0
 
 # Build both the web UX and agent for production usage
-build: build-web build-agent
-
-# Build the production agent using the existing build of the Web UX
-build-agent:
+build:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    # Have to remove linked server executable, so that switching from production
-    # to development modes (and vise-versa) will work.
-    just clean-agent
+    {{ _with_runner }} env MODE={{ _mode }} just web/build
 
-    echo ""
-    if [ "${BUILD_MODE:-}" == "development" ]; then
-        echo "Generating a development build of connect-client."
-    else
-        echo "Generating production builds of connect-client."
-    fi
-
-    if {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client; then
-        echo "Build was successful"
-    else
-        echo ""
-        echo "An error has occurred while building."
-        echo ""
-        if [ ! -f "./web/dist/index.html" ]; then
-            echo "No web SPA artifacts can be found. A web build is required for the backend"
-            echo "to build. Possibly resolve with 'just web/build' or 'just build'."
-        fi
-    fi
-
-# Build the development agent using the existing build of the Web UX
-build-agent-dev:
-    #!/bin/bash
-    set -euo pipefail
-    export BUILD_MODE=development
-
-    just build-agent
-
-# Build the web UX
-build-web:
-    {{ _with_runner }} just web/build
-
-# Build the developer stack
-build-dev:
-    just clean image bootstrap build-web build-agent-dev
+    # _with_runner is not invoked since `./scripts/get-version.bash` executes `docker run`, which would result in a docker-in-docker scenario.
+    version=$(./scripts/get-version.bash)
+    {{ _with_runner }} env MODE={{ _mode }} ./scripts/build.bash ./cmd/connect-client $version
 
 # Validate the agent and the web UX source code, along with checking for copyrights.
 validate:
@@ -152,7 +122,7 @@ run-agent *args:
 
 # Build the image. Typically does not need to be done very often.
 image:
-    #!/bin/bash
+    #!/usr/bin/env bash
     set -euo pipefail
 
     if "${DOCKER:-true}" == "true" ; then
@@ -164,12 +134,12 @@ image:
     fi
 
 # Start the agent and show the UI
-# NOTE: this must be called from within a docker container if so 
+# NOTE: this must be called from within a docker container if so
 # needed (it will not automatically use a running if defined)
 # This is because this recipe is called from the web/justfile, which
 # is already executing within a docker container (if configured to use)
 start-agent-for-e2e:
-    #!/bin/bash
+    #!/usr/bin/env bash
     set -exuo pipefail
 
     GOOS=$(go env GOOS)
@@ -189,6 +159,9 @@ start-agent-for-e2e:
 
 [private]
 _with_docker *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
     docker run --rm {{ _interactive }} \
         -e CI={{ _ci }} \
         -e GOCACHE=/work/.cache/go/cache \

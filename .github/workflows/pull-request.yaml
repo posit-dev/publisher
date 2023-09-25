@@ -1,6 +1,9 @@
 name: Pull Request
 on:
-  pull_request
+  pull_request:
+  push:
+    branches:
+      - tdstein/release
 
 # A note on debugging a github step:
 #   You can ssh into the github action environment and poke around by using
@@ -121,7 +124,7 @@ jobs:
       -
         name: Build the UX
         run: |
-          just build-web
+          just web/build
       -
         name: Upload Web-UX Artifacts
         uses: actions/upload-artifact@v3
@@ -302,7 +305,7 @@ jobs:
       -
         name: Build agent
         run: |
-          just build-agent
+          just build
       -
         name: Make agents executable
         run: |
@@ -647,7 +650,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin/**/connect-client
+          chmod -R +x ./bin/**/connect-client*
 
       # these are required to run docker on amd64 and arm64 platforms
       -
