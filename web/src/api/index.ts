@@ -2,9 +2,9 @@
 
 export { api as default, useApi } from 'src/api/client';
 
-export type * from 'src/api/types/accounts';
-export type * from 'src/api/types/apptypes';
-export type * from 'src/api/types/connect';
-export type * from 'src/api/types/deployments';
-export type * from 'src/api/types/files';
-export type * from 'src/api/types/manifest';
+export * from 'src/api/types/accounts';
+export * from 'src/api/types/apptypes';
+export * from 'src/api/types/connect';
+export * from 'src/api/types/deployments';
+export * from 'src/api/types/files';
+export * from 'src/api/types/manifest';
