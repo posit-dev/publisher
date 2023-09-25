@@ -702,5 +702,5 @@ jobs:
         name: Install python tools
         run: just install-python-tools
       -
-        name: validate
+        name: Validate Code
         run: just validate
