@@ -691,7 +691,7 @@ jobs:
     defaults:
       run:
         working-directory: ./extensions/jupyterlab/connect_jupyterlab
-      steps:
+    steps:
       -
         name: Checkout
         uses: actions/checkout@v3
