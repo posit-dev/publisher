@@ -685,3 +685,19 @@ jobs:
       #   run: |
       #     just web/build && \
       #     just test/ui-client ${os}
+
+  validate-jupyterlab-plugin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./extensions/jupyterlab/connect_jupyterlab
+      steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: npm install
+        run: npm install
+      -
+        name: validate
+        run: just validate
