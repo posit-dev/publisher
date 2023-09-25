@@ -56,6 +56,9 @@ def launch_ui(notebookPath: str, pythonPath: str, pythonVersion: str, log: loggi
     ]
     log.info("Starting: %s", " ".join(map(shlex.quote, args)))
     process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=None, text=True)
+    if process.stdout is None:
+        # This should never happen because we requested stdout=subprocess.PIPE
+        raise Exception("The launched process did not provide an output stream.")
     # currently, URL is the first thing written to stdout
     url = process.stdout.readline().strip()
     return url
