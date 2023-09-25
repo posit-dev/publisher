@@ -1,0 +1,10 @@
+
+install-python-tools:
+    pip install 'black==23.*' 'flake8==6.*' 'mypy==1.5.*'
+
+max_line_length := '99'
+
+validate-python:
+    black ./connect_jupyterlab --line-length {{ max_line_length }}
+    flake8 ./connect_jupyterlab --max-line-length {{ max_line_length }}
+    mypy ./connect_jupyterlab
