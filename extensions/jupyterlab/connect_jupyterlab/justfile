@@ -8,3 +8,8 @@ validate-python:
     black ./connect_jupyterlab --line-length {{ max_line_length }}
     flake8 ./connect_jupyterlab --max-line-length {{ max_line_length }}
     mypy ./connect_jupyterlab
+
+validate-js:
+    npm run lint:check
+
+validate: validate-js validate-python
