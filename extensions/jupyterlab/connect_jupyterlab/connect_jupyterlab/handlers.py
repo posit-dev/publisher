@@ -11,7 +11,7 @@ from tornado.web import authenticated
 
 class RouteHandler(APIHandler):
     @authenticated
-    def post(self):
+    def post(self) -> None:
         """post initiates the publishing process. Details TBD."""
         self.log.info("Launching publishing UI")
         data = self.get_json_body()
@@ -28,7 +28,7 @@ class RouteHandler(APIHandler):
             self.set_status(500, str(exc))
 
     @authenticated
-    def get(self):
+    def get(self) -> None:
         """get returns the status of the publishing process. Details TBD."""
         self.finish(json.dumps({"data": "GET /connect-jupyterlab/publish endpoint!"}))
 
