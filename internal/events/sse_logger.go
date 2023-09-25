@@ -24,10 +24,8 @@ func NewLogger(debug bool) logging.Logger {
 	return logging.FromStdLogger(slog.New(stderrHandler))
 }
 
-func NewLoggerWithSSE(debug bool) logging.Logger {
+func NewLoggerWithSSE(debug bool, eventServer *sse.Server) logging.Logger {
 	level := logLevel(debug)
-	eventServer := sse.New()
-	eventServer.CreateStream("messages")
 	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
 	sseHandler := NewSSEHandler(eventServer, &SSEHandlerOptions{Level: level})
 	multiHandler := logging.NewMultiHandler(stderrHandler, sseHandler)

@@ -28,6 +28,8 @@
       />
       <PublishProcess
         v-if="currentView === 'publish'"
+        :events="allEvents"
+        :event-stream="eventStream"
         @back="onConfigure"
       />
     </q-page-container>
@@ -36,7 +38,7 @@
 
 <script setup lang="ts">
 
-import { ref } from 'vue';
+import { onBeforeUnmount, ref } from 'vue';
 
 import AppMenu from 'src/components/AppMenu.vue';
 import ConfigurePublish from 'src/components/configurePublish/ConfigurePublish.vue';
@@ -45,12 +47,18 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
+import { EventStream } from 'src/api/resources/EventStream';
+import { EventStreamMessage } from 'src/api/types/events';
 
 type viewType = 'configure' | 'publish';
 
 const currentView = ref<viewType>('configure');
 const api = useApi();
 const deploymentStore = useDeploymentStore();
+
+const eventStream = new EventStream();
+// Temporary storage of events
+const allEvents = ref<EventStreamMessage[]>([]);
 
 const onPublish = () => {
   currentView.value = 'publish';
@@ -63,6 +71,20 @@ const getInitialDeploymentState = async() => {
   const { data: deployment } = await api.deployment.get();
   deploymentStore.deployment = deployment;
 };
+
+const incomingEvent = (msg: EventStreamMessage) => {
+  allEvents.value.push(msg);
+};
+eventStream.addEventMonitorCallback(['*'], incomingEvent);
+
+eventStream.setDebugMode(true);
+eventStream.open('/api/events?stream=messages');
+console.log(eventStream.status());
+
+// Have to be sure to close connection or it will be leaked on agent (if it continues to run)
+onBeforeUnmount(() => {
+  eventStream.close();
+});
 
 getInitialDeploymentState();
 </script>

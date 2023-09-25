@@ -19,6 +19,7 @@ import (
 	"github.com/rstudio/connect-client/web"
 
 	"github.com/gorilla/mux"
+	"github.com/r3labs/sse/v2"
 	"github.com/spf13/afero"
 )
 
@@ -31,9 +32,10 @@ func NewUIService(
 	token services.LocalToken,
 	fs afero.Fs,
 	lister accounts.AccountList,
-	log logging.Logger) *api.Service {
+	log logging.Logger,
+	eventServer *sse.Server) *api.Service {
 
-	handler := RouterHandlerFunc(fs, publish, lister, log)
+	handler := RouterHandlerFunc(fs, publish, lister, log, eventServer)
 
 	return api.NewService(
 		publish.State,
@@ -51,7 +53,7 @@ func NewUIService(
 	)
 }
 
-func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
+func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
 	deployment := publishArgs.State
 	base := deployment.SourceDir
 
@@ -63,6 +65,9 @@ func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister 
 	// GET /api/accounts
 	r.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(lister, log)).
 		Methods(http.MethodGet)
+
+	// GET /api/events
+	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
 
 	// GET /api/files
 	r.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log)).
