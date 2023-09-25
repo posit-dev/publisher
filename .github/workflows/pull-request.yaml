@@ -696,6 +696,11 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
       -
+        name: Setup Just
+        uses: extractions/setup-just@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      -
         name: npm install
         run: npm install
       -
