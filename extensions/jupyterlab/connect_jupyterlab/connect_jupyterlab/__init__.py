@@ -32,6 +32,4 @@ def _load_jupyter_server_extension(server_app):
         JupyterLab application instance
     """
     setup_handlers(server_app.web_app)
-    server_app.log.info(
-        f"Registered {PACKAGE_NAME} server extension, version {__version__}"
-    )
+    server_app.log.info(f"Registered {PACKAGE_NAME} server extension, version {__version__}")

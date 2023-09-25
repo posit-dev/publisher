@@ -42,9 +42,7 @@ def setup_handlers(web_app):
     web_app.add_handlers(host_pattern, handlers)
 
 
-def launch_ui(
-    notebookPath: str, pythonPath: str, pythonVersion: str, log: logging.Logger
-) -> str:
+def launch_ui(notebookPath: str, pythonPath: str, pythonVersion: str, log: logging.Logger) -> str:
     args = [
         "connect-client",
         "publish-ui",
