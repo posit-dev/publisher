@@ -1,13 +1,18 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-expansion-item>
+  <q-expansion-item
+    :default-opened="defaultOpen"
+    :expand-icon="expandIcon"
+    header-class="q-px-none"
+    :group="group"
+  >
     <template #header>
-      <q-item-section avatar>
-        <q-icon
-          :name="icon"
-          size="35px"
-        />
+      <q-item-section
+        avatar
+        class="q-ml-sm"
+      >
+        <slot name="avatar" />
       </q-item-section>
 
       <q-item-section>
@@ -27,7 +32,7 @@
       </q-item-section>
     </template>
 
-    <q-card class="bg-grey-9">
+    <q-card dark>
       <q-card-section>
         <slot />
         <!-- TODO: select from previous deployments or add to existing or new targets -->
@@ -37,11 +42,13 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-    title: string
-    subtitle?: string
-    icon: string
-    tooltip?: string
-  }>();
-</script>
 
+defineProps({
+  title: { type: String, required: true },
+  subtitle: { type: String, required: false, default: undefined },
+  tooltip: { type: String, required: false, default: undefined },
+  defaultOpen: { type: Boolean, required: false, default: false },
+  expandIcon: { type: String, required: false, default: undefined },
+  group: { type: String, required: false, default: undefined },
+});
+</script>

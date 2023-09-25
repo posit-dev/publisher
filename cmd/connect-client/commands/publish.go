@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 
+	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
@@ -215,7 +216,8 @@ func (cmd *CreateBundleCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLICo
 	if err != nil {
 		return err
 	}
-	return publish.CreateBundleFromDirectory(&cmd.PublishArgs, cmd.BundleFile, ctx.Logger)
+	publisher := publish.New(&cmd.PublishArgs)
+	return publisher.CreateBundleFromDirectory(cmd.BundleFile, ctx.Logger)
 }
 
 type WriteManifestCmd struct {
@@ -227,7 +229,8 @@ func (cmd *WriteManifestCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIC
 	if err != nil {
 		return err
 	}
-	return publish.WriteManifestFromDirectory(&cmd.PublishArgs, ctx.Logger)
+	publisher := publish.New(&cmd.PublishArgs)
+	return publisher.WriteManifestFromDirectory(ctx.Logger)
 }
 
 type PublishCmd struct {
@@ -239,7 +242,8 @@ func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext
 	if err != nil {
 		return err
 	}
-	return publish.PublishDirectory(&cmd.PublishArgs, ctx.Accounts, ctx.Logger)
+	publisher := publish.New(&cmd.PublishArgs)
+	return publisher.PublishDirectory(ctx.Accounts, ctx.Logger)
 }
 
 type PublishUICmd struct {
@@ -252,7 +256,10 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 	if err != nil {
 		return err
 	}
-	log := events.NewLoggerWithSSE(args.Debug)
+	eventServer := sse.New()
+	eventServer.CreateStream("messages")
+
+	log := events.NewLoggerWithSSE(args.Debug, eventServer)
 	svc := ui.NewUIService(
 		"/",
 		cmd.UIArgs,
@@ -260,6 +267,7 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		ctx.LocalToken,
 		ctx.Fs,
 		ctx.Accounts,
-		log)
+		log,
+		eventServer)
 	return svc.Run()
 }
