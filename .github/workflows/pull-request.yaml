@@ -699,5 +699,8 @@ jobs:
         name: npm install
         run: npm install
       -
+        name: Install python tools
+        run: just install-python-tools
+      -
         name: validate
         run: just validate
