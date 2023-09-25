@@ -4,8 +4,10 @@
   <LayoutPanel
     title="Files"
     :subtitle="fileSummary"
-    icon="img:/images/files-icon.jpg"
   >
+    <template #avatar>
+      <PublisherFolderLogo />
+    </template>
     <q-tree
       v-model:ticked="deploymentStore.files"
       v-model:expanded="expanded"
@@ -22,7 +24,9 @@
 import type { QTree, QTreeNode } from 'quasar';
 import { ref, computed } from 'vue';
 
-import LayoutPanel from 'src/components/LayoutPanel.vue';
+import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
+import PublisherFolderLogo from 'src/components/icons/PublisherFolderLogo.vue';
+
 import { useApi, DeploymentFile } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
 
@@ -34,7 +38,7 @@ const deploymentStore = useDeploymentStore();
 const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);
 
-type FileInfo = Pick<DeploymentFile, 'size' | 'isEntrypoint' | 'exclusion'>;
+type FileInfo = Pick<DeploymentFile, 'size' | 'isEntrypoint' | 'exclusion' | 'isFile' >;
 
 const fileMap = ref(new Map<string, FileInfo>());
 
@@ -56,8 +60,13 @@ const selectedFileTotalSize = computed(() : string => {
 });
 
 const fileSummary = computed(() => {
-  const count = deploymentStore.files.length;
   const path = deploymentStore.deployment?.sourcePath;
+
+  // Calculate the number of files that are "files" (i.e., regular files, not directories, symlinks, etc.)
+  const count = deploymentStore.files
+    .map(file => fileMap.value.get(file))
+    .filter(info => info?.isFile)
+    .length;
 
   if (count) {
     return `${count} files selected from ${path} (total = ${selectedFileTotalSize.value})`;
@@ -83,6 +92,7 @@ function populateFileMap(file: DeploymentFile) {
     size: file.size,
     isEntrypoint: file.isEntrypoint,
     exclusion: file.exclusion,
+    isFile: file.isFile
   };
   fileMap.value.set(file.id, info);
   file.files.forEach(populateFileMap);

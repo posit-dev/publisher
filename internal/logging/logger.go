@@ -28,37 +28,47 @@ const (
 	LogKeyErrCode = "error_code"
 )
 
-type Logger struct {
+type Logger interface {
+	BaseLogger
+	Start(msg string, args ...any)
+	Success(msg string, args ...any)
+	Status(msg string, args ...any)
+	Progress(msg string, done float32, total float32, args ...any)
+	Failure(err error)
+	WithArgs(args ...any) Logger
+}
+
+type logger struct {
 	BaseLogger
 }
 
 func New() Logger {
-	return Logger{
+	return logger{
 		slog.Default(),
 	}
 }
 
 func FromStdLogger(log *slog.Logger) Logger {
-	return Logger{log}
+	return logger{log}
 }
 
-func (l Logger) Start(msg string, args ...any) {
+func (l logger) Start(msg string, args ...any) {
 	l.Info(msg, append([]any{LogKeyPhase, StartPhase}, args...)...)
 }
 
-func (l Logger) Success(msg string, args ...any) {
+func (l logger) Success(msg string, args ...any) {
 	l.Info(msg, append([]any{LogKeyPhase, SuccessPhase}, args...)...)
 }
 
-func (l Logger) Status(msg string, args ...any) {
+func (l logger) Status(msg string, args ...any) {
 	l.Info(msg, append([]any{LogKeyPhase, ProgressPhase}, args...)...)
 }
 
-func (l Logger) Progress(msg string, done float32, total float32, args ...any) {
+func (l logger) Progress(msg string, done float32, total float32, args ...any) {
 	l.Info(msg, append([]any{LogKeyPhase, ProgressPhase, "done", done, "total", total}, args...)...)
 }
 
-func (l Logger) Failure(err error) {
+func (l logger) Failure(err error) {
 	if agentError, ok := err.(types.EventableError); ok {
 		args := []any{
 			LogKeyOp, agentError.GetOperation(),
@@ -73,11 +83,11 @@ func (l Logger) Failure(err error) {
 		// We shouldn't get here, because callers who use Failure
 		// (the Publish routine) will wrap all errors in AgentErrors.
 		// But just in case, log it anyway.
-		l.Debug("Received a non-eventable error in Logger.Failure; see the following error entry")
+		l.Debug("Received a non-eventable error in LoggerImpl.Failure; see the following error entry")
 		l.Error(err.Error(), LogKeyPhase, FailurePhase)
 	}
 }
 
-func (l Logger) With(args ...any) Logger {
-	return Logger{l.BaseLogger.With(args...)}
+func (l logger) WithArgs(args ...any) Logger {
+	return logger{l.BaseLogger.With(args...)}
 }

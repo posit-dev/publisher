@@ -183,7 +183,7 @@ func loadCACertificates(path string, log logging.Logger) (*x509.CertPool, error)
 	log.Info("Loading CA certificate", "path", path)
 	certificate, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading certificate file: %s", err)
+		return nil, fmt.Errorf("Error reading certificate file: %w", err)
 	}
 	certPool := x509.NewCertPool()
 	ok := certPool.AppendCertsFromPEM(certificate)

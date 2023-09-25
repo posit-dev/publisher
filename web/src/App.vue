@@ -9,65 +9,82 @@
       elevated
       class="bg-primary text-white"
     >
-      <q-toolbar class="max-width-md q-mx-auto">
+      <q-toolbar class="max-width-md q-pa-auto">
+        <AppMenu />
         <WhitePositLogo
           class="posit-logo"
           alt="Posit PBC Logo"
         />
-        <q-toolbar-title>
+        <q-toolbar-title class="q-pl-xs">
           Publisher
         </q-toolbar-title>
       </q-toolbar>
     </q-header>
 
     <q-page-container>
-      <q-page
-        class="max-width-md q-mx-auto"
-        padding
-      >
-        <h6 class="q-mt-none q-mb-md">
-          What would you like to be published and how?
-        </h6>
-        <q-list
-          dark
-          bordered
-          class="rounded-borders"
-        >
-          <DestinationTarget />
-          <q-separator />
-          <FilesToPublish />
-          <q-separator />
-          <PythonProject />
-          <q-separator />
-          <CommonSettings />
-          <q-separator />
-          <AdvancedSettings />
-        </q-list>
-        <PublishProcess />
-      </q-page>
+      <ConfigurePublish
+        v-if="currentView === 'configure'"
+        @publish="onPublish"
+      />
+      <PublishProcess
+        v-if="currentView === 'publish'"
+        :events="allEvents"
+        :event-stream="eventStream"
+        @back="onConfigure"
+      />
     </q-page-container>
   </q-layout>
 </template>
 
 <script setup lang="ts">
-import DestinationTarget from 'src/components/panels/DestinationTarget.vue';
-import FilesToPublish from 'src/components/panels/FilesToPublish.vue';
-import PythonProject from 'src/components/panels/PythonProject.vue';
-import CommonSettings from 'src/components/panels/CommonSettings.vue';
-import AdvancedSettings from 'src/components/panels/AdvancedSettings.vue';
-import PublishProcess from 'src/components/PublishProcess.vue';
+
+import { onBeforeUnmount, ref } from 'vue';
+
+import AppMenu from 'src/components/AppMenu.vue';
+import ConfigurePublish from 'src/components/configurePublish/ConfigurePublish.vue';
+import PublishProcess from 'src/components/publishProcess/PublishProcess.vue';
 import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
+import { EventStream } from 'src/api/resources/EventStream';
+import { EventStreamMessage } from 'src/api/types/events';
 
+type viewType = 'configure' | 'publish';
+
+const currentView = ref<viewType>('configure');
 const api = useApi();
 const deploymentStore = useDeploymentStore();
+
+const eventStream = new EventStream();
+// Temporary storage of events
+const allEvents = ref<EventStreamMessage[]>([]);
+
+const onPublish = () => {
+  currentView.value = 'publish';
+};
+const onConfigure = () => {
+  currentView.value = 'configure';
+};
 
 const getInitialDeploymentState = async() => {
   const { data: deployment } = await api.deployment.get();
   deploymentStore.deployment = deployment;
 };
+
+const incomingEvent = (msg: EventStreamMessage) => {
+  allEvents.value.push(msg);
+};
+eventStream.addEventMonitorCallback(['*'], incomingEvent);
+
+eventStream.setDebugMode(true);
+eventStream.open('/api/events?stream=messages');
+console.log(eventStream.status());
+
+// Have to be sure to close connection or it will be leaked on agent (if it continues to run)
+onBeforeUnmount(() => {
+  eventStream.close();
+});
 
 getInitialDeploymentState();
 </script>
