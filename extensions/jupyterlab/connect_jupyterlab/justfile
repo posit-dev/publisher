@@ -12,6 +12,6 @@ validate-python:
     mypy ./connect_jupyterlab
 
 validate-js:
-    npm run lint:check
+    jlpm run lint:check
 
 validate: validate-js validate-python
