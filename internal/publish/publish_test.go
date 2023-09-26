@@ -54,7 +54,8 @@ func (s *PublishSuite) TestCreateBundle() {
 		State: state.NewDeployment(),
 	}
 	cmd.State.SourceDir = s.cwd
-	err := CreateBundleFromDirectory(cmd, dest, s.log)
+	publisher := New(cmd)
+	err := publisher.CreateBundleFromDirectory(dest, s.log)
 	s.NoError(err)
 	s.True(dest.Exists())
 }
@@ -70,7 +71,8 @@ func (s *PublishSuite) TestCreateBundleFailCreate() {
 		State: state.NewDeployment(),
 	}
 	cmd.State.SourceDir = s.cwd
-	err := CreateBundleFromDirectory(cmd, dest, s.log)
+	publisher := New(cmd)
+	err := publisher.CreateBundleFromDirectory(dest, s.log)
 	s.ErrorIs(err, testError)
 }
 
@@ -83,7 +85,8 @@ func (s *PublishSuite) TestWriteManifest() {
 	}
 	cmd.State.SourceDir = s.cwd
 
-	err := WriteManifestFromDirectory(cmd, s.log)
+	publisher := New(cmd)
+	err := publisher.WriteManifestFromDirectory(s.log)
 	s.NoError(err)
 	s.True(manifestPath.Exists())
 
@@ -143,7 +146,9 @@ func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitEr
 	client.On("UploadBundle", myContentID, mock.Anything).Return(myBundleID, uploadErr)
 	client.On("DeployBundle", myContentID, myBundleID).Return(myTaskID, deployErr)
 	client.On("WaitForTask", myTaskID, mock.Anything).Return(waitErr)
-	err = publishWithClient(cmd, bundler, account, client, s.log)
+
+	publisher := New(cmd)
+	err = publisher.publishWithClient(bundler, account, client, s.log)
 	if expectedErr == nil {
 		s.NoError(err)
 	} else {
