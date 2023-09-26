@@ -226,14 +226,17 @@ func (ign *GitIgnoreList) AppendGit() error {
 	// Add all .gitignore files, from this directory
 	// up to the git root.
 	dir := util.NewPath(fromSplit(ign.cwd), ign.fs)
-	for dir.Base() != "" && dir.Base() != "/" {
+	for dir.Base() != "" && dir.Base() != "/" && dir.Base() != "." {
 		ignorePath := dir.Join(".gitignore")
 		exists, err := ignorePath.Exists()
 		if err != nil {
 			return err
 		}
 		if exists {
-			ign.append(ignorePath, nil)
+			err = ign.append(ignorePath, nil)
+			if err != nil {
+				return err
+			}
 		}
 		// See if we've reached the git root
 		exists, err = dir.Join(".git").Exists()
