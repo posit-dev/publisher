@@ -6,6 +6,7 @@ import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 // https://vitejs.dev/config/
 // eslint-disable-next-line no-restricted-syntax
 export default defineConfig({
+  base: './',
   plugins: [
     vue({
       template: { transformAssetUrls }
