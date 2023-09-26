@@ -709,11 +709,11 @@ jobs:
         name: Install JupyterLab Python extension
         run: just install
       -
-        name: Install NPM dependencies
-        run: npm install
-      -
         name: Install Python tools
         run: just install-python-tools
+      -
+        name: Install JS dependencies
+        run: jlpm install
       -
         name: Validate extension code
         run: just validate
