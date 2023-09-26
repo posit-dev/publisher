@@ -8,7 +8,9 @@ from urllib.parse import urlparse
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 from jupyter_server_proxy.handlers import LocalProxyHandler
+from tornado.httputil import HTTPServerRequest
 from tornado.web import authenticated
+from tornado.httpclient import HTTPResponse
 
 base_url = None
 known_ports = {}
@@ -52,6 +54,24 @@ class UIHandler(LocalProxyHandler):
     This handler verifies that the port belongs to one of
     the agents we launched.
     """
+
+    def __init__(self, *args, **kw):
+        kw["rewrite_response"] = UIHandler.rewrite
+        super().__init__(*args, **kw)
+
+    @staticmethod
+    def rewrite(request: HTTPServerRequest, response: HTTPResponse):
+        # rewrite the auth redirect from the agent
+        # This doesn't handle arbitrary redirects.
+        loc = response.headers.get("Location")
+        if loc is not None:
+            response.headers["Location"] = request.path
+
+        # scope any cookies to this app's path
+        cookie = response.headers.get("Set-Cookie")
+        if cookie is not None:
+            base_path = "/".join(request.path.split("/")[:4])
+            response.headers["Set-Cookie"] = f"{cookie}; Path={base_path}"
 
     def proxy(self, port, proxied_path):
         if int(port) not in known_ports:
