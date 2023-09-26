@@ -3,6 +3,7 @@ FROM rockylinux:8
 RUN dnf -y update\
     && dnf -y install\
         curl\
+        git\
         tar\
     && dnf -y module enable nodejs:18\
     && dnf -y module install nodejs:18
@@ -19,3 +20,5 @@ ENV PATH="$PATH:/usr/local/go/bin"
 
 RUN go env -w GOBIN=/usr/local/go/bin\
  && go install honnef.co/go/tools/cmd/staticcheck@latest
+
+RUN git config --global --add safe.directory '*'

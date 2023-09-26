@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-docker pull -q ghcr.io/choffmeister/git-describe-semver:latest > /dev/null
-docker run --rm -v $PWD:/workdir ghcr.io/choffmeister/git-describe-semver:latest \
-    -drop-prefix \
-    --fallback v0.0.0
+git describe --tags | sed 's/\v\(.*\).*/\1/'

@@ -18,7 +18,31 @@ func TestRandomSuite(t *testing.T) {
 }
 
 func (s *RandomSuite) TestRandomBytes() {
-	r, err := RandomBytes(32)
-	s.Nil(err)
-	s.Len(r, 32)
+	r1, err := RandomBytes(32)
+	s.NoError(err)
+	s.Len(r1, 32)
+
+	r2, err := RandomBytes(32)
+	s.NoError(err)
+	s.Len(r2, 32)
+	s.NotEqual(r1, r2)
+
+	r3, err := RandomBytes(12)
+	s.NoError(err)
+	s.Len(r3, 12)
+}
+
+func (s *RandomSuite) TestRandomString() {
+	r1, err := RandomString(32)
+	s.NoError(err)
+	s.Len(r1, 32)
+
+	r2, err := RandomString(32)
+	s.NoError(err)
+	s.Len(r2, 32)
+	s.NotEqual(r1, r2)
+
+	r3, err := RandomString(12)
+	s.NoError(err)
+	s.Len(r3, 12)
 }

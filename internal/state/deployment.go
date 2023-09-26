@@ -23,7 +23,18 @@ type TargetID struct {
 	DeployedAt types.NullTime     `json:"deployed_at" kong:"-"`        // Date/time bundle was deployed
 }
 
+type LocalDeploymentID string
+
+func NewLocalID() (LocalDeploymentID, error) {
+	str, err := util.RandomString(16)
+	if err != nil {
+		return LocalDeploymentID(""), err
+	}
+	return LocalDeploymentID(str), nil
+}
+
 type Deployment struct {
+	LocalID            LocalDeploymentID `json:"local_id" kong:"-"`            // Unique ID of this publishing operation. Only valid for this run of the agent.
 	SourceDir          util.Path         `json:"source_path" kong:"-"`         // Absolute path to source directory being published
 	Target             TargetID          `json:"target" kong:"embed"`          // Identity of previous deployment
 	Manifest           bundles.Manifest  `json:"manifest" kong:"embed"`        // manifest.json content for this deployment

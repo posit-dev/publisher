@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+CI="${CI:-false}"
 
 package=$1
-version=$2
-if [[ -z "$package" || -z "$version" ]]; then
-  echo "usage: $0 <package-name> <version>"
+if [[ -z "$package" ]]; then
+  echo "usage: $0 <package-name>"
   exit 1
 fi
 echo "Package: $package"
+
+version=$(./scripts/get-version.bash)
 echo "Version: $version"
 
 name=$(basename "$package")
@@ -57,11 +59,9 @@ do
 	GOOS=${platform_split[0]}
 	GOARCH=${platform_split[1]}
 
-    executable=./bin/$GOOS-$GOARCH/$name-$version
+    executable=./bin/$GOOS/$GOARCH/$name-$version-$GOOS-$GOARCH
 	if [ "$GOOS" = "windows" ]; then
 		executable+='.exe'
-    else
-        executable+='.bin'
 	fi
 
     if [ ! -d "./web/dist" ]; then
