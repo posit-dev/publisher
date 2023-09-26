@@ -701,11 +701,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
-        name: npm install
+        name: Install JupyterLab Python extension
+        run: just install
+      -
+        name: Install NPM dependencies
         run: npm install
       -
-        name: Install python tools
+        name: Install Python tools
         run: just install-python-tools
       -
-        name: Validate Code
+        name: Validate extension code
         run: just validate

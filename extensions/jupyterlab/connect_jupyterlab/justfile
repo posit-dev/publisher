@@ -1,3 +1,5 @@
+install:
+    pip install -e .
 
 install-python-tools:
     pip install 'black==23.*' 'flake8==6.*' 'mypy==1.5.*'
