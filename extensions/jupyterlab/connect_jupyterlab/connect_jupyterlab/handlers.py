@@ -3,13 +3,18 @@ import logging
 import os
 import shlex
 import subprocess
+from urllib.parse import urlparse
 
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
+from jupyter_server_proxy.handlers import LocalProxyHandler
 from tornado.web import authenticated
 
+base_url = None
+known_ports = {}
 
-class RouteHandler(APIHandler):
+
+class PublishHandler(APIHandler):
     @authenticated
     def post(self) -> None:
         """post initiates the publishing process. Details TBD."""
@@ -20,9 +25,16 @@ class RouteHandler(APIHandler):
         pythonVersion = data["pythonVersion"]
 
         try:
-            url = launch_ui(notebookPath, pythonPath, pythonVersion, self.log)
-            self.log.info("Publishing UI url: %s", url)
-            self.finish(json.dumps({"url": url}))
+            ui_url = launch_ui(notebookPath, pythonPath, pythonVersion, self.log)
+            parsed = urlparse(ui_url)
+            proxy_path = url_path_join(base_url, "ui", str(parsed.port), "/")
+            req = self.request
+            ui_url = parsed._replace(
+                scheme=req.protocol, netloc=req.host, path=proxy_path
+            ).geturl()
+
+            self.log.info("Publishing UI url: %s", ui_url)
+            self.finish(json.dumps({"url": ui_url}))
         except Exception as exc:
             self.log.exception("UI launch failed", exc_info=exc)
             self.set_status(500, str(exc))
@@ -33,12 +45,34 @@ class RouteHandler(APIHandler):
         self.finish(json.dumps({"data": "GET /connect-jupyterlab/publish endpoint!"}))
 
 
+class UIHandler(LocalProxyHandler):
+    """UIHandler proxies requests to a running agent instance.
+
+    Proxied paths are /connect-jupyterlab/ui/{port}/*.
+    This handler verifies that the port belongs to one of
+    the agents we launched.
+    """
+
+    def proxy(self, port, proxied_path):
+        if int(port) not in known_ports:
+            self.set_status(400, "Invalid proxy path")
+            self.finish()
+            return
+        return super().proxy(port, proxied_path)
+
+
 def setup_handlers(web_app):
     host_pattern = ".*$"
 
-    base_url = web_app.settings["base_url"]
-    route_pattern = url_path_join(base_url, "connect-jupyterlab", "publish")
-    handlers = [(route_pattern, RouteHandler)]
+    global base_url
+    base_url = url_path_join(web_app.settings["base_url"], "connect-jupyterlab")
+    route_pattern = url_path_join(base_url, "publish")
+    ui_pattern = url_path_join(base_url, "ui", r"(\d+)", r"(.*)")
+
+    handlers = [
+        (route_pattern, PublishHandler),
+        (ui_pattern, UIHandler),
+    ]
     web_app.add_handlers(host_pattern, handlers)
 
 
@@ -56,9 +90,13 @@ def launch_ui(notebookPath: str, pythonPath: str, pythonVersion: str, log: loggi
     ]
     log.info("Starting: %s", " ".join(map(shlex.quote, args)))
     process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=None, text=True)
+
     if process.stdout is None:
         # This should never happen because we requested stdout=subprocess.PIPE
         raise Exception("The launched process did not provide an output stream.")
     # currently, URL is the first thing written to stdout
     url = process.stdout.readline().strip()
+
+    parsed = urlparse(url)
+    known_ports[parsed.port] = process
     return url
