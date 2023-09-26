@@ -226,7 +226,7 @@ func (ign *GitIgnoreList) AppendGit() error {
 	// Add all .gitignore files, from this directory
 	// up to the git root.
 	dir := util.NewPath(fromSplit(ign.cwd), ign.fs)
-	for dir.Base() != "" {
+	for dir.Base() != "" && dir.Base() != "/" {
 		ignorePath := dir.Join(".gitignore")
 		exists, err := ignorePath.Exists()
 		if err != nil {
