@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
-from jupyter_server_proxy.handlers import LocalProxyHandler
+from jupyter_server_proxy.handlers import LocalProxyHandler  # type: ignore
 from tornado.httputil import HTTPServerRequest
 from tornado.web import authenticated
 from tornado.httpclient import HTTPResponse
