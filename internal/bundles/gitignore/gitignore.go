@@ -214,40 +214,7 @@ func (ign *GitIgnoreList) Append(path util.Path) error {
 	return ign.append(path, nil)
 }
 
-func (ign *GitIgnoreList) exists(path string) bool {
-	_, err := ign.fs.Stat(path)
-	return !os.IsNotExist(err)
-}
-
 var ErrNotInGitRepo = errors.New("not in a git repository")
-
-func (ign *GitIgnoreList) findGitRoot(cwd []string) (util.Path, error) {
-	p := fromSplit(cwd)
-	for !ign.exists(p + "/.git") {
-		if len(cwd) == 1 {
-			return util.Path{}, ErrNotInGitRepo
-		}
-		cwd = cwd[:len(cwd)-1]
-		p = fromSplit(cwd)
-	}
-	return util.NewPath(p, ign.fs), nil
-}
-
-func (ign *GitIgnoreList) appendAll(fname string, root util.Path) error {
-	return root.Walk(
-		func(path util.Path, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if path.Base() == fname {
-				err := ign.append(path, nil)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-}
 
 // AppendGit finds the root directory of the current git repository and appends
 // the contents of all .gitignore files in that git repository to the ignore
