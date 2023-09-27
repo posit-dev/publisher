@@ -19,6 +19,7 @@
       label="Publish"
       padding="8px 30px"
       class="q-ml-xs"
+      no-caps
       @click="onPublish"
     />
   </div>
