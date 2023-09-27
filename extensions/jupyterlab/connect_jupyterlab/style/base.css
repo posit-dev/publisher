@@ -4,7 +4,7 @@
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
 
-.rsc-icon {
+.posit-publish-icon {
   font-size: 18px;
 
   /* make the existing icon transparent so it is not visible */
@@ -15,8 +15,9 @@
   background-size: contain;
 }
 
-.jp-posit-publishing-view {
+.posit-publishing-view {
   width: 100%;
   height: 100%;
   border-width: 0;
+  min-width: 500px !important;
 }

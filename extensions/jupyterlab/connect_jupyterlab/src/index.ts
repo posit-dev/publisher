@@ -1,11 +1,14 @@
 import {
   JupyterFrontEnd,
-  JupyterFrontEndPlugin
+  JupyterFrontEndPlugin,
+  LabShell
 } from '@jupyterlab/application';
 
 import { ICommandPalette } from '@jupyterlab/apputils';
+import { JupyterLab } from '@jupyterlab/application';
 import { IDocumentManager } from '@jupyterlab/docmanager';
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
+import { NotebookApp, NotebookShell } from '@jupyter-notebook/application';
 import { KernelMessage } from '@jupyterlab/services';
 import { IKernelConnection } from '@jupyterlab/services/lib/kernel/kernel';
 import { JSONObject } from '@lumino/coreutils';
@@ -15,6 +18,12 @@ import { requestAPI } from './handler';
 
 const PACKAGE_NAME = 'connect_jupyterlab';
 const COMMAND_NAME = 'posit:publish';
+
+enum AppType {
+  Unknown = 0,
+  JupyterLab = 1,
+  JupyterNotebook = 2
+}
 
 async function runPython(
   code: string,
@@ -121,9 +130,9 @@ class IFrameWidget extends Widget {
     IFrameWidget.unique++;
     this.id = 'posit-publishing-ui-' + IFrameWidget.unique;
     this.title.label = 'Publish ' + notebookPath.split('/').at(-1);
-    this.title.closable = true;
-    // this.title.icon = LabIcon.resolveElement({ iconClass: 'rsc-icon' }); // nope
-    this.addClass('jp-posit-publishing-view');
+    this.title.closable = false;
+    // this.title.icon = LabIcon.resolveElement({ iconClass: 'posit-publish-icon' }); // nope
+    this.addClass('posit-publishing-view');
 
     const iframe = document.createElement('iframe');
     iframe.src = url;
@@ -136,7 +145,8 @@ class IFrameWidget extends Widget {
 function makePublishCommand(
   notebookTracker: INotebookTracker,
   docManager: IDocumentManager,
-  shell: JupyterFrontEnd.IShell
+  shell: JupyterFrontEnd.IShell,
+  appType: AppType
 ) {
   const uiWidgets = new Map<string, Widget>();
   let notebookPanel: NotebookPanel | null = null;
@@ -183,14 +193,36 @@ function makePublishCommand(
       const url = agentInfo.url;
       console.log(`Publishing agent serving at ${url}`);
 
-      // The widget is a singleton; if it's open, activate it.
+      // There is one widget per notebook; if it's open, activate it.
       let widget = uiWidgets.get(notebookPath);
       if (widget && shell.contains(widget)) {
         shell.activateById(widget.id);
       } else {
         widget = new IFrameWidget(notebookPath, url);
         uiWidgets.set(notebookPath, widget);
-        shell.add(widget, 'main');
+
+        switch (appType) {
+          case AppType.JupyterLab:
+            shell.add(widget, 'right');
+            shell.activateById(widget.id);
+            if (shell instanceof LabShell) {
+              // shell.collapseLeft();
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+            } else {
+              console.log("Couldn't collapse left sidebar");
+            }
+            break;
+          case AppType.JupyterNotebook:
+            shell.add(widget, 'right');
+            shell.activateById(widget.id);
+            // if (shell instanceof NotebookShell) {
+            //   shell.collapseLeft();
+            // } else {
+            //   console.log("Couldn't collapse left sidebar");
+            // }
+            break;
+        }
       }
     } catch (err) {
       throw new Error(`Error launching the publishing agent: ${err}`);
@@ -223,13 +255,22 @@ const plugin: JupyterFrontEndPlugin<void> = {
   ) => {
     console.log(`Activating JupyterLab extension ${PACKAGE_NAME}`);
     const { commands, shell } = app;
-
+    let appType = AppType.Unknown;
+    if (app instanceof NotebookApp) {
+      appType = AppType.JupyterNotebook;
+      console.log('Running in Jupyter Notebook app');
+    } else if (app instanceof JupyterLab) {
+      appType = AppType.JupyterLab;
+      console.log('Running in JupyterLab app');
+    } else {
+      console.log('Running in unknown app');
+    }
     // Add a command
     commands.addCommand(COMMAND_NAME, {
       label: 'Publish',
       caption: 'Publish to Posit Connect',
-      iconClass: 'rsc-icon',
-      execute: makePublishCommand(notebookTracker, docManager, shell)
+      iconClass: 'posit-publish-icon',
+      execute: makePublishCommand(notebookTracker, docManager, shell, appType)
     });
 
     // Add the command to the command palette

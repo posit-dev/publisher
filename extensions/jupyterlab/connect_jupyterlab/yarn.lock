@@ -2039,6 +2039,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jupyter-notebook/application@npm:^7.0.4":
+  version: 7.0.4
+  resolution: "@jupyter-notebook/application@npm:7.0.4"
+  dependencies:
+    "@jupyterlab/application": ^4.0.6
+    "@jupyterlab/coreutils": ^6.0.6
+    "@jupyterlab/docregistry": ^4.0.6
+    "@jupyterlab/rendermime-interfaces": ^3.8.6
+    "@jupyterlab/ui-components": ^4.0.6
+    "@lumino/algorithm": ^2.0.1
+    "@lumino/coreutils": ^2.1.2
+    "@lumino/messaging": ^2.0.1
+    "@lumino/polling": ^2.1.2
+    "@lumino/signaling": ^2.1.2
+    "@lumino/widgets": ^2.3.0
+  checksum: 0a467484f13eb1769f1c1bf4d03a641b8923597b61a462c5c52a9ccb653434f3a503d2b7ed56fae11146d85d827649844df0ed39b6443e1c0e7db9b09b099de6
+  languageName: node
+  linkType: hard
+
 "@jupyter/ydoc@npm:^1.0.2":
   version: 1.1.0
   resolution: "@jupyter/ydoc@npm:1.1.0"
@@ -5049,6 +5068,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "connect_jupyterlab@workspace:."
   dependencies:
+    "@jupyter-notebook/application": ^7.0.4
     "@jupyterlab/application": ^4.0.0
     "@jupyterlab/apputils": ^4.1.5
     "@jupyterlab/builder": ^4.0.0
