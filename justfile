@@ -1,5 +1,5 @@
 # clean, image, bootstrap, validate, build and test agent & client
-default: clean image bootstrap validate build test
+default: clean image bootstrap lint build test
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
@@ -53,28 +53,28 @@ build:
     version=$(./scripts/get-version.bash)
     {{ _with_runner }} env MODE={{ _mode }} ./scripts/build.bash ./cmd/connect-client $version
 
+# Print the pre-release status
+pre-release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    ./scripts/is-pre-release.bash
+
+# Print the Docker tag
 tag:
     #!/usr/bin/env bash
     set -euo pipefail
 
     echo "rstudio/connect-client:"$(just version)
 
+# Print the version
 version:
     #!/usr/bin/env bash
     set -euo pipefail
 
     ./scripts/get-version.bash
 
-# Validate the agent and the web UX source code, along with checking for copyrights.
-validate:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    ./scripts/ccheck.py ./scripts/ccheck.config
-    {{ _with_runner }} just web/validate
-    just validate-agent
-
-validate-agent:
+lint:
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -86,6 +86,8 @@ validate-agent:
         echo "placeholder" > ${web_dir}/placeholder
         trap "rm -f ${web_dir}/placeholder" EXIT
     fi
+
+    {{ _with_runner }} ./scripts/ccheck.py ./scripts/ccheck.config
     {{ _with_runner }} staticcheck ./...
     {{ _with_runner }} go vet -all ./...
     {{ _with_runner }} ./scripts/fmt-check.bash
@@ -100,15 +102,12 @@ validate-fix:
     ./scripts/ccheck.py ./scripts/ccheck.config --fix
     {{ _with_runner }} just web/validate-fix
 
-# Run all tests (unit and e2e) on the agent as well as web UX
-test: test-agent test-web
 
 # Run the tests on the agent w/ coverage profiling
-test-agent:
+test:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    echo "Testing agent code"
     {{ _with_runner }} go test ./... -covermode set -coverprofile ./test/go_cover.out
 
 # Display the test code coverage of the Go code, from last test run
@@ -122,6 +121,12 @@ test-agent-coverage:
 # run the tests on the Web UX
 test-web:
     {{ _with_runner }} just web/test
+
+web *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    {{ _with_runner }} just web/{{ args }}
 
 # Run the publishing agent executable w/ arguments
 run-agent *args:

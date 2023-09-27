@@ -3,6 +3,12 @@ _use_docker := env_var_or_default("DOCKER", "true")
 # will run recipes: bootstrap, validate, build, and test
 default: bootstrap validate build test
 
+install:
+    #!/bin/bash
+    set -euo pipefail
+
+    npm install --no-audit
+
 # update javascript/typescript dependencies
 bootstrap:
     #!/bin/bash
@@ -13,6 +19,13 @@ bootstrap:
     export CYPRESS_CACHE_FOLDER="./cypress/.cache"
     echo "NOTE: npm install may take five minutes or more from within a docker container..."
     npm install --no-audit
+
+
+lint:
+    #!/bin/bash
+    set -euo pipefail
+
+    npm run lint
 
 # validate the source files, do not fix the fixable items
 validate:
