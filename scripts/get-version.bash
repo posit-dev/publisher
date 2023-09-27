@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-git describe --tags | sed 's/\v\(.*\).*/\1/'
+version=$(git describe --tags)
+echo "${version/v/}"

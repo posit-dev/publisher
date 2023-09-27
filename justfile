@@ -7,8 +7,6 @@ _ci := "${CI:-false}"
 
 _mode := "${MODE:-dev}"
 
-_tag := "rstudio/connect-client:latest"
-
 _with_runner := if env_var_or_default("DOCKER", "true") == "true" {
         "just _with_docker"
     } else {
@@ -54,6 +52,18 @@ build:
     # _with_runner is not invoked since `./scripts/get-version.bash` executes `docker run`, which would result in a docker-in-docker scenario.
     version=$(./scripts/get-version.bash)
     {{ _with_runner }} env MODE={{ _mode }} ./scripts/build.bash ./cmd/connect-client $version
+
+tag:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "rstudio/connect-client:"$(just version)
+
+version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    ./scripts/get-version.bash
 
 # Validate the agent and the web UX source code, along with checking for copyrights.
 validate:
@@ -125,11 +135,12 @@ image:
     #!/usr/bin/env bash
     set -euo pipefail
 
+    echo $(just tag)
     if "${DOCKER:-true}" == "true" ; then
         docker build \
             --build-arg BUILDKIT_INLINE_CACHE=1 \
             --pull \
-            --tag {{ _tag }} \
+            --tag $(just tag) \
             ./build/package
     fi
 
@@ -169,4 +180,4 @@ _with_docker *args:
         -v "$(pwd)":/work \
         -w /work \
         {{ _uid_args }} \
-        {{ _tag }} {{ args }}
+        $(just tag) {{ args }}
