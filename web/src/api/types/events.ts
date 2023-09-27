@@ -11,43 +11,6 @@ export enum EventStreamMessageType {
   LOG = 'log',
 }
 
-interface StringMapOfStrings {
-  [key: string]: string,
-}
-
-export interface EventStreamMessage {
-  type: EventSubscriptionTarget,
-  time: string,
-  data: StringMapOfStrings,
-  error?: string,
-}
-
-// interface typeA extends EventStreamMessage {
-//   type: 'publish/start',
-//   data: {
-//     x: number;
-//   }
-// }
-
-// interface typeB extends EventStreamMessage {
-//   type: 'publish/success',
-//   data: {
-//     id: string;
-//   }
-// }
-
-// type Both = typeA | typeB;
-
-// export type Messages = typeA | typeB;
-
-// const testaa = (a: Both) => {
-//   if (a.type === 'publish/start') {
-//     a.data.id = 'abc';
-//   }
-// };
-
-export type OnMessageEventSourceCallback = (msg: EventStreamMessage) => void;
-
 export type MethodResult = {
   ok: boolean,
   error?: string,
@@ -67,64 +30,7 @@ export type CallbackQueueEntry = {
   callback: OnMessageEventSourceCallback,
 }
 
-export type EventSubscriptionTarget =
-  '*' | // all events
-
-  'agent/log' | // agent console log messages
-
-  'errors/*' | // all errors
-  'errors/sse' |
-  'errors/open' |
-  'errors/unknownEvent' |
-
-  'open/*' | // open events
-  'open/sse' |
-
-  'publish/*' | // publish events
-  'publish/**/log' |
-  'publish/**/failure' |
-
-  'publish/start' |
-  'publish/createBundle/start' |
-  'publish/createBundle/log' |
-  'publish/createBundle/success' |
-  'publish/createBundle/failure' | // new
-  // 'publish/createBundle/failure/authFailure' | // new, but we'll convert
-
-  'publish/createDeployment/start' |
-  'publish/createDeployment/success' |
-  'publish/createDeployment/failure' | // new
-
-  'publish/uploadBundle/start' |
-  'publish/uploadBundle/success' |
-  'publish/uploadBundle/failure' | // new
-
-  'publish/deployBundle/start' |
-  'publish/deployBundle/success' |
-  'publish/deployBundle/failure' | // new
-
-  // 'publish/restore' | // new but unknown???
-  // 'publish/restore/log' | // new but unknown???
-
-  'publish/restorePythonEnv/start' |
-  'publish/restorePythonEnv/log' |
-  'publish/restorePythonEnv/success' |
-  'publish/restorePythonEnv/failure' | // new
-  // 'publish/restorePythonEnv/failure/serverErr' | // new - converted
-
-  // 'publish/restoreREnv/failure/unknown' | // new, but on hold
-
-  'publish/runContent/start' |
-  'publish/runContent/log' |
-  'publish/runContent/success' |
-  'publish/runContent/failure' |
-
-  // 'publish/setVanityURL' | // new, but on hold
-
-  'publish/success' |
-  'publish/failure'; // new
-
-// Publishing events as of 9/26
+// Sample publishing stream of events as of 9/26
 // { "time": "2023-09-26T09:23:10.103322-07:00", "type": "open/sse", "data": {} }
 // { "time": "2023-09-26T09:23:14.188926-07:00", "type": "agent/log", "data": { "level": "WARN", "message": "Service is operating in DEVELOPMENT MODE with NO browser to server authentication" } }
 // { "time": "2023-09-26T09:23:14.189194-07:00", "type": "agent/log", "data": { "level": "INFO", "message": "UI server running", "url": "http://127.0.0.1:9001/" } }
@@ -168,9 +74,79 @@ export type EventSubscriptionTarget =
 // { "time": "2023-09-26T09:23:25.311112-07:00", "type": "publish/runContent/success", "data": { "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
 // { "time": "2023-09-26T09:23:25.311155-07:00", "type": "publish/success", "data": { "level": "INFO", "message": "Deployment successful", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "dashboardUrl": "https://rsc.radixu.com/connect/#/apps/0d976b10-8f98-463c-9647-9738338f53d8", "directUrl": "https://rsc.radixu.com/content/0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm", "serverUrl": "https://rsc.radixu.com" } }
 
+export type EventSubscriptionTarget =
+  '*' | // all events
+
+  'agent/log' | // agent console log messages
+
+  'errors/*' | // all errors
+  'errors/sse' |
+  'errors/open' |
+  'errors/unknownEvent' |
+
+  'open/*' | // open events
+  'open/sse' |
+
+  'publish/*' | // publish events
+  'publish/**/log' |
+  'publish/**/failure' |
+
+  'publish/start' |
+  'publish/createBundle/start' |
+  'publish/createBundle/log' |
+  'publish/createBundle/success' |
+  'publish/createBundle/failure' |
+  // 'publish/createBundle/failure/authFailure' | // received but temporarily converted
+
+  'publish/createDeployment/start' |
+  'publish/createDeployment/success' |
+  'publish/createDeployment/failure' |
+
+  'publish/uploadBundle/start' |
+  'publish/uploadBundle/success' |
+  'publish/uploadBundle/failure' |
+
+  'publish/deployBundle/start' |
+  'publish/deployBundle/success' |
+  'publish/deployBundle/failure' |
+
+  // 'publish/restore' | // found during agent code searches but not received
+  // 'publish/restore/log' | // found during agent code searches but not received
+
+  'publish/restorePythonEnv/start' |
+  'publish/restorePythonEnv/log' |
+  'publish/restorePythonEnv/success' |
+  'publish/restorePythonEnv/failure' |
+  // 'publish/restorePythonEnv/failure/serverErr' | // received but temporarily converted
+
+  // 'publish/restoreREnv/failure/unknown' | // received but temporarily converted
+
+  'publish/runContent/start' |
+  'publish/runContent/log' |
+  'publish/runContent/success' |
+  'publish/runContent/failure' |
+
+  // 'publish/setVanityURL' | // new, but on hold
+
+  'publish/success' |
+  'publish/failure';
+
 export function getLocalId(arg: EventStreamMessage) {
   return arg.data.localId;
 }
+
+interface StringMapOfStrings {
+  [key: string]: string,
+}
+
+export interface EventStreamMessage {
+  type: EventSubscriptionTarget,
+  time: string,
+  data: StringMapOfStrings,
+  error?: string,
+}
+
+export type OnMessageEventSourceCallback = (msg: EventStreamMessage) => void;
 
 export function isEventStreamMessage(o: object): o is EventStreamMessage {
   return (
