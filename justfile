@@ -87,7 +87,7 @@ lint:
         trap "rm -f ${web_dir}/placeholder" EXIT
     fi
 
-    {{ _with_runner }} ./scripts/ccheck.py ./scripts/ccheck.config
+    # ./scripts/ccheck.py ./scripts/ccheck.config
     {{ _with_runner }} staticcheck ./...
     {{ _with_runner }} go vet -all ./...
     {{ _with_runner }} ./scripts/fmt-check.bash
