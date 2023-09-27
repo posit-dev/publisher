@@ -155,6 +155,9 @@ export class EventStream {
     return null;
   }
 
+  // The conversion being performed by this method from specific failure
+  // events over into the generic /failure path is TEMPORARY. Code will be
+  // updated within the Agent and this code will no longer be required.
   private convertMessage(msg: EventStreamMessage) : EventStreamMessage {
     // We convert failure messages to a more generic form
     if (msg.type.includes('/failure')) {
@@ -191,15 +194,6 @@ export class EventStream {
     this.logMsg(`Converted to event type = ${finalMsg.type}`);
     this.dispatchMessage(finalMsg);
   }
-
-  // Do we create a subscribe method for each type
-  // or do we have everyone's handler do a type check in order to get to the type they expect?
-  // isTypeOf(x, type) : is type of
-  // (Seems like this makes more sense, so we can keep everything a bit more general purpose until
-  // someone needs the specific type)
-  // function isFoo(arg: any): arg is Foo {
-  //   return arg.foo !== undefined;
-  // }
 
   private initializeConnection(url: string, withCredentials: boolean): MethodResult {
     this.logMsg(`initializing connection to ${url}, with credentials: ${withCredentials}`);
