@@ -10,6 +10,35 @@ import {
   isEventStreamMessage,
   EventSubscriptionTarget,
   CallbackQueueEntry,
+  OnAgentLogCallback,
+  OnErrorsSseCallback,
+  OnErrorsOpenCallback,
+  OnErrorsUnknownEventCallback,
+  OnOpenSseCallback,
+  OnPublishStartCallback,
+  OnPublishCreateBundleStartCallback,
+  OnPublishCreateBundleLogCallback,
+  OnPublishCreateBundleSuccessCallback,
+  OnPublishCreateBundleFailureCallback,
+  OnPublishCreateDeploymentStartCallback,
+  OnPublishCreateDeploymentSuccessCallback,
+  OnPublishCreateDeploymentFailureCallback,
+  OnPublishUploadBundleStartCallback,
+  OnPublishUploadBundleSuccessCallback,
+  OnPublishUploadBundleFailureCallback,
+  OnPublishDeployBundleStartCallback,
+  OnPublishDeployBundleSuccessCallback,
+  OnPublishDeployBundleFailureCallback,
+  OnPublishRestorePythonEnvStartCallback,
+  OnPublishRestorePythonEnvLogCallback,
+  OnPublishRestorePythonEnvSuccessCallback,
+  OnPublishRestorePythonEnvFailureCallback,
+  OnPublishRunContentStartCallback,
+  OnPublishRunContentLogCallback,
+  OnPublishRunContentSuccessCallback,
+  OnPublishRunContentFailureCallback,
+  OnPublishSuccessCallback,
+  OnPublishFailureCallback,
 } from 'src/api/types/events.ts';
 
 export class EventStream {
@@ -81,12 +110,13 @@ export class EventStream {
       }
     });
     if (numMatched === 0 && msg.type !== 'errors/open') {
-      this.logMsg(`WARNING! No subscriber/handler found for msg: ${JSON.stringify}`);
+      const strMsg = JSON.stringify(msg);
+      this.logMsg(`WARNING! No subscriber/handler found for msg: ${strMsg}`);
       this.dispatchMessage({
         type: 'errors/unknownEvent',
         time: new Date().toString(),
         data: {
-          event: msg,
+          event: strMsg,
         },
       });
     }
@@ -96,8 +126,8 @@ export class EventStream {
     this.logMsg(`received RawOpenCallback`);
     this.isOpen = true;
     this.dispatchMessage({
+      time: new Date().toISOString(),
       type: 'open/sse',
-      time: new Date().toString(),
       data: {},
     });
   }
@@ -118,11 +148,29 @@ export class EventStream {
 
   private parseMessageData(data: string) : EventStreamMessage | null {
     const rawObj = JSON.parse(data);
-    const obj = camelcaseKeys(rawObj);
+    const obj = camelcaseKeys(rawObj, { deep: true });
     if (isEventStreamMessage(obj)) {
       return obj;
     }
     return null;
+  }
+
+  private convertMessage(msg: EventStreamMessage) : EventStreamMessage {
+    // We convert failure messages to a more generic form
+    if (msg.type.includes('/failure')) {
+      // split by /failure
+      const parts = msg.type.split('/failure');
+      // temporary!!! will be changing backend.
+      msg.type = `${parts[0]}/failure` as EventSubscriptionTarget;
+      if (parts.length === 1) {
+        // we didn't get a failure qualifier
+        msg.error = 'unknown';
+      } else {
+        // we'll set the error to the trailing failure qualifier, without the /
+        msg.error = parts[1].slice(1);
+      }
+    }
+    return msg;
   }
 
   private onMessageRawCallback(msg: MessageEvent) {
@@ -132,15 +180,26 @@ export class EventStream {
       const errorMsg = `Invalid EventStreamMessage received: ${msg.data}`;
       const now = new Date();
       this.dispatchMessage({
-        type: 'errors/open',
+        type: 'errors/sse',
         time: now.toString(),
         data: { msg: `${errorMsg}` },
       });
       return;
     }
     this.logMsg(`Received event type = ${parsed.type}`);
-    this.dispatchMessage(parsed);
+    const finalMsg = this.convertMessage(parsed);
+    this.logMsg(`Converted to event type = ${finalMsg.type}`);
+    this.dispatchMessage(finalMsg);
   }
+
+  // Do we create a subscribe method for each type
+  // or do we have everyone's handler do a type check in order to get to the type they expect?
+  // isTypeOf(x, type) : is type of
+  // (Seems like this makes more sense, so we can keep everything a bit more general purpose until
+  // someone needs the specific type)
+  // function isFoo(arg: any): arg is Foo {
+  //   return arg.foo !== undefined;
+  // }
 
   private initializeConnection(url: string, withCredentials: boolean): MethodResult {
     this.logMsg(`initializing connection to ${url}, with credentials: ${withCredentials}`);
@@ -195,7 +254,7 @@ export class EventStream {
     );
   }
 
-  public addEventMonitorCallback(
+  public addEventMonitorCallbackOld(
     targets: EventSubscriptionTarget[],
     cb: OnMessageEventSourceCallback
   ) {
@@ -207,7 +266,91 @@ export class EventStream {
     }
   }
 
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback) {
+  public addEventMonitorCallback(target: EventSubscriptionTarget[],
+    cb: OnMessageEventSourceCallback): void;
+  public addEventMonitorCallback(target: '*', cb: OnMessageEventSourceCallback): void;
+  public addEventMonitorCallback(target: 'agent/log', cb: OnAgentLogCallback): void;
+  public addEventMonitorCallback(target: 'errors/*', cb: OnPublishStartCallback): void;
+  public addEventMonitorCallback(target: 'errors/sse', cb: OnErrorsSseCallback): void;
+  public addEventMonitorCallback(target: 'errors/open', cb: OnErrorsOpenCallback): void;
+  public addEventMonitorCallback(target: 'errors/unknownEvent', cb: OnErrorsUnknownEventCallback): void;
+  public addEventMonitorCallback(target: 'open/*', cb: OnMessageEventSourceCallback): void;
+  public addEventMonitorCallback(target: 'open/sse', cb: OnOpenSseCallback): void;
+  public addEventMonitorCallback(target: 'publish/*', cb: OnMessageEventSourceCallback): void;
+  public addEventMonitorCallback(target: 'publish/**/log', cb: OnMessageEventSourceCallback): void;
+  public addEventMonitorCallback(target: 'publish/**/failure', cb: OnMessageEventSourceCallback): void;
+  public addEventMonitorCallback(target: 'publish/createBundle/start', cb: OnPublishCreateBundleStartCallback): void;
+  public addEventMonitorCallback(target: 'publish/createBundle/log', cb: OnPublishCreateBundleLogCallback): void;
+  public addEventMonitorCallback(target: 'publish/createBundle/success', cb: OnPublishCreateBundleSuccessCallback): void;
+  public addEventMonitorCallback(target: 'publish/createBundle/failure', cb: OnPublishCreateBundleFailureCallback): void;
+  public addEventMonitorCallback(target: 'publish/createDeployment/start', cb: OnPublishCreateDeploymentStartCallback): void;
+  public addEventMonitorCallback(target: 'publish/createDeployment/success', cb: OnPublishCreateDeploymentSuccessCallback): void;
+  public addEventMonitorCallback(target: 'publish/createDeployment/failure', cb: OnPublishCreateDeploymentFailureCallback): void;
+  public addEventMonitorCallback(target: 'publish/uploadBundle/start', cb: OnPublishUploadBundleStartCallback): void;
+  public addEventMonitorCallback(target: 'publish/uploadBundle/success', cb: OnPublishUploadBundleSuccessCallback): void;
+  public addEventMonitorCallback(target: 'publish/uploadBundle/failure', cb: OnPublishUploadBundleFailureCallback): void;
+  public addEventMonitorCallback(target: 'publish/deployBundle/start', cb: OnPublishDeployBundleStartCallback): void;
+  public addEventMonitorCallback(target: 'publish/deployBundle/success', cb: OnPublishDeployBundleSuccessCallback): void;
+  public addEventMonitorCallback(target: 'publish/deployBundle/failure', cb: OnPublishDeployBundleFailureCallback): void;
+  public addEventMonitorCallback(target: 'publish/restorePythonEnv/start', cb: OnPublishRestorePythonEnvStartCallback): void;
+  public addEventMonitorCallback(target: 'publish/restorePythonEnv/log', cb: OnPublishRestorePythonEnvLogCallback): void;
+  public addEventMonitorCallback(target: 'publish/restorePythonEnv/success', cb: OnPublishRestorePythonEnvSuccessCallback): void;
+  public addEventMonitorCallback(target: 'publish/restorePythonEnv/failure', cb: OnPublishRestorePythonEnvFailureCallback): void;
+  public addEventMonitorCallback(target: 'publish/runContent/start', cb: OnPublishRunContentStartCallback): void;
+  public addEventMonitorCallback(target: 'publish/runContent/log', cb: OnPublishRunContentLogCallback): void;
+  public addEventMonitorCallback(target: 'publish/runContent/success', cb: OnPublishRunContentSuccessCallback): void;
+  public addEventMonitorCallback(target: 'publish/runContent/failure', cb: OnPublishRunContentFailureCallback): void;
+  public addEventMonitorCallback(target: 'publish/success', cb: OnPublishSuccessCallback): void;
+  public addEventMonitorCallback(target: 'publish/failure', cb: OnPublishFailureCallback): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public addEventMonitorCallback(target: any, cb: any): void {
+    if (Array.isArray(target)) {
+      target.forEach(t => this.addEventMonitorCallback(t, cb));
+    } else {
+      this.subscriptions.push({
+        eventType: target,
+        callback: cb,
+      });
+    }
+  }
+
+  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
+  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
+  public delEventFilterCallback(cb: OnAgentLogCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishStartCallback): boolean;
+  public delEventFilterCallback(cb: OnErrorsSseCallback): boolean;
+  public delEventFilterCallback(cb: OnErrorsOpenCallback): boolean;
+  public delEventFilterCallback(cb: OnErrorsUnknownEventCallback): boolean;
+  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
+  public delEventFilterCallback(cb: OnOpenSseCallback): boolean;
+  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
+  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
+  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishCreateBundleStartCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishCreateBundleLogCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishCreateBundleSuccessCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishCreateBundleFailureCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishCreateDeploymentStartCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishCreateDeploymentSuccessCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishCreateDeploymentFailureCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishUploadBundleStartCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishUploadBundleSuccessCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishUploadBundleFailureCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishDeployBundleStartCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishDeployBundleSuccessCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishDeployBundleFailureCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishRestorePythonEnvStartCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishRestorePythonEnvLogCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishRestorePythonEnvSuccessCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishRestorePythonEnvFailureCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishRunContentStartCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishRunContentLogCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishRunContentSuccessCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishRunContentFailureCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishSuccessCallback): boolean;
+  public delEventFilterCallback(cb: OnPublishFailureCallback): boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public delEventFilterCallback(cb: any): boolean {
     let found = false;
     let index = -1;
     // We may have multiple events being delivered to same callback
