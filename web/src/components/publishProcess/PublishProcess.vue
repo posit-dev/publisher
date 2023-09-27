@@ -22,7 +22,6 @@
         v-for="(eventItem, index) in events"
         :key="index"
       >
-        {{ index }}
         {{ JSON.stringify(eventItem) }}
       </div>
       <p ref="agentLogEnd">

@@ -266,6 +266,10 @@ export class EventStream {
     }
   }
 
+  // Provide Typescript function overloading, so we can facilitate type specific callbacks allowing
+  // code to correctly type the incoming event automatically, if they are only receiving a single type of
+  // message. If they are receiving multiple, then they should use the array target signature and use type guards
+  // within that code to narrow down the type of the actual event received.
   public addEventMonitorCallback(target: EventSubscriptionTarget[],
     cb: OnMessageEventSourceCallback): void;
   public addEventMonitorCallback(target: '*', cb: OnMessageEventSourceCallback): void;
@@ -314,6 +318,8 @@ export class EventStream {
     }
   }
 
+  // Provide Typescript function overloading of each type of callback, corresponding to the 'addEventMonitorCallback'
+  // overloading above.
   public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
   public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
   public delEventFilterCallback(cb: OnAgentLogCallback): boolean;
