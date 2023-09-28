@@ -5,7 +5,12 @@
     title="Advanced Settings"
   >
     <template #avatar>
-      <PublisherAdvancedLogo />
+      <PublisherAdvancedLogo
+        width="40px"
+        height="40px"
+        fill="lightgray"
+        stroke="none"
+      />
     </template>
     TODO: Show list of editable settings (and some as read-only)
     based on capabilities of target server.

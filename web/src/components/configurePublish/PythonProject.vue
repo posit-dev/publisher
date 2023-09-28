@@ -5,7 +5,12 @@
     title="Python"
   >
     <template #avatar>
-      <PublisherPythonLogo />
+      <PublisherPythonLogo
+        width="40px"
+        height="40px"
+        fill="lightgray"
+        stroke="none"
+      />
     </template>
     TODO: Show detailed python version and list of package dependencies
     with ability to add or remove package dependencies.

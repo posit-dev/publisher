@@ -6,7 +6,12 @@
     :subtitle="fileSummary"
   >
     <template #avatar>
-      <PublisherFolderLogo />
+      <PublisherFolderLogo
+        width="40px"
+        height="40px"
+        fill="lightgray"
+        stroke="none"
+      />
     </template>
     <q-tree
       v-model:ticked="deploymentStore.files"

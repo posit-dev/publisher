@@ -5,7 +5,12 @@
     title="Common Settings"
   >
     <template #avatar>
-      <PublisherSettingsLogo />
+      <PublisherSettingsLogo
+        width="40px"
+        height="40px"
+        fill="lightgray"
+        stroke="none"
+      />
     </template>
     TODO: Common settings, probably off the info panel in dashboard
   </LayoutPanel>

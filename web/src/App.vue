@@ -12,6 +12,10 @@
       <q-toolbar class="max-width-md q-pa-auto">
         <AppMenu />
         <WhitePositLogo
+          width="70px"
+          height="30px"
+          fill="white"
+          stroke="none"
           class="posit-logo"
           alt="Posit PBC Logo"
         />
@@ -88,10 +92,3 @@ onBeforeUnmount(() => {
 
 getInitialDeploymentState();
 </script>
-
-<style lang="scss" scoped>
-.posit-logo {
-  max-height: 26px;
-  width: auto;
-}
-</style>
