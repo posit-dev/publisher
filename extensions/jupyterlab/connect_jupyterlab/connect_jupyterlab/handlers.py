@@ -25,9 +25,10 @@ class PublishHandler(APIHandler):
         notebookPath = os.path.abspath(data["notebookPath"])
         pythonPath = data["pythonPath"]
         pythonVersion = data["pythonVersion"]
+        theme = data["theme"]
 
         try:
-            ui_url = launch_ui(notebookPath, pythonPath, pythonVersion, self.log)
+            ui_url = launch_ui(notebookPath, pythonPath, pythonVersion, theme, self.log)
             parsed = urlparse(ui_url)
             proxy_path = url_path_join(base_url, "ui", str(parsed.port), "/")
             req = self.request
@@ -96,7 +97,9 @@ def setup_handlers(web_app):
     web_app.add_handlers(host_pattern, handlers)
 
 
-def launch_ui(notebookPath: str, pythonPath: str, pythonVersion: str, log: logging.Logger) -> str:
+def launch_ui(
+    notebookPath: str, pythonPath: str, pythonVersion: str, theme: str, log: logging.Logger
+) -> str:
     args = [
         "connect-client",
         "publish-ui",
@@ -105,6 +108,8 @@ def launch_ui(notebookPath: str, pythonPath: str, pythonVersion: str, log: loggi
         pythonPath,
         "--python-version",
         pythonVersion,
+        "--theme",
+        theme,
         "-n",
         "local",  # cheating, no target selection in the UI yet
     ]

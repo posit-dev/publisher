@@ -42,6 +42,7 @@ type UIArgs struct {
 	Interactive            bool   `short:"i" help:"Launch a browser to show the UI at the listen address."`
 	OpenBrowserAt          string `help:"Launch a browser to show the UI at specific network address." placeholder:"HOST[:PORT]" hidden:""`
 	SkipBrowserSessionAuth bool   `help:"Skip Browser Token Auth Checks" hidden:""`
+	Theme                  string `help:"UI theme, 'light' or 'dark'." hidden:""`
 	Listen                 string `help:"Network address to listen on." placeholder:"HOST[:PORT]" default:"localhost:0"`
 	AccessLog              bool   `help:"Log all HTTP requests."`
 	TLSKeyFile             string `help:"Path to TLS private key file for the UI server."`

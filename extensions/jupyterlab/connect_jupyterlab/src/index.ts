@@ -3,7 +3,7 @@ import {
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
-import { ICommandPalette } from '@jupyterlab/apputils';
+import { ICommandPalette, IThemeManager } from '@jupyterlab/apputils';
 import { IDocumentManager } from '@jupyterlab/docmanager';
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 import { KernelMessage } from '@jupyterlab/services';
@@ -100,13 +100,16 @@ class PublishResponse {
 async function launchAgent(
   notebookPath: string,
   pythonPath: string,
-  pythonVersion: string
+  pythonVersion: string,
+  isLightTheme: boolean
 ): Promise<PublishResponse> {
+  const theme = isLightTheme ? 'light' : 'dark';
   const data = await requestAPI<PublishResponse>('publish', {
     body: JSON.stringify({
       notebookPath: notebookPath,
       pythonPath: pythonPath,
-      pythonVersion: pythonVersion
+      pythonVersion: pythonVersion,
+      theme: theme
     }),
     method: 'POST'
   });
@@ -120,11 +123,19 @@ class PublishingWidget extends Widget {
   currentNotebook: NotebookPanel | null = null;
   docManager: IDocumentManager;
   notebookURLs: Map<string, string>;
+  isLightTheme: boolean;
 
-  constructor(notebookTracker: INotebookTracker, docManager: IDocumentManager) {
+  constructor(
+    notebookTracker: INotebookTracker,
+    docManager: IDocumentManager,
+    themeManager: IThemeManager
+  ) {
     super();
     this.notebookURLs = new Map<string, string>();
     this.docManager = docManager;
+
+    const theme = themeManager.theme;
+    this.isLightTheme = theme !== null && themeManager.isLight(theme);
 
     notebookTracker.currentChanged.connect((_, panel) => {
       console.log('Switch to panel', panel);
@@ -177,7 +188,8 @@ class PublishingWidget extends Widget {
     const agentInfo = await launchAgent(
       notebookPath,
       pythonPath,
-      pythonVersion
+      pythonVersion,
+      this.isLightTheme,
     );
     const agentURL = agentInfo.url;
     console.log(`Publishing agent serving at ${agentURL}`);
@@ -192,7 +204,7 @@ class PublishingWidget extends Widget {
       this.frame.src = url;
       this.frame.hidden = false;
     } catch (err) {
-      this.message.textContent = err as string;
+      this.message.textContent = '⛔️ ' + err;
       this.frame.hidden = true;
       this.message.hidden = false;
     }
@@ -203,11 +215,16 @@ async function activate(
   app: JupyterFrontEnd,
   palette: ICommandPalette,
   docManager: IDocumentManager,
-  notebookTracker: INotebookTracker
+  notebookTracker: INotebookTracker,
+  themeManager: IThemeManager
 ) {
   console.log(`Activating JupyterLab extension ${PACKAGE_NAME}`);
   const { commands, shell } = app;
-  const widget = new PublishingWidget(notebookTracker, docManager);
+  const widget = new PublishingWidget(
+    notebookTracker,
+    docManager,
+    themeManager
+  );
   shell.add(widget, 'right');
 
   // Add a command
@@ -232,7 +249,12 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: `${PACKAGE_NAME}:plugin`,
   description: 'A JupyterLab extension for publishing to Posit Connect.',
   autoStart: true,
-  requires: [ICommandPalette, IDocumentManager, INotebookTracker],
+  requires: [
+    ICommandPalette,
+    IDocumentManager,
+    INotebookTracker,
+    IThemeManager
+  ],
   activate: activate
 };
 

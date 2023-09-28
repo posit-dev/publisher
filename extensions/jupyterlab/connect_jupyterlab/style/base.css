@@ -29,10 +29,11 @@
 }
 
 .posit-publishing-message-area {
-  width: 100%;
   position: absolute;
   top: 50%;
   height: 10em;
   margin-top: -5em;
+  padding-left: 30px;
+  padding-right: 30px;
   text-align: center;
 }
