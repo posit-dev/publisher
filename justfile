@@ -114,6 +114,19 @@ version:
 
     ./scripts/get-version.bash
 
+[private]
+_with_docker *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    docker run --rm {{ _interactive }} \
+        -e CI={{ _ci }} \
+        -e GOCACHE=/work/.cache/go/cache \
+        -e GOMODCACHE=/work/.cache/go/mod \
+        -v "$(pwd)":/work \
+        -w /work \
+        {{ _uid_args }} \
+        $(just tag) {{ args }}
 
 # Start the agent and show the UI
 # NOTE: this must be called from within a docker container if so
@@ -134,21 +147,7 @@ start-agent-for-e2e:
 
     echo "Working directory is $(pwd)"
 
-    ./bin/$GOOS-$GOARCH/connect-client publish-ui \
+    ./bin/$GOOS/$GOARCH/connect-client* publish-ui \
         ./test/sample-content/fastapi-simple \
         --listen=127.0.0.1:9000 \
         --token=abc123
-
-[private]
-_with_docker *args:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    docker run --rm {{ _interactive }} \
-        -e CI={{ _ci }} \
-        -e GOCACHE=/work/.cache/go/cache \
-        -e GOMODCACHE=/work/.cache/go/mod \
-        -v "$(pwd)":/work \
-        -w /work \
-        {{ _uid_args }} \
-        $(just tag) {{ args }}

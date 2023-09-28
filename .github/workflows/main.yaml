@@ -2,7 +2,7 @@ name: Main
 on:
   push:
     branches:
-      - tdstein/release
+      - main
 jobs:
   agent:
     uses: ./.github/workflows/agent.yaml
