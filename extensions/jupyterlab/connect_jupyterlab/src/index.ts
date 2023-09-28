@@ -1,17 +1,15 @@
 import {
   JupyterFrontEnd,
-  JupyterFrontEndPlugin,
-  LabShell
+  JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
 import { ICommandPalette } from '@jupyterlab/apputils';
-import { JupyterLab } from '@jupyterlab/application';
 import { IDocumentManager } from '@jupyterlab/docmanager';
 import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
-import { NotebookApp, NotebookShell } from '@jupyter-notebook/application';
 import { KernelMessage } from '@jupyterlab/services';
 import { IKernelConnection } from '@jupyterlab/services/lib/kernel/kernel';
 import { JSONObject } from '@lumino/coreutils';
+import { Message } from '@lumino/messaging';
 import { Widget } from '@lumino/widgets';
 
 import { requestAPI } from './handler';
@@ -19,21 +17,15 @@ import { requestAPI } from './handler';
 const PACKAGE_NAME = 'connect_jupyterlab';
 const COMMAND_NAME = 'posit:publish';
 
-enum AppType {
-  Unknown = 0,
-  JupyterLab = 1,
-  JupyterNotebook = 2
-}
-
 async function runPython(
-  code: string,
-  expression: string,
+  toRun: string,
+  toEvaluate: string,
   kernel: IKernelConnection
 ): Promise<string> {
   const requestContent: KernelMessage.IExecuteRequestMsg['content'] = {
-    code,
+    code: toRun,
     user_expressions: {
-      value: expression
+      value: toEvaluate
     },
     stop_on_error: false
   };
@@ -66,6 +58,7 @@ async function getKernel(
   if (!kernel) {
     throw new Error('Session has no kernel.');
   }
+  console.info('Using kernel', kernel.id);
   const kernelLanguage = (await kernel.info).language_info.name;
   console.info('Kernel language:', kernelLanguage);
   if (kernelLanguage !== 'python') {
@@ -73,7 +66,6 @@ async function getKernel(
       "Can't publish this notebook because it doesn't use the Python kernel"
     );
   }
-  console.debug('Using kernel', kernel.id);
   return kernel;
 }
 
@@ -91,15 +83,15 @@ async function getKernelPythonVersion(
   );
 }
 
-class PublishStatus {
-  busy: boolean = false;
-}
+// class PublishStatus {
+//   busy: boolean = false;
+// }
 
-async function getPublishStatus(): Promise<PublishStatus> {
-  const data = await requestAPI<PublishStatus>('publish');
-  console.log(data);
-  return data;
-}
+// async function getPublishStatus(): Promise<PublishStatus> {
+//   const data = await requestAPI<PublishStatus>('publish');
+//   console.log(data);
+//   return data;
+// }
 
 class PublishResponse {
   url: string = '';
@@ -122,48 +114,48 @@ async function launchAgent(
   return data;
 }
 
-class IFrameWidget extends Widget {
-  static unique = 0;
+class PublishingWidget extends Widget {
+  frame: HTMLIFrameElement;
+  message: HTMLDivElement;
+  currentNotebook: NotebookPanel | null = null;
+  docManager: IDocumentManager;
+  notebookURLs: Map<string, string>;
 
-  constructor(notebookPath: string, url: string) {
+  constructor(notebookTracker: INotebookTracker, docManager: IDocumentManager) {
     super();
-    IFrameWidget.unique++;
-    this.id = 'posit-publishing-ui-' + IFrameWidget.unique;
-    this.title.label = 'Publish ' + notebookPath.split('/').at(-1);
+    this.notebookURLs = new Map<string, string>();
+    this.docManager = docManager;
+
+    notebookTracker.currentChanged.connect((_, panel) => {
+      console.log('Switch to panel', panel);
+      this.currentNotebook = panel;
+      this.activate();
+    });
+
+    this.id = 'posit-publishing-ui';
+    this.title.label = 'Posit Publishing';
     this.title.closable = false;
     // this.title.icon = LabIcon.resolveElement({ iconClass: 'posit-publish-icon' }); // nope
     this.addClass('posit-publishing-view');
 
-    const iframe = document.createElement('iframe');
-    iframe.src = url;
-    iframe.width = '100%';
-    iframe.height = '100%';
-    this.node.appendChild(iframe);
+    const frame = document.createElement('iframe');
+    frame.classList.add('posit-publishing-frame');
+    this.node.appendChild(frame);
+    this.frame = frame;
+
+    const message = document.createElement('div');
+    message.classList.add('posit-publishing-message-area');
+    message.textContent = 'Initializing; this message should be hidden.';
+    message.hidden = true;
+    this.node.appendChild(message);
+    this.message = message;
   }
-}
 
-function makePublishCommand(
-  notebookTracker: INotebookTracker,
-  docManager: IDocumentManager,
-  shell: JupyterFrontEnd.IShell,
-  appType: AppType
-) {
-  const uiWidgets = new Map<string, Widget>();
-  let notebookPanel: NotebookPanel | null = null;
-
-  notebookTracker.currentChanged.connect((_, panel) => {
-    console.log(panel);
-    notebookPanel = panel;
-  });
-
-  async function publish(calledFrom: string) {
-    console.log(`${COMMAND_NAME} command has been called from ${calledFrom}.`);
-    if (!notebookPanel) {
-      throw new Error(
-        "Can't publish because there isn't currently a notebook panel open."
-      );
+  async getOrStartUI(): Promise<string> {
+    if (!this.currentNotebook) {
+      throw new Error('Open a notebook to publish it.');
     }
-    const context = docManager.contextForWidget(notebookPanel);
+    const context = this.docManager.contextForWidget(this.currentNotebook);
     if (!context) {
       throw new Error('Error getting context for the notebook panel.');
     }
@@ -171,116 +163,77 @@ function makePublishCommand(
     if (!notebookPath) {
       throw new Error('Error getting the notebook path.');
     }
-    const kernel = await getKernel(notebookPanel);
+    const existingURL = this.notebookURLs.get(notebookPath);
+    if (existingURL !== undefined) {
+      console.log(`Using existing agent serving at ${existingURL}`);
+      return existingURL;
+    }
+    const kernel = await getKernel(this.currentNotebook);
     const pythonPath = await getKernelPythonPath(kernel);
     console.log('Kernel python path is', pythonPath);
     const pythonVersion = await getKernelPythonVersion(kernel);
     console.log('Kernel python version is', pythonVersion);
-    const status = await getPublishStatus();
-    console.log('Publishing status: ', status);
-    if (status.busy) {
-      throw new Error(
-        "Can't publish because there is already a publishing session open."
-      );
-    }
+
+    const agentInfo = await launchAgent(
+      notebookPath,
+      pythonPath,
+      pythonVersion
+    );
+    const agentURL = agentInfo.url;
+    console.log(`Publishing agent serving at ${agentURL}`);
+    this.notebookURLs.set(notebookPath, agentURL);
+    return agentURL;
+  }
+
+  async onActivateRequest(msg: Message): Promise<void> {
     try {
-      const agentInfo = await launchAgent(
-        notebookPath,
-        pythonPath,
-        pythonVersion
-      );
-      console.log(agentInfo);
-      const url = agentInfo.url;
-      console.log(`Publishing agent serving at ${url}`);
-
-      // There is one widget per notebook; if it's open, activate it.
-      let widget = uiWidgets.get(notebookPath);
-      if (widget && shell.contains(widget)) {
-        shell.activateById(widget.id);
-      } else {
-        widget = new IFrameWidget(notebookPath, url);
-        uiWidgets.set(notebookPath, widget);
-
-        switch (appType) {
-          case AppType.JupyterLab:
-            shell.add(widget, 'right');
-            shell.activateById(widget.id);
-            if (shell instanceof LabShell) {
-              // shell.collapseLeft();
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-            } else {
-              console.log("Couldn't collapse left sidebar");
-            }
-            break;
-          case AppType.JupyterNotebook:
-            shell.add(widget, 'right');
-            shell.activateById(widget.id);
-            // if (shell instanceof NotebookShell) {
-            //   shell.collapseLeft();
-            // } else {
-            //   console.log("Couldn't collapse left sidebar");
-            // }
-            break;
-        }
-      }
+      const url = await this.getOrStartUI();
+      this.message.hidden = true;
+      this.frame.src = url;
+      this.frame.hidden = false;
     } catch (err) {
-      throw new Error(`Error launching the publishing agent: ${err}`);
+      this.message.textContent = err as string;
+      this.frame.hidden = true;
+      this.message.hidden = false;
     }
   }
-  return async function (args: any) {
-    try {
-      await publish(args['origin']);
-    } catch (err) {
-      // TODO, obv
-      console.error('An error occurred during publishing:', err);
-      alert(err);
-    }
-  };
 }
 
-/**
- * Initialization data for the extension.
- */
+async function activate(
+  app: JupyterFrontEnd,
+  palette: ICommandPalette,
+  docManager: IDocumentManager,
+  notebookTracker: INotebookTracker
+) {
+  console.log(`Activating JupyterLab extension ${PACKAGE_NAME}`);
+  const { commands, shell } = app;
+  const widget = new PublishingWidget(notebookTracker, docManager);
+  shell.add(widget, 'right');
+
+  // Add a command
+  commands.addCommand(COMMAND_NAME, {
+    label: 'Publish',
+    caption: 'Publish to Posit Connect',
+    iconClass: 'posit-publish-icon',
+    execute: () => {
+      shell.activateById(widget.id);
+    }
+  });
+
+  // Add the command to the command palette
+  const category = 'notebook';
+  palette.addItem({
+    command: COMMAND_NAME,
+    category
+  });
+}
+
 const plugin: JupyterFrontEndPlugin<void> = {
   id: `${PACKAGE_NAME}:plugin`,
   description: 'A JupyterLab extension for publishing to Posit Connect.',
   autoStart: true,
   requires: [ICommandPalette, IDocumentManager, INotebookTracker],
-  activate: async (
-    app: JupyterFrontEnd,
-    palette: ICommandPalette,
-    docManager: IDocumentManager,
-    notebookTracker: INotebookTracker
-  ) => {
-    console.log(`Activating JupyterLab extension ${PACKAGE_NAME}`);
-    const { commands, shell } = app;
-    let appType = AppType.Unknown;
-    if (app instanceof NotebookApp) {
-      appType = AppType.JupyterNotebook;
-      console.log('Running in Jupyter Notebook app');
-    } else if (app instanceof JupyterLab) {
-      appType = AppType.JupyterLab;
-      console.log('Running in JupyterLab app');
-    } else {
-      console.log('Running in unknown app');
-    }
-    // Add a command
-    commands.addCommand(COMMAND_NAME, {
-      label: 'Publish',
-      caption: 'Publish to Posit Connect',
-      iconClass: 'posit-publish-icon',
-      execute: makePublishCommand(notebookTracker, docManager, shell, appType)
-    });
-
-    // Add the command to the command palette
-    const category = 'notebook';
-    palette.addItem({
-      command: COMMAND_NAME,
-      category,
-      args: { origin: 'palette' }
-    });
-  }
+  activate: activate
 };
 
 export default plugin;
