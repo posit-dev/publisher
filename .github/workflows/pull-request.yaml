@@ -11,7 +11,3 @@ jobs:
     uses: ./.github/workflows/web.yaml
   package:
     uses: ./.github/workflows/package.yaml
-  e2e:
-    needs:
-      - package
-    uses: ./.github/workflows/e2e.yaml

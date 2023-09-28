@@ -22,3 +22,8 @@ RUN go env -w GOBIN=/usr/local/go/bin\
  && go install honnef.co/go/tools/cmd/staticcheck@latest
 
 RUN git config --global --add safe.directory '*'
+
+RUN git clone https://github.com/bats-core/bats-core.git\
+    && ./bats-core/install.sh /usr/local\
+    && git clone https://github.com/ztombol/bats-support.git\
+    && git clone https://github.com/ztombol/bats-assert.git
