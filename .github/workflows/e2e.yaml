@@ -4,27 +4,6 @@ on:
     branches:
       - tdstein/release
 
-# A note on debugging a github step:
-#   You can ssh into the github action environment and poke around by using
-#   https://github.com/marketplace/actions/debugging-with-tmate
-#   Use `limit-access-to-actor: true` so only you can ssh into the environment!
-#
-#   For example, to debug a failure, append this to the jobs list within the failing step
-#   - name: Setup tmate session
-#     if: ${{ failure() }}
-#     uses: mxschmitt/action-tmate@v3
-#     with:
-#       limit-access-to-actor: true
-#
-
-# build docker image: actions/upload-artifact@v3, with path: /bin
-# - build UX
-#   - validate codebase
-#   - test UX unit tests
-#   - agent tests
-#   - build agent
-#     - UX e2e tests
-
 jobs:
   build-docker-image:
     runs-on: ubuntu-latest
@@ -308,7 +287,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin
+          sudo chmod -R +x ./bin/**/connect-client
       -
         name: Agent build artifacts
         uses: actions/upload-artifact@v3
@@ -352,7 +331,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin
+          chmod -R +x ./bin/**/connect-client
       -
         name: Restore Cache UX node_modules
         id: node_modules
@@ -388,7 +367,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin
+          chmod -R +x ./bin/**/connect-client
       -
         name: Run Windows CLI Tests
         env:
@@ -433,7 +412,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin
+          chmod -R +x ./bin/**/connect-client
       -
         name: Run MacOs CLI Tests
         env:
@@ -538,7 +517,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin
+          chmod -R +x ./bin/**/connect-client
       -
         name: Cache docker image (restore)
         id: cache-linux-amd64-image
@@ -649,7 +628,7 @@ jobs:
       -
         name: Make agents executable
         run: |
-          chmod -R +x ./bin
+          chmod -R +x ./bin/**/connect-client
 
       # these are required to run docker on amd64 and arm64 platforms
       -

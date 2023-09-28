@@ -59,12 +59,12 @@ do
 	GOOS=${platform_split[0]}
 	GOARCH=${platform_split[1]}
 
-    executable=./bin/$GOOS/$GOARCH/$name-$version-$GOOS-$GOARCH
+    executable=./bin/$GOOS-$GOARCH/$name
 	if [ "$GOOS" = "windows" ]; then
 		executable+='.exe'
 	fi
 
-    if [ ! -d "./web/dist" ]; then
+    if [ ! -f "./web/dist/index.html" ]; then
         echo "Error: Missing frontend distribution. Run just web/build." 1>&2
         exit 1
     fi

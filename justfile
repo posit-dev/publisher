@@ -1,4 +1,4 @@
-# clean, image, bootstrap, validate, build and test agent & client
+# clean, image, bootstrap, lint, build and test agent & client
 default: clean image lint test build
 
 _interactive := `tty -s && echo "-it" || echo ""`

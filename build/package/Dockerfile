@@ -3,6 +3,7 @@ FROM rockylinux:8
 RUN dnf -y update\
     && dnf -y install\
         curl\
+        findutils\
         git\
         tar\
     && dnf -y module enable nodejs:18\
