@@ -40,7 +40,8 @@ class PublishHandler(APIHandler):
             self.finish(json.dumps({"url": ui_url}))
         except Exception as exc:
             self.log.exception("UI launch failed", exc_info=exc)
-            self.set_status(500, str(exc))
+            self.set_status(500)
+            self.finish(str(exc))
 
     @authenticated
     def get(self) -> None:
@@ -114,7 +115,13 @@ def launch_ui(
         "local",  # cheating, no target selection in the UI yet
     ]
     log.info("Starting: %s", " ".join(map(shlex.quote, args)))
-    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=None, text=True)
+    try:
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=None, text=True)
+    except OSError as exc:
+        if exc.errno == 2:
+            raise Exception("Could not find connect-client on PATH.")
+        else:
+            raise
 
     if process.stdout is None:
         # This should never happen because we requested stdout=subprocess.PIPE
