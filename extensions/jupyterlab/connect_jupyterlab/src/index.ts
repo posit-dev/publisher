@@ -118,7 +118,8 @@ async function launchAgent(
 }
 
 class PublishingWidget extends Widget {
-  frame: HTMLIFrameElement;
+  currentFrame: HTMLIFrameElement | null = null;
+  frames: Map<string, HTMLIFrameElement>;
   message: HTMLDivElement;
   currentNotebook: NotebookPanel | null = null;
   docManager: IDocumentManager;
@@ -133,14 +134,17 @@ class PublishingWidget extends Widget {
     super();
     this.notebookURLs = new Map<string, string>();
     this.docManager = docManager;
+    this.frames = new Map<string, HTMLIFrameElement>();
 
     const theme = themeManager.theme;
     this.isLightTheme = theme !== null && themeManager.isLight(theme);
 
     notebookTracker.currentChanged.connect((_, panel) => {
-      console.log('Switch to panel', panel);
+      // If panel is visible, switch to the agent for the new notebook
       this.currentNotebook = panel;
-      this.activate();
+      if (!this.hasClass('lm-mod-hidden')) {
+        this.activate();
+      }
     });
 
     this.id = 'posit-publishing-ui';
@@ -148,11 +152,6 @@ class PublishingWidget extends Widget {
     this.title.closable = false;
     // this.title.icon = LabIcon.resolveElement({ iconClass: 'posit-publish-icon' }); // nope
     this.addClass('posit-publishing-view');
-
-    const frame = document.createElement('iframe');
-    frame.classList.add('posit-publishing-frame');
-    this.node.appendChild(frame);
-    this.frame = frame;
 
     const message = document.createElement('div');
     message.classList.add('posit-publishing-message-area');
@@ -162,7 +161,7 @@ class PublishingWidget extends Widget {
     this.message = message;
   }
 
-  async getOrStartUI(): Promise<string> {
+  async getOrStartUI(): Promise<void> {
     if (!this.currentNotebook) {
       throw new Error('Open a notebook to publish it.');
     }
@@ -175,9 +174,18 @@ class PublishingWidget extends Widget {
       throw new Error('Error getting the notebook path.');
     }
     const existingURL = this.notebookURLs.get(notebookPath);
+    const existingFrame = this.frames.get(notebookPath);
+
     if (existingURL !== undefined) {
       console.log(`Using existing agent serving at ${existingURL}`);
-      return existingURL;
+      if (existingFrame) {
+        this.switchToFrame(existingFrame);
+        return;
+      } else {
+        console.error(
+          `Agent is running for ${notebookPath}, but there's no frame. Starting a new agent.`
+        );
+      }
     }
     const kernel = await getKernel(this.currentNotebook);
     const pythonPath = await getKernelPythonPath(kernel);
@@ -189,24 +197,43 @@ class PublishingWidget extends Widget {
       notebookPath,
       pythonPath,
       pythonVersion,
-      this.isLightTheme,
+      this.isLightTheme
     );
+
     const agentURL = agentInfo.url;
     console.log(`Publishing agent serving at ${agentURL}`);
     this.notebookURLs.set(notebookPath, agentURL);
-    return agentURL;
+
+    if (existingFrame) {
+      this.switchToFrame(existingFrame);
+    } else {
+      const frame = document.createElement('iframe');
+      frame.classList.add('posit-publishing-frame');
+      frame.src = agentURL;
+      this.frames.set(notebookPath, frame);
+      this.node.appendChild(frame);
+      this.switchToFrame(frame);
+    }
+  }
+
+  switchToFrame(frame: HTMLIFrameElement | null): void {
+    if (this.currentFrame) {
+      this.currentFrame.hidden = true;
+    }
+    if (frame) {
+      frame.hidden = false;
+    }
+    this.currentFrame = frame;
   }
 
   async onActivateRequest(msg: Message): Promise<void> {
     try {
-      const url = await this.getOrStartUI();
+      await this.getOrStartUI();
       this.message.hidden = true;
-      this.frame.src = url;
-      this.frame.hidden = false;
     } catch (err) {
       this.message.textContent = '⛔️ ' + err;
-      this.frame.hidden = true;
       this.message.hidden = false;
+      this.switchToFrame(null);
     }
   }
 }
