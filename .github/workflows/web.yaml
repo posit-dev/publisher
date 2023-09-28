@@ -1,8 +1,6 @@
 name: Web
 on:
-  push:
-    branches:
-      - tdstein/release
+  workflow_call:
 jobs:
   web:
     runs-on: ubuntu-latest

@@ -19,6 +19,15 @@ _uid_args := if "{{ os() }}" == "Linux" {
         ""
     }
 
+# Builds application
+build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    {{ _with_runner }} env MODE={{ _mode }} just web/build
+    version=$(./scripts/get-version.bash)
+    {{ _with_runner }} env MODE={{ _mode }} ./scripts/build.bash ./cmd/connect-client $version
+
 # Remove built artifacts
 clean:
     #!/usr/bin/env bash
@@ -26,46 +35,28 @@ clean:
 
     {{ _with_runner }} rm -rf ./bin
 
-# create the security certificates
-certs:
+# Display the test code coverage of the Go code, from last test run
+cover:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    mkdir -p certs
-    mkcert -cert-file ./certs/localhost-cert.pem -key-file ./certs/localhost-key.pem localhost 127.0.0.1 ::1 0.0.0.0
+    {{ _with_runner }} go tool cover -html=cover.out
 
-# Build both the web UX and agent for production usage
-build:
+
+# Build the image. Typically does not need to be done very often.
+image:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    {{ _with_runner }} env MODE={{ _mode }} just web/build
+    if "${DOCKER:-true}" == "true" ; then
+        docker build \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --pull \
+            --tag $(just tag) \
+            ./build/package
+    fi
 
-    # _with_runner is not invoked since `./scripts/get-version.bash` executes `docker run`, which would result in a docker-in-docker scenario.
-    version=$(./scripts/get-version.bash)
-    {{ _with_runner }} env MODE={{ _mode }} ./scripts/build.bash ./cmd/connect-client $version
-
-# Print the pre-release status
-pre-release:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    ./scripts/is-pre-release.bash
-
-# Print the Docker tag
-tag:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    echo "rstudio/connect-client:"$(just version)
-
-# Print the version
-version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    ./scripts/get-version.bash
-
+# staticcheck, vet, and format check
 lint: stub
     #!/usr/bin/env bash
     set -euo pipefail
@@ -75,31 +66,40 @@ lint: stub
     {{ _with_runner }} go vet -all ./...
     {{ _with_runner }} ./scripts/fmt-check.bash
 
-# Validate and FIX automatically correctable issues. See the `validate` recipe for linting without fixing.
-validate-fix:
+# print the pre-release status
+pre-release:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    # This will fail even though fix flag is supplied (to fix errors).
-    # We could suppress w/ cmd || true, but do we want to?
-    ./scripts/ccheck.py ./scripts/ccheck.config --fix
-    {{ _with_runner }} just web/validate-fix
+    ./scripts/is-pre-release.bash
 
+# run the agent
+run *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
 
-# Run the tests on the agent w/ coverage profiling
+    {{ _with_runner }} go run ./cmd/connect-client {{ args }}
+
+# stub web/dist
+stub:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    ./scripts/stub.bash
+
+# print the Docker tag
+tag:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "rstudio/connect-client:"$(just version)
+
+# execute test with coverage
 test: stub
     #!/usr/bin/env bash
     set -euo pipefail
 
-    {{ _with_runner }} go test ./... -covermode set -coverprofile ./test/go_cover.out
-
-# Display the test code coverage of the Go code, from last test run
-test-agent-coverage:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    {{ _with_runner }} go tool cover -html=./test/go_cover.out -o ./test/go_coverage.html
-    echo "" && echo "To view coverage HTML, open ./test/go_coverage.html with your browser"
+    {{ _with_runner }} go test ./... -covermode set -coverprofile=cover.out
 
 web *args:
     #!/usr/bin/env bash
@@ -107,26 +107,13 @@ web *args:
 
     {{ _with_runner }} just web/{{ args }}
 
-# Run the publishing agent executable w/ arguments
-run-agent *args:
+# Print the version
+version:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    {{ _with_runner }} go run ./cmd/connect-client {{ args }}
+    ./scripts/get-version.bash
 
-# Build the image. Typically does not need to be done very often.
-image:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    echo $(just tag)
-    if "${DOCKER:-true}" == "true" ; then
-        docker build \
-            --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --pull \
-            --tag $(just tag) \
-            ./build/package
-    fi
 
 # Start the agent and show the UI
 # NOTE: this must be called from within a docker container if so
@@ -165,9 +152,3 @@ _with_docker *args:
         -w /work \
         {{ _uid_args }} \
         $(just tag) {{ args }}
-
-stub:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    ./scripts/stub.bash

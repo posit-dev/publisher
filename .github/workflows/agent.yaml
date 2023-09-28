@@ -1,8 +1,6 @@
 name: Agent
 on:
-  push:
-    branches:
-      - tdstein/release
+  workflow_call:
 jobs:
   agent:
     runs-on: ubuntu-latest
