@@ -18,7 +18,7 @@ var cookieKey []byte = securecookie.MustGenerateRandomKey()
 var cookieObj = securecookie.MustNew(sessionCookieName, cookieKey, securecookie.Params{
 	HTTPOnly: true,
 	Secure:   false, // we currently only serve over http
-	SameSite: securecookie.None,
+	SameSite: securecookie.Lax,
 })
 
 // CookieSession looks for a posit-publish-session cookie.
