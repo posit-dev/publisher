@@ -12,7 +12,6 @@
     viewBox="0 0 104 45"
     enable-background="new 0 0 104 52"
     xml:space="preserve"
-    :style="calculatedStyle"
   >
     <g>
       <path
