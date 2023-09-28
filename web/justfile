@@ -4,10 +4,7 @@ _use_docker := env_var_or_default("DOCKER", "true")
 default: bootstrap validate build test
 
 install:
-    #!/bin/bash
-    set -euo pipefail
-
-    npm install --no-audit
+    just bootstrap
 
 # update javascript/typescript dependencies
 bootstrap:
