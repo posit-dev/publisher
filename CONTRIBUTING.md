@@ -37,45 +37,52 @@ Currently, the following suffix lineage is in use:
 
 ## Release Lifecycle
 
+### Key
+
+- `X`: The major version.
+- `Y`: The minor version.
+- `Z`: The patch version.
+- `N`: A variable representing the incremental version value.
+
 **`X.Y.devN`**
 
-A development pre-release. Created to test changes to the release procces. `N` starts at 0 and increments by 1 (`dev0`, `dev1`, ..., `devN`).
+A development pre-release. Created to test changes to the release procces. `N` starts at **0** and increments by 1 (`X.Y.dev0`, `X.Y.dev1`, ..., `X.Y.devN`).
 
 *https://peps.python.org/pep-0440/#implicit-development-release-number*
 
-**`X.YalphaN`**
+**`X.Y.alphaN`**
 
-An alpha pre-release. Created to support internal user testing. `N` starts at 1 and increments by 1 (`alpha1`, `alpha2`, ..., `alphaN`).
-
-*https://peps.python.org/pep-0440/#pre-releases*
-
-**`X.YbetaN`**
-
-An beta pre-release. Created to support closed external user testing. `N` starts at 1 and increments by 1 (`beta1`, `beta2`, ..., `betaN`).
+An alpha pre-release. Created to support internal user testing. `N` starts at **1** and increments by 1 (`X.Y.alpha1`, `X.Y.alpha2`, ..., `X.Y.alphaN`).
 
 *https://peps.python.org/pep-0440/#pre-releases*
 
+**`X.Y.betaN`**
 
-**`X.YrcN`**
+An beta pre-release. Created to support closed external user testing. `N` starts at **1** and increments by 1 (`X.Y.beta1`, `X.Y.beta2`, ..., `X.Y.betaN`).
 
-An release-candidate pre-release. Created to support open external user testing. `N` starts at 1 and increments by 1 (`rc1`, `rc2`, ..., `rcN`).
+*https://peps.python.org/pep-0440/#pre-releases*
+
+
+**`X.Y.rcN`**
+
+An release-candidate pre-release. Created to support open external user testing. `N` starts at **1** and increments by 1 (`X.Y.rc1`, `X.Y.rc2`, ..., `X.Y.rcN`).
 
 *https://peps.python.org/pep-0440/#pre-releases*
 
 **`X.Y.N`**
 
-A stable patch release. Created for backward compatible bug fixes. `N` starts at 0 and increments by 1 (`X.Y.0`, `X.Y.1`, ..., `X.Y.N`).
+A stable patch release. Created for backward compatible bug fixes. `N` starts at **0** and increments by 1 (`X.Y.0`, `X.Y.1`, ..., `X.Y.N`).
 
 *https://semver.org*
 
-**`X.N.0`**
+**`X.N.Z`**
 
-A stable minor release. Created for added functionality in a backward compatible manner. `N` starts at 0 and increments by 1 (`X.Y.0`, `X.Y.1`, ..., `X.Y.N`).
+A stable minor release. Created for added functionality in a backward compatible manner. `N` starts at **0** and increments by 1 (`X.0.Z`, `X.1.Z`, ..., `X.N.Z`).
 
 *https://semver.org*
 
-**`N.0.0`**
+**`N.Y.Z`**
 
-A stable major release. Created for incompatbile API changes. `N` starts at 0 and increments by 1 (`X.Y.0`, `X.Y.1`, ..., `X.Y.N`).
+A stable major release. Created for incompatbile API changes. `N` starts at **0** and increments by 1 (`0.Y.Z`, `1.Y.Z`, ..., `N.Y.Z`).
 
 *https://semver.org*
