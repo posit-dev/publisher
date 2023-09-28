@@ -1,5 +1,5 @@
 # clean, image, bootstrap, validate, build and test agent & client
-default: clean image bootstrap lint build test
+default: clean image lint test build
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
@@ -19,19 +19,11 @@ _uid_args := if "{{ os() }}" == "Linux" {
         ""
     }
 
-# bootstrap any supporting packages (such as go package or web UX javascript/typescript dependencies)
-bootstrap:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    {{ _with_runner }} just web/bootstrap
-
 # Remove built artifacts
 clean:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    {{ _with_runner }} just web/clean
     {{ _with_runner }} rm -rf ./bin
 
 # create the security certificates
@@ -74,18 +66,9 @@ version:
 
     ./scripts/get-version.bash
 
-lint:
+lint: stub
     #!/usr/bin/env bash
     set -euo pipefail
-
-    # there must be files in web/dist for go vet
-    # so it can compile web/web.go which embeds it.
-    web_dir=web/dist
-    if [[ ! -e ${web_dir} ]]; then
-        mkdir -p ${web_dir}
-        echo "placeholder" > ${web_dir}/placeholder
-        trap "rm -f ${web_dir}/placeholder" EXIT
-    fi
 
     # ./scripts/ccheck.py ./scripts/ccheck.config
     {{ _with_runner }} staticcheck ./...
@@ -104,7 +87,7 @@ validate-fix:
 
 
 # Run the tests on the agent w/ coverage profiling
-test:
+test: stub
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -117,10 +100,6 @@ test-agent-coverage:
 
     {{ _with_runner }} go tool cover -html=./test/go_cover.out -o ./test/go_coverage.html
     echo "" && echo "To view coverage HTML, open ./test/go_coverage.html with your browser"
-
-# run the tests on the Web UX
-test-web:
-    {{ _with_runner }} just web/test
 
 web *args:
     #!/usr/bin/env bash
@@ -186,3 +165,9 @@ _with_docker *args:
         -w /work \
         {{ _uid_args }} \
         $(just tag) {{ args }}
+
+stub:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    ./scripts/stub.bash
