@@ -22,9 +22,16 @@
       <q-separator />
       <PythonProject />
       <q-separator />
-      <CommonSettings />
-      <q-separator />
-      <AdvancedSettings />
+      <!-- Common and Advanced Settings commented out until implemented. -->
+      <CommonSettings
+        v-if="false"
+      />
+      <q-separator
+        v-if="false"
+      />
+      <AdvancedSettings
+        v-if="false"
+      />
     </q-list>
   </q-page>
 </template>
