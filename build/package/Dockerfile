@@ -12,7 +12,15 @@ RUN dnf -y update\
         python3\
         # tar is required in this file
         tar\
-        # Xvfb is required by Cypress
+        # The following are required by Cypress
+        alsa-lib\
+        GConf2\
+        glibc\
+        gtk2-devel\
+        gtk3-devel\
+        libnotify-devel\
+        libXScrnSaver\
+        nss\
         xorg-x11-server-Xvfb\
     # NodeJS is required by this project. The source code for the client is written in it!
     && dnf -y module enable nodejs:18\
