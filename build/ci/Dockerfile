@@ -7,7 +7,6 @@ RUN apt-get update\
         # git is required in this file
         git\
         # NodeJS is required by this project. The source code for the client is written in it!
-        nodejs\
         npm\
         # The following are required by Cypress
         libgtk2.0-0\
@@ -41,3 +40,15 @@ RUN git clone https://github.com/bats-core/bats-core.git\
     && ./bats-core/install.sh /usr/local\
     && git clone https://github.com/ztombol/bats-support.git\
     && git clone https://github.com/ztombol/bats-assert.git
+
+RUN apt-get update\
+    && apt-get install -y\
+        ca-certificates\
+        curl\
+        gnupg\
+    && mkdir -p /etc/apt/keyrings\
+    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg\
+    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list\
+    && apt-get update\
+    && apt-get install -y\
+        nodejs
