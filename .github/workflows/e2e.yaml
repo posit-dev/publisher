@@ -25,9 +25,8 @@ jobs:
           tags: ${{ steps.get-tag.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - run: chmod -R +x ./bin
+      - run: just web install
       - run: just web build
-      - run: just build
       - run: just web test-e2e
 
   # test-windows:

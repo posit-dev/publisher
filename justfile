@@ -166,24 +166,3 @@ _with_docker *args:
         -w /work \
         {{ _uid_args }} \
         $(just tag) {{ args }}
-
-# Start the agent and show the UI
-# NOTE: this must be called from within a docker container if so
-# needed (it will not automatically use a running if defined)
-# This is because this recipe is called from the web/justfile, which
-# is already executing within a docker container (if configured to use)
-start-agent-for-e2e:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    # package=$(just executable-path)
-    # if ! $package; then
-    #     echo "error: Missing package. Run: `just build`." 1>&2
-    #     exit 1
-    # fi
-
-    just run publish-ui \
-        ./test/sample-content/fastapi-simple \
-        --listen=127.0.0.1:9000 \
-        --token=abc123
