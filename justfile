@@ -164,5 +164,5 @@ _with_docker *args:
         -e GOMODCACHE=/work/.cache/go/mod \
         -v "$(pwd)":/work \
         -w /work \
-        -u $(id -u):$(id -g) \
+        -u 0 \
         $(just tag) {{ args }}
