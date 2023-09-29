@@ -20,6 +20,5 @@ jobs:
           load: true
           tags: ${{ steps.get-tag.outputs.tag }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
       - run: just lint
       - run: just test

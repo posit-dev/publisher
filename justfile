@@ -154,12 +154,12 @@ _with_docker *args:
         just image
     fi
 
-    docker run --rm {{ _interactive }} \
-        -e CI={{ _ci }} \
-        -e GOCACHE=/work/.cache/go/cache \
-        -e GOMODCACHE=/work/.cache/go/mod \
-        -e USER=root\
-        -v "$(pwd)":/work \
-        -w /work \
-        -u 0 \
+    docker run --rm {{ _interactive }}\
+        -e CI={{ _ci }}\
+        -e DOCKER=false\
+        -e GOCACHE=/work/.cache/go/cache\
+        -e GOMODCACHE=/work/.cache/go/mod\
+        -e MODE={{ _mode }}\
+        -v "$(pwd)":/work\
+        -w /work\
         $(just tag) {{ args }}
