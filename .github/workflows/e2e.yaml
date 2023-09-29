@@ -27,7 +27,7 @@ jobs:
           cache-to: type=gha,mode=max
       - run: just web install
       - run: just web build
-      - run: just web test-e2e
+      - run: just web e2e
 
   # test-windows:
   #   needs: build

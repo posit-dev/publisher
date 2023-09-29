@@ -1,36 +1,26 @@
-FROM rockylinux:8
+FROM ubuntu:jammy
 
-RUN dnf -y update\
-    && dnf -y install\
+RUN apt-get update\
+    && apt-get install -y \
         # curl is required in this file
         curl\
-        # findutils is required by bats
-        findutils\
         # git is required in this file
         git\
-        # Python3 is required to for testing
-        python3\
-        # tar is required in this file
-        tar\
+        # NodeJS is required by this project. The source code for the client is written in it!
+        nodejs\
+        npm\
         # The following are required by Cypress
-        alsa-lib\
-        GConf2\
-        glibc\
-        gtk2-devel\
-        gtk3-devel\
-        libnotify-devel\
-        libXScrnSaver\
-        nss\
-        xorg-x11-server-Xvfb\
-    # NodeJS is required by this project. The source code for the client is written in it!
-    && dnf -y module enable nodejs:16\
-    && dnf -y module install nodejs:16
-
-# epel-release is required by ShellCheck
-RUN dnf -y install epel-release
-
-# epel-release is required by ShellCheck
-RUN dnf -y install ShellCheck
+        libgtk2.0-0\
+        libgtk-3-0\
+        libgbm-dev\
+        libnotify-dev\
+        libgconf-2-4\
+        libnss3\
+        libxss1\
+        libasound2\
+        libxtst6\
+        xauth\
+        xvfb
 
 # Just is required for this project (see Justfile, ./web/Justfile, ./tests/Justfile)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin

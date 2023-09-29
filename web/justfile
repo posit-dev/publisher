@@ -1,55 +1,87 @@
-_use_docker := env_var_or_default("DOCKER", "true")
+# Executes clean, install, test, build
+default: install lint test build
 
-# will run recipes: install, validate, build, test
-default: install validate build test
+export CYPRESS_CACHE_FOLDER := "./cypress/.cache"
 
-install:
-    just bootstrap
+_ci := "${CI:-false}"
 
-# update javascript/typescript dependencies
-bootstrap:
-    #!/bin/bash
-    set -euo pipefail
+_with_debug := if env_var_or_default("DEBUG", "true") == "true" {
+        "set -x pipefail"
+    } else {
+        ""
+    }
 
-    # set this environment variable to keep Cypress from attempting
-    # to create a cache within roots home dir.
-    export CYPRESS_CACHE_FOLDER="./cypress/.cache"
-    npm install --no-audit
-
-
-lint:
-    #!/bin/bash
-    set -euo pipefail
-
-    npm run lint
-
-# validate the source files, do not fix the fixable items
-validate:
-    npm run lint
-
-# validate the source files, fix the fixable items
-validate-fix:
-    npm run lint-fix
-
-# build the web artifacts for the SPA (into dest/spa)
-build: bootstrap
+# Compiles the static assests for the web client. Static assets are written to `./web/dist`.
+build:
     npm run build
 
-# perform unit, go race and e2e tests
-test: test-unit test-race test-e2e
+e2e:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
 
-# perform race testing
-test-race:
-    go test -race ./...
+    npx cypress install
+    npm run e2e
+
+# Fixes formatting using ESLint
+fix:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run fix
+
+# Installs dependencies
+install:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    if [ {{ _ci }} = "true" ]; then
+        npm ci --no-audit --no-fund
+    else
+        npm install --no-audit --no-fund
+    fi
+
+# Checks formatting using ESLint
+lint:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run lint
+
+# Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just web run preview`)
+run *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run {{ args }}
+
+
+# Executes unit tests
+test:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run test
+
+# Watches unit tests
+watch:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run watch
 
 # run e2e (Cypress) tests against dev server
 test-e2e-dev:
-    #!/bin/bash
-    set -euo pipefail
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
 
-    # set this environment variable to keep Cypress from attempting to create
-    # cache within roots home dir.
-    export CYPRESS_CACHE_FOLDER="./cypress/.cache"
     # install cypress
     npx cypress install
 
@@ -57,25 +89,22 @@ test-e2e-dev:
 
 # run e2e (Cypress) tests
 test-e2e:
-    #!/bin/bash
-    set -euo pipefail
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
 
-    # set this environment variable to keep Cypress from attempting to create
-    # cache within roots home dir.
-    export CYPRESS_CACHE_FOLDER="./cypress/.cache"
     # install cypress
     npx cypress install
 
     npm run test:e2e:ci
 
 build-and-test-ci-e2e target:
-    #!/bin/bash
-    set -euo pipefail
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
     just build
-    # set this environment variable to keep Cypress from attempting to create
-    # cache within roots home dir.
-    # use a different cache per os
-    export CYPRESS_CACHE_FOLDER="./cypress/{{target}}/.cache"
+
     # install cypress
     npx cypress install
 
@@ -85,9 +114,7 @@ build-and-test-ci-e2e target:
 test-unit:
     npm run test:unit run
 
-# run unit tests in watch mode, re-running as files are changed
-test-unit-watch:
-    npm run test:unit
+
 
 # start common UX development flow. Start the web server which updates automatically upon file changes
 dev:
@@ -100,7 +127,8 @@ preview:
 # remove build artifacts and dependencies
 clean:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -eou pipefail
+    {{ _with_debug }}
 
     # not using quasar clean, as it would require us to have node_modules fully installed. Instead, performing what
     # it said it was doing...

@@ -9,10 +9,18 @@
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint --ext .js,.ts,.vue,.cjs .",
-    "lint-fix": "eslint --ext .js,.ts,.vue,.cjs . --fix",
-    "test:unit": "vitest",
+    "fix": "eslint --ext .js,.ts,.vue,.cjs . --fix",
+    "test": "vitest run",
+    "watch": "vitest",
+
+    "cy:install": "cypress install",
+    "cy:run": "cypress run",
+
+    "e2e": "start-server-and-test --expect 401 e2e:start http-get://127.0.0.1:9000 cy:run",
+    "e2e:start": "env DOCKER=false just ../run publish-ui ./test/sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123",
+
     "test:e2e:dev": "start-server-and-test dev http-get://localhost:9000 cypress:run",
-    "test:e2e:ci": "start-server-and-test --expect 401 'just ../run publish-ui ./test/sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123' http-get://127.0.0.1:9000 cypress:run:ci",
+    "test:e2e:ci": "start-server-and-test --expect 401 'DOCKER=false just ../run publish-ui ./test/sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123' http-get://127.0.0.1:9000 cypress:run:ci",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
     "cypress:run:ci": "cypress run --env publishing-token=abc123"
@@ -34,7 +42,7 @@
     "@typescript-eslint/parser": "^6.4.1",
     "@vitejs/plugin-vue": "^4.2.3",
     "@vue/test-utils": "^2.4.1",
-    "cypress": "^13.0.0",
+    "cypress": "^13.3.0",
     "eslint": "^8.47.0",
     "eslint-plugin-cypress": "^2.14.0",
     "eslint-plugin-vue": "^9.17.0",
