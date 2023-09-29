@@ -35,6 +35,26 @@ async def test_post_publish(launch_ui, jp_fetch, jp_serverapp, jp_http_port, jp_
     assert payload == {"url": expected_url}
 
 
+@patch("connect_jupyterlab.handlers.launch_ui")
+async def test_post_publish_err(launch_ui, jp_fetch, jp_serverapp, jp_http_port, jp_base_url):
+    body = json.dumps(
+        {
+            "notebookPath": "notebooks/MyNotebook.ipynb",
+            "pythonPath": "/path/to/python",
+            "pythonVersion": "3.4.5",
+            "theme": "dark",
+        }
+    )
+    err = "test error"
+    launch_ui.side_effect = Exception(err)
+    response = await jp_fetch(
+        "connect-jupyterlab", "publish", method="POST", body=body, raise_error=False
+    )
+
+    assert response.code == 500
+    assert response.body == err.encode("utf-8")
+
+
 @patch("subprocess.Popen")
 async def test_launch_ui(popen):
     log = Mock()
