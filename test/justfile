@@ -26,6 +26,8 @@ init-connect:
 
 run-client target:
   #!/usr/bin/env bash
+
+  echo "\t\t"{{ target }}
   if [[ {{target}} =~ "linux-amd64" ]]; then
     _platform="linux/amd64"
   elif [[ {{target}} =~ "linux-arm64" ]]; then

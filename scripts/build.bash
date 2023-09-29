@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ ! -f "./web/dist/index.html" ]; then
+    echo "error: Missing frontend distribution. Run just web build." 1>&2
+    exit 1
+fi
+
 CI="${CI:-false}"
 
-package=$1
-if [[ -z "$package" ]]; then
-  echo "usage: $0 <package-name>"
+cmd=$1
+if [[ -z "$cmd" ]]; then
+  echo "usage: $0 <cmd>"
   exit 1
 fi
-echo "Package: $package"
+echo "Package: $cmd"
 
 version=$(./scripts/get-version.bash)
 echo "Version: $version"
 
-name=$(basename "$package")
+name=$(basename "$cmd")
 echo "Name: $name"
 
 mode=${MODE:-"dev"}
@@ -56,26 +61,22 @@ for platform in "${platforms[@]}"
 do
     echo "Building: $platform"
 	platform_split=(${platform//\// })
-	GOOS=${platform_split[0]}
-	GOARCH=${platform_split[1]}
+	os=${platform_split[0]}
+	arch=${platform_split[1]}
 
-    executable=./bin/$GOOS/$GOARCH/$name-$version-$GOOS-$GOARCH
-	if [ "$GOOS" = "windows" ]; then
+
+    executable=$(./scripts/get-package-path.bash "$name" "$version" "$os" "$arch" )
+	if [ "$os" = "windows" ]; then
 		executable+='.exe'
 	fi
 
-    if [ ! -f "./web/dist/index.html" ]; then
-        echo "Error: Missing frontend distribution. Run just web build." 1>&2
-        exit 1
-    fi
-
     env\
-        GOOS="$GOOS"\
-        GOARCH="$GOARCH"\
+        GOOS="$os"\
+        GOARCH="$arch"\
         go build\
         -o "$executable"\
         -ldflags "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$mode'"\
-        "$package"
+        "$cmd"
 
     echo "Executable: $executable"
     chmod +x "$executable"

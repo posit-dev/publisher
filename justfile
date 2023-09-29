@@ -1,9 +1,12 @@
 # clean, image, bootstrap, lint, build and test agent & client
 default: clean image lint test build
 
-_interactive := `tty -s && echo "-it" || echo ""`
 
 _ci := "${CI:-false}"
+
+_cmd := "./cmd/connect-client"
+
+_interactive := `tty -s && echo "-it" || echo ""`
 
 _mode := "${MODE:-dev}"
 
@@ -24,9 +27,7 @@ build:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    {{ _with_runner }} env MODE={{ _mode }} just web/build
-    version=$(./scripts/get-version.bash)
-    {{ _with_runner }} env MODE={{ _mode }} ./scripts/build.bash ./cmd/connect-client $version
+    {{ _with_runner }} env MODE={{ _mode }} ./scripts/build.bash {{ _cmd }}
 
 # Remove built artifacts
 clean:
@@ -65,6 +66,12 @@ lint: stub
     {{ _with_runner }} staticcheck ./...
     {{ _with_runner }} go vet -all ./...
     {{ _with_runner }} ./scripts/fmt-check.bash
+
+package-path:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    {{ _with_runner }} ./scripts/get-package-path.bash {{ _cmd }} $(just version) $(go env GOOS) $(go env GOARCH)
 
 # print the pre-release status
 pre-release:
@@ -146,8 +153,7 @@ start-agent-for-e2e:
     GOARCH="${GOARCH%%[[:cntrl:]]}"
 
     echo "Working directory is $(pwd)"
-    echo ./bin/$GOOS/$GOARCH/connect-client
-    ./bin/$GOOS/$GOARCH/connect-client publish-ui \
+    $(just package-path) publish-ui \
         ./test/sample-content/fastapi-simple \
         --listen=127.0.0.1:9000 \
         --token=abc123
