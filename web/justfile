@@ -110,11 +110,6 @@ build-and-test-ci-e2e target:
 
     npm run test:e2e:ci
 
-# run unit tests one time
-test-unit:
-    npm run test:unit run
-
-
 
 # start common UX development flow. Start the web server which updates automatically upon file changes
 dev:
