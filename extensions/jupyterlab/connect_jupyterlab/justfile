@@ -1,5 +1,5 @@
 install:
-    pip install -e .
+    pip install -e '.[test]'
 
 install-python-tools:
     pip install 'black==23.*' 'flake8==6.*' 'mypy==1.5.*' 'jupyterlab==4.*'
