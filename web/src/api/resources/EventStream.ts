@@ -248,18 +248,6 @@ export class EventStream {
     );
   }
 
-  public addEventMonitorCallbackOld(
-    targets: EventSubscriptionTarget[],
-    cb: OnMessageEventSourceCallback
-  ) {
-    for (const t in targets) {
-      this.subscriptions.push({
-        eventType: targets[t],
-        callback: cb,
-      });
-    }
-  }
-
   // Provide Typescript function overloading, so we can facilitate type specific callbacks allowing
   // code to correctly type the incoming event automatically, if they are only receiving a single type of
   // message. If they are receiving multiple, then they should use the array target signature and use type guards
