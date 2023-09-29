@@ -4,12 +4,12 @@ on:
     tags:
       - "v*.*.*"
 jobs:
-  package:
-    uses: ./.github/workflows/package.yaml
+  build:
+    uses: ./.github/workflows/build.yaml
   release:
     runs-on: ubuntu-latest
     needs:
-      - package
+      - build
     steps:
       - uses: actions/checkout@v3
         with:

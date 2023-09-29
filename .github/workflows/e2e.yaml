@@ -5,10 +5,10 @@ on:
       - tdstein/release
 
 jobs:
-  package:
-    uses: ./.github/workflows/package.yaml
+  build:
+    uses: ./.github/workflows/build.yaml
   ux-e2e-tests:
-    needs: package
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -24,7 +24,7 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./build/package/Dockerfile
+          file: ./build/ci/Dockerfile
           load: true
           tags: ${{ steps.get-tag.outputs.tag }}
           cache-from: type=gha
@@ -38,7 +38,7 @@ jobs:
       - run: just web test-e2e
 
   # test-windows:
-  #   needs: package
+  #   needs: build
   #   runs-on: windows-latest
   #   steps:
   #     -
@@ -85,7 +85,7 @@ jobs:
 
 
   # test-macos:
-  #   needs: package
+  #   needs: build
   #   runs-on: macos-latest
   #   steps:
   #     -
@@ -134,7 +134,7 @@ jobs:
   #   defaults:
   #     run:
   #       shell: bash -l {0}
-  #   needs: package
+  #   needs: build
   #   steps:
   #     -
   #       name: Checkout
@@ -249,7 +249,7 @@ jobs:
   #   defaults:
   #     run:
   #       shell: bash -l {0}
-  #   needs: package
+  #   needs: build
   #   steps:
   #     -
   #       name: Checkout

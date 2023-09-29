@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ ! -f "./web/dist/index.html" ]; then
-    echo "error: Missing frontend distribution. Run just web build." 1>&2
+if [ ! -d "./web/dist" ]; then
+    echo "error: Missing frontend distribution. Run \`just web build\` or \`just stub\`." 1>&2
     exit 1
 fi
 
@@ -60,15 +60,10 @@ fi
 for platform in "${platforms[@]}"
 do
     echo "Building: $platform"
-	platform_split=(${platform//\// })
-	os=${platform_split[0]}
-	arch=${platform_split[1]}
+    os=${platform%*\/}   # retain the part before the slash
+    arch=${platform/*\/} # retain the part after the slash
 
-
-    executable=$(./scripts/get-package-path.bash "$name" "$version" "$os" "$arch" )
-	if [ "$os" = "windows" ]; then
-		executable+='.exe'
-	fi
+    executable=$(./scripts/get-executable-path.bash "$name" "$version" "$os" "$arch" )
 
     env\
         GOOS="$os"\

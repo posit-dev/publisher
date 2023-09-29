@@ -9,5 +9,5 @@ jobs:
     uses: ./.github/workflows/agent.yaml
   web:
     uses: ./.github/workflows/web.yaml
-  package:
-    uses: ./.github/workflows/package.yaml
+  build:
+    uses: ./.github/workflows/build.yaml

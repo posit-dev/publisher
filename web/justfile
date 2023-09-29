@@ -1,7 +1,7 @@
 _use_docker := env_var_or_default("DOCKER", "true")
 
-# will run recipes: bootstrap, validate, build, and test
-default: bootstrap validate build test
+# will run recipes: install, validate, build, test
+default: install validate build test
 
 install:
     just bootstrap
@@ -14,7 +14,6 @@ bootstrap:
     # set this environment variable to keep Cypress from attempting
     # to create a cache within roots home dir.
     export CYPRESS_CACHE_FOLDER="./cypress/.cache"
-    echo "NOTE: npm install may take five minutes or more from within a docker container..."
     npm install --no-audit
 
 
