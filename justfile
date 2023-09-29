@@ -162,6 +162,7 @@ _with_docker *args:
         -e CI={{ _ci }} \
         -e GOCACHE=/work/.cache/go/cache \
         -e GOMODCACHE=/work/.cache/go/mod \
+        -e USER=root\
         -v "$(pwd)":/work \
         -w /work \
         -u 0 \
