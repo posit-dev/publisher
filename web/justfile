@@ -13,15 +13,38 @@ _with_debug := if env_var_or_default("DEBUG", "true") == "true" {
 
 # Compiles the static assests for the web client. Static assets are written to `./web/dist`.
 build:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
     npm run build
 
+# Deletes ephermal project files (i.e., cleans the project).
+clean:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    rm -rf .quasar
+    rm -rf dist
+    rm -rf node_modules
+
+# Executes end-to-end tests.
 e2e:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    npx cypress install
+    npx cypress install --force
     npm run e2e
+
+# Launch a local web server instance with hot-reloads.
+dev:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run dev
 
 # Fixes formatting using ESLint
 fix:
@@ -51,6 +74,14 @@ lint:
 
     npm run lint
 
+# Launch a local web server instance in production mode.
+preview:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run preview
+
 # Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just web run preview`)
 run *args:
     #!/usr/bin/env bash
@@ -75,62 +106,3 @@ watch:
     {{ _with_debug }}
 
     npm run watch
-
-# run e2e (Cypress) tests against dev server
-test-e2e-dev:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    # install cypress
-    npx cypress install
-
-    npm run test:e2e:dev
-
-# run e2e (Cypress) tests
-test-e2e:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    # install cypress
-    npx cypress install
-
-    npm run test:e2e:ci
-
-build-and-test-ci-e2e target:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just build
-
-    # install cypress
-    npx cypress install
-
-    npm run test:e2e:ci
-
-
-# start common UX development flow. Start the web server which updates automatically upon file changes
-dev:
-    npm run dev
-
-# start a locally run production build of the web Ux
-preview:
-    npm run preview
-
-# remove build artifacts and dependencies
-clean:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    # not using quasar clean, as it would require us to have node_modules fully installed. Instead, performing what
-    # it said it was doing...
-    # quasar clean
-    # App • Cleaned build artifact: "/work/web/.quasar"
-    # App • Emptied dist folder
-    # App • Done cleaning build artifacts
-    rm -rdf .quasar
-    rm -rdf dist
-    rm -rdf node_modules

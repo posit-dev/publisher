@@ -44,14 +44,10 @@ clean:
     {{ _with_runner }} rm -rf ./bin
 
 # Display the code coverage collected during the last execution of `just test`.
-cover *FLAGS:
+cover:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-
-    # if {{ FLAGS }} == "--fresh"; then
-    #     just test
-    # fi
 
     {{ _with_runner }} go tool cover -html=cover.out
 
@@ -154,9 +150,9 @@ _with_docker *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    # if ! docker image inspect $(just tag) &>/dev/null; then
-    #     just image
-    # fi
+    if ! docker image inspect $(just tag) &>/dev/null; then
+        just image
+    fi
 
     docker run --rm {{ _interactive }} \
         -e CI={{ _ci }} \
