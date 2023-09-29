@@ -12,16 +12,6 @@ RUN dnf -y update\
         python3\
         # tar is required in this file
         tar\
-        # The following are required by Cypress
-        alsa-lib\
-        GConf2\
-        glibc\
-        gtk2-devel\
-        gtk3-devel\
-        libnotify-devel\
-        libXScrnSaver\
-        nss\
-        xorg-x11-server-Xvfb\
     # NodeJS is required by this project. The source code for the client is written in it!
     && dnf -y module enable nodejs:16\
     && dnf -y module install nodejs:16
@@ -46,8 +36,3 @@ RUN go env -w GOBIN=/usr/local/go/bin\
  && go install honnef.co/go/tools/cmd/staticcheck@latest
 
 RUN git config --global --add safe.directory '*'
-
-RUN git clone https://github.com/bats-core/bats-core.git\
-    && ./bats-core/install.sh /usr/local\
-    && git clone https://github.com/ztombol/bats-support.git\
-    && git clone https://github.com/ztombol/bats-assert.git

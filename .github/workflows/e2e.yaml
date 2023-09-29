@@ -18,14 +18,15 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./build/ci/Dockerfile
+          file: ./build/package/Dockerfile
           load: true
           tags: ${{ steps.get-tag.outputs.tag }}
           cache-from: type=gha
       - run: just web install
       - run: just web build
       - run: just build
-      - run: just web e2e
+      - run: npx cypress install
+      - run: DOCKER=false just web/e2e
 
   # test-windows:
   #   needs: build

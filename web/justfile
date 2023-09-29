@@ -1,8 +1,6 @@
 # Executes clean, install, test, build
 default: install lint test build
 
-export CYPRESS_CACHE_FOLDER := "./cypress/.cache"
-
 _ci := "${CI:-false}"
 
 _with_debug := if env_var_or_default("DEBUG", "true") == "true" {
@@ -35,7 +33,6 @@ e2e:
     set -eou pipefail
     {{ _with_debug }}
 
-    # npx cypress install
     npm run e2e
 
 # Launch a local web server instance with hot-reloads.
