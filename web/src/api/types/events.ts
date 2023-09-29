@@ -146,7 +146,8 @@ export interface EventStreamMessage {
   error?: string,
 }
 
-export type OnMessageEventSourceCallback = (msg: EventStreamMessage) => void;
+export type OnMessageEventSourceCallback<T extends EventStreamMessage = EventStreamMessage> =
+  (msg: T) => void;
 
 export function isEventStreamMessage(o: object): o is EventStreamMessage {
   return (

@@ -312,45 +312,9 @@ export class EventStream {
     }
   }
 
-  // Provide Typescript function overloading of each type of callback, corresponding to the 'addEventMonitorCallback'
-  // overloading above.
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnAgentLogCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishStartCallback): boolean;
-  public delEventFilterCallback(cb: OnErrorsSseCallback): boolean;
-  public delEventFilterCallback(cb: OnErrorsOpenCallback): boolean;
-  public delEventFilterCallback(cb: OnErrorsUnknownEventCallback): boolean;
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnOpenSseCallback): boolean;
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateBundleStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateBundleLogCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateBundleSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateBundleFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateDeploymentStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateDeploymentSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateDeploymentFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishUploadBundleStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishUploadBundleSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishUploadBundleFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishDeployBundleStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishDeployBundleSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishDeployBundleFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRestorePythonEnvStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRestorePythonEnvLogCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRestorePythonEnvSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRestorePythonEnvFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRunContentStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRunContentLogCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRunContentSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRunContentFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishFailureCallback): boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public delEventFilterCallback(cb: any): boolean {
+  public delEventFilterCallback<T extends EventStreamMessage>(
+    cb: OnMessageEventSourceCallback<T>
+  ): boolean {
     let found = false;
     let index = -1;
     // We may have multiple events being delivered to same callback
