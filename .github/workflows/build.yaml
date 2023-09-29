@@ -21,6 +21,7 @@ jobs:
           tags: ${{ steps.get-tag.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - run: just web install
       - run: just web build
       - run: just build
       - uses: actions/upload-artifact@v3
