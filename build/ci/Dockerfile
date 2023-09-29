@@ -6,8 +6,6 @@ RUN apt-get update\
         curl\
         # git is required in this file
         git\
-        # NodeJS is required by this project. The source code for the client is written in it!
-        npm\
         # The following are required by Cypress
         libgtk2.0-0\
         libgtk-3-0\
@@ -41,6 +39,7 @@ RUN git clone https://github.com/bats-core/bats-core.git\
     && git clone https://github.com/ztombol/bats-support.git\
     && git clone https://github.com/ztombol/bats-assert.git
 
+# NodeJS is required by this project. The source code for the client is written in it!
 RUN apt-get update\
     && apt-get install -y\
         ca-certificates\
