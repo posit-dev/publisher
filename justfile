@@ -21,7 +21,7 @@ _with_runner := if env_var_or_default("DOCKER", "true") == "true" {
         ""
     }
 
-_uid_args := if "{{ os() }}" == "Linux" {
+_uid_args := if "{{ os() }}" == "linux" {
         "-u $(id -u):$(id -g)"
     } else {
         ""
