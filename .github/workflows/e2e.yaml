@@ -2,7 +2,11 @@ name: E2E
 on:
   pull_request:
 jobs:
-  ux-e2e-tests:
+  build:
+    uses: ./.github/workflows/build.yaml
+  e2e:
+    needs:
+      - build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -23,6 +27,11 @@ jobs:
           tags: ${{ steps.get-tag.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - uses: actions/download-artifact@v3
+        with:
+          name: executables
+          path: bin
+      - run: chmod -R +x ./bin
       - run: just web install
       - run: just web build
       - run: just web e2e
