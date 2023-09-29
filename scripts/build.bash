@@ -66,6 +66,7 @@ do
     executable=$(./scripts/get-executable-path.bash "$name" "$version" "$os" "$arch" )
 
     env\
+        CGO_ENABLED=0\
         GOOS="$os"\
         GOARCH="$arch"\
         go build\

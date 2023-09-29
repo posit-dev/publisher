@@ -41,6 +41,7 @@ RUN git clone https://github.com/bats-core/bats-core.git\
 
 # NodeJS is required by this project. The source code for the client is written in it!
 RUN apt-get update\
+    && apt-get remove -y npm nodejs\
     && apt-get install -y\
         ca-certificates\
         curl\
