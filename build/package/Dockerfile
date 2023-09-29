@@ -23,8 +23,8 @@ RUN dnf -y update\
         nss\
         xorg-x11-server-Xvfb\
     # NodeJS is required by this project. The source code for the client is written in it!
-    && dnf -y module enable nodejs:18\
-    && dnf -y module install nodejs:18
+    && dnf -y module enable nodejs:16\
+    && dnf -y module install nodejs:16
 
 # epel-release is required by ShellCheck
 RUN dnf -y install epel-release
