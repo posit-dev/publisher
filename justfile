@@ -9,7 +9,7 @@ _interactive := `tty -s && echo "-it" || echo ""`
 
 _mode := "${MODE:-dev}"
 
-_with_debug := if env_var_or_default("DEBUG", "false") == "true" {
+_with_debug := if env_var_or_default("DEBUG", "true") == "true" {
         "set -x pipefail"
     } else {
         ""
@@ -111,9 +111,9 @@ stub:
     dir=web/dist
 
     if [ ! -d "$dir" ]; then
-    mkdir -p $dir
-    touch $dir/generated.txt
-    echo "This file was created by ./scripts/stub.bash" >> $dir/generated.txt
+        mkdir -p $dir
+        touch $dir/generated.txt
+        echo "This file was created by ./scripts/stub.bash" >> $dir/generated.txt
     fi
 
 # Prints the Docker image tag.
