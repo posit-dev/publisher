@@ -16,7 +16,7 @@
     "cy:install": "cypress install",
     "cy:run": "cypress run --env publishing-token=abc123",
     "e2e": "start-server-and-test --expect 401 e2e:start http-get://127.0.0.1:9000 cy:run",
-    "e2e:start": "env DOCKER=false USER=root just ../run publish-ui ./test/sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123"
+    "e2e:start": "env DOCKER=false USER=$(whoami) just ../run publish-ui ./test/sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.5",
