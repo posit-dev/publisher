@@ -49,13 +49,11 @@ image:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    if "${DOCKER:-true}" == "true" ; then
-        docker build \
-            --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --pull \
-            --tag $(just tag) \
-            ./build/package
-    fi
+    docker build \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --pull \
+        --tag $(just tag) \
+        ./build/package
 
 # staticcheck, vet, and format check
 lint: stub
@@ -125,6 +123,10 @@ version:
 _with_docker *args:
     #!/usr/bin/env bash
     set -euo pipefail
+
+    if ! docker image inspect $(just tag) >/dev/null; then
+        just image
+    fi
 
     docker run --rm {{ _interactive }} \
         -e CI={{ _ci }} \
