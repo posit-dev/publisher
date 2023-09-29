@@ -3,6 +3,10 @@ import json
 import subprocess
 from unittest.mock import Mock, patch
 
+import jupyter_server_proxy
+from tornado.httputil import HTTPHeaders, HTTPServerRequest
+from tornado.httpclient import HTTPRequest, HTTPResponse
+
 from connect_jupyterlab import handlers
 
 
@@ -118,3 +122,40 @@ async def test_launch_ui_err(popen):
         handlers.launch_ui("notebooks/MyNotebook.ipynb", "/path/to/python", "3.4.5", "dark", log)
     except Exception as exc:
         assert exc == err
+
+
+@patch("connect_jupyterlab.handlers.launch_ui")
+@patch.object(jupyter_server_proxy.handlers.LocalProxyHandler, "proxy")
+async def test_proxy(proxy, launch_ui, jp_fetch):
+    launch_ui.return_value = "http://localhost:12345/?token=abc123"
+
+    async def proxy_response(port, proxied_path):
+        assert port == "12345"
+        assert proxied_path == "index.html"
+
+    proxy.side_effect = proxy_response
+    response = await jp_fetch("connect-jupyterlab", "ui", "12345", "index.html")
+    assert response.code == 200
+
+
+async def test_proxy_invalid_path(jp_fetch):
+    response = await jp_fetch("connect-jupyterlab", "ui", "44444", "index.html", raise_error=False)
+    assert response.code == 400
+
+
+def test_rewrite_redirect():
+    uri = "/connect-jupyterlab/ui/12345/?token=abc123"
+    req = HTTPServerRequest("GET", uri)
+    resp = HTTPResponse(HTTPRequest(uri), code=301, headers=HTTPHeaders(dict(Location="/")))
+    handlers.UIHandler.rewrite(req, resp)
+    assert resp.headers["Location"] == "/connect-jupyterlab/ui/12345/"
+
+
+def test_rewrite_cookie():
+    uri = "/connect-jupyterlab/ui/12345/index.html"
+    req = HTTPServerRequest("GET", uri)
+    resp = HTTPResponse(
+        HTTPRequest(uri), code=200, headers=HTTPHeaders({"Set-Cookie": "session=my-session"})
+    )
+    handlers.UIHandler.rewrite(req, resp)
+    assert resp.headers["Set-Cookie"] == "session=my-session; Path=/connect-jupyterlab/ui/12345"
