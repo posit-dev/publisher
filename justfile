@@ -21,7 +21,7 @@ _with_runner := if env_var_or_default("DOCKER", "true") == "true" {
         ""
     }
 
-_uid_args := if "{{ os() }}" == "linux" {
+_uid_args := if "{{ os_family() }}" == "unix" {
         "-u $(id -u):$(id -g)"
     } else {
         ""
@@ -154,9 +154,9 @@ _with_docker *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    if ! docker image inspect $(just tag) &>/dev/null; then
-        just image
-    fi
+    # if ! docker image inspect $(just tag) &>/dev/null; then
+    #     just image
+    # fi
 
     docker run --rm {{ _interactive }} \
         -e CI={{ _ci }} \
@@ -164,5 +164,5 @@ _with_docker *args:
         -e GOMODCACHE=/work/.cache/go/mod \
         -v "$(pwd)":/work \
         -w /work \
-        {{ _uid_args }} \
+        -u $(id -u):$(id -g) \
         $(just tag) {{ args }}
