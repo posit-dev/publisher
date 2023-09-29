@@ -717,3 +717,6 @@ jobs:
       -
         name: Validate extension code
         run: just validate
+      -
+        name: Test extension code
+        run: just test

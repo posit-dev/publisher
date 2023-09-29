@@ -15,3 +15,14 @@ validate-js:
     jlpm run lint:check
 
 validate: validate-js validate-python
+
+test: test-python test-js
+
+test-python:
+    JUPYTER_PLATFORM_DIRS=1 pytest -r ap \
+        --cov --no-cov-on-fail \
+        --cov-report=html \
+        connect_jupyterlab
+
+test-js:
+    true
