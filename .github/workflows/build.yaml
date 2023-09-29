@@ -1,4 +1,6 @@
 name: Build
+env:
+  MODE: prod
 on:
   workflow_call:
 jobs:

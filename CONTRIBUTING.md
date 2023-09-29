@@ -1,5 +1,27 @@
 # Contributing
 
+## Development
+
+### Build Tools
+
+The build tooling entrypoint is `just`. See the [installation instructions](https://just.systems/man/en/chapter_4.html) for your operating system to install Just.
+
+Execute `just -l` for a list of avaiable commands and documentation.
+
+### Environment Variables
+
+When executing commands the following variables are accepted to change behavior.
+
+Example: `env CI=true just build`.
+
+| Variable | Default | Type | Description                                                                                              |
+|----------|---------|------|----------------------------------------------------------------------------------------------------------|
+| CI       | false   | bool | Enable CI mode.   When set to true, multi-platform builds are enabled.                                   |
+| DEBUG    | true    | bool | Enable DEBUG mode.   When set to true, `set +x` is enabled for all Justfile targets.                     |
+| DOCKER   | true    | bool | Enable DOCKER mode.  When set to true, all Justfile targets are executed in Docker.                      |
+| MODE     | dev     | enum | Valid: `dev`, any  When set to `dev`, development is enabled. All other values disable development mode. |
+
+
 ## Release
 
 To start a release create a semver compatible tag.

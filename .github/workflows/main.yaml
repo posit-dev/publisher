@@ -9,4 +9,4 @@ jobs:
   web:
     uses: ./.github/workflows/web.yaml
   package:
-    uses: ./.github/workflows/package.yaml
+    uses: ./.github/workflows/build.yaml
