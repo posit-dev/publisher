@@ -5,6 +5,7 @@ RUN dnf -y update\
         curl\
         findutils\
         git\
+        python3\
         tar\
     && dnf -y module enable nodejs:18\
     && dnf -y module install nodejs:18
