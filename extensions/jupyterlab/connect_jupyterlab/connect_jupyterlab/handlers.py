@@ -1,3 +1,4 @@
+import errno
 import json
 import logging
 import os
@@ -14,6 +15,7 @@ from tornado.httpclient import HTTPResponse
 
 base_url = None
 known_ports = {}
+EXECUTABLE = "connect-client"
 
 
 class PublishHandler(APIHandler):
@@ -99,10 +101,14 @@ def setup_handlers(web_app):
 
 
 def launch_ui(
-    notebookPath: str, pythonPath: str, pythonVersion: str, theme: str, log: logging.Logger
+    notebookPath: str,
+    pythonPath: str,
+    pythonVersion: str,
+    theme: str,
+    log: logging.Logger,
 ) -> str:
     args = [
-        "connect-client",
+        EXECUTABLE,
         "publish-ui",
         notebookPath,
         "--python",
@@ -118,8 +124,8 @@ def launch_ui(
     try:
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=None, text=True)
     except OSError as exc:
-        if exc.errno == 2:
-            raise Exception("Could not find connect-client on PATH.")
+        if exc.errno == errno.ENOENT:
+            raise Exception(f"Could not find {EXECUTABLE} on PATH.")
         else:
             raise
 
