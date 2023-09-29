@@ -52,3 +52,5 @@ RUN apt-get update\
     && apt-get update\
     && apt-get install -y\
         nodejs
+
+RUN npm install -g cypress && npx cypress install
