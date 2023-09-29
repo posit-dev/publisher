@@ -60,7 +60,7 @@ fi
 for platform in "${platforms[@]}"
 do
     echo "Building: $platform"
-    os=${platform%*\/}   # retain the part before the slash
+    os=${platform/\/*}   # retain the part before the slash
     arch=${platform/*\/} # retain the part after the slash
 
     executable=$(./scripts/get-executable-path.bash "$name" "$version" "$os" "$arch" )

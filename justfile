@@ -1,7 +1,6 @@
 # clean, image, bootstrap, lint, build and test agent & client
 default: clean image lint test build
 
-
 _ci := "${CI:-false}"
 
 _cmd := "./cmd/connect-client"
