@@ -74,62 +74,68 @@ export type CallbackQueueEntry = {
 // { "time": "2023-09-26T09:23:25.311112-07:00", "type": "publish/runContent/success", "data": { "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
 // { "time": "2023-09-26T09:23:25.311155-07:00", "type": "publish/success", "data": { "level": "INFO", "message": "Deployment successful", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "dashboardUrl": "https://rsc.radixu.com/connect/#/apps/0d976b10-8f98-463c-9647-9738338f53d8", "directUrl": "https://rsc.radixu.com/content/0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm", "serverUrl": "https://rsc.radixu.com" } }
 
-export type EventSubscriptionTarget =
-  '*' | // all events
+export type EventSubscriptionTarget = keyof EventSubscriptionTargetCallbackMap;
 
-  'agent/log' | // agent console log messages
+export interface EventSubscriptionTargetCallbackMap {
+  // all events
+  '*': OnMessageEventSourceCallback
 
-  'errors/*' | // all errors
-  'errors/sse' |
-  'errors/open' |
-  'errors/unknownEvent' |
+  // agent console log messages
+  'agent/log': OnAgentLogCallback
 
-  'open/*' | // open events
-  'open/sse' |
+  // all errors
+  'errors/*': OnMessageEventSourceCallback
+  'errors/sse': OnErrorsSseCallback
+  'errors/open': OnErrorsOpenCallback
+  'errors/unknownEvent': OnErrorsUnknownEventCallback
 
-  'publish/*' | // publish events
-  'publish/**/log' |
-  'publish/**/failure' |
+  // open events
+  'open/*': OnMessageEventSourceCallback
+  'open/sse': OnOpenSseCallback
 
-  'publish/start' |
-  'publish/createBundle/start' |
-  'publish/createBundle/log' |
-  'publish/createBundle/success' |
-  'publish/createBundle/failure' |
+  // publish events
+  'publish/*': OnMessageEventSourceCallback
+  'publish/**/log': OnMessageEventSourceCallback
+  'publish/**/failure': OnMessageEventSourceCallback
+  'publish/start': OnPublishStartCallback
+
+  'publish/createBundle/start': OnPublishCreateBundleStartCallback
+  'publish/createBundle/log': OnPublishCreateBundleLogCallback
+  'publish/createBundle/success': OnPublishCreateBundleSuccessCallback
+  'publish/createBundle/failure': OnPublishCreateBundleFailureCallback
+
   // 'publish/createBundle/failure/authFailure' | // received but temporarily converted
+  'publish/createDeployment/start': OnPublishCreateDeploymentStartCallback
+  'publish/createDeployment/success': OnPublishCreateDeploymentSuccessCallback
+  'publish/createDeployment/failure': OnPublishCreateDeploymentFailureCallback
 
-  'publish/createDeployment/start' |
-  'publish/createDeployment/success' |
-  'publish/createDeployment/failure' |
+  'publish/uploadBundle/start': OnPublishUploadBundleStartCallback
+  'publish/uploadBundle/success': OnPublishUploadBundleSuccessCallback
+  'publish/uploadBundle/failure': OnPublishUploadBundleFailureCallback
 
-  'publish/uploadBundle/start' |
-  'publish/uploadBundle/success' |
-  'publish/uploadBundle/failure' |
-
-  'publish/deployBundle/start' |
-  'publish/deployBundle/success' |
-  'publish/deployBundle/failure' |
+  'publish/deployBundle/start': OnPublishDeployBundleStartCallback
+  'publish/deployBundle/success': OnPublishDeployBundleSuccessCallback
+  'publish/deployBundle/failure': OnPublishDeployBundleFailureCallback
 
   // 'publish/restore' | // found during agent code searches but not received
   // 'publish/restore/log' | // found during agent code searches but not received
 
-  'publish/restorePythonEnv/start' |
-  'publish/restorePythonEnv/log' |
-  'publish/restorePythonEnv/success' |
-  'publish/restorePythonEnv/failure' |
+  'publish/restorePythonEnv/start': OnPublishRestorePythonEnvStartCallback
+  'publish/restorePythonEnv/log': OnPublishRestorePythonEnvLogCallback
+  'publish/restorePythonEnv/success': OnPublishRestorePythonEnvSuccessCallback
+  'publish/restorePythonEnv/failure': OnPublishRestorePythonEnvFailureCallback
   // 'publish/restorePythonEnv/failure/serverErr' | // received but temporarily converted
 
-  // 'publish/restoreREnv/failure/unknown' | // received but temporarily converted
-
-  'publish/runContent/start' |
-  'publish/runContent/log' |
-  'publish/runContent/success' |
-  'publish/runContent/failure' |
+  'publish/runContent/start': OnPublishRunContentStartCallback
+  'publish/runContent/log': OnPublishRunContentLogCallback
+  'publish/runContent/success': OnPublishRunContentSuccessCallback
+  'publish/runContent/failure': OnPublishRunContentFailureCallback
 
   // 'publish/setVanityURL' | // new, but on hold
 
-  'publish/success' |
-  'publish/failure';
+  'publish/success': OnPublishSuccessCallback
+  'publish/failure': OnPublishFailureCallback
+}
 
 export function getLocalId(arg: EventStreamMessage) {
   return arg.data.localId;
@@ -146,8 +152,7 @@ export interface EventStreamMessage {
   error?: string,
 }
 
-export type OnMessageEventSourceCallback<T extends EventStreamMessage = EventStreamMessage> =
-  (msg: T) => void;
+export type OnMessageEventSourceCallback = <T extends EventStreamMessage>(msg: T) => void;
 
 export function isEventStreamMessage(o: object): o is EventStreamMessage {
   return (
