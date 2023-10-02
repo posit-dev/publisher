@@ -13,6 +13,7 @@
         icon="arrow_back"
         label="Back"
         data-automation="BackToConfiguration"
+        no-caps
         @click="onBackButton"
       />
     </div>
