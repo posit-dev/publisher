@@ -16,15 +16,25 @@
       bordered
       class="rounded-borders"
     >
-      <DestinationTarget />
+      <DestinationTarget
+        group="configurePublish"
+      />
       <q-separator />
-      <FilesToPublish />
+      <FilesToPublish
+        group="configurePublish"
+      />
       <q-separator />
-      <PythonProject />
+      <PythonProject
+        group="configurePublish"
+      />
       <q-separator />
-      <CommonSettings />
+      <CommonSettings
+        group="configurePublish"
+      />
       <q-separator />
-      <AdvancedSettings />
+      <AdvancedSettings
+        group="configurePublish"
+      />
     </q-list>
   </q-page>
 </template>
