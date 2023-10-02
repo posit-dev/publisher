@@ -10,35 +10,7 @@ import {
   isEventStreamMessage,
   EventSubscriptionTarget,
   CallbackQueueEntry,
-  OnAgentLogCallback,
-  OnErrorsSseCallback,
-  OnErrorsOpenCallback,
-  OnErrorsUnknownEventCallback,
-  OnOpenSseCallback,
-  OnPublishStartCallback,
-  OnPublishCreateBundleStartCallback,
-  OnPublishCreateBundleLogCallback,
-  OnPublishCreateBundleSuccessCallback,
-  OnPublishCreateBundleFailureCallback,
-  OnPublishCreateDeploymentStartCallback,
-  OnPublishCreateDeploymentSuccessCallback,
-  OnPublishCreateDeploymentFailureCallback,
-  OnPublishUploadBundleStartCallback,
-  OnPublishUploadBundleSuccessCallback,
-  OnPublishUploadBundleFailureCallback,
-  OnPublishDeployBundleStartCallback,
-  OnPublishDeployBundleSuccessCallback,
-  OnPublishDeployBundleFailureCallback,
-  OnPublishRestorePythonEnvStartCallback,
-  OnPublishRestorePythonEnvLogCallback,
-  OnPublishRestorePythonEnvSuccessCallback,
-  OnPublishRestorePythonEnvFailureCallback,
-  OnPublishRunContentStartCallback,
-  OnPublishRunContentLogCallback,
-  OnPublishRunContentSuccessCallback,
-  OnPublishRunContentFailureCallback,
-  OnPublishSuccessCallback,
-  OnPublishFailureCallback,
+  EventSubscriptionTargetCallbackMap,
 } from 'src/api/types/events.ts';
 
 export class EventStream {
@@ -248,60 +220,24 @@ export class EventStream {
     );
   }
 
-  public addEventMonitorCallbackOld(
-    targets: EventSubscriptionTarget[],
+  /**
+   * Subscribes to an event target, or targets, and invokes the callback when an
+   * event is received.
+   *
+   * @param target {EventSubscriptionTarget | EventSubscriptionTarget[]} The
+   *   event target, or array of targets, to subscribe to. Narrows the type of
+   *   callback when subscribing to a single target.
+   * @param cb {Function} The callback function to invoke when an event is
+   *   received.
+   */
+  public addEventMonitorCallback<T extends EventSubscriptionTarget>(
+    target: T,
+    cb: EventSubscriptionTargetCallbackMap[T]
+  ): void;
+  public addEventMonitorCallback(
+    target: EventSubscriptionTarget | EventSubscriptionTarget[],
     cb: OnMessageEventSourceCallback
-  ) {
-    for (const t in targets) {
-      this.subscriptions.push({
-        eventType: targets[t],
-        callback: cb,
-      });
-    }
-  }
-
-  // Provide Typescript function overloading, so we can facilitate type specific callbacks allowing
-  // code to correctly type the incoming event automatically, if they are only receiving a single type of
-  // message. If they are receiving multiple, then they should use the array target signature and use type guards
-  // within that code to narrow down the type of the actual event received.
-  public addEventMonitorCallback(target: EventSubscriptionTarget[],
-    cb: OnMessageEventSourceCallback): void;
-  public addEventMonitorCallback(target: '*', cb: OnMessageEventSourceCallback): void;
-  public addEventMonitorCallback(target: 'agent/log', cb: OnAgentLogCallback): void;
-  public addEventMonitorCallback(target: 'errors/*', cb: OnPublishStartCallback): void;
-  public addEventMonitorCallback(target: 'errors/sse', cb: OnErrorsSseCallback): void;
-  public addEventMonitorCallback(target: 'errors/open', cb: OnErrorsOpenCallback): void;
-  public addEventMonitorCallback(target: 'errors/unknownEvent', cb: OnErrorsUnknownEventCallback): void;
-  public addEventMonitorCallback(target: 'open/*', cb: OnMessageEventSourceCallback): void;
-  public addEventMonitorCallback(target: 'open/sse', cb: OnOpenSseCallback): void;
-  public addEventMonitorCallback(target: 'publish/*', cb: OnMessageEventSourceCallback): void;
-  public addEventMonitorCallback(target: 'publish/**/log', cb: OnMessageEventSourceCallback): void;
-  public addEventMonitorCallback(target: 'publish/**/failure', cb: OnMessageEventSourceCallback): void;
-  public addEventMonitorCallback(target: 'publish/createBundle/start', cb: OnPublishCreateBundleStartCallback): void;
-  public addEventMonitorCallback(target: 'publish/createBundle/log', cb: OnPublishCreateBundleLogCallback): void;
-  public addEventMonitorCallback(target: 'publish/createBundle/success', cb: OnPublishCreateBundleSuccessCallback): void;
-  public addEventMonitorCallback(target: 'publish/createBundle/failure', cb: OnPublishCreateBundleFailureCallback): void;
-  public addEventMonitorCallback(target: 'publish/createDeployment/start', cb: OnPublishCreateDeploymentStartCallback): void;
-  public addEventMonitorCallback(target: 'publish/createDeployment/success', cb: OnPublishCreateDeploymentSuccessCallback): void;
-  public addEventMonitorCallback(target: 'publish/createDeployment/failure', cb: OnPublishCreateDeploymentFailureCallback): void;
-  public addEventMonitorCallback(target: 'publish/uploadBundle/start', cb: OnPublishUploadBundleStartCallback): void;
-  public addEventMonitorCallback(target: 'publish/uploadBundle/success', cb: OnPublishUploadBundleSuccessCallback): void;
-  public addEventMonitorCallback(target: 'publish/uploadBundle/failure', cb: OnPublishUploadBundleFailureCallback): void;
-  public addEventMonitorCallback(target: 'publish/deployBundle/start', cb: OnPublishDeployBundleStartCallback): void;
-  public addEventMonitorCallback(target: 'publish/deployBundle/success', cb: OnPublishDeployBundleSuccessCallback): void;
-  public addEventMonitorCallback(target: 'publish/deployBundle/failure', cb: OnPublishDeployBundleFailureCallback): void;
-  public addEventMonitorCallback(target: 'publish/restorePythonEnv/start', cb: OnPublishRestorePythonEnvStartCallback): void;
-  public addEventMonitorCallback(target: 'publish/restorePythonEnv/log', cb: OnPublishRestorePythonEnvLogCallback): void;
-  public addEventMonitorCallback(target: 'publish/restorePythonEnv/success', cb: OnPublishRestorePythonEnvSuccessCallback): void;
-  public addEventMonitorCallback(target: 'publish/restorePythonEnv/failure', cb: OnPublishRestorePythonEnvFailureCallback): void;
-  public addEventMonitorCallback(target: 'publish/runContent/start', cb: OnPublishRunContentStartCallback): void;
-  public addEventMonitorCallback(target: 'publish/runContent/log', cb: OnPublishRunContentLogCallback): void;
-  public addEventMonitorCallback(target: 'publish/runContent/success', cb: OnPublishRunContentSuccessCallback): void;
-  public addEventMonitorCallback(target: 'publish/runContent/failure', cb: OnPublishRunContentFailureCallback): void;
-  public addEventMonitorCallback(target: 'publish/success', cb: OnPublishSuccessCallback): void;
-  public addEventMonitorCallback(target: 'publish/failure', cb: OnPublishFailureCallback): void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public addEventMonitorCallback(target: any, cb: any): void {
+  ): void {
     if (Array.isArray(target)) {
       target.forEach(t => this.addEventMonitorCallback(t, cb));
     } else {
@@ -312,45 +248,16 @@ export class EventStream {
     }
   }
 
-  // Provide Typescript function overloading of each type of callback, corresponding to the 'addEventMonitorCallback'
-  // overloading above.
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnAgentLogCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishStartCallback): boolean;
-  public delEventFilterCallback(cb: OnErrorsSseCallback): boolean;
-  public delEventFilterCallback(cb: OnErrorsOpenCallback): boolean;
-  public delEventFilterCallback(cb: OnErrorsUnknownEventCallback): boolean;
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnOpenSseCallback): boolean;
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateBundleStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateBundleLogCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateBundleSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateBundleFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateDeploymentStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateDeploymentSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishCreateDeploymentFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishUploadBundleStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishUploadBundleSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishUploadBundleFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishDeployBundleStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishDeployBundleSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishDeployBundleFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRestorePythonEnvStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRestorePythonEnvLogCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRestorePythonEnvSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRestorePythonEnvFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRunContentStartCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRunContentLogCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRunContentSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishRunContentFailureCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishSuccessCallback): boolean;
-  public delEventFilterCallback(cb: OnPublishFailureCallback): boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public delEventFilterCallback(cb: any): boolean {
+  /**
+   * Removes all subscriptions with the same instance of a callback function.
+   *
+   * @param {Function} cb The callback function to remove. Accepts any callback from the
+   *         EventSubscriptionTargetCallbackMap.
+   * @returns {boolean} Returns true if a callback was found and removed.
+   */
+  public delEventFilterCallback<T extends EventSubscriptionTarget>(
+    cb: EventSubscriptionTargetCallbackMap[T]
+  ): boolean {
     let found = false;
     let index = -1;
     // We may have multiple events being delivered to same callback
