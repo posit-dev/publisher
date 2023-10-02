@@ -16,7 +16,6 @@
           height="30px"
           fill="white"
           stroke="none"
-          class="posit-logo"
           alt="Posit PBC Logo"
         />
         <q-toolbar-title class="q-pl-xs">
