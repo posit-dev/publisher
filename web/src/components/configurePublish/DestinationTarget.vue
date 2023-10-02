@@ -9,8 +9,8 @@
       <PublisherDestinationLogo
         width="40px"
         height="40px"
-        fill="lightgray"
-        stroke="none"
+        :fill="colorStore.activePallete.icon.fill"
+        :stroke="colorStore.activePallete.icon.stroke"
       />
     </template>
     TODO: select from previous deployments or add to existing or new targets
@@ -24,8 +24,10 @@ import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
 import PublisherDestinationLogo from 'src/components/icons/PublisherDestinationLogo.vue';
 
 import { useDeploymentStore } from 'src/stores/deployment';
+import { useColorStore } from 'src/stores/color';
 
 const deploymentStore = useDeploymentStore();
+const colorStore = useColorStore();
 
 const destinationTitle = computed(() => {
   const accountName = deploymentStore.deployment?.target.accountName;

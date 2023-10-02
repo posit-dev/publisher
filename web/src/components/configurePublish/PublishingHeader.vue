@@ -9,7 +9,6 @@
       label="Title"
       outlined
       dense
-      dark
       clearable
       hint="Enter a title for your content on the server"
       class="col-9"

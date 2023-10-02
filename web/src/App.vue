@@ -3,19 +3,17 @@
 <template>
   <q-layout
     view="hHh lpR fFf"
-    class="bg-grey-9 text-white"
   >
     <q-header
       elevated
-      class="bg-primary text-white"
     >
       <q-toolbar class="max-width-md q-pa-auto">
         <AppMenu />
         <WhitePositLogo
           width="70px"
           height="30px"
-          fill="white"
-          stroke="none"
+          :fill="colorStore.activePallete.logo.fill"
+          :stroke="colorStore.activePallete.logo.stroke"
           alt="Posit PBC Logo"
         />
         <q-toolbar-title class="q-pl-xs">
@@ -42,6 +40,7 @@
 <script setup lang="ts">
 
 import { onBeforeUnmount, ref } from 'vue';
+import { useQuasar } from 'quasar';
 
 import AppMenu from 'src/components/AppMenu.vue';
 import ConfigurePublish from 'src/components/configurePublish/ConfigurePublish.vue';
@@ -50,6 +49,8 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
+import { useColorStore } from './stores/color';
+
 import { EventStream } from 'src/api/resources/EventStream';
 import {
   EventStreamMessage,
@@ -63,6 +64,10 @@ type viewType = 'configure' | 'publish';
 const currentView = ref<viewType>('configure');
 const api = useApi();
 const deploymentStore = useDeploymentStore();
+const colorStore = useColorStore();
+
+const $q = useQuasar();
+$q.dark.set('auto');
 
 const eventStream = new EventStream();
 // Temporary storage of events

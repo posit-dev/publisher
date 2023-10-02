@@ -4,12 +4,10 @@
   <q-page
     class="max-width-md q-mx-auto"
     padding
-    dark
   >
     <div>
       <q-btn
         :disable="backButtonDisabled"
-        color="primary"
         icon="arrow_back"
         label="Back"
         data-automation="BackToConfiguration"
