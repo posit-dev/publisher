@@ -17,8 +17,8 @@ from tornado.web import authenticated
 base_url = None
 EXECUTABLE = "connect-client"
 
-known_ports = set()  # type: Set[int]
-agentsByNotebookPath = {}  # type: Dict[str, Tuple[subprocess.Popen, str]]
+known_ports: Set[int] = set()
+agentsByNotebookPath: Dict[str, Tuple[subprocess.Popen, str]] = {}
 
 
 class PublishHandler(APIHandler):
@@ -26,7 +26,7 @@ class PublishHandler(APIHandler):
     def post(self) -> None:
         """post initiates the publishing process. Details TBD."""
         self.log.info("Launching publishing UI")
-        data = self.get_json_body()  # type: Dict[str, str]
+        data: Dict[str, str] = self.get_json_body()
         notebookPath = os.path.abspath(data["notebookPath"])
         pythonPath = data["pythonPath"]
         pythonVersion = data["pythonVersion"]
@@ -158,5 +158,10 @@ def launch_ui(
     # remember this agent in case of UI refresh
     agentsByNotebookPath[notebookPath] = (process, url)
     parsed = urlparse(url)
+
+    if parsed.port is None:
+        # we should always have a port
+        raise Exception("The launched process did not bind to a port.")
+
     known_ports.add(parsed.port)
     return url
