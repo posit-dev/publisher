@@ -12,7 +12,6 @@
       @publish="emit('publish')"
     />
     <q-list
-      dark
       bordered
       class="rounded-borders"
     >

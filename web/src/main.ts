@@ -21,4 +21,5 @@ const app = createApp(App);
 
 app.use(pinia);
 app.use(Quasar, { plugins: { Dark } });
+
 app.mount('#app');

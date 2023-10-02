@@ -8,8 +8,8 @@
       <PublisherAdvancedLogo
         width="40px"
         height="40px"
-        fill="lightgray"
-        stroke="none"
+        :fill="colorStore.activePallete.icon.fill"
+        :stroke="colorStore.activePallete.icon.stroke"
       />
     </template>
     TODO: Show list of editable settings (and some as read-only)
@@ -20,4 +20,7 @@
 <script setup lang="ts">
 import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
 import PublisherAdvancedLogo from 'src/components/icons/PublisherAdvancedLogo.vue';
+import { useColorStore } from 'src/stores/color';
+
+const colorStore = useColorStore();
 </script>
