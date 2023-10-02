@@ -17,6 +17,7 @@
     </div>
     <div class="q-mt-lg">
       <h4>Temporary Event Display for Publishing Process</h4>
+      <PublishStepper />
       <div
         v-for="(eventItem, index) in events"
         :key="index"
@@ -36,6 +37,8 @@ import { EventStreamMessage, PublishSuccess } from 'src/api/types/events';
 import { PropType, onBeforeUnmount, ref, watch } from 'vue';
 import { scroll as qScroll } from 'quasar';
 import { useEventStream } from 'src/plugins/eventStream';
+import PublishStepper from 'src/components/publishProcess/PublishStepper.vue';
+
 const { getScrollTarget, setVerticalScrollPosition } = qScroll;
 
 const props = defineProps({
