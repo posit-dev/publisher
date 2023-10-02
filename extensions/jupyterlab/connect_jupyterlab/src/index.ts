@@ -50,11 +50,23 @@ async function runPython(
   return actualExpressionValue.slice(1, -1);
 }
 
+async function sleep(seconds: number) {
+  return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+}
+
 async function getKernel(
-  notebookPanel: NotebookPanel
+  notebookPanel: NotebookPanel,
+  maxRetries: number
 ): Promise<IKernelConnection> {
   const sessionContext = notebookPanel.sessionContext;
-  const kernel = sessionContext.session?.kernel;
+  let kernel = sessionContext.session?.kernel;
+  let retries = 0;
+  while (!kernel && retries < maxRetries) {
+    console.debug('No kernel yet; retrying');
+    retries++;
+    await sleep(0.2);
+    kernel = sessionContext.session?.kernel;
+  }
   if (!kernel) {
     throw new Error('Session has no kernel.');
   }
@@ -187,7 +199,7 @@ class PublishingWidget extends Widget {
         );
       }
     }
-    const kernel = await getKernel(this.currentNotebook);
+    const kernel = await getKernel(this.currentNotebook, 10);
     const pythonPath = await getKernelPythonPath(kernel);
     console.log('Kernel python path is', pythonPath);
     const pythonVersion = await getKernelPythonVersion(kernel);
