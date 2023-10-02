@@ -24,7 +24,6 @@ export type DeploymentFile = {
     abs: string
     base: string
     rel: string
-    root: string
     size: number
     modifiedDatetime: string
     isDir: boolean
