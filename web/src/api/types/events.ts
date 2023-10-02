@@ -135,14 +135,10 @@ export function getLocalId(arg: EventStreamMessage) {
   return arg.data.localId;
 }
 
-interface StringMapOfStrings {
-  [key: string]: string,
-}
-
 export interface EventStreamMessage {
   type: EventSubscriptionTarget,
   time: string,
-  data: StringMapOfStrings,
+  data: Record<string, string>,
   error?: string,
 }
 
