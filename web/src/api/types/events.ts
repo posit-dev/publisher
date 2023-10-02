@@ -76,6 +76,9 @@ export type CallbackQueueEntry = {
 
 export type EventSubscriptionTarget = keyof EventSubscriptionTargetCallbackMap;
 
+/**
+ * Mapping of event subscription targets to callback signatures.
+ */
 export interface EventSubscriptionTargetCallbackMap {
   // all events
   '*': OnMessageEventSourceCallback

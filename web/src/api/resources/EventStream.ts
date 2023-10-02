@@ -220,10 +220,16 @@ export class EventStream {
     );
   }
 
-  // Provide Typescript function overloading, so we can facilitate type specific callbacks allowing
-  // code to correctly type the incoming event automatically, if they are only receiving a single type of
-  // message. If they are receiving multiple, then they should use the array target signature and use type guards
-  // within that code to narrow down the type of the actual event received.
+  /**
+   * Subscribes to an event target, or targets, and invokes the callback when an
+   * event is received.
+   *
+   * @param target {EventSubscriptionTarget | EventSubscriptionTarget[]} The
+   *   event target, or array of targets, to subscribe to. Narrows the type of
+   *   callback when subscribing to a single target.
+   * @param cb {Function} The callback function to invoke when an event is
+   *   received.
+   */
   public addEventMonitorCallback<T extends EventSubscriptionTarget>(
     target: T,
     cb: EventSubscriptionTargetCallbackMap[T]
@@ -242,6 +248,13 @@ export class EventStream {
     }
   }
 
+  /**
+   * Removes all subscriptions with the same instance of a callback function.
+   *
+   * @param {Function} cb The callback function to remove. Accepts any callback from the
+   *         EventSubscriptionTargetCallbackMap.
+   * @returns {boolean} Returns true if a callback was found and removed.
+   */
   public delEventFilterCallback<T extends EventSubscriptionTarget>(
     cb: EventSubscriptionTargetCallbackMap[T]
   ): boolean {
