@@ -60,8 +60,9 @@ The `jlpm` command is JupyterLab's pinned version of
 conda create -n labext python=3.11 nodejs=18
 conda activate labext
 
-# Install package in development mode
-pip install -e ".[test]"
+# Install Python package in development mode
+just install
+
 # Link your development version of the extension with JupyterLab
 jupyter labextension develop . --overwrite
 # Server extension must be manually installed in develop mode

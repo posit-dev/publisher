@@ -1,9 +1,6 @@
 install:
     pip install -e '.[test]'
 
-install-python-tools:
-    pip install 'black==23.*' 'flake8==6.*' 'mypy==1.5.*' 'jupyterlab==4.*'
-
 max_line_length := '99'
 
 validate-python:
