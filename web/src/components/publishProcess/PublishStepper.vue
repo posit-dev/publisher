@@ -34,7 +34,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from './PublishStep.vue';
+import PublishStep from 'src/components/publishProcess/PublishStep.vue';
 
 const activeStep = ref(2);
 </script>
