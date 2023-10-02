@@ -5,17 +5,20 @@ import os
 import shlex
 import subprocess
 from urllib.parse import urlparse
+from typing import Set, Dict, Tuple
 
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 from jupyter_server_proxy.handlers import LocalProxyHandler  # type: ignore
+from tornado.httpclient import HTTPResponse
 from tornado.httputil import HTTPServerRequest
 from tornado.web import authenticated
-from tornado.httpclient import HTTPResponse
 
 base_url = None
-known_ports = {}
 EXECUTABLE = "connect-client"
+
+known_ports = set()  # type: Set[int]
+agentsByNotebookPath = {}  # type: Dict[str, Tuple[subprocess.Popen, str]]
 
 
 class PublishHandler(APIHandler):
@@ -23,7 +26,7 @@ class PublishHandler(APIHandler):
     def post(self) -> None:
         """post initiates the publishing process. Details TBD."""
         self.log.info("Launching publishing UI")
-        data = self.get_json_body()
+        data = self.get_json_body()  # type: Dict[str, str]
         notebookPath = os.path.abspath(data["notebookPath"])
         pythonPath = data["pythonPath"]
         pythonVersion = data["pythonVersion"]
@@ -107,6 +110,22 @@ def launch_ui(
     theme: str,
     log: logging.Logger,
 ) -> str:
+    processInfo = agentsByNotebookPath.get(notebookPath)
+    if processInfo is not None:
+        process, url = processInfo
+        if process.poll() is None:
+            # process is still running
+            log.info("Found existing agent for %s at %s", notebookPath, url)
+            return url
+        else:
+            # process has exited
+            log.info(
+                "Previous agent for %s exited with code %d; starting a new one",
+                notebookPath,
+                process.returncode,
+            )
+            del agentsByNotebookPath[notebookPath]
+
     args = [
         EXECUTABLE,
         "publish-ui",
@@ -132,9 +151,12 @@ def launch_ui(
     if process.stdout is None:
         # This should never happen because we requested stdout=subprocess.PIPE
         raise Exception("The launched process did not provide an output stream.")
-    # currently, URL is the first thing written to stdout
+
+    # URL is the first line written to stdout
     url = process.stdout.readline().strip()
 
+    # remember this agent in case of UI refresh
+    agentsByNotebookPath[notebookPath] = (process, url)
     parsed = urlparse(url)
-    known_ports[parsed.port] = process
+    known_ports.add(parsed.port)
     return url
