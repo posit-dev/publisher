@@ -18,7 +18,9 @@
         v-for="(log, index) in logs"
         :key="index"
       >
-        {{ log }}
+        <q-item-section>
+          {{ log }}
+        </q-item-section>
       </q-item>
     </q-list>
   </q-step>
