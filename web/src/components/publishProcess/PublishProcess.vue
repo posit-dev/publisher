@@ -21,7 +21,7 @@
         v-for="(eventItem, index) in events"
         :key="index"
       >
-        {{ eventItem }}
+        {{ JSON.stringify(eventItem) }}
       </div>
       <p ref="agentLogEnd">
         &nbsp;
@@ -33,7 +33,7 @@
 <script setup lang="ts">
 
 import { EventStream } from 'src/api/resources/EventStream';
-import { EventStreamMessage } from 'src/api/types/events';
+import { EventStreamMessage, PublishSuccess } from 'src/api/types/events';
 import { PropType, onBeforeUnmount, ref, watch } from 'vue';
 import { scroll as qScroll } from 'quasar';
 const { getScrollTarget, setVerticalScrollPosition } = qScroll;
@@ -59,10 +59,11 @@ const onBackButton = () => {
 
 const backButtonDisabled = ref(true);
 
-const publishingComplete = () => {
+const publishingComplete = (msg: PublishSuccess) => {
   backButtonDisabled.value = false;
+  console.log(`msg: ${JSON.stringify(msg)}`);
 };
-props.eventStream.addEventMonitorCallback(['publish/success'], publishingComplete);
+props.eventStream.addEventMonitorCallback('publish/success', publishingComplete);
 
 watch(props.events, () => {
   if (agentLogEnd.value) {

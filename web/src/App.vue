@@ -40,6 +40,7 @@
 <script setup lang="ts">
 
 import { onBeforeUnmount, ref } from 'vue';
+import { useQuasar } from 'quasar';
 
 import AppMenu from 'src/components/AppMenu.vue';
 import ConfigurePublish from 'src/components/configurePublish/ConfigurePublish.vue';
@@ -51,8 +52,12 @@ import { useDeploymentStore } from 'src/stores/deployment';
 import { useColorStore } from './stores/color';
 
 import { EventStream } from 'src/api/resources/EventStream';
-import { EventStreamMessage } from 'src/api/types/events';
-import { useQuasar } from 'quasar';
+import {
+  EventStreamMessage,
+  isPublishStart,
+  isPublishSuccess,
+  getLocalId,
+} from 'src/api/types/events';
 
 type viewType = 'configure' | 'publish';
 
@@ -80,10 +85,29 @@ const getInitialDeploymentState = async() => {
   deploymentStore.deployment = deployment;
 };
 
+let currentPublishStreamID: string = '';
+
 const incomingEvent = (msg: EventStreamMessage) => {
+  // We are going to filter these events based on current job id (localId)
+  // specific to any publish process. (i.e. Don't display old stream messages which
+  // happen to come in which were part of the last publish cycle started.)
+  const newId = getLocalId(msg);
+
+  // publish/start event establishes the publishing job id
+  if (isPublishStart(msg)) {
+    if (newId) {
+      currentPublishStreamID = newId;
+    }
+  } else if (isPublishSuccess(msg)) {
+    currentPublishStreamID = '';
+  }
+  // if we have a publishing job id
+  if (currentPublishStreamID && newId !== currentPublishStreamID) {
+    return;
+  }
   allEvents.value.push(msg);
 };
-eventStream.addEventMonitorCallback(['*'], incomingEvent);
+eventStream.addEventMonitorCallback('*', incomingEvent);
 
 eventStream.setDebugMode(true);
 eventStream.open('/api/events?stream=messages');
