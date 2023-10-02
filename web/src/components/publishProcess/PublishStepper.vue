@@ -5,9 +5,7 @@
     v-model="activeStep"
     vertical
     animated
-    dark
     flat
-    class="bg-grey-9"
     :header-nav="true"
   >
     <PublishStep
