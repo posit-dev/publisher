@@ -3,7 +3,7 @@ import json
 import subprocess
 from unittest.mock import Mock, patch
 
-import jupyter_server_proxy
+import jupyter_server_proxy  # type: ignore
 from tornado.httputil import HTTPHeaders, HTTPServerRequest
 from tornado.httpclient import HTTPRequest, HTTPResponse
 
