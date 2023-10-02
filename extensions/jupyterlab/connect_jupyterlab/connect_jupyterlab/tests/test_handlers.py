@@ -61,6 +61,7 @@ async def test_post_publish_err(launch_ui, jp_fetch, jp_serverapp, jp_http_port,
 
 @patch("subprocess.Popen")
 async def test_launch_ui(popen):
+    handlers.agentsByNotebookPath = {}
     log = Mock()
     log.info = Mock()
 
@@ -159,3 +160,103 @@ def test_rewrite_cookie():
     )
     handlers.UIHandler.rewrite(req, resp)
     assert resp.headers["Set-Cookie"] == "session=my-session; Path=/connect-jupyterlab/ui/12345"
+
+
+@patch("subprocess.Popen")
+async def test_launch_ui_reuse_agent(popen):
+    handlers.agentsByNotebookPath = {}
+    log = Mock()
+    log.info = Mock()
+
+    process = Mock()
+    process.stdout = Mock()
+    process.stdout.readline = Mock()
+    process.poll.return_value = None
+
+    ui_url = "http://localhost:12345/?token=abc123"
+    process.stdout.readline.return_value = "http://localhost:12345/?token=abc123"
+
+    popen.return_value = process
+
+    url = handlers.launch_ui("notebooks/MyNotebook.ipynb", "/path/to/python", "3.4.5", "dark", log)
+    url2 = handlers.launch_ui(
+        "notebooks/MyNotebook.ipynb", "/path/to/python", "3.4.5", "dark", log
+    )
+    log.info.assert_called()
+
+    # only one process is launched
+    popen.assert_called_once_with(
+        [
+            "connect-client",
+            "publish-ui",
+            "notebooks/MyNotebook.ipynb",
+            "--python",
+            "/path/to/python",
+            "--python-version",
+            "3.4.5",
+            "--theme",
+            "dark",
+            "-n",
+            "local",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=None,
+        text=True,
+    )
+    assert url == ui_url
+    assert url2 == ui_url
+
+
+@patch("subprocess.Popen")
+async def test_launch_ui_cant_reuse_agent(popen):
+    handlers.agentsByNotebookPath = {}
+    log = Mock()
+    log.info = Mock()
+
+    process = Mock()
+    process.stdout = Mock()
+    process.stdout.readline = Mock()
+    ui_url = "http://localhost:12345/?token=abc123"
+    process.stdout.readline.return_value = ui_url
+
+    # process has exited
+    process.poll.return_value = 1
+    popen.return_value = process
+
+    # now call launch_ui twice
+    url = handlers.launch_ui("notebooks/MyNotebook.ipynb", "/path/to/python", "3.4.5", "dark", log)
+
+    process2 = Mock()
+    process2.stdout = Mock()
+    process2.stdout.readline = Mock()
+    ui_url2 = "http://localhost:54321/?token=321bca"
+    process2.stdout.readline.return_value = ui_url2
+    popen.return_value = process2
+
+    url2 = handlers.launch_ui(
+        "notebooks/MyNotebook.ipynb", "/path/to/python", "3.4.5", "dark", log
+    )
+
+    # two processes are launched
+    log.info.assert_called()
+    assert len(popen.call_args_list) == 2
+    popen.assert_called_with(
+        [
+            "connect-client",
+            "publish-ui",
+            "notebooks/MyNotebook.ipynb",
+            "--python",
+            "/path/to/python",
+            "--python-version",
+            "3.4.5",
+            "--theme",
+            "dark",
+            "-n",
+            "local",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=None,
+        text=True,
+    )
+    assert url == ui_url
+    assert url2 == ui_url2
