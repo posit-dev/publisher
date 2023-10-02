@@ -6,7 +6,12 @@
     :subtitle="destinationTitle"
   >
     <template #avatar>
-      <PublisherDestinationLogo />
+      <PublisherDestinationLogo
+        width="40px"
+        height="40px"
+        fill="lightgray"
+        stroke="none"
+      />
     </template>
     TODO: select from previous deployments or add to existing or new targets
   </LayoutPanel>
