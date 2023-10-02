@@ -1,39 +1,13 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useQuasar } from 'quasar';
 
 export const useColorStore = defineStore('color', () => {
   const $q = useQuasar();
 
   const palette = {
-    none: {
-      icon: {
-        fill: 'none',
-        stroke: 'none',
-      },
-      logo: {
-        fill: 'none',
-        stroke: 'none',
-      },
-      expansion: {
-        header: {
-          open: {
-            background: 'none',
-            text: 'none',
-          },
-          closed: {
-            background: 'none',
-            text: 'none',
-          },
-        },
-        card: {
-          background: 'none',
-          text: 'none',
-        },
-      }
-    },
     dark: {
       icon: {
         fill: '#D3D3D3',
@@ -88,19 +62,11 @@ export const useColorStore = defineStore('color', () => {
     }
   };
 
-  const setPalletePerDarkMode = () => {
+  const activePallete = computed(() => {
     if ($q.dark.isActive) {
-      activePallete.value = palette.dark;
-    } else {
-      activePallete.value = palette.light;
+      return palette.dark;
     }
-  };
-
-  const activePallete = ref(palette.none);
-  setPalletePerDarkMode();
-
-  watch(() => $q.dark.isActive, () => {
-    setPalletePerDarkMode();
+    return palette.light;
   });
 
   return {
