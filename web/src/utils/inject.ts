@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import { Ref } from 'vue';
 
 import { EventStream } from 'src/api/resources/EventStream';
