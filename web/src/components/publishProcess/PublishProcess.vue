@@ -18,7 +18,7 @@
     <div class="q-mt-lg">
       <h4>Temporary Event Display for Publishing Process</h4>
       <div
-        v-for="(eventItem, index) in events"
+        v-for="(eventItem, index) in sse?.events"
         :key="index"
       >
         {{ JSON.stringify(eventItem) }}
@@ -31,23 +31,13 @@
 </template>
 
 <script setup lang="ts">
-
-import { EventStream } from 'src/api/resources/EventStream';
-import { EventStreamMessage, PublishSuccess } from 'src/api/types/events';
-import { PropType, onBeforeUnmount, ref, watch } from 'vue';
+import { PublishSuccess } from 'src/api/types/events';
+import { inject, onBeforeUnmount, ref, watch } from 'vue';
 import { scroll as qScroll } from 'quasar';
+import { SSE, sseKey } from 'src/utils/inject';
 const { getScrollTarget, setVerticalScrollPosition } = qScroll;
 
-const props = defineProps({
-  events: {
-    type: Array as PropType<EventStreamMessage[]>,
-    required: true,
-  },
-  eventStream: {
-    type: Object as PropType<EventStream>,
-    required: true,
-  }
-});
+const sse = inject<SSE>(sseKey);
 
 const agentLogEnd = ref<HTMLDivElement | null>(null);
 
@@ -63,9 +53,9 @@ const publishingComplete = (msg: PublishSuccess) => {
   backButtonDisabled.value = false;
   console.log(`msg: ${JSON.stringify(msg)}`);
 };
-props.eventStream.addEventMonitorCallback('publish/success', publishingComplete);
+sse?.stream.addEventMonitorCallback('publish/success', publishingComplete);
 
-watch(props.events, () => {
+watch(sse!.events.value, () => {
   if (agentLogEnd.value) {
     const el = agentLogEnd.value as HTMLDivElement;
     const target = getScrollTarget(el);
@@ -76,7 +66,7 @@ watch(props.events, () => {
 });
 
 onBeforeUnmount(() => {
-  props.eventStream.delEventFilterCallback(publishingComplete);
+  sse?.stream.delEventFilterCallback(publishingComplete);
 });
 
 </script>

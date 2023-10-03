@@ -29,8 +29,6 @@
       />
       <PublishProcess
         v-if="currentView === 'publish'"
-        :events="allEvents"
-        :event-stream="eventStream"
         @back="onConfigure"
       />
     </q-page-container>
@@ -38,8 +36,7 @@
 </template>
 
 <script setup lang="ts">
-
-import { onBeforeUnmount, ref } from 'vue';
+import { onBeforeUnmount, provide, ref } from 'vue';
 import { useQuasar } from 'quasar';
 
 import AppMenu from 'src/components/AppMenu.vue';
@@ -58,6 +55,7 @@ import {
   isPublishSuccess,
   getLocalId,
 } from 'src/api/types/events';
+import { SSE, sseKey } from 'src/utils/inject';
 
 type viewType = 'configure' | 'publish';
 
@@ -72,6 +70,11 @@ $q.dark.set('auto');
 const eventStream = new EventStream();
 // Temporary storage of events
 const allEvents = ref<EventStreamMessage[]>([]);
+
+provide<SSE>(sseKey, {
+  stream: eventStream,
+  events: allEvents
+});
 
 const onPublish = () => {
   currentView.value = 'publish';
