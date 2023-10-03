@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"sort"
 
 	"github.com/r3labs/sse/v2"
+	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
@@ -23,8 +25,8 @@ import (
 )
 
 type StatefulCommand interface {
-	LoadState(log logging.Logger) error
-	SaveState(log logging.Logger) error
+	LoadState(ctx *cli_types.CLIContext) error
+	SaveState(ctx *cli_types.CLIContext) error
 }
 
 type BaseBundleCmd struct {
@@ -38,10 +40,11 @@ func (cmd *BaseBundleCmd) getConfigName() string {
 	if cmd.State.Target.AccountName != "" {
 		return cmd.State.Target.AccountName
 	}
-	return "default"
+	return ""
 }
 
-func (cmd *BaseBundleCmd) LoadState(log logging.Logger) error {
+func (cmd *BaseBundleCmd) LoadState(ctx *cli_types.CLIContext) error {
+	log := ctx.Logger
 	sourceDir, err := util.DirFromPath(cmd.Path)
 	if err != nil {
 		return err
@@ -50,19 +53,43 @@ func (cmd *BaseBundleCmd) LoadState(log logging.Logger) error {
 	cmd.Config = cmd.getConfigName()
 
 	cliState := cmd.State
-	cmd.State = state.NewDeployment()
-	if !cmd.New {
-		err = cmd.State.LoadFromFiles(sourceDir, cmd.Config, log)
-		if err != nil && !os.IsNotExist(err) {
-			return err
+	if cmd.New {
+		cmd.State = state.NewDeployment()
+	} else {
+		if cmd.Config != "" {
+			// Config name provided, use that saved metadata.
+			log.Info("Attempting to load metadata for selected account/configuration",
+				"name", cmd.Config)
+			err = cmd.State.LoadFromFiles(sourceDir, cmd.Config, log)
+			if err != nil && !os.IsNotExist(err) {
+				return err
+			}
+		} else {
+			// No config or account name provided. Use the most recent deployment.
+			log.Info("Attempting to load metadata for most recent deployment target")
+			cmd.State, err = state.GetMostRecentDeployment(cmd.State.SourceDir, log)
+			if err != nil {
+				return err
+			}
+			// No saved metadata found. Use the default account.
+			if cmd.State != nil {
+				log.Info("Loaded most recent deployment",
+					"name", cmd.State.Target.AccountName)
+			} else {
+				cmd.State = state.NewDeployment()
+				cmd.State.Target.AccountName = getDefaultAccount(ctx.Accounts)
+				log.Info("No saved metadata found; using the default account.",
+					"name", cmd.State.Target.AccountName)
+			}
 		}
 	}
+	cmd.Config = cmd.getConfigName()
 	cmd.State.Merge(cliState)
 	return nil
 }
 
-func (cmd *BaseBundleCmd) SaveState(log logging.Logger) error {
-	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, log)
+func (cmd *BaseBundleCmd) SaveState(ctx *cli_types.CLIContext) error {
+	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, ctx.Logger)
 }
 
 func createManifestFileMapFromSourceDir(sourceDir util.Path, log logging.Logger) (bundles.ManifestFileMap, error) {
@@ -103,6 +130,22 @@ func createManifestFileMapFromSourceDir(sourceDir util.Path, log logging.Logger)
 		return nil, err
 	}
 	return files, nil
+}
+
+// getDefaultAccount returns the name of the default account,
+// which is the first Connect account alphabetically by name.
+func getDefaultAccount(lister accounts.AccountList) string {
+	accounts, err := lister.GetAccountsByServerType(accounts.ServerTypeConnect)
+	if err != nil {
+		return ""
+	}
+	if len(accounts) == 0 {
+		return ""
+	}
+	sort.Slice(accounts, func(i, j int) bool {
+		return accounts[i].Name < accounts[j].Name
+	})
+	return accounts[0].Name
 }
 
 // stateFromCLI takes the CLI options provided by the user,
