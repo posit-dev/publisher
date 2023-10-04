@@ -92,11 +92,14 @@ func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	executor.AssertExpectations(s.T())
 }
 
-func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
+func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython3() {
 	// This test can only run if python3 is on the PATH.
 	_, err := exec.LookPath("python3")
 	if err != nil {
-		s.T().Skip("python3 isn't available on PATH")
+		_, err := exec.LookPath("python")
+		if err != nil {
+			s.T().Skip("This test requires python or python3 to be available on PATH")
+		}
 	}
 	log := logging.New()
 	inspector := NewPythonInspector(util.Path{}, util.Path{}, log)
