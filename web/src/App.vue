@@ -71,7 +71,7 @@ const eventStream = new EventStream();
 // Temporary storage of events
 const allEvents = ref<EventStreamMessage[]>([]);
 
-provide<SSE>(sseKey, {
+provide(sseKey, {
   stream: eventStream,
   events: allEvents
 });

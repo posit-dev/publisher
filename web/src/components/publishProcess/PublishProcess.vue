@@ -34,10 +34,10 @@
 import { PublishSuccess } from 'src/api/types/events';
 import { inject, onBeforeUnmount, ref, watch } from 'vue';
 import { scroll as qScroll } from 'quasar';
-import { SSE, sseKey } from 'src/utils/inject';
+import { sseKey } from 'src/utils/inject';
 const { getScrollTarget, setVerticalScrollPosition } = qScroll;
 
-const sse = inject<SSE>(sseKey);
+const sse = inject(sseKey);
 
 const agentLogEnd = ref<HTMLDivElement | null>(null);
 
