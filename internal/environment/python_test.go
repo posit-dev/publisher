@@ -84,7 +84,7 @@ func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	log := logging.New()
 	inspector := NewPythonInspector(util.Path{}, util.Path{}, log)
 	executor := NewMockPythonExecutor()
-	executor.On("runPythonCommand", "python3", mock.Anything).Return([]byte("3.10.4"), nil)
+	executor.On("runPythonCommand", mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
 	version, err := inspector.GetPythonVersion()
 	s.Nil(err)

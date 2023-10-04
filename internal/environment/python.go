@@ -3,6 +3,7 @@ package environment
 import (
 	"bytes"
 	"fmt"
+	"io/fs"
 	"os/exec"
 	"strings"
 
@@ -54,18 +55,34 @@ func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.
 	}
 }
 
-func (i *defaultPythonInspector) getPythonExecutable() string {
+func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
 	if i.pythonPath.Path() != "" {
 		// User-provided python executable
-		return i.pythonPath.Path()
+		exists, err := i.pythonPath.Exists()
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return i.pythonPath.Path(), nil
+		}
+		return "", fmt.Errorf(
+			"cannot find the specified Python executable %s: %w",
+			i.pythonPath, fs.ErrNotExist)
 	} else {
 		// Use whatever is on PATH
-		return "python3"
+		path, err := exec.LookPath("python3")
+		if err != nil {
+			return exec.LookPath("python")
+		}
+		return path, err
 	}
 }
 
 func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
-	pythonExecutable := i.getPythonExecutable()
+	pythonExecutable, err := i.getPythonExecutable()
+	if err != nil {
+		return "", err
+	}
 	args := []string{
 		`-E`, // ignore python-specific environment variables
 		`-c`, // execute the next argument as python code
@@ -90,7 +107,10 @@ func (i *defaultPythonInspector) GetPythonRequirements() ([]byte, error) {
 		i.log.Info("Using Python packages", "source", requirementsFilename)
 		return requirementsFilename.ReadFile()
 	}
-	pythonExecutable := i.getPythonExecutable()
+	pythonExecutable, err := i.getPythonExecutable()
+	if err != nil {
+		return nil, err
+	}
 	source := fmt.Sprintf("'%s -m pip freeze'", pythonExecutable)
 	i.log.Info("Using Python packages", "source", source)
 	args := []string{"-m", "pip", "freeze"}
