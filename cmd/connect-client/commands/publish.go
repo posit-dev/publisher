@@ -77,12 +77,17 @@ func (cmd *BaseBundleCmd) LoadState(ctx *cli_types.CLIContext) error {
 					"name", cmd.State.Target.AccountName)
 			} else {
 				cmd.State = state.NewDeployment()
-				cmd.State.Target.AccountName = getDefaultAccount(ctx.Accounts)
+				accounts, err := ctx.Accounts.GetAccountsByServerType(accounts.ServerTypeConnect)
+				if err != nil {
+					return err
+				}
+				cmd.State.Target.AccountName = getDefaultAccount(accounts)
 				log.Info("No saved metadata found; using the default account.",
 					"name", cmd.State.Target.AccountName)
 			}
 		}
 	}
+	// Target account name may have changed.
 	cmd.Config = cmd.getConfigName()
 	cmd.State.Merge(cliState)
 	return nil
@@ -134,11 +139,7 @@ func createManifestFileMapFromSourceDir(sourceDir util.Path, log logging.Logger)
 
 // getDefaultAccount returns the name of the default account,
 // which is the first Connect account alphabetically by name.
-func getDefaultAccount(lister accounts.AccountList) string {
-	accounts, err := lister.GetAccountsByServerType(accounts.ServerTypeConnect)
-	if err != nil {
-		return ""
-	}
+func getDefaultAccount(accounts []accounts.Account) string {
 	if len(accounts) == 0 {
 		return ""
 	}

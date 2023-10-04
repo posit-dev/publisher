@@ -11,6 +11,10 @@ type MockAccountList struct {
 	AccountList
 }
 
+func NewMockAccountList() *MockAccountList {
+	return &MockAccountList{}
+}
+
 func (m *MockAccountList) GetAllAccounts() ([]Account, error) {
 	args := m.Called()
 	return args.Get(0).([]Account), args.Error(1)
