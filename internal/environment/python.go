@@ -55,7 +55,7 @@ func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.
 	}
 }
 
-func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
+func (i *defaultPythonInspector) getPythonExecutable(exec util.PathLooker) (string, error) {
 	if i.pythonPath.Path() != "" {
 		// User-provided python executable
 		exists, err := i.pythonPath.Exists()
@@ -79,7 +79,7 @@ func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
 }
 
 func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
-	pythonExecutable, err := i.getPythonExecutable()
+	pythonExecutable, err := i.getPythonExecutable(util.NewPathLooker())
 	if err != nil {
 		return "", err
 	}
@@ -107,7 +107,7 @@ func (i *defaultPythonInspector) GetPythonRequirements() ([]byte, error) {
 		i.log.Info("Using Python packages", "source", requirementsFilename)
 		return requirementsFilename.ReadFile()
 	}
-	pythonExecutable, err := i.getPythonExecutable()
+	pythonExecutable, err := i.getPythonExecutable(util.NewPathLooker())
 	if err != nil {
 		return nil, err
 	}

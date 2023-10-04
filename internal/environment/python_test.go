@@ -92,8 +92,8 @@ func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	executor.AssertExpectations(s.T())
 }
 
-func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython3() {
-	// This test can only run if python3 is on the PATH.
+func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
+	// This test can only run if python3 or python is on the PATH.
 	_, err := exec.LookPath("python3")
 	if err != nil {
 		_, err := exec.LookPath("python")
@@ -106,6 +106,18 @@ func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython3() {
 	version, err := inspector.GetPythonVersion()
 	s.Nil(err)
 	s.True(strings.HasPrefix(version, "3."))
+}
+
+func (s *PythonSuite) TestGetPythonExecutableFallbackPython() {
+	log := logging.New()
+	inspector := NewPythonInspector(util.Path{}, util.Path{}, log)
+
+	exec := util.NewMockPathLooker()
+	exec.On("LookPath", "python3").Return("", os.ErrNotExist)
+	exec.On("LookPath", "python").Return("/usr/bin/python", nil)
+	executable, err := inspector.getPythonExecutable(exec)
+	s.NoError(err)
+	s.Equal("/usr/bin/python", executable)
 }
 
 func (s *PythonSuite) TestGetRequirementsFromFile() {
