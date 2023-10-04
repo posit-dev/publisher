@@ -4,7 +4,6 @@ package inspect
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -72,8 +71,6 @@ func getNotebookFileInputs(path util.Path) (string, error) {
 	return getNotebookInputs(f)
 }
 
-var errNoCellsInNotebook = errors.New("no cells found in notebook")
-
 func getNotebookInputs(r io.Reader) (string, error) {
 	decoder := json.NewDecoder(r)
 
@@ -85,7 +82,7 @@ func getNotebookInputs(r io.Reader) (string, error) {
 	}
 	cells, ok := notebookContents["cells"].([]any)
 	if !ok || len(cells) == 0 {
-		return "", errNoCellsInNotebook
+		return "", nil
 	}
 	combinedSource := []string{}
 	for cellNum, rawCell := range cells {
