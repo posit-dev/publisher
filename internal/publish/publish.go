@@ -37,7 +37,7 @@ func (p *Publisher) CreateBundleFromDirectory(dest util.Path, log logging.Logger
 		return err
 	}
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundler(p.args.State.SourceDir, &p.args.State.Manifest, p.args.Exclude, nil, log)
+	bundler, err := bundles.NewBundler(p.args.State.SourceDir, &p.args.State.Manifest, nil, log)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (p *Publisher) CreateBundleFromDirectory(dest util.Path, log logging.Logger
 }
 
 func (p *Publisher) WriteManifestFromDirectory(log logging.Logger) error {
-	bundler, err := bundles.NewBundler(p.args.State.SourceDir, &p.args.State.Manifest, p.args.Exclude, nil, log)
+	bundler, err := bundles.NewBundler(p.args.State.SourceDir, &p.args.State.Manifest, nil, log)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (p *Publisher) PublishManifestFiles(lister accounts.AccountList, log loggin
 
 func (p *Publisher) PublishDirectory(lister accounts.AccountList, log logging.Logger) error {
 	log.Info("Publishing from directory", "path", p.args.State.SourceDir)
-	bundler, err := bundles.NewBundler(p.args.State.SourceDir, &p.args.State.Manifest, p.args.Exclude, nil, log)
+	bundler, err := bundles.NewBundler(p.args.State.SourceDir, &p.args.State.Manifest, nil, log)
 	if err != nil {
 		return err
 	}

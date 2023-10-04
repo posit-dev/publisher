@@ -27,7 +27,7 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequirements []byte, log logging.Logger) (*bundler, error) {
+func NewBundler(path util.Path, manifest *Manifest, pythonRequirements []byte, log logging.Logger) (*bundler, error) {
 	var dir util.Path
 	var filename string
 	isDir, err := path.IsDir()
@@ -45,7 +45,7 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	if err != nil {
 		return nil, err
 	}
-	excluder, err := gitignore.NewExcludingWalker(dir, ignores)
+	excluder, err := gitignore.NewExcludingWalker(dir, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
