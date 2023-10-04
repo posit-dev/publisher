@@ -268,6 +268,12 @@ jobs:
         name: Agent Unit Tests
         run: |
           just test-agent
+      -
+        name: Code Coverage
+        uses: gwatts/go-coverage-action@v1
+        id: coverage
+        with:
+          cover-pkg: ./...
 
   build-agent:
     needs: build-ux
