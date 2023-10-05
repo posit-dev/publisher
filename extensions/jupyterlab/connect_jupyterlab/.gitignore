@@ -124,3 +124,11 @@ dmypy.json
 
 # Yarn cache
 .yarn/
+
+# VS code (matching the repo root gitignore)
+.vscode/*
+!.vscode/recommended.settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
