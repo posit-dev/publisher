@@ -13,9 +13,8 @@ arch=$4
 
 name=$(basename "$cmd")
 
-extension=""
 if [ "$os" = "windows" ]; then
-    extension+='.exe'
+    printf ".\bin\%s\%s\%s" "$os" "$arch" "$name-$version-$os-$arch.exe"
+else
+    printf "./bin/%s/%s/%s" "$os" "$arch" "$name-$version-$os-$arch"
 fi
-
-echo "./bin/$os/$arch/$name-$version-$os-$arch$extension"

@@ -13,9 +13,12 @@
     "test": "vitest run",
     "watch": "vitest",
 
-    "cy:run": "cypress run --env publishing-token=abc123",
-    "e2e": "start-server-and-test --expect 401 e2e:start http-get://127.0.0.1:9000 cy:run",
-    "e2e:start": "DOCKER=false ../$(DOCKER=false just ../executable-path) publish-ui ../test/sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123"
+    "test:e2e:dev": "start-server-and-test dev http-get://localhost:9000 cypress:run",
+    "test:e2e:ci": "start-server-and-test --expect 401 start http-get://127.0.0.1:9000 cypress:run:ci",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:ci": "cypress run --env publishing-token=abc123",
+    "start": "DOCKER=false ../$(DOCKER=false just ../executable-path) publish-ui ../test/sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.5",

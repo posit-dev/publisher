@@ -1,3 +1,5 @@
+export CYPRESS_CACHE_FOLDER := "./cypress/.cache"
+
 # Executes clean, install, test, build
 default: install lint test build
 
@@ -33,7 +35,8 @@ e2e:
     set -eou pipefail
     {{ _with_debug }}
 
-    npm run e2e
+    npx cypress install
+    npm run test:e2e:ci
 
 # Launch a local web server instance with hot-reloads.
 dev:

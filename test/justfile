@@ -43,9 +43,9 @@ run-client target:
     -w /publishing-client/ \
     --rm {{_tag}}-{{target}} just test/_test-client {{target}}
   elif [[ {{target}} =~ "windows" ]]; then
-    just _test-client windows-amd64
+    just _test-client windows/amd64
   elif [[ {{target}} =~ "macos" ]]; then
-    just _test-client darwin-amd64
+    just _test-client darwin/amd64
   fi
 
 build-binary target:
@@ -116,7 +116,7 @@ run-client-local target:
   just bats-install && \
   BATS_SUPPORT_LIB={{invocation_directory()}}/libs/bats-support/load \
   BATS_ASSERT_LIB={{invocation_directory()}}/libs/bats-assert/load \
-  BINARY_PATH=../bin/{{target}}/connect-client \
+  BINARY_PATH=../bin/{{target}}/connect-client* \
   ./libs/bats-core/bin/bats --tap -T -r ./bats/
 
 bats-install:
@@ -127,4 +127,3 @@ bats-install:
     git clone --depth=1 https://github.com/ztombol/bats-support.git ./libs/bats-support && \
     git clone --depth=1 https://github.com/ztombol/bats-assert.git ./libs/bats-assert
   fi
-docke
