@@ -5,7 +5,12 @@
     title="Common Settings"
   >
     <template #avatar>
-      <PublisherSettingsLogo />
+      <PublisherSettingsLogo
+        width="40px"
+        height="40px"
+        :fill="colorStore.activePallete.icon.fill"
+        :stroke="colorStore.activePallete.icon.stroke"
+      />
     </template>
     TODO: Common settings, probably off the info panel in dashboard
   </LayoutPanel>
@@ -14,5 +19,8 @@
 <script setup lang="ts">
 import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
 import PublisherSettingsLogo from 'src/components/icons/PublisherSettingsLogo.vue';
-</script>
 
+import { useColorStore } from 'src/stores/color';
+
+const colorStore = useColorStore();
+</script>
