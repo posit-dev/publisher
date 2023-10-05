@@ -20,6 +20,7 @@ import { useEventStream } from 'src/plugins/eventStream';
 defineProps({
   name: { type: [String, Number], required: true },
 });
+const emit = defineEmits(['start', 'done']);
 
 const $eventStream = useEventStream();
 
@@ -28,10 +29,12 @@ const logs = ref<string[]>([]);
 
 const startCb = $eventStream.addEventMonitorCallback('publish/deployBundle/start', (msg) => {
   logs.value.push(JSON.stringify(msg));
+  emit('start');
 });
 const successCb = $eventStream.addEventMonitorCallback('publish/deployBundle/success', (msg) => {
   logs.value.push(JSON.stringify(msg));
   done.value = true;
+  emit('done');
 });
 
 onBeforeUnmount(() => {

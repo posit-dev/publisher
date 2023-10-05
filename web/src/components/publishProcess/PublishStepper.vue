@@ -8,13 +8,34 @@
     flat
     :header-nav="true"
   >
-    <CreateDeployment :name="1" />
-    <CreateBundle :name="2" />
-    <UploadBundle :name="3" />
-    <DeployBundle :name="4" />
-    <RestorePythonEnvironment :name="5" />
-    <RunContent :name="6" />
-    <WrappingUpDeployment :name="7" />
+    <CreateBundle
+      :name="1"
+      @start="openStep = 1"
+    />
+    <CreateDeployment
+      :name="2"
+      @start="openStep = 2"
+    />
+    <UploadBundle
+      :name="3"
+      @start="openStep = 3"
+    />
+    <DeployBundle
+      :name="4"
+      @start="openStep = 4"
+    />
+    <RestorePythonEnvironment
+      :name="5"
+      @start="openStep = 5"
+    />
+    <RunContent
+      :name="6"
+      @start="openStep = 6"
+    />
+    <WrappingUpDeployment
+      :name="7"
+      @start="openStep = 7"
+    />
   </q-stepper>
 </template>
 
