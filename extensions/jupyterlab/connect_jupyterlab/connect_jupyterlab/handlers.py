@@ -126,6 +126,11 @@ def launch_ui(
             )
             del agentsByNotebookPath[notebookPath]
 
+    title = os.path.basename(notebookPath)
+    for suffix in (".ipynb", ".py"):
+        if title.endswith(suffix):
+            title = title[: -len(suffix)]
+
     args = [
         EXECUTABLE,
         "publish-ui",
@@ -136,6 +141,8 @@ def launch_ui(
         pythonVersion,
         "--theme",
         theme,
+        "--title",
+        title,
         "-n",
         "local",  # cheating, no target selection in the UI yet
     ]
