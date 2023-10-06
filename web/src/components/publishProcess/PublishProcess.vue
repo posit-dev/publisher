@@ -4,15 +4,14 @@
   <q-page
     class="max-width-md q-mx-auto"
     padding
-    dark
   >
     <div>
       <q-btn
         :disable="backButtonDisabled"
-        color="primary"
         icon="arrow_back"
         label="Back"
         data-automation="BackToConfiguration"
+        no-caps
         @click="onBackButton"
       />
     </div>
@@ -22,7 +21,7 @@
         v-for="(eventItem, index) in events"
         :key="index"
       >
-        {{ eventItem }}
+        {{ JSON.stringify(eventItem) }}
       </div>
       <p ref="agentLogEnd">
         &nbsp;
@@ -33,22 +32,20 @@
 
 <script setup lang="ts">
 
-import { EventStream } from 'src/api/resources/EventStream';
-import { EventStreamMessage } from 'src/api/types/events';
+import { EventStreamMessage, PublishSuccess } from 'src/api/types/events';
 import { PropType, onBeforeUnmount, ref, watch } from 'vue';
 import { scroll as qScroll } from 'quasar';
+import { useEventStream } from 'src/plugins/eventStream';
 const { getScrollTarget, setVerticalScrollPosition } = qScroll;
 
 const props = defineProps({
   events: {
     type: Array as PropType<EventStreamMessage[]>,
     required: true,
-  },
-  eventStream: {
-    type: Object as PropType<EventStream>,
-    required: true,
   }
 });
+
+const $eventStream = useEventStream();
 
 const agentLogEnd = ref<HTMLDivElement | null>(null);
 
@@ -60,10 +57,11 @@ const onBackButton = () => {
 
 const backButtonDisabled = ref(true);
 
-const publishingComplete = () => {
+const publishingComplete = (msg: PublishSuccess) => {
   backButtonDisabled.value = false;
+  console.log(`msg: ${JSON.stringify(msg)}`);
 };
-props.eventStream.addEventMonitorCallback(['publish/success'], publishingComplete);
+$eventStream.addEventMonitorCallback('publish/success', publishingComplete);
 
 watch(props.events, () => {
   if (agentLogEnd.value) {
@@ -76,7 +74,7 @@ watch(props.events, () => {
 });
 
 onBeforeUnmount(() => {
-  props.eventStream.delEventFilterCallback(publishingComplete);
+  $eventStream.delEventFilterCallback(publishingComplete);
 });
 
 </script>

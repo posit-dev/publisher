@@ -3,16 +3,17 @@
 <template>
   <q-layout
     view="hHh lpR fFf"
-    class="bg-grey-9 text-white"
   >
     <q-header
       elevated
-      class="bg-primary text-white"
     >
       <q-toolbar class="max-width-md q-pa-auto">
         <AppMenu />
         <WhitePositLogo
-          class="posit-logo"
+          width="70px"
+          height="30px"
+          :fill="colorStore.activePallete.logo.fill"
+          :stroke="colorStore.activePallete.logo.stroke"
           alt="Posit PBC Logo"
         />
         <q-toolbar-title class="q-pl-xs">
@@ -29,7 +30,6 @@
       <PublishProcess
         v-if="currentView === 'publish'"
         :events="allEvents"
-        :event-stream="eventStream"
         @back="onConfigure"
       />
     </q-page-container>
@@ -39,6 +39,7 @@
 <script setup lang="ts">
 
 import { onBeforeUnmount, ref } from 'vue';
+import { useQuasar } from 'quasar';
 
 import AppMenu from 'src/components/AppMenu.vue';
 import ConfigurePublish from 'src/components/configurePublish/ConfigurePublish.vue';
@@ -47,16 +48,28 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
-import { EventStream } from 'src/api/resources/EventStream';
-import { EventStreamMessage } from 'src/api/types/events';
+import { useColorStore } from './stores/color';
+
+import {
+  EventStreamMessage,
+  isPublishStart,
+  isPublishSuccess,
+  getLocalId,
+} from 'src/api/types/events';
+import { useEventStream } from 'src/plugins/eventStream';
 
 type viewType = 'configure' | 'publish';
 
 const currentView = ref<viewType>('configure');
 const api = useApi();
 const deploymentStore = useDeploymentStore();
+const colorStore = useColorStore();
 
-const eventStream = new EventStream();
+const $q = useQuasar();
+$q.dark.set('auto');
+
+const $eventStream = useEventStream();
+
 // Temporary storage of events
 const allEvents = ref<EventStreamMessage[]>([]);
 
@@ -72,26 +85,38 @@ const getInitialDeploymentState = async() => {
   deploymentStore.deployment = deployment;
 };
 
+let currentPublishStreamID: string = '';
+
 const incomingEvent = (msg: EventStreamMessage) => {
+  // We are going to filter these events based on current job id (localId)
+  // specific to any publish process. (i.e. Don't display old stream messages which
+  // happen to come in which were part of the last publish cycle started.)
+  const newId = getLocalId(msg);
+
+  // publish/start event establishes the publishing job id
+  if (isPublishStart(msg)) {
+    if (newId) {
+      currentPublishStreamID = newId;
+    }
+  } else if (isPublishSuccess(msg)) {
+    currentPublishStreamID = '';
+  }
+  // if we have a publishing job id
+  if (currentPublishStreamID && newId !== currentPublishStreamID) {
+    return;
+  }
   allEvents.value.push(msg);
 };
-eventStream.addEventMonitorCallback(['*'], incomingEvent);
 
-eventStream.setDebugMode(true);
-eventStream.open('/api/events?stream=messages');
-console.log(eventStream.status());
+$eventStream.addEventMonitorCallback('*', incomingEvent);
+$eventStream.setDebugMode(true);
+$eventStream.open('/api/events?stream=messages');
+console.log($eventStream.status());
 
 // Have to be sure to close connection or it will be leaked on agent (if it continues to run)
 onBeforeUnmount(() => {
-  eventStream.close();
+  $eventStream.close();
 });
 
 getInitialDeploymentState();
 </script>
-
-<style lang="scss" scoped>
-.posit-logo {
-  max-height: 26px;
-  width: auto;
-}
-</style>

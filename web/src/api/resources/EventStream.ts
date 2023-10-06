@@ -10,6 +10,7 @@ import {
   isEventStreamMessage,
   EventSubscriptionTarget,
   CallbackQueueEntry,
+  EventSubscriptionTargetCallbackMap,
 } from 'src/api/types/events.ts';
 
 export class EventStream {
@@ -81,12 +82,13 @@ export class EventStream {
       }
     });
     if (numMatched === 0 && msg.type !== 'errors/open') {
-      this.logMsg(`WARNING! No subscriber/handler found for msg: ${JSON.stringify}`);
+      const strMsg = JSON.stringify(msg);
+      this.logMsg(`WARNING! No subscriber/handler found for msg: ${strMsg}`);
       this.dispatchMessage({
         type: 'errors/unknownEvent',
         time: new Date().toString(),
         data: {
-          event: msg,
+          event: strMsg,
         },
       });
     }
@@ -96,8 +98,8 @@ export class EventStream {
     this.logMsg(`received RawOpenCallback`);
     this.isOpen = true;
     this.dispatchMessage({
+      time: new Date().toISOString(),
       type: 'open/sse',
-      time: new Date().toString(),
       data: {},
     });
   }
@@ -118,11 +120,32 @@ export class EventStream {
 
   private parseMessageData(data: string) : EventStreamMessage | null {
     const rawObj = JSON.parse(data);
-    const obj = camelcaseKeys(rawObj);
+    const obj = camelcaseKeys(rawObj, { deep: true });
     if (isEventStreamMessage(obj)) {
       return obj;
     }
     return null;
+  }
+
+  // The conversion being performed by this method from specific failure
+  // events over into the generic /failure path is TEMPORARY. Code will be
+  // updated within the Agent and this code will no longer be required.
+  private convertMessage(msg: EventStreamMessage) : EventStreamMessage {
+    // We convert failure messages to a more generic form
+    if (msg.type.includes('/failure')) {
+      // split by /failure
+      const parts = msg.type.split('/failure');
+      // temporary!!! will be changing backend.
+      msg.type = `${parts[0]}/failure` as EventSubscriptionTarget;
+      if (parts.length === 1) {
+        // we didn't get a failure qualifier
+        msg.error = 'unknown';
+      } else {
+        // we'll set the error to the trailing failure qualifier, without the /
+        msg.error = parts[1].slice(1);
+      }
+    }
+    return msg;
   }
 
   private onMessageRawCallback(msg: MessageEvent) {
@@ -132,14 +155,16 @@ export class EventStream {
       const errorMsg = `Invalid EventStreamMessage received: ${msg.data}`;
       const now = new Date();
       this.dispatchMessage({
-        type: 'errors/open',
+        type: 'errors/sse',
         time: now.toString(),
         data: { msg: `${errorMsg}` },
       });
       return;
     }
     this.logMsg(`Received event type = ${parsed.type}`);
-    this.dispatchMessage(parsed);
+    const finalMsg = this.convertMessage(parsed);
+    this.logMsg(`Converted to event type = ${finalMsg.type}`);
+    this.dispatchMessage(finalMsg);
   }
 
   private initializeConnection(url: string, withCredentials: boolean): MethodResult {
@@ -195,19 +220,45 @@ export class EventStream {
     );
   }
 
+  /**
+   * Subscribes to an event target, or targets, and invokes the callback when an
+   * event is received.
+   *
+   * @param target {EventSubscriptionTarget | EventSubscriptionTarget[]} The
+   *   event target, or array of targets, to subscribe to. Narrows the type of
+   *   callback when subscribing to a single target.
+   * @param cb {Function} The callback function to invoke when an event is
+   *   received.
+   */
+  public addEventMonitorCallback<T extends EventSubscriptionTarget>(
+    target: T,
+    cb: EventSubscriptionTargetCallbackMap[T]
+  ): EventSubscriptionTargetCallbackMap[T];
   public addEventMonitorCallback(
-    targets: EventSubscriptionTarget[],
+    target: EventSubscriptionTarget | EventSubscriptionTarget[],
     cb: OnMessageEventSourceCallback
-  ) {
-    for (const t in targets) {
+  ): OnMessageEventSourceCallback {
+    if (Array.isArray(target)) {
+      target.forEach(t => this.addEventMonitorCallback(t, cb));
+    } else {
       this.subscriptions.push({
-        eventType: targets[t],
+        eventType: target,
         callback: cb,
       });
     }
+    return cb;
   }
 
-  public delEventFilterCallback(cb: OnMessageEventSourceCallback) {
+  /**
+   * Removes all subscriptions with the same instance of a callback function.
+   *
+   * @param {Function} cb The callback function to remove. Accepts any callback from the
+   *         EventSubscriptionTargetCallbackMap.
+   * @returns {boolean} Returns true if a callback was found and removed.
+   */
+  public delEventFilterCallback<T extends EventSubscriptionTarget>(
+    cb: EventSubscriptionTargetCallbackMap[T]
+  ): boolean {
     let found = false;
     let index = -1;
     // We may have multiple events being delivered to same callback

@@ -9,7 +9,6 @@
       label="Title"
       outlined
       dense
-      dark
       clearable
       hint="Enter a title for your content on the server"
       class="col-9"
@@ -19,6 +18,7 @@
       label="Publish"
       padding="8px 30px"
       class="q-ml-xs"
+      no-caps
       @click="onPublish"
     />
   </div>

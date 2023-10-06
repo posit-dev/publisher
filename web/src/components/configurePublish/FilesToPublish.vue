@@ -6,7 +6,12 @@
     :subtitle="fileSummary"
   >
     <template #avatar>
-      <PublisherFolderLogo />
+      <PublisherFolderLogo
+        width="40px"
+        height="40px"
+        :fill="colorStore.activePallete.icon.fill"
+        :stroke="colorStore.activePallete.icon.stroke"
+      />
     </template>
     <q-tree
       v-model:ticked="deploymentStore.files"
@@ -14,7 +19,6 @@
       :nodes="files"
       :node-key="NODE_KEY"
       tick-strategy="leaf"
-      dark
       dense
     />
   </LayoutPanel>
@@ -29,11 +33,13 @@ import PublisherFolderLogo from 'src/components/icons/PublisherFolderLogo.vue';
 
 import { useApi, DeploymentFile } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
+import { useColorStore } from 'src/stores/color';
 
 const NODE_KEY = 'key';
 
 const api = useApi();
 const deploymentStore = useDeploymentStore();
+const colorStore = useColorStore();
 
 const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);

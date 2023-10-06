@@ -7,13 +7,9 @@
         v-model="value"
         no-caps
         unelevated
-        dark
         size="1rem"
         padding="2px"
         spread
-        toggle-color="primary"
-        color="dark-grey"
-        text-color="white"
         :options="options"
         style="border: 1px solid #027be3;"
       />
