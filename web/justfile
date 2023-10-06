@@ -35,7 +35,6 @@ e2e:
     set -eou pipefail
     {{ _with_debug }}
 
-    npx cypress install
     npm run test:e2e:ci
 
 # Launch a local web server instance with hot-reloads.

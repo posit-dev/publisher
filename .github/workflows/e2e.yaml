@@ -336,7 +336,9 @@ jobs:
       -
         name: UX E2E Tests
         run: |
-          PATH="${PATH}:/usr/local/bin" just web/e2e
+          just web install
+          just web build
+          just web e2e
 
   test-windows:
     needs: build-agent

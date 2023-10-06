@@ -18,7 +18,7 @@
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
     "cypress:run:ci": "cypress run --env publishing-token=abc123",
-    "start": "DOCKER=false ../$(DOCKER=false just ../executable-path) publish-ui ../test/sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123"
+    "start": "just ../run publish-ui ./test/sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.5",

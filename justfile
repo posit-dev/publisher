@@ -3,6 +3,8 @@ default: clean image lint test build
 
 _ci := "${CI:-false}"
 
+_docker := env_var_or_default("DEBUG", "true")
+
 _cmd := "./cmd/connect-client"
 
 _interactive := `tty -s && echo "-it" || echo ""`
@@ -11,12 +13,6 @@ _mode := "${MODE:-dev}"
 
 _with_debug := if env_var_or_default("DEBUG", "true") == "true" {
         "set -x pipefail"
-    } else {
-        ""
-    }
-
-_with_runner := if env_var_or_default("DOCKER", "true") == "true" {
-        "just _with_docker"
     } else {
         ""
     }
@@ -33,7 +29,7 @@ build:
     set -eou pipefail
     {{ _with_debug }}
 
-    {{ _with_runner }} env MODE={{ _mode }} ./scripts/build.bash {{ _cmd }}
+    just _with_docker env MODE={{ _mode }} ./scripts/build.bash {{ _cmd }}
 
 # Deletes ephermal project files (i.e., cleans the project).
 clean:
@@ -41,7 +37,7 @@ clean:
     set -eou pipefail
     {{ _with_debug }}
 
-    {{ _with_runner }} rm -rf ./bin
+    just _with_docker rm -rf ./bin
 
 # Display the code coverage collected during the last execution of `just test`.
 cover:
@@ -49,7 +45,7 @@ cover:
     set -eou pipefail
     {{ _with_debug }}
 
-    {{ _with_runner }} go tool cover -html=cover.out
+    just _with_docker go tool cover -html=cover.out
 
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).
 executable-path:
@@ -57,13 +53,17 @@ executable-path:
     set -eou pipefail
     {{ _with_debug }}
 
-    {{ _with_runner }} ./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOOS) $(go env GOARCH)
+    just _with_docker ./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOOS) $(go env GOARCH)
 
 # Build the image. Typically does not need to be done very often.
 image:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
+
+    if ! ${DOCKER-true}; then
+        exit 0
+    fi
 
     docker build \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -78,9 +78,9 @@ lint: stub
     {{ _with_debug }}
 
     # ./scripts/ccheck.py ./scripts/ccheck.config
-    {{ _with_runner }} staticcheck ./...
-    {{ _with_runner }} go vet -all ./...
-    {{ _with_runner }} ./scripts/fmt-check.bash
+    just _with_docker staticcheck ./...
+    just _with_docker go vet -all ./...
+    just _with_docker ./scripts/fmt-check.bash
 
 # Prints the pre-release status based on the version (see `just version`).
 pre-release:
@@ -96,7 +96,7 @@ run *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    {{ _with_runner }} go run {{ _cmd }} {{ args }}
+    just _with_docker go run {{ _cmd }} {{ args }}
 
 # Creates a fake './web/dist' directory for when it isn't needed.
 stub:
@@ -126,7 +126,7 @@ test: stub
     set -eou pipefail
     {{ _with_debug }}
 
-    {{ _with_runner }} go test ./... -covermode set -coverprofile=cover.out
+    just _with_docker go test ./... -covermode set -coverprofile=cover.out
 
 # Executes commands in ./web/Justfile. Equivalent to `just web/dist`, but inside of Docker (i.e., just _with_docker web/dist).
 web *args:
@@ -134,7 +134,7 @@ web *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    {{ _with_runner }} just web/{{ args }}
+    just _with_docker just web/{{ args }}
 
 # Print the version.
 version:
@@ -150,6 +150,11 @@ _with_docker *args:
     set -eou pipefail
     {{ _with_debug }}
 
+    if ! ${DOCKER-true}; then
+        {{ args }}
+        exit 0
+    fi
+
     if ! docker image inspect $(just tag) &>/dev/null; then
         just image
     fi
@@ -162,4 +167,5 @@ _with_docker *args:
         -e MODE={{ _mode }}\
         -v "$(pwd)":/work\
         -w /work\
+        {{ _uid_args }}\
         $(just tag) {{ args }}
