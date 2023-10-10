@@ -165,6 +165,7 @@ func (p *Publisher) publishWithClient(
 		logging.LogKeyOp, events.PublishOp,
 		"server", account.URL,
 	)
+
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
