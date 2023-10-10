@@ -28,6 +28,7 @@ install:
     {{ _with_debug }}
 
     npm install
+    ./node_modules/.bin/cypress install
 
 # Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just cy run test`)
 run *args:
