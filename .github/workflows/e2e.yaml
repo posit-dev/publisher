@@ -1,12 +1,8 @@
 name: E2E
 on:
-  pull_request:
-
+  workflow_call:
 jobs:
-  build:
-    uses: ./.github/workflows/build.yaml
   cypress:
-    needs: build
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]

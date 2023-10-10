@@ -8,5 +8,8 @@ jobs:
     uses: ./.github/workflows/agent.yaml
   web:
     uses: ./.github/workflows/web.yaml
-  package:
+  build:
     uses: ./.github/workflows/build.yaml
+  e2e:
+    needs: build
+    uses: ./.github/workflows/e2e.yaml
