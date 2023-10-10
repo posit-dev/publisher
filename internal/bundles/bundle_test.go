@@ -17,7 +17,9 @@ import (
 
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles/bundlestest"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/logging/loggingtest"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -163,20 +165,24 @@ func (s *BundlerSuite) SetupTest() {
 }
 
 func (s *BundlerSuite) TestNewBundlerDirectory() {
-	log := logging.New()
+	log := loggingtest.NewMockLogger()
+	log.On("WithArgs", logging.LogKeyOp, events.PublishCreateBundleOp).Return(log)
 	bundler, err := NewBundler(s.cwd, NewManifest(), []string{"*.log"}, nil, log)
 	s.Nil(err)
 	s.NotNil(bundler)
+	log.AssertExpectations(s.T())
 }
 
 func (s *BundlerSuite) TestNewBundlerFile() {
-	log := logging.New()
+	log := loggingtest.NewMockLogger()
+	log.On("WithArgs", logging.LogKeyOp, events.PublishCreateBundleOp).Return(log)
 	path := s.cwd.Join("app.py")
 	err := path.WriteFile([]byte("import flask\napp=flask.Flask(__name)\n"), 0600)
 	s.Nil(err)
 	bundler, err := NewBundler(path, NewManifest(), nil, nil, log)
 	s.Nil(err)
 	s.NotNil(bundler)
+	log.AssertExpectations(s.T())
 }
 
 func (s *BundlerSuite) TestNewBundlerExcludedFile() {
@@ -205,13 +211,15 @@ func (s *BundlerSuite) TestNewBundlerWalkerErr() {
 }
 
 func (s *BundlerSuite) TestNewBundlerForManifest() {
-	log := logging.New()
+	log := loggingtest.NewMockLogger()
+	log.On("WithArgs", logging.LogKeyOp, events.PublishCreateBundleOp).Return(log)
 	manifestPath := s.cwd.Join(ManifestFilename)
 	err := s.manifest.WriteManifestFile(manifestPath)
 	s.Nil(err)
 	bundler, err := NewBundlerForManifestFile(manifestPath, log)
 	s.Nil(err)
 	s.NotNil(bundler)
+	log.AssertExpectations(s.T())
 }
 
 func (s *BundlerSuite) TestNewBundlerForManifestMissingManifestFile() {
