@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "test": "EXE=../../$(just ../../executable-path) bats -r -T -t ./tests"
+    "test": "bats -r -T -t ./tests"
   },
   "devDependencies": {
     "bats": "^1.10.0",
