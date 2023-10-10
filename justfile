@@ -47,6 +47,14 @@ cover:
 
     just _with_docker go tool cover -html=cover.out
 
+# Executes commands in ./test/cy/justfile. Equivalent to `just test/cy/`, but inside of Docker (i.e., just _with_docker just test/cy/).
+cy *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just test/cy/{{ args }}
+
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).
 executable-path:
     #!/usr/bin/env bash
@@ -96,7 +104,7 @@ run *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker go run {{ _cmd }} {{ args }}
+    just _with_docker $(just executable-path) {{ args }}
 
 # Creates a fake './web/dist' directory for when it isn't needed.
 stub:
@@ -167,5 +175,4 @@ _with_docker *args:
         -e MODE={{ _mode }}\
         -v "$(pwd)":/work\
         -w /work\
-        {{ _uid_args }}\
         $(just tag) {{ args }}

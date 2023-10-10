@@ -1,0 +1,14 @@
+{
+  "name": "cy",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "just ../../run publish-ui --listen 127.0.0.1:9000 --token=token ./test/sample-content/fastapi-simple",
+    "test": "start-server-and-test --expect 401 start http-get://127.0.0.1:9000 run",
+    "open": "cypress open",
+    "run": "cypress run --env token=token"
+  },
+  "devDependencies": {
+    "cypress": "^13.3.0",
+    "start-server-and-test": "^2.0.1"
+  }
+}

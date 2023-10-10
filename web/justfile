@@ -29,14 +29,6 @@ clean:
     rm -rf dist
     rm -rf node_modules
 
-# Executes end-to-end tests.
-e2e:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    npm run test:e2e:ci
-
 # Launch a local web server instance with hot-reloads.
 dev:
     #!/usr/bin/env bash

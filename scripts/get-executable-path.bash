@@ -14,7 +14,7 @@ arch=$4
 name=$(basename "$cmd")
 
 if [ "$os" = "windows" ]; then
-    printf ".\bin\%s\%s\%s" "$os" "$arch" "$name-$version-$os-$arch.exe"
+    printf "./bin/%s/%s/%s" "$os" "$arch" "$name-$version-$os-$arch.exe"
 else
     printf "./bin/%s/%s/%s" "$os" "$arch" "$name-$version-$os-$arch"
 fi
