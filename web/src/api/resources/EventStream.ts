@@ -233,11 +233,11 @@ export class EventStream {
   public addEventMonitorCallback<T extends EventSubscriptionTarget>(
     target: T,
     cb: EventSubscriptionTargetCallbackMap[T]
-  ): void;
+  ): EventSubscriptionTargetCallbackMap[T];
   public addEventMonitorCallback(
     target: EventSubscriptionTarget | EventSubscriptionTarget[],
     cb: OnMessageEventSourceCallback
-  ): void {
+  ): OnMessageEventSourceCallback {
     if (Array.isArray(target)) {
       target.forEach(t => this.addEventMonitorCallback(t, cb));
     } else {
@@ -246,6 +246,7 @@ export class EventStream {
         callback: cb,
       });
     }
+    return cb;
   }
 
   /**

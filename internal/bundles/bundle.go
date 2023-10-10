@@ -12,6 +12,7 @@ import (
 	"io/fs"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
@@ -49,6 +50,7 @@ func NewBundler(path util.Path, manifest *Manifest, pythonRequirements []byte, l
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
+	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
 	symlinkWalker := util.NewSymlinkWalker(excluder, log)
 
 	return &bundler{
@@ -75,6 +77,7 @@ func NewBundlerForManifest(dir util.Path, manifest *Manifest, log logging.Logger
 	if err != nil {
 		return nil, err
 	}
+	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
 	return &bundler{
 		manifest: manifest,
 		baseDir:  absDir,
