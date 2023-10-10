@@ -20,3 +20,21 @@ jobs:
           path: bin
       - run: chmod -R +x ./bin
       - run: just cy
+  bats:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      DOCKER: false
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: extractions/setup-just@v1
+      - uses: actions/download-artifact@v3
+        with:
+          name: executables
+          path: bin
+      - run: chmod -R +x ./bin
+      - run: just bats

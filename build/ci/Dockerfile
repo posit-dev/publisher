@@ -34,11 +34,6 @@ RUN go env -w GOBIN=/usr/local/go/bin\
 
 RUN git config --global --add safe.directory '*'
 
-RUN git clone https://github.com/bats-core/bats-core.git\
-    && ./bats-core/install.sh /usr/local\
-    && git clone https://github.com/ztombol/bats-support.git\
-    && git clone https://github.com/ztombol/bats-assert.git
-
 # NodeJS is required by this project. The source code for the client is written in it!
 RUN apt-get update\
     && apt-get install -y\
