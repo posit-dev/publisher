@@ -1,7 +1,13 @@
-export CYPRESS_CACHE_FOLDER := "./cypress/.cache"
+alias b := build
+alias c := clean
+alias i := install
+alias l := lint
+alias p := preview
+alias r := run
+alias t := test
+alias w := watch
 
-# Executes clean, install, test, build
-default: install lint test build
+export CYPRESS_CACHE_FOLDER := "./cypress/.cache"
 
 _ci := "${CI:-false}"
 
@@ -11,6 +17,17 @@ _with_debug := if env_var_or_default("DEBUG", "true") == "true" {
         ""
     }
 
+default:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just install
+    just lint
+    just test
+    just build
+
+
 # Compiles the static assests for the web client. Static assets are written to `./web/dist`.
 build:
     #!/usr/bin/env bash
@@ -19,7 +36,7 @@ build:
 
     npm run build
 
-# Deletes ephermal project files (i.e., cleans the project).
+# Deletes ephemeral project files (i.e., cleans the project).
 clean:
     #!/usr/bin/env bash
     set -eou pipefail

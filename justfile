@@ -1,5 +1,12 @@
-# Executes clean, image, lint, test, build
-default: clean image lint test build
+alias b := build
+alias c := clean
+alias co := cover
+alias i := image
+alias l := lint
+alias r := run
+alias t := test
+alias w := web
+alias v := version
 
 _ci := "${CI:-false}"
 
@@ -23,6 +30,16 @@ _uid_args := if "{{ os_family() }}" == "unix" {
         ""
     }
 
+default:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just clean
+    just lint
+    just test
+    just build
+
 # Compiles the application using Go. Executables are written to `./dist`. If invoked with `env CI=true` then executables for all supported architectures using the Go toolchain.
 build:
     #!/usr/bin/env bash
@@ -31,7 +48,7 @@ build:
 
     just _with_docker env MODE={{ _mode }} ./scripts/build.bash {{ _cmd }}
 
-# Deletes ephermal project files (i.e., cleans the project).
+# Deletes ephemeral project files (i.e., cleans the project).
 clean:
     #!/usr/bin/env bash
     set -eou pipefail
