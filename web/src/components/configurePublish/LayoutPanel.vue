@@ -4,8 +4,7 @@
   <q-expansion-item
     :default-opened="defaultOpen"
     :expand-icon="expandIcon"
-    header-class="q-px-none"
-    :style="headerStyle"
+    :header-style="headerStyle"
     :group="group"
     @before-show="onBeforeShow"
     @before-hide="onBeforeHide"
@@ -49,6 +48,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useColorStore } from 'src/stores/color';
+import { colorToHex } from 'src/utils/colorValues';
 
 const colorStore = useColorStore();
 
@@ -70,23 +70,40 @@ const onBeforeHide = () => {
   isOpen.value = false;
 };
 
-const headerStyle = computed(() : string => {
-  const bg = isOpen.value ?
-    `${colorStore.activePallete.expansion.header.open.background}` :
-    `${colorStore.activePallete.expansion.header.closed.background}`;
-  const text = isOpen.value ?
-    `${colorStore.activePallete.expansion.header.open.text}` :
-    `${colorStore.activePallete.expansion.header.closed.text}`;
+const headerStyle = computed(() : string[] => {
+  const styles = [
+    `border-left: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;`,
+    `border-top: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;`,
+    `border-right: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;`,
+  ];
+  if (isOpen.value) {
+    styles.push(`border-bottom: none !important;`);
+  } else {
+    styles.push(`border-bottom: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;`);
+  }
 
-  return `
-    background-color: ${bg};
-    color: ${text};
-  `;
+  const bg = isOpen.value ?
+    `${colorToHex(colorStore.activePallete.expansion.header.open.background)}` :
+    `${colorToHex(colorStore.activePallete.expansion.header.closed.background)}`;
+  styles.push(`background-color: ${bg} !important;`);
+
+  const text = isOpen.value ?
+    `${colorToHex(colorStore.activePallete.expansion.header.open.text)}` :
+    `${colorToHex(colorStore.activePallete.expansion.header.closed.text)}`;
+  styles.push(`color: ${text} !important;`);
+  return styles;
 });
+
 const cardStyle = computed(() : string => {
-  return `
-    background-color: ${colorStore.activePallete.expansion.card.background};
-    color: ${colorStore.activePallete.expansion.card.text};
-  `;
+  const result = (`
+    border-left: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;
+    border-top: none !important;
+    border-right: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;
+    border-bottom: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;
+    background-color: ${colorToHex(colorStore.activePallete.expansion.card.background)} !important;
+    color: ${colorToHex(colorStore.activePallete.expansion.card.text)} !important;
+  `);
+  console.log(`cardStyle = ${result}`);
+  return result;
 });
 </script>

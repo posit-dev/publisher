@@ -6,6 +6,7 @@
   >
     <q-input
       v-model="title"
+      :color="colorStore.activePallete.textInput.active"
       label="Title"
       outlined
       dense
@@ -28,6 +29,9 @@
 
 import { ref } from 'vue';
 import { useApi } from 'src/api';
+import { useColorStore } from 'src/stores/color';
+
+const colorStore = useColorStore();
 
 const emit = defineEmits(['publish']);
 

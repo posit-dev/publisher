@@ -12,8 +12,8 @@
         <WhitePositLogo
           width="70px"
           height="30px"
-          :fill="colorStore.activePallete.logo.fill"
-          :stroke="colorStore.activePallete.logo.stroke"
+          :fill="colorToHex(colorStore.activePallete.logo.fill)"
+          :stroke="colorToHex(colorStore.activePallete.logo.stroke)"
           alt="Posit PBC Logo"
         />
         <q-toolbar-title class="q-pl-xs">
@@ -49,7 +49,8 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
-import { useColorStore } from './stores/color';
+import { useColorStore } from 'src/stores/color';
+import { colorToHex } from 'src/utils/colorValues';
 
 import { EventStream } from 'src/api/resources/EventStream';
 import {
@@ -109,7 +110,7 @@ const incomingEvent = (msg: EventStreamMessage) => {
 };
 eventStream.addEventMonitorCallback('*', incomingEvent);
 
-eventStream.setDebugMode(true);
+eventStream.setDebugMode(false);
 eventStream.open('/api/events?stream=messages');
 console.log(eventStream.status());
 
@@ -120,3 +121,19 @@ onBeforeUnmount(() => {
 
 getInitialDeploymentState();
 </script>
+
+<style lang="scss">
+// Add colors to Quasar Palette (white and black)
+.text-white {
+  color: white !important;
+}
+.bg-white {
+  background: white !important;
+}
+.text-black {
+  color: black !important;
+}
+.bg-black {
+  background: black !important;
+}
+</style>
