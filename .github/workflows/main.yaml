@@ -10,6 +10,9 @@ jobs:
     uses: ./.github/workflows/web.yaml
   build:
     uses: ./.github/workflows/build.yaml
-  e2e:
+  bats:
     needs: build
-    uses: ./.github/workflows/e2e.yaml
+    uses: ./.github/workflows/bats.yaml
+  cypress:
+    needs: build
+    uses: ./.github/workflows/cypress.yaml

@@ -12,6 +12,8 @@ _ci := "${CI:-false}"
 
 _docker := env_var_or_default("DEBUG", "true")
 
+_docker_platform := env_var_or_default("DOCKER_PLATFORM", env_var_or_default("DOCKER_DEFAULT_PLATFORM", "linux/amd64"))
+
 _cmd := "./cmd/connect-client"
 
 _interactive := `tty -s && echo "-it" || echo ""`
@@ -198,6 +200,7 @@ _with_docker *args:
         -e GOCACHE=/work/.cache/go/cache\
         -e GOMODCACHE=/work/.cache/go/mod\
         -e MODE={{ _mode }}\
+        --platform {{ _docker_platform }}\
         -v "$(pwd)":/work\
         -w /work\
         $(just tag) {{ args }}

@@ -1,0 +1,51 @@
+name: Bats
+on:
+  workflow_call:
+jobs:
+  native:
+    env:
+      DOCKER: false
+    strategy:
+      matrix:
+        runner: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: extractions/setup-just@v1
+      - uses: actions/download-artifact@v3
+        with:
+          name: executables
+          path: bin
+      - run: chmod -R +x ./bin
+      - run: just bats
+  docker:
+    strategy:
+      matrix:
+        docker-platform: ["linux/amd64", "linux/arm64"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: extractions/setup-just@v1
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - id: get-tag
+        run: echo "tag=$(just tag)" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./build/ci/Dockerfile
+          load: true
+          tags: ${{ steps.get-tag.outputs.tag }}
+          platforms: ${{ matrix.docker-platform }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - uses: actions/download-artifact@v3
+        with:
+          name: executables
+          path: bin
+      - run: chmod -R +x ./bin
+      - run: just bats
