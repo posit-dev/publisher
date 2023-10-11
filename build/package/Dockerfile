@@ -5,8 +5,8 @@ RUN yum update -y \
     && yum install -y curl git openssl mailcap tzdata xz nodejs xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GConf2 nss libXScrnSaver alsa-lib python3 \
     && yum groupinstall -y "Development Tools"
 
-RUN export GOLANG_VERSION=1.21.0 \
-    && export GOLANG_DOWNLOAD_SHA256=d0398903a16ba2232b389fb31032ddf57cac34efda306a0eebac34f0965a0742 \
+RUN export GOLANG_VERSION=1.21.3 \
+    && export GOLANG_DOWNLOAD_SHA256=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8 \
     && curl -fsSL "https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz" -o golang.tar.gz \
     && echo "${GOLANG_DOWNLOAD_SHA256}  golang.tar.gz" | sha256sum -c - \
     && tar -C /usr/local -xzf golang.tar.gz \
