@@ -17,6 +17,7 @@
     </div>
     <div class="q-mt-lg">
       <h4>Temporary Event Display for Publishing Process</h4>
+      <PublishSummary />
       <PublishStepper />
       <div
         v-for="(eventItem, index) in events"
