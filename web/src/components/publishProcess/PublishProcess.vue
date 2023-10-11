@@ -46,10 +46,10 @@ const onBackButton = () => {
 const publishInProgress = ref(true);
 
 const progressTitle = computed(() => {
-  const name = deploymentStore.deployment?.sourcePath;
+  const path = deploymentStore.deployment?.sourcePath;
   const target = deploymentStore.deployment?.target.accountName;
   if (publishInProgress.value) {
-    return `Publishing '${name}' to ${target}...`;
+    return `Publishing '${path}' to ${target}...`;
   }
   return `'' has been published to ${target}`;
 });
