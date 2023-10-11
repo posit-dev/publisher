@@ -51,7 +51,7 @@ const progressTitle = computed(() => {
   if (publishInProgress.value) {
     return `Publishing '${path}' to ${target}...`;
   }
-  return `'' has been published to ${target}`;
+  return `'${path}' has been published to ${target}`;
 });
 
 const publishingComplete = (msg: PublishSuccess) => {
