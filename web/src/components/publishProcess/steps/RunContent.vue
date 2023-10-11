@@ -31,6 +31,9 @@ const startCb = $eventStream.addEventMonitorCallback('publish/runContent/start',
   messages.value.push(msg.data.message);
   emit('start');
 });
+const logCb = $eventStream.addEventMonitorCallback('publish/runContent/log', (msg) => {
+  messages.value.push(msg.data.message);
+});
 const successCb = $eventStream.addEventMonitorCallback('publish/runContent/success', (msg) => {
   messages.value.push(msg.data.message);
   done.value = true;
@@ -39,6 +42,7 @@ const successCb = $eventStream.addEventMonitorCallback('publish/runContent/succe
 
 onBeforeUnmount(() => {
   $eventStream.delEventFilterCallback(startCb);
+  $eventStream.delEventFilterCallback(logCb);
   $eventStream.delEventFilterCallback(successCb);
 });
 </script>

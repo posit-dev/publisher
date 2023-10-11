@@ -31,6 +31,9 @@ const startCb = $eventStream.addEventMonitorCallback('publish/createBundle/start
   messages.value.push(msg.data.message);
   emit('start');
 });
+const logCb = $eventStream.addEventMonitorCallback('publish/createBundle/log', (msg) => {
+  messages.value.push(msg.data.message);
+});
 const successCb = $eventStream.addEventMonitorCallback('publish/createBundle/success', (msg) => {
   messages.value.push(msg.data.message);
   done.value = true;
@@ -39,6 +42,7 @@ const successCb = $eventStream.addEventMonitorCallback('publish/createBundle/suc
 
 onBeforeUnmount(() => {
   $eventStream.delEventFilterCallback(startCb);
+  $eventStream.delEventFilterCallback(logCb);
   $eventStream.delEventFilterCallback(successCb);
 });
 </script>
