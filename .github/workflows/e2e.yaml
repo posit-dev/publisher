@@ -41,5 +41,3 @@ jobs:
         shell: bash
         run: echo "executable-path=$(just executable-path)" >> "$GITHUB_OUTPUT"
       - run: just bats
-        env:
-          EXE: ${{ steps.get-executable-path.outputs.executable-path }}

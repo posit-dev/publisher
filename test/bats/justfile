@@ -44,4 +44,11 @@ test:
     set -eou pipefail
     {{ _with_debug }}
 
-    npm test
+    exe=$(just ../../executable-path)
+
+    if [ ! -f $exe ]; then
+        echo "error: Missing executable. Run \`just build\`." 1>&2
+        exit 1
+    fi
+
+    EXE=$exe npm test
