@@ -7,7 +7,7 @@
     icon="publish"
     summary="Associating the uploaded bundle with the deployment object."
     :done="done"
-    :logs="logs"
+    :logs="messages"
   />
 </template>
 
@@ -25,14 +25,14 @@ const emit = defineEmits(['start', 'done']);
 const $eventStream = useEventStream();
 
 const done = ref(false);
-const logs = ref<string[]>([]);
+const messages = ref<string[]>([]);
 
 const startCb = $eventStream.addEventMonitorCallback('publish/deployBundle/start', (msg) => {
-  logs.value.push(JSON.stringify(msg));
+  messages.value.push(msg.data.message);
   emit('start');
 });
 const successCb = $eventStream.addEventMonitorCallback('publish/deployBundle/success', (msg) => {
-  logs.value.push(JSON.stringify(msg));
+  messages.value.push(msg.data.message);
   done.value = true;
   emit('done');
 });

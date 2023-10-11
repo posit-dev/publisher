@@ -7,7 +7,7 @@
     icon="move_down"
     summary="Installing the dependent python packages on the server in order to reproduce your runtime environment."
     :done="done"
-    :logs="logs"
+    :logs="messages"
   />
 </template>
 
@@ -25,14 +25,14 @@ const emit = defineEmits(['start', 'done']);
 const $eventStream = useEventStream();
 
 const done = ref(false);
-const logs = ref<string[]>([]);
+const messages = ref<string[]>([]);
 
 const startCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/start', (msg) => {
-  logs.value.push(JSON.stringify(msg));
+  messages.value.push(msg.data.message);
   emit('start');
 });
 const successCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/success', (msg) => {
-  logs.value.push(JSON.stringify(msg));
+  messages.value.push(msg.data.message);
   done.value = true;
   emit('start');
 });

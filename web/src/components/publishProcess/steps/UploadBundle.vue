@@ -7,7 +7,7 @@
     icon="login"
     summary="Transferring the files from your local workstation to the server."
     :done="done"
-    :logs="logs"
+    :logs="messages"
   />
 </template>
 
@@ -25,14 +25,14 @@ const emit = defineEmits(['start', 'done']);
 const $eventStream = useEventStream();
 
 const done = ref(false);
-const logs = ref<string[]>([]);
+const messages = ref<string[]>([]);
 
 const startCb = $eventStream.addEventMonitorCallback('publish/uploadBundle/start', (msg) => {
-  logs.value.push(JSON.stringify(msg));
+  messages.value.push(msg.data.message);
   emit('start');
 });
 const successCb = $eventStream.addEventMonitorCallback('publish/uploadBundle/success', (msg) => {
-  logs.value.push(JSON.stringify(msg));
+  messages.value.push(msg.data.message);
   done.value = true;
   emit('done');
 });
