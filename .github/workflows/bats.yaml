@@ -48,3 +48,5 @@ jobs:
           path: bin
       - run: chmod -R +x ./bin
       - run: just bats
+        env:
+          DOCKER_PLATFORM: ${{ matrix.docker-platform }}
