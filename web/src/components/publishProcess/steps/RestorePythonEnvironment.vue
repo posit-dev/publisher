@@ -34,6 +34,9 @@ const startCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/s
 const logCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/log', (msg) => {
   messages.value.push(msg.data.message);
 });
+const progressCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/progress', (msg) => {
+  messages.value.push(msg.data.message);
+});
 const successCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/success', (msg) => {
   messages.value.push(msg.data.message);
   done.value = true;
@@ -43,6 +46,7 @@ const successCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv
 onBeforeUnmount(() => {
   $eventStream.delEventFilterCallback(startCb);
   $eventStream.delEventFilterCallback(logCb);
+  $eventStream.delEventFilterCallback(progressCb);
   $eventStream.delEventFilterCallback(successCb);
 });
 </script>
