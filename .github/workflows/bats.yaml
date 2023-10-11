@@ -42,7 +42,6 @@ jobs:
           tags: ${{ steps.get-tag.outputs.tag }}
           platforms: ${{ matrix.docker-platform }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
       - uses: actions/download-artifact@v3
         with:
           name: executables
