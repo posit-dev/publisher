@@ -545,7 +545,7 @@ export interface PublishSuccess extends EventStreamMessage {
     level: string,
     message: string,
     contentId: string,
-    datashboardUrl: string,
+    dashboardUrl: string,
     directUrl: string,
     localId: string,
     serverUrl: string,
