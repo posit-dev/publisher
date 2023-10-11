@@ -31,10 +31,10 @@
     <RunContent
       :name="6"
       @start="openStep = 6"
+      @done="openStep = 7"
     />
     <WrappingUpDeployment
       :name="7"
-      @start="openStep = 7"
     />
   </q-stepper>
 </template>
