@@ -170,19 +170,6 @@ describe('description', () => {
       connect: {
         connect: {
           name: '',
-          connectionTimeout: null,
-          readTimeout: null,
-          initTimeout: null,
-          idleTimeout: null,
-          maxProcesses: null,
-          minProcesses: null,
-          maxConnsPerProcess: null,
-          loadFactor: null,
-          runAsCurrentUser: null,
-          memoryRequest: null,
-          memoryLimit: null,
-          cpuRequest: null,
-          cpuLimit: null
         },
         environment: [
           {
@@ -200,4 +187,3 @@ describe('description', () => {
     expect(wrapper.text()).toContain('4 files selected from test/sample-content/fastapi-simple (total = 1.0 KB)');
   });
 });
-
