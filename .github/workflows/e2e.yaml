@@ -38,6 +38,7 @@ jobs:
           path: bin
       - run: chmod -R +x ./bin
       - id: get-executable-path
+        shell: bash
         run: echo "executable-path=$(just executable-path)" >> "$GITHUB_OUTPUT"
       - run: just bats
         env:
