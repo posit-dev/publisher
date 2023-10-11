@@ -7,7 +7,7 @@
   >
     <div>
       <q-btn
-        :disable="backButtonDisabled"
+        :disable="publishInProgress"
         icon="arrow_back"
         label="Back"
         data-automation="BackToConfiguration"
@@ -16,7 +16,9 @@
       />
     </div>
     <div class="q-mt-lg">
-      <h4>Temporary Event Display for Publishing Process</h4>
+      <h6 class="q-my-sm">
+        {{ progressTitle }}
+      </h6>
       <PublishSummary />
       <PublishStepper />
       <div
@@ -35,10 +37,12 @@
 <script setup lang="ts">
 
 import { EventStreamMessage, PublishSuccess } from 'src/api/types/events';
-import { PropType, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, PropType, onBeforeUnmount, ref, watch } from 'vue';
 import { scroll as qScroll } from 'quasar';
 import { useEventStream } from 'src/plugins/eventStream';
 import PublishStepper from 'src/components/publishProcess/PublishStepper.vue';
+import PublishSummary from 'src/components/publishProcess/PublishSummary.vue';
+import { useDeploymentStore } from 'src/stores/deployment';
 
 const { getScrollTarget, setVerticalScrollPosition } = qScroll;
 
@@ -50,7 +54,7 @@ const props = defineProps({
 });
 
 const $eventStream = useEventStream();
-
+const deploymentStore = useDeploymentStore();
 const agentLogEnd = ref<HTMLDivElement | null>(null);
 
 const emit = defineEmits(['back']);
@@ -59,10 +63,19 @@ const onBackButton = () => {
   emit('back');
 };
 
-const backButtonDisabled = ref(true);
+const publishInProgress = ref(true);
+
+const progressTitle = computed(() => {
+  const name = deploymentStore.deployment?.sourcePath;
+  const target = deploymentStore.deployment?.target.accountName;
+  if (publishInProgress.value) {
+    return `Publishing '${name}' to ${target}...`;
+  }
+  return `'' has been published to ${target}`;
+});
 
 const publishingComplete = (msg: PublishSuccess) => {
-  backButtonDisabled.value = false;
+  publishInProgress.value = false;
   console.log(`msg: ${JSON.stringify(msg)}`);
 };
 $eventStream.addEventMonitorCallback('publish/success', publishingComplete);
