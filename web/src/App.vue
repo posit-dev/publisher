@@ -30,7 +30,6 @@
       <PublishProcess
         v-if="currentView === 'publish'"
         :events="allEvents"
-        :event-stream="eventStream"
         @back="onConfigure"
       />
     </q-page-container>
@@ -51,13 +50,13 @@ import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
 import { useColorStore } from './stores/color';
 
-import { EventStream } from 'src/api/resources/EventStream';
 import {
   EventStreamMessage,
   isPublishStart,
   isPublishSuccess,
   getLocalId,
 } from 'src/api/types/events';
+import { useEventStream } from 'src/plugins/eventStream';
 
 type viewType = 'configure' | 'publish';
 
@@ -69,7 +68,8 @@ const colorStore = useColorStore();
 const $q = useQuasar();
 $q.dark.set('auto');
 
-const eventStream = new EventStream();
+const $eventStream = useEventStream();
+
 // Temporary storage of events
 const allEvents = ref<EventStreamMessage[]>([]);
 
@@ -107,15 +107,15 @@ const incomingEvent = (msg: EventStreamMessage) => {
   }
   allEvents.value.push(msg);
 };
-eventStream.addEventMonitorCallback('*', incomingEvent);
 
-eventStream.setDebugMode(true);
-eventStream.open('/api/events?stream=messages');
-console.log(eventStream.status());
+$eventStream.addEventMonitorCallback('*', incomingEvent);
+$eventStream.setDebugMode(true);
+$eventStream.open('/api/events?stream=messages');
+console.log($eventStream.status());
 
 // Have to be sure to close connection or it will be leaked on agent (if it continues to run)
 onBeforeUnmount(() => {
-  eventStream.close();
+  $eventStream.close();
 });
 
 getInitialDeploymentState();
