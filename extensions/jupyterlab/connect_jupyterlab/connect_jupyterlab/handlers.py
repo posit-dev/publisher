@@ -48,11 +48,6 @@ class PublishHandler(APIHandler):
             self.set_status(500)
             self.finish(str(exc))
 
-    @authenticated
-    def get(self) -> None:
-        """get returns the status of the publishing process. Details TBD."""
-        self.finish(json.dumps({"data": "GET /connect-jupyterlab/publish endpoint!"}))
-
 
 class UIHandler(LocalProxyHandler):
     """UIHandler proxies requests to a running agent instance.
