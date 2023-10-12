@@ -1,6 +1,5 @@
 # Contributing
 
-
 ## Development
 
 ### Build Tools
