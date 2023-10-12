@@ -139,7 +139,7 @@ def launch_ui(
         "--title",
         title,
         "-n",
-        "local",  # cheating, no target selection in the UI yet
+        "dogfood",  # cheating, no target selection in the UI yet
     ]
     log.info("Starting: %s", " ".join(map(shlex.quote, args)))
     try:
