@@ -132,6 +132,6 @@ const credentialStyle = computed(() => {
     font-size: x-small; 
     text-align: end;
   `;
-})
+});
 
 </script>
