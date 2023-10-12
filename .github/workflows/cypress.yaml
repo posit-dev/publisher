@@ -1,8 +1,8 @@
-name: E2E
+name: Cypress
 on:
   workflow_call:
 jobs:
-  cypress:
+  native:
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]

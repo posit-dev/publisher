@@ -10,21 +10,31 @@ alias v := version
 
 _ci := "${CI:-false}"
 
-_docker := env_var_or_default("DEBUG", "true")
-
 _cmd := "./cmd/connect-client"
+
+_debug := env_var_or_default("DEBUG", "true")
+
+_docker := env_var_or_default("DOCKER", "true")
+
+_docker_file := "./build/ci/Dockerfile"
+
+_docker_image_name := "rstudio/connect-client"
+
+_docker_platform := env_var_or_default("DOCKER_PLATFORM", env_var_or_default("DOCKER_DEFAULT_PLATFORM", "linux/amd64"))
+
+_github_actions := env_var_or_default("GITHUB_ACTIONS", "false")
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
 _mode := "${MODE:-dev}"
 
-_with_debug := if env_var_or_default("DEBUG", "true") == "true" {
+_with_debug := if _debug == "true" {
         "set -x pipefail"
     } else {
         ""
     }
 
-_uid_args := if "{{ os_family() }}" == "unix" {
+_uid_args := if os_family() == "unix" {
         "-u $(id -u):$(id -g)"
     } else {
         ""
@@ -39,6 +49,14 @@ default:
     just lint
     just test
     just build
+
+# Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`, but inside of Docker (i.e., just _with_docker just test/bats/).
+bats *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just test/bats/{{ args }}
 
 # Compiles the application using Go. Executables are written to `./dist`. If invoked with `env CI=true` then executables for all supported architectures using the Go toolchain.
 build:
@@ -90,11 +108,30 @@ image:
         exit 0
     fi
 
-    docker build \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --pull \
+    case {{ _docker_platform }} in
+        "linux/amd64")
+            gochecksum=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8
+            ;;
+        "linux/arm64")
+            gochecksum=fc90fa48ae97ba6368eecb914343590bbb61b388089510d0c56c2dde52987ef3
+            ;;
+        *)
+            echo "error: DOCKER_PLATFORM not supported. Found \`"{{ _docker_platform }}"\`." 1>&2
+            exit 1
+            ;;
+        esac
+
+    docker buildx build \
+        --build-arg "GOVERSION=1.21.3"\
+        --build-arg "GOCHECKSUM=${gochecksum}"\
+        --cache-from type=gha\
+        --cache-to type=gha\
+        --file {{ _docker_file }}\
+        --load\
+        --platform {{ _docker_platform }}\
+        --progress plain\
         --tag $(just tag) \
-        ./build/ci
+        .
 
 # staticcheck, vet, and format check
 lint: stub
@@ -143,7 +180,7 @@ tag:
     set -eou pipefail
     {{ _with_debug }}
 
-    echo "rstudio/connect-client:"$(just version)
+    echo {{ _docker_image_name }}":"$(just version)
 
 # Execute unit tests.
 test: stub
@@ -175,7 +212,7 @@ _with_docker *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    if ! ${DOCKER-true}; then
+    if ! {{ _docker }}; then
         {{ args }}
         exit 0
     fi
@@ -186,10 +223,12 @@ _with_docker *args:
 
     docker run --rm {{ _interactive }}\
         -e CI={{ _ci }}\
+        -e DEBUG={{ _debug }}\
         -e DOCKER=false\
         -e GOCACHE=/work/.cache/go/cache\
         -e GOMODCACHE=/work/.cache/go/mod\
         -e MODE={{ _mode }}\
+        --platform {{ _docker_platform }}\
         -v "$(pwd)":/work\
         -w /work\
         $(just tag) {{ args }}
