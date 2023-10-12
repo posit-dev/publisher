@@ -1,7 +1,10 @@
 FROM ubuntu:jammy
 
-RUN apt-get update\
-    && apt-get install -y \
+RUN \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked\
+    --mount=type=cache,target=/var/lib/apt,sharing=locked\
+    apt-get update\
+    && apt-get install -y\
         # curl is required in this file
         curl\
         # git is required in this file
@@ -31,7 +34,6 @@ ARG TARGETOS
 ARG GOVERSION=1.21.3
 ARG GOCHECKSUM=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8
 ARG GOARCHIVE=go$GOVERSION.$TARGETOS-$TARGETARCH.tar.gz
-
 RUN curl -L -O https://go.dev/dl/$GOARCHIVE\
     && echo "$GOCHECKSUM $GOARCHIVE" | sha256sum -c - \
     && rm -rf /usr/local/go\
@@ -45,10 +47,12 @@ RUN go env -w GOBIN=/usr/local/go/bin\
 
 # NodeJS is required by this project. The source code for the client is written in it!
 ARG NODEVERSION=18
-RUN apt-get update\
+RUN \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked\
+    --mount=type=cache,target=/var/lib/apt,sharing=locked\
+    apt-get update\
     && apt-get install -y\
         ca-certificates\
-        curl\
         gnupg\
     && mkdir -p /etc/apt/keyrings\
     && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg\

@@ -10,13 +10,19 @@ alias v := version
 
 _ci := "${CI:-false}"
 
+_cmd := "./cmd/connect-client"
+
 _debug := env_var_or_default("DEBUG", "true")
 
 _docker := env_var_or_default("DOCKER", "true")
 
+_docker_file := "./build/ci/Dockerfile"
+
+_docker_image_name := "rstudio/connect-client"
+
 _docker_platform := env_var_or_default("DOCKER_PLATFORM", env_var_or_default("DOCKER_DEFAULT_PLATFORM", "linux/amd64"))
 
-_cmd := "./cmd/connect-client"
+_github_actions := env_var_or_default("GITHUB_ACTIONS", "false")
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
@@ -115,15 +121,28 @@ image:
             ;;
         esac
 
+    case {{ _github_actions }} in
+        "true") cache_from="type=gha" ;;
+        *)      cache_from="type=inline" ;;
+    esac
 
-    docker build \
-        --build-arg "BUILDKIT_INLINE_CACHE=1" \
+    case {{ _github_actions }} in
+        "true") cache_to="type=gha" ;;
+        *)      cache_to="type=inline" ;;
+    esac
+
+    # /usr/bin/docker buildx build --cache-from type=gha --cache-to type=gha,mode=max --file ./build/ci/Dockerfile --iidfile /tmp/docker-actions-toolkit-4y1Oyi/iidfile --tag rstudio/connect-client:0.0.dev0-121-g73ba98a --load --metadata-file /tmp/docker-actions-toolkit-4y1Oyi/metadata-file .
+    docker buildx build \
         --build-arg "GOVERSION=1.21.3"\
         --build-arg "GOCHECKSUM=${gochecksum}"\
-        --platform "{{ _docker_platform }}"\
-        --pull \
+        --cache-from $cache_from\
+        --cache-to $cache_to\
+        --file {{ _docker_file }}\
+        --output type=docker,name={{ _docker_image_name }}\
+        --platform {{ _docker_platform }}\
+        --pull\
         --tag $(just tag) \
-        ./build/ci
+        .
 
 # staticcheck, vet, and format check
 lint: stub
@@ -172,7 +191,7 @@ tag:
     set -eou pipefail
     {{ _with_debug }}
 
-    echo "rstudio/connect-client:"$(just version)
+    echo {{ _docker_image_name }}":"$(just version)
 
 # Execute unit tests.
 test: stub
