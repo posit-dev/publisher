@@ -10,7 +10,9 @@ alias v := version
 
 _ci := "${CI:-false}"
 
-_docker := env_var_or_default("DEBUG", "true")
+_debug := env_var_or_default("DEBUG", "true")
+
+_docker := env_var_or_default("DOCKER", "true")
 
 _docker_platform := env_var_or_default("DOCKER_PLATFORM", env_var_or_default("DOCKER_DEFAULT_PLATFORM", "linux/amd64"))
 
@@ -20,7 +22,7 @@ _interactive := `tty -s && echo "-it" || echo ""`
 
 _mode := "${MODE:-dev}"
 
-_with_debug := if env_var_or_default("DEBUG", "true") == "true" {
+_with_debug := if "{{ _debug }}" == "true" {
         "set -x pipefail"
     } else {
         ""
@@ -186,7 +188,7 @@ _with_docker *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    if ! ${DOCKER-true}; then
+    if ! {{ _docker }}; then
         {{ args }}
         exit 0
     fi
@@ -197,6 +199,7 @@ _with_docker *args:
 
     docker run --rm {{ _interactive }}\
         -e CI={{ _ci }}\
+        -e DEBUG={{ _debug }}\
         -e DOCKER=false\
         -e GOCACHE=/work/.cache/go/cache\
         -e GOMODCACHE=/work/.cache/go/mod\
