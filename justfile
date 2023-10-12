@@ -109,8 +109,8 @@ image:
     fi
 
     docker buildx build \
-        --cache-from type=gha,scope=${GITHUB_REF:-}\
-        --cache-to type=gha,scope=${GITHUB_REF:-}\
+        --cache-from type=gha\
+        --cache-to type=gha,mode=max\
         --file {{ _docker_file }}\
         --load\
         --platform {{ _docker_platform }}\

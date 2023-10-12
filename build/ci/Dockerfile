@@ -1,7 +1,7 @@
 # Base the image on the target platform. This will use emulation when running on native archiectures when supported.
 # Docker Desktop provides binfmt_misc multi-architecture support, which means you can run containers for different Linux architectures such as arm, mips, ppc64le, and even s390x.
 # See https://docs.docker.com/build/building/multi-platform
-FROM --platform=$TARGETPLATFORM ubuntu:jammy
+FROM --platform=$BUILDPLATFORM ubuntu:jammy
 
 RUN apt-get update\
     && apt-get install -y\
@@ -28,25 +28,25 @@ RUN git config --global --add safe.directory '*'
 # Just is required for this project (see justfile, ./web/justfile, etc.)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
-# The Go archive checksum is looked up in the following script.
-COPY ./scripts/get-go-checksum.bash ./scripts/get-go-checksum.bash
-
 # Go is required by this project. The source code is written in it!
+ARG BUILDOS
+ARG BUILDARCH
+ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
-ARG TARGETPLATFORM
-# When updating, don't forget to update ./scripts/get-go-checksum.bash
 ARG GOVERSION=1.21.3
-ARG GOARCHIVE=go$GOVERSION.$TARGETOS-$TARGETARCH.tar.gz
+ARG GOCHECKSUM=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8
+ARG GOARCHIVE=go$GOVERSION.linux-amd64.tar.gz
+ENV PATH="$PATH:/usr/local/go/bin"
 RUN curl -L -O https://go.dev/dl/$GOARCHIVE\
-    && echo "$(./scripts/get-go-checksum.bash $TARGETPLATFORM) $GOARCHIVE" | sha256sum -c - \
+    && echo "$GOCHECKSUM $GOARCHIVE" | sha256sum -c - \
     && rm -rf /usr/local/go\
     && tar -C /usr/local -xzf $GOARCHIVE\
-    && rm $GOARCHIVE
-ENV PATH="$PATH:/usr/local/go/bin"
-
-# staticcheck is required to for linting Go
-RUN go env -w GOBIN=/usr/local/go/bin\
+    && rm $GOARCHIVE\
+    # && go env -w GOBIN=/usr/local/go/bin\
+    && go env -w GOOS=$TARGETOS\
+    && go env -w GOARCH=$TARGETARCH\
+    # staticcheck is required to for linting Go
     && go install honnef.co/go/tools/cmd/staticcheck@latest
 
 # NodeJS is required by this project. The source code for the client is written in it!
