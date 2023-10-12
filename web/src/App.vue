@@ -29,7 +29,6 @@
       />
       <PublishProcess
         v-if="currentView === 'publish'"
-        :events="allEvents"
         @back="onConfigure"
       />
     </q-page-container>
