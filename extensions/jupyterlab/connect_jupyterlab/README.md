@@ -19,6 +19,11 @@ To install the extension, execute:
 pip install connect_jupyterlab
 ```
 
+Ensure that the agent executable is on PATH, e.g.
+```
+export PATH=$(pwd)/bin/darwin-amd64:$PATH
+```
+
 ## Uninstall
 
 To remove the extension, execute:
