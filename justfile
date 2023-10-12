@@ -102,6 +102,7 @@ image:
 
     docker build \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --platform {{ _docker_platform }}\
         --pull \
         --tag $(just tag) \
         ./build/ci

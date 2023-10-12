@@ -23,9 +23,12 @@ RUN apt-get update\
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
 # Go is required by this project. The source code is written in it!
-RUN curl -L -O https://go.dev/dl/go1.21.1.linux-amd64.tar.gz\
+ARG TARGETARCH
+ARG TARGETOS
+ARG GOARCHIVE=go1.21.1.$TARGETOS-$TARGETARCH.tar.gz
+RUN curl -L -O "https://go.dev/dl/$GOARCHIVE"\
     && rm -rf /usr/local/go\
-    && tar -C /usr/local -xzf go1.21.1.linux-amd64.tar.gz
+    && tar -C /usr/local -xzf $GOARCHIVE
 ENV PATH="$PATH:/usr/local/go/bin"
 
 # staticcheck is required to for linting Go
