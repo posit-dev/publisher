@@ -122,12 +122,12 @@ image:
         esac
 
     case {{ _github_actions }} in
-        "true") cache_from="type=gha" ;;
+        "true") cache_from="type=gha,token=${ACTIONS_RUNTIME_TOKEN:-},scope=${GITHUB_REF_NAME:-},url=${ACTIONS_CACHE_URL:-}" ;;
         *)      cache_from="type=inline" ;;
     esac
 
     case {{ _github_actions }} in
-        "true") cache_to="type=gha,mode=max" ;;
+        "true") cache_to="type=gha,mode=max,token=${ACTIONS_RUNTIME_TOKEN:-},scope=${GITHUB_REF_NAME:-},url=${ACTIONS_CACHE_URL:-}" ;;
         *)      cache_to="type=inline" ;;
     esac
 
