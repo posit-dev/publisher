@@ -22,13 +22,13 @@ _interactive := `tty -s && echo "-it" || echo ""`
 
 _mode := "${MODE:-dev}"
 
-_with_debug := if "{{ _debug }}" == "true" {
+_with_debug := if _debug == "true" {
         "set -x pipefail"
     } else {
         ""
     }
 
-_uid_args := if "{{ os_family() }}" == "unix" {
+_uid_args := if os_family() == "unix" {
         "-u $(id -u):$(id -g)"
     } else {
         ""
@@ -117,10 +117,10 @@ image:
 
 
     docker build \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --build-arg GOVERSION=1.21.3\
-        --build-arg GOCHECKSUM=$gochecksum\
-        --platform {{ _docker_platform }}\
+        --build-arg "BUILDKIT_INLINE_CACHE=1" \
+        --build-arg "GOVERSION=1.21.3"\
+        --build-arg "GOCHECKSUM=${gochecksum}"\
+        --platform "{{ _docker_platform }}"\
         --pull \
         --tag $(just tag) \
         ./build/ci
