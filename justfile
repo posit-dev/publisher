@@ -122,21 +122,21 @@ image:
         esac
 
     case {{ _github_actions }} in
-        "true") cache_from="type=gha" ;;
-        *)      cache_from="type=inline" ;;
+        "true") cache_from="--cache-from type=gha" ;;
+        *)      cache_from="--cache-from type=inline" ;;
     esac
 
     case {{ _github_actions }} in
-        "true") cache_to="type=gha" ;;
-        *)      cache_to="type=inline" ;;
+        "true") cache_to="--cache-to type=gha" ;;
+        *)      cache_to="--cache-to type=inline" ;;
     esac
 
-    # /usr/bin/docker buildx build --cache-from type=gha --cache-to type=gha,mode=max --file ./build/ci/Dockerfile --iidfile /tmp/docker-actions-toolkit-4y1Oyi/iidfile --tag rstudio/connect-client:0.0.dev0-121-g73ba98a --load --metadata-file /tmp/docker-actions-toolkit-4y1Oyi/metadata-file .
     docker buildx build \
+        --builder ${DOCKER_BUILDER_NAME:=$(docker context show)}\
         --build-arg "GOVERSION=1.21.3"\
         --build-arg "GOCHECKSUM=${gochecksum}"\
-        --cache-from $cache_from\
-        --cache-to $cache_to\
+        $cache_from\
+        $cache_to\
         --file {{ _docker_file }}\
         --output type=docker,name={{ _docker_image_name }}\
         --platform {{ _docker_platform }}\
