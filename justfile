@@ -125,7 +125,7 @@ image:
         --build-arg "GOVERSION=1.21.3"\
         --build-arg "GOCHECKSUM=${gochecksum}"\
         --cache-from type=gha\
-        --cache-to type=gha,mode=max\
+        --cache-to type=gha\
         --file {{ _docker_file }}\
         --load\
         --platform {{ _docker_platform }}\
