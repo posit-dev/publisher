@@ -19,22 +19,28 @@ RUN apt-get update\
         xauth\
         xvfb
 
-# Just is required for this project (see Justfile, ./web/Justfile, ./tests/Justfile)
+# Mark all directories as safe for Git
+RUN git config --global --add safe.directory '*'
+
+# Just is required for this project (see justfile, ./web/justfile, etc.)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
 # Go is required by this project. The source code is written in it!
-RUN curl -L https://go.dev/dl/go1.21.3.linux-amd64.tar.gz -o go.tar.gz\
-    && echo "1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8 go.tar.gz" | sha256sum -c - \
+ARG TARGETARCH
+ARG TARGETOS
+ARG GOVERSION=1.21.3
+ARG GOARCHIVE=go$GOVERSION.$TARGETOS-$TARGETARCH.tar.gz
+ARG GOCHECKSUM=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8
+RUN curl -L -O https://go.dev/dl/$GOARCHIVE\
+    && echo "$GOCHECKSUM $GOARCHIVE" | sha256sum -c - \
     && rm -rf /usr/local/go\
-    && tar -C /usr/local -xzf go.tar.gz\
-    && rm go.tar.gz
+    && tar -C /usr/local -xzf $GOARCHIVE\
+    && rm $GOARCHIVE
 ENV PATH="$PATH:/usr/local/go/bin"
 
 # staticcheck is required to for linting Go
 RUN go env -w GOBIN=/usr/local/go/bin\
- && go install honnef.co/go/tools/cmd/staticcheck@latest
-
-RUN git config --global --add safe.directory '*'
+    && go install honnef.co/go/tools/cmd/staticcheck@latest
 
 # NodeJS is required by this project. The source code for the client is written in it!
 RUN apt-get update\
