@@ -1,9 +1,6 @@
 FROM ubuntu:jammy
 
-RUN \
-    --mount=type=cache,target=/var/cache/apt,sharing=locked\
-    --mount=type=cache,target=/var/lib/apt,sharing=locked\
-    apt-get update\
+RUN apt-get update\
     && apt-get install -y\
         # curl is required in this file
         curl\
@@ -47,10 +44,7 @@ RUN go env -w GOBIN=/usr/local/go/bin\
 
 # NodeJS is required by this project. The source code for the client is written in it!
 ARG NODEVERSION=18
-RUN \
-    --mount=type=cache,target=/var/cache/apt,sharing=locked\
-    --mount=type=cache,target=/var/lib/apt,sharing=locked\
-    apt-get update\
+RUN apt-get update\
     && apt-get install -y\
         ca-certificates\
         gnupg\
