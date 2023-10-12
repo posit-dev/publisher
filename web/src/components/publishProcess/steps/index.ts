@@ -1,3 +1,5 @@
+// Copyright (C) 2023 by Posit Software, PBC.
+
 export { default as CreateBundle } from './CreateBundle.vue';
 export { default as CreateDeployment } from './CreateDeployment.vue';
 export { default as DeployBundle } from './DeployBundle.vue';
