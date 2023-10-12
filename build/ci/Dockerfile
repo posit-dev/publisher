@@ -28,9 +28,10 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash 
 # Go is required by this project. The source code is written in it!
 ARG TARGETARCH
 ARG TARGETOS
-ARG GOVERSION=1.21.3
+ARG GOVERSION
+ARG GOCHECKSUM
 ARG GOARCHIVE=go$GOVERSION.$TARGETOS-$TARGETARCH.tar.gz
-ARG GOCHECKSUM=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8
+
 RUN curl -L -O https://go.dev/dl/$GOARCHIVE\
     && echo "$GOCHECKSUM $GOARCHIVE" | sha256sum -c - \
     && rm -rf /usr/local/go\

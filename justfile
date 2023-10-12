@@ -102,8 +102,24 @@ image:
         exit 0
     fi
 
+    case {{ _docker_platform }} in
+        "linux/amd64")
+            gochecksum=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8
+            ;;
+        "linux/arm64")
+            gochecksum=fc90fa48ae97ba6368eecb914343590bbb61b388089510d0c56c2dde52987ef3
+            ;;
+        *)
+            echo "error: DOCKER_PLATFORM not supported. Found \`"{{ _docker_platform }}"\`." 1>&2
+            exit 1
+            ;;
+        esac
+
+
     docker build \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --build-arg GOVERSION=1.21.3\
+        --build-arg GOCHECKSUM=$gochecksum\
         --platform {{ _docker_platform }}\
         --pull \
         --tag $(just tag) \
