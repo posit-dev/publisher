@@ -121,21 +121,11 @@ image:
             ;;
         esac
 
-    case {{ _github_actions }} in
-        "true") cache_from="type=gha" ;;
-        *)      cache_from="type=inline" ;;
-    esac
-
-    case {{ _github_actions }} in
-        "true") cache_to="type=gha,mode=max" ;;
-        *)      cache_to="type=inline" ;;
-    esac
-
     docker buildx build \
         --build-arg "GOVERSION=1.21.3"\
         --build-arg "GOCHECKSUM=${gochecksum}"\
-        --cache-from $cache_from\
-        --cache-to $cache_to\
+        --cache-from type=gha\
+        --cache-to type=gha,mode=max\
         --file {{ _docker_file }}\
         --load\
         --platform {{ _docker_platform }}\
