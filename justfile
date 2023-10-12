@@ -122,25 +122,24 @@ image:
         esac
 
     case {{ _github_actions }} in
-        "true") cache_from="--cache-from type=gha" ;;
-        *)      cache_from="--cache-from type=inline" ;;
+        "true") cache_from="type=gha" ;;
+        *)      cache_from="type=inline" ;;
     esac
 
     case {{ _github_actions }} in
-        "true") cache_to="--cache-to type=gha" ;;
-        *)      cache_to="--cache-to type=inline" ;;
+        "true") cache_to="type=gha,mode=max" ;;
+        *)      cache_to="type=inline" ;;
     esac
 
     docker buildx build \
-        --builder ${DOCKER_BUILDER_NAME:=$(docker context show)}\
         --build-arg "GOVERSION=1.21.3"\
         --build-arg "GOCHECKSUM=${gochecksum}"\
-        $cache_from\
-        $cache_to\
+        --cache-from $cache_from\
+        --cache-to $cache_to\
         --file {{ _docker_file }}\
-        --output type=docker,name={{ _docker_image_name }}\
+        --load\
         --platform {{ _docker_platform }}\
-        --pull\
+        --progress plain\
         --tag $(just tag) \
         .
 
