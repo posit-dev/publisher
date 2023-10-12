@@ -1,3 +1,6 @@
+# Base the image on the target platform. This will use emulation when running on native archiectures when supported.
+# Docker Desktop provides binfmt_misc multi-architecture support, which means you can run containers for different Linux architectures such as arm, mips, ppc64le, and even s390x.
+# See https://docs.docker.com/build/building/multi-platform
 FROM --platform=$TARGETPLATFORM ubuntu:jammy
 
 RUN apt-get update\
@@ -25,14 +28,18 @@ RUN git config --global --add safe.directory '*'
 # Just is required for this project (see justfile, ./web/justfile, etc.)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
+# The Go archive checksum is looked up in the following script.
+COPY ./scripts/get-go-checksum.bash ./scripts/get-go-checksum.bash
+
 # Go is required by this project. The source code is written in it!
-ARG TARGETARCH
 ARG TARGETOS
-ARG GOVERSION
-ARG GOCHECKSUM
+ARG TARGETARCH
+ARG TARGETPLATFORM
+# When updating, don't forget to update ./scripts/get-go-checksum.bash
+ARG GOVERSION=1.21.3
 ARG GOARCHIVE=go$GOVERSION.$TARGETOS-$TARGETARCH.tar.gz
 RUN curl -L -O https://go.dev/dl/$GOARCHIVE\
-    && echo "$GOCHECKSUM $GOARCHIVE" | sha256sum -c - \
+    && echo "$(./scripts/get-go-checksum.bash $TARGETPLATFORM) $GOARCHIVE" | sha256sum -c - \
     && rm -rf /usr/local/go\
     && tar -C /usr/local -xzf $GOARCHIVE\
     && rm $GOARCHIVE
