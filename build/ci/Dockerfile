@@ -1,11 +1,19 @@
 FROM --platform=$BUILDPLATFORM ubuntu:jammy
 
-RUN apt-get update\
+ARG NODEVERSION=18
+RUN \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update\
     && apt-get install -y\
+        # ca-certificates is required in this file
+        ca-certificates\
         # curl is required in this file
         curl\
         # git is required in this file
         git\
+        # gnupg is required in this file
+        gnupg\
         # The following are required by Cypress
         libgtk2.0-0\
         libgtk-3-0\
@@ -17,7 +25,14 @@ RUN apt-get update\
         libasound2\
         libxtst6\
         xauth\
-        xvfb
+        xvfb\
+        # NodeJS is required by this project. The source code for the client is written in it!
+        && mkdir -p /etc/apt/keyrings\
+        && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg\
+        && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODEVERSION.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list\
+        && apt-get update\
+        && apt-get install -y\
+            nodejs
 
 # Mark all directories as safe for Git
 RUN git config --global --add safe.directory '*'
@@ -38,16 +53,3 @@ RUN curl -L -O https://go.dev/dl/$GOARCHIVE\
     && go env -w GOPATH=/usr/local/go\
     # staticcheck is required to for linting Go
     && go install honnef.co/go/tools/cmd/staticcheck@latest
-
-# NodeJS is required by this project. The source code for the client is written in it!
-ARG NODEVERSION=18
-RUN apt-get update\
-    && apt-get install -y\
-        ca-certificates\
-        gnupg\
-    && mkdir -p /etc/apt/keyrings\
-    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg\
-    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODEVERSION.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list\
-    && apt-get update\
-    && apt-get install -y\
-        nodejs
