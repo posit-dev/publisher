@@ -62,6 +62,22 @@ export const useColorStore = defineStore('color', () => {
           },
         },
       },
+      progress: {
+        inactive: 'grey-5',
+        active: 'grey-4',
+        done: 'grey-6',
+        error: 'red-10',
+        summary: {
+          background: 'grey-9',
+          text: 'grey-4',
+          border: 'grey-6',
+        },
+        log: {
+          background: 'grey-10',
+          text: 'grey-6',
+          border: 'grey-6',
+        }
+      },
     },
     light: {
       textInput: {
@@ -110,6 +126,22 @@ export const useColorStore = defineStore('color', () => {
             text: 'black',
           },
         },
+      },
+      progress: {
+        inactive: 'grey-5',
+        active: 'black',
+        done: 'grey-8',
+        error: 'red-10',
+        summary: {
+          background: 'grey-1',
+          text: 'grey-8',
+          border: 'grey-8',
+        },
+        log: {
+          background: 'grey-3',
+          text: 'grey-8',
+          border: 'grey-8',
+        }
       },
     }
   };
