@@ -4,23 +4,6 @@ export type ConnectContent = {
     name: string;
     title?: string;
     description?: string;
-    accessType?: string;
-    connectionTimeout: number | null;
-    readTimeout: number | null;
-    initTimeout: number | null;
-    idleTimeout: number | null;
-    maxProcesses: number | null;
-    minProcesses: number | null;
-    maxConnsPerProcess: number | null;
-    loadFactor: number | null;
-    runAs?: string;
-    runAsCurrentUser: boolean | null;
-    memoryRequest: number | null;
-    memoryLimit: number | null;
-    cpuRequest: number | null;
-    cpuLimit: number | null;
-    serviceAccountName?: string;
-    defaultImageName?: string;
 }
 
 export type ConnectEnvironmentVariable = {

@@ -61,7 +61,7 @@ module.exports = {
 
     '@typescript-eslint/naming-convention': [
       'error',
-      { selector: ['variableLike', 'classProperty', 'typeProperty'], format: ['camelCase'], leadingUnderscore: 'allow' },
+      { selector: ['variableLike', 'classProperty'], format: ['camelCase'], leadingUnderscore: 'allow' },
       { selector: 'variable', modifiers: ['const'], format: ['camelCase', 'UPPER_CASE'], leadingUnderscore: 'allow' }
     ],
 

@@ -12,6 +12,7 @@ import (
 	"io/fs"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
@@ -27,7 +28,7 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequirements []byte, log logging.Logger) (*bundler, error) {
+func NewBundler(path util.Path, manifest *Manifest, pythonRequirements []byte, log logging.Logger) (*bundler, error) {
 	var dir util.Path
 	var filename string
 	isDir, err := path.IsDir()
@@ -45,10 +46,11 @@ func NewBundler(path util.Path, manifest *Manifest, ignores []string, pythonRequ
 	if err != nil {
 		return nil, err
 	}
-	excluder, err := gitignore.NewExcludingWalker(dir, ignores)
+	excluder, err := gitignore.NewExcludingWalker(dir, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
+	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
 	symlinkWalker := util.NewSymlinkWalker(excluder, log)
 
 	return &bundler{
@@ -75,6 +77,7 @@ func NewBundlerForManifest(dir util.Path, manifest *Manifest, log logging.Logger
 	if err != nil {
 		return nil, err
 	}
+	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
 	return &bundler{
 		manifest: manifest,
 		baseDir:  absDir,

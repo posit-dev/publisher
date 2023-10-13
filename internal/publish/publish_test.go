@@ -128,7 +128,7 @@ func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitEr
 	}
 	cmd.State.SourceDir = s.cwd
 
-	bundler, err := bundles.NewBundler(s.cwd, &cmd.State.Manifest, nil, nil, s.log)
+	bundler, err := bundles.NewBundler(s.cwd, &cmd.State.Manifest, nil, s.log)
 	s.NoError(err)
 
 	account := &accounts.Account{
