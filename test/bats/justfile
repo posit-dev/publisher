@@ -1,3 +1,7 @@
+alias c := clean
+alias i := install
+alias t := test
+
 _with_debug := if env_var_or_default("DEBUG", "true") == "true" {
         "set -x pipefail"
     } else {
