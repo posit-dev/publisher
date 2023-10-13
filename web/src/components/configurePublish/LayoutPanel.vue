@@ -70,6 +70,8 @@ const onBeforeHide = () => {
   isOpen.value = false;
 };
 
+// Have to do this because v-bind w/ CSS won't take a list of style attributes or string, just a single value
+// because of their implementation.
 const headerClass = computed(() => {
   return isOpen.value
     ? 'panel-header header-open-border-bottom'
