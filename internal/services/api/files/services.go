@@ -16,8 +16,7 @@ type FilesService interface {
 }
 
 func CreateFilesService(base util.Path, afs afero.Fs, log logging.Logger) FilesService {
-	f := base.Join(".gitignore")
-	ignore, err := gitignore.NewIgnoreList(f, nil)
+	ignore, err := gitignore.NewIgnoreList(base, nil)
 	if err != nil {
 		log.Warn("failed to load .gitignore file")
 	}

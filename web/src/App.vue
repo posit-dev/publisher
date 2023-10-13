@@ -109,7 +109,7 @@ const incomingEvent = (msg: EventStreamMessage) => {
 
 $eventStream.addEventMonitorCallback('*', incomingEvent);
 $eventStream.setDebugMode(true);
-$eventStream.open('/api/events?stream=messages');
+$eventStream.open('api/events?stream=messages');
 console.log($eventStream.status());
 
 // Have to be sure to close connection or it will be leaked on agent (if it continues to run)
