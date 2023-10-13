@@ -706,11 +706,11 @@ jobs:
           . env/bin/activate
           echo PATH=$PATH >> $GITHUB_ENV
       -
-        name: Install JupyterLab Python extension
-        run: just install
-      -
         name: Install JS dependencies
         run: jlpm install
+      -
+        name: Install JupyterLab Python extension
+        run: just install
       -
         name: Validate extension code
         run: just validate
