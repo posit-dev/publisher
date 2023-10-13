@@ -8,13 +8,13 @@ alias t := test
 alias w := web
 alias v := version
 
-_ci := "${CI:-false}"
+_ci := env_var_or_default("CI", "false")
 
 _cmd := "./cmd/connect-client"
 
 _debug := env_var_or_default("DEBUG", "true")
 
-_docker := env_var_or_default("DOCKER", "true")
+_docker := env_var_or_default("DOCKER", if _ci == "true" { "true"} else { "false" })
 
 _docker_file := "./build/ci/Dockerfile"
 
@@ -97,7 +97,7 @@ executable-path:
     set -eou pipefail
     {{ _with_debug }}
 
-    echo just _with_docker '$(./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOHOSTOS) $(go env GOHOSTARCH))'
+    just _with_docker echo '$(./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOHOSTOS) $(go env GOHOSTARCH))'
 
 # Build the image. Typically does not need to be done very often.
 image:
