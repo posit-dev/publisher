@@ -45,9 +45,10 @@ ARG GOVERSION=1.21.3
 ARG GOCHECKSUM=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8
 ARG GOARCHIVE=go$GOVERSION.linux-amd64.tar.gz
 ENV PATH="$PATH:/usr/local/go/bin"
-RUN curl -L -O https://go.dev/dl/$GOARCHIVE\
+RUN \
+    --mount=type=cache,target=/usr/local/go,sharing=locked \
+    curl -L -O https://go.dev/dl/$GOARCHIVE\
     && echo "$GOCHECKSUM $GOARCHIVE" | sha256sum -c - \
-    && rm -rf /usr/local/go\
     && tar -C /usr/local -xzf $GOARCHIVE\
     && rm $GOARCHIVE\
     && go env -w GOPATH=/usr/local/go\
