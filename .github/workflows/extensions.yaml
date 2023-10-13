@@ -11,6 +11,6 @@ jobs:
         with:
           python-version: '3.11'
       - uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
-      - run: just install
-      - run: just validate
-      - run: just test
+      - run: just jupyterlab install
+      - run: just jupyterlab validate
+      - run: just jupyterlab test
