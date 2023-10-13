@@ -22,9 +22,8 @@ default:
     set -eou pipefail
     {{ _with_debug }}
 
+    just clean
     just install
-    just lint
-    just test
     just build
 
 

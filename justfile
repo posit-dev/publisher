@@ -45,10 +45,8 @@ default:
     set -eou pipefail
     {{ _with_debug }}
 
-    just web clean
-    just web install
-    just web build
     just clean
+    just web
     just build
 
 # Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`, but inside of Docker (i.e., just _with_docker just test/bats/).
