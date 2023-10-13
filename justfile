@@ -110,7 +110,7 @@ image:
 
     docker buildx build \
         --cache-from type=gha\
-        --cache-to type=gha,mode=max\
+        --cache-to type=gha,mode=min\
         --file {{ _docker_file }}\
         --load\
         --platform {{ _docker_platform }}\
