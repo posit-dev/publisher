@@ -706,11 +706,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-      - name: Create virtualenv
-        run: |
-          python -m venv ./env
-          . env/bin/activate
-          echo PATH=$PATH >> $GITHUB_ENV
       -
         name: Install JupyterLab Python extension
         run: just install
