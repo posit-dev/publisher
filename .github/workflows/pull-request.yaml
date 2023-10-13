@@ -692,11 +692,9 @@ jobs:
       run:
         working-directory: ./extensions/jupyterlab/connect_jupyterlab
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v3
-      -
-        name: Setup Just
+      - name: Setup Just
         uses: extractions/setup-just@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -709,9 +707,9 @@ jobs:
         run: python -m pip install -U "jupyterlab>=4.0.0,<5"
       - name: Install JS dependencies
         run: jlpm install
-      -
-        name: Validate extension code
+      - name: Install connect_jupyterlab package
+        run: just install
+      - name: Validate extension code
         run: just validate
-      -
-        name: Test extension code
+      - name: Test extension code
         run: just test
