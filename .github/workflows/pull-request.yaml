@@ -707,6 +707,9 @@ jobs:
         with:
           node-version: '18.x'
       -
+        name: Install JupyterLab
+        run: pip install 'jupyterlab==4.*'
+      -
         name: Install JupyterLab Python extension
         run: just install
       -
