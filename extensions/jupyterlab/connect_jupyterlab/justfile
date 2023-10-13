@@ -1,0 +1,40 @@
+max_line_length := '99'
+
+_with_debug := if env_var_or_default("DEBUG", "true") == "true" {
+        "set -x pipefail"
+    } else {
+        ""
+    }
+
+default:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just install
+
+install:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    python -m pip install -U "jupyterlab>=4.0.0,<5"
+    jlpm install
+    pip install -e '.[test]'
+
+lint:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+    black ./connect_jupyterlab --line-length {{ max_line_length }}
+    flake8 ./connect_jupyterlab --max-line-length {{ max_line_length }}
+    mypy ./connect_jupyterlab
+    jlpm run lint:check
+
+test:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    JUPYTER_PLATFORM_DIRS=1 pytest -r ap --cov --no-cov-on-fail --cov-report=html connect_jupyterlab
+    jlpm run test

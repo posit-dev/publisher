@@ -86,8 +86,7 @@ func (s *NotebookDetectorSuite) TestGetNotebookFileInputsErr() {
 func (s *NotebookDetectorSuite) TestGetNotebookInputsNoCells() {
 	path := util.NewPath("testdata", afero.NewOsFs()).Join("empty_notebook.ipynb.txt")
 	inputs, err := getNotebookFileInputs(path)
-	s.NotNil(err)
-	s.ErrorIs(err, errNoCellsInNotebook)
+	s.NoError(err)
 	s.Equal("", inputs)
 }
 

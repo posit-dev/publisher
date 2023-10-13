@@ -13,7 +13,7 @@ require (
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/spf13/afero v1.9.5
 	github.com/stretchr/testify v1.8.2
-	golang.org/x/net v0.7.0
+	golang.org/x/net v0.17.0
 )
 
 require (
@@ -22,8 +22,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

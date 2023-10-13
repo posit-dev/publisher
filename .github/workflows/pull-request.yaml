@@ -4,6 +4,8 @@ on:
 jobs:
   agent:
     uses: ./.github/workflows/agent.yaml
+  extensions:
+    uses: ./.github/workflows/extensions.yaml
   web:
     uses: ./.github/workflows/web.yaml
   build:

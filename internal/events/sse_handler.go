@@ -5,7 +5,6 @@ package events
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"slices"
 
@@ -99,9 +98,6 @@ func (h *SSEHandler) Handle(ctx context.Context, rec slog.Record) error {
 	if err != nil {
 		return err
 	}
-
-	// TODO: debugging
-	fmt.Println("SSE will send: ", string(eventJSON))
 
 	h.server.Publish("messages",
 		&sse.Event{

@@ -34,7 +34,7 @@ class PublishingClientApi {
 
   constructor() {
     const client = axios.create({
-      baseURL: '/api',
+      baseURL: './api',
       withCredentials: true,
     });
 

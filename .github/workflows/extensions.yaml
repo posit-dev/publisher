@@ -1,0 +1,16 @@
+name: Extensions
+on:
+  workflow_call:
+jobs:
+  jupyterlab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: extractions/setup-just@v1
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+      - run: just install
+      - run: just validate
+      - run: just test
