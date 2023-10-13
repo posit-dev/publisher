@@ -10,14 +10,6 @@ from tornado.httpclient import HTTPRequest, HTTPResponse
 from connect_jupyterlab import handlers
 
 
-async def test_get_publish(jp_fetch):
-    response = await jp_fetch("connect-jupyterlab", "publish")
-
-    assert response.code == 200
-    payload = json.loads(response.body)
-    assert payload == {"data": "GET /connect-jupyterlab/publish endpoint!"}
-
-
 @patch("connect_jupyterlab.handlers.launch_ui")
 async def test_post_publish(launch_ui, jp_fetch, jp_serverapp, jp_http_port, jp_base_url):
     body = json.dumps(
