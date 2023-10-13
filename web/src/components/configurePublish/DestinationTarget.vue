@@ -9,8 +9,7 @@
       <PublisherDestinationLogo
         width="40px"
         height="40px"
-        :fill="colorToHex(colorStore.activePallete.icon.fill)"
-        :stroke="colorToHex(colorStore.activePallete.icon.stroke)"
+        svg-class="destination-logo"
       />
     </template>
     <div class="q-pa-sm">
@@ -19,8 +18,7 @@
           v-for="account in accounts"
           :key="account.name"
           tag="label"
-          class="q-my-sm row items-center"
-          :style="itemStyle"
+          class="q-my-sm row items-center account-item"
         >
           <q-item-section
             avatar
@@ -41,20 +39,19 @@
             </q-item-label>
             <q-item-label
               caption
-              :style="captionStyle"
+              class="account-caption"
             >
               Account: {{ calculateName(account) }}
             </q-item-label>
             <q-item-label
               caption
-              :style="captionStyle"
+              class="account-url"
             >
               URL: {{ account.url }}
             </q-item-label>
             <q-item-label
               caption
-              class="q-pt-sm"
-              :style="credentialStyle"
+              class="q-pt-sm account-credential"
             >
               Credentials managed by: {{ account.source }}
             </q-item-label>
@@ -111,27 +108,32 @@ const calculateName = (account: Account) => {
   }
   return '';
 };
-
-const itemStyle = computed(() => {
-  return `
-    border: ${colorToHex(colorStore.activePallete.destination.outline)} solid 2px; border-radius: 10px;
-    background-color: blue${colorToHex(colorStore.activePallete.destination.background)};
-    color: ${colorToHex(colorStore.activePallete.destination.text)};
-  `;
-});
-
-const captionStyle = computed(() => {
-  return `
-    color: ${colorToHex(colorStore.activePallete.destination.caption)};
-  `;
-});
-
-const credentialStyle = computed(() => {
-  return `
-    color: ${colorToHex(colorStore.activePallete.destination.caption)};
-    font-size: x-small; 
-    text-align: end;
-  `;
-});
-
 </script>
+
+<style>
+.destination-logo {
+  fill: v-bind('colorToHex(colorStore.activePallete.icon.fill)');
+  stroke: v-bind('colorToHex(colorStore.activePallete.icon.stroke)');
+}
+
+.account-item {
+  border: v-bind('colorToHex(colorStore.activePallete.destination.outline)') solid 2px;
+  border-radius: 10px;
+  background-color: v-bind('colorToHex(colorStore.activePallete.destination.background)');
+  color: v-bind('colorToHex(colorStore.activePallete.destination.text)');
+}
+
+.account-caption {
+  color: v-bind('colorToHex(colorStore.activePallete.destination.caption)');
+}
+
+.account-url {
+  color: v-bind('colorToHex(colorStore.activePallete.destination.caption)');
+}
+
+.account-credential {
+  color: v-bind('colorToHex(colorStore.activePallete.destination.caption)');
+  font-size: x-small;
+  text-align: end;
+}
+</style>

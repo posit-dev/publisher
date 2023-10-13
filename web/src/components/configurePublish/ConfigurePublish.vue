@@ -28,12 +28,12 @@
       />
       <!-- Common and Advanced Settings commented out until implemented. -->
       <CommonSettings
-        v-if="false"
+        v-if="true"
         group="configurePublish"
         class="q-my-sm"
       />
       <AdvancedSettings
-        v-if="false"
+        v-if="true"
         group="configurePublish"
         class="q-my-sm"
       />

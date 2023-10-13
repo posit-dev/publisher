@@ -8,8 +8,7 @@
       <PublisherSettingsLogo
         width="40px"
         height="40px"
-        :fill="colorToHex(colorStore.activePallete.icon.fill)"
-        :stroke="colorToHex(colorStore.activePallete.icon.stroke)"
+        svg-class="common-logo"
       />
     </template>
     TODO: Common settings, probably off the info panel in dashboard
@@ -25,3 +24,10 @@ import { colorToHex } from 'src/utils/colorValues';
 
 const colorStore = useColorStore();
 </script>
+
+<style>
+.common-logo {
+  fill: v-bind('colorToHex(colorStore.activePallete.icon.fill)');
+  stroke: v-bind('colorToHex(colorStore.activePallete.icon.stroke)');
+}
+</style>

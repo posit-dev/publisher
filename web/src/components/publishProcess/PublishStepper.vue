@@ -60,5 +60,5 @@ import {
 const colorStore = useColorStore();
 
 const openStep = ref<number | undefined>(undefined);
-</script>
 
+</script>

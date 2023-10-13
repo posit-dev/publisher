@@ -8,8 +8,7 @@
       <PublisherPythonLogo
         width="40px"
         height="40px"
-        :fill="colorToHex(colorStore.activePallete.icon.fill)"
-        :stroke="colorToHex(colorStore.activePallete.icon.stroke)"
+        svg-class="python-logo"
       />
     </template>
     TODO: Show detailed python version and list of package dependencies
@@ -27,3 +26,9 @@ import { colorToHex } from 'src/utils/colorValues';
 const colorStore = useColorStore();
 </script>
 
+<style>
+.python-logo {
+  fill: v-bind('colorToHex(colorStore.activePallete.icon.fill)');
+  stroke: v-bind('colorToHex(colorStore.activePallete.icon.stroke)');
+}
+</style>

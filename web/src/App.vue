@@ -6,14 +6,14 @@
   >
     <q-header
       elevated
+      class="my-class"
     >
       <q-toolbar class="max-width-md q-pa-auto">
         <AppMenu />
         <WhitePositLogo
           width="70px"
           height="30px"
-          :fill="colorToHex(colorStore.activePallete.logo.fill)"
-          :stroke="colorToHex(colorStore.activePallete.logo.stroke)"
+          svg-class="posit-logo"
           alt="Posit PBC Logo"
         />
         <q-toolbar-title class="q-pl-xs">
@@ -134,5 +134,9 @@ getInitialDeploymentState();
 }
 .bg-black {
   background: black !important;
+}
+.posit-logo {
+  fill: v-bind('colorToHex(colorStore.activePallete.logo.fill)');
+  stroke: v-bind('colorToHex(colorStore.activePallete.logo.stroke)');
 }
 </style>

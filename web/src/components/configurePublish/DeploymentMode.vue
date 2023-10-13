@@ -11,11 +11,11 @@
         padding="2px"
         spread
         :options="options"
-        :style="toggleStyle"
         :text-color="colorStore.activePallete.deploymentMode.toggle.inActive.text"
         :color="colorStore.activePallete.deploymentMode.toggle.inActive.background"
         :toggle-text-color="colorStore.activePallete.deploymentMode.toggle.active.text"
         :toggle-color="colorStore.activePallete.deploymentMode.toggle.active.background"
+        class="toggle"
       />
     </div>
   </div>
@@ -53,8 +53,10 @@ const value = computed({
   }
 });
 
-const toggleStyle = computed(() => {
-  return `border: 1px solid ${colorToHex(colorStore.activePallete.outline)};`;
-});
-
 </script>
+
+<style scoped>
+.toggle {
+  border: 1px solid v-bind('colorToHex(colorStore.activePallete.outline)');
+}
+</style>

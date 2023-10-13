@@ -9,8 +9,7 @@
       <PublisherFolderLogo
         width="40px"
         height="40px"
-        :fill="colorToHex(colorStore.activePallete.icon.fill)"
-        :stroke="colorToHex(colorStore.activePallete.icon.stroke)"
+        svg-class="folder-logo"
       />
     </template>
     <q-tree
@@ -122,3 +121,10 @@ async function getFiles() {
 
 getFiles();
 </script>
+
+<style>
+.folder-logo {
+  fill: v-bind('colorToHex(colorStore.activePallete.icon.fill)');
+  stroke: v-bind('colorToHex(colorStore.activePallete.icon.stroke)');
+}
+</style>

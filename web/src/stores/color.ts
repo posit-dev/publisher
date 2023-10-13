@@ -67,6 +67,7 @@ export const useColorStore = defineStore('color', () => {
         active: 'grey-4',
         done: 'grey-6',
         error: 'red-10',
+        text: 'red-10',
         summary: {
           background: 'grey-9',
           text: 'grey-4',
@@ -132,6 +133,7 @@ export const useColorStore = defineStore('color', () => {
         active: 'black',
         done: 'grey-8',
         error: 'red-10',
+        text: 'red-10',
         summary: {
           background: 'grey-1',
           text: 'grey-8',

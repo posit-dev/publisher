@@ -4,8 +4,8 @@
   <q-expansion-item
     :default-opened="defaultOpen"
     :expand-icon="expandIcon"
-    :header-style="headerStyle"
     :group="group"
+    :header-class="headerClass"
     @before-show="onBeforeShow"
     @before-hide="onBeforeHide"
   >
@@ -18,7 +18,9 @@
       </q-item-section>
 
       <q-item-section>
-        <q-item-label>{{ title }}</q-item-label>
+        <q-item-label>
+          {{ title }}
+        </q-item-label>
         <q-item-label
           v-if="subtitle"
           caption
@@ -34,9 +36,7 @@
       </q-item-section>
     </template>
 
-    <q-card
-      :style="cardStyle"
-    >
+    <q-card class="panel-card">
       <q-card-section>
         <slot />
         <!-- TODO: select from previous deployments or add to existing or new targets -->
@@ -70,40 +70,49 @@ const onBeforeHide = () => {
   isOpen.value = false;
 };
 
-const headerStyle = computed(() : string[] => {
-  const styles = [
-    `border-left: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;`,
-    `border-top: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;`,
-    `border-right: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;`,
-  ];
-  if (isOpen.value) {
-    styles.push(`border-bottom: none !important;`);
-  } else {
-    styles.push(`border-bottom: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;`);
-  }
-
-  const bg = isOpen.value ?
-    `${colorToHex(colorStore.activePallete.expansion.header.open.background)}` :
-    `${colorToHex(colorStore.activePallete.expansion.header.closed.background)}`;
-  styles.push(`background-color: ${bg} !important;`);
-
-  const text = isOpen.value ?
-    `${colorToHex(colorStore.activePallete.expansion.header.open.text)}` :
-    `${colorToHex(colorStore.activePallete.expansion.header.closed.text)}`;
-  styles.push(`color: ${text} !important;`);
-  return styles;
+const headerClass = computed(() => {
+  return isOpen.value
+    ? 'panel-header header-open-border-bottom'
+    : 'panel-header header-closed-border-bottom';
 });
 
-const cardStyle = computed(() : string => {
-  const result = (`
-    border-left: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;
-    border-top: none !important;
-    border-right: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;
-    border-bottom: solid 1px ${colorToHex(colorStore.activePallete.outline)} !important;
-    background-color: ${colorToHex(colorStore.activePallete.expansion.card.background)} !important;
-    color: ${colorToHex(colorStore.activePallete.expansion.card.text)} !important;
-  `);
-  console.log(`cardStyle = ${result}`);
-  return result;
+const headerBackgroundColor = computed(() => {
+  return isOpen.value
+    ? `${colorToHex(colorStore.activePallete.expansion.header.open.background)}`
+    : `${colorToHex(colorStore.activePallete.expansion.header.closed.background)}`;
 });
+
+const headerTextColor = computed(() => {
+  return isOpen.value
+    ? `${colorToHex(colorStore.activePallete.expansion.header.open.text)}`
+    : `${colorToHex(colorStore.activePallete.expansion.header.closed.text)}`;
+});
+
 </script>
+
+<style>
+.panel-header {
+  border-left: solid 1px v-bind('colorToHex(colorStore.activePallete.outline)') !important;
+  border-top: solid 1px v-bind('colorToHex(colorStore.activePallete.outline)') !important;
+  border-right: solid 1px v-bind('colorToHex(colorStore.activePallete.outline)') !important;
+  background-color: v-bind('headerBackgroundColor') !important;
+  color: v-bind('headerTextColor') !important;
+}
+
+.header-closed-border-bottom {
+  border-bottom: solid 1px v-bind('colorToHex(colorStore.activePallete.outline)') !important;
+}
+
+.header-open-border-bottom {
+  border-bottom: none !important;
+}
+
+.panel-card {
+  border-left: solid 1px v-bind('colorToHex(colorStore.activePallete.outline)') !important;
+  border-top: none !important;
+  border-right: solid 1px v-bind('colorToHex(colorStore.activePallete.outline)') !important;
+  border-bottom: solid 1px v-bind('colorToHex(colorStore.activePallete.outline)') !important;
+  background-color: v-bind('colorToHex(colorStore.activePallete.expansion.card.background)') !important;
+  color: v-bind('colorToHex(colorStore.activePallete.expansion.card.text)') !important;
+}
+</style>
