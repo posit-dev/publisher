@@ -1,3 +1,4 @@
+alias a := all
 alias b := build
 alias c := clean
 alias co := cover
@@ -40,6 +41,7 @@ _uid_args := if os_family() == "unix" {
         ""
     }
 
+# Quick start
 default:
     #!/usr/bin/env bash
     set -eou pipefail
@@ -48,6 +50,29 @@ default:
     just clean
     just web
     just build
+
+# Executes commands where avaiable. WARNING your mileage may very.
+all *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    if $(cd web/ && just --show {{ args }} &>/dev/null); then
+        just web {{ args }}
+    fi
+
+    if $(just --show {{ args }} &>/dev/null); then
+        just {{ args }}
+    fi
+
+    if $(cd test/bats && just --show {{ args }} &>/dev/null); then
+        just bats {{ args }}
+    fi
+
+    if $(cd test/cy && just --show {{ args }} &>/dev/null); then
+        just cy {{ args }}
+    fi
+
 
 # Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`, but inside of Docker (i.e., just _with_docker just test/bats/).
 bats *args:
@@ -96,6 +121,14 @@ executable-path:
     {{ _with_debug }}
 
     just _with_docker echo '$(./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOHOSTOS) $(go env GOHOSTARCH))'
+
+# Fixes linting errors
+fix:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+     ./scripts/ccheck.py ./scripts/ccheck.config --fix
 
 # Build the image. Typically does not need to be done very often.
 image:
