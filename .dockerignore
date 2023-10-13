@@ -1,16 +1,1 @@
-**/.cache
-**/.dockerignore
-**/.DS_Store
-**/.env
-**/.git
-**/.github
-**/.gitignore
-**/.vscode
-**/bin
-**/dist
-**/docker-compose*
-**/Dockerfile*
-**/node_modules
-**/npm-debug.log
-CHANGELOG.md
-README.md
+*

@@ -45,9 +45,10 @@ default:
     set -eou pipefail
     {{ _with_debug }}
 
+    just web clean
+    just web install
+    just web build
     just clean
-    just lint
-    just test
     just build
 
 # Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`, but inside of Docker (i.e., just _with_docker just test/bats/).
@@ -96,7 +97,7 @@ executable-path:
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker ./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOOS) $(go env GOARCH)
+    echo just _with_docker '$(./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOHOSTOS) $(go env GOHOSTARCH))'
 
 # Build the image. Typically does not need to be done very often.
 image:
@@ -108,24 +109,9 @@ image:
         exit 0
     fi
 
-    case {{ _docker_platform }} in
-        "linux/amd64")
-            gochecksum=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8
-            ;;
-        "linux/arm64")
-            gochecksum=fc90fa48ae97ba6368eecb914343590bbb61b388089510d0c56c2dde52987ef3
-            ;;
-        *)
-            echo "error: DOCKER_PLATFORM not supported. Found \`"{{ _docker_platform }}"\`." 1>&2
-            exit 1
-            ;;
-        esac
-
     docker buildx build \
-        --build-arg "GOVERSION=1.21.3"\
-        --build-arg "GOCHECKSUM=${gochecksum}"\
         --cache-from type=gha\
-        --cache-to type=gha\
+        --cache-to type=gha,mode=min\
         --file {{ _docker_file }}\
         --load\
         --platform {{ _docker_platform }}\
@@ -158,7 +144,8 @@ run *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker $(just executable-path) {{ args }}
+    echo {{ args }}
+    just _with_docker '$(just executable-path)' {{ args }}
 
 # Creates a fake './web/dist' directory for when it isn't needed.
 stub:

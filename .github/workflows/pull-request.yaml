@@ -2,16 +2,11 @@ name: Pull Request
 on:
   pull_request:
 jobs:
-  image:
-    uses: ./.github/workflows/image.yaml
   agent:
-    needs: image
     uses: ./.github/workflows/agent.yaml
   web:
-    needs: image
     uses: ./.github/workflows/web.yaml
   build:
-    needs: image
     uses: ./.github/workflows/build.yaml
   bats:
     needs: build
