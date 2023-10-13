@@ -705,10 +705,10 @@ jobs:
           python-version: '3.11'
       - name: Base Setup
         uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
-      - name: Install JS dependencies
-        run: jlpm install
       - name: Install Python dependencies
         run: python -m pip install -U "jupyterlab>=4.0.0,<5"
+      - name: Install JS dependencies
+        run: jlpm install
       -
         name: Validate extension code
         run: just validate
