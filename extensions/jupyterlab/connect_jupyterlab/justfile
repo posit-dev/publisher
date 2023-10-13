@@ -1,0 +1,25 @@
+install:
+    pip install -e '.[test]'
+
+max_line_length := '99'
+
+validate-python:
+    black ./connect_jupyterlab --line-length {{ max_line_length }}
+    flake8 ./connect_jupyterlab --max-line-length {{ max_line_length }}
+    mypy ./connect_jupyterlab
+
+validate-js:
+    jlpm run lint:check
+
+validate: validate-js validate-python
+
+test: test-python test-js
+
+test-python:
+    JUPYTER_PLATFORM_DIRS=1 pytest -r ap \
+        --cov --no-cov-on-fail \
+        --cov-report=html \
+        connect_jupyterlab
+
+test-js:
+    jlpm run test
