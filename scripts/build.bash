@@ -24,7 +24,7 @@ echo "Name: $name"
 mode=${MODE:-"dev"}
 echo "Mode: $mode"
 
-platforms=("$(go env GOOS)/$(go env GOARCH)")
+platforms=("$(go env GOHOSTOS)/$(go env GOHOSTARCH)")
 if [ "$CI" = "true" ]; then
     platforms=(
         "darwin/amd64"

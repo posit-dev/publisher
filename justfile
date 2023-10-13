@@ -45,9 +45,10 @@ default:
     set -eou pipefail
     {{ _with_debug }}
 
+    just web clean
+    just web install
+    just web build
     just clean
-    just lint
-    just test
     just build
 
 # Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`, but inside of Docker (i.e., just _with_docker just test/bats/).
@@ -96,7 +97,7 @@ executable-path:
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker ./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOOS) $(go env GOARCH)
+    echo just _with_docker '$(./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOHOSTOS) $(go env GOHOSTARCH))'
 
 # Build the image. Typically does not need to be done very often.
 image:
@@ -143,7 +144,8 @@ run *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker $(just executable-path) {{ args }}
+    echo {{ args }}
+    just _with_docker '$(just executable-path)' {{ args }}
 
 # Creates a fake './web/dist' directory for when it isn't needed.
 stub:
