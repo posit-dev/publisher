@@ -703,18 +703,10 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-      -
-        name: Install JupyterLab
-        run: pip install 'jupyterlab==4.*'
-      -
-        name: Install JupyterLab Python extension
-        run: just install
-      -
-        name: Install JS dependencies
-        run: jlpm install
+      - name: Base Setup
+        uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+      - name: Install dependencies
+        run: python -m pip install -U "jupyterlab>=4.0.0,<5"
       -
         name: Validate extension code
         run: just validate

@@ -1,5 +1,5 @@
 install:
-    pip install -vv -e '.[test]'
+    pip install -e '.[test]'
 
 max_line_length := '99'
 
