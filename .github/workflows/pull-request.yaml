@@ -8,3 +8,9 @@ jobs:
     uses: ./.github/workflows/web.yaml
   build:
     uses: ./.github/workflows/build.yaml
+  bats:
+    needs: build
+    uses: ./.github/workflows/bats.yaml
+  cypress:
+    needs: build
+    uses: ./.github/workflows/cypress.yaml

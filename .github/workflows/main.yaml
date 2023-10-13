@@ -4,9 +4,20 @@ on:
     branches:
       - main
 jobs:
+  image:
+    uses: ./.github/workflows/image.yaml
   agent:
+    needs: image
     uses: ./.github/workflows/agent.yaml
   web:
+    needs: image
     uses: ./.github/workflows/web.yaml
-  package:
+  build:
+    needs: image
     uses: ./.github/workflows/build.yaml
+  bats:
+    needs: build
+    uses: ./.github/workflows/bats.yaml
+  cypress:
+    needs: build
+    uses: ./.github/workflows/cypress.yaml

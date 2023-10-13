@@ -11,14 +11,7 @@
     "lint": "eslint --ext .js,.ts,.vue,.cjs .",
     "fix": "eslint --ext .js,.ts,.vue,.cjs . --fix",
     "test": "vitest run",
-    "watch": "vitest",
-
-    "test:e2e:dev": "start-server-and-test dev http-get://localhost:9000 cypress:run",
-    "test:e2e:ci": "start-server-and-test --expect 401 start http-get://127.0.0.1:9000 cypress:run:ci",
-    "cypress:open": "cypress open",
-    "cypress:run": "cypress run",
-    "cypress:run:ci": "cypress run --env publishing-token=abc123",
-    "start": "just ../run publish-ui ./test/sample-content/fastapi-simple --listen=127.0.0.1:9000 --token=abc123"
+    "watch": "vitest"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.5",
@@ -37,13 +30,11 @@
     "@typescript-eslint/parser": "^6.4.1",
     "@vitejs/plugin-vue": "^4.2.3",
     "@vue/test-utils": "^2.4.1",
-    "cypress": "^13.3.0",
     "eslint": "^8.47.0",
     "eslint-plugin-cypress": "^2.14.0",
     "eslint-plugin-vue": "^9.17.0",
     "jsdom": "^22.1.0",
     "sass": "^1.66.1",
-    "start-server-and-test": "^2.0.0",
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
     "vitest": "^0.34.2",

@@ -8,23 +8,33 @@ alias t := test
 alias w := web
 alias v := version
 
-_ci := "${CI:-false}"
-
-_docker := env_var_or_default("DEBUG", "true")
+_ci := env_var_or_default("CI", "false")
 
 _cmd := "./cmd/connect-client"
+
+_debug := env_var_or_default("DEBUG", "true")
+
+_docker := env_var_or_default("DOCKER", if _ci == "true" { "true"} else { "false" })
+
+_docker_file := "./build/ci/Dockerfile"
+
+_docker_image_name := "rstudio/connect-client"
+
+_docker_platform := env_var_or_default("DOCKER_PLATFORM", env_var_or_default("DOCKER_DEFAULT_PLATFORM", "linux/amd64"))
+
+_github_actions := env_var_or_default("GITHUB_ACTIONS", "false")
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
 _mode := "${MODE:-dev}"
 
-_with_debug := if env_var_or_default("DEBUG", "true") == "true" {
+_with_debug := if _debug == "true" {
         "set -x pipefail"
     } else {
         ""
     }
 
-_uid_args := if "{{ os_family() }}" == "unix" {
+_uid_args := if os_family() == "unix" {
         "-u $(id -u):$(id -g)"
     } else {
         ""
@@ -36,9 +46,16 @@ default:
     {{ _with_debug }}
 
     just clean
-    just lint
-    just test
+    just web
     just build
+
+# Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`, but inside of Docker (i.e., just _with_docker just test/bats/).
+bats *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just test/bats/{{ args }}
 
 # Compiles the application using Go. Executables are written to `./dist`. If invoked with `env CI=true` then executables for all supported architectures using the Go toolchain.
 build:
@@ -64,13 +81,21 @@ cover:
 
     just _with_docker go tool cover -html=cover.out
 
+# Executes commands in ./test/cy/justfile. Equivalent to `just test/cy/`, but inside of Docker (i.e., just _with_docker just test/cy/).
+cy *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just test/cy/{{ args }}
+
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).
 executable-path:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker ./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOOS) $(go env GOARCH)
+    just _with_docker echo '$(./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOHOSTOS) $(go env GOHOSTARCH))'
 
 # Build the image. Typically does not need to be done very often.
 image:
@@ -82,11 +107,15 @@ image:
         exit 0
     fi
 
-    docker build \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \
-        --pull \
+    docker buildx build \
+        --cache-from type=gha\
+        --cache-to type=gha,mode=min\
+        --file {{ _docker_file }}\
+        --load\
+        --platform {{ _docker_platform }}\
+        --progress plain\
         --tag $(just tag) \
-        ./build/ci
+        .
 
 # staticcheck, vet, and format check
 lint: stub
@@ -113,7 +142,8 @@ run *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker go run {{ _cmd }} {{ args }}
+    echo {{ args }}
+    just _with_docker '$(just executable-path)' {{ args }}
 
 # Creates a fake './web/dist' directory for when it isn't needed.
 stub:
@@ -135,7 +165,7 @@ tag:
     set -eou pipefail
     {{ _with_debug }}
 
-    echo "rstudio/connect-client:"$(just version)
+    echo {{ _docker_image_name }}":"$(just version)
 
 # Execute unit tests.
 test: stub
@@ -167,7 +197,7 @@ _with_docker *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    if ! ${DOCKER-true}; then
+    if ! {{ _docker }}; then
         {{ args }}
         exit 0
     fi
@@ -178,11 +208,12 @@ _with_docker *args:
 
     docker run --rm {{ _interactive }}\
         -e CI={{ _ci }}\
+        -e DEBUG={{ _debug }}\
         -e DOCKER=false\
         -e GOCACHE=/work/.cache/go/cache\
         -e GOMODCACHE=/work/.cache/go/mod\
         -e MODE={{ _mode }}\
+        --platform {{ _docker_platform }}\
         -v "$(pwd)":/work\
         -w /work\
-        {{ _uid_args }}\
         $(just tag) {{ args }}

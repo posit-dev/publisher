@@ -1,8 +1,29 @@
-name: Agent
+name: Bats
 on:
   workflow_call:
 jobs:
-  agent:
+  native:
+    env:
+      DOCKER: false
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: extractions/setup-just@v1
+      - uses: actions/download-artifact@v3
+        with:
+          name: executables
+          path: bin
+      - run: chmod -R +x ./bin
+      - run: just bats
+  docker:
+    env:
+      DOCKER: true
     runs-on: ubuntu-latest
     steps:
       - uses: crazy-max/ghaction-github-runtime@v3
@@ -28,5 +49,9 @@ jobs:
         with:
           cache-source: var-lib-apt
           cache-target: /var/lib/apt
-      - run: just lint
-      - run: just test
+      - uses: actions/download-artifact@v3
+        with:
+          name: executables
+          path: bin
+      - run: chmod -R +x ./bin
+      - run: just bats
