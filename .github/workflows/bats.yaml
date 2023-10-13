@@ -6,6 +6,7 @@ jobs:
     env:
       DOCKER: false
     strategy:
+      fail-fast: false
       matrix:
         runner: [macos-latest, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.runner }}

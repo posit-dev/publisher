@@ -3,12 +3,13 @@ on:
   workflow_call:
 jobs:
   native:
+    env:
+      DOCKER: false
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    env:
-      DOCKER: false
     steps:
       - uses: actions/checkout@v3
         with:
