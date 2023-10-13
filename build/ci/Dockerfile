@@ -1,6 +1,3 @@
-# Base the image on the target platform. This will use emulation when running on native archiectures when supported.
-# Docker Desktop provides binfmt_misc multi-architecture support, which means you can run containers for different Linux architectures such as arm, mips, ppc64le, and even s390x.
-# See https://docs.docker.com/build/building/multi-platform
 FROM --platform=$BUILDPLATFORM ubuntu:jammy
 
 RUN apt-get update\
@@ -29,11 +26,6 @@ RUN git config --global --add safe.directory '*'
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
 # Go is required by this project. The source code is written in it!
-ARG BUILDOS
-ARG BUILDARCH
-ARG BUILDPLATFORM
-ARG TARGETOS
-ARG TARGETARCH
 ARG GOVERSION=1.21.3
 ARG GOCHECKSUM=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8
 ARG GOARCHIVE=go$GOVERSION.linux-amd64.tar.gz
@@ -43,9 +35,7 @@ RUN curl -L -O https://go.dev/dl/$GOARCHIVE\
     && rm -rf /usr/local/go\
     && tar -C /usr/local -xzf $GOARCHIVE\
     && rm $GOARCHIVE\
-    # && go env -w GOBIN=/usr/local/go/bin\
-    && go env -w GOOS=$TARGETOS\
-    && go env -w GOARCH=$TARGETARCH\
+    && go env -w GOPATH=/usr/local/go\
     # staticcheck is required to for linting Go
     && go install honnef.co/go/tools/cmd/staticcheck@latest
 
