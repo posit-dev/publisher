@@ -3,6 +3,10 @@ package state
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
+	"io/fs"
+	"sort"
+
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/logging"
@@ -97,7 +101,11 @@ func (d *Deployment) LoadManifest(path util.Path, log logging.Logger) error {
 }
 
 func getMetadataPath(sourceDir util.Path, configName string) util.Path {
-	return sourceDir.Join(".posit", "deployments", configName)
+	return getMetadataRoot(sourceDir).Join(configName)
+}
+
+func getMetadataRoot(sourceDir util.Path) util.Path {
+	return sourceDir.Join(".posit", "deployments")
 }
 
 type MetadataLabel string
@@ -165,4 +173,59 @@ func (d *Deployment) Save(serializer deploymentSerializer) error {
 		}
 	}
 	return nil
+}
+
+// listDeployments returns a list of the previous
+// deployments for this source directory.
+func listDeployments(sourceDir util.Path, log logging.Logger) ([]*Deployment, error) {
+	deploymentsDir := getMetadataRoot(sourceDir)
+	dirContents, err := deploymentsDir.ReadDir()
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			// It's OK for the directory not to exist;
+			// that means there are no prior deployments.
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+	deployments := []*Deployment{}
+	for _, fileInfo := range dirContents {
+		if fileInfo.IsDir() {
+			deployment := NewDeployment()
+			err = deployment.LoadFromFiles(sourceDir, fileInfo.Name(), log)
+			if err != nil {
+				return nil, err
+			}
+			deployments = append(deployments, deployment)
+		}
+	}
+	sort.Slice(deployments, func(i, j int) bool {
+		// Sort in reverse order by deployment time
+		t1, t1valid := deployments[i].Target.DeployedAt.Get()
+		t2, t2valid := deployments[j].Target.DeployedAt.Get()
+		if t1valid && t2valid {
+			return t1.After(t2)
+		} else if t1valid {
+			return true
+		} else {
+			return false
+		}
+	})
+	return deployments, nil
+}
+
+// GetMostRecentDeployment returns the contents of the metadata
+// store for the most recently deployed bundle. This is
+// the default metadata that will be used when redeploying.
+// Returns nil if there are no prior deployments.
+func GetMostRecentDeployment(sourceDir util.Path, log logging.Logger) (*Deployment, error) {
+	deployments, err := listDeployments(sourceDir, log)
+	if err != nil {
+		return nil, err
+	}
+	if len(deployments) == 0 {
+		return nil, nil
+	}
+	return deployments[0], nil
 }

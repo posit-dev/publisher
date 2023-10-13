@@ -14,26 +14,26 @@ type ConnectDeployment struct {
 }
 
 type ConnectContent struct {
-	Name               types.ContentName `json:"name,omitempty"`
+	Name               types.ContentName `json:"name"`
 	Title              string            `json:"title,omitempty"`
 	Description        string            `json:"description,omitempty"`
-	AccessType         string            `json:"access_type,omitempty"`
-	ConnectionTimeout  types.NullInt32   `json:"connection_timeout"`
-	ReadTimeout        types.NullInt32   `json:"read_timeout"`
-	InitTimeout        types.NullInt32   `json:"init_timeout"`
-	IdleTimeout        types.NullInt32   `json:"idle_timeout"`
-	MaxProcesses       types.NullInt32   `json:"max_processes"`
-	MinProcesses       types.NullInt32   `json:"min_processes"`
-	MaxConnsPerProcess types.NullInt32   `json:"max_conns_per_process" kong:"name='max-connections'"`
-	LoadFactor         types.NullFloat64 `json:"load_factor"`
-	RunAs              string            `json:"run_as,omitempty"`
-	RunAsCurrentUser   types.NullBool    `json:"run_as_current_user"`
-	MemoryRequest      types.NullInt64   `json:"memory_request"`
-	MemoryLimit        types.NullInt64   `json:"memory_limit"`
-	CPURequest         types.NullFloat64 `json:"cpu_request"`
-	CPULimit           types.NullFloat64 `json:"cpu_limit"`
-	ServiceAccountName string            `json:"service_account_name,omitempty"`
-	DefaultImageName   string            `json:"default_image_name,omitempty"`
+	AccessType         string            `json:"-"`
+	ConnectionTimeout  types.NullInt32   `json:"-"`
+	ReadTimeout        types.NullInt32   `json:"-"`
+	InitTimeout        types.NullInt32   `json:"-"`
+	IdleTimeout        types.NullInt32   `json:"-"`
+	MaxProcesses       types.NullInt32   `json:"-"`
+	MinProcesses       types.NullInt32   `json:"-"`
+	MaxConnsPerProcess types.NullInt32   `json:"-"`
+	LoadFactor         types.NullFloat64 `json:"-"`
+	RunAs              string            `json:"-"`
+	RunAsCurrentUser   types.NullBool    `json:"-"`
+	MemoryRequest      types.NullInt64   `json:"-"`
+	MemoryLimit        types.NullInt64   `json:"-"`
+	CPURequest         types.NullFloat64 `json:"-"`
+	CPULimit           types.NullFloat64 `json:"-"`
+	ServiceAccountName string            `json:"-"`
+	DefaultImageName   string            `json:"-"`
 }
 
 func (d *ConnectDeployment) Merge(other *ConnectDeployment) {

@@ -7,7 +7,7 @@
   >
     <div>
       <q-btn
-        :disable="backButtonDisabled"
+        :disable="publishInProgress"
         icon="arrow_back"
         label="Back"
         data-automation="BackToConfiguration"
@@ -16,40 +16,26 @@
       />
     </div>
     <div class="q-mt-lg">
-      <h4>Temporary Event Display for Publishing Process</h4>
-      <div
-        v-for="(eventItem, index) in events"
-        :key="index"
-      >
-        {{ JSON.stringify(eventItem) }}
-      </div>
-      <p ref="agentLogEnd">
-        &nbsp;
-      </p>
+      <h6 class="q-my-sm">
+        {{ progressTitle }}
+      </h6>
+      <PublishSummary />
+      <PublishStepper />
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
 
-import { EventStream } from 'src/api/resources/EventStream';
-import { EventStreamMessage, PublishSuccess } from 'src/api/types/events';
-import { PropType, onBeforeUnmount, ref, watch } from 'vue';
-import { scroll as qScroll } from 'quasar';
-const { getScrollTarget, setVerticalScrollPosition } = qScroll;
+import { PublishSuccess } from 'src/api/types/events';
+import { computed, onBeforeUnmount, ref } from 'vue';
+import { useEventStream } from 'src/plugins/eventStream';
+import PublishStepper from 'src/components/publishProcess/PublishStepper.vue';
+import PublishSummary from 'src/components/publishProcess/PublishSummary.vue';
+import { useDeploymentStore } from 'src/stores/deployment';
 
-const props = defineProps({
-  events: {
-    type: Array as PropType<EventStreamMessage[]>,
-    required: true,
-  },
-  eventStream: {
-    type: Object as PropType<EventStream>,
-    required: true,
-  }
-});
-
-const agentLogEnd = ref<HTMLDivElement | null>(null);
+const $eventStream = useEventStream();
+const deploymentStore = useDeploymentStore();
 
 const emit = defineEmits(['back']);
 
@@ -57,26 +43,25 @@ const onBackButton = () => {
   emit('back');
 };
 
-const backButtonDisabled = ref(true);
+const publishInProgress = ref(true);
 
-const publishingComplete = (msg: PublishSuccess) => {
-  backButtonDisabled.value = false;
-  console.log(`msg: ${JSON.stringify(msg)}`);
-};
-props.eventStream.addEventMonitorCallback('publish/success', publishingComplete);
-
-watch(props.events, () => {
-  if (agentLogEnd.value) {
-    const el = agentLogEnd.value as HTMLDivElement;
-    const target = getScrollTarget(el);
-    const offset = el.offsetTop;
-    const duration = 1000;
-    setVerticalScrollPosition(target, offset, duration);
+const progressTitle = computed(() => {
+  const path = deploymentStore.deployment?.sourcePath;
+  const target = deploymentStore.deployment?.target.accountName;
+  if (publishInProgress.value) {
+    return `Publishing '${path}' to ${target}...`;
   }
+  return `'${path}' has been published to ${target}`;
 });
 
+const publishingComplete = (msg: PublishSuccess) => {
+  publishInProgress.value = false;
+  console.log(`msg: ${JSON.stringify(msg)}`);
+};
+$eventStream.addEventMonitorCallback('publish/success', publishingComplete);
+
 onBeforeUnmount(() => {
-  props.eventStream.delEventFilterCallback(publishingComplete);
+  $eventStream.delEventFilterCallback(publishingComplete);
 });
 
 </script>
