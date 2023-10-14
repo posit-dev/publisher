@@ -141,6 +141,14 @@ image:
         --tag $(just tag) \
         .
 
+jupyterlab *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just extensions/jupyterlab/connect_jupyterlab/{{ args }}
+
+
 # staticcheck, vet, and format check
 lint: stub
     #!/usr/bin/env bash
