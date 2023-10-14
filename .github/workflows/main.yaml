@@ -1,19 +1,14 @@
-name: Main
+name: Pull Request
 on:
-  push:
-    branches:
-      - main
+  pull_request:
 jobs:
-  image:
-    uses: ./.github/workflows/image.yaml
   agent:
-    needs: image
     uses: ./.github/workflows/agent.yaml
+  extensions:
+    uses: ./.github/workflows/extensions.yaml
   web:
-    needs: image
     uses: ./.github/workflows/web.yaml
   build:
-    needs: image
     uses: ./.github/workflows/build.yaml
   bats:
     needs: build
