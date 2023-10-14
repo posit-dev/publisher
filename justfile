@@ -1,7 +1,8 @@
+alias a := all
 alias b := build
 alias c := clean
 alias co := cover
-alias i := image
+alias im := image
 alias l := lint
 alias r := run
 alias t := test
@@ -40,6 +41,7 @@ _uid_args := if os_family() == "unix" {
         ""
     }
 
+# Quick start
 default:
     #!/usr/bin/env bash
     set -eou pipefail
@@ -48,6 +50,20 @@ default:
     just clean
     just web
     just build
+
+# Executes command against every justfile where avaiable. WARNING your mileage may very.
+all +args='default':
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    # For each justfile, check if the first argument exists, and then execute it.
+    for f in `find . -name justfile`; do
+        arg=`echo {{ args }} | awk '{print $1;}'`
+        if just -f $f --show $arg &>/dev/null; then
+            just _with_docker just -f $f {{ args }}
+        fi
+    done
 
 # Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`, but inside of Docker (i.e., just _with_docker just test/bats/).
 bats *args:
@@ -96,6 +112,14 @@ executable-path:
     {{ _with_debug }}
 
     just _with_docker echo '$(./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOHOSTOS) $(go env GOHOSTARCH))'
+
+# Fixes linting errors
+fix:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+     ./scripts/ccheck.py ./scripts/ccheck.config --fix
 
 # Build the image. Typically does not need to be done very often.
 image:
