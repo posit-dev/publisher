@@ -51,28 +51,19 @@ default:
     just web
     just build
 
-# Executes commands where avaiable. WARNING your mileage may very.
-all *args:
+# Executes command against every justfile where avaiable. WARNING your mileage may very.
+all +args='default':
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    if $(cd web/ && just --show {{ args }} &>/dev/null); then
-        just web {{ args }}
-    fi
-
-    if $(just --show {{ args }} &>/dev/null); then
-        just {{ args }}
-    fi
-
-    if $(cd test/bats && just --show {{ args }} &>/dev/null); then
-        just bats {{ args }}
-    fi
-
-    if $(cd test/cy && just --show {{ args }} &>/dev/null); then
-        just cy {{ args }}
-    fi
-
+    # For each justfile, check if the first argument exists, and then execute it.
+    for f in `find . -name justfile`; do
+        arg=`echo {{ args }} | awk '{print $1;}'`
+        if just -f $f --show $arg &>/dev/null; then
+            just _with_docker just -f $f {{ args }}
+        fi
+    done
 
 # Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`, but inside of Docker (i.e., just _with_docker just test/bats/).
 bats *args:
