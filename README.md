@@ -10,7 +10,7 @@ your local machine for development and testing purposes.
 ### Prerequisites
 
 NOTE: This project has been configured to use docker by default, which minimizes
-the prerequisites which need to be installed. Use of docker can be controlled 
+the prerequisites which need to be installed. Use of docker can be controlled
 via the DOCKER environment variable:
 if (DOCKER is undefined || DOCKER === 'true') {
     Tasks will be executed in a docker container using the image `build/package/Dockerfile`
@@ -25,7 +25,7 @@ If using Docker, you must have Docker installed: [Docker](https://www.docker.com
 
 Just (justfile runner) is used to run commands: [Just](https://just.systems)
 
-See the additional pre-requisites required for development tasks without Docker at: 
+See the additional pre-requisites required for development tasks without Docker at:
 - CLI: TBD
 - UX: [`web/README.md`](./web/README.md)
 
@@ -49,16 +49,16 @@ Simplest approach to perform all of the applicable steps:
 
 Building the DOCKER image:
 - If using docker (by either not setting the DOCKER environment variable or setting it to "true"), you'll need
-  to build the DOCKER image. This is done as one of the steps within the `default` recipe, but you can also 
+  to build the DOCKER image. This is done as one of the steps within the `default` recipe, but you can also
   perform it with the command `just image`.
 - If you are not using docker, you can skip this step, although performing the recipe is a NO-OP.
 
 #### Justfiles
 
 All tasks are done through the justfile recipes, present within the top level `justfile` file. Recipes present include macro-operations
-for the multiple projects (Go and Web SPA) included in this repo. 
+for the multiple projects (Go and Web SPA) included in this repo.
 
-Specialized recipes for the Go project are located within the `cmd/connect-client/justfile` and 
+Specialized recipes for the Go project are located within the `cmd/connect-client/justfile` and
 specialized recipes for the Web project are located within the `web/justfile`.
 
 The top level `justfile` recipes can be displayed from within the top level repo subdirectory by issuing the command: `just --list`
@@ -96,6 +96,7 @@ cp .vscode/recommended.settings.json .vscode/settings.json
 
 We use [Semantic Versioning](http://semver.org/) for versioning. For the versions
 available, see the [tags on this repository](https://github.com/rstudio/publishing-client/tags).
+
 
 ## Authors
 
