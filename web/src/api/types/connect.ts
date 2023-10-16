@@ -13,6 +13,6 @@ export type ConnectEnvironmentVariable = {
 }
 
 export type ConnectDeployment = {
-    connect: ConnectContent;
+    content: ConnectContent;
     environment: ConnectEnvironmentVariable[];
 }

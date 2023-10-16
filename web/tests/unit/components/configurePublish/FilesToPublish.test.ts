@@ -168,7 +168,7 @@ describe('description', () => {
         }
       },
       connect: {
-        connect: {
+        content: {
           name: '',
         },
         environment: [
