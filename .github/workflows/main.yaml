@@ -1,6 +1,8 @@
-name: Pull Request
+name: Main
 on:
-  pull_request:
+  push:
+    branches:
+      - main
 jobs:
   agent:
     uses: ./.github/workflows/agent.yaml
