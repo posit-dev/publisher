@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="1" failures="0" errors="0" time="1.563">
-  <testsuite name="connect_jupyterlab" errors="0" failures="0" skipped="0" timestamp="2023-10-13T18:50:55" time="1.24" tests="1">
-    <testcase classname="connect_jupyterlab should be tested" name="connect_jupyterlab should be tested" time="0.002">
-    </testcase>
-  </testsuite>
-</testsuites>
