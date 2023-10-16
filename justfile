@@ -87,7 +87,7 @@ clean:
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker rm -rf ./bin
+    rm -rf ./bin
 
 # Display the code coverage collected during the last execution of `just test`.
 cover:
