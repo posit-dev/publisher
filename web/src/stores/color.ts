@@ -29,7 +29,10 @@ export const useColorStore = defineStore('color', () => {
       },
       destination: {
         outline: 'grey-6',
-        background: 'grey-9',
+        background: {
+          selected: 'grey-8',
+          unSelected: 'black',
+        },
         text: 'grey-1',
         caption: 'grey-6',
       },
@@ -95,7 +98,10 @@ export const useColorStore = defineStore('color', () => {
       },
       destination: {
         outline: 'grey-10',
-        background: 'grey-1',
+        background: {
+          selected: 'grey-5',
+          unSelected: 'grey-1',
+        },
         text: 'black',
         caption: 'grey-10',
       },
