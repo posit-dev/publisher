@@ -83,6 +83,7 @@ func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	i.log.Info("Running Python", "python", pythonExecutable)
 	args := []string{
 		`-E`, // ignore python-specific environment variables
 		`-c`, // execute the next argument as python code
@@ -111,6 +112,7 @@ func (i *defaultPythonInspector) GetPythonRequirements() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	i.log.Info("Running Python", "python", pythonExecutable)
 	source := fmt.Sprintf("'%s -m pip freeze'", pythonExecutable)
 	i.log.Info("Using Python packages", "source", source)
 	args := []string{"-m", "pip", "freeze"}
