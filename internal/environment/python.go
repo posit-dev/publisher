@@ -55,6 +55,12 @@ func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.
 	}
 }
 
+func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
+	args := []string{"--version"}
+	_, err := i.executor.runPythonCommand(pythonExecutable, args)
+	return err
+}
+
 func (i *defaultPythonInspector) getPythonExecutable(exec util.PathLooker) (string, error) {
 	if i.pythonPath.Path() != "" {
 		// User-provided python executable
@@ -71,10 +77,23 @@ func (i *defaultPythonInspector) getPythonExecutable(exec util.PathLooker) (stri
 	} else {
 		// Use whatever is on PATH
 		path, err := exec.LookPath("python3")
-		if err != nil {
-			return exec.LookPath("python")
+		if err == nil {
+			// Ensure the Python is actually runnable. This is especially
+			// needed on Windows, where `python3` is (by default)
+			// an app execution alias. Also, installing Python from
+			// python.org does not disable the built-in app execution aliases.
+			err = i.validatePythonExecutable(path)
 		}
-		return path, err
+		if err != nil {
+			path, err = exec.LookPath("python")
+			if err == nil {
+				err = i.validatePythonExecutable(path)
+			}
+		}
+		if err != nil {
+			return "", err
+		}
+		return path, nil
 	}
 }
 
