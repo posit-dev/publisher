@@ -142,7 +142,16 @@ image:
         .
 
 install:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
     just _with_docker go install honnef.co/go/tools/cmd/staticcheck@latest
+    if [ ! `just _with_docker which staticcheck` ]; then
+        echo "error: \`staticcheck\` not found. Is '\$GOPATH/bin' in your '\$PATH'?" 1>&2
+        exit 1
+    fi
+
 
 jupyterlab *args:
     #!/usr/bin/env bash
