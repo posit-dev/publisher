@@ -141,6 +141,9 @@ image:
         --tag $(just tag) \
         .
 
+install:
+    just _with_docker go install honnef.co/go/tools/cmd/staticcheck@latest
+
 jupyterlab *args:
     #!/usr/bin/env bash
     set -eou pipefail
@@ -248,4 +251,5 @@ _with_docker *args:
         --platform {{ _docker_platform }}\
         -v "$(pwd)":/work\
         -w /work\
-        $(just tag) {{ args }}
+        $(just tag)\
+        /bin/bash -c  '{{ args }}'
