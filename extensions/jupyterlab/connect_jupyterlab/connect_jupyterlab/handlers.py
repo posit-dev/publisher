@@ -5,7 +5,7 @@ import os
 import shlex
 import subprocess
 from urllib.parse import urlparse
-from typing import Set, Dict, Tuple
+from typing import Set, Dict, Tuple, Any
 
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
@@ -14,7 +14,7 @@ from tornado.httpclient import HTTPResponse
 from tornado.httputil import HTTPServerRequest
 from tornado.web import authenticated
 
-base_url = None
+base_url: str = ""
 EXECUTABLE = "connect-client"
 
 known_ports: Set[int] = set()
