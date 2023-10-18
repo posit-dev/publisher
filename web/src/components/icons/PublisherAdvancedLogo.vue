@@ -36,8 +36,6 @@
         c0.9,1.6,1.9,2.3,3,2.3C27.2,44.3,28.2,43.5,29,41.9z M23.3,28.1c-0.7-0.7-1.1-1.6-1.1-2.7c0-1,0.4-1.9,1.1-2.7
         c0.7-0.7,1.6-1.1,2.7-1.1c1,0,1.9,0.4,2.7,1.1c0.7,0.7,1.1,1.6,1.1,2.7c0,1.1-0.4,1.9-1.1,2.7c-0.7,0.7-1.6,1.1-2.7,1.1
         C25,29.2,24.1,28.9,23.3,28.1z"
-        :fill="fill"
-        :stroke="stroke"
       />
     </g>
   </svg>
@@ -48,7 +46,5 @@
 defineProps({
   height: { type: String, required: true },
   width: { type: String, required: true },
-  fill: { type: String, required: true },
-  stroke: { type: String, required: true },
 });
 </script>

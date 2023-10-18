@@ -12,32 +12,30 @@
       @publish="emit('publish')"
     />
     <q-list
-      bordered
       class="rounded-borders"
     >
       <DestinationTarget
         group="configurePublish"
+        class="q-my-sm"
       />
-      <q-separator />
       <FilesToPublish
         group="configurePublish"
+        class="q-my-sm"
       />
-      <q-separator />
       <PythonProject
         group="configurePublish"
+        class="q-my-sm"
       />
-      <q-separator />
       <!-- Common and Advanced Settings commented out until implemented. -->
       <CommonSettings
         v-if="false"
         group="configurePublish"
-      />
-      <q-separator
-        v-if="false"
+        class="q-my-sm"
       />
       <AdvancedSettings
         v-if="false"
         group="configurePublish"
+        class="q-my-sm"
       />
     </q-list>
   </q-page>

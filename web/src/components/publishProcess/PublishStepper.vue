@@ -7,6 +7,10 @@
     animated
     flat
     :header-nav="true"
+    :inactive-icon="colorStore.activePallete.progress.inactive"
+    :done-color="colorStore.activePallete.progress.done"
+    :active-color="colorStore.activePallete.progress.active"
+    :error-color="colorStore.activePallete.progress.error"
   >
     <CreateBundle
       :name="1"
@@ -41,6 +45,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useColorStore } from 'src/stores/color';
 
 import {
   CreateDeployment,
@@ -52,6 +57,8 @@ import {
   WrappingUpDeployment
 } from 'src/components/publishProcess/steps';
 
-const openStep = ref<number | undefined>(undefined);
-</script>
+const colorStore = useColorStore();
 
+const openStep = ref<number | undefined>(undefined);
+
+</script>

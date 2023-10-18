@@ -11,7 +11,11 @@
         padding="2px"
         spread
         :options="options"
-        style="border: 1px solid #027be3;"
+        :text-color="colorStore.activePallete.deploymentMode.toggle.inActive.text"
+        :color="colorStore.activePallete.deploymentMode.toggle.inActive.background"
+        :toggle-text-color="colorStore.activePallete.deploymentMode.toggle.active.text"
+        :toggle-color="colorStore.activePallete.deploymentMode.toggle.active.background"
+        class="toggle"
       />
     </div>
   </div>
@@ -21,6 +25,10 @@
 import { PropType, computed } from 'vue';
 
 import { DeploymentModeType } from 'src/api/types/deployments.ts';
+import { useColorStore } from 'src/stores/color';
+import { colorToHex } from 'src/utils/colorValues';
+
+const colorStore = useColorStore();
 
 const emit = defineEmits(['update:modelValue']);
 
@@ -46,3 +54,9 @@ const value = computed({
 });
 
 </script>
+
+<style scoped>
+.toggle {
+  border: 1px solid v-bind('colorToHex(colorStore.activePallete.outline)');
+}
+</style>
