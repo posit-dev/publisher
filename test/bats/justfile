@@ -1,0 +1,58 @@
+alias c := clean
+alias i := install
+alias t := test
+
+_with_debug := if env_var_or_default("DEBUG", "true") == "true" {
+        "set -x pipefail"
+    } else {
+        ""
+    }
+
+default:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just install
+    just test
+
+# Deletes ephemeral project files (i.e., cleans the project).
+clean:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    rm -rf node_modules
+
+
+# Install dependencies
+install:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm install
+
+# Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just bats run test`)
+run *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run {{ args }}
+
+
+# Executes Cypress tests
+test:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    exe=$(just ../../executable-path)
+
+    if [ ! -f $exe ]; then
+        echo "error: Missing executable. Run \`just build\`." 1>&2
+        exit 1
+    fi
+
+    EXE=$exe npm test

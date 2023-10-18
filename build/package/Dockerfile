@@ -1,35 +1,38 @@
-# To build and run shell: `docker run -it $(docker build -q .)` from within `build/package` subdirectory
-FROM centos:7
+FROM rockylinux:8
 
-RUN yum update -y \
-    && yum install -y curl git openssl mailcap tzdata xz nodejs xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GConf2 nss libXScrnSaver alsa-lib python3 \
-    && yum groupinstall -y "Development Tools"
+RUN dnf -y update\
+    && dnf -y install\
+        # curl is required in this file
+        curl\
+        # findutils is required by bats
+        findutils\
+        # git is required in this file
+        git\
+        # Python3 is required to for testing
+        python3\
+        # tar is required in this file
+        tar\
+    # NodeJS is required by this project. The source code for the client is written in it!
+    && dnf -y module enable nodejs:16\
+    && dnf -y module install nodejs:16
 
-RUN export GOLANG_VERSION=1.21.3 \
-    && export GOLANG_DOWNLOAD_SHA256=1241381b2843fae5a9707eec1f8fb2ef94d827990582c7c7c32f5bdfbfd420c8 \
-    && curl -fsSL "https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz" -o golang.tar.gz \
-    && echo "${GOLANG_DOWNLOAD_SHA256}  golang.tar.gz" | sha256sum -c - \
-    && tar -C /usr/local -xzf golang.tar.gz \
-    && rm golang.tar.gz
+# epel-release is required by ShellCheck
+RUN dnf -y install epel-release
+
+# epel-release is required by ShellCheck
+RUN dnf -y install ShellCheck
+
+# Just is required for this project (see Justfile, ./web/Justfile, ./tests/Justfile)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+
+# Go is required by this project. The source code is written in it!
+RUN curl -L -O https://go.dev/dl/go1.21.3.linux-amd64.tar.gz\
+    && rm -rf /usr/local/go\
+    && tar -C /usr/local -xzf go1.21.3.linux-amd64.tar.gz
 ENV PATH="$PATH:/usr/local/go/bin"
 
-RUN export GOPATH=/usr/local/gotools \
-    && go install -v mvdan.cc/sh/v3/cmd/shfmt@latest \
-    && go install -v golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow@latest \
-    && go install honnef.co/go/tools/cmd/staticcheck@latest
-ENV PATH="$PATH:/usr/local/gotools/bin"
+# staticcheck is required to for linting Go
+RUN go env -w GOBIN=/usr/local/go/bin\
+ && go install honnef.co/go/tools/cmd/staticcheck@latest
 
-RUN export SHELLCHECK_VERSION=0.9.0 \
-    && curl -fsSL https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz \
-        | tar -C /usr/local/bin -xJ --strip=1 shellcheck-v${SHELLCHECK_VERSION}/shellcheck \
-    && chown $(id -u):$(id -g) /usr/local/bin/shellcheck
-
-# task runner
-RUN export JUST_VERSION=1.14.0 \
-    && curl -fsSL https://github.com/casey/just/releases/download/${JUST_VERSION}/just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz \
-    | tar -C /usr/local/bin -xz just
-
-# UX stack
-RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
-RUN yum -y install nodejs
-RUN node -v && npm version && npx -v
+RUN git config --global --add safe.directory '*'

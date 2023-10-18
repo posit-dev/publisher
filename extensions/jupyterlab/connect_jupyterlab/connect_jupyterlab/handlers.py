@@ -26,7 +26,7 @@ class PublishHandler(APIHandler):
     def post(self) -> None:
         """post initiates the publishing process. Details TBD."""
         self.log.info("Launching publishing UI")
-        data: Dict[str, str] = self.get_json_body()
+        data: Any = self.get_json_body()
         notebookPath = os.path.abspath(data["notebookPath"])
         pythonPath = data["pythonPath"]
         pythonVersion = data["pythonVersion"]

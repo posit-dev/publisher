@@ -10,6 +10,7 @@ node_modules/
 connect_jupyterlab/labextension
 # Version file is handled by hatchling
 connect_jupyterlab/_version.py
+junit.xml
 
 # Integration tests
 ui-tests/test-results/

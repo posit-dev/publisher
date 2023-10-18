@@ -3,6 +3,7 @@ package environment
 import (
 	"bytes"
 	"fmt"
+	"io/fs"
 	"os/exec"
 	"strings"
 
@@ -54,18 +55,54 @@ func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.
 	}
 }
 
-func (i *defaultPythonInspector) getPythonExecutable() string {
+func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
+	args := []string{"--version"}
+	_, err := i.executor.runPythonCommand(pythonExecutable, args)
+	return err
+}
+
+func (i *defaultPythonInspector) getPythonExecutable(exec util.PathLooker) (string, error) {
 	if i.pythonPath.Path() != "" {
 		// User-provided python executable
-		return i.pythonPath.Path()
+		exists, err := i.pythonPath.Exists()
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return i.pythonPath.Path(), nil
+		}
+		return "", fmt.Errorf(
+			"cannot find the specified Python executable %s: %w",
+			i.pythonPath, fs.ErrNotExist)
 	} else {
 		// Use whatever is on PATH
-		return "python3"
+		path, err := exec.LookPath("python3")
+		if err == nil {
+			// Ensure the Python is actually runnable. This is especially
+			// needed on Windows, where `python3` is (by default)
+			// an app execution alias. Also, installing Python from
+			// python.org does not disable the built-in app execution aliases.
+			err = i.validatePythonExecutable(path)
+		}
+		if err != nil {
+			path, err = exec.LookPath("python")
+			if err == nil {
+				err = i.validatePythonExecutable(path)
+			}
+		}
+		if err != nil {
+			return "", err
+		}
+		return path, nil
 	}
 }
 
 func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
-	pythonExecutable := i.getPythonExecutable()
+	pythonExecutable, err := i.getPythonExecutable(util.NewPathLooker())
+	if err != nil {
+		return "", err
+	}
+	i.log.Info("Running Python", "python", pythonExecutable)
 	args := []string{
 		`-E`, // ignore python-specific environment variables
 		`-c`, // execute the next argument as python code
@@ -90,7 +127,11 @@ func (i *defaultPythonInspector) GetPythonRequirements() ([]byte, error) {
 		i.log.Info("Using Python packages", "source", requirementsFilename)
 		return requirementsFilename.ReadFile()
 	}
-	pythonExecutable := i.getPythonExecutable()
+	pythonExecutable, err := i.getPythonExecutable(util.NewPathLooker())
+	if err != nil {
+		return nil, err
+	}
+	i.log.Info("Running Python", "python", pythonExecutable)
 	source := fmt.Sprintf("'%s -m pip freeze'", pythonExecutable)
 	i.log.Info("Using Python packages", "source", source)
 	args := []string{"-m", "pip", "freeze"}

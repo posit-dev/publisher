@@ -84,7 +84,7 @@ func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	log := logging.New()
 	inspector := NewPythonInspector(util.Path{}, util.Path{}, log)
 	executor := NewMockPythonExecutor()
-	executor.On("runPythonCommand", "python3", mock.Anything).Return([]byte("3.10.4"), nil)
+	executor.On("runPythonCommand", mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
 	version, err := inspector.GetPythonVersion()
 	s.Nil(err)
@@ -93,16 +93,98 @@ func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 }
 
 func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
-	// This test can only run if python3 is on the PATH.
+	// This test can only run if python3 or python is on the PATH.
 	_, err := exec.LookPath("python3")
 	if err != nil {
-		s.T().Skip("python3 isn't available on PATH")
+		_, err := exec.LookPath("python")
+		if err != nil {
+			s.T().Skip("This test requires python or python3 to be available on PATH")
+		}
 	}
 	log := logging.New()
 	inspector := NewPythonInspector(util.Path{}, util.Path{}, log)
 	version, err := inspector.GetPythonVersion()
 	s.Nil(err)
 	s.True(strings.HasPrefix(version, "3."))
+}
+
+type mockPythonExecutor struct {
+	mock.Mock
+}
+
+var _ pythonExecutor = &mockPythonExecutor{}
+
+func (m *mockPythonExecutor) runPythonCommand(pythonExecutable string, args []string) ([]byte, error) {
+	mockArgs := m.Called(pythonExecutable, args)
+	out := mockArgs.Get(0)
+	if out != nil {
+		return out.([]byte), mockArgs.Error(1)
+	} else {
+		return nil, mockArgs.Error(1)
+	}
+}
+
+func (s *PythonSuite) TestGetPythonExecutableFallbackPython() {
+	// python3 does not exist
+	// python exists and is runnable
+	log := logging.New()
+	executor := &mockPythonExecutor{}
+	executor.On("runPythonCommand", "/some/python", mock.Anything).Return(nil, nil)
+	inspector := &defaultPythonInspector{
+		executor: executor,
+		log:      log,
+	}
+
+	exec := util.NewMockPathLooker()
+	exec.On("LookPath", "python3").Return("", os.ErrNotExist)
+	exec.On("LookPath", "python").Return("/some/python", nil)
+	executable, err := inspector.getPythonExecutable(exec)
+	s.NoError(err)
+	s.Equal("/some/python", executable)
+}
+
+func (s *PythonSuite) TestGetPythonExecutablePython3NotRunnable() {
+	// python3 exists but is not runnable
+	// python exists and is runnable
+	log := logging.New()
+	executor := &mockPythonExecutor{}
+	testError := errors.New("exit status 9009")
+	executor.On("runPythonCommand", "/some/python3", mock.Anything).Return(nil, testError)
+	executor.On("runPythonCommand", "/some/python", mock.Anything).Return(nil, nil)
+
+	inspector := &defaultPythonInspector{
+		executor: executor,
+		log:      log,
+	}
+
+	exec := util.NewMockPathLooker()
+	exec.On("LookPath", "python3").Return("/some/python3", nil)
+	exec.On("LookPath", "python").Return("/some/python", nil)
+	executable, err := inspector.getPythonExecutable(exec)
+	s.NoError(err)
+	s.Equal("/some/python", executable)
+}
+
+func (s *PythonSuite) TestGetPythonExecutableNoRunnablePython() {
+	// python3 exists but is not runnable
+	// python exists but is not runnable
+	log := logging.New()
+	executor := &mockPythonExecutor{}
+	testError := errors.New("exit status 9009")
+	executor.On("runPythonCommand", "/some/python3", mock.Anything).Return(nil, testError)
+	executor.On("runPythonCommand", "/some/python", mock.Anything).Return(nil, testError)
+
+	inspector := &defaultPythonInspector{
+		executor: executor,
+		log:      log,
+	}
+
+	exec := util.NewMockPathLooker()
+	exec.On("LookPath", "python3").Return("/some/python3", nil)
+	exec.On("LookPath", "python").Return("/some/python", nil)
+	executable, err := inspector.getPythonExecutable(exec)
+	s.NotNil(err)
+	s.Equal("", executable)
 }
 
 func (s *PythonSuite) TestGetRequirementsFromFile() {
