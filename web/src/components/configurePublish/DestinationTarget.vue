@@ -14,7 +14,7 @@
     </template>
     <div class="q-pa-sm">
       <q-list>
-        <AccountCredentials
+        <AccountCredential
           v-for="account in accounts"
           :key="account.name"
           v-model="selectedAccountName"
@@ -32,7 +32,7 @@ import { computed, onMounted, ref } from 'vue';
 
 import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
 import PublisherDestinationLogo from 'src/components/icons/PublisherDestinationLogo.vue';
-import AccountCredentials from 'src/components/configurePublish/AccountCredentials.vue';
+import AccountCredential from 'src/components/configurePublish/AccountCredential.vue';
 
 import { useDeploymentStore } from 'src/stores/deployment';
 import { useColorStore } from 'src/stores/color';
