@@ -13,7 +13,7 @@
         <WhitePositLogo
           width="70px"
           height="30px"
-          svg-class="posit-logo"
+          class="posit-logo"
           alt="Posit PBC Logo"
         />
         <q-toolbar-title class="q-pl-xs">

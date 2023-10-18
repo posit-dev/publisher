@@ -8,7 +8,7 @@
       <PublisherAdvancedLogo
         width="40px"
         height="40px"
-        svg-class="advanced-logo"
+        class="advanced-logo"
       />
     </template>
     TODO: Show list of editable settings (and some as read-only)

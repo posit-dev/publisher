@@ -7,7 +7,6 @@
     version="1.1"
     :width="width"
     :height="height"
-    :class="svgClass"
     x="0px"
     y="0px"
     viewBox="0 0 104 45"
@@ -54,7 +53,6 @@
 defineProps({
   height: { type: String, required: true },
   width: { type: String, required: true },
-  svgClass: { type: String, required: false, default: '' },
 });
 
 </script>

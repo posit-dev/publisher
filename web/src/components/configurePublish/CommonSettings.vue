@@ -8,7 +8,7 @@
       <PublisherSettingsLogo
         width="40px"
         height="40px"
-        svg-class="common-logo"
+        class="common-logo"
       />
     </template>
     TODO: Common settings, probably off the info panel in dashboard

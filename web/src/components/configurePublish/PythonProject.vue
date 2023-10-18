@@ -8,7 +8,7 @@
       <PublisherPythonLogo
         width="40px"
         height="40px"
-        svg-class="python-logo"
+        class="python-logo"
       />
     </template>
     TODO: Show detailed python version and list of package dependencies

@@ -49,6 +49,7 @@
 import { PropType, computed } from 'vue';
 import { Account } from 'src/api';
 import { useColorStore } from 'src/stores/color';
+import { colorToHex } from 'src/utils/colorValues';
 import { calculateName } from 'src/utils/accounts';
 
 const colorStore = useColorStore();
@@ -62,16 +63,6 @@ const props = defineProps({
   account: {
     type: Object as PropType<Account>,
     required: true,
-  },
-  selectedClass: {
-    type: String,
-    required: false,
-    default: '',
-  },
-  unSelectedClass: {
-    type: String,
-    required: false,
-    default: '',
   },
 });
 
@@ -89,7 +80,37 @@ const selected = computed(() => {
 });
 
 const activeClass = computed(() => {
-  return selected.value ? props.selectedClass : props.unSelectedClass;
+  return selected.value ? 'account-item-selected' : 'account-item-not-selected';
 });
 
 </script>
+
+<style>
+.account-item-selected {
+  border: v-bind('colorToHex(colorStore.activePallete.destination.outline)') solid 1px;
+  border-radius: 10px;
+  background-color: v-bind('colorToHex(colorStore.activePallete.destination.background.selected)');
+  color: v-bind('colorToHex(colorStore.activePallete.destination.text)');
+}
+
+.account-item-not-selected {
+  border: v-bind('colorToHex(colorStore.activePallete.destination.outline)') solid 1px;
+  border-radius: 10px;
+  background-color: v-bind('colorToHex(colorStore.activePallete.destination.background.unSelected)');
+  color: v-bind('colorToHex(colorStore.activePallete.destination.text)');
+}
+
+.account-caption {
+  color: v-bind('colorToHex(colorStore.activePallete.destination.caption)');
+}
+
+.account-url {
+  color: v-bind('colorToHex(colorStore.activePallete.destination.caption)');
+}
+
+.account-credential {
+  color: v-bind('colorToHex(colorStore.activePallete.destination.caption)');
+  font-size: x-small;
+  text-align: end;
+}
+</style>

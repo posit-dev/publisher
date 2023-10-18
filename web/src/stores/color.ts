@@ -27,6 +27,9 @@ export const useColorStore = defineStore('color', () => {
         fill: 'grey-1',
         stroke: 'none',
       },
+      files: {
+        controls: 'grey-6',
+      },
       destination: {
         outline: 'grey-6',
         background: {
@@ -95,6 +98,9 @@ export const useColorStore = defineStore('color', () => {
       logo: {
         fill: 'grey-1',
         stroke: 'none',
+      },
+      files: {
+        controls: 'grey-10',
       },
       destination: {
         outline: 'grey-10',

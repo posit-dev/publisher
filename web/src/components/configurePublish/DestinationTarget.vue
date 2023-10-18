@@ -9,7 +9,7 @@
       <PublisherDestinationLogo
         width="40px"
         height="40px"
-        svg-class="destination-logo"
+        class="destination-logo"
       />
     </template>
     <div class="q-pa-sm">
@@ -19,8 +19,6 @@
           :key="account.name"
           v-model="selectedAccountName"
           :account="account"
-          selected-class="account-item-selected"
-          un-selected-class="account-item-not-selected"
         />
       </q-list>
     </div>
@@ -83,31 +81,4 @@ onMounted(async() => {
   stroke: v-bind('colorToHex(colorStore.activePallete.icon.stroke)');
 }
 
-.account-item-selected {
-  border: v-bind('colorToHex(colorStore.activePallete.destination.outline)') solid 2px;
-  border-radius: 10px;
-  background-color: v-bind('colorToHex(colorStore.activePallete.destination.background.selected)');
-  color: v-bind('colorToHex(colorStore.activePallete.destination.text)');
-}
-
-.account-item-not-selected {
-  border: v-bind('colorToHex(colorStore.activePallete.destination.outline)') solid 1px;
-  border-radius: 10px;
-  background-color: v-bind('colorToHex(colorStore.activePallete.destination.background.unSelected)');
-  color: v-bind('colorToHex(colorStore.activePallete.destination.text)');
-}
-
-.account-caption {
-  color: v-bind('colorToHex(colorStore.activePallete.destination.caption)');
-}
-
-.account-url {
-  color: v-bind('colorToHex(colorStore.activePallete.destination.caption)');
-}
-
-.account-credential {
-  color: v-bind('colorToHex(colorStore.activePallete.destination.caption)');
-  font-size: x-small;
-  text-align: end;
-}
 </style>

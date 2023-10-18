@@ -9,7 +9,7 @@
       <PublisherFolderLogo
         width="40px"
         height="40px"
-        svg-class="folder-logo"
+        class="folder-logo"
       />
     </template>
     <q-tree
@@ -17,6 +17,7 @@
       v-model:expanded="expanded"
       :nodes="files"
       :node-key="NODE_KEY"
+      :control-color="colorStore.activePallete.files.controls"
       tick-strategy="leaf"
       dense
     />
