@@ -13,7 +13,6 @@ export const calculateName = (account: Account) => {
 
 export const findAccount = (accountName: string, accounts: Account[]): Account | undefined => {
   return accounts.find(account => {
-    console.log(`${account.name} vs ${accountName}`);
     return (account.name === accountName);
   });
 };
