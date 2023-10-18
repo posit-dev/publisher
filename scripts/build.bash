@@ -1,18 +1,30 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-set -eo pipefail
-
-package=$1
-if [[ -z "$package" ]]; then
-  echo "usage: $0 <package-name>"
-  exit 1
+if [ ! -d "./web/dist" ]; then
+    echo "error: Missing frontend distribution. Run \`just web build\` or \`just stub\`." 1>&2
+    exit 1
 fi
 
-package_name=$(basename "$package")
-platforms=("$(go env GOOS)/$(go env GOARCH)")
-version=$(git describe --always --tags)
-developmentMode=${BUILD_MODE:-"production"}
+CI="${CI:-false}"
 
+cmd=$1
+if [[ -z "$cmd" ]]; then
+  echo "usage: $0 <cmd>"
+  exit 1
+fi
+echo "Package: $cmd"
+
+version=$(./scripts/get-version.bash)
+echo "Version: $version"
+
+name=$(basename "$cmd")
+echo "Name: $name"
+
+mode=${MODE:-"dev"}
+echo "Mode: $mode"
+
+platforms=("$(go env GOHOSTOS)/$(go env GOHOSTARCH)")
 if [ "$CI" = "true" ]; then
     platforms=(
         "darwin/amd64"
@@ -47,23 +59,21 @@ fi
 
 for platform in "${platforms[@]}"
 do
-    echo "Building $platform"
-	platform_split=(${platform//\// })
-	GOOS=${platform_split[0]}
-	GOARCH=${platform_split[1]}
-	output_name='./bin/'$GOOS'-'$GOARCH/$package_name
-	if [ "$GOOS" = "windows" ]; then
-		output_name+='.exe'
-	fi
+    echo "Building: $platform"
+    os=${platform/\/*}   # retain the part before the slash
+    arch=${platform/*\/} # retain the part after the slash
 
-    env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$output_name" -ldflags \
-        "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$developmentMode'" \
-        "$package"
-	if [ $? -ne 0 ]; then
-   		echo 'An error has occurred! Aborting the script execution...'
-		exit 1
-    else
-        echo "Making $output_name executable"
-        chmod +x "$output_name"
-	fi
+    executable=$(./scripts/get-executable-path.bash "$name" "$version" "$os" "$arch" )
+
+    env\
+        CGO_ENABLED=0\
+        GOOS="$os"\
+        GOARCH="$arch"\
+        go build\
+        -o "$executable"\
+        -ldflags "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$mode'"\
+        "$cmd"
+
+    echo "Executable: $executable"
+    chmod +x "$executable"
 done

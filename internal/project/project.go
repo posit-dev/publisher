@@ -14,5 +14,5 @@ func UserAgent() string {
 }
 
 func DevelopmentBuild() bool {
-	return Mode == "development"
+	return Mode == "dev"
 }

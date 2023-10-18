@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # Use gofmt to check for fmt compliance. When there are formatting problems,
 # print the suggestions and exit with an error.

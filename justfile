@@ -1,199 +1,264 @@
-# clean, image, bootstrap, validate, build and test agent & client
-default: clean image bootstrap validate build test
+alias a := all
+alias b := build
+alias c := clean
+alias co := cover
+alias im := image
+alias l := lint
+alias r := run
+alias t := test
+alias w := web
+alias v := version
+
+_ci := env_var_or_default("CI", "false")
+
+_cmd := "./cmd/connect-client"
+
+_debug := env_var_or_default("DEBUG", "true")
+
+_docker := env_var_or_default("DOCKER", if _ci == "true" { "true"} else { "false" })
+
+_docker_file := "./build/ci/Dockerfile"
+
+_docker_image_name := "rstudio/connect-client"
+
+_docker_platform := env_var_or_default("DOCKER_PLATFORM", env_var_or_default("DOCKER_DEFAULT_PLATFORM", "linux/amd64"))
+
+_github_actions := env_var_or_default("GITHUB_ACTIONS", "false")
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
-_ci := "${CI:-false}"
+_mode := "${MODE:-dev}"
 
-_tag := "rstudio/connect-client:latest"
-
-_with_runner := if env_var_or_default("DOCKER", "true") == "true" {
-        "just _with_docker"
+_with_debug := if _debug == "true" {
+        "set -x pipefail"
     } else {
         ""
     }
 
-_uid_args := if "{{ os() }}" == "Linux" {
+_uid_args := if os_family() == "unix" {
         "-u $(id -u):$(id -g)"
     } else {
         ""
     }
 
-# bootstrap any supporting packages (such as go package or web UX javascript/typescript dependencies)
-bootstrap:
-    # No initialization needed for go code at this time.
-    # bootstrap client
-    {{ _with_runner }} just web/bootstrap
-
-# Clean the agent and web UX build artifacts as well as remove all web UX dependency packages.
-clean: clean-agent
-    just web/clean
-
-# Clean the agent's build artifacts
-clean-agent:
-    rm -rf ./bin/**/connect-client
-
-# create the security certificates
-certs:
-    mkdir -p certs
-    mkcert -cert-file ./certs/localhost-cert.pem -key-file ./certs/localhost-key.pem localhost 127.0.0.1 ::1 0.0.0.0
-
-# Build both the web UX and agent for production usage
-build: build-web build-agent
-
-# Build the production agent using the existing build of the Web UX
-build-agent:
+# Quick start
+default:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -eou pipefail
+    {{ _with_debug }}
 
-    # Have to remove linked server executable, so that switching from production
-    # to development modes (and vise-versa) will work.
-    just clean-agent
+    just clean
+    just web
+    just build
 
-    echo ""
-    if [ "${BUILD_MODE:-}" == "development" ]; then
-        echo "Generating a development build of connect-client."
-    else
-        echo "Generating production builds of connect-client."
-    fi
+# Executes command against every justfile where avaiable. WARNING your mileage may very.
+all +args='default':
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
 
-    if {{ _with_runner }} ./scripts/build.bash ./cmd/connect-client; then
-        echo "Build was successful"
-    else
-        echo ""
-        echo "An error has occurred while building."
-        echo ""
-        if [ ! -f "./web/dist/index.html" ]; then
-            echo "No web SPA artifacts can be found. A web build is required for the backend"
-            echo "to build. Possibly resolve with 'just web/build' or 'just build'."
+    # For each justfile, check if the first argument exists, and then execute it.
+    for f in `find . -name justfile`; do
+        arg=`echo {{ args }} | awk '{print $1;}'`
+        if just -f $f --show $arg &>/dev/null; then
+            just _with_docker just -f $f {{ args }}
         fi
-    fi
+    done
 
-# Build the development agent using the existing build of the Web UX
-build-agent-dev:
-    #!/bin/bash
-    set -euo pipefail
-    export BUILD_MODE=development
-
-    just build-agent
-
-# Build the web UX
-build-web:
-    {{ _with_runner }} just web/build
-
-# Build the developer stack
-build-dev:
-    just clean image bootstrap build-web build-agent-dev
-
-# Validate the agent and the web UX source code, along with checking for copyrights.
-validate:
+# Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`, but inside of Docker (i.e., just _with_docker just test/bats/).
+bats *args:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -eou pipefail
+    {{ _with_debug }}
 
-    ./scripts/ccheck.py ./scripts/ccheck.config
-    {{ _with_runner }} just web/validate
-    just validate-agent
+    just _with_docker just test/bats/{{ args }}
 
-validate-agent:
+# Compiles the application using Go. Executables are written to `./dist`. If invoked with `env CI=true` then executables for all supported architectures using the Go toolchain.
+build:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -eou pipefail
+    {{ _with_debug }}
 
-    # there must be files in web/dist for go vet
-    # so it can compile web/web.go which embeds it.
-    web_dir=web/dist
-    if [[ ! -e ${web_dir} ]]; then
-        mkdir -p ${web_dir}
-        echo "placeholder" > ${web_dir}/placeholder
-        trap "rm -f ${web_dir}/placeholder" EXIT
-    fi
-    {{ _with_runner }} staticcheck ./...
-    {{ _with_runner }} go vet -all ./...
-    {{ _with_runner }} ./scripts/fmt-check.bash
+    just _with_docker env MODE={{ _mode }} ./scripts/build.bash {{ _cmd }}
 
-# Validate and FIX automatically correctable issues. See the `validate` recipe for linting without fixing.
-validate-fix:
+# Deletes ephemeral project files (i.e., cleans the project).
+clean:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -eou pipefail
+    {{ _with_debug }}
 
-    # This will fail even though fix flag is supplied (to fix errors).
-    # We could suppress w/ cmd || true, but do we want to?
-    ./scripts/ccheck.py ./scripts/ccheck.config --fix
-    {{ _with_runner }} just web/validate-fix
+    rm -rf ./bin
 
-# Run all tests (unit and e2e) on the agent as well as web UX
-test: test-agent test-web
-
-# Run the tests on the agent w/ coverage profiling
-test-agent:
+# Display the code coverage collected during the last execution of `just test`.
+cover:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -eou pipefail
+    {{ _with_debug }}
 
-    echo "Testing agent code"
-    {{ _with_runner }} go test ./... -covermode set -coverprofile ./test/go_cover.out
+    just _with_docker go tool cover -html=cover.out
 
-# Display the test code coverage of the Go code, from last test run
-test-agent-coverage:
+# Executes commands in ./test/cy/justfile. Equivalent to `just test/cy/`, but inside of Docker (i.e., just _with_docker just test/cy/).
+cy *args:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -eou pipefail
+    {{ _with_debug }}
 
-    {{ _with_runner }} go tool cover -html=./test/go_cover.out -o ./test/go_coverage.html
-    echo "" && echo "To view coverage HTML, open ./test/go_coverage.html with your browser"
+    just _with_docker just test/cy/{{ args }}
 
-# run the tests on the Web UX
-test-web:
-    {{ _with_runner }} just web/test
-
-# Run the publishing agent executable w/ arguments
-run-agent *args:
+# Prints the executable path for this operating system. It may not exist yet (see `just build`).
+executable-path:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -eou pipefail
+    {{ _with_debug }}
 
-    {{ _with_runner }} go run ./cmd/connect-client {{ args }}
+    just _with_docker echo '$(./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOHOSTOS) $(go env GOHOSTARCH))'
+
+# Fixes linting errors
+fix:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+     ./scripts/ccheck.py ./scripts/ccheck.config --fix
 
 # Build the image. Typically does not need to be done very often.
 image:
-    #!/bin/bash
-    set -euo pipefail
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
 
-    if "${DOCKER:-true}" == "true" ; then
-        docker build \
-            --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --pull \
-            --tag {{ _tag }} \
-            ./build/package
+    if ! ${DOCKER-true}; then
+        exit 0
     fi
 
-# Start the agent and show the UI
-# NOTE: this must be called from within a docker container if so 
-# needed (it will not automatically use a running if defined)
-# This is because this recipe is called from the web/justfile, which
-# is already executing within a docker container (if configured to use)
-start-agent-for-e2e:
-    #!/bin/bash
-    set -exuo pipefail
+    docker buildx build \
+        --cache-from type=gha\
+        --cache-to type=gha,mode=min\
+        --file {{ _docker_file }}\
+        --load\
+        --platform {{ _docker_platform }}\
+        --progress plain\
+        --tag $(just tag) \
+        .
 
-    GOOS=$(go env GOOS)
-    # remove \r from string when executed through docker
-    GOOS="${GOOS%%[[:cntrl:]]}"
+install:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
 
-    GOARCH=$(go env GOARCH)
-    # remove \r from string when executed through docker
-    GOARCH="${GOARCH%%[[:cntrl:]]}"
+    just _with_docker go install honnef.co/go/tools/cmd/staticcheck@latest
+    if [ ! `just _with_docker which staticcheck` ]; then
+        echo "error: \`staticcheck\` not found. Is '\$GOPATH/bin' in your '\$PATH'?" 1>&2
+        exit 1
+    fi
 
-    echo "Working directory is $(pwd)"
 
-    ./bin/$GOOS-$GOARCH/connect-client publish-ui \
-        ./test/sample-content/fastapi-simple \
-        --listen=127.0.0.1:9000 \
-        --token=abc123
+jupyterlab *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just extensions/jupyterlab/connect_jupyterlab/{{ args }}
+
+
+# staticcheck, vet, and format check
+lint: stub
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    # ./scripts/ccheck.py ./scripts/ccheck.config
+    just _with_docker staticcheck ./...
+    just _with_docker go vet -all ./...
+    just _with_docker ./scripts/fmt-check.bash
+
+# Prints the pre-release status based on the version (see `just version`).
+pre-release:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    ./scripts/is-pre-release.bash
+
+# Runs the CLI via `go run`.
+run *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    echo {{ args }}
+    just _with_docker '$(just executable-path)' {{ args }}
+
+# Creates a fake './web/dist' directory for when it isn't needed.
+stub:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    dir=web/dist
+
+    if [ ! -d "$dir" ]; then
+        mkdir -p $dir
+        touch $dir/generated.txt
+        echo "This file was created by ./scripts/stub.bash" >> $dir/generated.txt
+    fi
+
+# Prints the Docker image tag.
+tag:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    echo {{ _docker_image_name }}":"$(just version)
+
+# Execute unit tests.
+test: stub
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker go test ./... -covermode set -coverprofile=cover.out
+
+# Executes commands in ./web/Justfile. Equivalent to `just web/dist`, but inside of Docker (i.e., just _with_docker web/dist).
+web *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just web/{{ args }}
+
+# Print the version.
+version:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    ./scripts/get-version.bash
 
 [private]
 _with_docker *args:
-    docker run --rm {{ _interactive }} \
-        -e CI={{ _ci }} \
-        -e GOCACHE=/work/.cache/go/cache \
-        -e GOMODCACHE=/work/.cache/go/mod \
-        -v "$(pwd)":/work \
-        -w /work \
-        {{ _uid_args }} \
-        {{ _tag }} {{ args }}
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    if ! {{ _docker }}; then
+        {{ args }}
+        exit 0
+    fi
+
+    if ! docker image inspect $(just tag) &>/dev/null; then
+        just image
+    fi
+
+    docker run --rm {{ _interactive }}\
+        -e CI={{ _ci }}\
+        -e DEBUG={{ _debug }}\
+        -e DOCKER=false\
+        -e GOCACHE=/work/.cache/go/cache\
+        -e GOMODCACHE=/work/.cache/go/mod\
+        -e MODE={{ _mode }}\
+        --platform {{ _docker_platform }}\
+        -v "$(pwd)":/work\
+        -w /work\
+        $(just tag)\
+        /bin/bash -c  '{{ args }}'

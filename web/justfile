@@ -1,109 +1,115 @@
-_use_docker := env_var_or_default("DOCKER", "true")
+alias b := build
+alias c := clean
+alias i := install
+alias l := lint
+alias p := preview
+alias r := run
+alias t := test
+alias w := watch
 
-# will run recipes: bootstrap, validate, build, and test
-default: bootstrap validate build test
+export CYPRESS_CACHE_FOLDER := "./cypress/.cache"
 
-# update javascript/typescript dependencies
-bootstrap:
-    #!/bin/bash
-    set -euo pipefail
+_ci := "${CI:-false}"
 
-    # set this environment variable to keep Cypress from attempting
-    # to create a cache within root's home dir.
-    export CYPRESS_CACHE_FOLDER="./cypress/.cache"
-    echo "NOTE: npm install may take five minutes or more from within a docker container..."
-    npm install --no-audit
+_with_debug := if env_var_or_default("DEBUG", "true") == "true" {
+        "set -x pipefail"
+    } else {
+        ""
+    }
 
-# validate the source files, do not fix the fixable items
-validate:
-    npm run lint
+default:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
 
-# validate the source files, fix the fixable items
-validate-fix:
-    npm run lint-fix
+    just clean
+    just install
+    just build
 
-# build the web artifacts for the SPA (into dest/spa)
+
+# Compiles the static assests for the web client. Static assets are written to `./web/dist`.
 build:
-    #!/bin/bash
-    set -euo pipefail
-
-    just bootstrap
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
 
     npm run build
 
-# perform unit, go race and e2e tests
-test: test-unit test-race test-e2e
-
-# perform race testing
-test-race:
-    go test -race ./...
-
-# run e2e (Cypress) tests against dev server
-test-e2e-dev:
-    #!/bin/bash
-    set -euo pipefail
-
-    # set this environment variable to keep Cypress from attempting to create
-    # cache within root's home dir.
-    export CYPRESS_CACHE_FOLDER="./cypress/.cache"
-    # install cypress
-    npx cypress install
-
-    npm run test:e2e:dev
-
-# run e2e (Cypress) tests
-test-e2e:
-    #!/bin/bash
-    set -euo pipefail
-
-    # set this environment variable to keep Cypress from attempting to create
-    # cache within root's home dir.
-    export CYPRESS_CACHE_FOLDER="./cypress/.cache"
-    # install cypress
-    npx cypress install
-
-    npm run test:e2e:ci
-
-build-and-test-ci-e2e target:
-    #!/bin/bash
-    set -euo pipefail
-    just build
-    # set this environment variable to keep Cypress from attempting to create
-    # cache within root's home dir.
-    # use a different cache per os
-    export CYPRESS_CACHE_FOLDER="./cypress/{{target}}/.cache"
-    # install cypress
-    npx cypress install
-
-    npm run test:e2e:ci
-
-# run unit tests one time
-test-unit:
-    npm run test:unit run
-
-# run unit tests in watch mode, re-running as files are changed
-test-unit-watch:
-    npm run test:unit
-
-# start common UX development flow. Start the web server which updates automatically upon file changes
-dev:
-    npm run dev
-
-# start a locally run production build of the web Ux
-preview:
-    npm run preview
-
-# remove build artifacts and dependencies
+# Deletes ephemeral project files (i.e., cleans the project).
 clean:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -eou pipefail
+    {{ _with_debug }}
 
-    # not using quasar clean, as it would require us to have node_modules fully installed. Instead, performing what
-    # it said it was doing...
-    # quasar clean
-    # App • Cleaned build artifact: "/work/web/.quasar"
-    # App • Emptied dist folder
-    # App • Done cleaning build artifacts
-    rm -rdf .quasar
-    rm -rdf dist
-    rm -rdf node_modules
+    rm -rf .quasar
+    rm -rf dist
+    rm -rf node_modules
+
+# Launch a local web server instance with hot-reloads.
+dev:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run dev
+
+# Fixes formatting using ESLint
+fix:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run fix
+
+# Installs dependencies
+install:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    if [ {{ _ci }} = "true" ]; then
+        npm ci --no-audit --no-fund
+    else
+        npm install --no-audit --no-fund
+    fi
+
+# Checks formatting using ESLint
+lint:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run lint
+
+# Launch a local web server instance in production mode.
+preview:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run preview
+
+# Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just web run preview`)
+run *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run {{ args }}
+
+
+# Executes unit tests
+test:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run test
+
+# Watches unit tests
+watch:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run watch

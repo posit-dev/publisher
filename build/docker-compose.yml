@@ -8,7 +8,7 @@ services:
     ports:
       - 3939:3939
     volumes:
-      - $PWD/docker/rstudio-connect.gcfg:/etc/rstudio-connect/rstudio-connect.gcfg
+      - rstudio-connect.gcfg:/etc/rstudio-connect/rstudio-connect.gcfg
     privileged: true
     environment:
       RSTUDIO_CONNECT_HASTE: "enabled"
