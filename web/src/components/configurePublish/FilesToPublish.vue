@@ -9,8 +9,7 @@
       <PublisherFolderLogo
         width="40px"
         height="40px"
-        :fill="colorStore.activePallete.icon.fill"
-        :stroke="colorStore.activePallete.icon.stroke"
+        class="folder-logo"
       />
     </template>
     <q-tree
@@ -18,6 +17,7 @@
       v-model:expanded="expanded"
       :nodes="files"
       :node-key="NODE_KEY"
+      :control-color="colorStore.activePallete.files.controls"
       tick-strategy="leaf"
       dense
     />
@@ -34,6 +34,7 @@ import PublisherFolderLogo from 'src/components/icons/PublisherFolderLogo.vue';
 import { useApi, DeploymentFile } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
 import { useColorStore } from 'src/stores/color';
+import { colorToHex } from 'src/utils/colorValues';
 
 const NODE_KEY = 'key';
 
@@ -121,3 +122,10 @@ async function getFiles() {
 
 getFiles();
 </script>
+
+<style>
+.folder-logo {
+  fill: v-bind('colorToHex(colorStore.activePallete.icon.fill)');
+  stroke: v-bind('colorToHex(colorStore.activePallete.icon.stroke)');
+}
+</style>

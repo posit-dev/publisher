@@ -8,8 +8,7 @@
       <PublisherSettingsLogo
         width="40px"
         height="40px"
-        :fill="colorStore.activePallete.icon.fill"
-        :stroke="colorStore.activePallete.icon.stroke"
+        class="common-logo"
       />
     </template>
     TODO: Common settings, probably off the info panel in dashboard
@@ -21,6 +20,14 @@ import LayoutPanel from 'src/components/configurePublish/LayoutPanel.vue';
 import PublisherSettingsLogo from 'src/components/icons/PublisherSettingsLogo.vue';
 
 import { useColorStore } from 'src/stores/color';
+import { colorToHex } from 'src/utils/colorValues';
 
 const colorStore = useColorStore();
 </script>
+
+<style>
+.common-logo {
+  fill: v-bind('colorToHex(colorStore.activePallete.icon.fill)');
+  stroke: v-bind('colorToHex(colorStore.activePallete.icon.stroke)');
+}
+</style>

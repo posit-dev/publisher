@@ -6,14 +6,14 @@
   >
     <q-header
       elevated
+      class="my-class"
     >
       <q-toolbar class="max-width-md q-pa-auto">
         <AppMenu />
         <WhitePositLogo
           width="70px"
           height="30px"
-          :fill="colorStore.activePallete.logo.fill"
-          :stroke="colorStore.activePallete.logo.stroke"
+          class="posit-logo"
           alt="Posit PBC Logo"
         />
         <q-toolbar-title class="q-pl-xs">
@@ -47,7 +47,8 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
-import { useColorStore } from './stores/color';
+import { useColorStore } from 'src/stores/color';
+import { colorToHex } from 'src/utils/colorValues';
 
 import {
   EventStreamMessage,
@@ -119,3 +120,23 @@ onBeforeUnmount(() => {
 
 getInitialDeploymentState();
 </script>
+
+<style lang="scss">
+// Add colors to Quasar Palette (white and black)
+.text-white {
+  color: white !important;
+}
+.bg-white {
+  background: white !important;
+}
+.text-black {
+  color: black !important;
+}
+.bg-black {
+  background: black !important;
+}
+.posit-logo {
+  fill: v-bind('colorToHex(colorStore.activePallete.logo.fill)');
+  stroke: v-bind('colorToHex(colorStore.activePallete.logo.stroke)');
+}
+</style>
