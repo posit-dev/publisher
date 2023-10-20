@@ -5,25 +5,10 @@ jobs:
   web:
     runs-on: ubuntu-latest
     steps:
-      - uses: crazy-max/ghaction-github-runtime@v3
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: extractions/setup-just@v1
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: actions/cache@v3
-        with:
-          path: var-cache-apt
-          key: var-cache-apt-${{ hashFiles('./build/ci/Dockerfile') }}
-      - uses: reproducible-containers/buildkit-cache-dance@v2.1.2
-        with:
-          cache-source: var-cache-apt
-          cache-target: /var/cache/apt
-      - uses: actions/cache@v3
-        with:
-          path: var-lib-apt
-          key: var-lib-apt-${{ hashFiles('./build/ci/Dockerfile') }}
+      - uses: ./.github/actions/setup
       - run: just web install
       - run: just web lint
       - run: just web test
