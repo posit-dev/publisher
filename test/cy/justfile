@@ -24,6 +24,19 @@ clean:
 
     rm -rf node_modules
 
+fix:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run fix
+
+lint:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run lint
 
 # Install dependencies
 install:
