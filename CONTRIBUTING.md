@@ -12,14 +12,24 @@ Execute `just -l` for a list of avaiable commands and documentation.
 
 When executing commands the following variables are accepted to change behavior.
 
-Example: `env CI=true just build`.
-
 | Variable | Default | Type | Description                                                                                              |
 |----------|---------|------|----------------------------------------------------------------------------------------------------------|
 | CI       | false   | bool | Enable CI mode.   When set to true, multi-platform builds are enabled.                                   |
-| DEBUG    | true    | bool | Enable DEBUG mode.   When set to true, `set +x` is enabled for all Justfile targets.                     |
-| DOCKER   | true    | bool | Enable DOCKER mode.  When set to true, all Justfile targets are executed in Docker.                      |
-| MODE     | dev     | enum | Valid: `dev`, any  When set to `dev`, development is enabled. All other values disable development mode. |
+| DEBUG    | false   | bool | Enable DEBUG mode.   When set to true, `set +x` is enabled for all Justfile targets.                     |
+| DOCKER   | false   | bool | Enable DOCKER mode.  When set to true, all Justfile targets are executed in Docker.                      |
+| MODE     | dev     | enum | When set to `dev`, development is enabled. All other values disable development mode.                    |
+
+
+#### Continous Integration in GitHub Actions
+
+When running in GitHub Actions, the env varabile `CI` is set to `true` by GitHub. When `CI=true`, the defaults for the following values are adjusted.
+
+This mode can be reproduced on your local machine by setting `CI=true`.
+
+| Variable | Default |
+|----------|---------|
+| DOCKER   | true    |
+| MODE     | prod    |
 
 
 ## Release

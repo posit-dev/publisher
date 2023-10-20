@@ -9,9 +9,11 @@ alias w := watch
 
 export CYPRESS_CACHE_FOLDER := "./cypress/.cache"
 
-_ci := "${CI:-false}"
+_ci := env_var_or_default("CI", "false")
 
-_with_debug := if env_var_or_default("DEBUG", "true") == "true" {
+_debug := env_var_or_default("DEBUG", "false")
+
+_with_debug := if _debug == "true" {
         "set -x pipefail"
     } else {
         ""

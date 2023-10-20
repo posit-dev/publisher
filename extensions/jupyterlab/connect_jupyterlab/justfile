@@ -1,6 +1,10 @@
 max_line_length := '99'
 
-_with_debug := if env_var_or_default("DEBUG", "true") == "true" {
+_ci := env_var_or_default("CI", "false")
+
+_debug := env_var_or_default("DEBUG", "false")
+
+_with_debug := if _debug == "true" {
         "set -x pipefail"
     } else {
         ""
