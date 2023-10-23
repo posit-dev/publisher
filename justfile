@@ -13,9 +13,9 @@ _ci := env_var_or_default("CI", "false")
 
 _cmd := "./cmd/connect-client"
 
-_debug := env_var_or_default("DEBUG", "true")
+_debug := env_var_or_default("DEBUG", "false")
 
-_docker := env_var_or_default("DOCKER", if _ci == "true" { "true"} else { "false" })
+_docker := env_var_or_default("DOCKER", if _ci == "true" { "true" } else { "false" })
 
 _docker_file := "./build/ci/Dockerfile"
 
@@ -27,7 +27,7 @@ _github_actions := env_var_or_default("GITHUB_ACTIONS", "false")
 
 _interactive := `tty -s && echo "-it" || echo ""`
 
-_mode := "${MODE:-dev}"
+_mode := env_var_or_default("MODE", if _ci == "true" { "prod" } else { "dev" })
 
 _with_debug := if _debug == "true" {
         "set -x pipefail"
