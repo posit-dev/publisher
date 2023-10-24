@@ -31,6 +31,29 @@ const setFilesOnServer = requestOnce(async(
   }
 }, 500);
 
+/**
+ * Set the account on the server side.
+ * Debounced to avoid API calls on every state change.
+ * In progress API calls are cancelled to avoid de-syncing the deployment state.
+ */
+const setAccountOnServer = requestOnce(async(
+  signal: AbortSignal,
+  accountName: string,
+  deploymentState: Ref<Deployment | undefined>
+) => {
+  try {
+    const { data } = await api.deployment.setAccount(
+      accountName,
+      { signal: signal }
+    );
+    deploymentState.value = data;
+  } catch (err) {
+    if (err instanceof CanceledError) {
+      // ignore
+    }
+  }
+}, 500);
+
 export const useDeploymentStore = defineStore('deployment', () => {
   const deployment = ref<Deployment>();
 
@@ -46,8 +69,26 @@ export const useDeploymentStore = defineStore('deployment', () => {
     }
   });
 
+  const account = computed<string>({
+    get: () => {
+      if (deployment.value) {
+        return deployment.value.target.accountName;
+      }
+      return '';
+    },
+    set: async(newName: string) => {
+      // Update the deployment state immediately before sending to server
+      if (deployment.value) {
+        deployment.value.target.accountName = newName;
+      }
+
+      setAccountOnServer(newName, deployment);
+    }
+  });
+
   return {
     deployment,
-    files
+    files,
+    account,
   };
 });

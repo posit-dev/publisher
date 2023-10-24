@@ -17,7 +17,7 @@
         <AccountCredential
           v-for="account in accounts"
           :key="account.name"
-          v-model="selectedAccountName"
+          v-model="deploymentStore.account"
           :account="account"
         />
       </q-list>
@@ -36,16 +36,13 @@ import { useDeploymentStore } from 'src/stores/deployment';
 import { useColorStore } from 'src/stores/color';
 import { colorToHex } from 'src/utils/colorValues';
 import { Account, useApi } from 'src/api';
-import { findAccount } from 'src/utils/accounts';
 
 const deploymentStore = useDeploymentStore();
 const colorStore = useColorStore();
 
-const selectedAccountName = ref('');
-
 const destinationTitle = computed(() => {
-  if (selectedAccountName.value) {
-    return `New deployment using ${selectedAccountName.value} account`;
+  if (deploymentStore.account) {
+    return `New deployment using ${deploymentStore.account} account`;
   }
   return '';
 });
@@ -57,18 +54,6 @@ onMounted(async() => {
   try {
     const response = await api.accounts.getAll();
     accounts.value = response.data.accounts;
-    if (
-      accounts.value &&
-      deploymentStore.deployment &&
-      deploymentStore.deployment?.target.accountName
-    ) {
-      const account = findAccount(deploymentStore.deployment.target.accountName, accounts.value);
-      if (account) {
-        selectedAccountName.value = account.name;
-      } else {
-        // TODO: handle the error, we do not have a match.
-      }
-    }
   } catch (err) {
     // TODO: handle the error
   }
