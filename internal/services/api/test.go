@@ -26,6 +26,11 @@ func (m *MockDeploymentsService) SetDeploymentFiles(files []string) *state.Deplo
 	return args.Get(0).(*state.Deployment)
 }
 
+func (m *MockDeploymentsService) SetDeploymentTitle(title string) *state.Deployment {
+	args := m.Called()
+	return args.Get(0).(*state.Deployment)
+}
+
 type MockFilesService struct {
 	mock.Mock
 	files.FilesService
