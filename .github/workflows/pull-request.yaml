@@ -1,9 +1,12 @@
 name: Pull Request
 on:
   pull_request:
-concurrency:
-  group: ${{ github.head_ref }}
-  cancel-in-progress: true
+  push:
+    branches:
+      - tdstein/ci-fetch-performance
+# concurrency:
+#   group: ${{ github.head_ref || github.ref }}
+#   cancel-in-progress: true
 jobs:
   agent:
     uses: ./.github/workflows/agent.yaml
