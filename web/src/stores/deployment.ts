@@ -70,12 +70,7 @@ export const useDeploymentStore = defineStore('deployment', () => {
   });
 
   const account = computed<string>({
-    get: () => {
-      if (deployment.value) {
-        return deployment.value.target.accountName;
-      }
-      return '';
-    },
+    get: () => deployment.value?.target.accountName || '',
     set: async(newName: string) => {
       // Update the deployment state immediately before sending to server
       if (deployment.value) {
