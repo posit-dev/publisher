@@ -27,6 +27,11 @@ func (m *MockDeploymentsService) SetDeploymentFiles(files []string) *state.Deplo
 	return args.Get(0).(*state.Deployment)
 }
 
+func (m *MockDeploymentsService) SetDeploymentTitle(title string) *state.Deployment {
+	args := m.Called()
+	return args.Get(0).(*state.Deployment)
+}
+
 func (m *MockDeploymentsService) SetDeploymentAccount(lister accounts.AccountList, account_name string) (*state.Deployment, error) {
 	args := m.Called()
 	return args.Get(0).(*state.Deployment), nil

@@ -46,6 +46,18 @@ func (s *ServicesSuite) TestSetDeploymentFiles() {
 	s.Equal(res.Manifest.Files, bundles.ManifestFileMap{"file": bundles.ManifestFile{Checksum: ""}})
 }
 
+func (s *ServicesSuite) TestSetDeploymentTitle() {
+	src := state.NewDeployment()
+	s.Equal(src.Connect.Content.Title, "")
+
+	service := CreateDeploymentsService(src)
+
+	title := "new-title"
+	res := service.SetDeploymentTitle(title)
+	s.Equal(src, res)
+	s.Equal(res.Connect.Content.Title, "new-title")
+}
+
 func (s *ServicesSuite) TestSetDeploymentAccount() {
 	src := state.NewDeployment()
 	s.Equal(src.Target.AccountName, "")
