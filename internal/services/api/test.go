@@ -37,11 +37,6 @@ func (m *MockDeploymentsService) SetDeploymentAccount(lister accounts.AccountLis
 	return args.Get(0).(*state.Deployment), nil
 }
 
-func (m *MockDeploymentsService) SetDeploymentTitle(title string) *state.Deployment {
-	args := m.Called()
-	return args.Get(0).(*state.Deployment)
-}
-
 type MockFilesService struct {
 	mock.Mock
 	files.FilesService
