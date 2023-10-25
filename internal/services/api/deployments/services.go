@@ -10,6 +10,7 @@ import (
 type DeploymentsService interface {
 	GetDeployment() *state.Deployment
 	SetDeploymentFiles(files []string) *state.Deployment
+	SetDeploymentTitle(title string) *state.Deployment
 }
 
 func CreateDeploymentsService(deployment *state.Deployment) DeploymentsService {
@@ -34,6 +35,12 @@ func (s deploymentsService) SetDeploymentFiles(files []string) *state.Deployment
 
 	// mutate the Manifest Files value
 	s.deployment.Manifest.Files = mfm
+
+	return s.deployment
+}
+
+func (s deploymentsService) SetDeploymentTitle(title string) *state.Deployment {
+	s.deployment.Connect.Content.Title = title
 
 	return s.deployment
 }
