@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue';
 
-import PublishStep from 'src/components/publishProcess/PublishStep.vue';
+import PublishStep, { Log } from 'src/components/publishProcess/PublishStep.vue';
 import { useEventStream } from 'src/plugins/eventStream';
 
 defineProps({
@@ -25,7 +25,7 @@ const emit = defineEmits(['start', 'done']);
 const $eventStream = useEventStream();
 
 const done = ref(false);
-const messages = ref<string[]>([]);
+const messages = ref<Log[]>([]);
 
 const startCb = $eventStream.addEventMonitorCallback('publish/createDeployment/start', (msg) => {
   messages.value.push(msg.data.message);
@@ -36,9 +36,16 @@ const successCb = $eventStream.addEventMonitorCallback('publish/createDeployment
   done.value = true;
   emit('done');
 });
+const errorCb = $eventStream.addEventMonitorCallback('publish/createDeployment/failure', (msg) => {
+  messages.value.push({
+    msg: msg.data.message,
+    type: 'error',
+  });
+});
 
 onBeforeUnmount(() => {
   $eventStream.delEventFilterCallback(startCb);
   $eventStream.delEventFilterCallback(successCb);
+  $eventStream.delEventFilterCallback(errorCb);
 });
 </script>
