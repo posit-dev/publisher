@@ -127,7 +127,7 @@ image:
     set -eou pipefail
     {{ _with_debug }}
 
-    if ! ${DOCKER-true}; then
+    if ! {{ _docker }}; then
         exit 0
     fi
 
