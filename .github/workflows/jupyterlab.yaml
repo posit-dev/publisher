@@ -1,11 +1,15 @@
-name: Extensions
+name: JupyterLab
 on:
   workflow_call:
 jobs:
-  jupyterlab:
+  native:
     env:
       DOCKER: false
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v3
       - uses: extractions/setup-just@v1

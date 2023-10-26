@@ -192,6 +192,13 @@ pre-release:
 
     ./scripts/is-pre-release.bash
 
+positron *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just extensions/positron/{{ args }}
+
 # Runs the CLI via `go run`.
 run *args:
     #!/usr/bin/env bash
