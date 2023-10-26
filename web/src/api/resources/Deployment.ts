@@ -40,4 +40,12 @@ export class Deployment {
       this.createConfig(config)
     );
   }
+
+  setTitle(title: string, config?: AxiosRequestConfig<DeploymentState>) {
+    return this.client.put<DeploymentState>(
+      '/deployment/title',
+      { title: title },
+      this.createConfig(config)
+    );
+  }
 }
