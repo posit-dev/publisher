@@ -1,4 +1,4 @@
-name: Bats
+name: Positron
 on:
   workflow_call:
 jobs:
@@ -15,26 +15,15 @@ jobs:
         with:
           fetch-depth: 0
       - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
+      - uses: actions/setup-node@v3
         with:
-          name: executables
-          path: bin
-      - run: chmod -R +x ./bin
-      - run: just bats
+          node-version: 18.x
+      - run: just positron ci
   docker:
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [ubuntu-latest]
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v3
-        with:
-          name: executables
-          path: bin
-      - run: chmod -R +x ./bin
-      - run: just bats
+      - run: just positron ci

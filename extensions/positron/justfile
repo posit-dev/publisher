@@ -1,0 +1,77 @@
+alias c := clean
+alias i := install
+alias t := test
+
+_ci := env_var_or_default("CI", "false")
+
+_debug := env_var_or_default("DEBUG", "false")
+
+_with_debug := if _debug == "true" {
+        "set -x pipefail"
+    } else {
+        ""
+    }
+
+# Executes continuous integration workflow (i.e., this is what GitHub Actions uses)
+ci:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just install
+    just lint
+    just test
+
+# Deletes ephemeral project files (i.e., cleans the project).
+clean:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    rm -rf node_modules
+
+default:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just install
+    just test
+
+
+# Install dependencies
+install:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm install
+
+# Performs static code analysis with ESLint
+lint:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run lint
+
+# Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just positron run test`)
+run *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run {{ args }}
+
+
+# Executes npm test
+test:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    if [ {{ os() }} == "linux" ]; then
+        xvfb-run -a npm test
+    else
+        npm test
+    fi
