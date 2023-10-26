@@ -1,6 +1,5 @@
 out
 dist
 node_modules
-.vscode-test-web/
+.vscode-test/
 *.vsix
-5
