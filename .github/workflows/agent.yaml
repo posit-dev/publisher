@@ -9,5 +9,4 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: just lint
-      - run: just test
+      - run: just ci

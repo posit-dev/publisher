@@ -20,4 +20,4 @@ jobs:
           name: executables
           path: bin
       - run: chmod -R +x ./bin
-      - run: just cy
+      - run: just cy ci
