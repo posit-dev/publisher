@@ -5,8 +5,12 @@
     :name="name"
     title="This is a step"
     :icon="icon"
-    :active-icon="icon"
+    :active-icon="hasError ? 'warning' : icon"
+    :active-color="hasError ? 'red' : undefined"
     :header-nav="true"
+    :error="hasError"
+    error-icon="warning"
+    error-color="red"
   >
     <div
       class="text-bold q-pa-sm summaryClass"
@@ -22,7 +26,12 @@
         :key="index"
       >
         <q-item-section>
-          {{ log }}
+          <template v-if="isErrorLog(log)">
+            <span class="text-red text-weight-medium">{{ log.msg }}</span>
+          </template>
+          <template v-else>
+            {{ log }}
+          </template>
         </q-item-section>
       </q-item>
     </q-list>
@@ -30,18 +39,33 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType, computed } from 'vue';
 import { useColorStore } from 'src/stores/color';
 import { colorToHex } from 'src/utils/colorValues';
 
+type AdvancedLog = {
+  msg: string,
+  type?: 'error',
+}
+export type Log = string | AdvancedLog
+
+function isAdvancedLog(log: Log): log is AdvancedLog {
+  return !(typeof log === 'string' || log instanceof String);
+}
+function isErrorLog(log: Log): log is AdvancedLog & { type: 'error' } {
+  return isAdvancedLog(log) && log.type === 'error';
+}
+
 const colorStore = useColorStore();
 
-defineProps({
+const props = defineProps({
   name: { type: [String, Number], required: true },
   icon: { type: String, required: true },
   summary: { type: String, required: true },
-  logs: { type: Array as PropType<string[]>, required: false, default: () => [] },
+  logs: { type: Array as PropType<Log[]>, required: false, default: () => [] },
 });
+
+const hasError = computed(() => props.logs.some(log => isErrorLog(log)));
 </script>
 
 <style scoped>
