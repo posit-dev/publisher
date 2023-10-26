@@ -32,4 +32,12 @@ export class Deployment {
       this.createConfig(config)
     );
   }
+
+  setAccount(accountName: string, config?: AxiosRequestConfig<DeploymentState>) {
+    return this.client.put<DeploymentState>(
+      '/deployment/account',
+      { account: accountName },
+      this.createConfig(config)
+    );
+  }
 }

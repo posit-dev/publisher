@@ -77,8 +77,16 @@ func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister 
 	r.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService)).
 		Methods(http.MethodGet)
 
+	// PUT /api/deployment/title
+	r.Handle(ToPath("deployment", "title"), api.PutDeploymentTitleHandlerFunc(deploymentsService, log)).
+		Methods(http.MethodPut)
+
 	// PUT /api/deployment/files
 	r.Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log)).
+		Methods(http.MethodPut)
+
+	// PUT /api/deployment/account
+	r.Handle(ToPath("deployment", "account"), api.PutDeploymentAccountHandlerFunc(lister, deploymentsService, log)).
 		Methods(http.MethodPut)
 
 	// POST /api/publish
