@@ -1,0 +1,522 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rstudio/publishing-client/posit-publishing-schema-v3.json",
+  "type": "object",
+  "additionalProperties": false,
+  "default": {},
+  "description": "Posit Deployment",
+  "required": [
+    "$schema",
+    "type",
+    "entrypoint",
+    "files",
+    "dependencies"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "url",
+      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/connect/posit-publishing-schema-v3.json'.",
+      "enum": ["./posit-publishing-schema-v3.json"],
+      "examples": [
+        "./posit-publishing-schema-v3.json"
+      ]
+    },
+    "type": {
+      "type": "string",
+      "description": "Indicates the type of content being deployed.",
+      "enum": [
+        "api",
+        "jupyter-static",
+        "jupyter-voila",
+        "python-api",
+        "python-bokeh",
+        "python-dash",
+        "python-fastapi",
+        "python-shiny",
+        "python-streamlit",
+        "quarto-shiny",
+        "quarto-static",
+        "rmd-shiny",
+        "rmd-static",
+        "shiny",
+        "static",
+        "tensorflow-saved-model"
+      ],
+      "examples": [
+        "quarto-static"
+      ]
+    },
+    "entrypoint": {
+      "type": "string",
+      "description": "Name of the primary file containing the content. For some types of Python executable content, this may also indicate the object within the file in module:object format.",
+      "examples": [
+        "app.py",
+        "report.qmd"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]{3,64}$|",
+      "default": "",
+      "description": "Unique name for this deployment. If present, and a deployment with this name exists, it will be updated, otherwise it will be created.",
+      "examples": [
+        "quarterly-sales-report-by-region"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "default": null,
+      "description": "Unique ID of this deployment. If present, it must be the ID of an existing deployment of the same type on the server, which will be updated.",
+      "examples": [
+        "de2e7bdb-b085-401e-a65c-443e40009749"
+      ]
+    },
+    "custom_url": {
+      "type": "string",
+      "pattern": "^/[/a-zA-Z0-9-_]+/$",
+      "default": null,
+      "description": "Custom URL path to assign to this content. The URL path must be unassigned, or assigned to content you own. You must be an administrator to set this value.",
+      "examples": [
+        "/reports/quarterly-sales"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "pattern": "^[^\t\n\f\r]{3,1024}$|",
+      "default": "",
+      "description": "Human-readable title for this content.",
+      "examples": [
+        "Quarterly Sales Report"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "default": "",
+      "description": "Human-readable description for this content.",
+      "examples": [
+        "This is the quarterly sales report, broken down by region."
+      ]
+    },
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": null,
+      "description": "Information about the author of this content.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "",
+          "description": "Author name.",
+          "examples": [
+            "Michael Marchetti"
+          ]
+        },
+        "email": {
+          "type": "string",
+          "default": "",
+          "description": "Author email address.",
+          "examples": [
+            "mike@posit.co"
+          ]
+        },
+        "username": {
+          "type": "string",
+          "default": "",
+          "description": "Author's username on the publishing server.",
+          "examples": [
+            "mmarchetti"
+          ]
+        },
+        "organization": {
+          "type": "string",
+          "default": "",
+          "description": "Author's organization.",
+          "examples": [
+            "Posit, PBC"
+          ]
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "default": [],
+      "description": "The tags Schema",
+      "items": {
+        "type": "string",
+        "description": "List of tags to apply to this deployment. When publishing to Connect, tags must be pre-defined by an administrator.",
+        "examples": [
+          "sales",
+          "quarterly",
+          "regional"
+        ]
+      }
+    },
+    "files": {
+      "type": "array",
+      "description": "The files Schema",
+      "items": {
+        "type": "string",
+        "description": "List of relative file paths that are used by this deployment. When creating a bundle, these files must exist in the project directory. When deploying from git, these files must exist in the repository.",
+        "examples": [
+          "report.qmd",
+          "_quarto.yml",
+          "model.py",
+          "requirements.txt",
+          "weights/*.hdf5"
+        ]
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Language runtimes and packages needed to run this content.",
+      "properties": {
+        "python": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": null,
+          "description": "Python language and dependencies.",
+          "required": [
+            "version"
+          ],
+          "properties": {
+            "version": {
+              "type": "string",
+              "description": "Python version. The server must have a similar Python version in order to run the content.",
+              "examples": [
+                "3.11.3"
+              ]
+            },
+            "package_file": {
+              "type": "string",
+              "description": "File containing package dependencies. The file must exist and be listed under 'files'.",
+              "default": "requirements.txt",
+              "examples": [
+                "requirements.txt"
+              ]
+            },
+            "package_manager": {
+              "type": "string",
+              "default": "pip",
+              "enum": [
+                "pip",
+                "none"
+              ],
+              "description": "Package manager that will install the dependencies. If package_manager is none, dependencies will not be installed.",
+              "examples": [
+                "pip"
+              ]
+            }
+          }
+        },
+        "r": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": null,
+          "description": "R language and dependencies.",
+          "required": [
+            "version"
+          ],
+          "properties": {
+            "version": {
+              "type": "string",
+              "description": "R version. The server must have a similar R version in order to run the content.",
+              "examples": [
+                "4.3.1"
+              ]
+            },
+            "package_file": {
+              "type": "string",
+              "default": "renv.lock",
+              "description": "File containing package dependencies. The file must exist and be listed under 'files'.",
+              "examples": [
+                "renv.lock"
+              ]
+            },
+            "package_manager": {
+              "type": "string",
+              "default": "packrat",
+              "enum": [
+                "packrat",
+                "none"
+              ],
+              "description": "Package manager that will install the dependencies. If package_manager is none, dependencies will not be installed.",
+              "examples": [
+                "packrat"
+              ]
+            }
+          }
+        },
+        "quarto": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": null,
+          "description": "Quarto version required to run the content.",
+          "required": [
+            "version"
+          ],
+          "properties": {
+            "version": {
+              "type": "string",
+              "description": "Quarto version. The server must have a similar Quarto version in order to run the content.",
+              "examples": [
+                "1.4"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": null,
+      "description": "Environment variable/value map. Null values may be used for secrets; deployment tools should populate these from the deploying environment. For git-based deployments, the publishing server must be configured to provide those values.",
+      "examples": [
+        {
+          "API_URL": "https://example.com/api",
+          "API_KEY": null
+        }
+      ]
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": null,
+      "description": "Schedule for recurring execution of this content. Only applies to reports, such as Quarto and R Markdown.",
+      "required": [
+        "start",
+        "recurrence"
+      ],
+      "properties": {
+        "start": {
+          "type": "string",
+          "description": "Time for the first run of the content.",
+          "examples": [
+            "2023-10-25T08:00:00Z"
+          ]
+        },
+        "recurrence": {
+          "type": "string",
+          "description": "Recurrence scheme for the content, in iCalendar RRULE format.",
+          "examples": [
+            "FREQ=MONTHLY;INTERVAL=3"
+          ]
+        }
+      }
+    },
+    "connect": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": null,
+      "description": "Setting specific to Posit Connect deployments.",
+      "properties": {
+        "access": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": null,
+          "description": "Access control settings.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "default": "acl",
+              "description": "Type of access control. 'all' make the deployment public, with no login required. 'logged-in' allows all logged-in users to access the content. 'acl' allows only specific users to access the content.",
+              "enum": [
+                "all",
+                "logged-in",
+                "acl"
+              ],
+              "examples": [
+                "logged-in"
+              ]
+            },
+            "run_as": {
+              "type": "string",
+              "default": "",
+              "description": "The system username under which the content should be run. Must be an existing user in the allowed group. You must be an administrator to set this value.",
+              "examples": [
+                "rstudio-connect"
+              ]
+            },
+            "run_as_current_user": {
+              "type": "boolean",
+              "default": false,
+              "description": "For application content types, run a separate process for each visiting user under that user's server account. Requires PAM authentication on the Posit Connect server. You must be an administrator to set this value.",
+              "examples": [
+                false
+              ]
+            }
+          }
+        },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": null,
+          "description": "Runtime settings for application content types.",
+          "properties": {
+            "connection_timeout": {
+              "type": "integer",
+              "default": null,
+              "minimum": 0,
+              "description": "Maximum number of seconds allowed without data sent or received across a client connection. A value of `0` means connections will never time-out (not recommended).",
+              "examples": [
+                5
+              ]
+            },
+            "read_timeout": {
+              "type": "integer",
+              "default": null,
+              "minimum": 0,
+              "description": "Maximum number of seconds allowed without data received from a client connection. A value of `0` means a lack of client (browser) interaction never causes the connection to close.",
+              "examples": [
+                30
+              ]
+            },
+            "init_timeout": {
+              "type": "integer",
+              "default": null,
+              "description": "The maximum number of seconds allowed for an interactive application to start. Posit Connect must be able to connect to a newly launched application before this threshold has elapsed.",
+              "examples": [
+                60
+              ]
+            },
+            "idle_timeout": {
+              "type": "integer",
+              "default": null,
+              "description": "The maximum number of seconds a worker process for an interactive application to remain alive after it goes idle (no active connections).",
+              "examples": [
+                120
+              ]
+            },
+            "max_processes": {
+              "type": "integer",
+              "default": null,
+              "minimum": 1,
+              "description": "Specifies the total number of concurrent processes allowed for a single interactive application.",
+              "examples": [
+                5
+              ]
+            },
+            "min_processes": {
+              "type": "integer",
+              "default": null,
+              "minimum": 0,
+              "description": "Specifies the minimum number of concurrent processes allowed for a single interactive application.",
+              "examples": [
+                1
+              ]
+            },
+            "max_conns_per_process": {
+              "type": "integer",
+              "default": null,
+              "minimum": 1,
+              "description": "Specifies the maximum number of client connections allowed to an individual process. Incoming connections which will exceed this limit are routed to a new process or rejected.",
+              "examples": [
+                50
+              ]
+            },
+            "load_factor": {
+              "type": "number",
+              "default": null,
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Controls how aggressively new processes are spawned. The valid range is between 0.0 and 1.0.",
+              "examples": [
+                0.5
+              ]
+            }
+          }
+        },
+        "kubernetes": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": null,
+          "description": "Settings used with Posit Connect's off-host execution feature, where content is run in Kubernetes.",
+          "properties": {
+            "amd_gpu_limit": {
+              "type": "integer",
+              "default": null,
+              "description": "The number of AMD GPUs that will be allocated by Kubernetes to run this content.",
+              "examples": [
+                0
+              ]
+            },
+            "cpu_limit": {
+              "type": "integer",
+              "default": null,
+              "description": "The maximum amount of compute power this content will be allowed to consume when executing or rendering, expressed in CPU Units, where 1.0 unit is equivalent to 1 physical or virtual core. Fractional values are allowed. If the process tries to use more CPU than allowed, it will be throttled.",
+              "examples": [
+                1
+              ]
+            },
+            "cpu_request": {
+              "type": "number",
+              "default": null,
+              "description": "The minimum amount of compute power this content needs when executing virtual core. Fractional values are allowed.",
+              "examples": [
+                0.5
+              ]
+            },
+            "image_name": {
+              "type": "string",
+              "default": "",
+              "description": "Name of the target container image.",
+              "examples": [
+                "posit/connect-runtime-python3.11-r4.3"
+              ]
+            },
+            "memory_limit": {
+              "type": "string",
+              "default": "",
+              "description": "The maximum amount of RAM this content will be allowed to consume when executing or rendering, expressed in bytes. If the process tries to use more memory than allowed, it will be terminated",
+              "examples": [
+                "100000000"
+              ]
+            },
+            "memory_request": {
+              "type": "string",
+              "default": "",
+              "description": "The minimum amount of RAM this content needs when executing or rendering, expressed in bytes.",
+              "examples": [
+                "20000000"
+              ]
+            },
+            "nvidia_gpu_limit": {
+              "type": "integer",
+              "default": null,
+              "description": "The number of NVIDIA GPUs that will be allocated by Kubernetes to run this content.",
+              "examples": [
+                0
+              ]
+            },
+            "service_account_name": {
+              "type": "string",
+              "default": null,
+              "description": "The name of the Kubernetes service account that is used to run this content. It must adhere to Kubernetes service account naming rules. You must be an administrator to set this value.",
+              "examples": [
+                "posit-connect-content"
+              ]
+            },
+            "r_environment_management": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enables or disables R environment management. When false, Posit Connect will not install R packages and instead assume that all required packages are present in the container image.",
+              "examples": [
+                true
+              ]
+            },
+            "py_environment_management": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enables or disables Python environment management. When false, Posit Connect will not install Python packages and instead assume that all required packages are present in the container image.",
+              "examples": [
+                true
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
