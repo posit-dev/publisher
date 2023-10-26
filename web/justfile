@@ -19,15 +19,15 @@ _with_debug := if _debug == "true" {
         ""
     }
 
-default:
+# Executes continuous integration workflow (i.e., this is what GitHub Actions uses)
+ci:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    just clean
     just install
-    just build
-
+    just lint
+    just test
 
 # Compiles the static assests for the web client. Static assets are written to `./web/dist`.
 build:
@@ -46,6 +46,16 @@ clean:
     rm -rf .quasar
     rm -rf dist
     rm -rf node_modules
+
+default:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just clean
+    just install
+    just build
+
 
 # Launch a local web server instance with hot-reloads.
 dev:

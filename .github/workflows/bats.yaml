@@ -20,7 +20,7 @@ jobs:
           name: executables
           path: bin
       - run: chmod -R +x ./bin
-      - run: just bats
+      - run: just bats ci
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -33,4 +33,4 @@ jobs:
           name: executables
           path: bin
       - run: chmod -R +x ./bin
-      - run: just bats
+      - run: just bats ci
