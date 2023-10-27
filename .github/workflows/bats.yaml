@@ -20,7 +20,8 @@ jobs:
           name: executables
           path: bin
       - run: chmod -R +x ./bin
-      - run: just bats ci
+      - run: just bats install
+      - run: just bats test
   docker:
     strategy:
       fail-fast: false
@@ -37,4 +38,5 @@ jobs:
           name: executables
           path: bin
       - run: chmod -R +x ./bin
-      - run: just bats ci
+      - run: just bats install
+      - run: just bats test

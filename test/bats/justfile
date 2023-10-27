@@ -12,8 +12,7 @@ _with_debug := if _debug == "true" {
         ""
     }
 
-# Executes continuous integration workflow (i.e., this is what GitHub Actions uses)
-ci:
+default:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
@@ -29,14 +28,6 @@ clean:
 
     rm -rf node_modules
 
-default:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just clean
-    just install
-    just test
 
 # Install dependencies
 install:
