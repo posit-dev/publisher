@@ -17,7 +17,9 @@
       "type": "string",
       "format": "url",
       "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/connect/posit-publishing-schema-v3.json'.",
-      "enum": ["./posit-publishing-schema-v3.json"],
+      "enum": [
+        "./posit-publishing-schema-v3.json"
+      ],
       "examples": [
         "./posit-publishing-schema-v3.json"
       ]
@@ -55,15 +57,6 @@
         "report.qmd"
       ]
     },
-    "name": {
-      "type": "string",
-      "pattern": "^[a-zA-Z0-9_-]{3,64}$|",
-      "default": "",
-      "description": "Unique name for this deployment. If present, and a deployment with this name exists, it will be updated, otherwise it will be created.",
-      "examples": [
-        "quarterly-sales-report-by-region"
-      ]
-    },
     "id": {
       "type": "string",
       "default": null,
@@ -72,13 +65,12 @@
         "de2e7bdb-b085-401e-a65c-443e40009749"
       ]
     },
-    "custom_url": {
+    "name": {
       "type": "string",
-      "pattern": "^/[/a-zA-Z0-9-_]+/$",
-      "default": null,
-      "description": "Custom URL path to assign to this content. The URL path must be unassigned, or assigned to content you own. You must be an administrator to set this value.",
+      "default": "",
+      "description": "Unique name of this deployment. If a deployment with this name does not exist, it will be created. Otherwise, it will be updated.",
       "examples": [
-        "/reports/quarterly-sales"
+        "regional-quarterly-sales-report"
       ]
     },
     "title": {
@@ -141,10 +133,9 @@
     "tags": {
       "type": "array",
       "default": [],
-      "description": "The tags Schema",
+      "description": "List of tags to apply to this deployment. When publishing to Connect, tags must be pre-defined by an administrator.",
       "items": {
         "type": "string",
-        "description": "List of tags to apply to this deployment. When publishing to Connect, tags must be pre-defined by an administrator.",
         "examples": [
           "sales",
           "quarterly",
@@ -236,14 +227,14 @@
             },
             "package_manager": {
               "type": "string",
-              "default": "packrat",
+              "default": "renv",
               "enum": [
-                "packrat",
+                "renv",
                 "none"
               ],
               "description": "Package manager that will install the dependencies. If package_manager is none, dependencies will not be installed.",
               "examples": [
-                "packrat"
+                "renv"
               ]
             }
           }
@@ -263,6 +254,22 @@
               "examples": [
                 "1.4"
               ]
+            },
+            "engines": {
+              "type": "array",
+              "default": [],
+              "description": "List of Quarto engines required for this content.",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "knitr",
+                  "jupyter"
+                ],
+                "examples": [
+                  "knitr",
+                  "jupyter"
+                ]
+              }
             }
           }
         }
@@ -270,7 +277,12 @@
     },
     "environment": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
       "default": null,
       "description": "Environment variable/value map. Null values may be used for secrets; deployment tools should populate these from the deploying environment. For git-based deployments, the publishing server must be configured to provide those values.",
       "examples": [

@@ -4,14 +4,24 @@
   "type": "quarto-static",
   "entrypoint": "report.qmd",
 
-  // name or id can be used to specify a target deployment to update.
-  // name can be used for initial deployment as well as updates.
-  // id can only be used for updates once the content has been deployed.
-  "name": "quarterly-sales-report-by-region",
-  "id": "de2e7bdb-b085-401e-a65c-443e40009749",
+  // id can be used to specify a target deployment to update.
+  // Currently, it can only be used for updates once the content
+  // has been deployed, because the server assigns the GUIDs.
+  // Allowing the client to generate GUIDs and save them here
+  // would be helpful, since the metadata could be correct before
+  // the first deployment (an enabler for git workflows).
+  // Name can be used as an alternative to ID.
+  // On Connect, (owner, name) pairs must be unique
+  // unless name is empty.
 
-  // Is this Connect-specific?
-  "custom_url": "/reports/quarterly-sales/",
+  // Note that currently, you can't create a deployment
+  // by uploading a bundle, because the upload endpoint
+  // is under the content-id (/__api__/v1/content/{GUID}/upload).
+  // If we want that workflow, we will need to provide a global
+  // bundle upload endpoint (/__api__/v1/bundles/upload) that
+  // always creates a new content item.
+  "id": "de2e7bdb-b085-401e-a65c-443e40009749",
+  "name": "regional-quarterly-sales-report",
 
   // These metadata fields are purely for human consumption.
   "title": "Regional Quarterly Sales Report",
@@ -53,7 +63,7 @@
     "r": {
       "version": "4.3.1",
       "package_file": "renv.lock",
-      "package_manager": "packrat"
+      "package_manager": "renv"
     },
     "quarto": {
       "version": "1.4"
@@ -72,6 +82,7 @@
     "recurrence": "FREQ=MONTHLY;INTERVAL=3"
   },
   "connect": {
+    // These settings are Connect-specific and will be ignored by other servers.
     "access": {
       "type": "logged-in",
       "run_as": "rstudio-connect",
@@ -92,6 +103,7 @@
     "kubernetes": {
       // Will Posit Cloud Connect be containerized? If so, will it support
       // image_name, cpu_limit, memory_limit, and/or gpu settings?
+      // (note k8s GPU settings are different from the docker ones)
       "amd_gpu_limit": 0,
       "cpu_limit": 1,
       "cpu_request": 0.5,
@@ -99,7 +111,7 @@
       "memory_limit": "100000000",
       "memory_request": "20000000",
       "nvidia_gpu_limit": 0,
-      "service_account_name": "k8s-runner",
+      "service_account_name": "posit-connect-content",
       "r_environment_management": true,
       "py_environment_management": true
     }
