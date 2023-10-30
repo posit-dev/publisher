@@ -1,12 +1,14 @@
 {
-  "name": "positron",
-  "displayName": "positron",
-  "description": "",
+  "name": "positron-publish",
+  "displayName": "Positron Publish",
+  "description": "Publish your applications from Positron to Posit products",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.83.0"
   },
   "categories": [
+    "Data Science",
+    "Machine Learning",
     "Other"
   ],
   "activationEvents": [],
@@ -14,8 +16,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "positron.publish",
-        "title": "Hello, Publish"
+        "command": "positron.publish.assistant.open",
+        "title": "Positron: Open Publish Assistant"
       }
     ]
   },
