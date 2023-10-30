@@ -9,4 +9,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: just web ci
+      - run: just web install
+      - run: just web lint
+      - run: just web test

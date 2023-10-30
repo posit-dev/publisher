@@ -18,7 +18,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: just positron ci
+      - run: just positron install
+      - run: just positron lint
+      - run: just positron test
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -26,4 +28,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: just positron ci
+      - run: just positron install
+      - run: just positron lint
+      - run: just positron test
