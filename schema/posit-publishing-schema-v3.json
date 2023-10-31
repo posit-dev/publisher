@@ -358,6 +358,102 @@
               "examples": [
                 false
               ]
+            },
+            "users": {
+              "type": "array",
+              "default": [],
+              "description": "List of users who have access to this content.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "anyOf": [
+                  { "required": ["id"] },
+                  { "required": ["guid"] }
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "default": null,
+                    "description": "Unique ID from the authentication provider that identifies this user. This may be a username, LDAP CN/DN, email address, etc. depending on the provider.",
+                    "examples": [
+                      "jqpublic"
+                    ]
+                  },
+                  "guid": {
+                    "type": "string",
+                    "default": null,
+                    "description": "Unique identifier assigned by Connect. When deploying to the same server, this will determine the user who is granted access. When deploying to a different server, the provider_id will be used to look up the user.",
+                    "examples": [
+                      "cd2e7cef-a195-512e-b76d-554f4f5a239c"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "default": null,
+                    "description": "User's name. This field is informational only.",
+                    "examples": [
+                      "John Q. Public"
+                    ]
+                  },
+                  "permissions": {
+                    "type": "string",
+                    "default": "viewer",
+                    "description": "Permission level assigned to this user.",
+                    "enum": ["viewer", "editor", "owner"],
+                    "examples": [
+                      "viewer"
+                    ]
+                  }
+                }
+              }
+            },
+            "groups": {
+              "type": "array",
+              "default": [],
+              "description": "List of groups who have access to this content.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "anyOf": [
+                  { "required": ["id"] },
+                  { "required": ["guid"] }
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "default": null,
+                    "description": "Unique ID from the authentication provider that identifies this group. For groups created by Connect, this will be the group name. This may be a group name, LDAP CN/DN, etc. depending on the provider.",
+                    "examples": [
+                      "Data Science Team"
+                    ]
+                  },
+                  "guid": {
+                    "type": "string",
+                    "default": null,
+                    "description": "Unique identifier assigned by Connect. When deploying to the same server, this will determine the user who is granted access. When deploying to a different server, the provider_id will be used to look up the user.",
+                    "examples": [
+                      "8b4fde3e-f995-4894-bc02-ae47538262ff"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "default": null,
+                    "description": "Group name. This field is informational only.",
+                    "examples": [
+                      "Data Science Team"
+                    ]
+                  },
+                  "permissions": {
+                    "type": "string",
+                    "default": "viewer",
+                    "description": "Permission level assigned to this group.",
+                    "enum": ["viewer", "editor", "owner"],
+                    "examples": [
+                      "editor"
+                    ]
+                  }
+                }
+              }
             }
           }
         },

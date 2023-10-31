@@ -1,8 +1,6 @@
 {
   // URL to the schema definition, which we should make public.
   "$schema": "./posit-publishing-schema-v3.json",
-  "type": "quarto-static",
-  "entrypoint": "report.qmd",
 
   // id can be used to specify a target deployment to update.
   // Currently, it can only be used for updates once the content
@@ -19,9 +17,17 @@
   // is under the content-id (/__api__/v1/content/{GUID}/upload).
   // If we want that workflow, we will need to provide a global
   // bundle upload endpoint (/__api__/v1/bundles/upload) that
-  // always creates a new content item.
+  // creates or updates a content item by ID. Or, the client
+  // can find/create by ID/name, then upload to the content item.
+  // Git deployments in Connect are handled via a call sequence
+  // that requires a content item to be created before the repo
+  // can be attached to it.
   "id": "de2e7bdb-b085-401e-a65c-443e40009749",
   "name": "regional-quarterly-sales-report",
+
+  // Defines what we are deploying
+  "type": "quarto-static",
+  "entrypoint": "report.qmd",
 
   // These metadata fields are purely for human consumption.
   "title": "Regional Quarterly Sales Report",
@@ -52,7 +58,7 @@
     "_quarto.yml",
     "model.py",
     "requirements.txt",
-    "weights/*.hdf5"
+    "weights/sales-model.hdf5"
   ],
   "dependencies": {
     "python": {
@@ -84,9 +90,43 @@
   "connect": {
     // These settings are Connect-specific and will be ignored by other servers.
     "access": {
+      // Eventually the ACL for content with type="acl" should go here.
+      // Identifying users is tricky, especially if the identities need
+      // to be ported between servers (staging/production). Connect
+      // assigns a GUID to each user or group, and we'd use those
+      // for same-server deployments because they are guaranteed to be
+      // unique. All other user identifiers are auth-type specific and
+      // need to be resolved by Connect, and many things you
+      // might expect to be unique are not guaranteed to be.
       "type": "logged-in",
       "run_as": "rstudio-connect",
-      "run_as_current_user": false
+      "run_as_current_user": false,
+      "users": [
+        {
+          // Password auth uses usernames as unique IDs.
+          // You can specify the auth provider unique ID,
+          // Connect-assigned GUID, or both. Tools
+          // should populate both, because GUIDs are not
+          // portable across Connect instances.
+          "id": "jqpublic",
+          "guid": "536b456e-0311-4f92-ba10-dbf1db8a468e",
+          "name": "John Q. Public",
+          "permissions": "editor"
+        }
+      ],
+      "groups": [
+        {
+          // Connect identifies groups with a name and a GUID,
+          // both of which are unique. LDAP may provide
+          // a CN/DN as the unique ID, with a separate name. Tools
+          // should populate both, because GUIDs are not
+          // portable across Connect instances.
+          "id": "Data Science Team",
+          "guid": "8b4fde3e-f995-4894-bc02-ae47538262ff",
+          "name": "Data Science Team",
+          "permissions": "editor"
+        }
+      ]
     },
     "runtime": {
       // Might some of these apply beyond Connect? For example, init_timeout
