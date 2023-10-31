@@ -17,7 +17,7 @@
     "commands": [
       {
         "command": "positron.publish.assistant.open",
-        "title": "Positron: Open Publish Assistant"
+        "title": "Publisher: Open Assistant"
       }
     ]
   },
