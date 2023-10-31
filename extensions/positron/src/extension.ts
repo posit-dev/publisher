@@ -30,20 +30,20 @@ export async function activate(context: vscode.ExtensionContext) {
 		const uri = await vscode.env.asExternalUri(vscode.Uri.parse(`http://${url}`));
 		const cspsrc = panel.webview.cspSource;
 		panel.webview.html =
-		// install https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html to enable code highlighting below
-		/*html*/
-		`
-		<!DOCTYPE html>
-			<head>
-				<meta
-					http-equiv="Content-Security-Policy"
-					content="default-src 'none'; frame-src ${uri} ${cspsrc} https:; img-src ${cspsrc} https:; script-src ${cspsrc}; style-src ${cspsrc};"
-				/>
-			</head>
-			<body >
-				<iframe src="${uri}">
-			</body>
-		</html>
+			// install https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html to enable code highlighting below
+			/*html*/
+			`
+			<!DOCTYPE html>
+				<head>
+					<meta
+						http-equiv="Content-Security-Policy"
+						content="default-src 'none'; frame-src ${uri} ${cspsrc} https:; img-src ${cspsrc} https:; script-src ${cspsrc}; style-src ${cspsrc};"
+					/>
+				</head>
+				<body style="padding: 0;">
+					<iframe src="${uri}" style="width: 100vw; height: calc(100vh - 3px); border: 0;">
+				</body>
+			</html>
 		`;
 	});
 
