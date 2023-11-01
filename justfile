@@ -41,6 +41,16 @@ _uid_args := if os_family() == "unix" {
         ""
     }
 
+# Quick start
+default:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just clean
+    just web
+    just build
+
 # Executes command against every justfile where avaiable. WARNING your mileage may very.
 all +args='default':
     #!/usr/bin/env bash
@@ -71,16 +81,6 @@ build:
 
     just _with_docker env MODE={{ _mode }} ./scripts/build.bash {{ _cmd }}
 
-# Executes continuous integration workflow (i.e., this is what GitHub Actions uses)
-ci:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just install
-    just lint
-    just test
-
 # Deletes ephemeral project files (i.e., cleans the project).
 clean:
     #!/usr/bin/env bash
@@ -105,16 +105,6 @@ cy *args:
 
     just _with_docker just test/cy/{{ args }}
 
-# Quick start
-default:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just clean
-    just web
-    just build
-
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).
 executable-path:
     #!/usr/bin/env bash
@@ -137,7 +127,7 @@ image:
     set -eou pipefail
     {{ _with_debug }}
 
-    if ! ${DOCKER-true}; then
+    if ! {{ _docker }}; then
         exit 0
     fi
 

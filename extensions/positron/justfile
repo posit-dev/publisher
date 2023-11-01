@@ -12,14 +12,13 @@ _with_debug := if _debug == "true" {
         ""
     }
 
-# Executes continuous integration workflow (i.e., this is what GitHub Actions uses)
-ci:
+# Quick start
+default:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
     just install
-    just lint
     just test
 
 # Deletes ephemeral project files (i.e., cleans the project).
@@ -30,13 +29,13 @@ clean:
 
     rm -rf node_modules
 
-default:
+configure:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    just install
-    just test
+    alias publisher=$(basename `just ../../executable-path`)
+    readonly publisher
 
 
 # Install dependencies

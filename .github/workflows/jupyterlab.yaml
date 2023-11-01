@@ -17,4 +17,6 @@ jobs:
         with:
           python-version: '3.11'
       - uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
-      - run: just jupyterlab ci
+      - run: just jupyterlab install
+      - run: just jupyterlab lint
+      - run: just jupyterlab test
