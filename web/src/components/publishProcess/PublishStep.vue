@@ -22,15 +22,15 @@
       class="logClass"
     >
       <q-item
-        v-for="(log, index) in logs"
+        v-for="(msg, index) in messages"
         :key="index"
       >
         <q-item-section>
-          <template v-if="isErrorLog(log)">
-            <span class="text-red text-weight-medium">{{ log.msg }}</span>
+          <template v-if="isErrorEventStreamMessage(msg)">
+            <span class="text-red text-weight-medium">{{ msg.data.message }}</span>
           </template>
           <template v-else>
-            {{ log }}
+            {{ msg.data.message }}
           </template>
         </q-item-section>
       </q-item>
@@ -42,19 +42,7 @@
 import { PropType, computed } from 'vue';
 import { useColorStore } from 'src/stores/color';
 import { colorToHex } from 'src/utils/colorValues';
-
-type AdvancedLog = {
-  msg: string,
-  type?: 'error',
-}
-export type Log = string | AdvancedLog
-
-function isAdvancedLog(log: Log): log is AdvancedLog {
-  return !(typeof log === 'string' || log instanceof String);
-}
-function isErrorLog(log: Log): log is AdvancedLog & { type: 'error' } {
-  return isAdvancedLog(log) && log.type === 'error';
-}
+import { EventStreamMessage, isErrorEventStreamMessage } from 'src/api/types/events';
 
 const colorStore = useColorStore();
 
@@ -62,10 +50,10 @@ const props = defineProps({
   name: { type: [String, Number], required: true },
   icon: { type: String, required: true },
   summary: { type: String, required: true },
-  logs: { type: Array as PropType<Log[]>, required: false, default: () => [] },
+  messages: { type: Array as PropType<EventStreamMessage[]>, required: false, default: () => [] },
 });
 
-const hasError = computed(() => props.logs.some(log => isErrorLog(log)));
+const hasError = computed(() => props.messages.some(msg => isErrorEventStreamMessage(msg)));
 </script>
 
 <style scoped>
