@@ -27,7 +27,7 @@
       >
         <q-item-section>
           <template v-if="isErrorEventStreamMessage(msg)">
-            <span class="text-red text-weight-medium">{{ msg.data.message }}</span>
+            <span class="text-error text-weight-medium">{{ msg.data.message }}</span>
           </template>
           <template v-else>
             {{ msg.data.message }}
@@ -68,5 +68,9 @@ const hasError = computed(() => props.messages.some(msg => isErrorEventStreamMes
   color: v-bind('colorToHex(colorStore.activePallete.progress.log.text)');
   background-color: v-bind('colorToHex(colorStore.activePallete.progress.log.background)');
   border: solid v-bind('colorToHex(colorStore.activePallete.progress.summary.border)') 1px;
+}
+
+.text-error {
+  color: v-bind('colorToHex(colorStore.activePallete.textError)')
 }
 </style>
