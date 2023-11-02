@@ -75,10 +75,7 @@ test-deploy:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-    # echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
-    # chmod 600 .fuzzbucket-ssh-key
-    # export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
-    # export TEST_ENVIRONMENT=${TEST_ENVIRONMENT}
+    pip install -r ../setup/requirements.txt
     CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')" \
     CONNECT_SERVER="$(python ../setup/connect_setup.py)" \
     CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login" \
