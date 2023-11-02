@@ -31,7 +31,7 @@ jobs:
         with:
           limit-access-to-actor: true
       - run: chmod -R +x ./bin
-      - run: echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key && chmod 600 .fuzzbucket-ssh-key
+      - run: echo "${FUZZBUCKET_SSH_KEY}" > fuzzbucket-ssh-key && chmod 600 fuzzbucket-ssh-key
       - run: just cy install
       - run: just cy test
       - run: just cy test-deploy

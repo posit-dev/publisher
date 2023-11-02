@@ -12,7 +12,7 @@ box_name = "connect-publishing-client"
 list_command = "fuzzbucket-client -j list"
 create_command = "fuzzbucket-client create -c -S 20 -t m5.2xlarge " + alias + " -n " + box_name
 remove_command = "fuzzbucket-client rm " + box_name
-ssh_options = "-i.fuzzbucket-ssh-key"
+ssh_options = "-i fuzzbucket-ssh-key"
 
 def get_api_key(username):
     # Calculate the MD5 hash for the username to get an API Key
