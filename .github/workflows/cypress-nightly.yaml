@@ -27,7 +27,7 @@ jobs:
           name: executables
           path: bin
       - run: chmod -R +x ./bin
-      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/setup/fuzzbucket-ssh-key && chmod 600 test/setup/fuzzbucket-ssh-key
+      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/cy/fuzzbucket-ssh-key && chmod 600 test/cy/fuzzbucket-ssh-key
       - run: just cy install
       - run: just cy test
       - run: just cy test-deploy
