@@ -1,4 +1,4 @@
-name: Cypress
+name: Cypress-nightly
 on:
   workflow_call:
 jobs:

@@ -79,7 +79,7 @@ test-deploy:
     # chmod 600 .fuzzbucket-ssh-key
     # export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
     # export TEST_ENVIRONMENT=${TEST_ENVIRONMENT}
-    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
-    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
-    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
+    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')" && \
+    export CONNECT_SERVER="$(python ../setup/connect_setup.py)" && \
+    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login" && \
     npm run test-deploy
