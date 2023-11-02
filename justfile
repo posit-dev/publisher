@@ -103,8 +103,6 @@ cy *args:
     set -eou pipefail
     {{ _with_debug }}
     
-    export FUZZBUCKET_CREDENTIALS=${FUZZBUCKET_CREDENTIALS}
-    export FUZZBUCKET_URL=${FUZZBUCKET_URL}
     just _with_docker just test/cy/{{ args }}
 
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).
