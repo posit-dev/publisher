@@ -26,10 +26,10 @@ jobs:
         with:
           name: executables
           path: bin
-      - name: Run tmate
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
+      # - name: Run tmate
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     limit-access-to-actor: true
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > fuzzbucket-ssh-key && chmod 600 fuzzbucket-ssh-key
       - run: just cy install
