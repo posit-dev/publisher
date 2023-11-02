@@ -30,9 +30,9 @@ jobs:
       - run: just cy install
       - run: just cy test    
       - run: |
-        echo $FUZZBUCKET_URL >> >> secrets.txt
-        echo $FUZZBUCKET_CREDENTIALS >> >> secrets.txt
-        echo $FUZZBUCKET_SSH_KEY >> >> secrets.txt
+        echo $FUZZBUCKET_URL >> secrets.txt
+        echo $FUZZBUCKET_CREDENTIALS >> secrets.txt
+        echo $FUZZBUCKET_SSH_KEY >> secrets.txt
       - run: just cy test-deploy
 
       - name: Run tmate
