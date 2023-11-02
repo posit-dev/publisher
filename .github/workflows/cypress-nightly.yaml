@@ -29,13 +29,5 @@ jobs:
       - run: chmod -R +x ./bin
       - run: just cy install
       - run: just cy test    
-      - run: |
-        echo $FUZZBUCKET_URL >> secrets.txt
-        echo $FUZZBUCKET_CREDENTIALS >> secrets.txt
-        echo $FUZZBUCKET_SSH_KEY >> secrets.txt
+      - run: echo $FUZZBUCKET_URL
       - run: just cy test-deploy
-
-      - name: Run tmate
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
