@@ -39,7 +39,6 @@ const logCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/log
 });
 const statusCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/status', (msg) => {
   let newCaption: string;
-  console.log('This is a status msg', msg);
   switch (msg.data.status) {
     case 'download+install':
       newCaption = `Downloading and installing package: `;
