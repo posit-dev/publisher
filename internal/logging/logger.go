@@ -14,6 +14,7 @@ type Phase string
 const (
 	StartPhase    Phase = "start"
 	ProgressPhase Phase = "progress"
+	StatusPhase   Phase = "status"
 	SuccessPhase  Phase = "success"
 	FailurePhase  Phase = "failure"
 	LogPhase      Phase = "log"
@@ -61,7 +62,7 @@ func (l logger) Success(msg string, args ...any) {
 }
 
 func (l logger) Status(msg string, args ...any) {
-	l.Info(msg, append([]any{LogKeyPhase, ProgressPhase}, args...)...)
+	l.Info(msg, append([]any{LogKeyPhase, StatusPhase}, args...)...)
 }
 
 func (l logger) Progress(msg string, done float32, total float32, args ...any) {
