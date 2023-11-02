@@ -30,4 +30,5 @@ jobs:
       - run: chmod -R +x ./bin
       - run: just cy install
       - run: just cy test
+      - run: echo $FUZZBUCKET_URL
       - run: just cy test-deploy
