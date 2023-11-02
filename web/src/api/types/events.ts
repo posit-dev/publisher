@@ -152,6 +152,16 @@ export interface EventStreamMessage {
   error?: string,
 }
 
+export interface EventStreamMessageWithError extends EventStreamMessage {
+  error: string;
+}
+
+export function isErrorEventStreamMessage(
+  msg: EventStreamMessage
+): msg is EventStreamMessageWithError {
+  return msg.error !== undefined;
+}
+
 export type OnMessageEventSourceCallback = <T extends EventStreamMessage>(msg: T) => void;
 
 export function isEventStreamMessage(o: object): o is EventStreamMessage {
