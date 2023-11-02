@@ -34,7 +34,7 @@ jobs:
       - run: just cy install
       - run: just cy test
       - run: |
-        FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }} \
-        FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }} \
-        FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }} \
+        export FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+        export FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+        export FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
         just cy test-deploy
