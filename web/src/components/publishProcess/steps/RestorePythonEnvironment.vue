@@ -39,7 +39,9 @@ const logCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/log
 });
 const statusCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/status', (msg) => {
   let newCaption: string;
-  switch (msg.data.status) {
+
+  const { status: packageStatus, name: packageName, version } = msg.data;
+  switch (packageStatus) {
     case 'download+install':
       newCaption = `Downloading and installing package: `;
       break;
@@ -50,9 +52,9 @@ const statusCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/
       newCaption = `Installing package: `;
       break;
   }
-  newCaption += msg.data.name;
-  if (msg.data.version) {
-    newCaption += ` (${msg.data.version})`;
+  newCaption += packageName;
+  if (version) {
+    newCaption += ` (${version})`;
   }
   caption.value = newCaption;
 });
