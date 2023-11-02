@@ -1,8 +1,9 @@
-name: Main
+name: Nightly
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: "0 06 * * *"
+  workflow_dispatch:
+
 jobs:
   agent:
     uses: ./.github/workflows/agent.yaml
