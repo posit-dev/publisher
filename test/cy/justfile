@@ -70,3 +70,16 @@ test:
     {{ _with_debug }}
 
     npm test
+
+test-deploy:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+    # echo "${FUZZBUCKET_SSH_KEY}" > .fuzzbucket-ssh-key
+    # chmod 600 .fuzzbucket-ssh-key
+    # export SSH_OPTIONS="-i.fuzzbucket-ssh-key"
+    # export TEST_ENVIRONMENT=${TEST_ENVIRONMENT}
+    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
+    npm run test-deploy

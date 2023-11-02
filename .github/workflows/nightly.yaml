@@ -1,0 +1,24 @@
+name: Main
+on:
+  push:
+    branches:
+      - main
+jobs:
+  agent:
+    uses: ./.github/workflows/agent.yaml
+  web:
+    uses: ./.github/workflows/web.yaml
+  build:
+    uses: ./.github/workflows/build.yaml
+  bats:
+    needs: build
+    uses: ./.github/workflows/bats.yaml
+  cypress:
+    needs: build
+    uses: ./.github/workflows/cypress.yaml
+
+  # Extensions
+  jupyterlab:
+    uses: ./.github/workflows/jupyterlab.yaml
+  positron:
+    uses: ./.github/workflows/positron.yaml
