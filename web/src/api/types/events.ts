@@ -464,10 +464,21 @@ export function isPublishRestorePythonEnvProgress(arg: Events):
   return arg.type === 'publish/restorePythonEnv/progress';
 }
 
+type packageRuntime = 'r' | 'python';
+type packageStatus = 'download+install' | 'download' | 'install';
+
 export interface PublishRestorePythonEnvStatus extends EventStreamMessage {
   type: 'publish/restorePythonEnv/status',
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
+  data: {
+    level: 'INFO',
+    localId: string,
+    message: string,
+    name: string,
+    runtime: packageRuntime,
+    source: 'serverp.log',
+    status: packageStatus,
+    version: string
+  }
 }
 export type OnPublishRestorePythonEnvStatusCallback = (
   msg: PublishRestorePythonEnvStatus
