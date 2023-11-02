@@ -76,7 +76,7 @@ test-deploy:
     set -eou pipefail
     {{ _with_debug }}
     pip install -r ../setup/requirements.txt
-    CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')" \
-    CONNECT_SERVER="$(python ../setup/connect_setup.py)" \
-    CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login" \
+    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
     npm run test-deploy
