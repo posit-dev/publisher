@@ -4,12 +4,11 @@
   "type": "object",
   "additionalProperties": false,
   "default": {},
-  "description": "Posit Deployment",
+  "description": "Posit Deployment Settings",
   "required": [
     "$schema",
     "type",
     "entrypoint",
-    "files",
     "dependencies"
   ],
   "properties": {
@@ -57,22 +56,6 @@
         "report.qmd"
       ]
     },
-    "id": {
-      "type": "string",
-      "default": null,
-      "description": "Unique ID of this deployment. If present, it must be the ID of an existing deployment of the same type on the server, which will be updated.",
-      "examples": [
-        "de2e7bdb-b085-401e-a65c-443e40009749"
-      ]
-    },
-    "name": {
-      "type": "string",
-      "default": "",
-      "description": "Unique name of this deployment. If a deployment with this name does not exist, it will be created. Otherwise, it will be updated.",
-      "examples": [
-        "regional-quarterly-sales-report"
-      ]
-    },
     "title": {
       "type": "string",
       "pattern": "^[^\t\n\f\r]{3,1024}$|",
@@ -88,6 +71,14 @@
       "description": "Human-readable description for this content.",
       "examples": [
         "This is the quarterly sales report, broken down by region."
+      ]
+    },
+    "thumbnail": {
+      "type": "string",
+      "default": null,
+      "description": "Path to thumbnail preview image for this content.",
+      "examples": [
+        "images/thumbnail.jpg"
       ]
     },
     "author": {
@@ -145,7 +136,8 @@
     },
     "files": {
       "type": "array",
-      "description": "The files Schema",
+      "description": "List of files to include in the deployment. The default is to include all files not matched by a pattern in an ignore file.",
+      "default": null,
       "items": {
         "type": "string",
         "description": "List of relative file paths that are used by this deployment. When creating a bundle, these files must exist in the project directory. When deploying from git, these files must exist in the repository.",

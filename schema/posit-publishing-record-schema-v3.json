@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rstudio/publishing-client/posit-publishing-record-schema-v3.json",
+  "type": "object",
+  "additionalProperties": false,
+  "default": {},
+  "description": "Posit Publishing Record",
+  "required": [
+    "$schema",
+    "server-url",
+    "id",
+    "configuration"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "url",
+      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/connect/posit-publishing-schema-v3.json'.",
+      "enum": [
+        "./posit-publishing-record-schema-v3.json"
+      ],
+      "examples": [
+        "./posit-publishing-record-schema-v3.json"
+      ]
+    },
+    "server-url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL of the server where this content was deployed.",
+      "examples": [
+        "https://connect.example.com"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "description": "Unique ID of this deployment.",
+      "examples": [
+        "de2e7bdb-b085-401e-a65c-443e40009749"
+      ]
+    },
+    "configuration": {
+      "type": "string",
+      "description": "Path to the configuration file within the project directory.",
+      "examples": [
+        "production.json"
+      ]
+    }
+  }
+}

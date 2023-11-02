@@ -2,29 +2,6 @@
   // URL to the schema definition, which we should make public.
   "$schema": "./posit-publishing-schema-v3.json",
 
-  // id can be used to specify a target deployment to update.
-  // Currently, it can only be used for updates once the content
-  // has been deployed, because the server assigns the GUIDs.
-  // Allowing the client to generate GUIDs and save them here
-  // would be helpful, since the metadata could be correct before
-  // the first deployment (an enabler for git workflows).
-  // Name can be used as an alternative to ID.
-  // On Connect, (owner, name) pairs must be unique
-  // unless name is empty.
-
-  // Note that currently, you can't create a deployment
-  // by uploading a bundle, because the upload endpoint
-  // is under the content-id (/__api__/v1/content/{GUID}/upload).
-  // If we want that workflow, we will need to provide a global
-  // bundle upload endpoint (/__api__/v1/bundles/upload) that
-  // creates or updates a content item by ID. Or, the client
-  // can find/create by ID/name, then upload to the content item.
-  // Git deployments in Connect are handled via a call sequence
-  // that requires a content item to be created before the repo
-  // can be attached to it.
-  "id": "de2e7bdb-b085-401e-a65c-443e40009749",
-  "name": "regional-quarterly-sales-report",
-
   // Defines what we are deploying
   "type": "quarto-static",
   "entrypoint": "report.qmd",
@@ -32,6 +9,7 @@
   // These metadata fields are purely for human consumption.
   "title": "Regional Quarterly Sales Report",
   "description": "This is the quarterly sales report, broken down by region.",
+  "thumbnail": "images/thumbnail.jpg",
   "author": {
     "name": "Michael Marchetti",
     "email": "mike@posit.co",
