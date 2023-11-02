@@ -12,6 +12,8 @@ _with_debug := if _debug == "true" {
         ""
     }
 
+FUZZBUCKET_SSH_KEY := env_var_or_default("FUZZBUCKET_SSH_KEY", "NA")
+
 default:
     #!/usr/bin/env bash
     set -eou pipefail
@@ -76,7 +78,9 @@ test-deploy:
     set -eou pipefail
     {{ _with_debug }}
     pip install -r ../setup/requirements.txt
-    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+    export FUZZBUCKET_CREDENTIALS=${FUZZBUCKET_CREDENTIALS}
+    export FUZZBUCKET_URL=${FUZZBUCKET_URL}
     export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
     export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
     npm run test-deploy
