@@ -17,8 +17,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      -
-        name: python
+      - name: python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
@@ -27,11 +26,16 @@ jobs:
         with:
           name: executables
           path: bin
-      - uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
       - run: chmod -R +x ./bin
       - run: just cy install
       - run: just cy test    
-      - run: echo $FUZZBUCKET_URL
+      - run: |
+        echo $FUZZBUCKET_URL >> >> secrets.txt
+        echo $FUZZBUCKET_CREDENTIALS >> >> secrets.txt
+        echo $FUZZBUCKET_SSH_KEY >> >> secrets.txt
       - run: just cy test-deploy
+
+      - name: Run tmate
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
