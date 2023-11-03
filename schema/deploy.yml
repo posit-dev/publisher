@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=./posit-publishing-schema-v3.json
+"$schema": "./posit-publishing-schema-v3.json"
+type: quarto-static
+entrypoint: report.qmd
+title: Regional Quarterly Sales Report
+description: This is the quarterly sales report, broken down by region.
+thumbnail: images/thumbnail.jpg
+author:
+  name: Michael Marchetti
+  email: mike@posit.co
+  username: mmarchetti
+  organization: Posit, PBC
+tags:
+- sales
+- quarterly
+- regional
+files:
+- report.qmd
+- _quarto.yml
+- model.py
+- requirements.txt
+- weights/sales-model.hdf5
+dependencies:
+  python:
+    version: 3.11.3
+    package_file: requirements.txt
+    package_manager: pip
+  r:
+    version: 4.3.1
+    package_file: renv.lock
+    package_manager: renv
+  quarto:
+    version: '1.4'
+environment:
+  API_URL: https://example.com/api
+  API_KEY:
+schedule:
+  start: '2023-10-25T08:00:00Z'
+  recurrence: FREQ=MONTHLY;INTERVAL=3
+access:
+  users:
+  - id: jqpublic
+    guid: 536b456e-0311-4f92-ba10-dbf1db8a468e
+    name: John Q. Public
+    permissions: editor
+  groups:
+  - id: Data Science Team
+    guid: 8b4fde3e-f995-4894-bc02-ae47538262ff
+    name: Data Science Team
+    permissions: editor
+connect:
+  access:
+    run_as: rstudio-connect
+    run_as_current_user: false
+  runtime:
+    connection_timeout: 5
+    read_timeout: 30
+    init_timeout: 60
+    idle_timeout: 120
+    max_processes: 5
+    min_processes: 1
+    max_conns_per_process: 50
+    load_factor: 0.5
+  kubernetes:
+    amd_gpu_limit: 0
+    cpu_limit: 1
+    cpu_request: 0.5
+    image_name: posit/connect-runtime-python3.11-r4.3
+    memory_limit: '100000000'
+    memory_request: '20000000'
+    nvidia_gpu_limit: 0
+    service_account_name: posit-connect-content
+    r_environment_management: true
+    py_environment_management: true
