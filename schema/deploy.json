@@ -65,46 +65,39 @@
     "start": "2023-10-25T08:00:00Z",
     "recurrence": "FREQ=MONTHLY;INTERVAL=3"
   },
+  "access": {
+    "users": [
+      {
+        // Password auth uses usernames as unique IDs.
+        // You can specify the auth provider unique ID,
+        // Connect-assigned GUID, or both. Tools
+        // should populate both, because GUIDs are not
+        // portable across Connect instances.
+        "id": "jqpublic",
+        "guid": "536b456e-0311-4f92-ba10-dbf1db8a468e",
+        "name": "John Q. Public",
+        "permissions": "editor"
+      }
+    ],
+    "groups": [
+      {
+        // Connect identifies groups with a name and a GUID,
+        // both of which are unique. LDAP may provide
+        // a CN/DN as the unique ID, with a separate name. Tools
+        // should populate both, because GUIDs are not
+        // portable across Connect instances.
+        "id": "Data Science Team",
+        "guid": "8b4fde3e-f995-4894-bc02-ae47538262ff",
+        "name": "Data Science Team",
+        "permissions": "editor"
+      }
+    ]
+  },
   "connect": {
     // These settings are Connect-specific and will be ignored by other servers.
     "access": {
-      // Eventually the ACL for content with type="acl" should go here.
-      // Identifying users is tricky, especially if the identities need
-      // to be ported between servers (staging/production). Connect
-      // assigns a GUID to each user or group, and we'd use those
-      // for same-server deployments because they are guaranteed to be
-      // unique. All other user identifiers are auth-type specific and
-      // need to be resolved by Connect, and many things you
-      // might expect to be unique are not guaranteed to be.
-      "type": "logged-in",
       "run_as": "rstudio-connect",
-      "run_as_current_user": false,
-      "users": [
-        {
-          // Password auth uses usernames as unique IDs.
-          // You can specify the auth provider unique ID,
-          // Connect-assigned GUID, or both. Tools
-          // should populate both, because GUIDs are not
-          // portable across Connect instances.
-          "id": "jqpublic",
-          "guid": "536b456e-0311-4f92-ba10-dbf1db8a468e",
-          "name": "John Q. Public",
-          "permissions": "editor"
-        }
-      ],
-      "groups": [
-        {
-          // Connect identifies groups with a name and a GUID,
-          // both of which are unique. LDAP may provide
-          // a CN/DN as the unique ID, with a separate name. Tools
-          // should populate both, because GUIDs are not
-          // portable across Connect instances.
-          "id": "Data Science Team",
-          "guid": "8b4fde3e-f995-4894-bc02-ae47538262ff",
-          "name": "Data Science Team",
-          "permissions": "editor"
-        }
-      ]
+      "run_as_current_user": false
     },
     "runtime": {
       // Might some of these apply beyond Connect? For example, init_timeout
