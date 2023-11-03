@@ -11,6 +11,7 @@
     "Machine Learning",
     "Other"
   ],
+  "extensionKind": ["ui"],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
