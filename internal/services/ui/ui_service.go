@@ -46,7 +46,6 @@ func NewUIService(
 		ui.TLSCertFile,
 		ui.Interactive,
 		ui.OpenBrowserAt,
-		ui.SkipBrowserSessionAuth,
 		ui.AccessLog,
 		token,
 		log,
