@@ -59,6 +59,7 @@ class Assistant {
 	start = async (): Promise<void> => {
 		this.terminal.show();
 		const command: commands.Command = commands.create(this.port);
+		this.terminal.sendText("eval \"$(just ../../configure)\"");
 		this.terminal.sendText(command);
 		console.debug("Waiting 3000 ms for ui to initialize");
 		await new Promise(resolve => setTimeout(resolve, 3000));

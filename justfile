@@ -89,6 +89,20 @@ clean:
 
     rm -rf ./bin
 
+# Prints shell commands to configure executable on path. Configure your shell via: eval "$(just configure)"
+configure:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    pathname=`just executable-path`
+    dir=`dirname $pathname`
+    base=`basename "$pathname"`
+    if ! command -v $base &> /dev/null; then
+        echo export PATH=`printf "%q" $PATH:$dir`
+        echo alias connect-client=$base
+    fi
+
 # Display the code coverage collected during the last execution of `just test`.
 cover:
     #!/usr/bin/env bash

@@ -1,4 +1,4 @@
-const executable: string = "just run";
+const executable: string = "connect-client";
 
 export type Command = string;
 
