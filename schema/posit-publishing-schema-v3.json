@@ -173,6 +173,9 @@
               "default": "pip",
               "enum": [
                 "pip",
+                "conda",
+                "pipenv",
+                "poetry",
                 "none"
               ],
               "description": "Package manager that will install the dependencies. If package_manager is none, dependencies will not be installed.",
