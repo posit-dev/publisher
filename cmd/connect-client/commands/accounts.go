@@ -101,8 +101,8 @@ func (cmd *listAccountsCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLICo
 }
 
 type AccountCommands struct {
-	AddAccount    addAccountCmd    `kong:"cmd" help:"Add a publishing account."`
-	RemoveAccount removeAccountCmd `kong:"cmd" help:"Remove a publishing account. Specify by name or URL."`
-	ListAccounts  listAccountsCmd  `kong:"cmd" help:"List publishing accounts."`
-	TestAccount   testAccountCmd   `kong:"cmd" help:"Verify connectivity and credentials for a publishing account."`
+	// AddAccount    addAccountCmd    `kong:"cmd" help:"Add a publishing account."`
+	// RemoveAccount removeAccountCmd `kong:"cmd" help:"Remove a publishing account. Specify by name or URL."`
+	ListAccounts listAccountsCmd `kong:"cmd" help:"List publishing accounts."`
+	TestAccount  testAccountCmd  `kong:"cmd" help:"Verify connectivity and credentials for a publishing account."`
 }
