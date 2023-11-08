@@ -96,12 +96,15 @@ configure:
     {{ _with_debug }}
 
     pathname=`just executable-path`
+    if ! [ -f $pathname ]; then
+        echo "info: ${pathname} not found. Running 'just build'." 1>&2
+        just build 1>&2
+    fi
+
     dir=`dirname $pathname`
     base=`basename "$pathname"`
-    if ! command -v $base &> /dev/null; then
-        echo export PATH=`printf "%q" $PATH:$dir`
-        echo alias connect-client=$base
-    fi
+    echo export PATH=`printf "%q" $PATH:$dir`
+    echo alias connect-client=$base
 
 # Display the code coverage collected during the last execution of `just test`.
 cover:

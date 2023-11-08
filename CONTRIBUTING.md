@@ -31,6 +31,11 @@ This mode can be reproduced on your local machine by setting `CI=true`.
 | DOCKER   | true    |
 | MODE     | prod    |
 
+### Extension Development
+
+Extensions require the executable to exist on your `$PATH`.
+
+Execute `eval "$(just configure)"` to configure the executable on your current `$PATH`.
 
 ## Release
 
