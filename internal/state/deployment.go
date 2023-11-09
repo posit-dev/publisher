@@ -15,16 +15,15 @@ import (
 )
 
 type TargetID struct {
-	AccountName string              `json:"account_name" short:"n" help:"Nickname of destination publishing account."` // Nickname
-	ServerType  accounts.ServerType `json:"server_type" kong:"-"`                                                      // Which type of API this server provides
-	ServerURL   string              `json:"server_url" kong:"-"`                                                       // Server URL
-	ContentId   types.ContentID     `json:"content_id" help:"Unique ID of content item to update."`                    // Content ID (GUID for Connect)
-	ContentName types.ContentName   `json:"content_name" help:"Name of content item to update."`                       // Content Name (unique per user)
+	ServerType  accounts.ServerType `json:"server_type"`                                            // Which type of API this server provides
+	ServerURL   string              `json:"server_url"`                                             // Server URL
+	ContentId   types.ContentID     `json:"content_id" help:"Unique ID of content item to update."` // Content ID (GUID for Connect)
+	ContentName types.ContentName   `json:"content_name" help:"Name of content item to update."`    // Content Name (unique per user)
 
 	// These fields are informational and don't affect future deployments.
-	Username   string             `json:"username,omitempty" kong:"-"` // Username, if known
-	BundleId   types.NullBundleID `json:"bundle_id" kong:"-"`          // Bundle ID that was deployed
-	DeployedAt types.NullTime     `json:"deployed_at" kong:"-"`        // Date/time bundle was deployed
+	Username   string             `json:"username,omitempty"` // Username, if known
+	BundleId   types.NullBundleID `json:"bundle_id"`          // Bundle ID that was deployed
+	DeployedAt types.NullTime     `json:"deployed_at"`        // Date/time bundle was deployed
 }
 
 type LocalDeploymentID string
@@ -38,12 +37,12 @@ func NewLocalID() (LocalDeploymentID, error) {
 }
 
 type Deployment struct {
-	LocalID            LocalDeploymentID `json:"local_id" kong:"-"`            // Unique ID of this publishing operation. Only valid for this run of the agent.
-	SourceDir          util.Path         `json:"source_path" kong:"-"`         // Absolute path to source directory being published
-	Target             TargetID          `json:"target" kong:"embed"`          // Identity of previous deployment
-	Manifest           bundles.Manifest  `json:"manifest" kong:"embed"`        // manifest.json content for this deployment
-	Connect            ConnectDeployment `json:"connect" kong:"embed"`         // Connect metadata for this deployment, if target is Connect
-	PythonRequirements []byte            `json:"python_requirements" kong:"-"` // Content of requirements.txt to include
+	LocalID            LocalDeploymentID `json:"local_id"`            // Unique ID of this publishing operation. Only valid for this run of the agent.
+	SourceDir          util.Path         `json:"source_path"`         // Absolute path to source directory being published
+	Target             TargetID          `json:"target"`              // Identity of previous deployment
+	Manifest           bundles.Manifest  `json:"manifest"`            // manifest.json content for this deployment
+	Connect            ConnectDeployment `json:"connect"`             // Connect metadata for this deployment, if target is Connect
+	PythonRequirements []byte            `json:"python_requirements"` // Content of requirements.txt to include
 }
 
 func NewDeployment() *Deployment {
@@ -58,9 +57,6 @@ func NewDeployment() *Deployment {
 func (d *Deployment) Merge(other *Deployment) {
 	if other.SourceDir.Path() != "" {
 		d.SourceDir = other.SourceDir
-	}
-	if other.Target.AccountName != "" {
-		d.Target.AccountName = other.Target.AccountName
 	}
 	if other.Target.ServerType != "" {
 		d.Target.ServerType = other.Target.ServerType
