@@ -4,34 +4,12 @@ package commands
 
 import (
 	"fmt"
-	"net/url"
-	"os"
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients"
 	"github.com/rstudio/connect-client/internal/cli_types"
 )
-
-type addAccountCmd struct {
-	Name        string   `short:"n" help:"Nickname for the account."`
-	URL         *url.URL `short:"u" help:"Server URL."`
-	APIKey      string   `short:"k" help:"API key."`
-	Certificate *os.File `help:"Path to CA certificate bundle."`
-	Insecure    bool     `help:"Don't validate server certificate."`
-}
-
-func (cmd *addAccountCmd) Run(args *cli_types.CommonArgs) error {
-	return nil
-}
-
-type removeAccountCmd struct {
-	Name string `short:"n" help:"Nickname of account to remove."`
-}
-
-func (cmd *removeAccountCmd) Run(args *cli_types.CommonArgs) error {
-	return nil
-}
 
 type testAccountCmd struct {
 	Name string `short:"n" help:"Nickname of account to test."`
@@ -101,8 +79,6 @@ func (cmd *listAccountsCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLICo
 }
 
 type AccountCommands struct {
-	// AddAccount    addAccountCmd    `kong:"cmd" help:"Add a publishing account."`
-	// RemoveAccount removeAccountCmd `kong:"cmd" help:"Remove a publishing account. Specify by name or URL."`
 	ListAccounts listAccountsCmd `kong:"cmd" help:"List publishing accounts."`
 	TestAccount  testAccountCmd  `kong:"cmd" help:"Verify connectivity and credentials for a publishing account."`
 }
