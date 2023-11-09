@@ -41,10 +41,6 @@ func (s *ManifestSuite) TestNewManifest() {
 	s.Equal(1, manifest.Version)
 	s.Empty(manifest.Packages)
 	s.Empty(manifest.Files)
-	s.Nil(manifest.Python)
-	s.Nil(manifest.Jupyter)
-	s.Nil(manifest.Quarto)
-	s.Nil(manifest.Environment)
 }
 
 func (s *ManifestSuite) TestAddFile() {
@@ -62,10 +58,14 @@ func (s *ManifestSuite) TestReadManifest() {
 	manifest, err := ReadManifest(reader)
 	s.Nil(err)
 	s.Equal(&Manifest{
-		Version:  1,
-		Platform: "4.1.0",
-		Packages: PackageMap{},
-		Files:    ManifestFileMap{},
+		Version:     1,
+		Platform:    "4.1.0",
+		Python:      &Python{},
+		Quarto:      &Quarto{},
+		Jupyter:     &Jupyter{},
+		Environment: &Environment{},
+		Packages:    PackageMap{},
+		Files:       ManifestFileMap{},
 	}, manifest)
 }
 
@@ -100,10 +100,14 @@ func (s *ManifestSuite) TestReadManifestFile() {
 	manifest, err := ReadManifestFile(manifestPath)
 	s.Nil(err)
 	s.Equal(&Manifest{
-		Version:  1,
-		Platform: "4.1.0",
-		Packages: PackageMap{},
-		Files:    ManifestFileMap{},
+		Version:     1,
+		Platform:    "4.1.0",
+		Python:      &Python{},
+		Quarto:      &Quarto{},
+		Jupyter:     &Jupyter{},
+		Environment: &Environment{},
+		Packages:    PackageMap{},
+		Files:       ManifestFileMap{},
 	}, manifest)
 }
 

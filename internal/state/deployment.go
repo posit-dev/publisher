@@ -21,9 +21,8 @@ type TargetID struct {
 	ContentName types.ContentName   `json:"content_name" help:"Name of content item to update."`    // Content Name (unique per user)
 
 	// These fields are informational and don't affect future deployments.
-	Username   string             `json:"username,omitempty"` // Username, if known
-	BundleId   types.NullBundleID `json:"bundle_id"`          // Bundle ID that was deployed
-	DeployedAt types.NullTime     `json:"deployed_at"`        // Date/time bundle was deployed
+	Username string             `json:"username,omitempty"` // Username, if known
+	BundleId types.NullBundleID `json:"bundle_id"`          // Bundle ID that was deployed
 }
 
 type LocalDeploymentID string
@@ -197,16 +196,7 @@ func listDeployments(sourceDir util.Path, log logging.Logger) ([]*Deployment, er
 		}
 	}
 	sort.Slice(deployments, func(i, j int) bool {
-		// Sort in reverse order by deployment time
-		t1, t1valid := deployments[i].Target.DeployedAt.Get()
-		t2, t2valid := deployments[j].Target.DeployedAt.Get()
-		if t1valid && t2valid {
-			return t1.After(t2)
-		} else if t1valid {
-			return true
-		} else {
-			return false
-		}
+		return deployments[i].Target.ServerURL < deployments[j].Target.ServerURL
 	})
 	return deployments, nil
 }

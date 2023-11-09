@@ -225,7 +225,6 @@ func (p *Publisher) publishWithClient(
 		ContentName: "",
 		Username:    account.AccountName,
 		BundleId:    types.NewOptional(bundleID),
-		DeployedAt:  types.NewOptional(time.Now()),
 	}
 
 	taskID, err := withLog(events.PublishDeployBundleOp, "Initiating bundle deployment", "task_id", log, func() (types.TaskID, error) {
