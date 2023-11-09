@@ -9,13 +9,21 @@ import * as ports from './ports';
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
 	let assistant = vscode.commands.registerCommand('positron.publish.assistant.open', async () => {
+		const port = await ports.acquire();
+		const path = vscode.workspace.workspaceFolders?.at(0)?.uri.path;
+		if (path === undefined) {
+			throw new Error("workspace path is undefined");
+		}
+
 		const assistant = assistants.create({
-			port: await ports.acquire(),
+			port: port,
 			resources: [
 				vscode.Uri.joinPath(context.extensionUri, "out"),
 				vscode.Uri.joinPath(context.extensionUri, "assets")
-			]
+			],
+			path: path
 		});
+
 		await assistant.start();
 		await assistant.render();
 	});
