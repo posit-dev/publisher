@@ -26,25 +26,24 @@
       "type": "string",
       "description": "Indicates the type of content being deployed.",
       "enum": [
-        "api",
-        "jupyter-static",
+        "html",
+        "jupyter-notebook",
         "jupyter-voila",
-        "python-api",
         "python-bokeh",
         "python-dash",
         "python-fastapi",
+        "python-flask",
         "python-shiny",
         "python-streamlit",
         "quarto-shiny",
-        "quarto-static",
+        "quarto",
+        "r-plumber",
+        "r-shiny",
         "rmd-shiny",
-        "rmd-static",
-        "shiny",
-        "static",
-        "tensorflow-saved-model"
+        "rmd"
       ],
       "examples": [
-        "quarto-static"
+        "quarto"
       ]
     },
     "entrypoint": {
@@ -77,42 +76,6 @@
         "images/thumbnail.jpg"
       ]
     },
-    "author": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Information about the author of this content.",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "Author name.",
-          "examples": [
-            "Michael Marchetti"
-          ]
-        },
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "Author email address.",
-          "examples": [
-            "mike@posit.co"
-          ]
-        },
-        "username": {
-          "type": "string",
-          "description": "Author's username on the publishing server.",
-          "examples": [
-            "mmarchetti"
-          ]
-        },
-        "organization": {
-          "type": "string",
-          "description": "Author's organization.",
-          "examples": [
-            "Posit, PBC"
-          ]
-        }
-      }
-    },
     "tags": {
       "type": "array",
       "description": "List of tags to apply to this deployment. When publishing to Connect, tags must be pre-defined by an administrator.",
@@ -122,21 +85,6 @@
           "sales",
           "quarterly",
           "regional"
-        ]
-      }
-    },
-    "files": {
-      "type": "array",
-      "description": "List of files to include in the deployment. The default is to include all files not matched by a pattern in an ignore file.",
-      "items": {
-        "type": "string",
-        "description": "List of relative file paths that are used by this deployment. When creating a bundle, these files must exist in the project directory. When deploying from git, these files must exist in the repository.",
-        "examples": [
-          "report.qmd",
-          "_quarto.yml",
-          "model.py",
-          "requirements.txt",
-          "weights/*.hdf5"
         ]
       }
     },
@@ -155,9 +103,10 @@
           "properties": {
             "version": {
               "type": "string",
-              "description": "Python version. The server must have a similar Python version in order to run the content.",
+              "description": "Python version. The server must have a matching Python version in order to run the content.",
               "examples": [
-                "3.11.3"
+                "3.11.3",
+                "3.11"
               ]
             },
             "package_file": {
@@ -272,28 +221,32 @@
         }
       ]
     },
-    "schedule": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Schedule for recurring execution of this content. Only applies to reports, such as Quarto and R Markdown.",
-      "required": [
-        "start",
-        "recurrence"
-      ],
-      "properties": {
-        "start": {
-          "type": "string",
-          "description": "Time for the first run of the content.",
-          "examples": [
-            "2023-10-25T08:00:00Z"
-          ]
-        },
-        "recurrence": {
-          "type": "string",
-          "description": "Recurrence scheme for the content, in iCalendar RRULE format.",
-          "examples": [
-            "FREQ=MONTHLY;INTERVAL=3"
-          ]
+    "schedules": {
+      "type": "array",
+      "description": "Schedules for recurring execution of this content. Only applies to reports, such as Quarto, R Markdown, and Jupyter Notebooks.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "start",
+          "recurrence"
+        ],
+        "properties": {
+          "start": {
+            "type": "string",
+            "description": "Time for the first run of the content.",
+            "examples": [
+              "2023-10-25T08:00:00Z"
+            ]
+          },
+          "recurrence": {
+            "type": "string",
+            "description": "Recurrence scheme for the content, in cron or iCalendar RRULE format.",
+            "examples": [
+              "FREQ=MONTHLY;INTERVAL=3",
+              "0 2 * * *"
+            ]
+          }
         }
       }
     },

@@ -5,19 +5,6 @@ title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
 thumbnail = "images/thumbnail.jpg"
 tags = [ "sales", "quarterly", "regional" ]
-files = [
-  "report.qmd",
-  "_quarto.yml",
-  "model.py",
-  "requirements.txt",
-  "weights/sales-model.hdf5"
-]
-
-[author]
-name = "Michael Marchetti"
-email = "mike@posit.co"
-username = "mmarchetti"
-organization = "Posit, PBC"
 
 [dependencies.python]
 version = "3.11.3"
