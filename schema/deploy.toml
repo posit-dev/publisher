@@ -1,5 +1,5 @@
 "$schema" = "./posit-publishing-schema-v3.json"
-type = "quarto-static"
+type = "quarto"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
@@ -22,7 +22,7 @@ version = "1.4"
 [environment]
 API_URL = "https://example.com/api"
 
-[schedule]
+[[schedules]]
 start = "2023-10-25T08:00:00Z"
 recurrence = "FREQ=MONTHLY;INTERVAL=3"
 
