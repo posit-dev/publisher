@@ -127,7 +127,7 @@ image:
     set -eou pipefail
     {{ _with_debug }}
 
-    if [ -z "{{ _docker }}" ]; then
+    if ! {{ _docker }}; then
         exit 0
     fi
 
@@ -250,7 +250,7 @@ _with_docker *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    if [ -z "{{ _docker }}" ]; then
+    if ! {{ _docker }}; then
         {{ args }}
         exit 0
     fi
