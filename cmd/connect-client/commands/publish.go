@@ -185,6 +185,17 @@ func (cmd *BaseBundleCmd) stateFromCLI(log logging.Logger) error {
 	}
 	log.Info("Deployment type", "Entrypoint", metadata.Entrypoint, "AppMode", metadata.AppMode)
 
+	initCommand := InitCommand{
+		State: cmd.State,
+	}
+	pythonRequired, err := initCommand.requiresPython()
+	if err != nil {
+		return err
+	}
+	if pythonRequired {
+		initCommand.inspectPython(log, manifest)
+	}
+
 	manifestFiles, err := createManifestFileMapFromSourceDir(cmd.State.SourceDir, log)
 	if err != nil {
 		return err
