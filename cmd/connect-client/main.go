@@ -13,7 +13,6 @@ import (
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/project"
-	"github.com/rstudio/connect-client/internal/services"
 	"github.com/spf13/afero"
 )
 
@@ -37,11 +36,7 @@ func logVersion(log logging.Logger) {
 func makeContext(log logging.Logger) (*cli_types.CLIContext, error) {
 	fs := afero.NewOsFs()
 	accountList := accounts.NewAccountList(fs, log)
-	token, err := services.NewLocalToken()
-	if err != nil {
-		return nil, err
-	}
-	ctx := cli_types.NewCLIContext(accountList, token, fs, log)
+	ctx := cli_types.NewCLIContext(accountList, fs, log)
 	return ctx, nil
 }
 
@@ -74,9 +69,6 @@ func main() {
 	}
 	if cli.Debug {
 		ctx.Logger = events.NewLogger(true)
-	}
-	if cli.Token != nil {
-		ctx.LocalToken = *cli.Token
 	}
 	cmd, ok := args.Selected().Target.Interface().(commands.StatefulCommand)
 	if ok {

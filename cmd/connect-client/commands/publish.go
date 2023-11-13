@@ -308,7 +308,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		"/",
 		cmd.UIArgs,
 		&cmd.PublishArgs,
-		ctx.LocalToken,
 		ctx.Fs,
 		ctx.Accounts,
 		log,
