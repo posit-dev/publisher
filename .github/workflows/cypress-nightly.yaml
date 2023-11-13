@@ -29,14 +29,8 @@ jobs:
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/cy/fuzzbucket-ssh-key && chmod 600 test/cy/fuzzbucket-ssh-key
       - run: just cy install
-      - run: echo $(expr substr $(uname -s) 1 10)
       - run: just cy test
-      - run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            just cy test-deploy-windows
-          else
-            just cy test-deploy
-          fi
+      - run: just cy test-deploy
 
       - name: Setup tmate session
         if: ${{ failure() }}
