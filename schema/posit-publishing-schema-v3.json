@@ -19,7 +19,7 @@
         "./posit-publishing-schema-v3.json"
       ],
       "examples": [
-        "./posit-publishing-schema-v3.json"
+        "https://cdn.posit.co/connect/posit-publishing-schema-v3.json"
       ]
     },
     "type": {
@@ -209,16 +209,26 @@
       "type": "object",
       "additionalProperties": {
         "type": [
-          "string",
-          "null"
+          "string"
         ]
       },
-      "description": "Environment variable/value map. Null values may be used for secrets; deployment tools should populate these from the deploying environment. For git-based deployments, the publishing server must be configured to provide those values.",
+      "description": "Environment variable/value map. Secrets such as API keys or tokens should not be stored here.",
       "examples": [
         {
-          "API_URL": "https://example.com/api",
-          "API_KEY": null
+          "API_URL": "https://example.com/api"
         }
+      ]
+    },
+    "secrets": {
+      "type": "array",
+      "items": {
+        "type": [
+          "string"
+        ]
+      },
+      "description": "Names of secrets that should be injected as environment variables.",
+      "examples": [
+        "API_KEY"
       ]
     },
     "schedules": {

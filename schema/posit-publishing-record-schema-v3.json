@@ -14,12 +14,12 @@
     "$schema": {
       "type": "string",
       "format": "url",
-      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/connect/posit-publishing-schema-v3.json'.",
+      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/connect/posit-publishing-record-schema-v3.json'.",
       "enum": [
         "./posit-publishing-record-schema-v3.json"
       ],
       "examples": [
-        "./posit-publishing-record-schema-v3.json"
+        "https://cdn.posit.co/connect/posit-publishing-record-schema-v3.json"
       ]
     },
     "server-url": {
@@ -37,12 +37,29 @@
         "de2e7bdb-b085-401e-a65c-443e40009749"
       ]
     },
-    "configuration": {
+    "configuration-file": {
       "type": "string",
-      "description": "Path to the configuration file within the project directory.",
+      "description": "Name of the configuration file that was used during deployment.",
       "examples": [
-        "production.json"
+        "production.toml"
       ]
+    },
+    "configuration": {
+      "$ref": "./posit-publishing-schema-v3.json"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": [
+          "string"
+        ]
+      },
+      "description": "Project-relative paths of the files that were included in the deployment.",
+      "examples": [
+        "app.py",
+        "model/weights.csv"
+      ]
+
     }
   }
 }

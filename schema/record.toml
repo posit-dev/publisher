@@ -1,3 +1,9 @@
+"$schema" = "./posit-publishing-record-schema-v3.json"
+server-url = "https://connect.example.com"
+id = "de2e7bdb-b085-401e-a65c-443e40009749"
+configuration-file = "production.json"
+
+[configuration]
 "$schema" = "./posit-publishing-schema-v3.json"
 type = "quarto"
 entrypoint = "report.qmd"
@@ -5,46 +11,45 @@ title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
 thumbnail = "images/thumbnail.jpg"
 tags = [ "sales", "quarterly", "regional" ]
-
 secrets = ["API_KEY"]
 
-[dependencies.python]
+[configuration.dependencies.python]
 version = "3.11.3"
 package_file = "requirements.txt"
 package_manager = "pip"
 
-[dependencies.r]
+[configuration.dependencies.r]
 version = "4.3.1"
 package_file = "renv.lock"
 package_manager = "renv"
 
-[dependencies.quarto]
+[configuration.dependencies.quarto]
 version = "1.4"
 
-[environment]
+[configuration.environment]
 API_URL = "https://example.com/api"
 
-[[schedules]]
+[[configuration.schedules]]
 start = "2023-10-25T08:00:00Z"
 recurrence = "FREQ=MONTHLY;INTERVAL=3"
 
-[[access.users]]
+[[configuration.access.users]]
 id = "jqpublic"
 guid = "536b456e-0311-4f92-ba10-dbf1db8a468e"
 name = "John Q. Public"
 permissions = "editor"
 
-[[access.groups]]
+[[configuration.access.groups]]
 id = "Data Science Team"
 guid = "8b4fde3e-f995-4894-bc02-ae47538262ff"
 name = "Data Science Team"
 permissions = "editor"
 
-[connect.access]
+[configuration.connect.access]
 run_as = "rstudio-connect"
 run_as_current_user = false
 
-[connect.runtime]
+[configuration.connect.runtime]
 connection_timeout = 5
 read_timeout = 30
 init_timeout = 60
@@ -54,7 +59,7 @@ min_processes = 1
 max_conns_per_process = 50
 load_factor = 0.5
 
-[connect.kubernetes]
+[configuration.connect.kubernetes]
 amd_gpu_limit = 0
 cpu_limit = 1
 cpu_request = 0.5
