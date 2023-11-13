@@ -8,7 +8,7 @@
     "test-deploy": "start-server-and-test --expect 401 start http-get://127.0.0.1:9000 run-deploy",
     "open": "cypress open",
     "run": "cypress run --spec ./cypress/e2e/publish-ui/*.cy.js --env token=token",
-    "run-deploy": "if \"%OS%\"==\"Windows_NT\"; then cypress run --spec ./cypress/e2e/deploy/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=%CYPRESS_CONNECT_ADDRESS%; else cypress run --spec ./cypress/e2e/deploy/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS; fi;"
+    "run-deploy": "if \"%OS%\"==\"Windows_NT\" (cypress run --spec ./cypress/e2e/deploy/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=%CYPRESS_CONNECT_ADDRESS%) else (cypress run --spec ./cypress/e2e/deploy/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS);"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
