@@ -6,9 +6,11 @@
     "start": "just ../../run publish-ui --listen 127.0.0.1:9000 --token=token -n env ./test/sample-content/fastapi-simple",
     "test": "start-server-and-test --expect 401 start http-get://127.0.0.1:9000 run",
     "test-deploy": "start-server-and-test --expect 401 start http-get://127.0.0.1:9000 run-deploy",
+    "test-deploy-windows": "start-server-and-test --expect 401 start http-get://127.0.0.1:9000 run-deploy-windows",
     "open": "cypress open",
     "run": "cypress run --spec ./cypress/e2e/publish-ui/*.cy.js --env token=token",
-    "run-deploy": "if \"%OS%\"==\"Windows_NT\"; then cypress run --spec ./cypress/e2e/deploy/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=%CYPRESS_CONNECT_ADDRESS%; else cypress run --spec ./cypress/e2e/deploy/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS; fi"
+    "run-deploy": "cypress run --spec ./cypress/e2e/deploy/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS",
+    "run-deploy-windows": "cypress run --spec ./cypress/e2e/deploy/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=%CYPRESS_CONNECT_ADDRESS%"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
