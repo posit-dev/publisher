@@ -24,6 +24,5 @@ func (s *MainSuite) TestMakeContext() {
 	ctx, err := makeContext(log)
 	s.Nil(err)
 	s.NotNil(ctx.Accounts)
-	s.NotEqual(ctx.LocalToken, "")
 	s.Equal(log, ctx.Logger)
 }

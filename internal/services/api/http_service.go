@@ -12,7 +12,6 @@ import (
 
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/project"
-	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/middleware"
 	"github.com/rstudio/connect-client/internal/state"
 
@@ -28,7 +27,6 @@ type Service struct {
 	certFile      string
 	openBrowser   bool
 	openBrowserAt string
-	token         services.LocalToken
 	addr          net.Addr
 	log           logging.Logger
 }
@@ -45,7 +43,6 @@ func NewService(
 	openBrowser bool,
 	openBrowserAt string,
 	accessLog bool,
-	token services.LocalToken,
 	log logging.Logger) *Service {
 
 	if accessLog {
@@ -62,7 +59,6 @@ func NewService(
 		certFile:      certFile,
 		openBrowser:   openBrowser,
 		openBrowserAt: openBrowserAt,
-		token:         token,
 		addr:          nil,
 		log:           log,
 	}
