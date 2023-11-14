@@ -29,14 +29,6 @@ clean:
 
     rm -rf node_modules
 
-configure:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    alias publisher=$(basename `just ../../executable-path`)
-    readonly publisher
-
 
 # Install dependencies
 install:
