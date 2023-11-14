@@ -109,7 +109,7 @@
                 "3.11"
               ]
             },
-            "package_file": {
+            "package-file": {
               "type": "string",
               "description": "File containing package dependencies. The file must exist and be listed under 'files'.",
               "default": "requirements.txt",
@@ -117,7 +117,7 @@
                 "requirements.txt"
               ]
             },
-            "package_manager": {
+            "package-manager": {
               "type": "string",
               "default": "pip",
               "enum": [
@@ -127,7 +127,7 @@
                 "poetry",
                 "none"
               ],
-              "description": "Package manager that will install the dependencies. If package_manager is none, dependencies will not be installed.",
+              "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will not be installed.",
               "examples": [
                 "pip"
               ]
@@ -149,7 +149,7 @@
                 "4.3.1"
               ]
             },
-            "package_file": {
+            "package-file": {
               "type": "string",
               "default": "renv.lock",
               "description": "File containing package dependencies. The file must exist and be listed under 'files'.",
@@ -157,14 +157,14 @@
                 "renv.lock"
               ]
             },
-            "package_manager": {
+            "package-manager": {
               "type": "string",
               "default": "renv",
               "enum": [
                 "renv",
                 "none"
               ],
-              "description": "Package manager that will install the dependencies. If package_manager is none, dependencies will not be installed.",
+              "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will not be installed.",
               "examples": [
                 "renv"
               ]
@@ -298,7 +298,7 @@
               },
               "guid": {
                 "type": "string",
-                "description": "Unique identifier assigned by Connect. When deploying to the same server, this will determine the user who is granted access. When deploying to a different server, the provider_id will be used to look up the user.",
+                "description": "Unique identifier assigned by Connect. When deploying to the same server, this will determine the user who is granted access. When deploying to a different server, the provider-id will be used to look up the user.",
                 "examples": [
                   "cd2e7cef-a195-512e-b76d-554f4f5a239c"
                 ]
@@ -341,7 +341,7 @@
               },
               "guid": {
                 "type": "string",
-                "description": "Unique identifier assigned by Connect. When deploying to the same server, this will determine the user who is granted access. When deploying to a different server, the provider_id will be used to look up the user.",
+                "description": "Unique identifier assigned by Connect. When deploying to the same server, this will determine the user who is granted access. When deploying to a different server, the provider-id will be used to look up the user.",
                 "examples": [
                   "8b4fde3e-f995-4894-bc02-ae47538262ff"
                 ]
@@ -373,14 +373,14 @@
       "description": "Setting specific to Posit Connect deployments.",
       "properties": {
         "access": {
-          "run_as": {
+          "run-as": {
             "type": "string",
             "description": "The system username under which the content should be run. Must be an existing user in the allowed group. You must be an administrator to set this value.",
             "examples": [
               "rstudio-connect"
             ]
           },
-          "run_as_current_user": {
+          "run-as-current-user": {
             "type": "boolean",
             "default": false,
             "description": "For application content types, run a separate process for each visiting user under that user's server account. Requires PAM authentication on the Posit Connect server. You must be an administrator to set this value."
@@ -391,7 +391,7 @@
           "additionalProperties": false,
           "description": "Runtime settings for application content types.",
           "properties": {
-            "connection_timeout": {
+            "connection-timeout": {
               "type": "integer",
               "minimum": 0,
               "description": "Maximum number of seconds allowed without data sent or received across a client connection. A value of `0` means connections will never time-out (not recommended).",
@@ -399,7 +399,7 @@
                 5
               ]
             },
-            "read_timeout": {
+            "read-timeout": {
               "type": "integer",
               "minimum": 0,
               "description": "Maximum number of seconds allowed without data received from a client connection. A value of `0` means a lack of client (browser) interaction never causes the connection to close.",
@@ -407,21 +407,21 @@
                 30
               ]
             },
-            "init_timeout": {
+            "init-timeout": {
               "type": "integer",
               "description": "The maximum number of seconds allowed for an interactive application to start. Posit Connect must be able to connect to a newly launched application before this threshold has elapsed.",
               "examples": [
                 60
               ]
             },
-            "idle_timeout": {
+            "idle-timeout": {
               "type": "integer",
               "description": "The maximum number of seconds a worker process for an interactive application to remain alive after it goes idle (no active connections).",
               "examples": [
                 120
               ]
             },
-            "max_processes": {
+            "max-processes": {
               "type": "integer",
               "minimum": 1,
               "description": "Specifies the total number of concurrent processes allowed for a single interactive application.",
@@ -429,7 +429,7 @@
                 5
               ]
             },
-            "min_processes": {
+            "min-processes": {
               "type": "integer",
               "minimum": 0,
               "description": "Specifies the minimum number of concurrent processes allowed for a single interactive application.",
@@ -437,7 +437,7 @@
                 1
               ]
             },
-            "max_conns_per_process": {
+            "max-conns-per-process": {
               "type": "integer",
               "minimum": 1,
               "description": "Specifies the maximum number of client connections allowed to an individual process. Incoming connections which will exceed this limit are routed to a new process or rejected.",
@@ -445,7 +445,7 @@
                 50
               ]
             },
-            "load_factor": {
+            "load-factor": {
               "type": "number",
               "minimum": 0,
               "maximum": 1,
@@ -461,70 +461,70 @@
           "additionalProperties": false,
           "description": "Settings used with Posit Connect's off-host execution feature, where content is run in Kubernetes.",
           "properties": {
-            "amd_gpu_limit": {
+            "amd-gpu-limit": {
               "type": "integer",
               "description": "The number of AMD GPUs that will be allocated by Kubernetes to run this content.",
               "examples": [
                 0
               ]
             },
-            "cpu_limit": {
+            "cpu-limit": {
               "type": "integer",
               "description": "The maximum amount of compute power this content will be allowed to consume when executing or rendering, expressed in CPU Units, where 1.0 unit is equivalent to 1 physical or virtual core. Fractional values are allowed. If the process tries to use more CPU than allowed, it will be throttled.",
               "examples": [
                 1
               ]
             },
-            "cpu_request": {
+            "cpu-request": {
               "type": "number",
               "description": "The minimum amount of compute power this content needs when executing virtual core. Fractional values are allowed.",
               "examples": [
                 0.5
               ]
             },
-            "image_name": {
+            "image-name": {
               "type": "string",
               "description": "Name of the target container image.",
               "examples": [
                 "posit/connect-runtime-python3.11-r4.3"
               ]
             },
-            "memory_limit": {
+            "memory-limit": {
               "type": "string",
               "description": "The maximum amount of RAM this content will be allowed to consume when executing or rendering, expressed in bytes. If the process tries to use more memory than allowed, it will be terminated",
               "examples": [
                 "100000000"
               ]
             },
-            "memory_request": {
+            "memory-request": {
               "type": "string",
               "description": "The minimum amount of RAM this content needs when executing or rendering, expressed in bytes.",
               "examples": [
                 "20000000"
               ]
             },
-            "nvidia_gpu_limit": {
+            "nvidia-gpu-limit": {
               "type": "integer",
               "description": "The number of NVIDIA GPUs that will be allocated by Kubernetes to run this content.",
               "examples": [
                 0
               ]
             },
-            "service_account_name": {
+            "service-account-name": {
               "type": "string",
               "description": "The name of the Kubernetes service account that is used to run this content. It must adhere to Kubernetes service account naming rules. You must be an administrator to set this value.",
               "examples": [
                 "posit-connect-content"
               ]
             },
-            "r_environment_management": {
+            "r-environment-management": {
               "type": "boolean",
               "description": "Enables or disables R environment management. When false, Posit Connect will not install R packages and instead assume that all required packages are present in the container image.",
               "examples": [
                 true
               ]
             },
-            "py_environment_management": {
+            "py-environment-management": {
               "type": "boolean",
               "description": "Enables or disables Python environment management. When false, Posit Connect will not install Python packages and instead assume that all required packages are present in the container image.",
               "examples": [
