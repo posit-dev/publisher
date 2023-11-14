@@ -17,9 +17,19 @@
     "commands": [
       {
         "command": "positron.publish.assistant.open",
-        "title": "Publisher: Open Assistant"
+        "title": "Open Assistant",
+        "category": "Publisher"
       }
-    ]
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceLangId == python",
+          "command": "positron.publish.assistant.open",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
