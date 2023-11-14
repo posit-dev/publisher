@@ -23,7 +23,6 @@ var standardIgnores = []string{
 
 	// From rsconnect
 	".DS_Store",
-	".gitignore",
 	".Rhistory",
 	".quarto/",
 	// Less precise than rsconnect, which checks for a
@@ -32,7 +31,7 @@ var standardIgnores = []string{
 
 	// Other
 	".ipynb_checkpoints/",
-	".posit/",
+	".posit/deployments",
 }
 
 // excludingWalker is a Walker that excludes files and directories
