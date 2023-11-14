@@ -7,8 +7,7 @@
   "required": [
     "$schema",
     "type",
-    "entrypoint",
-    "dependencies"
+    "entrypoint"
   ],
   "properties": {
     "$schema": {
@@ -88,119 +87,112 @@
         ]
       }
     },
-    "dependencies": {
+    "python": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Language runtimes and packages needed to run this content.",
+      "description": "Python language and dependencies.",
+      "required": [
+        "version"
+      ],
       "properties": {
-        "python": {
-          "type": "object",
-          "additionalProperties": false,
-          "description": "Python language and dependencies.",
-          "required": [
-            "version"
-          ],
-          "properties": {
-            "version": {
-              "type": "string",
-              "description": "Python version. The server must have a matching Python version in order to run the content.",
-              "examples": [
-                "3.11.3",
-                "3.11"
-              ]
-            },
-            "package-file": {
-              "type": "string",
-              "description": "File containing package dependencies. The file must exist and be listed under 'files'.",
-              "default": "requirements.txt",
-              "examples": [
-                "requirements.txt"
-              ]
-            },
-            "package-manager": {
-              "type": "string",
-              "default": "pip",
-              "enum": [
-                "pip",
-                "conda",
-                "pipenv",
-                "poetry",
-                "none"
-              ],
-              "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will not be installed.",
-              "examples": [
-                "pip"
-              ]
-            }
-          }
+        "version": {
+          "type": "string",
+          "description": "Python version. The server must have a matching Python version in order to run the content.",
+          "examples": [
+            "3.11.3",
+            "3.11"
+          ]
         },
-        "r": {
-          "type": "object",
-          "additionalProperties": false,
-          "description": "R language and dependencies.",
-          "required": [
-            "version"
-          ],
-          "properties": {
-            "version": {
-              "type": "string",
-              "description": "R version. The server must have a similar R version in order to run the content.",
-              "examples": [
-                "4.3.1"
-              ]
-            },
-            "package-file": {
-              "type": "string",
-              "default": "renv.lock",
-              "description": "File containing package dependencies. The file must exist and be listed under 'files'.",
-              "examples": [
-                "renv.lock"
-              ]
-            },
-            "package-manager": {
-              "type": "string",
-              "default": "renv",
-              "enum": [
-                "renv",
-                "none"
-              ],
-              "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will not be installed.",
-              "examples": [
-                "renv"
-              ]
-            }
-          }
+        "package-file": {
+          "type": "string",
+          "description": "File containing package dependencies. The file must exist and be listed under 'files'.",
+          "default": "requirements.txt",
+          "examples": [
+            "requirements.txt"
+          ]
         },
-        "quarto": {
-          "type": "object",
-          "additionalProperties": false,
-          "description": "Quarto version required to run the content.",
-          "required": [
-            "version"
+        "package-manager": {
+          "type": "string",
+          "default": "pip",
+          "enum": [
+            "pip",
+            "conda",
+            "pipenv",
+            "poetry",
+            "none"
           ],
-          "properties": {
-            "version": {
-              "type": "string",
-              "description": "Quarto version. The server must have a similar Quarto version in order to run the content.",
-              "examples": [
-                "1.4"
-              ]
-            },
-            "engines": {
-              "type": "array",
-              "description": "List of Quarto engines required for this content.",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "knitr",
-                  "jupyter"
-                ],
-                "examples": [
-                  "knitr",
-                  "jupyter"
-                ]
-              }
-            }
+          "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will not be installed.",
+          "examples": [
+            "pip"
+          ]
+        }
+      }
+    },
+    "r": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "R language and dependencies.",
+      "required": [
+        "version"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "R version. The server must have a similar R version in order to run the content.",
+          "examples": [
+            "4.3.1"
+          ]
+        },
+        "package-file": {
+          "type": "string",
+          "default": "renv.lock",
+          "description": "File containing package dependencies. The file must exist and be listed under 'files'.",
+          "examples": [
+            "renv.lock"
+          ]
+        },
+        "package-manager": {
+          "type": "string",
+          "default": "renv",
+          "enum": [
+            "renv",
+            "none"
+          ],
+          "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will not be installed.",
+          "examples": [
+            "renv"
+          ]
+        }
+      }
+    },
+    "quarto": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Quarto version required to run the content.",
+      "required": [
+        "version"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Quarto version. The server must have a similar Quarto version in order to run the content.",
+          "examples": [
+            "1.4"
+          ]
+        },
+        "engines": {
+          "type": "array",
+          "description": "List of Quarto engines required for this content.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "knitr",
+              "jupyter"
+            ],
+            "examples": [
+              "knitr",
+              "jupyter"
+            ]
           }
         }
       }
@@ -437,7 +429,7 @@
                 1
               ]
             },
-            "max-conns-per-process": {
+            "max-connections": {
               "type": "integer",
               "minimum": 1,
               "description": "Specifies the maximum number of client connections allowed to an individual process. Incoming connections which will exceed this limit are routed to a new process or rejected.",
