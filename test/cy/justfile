@@ -76,6 +76,7 @@ test:
 
 fuzzbucket-creation:
     #!/usr/bin/env bash
+    set -eou pipefail
     pip install -r ../setup/requirements.txt
     python ../setup/connect_setup.py
 
