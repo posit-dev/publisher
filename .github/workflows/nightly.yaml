@@ -17,7 +17,7 @@ jobs:
   cypress-nightly:
     needs: build
     secrets: inherit
-    uses: ./.github/workflows/cypress-nightly.yaml
+    uses: ./.github/workflows/contract.yaml
 
   # Extensions
   jupyterlab:

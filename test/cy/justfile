@@ -2,6 +2,7 @@ alias c := clean
 alias i := install
 alias t := test
 
+# RUNNER_OS from gh actions for windows tests
 export RUNNER_OS := env_var_or_default("RUNNER_OS", "local")
 
 _ci := env_var_or_default("CI", "false")
