@@ -29,7 +29,7 @@ class Assistant {
 
 	render = async () => {
 		const panel = vscode.window.createWebviewPanel(
-			'positron.publish.assistant',
+			'positron.publisher.assistant',
 			'Publish Assistant',
 			vscode.ViewColumn.Beside,
 			{

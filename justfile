@@ -104,7 +104,7 @@ configure:
     dir=`dirname $pathname`
     base=`basename "$pathname"`
     echo export PATH=`printf "%q" $PATH:$dir`
-    echo alias connect-client=$base
+    echo alias publisher=$base
 
 # Display the code coverage collected during the last execution of `just test`.
 cover:
