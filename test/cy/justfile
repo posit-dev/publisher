@@ -74,6 +74,10 @@ test:
 
     npm test
 
+fuzzbucket-creation:
+    pip install -r ../setup/requirements.txt
+    python ../setup/connect_setup.py
+
 test-deploy:
     #!/usr/bin/env bash
     set -eou pipefail
