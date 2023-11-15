@@ -68,26 +68,8 @@ func main() {
 	if cli.Debug {
 		ctx.Logger = events.NewLogger(true)
 	}
-	cmd, ok := args.Selected().Target.Interface().(commands.StatefulCommand)
-	if ok {
-		// For these commands, we need to load saved deployment state
-		// from file, then overlay the alread-parsed CLI arguments on top.
-		err = cmd.LoadState(ctx)
-		if err != nil {
-			Fatal(log, "Error loading saved deployment", err)
-		}
-		err = args.Run(&cli.CommonArgs)
-		if err != nil {
-			Fatal(log, "Error running command", err)
-		}
-		err = cmd.SaveState(ctx)
-		if err != nil {
-			Fatal(log, "Error saving deployment", err)
-		}
-	} else {
-		err = args.Run(&cli.CommonArgs)
-		if err != nil {
-			Fatal(log, "Error running command", err)
-		}
+	err = args.Run(&cli.CommonArgs)
+	if err != nil {
+		Fatal(log, "Error running command", err)
 	}
 }

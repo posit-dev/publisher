@@ -8,9 +8,8 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients/clienttest"
 	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/cli_types"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -49,12 +48,7 @@ func (s *PublishSuite) SetupTest() {
 
 func (s *PublishSuite) TestCreateBundle() {
 	dest := s.cwd.Join("output_dir", "bundle.tar.gz")
-	cmd := &cli_types.PublishArgs{
-		Path:  s.cwd,
-		State: state.NewDeployment(),
-	}
-	cmd.State.SourceDir = s.cwd
-	publisher := New(cmd)
+	publisher := New(s.cwd, nil, config.NewConfig(), nil)
 	err := publisher.CreateBundleFromDirectory(dest, s.log)
 	s.NoError(err)
 	s.True(dest.Exists())
@@ -66,35 +60,9 @@ func (s *PublishSuite) TestCreateBundleFailCreate() {
 	afs.On("Create", mock.Anything).Return(nil, testError)
 	dest := util.NewPath("anypath", afs)
 
-	cmd := &cli_types.PublishArgs{
-		Path:  s.cwd,
-		State: state.NewDeployment(),
-	}
-	cmd.State.SourceDir = s.cwd
-	publisher := New(cmd)
+	publisher := New(s.cwd, nil, config.NewConfig(), nil)
 	err := publisher.CreateBundleFromDirectory(dest, s.log)
 	s.ErrorIs(err, testError)
-}
-
-func (s *PublishSuite) TestWriteManifest() {
-	manifestPath := s.cwd.Join(bundles.ManifestFilename)
-	s.False(manifestPath.Exists())
-	cmd := &cli_types.PublishArgs{
-		Path:  s.cwd,
-		State: state.NewDeployment(),
-	}
-	cmd.State.SourceDir = s.cwd
-
-	publisher := New(cmd)
-	err := publisher.WriteManifestFromDirectory(s.log)
-	s.NoError(err)
-	s.True(manifestPath.Exists())
-
-	manifestOut, err := bundles.ReadManifestFile(manifestPath)
-	s.NoError(err)
-	s.Equal([]string{"app.py", "requirements.txt"}, manifestOut.GetFilenames())
-	manifestOut.Files = make(bundles.ManifestFileMap)
-	s.Equal(&cmd.State.Manifest, manifestOut)
 }
 
 func (s *PublishSuite) TestPublishWithClient() {
@@ -122,13 +90,7 @@ func (s *PublishSuite) TestPublishWithClientFailWaitForTask() {
 }
 
 func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitErr, expectedErr error) {
-	cmd := &cli_types.PublishArgs{
-		Path:  s.cwd,
-		State: state.NewDeployment(),
-	}
-	cmd.State.SourceDir = s.cwd
-
-	bundler, err := bundles.NewBundler(s.cwd, &cmd.State.Manifest, nil, s.log)
+	bundler, err := bundles.NewBundler(s.cwd, bundles.NewManifest(), nil, s.log)
 	s.NoError(err)
 
 	account := &accounts.Account{
@@ -147,7 +109,7 @@ func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitEr
 	client.On("DeployBundle", myContentID, myBundleID).Return(myTaskID, deployErr)
 	client.On("WaitForTask", myTaskID, mock.Anything).Return(waitErr)
 
-	publisher := New(cmd)
+	publisher := New(s.cwd, nil, config.NewConfig(), nil)
 	err = publisher.publishWithClient(bundler, account, client, s.log)
 	if expectedErr == nil {
 		s.NoError(err)

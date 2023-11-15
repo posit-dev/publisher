@@ -3,17 +3,18 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
-	"os"
 	"sort"
+	"strings"
 
 	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/cli_types"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/environment"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/inspect"
@@ -24,134 +25,24 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type StatefulCommand interface {
-	LoadState(ctx *cli_types.CLIContext) error
-	SaveState(ctx *cli_types.CLIContext) error
-}
-
-type BaseBundleCmd struct {
-	cli_types.PublishArgs `kong:"embed"`
-}
-
-func (cmd *BaseBundleCmd) getConfigName() string {
-	if cmd.Config != "" {
-		return cmd.Config
-	}
-	if cmd.AccountName != "" {
-		return cmd.AccountName
-	}
-	return ""
-}
-
-func (cmd *BaseBundleCmd) LoadState(ctx *cli_types.CLIContext) error {
-	log := ctx.Logger
-	sourceDir, err := util.DirFromPath(cmd.Path)
-	if err != nil {
-		return err
-	}
-	cmd.State = state.NewDeployment()
-	cmd.State.SourceDir = sourceDir
-	cmd.Config = cmd.getConfigName()
-
-	cliState := cmd.State
-	if !cmd.New {
-		if cmd.Config != "" {
-			// Config name provided, use that saved metadata.
-			log.Info("Attempting to load metadata for selected account/configuration",
-				"name", cmd.Config)
-			err = cmd.State.LoadFromFiles(sourceDir, cmd.Config, log)
-			if err != nil && !os.IsNotExist(err) {
-				return err
-			}
-		} else {
-			// No config or account name provided. Use the most recent deployment.
-			log.Info("Attempting to load metadata for most recent deployment target")
-			cmd.State, err = state.GetMostRecentDeployment(cmd.State.SourceDir, log)
-			if err != nil {
-				return err
-			}
-			// No saved metadata found. Use the default account.
-			if cmd.State != nil {
-				log.Info("Loaded most recent deployment",
-					"name", cmd.AccountName)
-			} else {
-				cmd.State = state.NewDeployment()
-				accounts, err := ctx.Accounts.GetAccountsByServerType(accounts.ServerTypeConnect)
-				if err != nil {
-					return err
-				}
-				cmd.AccountName = getDefaultAccount(accounts)
-				log.Info("No saved metadata found; using the default account.",
-					"name", cmd.AccountName)
-			}
-		}
-	}
-	// Target account name may have changed.
-	cmd.Config = cmd.getConfigName()
-	cmd.State.Merge(cliState)
-	return nil
-}
-
-func (cmd *BaseBundleCmd) SaveState(ctx *cli_types.CLIContext) error {
-	return cmd.State.SaveToFiles(cmd.State.SourceDir, cmd.Config, ctx.Logger)
-}
-
-func createManifestFileMapFromSourceDir(sourceDir util.Path, log logging.Logger) (bundles.ManifestFileMap, error) {
-	files := make(bundles.ManifestFileMap)
-
-	ignore, err := gitignore.NewIgnoreList(sourceDir, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// grab the absolute path for use in file tree walk
-	root, err := sourceDir.Abs()
-	if err != nil {
-		return nil, err
-	}
-
-	walker := util.NewSymlinkWalker(ignore, log)
-	err = walker.Walk(root, func(path util.Path, info fs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// assume the paths listed in the manifest are relative
-		//
-		// a future improvement can ask the user for preference on file listing
-		// if this occurs, downstream references to this value must be changed to
-		// recognize non-relative paths
-		rel, err := path.Rel(root)
-		if err != nil {
-			return err
-		}
-
-		// use the relative file path when creating the manifest
-		files[rel.Path()] = bundles.NewManifestFile()
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return files, nil
-}
+var errNoAccounts = errors.New("There are no accounts yet. Register an account before publishing.")
 
 // getDefaultAccount returns the name of the default account,
 // which is the first Connect account alphabetically by name.
-func getDefaultAccount(accounts []accounts.Account) string {
+func getDefaultAccount(accounts []accounts.Account) (*accounts.Account, error) {
 	if len(accounts) == 0 {
-		return ""
+		return nil, errNoAccounts
 	}
 	sort.Slice(accounts, func(i, j int) bool {
 		return accounts[i].Name < accounts[j].Name
 	})
-	return accounts[0].Name
+	return &accounts[0], nil
 }
 
 // stateFromCLI takes the CLI options provided by the user,
 // performs content auto-detection if needed, and
 // updates cmd.State to reflect all of the information.
-func (cmd *BaseBundleCmd) stateFromCLI(log logging.Logger) error {
+func (cmd *InitCommand) stateFromCLI(log logging.Logger) error {
 	manifest := &cmd.State.Manifest
 	manifest.Version = 1
 	manifest.Packages = make(bundles.PackageMap)
@@ -196,11 +87,6 @@ func (cmd *BaseBundleCmd) stateFromCLI(log logging.Logger) error {
 		initCommand.inspectPython(log, manifest)
 	}
 
-	manifestFiles, err := createManifestFileMapFromSourceDir(cmd.State.SourceDir, log)
-	if err != nil {
-		return err
-	}
-	manifest.Files = manifestFiles
 	manifest.ResetEmptyFields()
 	return nil
 }
@@ -209,6 +95,7 @@ func (cmd *BaseBundleCmd) stateFromCLI(log logging.Logger) error {
 // created as a place to put the inspection code that was
 // previously part of BaseBundleCmd.
 type InitCommand struct {
+	Path   util.Path         `help:"Path to directory containing files to publish." arg:"" default:"."`
 	Python util.Path         `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
 	State  *state.Deployment `kong:"-"`
 }
@@ -272,36 +159,138 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 }
 
 type PublishCmd struct {
-	*BaseBundleCmd `kong:"embed"`
+	Path        util.Path          `help:"Path to directory containing files to publish." arg:"" default:"."`
+	AccountName string             `short:"n" help:"Nickname of destination publishing account."`
+	ConfigName  string             `kong:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
+	TargetName  string             `kong:"update" short:"u" help:"Name of deployment to update (in .posit/deployments/)"`
+	Account     *accounts.Account  `kong:"-"`
+	Config      *config.Config     `kong:"-"`
+	Target      *config.Deployment `kong:"-"`
 }
 
+func (cmd *PublishCmd) LoadConfig() (*config.Config, error) {
+	if !strings.HasSuffix(cmd.ConfigName, ".toml") {
+		cmd.ConfigName += ".toml"
+	}
+	configPath := cmd.Path.Join(".posit", "publish", cmd.ConfigName)
+	cfg, err := config.ReadOrCreateConfigFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
+func (cmd *PublishCmd) LoadTarget() (*config.Deployment, error) {
+	if !strings.HasSuffix(cmd.TargetName, ".toml") {
+		cmd.TargetName += ".toml"
+	}
+	configPath := cmd.Path.Join(".posit", "deployments", cmd.TargetName)
+	target, err := config.ReadDeploymentFile(configPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, fmt.Errorf("can't find deployment at '%s'", configPath)
+		}
+		return nil, err
+	}
+	return target, nil
+}
+
+var errNoDefaultAccount = errors.New("you have more than one publishing account; you must specify one with --account")
+
+func (cmd *PublishCmd) LoadAccount(accountList accounts.AccountList) (*accounts.Account, error) {
+	if cmd.AccountName == "" {
+		accounts, err := accountList.GetAllAccounts()
+		if err != nil {
+			return nil, err
+		}
+		account, err := getDefaultAccount(accounts)
+		if err != nil {
+			return nil, err
+		}
+		return account, nil
+	} else {
+		account, err := accountList.GetAccountByName(cmd.AccountName)
+		if err != nil {
+			return nil, err
+		}
+		return account, nil
+	}
+}
+
+var errTargetImpliesConfig = errors.New("cannot specify --config with --target")
+var errTargetImpliesAccount = errors.New("cannot specify --account with --target")
+
 func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	err := cmd.stateFromCLI(ctx.Logger)
+	var target *config.Deployment
+	var account *accounts.Account
+	var cfg *config.Config
+	var err error
+
+	if cmd.TargetName != "" {
+		// Specifying an existing deployment determines
+		// the account and configuration.
+		// TODO: see if this can be done with a Kong group.
+		if cmd.ConfigName != "" {
+			return errTargetImpliesConfig
+		}
+		if cmd.AccountName != "" {
+			return errTargetImpliesAccount
+		}
+		target, err = cmd.LoadTarget()
+		if err != nil {
+			return err
+		}
+
+		// Target specifies the configuration name
+		cmd.ConfigName = target.ConfigurationFile
+
+		// and the account's server URL
+		account, err = ctx.Accounts.GetAccountByServerURL(target.ServerURL)
+		if err != nil {
+			return err
+		}
+		cmd.AccountName = account.Name
+	} else {
+		// Use specified account, or default account
+		account, err = cmd.LoadAccount(ctx.Accounts)
+		if err != nil {
+			return err
+		}
+	}
+	cfg, err = cmd.LoadConfig()
 	if err != nil {
 		return err
 	}
-	publisher := publish.New(&cmd.PublishArgs)
-	return publisher.PublishDirectory(ctx.Accounts, ctx.Logger)
+	publisher := publish.New(cmd.Path, account, cfg, target)
+	return publisher.PublishDirectory(ctx.Logger)
 }
 
 type PublishUICmd struct {
-	PublishCmd `kong:"embed"`
-	cli_types.UIArgs
+	Path          util.Path `help:"Path to directory containing files to publish." arg:"" default:"."`
+	Interactive   bool      `short:"i" help:"Launch a browser to show the UI at the listen address."`
+	OpenBrowserAt string    `help:"Launch a browser to show the UI at specific network address." placeholder:"HOST[:PORT]" hidden:""`
+	Theme         string    `help:"UI theme, 'light' or 'dark'." hidden:""`
+	Listen        string    `help:"Network address to listen on." placeholder:"HOST[:PORT]" default:"localhost:0"`
+	AccessLog     bool      `help:"Log all HTTP requests."`
+	TLSKeyFile    string    `help:"Path to TLS private key file for the UI server."`
+	TLSCertFile   string    `help:"Path to TLS certificate chain file for the UI server."`
 }
 
 func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	err := cmd.stateFromCLI(ctx.Logger)
-	if err != nil {
-		return err
-	}
 	eventServer := sse.New()
 	eventServer.CreateStream("messages")
 
 	log := events.NewLoggerWithSSE(args.Debug, eventServer)
 	svc := ui.NewUIService(
 		"/",
-		cmd.UIArgs,
-		&cmd.PublishArgs,
+		cmd.Interactive,
+		cmd.OpenBrowserAt,
+		cmd.Theme,
+		cmd.Listen,
+		cmd.AccessLog,
+		cmd.TLSKeyFile,
+		cmd.TLSCertFile,
+		cmd.Path,
 		ctx.Fs,
 		ctx.Accounts,
 		log,

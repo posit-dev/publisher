@@ -7,7 +7,6 @@ import (
 	"net/url"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/services/api"
@@ -15,6 +14,7 @@ import (
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
 	"github.com/rstudio/connect-client/internal/services/middleware"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/web"
 
 	"github.com/gorilla/mux"
@@ -26,30 +26,35 @@ const APIPrefix string = "api"
 
 func NewUIService(
 	fragment string,
-	ui cli_types.UIArgs,
-	publish *cli_types.PublishArgs,
+	interactive bool,
+	openBrowserAt string,
+	theme string,
+	listen string,
+	accessLog bool,
+	tlsKeyFile string,
+	tlsCertFile string,
+	dir util.Path,
 	fs afero.Fs,
 	lister accounts.AccountList,
 	log logging.Logger,
 	eventServer *sse.Server) *api.Service {
 
-	handler := RouterHandlerFunc(fs, publish, lister, log, eventServer)
+	handler := RouterHandlerFunc(fs, lister, log, eventServer)
 
 	return api.NewService(
-		publish.State,
 		handler,
-		ui.Listen,
+		listen,
 		fragment,
-		ui.TLSKeyFile,
-		ui.TLSCertFile,
-		ui.Interactive,
-		ui.OpenBrowserAt,
-		ui.AccessLog,
+		tlsKeyFile,
+		tlsCertFile,
+		interactive,
+		openBrowserAt,
+		accessLog,
 		log,
 	)
 }
 
-func RouterHandlerFunc(afs afero.Fs, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
+func RouterHandlerFunc(afs afero.Fs, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
 	deployment := publishArgs.State
 	base := deployment.SourceDir
 

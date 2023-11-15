@@ -3,28 +3,58 @@ package config
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"io"
+	"io/fs"
 
 	"github.com/pelletier/go-toml/v2"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 const ConfigSchema SchemaURL = "https://github.com/rstudio/publishing-client/blob/main/schemas/posit-publishing-schema-v3.json"
 
-func NewConfiguration() *Configuration {
-	return &Configuration{
+func NewConfig() *Config {
+	return &Config{
 		Schema: ConfigSchema,
 	}
 }
 
-func ReadConfig(r io.Reader) (*Configuration, error) {
+func ReadConfig(r io.Reader) (*Config, error) {
 	dec := toml.NewDecoder(r)
 	dec.DisallowUnknownFields()
-	cfg := new(Configuration)
+	cfg := new(Config)
 	err := dec.Decode(cfg)
 	return cfg, err
 }
 
-func WriteConfig(cfg *Configuration, w io.Writer) error {
+func ReadConfigFile(path util.Path) (*Config, error) {
+	f, err := path.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return ReadConfig(f)
+}
+
+func ReadOrCreateConfigFile(path util.Path) (*Config, error) {
+	cfg, err := ReadConfigFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		cfg = NewConfig()
+		err = WriteConfigFile(cfg, path)
+	}
+	return cfg, err
+}
+
+func WriteConfig(cfg *Config, w io.Writer) error {
 	enc := toml.NewEncoder(w)
 	return enc.Encode(cfg)
+}
+
+func WriteConfigFile(cfg *Config, path util.Path) error {
+	f, err := path.Open()
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return WriteConfig(cfg, f)
 }

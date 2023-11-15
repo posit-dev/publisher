@@ -13,7 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients"
 	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/cli_types"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
@@ -22,12 +22,23 @@ import (
 )
 
 type Publisher struct {
-	args *cli_types.PublishArgs
+	dir     util.Path
+	account *accounts.Account
+	cfg     *config.Config
+	target  *config.Deployment
 }
 
-func New(args *cli_types.PublishArgs) *Publisher {
+func New(
+	dir util.Path,
+	account *accounts.Account,
+	cfg *config.Config,
+	target *config.Deployment) *Publisher {
+
 	return &Publisher{
-		args: args,
+		dir:     dir,
+		account: account,
+		cfg:     cfg,
+		target:  target,
 	}
 }
 
@@ -37,34 +48,12 @@ func (p *Publisher) CreateBundleFromDirectory(dest util.Path, log logging.Logger
 		return err
 	}
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundler(p.args.State.SourceDir, &p.args.State.Manifest, nil, log)
+	bundler, err := bundles.NewBundler(p.dir, bundles.NewManifest(), nil, log)
 	if err != nil {
 		return err
 	}
 	_, err = bundler.CreateBundle(bundleFile)
 	return err
-}
-
-func (p *Publisher) WriteManifestFromDirectory(log logging.Logger) error {
-	bundler, err := bundles.NewBundler(p.args.State.SourceDir, &p.args.State.Manifest, nil, log)
-	if err != nil {
-		return err
-	}
-	manifest, err := bundler.CreateManifest()
-	if err != nil {
-		return err
-	}
-	manifestPath := p.args.State.SourceDir.Join(bundles.ManifestFilename)
-	log.Info("Writing manifest", "path", manifestPath)
-	manifestJSON, err := manifest.ToJSON()
-	if err != nil {
-		return err
-	}
-	err = manifestPath.WriteFile(manifestJSON, 0666)
-	if err != nil {
-		return fmt.Errorf("error writing manifest file '%s': %w", manifestPath, err)
-	}
-	return nil
 }
 
 type appInfo struct {
@@ -92,39 +81,26 @@ func (p *Publisher) logAppInfo(accountURL string, contentID types.ContentID, log
 	return err
 }
 
-func (p *Publisher) PublishManifestFiles(lister accounts.AccountList, log logging.Logger) error {
-	bundler, err := bundles.NewBundlerForManifest(p.args.State.SourceDir, &p.args.State.Manifest, log)
+func (p *Publisher) PublishDirectory(log logging.Logger) error {
+	log.Info("Publishing from directory", "path", p.dir)
+	bundler, err := bundles.NewBundler(p.dir, bundles.NewManifest(), nil, log)
 	if err != nil {
 		return err
 	}
-	return p.publish(bundler, lister, log)
-}
-
-func (p *Publisher) PublishDirectory(lister accounts.AccountList, log logging.Logger) error {
-	log.Info("Publishing from directory", "path", p.args.State.SourceDir)
-	bundler, err := bundles.NewBundler(p.args.State.SourceDir, &p.args.State.Manifest, nil, log)
-	if err != nil {
-		return err
-	}
-	return p.publish(bundler, lister, log)
+	return p.publish(bundler, log)
 }
 
 func (p *Publisher) publish(
 	bundler bundles.Bundler,
-	lister accounts.AccountList,
 	log logging.Logger) error {
 
-	account, err := lister.GetAccountByName(p.args.AccountName)
-	if err != nil {
-		return err
-	}
 	// TODO: factory method to create client based on server type
 	// TODO: timeout option
-	client, err := clients.NewConnectClient(account, 2*time.Minute, log)
+	client, err := clients.NewConnectClient(p.account, 2*time.Minute, log)
 	if err != nil {
 		return err
 	}
-	err = p.publishWithClient(bundler, account, client, log)
+	err = p.publishWithClient(bundler, p.account, client, log)
 	if err != nil {
 		log.Failure(err)
 	}
@@ -186,10 +162,11 @@ func (p *Publisher) publishWithClient(
 	}
 
 	var contentID types.ContentID
-	if p.args.State.Target.ContentId != "" && !p.args.New {
-		contentID = p.args.State.Target.ContentId
+	connectContent := state.ConnectContentFromConfig(p.cfg)
+	if p.target != nil {
+		contentID = p.target.Id
 		_, err := withLog(events.PublishCreateDeploymentOp, "Updating deployment", "content_id", log, func() (any, error) {
-			return contentID, client.UpdateDeployment(contentID, p.args.State.Connect.Content)
+			return contentID, client.UpdateDeployment(contentID, connectContent)
 		})
 		if err != nil {
 			httpErr, ok := err.(*clients.HTTPError)
@@ -203,7 +180,7 @@ func (p *Publisher) publishWithClient(
 		}
 	} else {
 		contentID, err = withLog(events.PublishCreateDeploymentOp, "Creating deployment", "content_id", log, func() (types.ContentID, error) {
-			return client.CreateDeployment(p.args.State.Connect.Content)
+			return client.CreateDeployment(connectContent)
 		})
 		if err != nil {
 			return err
@@ -218,13 +195,10 @@ func (p *Publisher) publishWithClient(
 		return err
 	}
 
-	p.args.State.Target = state.TargetID{
-		ServerType:  account.ServerType,
-		ServerURL:   account.URL,
-		ContentId:   contentID,
-		ContentName: "",
-		Username:    account.AccountName,
-		BundleId:    types.NewOptional(bundleID),
+	p.target = &config.Deployment{
+		ServerType: account.ServerType,
+		ServerURL:  account.URL,
+		Id:         contentID,
 	}
 
 	taskID, err := withLog(events.PublishDeployBundleOp, "Initiating bundle deployment", "task_id", log, func() (types.TaskID, error) {

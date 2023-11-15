@@ -1,8 +1,13 @@
 package config
 
+import (
+	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/types"
+)
+
 // Copyright (C) 2023 by Posit Software, PBC.
 
-type Configuration struct {
+type Config struct {
 	Schema        SchemaURL   `toml:"$schema"`
 	Type          string      `toml:"type"`
 	Entrypoint    string      `toml:"string"`
@@ -16,16 +21,18 @@ type Configuration struct {
 	Environment   Environment `toml:"environment,omitempty"`
 	Secrets       []string    `toml:"secrets,omitempty"`
 	Schedules     []Schedule  `toml:"schedules,omitempty"`
+	Access        Access      `toml:"access,omitempty"`
 	Connect       Connect     `toml:"connect,omitempty"`
 }
 
-type DeploymentRecord struct {
-	Schema            SchemaURL     `toml:"$schema"`
-	Id                string        `toml:"id"`
-	ServerURL         string        `toml:"server-url"`
-	ConfigurationFile string        `toml:"configuration-file"`
-	Files             []string      `toml:"files"`
-	Configuration     Configuration `toml:"configuration"`
+type Deployment struct {
+	Schema            SchemaURL           `toml:"$schema"`
+	ServerType        accounts.ServerType `toml:"server-type"`
+	ServerURL         string              `toml:"server-url"`
+	Id                types.ContentID     `toml:"id"`
+	ConfigurationFile string              `toml:"configuration-file"`
+	Files             []string            `toml:"files"`
+	Configuration     Config              `toml:"configuration"`
 }
 
 type SchemaURL string
@@ -90,7 +97,7 @@ type Connect struct {
 
 type ConnectAccess struct {
 	RunAs            string `toml:"run-as,omitempty"`
-	RunAsCurrentUser string `toml:"run-as-current-user,omitempty"`
+	RunAsCurrentUser *bool  `toml:"run-as-current-user,omitempty"`
 }
 
 type ConnectRuntime struct {
