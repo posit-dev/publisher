@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/util"
@@ -13,10 +14,26 @@ import (
 
 const ConfigSchema SchemaURL = "https://github.com/rstudio/publishing-client/blob/main/schemas/posit-publishing-schema-v3.json"
 
+const DefaultConfigName = "default"
+
 func NewConfig() *Config {
 	return &Config{
 		Schema: ConfigSchema,
 	}
+}
+
+func NormalizeConfigName(configName string) string {
+	if configName == "" {
+		configName = DefaultConfigName
+	}
+	if !strings.HasSuffix(configName, ".toml") {
+		configName += ".toml"
+	}
+	return configName
+}
+
+func GetConfigPath(base util.Path, configName string) util.Path {
+	return base.Join(".posit", "publish", NormalizeConfigName(configName))
 }
 
 func ReadConfig(r io.Reader) (*Config, error) {
@@ -51,7 +68,11 @@ func WriteConfig(cfg *Config, w io.Writer) error {
 }
 
 func WriteConfigFile(cfg *Config, path util.Path) error {
-	f, err := path.Open()
+	err := path.Dir().MkdirAll(0777)
+	if err != nil {
+		return err
+	}
+	f, err := path.Create()
 	if err != nil {
 		return err
 	}

@@ -2,27 +2,28 @@ package config
 
 import (
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/types"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type Config struct {
-	Schema        SchemaURL   `toml:"$schema"`
-	Type          string      `toml:"type"`
-	Entrypoint    string      `toml:"string"`
-	Title         string      `toml:"title,omitempty"`
-	Description   string      `toml:"description,multiline,omitempty"`
-	ThumbnailFile string      `toml:"thumbnail,omitempty"`
-	Tags          []string    `toml:"tags,omitempty"`
-	Python        Python      `toml:"python,omitempty"`
-	R             R           `toml:"r,omitempty"`
-	Quarto        Quarto      `toml:"quarto,omitempty"`
-	Environment   Environment `toml:"environment,omitempty"`
-	Secrets       []string    `toml:"secrets,omitempty"`
-	Schedules     []Schedule  `toml:"schedules,omitempty"`
-	Access        Access      `toml:"access,omitempty"`
-	Connect       Connect     `toml:"connect,omitempty"`
+	Schema        SchemaURL        `toml:"$schema"`
+	Type          apptypes.AppMode `toml:"type"`
+	Entrypoint    string           `toml:"string"`
+	Title         string           `toml:"title,omitempty"`
+	Description   string           `toml:"description,multiline,omitempty"`
+	ThumbnailFile string           `toml:"thumbnail,omitempty"`
+	Tags          []string         `toml:"tags,omitempty"`
+	Python        Python           `toml:"python,omitempty"`
+	R             R                `toml:"r,omitempty"`
+	Quarto        Quarto           `toml:"quarto,omitempty"`
+	Environment   Environment      `toml:"environment,omitempty"`
+	Secrets       []string         `toml:"secrets,omitempty"`
+	Schedules     []Schedule       `toml:"schedules,omitempty"`
+	Access        Access           `toml:"access,omitempty"`
+	Connect       Connect          `toml:"connect,omitempty"`
 }
 
 type Deployment struct {
