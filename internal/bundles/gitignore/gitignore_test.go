@@ -45,15 +45,14 @@ func (s *GitIgnoreSuite) TestMatch() {
 	err := s.cwd.Join(".git").MkdirAll(0700)
 	s.NoError(err)
 
-	gitignorePath := s.cwd.Join(".gitignore")
-	err = gitignorePath.WriteFile([]byte(".Rhistory\nignoreme\n"), 0600)
+	ignoreFilePath := s.cwd.Join(".positignore")
+	err = ignoreFilePath.WriteFile([]byte(".Rhistory\nignoreme\n"), 0600)
 	s.NoError(err)
 
-	ign := New(s.cwd)
+	ign, err := From(ignoreFilePath)
+	s.NoError(err)
+
 	err = ign.AppendGlobs([]string{"*.bak"}, MatchSourceUser)
-	s.NoError(err)
-
-	err = ign.AppendGit()
 	s.NoError(err)
 
 	// Match returns nil if no match
@@ -67,7 +66,7 @@ func (s *GitIgnoreSuite) TestMatch() {
 	s.NotNil(m)
 	s.Equal(MatchSourceFile, m.Source)
 	s.Equal(".Rhistory", m.Pattern)
-	s.Equal(gitignorePath.Path(), m.FilePath)
+	s.Equal(ignoreFilePath.Path(), m.FilePath)
 	s.Equal(1, m.Line)
 
 	// Non-file matches don't include file info
