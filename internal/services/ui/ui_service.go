@@ -8,18 +8,17 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
 	"github.com/rstudio/connect-client/internal/services/middleware"
+	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/web"
 
 	"github.com/gorilla/mux"
 	"github.com/r3labs/sse/v2"
-	"github.com/spf13/afero"
 )
 
 const APIPrefix string = "api"
@@ -34,14 +33,15 @@ func NewUIService(
 	tlsKeyFile string,
 	tlsCertFile string,
 	dir util.Path,
-	fs afero.Fs,
+	stateStore *state.State,
 	lister accounts.AccountList,
 	log logging.Logger,
 	eventServer *sse.Server) *api.Service {
 
-	handler := RouterHandlerFunc(fs, lister, log, eventServer)
+	handler := RouterHandlerFunc(dir, stateStore, lister, log, eventServer)
 
 	return api.NewService(
+		stateStore,
 		handler,
 		listen,
 		fragment,
@@ -54,13 +54,10 @@ func NewUIService(
 	)
 }
 
-func RouterHandlerFunc(afs afero.Fs, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
-	deployment := publishArgs.State
-	base := deployment.SourceDir
-
-	deploymentsService := deployments.CreateDeploymentsService(deployment)
-	filesService := files.CreateFilesService(base, afs, log)
-	pathsService := paths.CreatePathsService(base, afs, log)
+func RouterHandlerFunc(base util.Path, s *state.State, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
+	deploymentsService := deployments.CreateDeploymentsService(s)
+	filesService := files.CreateFilesService(base, log)
+	pathsService := paths.CreatePathsService(base, log)
 
 	r := mux.NewRouter()
 	// GET /api/accounts
@@ -78,21 +75,12 @@ func RouterHandlerFunc(afs afero.Fs, lister accounts.AccountList, log logging.Lo
 	r.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService)).
 		Methods(http.MethodGet)
 
-	// PUT /api/deployment/title
-	r.Handle(ToPath("deployment", "title"), api.PutDeploymentTitleHandlerFunc(deploymentsService, log)).
-		Methods(http.MethodPut)
-
-	// PUT /api/deployment/files
-	r.Handle(ToPath("deployment", "files"), api.PutDeploymentFilesHandlerFunc(deploymentsService, log)).
-		Methods(http.MethodPut)
-
 	// PUT /api/deployment/account
 	r.Handle(ToPath("deployment", "account"), api.PutDeploymentAccountHandlerFunc(lister, deploymentsService, log)).
 		Methods(http.MethodPut)
 
 	// POST /api/publish
-	publisher := publish.New(publishArgs)
-	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(publisher, publishArgs, lister, log)).
+	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(base, log, lister)).
 		Methods(http.MethodPost)
 
 	// GET /

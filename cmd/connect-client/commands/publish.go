@@ -5,9 +5,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"io/fs"
-	"sort"
-	"strings"
 
 	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -24,20 +21,6 @@ import (
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 )
-
-var errNoAccounts = errors.New("There are no accounts yet. Register an account before publishing.")
-
-// getDefaultAccount returns the name of the default account,
-// which is the first Connect account alphabetically by name.
-func getDefaultAccount(accounts []accounts.Account) (*accounts.Account, error) {
-	if len(accounts) == 0 {
-		return nil, errNoAccounts
-	}
-	sort.Slice(accounts, func(i, j int) bool {
-		return accounts[i].Name < accounts[j].Name
-	})
-	return &accounts[0], nil
-}
 
 // stateFromCLI takes the CLI options provided by the user,
 // performs content auto-detection if needed, and
@@ -95,9 +78,9 @@ func (cmd *InitCommand) stateFromCLI(log logging.Logger) error {
 // created as a place to put the inspection code that was
 // previously part of BaseBundleCmd.
 type InitCommand struct {
-	Path   util.Path         `help:"Path to directory containing files to publish." arg:"" default:"."`
-	Python util.Path         `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
-	State  *state.Deployment `kong:"-"`
+	Path   util.Path            `help:"Path to directory containing files to publish." arg:"" default:"."`
+	Python util.Path            `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
+	State  *state.OldDeployment `kong:"-"`
 }
 
 func (cmd *InitCommand) requiresPython() (bool, error) {
@@ -162,106 +145,20 @@ type PublishCmd struct {
 	Path        util.Path          `help:"Path to directory containing files to publish." arg:"" default:"."`
 	AccountName string             `short:"n" help:"Nickname of destination publishing account."`
 	ConfigName  string             `kong:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
-	TargetName  string             `kong:"update" short:"u" help:"Name of deployment to update (in .posit/deployments/)"`
+	TargetID    string             `kong:"update" short:"u" help:"ID of deployment to update (in .posit/deployments/)"`
 	Account     *accounts.Account  `kong:"-"`
 	Config      *config.Config     `kong:"-"`
 	Target      *config.Deployment `kong:"-"`
-}
-
-func (cmd *PublishCmd) LoadConfig() (*config.Config, error) {
-	if !strings.HasSuffix(cmd.ConfigName, ".toml") {
-		cmd.ConfigName += ".toml"
-	}
-	configPath := cmd.Path.Join(".posit", "publish", cmd.ConfigName)
-	cfg, err := config.ReadOrCreateConfigFile(configPath)
-	if err != nil {
-		return nil, err
-	}
-	return cfg, nil
-}
-
-func (cmd *PublishCmd) LoadTarget() (*config.Deployment, error) {
-	if !strings.HasSuffix(cmd.TargetName, ".toml") {
-		cmd.TargetName += ".toml"
-	}
-	configPath := cmd.Path.Join(".posit", "deployments", cmd.TargetName)
-	target, err := config.ReadDeploymentFile(configPath)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, fmt.Errorf("can't find deployment at '%s'", configPath)
-		}
-		return nil, err
-	}
-	return target, nil
-}
-
-var errNoDefaultAccount = errors.New("you have more than one publishing account; you must specify one with --account")
-
-func (cmd *PublishCmd) LoadAccount(accountList accounts.AccountList) (*accounts.Account, error) {
-	if cmd.AccountName == "" {
-		accounts, err := accountList.GetAllAccounts()
-		if err != nil {
-			return nil, err
-		}
-		account, err := getDefaultAccount(accounts)
-		if err != nil {
-			return nil, err
-		}
-		return account, nil
-	} else {
-		account, err := accountList.GetAccountByName(cmd.AccountName)
-		if err != nil {
-			return nil, err
-		}
-		return account, nil
-	}
 }
 
 var errTargetImpliesConfig = errors.New("cannot specify --config with --target")
 var errTargetImpliesAccount = errors.New("cannot specify --account with --target")
 
 func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	var target *config.Deployment
-	var account *accounts.Account
-	var cfg *config.Config
-	var err error
-
-	if cmd.TargetName != "" {
-		// Specifying an existing deployment determines
-		// the account and configuration.
-		// TODO: see if this can be done with a Kong group.
-		if cmd.ConfigName != "" {
-			return errTargetImpliesConfig
-		}
-		if cmd.AccountName != "" {
-			return errTargetImpliesAccount
-		}
-		target, err = cmd.LoadTarget()
-		if err != nil {
-			return err
-		}
-
-		// Target specifies the configuration name
-		cmd.ConfigName = target.ConfigurationFile
-
-		// and the account's server URL
-		account, err = ctx.Accounts.GetAccountByServerURL(target.ServerURL)
-		if err != nil {
-			return err
-		}
-		cmd.AccountName = account.Name
-	} else {
-		// Use specified account, or default account
-		account, err = cmd.LoadAccount(ctx.Accounts)
-		if err != nil {
-			return err
-		}
-	}
-	cfg, err = cmd.LoadConfig()
+	publisher, err := publish.New(cmd.Path, cmd.AccountName, cmd.ConfigName, cmd.TargetID, ctx.Accounts)
 	if err != nil {
 		return err
 	}
-	publisher := publish.New(cmd.Path, account, cfg, target)
 	return publisher.PublishDirectory(ctx.Logger)
 }
 
@@ -279,6 +176,10 @@ type PublishUICmd struct {
 func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	eventServer := sse.New()
 	eventServer.CreateStream("messages")
+	stateStore, err := state.New(cmd.Path, "", "default.toml", "", ctx.Accounts)
+	if err != nil {
+		return err
+	}
 
 	log := events.NewLoggerWithSSE(args.Debug, eventServer)
 	svc := ui.NewUIService(
@@ -291,7 +192,7 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		cmd.TLSKeyFile,
 		cmd.TLSCertFile,
 		cmd.Path,
-		ctx.Fs,
+		stateStore,
 		ctx.Accounts,
 		log,
 		eventServer)

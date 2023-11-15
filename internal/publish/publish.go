@@ -22,24 +22,15 @@ import (
 )
 
 type Publisher struct {
-	dir     util.Path
-	account *accounts.Account
-	cfg     *config.Config
-	target  *config.Deployment
+	*state.State
 }
 
-func New(
-	dir util.Path,
-	account *accounts.Account,
-	cfg *config.Config,
-	target *config.Deployment) *Publisher {
-
-	return &Publisher{
-		dir:     dir,
-		account: account,
-		cfg:     cfg,
-		target:  target,
+func New(path util.Path, accountName, configName, targetID string, accountList accounts.AccountList) (*Publisher, error) {
+	s, err := state.New(path, accountName, configName, targetID, accountList)
+	if err != nil {
+		return nil, err
 	}
+	return &Publisher{s}, nil
 }
 
 func (p *Publisher) CreateBundleFromDirectory(dest util.Path, log logging.Logger) error {
@@ -48,7 +39,7 @@ func (p *Publisher) CreateBundleFromDirectory(dest util.Path, log logging.Logger
 		return err
 	}
 	defer bundleFile.Close()
-	bundler, err := bundles.NewBundler(p.dir, bundles.NewManifest(), nil, log)
+	bundler, err := bundles.NewBundler(p.Dir, bundles.NewManifest(), nil, log)
 	if err != nil {
 		return err
 	}
@@ -82,8 +73,8 @@ func (p *Publisher) logAppInfo(accountURL string, contentID types.ContentID, log
 }
 
 func (p *Publisher) PublishDirectory(log logging.Logger) error {
-	log.Info("Publishing from directory", "path", p.dir)
-	bundler, err := bundles.NewBundler(p.dir, bundles.NewManifest(), nil, log)
+	log.Info("Publishing from directory", "path", p.Dir)
+	bundler, err := bundles.NewBundler(p.Dir, bundles.NewManifest(), nil, log)
 	if err != nil {
 		return err
 	}
@@ -96,11 +87,11 @@ func (p *Publisher) publish(
 
 	// TODO: factory method to create client based on server type
 	// TODO: timeout option
-	client, err := clients.NewConnectClient(p.account, 2*time.Minute, log)
+	client, err := clients.NewConnectClient(p.Account, 2*time.Minute, log)
 	if err != nil {
 		return err
 	}
-	err = p.publishWithClient(bundler, p.account, client, log)
+	err = p.publishWithClient(bundler, p.Account, client, log)
 	if err != nil {
 		log.Failure(err)
 	}
@@ -162,9 +153,9 @@ func (p *Publisher) publishWithClient(
 	}
 
 	var contentID types.ContentID
-	connectContent := state.ConnectContentFromConfig(p.cfg)
-	if p.target != nil {
-		contentID = p.target.Id
+	connectContent := state.ConnectContentFromConfig(p.Cfg)
+	if p.Target != nil {
+		contentID = p.Target.Id
 		_, err := withLog(events.PublishCreateDeploymentOp, "Updating deployment", "content_id", log, func() (any, error) {
 			return contentID, client.UpdateDeployment(contentID, connectContent)
 		})
@@ -195,10 +186,14 @@ func (p *Publisher) publishWithClient(
 		return err
 	}
 
-	p.target = &config.Deployment{
-		ServerType: account.ServerType,
-		ServerURL:  account.URL,
-		Id:         contentID,
+	p.Target = &config.Deployment{
+		Schema:            config.DeploymentSchema,
+		ServerType:        account.ServerType,
+		ServerURL:         account.URL,
+		Id:                contentID,
+		ConfigurationFile: p.ConfigName,
+		Files:             []string{},
+		Configuration:     *p.Cfg,
 	}
 
 	taskID, err := withLog(events.PublishDeployBundleOp, "Initiating bundle deployment", "task_id", log, func() (types.TaskID, error) {

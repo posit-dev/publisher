@@ -19,7 +19,7 @@ import (
 )
 
 type Service struct {
-	state         *state.Deployment
+	state         *state.State
 	handler       http.HandlerFunc
 	listen        string
 	path          string
@@ -34,7 +34,7 @@ type Service struct {
 var errTlsRequiredFiles error = errors.New("TLS requires both a private key file and a certificate chain file")
 
 func NewService(
-	state *state.Deployment,
+	state *state.State,
 	handler http.HandlerFunc,
 	listen string,
 	path string,

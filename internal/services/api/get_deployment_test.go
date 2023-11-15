@@ -29,7 +29,7 @@ func (s *GetDeploymentHandlerFuncSuite) TestGetDeploymentHandlerFunc() {
 }
 
 func (s *GetDeploymentHandlerFuncSuite) TestGetDeploymentHandler() {
-	src := state.NewDeployment()
+	src := state.OldDeploymentFromState(&state.State{})
 	deploymentsService := new(MockDeploymentsService)
 	deploymentsService.On("GetDeployment").Return(src)
 	h := GetDeploymentHandlerFunc(deploymentsService)
@@ -44,7 +44,7 @@ func (s *GetDeploymentHandlerFuncSuite) TestGetDeploymentHandler() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
 
-	res := &state.Deployment{}
+	res := &state.OldDeployment{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(res))

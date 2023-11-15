@@ -45,8 +45,7 @@ func (s *PutDeploymentAccountHandlerFuncSuite) TestPutDeploymentAccountHandlerFu
 }
 
 func (s *PutDeploymentAccountHandlerFuncSuite) TestPutDeploymentAccountHandler() {
-
-	src := state.NewDeployment()
+	src := state.OldDeploymentFromState(&state.State{})
 	deploymentsService := new(MockDeploymentsService)
 	deploymentsService.On("SetDeploymentAccount", mock.Anything).Return(src)
 
@@ -67,7 +66,7 @@ func (s *PutDeploymentAccountHandlerFuncSuite) TestPutDeploymentAccountHandler()
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
 
-	res := &state.Deployment{}
+	res := &state.OldDeployment{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(res))

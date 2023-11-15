@@ -7,28 +7,38 @@ import (
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
-type PublishReponse struct {
+type PostPublishRequestBody struct {
+	AccountName string `json:"account"`
+	ConfigName  string `json:"config"`
+	TargetID    string `json:"target"`
+}
+
+type PostPublishReponse struct {
 	LocalID state.LocalDeploymentID `json:"local_id"` // Unique ID of this publishing operation. Only valid for this run of the agent.
 }
 
-type ManifestFilesPublisher interface {
-	PublishManifestFiles(lister accounts.AccountList, log logging.Logger) error
-}
-
-func PostPublishHandlerFunc(publisher ManifestFilesPublisher, publishArgs *cli_types.PublishArgs, lister accounts.AccountList, log logging.Logger) http.HandlerFunc {
+func PostPublishHandlerFunc(base util.Path, log logging.Logger, accountList accounts.AccountList) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		dec := json.NewDecoder(req.Body)
+		dec.DisallowUnknownFields()
+		var b PostPublishRequestBody
+		err := dec.Decode(&b)
+		if err != nil {
+			BadRequestJson(w, req, log, err)
+			return
+		}
 		localID, err := state.NewLocalID()
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
-		publishArgs.State.LocalID = localID
-		response := PublishReponse{
+		response := PostPublishReponse{
 			LocalID: localID,
 		}
 		w.Header().Set("content-type", "application/json")
@@ -37,9 +47,15 @@ func PostPublishHandlerFunc(publisher ManifestFilesPublisher, publishArgs *cli_t
 
 		go func() {
 			log = log.WithArgs("local_id", localID)
-			err := publisher.PublishManifestFiles(lister, log)
+			publisher, err := publish.New(base, b.AccountName, b.ConfigName, b.TargetID, accountList)
 			if err != nil {
 				log.Error("Deployment failed", "error", err.Error())
+				return
+			}
+			err = publisher.PublishDirectory(log)
+			if err != nil {
+				log.Error("Deployment failed", "error", err.Error())
+				return
 			}
 		}()
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -48,7 +49,13 @@ func (s *PublishSuite) SetupTest() {
 
 func (s *PublishSuite) TestCreateBundle() {
 	dest := s.cwd.Join("output_dir", "bundle.tar.gz")
-	publisher := New(s.cwd, nil, config.NewConfig(), nil)
+	stateStore := &state.State{
+		Dir:     s.cwd,
+		Account: nil,
+		Cfg:     config.NewConfig(),
+		Target:  nil,
+	}
+	publisher := &Publisher{stateStore}
 	err := publisher.CreateBundleFromDirectory(dest, s.log)
 	s.NoError(err)
 	s.True(dest.Exists())
@@ -60,7 +67,13 @@ func (s *PublishSuite) TestCreateBundleFailCreate() {
 	afs.On("Create", mock.Anything).Return(nil, testError)
 	dest := util.NewPath("anypath", afs)
 
-	publisher := New(s.cwd, nil, config.NewConfig(), nil)
+	stateStore := &state.State{
+		Dir:     s.cwd,
+		Account: nil,
+		Cfg:     config.NewConfig(),
+		Target:  nil,
+	}
+	publisher := &Publisher{stateStore}
 	err := publisher.CreateBundleFromDirectory(dest, s.log)
 	s.ErrorIs(err, testError)
 }
@@ -109,7 +122,13 @@ func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitEr
 	client.On("DeployBundle", myContentID, myBundleID).Return(myTaskID, deployErr)
 	client.On("WaitForTask", myTaskID, mock.Anything).Return(waitErr)
 
-	publisher := New(s.cwd, nil, config.NewConfig(), nil)
+	stateStore := &state.State{
+		Dir:     s.cwd,
+		Account: nil,
+		Cfg:     config.NewConfig(),
+		Target:  nil,
+	}
+	publisher := &Publisher{stateStore}
 	err = publisher.publishWithClient(bundler, account, client, s.log)
 	if expectedErr == nil {
 		s.NoError(err)

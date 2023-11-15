@@ -8,20 +8,18 @@ import (
 
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
-	"github.com/spf13/afero"
 )
 
 type PathsService interface {
 	IsSafe(p util.Path) (bool, error)
 }
 
-func CreatePathsService(base util.Path, afs afero.Fs, log logging.Logger) PathsService {
-	return pathsService{base, afs, log}
+func CreatePathsService(base util.Path, log logging.Logger) PathsService {
+	return pathsService{base, log}
 }
 
 type pathsService struct {
 	base util.Path
-	afs  afero.Fs
 	log  logging.Logger
 }
 
