@@ -29,7 +29,7 @@ func (cmd *InitCommand) inspectProjectType(log logging.Logger) (*inspect.Content
 type InitCommand struct {
 	Path       util.Path `help:"Path to directory containing files to publish." arg:"" default:"."`
 	Python     util.Path `help:"Path to Python interpreter for this content, if it is Python-based. Default is the Python 3 on your PATH."`
-	ConfigName string    `kong:"config" short:"c" help:"Configuration name to create (in .posit/publish/)"`
+	ConfigName string    `name:"config" short:"c" help:"Configuration name to create (in .posit/publish/)"`
 	config     *config.Config
 }
 
@@ -71,6 +71,9 @@ func (cmd *InitCommand) inspectPython(log logging.Logger) (*config.Python, error
 }
 
 func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+	if cmd.ConfigName == "" {
+		cmd.ConfigName = config.DefaultConfigName
+	}
 	cmd.config = config.NewConfig()
 	contentType, err := cmd.inspectProjectType(ctx.Logger)
 	if err != nil {

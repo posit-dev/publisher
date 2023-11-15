@@ -63,15 +63,6 @@ func NewBundler(path util.Path, manifest *Manifest, pythonRequirements []byte, l
 	}, nil
 }
 
-func NewBundlerForManifestFile(manifestPath util.Path, log logging.Logger) (*bundler, error) {
-	dir := manifestPath.Dir()
-	manifest, err := ReadManifestFile(manifestPath)
-	if err != nil {
-		return nil, err
-	}
-	return NewBundlerForManifest(dir, manifest, log)
-}
-
 func NewBundlerForManifest(dir util.Path, manifest *Manifest, log logging.Logger) (*bundler, error) {
 	absDir, err := dir.Abs()
 	if err != nil {

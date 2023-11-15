@@ -52,7 +52,7 @@ func (s *PublishSuite) TestCreateBundle() {
 	stateStore := &state.State{
 		Dir:     s.cwd,
 		Account: nil,
-		Cfg:     config.NewConfig(),
+		Config:  config.NewConfig(),
 		Target:  nil,
 	}
 	publisher := &defaultPublisher{stateStore}
@@ -70,7 +70,7 @@ func (s *PublishSuite) TestCreateBundleFailCreate() {
 	stateStore := &state.State{
 		Dir:     s.cwd,
 		Account: nil,
-		Cfg:     config.NewConfig(),
+		Config:  config.NewConfig(),
 		Target:  nil,
 	}
 	publisher := &defaultPublisher{stateStore}
@@ -125,7 +125,7 @@ func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitEr
 	stateStore := &state.State{
 		Dir:     s.cwd,
 		Account: nil,
-		Cfg:     config.NewConfig(),
+		Config:  config.NewConfig(),
 		Target:  nil,
 	}
 	publisher := &defaultPublisher{stateStore}

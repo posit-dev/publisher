@@ -22,18 +22,14 @@ func NewConfig() *Config {
 	}
 }
 
-func NormalizeConfigName(configName string) string {
+func GetConfigPath(base util.Path, configName string) util.Path {
 	if configName == "" {
 		configName = DefaultConfigName
 	}
 	if !strings.HasSuffix(configName, ".toml") {
 		configName += ".toml"
 	}
-	return configName
-}
-
-func GetConfigPath(base util.Path, configName string) util.Path {
-	return base.Join(".posit", "publish", NormalizeConfigName(configName))
+	return base.Join(".posit", "publish", configName)
 }
 
 func ReadConfig(r io.Reader) (*Config, error) {

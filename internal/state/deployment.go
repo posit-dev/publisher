@@ -30,7 +30,7 @@ type OldDeployment struct {
 }
 
 func OldDeploymentFromState(s *State) *OldDeployment {
-	d := OldDeploymentFromConfig(s.Dir, s.Cfg, s.Account, s.Target)
+	d := OldDeploymentFromConfig(s.Dir, s.Config, s.Account, s.Target)
 	d.LocalID = s.LocalID
 	return d
 }

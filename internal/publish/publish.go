@@ -82,7 +82,8 @@ func (p *defaultPublisher) logAppInfo(accountURL string, contentID types.Content
 
 func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 	log.Info("Publishing from directory", "path", p.Dir)
-	bundler, err := bundles.NewBundler(p.Dir, bundles.NewManifest(), nil, log)
+	manifest := bundles.NewManifestFromConfig(p.Config)
+	bundler, err := bundles.NewBundler(p.Dir, manifest, nil, log)
 	if err != nil {
 		return err
 	}
@@ -161,7 +162,7 @@ func (p *defaultPublisher) publishWithClient(
 	}
 
 	var contentID types.ContentID
-	connectContent := state.ConnectContentFromConfig(p.Cfg)
+	connectContent := state.ConnectContentFromConfig(p.Config)
 	if p.Target != nil {
 		contentID = p.Target.Id
 		_, err := withLog(events.PublishCreateDeploymentOp, "Updating deployment", "content_id", log, func() (any, error) {
@@ -184,7 +185,30 @@ func (p *defaultPublisher) publishWithClient(
 		if err != nil {
 			return err
 		}
-		log.Info("content_id", contentID)
+	}
+
+	p.Target = &config.Deployment{
+		Schema:        config.DeploymentSchema,
+		ServerType:    account.ServerType,
+		ServerURL:     account.URL,
+		Id:            contentID,
+		ConfigName:    p.ConfigName,
+		Files:         []string{},
+		Configuration: *p.Config,
+	}
+	// Save current deployment information for this target
+	err = config.WriteDeploymentFile(p.Target, config.GetDeploymentPath(p.Dir, p.Target))
+	if err != nil {
+		return err
+	}
+	// and create a new history entry
+	historyPath, err := config.GetDeploymentHistoryPath(p.Dir, p.Target)
+	if err != nil {
+		return err
+	}
+	err = config.WriteDeploymentFile(p.Target, historyPath)
+	if err != nil {
+		return err
 	}
 
 	bundleID, err := withLog(events.PublishUploadBundleOp, "Uploading deployment bundle", "bundle_id", log, func() (types.BundleID, error) {
@@ -192,16 +216,6 @@ func (p *defaultPublisher) publishWithClient(
 	})
 	if err != nil {
 		return err
-	}
-
-	p.Target = &config.Deployment{
-		Schema:            config.DeploymentSchema,
-		ServerType:        account.ServerType,
-		ServerURL:         account.URL,
-		Id:                contentID,
-		ConfigurationFile: p.ConfigName,
-		Files:             []string{},
-		Configuration:     *p.Cfg,
 	}
 
 	taskID, err := withLog(events.PublishDeployBundleOp, "Initiating bundle deployment", "task_id", log, func() (types.TaskID, error) {

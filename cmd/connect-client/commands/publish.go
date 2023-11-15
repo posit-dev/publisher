@@ -12,15 +12,18 @@ import (
 
 type PublishCmd struct {
 	Path        util.Path          `help:"Path to directory containing files to publish." arg:"" default:"."`
-	AccountName string             `short:"n" help:"Nickname of destination publishing account."`
-	ConfigName  string             `kong:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
-	TargetID    string             `kong:"update" short:"u" help:"ID of deployment to update (in .posit/deployments/)"`
+	AccountName string             `name:"account" short:"n" help:"Nickname of destination publishing account."`
+	ConfigName  string             `name:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
+	TargetID    string             `name:"update" short:"u" help:"ID of deployment to update (in .posit/deployments/)"`
 	Account     *accounts.Account  `kong:"-"`
 	Config      *config.Config     `kong:"-"`
 	Target      *config.Deployment `kong:"-"`
 }
 
 func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+	if cmd.ConfigName == "" {
+		cmd.ConfigName = config.DefaultConfigName
+	}
 	publisher, err := publish.New(cmd.Path, cmd.AccountName, cmd.ConfigName, cmd.TargetID, ctx.Accounts)
 	if err != nil {
 		return err

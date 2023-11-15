@@ -3,6 +3,7 @@ package config
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/pelletier/go-toml/v2"
@@ -15,6 +16,25 @@ func NewDeployment() *Deployment {
 	return &Deployment{
 		Schema:        DeploymentSchema,
 		Configuration: *NewConfig(),
+	}
+}
+
+func GetDeploymentPath(base util.Path, d *Deployment) util.Path {
+	name := fmt.Sprintf("%s-%s.toml", d.ConfigName, d.Id)
+	return base.Join(".posit", "deployments", name)
+}
+
+func GetDeploymentHistoryPath(base util.Path, d *Deployment) (util.Path, error) {
+	for i := 1; ; i++ {
+		name := fmt.Sprintf("%s-%s-%d.toml", d.ConfigName, d.Id, i)
+		path := base.Join(".posit", "history", name)
+		exists, err := path.Exists()
+		if err != nil {
+			return util.Path{}, err
+		}
+		if !exists {
+			return path, nil
+		}
 	}
 }
 
@@ -41,7 +61,11 @@ func WriteDeployment(record *Deployment, w io.Writer) error {
 }
 
 func WriteDeploymentFile(record *Deployment, path util.Path) error {
-	f, err := path.Open()
+	err := path.Dir().MkdirAll(0777)
+	if err != nil {
+		return err
+	}
+	f, err := path.Create()
 	if err != nil {
 		return err
 	}

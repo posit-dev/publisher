@@ -21,14 +21,13 @@ type State struct {
 	ConfigName  string
 	TargetID    string
 	Account     *accounts.Account
-	Cfg         *config.Config
+	Config      *config.Config
 	Target      *config.Deployment
 	LocalID     LocalDeploymentID
 }
 
 func loadConfig(path util.Path, configName string) (*config.Config, error) {
-	configName = config.NormalizeConfigName(configName)
-	configPath := path.Join(".posit", "publish", configName)
+	configPath := config.GetConfigPath(path, configName)
 	cfg, err := config.ReadOrCreateConfigFile(configPath)
 	if err != nil {
 		return nil, err
@@ -91,7 +90,7 @@ var errTargetImpliesAccount = errors.New("cannot specify --account with --target
 func Empty() *State {
 	return &State{
 		Account: &accounts.Account{},
-		Cfg:     &config.Config{},
+		Config:  &config.Config{},
 	}
 }
 
@@ -117,7 +116,7 @@ func New(path util.Path, accountName, configName, targetID string, accountList a
 		}
 
 		// Target specifies the configuration name
-		configName = target.ConfigurationFile
+		configName = target.ConfigName
 
 		// and the account's server URL
 		account, err = accountList.GetAccountByServerURL(target.ServerURL)
@@ -142,7 +141,7 @@ func New(path util.Path, accountName, configName, targetID string, accountList a
 		ConfigName:  configName,
 		TargetID:    targetID,
 		Account:     account,
-		Cfg:         cfg,
+		Config:      cfg,
 		Target:      target,
 	}, nil
 }

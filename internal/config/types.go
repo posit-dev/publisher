@@ -27,13 +27,13 @@ type Config struct {
 }
 
 type Deployment struct {
-	Schema            SchemaURL           `toml:"$schema"`
-	ServerType        accounts.ServerType `toml:"server-type"`
-	ServerURL         string              `toml:"server-url"`
-	Id                types.ContentID     `toml:"id"`
-	ConfigurationFile string              `toml:"configuration-file"`
-	Files             []string            `toml:"files"`
-	Configuration     Config              `toml:"configuration"`
+	Schema        SchemaURL           `toml:"$schema"`
+	ServerType    accounts.ServerType `toml:"server-type"`
+	ServerURL     string              `toml:"server-url"`
+	Id            types.ContentID     `toml:"id"`
+	ConfigName    string              `toml:"configuration-name"`
+	Configuration Config              `toml:"configuration"`
+	Files         []string            `toml:"files"`
 }
 
 type SchemaURL string

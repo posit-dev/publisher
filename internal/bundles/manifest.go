@@ -8,10 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"sort"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -30,7 +32,7 @@ const PythonRequirementsFilename = "requirements.txt"
 // environment can be recreated (if needed) and how it is served/executed).
 type Manifest struct {
 	Version     int             `json:"version"`                             // Manifest version (always 1)
-	Locale      string          `json:"locale"`                              // User's locale. Currently unused.
+	Locale      string          `json:"locale,omitempty"`                    // User's locale. Currently unused.
 	Platform    string          `json:"platform,omitempty" name:"r-version"` // Client R version
 	Metadata    Metadata        `json:"metadata"`                            // Properties about this deployment. Ignored by shinyapps.io
 	Python      *Python         `json:"python,omitempty"`                    // If non-null, specifies the Python version and dependencies
@@ -152,6 +154,41 @@ func NewManifest() *Manifest {
 		Packages:    make(PackageMap),
 		Files:       make(ManifestFileMap),
 	}
+}
+
+func NewManifestFromConfig(cfg *config.Config) *Manifest {
+	m := &Manifest{
+		Version:  1,
+		Platform: cfg.R.Version,
+		Metadata: Metadata{
+			AppMode:    cfg.Type,
+			Entrypoint: cfg.Entrypoint,
+		},
+		Python: &Python{
+			Version: cfg.Python.Version,
+			PackageManager: PythonPackageManager{
+				Name:        cfg.Python.PackageManager,
+				PackageFile: cfg.Python.PackageFile,
+			},
+		},
+		Jupyter: nil,
+		Quarto: &Quarto{
+			Version: cfg.Quarto.Version,
+			Engines: cfg.Quarto.Engines,
+		},
+		Environment: nil,
+		Packages:    make(PackageMap),
+		Files:       make(ManifestFileMap),
+	}
+	switch cfg.Type {
+	case apptypes.StaticRmdMode:
+	case apptypes.ShinyRmdMode:
+		m.Metadata.PrimaryRmd = cfg.Entrypoint
+	case apptypes.StaticMode:
+		m.Metadata.PrimaryHtml = cfg.Entrypoint
+	}
+	json.NewEncoder(os.Stdout).Encode(m)
+	return m
 }
 
 func (manifest *Manifest) AddFile(path string, fileMD5 []byte) {
