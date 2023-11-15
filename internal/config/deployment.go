@@ -26,8 +26,9 @@ func GetDeploymentPath(base util.Path, d *Deployment) util.Path {
 
 func GetDeploymentHistoryPath(base util.Path, d *Deployment) (util.Path, error) {
 	for i := 1; ; i++ {
-		name := fmt.Sprintf("%s-%s-%d.toml", d.ConfigName, d.Id, i)
-		path := base.Join(".posit", "history", name)
+		dirname := fmt.Sprintf("%s-%s", d.ConfigName, d.Id)
+		name := fmt.Sprintf("v%d.toml", i)
+		path := base.Join(".posit", "history", dirname, name)
 		exists, err := path.Exists()
 		if err != nil {
 			return util.Path{}, err

@@ -104,7 +104,7 @@ func New(path util.Path, accountName, configName, targetID string, accountList a
 		// Specifying an existing deployment determines
 		// the account and configuration.
 		// TODO: see if this can be done with a Kong group.
-		if configName != "" {
+		if configName != "" && configName != config.DefaultConfigName {
 			return nil, errTargetImpliesConfig
 		}
 		if accountName != "" {
