@@ -31,6 +31,8 @@ jobs:
       - run: just cy install
       - run: just cy test
       - run: just cy test-deploy
+        env: 
+          RUNNER_OS: ${{ matrix.os }}
 
       - name: Setup tmate session
         if: ${{ failure() }}

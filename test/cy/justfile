@@ -2,6 +2,8 @@ alias c := clean
 alias i := install
 alias t := test
 
+export RUNNER_OS := env_var_or_default("RUNNER_OS", "local")
+
 _ci := env_var_or_default("CI", "false")
 
 _debug := env_var_or_default("DEBUG", "false")
@@ -79,7 +81,7 @@ test-deploy:
     export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
     export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
     export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
-    if [[ "$(expr substr $(uname -s) 1 10)" =~ "MSYS" ]]; then \
+    if [[ ${RUNNER_OS} =~ "windows" ]]; then \
         npm run test-deploy-windows
     else
         npm run test-deploy
