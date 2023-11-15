@@ -75,6 +75,7 @@ test:
     npm test
 
 fuzzbucket-creation:
+    #!/usr/bin/env bash
     pip install -r ../setup/requirements.txt
     python ../setup/connect_setup.py
 
