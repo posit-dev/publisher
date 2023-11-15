@@ -23,7 +23,20 @@ type PostPublishReponse struct {
 	LocalID state.LocalDeploymentID `json:"local_id"` // Unique ID of this publishing operation. Only valid for this run of the agent.
 }
 
-func PostPublishHandlerFunc(base util.Path, log logging.Logger, accountList accounts.AccountList) http.HandlerFunc {
+type PublisherFactory = func(*state.State) publish.Publisher
+type StateFactory = func(
+	path util.Path,
+	accountName, configName, targetID string,
+	accountList accounts.AccountList) (*state.State, error)
+
+func PostPublishHandlerFunc(
+	stateStore *state.State,
+	base util.Path,
+	log logging.Logger,
+	accountList accounts.AccountList,
+	stateFactory StateFactory,
+	publisherFactory PublisherFactory) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, req *http.Request) {
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
@@ -38,6 +51,11 @@ func PostPublishHandlerFunc(base util.Path, log logging.Logger, accountList acco
 			InternalError(w, req, log, err)
 			return
 		}
+		newState, err := stateFactory(base, b.AccountName, b.ConfigName, b.TargetID, accountList)
+		if err != nil {
+			BadRequestJson(w, req, log, err)
+			return
+		}
 		response := PostPublishReponse{
 			LocalID: localID,
 		}
@@ -45,13 +63,12 @@ func PostPublishHandlerFunc(base util.Path, log logging.Logger, accountList acco
 		w.WriteHeader(http.StatusAccepted)
 		json.NewEncoder(w).Encode(response)
 
+		*stateStore = *newState
+		stateStore.LocalID = localID
+
 		go func() {
 			log = log.WithArgs("local_id", localID)
-			publisher, err := publish.New(base, b.AccountName, b.ConfigName, b.TargetID, accountList)
-			if err != nil {
-				log.Error("Deployment failed", "error", err.Error())
-				return
-			}
+			publisher := publisherFactory(stateStore)
 			err = publisher.PublishDirectory(log)
 			if err != nil {
 				log.Error("Deployment failed", "error", err.Error())

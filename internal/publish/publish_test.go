@@ -55,7 +55,7 @@ func (s *PublishSuite) TestCreateBundle() {
 		Cfg:     config.NewConfig(),
 		Target:  nil,
 	}
-	publisher := &Publisher{stateStore}
+	publisher := &defaultPublisher{stateStore}
 	err := publisher.CreateBundleFromDirectory(dest, s.log)
 	s.NoError(err)
 	s.True(dest.Exists())
@@ -73,7 +73,7 @@ func (s *PublishSuite) TestCreateBundleFailCreate() {
 		Cfg:     config.NewConfig(),
 		Target:  nil,
 	}
-	publisher := &Publisher{stateStore}
+	publisher := &defaultPublisher{stateStore}
 	err := publisher.CreateBundleFromDirectory(dest, s.log)
 	s.ErrorIs(err, testError)
 }
@@ -128,7 +128,7 @@ func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitEr
 		Cfg:     config.NewConfig(),
 		Target:  nil,
 	}
-	publisher := &Publisher{stateStore}
+	publisher := &defaultPublisher{stateStore}
 	err = publisher.publishWithClient(bundler, account, client, s.log)
 	if expectedErr == nil {
 		s.NoError(err)

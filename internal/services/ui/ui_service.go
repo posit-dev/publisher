@@ -8,6 +8,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
@@ -54,8 +55,8 @@ func NewUIService(
 	)
 }
 
-func RouterHandlerFunc(base util.Path, s *state.State, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
-	deploymentsService := deployments.CreateDeploymentsService(s)
+func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
+	deploymentsService := deployments.CreateDeploymentsService(stateStore)
 	filesService := files.CreateFilesService(base, log)
 	pathsService := paths.CreatePathsService(base, log)
 
@@ -80,7 +81,7 @@ func RouterHandlerFunc(base util.Path, s *state.State, lister accounts.AccountLi
 		Methods(http.MethodPut)
 
 	// POST /api/publish
-	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(base, log, lister)).
+	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
 		Methods(http.MethodPost)
 
 	// GET /

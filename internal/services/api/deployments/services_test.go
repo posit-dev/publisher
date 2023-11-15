@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
@@ -21,20 +22,21 @@ func TestServicesSuite(t *testing.T) {
 }
 
 func (s *ServicesSuite) TestCreateDeploymentsService() {
-	src := &state.State{}
+	src := state.Empty()
 	service := CreateDeploymentsService(src)
 	s.NotNil(service)
 }
 
 func (s *ServicesSuite) TestGetDeployment() {
-	src := &state.State{}
+	src := state.Empty()
 	service := CreateDeploymentsService(src)
 	res := service.GetDeployment()
-	s.Equal(src, res)
+	s.Equal(state.OldDeploymentFromState(src), res)
 }
 
 func (s *ServicesSuite) TestSetDeploymentAccount() {
-	src := &state.State{}
+	src := state.Empty()
+	src.Target = &config.Deployment{}
 	s.Equal(src.Target.ServerType, accounts.ServerType(""))
 	s.Equal(src.Target.ServerURL, "")
 

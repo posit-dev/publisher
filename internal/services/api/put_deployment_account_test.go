@@ -45,7 +45,7 @@ func (s *PutDeploymentAccountHandlerFuncSuite) TestPutDeploymentAccountHandlerFu
 }
 
 func (s *PutDeploymentAccountHandlerFuncSuite) TestPutDeploymentAccountHandler() {
-	src := state.OldDeploymentFromState(&state.State{})
+	src := state.OldDeploymentFromState(state.Empty())
 	deploymentsService := new(MockDeploymentsService)
 	deploymentsService.On("SetDeploymentAccount", mock.Anything).Return(src)
 

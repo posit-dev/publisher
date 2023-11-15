@@ -21,19 +21,27 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type Publisher struct {
+type Publisher interface {
+	PublishDirectory(logging.Logger) error
+}
+
+type defaultPublisher struct {
 	*state.State
 }
 
-func New(path util.Path, accountName, configName, targetID string, accountList accounts.AccountList) (*Publisher, error) {
+func New(path util.Path, accountName, configName, targetID string, accountList accounts.AccountList) (Publisher, error) {
 	s, err := state.New(path, accountName, configName, targetID, accountList)
 	if err != nil {
 		return nil, err
 	}
-	return &Publisher{s}, nil
+	return &defaultPublisher{s}, nil
 }
 
-func (p *Publisher) CreateBundleFromDirectory(dest util.Path, log logging.Logger) error {
+func NewFromState(s *state.State) Publisher {
+	return &defaultPublisher{s}
+}
+
+func (p *defaultPublisher) CreateBundleFromDirectory(dest util.Path, log logging.Logger) error {
 	bundleFile, err := dest.Create()
 	if err != nil {
 		return err
@@ -52,7 +60,7 @@ type appInfo struct {
 	DirectURL    string `json:"direct-url"`
 }
 
-func (p *Publisher) logAppInfo(accountURL string, contentID types.ContentID, log logging.Logger) error {
+func (p *defaultPublisher) logAppInfo(accountURL string, contentID types.ContentID, log logging.Logger) error {
 	appInfo := appInfo{
 		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
 		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
@@ -72,7 +80,7 @@ func (p *Publisher) logAppInfo(accountURL string, contentID types.ContentID, log
 	return err
 }
 
-func (p *Publisher) PublishDirectory(log logging.Logger) error {
+func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 	log.Info("Publishing from directory", "path", p.Dir)
 	bundler, err := bundles.NewBundler(p.Dir, bundles.NewManifest(), nil, log)
 	if err != nil {
@@ -81,7 +89,7 @@ func (p *Publisher) PublishDirectory(log logging.Logger) error {
 	return p.publish(bundler, log)
 }
 
-func (p *Publisher) publish(
+func (p *defaultPublisher) publish(
 	bundler bundles.Bundler,
 	log logging.Logger) error {
 
@@ -122,7 +130,7 @@ func withLog[T any](
 	return value, nil
 }
 
-func (p *Publisher) publishWithClient(
+func (p *defaultPublisher) publishWithClient(
 	bundler bundles.Bundler,
 	account *accounts.Account,
 	client clients.APIClient,

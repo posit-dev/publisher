@@ -29,7 +29,7 @@ func (s *GetDeploymentHandlerFuncSuite) TestGetDeploymentHandlerFunc() {
 }
 
 func (s *GetDeploymentHandlerFuncSuite) TestGetDeploymentHandler() {
-	src := state.OldDeploymentFromState(&state.State{})
+	src := state.OldDeploymentFromState(state.Empty())
 	deploymentsService := new(MockDeploymentsService)
 	deploymentsService.On("GetDeployment").Return(src)
 	h := GetDeploymentHandlerFunc(deploymentsService)

@@ -93,6 +93,13 @@ func loadAccount(accountName string, accountList accounts.AccountList) (*account
 var errTargetImpliesConfig = errors.New("cannot specify --config with --target")
 var errTargetImpliesAccount = errors.New("cannot specify --account with --target")
 
+func Empty() *State {
+	return &State{
+		Account: &accounts.Account{},
+		Cfg:     &config.Config{},
+	}
+}
+
 func New(path util.Path, accountName, configName, targetID string, accountList accounts.AccountList) (*State, error) {
 	var target *config.Deployment
 	var account *accounts.Account
