@@ -81,7 +81,7 @@ test-deploy:
     export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
     export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
     export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
-    if [[ ${RUNNER_OS} =~ "windows" ]]; then \
+    if [[ ${RUNNER_OS} =~ "Windows" ]]; then \
         npm run test-deploy-windows
     else
         npm run test-deploy
