@@ -10,7 +10,6 @@ import (
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
-	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
@@ -29,7 +28,6 @@ func NewUIService(
 	fragment string,
 	ui cli_types.UIArgs,
 	publish *cli_types.PublishArgs,
-	token services.LocalToken,
 	fs afero.Fs,
 	lister accounts.AccountList,
 	log logging.Logger,
@@ -46,9 +44,7 @@ func NewUIService(
 		ui.TLSCertFile,
 		ui.Interactive,
 		ui.OpenBrowserAt,
-		ui.SkipBrowserSessionAuth,
 		ui.AccessLog,
-		token,
 		log,
 	)
 }
