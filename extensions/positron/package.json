@@ -21,7 +21,8 @@
     "commands": [
       {
         "command": "positron.publisher.assistant.open",
-        "title": "Publisher: Open Assistant"
+        "title": "Open Assistant",
+        "category": "Publisher"
       }
     ],
     "configuration": {
@@ -32,6 +33,15 @@
           "type": "string"
         }
       }
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceLangId == python",
+          "command": "positron.publisher.assistant.open",
+          "group": "navigation"
+        }
+      ]
     }
   },
   "scripts": {
