@@ -14,11 +14,11 @@ jobs:
   bats:
     needs: build
     uses: ./.github/workflows/bats.yaml
-  fuzzbucket:
+  contract-deps:
     secrets: inherit
     uses: ./.github/workflows/contract-deps.yaml
   cypress-nightly:
-    needs: [build, fuzzbucket]
+    needs: [build, contract-deps]
     secrets: inherit
     uses: ./.github/workflows/contract.yaml
   cleanup: 
