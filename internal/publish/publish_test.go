@@ -9,6 +9,7 @@ import (
 	"github.com/rstudio/connect-client/internal/api_client/clients/clienttest"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
@@ -47,31 +48,50 @@ func (s *PublishSuite) SetupTest() {
 
 }
 
+func (s *PublishSuite) TestNewFromState() {
+	stateStore := state.Empty()
+	publisher := NewFromState(stateStore)
+	s.Equal(stateStore, publisher.State)
+}
+
 func (s *PublishSuite) TestPublishWithClient() {
-	s.publishWithClient(nil, nil, nil, nil, nil)
+	s.publishWithClient(nil, nil, nil, nil, nil, nil)
+}
+
+func (s *PublishSuite) TestPublishWithClientUpdate() {
+	target := deployment.New()
+	target.Id = "myContentID"
+	s.publishWithClient(target, nil, nil, nil, nil, nil)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailCreate() {
 	createErr := errors.New("error from Create")
-	s.publishWithClient(createErr, nil, nil, nil, createErr)
+	s.publishWithClient(nil, createErr, nil, nil, nil, createErr)
+}
+
+func (s *PublishSuite) TestPublishWithClientFailUpdate() {
+	target := deployment.New()
+	target.Id = "myContentID"
+	createErr := errors.New("error from Update")
+	s.publishWithClient(target, createErr, nil, nil, nil, nil)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailUpload() {
 	uploadErr := errors.New("error from Upload")
-	s.publishWithClient(nil, uploadErr, nil, nil, uploadErr)
+	s.publishWithClient(nil, nil, uploadErr, nil, nil, uploadErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailDeploy() {
 	deployErr := errors.New("error from Deploy")
-	s.publishWithClient(nil, nil, deployErr, nil, deployErr)
+	s.publishWithClient(nil, nil, nil, deployErr, nil, deployErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailWaitForTask() {
 	waitErr := errors.New("error from WaitForTask")
-	s.publishWithClient(nil, nil, nil, waitErr, waitErr)
+	s.publishWithClient(nil, nil, nil, nil, waitErr, waitErr)
 }
 
-func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitErr, expectedErr error) {
+func (s *PublishSuite) publishWithClient(target *deployment.Deployment, createErr, uploadErr, deployErr, waitErr, expectedErr error) {
 	bundler, err := bundles.NewBundler(s.cwd, bundles.NewManifest(), nil, s.log)
 	s.NoError(err)
 
@@ -86,7 +106,11 @@ func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitEr
 	myTaskID := types.TaskID("myTaskID")
 
 	client := clienttest.NewMockClient()
-	client.On("CreateDeployment", mock.Anything).Return(myContentID, createErr)
+	if target == nil {
+		client.On("CreateDeployment", mock.Anything).Return(myContentID, createErr)
+	} else {
+		client.On("UpdateDeployment", myContentID, mock.Anything).Return(createErr)
+	}
 	client.On("UploadBundle", myContentID, mock.Anything).Return(myBundleID, uploadErr)
 	client.On("DeployBundle", myContentID, myBundleID).Return(myTaskID, deployErr)
 	client.On("WaitForTask", myTaskID, mock.Anything).Return(waitErr)
@@ -95,7 +119,7 @@ func (s *PublishSuite) publishWithClient(createErr, uploadErr, deployErr, waitEr
 		Dir:     s.cwd,
 		Account: nil,
 		Config:  config.New(),
-		Target:  nil,
+		Target:  target,
 	}
 	publisher := &defaultPublisher{stateStore}
 	err = publisher.publishWithClient(bundler, account, client, s.log)
