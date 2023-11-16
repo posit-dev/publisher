@@ -55,15 +55,13 @@ func loadTarget(path util.Path, targetID string) (*deployment.Deployment, error)
 // which is the first Connect account alphabetically by name.
 func getDefaultAccount(accounts []accounts.Account) (*accounts.Account, error) {
 	if len(accounts) == 0 {
-		return nil, errNoAccounts
+		return nil, nil
 	}
 	sort.Slice(accounts, func(i, j int) bool {
 		return accounts[i].Name < accounts[j].Name
 	})
 	return &accounts[0], nil
 }
-
-var errNoAccounts = errors.New("there are no accounts yet; register an account before publishing")
 
 func loadAccount(accountName string, accountList accounts.AccountList) (*accounts.Account, error) {
 	if accountName == "" {

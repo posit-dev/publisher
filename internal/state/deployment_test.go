@@ -20,7 +20,7 @@ func TestDeploymentSuite(t *testing.T) {
 
 func (s *DeploymentSuite) TestGetDefaultAccountEmpty() {
 	acct, err := getDefaultAccount([]accounts.Account{})
-	s.ErrorIs(err, errNoAccounts)
+	s.NoError(err)
 	s.Nil(acct)
 }
 
