@@ -74,11 +74,17 @@ test:
 
     npm test
 
-fuzzbucket-creation:
+fuzzbucket-start:
     #!/usr/bin/env bash
     set -eou pipefail
     pip install -r ../setup/requirements.txt
     python ../setup/connect_setup.py
+
+fuzzbucket-stop:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    pip install fuzzbucket-client
+    fuzzbucket-client rm connect-publishing-client
 
 test-deploy:
     #!/usr/bin/env bash

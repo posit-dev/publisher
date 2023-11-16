@@ -17,5 +17,4 @@ jobs:
         with:
           python-version: 3.11
       - uses: extractions/setup-just@v1
-      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/cy/fuzzbucket-ssh-key && chmod 600 test/cy/fuzzbucket-ssh-key
-      - run: just cy fuzzbucket-start
+      - run: just cy fuzzbucket-stop
