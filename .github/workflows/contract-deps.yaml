@@ -1,8 +1,8 @@
-name: fuzzbucket
+name: contract dependencies
 on:
   workflow_call:
 jobs:
-  native:
+  connect:
     env:
       DOCKER: false
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}

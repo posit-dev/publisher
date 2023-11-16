@@ -2,7 +2,7 @@ name: fuzzbucket
 on:
   workflow_call:
 jobs:
-  native:
+  cleanup-connect:
     env:
       DOCKER: false
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}

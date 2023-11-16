@@ -16,7 +16,7 @@ jobs:
     uses: ./.github/workflows/bats.yaml
   fuzzbucket:
     secrets: inherit
-    uses: ./.github/workflows/fuzzbucket.yaml
+    uses: ./.github/workflows/contract-deps.yaml
   cypress-nightly:
     needs: [build, fuzzbucket]
     secrets: inherit
