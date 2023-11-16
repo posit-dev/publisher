@@ -11,6 +11,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
@@ -22,25 +23,25 @@ type State struct {
 	TargetID    string
 	Account     *accounts.Account
 	Config      *config.Config
-	Target      *config.Deployment
+	Target      *deployment.Deployment
 	LocalID     LocalDeploymentID
 }
 
 func loadConfig(path util.Path, configName string) (*config.Config, error) {
 	configPath := config.GetConfigPath(path, configName)
-	cfg, err := config.ReadOrCreateConfigFile(configPath)
+	cfg, err := config.FromFile(configPath)
 	if err != nil {
 		return nil, err
 	}
 	return cfg, nil
 }
 
-func loadTarget(path util.Path, targetID string) (*config.Deployment, error) {
+func loadTarget(path util.Path, targetID string) (*deployment.Deployment, error) {
 	if !strings.HasSuffix(targetID, ".toml") {
 		targetID += ".toml"
 	}
 	configPath := path.Join(".posit", "deployments", targetID)
-	target, err := config.ReadDeploymentFile(configPath)
+	target, err := deployment.FromFile(configPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, fmt.Errorf("can't find deployment at '%s'", configPath)
@@ -95,7 +96,7 @@ func Empty() *State {
 }
 
 func New(path util.Path, accountName, configName, targetID string, accountList accounts.AccountList) (*State, error) {
-	var target *config.Deployment
+	var target *deployment.Deployment
 	var account *accounts.Account
 	var cfg *config.Config
 	var err error
@@ -133,7 +134,12 @@ func New(path util.Path, accountName, configName, targetID string, accountList a
 	}
 	cfg, err = loadConfig(path, configName)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, fs.ErrNotExist) {
+			// TODO: automatically run `init` when there is no configuration file
+			return nil, fmt.Errorf("couldn't load configuration '%s' from '%s'; run 'publish init' to create an initial configuration file", configName, path)
+		} else {
+			return nil, err
+		}
 	}
 	return &State{
 		Dir:         path,

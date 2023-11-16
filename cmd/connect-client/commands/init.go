@@ -74,7 +74,7 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if cmd.ConfigName == "" {
 		cmd.ConfigName = config.DefaultConfigName
 	}
-	cmd.config = config.NewConfig()
+	cmd.config = config.New()
 	contentType, err := cmd.inspectProjectType(ctx.Logger)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 		cmd.config.Python = *pythonConfig
 	}
 	configPath := config.GetConfigPath(cmd.Path, cmd.ConfigName)
-	err = config.WriteConfigFile(cmd.config, configPath)
+	err = cmd.config.WriteFile(configPath)
 	if err != nil {
 		return err
 	}

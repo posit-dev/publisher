@@ -13,7 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/api_client/clients"
 	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
@@ -187,8 +187,8 @@ func (p *defaultPublisher) publishWithClient(
 		}
 	}
 
-	p.Target = &config.Deployment{
-		Schema:        config.DeploymentSchema,
+	p.Target = &deployment.Deployment{
+		Schema:        deployment.DeploymentSchema,
 		ServerType:    account.ServerType,
 		ServerURL:     account.URL,
 		Id:            contentID,
@@ -197,16 +197,16 @@ func (p *defaultPublisher) publishWithClient(
 		Configuration: *p.Config,
 	}
 	// Save current deployment information for this target
-	err = config.WriteDeploymentFile(p.Target, config.GetDeploymentPath(p.Dir, p.Target))
+	err = p.Target.WriteFile(deployment.GetDeploymentPath(p.Dir, p.Target))
 	if err != nil {
 		return err
 	}
 	// and create a new history entry
-	historyPath, err := config.GetDeploymentHistoryPath(p.Dir, p.Target)
+	historyPath, err := deployment.GetDeploymentHistoryPath(p.Dir, p.Target)
 	if err != nil {
 		return err
 	}
-	err = config.WriteDeploymentFile(p.Target, historyPath)
+	err = p.Target.WriteFile(historyPath)
 	if err != nil {
 		return err
 	}

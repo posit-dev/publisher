@@ -11,6 +11,7 @@ import (
 	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
@@ -35,7 +36,7 @@ func OldDeploymentFromState(s *State) *OldDeployment {
 	return d
 }
 
-func OldDeploymentFromConfig(path util.Path, cfg *config.Config, account *accounts.Account, target *config.Deployment) *OldDeployment {
+func OldDeploymentFromConfig(path util.Path, cfg *config.Config, account *accounts.Account, target *deployment.Deployment) *OldDeployment {
 	var contentID types.ContentID
 	var files bundles.ManifestFileMap
 
@@ -87,7 +88,7 @@ func getDeploymentsDirectory(sourceDir util.Path) util.Path {
 
 // listDeployments returns a list of the previous
 // deployments for this source directory.
-func listDeployments(sourceDir util.Path, log logging.Logger) ([]*config.Deployment, error) {
+func listDeployments(sourceDir util.Path, log logging.Logger) ([]*deployment.Deployment, error) {
 	deploymentsDir := getDeploymentsDirectory(sourceDir)
 	dirContents, err := deploymentsDir.ReadDir()
 	if err != nil {
@@ -99,10 +100,10 @@ func listDeployments(sourceDir util.Path, log logging.Logger) ([]*config.Deploym
 			return nil, err
 		}
 	}
-	deployments := make([]*config.Deployment, 0, len(dirContents))
+	deployments := make([]*deployment.Deployment, 0, len(dirContents))
 	for _, fileInfo := range dirContents {
 		if !fileInfo.IsDir() {
-			deployment, err := config.ReadDeploymentFile(deploymentsDir.Join(fileInfo.Name()))
+			deployment, err := deployment.FromFile(deploymentsDir.Join(fileInfo.Name()))
 			if err != nil {
 				return nil, err
 			}
@@ -119,7 +120,7 @@ func listDeployments(sourceDir util.Path, log logging.Logger) ([]*config.Deploym
 // store for the most recently deployed bundle. This is
 // the default metadata that will be used when redeploying.
 // Returns nil if there are no prior deployments.
-func GetMostRecentDeployment(sourceDir util.Path, log logging.Logger) (*config.Deployment, error) {
+func GetMostRecentDeployment(sourceDir util.Path, log logging.Logger) (*deployment.Deployment, error) {
 	deployments, err := listDeployments(sourceDir, log)
 	if err != nil {
 		return nil, err

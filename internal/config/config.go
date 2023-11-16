@@ -16,7 +16,7 @@ const ConfigSchema SchemaURL = "https://github.com/rstudio/publishing-client/blo
 
 const DefaultConfigName = "default"
 
-func NewConfig() *Config {
+func New() *Config {
 	return &Config{
 		Schema: ConfigSchema,
 	}
@@ -32,7 +32,7 @@ func GetConfigPath(base util.Path, configName string) util.Path {
 	return base.Join(".posit", "publish", configName)
 }
 
-func ReadConfig(r io.Reader) (*Config, error) {
+func Read(r io.Reader) (*Config, error) {
 	dec := toml.NewDecoder(r)
 	dec.DisallowUnknownFields()
 	cfg := new(Config)
@@ -40,30 +40,30 @@ func ReadConfig(r io.Reader) (*Config, error) {
 	return cfg, err
 }
 
-func ReadConfigFile(path util.Path) (*Config, error) {
+func FromFile(path util.Path) (*Config, error) {
 	f, err := path.Open()
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	return ReadConfig(f)
+	return Read(f)
 }
 
 func ReadOrCreateConfigFile(path util.Path) (*Config, error) {
-	cfg, err := ReadConfigFile(path)
+	cfg, err := FromFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
-		cfg = NewConfig()
-		err = WriteConfigFile(cfg, path)
+		cfg = New()
+		err = cfg.WriteFile(path)
 	}
 	return cfg, err
 }
 
-func WriteConfig(cfg *Config, w io.Writer) error {
+func (cfg *Config) Write(w io.Writer) error {
 	enc := toml.NewEncoder(w)
 	return enc.Encode(cfg)
 }
 
-func WriteConfigFile(cfg *Config, path util.Path) error {
+func (cfg *Config) WriteFile(path util.Path) error {
 	err := path.Dir().MkdirAll(0777)
 	if err != nil {
 		return err
@@ -73,5 +73,5 @@ func WriteConfigFile(cfg *Config, path util.Path) error {
 		return err
 	}
 	defer f.Close()
-	return WriteConfig(cfg, f)
+	return cfg.Write(f)
 }
