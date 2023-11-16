@@ -238,16 +238,12 @@ tag:
     echo {{ _docker_image_name }}":"$(just version)
 
 # Execute unit tests.
-test *args: stub
+test *args=("./..."): stub
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    packages="{{ args }}"
-    if [ -z "$packages" ]; then
-        packages='./...'
-    fi
-    just _with_docker go test $packages -covermode set -coverprofile=cover.out
+    just _with_docker go test {{ args }} -covermode set -coverprofile=cover.out
 
 # Executes commands in ./web/Justfile. Equivalent to `just web/dist`, but inside of Docker (i.e., just _with_docker web/dist).
 web *args:
