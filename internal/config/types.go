@@ -9,7 +9,7 @@ import (
 type Config struct {
 	Schema        SchemaURL        `toml:"$schema"`
 	Type          apptypes.AppMode `toml:"type"`
-	Entrypoint    string           `toml:"string"`
+	Entrypoint    string           `toml:"entrypoint,omitempty"`
 	Title         string           `toml:"title,omitempty"`
 	Description   string           `toml:"description,multiline,omitempty"`
 	ThumbnailFile string           `toml:"thumbnail,omitempty"`
