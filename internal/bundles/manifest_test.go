@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -118,4 +119,50 @@ func (s *ManifestSuite) TestReadManifestFileErr() {
 	manifest, err := ReadManifestFile(manifestPath)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(manifest)
+}
+
+func (s *ManifestSuite) TestNewManifestFromConfig() {
+	cfg := &config.Config{
+		Schema:      config.ConfigSchema,
+		Type:        "python-dash",
+		Entrypoint:  "app:myapp",
+		Title:       "Super Title",
+		Description: "minimal description",
+		Python: config.Python{
+			Version:        "3.4.5",
+			PackageFile:    "requirements.in",
+			PackageManager: "pip",
+		},
+		R: config.R{
+			Version:        "4.5.6",
+			PackageFile:    "renv.lock",
+			PackageManager: "renv",
+		},
+		Quarto: config.Quarto{
+			Version: "1.2.3",
+			Engines: []string{"jupyter"},
+		},
+	}
+	m := NewManifestFromConfig(cfg)
+	s.Equal(&Manifest{
+		Version:  1,
+		Platform: "4.5.6",
+		Metadata: Metadata{
+			AppMode:    "python-dash",
+			Entrypoint: "app:myapp",
+		},
+		Python: &Python{
+			Version: "3.4.5",
+			PackageManager: PythonPackageManager{
+				Name:        "pip",
+				PackageFile: "requirements.in",
+			},
+		},
+		Quarto: &Quarto{
+			Version: "1.2.3",
+			Engines: []string{"jupyter"},
+		},
+		Packages: map[string]Package{},
+		Files:    map[string]ManifestFile{},
+	}, m)
 }
