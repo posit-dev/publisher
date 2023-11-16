@@ -126,6 +126,7 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/restorePythonEnv/start': OnPublishRestorePythonEnvStartCallback
   'publish/restorePythonEnv/log': OnPublishRestorePythonEnvLogCallback
   'publish/restorePythonEnv/progress': OnPublishRestorePythonEnvProgressCallback
+  'publish/restorePythonEnv/status': OnPublishRestorePythonEnvStatusCallback
   'publish/restorePythonEnv/success': OnPublishRestorePythonEnvSuccessCallback
   'publish/restorePythonEnv/failure': OnPublishRestorePythonEnvFailureCallback
   // 'publish/restorePythonEnv/failure/serverErr' | // received but temporarily converted
@@ -150,6 +151,16 @@ export interface EventStreamMessage {
   time: string,
   data: Record<string, string>,
   error?: string,
+}
+
+export interface EventStreamMessageWithError extends EventStreamMessage {
+  error: string;
+}
+
+export function isErrorEventStreamMessage(
+  msg: EventStreamMessage
+): msg is EventStreamMessageWithError {
+  return msg.error !== undefined;
 }
 
 export type OnMessageEventSourceCallback = <T extends EventStreamMessage>(msg: T) => void;
@@ -451,6 +462,19 @@ export type OnPublishRestorePythonEnvProgressCallback = (
 export function isPublishRestorePythonEnvProgress(arg: Events):
   arg is PublishRestorePythonEnvProgress {
   return arg.type === 'publish/restorePythonEnv/progress';
+}
+
+export interface PublishRestorePythonEnvStatus extends EventStreamMessage {
+  type: 'publish/restorePythonEnv/status',
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishRestorePythonEnvStatusCallback = (
+  msg: PublishRestorePythonEnvStatus
+) => void;
+export function isPublishRestorePythonEnvStatus(arg: Events):
+  arg is PublishRestorePythonEnvStatus {
+  return arg.type === 'publish/restorePythonEnv/status';
 }
 
 export interface PublishRestorePythonEnvSuccess extends EventStreamMessage {
