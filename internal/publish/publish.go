@@ -41,20 +41,6 @@ func NewFromState(s *state.State) Publisher {
 	return &defaultPublisher{s}
 }
 
-func (p *defaultPublisher) CreateBundleFromDirectory(dest util.Path, log logging.Logger) error {
-	bundleFile, err := dest.Create()
-	if err != nil {
-		return err
-	}
-	defer bundleFile.Close()
-	bundler, err := bundles.NewBundler(p.Dir, bundles.NewManifest(), nil, log)
-	if err != nil {
-		return err
-	}
-	_, err = bundler.CreateBundle(bundleFile)
-	return err
-}
-
 type appInfo struct {
 	DashboardURL string `json:"dashboard-url"`
 	DirectURL    string `json:"direct-url"`

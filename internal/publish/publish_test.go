@@ -47,37 +47,6 @@ func (s *PublishSuite) SetupTest() {
 
 }
 
-func (s *PublishSuite) TestCreateBundle() {
-	dest := s.cwd.Join("output_dir", "bundle.tar.gz")
-	stateStore := &state.State{
-		Dir:     s.cwd,
-		Account: nil,
-		Config:  config.New(),
-		Target:  nil,
-	}
-	publisher := &defaultPublisher{stateStore}
-	err := publisher.CreateBundleFromDirectory(dest, s.log)
-	s.NoError(err)
-	s.True(dest.Exists())
-}
-
-func (s *PublishSuite) TestCreateBundleFailCreate() {
-	afs := utiltest.NewMockFs()
-	testError := errors.New("error from Create")
-	afs.On("Create", mock.Anything).Return(nil, testError)
-	dest := util.NewPath("anypath", afs)
-
-	stateStore := &state.State{
-		Dir:     s.cwd,
-		Account: nil,
-		Config:  config.New(),
-		Target:  nil,
-	}
-	publisher := &defaultPublisher{stateStore}
-	err := publisher.CreateBundleFromDirectory(dest, s.log)
-	s.ErrorIs(err, testError)
-}
-
 func (s *PublishSuite) TestPublishWithClient() {
 	s.publishWithClient(nil, nil, nil, nil, nil)
 }
