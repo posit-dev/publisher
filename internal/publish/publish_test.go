@@ -51,7 +51,7 @@ func (s *PublishSuite) SetupTest() {
 func (s *PublishSuite) TestNewFromState() {
 	stateStore := state.Empty()
 	publisher := NewFromState(stateStore)
-	s.Equal(stateStore, publisher.State)
+	s.Equal(stateStore, publisher.(*defaultPublisher).State)
 }
 
 func (s *PublishSuite) TestPublishWithClient() {
@@ -73,7 +73,7 @@ func (s *PublishSuite) TestPublishWithClientFailUpdate() {
 	target := deployment.New()
 	target.Id = "myContentID"
 	createErr := errors.New("error from Update")
-	s.publishWithClient(target, createErr, nil, nil, nil, nil)
+	s.publishWithClient(target, createErr, nil, nil, nil, createErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailUpload() {

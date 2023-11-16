@@ -29,7 +29,7 @@ type defaultPublisher struct {
 	*state.State
 }
 
-func New(path util.Path, accountName, configName, targetID string, accountList accounts.AccountList) (*defaultPublisher, error) {
+func New(path util.Path, accountName, configName, targetID string, accountList accounts.AccountList) (Publisher, error) {
 	s, err := state.New(path, accountName, configName, targetID, accountList)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func New(path util.Path, accountName, configName, targetID string, accountList a
 	return &defaultPublisher{s}, nil
 }
 
-func NewFromState(s *state.State) *defaultPublisher {
+func NewFromState(s *state.State) Publisher {
 	return &defaultPublisher{s}
 }
 
