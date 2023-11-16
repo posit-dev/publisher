@@ -161,7 +161,6 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 				}
 			}
 		}
-		bundle.manifest.ResetEmptyFields()
 		err = bundle.addManifest()
 		if err != nil {
 			return nil, err

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"sort"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
@@ -207,100 +206,6 @@ func (manifest *Manifest) Clone() (*Manifest, error) {
 		return nil, err
 	}
 	return ReadManifest(bytes.NewReader(manifestJSON))
-}
-
-func (m *Manifest) Merge(other *Manifest) {
-	m.Version = 1
-	if other.Platform != "" {
-		m.Platform = other.Platform
-	}
-	if other.Metadata.AppMode != apptypes.UnknownMode {
-		m.Metadata.AppMode = other.Metadata.AppMode
-	}
-	if other.Metadata.ContentCategory != "" {
-		m.Metadata.ContentCategory = other.Metadata.ContentCategory
-	}
-	if other.Metadata.Entrypoint != "" {
-		m.Metadata.Entrypoint = other.Metadata.Entrypoint
-	}
-	if other.Metadata.PrimaryRmd != "" {
-		m.Metadata.PrimaryRmd = other.Metadata.PrimaryRmd
-	}
-	if other.Metadata.PrimaryHtml != "" {
-		m.Metadata.PrimaryHtml = other.Metadata.PrimaryHtml
-	}
-	if other.Metadata.HasParameters {
-		m.Metadata.HasParameters = other.Metadata.HasParameters
-	}
-	if m.Python == nil {
-		m.Python = other.Python
-	} else if other.Python != nil {
-		if other.Python.Version != "" {
-			m.Python.Version = other.Python.Version
-		}
-		if other.Python.PackageManager.Name != "" {
-			m.Python.PackageManager.Name = other.Python.PackageManager.Name
-		}
-		if other.Python.PackageManager.Version != "" {
-			m.Python.PackageManager.Version = other.Python.PackageManager.Version
-		}
-		if other.Python.PackageManager.PackageFile != "" {
-			m.Python.PackageManager.PackageFile = other.Python.PackageManager.PackageFile
-		}
-	}
-	if m.Jupyter == nil {
-		m.Jupyter = other.Jupyter
-	} else if other.Jupyter != nil {
-		if other.Jupyter.HideAllInput {
-			m.Jupyter.HideAllInput = other.Jupyter.HideAllInput
-		}
-		if other.Jupyter.HideTaggedInput {
-			m.Jupyter.HideTaggedInput = other.Jupyter.HideTaggedInput
-		}
-	}
-	if m.Quarto == nil {
-		m.Quarto = other.Quarto
-	} else if other.Quarto != nil {
-		if other.Quarto.Version != "" {
-			m.Quarto.Version = other.Quarto.Version
-		}
-		m.Quarto.Engines = util.RemoveDuplicates(append(m.Quarto.Engines, other.Quarto.Engines...))
-	}
-	if m.Environment == nil {
-		m.Environment = other.Environment
-	} else if other.Environment != nil {
-		if other.Environment.Image != "" {
-			m.Environment.Image = other.Environment.Image
-		}
-		if other.Environment.Prebuilt {
-			m.Environment.Prebuilt = other.Environment.Prebuilt
-		}
-	}
-	for k, v := range other.Packages {
-		m.Packages[k] = v
-	}
-	for k, v := range other.Files {
-		m.Files[k] = v
-	}
-}
-
-// ResetEmptyFields resets any of the optional sub-structs to nil
-// if they have their zero values. We do this because Kong
-// creates all sub-structs during CLI parsing, but we would
-// prefer to omit them from the JSON if they are empty.
-func (manifest *Manifest) ResetEmptyFields() {
-	if reflect.DeepEqual(manifest.Python, &Python{}) {
-		manifest.Python = nil
-	}
-	if reflect.DeepEqual(manifest.Jupyter, &Jupyter{}) {
-		manifest.Jupyter = nil
-	}
-	if reflect.DeepEqual(manifest.Quarto, &Quarto{}) {
-		manifest.Quarto = nil
-	}
-	if reflect.DeepEqual(manifest.Environment, &Environment{}) {
-		manifest.Environment = nil
-	}
 }
 
 func (manifest *Manifest) GetFilenames() []string {
