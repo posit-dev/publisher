@@ -23,14 +23,19 @@ type PublishUICmd struct {
 }
 
 func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+	ctx.Logger.Info("Starting PublishUICmd.Run")
 	eventServer := sse.New()
+	ctx.Logger.Info("created event server")
 	eventServer.CreateStream("messages")
-	stateStore, err := state.New(cmd.Path, "", "default.toml", "", ctx.Accounts)
+	ctx.Logger.Info("created event stream")
+	stateStore, err := state.New(cmd.Path, "", "", "", ctx.Accounts)
 	if err != nil {
 		return err
 	}
+	ctx.Logger.Info("created state store")
 
 	log := events.NewLoggerWithSSE(args.Debug, eventServer)
+	ctx.Logger.Info("created SSE logger")
 	svc := ui.NewUIService(
 		"/",
 		cmd.Interactive,
@@ -45,5 +50,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		ctx.Accounts,
 		log,
 		eventServer)
+	ctx.Logger.Info("created UI service")
 	return svc.Run()
 }
