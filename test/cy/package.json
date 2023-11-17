@@ -3,10 +3,14 @@
   "scripts": {
     "lint": "eslint --ext .js,.ts,.cjs .",
     "fix": "eslint --ext .js,.ts,.cjs . --fix",
-    "start": "just ../../run publish-ui --listen 127.0.0.1:9000 ./test/sample-content/fastapi-simple",
+    "start": "just ../../run publish-ui --listen 127.0.0.1:9000 -n env ./test/sample-content/fastapi-simple",
     "test": "start-server-and-test --expect 200 start http-get://127.0.0.1:9000 run",
+    "test-deploy": "start-server-and-test --expect 200 start http-get://127.0.0.1:9000 run-deploy",
+    "test-deploy-windows": "start-server-and-test --expect 200 start http-get://127.0.0.1:9000 run-deploy-windows",
     "open": "cypress open",
-    "run": "cypress run"
+    "run": "cypress run --spec ./cypress/e2e/ui/*.cy.js --env token=token",
+    "run-deploy": "cypress run --spec ./cypress/e2e/contract/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS",
+    "run-deploy-windows": "cypress run --spec ./cypress/e2e/contract/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=%CYPRESS_CONNECT_ADDRESS%"
   },
   "devDependencies": {
     "cypress": "^13.3.0",
