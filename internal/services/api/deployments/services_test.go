@@ -50,13 +50,13 @@ func (s *ServicesSuite) TestSetDeploymentAccount() {
 
 	lister := accounts.NewMockAccountList()
 	lister.On("GetAccountByName", "test").Return(result, nil)
-	lister.On("GetAccountByName", "unknown").Return(&accounts.Account{}, errors.New("Account Not Found"))
+	lister.On("GetAccountByName", "unknown").Return(nil, errors.New("Account Not Found"))
 
 	res, err := service.SetDeploymentAccount(lister, "test")
 	s.Nil(err)
 
-	s.Equal(res.Target.ServerType, result.ServerType)
-	s.Equal(res.Target.ServerURL, result.URL)
+	s.Equal(result.ServerType, res.Target.ServerType)
+	s.Equal(result.URL, res.Target.ServerURL)
 
 	_, err = service.SetDeploymentAccount(lister, "unknown")
 	s.NotNil(err)

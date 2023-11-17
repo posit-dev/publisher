@@ -52,12 +52,12 @@ func OldDeploymentFromConfig(path util.Path, cfg *config.Config, account *accoun
 	targetID := OldTargetID{
 		ContentId: contentID,
 	}
-	if target != nil {
-		targetID.ServerType = target.ServerType
-		targetID.ServerURL = target.ServerURL
-	} else if account != nil {
+	if account != nil {
 		targetID.ServerType = account.ServerType
 		targetID.ServerURL = account.URL
+	} else if target != nil {
+		targetID.ServerType = target.ServerType
+		targetID.ServerURL = target.ServerURL
 	}
 	return &OldDeployment{
 		SourceDir: path,
