@@ -11,6 +11,8 @@ jobs:
     uses: ./.github/workflows/web.yaml
   build:
     uses: ./.github/workflows/build.yaml
+  package:
+    uses: ./.github/workflows/package.yaml
   bats:
     needs: build
     uses: ./.github/workflows/bats.yaml
@@ -22,4 +24,4 @@ jobs:
   jupyterlab:
     uses: ./.github/workflows/jupyterlab.yaml
   positron:
-    uses: ./.github/workflows/positron.yaml
+    uses: ./.github/workflows/vscode.yaml

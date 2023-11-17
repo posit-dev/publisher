@@ -73,7 +73,7 @@ bats *args:
 
     just _with_docker just test/bats/{{ args }}
 
-# Compiles the application using Go. Executables are written to `./dist`. If invoked with `env CI=true` then executables for all supported architectures using the Go toolchain.
+# Compiles the application using Go. Executables are written to `./bin`. If invoked with `env CI=true` then executables for all supported architectures using the Go toolchain.
 build:
     #!/usr/bin/env bash
     set -eou pipefail
@@ -191,6 +191,13 @@ lint: stub
     just _with_docker go vet -all ./...
     just _with_docker ./scripts/fmt-check.bash
 
+name:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    basename {{ _cmd }}
+
 # Prints the pre-release status based on the version (see `just version`).
 pre-release:
     #!/usr/bin/env bash
@@ -198,13 +205,6 @@ pre-release:
     {{ _with_debug }}
 
     ./scripts/is-pre-release.bash
-
-positron *args:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just _with_docker just extensions/positron/{{ args }}
 
 # Runs the CLI via `go run`.
 run *args:
@@ -260,6 +260,14 @@ version:
     {{ _with_debug }}
 
     ./scripts/get-version.bash
+
+# Executes commands in ./extensions/vscode/Justfile. Equivalent to `just extensions/vscode`, but inside of Docker (i.e., just _with_docker extension/vscode)
+vscode *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just extensions/vscode/{{ args }}
 
 [private]
 _with_docker *args:

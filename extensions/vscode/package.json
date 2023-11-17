@@ -1,8 +1,8 @@
 {
-  "name": "positron-publisher",
+  "name": "publisher",
   "displayName": "Positron Publisher",
   "description": "Publish your applications from Positron to Posit products",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/rstudio/publishing-client/tree/main/extensions/positron"

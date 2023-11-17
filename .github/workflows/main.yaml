@@ -21,4 +21,4 @@ jobs:
   jupyterlab:
     uses: ./.github/workflows/jupyterlab.yaml
   positron:
-    uses: ./.github/workflows/positron.yaml
+    uses: ./.github/workflows/vscode.yaml
