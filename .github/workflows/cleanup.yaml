@@ -1,0 +1,20 @@
+name: fuzzbucket
+on:
+  workflow_call:
+jobs:
+  cleanup-connect:
+    env:
+      DOCKER: false
+      FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+      FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+      FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - uses: extractions/setup-just@v1
+      - run: just cy fuzzbucket-stop
