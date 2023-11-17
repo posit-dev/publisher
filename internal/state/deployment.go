@@ -38,11 +38,10 @@ func OldDeploymentFromState(s *State) *OldDeployment {
 
 func OldDeploymentFromConfig(path util.Path, cfg *config.Config, account *accounts.Account, target *deployment.Deployment) *OldDeployment {
 	var contentID types.ContentID
-	var files bundles.ManifestFileMap
+	files := make(bundles.ManifestFileMap)
 
 	if target != nil {
 		contentID = target.Id
-		files = make(bundles.ManifestFileMap)
 		for _, f := range target.Files {
 			files[f] = bundles.ManifestFile{
 				Checksum: "",
