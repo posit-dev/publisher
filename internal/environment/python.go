@@ -139,5 +139,10 @@ func (i *defaultPythonInspector) EnsurePythonRequirementsFile() error {
 	if err != nil {
 		return err
 	}
-	return requirementsFilename.WriteFile(out, 0666)
+	err = requirementsFilename.WriteFile(out, 0666)
+	if err != nil {
+		return err
+	}
+	i.log.Info("Wrote requirements file", "path", requirementsFilename)
+	return nil
 }

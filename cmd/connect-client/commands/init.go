@@ -95,6 +95,8 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	}
 	configPath := config.GetConfigPath(cmd.Path, cmd.ConfigName)
 	err = cmd.config.WriteFile(configPath)
+	ctx.Logger.Info("Wrote config file", "path", configPath)
+
 	if err != nil {
 		return err
 	}
