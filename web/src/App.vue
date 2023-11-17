@@ -1,142 +1,20 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-layout
-    view="hHh lpR fFf"
-  >
-    <q-header
-      elevated
-      class="my-class"
-    >
-      <q-toolbar class="max-width-md q-pa-auto">
-        <AppMenu />
-        <WhitePositLogo
-          width="70px"
-          height="30px"
-          class="posit-logo"
-          alt="Posit PBC Logo"
-        />
-        <q-toolbar-title class="q-pl-xs">
-          Publisher
-        </q-toolbar-title>
-      </q-toolbar>
-    </q-header>
-
-    <q-page-container>
-      <ConfigurePublish
-        v-if="currentView === 'configure'"
-        @publish="onPublish"
-      />
-      <PublishProcess
-        v-if="currentView === 'publish'"
-        @back="onConfigure"
-      />
-    </q-page-container>
-  </q-layout>
+  <div id="app">
+    <h1>Hello App!</h1>
+    <!-- route outlet -->
+    <!-- component matched by the route will render here -->
+    <router-view />
+  </div>
 </template>
 
 <script setup lang="ts">
 
-import { onBeforeUnmount, ref } from 'vue';
 import { useQuasar } from 'quasar';
-
-import AppMenu from 'src/components/AppMenu.vue';
-import ConfigurePublish from 'src/components/configurePublish/ConfigurePublish.vue';
-import PublishProcess from 'src/components/publishProcess/PublishProcess.vue';
-import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
-
-import { useApi } from 'src/api';
-import { useDeploymentStore } from 'src/stores/deployment';
-import { useColorStore } from 'src/stores/color';
-import { colorToHex } from 'src/utils/colorValues';
-
-import {
-  EventStreamMessage,
-  isPublishStart,
-  isPublishSuccess,
-  getLocalId,
-} from 'src/api/types/events';
-import { useEventStream } from 'src/plugins/eventStream';
-
-type viewType = 'configure' | 'publish';
-
-const currentView = ref<viewType>('configure');
-const api = useApi();
-const deploymentStore = useDeploymentStore();
-const colorStore = useColorStore();
 
 const $q = useQuasar();
 $q.dark.set('auto');
 
-const $eventStream = useEventStream();
-
-// Temporary storage of events
-const allEvents = ref<EventStreamMessage[]>([]);
-
-const onPublish = () => {
-  currentView.value = 'publish';
-};
-const onConfigure = () => {
-  currentView.value = 'configure';
-};
-
-const getInitialDeploymentState = async() => {
-  const { data: deployment } = await api.deployment.get();
-  deploymentStore.deployment = deployment;
-};
-
-let currentPublishStreamID: string = '';
-
-const incomingEvent = (msg: EventStreamMessage) => {
-  // We are going to filter these events based on current job id (localId)
-  // specific to any publish process. (i.e. Don't display old stream messages which
-  // happen to come in which were part of the last publish cycle started.)
-  const newId = getLocalId(msg);
-
-  // publish/start event establishes the publishing job id
-  if (isPublishStart(msg)) {
-    if (newId) {
-      currentPublishStreamID = newId;
-    }
-  } else if (isPublishSuccess(msg)) {
-    currentPublishStreamID = '';
-  }
-  // if we have a publishing job id
-  if (currentPublishStreamID && newId !== currentPublishStreamID) {
-    return;
-  }
-  allEvents.value.push(msg);
-};
-
-$eventStream.addEventMonitorCallback('*', incomingEvent);
-$eventStream.setDebugMode(true);
-$eventStream.open('api/events?stream=messages');
-console.log($eventStream.status());
-
-// Have to be sure to close connection or it will be leaked on agent (if it continues to run)
-onBeforeUnmount(() => {
-  $eventStream.close();
-});
-
-getInitialDeploymentState();
 </script>
 
-<style lang="scss">
-// Add colors to Quasar Palette (white and black)
-.text-white {
-  color: white !important;
-}
-.bg-white {
-  background: white !important;
-}
-.text-black {
-  color: black !important;
-}
-.bg-black {
-  background: black !important;
-}
-.posit-logo {
-  fill: v-bind('colorToHex(colorStore.activePallete.logo.fill)');
-  stroke: v-bind('colorToHex(colorStore.activePallete.logo.stroke)');
-}
-</style>
