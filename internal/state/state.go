@@ -52,14 +52,14 @@ func loadTarget(path util.Path, targetID string) (*deployment.Deployment, error)
 
 // getDefaultAccount returns the name of the default account,
 // which is the first Connect account alphabetically by name.
-func getDefaultAccount(accounts []accounts.Account) (*accounts.Account, error) {
+func getDefaultAccount(accounts []accounts.Account) *accounts.Account {
 	if len(accounts) == 0 {
-		return nil, nil
+		return nil
 	}
 	sort.Slice(accounts, func(i, j int) bool {
 		return accounts[i].Name < accounts[j].Name
 	})
-	return &accounts[0], nil
+	return &accounts[0]
 }
 
 func loadAccount(accountName string, accountList accounts.AccountList) (*accounts.Account, error) {
@@ -68,11 +68,7 @@ func loadAccount(accountName string, accountList accounts.AccountList) (*account
 		if err != nil {
 			return nil, err
 		}
-		account, err := getDefaultAccount(accounts)
-		if err != nil {
-			return nil, err
-		}
-		return account, nil
+		return getDefaultAccount(accounts), nil
 	} else {
 		account, err := accountList.GetAccountByName(accountName)
 		if err != nil {

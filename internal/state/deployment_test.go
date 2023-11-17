@@ -19,24 +19,21 @@ func TestDeploymentSuite(t *testing.T) {
 }
 
 func (s *DeploymentSuite) TestGetDefaultAccountEmpty() {
-	acct, err := getDefaultAccount([]accounts.Account{})
-	s.NoError(err)
+	acct := getDefaultAccount([]accounts.Account{})
 	s.Nil(acct)
 }
 
 func (s *DeploymentSuite) TestGetDefaultAccountOne() {
-	acct, err := getDefaultAccount([]accounts.Account{
+	acct := getDefaultAccount([]accounts.Account{
 		{Name: "abc"},
 	})
-	s.NoError(err)
 	s.Equal("abc", acct.Name)
 }
 
 func (s *DeploymentSuite) TestGetDefaultAccountMultiple() {
-	acct, err := getDefaultAccount([]accounts.Account{
+	acct := getDefaultAccount([]accounts.Account{
 		{Name: "def"},
 		{Name: "abc"},
 	})
-	s.NoError(err)
 	s.Equal("abc", acct.Name)
 }
