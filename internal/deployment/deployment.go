@@ -29,6 +29,7 @@ func New() *Deployment {
 	return &Deployment{
 		Schema:        DeploymentSchema,
 		Configuration: *config.New(),
+		Files:         []string{},
 	}
 }
 

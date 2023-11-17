@@ -78,9 +78,6 @@ func loadAccount(accountName string, accountList accounts.AccountList) (*account
 	}
 }
 
-var errTargetImpliesConfig = errors.New("cannot specify --config with --target")
-var errTargetImpliesAccount = errors.New("cannot specify --account with --target")
-
 func Empty() *State {
 	return &State{
 		Account: &accounts.Account{},
@@ -95,29 +92,22 @@ func New(path util.Path, accountName, configName, targetID string, accountList a
 	var err error
 
 	if targetID != "" {
-		// Specifying an existing deployment determines
-		// the account and configuration.
-		// TODO: see if this can be done with a Kong group.
-		if configName != "" && configName != config.DefaultConfigName {
-			return nil, errTargetImpliesConfig
-		}
-		if accountName != "" {
-			return nil, errTargetImpliesAccount
-		}
 		target, err = loadTarget(path, targetID)
 		if err != nil {
 			return nil, err
 		}
-
-		// Target specifies the configuration name
-		configName = target.ConfigName
-
-		// and the account's server URL
-		account, err = accountList.GetAccountByServerURL(target.ServerURL)
-		if err != nil {
-			return nil, err
+		// Target specifies the configuration and account names,
+		// unless the caller overrides.
+		if configName == "" {
+			configName = target.ConfigName
 		}
-		accountName = account.Name
+		if accountName == "" {
+			account, err = accountList.GetAccountByServerURL(target.ServerURL)
+			if err != nil {
+				return nil, err
+			}
+			accountName = account.Name
+		}
 	} else {
 		// Use specified account, or default account
 		account, err = loadAccount(accountName, accountList)

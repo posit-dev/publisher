@@ -282,3 +282,43 @@ func (s *StateSuite) TestNewConfigErr() {
 	s.ErrorContains(err, "couldn't load configuration")
 	s.Nil(state)
 }
+
+func (s *StateSuite) TestNewWithTarget() {
+	accts := &accounts.MockAccountList{}
+	acct1 := accounts.Account{
+		Name: "acct1",
+		URL:  "https://saved.server.example.com",
+	}
+	acct2 := accounts.Account{
+		Name: "acct2",
+		URL:  "https://another.server.example.com",
+	}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct1, acct2}, nil)
+	accts.On("GetAccountByName", "acct1").Return(&acct1, nil)
+	accts.On("GetAccountByName", "acct2").Return(&acct2, nil)
+	accts.On("GetAccountByServerURL", "https://saved.server.example.com").Return(&acct1, nil)
+	accts.On("GetAccountByServerURL", "https://another.server.example.com").Return(&acct2, nil)
+
+	configPath := config.GetConfigPath(s.cwd, "savedConfigName")
+	cfg := config.New()
+	err := cfg.WriteFile(configPath)
+	s.NoError(err)
+
+	targetPath := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
+	d := deployment.New()
+	d.Id = "myTargetID"
+	d.ConfigName = "savedConfigName"
+	d.ServerURL = "https://saved.server.example.com"
+	err = d.WriteFile(targetPath)
+	s.NoError(err)
+
+	state, err := New(s.cwd, "", "", "myTargetID", accts)
+	s.NoError(err)
+	s.NotNil(state)
+	s.Equal(state.AccountName, "acct1")
+	s.Equal(state.ConfigName, "savedConfigName")
+	s.Equal(state.TargetID, "myTargetID")
+	s.Equal(state.Account, &acct1)
+	s.Equal(state.Config, cfg)
+	s.Equal(state.Target, d)
+}
