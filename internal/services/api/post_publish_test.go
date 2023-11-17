@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -74,4 +75,68 @@ func (s *PublishHandlerFuncSuite) TestPublishHandlerFunc() {
 	s.NotEqual(state.LocalDeploymentID(""), stateStore.LocalID)
 	s.NotEqual(oldID, stateStore.LocalID)
 	s.Equal(stateStore.LocalID, res.LocalID)
+}
+
+func (s *PublishHandlerFuncSuite) TestPublishHandlerFuncBadJSON() {
+	log := logging.New()
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/publish", nil)
+	s.NoError(err)
+
+	req.Body = io.NopCloser(strings.NewReader("{\"random\":\"123\"}"))
+
+	handler := PostPublishHandlerFunc(nil, util.Path{}, log, nil, nil, nil)
+	handler(rec, req)
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+}
+
+func (s *PublishHandlerFuncSuite) TestPublishHandlerFuncStateErr() {
+	log := logging.New()
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/publish", nil)
+	s.NoError(err)
+	req.Body = io.NopCloser(strings.NewReader("{}"))
+
+	stateFactory := func(
+		path util.Path,
+		accountName, configName, targetID string,
+		accountList accounts.AccountList) (*state.State, error) {
+		return nil, errors.New("test error from state factory")
+	}
+
+	handler := PostPublishHandlerFunc(nil, util.Path{}, log, nil, stateFactory, nil)
+	handler(rec, req)
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+}
+
+func (s *PublishHandlerFuncSuite) TestPublishHandlerFuncPublishErr() {
+	log := logging.New()
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/publish", nil)
+	s.NoError(err)
+
+	lister := &accounts.MockAccountList{}
+	req.Body = io.NopCloser(strings.NewReader("{\"account\":\"local\", \"config\":\"default\"}"))
+
+	stateFactory := func(
+		path util.Path,
+		accountName, configName, targetID string,
+		accountList accounts.AccountList) (*state.State, error) {
+		return state.Empty(), nil
+	}
+
+	testErr := errors.New("test error from PublishDirectory")
+	publisher := &mockPublisher{}
+	publisher.On("PublishDirectory", mock.Anything).Return(testErr)
+	publisherFactory := func(*state.State) publish.Publisher {
+		return publisher
+	}
+
+	handler := PostPublishHandlerFunc(state.Empty(), util.Path{}, log, lister, stateFactory, publisherFactory)
+	handler(rec, req)
+
+	// Handler returns 202 Accepted even if publishing errs,
+	// because the publish action is asynchronous.
+	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
 }

@@ -3,6 +3,7 @@ package main
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"os"
 	"runtime/pprof"
 
@@ -42,6 +43,7 @@ func makeContext(log logging.Logger) (*cli_types.CLIContext, error) {
 func Fatal(log logging.Logger, msg string, err error, args ...any) {
 	args = append([]any{"error", err.Error()}, args...)
 	log.Error(msg, args...)
+	fmt.Fprintln(os.Stderr, "\n", err)
 	os.Exit(1)
 }
 

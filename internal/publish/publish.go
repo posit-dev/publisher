@@ -183,12 +183,12 @@ func (p *defaultPublisher) publishWithClient(
 		Configuration: *p.Config,
 	}
 	// Save current deployment information for this target
-	err = p.Target.WriteFile(deployment.GetDeploymentPath(p.Dir, p.Target))
+	err = p.Target.WriteFile(deployment.GetLatestDeploymentPath(p.Dir, string(p.Target.Id)))
 	if err != nil {
 		return err
 	}
 	// and create a new history entry
-	historyPath, err := deployment.GetDeploymentHistoryPath(p.Dir, p.Target)
+	historyPath, err := deployment.GetDeploymentHistoryPath(p.Dir, string(p.Target.Id))
 	if err != nil {
 		return err
 	}

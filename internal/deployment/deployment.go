@@ -32,16 +32,16 @@ func New() *Deployment {
 	}
 }
 
-func GetDeploymentPath(base util.Path, d *Deployment) util.Path {
-	name := fmt.Sprintf("%s-%s.toml", d.ConfigName, d.Id)
-	return base.Join(".posit", "deployments", name)
+const latestDeploymentName = "latest.toml"
+
+func GetLatestDeploymentPath(base util.Path, id string) util.Path {
+	return base.Join(".posit", "deployments", id, latestDeploymentName)
 }
 
-func GetDeploymentHistoryPath(base util.Path, d *Deployment) (util.Path, error) {
+func GetDeploymentHistoryPath(base util.Path, id string) (util.Path, error) {
 	for i := 1; ; i++ {
-		dirname := fmt.Sprintf("%s-%s", d.ConfigName, d.Id)
 		name := fmt.Sprintf("v%d.toml", i)
-		path := base.Join(".posit", "history", dirname, name)
+		path := base.Join(".posit", "deployments", id, name)
 		exists, err := path.Exists()
 		if err != nil {
 			return util.Path{}, err
@@ -52,21 +52,13 @@ func GetDeploymentHistoryPath(base util.Path, d *Deployment) (util.Path, error) 
 	}
 }
 
-func FromReader(r io.Reader) (*Deployment, error) {
-	dec := toml.NewDecoder(r)
-	dec.DisallowUnknownFields()
-	record := new(Deployment)
-	err := dec.Decode(record)
-	return record, err
-}
-
 func FromFile(path util.Path) (*Deployment, error) {
-	f, err := path.Open()
+	deployment := New()
+	err := util.ReadTOMLFile(path, deployment)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-	return FromReader(f)
+	return deployment, nil
 }
 
 func (record *Deployment) Write(w io.Writer) error {

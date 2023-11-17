@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/fs"
 	"sort"
-	"strings"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/config"
@@ -31,20 +30,20 @@ func loadConfig(path util.Path, configName string) (*config.Config, error) {
 	configPath := config.GetConfigPath(path, configName)
 	cfg, err := config.FromFile(configPath)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, fmt.Errorf("can't find configuration at '%s': %w", configPath, err)
+		}
 		return nil, err
 	}
 	return cfg, nil
 }
 
 func loadTarget(path util.Path, targetID string) (*deployment.Deployment, error) {
-	if !strings.HasSuffix(targetID, ".toml") {
-		targetID += ".toml"
-	}
-	configPath := path.Join(".posit", "deployments", targetID)
+	configPath := deployment.GetLatestDeploymentPath(path, targetID)
 	target, err := deployment.FromFile(configPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return nil, fmt.Errorf("can't find deployment at '%s'", configPath)
+			return nil, fmt.Errorf("can't find deployment at '%s': %w", configPath, err)
 		}
 		return nil, err
 	}
