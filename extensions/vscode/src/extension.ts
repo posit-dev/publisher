@@ -8,7 +8,7 @@ import * as ports from './ports';
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
-	let assistant = vscode.commands.registerCommand('positron.publisher.assistant.open', async () => {
+	vscode.commands.registerCommand('positron.publisher.assistant.open', async () => {
 		const port = await ports.acquire();
 		const path = vscode.workspace.workspaceFolders?.at(0)?.uri.path;
 		if (path === undefined) {
