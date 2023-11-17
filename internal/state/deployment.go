@@ -49,13 +49,19 @@ func OldDeploymentFromConfig(path util.Path, cfg *config.Config, account *accoun
 			}
 		}
 	}
+	targetID := OldTargetID{
+		ContentId: contentID,
+	}
+	if target != nil {
+		targetID.ServerType = target.ServerType
+		targetID.ServerURL = target.ServerURL
+	} else if account != nil {
+		targetID.ServerType = account.ServerType
+		targetID.ServerURL = account.URL
+	}
 	return &OldDeployment{
 		SourceDir: path,
-		Target: OldTargetID{
-			ServerType: account.ServerType,
-			ServerURL:  account.URL,
-			ContentId:  contentID,
-		},
+		Target:    targetID,
 		Manifest: bundles.Manifest{
 			Version: 1,
 			Metadata: bundles.Metadata{
