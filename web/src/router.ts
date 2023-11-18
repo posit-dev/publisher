@@ -7,7 +7,7 @@ import DeploymentDestinationPageVue from 'src/components/DeploymentDestinationPa
 import PublishProcessPageVue from 'src/components/PublishProcessPage.vue';
 
 const routes = [
-  { name: 'root', path: '/', redirect: { name: 'project' }},
+  { name: 'root', path: '/', redirect: { name: 'project' } },
   { name: 'project', path: '/project', component: ProjectPage },
   { name: 'destination', path: '/destination/:id', component: DeploymentDestinationPageVue },
   { name: 'progress', path: '/progress', component: PublishProcessPageVue },
