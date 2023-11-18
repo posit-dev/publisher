@@ -7,9 +7,10 @@ import DeploymentDestinationPageVue from 'src/components/DeploymentDestinationPa
 import PublishProcessPageVue from 'src/components/PublishProcessPage.vue';
 
 const routes = [
-  { path: '/', component: ProjectPage },
-  { path: '/destination/:id', component: DeploymentDestinationPageVue },
-  { path: '/progress', component: PublishProcessPageVue },
+  { name: 'root', path: '/', redirect: { name: 'project' }},
+  { name: 'project', path: '/project', component: ProjectPage },
+  { name: 'destination', path: '/destination/:id', component: DeploymentDestinationPageVue },
+  { name: 'progress', path: '/progress', component: PublishProcessPageVue },
 ];
 
 export const router = createRouter({

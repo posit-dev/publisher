@@ -10,7 +10,7 @@
       <q-page-container>
         <!-- route outlet -->
         <!-- component matched by the route will render here -->
-        <!-- <router-view /> -->
+        <router-view />
       </q-page-container>
     </q-layout>
   </div>
@@ -40,9 +40,5 @@ $q.dark.set('auto');
 }
 .bg-black {
   background: black !important;
-}
-.posit-logo {
-  fill: white;
-  stroke: none;
 }
 </style>
