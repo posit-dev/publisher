@@ -7,32 +7,28 @@
   >
     <q-toolbar class="max-width-md q-pa-auto">
       <AppMenu />
-      <WhitePositLogo
-        width="70px"
-        height="30px"
-        class="posit-logo"
-        alt="Posit PBC Logo"
-        @click="navigateToAppRoot"
-      />
-      <q-toolbar-title class="q-pl-xs">
-        Publisher
-      </q-toolbar-title>
+      <router-link
+        :to="{ name: 'root' }"
+        class="header row"
+      >
+        <WhitePositLogo
+          width="70px"
+          height="30px"
+          class="posit-logo"
+          alt="Posit PBC Logo"
+        />
+        <q-toolbar-title class="q-pl-xs">
+          Publisher
+        </q-toolbar-title>
+      </router-link>
     </q-toolbar>
   </q-header>
 </template>
 
 <script setup lang="ts">
 
-import { useRouter } from 'vue-router';
-
 import AppMenu from 'src/components/AppMenu.vue';
 import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
-
-const router = useRouter();
-
-const navigateToAppRoot = () => {
-  router.push({ name: 'root' });
-};
 
 </script>
 
@@ -42,6 +38,11 @@ const navigateToAppRoot = () => {
   fill: white;
   stroke: none;
   cursor: pointer;
+}
+
+.header {
+  text-decoration: none;
+  color: white;
 }
 
 </style>
