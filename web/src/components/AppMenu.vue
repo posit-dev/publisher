@@ -9,7 +9,6 @@
     >
       <q-menu>
         <q-list
-          style="min-width: 100px"
           class="q-pa-sm"
         >
           <q-item
