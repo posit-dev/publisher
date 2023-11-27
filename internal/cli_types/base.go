@@ -13,7 +13,7 @@ import (
 
 type CommonArgs struct {
 	Debug   bool   `help:"Enable debug mode." env:"CONNECT_DEBUG"`
-	Profile string `help:"Enable CPU profiling"`
+	Profile string `help:"Enable CPU profiling" kong:"hidden"`
 }
 
 type Log interface {
@@ -45,11 +45,11 @@ type UIArgs struct {
 }
 
 type PublishArgs struct {
-	Python util.Path `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
-	Path   util.Path `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
-	Config string    `help:"Name of metadata directory to load/save (see ./.posit/deployments/)."`
-	New    bool      `help:"Create a new deployment instead of updating the previous deployment."`
+	Path        util.Path `help:"Path to directory containing files to publish, or a file within that directory." arg:""`
+	AccountName string    `short:"n" help:"Nickname of destination publishing account."`
+	Config      string    `short:"c" help:"Configuration file name (in .posit/publish/). Default is deploy.toml."`
+	New         bool      `help:"Create a new deployment instead of updating the previous deployment."`
 	// Store for the deployment State that will be served to the UI,
 	// published, written to manifest and metadata files, etc.
-	State *state.Deployment `kong:"embed"`
+	State *state.Deployment `kong:"-"`
 }

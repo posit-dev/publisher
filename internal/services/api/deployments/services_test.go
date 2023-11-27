@@ -60,7 +60,6 @@ func (s *ServicesSuite) TestSetDeploymentTitle() {
 
 func (s *ServicesSuite) TestSetDeploymentAccount() {
 	src := state.NewDeployment()
-	s.Equal(src.Target.AccountName, "")
 	s.Equal(src.Target.ServerType, accounts.ServerType(""))
 	s.Equal(src.Target.ServerURL, "")
 
@@ -79,7 +78,6 @@ func (s *ServicesSuite) TestSetDeploymentAccount() {
 	res, err := service.SetDeploymentAccount(lister, "test")
 	s.Nil(err)
 
-	s.Equal(res.Target.AccountName, result.Name)
 	s.Equal(res.Target.ServerType, result.ServerType)
 	s.Equal(res.Target.ServerURL, result.URL)
 

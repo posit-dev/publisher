@@ -114,7 +114,7 @@ func (p *Publisher) publish(
 	lister accounts.AccountList,
 	log logging.Logger) error {
 
-	account, err := lister.GetAccountByName(p.args.State.Target.AccountName)
+	account, err := lister.GetAccountByName(p.args.AccountName)
 	if err != nil {
 		return err
 	}
@@ -220,13 +220,11 @@ func (p *Publisher) publishWithClient(
 
 	p.args.State.Target = state.TargetID{
 		ServerType:  account.ServerType,
-		AccountName: account.Name,
 		ServerURL:   account.URL,
 		ContentId:   contentID,
 		ContentName: "",
 		Username:    account.AccountName,
 		BundleId:    types.NewOptional(bundleID),
-		DeployedAt:  types.NewOptional(time.Now()),
 	}
 
 	taskID, err := withLog(events.PublishDeployBundleOp, "Initiating bundle deployment", "task_id", log, func() (types.TaskID, error) {

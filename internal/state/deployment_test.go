@@ -35,7 +35,6 @@ func (s *DeploymentSuite) TestMergeEmpty() {
 	orig := NewDeployment()
 	orig.SourceDir = util.NewPath("/my/dir", nil)
 	orig.PythonRequirements = []byte("numpy\npandas\n")
-	orig.Target.AccountName = "my-account"
 	orig.Target.ServerType = accounts.ServerTypeConnect
 	orig.Target.ServerURL = "https://connect.example.com"
 	orig.Target.ContentId = "abc123"
@@ -51,7 +50,6 @@ func (s *DeploymentSuite) TestMergeNonEmpty() {
 	orig := NewDeployment()
 	orig.SourceDir = util.NewPath("/my/dir", nil)
 	orig.PythonRequirements = []byte("numpy\npandas\n")
-	orig.Target.AccountName = "my-account"
 	orig.Target.ServerType = accounts.ServerTypeConnect
 	orig.Target.ServerURL = "https://connect.example.com"
 	orig.Target.ContentId = "abc123"
@@ -61,7 +59,6 @@ func (s *DeploymentSuite) TestMergeNonEmpty() {
 	other := NewDeployment()
 	other.SourceDir = util.NewPath("/other/dir", nil)
 	other.PythonRequirements = []byte("flask\n")
-	other.Target.AccountName = "your-account"
 	other.Target.ServerType = accounts.ServerTypeShinyappsIO
 	other.Target.ServerURL = "https://shinyapps.io"
 	other.Target.ContentId = types.ContentID("99")
@@ -69,7 +66,6 @@ func (s *DeploymentSuite) TestMergeNonEmpty() {
 	merged.Merge(other)
 	s.Equal(other.SourceDir, merged.SourceDir)
 	s.Equal([]byte("numpy\npandas\nflask\n"), merged.PythonRequirements)
-	s.Equal("your-account", merged.Target.AccountName)
 	s.Equal(accounts.ServerTypeShinyappsIO, merged.Target.ServerType)
 	s.Equal("https://shinyapps.io", merged.Target.ServerURL)
 	s.Equal(types.ContentID("99"), merged.Target.ContentId)
@@ -90,10 +86,14 @@ func (s *DeploymentSuite) TestLoadManifest() {
 	err = deployment.LoadManifest(path, log)
 	s.Nil(err)
 	s.Equal(bundles.Manifest{
-		Version:  1,
-		Platform: "4.1.0",
-		Packages: bundles.PackageMap{},
-		Files:    bundles.ManifestFileMap{},
+		Version:     1,
+		Platform:    "4.1.0",
+		Python:      &bundles.Python{},
+		Quarto:      &bundles.Quarto{},
+		Jupyter:     &bundles.Jupyter{},
+		Environment: &bundles.Environment{},
+		Packages:    bundles.PackageMap{},
+		Files:       bundles.ManifestFileMap{},
 	}, deployment.Manifest)
 }
 
@@ -111,10 +111,14 @@ func (s *DeploymentSuite) TestLoadManifestDir() {
 	err = deployment.LoadManifest(path, log)
 	s.Nil(err)
 	s.Equal(bundles.Manifest{
-		Version:  1,
-		Platform: "4.1.0",
-		Packages: bundles.PackageMap{},
-		Files:    bundles.ManifestFileMap{},
+		Version:     1,
+		Platform:    "4.1.0",
+		Python:      &bundles.Python{},
+		Quarto:      &bundles.Quarto{},
+		Jupyter:     &bundles.Jupyter{},
+		Environment: &bundles.Environment{},
+		Packages:    bundles.PackageMap{},
+		Files:       bundles.ManifestFileMap{},
 	}, deployment.Manifest)
 }
 
