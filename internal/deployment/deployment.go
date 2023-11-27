@@ -35,14 +35,23 @@ func New() *Deployment {
 
 const latestDeploymentName = "latest.toml"
 
+func GetDeploymentsPath(base util.Path) util.Path {
+	return base.Join(".posit", "deployments")
+}
+
 func GetLatestDeploymentPath(base util.Path, id string) util.Path {
-	return base.Join(".posit", "deployments", id, latestDeploymentName)
+	return GetDeploymentsPath(base).Join(id, latestDeploymentName)
+}
+
+func ListLatestDeploymentFiles(base util.Path) ([]util.Path, error) {
+	dir := GetDeploymentsPath(base)
+	return dir.Glob("*/" + latestDeploymentName)
 }
 
 func GetDeploymentHistoryPath(base util.Path, id string) (util.Path, error) {
 	for i := 1; ; i++ {
 		name := fmt.Sprintf("v%d.toml", i)
-		path := base.Join(".posit", "deployments", id, name)
+		path := GetDeploymentsPath(base).Join(id, name)
 		exists, err := path.Exists()
 		if err != nil {
 			return util.Path{}, err

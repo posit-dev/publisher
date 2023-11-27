@@ -20,6 +20,10 @@ func New() *Config {
 	}
 }
 
+func GetConfigDir(base util.Path) util.Path {
+	return base.Join(".posit", "publish")
+}
+
 func GetConfigPath(base util.Path, configName string) util.Path {
 	if configName == "" {
 		configName = DefaultConfigName
@@ -27,7 +31,12 @@ func GetConfigPath(base util.Path, configName string) util.Path {
 	if !strings.HasSuffix(configName, ".toml") {
 		configName += ".toml"
 	}
-	return base.Join(".posit", "publish", configName)
+	return GetConfigDir(base).Join(configName)
+}
+
+func ListConfigFiles(base util.Path) ([]util.Path, error) {
+	dir := GetConfigDir(base)
+	return dir.Glob("*.toml")
 }
 
 func FromFile(path util.Path) (*Config, error) {
