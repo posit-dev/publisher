@@ -17,6 +17,7 @@ type AccountList interface {
 	GetAllAccounts() ([]Account, error)
 	GetAccountByName(name string) (*Account, error)
 	GetAccountsByServerType(_ ServerType) ([]Account, error)
+	GetAccountByServerURL(url string) (*Account, error)
 }
 
 type defaultAccountList struct {
@@ -60,6 +61,19 @@ func (l *defaultAccountList) GetAccountByName(name string) (*Account, error) {
 		}
 	}
 	return nil, fmt.Errorf("there is no account named '%s'", name)
+}
+
+func (l *defaultAccountList) GetAccountByServerURL(url string) (*Account, error) {
+	accounts, err := l.GetAllAccounts()
+	if err != nil {
+		return nil, err
+	}
+	for _, account := range accounts {
+		if account.URL == url {
+			return &account, nil
+		}
+	}
+	return nil, fmt.Errorf("there is no account for the server '%s'", url)
 }
 
 func (l *defaultAccountList) GetAccountsByServerType(serverType ServerType) (accounts []Account, err error) {

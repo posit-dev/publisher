@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -41,10 +42,6 @@ func (s *ManifestSuite) TestNewManifest() {
 	s.Equal(1, manifest.Version)
 	s.Empty(manifest.Packages)
 	s.Empty(manifest.Files)
-	s.Nil(manifest.Python)
-	s.Nil(manifest.Jupyter)
-	s.Nil(manifest.Quarto)
-	s.Nil(manifest.Environment)
 }
 
 func (s *ManifestSuite) TestAddFile() {
@@ -62,10 +59,14 @@ func (s *ManifestSuite) TestReadManifest() {
 	manifest, err := ReadManifest(reader)
 	s.Nil(err)
 	s.Equal(&Manifest{
-		Version:  1,
-		Platform: "4.1.0",
-		Packages: PackageMap{},
-		Files:    ManifestFileMap{},
+		Version:     1,
+		Platform:    "4.1.0",
+		Python:      &Python{},
+		Quarto:      &Quarto{},
+		Jupyter:     &Jupyter{},
+		Environment: &Environment{},
+		Packages:    PackageMap{},
+		Files:       ManifestFileMap{},
 	}, manifest)
 }
 
@@ -100,10 +101,14 @@ func (s *ManifestSuite) TestReadManifestFile() {
 	manifest, err := ReadManifestFile(manifestPath)
 	s.Nil(err)
 	s.Equal(&Manifest{
-		Version:  1,
-		Platform: "4.1.0",
-		Packages: PackageMap{},
-		Files:    ManifestFileMap{},
+		Version:     1,
+		Platform:    "4.1.0",
+		Python:      &Python{},
+		Quarto:      &Quarto{},
+		Jupyter:     &Jupyter{},
+		Environment: &Environment{},
+		Packages:    PackageMap{},
+		Files:       ManifestFileMap{},
 	}, manifest)
 }
 
@@ -116,166 +121,48 @@ func (s *ManifestSuite) TestReadManifestFileErr() {
 	s.Nil(manifest)
 }
 
-func (s *ManifestSuite) TestMergeEmpty() {
-	orig := Manifest{
-		Version:  1,
-		Platform: "4.1.0",
-		Packages: PackageMap{},
-		Files:    ManifestFileMap{},
-		Metadata: Metadata{
-			AppMode:         "python-fastapi",
-			ContentCategory: "",
-			Entrypoint:      "app.py",
-			PrimaryRmd:      "rmd",
-			PrimaryHtml:     "html",
-			HasParameters:   false,
+func (s *ManifestSuite) TestNewManifestFromConfig() {
+	cfg := &config.Config{
+		Schema:      config.ConfigSchema,
+		Type:        "python-dash",
+		Entrypoint:  "app:myapp",
+		Title:       "Super Title",
+		Description: "minimal description",
+		Python: config.Python{
+			Version:        "3.4.5",
+			PackageFile:    "requirements.in",
+			PackageManager: "pip",
+		},
+		R: config.R{
+			Version:        "4.5.6",
+			PackageFile:    "renv.lock",
+			PackageManager: "renv",
+		},
+		Quarto: config.Quarto{
+			Version: "1.2.3",
+			Engines: []string{"jupyter"},
 		},
 	}
-	added := Manifest{}
-	merged := orig
-	merged.Merge(&added)
-	s.Equal(orig, merged)
-}
-
-func (s *ManifestSuite) TestMergeNonEmpty() {
-	orig := Manifest{
+	m := NewManifestFromConfig(cfg)
+	s.Equal(&Manifest{
 		Version:  1,
-		Platform: "4.1.0",
-		Packages: PackageMap{
-			"shiny": Package{
-				Source:     "source",
-				Repository: "CRAN",
-				Description: map[string]string{
-					"field": "value",
-				},
-			},
-		},
-		Files: ManifestFileMap{
-			"app.py": ManifestFile{
-				Checksum: "abc123",
-			},
-		},
+		Platform: "4.5.6",
 		Metadata: Metadata{
-			AppMode:         "python-fastapi",
-			ContentCategory: "",
-			Entrypoint:      "app.py",
-			PrimaryRmd:      "rmd",
-			PrimaryHtml:     "html",
-			HasParameters:   false,
+			AppMode:    "python-dash",
+			Entrypoint: "app:myapp",
 		},
 		Python: &Python{
-			Version: "3.9.1",
+			Version: "3.4.5",
 			PackageManager: PythonPackageManager{
 				Name:        "pip",
-				Version:     "23.1.1",
-				PackageFile: "requirements.txt",
+				PackageFile: "requirements.in",
 			},
-		},
-		Jupyter: &Jupyter{
-			HideAllInput:    false,
-			HideTaggedInput: false,
 		},
 		Quarto: &Quarto{
-			Version: "1.0.0",
-			Engines: []string{"knitr"},
+			Version: "1.2.3",
+			Engines: []string{"jupyter"},
 		},
-		Environment: &Environment{
-			Image:    "my-super-image",
-			Prebuilt: false,
-		},
-	}
-	added := Manifest{Version: 1,
-		Platform: "4.1.0",
-		Packages: PackageMap{
-			"knitr": Package{
-				Source:     "no",
-				Repository: "CRAN",
-				Description: map[string]string{
-					"field": "value",
-				},
-			},
-		},
-		Files: ManifestFileMap{
-			"app.py": ManifestFile{
-				Checksum: "987654",
-			},
-		},
-		Metadata: Metadata{
-			AppMode:         "quarto-shiny",
-			ContentCategory: "something",
-			Entrypoint:      "app.py",
-			PrimaryRmd:      "nope",
-			PrimaryHtml:     "also no",
-			HasParameters:   true,
-		},
-		Python: &Python{
-			Version: "3.10.2",
-			PackageManager: PythonPackageManager{
-				Name:        "pip",
-				Version:     "22.0.1",
-				PackageFile: "requirements.txt",
-			},
-		},
-		Jupyter: &Jupyter{
-			HideAllInput:    true,
-			HideTaggedInput: true,
-		},
-		Quarto: &Quarto{
-			Version: "0.9.0",
-			Engines: []string{"knitr"},
-		},
-		Environment: &Environment{
-			Image:    "some-image",
-			Prebuilt: true,
-		},
-	}
-	merged := orig
-	merged.Merge(&added)
-
-	// Package list will contain both.
-	s.Len(merged.Packages, 2)
-	// Then drop it so we can do a single compare of the other fields.
-	merged.Packages = added.Packages
-	s.Equal(added, merged)
-}
-
-func (s *ManifestSuite) TestResetEmptyFieldsNonEmpty() {
-	m := Manifest{
-		Python: &Python{
-			Version: "3.8.1",
-		},
-		Jupyter: &Jupyter{
-			HideAllInput: true,
-		},
-		Quarto: &Quarto{
-			Version: "0.9.0",
-		},
-		Environment: &Environment{
-			Image: "my-image",
-		},
-	}
-	orig := m
-	m.ResetEmptyFields()
-	s.Equal(orig, m)
-}
-
-func (s *ManifestSuite) TestResetEmptyFieldsNil() {
-	m := Manifest{}
-	orig := m
-	m.ResetEmptyFields()
-	s.Equal(orig, m)
-}
-
-func (s *ManifestSuite) TestResetEmptyFieldsEmpty() {
-	m := Manifest{
-		Python:      &Python{},
-		Jupyter:     &Jupyter{},
-		Quarto:      &Quarto{},
-		Environment: &Environment{},
-	}
-	m.ResetEmptyFields()
-	s.Nil(m.Python)
-	s.Nil(m.Jupyter)
-	s.Nil(m.Quarto)
-	s.Nil(m.Environment)
+		Packages: map[string]Package{},
+		Files:    map[string]ManifestFile{},
+	}, m)
 }

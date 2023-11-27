@@ -28,14 +28,14 @@ func (s *ServicesSuite) SetupSuite() {
 func (s *ServicesSuite) TestCreateFilesService() {
 	afs := afero.NewMemMapFs()
 	base := util.NewPath("", afs)
-	service := CreateFilesService(base, afs, s.log)
+	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
 }
 
 func (s *ServicesSuite) TestGetFile() {
 	afs := afero.NewMemMapFs()
 	base := util.NewPath("", afs)
-	service := CreateFilesService(base, afs, s.log)
+	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
 	file, err := service.GetFile(base)
 	s.Nil(err)
@@ -45,7 +45,7 @@ func (s *ServicesSuite) TestGetFile() {
 func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 	afs := afero.NewOsFs()
 	base := util.NewPath("../../../../test/sample-content/fastapi-simple", afs)
-	service := CreateFilesService(base, afs, s.log)
+	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
 	file, err := service.GetFile(base)
 	s.Nil(err)
@@ -55,7 +55,7 @@ func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
 	afs := afero.NewOsFs()
 	base := util.NewPath("../../../../test/sample-content/fastapi-simple/", afs)
-	service := CreateFilesService(base, afs, s.log)
+	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
 	file, err := service.GetFile(base)
 	s.Nil(err)

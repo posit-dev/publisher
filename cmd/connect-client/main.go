@@ -3,6 +3,7 @@ package main
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"os"
 	"runtime/pprof"
 
@@ -20,11 +21,10 @@ type cliSpec struct {
 	cli_types.CommonArgs
 	commands.AccountCommands `group:"Accounts"`
 
-	Publish       commands.PublishCmd       `kong:"cmd" help:"Publish a project."`
-	PublishUI     commands.PublishUICmd     `kong:"cmd" help:"Publish a project using the UI."`
-	CreateBundle  commands.CreateBundleCmd  `kong:"cmd" help:"Create a bundle file for a project directory."`
-	WriteManifest commands.WriteManifestCmd `kong:"cmd" help:"Create a manifest.json file for a project directory."`
-	Version       commands.VersionFlag      `help:"Show the client software version and exit."`
+	Init      commands.InitCommand  `kong:"cmd" help:"Create a configuration file based on the contents of the directory."`
+	Publish   commands.PublishCmd   `kong:"cmd" help:"Publish a project."`
+	PublishUI commands.PublishUICmd `kong:"cmd" help:"Publish a project using the UI."`
+	Version   commands.VersionFlag  `help:"Show the client software version and exit."`
 }
 
 func logVersion(log logging.Logger) {
@@ -43,6 +43,7 @@ func makeContext(log logging.Logger) (*cli_types.CLIContext, error) {
 func Fatal(log logging.Logger, msg string, err error, args ...any) {
 	args = append([]any{"error", err.Error()}, args...)
 	log.Error(msg, args...)
+	fmt.Fprintln(os.Stderr, "\n", err)
 	os.Exit(1)
 }
 
@@ -70,26 +71,8 @@ func main() {
 	if cli.Debug {
 		ctx.Logger = events.NewLogger(true)
 	}
-	cmd, ok := args.Selected().Target.Interface().(commands.StatefulCommand)
-	if ok {
-		// For these commands, we need to load saved deployment state
-		// from file, then overlay the alread-parsed CLI arguments on top.
-		err = cmd.LoadState(ctx)
-		if err != nil {
-			Fatal(log, "Error loading saved deployment", err)
-		}
-		err = args.Run(&cli.CommonArgs)
-		if err != nil {
-			Fatal(log, "Error running command", err)
-		}
-		err = cmd.SaveState(ctx)
-		if err != nil {
-			Fatal(log, "Error saving deployment", err)
-		}
-	} else {
-		err = args.Run(&cli.CommonArgs)
-		if err != nil {
-			Fatal(log, "Error running command", err)
-		}
+	err = args.Run(&cli.CommonArgs)
+	if err != nil {
+		Fatal(log, "Error running command", err)
 	}
 }
