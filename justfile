@@ -89,6 +89,23 @@ clean:
 
     rm -rf ./bin
 
+# Prints shell commands to configure executable on path. Configure your shell via: eval "$(just configure)"
+configure:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    pathname=`just executable-path`
+    if ! [ -f $pathname ]; then
+        echo "info: ${pathname} not found. Running 'just build'." 1>&2
+        just build 1>&2
+    fi
+
+    dir=`dirname $pathname`
+    base=`basename "$pathname"`
+    echo export PATH=`printf "%q" $PATH:$dir`
+    echo alias connect-client=$base
+
 # Display the code coverage collected during the last execution of `just test`.
 cover:
     #!/usr/bin/env bash
@@ -102,7 +119,7 @@ cy *args:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-
+    
     just _with_docker just test/cy/{{ args }}
 
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).

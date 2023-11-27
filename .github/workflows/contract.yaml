@@ -1,0 +1,34 @@
+name: Cypress-nightly
+on:
+  workflow_call:
+jobs:
+  native:
+    env:
+      DOCKER: false
+      FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+      FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+      FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - uses: extractions/setup-just@v1
+      - uses: actions/download-artifact@v3
+        with:
+          name: executables
+          path: bin
+      - run: chmod -R +x ./bin
+      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/cy/fuzzbucket-ssh-key && chmod 600 test/cy/fuzzbucket-ssh-key
+      - run: just cy install
+      - run: just cy test
+      - run: just cy test-deploy

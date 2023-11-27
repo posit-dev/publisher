@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.16.5",
-    "axios": "^1.4.0",
+    "axios": "^1.6.0",
     "camelcase-keys": "^9.0.0",
     "decamelize-keys": "^2.0.1",
     "pinia": "^2.1.6",

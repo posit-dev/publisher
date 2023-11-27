@@ -30,15 +30,15 @@ type StatefulCommand interface {
 }
 
 type BaseBundleCmd struct {
-	cli_types.PublishArgs
+	cli_types.PublishArgs `kong:"embed"`
 }
 
 func (cmd *BaseBundleCmd) getConfigName() string {
 	if cmd.Config != "" {
 		return cmd.Config
 	}
-	if cmd.State.Target.AccountName != "" {
-		return cmd.State.Target.AccountName
+	if cmd.AccountName != "" {
+		return cmd.AccountName
 	}
 	return ""
 }
@@ -49,13 +49,12 @@ func (cmd *BaseBundleCmd) LoadState(ctx *cli_types.CLIContext) error {
 	if err != nil {
 		return err
 	}
+	cmd.State = state.NewDeployment()
 	cmd.State.SourceDir = sourceDir
 	cmd.Config = cmd.getConfigName()
 
 	cliState := cmd.State
-	if cmd.New {
-		cmd.State = state.NewDeployment()
-	} else {
+	if !cmd.New {
 		if cmd.Config != "" {
 			// Config name provided, use that saved metadata.
 			log.Info("Attempting to load metadata for selected account/configuration",
@@ -74,16 +73,16 @@ func (cmd *BaseBundleCmd) LoadState(ctx *cli_types.CLIContext) error {
 			// No saved metadata found. Use the default account.
 			if cmd.State != nil {
 				log.Info("Loaded most recent deployment",
-					"name", cmd.State.Target.AccountName)
+					"name", cmd.AccountName)
 			} else {
 				cmd.State = state.NewDeployment()
 				accounts, err := ctx.Accounts.GetAccountsByServerType(accounts.ServerTypeConnect)
 				if err != nil {
 					return err
 				}
-				cmd.State.Target.AccountName = getDefaultAccount(accounts)
+				cmd.AccountName = getDefaultAccount(accounts)
 				log.Info("No saved metadata found; using the default account.",
-					"name", cmd.State.Target.AccountName)
+					"name", cmd.AccountName)
 			}
 		}
 	}
@@ -186,27 +185,35 @@ func (cmd *BaseBundleCmd) stateFromCLI(log logging.Logger) error {
 	}
 	log.Info("Deployment type", "Entrypoint", metadata.Entrypoint, "AppMode", metadata.AppMode)
 
+	initCommand := InitCommand{
+		State: cmd.State,
+	}
+	pythonRequired, err := initCommand.requiresPython()
+	if err != nil {
+		return err
+	}
+	if pythonRequired {
+		initCommand.inspectPython(log, manifest)
+	}
+
 	manifestFiles, err := createManifestFileMapFromSourceDir(cmd.State.SourceDir, log)
 	if err != nil {
 		return err
 	}
 	manifest.Files = manifestFiles
-
-	requiresPython, err := cmd.requiresPython()
-	if err != nil {
-		return err
-	}
-	if requiresPython {
-		err = cmd.inspectPython(log, manifest)
-		if err != nil {
-			return err
-		}
-	}
 	manifest.ResetEmptyFields()
 	return nil
 }
 
-func (cmd *BaseBundleCmd) requiresPython() (bool, error) {
+// This is an incomplete implementation of InitCommand,
+// created as a place to put the inspection code that was
+// previously part of BaseBundleCmd.
+type InitCommand struct {
+	Python util.Path         `help:"Path to Python interpreter for this content. Required unless you specify --python-version and include a requirements.txt file. Default is the Python 3 on your PATH."`
+	State  *state.Deployment `kong:"-"`
+}
+
+func (cmd *InitCommand) requiresPython() (bool, error) {
 	manifest := &cmd.State.Manifest
 	if manifest.Metadata.AppMode.IsPythonContent() {
 		return true, nil
@@ -228,7 +235,7 @@ func (cmd *BaseBundleCmd) requiresPython() (bool, error) {
 	return exists, nil
 }
 
-func (cmd *BaseBundleCmd) inspectPython(log logging.Logger, manifest *bundles.Manifest) error {
+func (cmd *InitCommand) inspectPython(log logging.Logger, manifest *bundles.Manifest) error {
 	inspector := environment.NewPythonInspector(cmd.State.SourceDir, cmd.Python, log)
 	if manifest.Python.Version == "" {
 		pythonVersion, err := inspector.GetPythonVersion()
@@ -250,31 +257,18 @@ func (cmd *BaseBundleCmd) inspectPython(log logging.Logger, manifest *bundles.Ma
 	return nil
 }
 
-type CreateBundleCmd struct {
-	*BaseBundleCmd `kong:"embed"`
-	BundleFile     util.Path `help:"Path to a file where the bundle should be written." kong:"required"`
-}
-
-func (cmd *CreateBundleCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	err := cmd.stateFromCLI(ctx.Logger)
+func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+	requiresPython, err := cmd.requiresPython()
 	if err != nil {
 		return err
 	}
-	publisher := publish.New(&cmd.PublishArgs)
-	return publisher.CreateBundleFromDirectory(cmd.BundleFile, ctx.Logger)
-}
-
-type WriteManifestCmd struct {
-	*BaseBundleCmd `kong:"embed"`
-}
-
-func (cmd *WriteManifestCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	err := cmd.stateFromCLI(ctx.Logger)
-	if err != nil {
-		return err
+	if requiresPython {
+		err = cmd.inspectPython(ctx.Logger, &cmd.State.Manifest)
+		if err != nil {
+			return err
+		}
 	}
-	publisher := publish.New(&cmd.PublishArgs)
-	return publisher.WriteManifestFromDirectory(ctx.Logger)
+	return nil
 }
 
 type PublishCmd struct {
@@ -308,7 +302,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		"/",
 		cmd.UIArgs,
 		&cmd.PublishArgs,
-		ctx.LocalToken,
 		ctx.Fs,
 		ctx.Accounts,
 		log,
