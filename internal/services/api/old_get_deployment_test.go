@@ -24,7 +24,7 @@ func TestGetDeploymentHandlerFuncSuite(t *testing.T) {
 func (s *GetDeploymentHandlerFuncSuite) TestGetDeploymentHandlerFunc() {
 	deploymentsService := new(MockDeploymentsService)
 	deploymentsService.On("GetDeployment").Return(nil, nil)
-	h := GetDeploymentHandlerFunc(deploymentsService)
+	h := OldGetDeploymentHandlerFunc(deploymentsService)
 	s.NotNil(h)
 }
 
@@ -32,7 +32,7 @@ func (s *GetDeploymentHandlerFuncSuite) TestGetDeploymentHandler() {
 	src := state.OldDeploymentFromState(state.Empty())
 	deploymentsService := new(MockDeploymentsService)
 	deploymentsService.On("GetDeployment").Return(src)
-	h := GetDeploymentHandlerFunc(deploymentsService)
+	h := OldGetDeploymentHandlerFunc(deploymentsService)
 
 	rec := httptest.NewRecorder()
 
