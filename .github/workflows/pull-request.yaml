@@ -16,7 +16,7 @@ jobs:
     uses: ./.github/workflows/bats.yaml
   cypress:
     needs: build
-    uses: ./.github/workflows/cypress.yaml
+    uses: ./.github/workflows/ui.yaml
 
   # Extensions
   jupyterlab:

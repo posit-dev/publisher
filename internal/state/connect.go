@@ -9,8 +9,8 @@ import (
 )
 
 type ConnectDeployment struct {
-	Content     ConnectContent               `json:"content" kong:"embed"`
-	Environment []ConnectEnvironmentVariable `json:"environment" short:"E"`
+	Content     ConnectContent               `json:"content"`
+	Environment []ConnectEnvironmentVariable `json:"environment"`
 }
 
 type ConnectContent struct {
