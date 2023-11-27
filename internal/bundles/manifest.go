@@ -29,26 +29,26 @@ const PythonRequirementsFilename = "requirements.txt"
 // The manifest describes the type of content (its dependencies, how its
 // environment can be recreated (if needed) and how it is served/executed).
 type Manifest struct {
-	Version     int             `json:"version" kong:"-"`                               // Manifest version (always 1)
-	Locale      string          `json:"locale" kong:"-"`                                // User's locale. Currently unused.
-	Platform    string          `json:"platform,omitempty" name:"r-version"`            // Client R version
-	Metadata    Metadata        `json:"metadata" kong:"embed"`                          // Properties about this deployment. Ignored by shinyapps.io
-	Python      *Python         `json:"python,omitempty" kong:"embed,prefix='python-'"` // If non-null, specifies the Python version and dependencies
-	Jupyter     *Jupyter        `json:"jupyter,omitempty" kong:"embed"`                 // If non-null, specifies the Jupyter options
-	Quarto      *Quarto         `json:"quarto,omitempty" kong:"embed,prefix='quarto-'"` // If non-null, specifies the Quarto version and engines
-	Environment *Environment    `json:"environment,omitempty" kong:"embed"`             // Information about the execution environment
-	Packages    PackageMap      `json:"packages" kong:"-"`                              // Map of R package name to package details
-	Files       ManifestFileMap `json:"files" kong:"-"`                                 // List of file paths contained in the bundle
+	Version     int             `json:"version"`                             // Manifest version (always 1)
+	Locale      string          `json:"locale"`                              // User's locale. Currently unused.
+	Platform    string          `json:"platform,omitempty" name:"r-version"` // Client R version
+	Metadata    Metadata        `json:"metadata"`                            // Properties about this deployment. Ignored by shinyapps.io
+	Python      *Python         `json:"python,omitempty"`                    // If non-null, specifies the Python version and dependencies
+	Jupyter     *Jupyter        `json:"jupyter,omitempty"`                   // If non-null, specifies the Jupyter options
+	Quarto      *Quarto         `json:"quarto,omitempty"`                    // If non-null, specifies the Quarto version and engines
+	Environment *Environment    `json:"environment,omitempty"`               // Information about the execution environment
+	Packages    PackageMap      `json:"packages"`                            // Map of R package name to package details
+	Files       ManifestFileMap `json:"files"`                               // List of file paths contained in the bundle
 }
 
 // Metadata contains details about this deployment (type, etc).
 type Metadata struct {
-	AppMode         apptypes.AppMode `json:"appmode" short:"t" help:"Type of content being deployed. Default is to auto detect."` // Selects the runtime for this content.
-	ContentCategory string           `json:"content_category,omitempty"`                                                          // A refinement of the AppMode used by plots and sites
-	Entrypoint      string           `json:"entrypoint,omitempty"`                                                                // The main file being deployed.
-	PrimaryRmd      string           `json:"primary_rmd,omitempty" kong:"-"`                                                      // The rendering target for Rmd deployments.
-	PrimaryHtml     string           `json:"primary_html,omitempty" kong:"-"`                                                     // The default document for static deployments.
-	HasParameters   bool             `json:"has_parameters,omitempty" kong:"-"`                                                   // True if this is content allows parameter customization.
+	AppMode         apptypes.AppMode `json:"appmode" help:"Type of content being deployed. Default is to auto detect."` // Selects the runtime for this content.
+	ContentCategory string           `json:"content_category,omitempty"`                                                // A refinement of the AppMode used by plots and sites
+	Entrypoint      string           `json:"entrypoint,omitempty"`                                                      // The main file being deployed.
+	PrimaryRmd      string           `json:"primary_rmd,omitempty"`                                                     // The rendering target for Rmd deployments.
+	PrimaryHtml     string           `json:"primary_html,omitempty"`                                                    // The default document for static deployments.
+	HasParameters   bool             `json:"has_parameters,omitempty"`                                                  // True if this is content allows parameter customization.
 }
 
 type Environment struct {
@@ -58,7 +58,7 @@ type Environment struct {
 
 type Python struct {
 	Version        string               `json:"version"` // The Python version
-	PackageManager PythonPackageManager `json:"package_manager" kong:"embed"`
+	PackageManager PythonPackageManager `json:"package_manager"`
 }
 
 type Quarto struct {
@@ -72,9 +72,9 @@ type Jupyter struct {
 }
 
 type PythonPackageManager struct {
-	Name        string `json:"name" kong:"-"`              // Which package manger (always "pip")
-	Version     string `json:"version,omitempty" kong:"-"` // Package manager version
-	PackageFile string `json:"package_file"`               // Filename listing dependencies; usually "requirements.txt"
+	Name        string `json:"name"`
+	Version     string `json:"version,omitempty"` // Package manager version
+	PackageFile string `json:"package_file"`      // Filename listing dependencies; usually "requirements.txt"
 }
 
 type PackageMap map[string]Package
@@ -144,9 +144,13 @@ func ReadManifestFile(path util.Path) (*Manifest, error) {
 
 func NewManifest() *Manifest {
 	return &Manifest{
-		Version:  1,
-		Packages: make(PackageMap),
-		Files:    make(ManifestFileMap),
+		Version:     1,
+		Python:      &Python{},
+		Quarto:      &Quarto{},
+		Jupyter:     &Jupyter{},
+		Environment: &Environment{},
+		Packages:    make(PackageMap),
+		Files:       make(ManifestFileMap),
 	}
 }
 
