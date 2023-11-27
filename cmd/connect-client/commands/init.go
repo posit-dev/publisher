@@ -91,7 +91,7 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 		if err != nil {
 			return err
 		}
-		cmd.config.Python = *pythonConfig
+		cmd.config.Python = pythonConfig
 	}
 	configPath := config.GetConfigPath(cmd.Path, cmd.ConfigName)
 	err = cmd.config.WriteFile(configPath)

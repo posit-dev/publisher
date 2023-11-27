@@ -14,13 +14,13 @@ import (
 )
 
 type Deployment struct {
-	Schema        config.SchemaURL    `toml:"$schema"`
-	ServerType    accounts.ServerType `toml:"server-type"`
-	ServerURL     string              `toml:"server-url"`
-	Id            types.ContentID     `toml:"id"`
-	ConfigName    string              `toml:"configuration-name"`
-	Configuration config.Config       `toml:"configuration"`
-	Files         []string            `toml:"files"`
+	Schema        config.SchemaURL    `toml:"$schema" json:"$schema"`
+	ServerType    accounts.ServerType `toml:"server-type" json:"server-type"`
+	ServerURL     string              `toml:"server-url" json:"server-url"`
+	Id            types.ContentID     `toml:"id" json:"id"`
+	ConfigName    string              `toml:"configuration-name" json:"configuration-name"`
+	Configuration config.Config       `toml:"configuration" json:"configuration"`
+	Files         []string            `toml:"files" json:"files"`
 }
 
 const DeploymentSchema config.SchemaURL = "https://github.com/rstudio/publishing-client/blob/main/schemas/posit-publishing-record-schema-v3.json"
@@ -35,14 +35,23 @@ func New() *Deployment {
 
 const latestDeploymentName = "latest.toml"
 
+func GetDeploymentsPath(base util.Path) util.Path {
+	return base.Join(".posit", "deployments")
+}
+
 func GetLatestDeploymentPath(base util.Path, id string) util.Path {
-	return base.Join(".posit", "deployments", id, latestDeploymentName)
+	return GetDeploymentsPath(base).Join(id, latestDeploymentName)
+}
+
+func ListLatestDeploymentFiles(base util.Path) ([]util.Path, error) {
+	dir := GetDeploymentsPath(base)
+	return dir.Glob("*/" + latestDeploymentName)
 }
 
 func GetDeploymentHistoryPath(base util.Path, id string) (util.Path, error) {
 	for i := 1; ; i++ {
 		name := fmt.Sprintf("v%d.toml", i)
-		path := base.Join(".posit", "deployments", id, name)
+		path := GetDeploymentsPath(base).Join(id, name)
 		exists, err := path.Exists()
 		if err != nil {
 			return util.Path{}, err

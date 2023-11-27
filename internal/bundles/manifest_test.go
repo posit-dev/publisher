@@ -128,17 +128,17 @@ func (s *ManifestSuite) TestNewManifestFromConfig() {
 		Entrypoint:  "app:myapp",
 		Title:       "Super Title",
 		Description: "minimal description",
-		Python: config.Python{
+		Python: &config.Python{
 			Version:        "3.4.5",
 			PackageFile:    "requirements.in",
 			PackageManager: "pip",
 		},
-		R: config.R{
+		R: &config.R{
 			Version:        "4.5.6",
 			PackageFile:    "renv.lock",
 			PackageManager: "renv",
 		},
-		Quarto: config.Quarto{
+		Quarto: &config.Quarto{
 			Version: "1.2.3",
 			Engines: []string{"jupyter"},
 		},

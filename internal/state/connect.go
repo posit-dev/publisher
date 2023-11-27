@@ -42,28 +42,40 @@ func copy[T any](src *T) *T {
 }
 
 func ConnectContentFromConfig(cfg *config.Config) *ConnectContent {
-	return &ConnectContent{
-		Name:               "",
-		Title:              cfg.Title,
-		Description:        cfg.Description,
-		AccessType:         string(cfg.Access.Type), // access types map directly to Connect
-		ConnectionTimeout:  copy(cfg.Connect.Runtime.ConnectionTimeout),
-		ReadTimeout:        copy(cfg.Connect.Runtime.ReadTimeout),
-		InitTimeout:        copy(cfg.Connect.Runtime.InitTimeout),
-		IdleTimeout:        copy(cfg.Connect.Runtime.IdleTimeout),
-		MaxProcesses:       copy(cfg.Connect.Runtime.MaxProcesses),
-		MinProcesses:       copy(cfg.Connect.Runtime.MinProcesses),
-		MaxConnsPerProcess: copy(cfg.Connect.Runtime.MaxConnsPerProcess),
-		LoadFactor:         copy(cfg.Connect.Runtime.LoadFactor),
-		RunAs:              cfg.Connect.Access.RunAs,
-		RunAsCurrentUser:   cfg.Connect.Access.RunAsCurrentUser,
-		MemoryRequest:      copy(cfg.Connect.Kubernetes.MemoryRequest),
-		MemoryLimit:        copy(cfg.Connect.Kubernetes.MemoryLimit),
-		CPURequest:         copy(cfg.Connect.Kubernetes.CPURequest),
-		CPULimit:           copy(cfg.Connect.Kubernetes.CPULimit),
-		AMDGPULimit:        copy(cfg.Connect.Kubernetes.AMDGPULimit),
-		NvidiaGPULimit:     copy(cfg.Connect.Kubernetes.NvidiaGPULimit),
-		ServiceAccountName: cfg.Connect.Kubernetes.ServiceAccountName,
-		DefaultImageName:   cfg.Connect.Kubernetes.DefaultImageName,
+	c := &ConnectContent{
+		Name:        "",
+		Title:       cfg.Title,
+		Description: cfg.Description,
 	}
+	if cfg.Access != nil {
+		// access types map directly to Connect
+		c.AccessType = string(cfg.Access.Type)
+	}
+	if cfg.Connect != nil {
+		if cfg.Connect.Runtime != nil {
+			c.ConnectionTimeout = copy(cfg.Connect.Runtime.ConnectionTimeout)
+			c.ReadTimeout = copy(cfg.Connect.Runtime.ReadTimeout)
+			c.InitTimeout = copy(cfg.Connect.Runtime.InitTimeout)
+			c.IdleTimeout = copy(cfg.Connect.Runtime.IdleTimeout)
+			c.MaxProcesses = copy(cfg.Connect.Runtime.MaxProcesses)
+			c.MinProcesses = copy(cfg.Connect.Runtime.MinProcesses)
+			c.MaxConnsPerProcess = copy(cfg.Connect.Runtime.MaxConnsPerProcess)
+			c.LoadFactor = copy(cfg.Connect.Runtime.LoadFactor)
+		}
+		if cfg.Connect.Access != nil {
+			c.RunAs = cfg.Connect.Access.RunAs
+			c.RunAsCurrentUser = copy(cfg.Connect.Access.RunAsCurrentUser)
+		}
+		if cfg.Connect.Kubernetes != nil {
+			c.MemoryRequest = copy(cfg.Connect.Kubernetes.MemoryRequest)
+			c.MemoryLimit = copy(cfg.Connect.Kubernetes.MemoryLimit)
+			c.CPURequest = copy(cfg.Connect.Kubernetes.CPURequest)
+			c.CPULimit = copy(cfg.Connect.Kubernetes.CPULimit)
+			c.AMDGPULimit = copy(cfg.Connect.Kubernetes.AMDGPULimit)
+			c.NvidiaGPULimit = copy(cfg.Connect.Kubernetes.NvidiaGPULimit)
+			c.ServiceAccountName = cfg.Connect.Kubernetes.ServiceAccountName
+			c.DefaultImageName = cfg.Connect.Kubernetes.DefaultImageName
+		}
+	}
+	return c
 }

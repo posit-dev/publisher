@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
@@ -157,27 +156,33 @@ func NewManifest() *Manifest {
 
 func NewManifestFromConfig(cfg *config.Config) *Manifest {
 	m := &Manifest{
-		Version:  1,
-		Platform: cfg.R.Version,
+		Version: 1,
 		Metadata: Metadata{
 			AppMode:    cfg.Type,
 			Entrypoint: cfg.Entrypoint,
 		},
-		Python: &Python{
+		Jupyter:     nil,
+		Environment: nil,
+		Packages:    make(PackageMap),
+		Files:       make(ManifestFileMap),
+	}
+	if cfg.R != nil {
+		m.Platform = cfg.R.Version
+	}
+	if cfg.Python != nil {
+		m.Python = &Python{
 			Version: cfg.Python.Version,
 			PackageManager: PythonPackageManager{
 				Name:        cfg.Python.PackageManager,
 				PackageFile: cfg.Python.PackageFile,
 			},
-		},
-		Jupyter: nil,
-		Quarto: &Quarto{
+		}
+	}
+	if cfg.Quarto != nil {
+		m.Quarto = &Quarto{
 			Version: cfg.Quarto.Version,
 			Engines: cfg.Quarto.Engines,
-		},
-		Environment: nil,
-		Packages:    make(PackageMap),
-		Files:       make(ManifestFileMap),
+		}
 	}
 	switch cfg.Type {
 	case apptypes.StaticRmdMode:
@@ -186,7 +191,6 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 	case apptypes.StaticMode:
 		m.Metadata.PrimaryHtml = cfg.Entrypoint
 	}
-	json.NewEncoder(os.Stdout).Encode(m)
 	return m
 }
 

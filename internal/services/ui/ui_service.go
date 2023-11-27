@@ -72,11 +72,19 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 	r.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log)).
 		Methods(http.MethodGet)
 
-	// GET /api/deployment
+	// GET /api/configurations
+	r.Handle(ToPath("configurations"), api.GetConfigurationsHandlerFunc(base, log)).
+		Methods(http.MethodGet)
+
+	// GET /api/deployments
+	r.Handle(ToPath("deployments"), api.GetDeploymentsHandlerFunc(base, log)).
+		Methods(http.MethodGet)
+
+	// GET /api/deployment - DEPRECATED
 	r.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService)).
 		Methods(http.MethodGet)
 
-	// PUT /api/deployment/account
+	// PUT /api/deployment/account - DEPRECATED
 	r.Handle(ToPath("deployment", "account"), api.PutDeploymentAccountHandlerFunc(lister, deploymentsService, log)).
 		Methods(http.MethodPut)
 
