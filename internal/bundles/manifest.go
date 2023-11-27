@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 
 	"github.com/rstudio/connect-client/internal/apptypes"
@@ -192,7 +191,6 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 	case apptypes.StaticMode:
 		m.Metadata.PrimaryHtml = cfg.Entrypoint
 	}
-	json.NewEncoder(os.Stdout).Encode(m)
 	return m
 }
 
