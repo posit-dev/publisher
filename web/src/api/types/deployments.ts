@@ -12,7 +12,6 @@ export type Target = {
     contentName: string;
     username: string;
     bundleId: string | null;
-    deployedAt: number | null;
 }
 
 export type Deployment = {

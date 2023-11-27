@@ -2,7 +2,6 @@ describe('Landing', () => {
   beforeEach(() => {
     cy.visit({
       url: '/',
-      qs: { token: Cypress.env('token') }
     });
   });
   it('.should() - assert that <title> is correct', () => {
@@ -13,8 +12,7 @@ describe('Landing', () => {
 describe('Check Files', () => {
   beforeEach(() => {
     cy.visit({
-      url: '/',
-      qs: { token: Cypress.env('token') }
+      url: '/'
     });
   });
   it('files should be listed', () => {

@@ -53,7 +53,6 @@ func (s deploymentsService) SetDeploymentAccount(lister accounts.AccountList, na
 		return s.deployment, err
 	}
 
-	s.deployment.Target.AccountName = account.Name
 	s.deployment.Target.ServerType = account.ServerType
 	s.deployment.Target.ServerURL = account.URL
 

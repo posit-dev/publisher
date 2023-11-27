@@ -141,7 +141,6 @@ describe('description', () => {
         contentName: '',
         username: '',
         bundleId: null,
-        deployedAt: null
       },
       manifest: {
         version: 1,
