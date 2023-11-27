@@ -14,13 +14,13 @@ import (
 )
 
 type Deployment struct {
-	Schema        config.SchemaURL    `toml:"$schema"`
-	ServerType    accounts.ServerType `toml:"server-type"`
-	ServerURL     string              `toml:"server-url"`
-	Id            types.ContentID     `toml:"id"`
-	ConfigName    string              `toml:"configuration-name"`
-	Configuration config.Config       `toml:"configuration"`
-	Files         []string            `toml:"files"`
+	Schema        config.SchemaURL    `toml:"$schema" json:"$schema"`
+	ServerType    accounts.ServerType `toml:"server-type" json:"server-type"`
+	ServerURL     string              `toml:"server-url" json:"server-url"`
+	Id            types.ContentID     `toml:"id" json:"id"`
+	ConfigName    string              `toml:"configuration-name" json:"configuration-name"`
+	Configuration config.Config       `toml:"configuration" json:"configuration"`
+	Files         []string            `toml:"files" json:"files"`
 }
 
 const DeploymentSchema config.SchemaURL = "https://github.com/rstudio/publishing-client/blob/main/schemas/posit-publishing-record-schema-v3.json"
