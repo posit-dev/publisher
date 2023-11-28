@@ -1,33 +1,27 @@
-import * as wait from 'wait-on';
-
 import * as vscode from 'vscode';
+import * as wait from 'wait-on';
 
 import * as commands from './commands';
 
-const name: string = "publisher";
+export class Assistant {
 
-type CreateAssistantParameters = {
-	path: string,
-	port: number,
-	resources: vscode.Uri[],
-};
+    private readonly name: string = "Publish Assistant";
 
-class Assistant {
-
-
-	readonly path: string;
-	readonly port: number;
-	readonly terminal: vscode.Terminal;
+	private readonly path: string;
+	private readonly port: number;
 	readonly resources: vscode.Uri[];
 
-	constructor(path: string, port: number, resources: vscode.Uri[]) {
-		this.path = path;
+	constructor(port: number, resources: vscode.Uri[]) {
+        const path = vscode.workspace.workspaceFolders?.at(0)?.uri.path;
+        if (path === undefined) {
+			throw new Error("workspace path is undefined");
+		}
+        this.path = path;
 		this.port = port;
 		this.resources = resources;
-		this.terminal = vscode.window.createTerminal({ name: name });
 	}
 
-	render = async () => {
+	focus = async () => {
 		const panel = vscode.window.createWebviewPanel(
 			'positron.publisher.assistant',
 			'Publish Assistant',
@@ -60,17 +54,15 @@ class Assistant {
 	};
 
 	start = async (): Promise<void> => {
-		this.terminal.show();
 		const command: commands.Command = commands.create(this.path, this.port);
-		this.terminal.sendText(command);
-		console.debug("Waiting 3000 ms for ui to initialize");
-		await new Promise(resolve => setTimeout(resolve, 3000));
-		console.debug("Finished waiting for the ui to initialize");
+        const terminal = vscode.window.createTerminal({ name: this.name, hideFromUser: true });
+		terminal.sendText(command);
+		console.debug("waiting for the server to start");
+		await wait({
+            resources: [
+                `http-get://127.0.0.1:${this.port}`
+            ]
+        });
 	};
 
 }
-
-
-export const create = (params: CreateAssistantParameters): Assistant => {
-	return new Assistant(params.path, params.port, params.resources);
-};
