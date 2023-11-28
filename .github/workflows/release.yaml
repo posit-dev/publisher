@@ -6,10 +6,13 @@ on:
 jobs:
   build:
     uses: ./.github/workflows/build.yaml
+  package:
+    uses: ./.github/workflows/package.yaml
   release:
     runs-on: ubuntu-latest
     needs:
       - build
+      - package
     steps:
       - uses: actions/checkout@v3
         with:
@@ -17,8 +20,13 @@ jobs:
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
-          name: executables
+          name: bin
           path: bin
+      - uses: actions/download-artifact@v3
+        with:
+          name: packages
+          path: packages
+      - run: chmod -R +x ./bin ./packages
       - id: get-prerelease
         run: echo "prerelease=$(just pre-release)" >> "$GITHUB_OUTPUT"
       - name: Release
@@ -26,4 +34,6 @@ jobs:
         with:
           draft: false
           prerelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}
-          files: bin/**/*
+          files: |
+            bin/**/*
+            packages/**/*

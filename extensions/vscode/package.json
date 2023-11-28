@@ -1,8 +1,12 @@
 {
-  "name": "positron-publish",
-  "displayName": "Positron Publish",
+  "name": "publisher",
+  "displayName": "Positron Publisher",
   "description": "Publish your applications from Positron to Posit products",
-  "version": "0.0.1",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rstudio/publishing-client/tree/main/extensions/positron"
+  },
   "engines": {
     "vscode": "^1.83.0"
   },
@@ -16,16 +20,25 @@
   "contributes": {
     "commands": [
       {
-        "command": "positron.publish.assistant.open",
+        "command": "positron.publisher.assistant.open",
         "title": "Open Assistant",
         "category": "Publisher"
       }
     ],
+    "configuration": {
+      "title": "Positron",
+      "properties": {
+        "positron.publisher.executable.path": {
+          "description": "A path to the Positron Publisher CLI executable. By default, the extension looks for `publisher` in the `PATH`",
+          "type": "string"
+        }
+      }
+    },
     "menus": {
       "editor/title": [
         {
           "when": "resourceLangId == python",
-          "command": "positron.publish.assistant.open",
+          "command": "positron.publisher.assistant.open",
           "group": "navigation"
         }
       ]
