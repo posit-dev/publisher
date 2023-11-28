@@ -15,7 +15,7 @@ import (
 
 type PythonInspector interface {
 	GetPythonVersion() (string, error)
-	GetPythonRequirements() ([]byte, error)
+	EnsurePythonRequirementsFile() error
 }
 
 type defaultPythonInspector struct {
@@ -117,23 +117,32 @@ func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
 	return version, nil
 }
 
-func (i *defaultPythonInspector) GetPythonRequirements() ([]byte, error) {
+func (i *defaultPythonInspector) EnsurePythonRequirementsFile() error {
 	requirementsFilename := i.projectDir.Join("requirements.txt")
 	exists, err := requirementsFilename.Exists()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if exists {
 		i.log.Info("Using Python packages", "source", requirementsFilename)
-		return requirementsFilename.ReadFile()
+		return nil
 	}
 	pythonExecutable, err := i.getPythonExecutable(util.NewPathLooker())
 	if err != nil {
-		return nil, err
+		return err
 	}
 	i.log.Info("Running Python", "python", pythonExecutable)
-	source := fmt.Sprintf("'%s -m pip freeze'", pythonExecutable)
+	source := fmt.Sprintf("%s -m pip freeze", pythonExecutable)
 	i.log.Info("Using Python packages", "source", source)
 	args := []string{"-m", "pip", "freeze"}
-	return i.executor.runPythonCommand(pythonExecutable, args)
+	out, err := i.executor.runPythonCommand(pythonExecutable, args)
+	if err != nil {
+		return err
+	}
+	err = requirementsFilename.WriteFile(out, 0666)
+	if err != nil {
+		return err
+	}
+	i.log.Info("Wrote requirements file", "path", requirementsFilename)
+	return nil
 }

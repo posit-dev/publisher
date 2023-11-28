@@ -145,18 +145,18 @@ type connectGetContentDTO struct {
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
 
-func (c *ConnectClient) CreateDeployment(body state.ConnectContent) (types.ContentID, error) {
+func (c *ConnectClient) CreateDeployment(body *state.ConnectContent) (types.ContentID, error) {
 	content := connectGetContentDTO{}
-	err := c.client.Post("/__api__/v1/content", &body, &content)
+	err := c.client.Post("/__api__/v1/content", body, &content)
 	if err != nil {
 		return "", err
 	}
 	return content.GUID, nil
 }
 
-func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body state.ConnectContent) error {
+func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *state.ConnectContent) error {
 	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
-	return c.client.Patch(url, &body, nil)
+	return c.client.Patch(url, body, nil)
 }
 
 type bundleMetadataDTO struct {

@@ -28,8 +28,8 @@ type User struct {
 type APIClient interface {
 	TestConnection() error
 	TestAuthentication() (*User, error)
-	CreateDeployment(state.ConnectContent) (types.ContentID, error)
-	UpdateDeployment(types.ContentID, state.ConnectContent) error
+	CreateDeployment(*state.ConnectContent) (types.ContentID, error)
+	UpdateDeployment(types.ContentID, *state.ConnectContent) error
 	UploadBundle(types.ContentID, io.Reader) (types.BundleID, error)
 	DeployBundle(types.ContentID, types.BundleID) (types.TaskID, error)
 	WaitForTask(taskID types.TaskID, log logging.Logger) error

@@ -21,4 +21,5 @@ jobs:
           path: bin
       - run: chmod -R +x ./bin
       - run: just cy install
+      - run: just cy init
       - run: just cy test
