@@ -22,7 +22,11 @@
       {
         "command": "positron.publisher.assistant.open",
         "title": "Open Assistant",
-        "category": "Publisher"
+        "category": "Publisher",
+        "icon": {
+          "light": "assets/icons/light.svg",
+          "dark": "assets/icons/dark.svg"
+        }
       }
     ],
     "configuration": {
