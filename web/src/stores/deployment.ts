@@ -54,6 +54,29 @@ const setAccountOnServer = requestOnce(async(
   }
 }, 500);
 
+/**
+ * Set the title on the server side.
+ * Debounced to avoid API calls on every state change.
+ * In progress API calls are cancelled to avoid de-syncing the deployment state.
+ */
+const setTitleOnServer = requestOnce(async(
+  signal: AbortSignal,
+  title: string,
+  deploymentState: Ref<Deployment | undefined>
+) => {
+  try {
+    const { data } = await api.deployment.setTitle(
+      title,
+      { signal: signal }
+    );
+    deploymentState.value = data;
+  } catch (err) {
+    if (err instanceof CanceledError) {
+      // ignore
+    }
+  }
+}, 500);
+
 export const useDeploymentStore = defineStore('deployment', () => {
   const deployment = ref<Deployment>();
 
@@ -71,7 +94,7 @@ export const useDeploymentStore = defineStore('deployment', () => {
 
   const account = computed<string>({
     get: () => deployment.value?.target.accountName || '',
-    set: async(newName: string) => {
+    set: (newName: string) => {
       // Update the deployment state immediately before sending to server
       if (deployment.value) {
         deployment.value.target.accountName = newName;
@@ -81,9 +104,24 @@ export const useDeploymentStore = defineStore('deployment', () => {
     }
   });
 
+  const title = computed<string>({
+    get: () => {
+      return deployment.value?.connect.content.title || '';
+    },
+    set: (newTitle) => {
+      // Update the deployment state immediately before sending to server
+      if (deployment.value) {
+        deployment.value.connect.content.title = newTitle;
+      }
+
+      setTitleOnServer(newTitle, deployment);
+    }
+  });
+
   return {
     deployment,
     files,
     account,
+    title
   };
 });

@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// Copyright (C) 2023 by Posit Software, PBC.
-
 type SliceSuite struct {
 	utiltest.Suite
 }

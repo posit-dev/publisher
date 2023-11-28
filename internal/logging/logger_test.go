@@ -53,7 +53,7 @@ func (s *LoggingSuite) TestSuccess() {
 
 func (s *LoggingSuite) TestStatus() {
 	baseLogger := NewMockBaseLogger()
-	baseLogger.On("Info", "message", LogKeyPhase, ProgressPhase, "arg", "value")
+	baseLogger.On("Info", "message", LogKeyPhase, StatusPhase, "arg", "value")
 
 	log := logger{baseLogger}
 	log.Status("message", "arg", "value")

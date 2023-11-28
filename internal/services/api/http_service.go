@@ -12,7 +12,6 @@ import (
 
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/project"
-	"github.com/rstudio/connect-client/internal/services"
 	"github.com/rstudio/connect-client/internal/services/middleware"
 	"github.com/rstudio/connect-client/internal/state"
 
@@ -20,7 +19,7 @@ import (
 )
 
 type Service struct {
-	state         *state.Deployment
+	state         *state.State
 	handler       http.HandlerFunc
 	listen        string
 	path          string
@@ -28,8 +27,6 @@ type Service struct {
 	certFile      string
 	openBrowser   bool
 	openBrowserAt string
-	skipAuth      bool
-	token         services.LocalToken
 	addr          net.Addr
 	log           logging.Logger
 }
@@ -37,7 +34,7 @@ type Service struct {
 var errTlsRequiredFiles error = errors.New("TLS requires both a private key file and a certificate chain file")
 
 func NewService(
-	state *state.Deployment,
+	state *state.State,
 	handler http.HandlerFunc,
 	listen string,
 	path string,
@@ -45,18 +42,8 @@ func NewService(
 	certFile string,
 	openBrowser bool,
 	openBrowserAt string,
-	skipAuth bool,
 	accessLog bool,
-	token services.LocalToken,
 	log logging.Logger) *Service {
-
-	if project.DevelopmentBuild() && skipAuth {
-		log.Warn("Service is operating in DEVELOPMENT MODE with NO browser to server authentication")
-	} else {
-		handler = middleware.AuthRequired(log, handler)
-		handler = middleware.CookieSession(log, handler)
-		handler = middleware.LocalTokenSession(token, log, handler)
-	}
 
 	if accessLog {
 		handler = middleware.LogRequest("Access Log", log, handler)
@@ -72,8 +59,6 @@ func NewService(
 		certFile:      certFile,
 		openBrowser:   openBrowser,
 		openBrowserAt: openBrowserAt,
-		skipAuth:      skipAuth,
-		token:         token,
 		addr:          nil,
 		log:           log,
 	}
@@ -90,7 +75,7 @@ func (svc *Service) isTLS() (bool, error) {
 	}
 }
 
-func (svc *Service) getURL(includeToken bool) *url.URL {
+func (svc *Service) getURL() *url.URL {
 	scheme := "http"
 	isTLS, _ := svc.isTLS()
 	if isTLS {
@@ -102,11 +87,6 @@ func (svc *Service) getURL(includeToken bool) *url.URL {
 		Host:     svc.addr.String(),
 		Path:     path,
 		Fragment: fragment,
-	}
-	if includeToken {
-		appURL.RawQuery = url.Values{
-			"token": []string{string(svc.token)},
-		}.Encode()
 	}
 	return appURL
 }
@@ -124,9 +104,7 @@ func (svc *Service) Run() error {
 	}
 
 	svc.addr = listener.Addr()
-
-	// If not development mode, then you get a token added to the URL
-	appURL := svc.getURL(!(project.DevelopmentBuild() && svc.skipAuth))
+	appURL := svc.getURL()
 
 	svc.log.Info("UI server running", "url", appURL.String())
 	fmt.Println(appURL.String())

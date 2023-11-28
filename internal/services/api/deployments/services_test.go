@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/bundles"
+	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
@@ -22,45 +22,21 @@ func TestServicesSuite(t *testing.T) {
 }
 
 func (s *ServicesSuite) TestCreateDeploymentsService() {
-	deployment := state.NewDeployment()
-	service := CreateDeploymentsService(deployment)
+	src := state.Empty()
+	service := CreateDeploymentsService(src)
 	s.NotNil(service)
 }
 
 func (s *ServicesSuite) TestGetDeployment() {
-	src := state.NewDeployment()
+	src := state.Empty()
 	service := CreateDeploymentsService(src)
 	res := service.GetDeployment()
-	s.Equal(src, res)
-}
-
-func (s *ServicesSuite) TestSetDeploymentFiles() {
-	src := state.NewDeployment()
-	s.Equal(src.Manifest.Files, bundles.ManifestFileMap(bundles.ManifestFileMap{}))
-
-	service := CreateDeploymentsService(src)
-
-	files := []string{"file"}
-	res := service.SetDeploymentFiles(files)
-	s.Equal(src, res)
-	s.Equal(res.Manifest.Files, bundles.ManifestFileMap{"file": bundles.ManifestFile{Checksum: ""}})
-}
-
-func (s *ServicesSuite) TestSetDeploymentTitle() {
-	src := state.NewDeployment()
-	s.Equal(src.Connect.Content.Title, "")
-
-	service := CreateDeploymentsService(src)
-
-	title := "new-title"
-	res := service.SetDeploymentTitle(title)
-	s.Equal(src, res)
-	s.Equal(res.Connect.Content.Title, "new-title")
+	s.Equal(state.OldDeploymentFromState(src), res)
 }
 
 func (s *ServicesSuite) TestSetDeploymentAccount() {
-	src := state.NewDeployment()
-	s.Equal(src.Target.AccountName, "")
+	src := state.Empty()
+	src.Target = &deployment.Deployment{}
 	s.Equal(src.Target.ServerType, accounts.ServerType(""))
 	s.Equal(src.Target.ServerURL, "")
 
@@ -74,14 +50,13 @@ func (s *ServicesSuite) TestSetDeploymentAccount() {
 
 	lister := accounts.NewMockAccountList()
 	lister.On("GetAccountByName", "test").Return(result, nil)
-	lister.On("GetAccountByName", "unknown").Return(&accounts.Account{}, errors.New("Account Not Found"))
+	lister.On("GetAccountByName", "unknown").Return(nil, errors.New("Account Not Found"))
 
 	res, err := service.SetDeploymentAccount(lister, "test")
 	s.Nil(err)
 
-	s.Equal(res.Target.AccountName, result.Name)
-	s.Equal(res.Target.ServerType, result.ServerType)
-	s.Equal(res.Target.ServerURL, result.URL)
+	s.Equal(result.ServerType, res.Target.ServerType)
+	s.Equal(result.URL, res.Target.ServerURL)
 
 	_, err = service.SetDeploymentAccount(lister, "unknown")
 	s.NotNil(err)

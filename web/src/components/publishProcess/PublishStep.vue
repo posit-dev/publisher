@@ -4,9 +4,14 @@
   <q-step
     :name="name"
     title="This is a step"
+    :caption="caption"
     :icon="icon"
-    :active-icon="icon"
+    :active-icon="hasError ? 'warning' : icon"
+    :active-color="hasError ? 'red' : undefined"
     :header-nav="true"
+    :error="hasError"
+    error-icon="warning"
+    error-color="red"
   >
     <div
       class="text-bold q-pa-sm summaryClass"
@@ -18,11 +23,16 @@
       class="logClass"
     >
       <q-item
-        v-for="(log, index) in logs"
+        v-for="(msg, index) in messages"
         :key="index"
       >
         <q-item-section>
-          {{ log }}
+          <template v-if="isErrorEventStreamMessage(msg)">
+            <span class="text-error text-weight-medium">{{ msg.data.message }}</span>
+          </template>
+          <template v-else>
+            {{ msg.data.message }}
+          </template>
         </q-item-section>
       </q-item>
     </q-list>
@@ -30,18 +40,22 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType, computed } from 'vue';
 import { useColorStore } from 'src/stores/color';
 import { colorToHex } from 'src/utils/colorValues';
+import { EventStreamMessage, isErrorEventStreamMessage } from 'src/api/types/events';
 
 const colorStore = useColorStore();
 
-defineProps({
+const props = defineProps({
   name: { type: [String, Number], required: true },
+  caption: { type: String, required: false, default: undefined },
   icon: { type: String, required: true },
   summary: { type: String, required: true },
-  logs: { type: Array as PropType<string[]>, required: false, default: () => [] },
+  messages: { type: Array as PropType<EventStreamMessage[]>, required: false, default: () => [] },
 });
+
+const hasError = computed(() => props.messages.some(msg => isErrorEventStreamMessage(msg)));
 </script>
 
 <style scoped>
@@ -56,5 +70,9 @@ defineProps({
   color: v-bind('colorToHex(colorStore.activePallete.progress.log.text)');
   background-color: v-bind('colorToHex(colorStore.activePallete.progress.log.background)');
   border: solid v-bind('colorToHex(colorStore.activePallete.progress.summary.border)') 1px;
+}
+
+.text-error {
+  color: v-bind('colorToHex(colorStore.activePallete.textError)')
 }
 </style>

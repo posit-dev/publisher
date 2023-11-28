@@ -5,7 +5,7 @@
     class="q-my-lg row justify-between items-start"
   >
     <q-input
-      v-model="title"
+      v-model="deploymentStore.title"
       :color="colorStore.activePallete.textInput.active"
       label="Title"
       outlined
@@ -29,7 +29,6 @@
 
 import { useApi } from 'src/api';
 import { useDeploymentStore } from 'src/stores/deployment';
-import { computed } from 'vue';
 import { useColorStore } from 'src/stores/color';
 
 const colorStore = useColorStore();
@@ -38,25 +37,6 @@ const emit = defineEmits(['publish']);
 
 const api = useApi();
 const deploymentStore = useDeploymentStore();
-
-// Unable to use storeToRefs from pinia because deployment is not
-// always defined. We might want to revisit this and instead define it
-// initially with an empty definition.
-const title = computed({
-  get() {
-    if (deploymentStore.deployment) {
-      return deploymentStore.deployment.connect.content.title;
-    }
-    return '';
-  },
-  set(val) {
-    if (deploymentStore.deployment) {
-      deploymentStore.deployment.connect.content.title = val;
-    } else {
-      console.log('Error setting title into empty deployment object!');
-    }
-  }
-});
 
 const onPublish = async() => {
   emit('publish');

@@ -3,6 +3,7 @@ cover.out
 
 bin/
 certs/
+packages/
 
 .DS_Store
 

@@ -6,8 +6,6 @@ on:
 jobs:
   agent:
     uses: ./.github/workflows/agent.yaml
-  extensions:
-    uses: ./.github/workflows/extensions.yaml
   web:
     uses: ./.github/workflows/web.yaml
   build:
@@ -17,4 +15,12 @@ jobs:
     uses: ./.github/workflows/bats.yaml
   cypress:
     needs: build
-    uses: ./.github/workflows/cypress.yaml
+    uses: ./.github/workflows/ui.yaml
+  package:
+    uses: ./.github/workflows/package.yaml
+
+  # Extensions
+  jupyterlab:
+    uses: ./.github/workflows/jupyterlab.yaml
+  vscode:
+    uses: ./.github/workflows/vscode.yaml

@@ -43,16 +43,21 @@ func (s *WalkerSuite) TestNewExcludingWalker() {
 	s.NotNil(w)
 }
 
-func (s *WalkerSuite) TestNewWalkerBadGitignore() {
+func (s *WalkerSuite) TestNewWalkerBadIgnoreFile() {
 	s.cwd.Join(".git").Mkdir(0700)
-	giPath := s.cwd.Join(".gitignore")
+	giPath := s.cwd.Join(".positignore")
 	data := []byte("[Z-A]\n")
 	err := giPath.WriteFile(data, 0600)
 	s.NoError(err)
 
 	w, err := NewExcludingWalker(s.cwd, nil)
+	s.NoError(err)
+	s.NotNil(w)
+
+	err = w.Walk(s.cwd, func(util.Path, fs.FileInfo, error) error {
+		return nil
+	})
 	s.NotNil(err)
-	s.Nil(w)
 }
 
 func (s *WalkerSuite) TestNewWalkerBadIgnore() {
@@ -61,9 +66,9 @@ func (s *WalkerSuite) TestNewWalkerBadIgnore() {
 	s.Nil(w)
 }
 
-func (s *WalkerSuite) TestWalkErrorLoadingRscignore() {
-	rscIgnorePath := s.cwd.Join(".rscignore")
-	err := rscIgnorePath.WriteFile([]byte("[Z-A]"), 0600)
+func (s *WalkerSuite) TestWalkErrorLoadingPositIgnore() {
+	positIgnorePath := s.cwd.Join(".positignore")
+	err := positIgnorePath.WriteFile([]byte("[Z-A]"), 0600)
 	s.NoError(err)
 
 	w, err := NewExcludingWalker(s.cwd, nil)
@@ -86,7 +91,7 @@ func (s *WalkerSuite) TestWalk() {
 	err = envDir.Join("bin", "python").WriteFile(nil, 0777)
 	s.NoError(err)
 
-	// a dir excluded by .rscignore
+	// a dir excluded by .positignore
 	excludedDir := baseDir.Join("excluded", "subdir")
 	err = excludedDir.MkdirAll(0777)
 	s.NoError(err)
@@ -94,8 +99,8 @@ func (s *WalkerSuite) TestWalk() {
 	err = excludedFile.WriteFile([]byte("this is an excluded file"), 0600)
 	s.NoError(err)
 
-	rscIgnorePath := baseDir.Join(".rscignore")
-	err = rscIgnorePath.WriteFile([]byte("excluded/\n*.csv\n"), 0600)
+	positIgnorePath := baseDir.Join(".positignore")
+	err = positIgnorePath.WriteFile([]byte("excluded/\n*.csv\n"), 0600)
 	s.NoError(err)
 
 	// some files we want to include
@@ -106,7 +111,7 @@ func (s *WalkerSuite) TestWalk() {
 	err = includedFile.WriteFile([]byte("this is an included file"), 0600)
 	s.NoError(err)
 
-	// files excluded by .rscignore
+	// files excluded by .positignore
 	for i := 0; i < 3; i++ {
 		csvPath := includedDir.Join(fmt.Sprintf("%d.csv", i))
 		err = csvPath.WriteFile(nil, 0600)
@@ -128,7 +133,7 @@ func (s *WalkerSuite) TestWalk() {
 	s.NoError(err)
 	s.Equal([]util.Path{
 		util.NewPath("test/dir", s.fs),
-		util.NewPath("test/dir/.rscignore", s.fs),
+		util.NewPath("test/dir/.positignore", s.fs),
 		util.NewPath("test/dir/included", s.fs),
 		util.NewPath("test/dir/included/includeme", s.fs),
 	}, seen)

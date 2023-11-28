@@ -109,7 +109,6 @@ const incomingEvent = (msg: EventStreamMessage) => {
 };
 
 $eventStream.addEventMonitorCallback('*', incomingEvent);
-$eventStream.setDebugMode(true);
 $eventStream.open('api/events?stream=messages');
 console.log($eventStream.status());
 

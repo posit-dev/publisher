@@ -73,7 +73,7 @@ bats *args:
 
     just _with_docker just test/bats/{{ args }}
 
-# Compiles the application using Go. Executables are written to `./dist`. If invoked with `env CI=true` then executables for all supported architectures using the Go toolchain.
+# Compiles the application using Go. Executables are written to `./bin`. If invoked with `env CI=true` then executables for all supported architectures using the Go toolchain.
 build:
     #!/usr/bin/env bash
     set -eou pipefail
@@ -89,6 +89,23 @@ clean:
 
     rm -rf ./bin
 
+# Prints shell commands to configure executable on path. Configure your shell via: eval "$(just configure)"
+configure:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    pathname=`just executable-path`
+    if ! [ -f $pathname ]; then
+        echo "info: ${pathname} not found. Running 'just build'." 1>&2
+        just build 1>&2
+    fi
+
+    dir=`dirname $pathname`
+    base=`basename "$pathname"`
+    echo export PATH=`printf "%q" $PATH:$dir`
+    echo alias publisher=$base
+
 # Display the code coverage collected during the last execution of `just test`.
 cover:
     #!/usr/bin/env bash
@@ -102,7 +119,7 @@ cy *args:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-
+    
     just _with_docker just test/cy/{{ args }}
 
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).
@@ -127,7 +144,7 @@ image:
     set -eou pipefail
     {{ _with_debug }}
 
-    if ! ${DOCKER-true}; then
+    if ! {{ _docker }}; then
         exit 0
     fi
 
@@ -146,10 +163,12 @@ install:
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker go install honnef.co/go/tools/cmd/staticcheck@latest
     if [ ! `just _with_docker which staticcheck` ]; then
-        echo "error: \`staticcheck\` not found. Is '\$GOPATH/bin' in your '\$PATH'?" 1>&2
-        exit 1
+        just _with_docker go install honnef.co/go/tools/cmd/staticcheck@latest
+        if [ ! `just _with_docker which staticcheck` ]; then
+            echo "error: \`staticcheck\` not found. Is '\$GOPATH/bin' in your '\$PATH'?" 1>&2
+            exit 1
+        fi
     fi
 
 
@@ -171,6 +190,13 @@ lint: stub
     just _with_docker staticcheck ./...
     just _with_docker go vet -all ./...
     just _with_docker ./scripts/fmt-check.bash
+
+name:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    basename {{ _cmd }}
 
 # Prints the pre-release status based on the version (see `just version`).
 pre-release:
@@ -212,12 +238,12 @@ tag:
     echo {{ _docker_image_name }}":"$(just version)
 
 # Execute unit tests.
-test: stub
+test *args=("./..."): stub
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker go test ./... -covermode set -coverprofile=cover.out
+    just _with_docker go test {{ args }} -covermode set -coverprofile=cover.out
 
 # Executes commands in ./web/Justfile. Equivalent to `just web/dist`, but inside of Docker (i.e., just _with_docker web/dist).
 web *args:
@@ -234,6 +260,14 @@ version:
     {{ _with_debug }}
 
     ./scripts/get-version.bash
+
+# Executes commands in ./extensions/vscode/Justfile. Equivalent to `just extensions/vscode`, but inside of Docker (i.e., just _with_docker extension/vscode)
+vscode *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just extensions/vscode/{{ args }}
 
 [private]
 _with_docker *args:
