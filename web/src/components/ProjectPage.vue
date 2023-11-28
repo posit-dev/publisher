@@ -5,4 +5,8 @@
 </template>
 
 <script setup lang="ts">
+import { useApi } from 'src/api';
+
+const api = useApi();
+api.deployments.get();
 </script>
