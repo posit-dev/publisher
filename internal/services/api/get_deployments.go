@@ -6,15 +6,16 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type deploymentDTO struct {
-	ID         string                 `json:"id"`
-	Deployment *deployment.Deployment `json:"deployment,omitempty"`
-	Error      string                 `json:"error,omitempty"`
+	*deployment.Deployment
+	ConfigPath string `json:"configuration-path,omitempty"`
+	Error      string `json:"error,omitempty"`
 }
 
 func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
@@ -27,12 +28,11 @@ func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
 		d, err := deployment.FromFile(path)
 		if err != nil {
 			response = append(response, deploymentDTO{
-				ID:    path.Dir().Base(),
 				Error: err.Error(),
 			})
 		} else {
 			response = append(response, deploymentDTO{
-				ID:         path.Dir().Base(),
+				ConfigPath: config.GetConfigPath(base, d.ConfigName).String(),
 				Deployment: d,
 			})
 		}

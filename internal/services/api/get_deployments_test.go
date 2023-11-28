@@ -11,6 +11,7 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -42,6 +43,7 @@ func (s *GetDeploymentsSuite) SetupTest() {
 func (s *GetDeploymentsSuite) TestGetDeployments() {
 	path := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
 	d := deployment.New()
+	d.Id = "myTargetID"
 	d.ServerType = accounts.ServerTypeConnect
 	err := d.WriteFile(path)
 	s.NoError(err)
@@ -61,14 +63,15 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 1)
-	s.Equal("myTargetID", res[0].ID)
 	s.Equal(d, res[0].Deployment)
+	s.Equal(types.ContentID("myTargetID"), res[0].Deployment.Id)
 	s.Equal("", res[0].Error)
 }
 
 func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	path := deployment.GetLatestDeploymentPath(s.cwd, "target1")
 	d := deployment.New()
+	d.Id = "target1"
 	d.ServerType = accounts.ServerTypeConnect
 	err := d.WriteFile(path)
 	s.NoError(err)
@@ -92,12 +95,11 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 2)
-	s.Equal("target1", res[0].ID)
 	s.Equal(d, res[0].Deployment)
+	s.Equal(types.ContentID("target1"), res[0].Deployment.Id)
 	s.Equal("", res[0].Error)
 
 	var nilDeployment *deployment.Deployment
-	s.Equal("target2", res[1].ID)
 	s.Equal(nilDeployment, res[1].Deployment)
 	s.NotEqual("", res[1].Error)
 }

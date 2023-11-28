@@ -12,6 +12,7 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -43,6 +44,7 @@ func (s *GetDeploymentSuite) SetupTest() {
 func (s *GetDeploymentSuite) TestGetDeployment() {
 	path := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
 	d := deployment.New()
+	d.Id = "myTargetID"
 	d.ServerType = accounts.ServerTypeConnect
 	err := d.WriteFile(path)
 	s.NoError(err)
@@ -62,8 +64,8 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
-	s.Equal("myTargetID", res.ID)
 	s.Equal(d, res.Deployment)
+	s.Equal(types.ContentID("myTargetID"), res.Deployment.Id)
 	s.Equal("", res.Error)
 }
 
@@ -89,7 +91,6 @@ func (s *GetDeploymentSuite) TestGetDeploymentError() {
 	s.NoError(dec.Decode(&res))
 
 	var nilDeployment *deployment.Deployment
-	s.Equal("myTargetID", res.ID)
 	s.Equal(nilDeployment, res.Deployment)
 	s.NotEqual("", res.Error)
 }

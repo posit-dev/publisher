@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
@@ -24,12 +25,11 @@ func readLatestDeploymentFile(base util.Path, id string) (*deploymentDTO, error)
 		}
 		// Other errors are returned to the caller
 		return &deploymentDTO{
-			ID:    id,
 			Error: err.Error(),
 		}, nil
 	} else {
 		return &deploymentDTO{
-			ID:         id,
+			ConfigPath: config.GetConfigPath(base, d.ConfigName).String(),
 			Deployment: d,
 		}, nil
 	}
