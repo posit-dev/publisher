@@ -4,7 +4,7 @@ package ui
 
 import (
 	"net/http"
-	"net/url"
+	"path"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/logging"
@@ -72,16 +72,32 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 	r.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log)).
 		Methods(http.MethodGet)
 
-	// GET /api/deployment
-	r.Handle(ToPath("deployment"), api.GetDeploymentHandlerFunc(deploymentsService)).
+	// GET /api/configurations
+	r.Handle(ToPath("configurations"), api.GetConfigurationsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
-	// PUT /api/deployment/account
+	// GET /api/deployments
+	r.Handle(ToPath("deployments"), api.GetDeploymentsHandlerFunc(base, log)).
+		Methods(http.MethodGet)
+
+	// GET /api/deployments/$ID
+	r.Handle(ToPath("deployments", "{id}"), api.GetDeploymentHandlerFunc(base, log)).
+		Methods(http.MethodGet)
+
+	// POST /api/deployments
+	r.Handle(ToPath("deployments"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
+		Methods(http.MethodPost)
+
+	// GET /api/deployment - DEPRECATED
+	r.Handle(ToPath("deployment"), api.OldGetDeploymentHandlerFunc(deploymentsService)).
+		Methods(http.MethodGet)
+
+	// PUT /api/deployment/account - DEPRECATED
 	r.Handle(ToPath("deployment", "account"), api.PutDeploymentAccountHandlerFunc(lister, deploymentsService, log)).
 		Methods(http.MethodPut)
 
-	// POST /api/publish
-	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
+	// POST /api/publish - DEPRECATED
+	r.Handle(ToPath("publish"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
 		Methods(http.MethodPost)
 
 	// GET /
@@ -94,6 +110,6 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 
 func ToPath(elements ...string) string {
 	prefix := "/" + APIPrefix
-	path, _ := url.JoinPath(prefix, elements...)
-	return path
+	elements = append([]string{prefix}, elements...)
+	return path.Join(elements...)
 }

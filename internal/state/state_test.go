@@ -85,15 +85,15 @@ func (s *StateSuite) TestLoadConfig() {
 		Title:       "Super Title",
 		Description: "minimal description",
 		Tags:        []string{"a", "b", "c"},
-		Python: config.Python{Version: "3.11.3",
+		Python: &config.Python{Version: "3.11.3",
 			PackageFile:    "requirements.txt",
 			PackageManager: "pip",
 		},
 		Environment: map[string]string{
 			"FOO": "BAR",
 		},
-		Connect: config.Connect{
-			Runtime: config.ConnectRuntime{
+		Connect: &config.Connect{
+			Runtime: &config.ConnectRuntime{
 				MinProcesses: &min_procs,
 			},
 		},
@@ -176,15 +176,15 @@ func (s *StateSuite) TestLoadTarget() {
 			Title:       "Super Title",
 			Description: "minimal description",
 			Tags:        []string{"a", "b", "c"},
-			Python: config.Python{Version: "3.11.3",
+			Python: &config.Python{Version: "3.11.3",
 				PackageFile:    "requirements.txt",
 				PackageManager: "pip",
 			},
 			Environment: map[string]string{
 				"FOO": "BAR",
 			},
-			Connect: config.Connect{
-				Runtime: config.ConnectRuntime{
+			Connect: &config.Connect{
+				Runtime: &config.ConnectRuntime{
 					MinProcesses: &min_procs,
 				},
 			},

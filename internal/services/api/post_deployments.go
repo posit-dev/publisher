@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
@@ -30,7 +29,7 @@ type StateFactory = func(
 	accountName, configName, targetID string,
 	accountList accounts.AccountList) (*state.State, error)
 
-func PostPublishHandlerFunc(
+func PostDeploymentsHandlerFunc(
 	stateStore *state.State,
 	base util.Path,
 	log logging.Logger,
@@ -46,9 +45,6 @@ func PostPublishHandlerFunc(
 		if err != nil {
 			BadRequestJson(w, req, log, err)
 			return
-		}
-		if b.ConfigName == "" {
-			b.ConfigName = config.DefaultConfigName
 		}
 		localID, err := state.NewLocalID()
 		if err != nil {
