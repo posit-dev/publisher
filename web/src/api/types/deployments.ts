@@ -3,8 +3,8 @@
 export type GetDeploymentsResponse = Record<string, Deployment>;
 
 export type DeploymentPythonConfiguration = {
-  'package-file': string,
-  'package-manager': string,
+  packageFile: string,
+  packageManager: string,
   version: string
 }
 
@@ -15,9 +15,9 @@ export type DeploymentConfiguration = {
 
 export type Deployment = {
   configuration: DeploymentConfiguration,
-  'configuration-name': string,
+  configurationName: string,
   files: string[],
   id: string,
-  'server-type': string,
-  'server-url': string,
+  serverType: string,
+  serverUrl: string,
 }
