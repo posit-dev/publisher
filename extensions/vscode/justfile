@@ -27,16 +27,23 @@ clean:
     set -eou pipefail
     {{ _with_debug }}
 
+    rm -f *.vsix
+    rm -rf .vscode-test
     rm -rf node_modules
+    rm -rf out
 
 
-# Install dependencies
+# Installs dependencies
 install:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    npm install
+    if [ {{ _ci }} = "true" ]; then
+        npm ci --no-audit --no-fund
+    else
+        npm install --no-audit --no-fund
+    fi
 
 # Performs static code analysis with ESLint
 lint:
@@ -45,6 +52,19 @@ lint:
     {{ _with_debug }}
 
     npm run lint
+
+# Packages the extension.
+package:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    name="$(just ../../name)"
+    version="$(just ../../version)"
+    path="../../packages"
+    mkdir -p "${path}"
+    npx @vscode/vsce package --skip-license -o ${path}/${name}-${version}.vsix
+
 
 # Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just positron run test`)
 run *args:

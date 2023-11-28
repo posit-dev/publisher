@@ -8,6 +8,7 @@
     summary="Installing the dependent python packages on the server in order to reproduce your runtime environment."
     :done="done"
     :messages="messages"
+    :caption="caption"
   />
 </template>
 
@@ -27,6 +28,7 @@ const $eventStream = useEventStream();
 
 const done = ref(false);
 const messages = ref<EventStreamMessage[]>([]);
+const caption = ref<string | undefined>();
 
 const startCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/start', (msg) => {
   messages.value.push(msg);
@@ -35,11 +37,30 @@ const startCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/s
 const logCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/log', (msg) => {
   messages.value.push(msg);
 });
-const progressCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/progress', (msg) => {
-  messages.value.push(msg);
+const statusCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/status', (msg) => {
+  let newCaption: string;
+
+  const { status: packageStatus, name: packageName, version } = msg.data;
+  switch (packageStatus) {
+    case 'download+install':
+      newCaption = `Downloading and installing package: `;
+      break;
+    case 'download':
+      newCaption = `Downloading package: `;
+      break;
+    case 'install':
+      newCaption = `Installing package: `;
+      break;
+  }
+  newCaption += packageName;
+  if (version) {
+    newCaption += ` (${version})`;
+  }
+  caption.value = newCaption;
 });
 const successCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv/success', (msg) => {
   messages.value.push(msg);
+  caption.value = undefined;
   done.value = true;
   emit('start');
 });
@@ -50,7 +71,7 @@ const failureCb = $eventStream.addEventMonitorCallback('publish/restorePythonEnv
 onBeforeUnmount(() => {
   $eventStream.delEventFilterCallback(startCb);
   $eventStream.delEventFilterCallback(logCb);
-  $eventStream.delEventFilterCallback(progressCb);
+  $eventStream.delEventFilterCallback(statusCb);
   $eventStream.delEventFilterCallback(successCb);
   $eventStream.delEventFilterCallback(failureCb);
 });

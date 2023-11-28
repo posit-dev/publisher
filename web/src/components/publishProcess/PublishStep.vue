@@ -4,6 +4,7 @@
   <q-step
     :name="name"
     title="This is a step"
+    :caption="caption"
     :icon="icon"
     :active-icon="hasError ? 'warning' : icon"
     :active-color="hasError ? 'red' : undefined"
@@ -48,6 +49,7 @@ const colorStore = useColorStore();
 
 const props = defineProps({
   name: { type: [String, Number], required: true },
+  caption: { type: String, required: false, default: undefined },
   icon: { type: String, required: true },
   summary: { type: String, required: true },
   messages: { type: Array as PropType<EventStreamMessage[]>, required: false, default: () => [] },
