@@ -12,9 +12,9 @@ import (
 )
 
 type configDTO struct {
-	Name   string         `json:"name"`
-	Config *config.Config `json:"config,omitempty"`
-	Error  string         `json:"error,omitempty"`
+	Name          string         `json:"name"`
+	Configuration *config.Config `json:"configuration,omitempty"`
+	Error         string         `json:"error,omitempty"`
 }
 
 func readConfigFiles(base util.Path) ([]configDTO, error) {
@@ -32,8 +32,8 @@ func readConfigFiles(base util.Path) ([]configDTO, error) {
 			})
 		} else {
 			response = append(response, configDTO{
-				Name:   path.Base(),
-				Config: cfg,
+				Name:          path.Base(),
+				Configuration: cfg,
 			})
 		}
 	}
