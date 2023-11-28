@@ -3,7 +3,7 @@ package inspect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -30,7 +30,7 @@ func (d *StaticHTMLDetector) InferType(path util.Path) (*ContentType, error) {
 	}
 	if entrypoint != "" {
 		return &ContentType{
-			AppMode:    apptypes.StaticMode,
+			Type:       config.ContentTypeHTML,
 			Entrypoint: entrypoint,
 		}, nil
 	}

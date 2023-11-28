@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -100,7 +100,7 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:        apptypes.StaticJupyterMode,
+		Type:           config.ContentTypeJupyterNotebook,
 		Entrypoint:     filename,
 		RequiresPython: true,
 	}, t)
@@ -116,7 +116,7 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:        apptypes.JupyterVoilaMode,
+		Type:           config.ContentTypeJupyterVoila,
 		Entrypoint:     filename,
 		RequiresPython: true,
 	}, t)

@@ -5,12 +5,12 @@ package inspect
 import (
 	"io"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type ContentType struct {
-	AppMode        apptypes.AppMode
+	Type           config.ContentType
 	Entrypoint     string
 	RequiresR      bool
 	RequiresPython bool

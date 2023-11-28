@@ -154,11 +154,33 @@ func NewManifest() *Manifest {
 	}
 }
 
+var connectContentTypeMap = map[config.ContentType]apptypes.AppMode{
+	config.ContentTypeHTML:            apptypes.StaticMode,
+	config.ContentTypeJupyterNotebook: apptypes.StaticJupyterMode,
+	config.ContentTypeJupyterVoila:    apptypes.JupyterVoilaMode,
+	config.ContentTypePythonBokeh:     apptypes.PythonBokehMode,
+	config.ContentTypePythonDash:      apptypes.PythonDashMode,
+	config.ContentTypePythonFastAPI:   apptypes.PythonFastAPIMode,
+	config.ContentTypePythonFlask:     apptypes.PythonAPIMode,
+	config.ContentTypePythonShiny:     apptypes.PythonShinyMode,
+	config.ContentTypePythonStreamlit: apptypes.PythonStreamlitMode,
+	config.ContentTypeQuartoShiny:     apptypes.ShinyQuartoMode,
+	config.ContentTypeQuarto:          apptypes.StaticQuartoMode,
+	config.ContentTypeRPlumber:        apptypes.PlumberAPIMode,
+	config.ContentTypeRShiny:          apptypes.ShinyMode,
+	config.ContentTypeRMarkdownShiny:  apptypes.ShinyRmdMode,
+	config.ContentTypeRMarkdown:       apptypes.StaticRmdMode,
+}
+
 func NewManifestFromConfig(cfg *config.Config) *Manifest {
+	contentType, ok := connectContentTypeMap[cfg.Type]
+	if !ok {
+		contentType = apptypes.UnknownMode
+	}
 	m := &Manifest{
 		Version: 1,
 		Metadata: Metadata{
-			AppMode:    cfg.Type,
+			AppMode:    contentType,
 			Entrypoint: cfg.Entrypoint,
 		},
 		Jupyter:     nil,
@@ -185,10 +207,10 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 		}
 	}
 	switch cfg.Type {
-	case apptypes.StaticRmdMode:
-	case apptypes.ShinyRmdMode:
+	case config.ContentTypeRMarkdown:
+	case config.ContentTypeRMarkdownShiny:
 		m.Metadata.PrimaryRmd = cfg.Entrypoint
-	case apptypes.StaticMode:
+	case config.ContentTypeHTML:
 		m.Metadata.PrimaryHtml = cfg.Entrypoint
 	}
 	return m
