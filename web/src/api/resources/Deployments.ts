@@ -2,7 +2,7 @@
 
 import { AxiosInstance, AxiosRequestConfig } from 'axios';
 
-import { GetDeploymentsResponse } from 'src/api/types/deployments';
+import { Deployment, DeploymentError } from 'src/api/types/deployments';
 
 export class Deployments {
   private client: AxiosInstance;
@@ -18,9 +18,16 @@ export class Deployments {
     };
   }
 
-  get() {
-    return this.client.get<GetDeploymentsResponse>(
+  getAll() {
+    return this.client.get<Array<Deployment | DeploymentError>>(
       '/deployments',
+      this.createConfig()
+    );
+  }
+
+  get(id: string) {
+    return this.client.get<Deployment | DeploymentError>(
+      `deployments/${id}`,
       this.createConfig()
     );
   }
