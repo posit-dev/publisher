@@ -11,23 +11,30 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type getDeploymentsResponse map[string]any
+type deploymentDTO struct {
+	ID         string                 `json:"id"`
+	Deployment *deployment.Deployment `json:"deployment,omitempty"`
+	Error      string                 `json:"error,omitempty"`
+}
 
-func readLatestDeploymentFiles(base util.Path) (getDeploymentsResponse, error) {
+func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
 	paths, err := deployment.ListLatestDeploymentFiles(base)
 	if err != nil {
 		return nil, err
 	}
-	response := getDeploymentsResponse{}
+	response := make([]deploymentDTO, 0, len(paths))
 	for _, path := range paths {
-		name := path.Dir().Base()
 		d, err := deployment.FromFile(path)
 		if err != nil {
-			response[name] = map[string]string{
-				"error": err.Error(),
-			}
+			response = append(response, deploymentDTO{
+				ID:    path.Dir().Base(),
+				Error: err.Error(),
+			})
 		} else {
-			response[name] = d
+			response = append(response, deploymentDTO{
+				ID:         path.Dir().Base(),
+				Deployment: d,
+			})
 		}
 	}
 	return response, nil
