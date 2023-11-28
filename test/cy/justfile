@@ -2,6 +2,9 @@ alias c := clean
 alias i := install
 alias t := test
 
+# RUNNER_OS from gh actions for windows tests
+export RUNNER_OS := env_var_or_default("RUNNER_OS", "local")
+
 _ci := env_var_or_default("CI", "false")
 
 _debug := env_var_or_default("DEBUG", "false")
@@ -77,3 +80,29 @@ test:
     {{ _with_debug }}
 
     npm test
+
+fuzzbucket-start:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    pip install -r ../setup/requirements.txt
+    python ../setup/connect_setup.py
+
+fuzzbucket-stop:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    pip install fuzzbucket-client
+    fuzzbucket-client rm connect-publishing-client
+
+test-deploy:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+    pip install -r ../setup/requirements.txt
+    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
+    if [[ ${RUNNER_OS} =~ "Windows" ]]; then \
+        npm run test-deploy-windows
+    else
+        npm run test-deploy
+    fi

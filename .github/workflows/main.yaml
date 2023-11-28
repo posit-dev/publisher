@@ -15,10 +15,12 @@ jobs:
     uses: ./.github/workflows/bats.yaml
   cypress:
     needs: build
-    uses: ./.github/workflows/cypress.yaml
+    uses: ./.github/workflows/ui.yaml
+  package:
+    uses: ./.github/workflows/package.yaml
 
   # Extensions
   jupyterlab:
     uses: ./.github/workflows/jupyterlab.yaml
-  positron:
-    uses: ./.github/workflows/positron.yaml
+  vscode:
+    uses: ./.github/workflows/vscode.yaml

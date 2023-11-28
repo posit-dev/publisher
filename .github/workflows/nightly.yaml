@@ -1,0 +1,33 @@
+name: Nightly
+on:
+  schedule:
+    - cron: "0 06 * * *"
+  workflow_dispatch:
+
+jobs:
+  agent:
+    uses: ./.github/workflows/agent.yaml
+  web:
+    uses: ./.github/workflows/web.yaml
+  build:
+    uses: ./.github/workflows/build.yaml
+  bats:
+    needs: build
+    uses: ./.github/workflows/bats.yaml
+  contract-deps:
+    secrets: inherit
+    uses: ./.github/workflows/contract-deps.yaml
+  cypress-nightly:
+    needs: [build, contract-deps]
+    secrets: inherit
+    uses: ./.github/workflows/contract.yaml
+  cleanup:
+    needs: cypress-nightly
+    secrets: inherit
+    uses: ./.github/workflows/cleanup.yaml
+
+  # Extensions
+  jupyterlab:
+    uses: ./.github/workflows/jupyterlab.yaml
+  vscode:
+    uses: ./.github/workflows/vscode.yaml
