@@ -21,12 +21,12 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type PublishHandlerFuncSuite struct {
+type PostDeploymentsHandlerFuncSuite struct {
 	utiltest.Suite
 }
 
-func TestPublishHandlerFuncSuite(t *testing.T) {
-	suite.Run(t, new(PublishHandlerFuncSuite))
+func TestPostDeploymentsHandlerFuncSuite(t *testing.T) {
+	suite.Run(t, new(PostDeploymentsHandlerFuncSuite))
 }
 
 type mockPublisher struct {
@@ -38,7 +38,7 @@ func (m *mockPublisher) PublishDirectory(log logging.Logger) error {
 	return args.Error(0)
 }
 
-func (s *PublishHandlerFuncSuite) TestPublishHandlerFunc() {
+func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
 	stateStore := state.Empty()
 	oldID := stateStore.LocalID
 	log := logging.New()
@@ -61,7 +61,7 @@ func (s *PublishHandlerFuncSuite) TestPublishHandlerFunc() {
 		accountList accounts.AccountList) (*state.State, error) {
 		return state.Empty(), nil
 	}
-	handler := PostPublishHandlerFunc(stateStore, util.Path{}, log, lister, stateFactory, publisherFactory)
+	handler := PostDeploymentsHandlerFunc(stateStore, util.Path{}, log, lister, stateFactory, publisherFactory)
 	handler(rec, req)
 
 	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
@@ -77,7 +77,7 @@ func (s *PublishHandlerFuncSuite) TestPublishHandlerFunc() {
 	s.Equal(stateStore.LocalID, res.LocalID)
 }
 
-func (s *PublishHandlerFuncSuite) TestPublishHandlerFuncBadJSON() {
+func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadJSON() {
 	log := logging.New()
 
 	rec := httptest.NewRecorder()
@@ -86,12 +86,12 @@ func (s *PublishHandlerFuncSuite) TestPublishHandlerFuncBadJSON() {
 
 	req.Body = io.NopCloser(strings.NewReader("{\"random\":\"123\"}"))
 
-	handler := PostPublishHandlerFunc(nil, util.Path{}, log, nil, nil, nil)
+	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil, nil, nil)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
 
-func (s *PublishHandlerFuncSuite) TestPublishHandlerFuncStateErr() {
+func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncStateErr() {
 	log := logging.New()
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("POST", "/api/publish", nil)
@@ -105,12 +105,12 @@ func (s *PublishHandlerFuncSuite) TestPublishHandlerFuncStateErr() {
 		return nil, errors.New("test error from state factory")
 	}
 
-	handler := PostPublishHandlerFunc(nil, util.Path{}, log, nil, stateFactory, nil)
+	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil, stateFactory, nil)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
 
-func (s *PublishHandlerFuncSuite) TestPublishHandlerFuncPublishErr() {
+func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncPublishErr() {
 	log := logging.New()
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("POST", "/api/publish", nil)
@@ -133,7 +133,7 @@ func (s *PublishHandlerFuncSuite) TestPublishHandlerFuncPublishErr() {
 		return publisher
 	}
 
-	handler := PostPublishHandlerFunc(state.Empty(), util.Path{}, log, lister, stateFactory, publisherFactory)
+	handler := PostDeploymentsHandlerFunc(state.Empty(), util.Path{}, log, lister, stateFactory, publisherFactory)
 	handler(rec, req)
 
 	// Handler returns 202 Accepted even if publishing errs,

@@ -30,7 +30,7 @@ type StateFactory = func(
 	accountName, configName, targetID string,
 	accountList accounts.AccountList) (*state.State, error)
 
-func PostPublishHandlerFunc(
+func PostDeploymentsHandlerFunc(
 	stateStore *state.State,
 	base util.Path,
 	log logging.Logger,
