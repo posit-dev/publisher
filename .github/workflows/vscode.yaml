@@ -1,4 +1,4 @@
-name: Positron
+name: VSCode
 on:
   workflow_call:
 jobs:
@@ -18,9 +18,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: just positron install
-      - run: just positron lint
-      - run: just positron test
+      - run: just vscode install
+      - run: just vscode lint
+      - run: just vscode test
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -28,6 +28,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: just positron install
-      - run: just positron lint
-      - run: just positron test
+      - run: just vscode install
+      - run: just vscode lint
+      - run: just vscode test

@@ -46,13 +46,13 @@ func (s *DeploymentSuite) TestNew() {
 
 func (s *DeploymentSuite) TestGetLatestDeploymentPath() {
 	path := GetLatestDeploymentPath(s.cwd, "myTargetID")
-	s.Equal(path, s.cwd.Join(".posit", "deployments", "myTargetID", "latest.toml"))
+	s.Equal(path, s.cwd.Join(".posit", "publish", "deployments", "myTargetID", "latest.toml"))
 }
 
 func (s *DeploymentSuite) TestGetLatestDeploymentHistoryPath() {
 	path, err := GetDeploymentHistoryPath(s.cwd, "myTargetID")
 	s.NoError(err)
-	s.Equal(path, s.cwd.Join(".posit", "deployments", "myTargetID", "v1.toml"))
+	s.Equal(path, s.cwd.Join(".posit", "publish", "deployments", "myTargetID", "v1.toml"))
 
 	f, err := path.Create()
 	s.NoError(err)
@@ -61,7 +61,7 @@ func (s *DeploymentSuite) TestGetLatestDeploymentHistoryPath() {
 
 	path, err = GetDeploymentHistoryPath(s.cwd, "myTargetID")
 	s.NoError(err)
-	s.Equal(path, s.cwd.Join(".posit", "deployments", "myTargetID", "v2.toml"))
+	s.Equal(path, s.cwd.Join(".posit", "publish", "deployments", "myTargetID", "v2.toml"))
 }
 
 func (s *DeploymentSuite) TestFromFile() {

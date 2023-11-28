@@ -17,7 +17,7 @@ jobs:
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
-          name: executables
+          name: bin
           path: bin
       - run: chmod -R +x ./bin
       - run: just bats install
@@ -35,7 +35,7 @@ jobs:
       - uses: ./.github/actions/setup
       - uses: actions/download-artifact@v3
         with:
-          name: executables
+          name: bin
           path: bin
       - run: chmod -R +x ./bin
       - run: just bats install

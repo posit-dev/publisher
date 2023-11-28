@@ -21,7 +21,7 @@ jobs:
     needs: [build, contract-deps]
     secrets: inherit
     uses: ./.github/workflows/contract.yaml
-  cleanup: 
+  cleanup:
     needs: cypress-nightly
     secrets: inherit
     uses: ./.github/workflows/cleanup.yaml
@@ -29,5 +29,5 @@ jobs:
   # Extensions
   jupyterlab:
     uses: ./.github/workflows/jupyterlab.yaml
-  positron:
-    uses: ./.github/workflows/positron.yaml
+  vscode:
+    uses: ./.github/workflows/vscode.yaml
