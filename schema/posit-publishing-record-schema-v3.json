@@ -8,7 +8,7 @@
     "$schema",
     "server-url",
     "id",
-    "configuration"
+    "configuration-name"
   ],
   "properties": {
     "$schema": {
@@ -37,11 +37,11 @@
         "de2e7bdb-b085-401e-a65c-443e40009749"
       ]
     },
-    "configuration-file": {
+    "configuration-name": {
       "type": "string",
-      "description": "Name of the configuration file that was used during deployment.",
+      "description": "Name of the configuration that was used during deployment.",
       "examples": [
-        "production.toml"
+        "production"
       ]
     },
     "configuration": {

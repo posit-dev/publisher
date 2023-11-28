@@ -3,7 +3,7 @@
   "$id": "https://github.com/rstudio/publishing-client/posit-publishing-schema-v3.json",
   "type": "object",
   "additionalProperties": false,
-  "description": "Posit Deployment Settings",
+  "description": "Posit Publishing Configuration",
   "required": [
     "$schema",
     "type",
