@@ -4,7 +4,7 @@
     "lint": "eslint --ext .js,.ts,.cjs .",
     "fix": "eslint --ext .js,.ts,.cjs . --fix",
     "init": "just ../../run init ./test/sample-content/fastapi-simple",
-    "start": "just ../../run publish-ui --listen 127.0.0.1:9000 -n env ./test/sample-content/fastapi-simple",
+    "start": "just ../../run publish-ui --listen 127.0.0.1:9000 ./test/sample-content/fastapi-simple",
     "test": "start-server-and-test --expect 200 start http-get://127.0.0.1:9000 run",
     "test-deploy": "start-server-and-test --expect 200 start http-get://127.0.0.1:9000 run-deploy",
     "test-deploy-windows": "start-server-and-test --expect 200 start http-get://127.0.0.1:9000 run-deploy-windows",
