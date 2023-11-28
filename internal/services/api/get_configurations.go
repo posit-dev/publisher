@@ -5,29 +5,41 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type getConfigurationsResponse map[string]any
+type configDTO struct {
+	Name          string         `json:"configuration-name"`
+	Path          string         `json:"configuration-path"`
+	Configuration *config.Config `json:"configuration,omitempty"`
+	Error         string         `json:"error,omitempty"`
+}
 
-func readConfigFiles(base util.Path) (getConfigurationsResponse, error) {
+func readConfigFiles(base util.Path) ([]configDTO, error) {
 	paths, err := config.ListConfigFiles(base)
 	if err != nil {
 		return nil, err
 	}
-	response := getConfigurationsResponse{}
+	response := make([]configDTO, 0, len(paths))
 	for _, path := range paths {
-		name := path.Base()
+		name := strings.TrimSuffix(path.Base(), ".toml")
 		cfg, err := config.FromFile(path)
 		if err != nil {
-			response[name] = map[string]string{
-				"error": err.Error(),
-			}
+			response = append(response, configDTO{
+				Name:  name,
+				Path:  path.String(),
+				Error: err.Error(),
+			})
 		} else {
-			response[name] = cfg
+			response = append(response, configDTO{
+				Name:          name,
+				Path:          path.String(),
+				Configuration: cfg,
+			})
 		}
 	}
 	return response, nil

@@ -36,7 +36,7 @@ func New() *Deployment {
 const latestDeploymentName = "latest.toml"
 
 func GetDeploymentsPath(base util.Path) util.Path {
-	return base.Join(".posit", "deployments")
+	return base.Join(".posit", "publish", "deployments")
 }
 
 func GetLatestDeploymentPath(base util.Path, id string) util.Path {

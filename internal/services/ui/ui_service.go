@@ -84,6 +84,10 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 	r.Handle(ToPath("deployments", "{id}"), api.GetDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
+	// POST /api/deployments
+	r.Handle(ToPath("deployments"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
+		Methods(http.MethodPost)
+
 	// GET /api/deployment - DEPRECATED
 	r.Handle(ToPath("deployment"), api.OldGetDeploymentHandlerFunc(deploymentsService)).
 		Methods(http.MethodGet)
@@ -92,8 +96,8 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 	r.Handle(ToPath("deployment", "account"), api.PutDeploymentAccountHandlerFunc(lister, deploymentsService, log)).
 		Methods(http.MethodPut)
 
-	// POST /api/publish
-	r.Handle(ToPath("publish"), api.PostPublishHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
+	// POST /api/publish - DEPRECATED
+	r.Handle(ToPath("publish"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
 		Methods(http.MethodPost)
 
 	// GET /
