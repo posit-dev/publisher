@@ -8,7 +8,6 @@ import (
 	"sort"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
@@ -58,30 +57,12 @@ func OldDeploymentFromConfig(path util.Path, cfg *config.Config, account *accoun
 		targetID.ServerType = target.ServerType
 		targetID.ServerURL = target.ServerURL
 	}
+	m := bundles.NewManifestFromConfig(cfg)
+	m.Files = files
 	return &OldDeployment{
-		SourceDir: path,
-		Target:    targetID,
-		Manifest: bundles.Manifest{
-			Version: 1,
-			Metadata: bundles.Metadata{
-				AppMode:     apptypes.AppMode(cfg.Type),
-				Entrypoint:  cfg.Entrypoint,
-				PrimaryRmd:  cfg.Entrypoint,
-				PrimaryHtml: cfg.Entrypoint,
-			},
-			Python: &bundles.Python{
-				Version: cfg.Python.Version,
-				PackageManager: bundles.PythonPackageManager{
-					Name:        cfg.Python.PackageManager,
-					PackageFile: cfg.Python.PackageFile,
-				},
-			},
-			Quarto: &bundles.Quarto{
-				Version: cfg.Quarto.Version,
-				Engines: cfg.Quarto.Engines,
-			},
-			Files: files,
-		},
+		SourceDir:          path,
+		Target:             targetID,
+		Manifest:           *m,
 		Connect:            OldConnectDeployment{*ConnectContentFromConfig(cfg)},
 		PythonRequirements: nil,
 	}

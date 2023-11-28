@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
@@ -46,9 +45,6 @@ func PostDeploymentsHandlerFunc(
 		if err != nil {
 			BadRequestJson(w, req, log, err)
 			return
-		}
-		if b.ConfigName == "" {
-			b.ConfigName = config.DefaultConfigName
 		}
 		localID, err := state.NewLocalID()
 		if err != nil {
