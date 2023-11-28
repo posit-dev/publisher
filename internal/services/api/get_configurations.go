@@ -11,23 +11,30 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type getConfigurationsResponse map[string]any
+type configDTO struct {
+	Name   string         `json:"name"`
+	Config *config.Config `json:"config,omitempty"`
+	Error  string         `json:"error,omitempty"`
+}
 
-func readConfigFiles(base util.Path) (getConfigurationsResponse, error) {
+func readConfigFiles(base util.Path) ([]configDTO, error) {
 	paths, err := config.ListConfigFiles(base)
 	if err != nil {
 		return nil, err
 	}
-	response := getConfigurationsResponse{}
+	response := make([]configDTO, 0, len(paths))
 	for _, path := range paths {
-		name := path.Base()
 		cfg, err := config.FromFile(path)
 		if err != nil {
-			response[name] = map[string]string{
-				"error": err.Error(),
-			}
+			response = append(response, configDTO{
+				Name:  path.Base(),
+				Error: err.Error(),
+			})
 		} else {
-			response[name] = cfg
+			response = append(response, configDTO{
+				Name:   path.Base(),
+				Config: cfg,
+			})
 		}
 	}
 	return response, nil
