@@ -4,6 +4,8 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -12,9 +14,25 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func readLatestDeploymentFile(base util.Path, id string) (*deployment.Deployment, error) {
+func readLatestDeploymentFile(base util.Path, id string) (*deploymentDTO, error) {
 	path := deployment.GetLatestDeploymentPath(base, id)
-	return deployment.FromFile(path)
+	d, err := deployment.FromFile(path)
+	if err != nil {
+		// Not found errors will return a 404
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+		// Other errors are returned to the caller
+		return &deploymentDTO{
+			ID:    id,
+			Error: err.Error(),
+		}, nil
+	} else {
+		return &deploymentDTO{
+			ID:         id,
+			Deployment: d,
+		}, nil
+	}
 }
 
 func GetDeploymentHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
@@ -22,7 +40,12 @@ func GetDeploymentHandlerFunc(base util.Path, log logging.Logger) http.HandlerFu
 		id := mux.Vars(req)["id"]
 		response, err := readLatestDeploymentFile(base, id)
 		if err != nil {
-			InternalError(w, req, log, err)
+			if errors.Is(err, fs.ErrNotExist) {
+				http.NotFound(w, req)
+			} else {
+				InternalError(w, req, log, err)
+			}
+			return
 		}
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(response)
