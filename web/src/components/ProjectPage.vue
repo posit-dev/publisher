@@ -2,11 +2,36 @@
 
 <template>
   <h1>Project Page</h1>
+
+  <h2>Destinations</h2>
+  <ul
+    v-for="deployment in deployments"
+    :key="deployment.id"
+  >
+    <li>
+      <RouterLink :to="`/destination/${deployment.id}`">
+        {{ deployment.serverUrl }}
+      </RouterLink>
+    </li>
+  </ul>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import { RouterLink } from 'vue-router';
+
 import { useApi } from 'src/api';
+import { Deployment } from 'src/api/types/deployments';
 
 const api = useApi();
-api.deployments.get();
+const deployments = ref<Deployment[]>([]);
+
+async function getDeployments() {
+  const response = (await api.deployments.get()).data;
+  Object.values(response).forEach((deployment) => {
+    deployments.value.push(deployment);
+  });
+}
+
+getDeployments();
 </script>
