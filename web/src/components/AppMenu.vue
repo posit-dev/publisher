@@ -9,7 +9,6 @@
     >
       <q-menu>
         <q-list
-          style="min-width: 100px"
           class="q-pa-sm"
         >
           <q-item
@@ -37,54 +36,6 @@
             <q-item-section>Dark Mode - auto</q-item-section>
           </q-item>
         </q-list>
-        <!-- <q-list
-          style="min-width: 100px"
-          class="q-pa-sm"
-        >
-          <q-item
-            v-close-popup
-            clickable
-            class="q-my-sm"
-          >
-            <q-item-section>Overview</q-item-section>
-          </q-item>
-
-          <q-item
-            v-close-popup
-            clickable
-            class="q-my-sm"
-          >
-            <q-item-section>Posit Publishing FAQs</q-item-section>
-          </q-item>
-
-          <q-separator />
-
-          <q-item
-            v-close-popup
-            clickable
-            class="q-my-sm"
-          >
-            <q-item-section>Show Agent Console</q-item-section>
-          </q-item>
-
-          <q-item
-            v-close-popup
-            clickable
-            class="q-my-sm"
-          >
-            <q-item-section>Create Diagnostic Bundle</q-item-section>
-          </q-item>
-
-          <q-separator />
-
-          <q-item
-            v-close-popup
-            clickable
-            class="q-my-sm"
-          >
-            <q-item-section>About</q-item-section>
-          </q-item>
-        </q-list> -->
       </q-menu>
     </q-btn>
   </div>
