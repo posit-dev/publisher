@@ -29,14 +29,14 @@ func (s *ServicesSuite) SetupSuite() {
 func (s *ServicesSuite) TestCreatePathsService() {
 	afs := afero.NewMemMapFs()
 	base := util.NewPath("", afs)
-	service := CreatePathsService(base, afs, s.log)
+	service := CreatePathsService(base, s.log)
 	s.NotNil(service)
 }
 
 func (s *ServicesSuite) TestPathsService_IsSafe() {
 	afs := afero.NewMemMapFs()
 	base := util.NewPath("", afs)
-	service := CreatePathsService(base, afs, s.log)
+	service := CreatePathsService(base, s.log)
 	ok, err := service.IsSafe(base)
 	s.True(ok)
 	s.Nil(err)
@@ -68,7 +68,7 @@ func (s *ServicesSuite) TestPathsService_isSymlink_True() {
 	fpath := util.NewPath(f.Name(), afs)
 	lpath := util.NewPath(l.Name(), afs)
 
-	ps := pathsService{fpath, afs, s.log}
+	ps := pathsService{fpath, s.log}
 	ok, err := ps.isSymlink(lpath)
 	s.Nil(err)
 	s.True(ok)
@@ -87,7 +87,7 @@ func (s *ServicesSuite) TestPathsService_isSymlink_False_FileFound() {
 	fpath := util.NewPath(f.Name(), afs)
 	lpath := util.NewPath(f.Name(), afs)
 
-	ps := pathsService{fpath, afs, s.log}
+	ps := pathsService{fpath, s.log}
 	ok, err := ps.isSymlink(lpath)
 	s.Nil(err)
 	s.False(ok)
@@ -106,7 +106,7 @@ func (s *ServicesSuite) TestPathsService_isSymlink_False_FileMissing() {
 	fpath := util.NewPath(f.Name(), afs)
 	lpath := util.NewPath("Not Found", afs)
 
-	ps := pathsService{fpath, afs, s.log}
+	ps := pathsService{fpath, s.log}
 	ok, err := ps.isSymlink(lpath)
 	s.Nil(err)
 	s.False(ok)
@@ -144,7 +144,7 @@ func (s *ServicesSuite) TestPathsService_isTrusted() {
 		fpath := util.NewPath("", afs)
 		tpath := util.NewPath(t.path, afs)
 
-		ps := pathsService{fpath, afs, s.log}
+		ps := pathsService{fpath, s.log}
 		res, _ := ps.isTrusted(tpath)
 		s.Equalf(t.exp, res, "%s should be %t, found %t", t.path, t.exp, res)
 	}

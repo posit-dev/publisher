@@ -15,5 +15,5 @@ jobs:
       - uses: actions/upload-artifact@v3
         id: upload
         with:
-          name: executables
+          name: bin
           path: bin/**/*

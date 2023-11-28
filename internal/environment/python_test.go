@@ -19,6 +19,7 @@ import (
 
 type PythonSuite struct {
 	utiltest.Suite
+	cwd util.Path
 }
 
 func TestPythonSuite(t *testing.T) {
@@ -43,6 +44,14 @@ func NewMockPythonExecutor() *MockPythonExecutor {
 	return &MockPythonExecutor{}
 }
 
+func (s *PythonSuite) SetupTest() {
+	cwd, err := util.Getwd(afero.NewMemMapFs())
+	s.NoError(err)
+	s.cwd = cwd
+	err = cwd.MkdirAll(0700)
+	s.NoError(err)
+}
+
 func (s *PythonSuite) TestNewPythonInspector() {
 	log := logging.New()
 	projectDir := util.NewPath("/myproject", nil)
@@ -61,7 +70,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
 	version, err := inspector.GetPythonVersion()
-	s.Nil(err)
+	s.NoError(err)
 	s.Equal("3.10.4", version)
 }
 
@@ -87,7 +96,7 @@ func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	executor.On("runPythonCommand", mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
 	version, err := inspector.GetPythonVersion()
-	s.Nil(err)
+	s.NoError(err)
 	s.Equal("3.10.4", version)
 	executor.AssertExpectations(s.T())
 }
@@ -104,7 +113,7 @@ func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
 	log := logging.New()
 	inspector := NewPythonInspector(util.Path{}, util.Path{}, log)
 	version, err := inspector.GetPythonVersion()
-	s.Nil(err)
+	s.NoError(err)
 	s.True(strings.HasPrefix(version, "3."))
 }
 
@@ -187,48 +196,49 @@ func (s *PythonSuite) TestGetPythonExecutableNoRunnablePython() {
 	s.Equal("", executable)
 }
 
-func (s *PythonSuite) TestGetRequirementsFromFile() {
-	baseDir, err := util.Getwd(afero.NewMemMapFs())
-	s.Nil(err)
-	err = baseDir.MkdirAll(0700)
-	s.Nil(err)
-
+func (s *PythonSuite) TestEnsurePythonRequirementsFileWhenExists() {
 	fileContent := []byte("numpy\npandas\n")
-	reqPath := baseDir.Join("requirements.txt")
-	err = reqPath.WriteFile(fileContent, 0600)
-	s.Nil(err)
+	reqPath := s.cwd.Join("requirements.txt")
+	err := reqPath.WriteFile(fileContent, 0600)
+	s.NoError(err)
 
 	log := logging.New()
-	inspector := NewPythonInspector(baseDir, util.Path{}, log)
-	requirements, err := inspector.GetPythonRequirements()
-	s.Nil(err)
+	inspector := NewPythonInspector(s.cwd, util.Path{}, log)
+	err = inspector.EnsurePythonRequirementsFile()
+	s.NoError(err)
+
+	requirements, err := reqPath.ReadFile()
+	s.NoError(err)
 	s.Equal(fileContent, requirements)
 }
 
-func (s *PythonSuite) TestGetRequirementsFromFileErr() {
+func (s *PythonSuite) TestEnsurePythonRequirementsFileErr() {
 	fs := utiltest.NewMockFs()
 	testError := errors.New("test error from Stat")
 	fs.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), testError)
 	projectDir := util.NewPath("/anything", fs)
 	log := logging.New()
 	inspector := NewPythonInspector(projectDir, util.Path{}, log)
-	requirements, err := inspector.GetPythonRequirements()
+	err := inspector.EnsurePythonRequirementsFile()
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
-	s.Nil(requirements)
 	fs.AssertExpectations(s.T())
 }
 
-func (s *PythonSuite) TestGetPythonRequirementsFromExecutable() {
+func (s *PythonSuite) TestEnsurePythonRequirementsFileFromExecutable() {
 	pythonPath := util.NewPath("/usr/bin/python3", nil)
 	log := logging.New()
-	inspector := NewPythonInspector(util.Path{}, pythonPath, log)
+	inspector := NewPythonInspector(s.cwd, pythonPath, log)
 	executor := NewMockPythonExecutor()
 	freezeOutput := []byte("numpy\npandas\n")
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(freezeOutput, nil)
 	inspector.executor = executor
-	requirements, err := inspector.GetPythonRequirements()
-	s.Nil(err)
+	err := inspector.EnsurePythonRequirementsFile()
+	s.NoError(err)
+
+	reqPath := s.cwd.Join("requirements.txt")
+	requirements, err := reqPath.ReadFile()
+	s.NoError(err)
 	s.Equal(freezeOutput, requirements)
 	executor.AssertExpectations(s.T())
 }
@@ -236,9 +246,8 @@ func (s *PythonSuite) TestGetPythonRequirementsFromExecutable() {
 func (s *PythonSuite) TestGetPythonRequirementsFromExecutableErr() {
 	log := logging.New()
 	pythonPath := util.NewPath("/nonexistent/python3", nil)
-	inspector := NewPythonInspector(util.Path{}, pythonPath, log)
-	requirements, err := inspector.GetPythonRequirements()
+	inspector := NewPythonInspector(s.cwd, pythonPath, log)
+	err := inspector.EnsurePythonRequirementsFile()
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
-	s.Nil(requirements)
 }

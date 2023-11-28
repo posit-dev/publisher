@@ -10,6 +10,6 @@ export class Publish {
   }
 
   start() {
-    return this.client.post('/publish');
+    return this.client.post('/publish', {});
   }
 }

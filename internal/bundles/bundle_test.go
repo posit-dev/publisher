@@ -185,26 +185,6 @@ func (s *BundlerSuite) TestNewBundlerFile() {
 	log.AssertExpectations(s.T())
 }
 
-func (s *BundlerSuite) TestNewBundlerForManifest() {
-	log := loggingtest.NewMockLogger()
-	log.On("WithArgs", logging.LogKeyOp, events.PublishCreateBundleOp).Return(log)
-	manifestPath := s.cwd.Join(ManifestFilename)
-	err := s.manifest.WriteManifestFile(manifestPath)
-	s.Nil(err)
-	bundler, err := NewBundlerForManifestFile(manifestPath, log)
-	s.Nil(err)
-	s.NotNil(bundler)
-	log.AssertExpectations(s.T())
-}
-
-func (s *BundlerSuite) TestNewBundlerForManifestMissingManifestFile() {
-	log := logging.New()
-	manifestPath := s.cwd.Join(ManifestFilename)
-	bundler, err := NewBundlerForManifestFile(manifestPath, log)
-	s.NotNil(err)
-	s.Nil(bundler)
-}
-
 func (s *BundlerSuite) makeFile(path string) {
 	s.makeFileWithContents(path, []byte("content of "+path))
 }
@@ -360,74 +340,6 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 		"subdir/testfile",
 		"testfile",
 	}, manifest2.GetFilenames())
-}
-
-func (s *BundlerSuite) TestMultipleCallsFromManifest() {
-	// The bundler should be reusable for multiple
-	// passes over the bundle directory.
-	s.makeFile("testfile")
-	s.makeFile(filepath.Join("subdir", "testfile"))
-
-	log := logging.New()
-	manifestPath := s.cwd.Join(ManifestFilename)
-	err := s.manifest.WriteManifestFile(manifestPath)
-	s.Nil(err)
-	bundler, err := NewBundlerForManifestFile(manifestPath, log)
-	s.Nil(err)
-
-	manifest, err := bundler.CreateManifest()
-	s.Nil(err)
-	s.NotNil(manifest)
-	s.Equal([]string{
-		"subdir/testfile",
-		"testfile",
-	}, manifest.GetFilenames())
-
-	dest := new(bytes.Buffer)
-	manifest2, err := bundler.CreateBundle(dest)
-	s.Nil(err)
-	s.NotNil(manifest2)
-	s.Equal([]string{
-		"subdir/testfile",
-		"testfile",
-	}, manifest2.GetFilenames())
-}
-
-func (s *BundlerSuite) TestNewBundleFromManifest() {
-	s.makeFile("testfile")
-	s.makeFile(filepath.Join("subdir", "testfile"))
-
-	dest := new(bytes.Buffer)
-	log := logging.New()
-
-	manifestPath := s.cwd.Join(ManifestFilename)
-	err := s.manifest.WriteManifestFile(manifestPath)
-	s.Nil(err)
-
-	bundler, err := NewBundlerForManifestFile(manifestPath, log)
-	s.Nil(err)
-	manifestOut, err := bundler.CreateBundle(dest)
-	s.Nil(err)
-	s.Equal(s.manifest.GetFilenames(), manifestOut.GetFilenames())
-	s.Greater(dest.Len(), 0)
-}
-
-func (s *BundlerSuite) TestNewBundleFromManifestMissingFile() {
-	dest := new(bytes.Buffer)
-	log := logging.New()
-
-	s.manifest.AddFile("nonexistent", []byte{0})
-	manifestPath := s.cwd.Join(ManifestFilename)
-	err := s.manifest.WriteManifestFile(manifestPath)
-	s.Nil(err)
-
-	bundler, err := NewBundlerForManifestFile(manifestPath, log)
-	s.Nil(err)
-	manifestOut, err := bundler.CreateBundle(dest)
-	s.NotNil(err)
-	s.Nil(manifestOut)
-	s.ErrorContains(err, "error adding file")
-	s.ErrorIs(err, os.ErrNotExist)
 }
 
 func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {

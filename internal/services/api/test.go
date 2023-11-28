@@ -17,24 +17,24 @@ type MockDeploymentsService struct {
 	deployments.DeploymentsService
 }
 
-func (m *MockDeploymentsService) GetDeployment() *state.Deployment {
+func (m *MockDeploymentsService) GetDeployment() *state.OldDeployment {
 	args := m.Called()
-	return args.Get(0).(*state.Deployment)
+	return args.Get(0).(*state.OldDeployment)
 }
 
-func (m *MockDeploymentsService) SetDeploymentFiles(files []string) *state.Deployment {
+func (m *MockDeploymentsService) SetDeploymentFiles(files []string) *state.OldDeployment {
 	args := m.Called()
-	return args.Get(0).(*state.Deployment)
+	return args.Get(0).(*state.OldDeployment)
 }
 
-func (m *MockDeploymentsService) SetDeploymentTitle(title string) *state.Deployment {
+func (m *MockDeploymentsService) SetDeploymentTitle(title string) *state.OldDeployment {
 	args := m.Called()
-	return args.Get(0).(*state.Deployment)
+	return args.Get(0).(*state.OldDeployment)
 }
 
-func (m *MockDeploymentsService) SetDeploymentAccount(lister accounts.AccountList, account_name string) (*state.Deployment, error) {
+func (m *MockDeploymentsService) SetDeploymentAccount(lister accounts.AccountList, account_name string) (*state.OldDeployment, error) {
 	args := m.Called()
-	return args.Get(0).(*state.Deployment), nil
+	return args.Get(0).(*state.OldDeployment), nil
 }
 
 type MockFilesService struct {

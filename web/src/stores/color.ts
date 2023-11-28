@@ -18,6 +18,7 @@ export const useColorStore = defineStore('color', () => {
       textInput: {
         active: 'grey-1',
       },
+      textError: 'red',
       outline: 'grey-6',
       icon: {
         fill: 'grey-4',
@@ -90,6 +91,7 @@ export const useColorStore = defineStore('color', () => {
       textInput: {
         active: 'grey-10',
       },
+      textError: 'red',
       outline: 'grey-10',
       icon: {
         fill: 'grey-8',
