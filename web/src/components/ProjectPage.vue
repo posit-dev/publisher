@@ -21,15 +21,15 @@ import { ref } from 'vue';
 import { RouterLink } from 'vue-router';
 
 import { useApi } from 'src/api';
-import { Deployment } from 'src/api/types/deployments';
+import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 
 const api = useApi();
 const deployments = ref<Deployment[]>([]);
 
 async function getDeployments() {
-  const response = (await api.deployments.get()).data;
-  Object.values(response).forEach((deployment) => {
-    deployments.value.push(deployment);
+  const response = (await api.deployments.getAll()).data;
+  deployments.value = response.filter<Deployment>((d): d is Deployment => {
+    return !isDeploymentError(d);
   });
 }
 
