@@ -1,23 +1,31 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-export type GetDeploymentsResponse = Record<string, Deployment>;
+import { Configuration } from 'src/api/types/configurations';
+import { SchemaURL } from 'src/api/types/schema';
 
-export type DeploymentPythonConfiguration = {
-  packageFile: string,
-  packageManager: string,
-  version: string
+export type DeploymentError = {
+  error: string,
 }
 
-export type DeploymentConfiguration = {
-  entrypoint: string,
-  python: DeploymentPythonConfiguration
+export enum ServerType {
+  CONNECT = 'connect',
+  SHINY_APPS = 'shinyapps',
+  CLOUD = 'cloud',
 }
 
 export type Deployment = {
-  configuration: DeploymentConfiguration,
-  configurationName: string,
-  files: string[],
-  id: string,
-  serverType: string,
+  $schema: SchemaURL,
+  serverType: ServerType
   serverUrl: string,
+  id: string,
+  files: string[]
+  configurationPath: string
+  configurationName: string
+  configuration: Configuration
+}
+
+export function isDeploymentError(
+  d: Deployment | DeploymentError
+): d is DeploymentError {
+  return (d as DeploymentError).error !== undefined;
 }
