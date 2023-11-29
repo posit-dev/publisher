@@ -197,7 +197,20 @@ func (p *defaultPublisher) publishWithClient(
 		return err
 	}
 
-	bundleID, err := withLog(events.PublishUploadBundleOp, "Uploading deployment bundle", "bundle_id", log, func() (types.BundleID, error) {
+	env := p.Config.Environment
+	if len(env) != 0 {
+		_, err = withLog(events.PublishSetEnvVarsOp, "Setting environment variables", "count", log, func() (int, error) {
+			for name, value := range env {
+				log.Info("Setting environment variable", "name", name, "value", value)
+			}
+			return len(env), client.SetEnvVars(contentID, env)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	bundleID, err := withLog(events.PublishUploadBundleOp, "Uploading deployment bundle", "count", log, func() (types.BundleID, error) {
 		return client.UploadBundle(contentID, bundleFile)
 	})
 	if err != nil {

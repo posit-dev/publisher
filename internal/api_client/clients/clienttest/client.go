@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/rstudio/connect-client/internal/api_client/clients"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
@@ -44,6 +45,11 @@ func (m *MockClient) CreateDeployment(s *state.ConnectContent) (types.ContentID,
 
 func (m *MockClient) UpdateDeployment(id types.ContentID, s *state.ConnectContent) error {
 	args := m.Called(id, s)
+	return args.Error(0)
+}
+
+func (m *MockClient) SetEnvVars(id types.ContentID, env config.Environment) error {
+	args := m.Called(id, env)
 	return args.Error(0)
 }
 
