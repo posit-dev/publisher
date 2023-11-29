@@ -134,9 +134,9 @@ func (p *defaultPublisher) publishWithClient(
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
-
+	var createdManifest *bundles.Manifest
 	_, err = withLog(events.PublishCreateBundleOp, "Creating bundle", "filename", log, func() (any, error) {
-		_, err := bundler.CreateBundle(bundleFile)
+		createdManifest, err = bundler.CreateBundle(bundleFile)
 		return bundleFile.Name(), err
 	})
 	if err != nil {
@@ -179,7 +179,7 @@ func (p *defaultPublisher) publishWithClient(
 		ServerURL:     account.URL,
 		Id:            contentID,
 		ConfigName:    p.ConfigName,
-		Files:         []string{},
+		Files:         createdManifest.GetFilenames(),
 		Configuration: *p.Config,
 	}
 	// Save current deployment information for this target
