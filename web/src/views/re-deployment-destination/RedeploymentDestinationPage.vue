@@ -2,24 +2,30 @@
 
 <template>
   <RedeploymentDestinationHeader
-    v-model="selectedAccount"
-    :url="destinationURL"
+    v-model="selectedAccountName"
     :content-id="contentID"
     class="q-mt-md"
   />
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-
-const route = useRoute();
 
 import RedeploymentDestinationHeader from './RedeploymentDestinationHeader.vue';
 
-const destinationURL = 'https:://dogfood.posit.co';
+const route = useRoute();
 
-const selectedAccount = ref(<string>route.params.account);
+const selectedAccountName = ref('');
+
+const init = () => {
+  // route param can be either string | string[]
+  if (Array.isArray(route.params.account)) {
+    selectedAccountName.value = route.params.account[0];
+  } else {
+    selectedAccountName.value = route.params.account;
+  }
+};
 
 const contentID = computed(():string => {
   if (Array.isArray(route.params.id)) {
@@ -28,4 +34,14 @@ const contentID = computed(():string => {
   return route.params.id;
 });
 
+onMounted(() => {
+  init();
+});
+
+watch(
+  () => route.params,
+  () => {
+    init();
+  }
+);
 </script>

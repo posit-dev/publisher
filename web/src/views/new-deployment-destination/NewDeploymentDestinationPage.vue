@@ -2,22 +2,38 @@
 
 <template>
   <NewDestinationHeader
-    v-model="selectedAccount"
-    :url="destinationURL"
+    v-model="selectedAccountName"
     class="q-mt-md"
   />
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import NewDestinationHeader from './NewDestinationHeader.vue';
 
 const route = useRoute();
 
-const destinationURL = 'https:://dogfood.posit.co';
+const selectedAccountName = ref('');
 
-const selectedAccount = ref(<string>route.params.account);
+const init = () => {
+  // route param can be either string | string[]
+  if (Array.isArray(route.params.account)) {
+    selectedAccountName.value = route.params.account[0];
+  } else {
+    selectedAccountName.value = route.params.account;
+  }
+};
 
+onMounted(() => {
+  init();
+});
+
+watch(
+  () => route.params,
+  () => {
+    init();
+  }
+);
 </script>

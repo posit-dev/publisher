@@ -6,7 +6,6 @@
     outlined
     dense
     :options="matchingAccounts"
-    :read-only="disableCredential"
     label="Credential"
   >
     <template #option="scope">
@@ -32,7 +31,7 @@
 
 <script setup lang="ts">
 
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 import { Account, useApi } from 'src/api';
 
@@ -41,16 +40,52 @@ const api = useApi();
 const emit = defineEmits(['update:modelValue']);
 const props = defineProps({
   url: { type: String, required: true },
+  // Account Name
   modelValue: { type: String, required: true },
 });
 
 type AccountSelection = Account & {
   label: string,
   value: string,
+  icon: string,
 }
 
 const matchingAccounts = ref<AccountSelection[]>([]);
 const selectedAccount = ref<AccountSelection | undefined>(undefined);
+
+const init = async() => {
+  try {
+    const response = await api.accounts.getAll();
+
+    const credentials = response.data.accounts.find(
+      (account: Account) => account.name === props.modelValue
+    );
+
+    if (credentials) {
+      selectedAccount.value = {
+        ...credentials,
+        label: props.modelValue,
+        value: props.modelValue,
+        icon: 'key',
+      };
+      // Now load up our matching accounts to the URL of the selected one
+      response.data.accounts.forEach((a: Account) => {
+        if (selectedAccount.value && a.url === selectedAccount.value.url) {
+          matchingAccounts.value.push({
+            ...a,
+            label: a.name,
+            value: a.name,
+            icon: 'key',
+          });
+        }
+      });
+    } else {
+      // TODO, logic error, we did not receive a valid account name.
+    }
+  } catch (err) {
+    // TODO: handle the API error
+  }
+};
 
 watch(selectedAccount, (newValue: AccountSelection | undefined) => {
   if (newValue) {
@@ -58,30 +93,18 @@ watch(selectedAccount, (newValue: AccountSelection | undefined) => {
   }
 });
 
-onMounted(async() => {
-  try {
-    const response = await api.accounts.getAll();
-    response.data.accounts.forEach((account: Account) => {
-      const accountSelect = {
-        ...account,
-        label: `${account.name}`,
-        value: account.name,
-        icon: '"key',
-      };
-      matchingAccounts.value.push(accountSelect);
-      if (account.name === props.modelValue) {
-        selectedAccount.value = accountSelect;
-      }
-    });
-  } catch (err) {
-    // TODO: handle the error
+watch(
+  [
+    () => props.url,
+    () => props.modelValue,
+  ],
+  () => {
+    init();
   }
+);
+
+onMounted(() => {
+  init();
 });
 
-const disableCredential = computed(() => {
-  if (matchingAccounts.value.length > 1) {
-    return false;
-  }
-  return true;
-});
 </script>

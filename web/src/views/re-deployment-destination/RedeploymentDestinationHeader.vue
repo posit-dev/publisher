@@ -5,7 +5,7 @@
     <div class="col text-center col-6">
       <div>Destination Summary</div>
       <div>
-        Redeployment to {{ url }}
+        Redeployment to {{ destinationURL }}
       </div>
       <div>
         Content ID: {{ contentId }}
@@ -13,8 +13,8 @@
     </div>
     <div class="col-3">
       <DenseAccountList
-        v-model="accountModel"
-        :url="url"
+        v-model="accountNameModel"
+        :url="destinationURL"
       />
     </div>
     <div class="col-2">
@@ -30,19 +30,23 @@
 
 <script setup lang="ts">
 
-import { computed } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { Account, useApi } from 'src/api';
 
 import DenseAccountList from 'src/components/DenseAccountList.vue';
 
+const api = useApi();
+
+const destinationURL = ref<string>('');
+
 const emit = defineEmits(['update:modelValue']);
 const props = defineProps({
-  url: { type: String, required: true },
   contentId: { type: String, required: false, default: undefined },
   // account name
   modelValue: { type: String, required: true },
 });
 
-const accountModel = computed({
+const accountNameModel = computed({
   get() {
     return props.modelValue;
   },
@@ -52,5 +56,31 @@ const accountModel = computed({
     }
   }
 });
+
+const init = async() => {
+  try {
+    const response = await api.accounts.getAll();
+
+    const credentials = response.data.accounts.find(
+      (account: Account) => account.name === props.modelValue
+    );
+    if (credentials) {
+      destinationURL.value = credentials.url;
+    }
+  } catch (err) {
+    // TODO: handle the API error
+  }
+};
+
+onMounted(() => {
+  init();
+});
+
+watch(
+  () => props.modelValue,
+  () => {
+    init();
+  }
+);
 
 </script>
