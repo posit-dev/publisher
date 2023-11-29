@@ -211,7 +211,7 @@ func (p *defaultPublisher) publishWithClient(
 		return err
 	}
 
-	taskLogger := log.WithArgs("source", "serverp.log")
+	taskLogger := log.WithArgs("source", "server.log")
 	err = client.WaitForTask(taskID, taskLogger)
 	if err != nil {
 		return err
