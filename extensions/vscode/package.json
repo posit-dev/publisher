@@ -20,20 +20,25 @@
   "contributes": {
     "commands": [
       {
-        "command": "positron.publisher.assistant.open",
+        "command": "posit.publisher.assistant.start",
         "title": "Open Assistant",
         "category": "Publisher",
         "icon": {
           "light": "assets/icons/light.svg",
           "dark": "assets/icons/dark.svg"
         }
+      },
+      {
+        "command": "posit.publisher.assistant.stop",
+        "title": "Shut Down Assistant",
+        "category": "Publisher"
       }
     ],
     "configuration": {
-      "title": "Positron",
+      "title": "Posit",
       "properties": {
         "positron.publisher.executable.path": {
-          "description": "A path to the Positron Publisher CLI executable. By default, the extension looks for `publisher` in the `PATH`",
+          "description": "A path to the Posit Publisher executable. By default, the extension looks for `publisher` in the `PATH`",
           "type": "string"
         }
       }
@@ -42,7 +47,7 @@
       "editor/title": [
         {
           "when": "resourceLangId == python",
-          "command": "positron.publisher.assistant.open",
+          "command": "posit.publisher.assistant.start",
           "group": "navigation"
         }
       ]
@@ -58,7 +63,9 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.2",
+    "@types/mutexify": "^1.2.3",
     "@types/node": "18.x",
+    "@types/retry": "^0.12.5",
     "@types/vscode": "^1.83.0",
     "@types/wait-on": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
@@ -67,10 +74,12 @@
     "eslint": "^8.50.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
-    "typescript": "^5.2.2",
-    "wait-on": "^7.2.0"
+    "typescript": "^5.2.2"
   },
   "dependencies": {
-    "get-port": "5.1.1"
+    "get-port": "5.1.1",
+    "mutexify": "^1.4.0",
+    "retry": "^0.13.1",
+    "wait-on": "^7.2.0"
   }
 }

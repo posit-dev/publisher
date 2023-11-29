@@ -1,7 +1,10 @@
-import * as vscode from 'vscode';
-import * as wait from 'wait-on';
 
+import * as retry from 'retry';
+import * as vscode from 'vscode';
+
+import { HOST } from '.';
 import * as commands from './commands';
+import * as ports from './ports';
 
 export class Assistant {
 
@@ -9,6 +12,8 @@ export class Assistant {
 
 	private readonly path: string;
 	private readonly port: number;
+	private readonly terminal: vscode.Terminal;
+
 	readonly resources: vscode.Uri[];
 
 	constructor(port: number, resources: vscode.Uri[]) {
@@ -19,9 +24,10 @@ export class Assistant {
         this.path = path;
 		this.port = port;
 		this.resources = resources;
+		this.terminal = vscode.window.createTerminal({ name: this.name, hideFromUser: true });
 	}
 
-	focus = async () => {
+	show = async () => {
 		const panel = vscode.window.createWebviewPanel(
 			'positron.publisher.assistant',
 			'Publish Assistant',
@@ -33,7 +39,7 @@ export class Assistant {
 			}
 		);
 
-		const uri = await vscode.env.asExternalUri(vscode.Uri.parse(`http://127.0.0.1:${this.port}`));
+		const uri = await vscode.env.asExternalUri(vscode.Uri.parse(`http://${HOST}:${this.port}`));
 		const url = uri.toString();
 		panel.webview.html =
 			// install https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html to enable code highlighting below
@@ -55,14 +61,22 @@ export class Assistant {
 
 	start = async (): Promise<void> => {
 		const command: commands.Command = commands.create(this.path, this.port);
-        const terminal = vscode.window.createTerminal({ name: this.name, hideFromUser: true });
-		terminal.sendText(command);
-		console.debug("waiting for the server to start");
-		await wait({
-            resources: [
-                `http-get://127.0.0.1:${this.port}`
-            ]
-        });
+		this.terminal.sendText(command);
+		if (!(await ports.ping(this.port))) {
+			throw Error("assistant failed to start");
+		}
+	};
+
+	stop = async (): Promise<void> => {
+		const operation = retry.operation();
+		operation.attempt(async () => {
+			// send "CTRL+C" command
+			this.terminal.sendText("\u0003");
+			const pong = await ports.ping(this.port, 1000);
+			if (pong) {
+				throw Error("assistant still running");
+			}
+		});
 	};
 
 }
