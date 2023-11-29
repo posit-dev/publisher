@@ -30,6 +30,11 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 	ctx.Logger.Info("created event server")
 	eventServer.CreateStream("messages")
 	ctx.Logger.Info("created event stream")
+
+	err := initialize.InitIfNeeded(cmd.Path, config.DefaultConfigName, ctx.Logger)
+	if err != nil {
+		return err
+	}
 	stateStore, err := state.New(cmd.Path, "", "", "", ctx.Accounts)
 	if err != nil {
 		return err
@@ -41,11 +46,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 
 	// Auto-initialize if needed. This will be replaced by an API call from the UI
 	// for better error handling and startup performance.
-	err = initialize.InitIfNeeded(cmd.Path, config.DefaultConfigName, log)
-	if err != nil {
-		return err
-	}
-
 	svc := ui.NewUIService(
 		"/",
 		cmd.Interactive,
