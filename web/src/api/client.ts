@@ -4,6 +4,8 @@ import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
 
+import { Accounts } from 'src/api/resources/Accounts';
+
 const camelCaseInterceptor = (response: AxiosResponse): AxiosResponse => {
   if (response.data && response.headers['content-type'] === 'application/json') {
     response.data = camelcaseKeys(
@@ -22,6 +24,8 @@ const snakeCaseInterceptor = (config: InternalAxiosRequestConfig) => {
 };
 
 class PublishingClientApi {
+  accounts: Accounts;
+
   constructor() {
     const client = axios.create({
       baseURL: './api',
@@ -30,6 +34,8 @@ class PublishingClientApi {
 
     client.interceptors.request.use(snakeCaseInterceptor);
     client.interceptors.response.use(camelCaseInterceptor);
+
+    this.accounts = new Accounts(client);
   }
 }
 
