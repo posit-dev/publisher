@@ -128,4 +128,12 @@ func (s *PublishSuite) publishWithClient(target *deployment.Deployment, createEr
 	} else {
 		s.Equal(expectedErr.Error(), err.Error())
 	}
+	if createErr == nil {
+		recordPath := deployment.GetLatestDeploymentPath(stateStore.Dir, string(stateStore.Target.Id))
+		record, err := deployment.FromFile(recordPath)
+		s.NoError(err)
+		s.Equal(myContentID, record.Id)
+		s.Contains(record.Files, "app.py")
+		s.Contains(record.Files, "requirements.txt")
+	}
 }
