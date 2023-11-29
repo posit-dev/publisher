@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -32,7 +32,7 @@ func (s *PythonSuite) TestInferTypeSpecifiedFile() {
 	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:        apptypes.PythonAPIMode,
+		Type:           config.ContentTypePythonFlask,
 		Entrypoint:     filename,
 		RequiresPython: true,
 	}, t)
@@ -48,7 +48,7 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:        apptypes.PythonAPIMode,
+		Type:           config.ContentTypePythonFlask,
 		Entrypoint:     filename,
 		RequiresPython: true,
 	}, t)
@@ -64,7 +64,7 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:        apptypes.PythonAPIMode,
+		Type:           config.ContentTypePythonFlask,
 		Entrypoint:     filename,
 		RequiresPython: true,
 	}, t)

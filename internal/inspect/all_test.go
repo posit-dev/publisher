@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -35,7 +35,7 @@ func (s *AllSuite) TestInferTypeDirectory() {
 	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:        apptypes.PythonDashMode,
+		Type:           config.ContentTypePythonDash,
 		Entrypoint:     appFilename,
 		RequiresPython: true,
 	}, t)
@@ -57,7 +57,7 @@ func (s *AllSuite) TestInferTypeFileLowerPriority() {
 	t, err := detector.InferType(htmlPath)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:    apptypes.StaticMode,
+		Type:       config.ContentTypeHTML,
 		Entrypoint: htmlFilename,
 	}, t)
 }
@@ -78,7 +78,7 @@ func (s *AllSuite) TestInferTypeFileHigherPriority() {
 	t, err := detector.InferType(appPath)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:        apptypes.PythonDashMode,
+		Type:           config.ContentTypePythonDash,
 		Entrypoint:     appFilename,
 		RequiresPython: true,
 	}, t)
@@ -99,7 +99,7 @@ func (s *AllSuite) TestInferTypeDirectoryPriority() {
 	t, err := detector.InferType(path)
 	s.Nil(err)
 	s.Equal(&ContentType{
-		AppMode:        apptypes.PythonDashMode,
+		Type:           config.ContentTypePythonDash,
 		Entrypoint:     appFilename,
 		RequiresPython: true,
 	}, t)
