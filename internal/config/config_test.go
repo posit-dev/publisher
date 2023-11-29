@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -60,7 +59,7 @@ func (s *ConfigSuite) TestFromFile() {
 	cfg, err := FromFile(path)
 	s.NoError(err)
 	s.NotNil(cfg)
-	s.Equal(apptypes.AppMode("python-dash"), cfg.Type)
+	s.Equal(ContentTypePythonDash, cfg.Type)
 }
 
 func (s *ConfigSuite) TestFromFileErr() {

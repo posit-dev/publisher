@@ -68,8 +68,8 @@ func New(cwd util.Path) GitIgnoreList {
 
 	return GitIgnoreList{
 		files,
-		toSplit(cwd.Path()),
-		cwd.Fs(),
+		toSplit(absPath.Path()),
+		absPath.Fs(),
 	}
 }
 

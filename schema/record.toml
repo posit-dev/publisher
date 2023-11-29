@@ -1,0 +1,50 @@
+"$schema" = "./posit-publishing-record-schema-v3.json"
+server-url = "https://connect.example.com"
+id = "de2e7bdb-b085-401e-a65c-443e40009749"
+configuration-name = "production"
+
+[configuration]
+"$schema" = "./posit-publishing-schema-v3.json"
+type = "quarto"
+entrypoint = "report.qmd"
+title = "Regional Quarterly Sales Report"
+description = "This is the quarterly sales report, broken down by region."
+
+[configuration.python]
+version = "3.11.3"
+package_file = "requirements.txt"
+package_manager = "pip"
+
+[configuration.r]
+version = "4.3.1"
+package_file = "renv.lock"
+package_manager = "renv"
+
+[configuration.quarto]
+version = "1.4"
+
+[configuration.connect.access]
+run_as = "rstudio-connect"
+run_as_current_user = false
+
+[configuration.connect.runtime]
+connection_timeout = 5
+read_timeout = 30
+init_timeout = 60
+idle_timeout = 120
+max_processes = 5
+min_processes = 1
+max_conns_per_process = 50
+load_factor = 0.5
+
+[configuration.connect.kubernetes]
+amd_gpu_limit = 0
+cpu_limit = 1
+cpu_request = 0.5
+image_name = "posit/connect-runtime-python3.11-r4.3"
+memory_limit = "100000000"
+memory_request = "20000000"
+nvidia_gpu_limit = 0
+service_account_name = "posit-connect-content"
+r_environment_management = true
+py_environment_management = true

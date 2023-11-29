@@ -5,7 +5,6 @@ package commands
 import (
 	"fmt"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/config"
@@ -22,7 +21,7 @@ func (cmd *InitCommand) inspectProjectType(log logging.Logger) (*inspect.Content
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
-	log.Info("Deployment type", "Entrypoint", contentType.Entrypoint, "AppMode", contentType.AppMode)
+	log.Info("Deployment type", "Entrypoint", contentType.Entrypoint, "AppMode", contentType.Type)
 	return contentType, nil
 }
 
@@ -33,8 +32,8 @@ type InitCommand struct {
 	config     *config.Config
 }
 
-func (cmd *InitCommand) requiresPython(appMode apptypes.AppMode) (bool, error) {
-	if appMode.IsPythonContent() {
+func (cmd *InitCommand) requiresPython(contentType config.ContentType) (bool, error) {
+	if contentType.IsPythonContent() {
 		return true, nil
 	}
 	if cmd.Python.Path() != "" {
@@ -79,10 +78,10 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if err != nil {
 		return err
 	}
-	cmd.config.Type = contentType.AppMode
+	cmd.config.Type = contentType.Type
 	cmd.config.Entrypoint = contentType.Entrypoint
 
-	requiresPython, err := cmd.requiresPython(contentType.AppMode)
+	requiresPython, err := cmd.requiresPython(contentType.Type)
 	if err != nil {
 		return err
 	}
