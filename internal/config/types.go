@@ -2,26 +2,57 @@ package config
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import (
-	"github.com/rstudio/connect-client/internal/apptypes"
+type ContentType string
+
+const (
+	ContentTypeHTML            ContentType = "html"
+	ContentTypeJupyterNotebook ContentType = "jupyter-notebook"
+	ContentTypeJupyterVoila    ContentType = "jupyter-voila"
+	ContentTypePythonBokeh     ContentType = "python-bokeh"
+	ContentTypePythonDash      ContentType = "python-dash"
+	ContentTypePythonFastAPI   ContentType = "python-fastapi"
+	ContentTypePythonFlask     ContentType = "python-flask"
+	ContentTypePythonShiny     ContentType = "python-shiny"
+	ContentTypePythonStreamlit ContentType = "python-streamlit"
+	ContentTypeQuartoShiny     ContentType = "quarto-shiny"
+	ContentTypeQuarto          ContentType = "quarto"
+	ContentTypeRPlumber        ContentType = "r-plumber"
+	ContentTypeRShiny          ContentType = "r-shiny"
+	ContentTypeRMarkdownShiny  ContentType = "rmd-shiny"
+	ContentTypeRMarkdown       ContentType = "rmd"
 )
 
+func (t ContentType) IsPythonContent() bool {
+	switch t {
+	case ContentTypeJupyterNotebook:
+	case ContentTypeJupyterVoila:
+	case ContentTypePythonBokeh:
+	case ContentTypePythonDash:
+	case ContentTypePythonFastAPI:
+	case ContentTypePythonFlask:
+	case ContentTypePythonShiny:
+	case ContentTypePythonStreamlit:
+		return true
+	}
+	return false
+}
+
 type Config struct {
-	Schema        SchemaURL        `toml:"$schema" json:"$schema"`
-	Type          apptypes.AppMode `toml:"type" json:"type"`
-	Entrypoint    string           `toml:"entrypoint,omitempty" json:"entrypoint,omitempty"`
-	Title         string           `toml:"title,omitempty" json:"title,omitempty"`
-	Description   string           `toml:"description,multiline,omitempty" json:"description,omitempty"`
-	ThumbnailFile string           `toml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
-	Tags          []string         `toml:"tags,omitempty" json:"tags,omitempty"`
-	Python        *Python          `toml:"python,omitempty" json:"python,omitempty"`
-	R             *R               `toml:"r,omitempty" json:"r,omitempty"`
-	Quarto        *Quarto          `toml:"quarto,omitempty" json:"quarto,omitempty"`
-	Environment   Environment      `toml:"environment,omitempty" json:"environment,omitempty"`
-	Secrets       []string         `toml:"secrets,omitempty" json:"secrets,omitempty"`
-	Schedules     []Schedule       `toml:"schedules,omitempty" json:"schedules,omitempty"`
-	Access        *Access          `toml:"access,omitempty" json:"access,omitempty"`
-	Connect       *Connect         `toml:"connect,omitempty" json:"connect,omitempty"`
+	Schema        SchemaURL   `toml:"$schema" json:"$schema"`
+	Type          ContentType `toml:"type" json:"type"`
+	Entrypoint    string      `toml:"entrypoint,omitempty" json:"entrypoint,omitempty"`
+	Title         string      `toml:"title,omitempty" json:"title,omitempty"`
+	Description   string      `toml:"description,multiline,omitempty" json:"description,omitempty"`
+	ThumbnailFile string      `toml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
+	Tags          []string    `toml:"tags,omitempty" json:"tags,omitempty"`
+	Python        *Python     `toml:"python,omitempty" json:"python,omitempty"`
+	R             *R          `toml:"r,omitempty" json:"r,omitempty"`
+	Quarto        *Quarto     `toml:"quarto,omitempty" json:"quarto,omitempty"`
+	Environment   Environment `toml:"environment,omitempty" json:"environment,omitempty"`
+	Secrets       []string    `toml:"secrets,omitempty" json:"secrets,omitempty"`
+	Schedules     []Schedule  `toml:"schedules,omitempty" json:"schedules,omitempty"`
+	Access        *Access     `toml:"access,omitempty" json:"access,omitempty"`
+	Connect       *Connect    `toml:"connect,omitempty" json:"connect,omitempty"`
 }
 
 type SchemaURL string
