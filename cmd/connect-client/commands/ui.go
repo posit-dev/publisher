@@ -5,7 +5,9 @@ package commands
 import (
 	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/cli_types"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/services/ui"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
@@ -36,6 +38,14 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 
 	log := events.NewLoggerWithSSE(args.Debug, eventServer)
 	ctx.Logger.Info("created SSE logger")
+
+	// Auto-initialize if needed. This will be replaced by an API call from the UI
+	// for better error handling and startup performance.
+	err = initialize.InitIfNeeded(cmd.Path, config.DefaultConfigName, log)
+	if err != nil {
+		return err
+	}
+
 	svc := ui.NewUIService(
 		"/",
 		cmd.Interactive,
