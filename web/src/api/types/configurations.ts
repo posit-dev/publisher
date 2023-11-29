@@ -22,28 +22,27 @@ export function isConfigurationError(
   return (c as ConfigurationError).error !== undefined;
 }
 
-enum AppMode {
-  UNKNOWN = '',
-  SHINY = 'shiny',
-  RMD_SHINY = 'rmd-shiny',
-  RMD_STATIC = 'rmd-static',
-  STATIC = 'static',
-  PLUMBER_API = 'api',
-  JUPYTER_STATIC = 'jupyter-static',
+enum ContentType {
+  HTML = 'html',
+  JUPYTER_NOTEBOOK = 'jupyter-notebook',
   JUPYTER_VOILA = 'jupyter-voila',
-  PYTHON_API = 'python-api',
-  PYTHON_DASH = 'python-dash',
-  PYTHON_STREAMLIT = 'python-streamlit',
   PYTHON_BOKEH = 'python-bokeh',
+  PYTHON_DASH = 'python-dash',
   PYTHON_FASTAPI = 'python-fastapi',
+  PYTHON_FLASK = 'python-flask',
   PYTHON_SHINY = 'python-shiny',
+  PYTHON_STREAMLIT = 'python-streamlit',
   QUARTO_SHINY = 'quarto-shiny',
-  QUARTO_STATIC = 'quarto-static',
+  QUARTO = 'quarto',
+  R_PLUMBER = 'r-plumber',
+  R_SHINY = 'r-shiny',
+  RMD_SHINY = 'rmd-shiny',
+  RMD = 'rmd'
 }
 
 export type ConfigurationDetails = {
   $schema: SchemaURL,
-  type: AppMode,
+  type: ContentType,
   entrypoint?: string,
   title?: string,
   description?: string,
