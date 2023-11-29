@@ -3,26 +3,26 @@ package inspect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type PythonAppDetector struct {
 	inferenceHelper
-	appMode apptypes.AppMode
-	imports []string
+	contentType config.ContentType
+	imports     []string
 }
 
-func NewPythonAppDetector(appMode apptypes.AppMode, imports []string) *PythonAppDetector {
+func NewPythonAppDetector(contentType config.ContentType, imports []string) *PythonAppDetector {
 	return &PythonAppDetector{
 		inferenceHelper: defaultInferenceHelper{},
-		appMode:         appMode,
+		contentType:     contentType,
 		imports:         imports,
 	}
 }
 
 func NewFlaskDetector() *PythonAppDetector {
-	return NewPythonAppDetector(apptypes.PythonAPIMode, []string{
+	return NewPythonAppDetector(config.ContentTypePythonFlask, []string{
 		"flask", // also matches flask_api, flask_openapi3, etc.
 		"flasgger",
 		"falcon", // must check for this after falcon.asgi (FastAPI)
@@ -30,7 +30,7 @@ func NewFlaskDetector() *PythonAppDetector {
 }
 
 func NewFastAPIDetector() *PythonAppDetector {
-	return NewPythonAppDetector(apptypes.PythonFastAPIMode, []string{
+	return NewPythonAppDetector(config.ContentTypePythonFastAPI, []string{
 		"fastapi",
 		"falcon.asgi",
 		"quart",
@@ -41,25 +41,25 @@ func NewFastAPIDetector() *PythonAppDetector {
 }
 
 func NewDashDetector() *PythonAppDetector {
-	return NewPythonAppDetector(apptypes.PythonDashMode, []string{
+	return NewPythonAppDetector(config.ContentTypePythonDash, []string{
 		"dash", // also matches dash_core_components, dash_bio, etc.
 	})
 }
 
 func NewStreamlitDetector() *PythonAppDetector {
-	return NewPythonAppDetector(apptypes.PythonStreamlitMode, []string{
+	return NewPythonAppDetector(config.ContentTypePythonStreamlit, []string{
 		"streamlit",
 	})
 }
 
 func NewBokehDetector() *PythonAppDetector {
-	return NewPythonAppDetector(apptypes.PythonBokehMode, []string{
+	return NewPythonAppDetector(config.ContentTypePythonBokeh, []string{
 		"bokeh",
 	})
 }
 
 func NewPyShinyDetector() *PythonAppDetector {
-	return NewPythonAppDetector(apptypes.PythonShinyMode, []string{
+	return NewPythonAppDetector(config.ContentTypePythonShiny, []string{
 		"shiny",
 	})
 }
@@ -77,7 +77,7 @@ func (d *PythonAppDetector) InferType(path util.Path) (*ContentType, error) {
 		if matches {
 			return &ContentType{
 				Entrypoint:     entrypoint,
-				AppMode:        d.appMode,
+				Type:           d.contentType,
 				RequiresPython: true,
 			}, nil
 		}

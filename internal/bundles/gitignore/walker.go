@@ -31,7 +31,7 @@ var standardIgnores = []string{
 
 	// Other
 	".ipynb_checkpoints/",
-	".posit/deployments",
+	".posit/publish/deployments/**/v*",
 }
 
 // excludingWalker is a Walker that excludes files and directories

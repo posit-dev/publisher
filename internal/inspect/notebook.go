@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -53,9 +53,9 @@ func (d *NotebookDetector) InferType(path util.Path) (*ContentType, error) {
 			RequiresPython: true,
 		}
 		if isVoila {
-			t.AppMode = apptypes.JupyterVoilaMode
+			t.Type = config.ContentTypeJupyterVoila
 		} else {
-			t.AppMode = apptypes.StaticJupyterMode
+			t.Type = config.ContentTypeJupyterNotebook
 		}
 		return t, nil
 	}
