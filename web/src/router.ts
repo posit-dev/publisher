@@ -2,7 +2,7 @@
 
 import { createRouter, createWebHashHistory } from 'vue-router';
 
-import ProjectPage from 'src/components/ProjectPage.vue';
+import ProjectPage from 'src/views/project-page/ProjectPage.vue';
 import ExistingDeploymentDestinationPageVue from 'src/views/existing-deployment-destination/ExistingDeploymentDestinationPage.vue';
 import NewDeploymentDestinationPageVue from 'src/views/new-deployment-destination/NewDeploymentDestinationPage.vue';
 import PublishProcessPageVue from 'src/components/PublishProcessPage.vue';
