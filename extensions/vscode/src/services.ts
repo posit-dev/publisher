@@ -129,18 +129,18 @@ export class Service {
 			return;
 		}
 
-		this.manager.transition("RUNNING", "STOPPING", async () => {
+		await this.manager.transition("RUNNING", "STOPPING", async () => {
 			console.debug("the service is stopping");
 			vscode.window.showInformationMessage("Stopping the Publish Assistant. Please wait...");
 			await this.assistant.stop();
 		});
 
-		this.manager.transition("STOPPING", "TERMINATED", async () => {
+		await this.manager.transition("STOPPING", "TERMINATED", async () => {
 			console.debug("the service is terminated");
 			vscode.window.showInformationMessage("The Publish Assistant has shutdown successfully.");
 		});
 
-		this.manager.transition("TERMINATED", "NEW", async () => {
+		await this.manager.transition("TERMINATED", "NEW", async () => {
 			console.debug("the service is ready");
 		});
 	};
