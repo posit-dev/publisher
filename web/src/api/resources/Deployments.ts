@@ -22,4 +22,20 @@ export class Deployments {
       `deployments/${id}`
     );
   }
+
+  publish(
+    accountName : string | undefined = undefined,
+    config: string = 'default',
+    target: string | undefined = undefined,
+  ){
+    const params = {
+      account: accountName,
+      config,
+      target,
+    };
+    return this.client.post(
+      '/deployments',
+      params,
+    );
+  }
 }
