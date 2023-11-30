@@ -44,7 +44,6 @@
             v-close-popup
             clickable
             class="q-my-sm"
-            @click="$q.dark.set(true)"
           >
             <q-item-section>
               <router-link
@@ -59,7 +58,6 @@
             v-close-popup
             clickable
             class="q-my-sm"
-            @click="$q.dark.set(true)"
           >
             <q-item-section>
               <router-link
@@ -67,21 +65,6 @@
                 style="text-decoration: none; color: inherit;"
               >
                 TEMP - New Deployment
-              </router-link>
-            </q-item-section>
-          </q-item>
-          <q-item
-            v-close-popup
-            clickable
-            class="q-my-sm"
-            @click="$q.dark.set(true)"
-          >
-            <q-item-section>
-              <router-link
-                :to="{ name: 'reDeployment', params: { id: '5d9e7135-7532-4975-a30a-3e96f80f1076', account: 'dogfood' }}"
-                style="text-decoration: none; color: inherit;"
-              >
-                TEMP - Re-Deployment
               </router-link>
             </q-item-section>
           </q-item>

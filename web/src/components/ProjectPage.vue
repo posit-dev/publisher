@@ -9,7 +9,7 @@
     :key="deployment.id"
   >
     <li>
-      <RouterLink :to="`/destination/${deployment.id}`">
+      <RouterLink :to="`/deployments/${deployment.id}`">
         {{ deployment.serverUrl }}
       </RouterLink>
     </li>

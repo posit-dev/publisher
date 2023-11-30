@@ -7,8 +7,8 @@
       <div>New Deployment to {{ destinationURL }}</div>
     </div>
     <div class="col-3">
-      <DenseAccountList
-        v-model="accountNameModel"
+      <SelectAccount
+        :accounts="fixedAccountList"
         :url="destinationURL"
       />
     </div>
@@ -25,53 +25,46 @@
 
 <script setup lang="ts">
 
-import { computed, onMounted, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { Account, useApi } from 'src/api';
 
-import DenseAccountList from 'src/components/DenseAccountList.vue';
+import SelectAccount from 'src/components/SelectAccount.vue';
 
 const api = useApi();
 
-const destinationURL = ref<string>('');
+const accounts = ref<Account[]>([]);
+const fixedAccountList = ref<Account[]>([]);
+const destinationURL = ref('');
 
-const emit = defineEmits(['update:modelValue']);
 const props = defineProps({
-  // account name
-  modelValue: { type: String, required: true },
+  accountName: { type: String, required: true },
 });
 
-const accountNameModel = computed({
-  get() {
-    return props.modelValue;
-  },
-  set(newValue) {
-    emit('update:modelValue', newValue);
-  }
-});
-
-const init = async() => {
+const updateAccountList = async() => {
   try {
     const response = await api.accounts.getAll();
-
-    const credentials = response.data.accounts.find(
-      (account: Account) => account.name === props.modelValue
-    );
-    if (credentials) {
-      destinationURL.value = credentials.url;
-    }
+    accounts.value = response.data.accounts;
   } catch (err) {
     // TODO: handle the API error
   }
 };
-
-onMounted(() => {
-  init();
-});
+updateAccountList();
 
 watch(
-  () => props.modelValue,
+  () => [
+    props.accountName,
+    accounts.value,
+  ],
   () => {
-    init();
-  }
+    const credentials = accounts.value.find(
+      (account: Account) => account.name === props.accountName
+    );
+    if (credentials) {
+      destinationURL.value = credentials.url;
+      fixedAccountList.value = [credentials];
+    }
+  },
+  { immediate: true }
 );
+
 </script>

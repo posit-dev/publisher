@@ -2,38 +2,25 @@
 
 <template>
   <NewDestinationHeader
-    v-model="selectedAccountName"
+    :account-name="accountName"
     class="q-mt-md"
   />
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 
 import NewDestinationHeader from './NewDestinationHeader.vue';
 
 const route = useRoute();
 
-const selectedAccountName = ref('');
-
-const init = () => {
+const accountName = computed(() => {
   // route param can be either string | string[]
   if (Array.isArray(route.params.account)) {
-    selectedAccountName.value = route.params.account[0];
-  } else {
-    selectedAccountName.value = route.params.account;
+    return route.params.account[0];
   }
-};
-
-onMounted(() => {
-  init();
+  return route.params.account;
 });
 
-watch(
-  () => route.params,
-  () => {
-    init();
-  }
-);
 </script>
