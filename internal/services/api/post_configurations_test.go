@@ -10,6 +10,9 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/environment"
+	"github.com/rstudio/connect-client/internal/environment/environmenttest"
+	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -29,6 +32,12 @@ func TestPostConfigurationsSuite(t *testing.T) {
 
 func (s *PostConfigurationsSuite) SetupSuite() {
 	s.log = logging.New()
+	initialize.PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
+		i := &environmenttest.MockPythonInspector{}
+		i.On("GetPythonVersion").Return("3.4.5", nil)
+		i.On("EnsurePythonRequirementsFile").Return(nil)
+		return i
+	}
 }
 
 func (s *PostConfigurationsSuite) SetupTest() {

@@ -13,12 +13,12 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-var contentDetectorFactory = inspect.NewContentTypeDetector
-var pythonInspectorFactory = environment.NewPythonInspector
+var ContentDetectorFactory = inspect.NewContentTypeDetector
+var PythonInspectorFactory = environment.NewPythonInspector
 
 func inspectProjectType(path util.Path, log logging.Logger) (*inspect.ContentType, error) {
 	log.Info("Detecting deployment type and entrypoint...")
-	typeDetector := contentDetectorFactory()
+	typeDetector := ContentDetectorFactory()
 	contentType, err := typeDetector.InferType(path)
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
@@ -47,7 +47,7 @@ func requiresPython(contentType config.ContentType, path util.Path, python util.
 
 func inspectPython(path util.Path, python util.Path, log logging.Logger) (*config.Python, error) {
 	cfg := &config.Python{}
-	inspector := pythonInspectorFactory(path, python, log)
+	inspector := PythonInspectorFactory(path, python, log)
 	version, err := inspector.GetPythonVersion()
 	if err != nil {
 		return nil, err

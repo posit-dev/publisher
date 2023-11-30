@@ -7,12 +7,12 @@ import (
 
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/environment"
+	"github.com/rstudio/connect-client/internal/environment/environmenttest"
 	"github.com/rstudio/connect-client/internal/inspect"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,8 +27,8 @@ func TestInitializeSuite(t *testing.T) {
 
 func (s *InitializeSuite) SetupTest() {
 	// Restore default factories for each test
-	contentDetectorFactory = inspect.NewContentTypeDetector
-	pythonInspectorFactory = environment.NewPythonInspector
+	ContentDetectorFactory = inspect.NewContentTypeDetector
+	PythonInspectorFactory = environment.NewPythonInspector
 
 	cwd, err := util.Getwd(afero.NewMemMapFs())
 	s.NoError(err)
@@ -74,8 +74,8 @@ func (s *InitializeSuite) createRequirementsFile() {
 func (s *InitializeSuite) TestInitInferredType() {
 	log := logging.New()
 	s.createAppPy()
-	pythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		i := &MockPythonInspector{}
+	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
+		i := &environmenttest.MockPythonInspector{}
 		i.On("GetPythonVersion").Return("3.4.5", nil)
 		i.On("EnsurePythonRequirementsFile").Return(nil)
 		return i
@@ -94,8 +94,8 @@ func (s *InitializeSuite) TestInitInferredType() {
 func (s *InitializeSuite) TestInitExplicitPython() {
 	log := logging.New()
 	s.createHTML()
-	pythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		i := &MockPythonInspector{}
+	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
+		i := &environmenttest.MockPythonInspector{}
 		i.On("GetPythonVersion").Return("3.4.5", nil)
 		i.On("EnsurePythonRequirementsFile").Return(nil)
 		return i
@@ -116,8 +116,8 @@ func (s *InitializeSuite) TestInitRequirementsFile() {
 	log := logging.New()
 	s.createHTML()
 	s.createRequirementsFile()
-	pythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		i := &MockPythonInspector{}
+	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
+		i := &environmenttest.MockPythonInspector{}
 		i.On("GetPythonVersion").Return("3.4.5", nil)
 		i.On("EnsurePythonRequirementsFile").Return(nil)
 		return i
@@ -136,8 +136,8 @@ func (s *InitializeSuite) TestInitRequirementsFile() {
 func (s *InitializeSuite) TestInitIfNeededWhenNeeded() {
 	log := logging.New()
 	s.createAppPy()
-	pythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		i := &MockPythonInspector{}
+	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
+		i := &environmenttest.MockPythonInspector{}
 		i.On("GetPythonVersion").Return("3.4.5", nil)
 		i.On("EnsurePythonRequirementsFile").Return(nil)
 		return i
@@ -159,26 +159,12 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 	cfg := config.New()
 	cfg.WriteFile(configPath)
 
-	pythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		return &MockPythonInspector{}
+	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
+		return &environmenttest.MockPythonInspector{}
 	}
 	err := InitIfNeeded(s.cwd, configName, log)
 	s.NoError(err)
 	newConfig, err := config.FromFile(configPath)
 	s.NoError(err)
 	s.Equal(cfg, newConfig)
-}
-
-type MockPythonInspector struct {
-	mock.Mock
-}
-
-func (m *MockPythonInspector) GetPythonVersion() (string, error) {
-	args := m.Called()
-	return args.String(0), args.Error(1)
-}
-
-func (m *MockPythonInspector) EnsurePythonRequirementsFile() error {
-	args := m.Called()
-	return args.Error(0)
 }
