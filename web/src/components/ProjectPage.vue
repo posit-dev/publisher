@@ -14,6 +14,19 @@
       </RouterLink>
     </li>
   </ul>
+
+  <h2>Configurations</h2>
+  <ul
+    v-for="config in configurations"
+    :key="config.configurationName"
+  >
+    <li>
+      {{ config.configurationName }}
+      <span v-if="isConfigurationError(config)">
+        {{ config.error }}
+      </span>
+    </li>
+  </ul>
 </template>
 
 <script setup lang="ts">
@@ -22,9 +35,11 @@ import { RouterLink } from 'vue-router';
 
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
+import { Configuration, ConfigurationError, isConfigurationError } from 'src/api/types/configurations';
 
 const api = useApi();
 const deployments = ref<Deployment[]>([]);
+const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 async function getDeployments() {
   const response = (await api.deployments.getAll()).data;
@@ -33,5 +48,11 @@ async function getDeployments() {
   });
 }
 
+async function getConfigurations() {
+  const response = await api.configurations.getAll();
+  configurations.value = response.data;
+}
+
 getDeployments();
+getConfigurations();
 </script>
