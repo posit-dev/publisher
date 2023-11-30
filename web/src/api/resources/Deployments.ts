@@ -24,8 +24,8 @@ export class Deployments {
   }
 
   publish(
-    accountName : string | undefined = undefined,
-    target: string | undefined = undefined,
+    accountName? : string,
+    target?: string,
   ){
     const params = {
       account: accountName,
