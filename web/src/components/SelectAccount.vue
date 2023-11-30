@@ -69,12 +69,6 @@ watch(
     if (!options.value.find((option) => option.label === selectedAccount.value?.label)) {
       if (options.value.length > 0) {
         selectedAccount.value = options.value[0];
-        // selectedAccount.value = {
-        //   ...credentials,
-        //   label: props.modelValue,
-        //   value: props.modelValue,
-        //   icon: 'key',
-        // };
       } else {
         selectedAccount.value = undefined;
       }
