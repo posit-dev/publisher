@@ -19,5 +19,6 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if cmd.ConfigName == "" {
 		cmd.ConfigName = config.DefaultConfigName
 	}
-	return initialize.Init(cmd.Path, cmd.ConfigName, cmd.Python, ctx.Logger)
+	_, err := initialize.Init(cmd.Path, cmd.ConfigName, cmd.Python, ctx.Logger)
+	return err
 }
