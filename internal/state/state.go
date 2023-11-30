@@ -108,13 +108,13 @@ func New(path util.Path, accountName, configName, targetID string, accountList a
 			}
 			accountName = account.Name
 		}
-	} else {
-		// Use specified account, or default account
-		account, err = loadAccount(accountName, accountList)
-		if err != nil {
-			return nil, err
-		}
 	}
+	// Use specified account, or default account
+	account, err = loadAccount(accountName, accountList)
+	if err != nil {
+		return nil, err
+	}
+
 	cfg, err = loadConfig(path, configName)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
