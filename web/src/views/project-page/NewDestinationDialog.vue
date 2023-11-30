@@ -67,6 +67,7 @@ const serverUrl = ref<string>('');
 const contentId = ref<string>('');
 
 function resetForm() {
+  serverUrl.value = '';
   contentId.value = '';
 }
 
