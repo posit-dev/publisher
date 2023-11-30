@@ -31,6 +31,7 @@ func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext
 	if cmd.ConfigName == "" {
 		cmd.ConfigName = config.DefaultConfigName
 	}
+
 	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
 	if err != nil {
 		return err
@@ -42,6 +43,11 @@ func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext
 	if stateStore.Account == nil {
 		return errNoAccounts
 	}
+	ctx.Logger.Info(
+		"Publish",
+		"configuration", stateStore.ConfigName,
+		"account", stateStore.AccountName,
+		"target", stateStore.TargetID)
 	publisher := publish.NewFromState(stateStore)
 	return publisher.PublishDirectory(ctx.Logger)
 }
