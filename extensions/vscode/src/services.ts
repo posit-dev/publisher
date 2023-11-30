@@ -19,12 +19,11 @@ class StateManager {
 	// Checks if the expected current state matches the internal state.
 	// If the states match, the callback is executed. If successful, true is returned.
 	// Otherwise, false is returned.
-	check = async (current: State, callback: Function): Promise<boolean> => {
+	check = async (...current: State[]): Promise<boolean> => {
 		// acquire the lock
 		const release = await this.lock();
 		try {
-			if (this.state === current) {
-				await callback();
+			if (current.includes(this.state)) {
 				return true;
 			}
 			return false;
@@ -98,50 +97,50 @@ export class Service {
 	}
 
 	start = async () => {
-		const isRunning = await this.manager.check("RUNNING", () => {
-			console.debug("the service is already running");
-		});
+		const isRunning = await this.manager.check("RUNNING");
 
 		if (isRunning) {
+			console.debug("the service is already running");
 			this.assistant.show();
 			return;
 		}
 
+		let message: vscode.Disposable;
 		await this.manager.transition("NEW", "STARTING", async () => {
 			console.debug("the service is starting");
-			vscode.window.showInformationMessage("Starting the Publish Assistant. Please wait.");
+			message = vscode.window.setStatusBarMessage("Starting the Publish Assistant. Please wait...");
 			await this.assistant.start();
 		});
 
 		await this.manager.transition("STARTING", "RUNNING", async () => {
 			console.debug("the service is running");
-			vscode.window.showInformationMessage("The Publish Assistant is now available!");
 			this.assistant.show();
+			if (message) {
+				message.dispose();
+			}
 		});
 	};
 
 	stop = async () => {
-		const isTerminated = await this.manager.check("NEW", () => {
-			console.debug("the service isn't running");
-		});
+		const isStopped = await this.manager.check("NEW", "TERMINATED", "FAILED");
 
-		if (isTerminated) {
+		if (isStopped) {
+			console.debug("the service isn't running");
 			return;
 		}
 
+		let message: vscode.Disposable;
 		await this.manager.transition("RUNNING", "STOPPING", async () => {
 			console.debug("the service is stopping");
-			vscode.window.showInformationMessage("Stopping the Publish Assistant. Please wait...");
+			message = vscode.window.setStatusBarMessage("Shutting down the Publish Assistant. Please wait...");
 			await this.assistant.stop();
 		});
 
-		await this.manager.transition("STOPPING", "TERMINATED", async () => {
+		await this.manager.transition("STOPPING", "NEW", async () => {
 			console.debug("the service is terminated");
-			vscode.window.showInformationMessage("The Publish Assistant has shutdown successfully.");
-		});
-
-		await this.manager.transition("TERMINATED", "NEW", async () => {
-			console.debug("the service is ready");
+			if (message) {
+				message.dispose();
+			}
 		});
 	};
 
