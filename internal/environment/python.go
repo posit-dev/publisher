@@ -46,7 +46,7 @@ func (e *defaultPythonExecutor) runPythonCommand(pythonExecutable string, args [
 	return stdout.Bytes(), nil
 }
 
-func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.Logger) *defaultPythonInspector {
+func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.Logger) PythonInspector {
 	return &defaultPythonInspector{
 		executor:   &defaultPythonExecutor{},
 		projectDir: projectDir,
