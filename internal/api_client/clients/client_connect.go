@@ -14,6 +14,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
@@ -156,6 +157,23 @@ func (c *ConnectClient) CreateDeployment(body *state.ConnectContent) (types.Cont
 
 func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *state.ConnectContent) error {
 	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
+	return c.client.Patch(url, body, nil)
+}
+
+type connectEnvVar struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+func (c *ConnectClient) SetEnvVars(contentID types.ContentID, env config.Environment) error {
+	body := make([]connectEnvVar, 0, len(env))
+	for name, value := range env {
+		body = append(body, connectEnvVar{
+			Name:  name,
+			Value: value,
+		})
+	}
+	url := fmt.Sprintf("/__api__/v1/content/%s/environment", contentID)
 	return c.client.Patch(url, body, nil)
 }
 

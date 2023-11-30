@@ -76,6 +76,10 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 	r.Handle(ToPath("configurations"), api.GetConfigurationsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
+	// POST /api/configurations
+	r.Handle(ToPath("configurations"), api.PostConfigurationsHandlerFunc(base, log)).
+		Methods(http.MethodPost)
+
 	// GET /api/deployments
 	r.Handle(ToPath("deployments"), api.GetDeploymentsHandlerFunc(base, log)).
 		Methods(http.MethodGet)

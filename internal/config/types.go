@@ -24,14 +24,15 @@ const (
 
 func (t ContentType) IsPythonContent() bool {
 	switch t {
-	case ContentTypeJupyterNotebook:
-	case ContentTypeJupyterVoila:
-	case ContentTypePythonBokeh:
-	case ContentTypePythonDash:
-	case ContentTypePythonFastAPI:
-	case ContentTypePythonFlask:
-	case ContentTypePythonShiny:
-	case ContentTypePythonStreamlit:
+	case
+		ContentTypeJupyterNotebook,
+		ContentTypeJupyterVoila,
+		ContentTypePythonBokeh,
+		ContentTypePythonDash,
+		ContentTypePythonFastAPI,
+		ContentTypePythonFlask,
+		ContentTypePythonShiny,
+		ContentTypePythonStreamlit:
 		return true
 	}
 	return false

@@ -9,6 +9,7 @@ import (
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
+	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
@@ -29,6 +30,10 @@ var errNoAccounts = errors.New("there are no accounts yet; register an account b
 func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	if cmd.ConfigName == "" {
 		cmd.ConfigName = config.DefaultConfigName
+	}
+	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
+	if err != nil {
+		return err
 	}
 	stateStore, err := state.New(cmd.Path, cmd.AccountName, cmd.ConfigName, cmd.TargetID, ctx.Accounts)
 	if err != nil {

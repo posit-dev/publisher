@@ -3,6 +3,7 @@ package clients
 import (
 	"io"
 
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
@@ -30,6 +31,7 @@ type APIClient interface {
 	TestAuthentication() (*User, error)
 	CreateDeployment(*state.ConnectContent) (types.ContentID, error)
 	UpdateDeployment(types.ContentID, *state.ConnectContent) error
+	SetEnvVars(types.ContentID, config.Environment) error
 	UploadBundle(types.ContentID, io.Reader) (types.BundleID, error)
 	DeployBundle(types.ContentID, types.BundleID) (types.TaskID, error)
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
