@@ -6,7 +6,7 @@
     @hide="hide"
     @update:model-value="val => emits('update:modelValue', val)"
   >
-    <q-card>
+    <q-card class="dialog-width">
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6">
           Add Destination
@@ -80,3 +80,10 @@ function hide() {
 }
 
 </script>
+
+<style scoped>
+.dialog-width {
+  width: 500px;
+  max-width: 90vw;
+}
+</style>
