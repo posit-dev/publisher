@@ -39,7 +39,8 @@ func (s *InitializeSuite) SetupTest() {
 
 func (s *InitializeSuite) TestInitEmpty() {
 	log := logging.New()
-	err := Init(s.cwd, "", util.Path{}, log)
+	cfg, err := Init(s.cwd, "", util.Path{}, log)
+	s.Nil(cfg)
 	s.ErrorIs(err, inspect.ErrCantDetectContentType)
 }
 
@@ -80,13 +81,14 @@ func (s *InitializeSuite) TestInitInferredType() {
 		return i
 	}
 	configName := ""
-	err := Init(s.cwd, configName, util.Path{}, log)
+	cfg, err := Init(s.cwd, configName, util.Path{}, log)
 	s.NoError(err)
 	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg, err := config.FromFile(configPath)
+	cfg2, err := config.FromFile(configPath)
 	s.NoError(err)
 	s.Equal(cfg.Type, config.ContentTypePythonFlask)
 	s.Equal("3.4.5", cfg.Python.Version)
+	s.Equal(cfg, cfg2)
 }
 
 func (s *InitializeSuite) TestInitExplicitPython() {
@@ -100,13 +102,14 @@ func (s *InitializeSuite) TestInitExplicitPython() {
 	}
 	configName := ""
 	python := util.NewPath("/usr/bin/python", s.cwd.Fs())
-	err := Init(s.cwd, configName, python, log)
+	cfg, err := Init(s.cwd, configName, python, log)
 	s.NoError(err)
 	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg, err := config.FromFile(configPath)
+	cfg2, err := config.FromFile(configPath)
 	s.NoError(err)
 	s.Equal(cfg.Type, config.ContentTypeHTML)
 	s.Equal("3.4.5", cfg.Python.Version)
+	s.Equal(cfg, cfg2)
 }
 
 func (s *InitializeSuite) TestInitRequirementsFile() {
@@ -120,13 +123,14 @@ func (s *InitializeSuite) TestInitRequirementsFile() {
 		return i
 	}
 	configName := ""
-	err := Init(s.cwd, configName, util.Path{}, log)
+	cfg, err := Init(s.cwd, configName, util.Path{}, log)
 	s.NoError(err)
 	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg, err := config.FromFile(configPath)
+	cfg2, err := config.FromFile(configPath)
 	s.NoError(err)
 	s.Equal(cfg.Type, config.ContentTypeHTML)
 	s.Equal("3.4.5", cfg.Python.Version)
+	s.Equal(cfg, cfg2)
 }
 
 func (s *InitializeSuite) TestInitIfNeededWhenNeeded() {

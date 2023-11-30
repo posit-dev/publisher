@@ -50,6 +50,7 @@ func GetConfigurationsHandlerFunc(base util.Path, log logging.Logger) http.Handl
 		response, err := readConfigFiles(base)
 		if err != nil {
 			InternalError(w, req, log, err)
+			return
 		}
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(response)

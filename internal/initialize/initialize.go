@@ -64,26 +64,26 @@ func inspectPython(path util.Path, python util.Path, log logging.Logger) (*confi
 	return cfg, nil
 }
 
-func Init(path util.Path, configName string, python util.Path, log logging.Logger) error {
+func Init(path util.Path, configName string, python util.Path, log logging.Logger) (*config.Config, error) {
 	if configName == "" {
 		configName = config.DefaultConfigName
 	}
 	cfg := config.New()
 	contentType, err := inspectProjectType(path, log)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cfg.Type = contentType.Type
 	cfg.Entrypoint = contentType.Entrypoint
 
 	requiresPython, err := requiresPython(contentType.Type, path, python)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if requiresPython {
 		pythonConfig, err := inspectPython(path, python, log)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		cfg.Python = pythonConfig
 	}
@@ -92,9 +92,9 @@ func Init(path util.Path, configName string, python util.Path, log logging.Logge
 	log.Info("Wrote config file", "path", configPath)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return cfg, nil
 }
 
 // InitIfNeeded runs an auto-initialize if the specified config file does not exist.
@@ -106,7 +106,7 @@ func InitIfNeeded(path util.Path, configName string, log logging.Logger) error {
 	}
 	if !exists {
 		log.Info("Configuration file does not exist; creating it", "path", configPath.String())
-		err = Init(path, configName, util.Path{}, log)
+		_, err = Init(path, configName, util.Path{}, log)
 		if err != nil {
 			return err
 		}
