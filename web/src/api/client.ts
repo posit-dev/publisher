@@ -7,6 +7,7 @@ import decamelizeKeys from 'decamelize-keys';
 import { Accounts } from 'src/api/resources/Accounts';
 import { Deployments } from 'src/api/resources/Deployments';
 import { Configurations } from 'src/api/resources/Configurations';
+import { Publish } from 'src/api/resources/Publish';
 
 const camelCaseInterceptor = (response: AxiosResponse): AxiosResponse => {
   if (response.data && response.headers['content-type'] === 'application/json') {
@@ -29,6 +30,7 @@ class PublishingClientApi {
   accounts: Accounts;
   configurations: Configurations;
   deployments: Deployments;
+  publish: Publish;
 
   constructor() {
     const client = axios.create({
@@ -42,6 +44,7 @@ class PublishingClientApi {
     this.accounts = new Accounts(client);
     this.configurations = new Configurations(client);
     this.deployments = new Deployments(client);
+    this.publish = new Publish(client);
   }
 }
 

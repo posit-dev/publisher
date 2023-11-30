@@ -25,6 +25,8 @@
           color="white"
           text-color="black"
           label="Publish"
+          :disable="disablePublishing"
+          @click="onPublish"
         />
       </div>
     </div>
@@ -47,6 +49,9 @@ const accounts = ref<Account[]>([]);
 const filteredAccountList = ref<Account[]>([]);
 const destinationURL = ref('');
 const selectedAccount = ref<Account>();
+const disablePublishing = ref(false);
+
+const emit = defineEmits(['publish']);
 
 const props = defineProps({
   contentId: { type: String, required: true },
@@ -55,6 +60,29 @@ const props = defineProps({
 
 const onUpdate = (account: Account) => {
   selectedAccount.value = account;
+};
+
+const onPublish = async() => {
+  const accountName = selectedAccount.value?.name;
+  if (!accountName) {
+    // internal error
+    console.log('An internal error has occurred when calling publish.start - no accountName');
+    return;
+  }
+  emit('publish');
+  disablePublishing.value = true;
+  try {
+    await api.publish.start(
+      accountName,
+      'default', // hardcoded for now...
+      props.contentId,
+    );
+    disablePublishing.value = false;
+  } catch (e) {
+    // Temporary until we determine the mechanism to notify users of general errors.
+    console.log('An error has occurred when calling publish.start:', e);
+    disablePublishing.value = false;
+  }
 };
 
 const updateAccountList = async() => {

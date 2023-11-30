@@ -18,6 +18,8 @@
         color="white"
         text-color="black"
         label="Publish"
+        :disable="disablePublishing"
+        @click="onPublish"
       />
     </div>
   </div>
@@ -35,10 +37,29 @@ const api = useApi();
 const accounts = ref<Account[]>([]);
 const fixedAccountList = ref<Account[]>([]);
 const destinationURL = ref('');
+const disablePublishing = ref(false);
+
+const emit = defineEmits(['publish']);
 
 const props = defineProps({
   accountName: { type: String, required: true },
 });
+
+const onPublish = async() => {
+  emit('publish');
+  disablePublishing.value = true;
+  try {
+    await api.publish.start(
+      props.accountName,
+      'default', // hardcoded for now...
+    );
+    disablePublishing.value = false;
+  } catch (e) {
+    // Temporary until we determine the mechanism to notify users of general errors.
+    console.log('An error has occurred when calling publish.start:', e);
+    disablePublishing.value = false;
+  }
+};
 
 const updateAccountList = async() => {
   try {
