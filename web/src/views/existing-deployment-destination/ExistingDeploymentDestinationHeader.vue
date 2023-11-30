@@ -74,7 +74,6 @@ const onPublish = async() => {
   try {
     await api.deployments.publish(
       accountName,
-      'default', // hardcoded for now...
       props.contentId,
     );
     disablePublishing.value = false;

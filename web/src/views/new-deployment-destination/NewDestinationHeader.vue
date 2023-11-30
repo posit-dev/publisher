@@ -51,7 +51,6 @@ const onPublish = async() => {
   try {
     await api.deployments.publish(
       props.accountName,
-      'default', // hardcoded for now...
     );
     disablePublishing.value = false;
   } catch (e) {
