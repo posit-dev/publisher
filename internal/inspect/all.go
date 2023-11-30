@@ -30,7 +30,7 @@ func NewContentTypeDetector() *ContentTypeDetector {
 	}
 }
 
-var errCantDetectContentType = errors.New("could not automatically detect content type. Please specify it with the -t option")
+var ErrCantDetectContentType = errors.New("could not automatically detect content type. Please specify it with the -t option")
 
 func (t *ContentTypeDetector) InferType(path util.Path) (*ContentType, error) {
 	for _, detector := range t.detectors {
@@ -42,7 +42,7 @@ func (t *ContentTypeDetector) InferType(path util.Path) (*ContentType, error) {
 			return contentType, nil
 		}
 	}
-	return nil, errCantDetectContentType
+	return nil, ErrCantDetectContentType
 }
 
 var _ ContentTypeInferer = &ContentTypeDetector{}

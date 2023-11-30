@@ -113,7 +113,7 @@ func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
 	detector := NewContentTypeDetector()
 	t, err := detector.InferType(path)
 	s.NotNil(err)
-	s.ErrorIs(err, errCantDetectContentType)
+	s.ErrorIs(err, ErrCantDetectContentType)
 	s.Nil(t)
 }
 
@@ -125,7 +125,7 @@ func (s *AllSuite) TestInferTypeFileIndeterminate() {
 	detector := NewContentTypeDetector()
 	t, err := detector.InferType(path)
 	s.NotNil(err)
-	s.ErrorIs(err, errCantDetectContentType)
+	s.ErrorIs(err, ErrCantDetectContentType)
 	s.Nil(t)
 }
 

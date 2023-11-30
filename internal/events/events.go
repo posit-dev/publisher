@@ -27,6 +27,7 @@ const (
 	AgentOp Operation = "agent"
 
 	PublishCreateDeploymentOp Operation = "publish/createDeployment"
+	PublishSetEnvVarsOp       Operation = "publish/setEnvVars"
 	PublishCreateBundleOp     Operation = "publish/createBundle"
 	PublishUploadBundleOp     Operation = "publish/uploadBundle"
 	PublishDeployBundleOp     Operation = "publish/deployBundle"

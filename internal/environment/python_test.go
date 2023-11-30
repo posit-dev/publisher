@@ -56,7 +56,8 @@ func (s *PythonSuite) TestNewPythonInspector() {
 	log := logging.New()
 	projectDir := util.NewPath("/myproject", nil)
 	pythonPath := util.NewPath("/usr/bin/python", nil)
-	inspector := NewPythonInspector(projectDir, pythonPath, log)
+	i := NewPythonInspector(projectDir, pythonPath, log)
+	inspector := i.(*defaultPythonInspector)
 	s.Equal(projectDir, inspector.projectDir)
 	s.Equal(pythonPath, inspector.pythonPath)
 	s.Equal(log, inspector.log)
@@ -65,7 +66,8 @@ func (s *PythonSuite) TestNewPythonInspector() {
 func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 	log := logging.New()
 	pythonPath := util.NewPath("/usr/bin/python3", nil)
-	inspector := NewPythonInspector(util.Path{}, pythonPath, log)
+	i := NewPythonInspector(util.Path{}, pythonPath, log)
+	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
@@ -78,7 +80,8 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	projectDir := util.NewPath("/myproject", afero.NewMemMapFs())
 	pythonPath := util.NewPath("/usr/bin/python3", nil)
 	log := logging.New()
-	inspector := NewPythonInspector(projectDir, pythonPath, log)
+	i := NewPythonInspector(projectDir, pythonPath, log)
+	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
 	testError := errors.New("test error from runPythonCommand")
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(nil, testError)
@@ -91,7 +94,8 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 
 func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	log := logging.New()
-	inspector := NewPythonInspector(util.Path{}, util.Path{}, log)
+	i := NewPythonInspector(util.Path{}, util.Path{}, log)
+	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
 	executor.On("runPythonCommand", mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
@@ -228,7 +232,8 @@ func (s *PythonSuite) TestEnsurePythonRequirementsFileErr() {
 func (s *PythonSuite) TestEnsurePythonRequirementsFileFromExecutable() {
 	pythonPath := util.NewPath("/usr/bin/python3", nil)
 	log := logging.New()
-	inspector := NewPythonInspector(s.cwd, pythonPath, log)
+	i := NewPythonInspector(s.cwd, pythonPath, log)
+	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
 	freezeOutput := []byte("numpy\npandas\n")
 	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(freezeOutput, nil)
