@@ -34,6 +34,7 @@
           <q-input
             v-model="contentId"
             label="Content ID"
+            hint="Optional"
           />
 
           <div>
