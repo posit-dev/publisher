@@ -8,7 +8,7 @@
   <q-btn @click="showAddNewModal = true">
     Add Destination
   </q-btn>
-  <NewDestinationDialogue v-model="showAddNewModal" />
+  <NewDestinationDialog v-model="showAddNewModal" />
 
   <ul
     v-for="deployment in deployments"
@@ -42,7 +42,7 @@ import { RouterLink } from 'vue-router';
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import { Configuration, ConfigurationError, isConfigurationError } from 'src/api/types/configurations';
-import NewDestinationDialogue from 'src/views/project-page/NewDestinationDialogue.vue';
+import NewDestinationDialog from 'src/views/project-page/NewDestinationDialog.vue';
 
 const api = useApi();
 const deployments = ref<Deployment[]>([]);
