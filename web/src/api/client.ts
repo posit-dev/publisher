@@ -4,6 +4,7 @@ import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
 
+import { Accounts } from 'src/api/resources/Accounts';
 import { Deployments } from 'src/api/resources/Deployments';
 import { Configurations } from 'src/api/resources/Configurations';
 
@@ -25,6 +26,7 @@ const snakeCaseInterceptor = (config: InternalAxiosRequestConfig) => {
 };
 
 class PublishingClientApi {
+  accounts: Accounts;
   configurations: Configurations;
   deployments: Deployments;
 
@@ -37,6 +39,7 @@ class PublishingClientApi {
     client.interceptors.request.use(snakeCaseInterceptor);
     client.interceptors.response.use(camelCaseInterceptor);
 
+    this.accounts = new Accounts(client);
     this.configurations = new Configurations(client);
     this.deployments = new Deployments(client);
   }

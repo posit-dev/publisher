@@ -2,15 +2,10 @@
 
 import { Configuration } from 'src/api/types/configurations';
 import { SchemaURL } from 'src/api/types/schema';
+import { ServerType } from 'src/api/types/accounts';
 
 export type DeploymentError = {
   error: string,
-}
-
-export enum ServerType {
-  CONNECT = 'connect',
-  SHINY_APPS = 'shinyapps',
-  CLOUD = 'cloud',
 }
 
 export type Deployment = {

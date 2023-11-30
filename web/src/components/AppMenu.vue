@@ -36,6 +36,39 @@
             <q-item-section>Dark Mode - auto</q-item-section>
           </q-item>
         </q-list>
+        <q-separator />
+        <q-list
+          class="q-pa-sm"
+        >
+          <q-item
+            v-close-popup
+            clickable
+            class="q-my-sm"
+          >
+            <q-item-section>
+              <router-link
+                :to="{ name: 'project'}"
+                style="text-decoration: none; color: inherit;"
+              >
+                TEMP - Project Page
+              </router-link>
+            </q-item-section>
+          </q-item>
+          <q-item
+            v-close-popup
+            clickable
+            class="q-my-sm"
+          >
+            <q-item-section>
+              <router-link
+                :to="{ name: 'newDeployment', params: { account: 'dogfood' }}"
+                style="text-decoration: none; color: inherit;"
+              >
+                TEMP - New Deployment
+              </router-link>
+            </q-item-section>
+          </q-item>
+        </q-list>
       </q-menu>
     </q-btn>
   </div>
