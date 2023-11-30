@@ -1,33 +1,33 @@
-import * as wait from 'wait-on';
 
+import * as retry from 'retry';
 import * as vscode from 'vscode';
 
+import { HOST } from '.';
 import * as commands from './commands';
+import * as ports from './ports';
 
-const name: string = "publisher";
+export class Assistant {
 
-type CreateAssistantParameters = {
-	path: string,
-	port: number,
-	resources: vscode.Uri[],
-};
+    private readonly name: string = "Publish Assistant";
 
-class Assistant {
+	private readonly path: string;
+	private readonly port: number;
+	private readonly terminal: vscode.Terminal;
 
-
-	readonly path: string;
-	readonly port: number;
-	readonly terminal: vscode.Terminal;
 	readonly resources: vscode.Uri[];
 
-	constructor(path: string, port: number, resources: vscode.Uri[]) {
-		this.path = path;
+	constructor(port: number, resources: vscode.Uri[]) {
+        const path = vscode.workspace.workspaceFolders?.at(0)?.uri.path;
+        if (path === undefined) {
+			throw new Error("workspace path is undefined");
+		}
+        this.path = path;
 		this.port = port;
 		this.resources = resources;
-		this.terminal = vscode.window.createTerminal({ name: name });
+		this.terminal = vscode.window.createTerminal({ name: this.name, hideFromUser: true });
 	}
 
-	render = async () => {
+	show = async () => {
 		const panel = vscode.window.createWebviewPanel(
 			'positron.publisher.assistant',
 			'Publish Assistant',
@@ -39,7 +39,7 @@ class Assistant {
 			}
 		);
 
-		const uri = await vscode.env.asExternalUri(vscode.Uri.parse(`http://127.0.0.1:${this.port}`));
+		const uri = await vscode.env.asExternalUri(vscode.Uri.parse(`http://${HOST}:${this.port}`));
 		const url = uri.toString();
 		panel.webview.html =
 			// install https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html to enable code highlighting below
@@ -60,17 +60,23 @@ class Assistant {
 	};
 
 	start = async (): Promise<void> => {
-		this.terminal.show();
 		const command: commands.Command = commands.create(this.path, this.port);
 		this.terminal.sendText(command);
-		console.debug("Waiting 3000 ms for ui to initialize");
-		await new Promise(resolve => setTimeout(resolve, 3000));
-		console.debug("Finished waiting for the ui to initialize");
+		if (!(await ports.ping(this.port))) {
+			throw Error("assistant failed to start");
+		}
+	};
+
+	stop = async (): Promise<void> => {
+		const operation = retry.operation();
+		operation.attempt(async () => {
+			// send "CTRL+C" command
+			this.terminal.sendText("\u0003");
+			const pong = await ports.ping(this.port, 1000);
+			if (pong) {
+				throw Error("assistant still running");
+			}
+		});
 	};
 
 }
-
-
-export const create = (params: CreateAssistantParameters): Assistant => {
-	return new Assistant(params.path, params.port, params.resources);
-};

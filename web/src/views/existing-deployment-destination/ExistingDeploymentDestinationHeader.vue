@@ -16,7 +16,7 @@
         <SelectAccount
           :accounts="filteredAccountList"
           :url="destinationURL"
-          @update:model-value="onUpdate"
+          @change="onChange"
         />
       </div>
       <div class="col-2">
@@ -58,7 +58,7 @@ const props = defineProps({
   url: { type: String, required: true },
 });
 
-const onUpdate = (account: Account) => {
+const onChange = (account: Account) => {
   selectedAccount.value = account;
 };
 

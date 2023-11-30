@@ -35,7 +35,7 @@ import { PropType, computed, ref, watch } from 'vue';
 
 import { Account } from 'src/api';
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['change']);
 const props = defineProps({
   url: { type: String, required: true },
   accounts: { type: Object as PropType<Account[]>, required: true },
@@ -80,7 +80,7 @@ watch(
 watch(
   selectedAccount,
   () => {
-    emit('update:modelValue', selectedAccount.value);
+    emit('change', selectedAccount.value);
   }
 );
 
