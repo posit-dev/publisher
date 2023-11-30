@@ -113,9 +113,8 @@ func (s *PublishSuite) publishWithClient(target *deployment.Deployment, createEr
 	client := clienttest.NewMockClient()
 	if target == nil {
 		client.On("CreateDeployment", mock.Anything).Return(myContentID, createErr)
-	} else {
-		client.On("UpdateDeployment", myContentID, mock.Anything).Return(createErr)
 	}
+	client.On("UpdateDeployment", myContentID, mock.Anything).Return(createErr)
 	client.On("SetEnvVars", myContentID, mock.Anything).Return(envVarErr)
 	client.On("UploadBundle", myContentID, mock.Anything).Return(myBundleID, uploadErr)
 	client.On("DeployBundle", myContentID, myBundleID).Return(myTaskID, deployErr)

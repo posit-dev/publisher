@@ -117,6 +117,46 @@ func withLog[T any](
 	return value, nil
 }
 
+func (p *defaultPublisher) createDeploymentRecord(
+	bundler bundles.Bundler,
+	contentID types.ContentID,
+	account *accounts.Account,
+	log logging.Logger) error {
+
+	// Scan the directory to get the file list for the deployment record
+	createdManifest, err := bundler.CreateManifest()
+	if err != nil {
+		return err
+	}
+	p.Target = &deployment.Deployment{
+		Schema:        deployment.DeploymentSchema,
+		ServerType:    account.ServerType,
+		ServerURL:     account.URL,
+		Id:            contentID,
+		ConfigName:    p.ConfigName,
+		Files:         createdManifest.GetFilenames(),
+		Configuration: *p.Config,
+	}
+	// Save current deployment information for this target
+	recordPath := deployment.GetLatestDeploymentPath(p.Dir, string(contentID))
+	log.Info("Writing deployment record", "path", recordPath)
+	err = p.Target.WriteFile(recordPath)
+	if err != nil {
+		return err
+	}
+	// and create a new history entry
+	historyPath, err := deployment.GetDeploymentHistoryPath(p.Dir, string(contentID))
+	if err != nil {
+		return err
+	}
+	log.Info("Writing history record", "path", historyPath)
+	err = p.Target.WriteFile(historyPath)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (p *defaultPublisher) publishWithClient(
 	bundler bundles.Bundler,
 	account *accounts.Account,
@@ -128,15 +168,33 @@ func (p *defaultPublisher) publishWithClient(
 		"server", account.URL,
 	)
 
+	var contentID types.ContentID
+	var err error
+
+	if p.Target != nil {
+		contentID = p.Target.Id
+	} else {
+		// Create a new deployment; we will update it with details later.
+		contentID, err = withLog(events.PublishCreateDeploymentOp, "Creating deployment", "content_id", log, func() (types.ContentID, error) {
+			return client.CreateDeployment(&state.ConnectContent{})
+		})
+		if err != nil {
+			return err
+		}
+	}
+	err = p.createDeploymentRecord(bundler, contentID, account, log)
+	if err != nil {
+		return err
+	}
+
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
 		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
-	var createdManifest *bundles.Manifest
 	_, err = withLog(events.PublishCreateBundleOp, "Creating bundle", "filename", log, func() (any, error) {
-		createdManifest, err = bundler.CreateBundle(bundleFile)
+		_, err = bundler.CreateBundle(bundleFile)
 		return bundleFile.Name(), err
 	})
 	if err != nil {
@@ -147,53 +205,26 @@ func (p *defaultPublisher) publishWithClient(
 		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
 	}
 
-	var contentID types.ContentID
-	connectContent := state.ConnectContentFromConfig(p.Config)
-	if p.Target != nil {
-		contentID = p.Target.Id
-		_, err := withLog(events.PublishCreateDeploymentOp, "Updating deployment", "content_id", log, func() (any, error) {
-			return contentID, client.UpdateDeployment(contentID, connectContent)
-		})
-		if err != nil {
-			httpErr, ok := err.(*clients.HTTPError)
-			if ok && httpErr.Status == http.StatusNotFound {
-				details := DeploymentNotFoundDetails{
-					ContentID: contentID,
-				}
-				return types.NewAgentError(events.DeploymentNotFoundCode, err, details)
-			}
-			return err
-		}
-	} else {
-		contentID, err = withLog(events.PublishCreateDeploymentOp, "Creating deployment", "content_id", log, func() (types.ContentID, error) {
-			return client.CreateDeployment(connectContent)
-		})
-		if err != nil {
-			return err
-		}
+	bundleID, err := withLog(events.PublishUploadBundleOp, "Uploading deployment bundle", "count", log, func() (types.BundleID, error) {
+		return client.UploadBundle(contentID, bundleFile)
+	})
+	if err != nil {
+		return err
 	}
 
-	p.Target = &deployment.Deployment{
-		Schema:        deployment.DeploymentSchema,
-		ServerType:    account.ServerType,
-		ServerURL:     account.URL,
-		Id:            contentID,
-		ConfigName:    p.ConfigName,
-		Files:         createdManifest.GetFilenames(),
-		Configuration: *p.Config,
-	}
-	// Save current deployment information for this target
-	err = p.Target.WriteFile(deployment.GetLatestDeploymentPath(p.Dir, string(p.Target.Id)))
+	// Update app settings
+	connectContent := state.ConnectContentFromConfig(p.Config)
+	_, err = withLog(events.PublishCreateDeploymentOp, "Updating deployment settings", "content_id", log, func() (any, error) {
+		return contentID, client.UpdateDeployment(contentID, connectContent)
+	})
 	if err != nil {
-		return err
-	}
-	// and create a new history entry
-	historyPath, err := deployment.GetDeploymentHistoryPath(p.Dir, string(p.Target.Id))
-	if err != nil {
-		return err
-	}
-	err = p.Target.WriteFile(historyPath)
-	if err != nil {
+		httpErr, ok := err.(*clients.HTTPError)
+		if ok && httpErr.Status == http.StatusNotFound {
+			details := DeploymentNotFoundDetails{
+				ContentID: contentID,
+			}
+			return types.NewAgentError(events.DeploymentNotFoundCode, err, details)
+		}
 		return err
 	}
 
@@ -208,13 +239,6 @@ func (p *defaultPublisher) publishWithClient(
 		if err != nil {
 			return err
 		}
-	}
-
-	bundleID, err := withLog(events.PublishUploadBundleOp, "Uploading deployment bundle", "count", log, func() (types.BundleID, error) {
-		return client.UploadBundle(contentID, bundleFile)
-	})
-	if err != nil {
-		return err
 	}
 
 	taskID, err := withLog(events.PublishDeployBundleOp, "Initiating bundle deployment", "task_id", log, func() (types.TaskID, error) {
