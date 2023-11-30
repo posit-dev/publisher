@@ -37,17 +37,17 @@
             hint="Optional"
           />
 
-          <div>
-            <q-btn
-              type="reset"
-              label="Cancel"
-              @click="hide"
-            />
+          <div class="flex row reverse">
             <q-btn
               type="submit"
               color="primary"
-              class="q-ml-sm"
               label="Add"
+            />
+            <q-btn
+              type="reset"
+              class="q-mr-sm"
+              label="Cancel"
+              @click="hide"
             />
           </div>
         </q-form>
