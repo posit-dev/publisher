@@ -28,6 +28,10 @@
           @submit.prevent="addDestination"
         >
           <q-input
+            v-model="serverUrl"
+            label="Server URL"
+          />
+          <q-input
             v-model="contentId"
             label="Content ID"
           />
@@ -59,6 +63,7 @@ defineProps({
 });
 const emits = defineEmits(['update:modelValue']);
 
+const serverUrl = ref<string>('');
 const contentId = ref<string>('');
 
 function resetForm() {
