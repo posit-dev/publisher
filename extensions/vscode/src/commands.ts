@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+import { HOST } from '.';
+
 const EXECUTABLE_DEFAULT = "publisher";
 
 export type Command = string;
@@ -11,5 +13,5 @@ export const create = (path: string, port: number, subcommand: string = "publish
         executable = EXECUTABLE_DEFAULT;
     }
 
-    return `${executable} ${subcommand} --listen=127.0.0.1:${port} ${path}`;
+    return `${executable} ${subcommand} --listen=${HOST}:${port} ${path}`;
 };
