@@ -43,7 +43,7 @@ class StateManager {
 		}
 	};
 
-	// Transistions the internal state from the current state the next state.
+	// Transitions the internal state from the current state the next state.
 	// If the internal state does not match the current state, an error is thrown.
 	// Otherwise, the callback is executed and the state is set to the provided next state.
 	transition = async (current: State, next: State, callback: Function): Promise<State> => {
@@ -115,7 +115,7 @@ export class Service {
 
 		await this.manager.transition("STARTING", "RUNNING", async () => {
 			console.debug("the service is running");
-			vscode.window.showInformationMessage("The Publish Assistant is now avaiable!");
+			vscode.window.showInformationMessage("The Publish Assistant is now available!");
 			this.assistant.show();
 		});
 	};
