@@ -10,16 +10,17 @@ let service: Service;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
-	service = await Service.get(context);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('posit.publisher.assistant.start', async () => {
+			service = await Service.get(context);
 			await service.start();
 		})
 	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('posit.publisher.assistant.stop', async () => {
+			service = await Service.get(context);
 			await service.stop();
 		})
 	);
