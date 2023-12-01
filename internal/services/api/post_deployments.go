@@ -23,19 +23,14 @@ type PostPublishReponse struct {
 	LocalID state.LocalDeploymentID `json:"local_id"` // Unique ID of this publishing operation. Only valid for this run of the agent.
 }
 
-type PublisherFactory = func(*state.State) publish.Publisher
-type StateFactory = func(
-	path util.Path,
-	accountName, configName, targetID string,
-	accountList accounts.AccountList) (*state.State, error)
+var stateFactory = state.New
+var publisherFactory = publish.NewFromState
 
 func PostDeploymentsHandlerFunc(
 	stateStore *state.State,
 	base util.Path,
 	log logging.Logger,
-	accountList accounts.AccountList,
-	stateFactory StateFactory,
-	publisherFactory PublisherFactory) http.HandlerFunc {
+	accountList accounts.AccountList) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, req *http.Request) {
 		dec := json.NewDecoder(req.Body)
@@ -65,10 +60,10 @@ func PostDeploymentsHandlerFunc(
 
 		*stateStore = *newState
 		stateStore.LocalID = localID
+		publisher := publisherFactory(stateStore)
 
 		go func() {
 			log = log.WithArgs("local_id", localID)
-			publisher := publisherFactory(stateStore)
 			err = publisher.PublishDirectory(log)
 			if err != nil {
 				log.Error("Deployment failed", "error", err.Error())

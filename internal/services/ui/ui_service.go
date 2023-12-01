@@ -8,7 +8,6 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
@@ -93,7 +92,7 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 		Methods(http.MethodGet)
 
 	// POST /api/deployments
-	r.Handle(ToPath("deployments"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
+	r.Handle(ToPath("deployments"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister)).
 		Methods(http.MethodPost)
 
 	// GET /api/deployment - DEPRECATED
@@ -105,7 +104,7 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 		Methods(http.MethodPut)
 
 	// POST /api/publish - DEPRECATED
-	r.Handle(ToPath("publish"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
+	r.Handle(ToPath("publish"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister)).
 		Methods(http.MethodPost)
 
 	// GET /
