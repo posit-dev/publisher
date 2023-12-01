@@ -22,4 +22,19 @@ export class Deployments {
       `deployments/${id}`
     );
   }
+
+  publish(
+    accountName? : string,
+    target?: string,
+  ){
+    const params = {
+      account: accountName,
+      config: 'default', // hardcoded for now
+      target,
+    };
+    return this.client.post(
+      '/deployments',
+      params,
+    );
+  }
 }
