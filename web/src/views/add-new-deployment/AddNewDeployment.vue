@@ -78,11 +78,3 @@ function navigateToNewDestinationPage() {
 
 getAccounts();
 </script>
-
-  <style scoped>
-  .dialog-width {
-    width: 500px;
-    max-width: 90vw;
-  }
-  </style>
-
