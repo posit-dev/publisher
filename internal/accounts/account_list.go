@@ -3,6 +3,7 @@ package accounts
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/rstudio/connect-client/internal/logging"
@@ -50,6 +51,8 @@ func (l *defaultAccountList) GetAllAccounts() (accounts []Account, err error) {
 	return accounts, nil
 }
 
+var ErrAccountNotFound = errors.New("no such account")
+
 func (l *defaultAccountList) GetAccountByName(name string) (*Account, error) {
 	accounts, err := l.GetAllAccounts()
 	if err != nil {
@@ -60,7 +63,7 @@ func (l *defaultAccountList) GetAccountByName(name string) (*Account, error) {
 			return &account, nil
 		}
 	}
-	return nil, fmt.Errorf("there is no account named '%s'", name)
+	return nil, fmt.Errorf("cannot get account named '%s': %w", name, ErrAccountNotFound)
 }
 
 func (l *defaultAccountList) GetAccountByServerURL(url string) (*Account, error) {

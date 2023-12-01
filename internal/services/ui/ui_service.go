@@ -65,6 +65,10 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 	r.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(lister, log)).
 		Methods(http.MethodGet)
 
+	// GET /api/accounts/{name}
+	r.Handle(ToPath("accounts", "{name}"), api.GetAccountHandlerFunc(lister, log)).
+		Methods(http.MethodGet)
+
 	// GET /api/events
 	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
 
