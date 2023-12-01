@@ -33,6 +33,7 @@
         type="reset"
         class="q-mr-sm"
         label="Cancel"
+        @click="router.back()"
       />
     </div>
   </q-form>
@@ -41,6 +42,7 @@
 <script setup lang="ts">
 import { Account, useApi } from 'src/api';
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 
@@ -49,6 +51,7 @@ const selectedAccount = ref<Account | undefined>(undefined);
 const contentId = ref<string>('');
 
 const api = useApi();
+const router = useRouter();
 
 async function getAccounts() {
   const response = await api.accounts.getAll();
