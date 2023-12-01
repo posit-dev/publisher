@@ -4,7 +4,7 @@
   <q-form
     class="q-gutter-md"
     @reset="resetForm"
-    @submit.prevent="addDestination"
+    @submit.prevent="navigateToNewDestinationPage"
   >
     <div class="q-pa-sm">
       <q-list>
@@ -25,7 +25,7 @@
 
     <div class="flex row reverse">
       <q-btn
-        :to="{ name: 'newDeployment', params: { account: selectedAccountName, contentId: contentId } }"
+        :to="destinationPage"
         type="submit"
         color="primary"
         label="Add"
@@ -42,8 +42,8 @@
 
 <script setup lang="ts">
 import { Account, useApi } from 'src/api';
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, ref } from 'vue';
+import { RouteLocationRaw, useRouter } from 'vue-router';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 
@@ -64,8 +64,16 @@ function resetForm() {
   contentId.value = '';
 }
 
-function addDestination() {
-  console.log('Destination added');
+const destinationPage = computed<RouteLocationRaw>(() => ({
+  name: 'newDeployment',
+  params: {
+    account: selectedAccountName.value,
+    contentId: contentId.value,
+  },
+}));
+
+function navigateToNewDestinationPage() {
+  router.push(destinationPage.value);
 }
 
 getAccounts();
