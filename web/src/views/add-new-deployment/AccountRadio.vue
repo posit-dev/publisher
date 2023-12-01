@@ -13,6 +13,7 @@
     >
       <q-radio
         v-model="radioModel"
+        name="account"
         :val="account.name"
       />
     </q-item-section>
