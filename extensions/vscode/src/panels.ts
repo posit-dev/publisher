@@ -8,7 +8,7 @@ type State = {
     panel?: vscode.WebviewPanel;
 };
 
-export class Panel {
+export class Panel implements vscode.Disposable {
 
     private readonly context: vscode.ExtensionContext;
     private readonly html: string;
@@ -77,6 +77,11 @@ export class Panel {
             null,
             this.context.subscriptions
         );
+    }
+
+    dispose() {
+        // this invokes this panel.onDidDispose callback above, which resets the state.
+        this.state.panel?.dispose();
     }
 
 }

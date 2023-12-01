@@ -35,6 +35,8 @@ export class Assistant {
 	};
 
 	stop = async (): Promise<void> => {
+		// close the panel
+		this.panel.dispose();
 		const operation = retry.operation();
 		operation.attempt(async () => {
 			// send "CTRL+C" command
