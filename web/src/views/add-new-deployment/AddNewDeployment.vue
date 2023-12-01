@@ -11,7 +11,7 @@
         <AccountRadio
           v-for="account in accounts"
           :key="account.name"
-          v-model="selectedAccount"
+          v-model="selectedAccountName"
           :account="account"
         />
       </q-list>
@@ -47,7 +47,7 @@ import { useRouter } from 'vue-router';
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 
 const accounts = ref<Account[]>([]);
-const selectedAccount = ref<Account | undefined>(undefined);
+const selectedAccountName = ref<string>('');
 const contentId = ref<string>('');
 
 const api = useApi();
@@ -59,7 +59,7 @@ async function getAccounts() {
 }
 
 function resetForm() {
-  selectedAccount.value = undefined;
+  selectedAccountName.value = '';
   contentId.value = '';
 }
 
