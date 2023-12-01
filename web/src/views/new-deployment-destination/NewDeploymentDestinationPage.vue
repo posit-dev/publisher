@@ -1,6 +1,16 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
+  <div class="q-pa-md q-gutter-sm">
+    <q-breadcrumbs>
+      <q-breadcrumbs-el
+        label="Project"
+        :to="{ name: 'project' }"
+      />
+      <q-breadcrumbs-el label="New Destination" />
+    </q-breadcrumbs>
+  </div>
+
   <NewDestinationHeader
     :account-name="accountName"
     :content-id="contentId"

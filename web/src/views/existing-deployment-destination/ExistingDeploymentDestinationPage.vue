@@ -1,6 +1,21 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
+  <div class="q-pa-md q-gutter-sm">
+    <q-breadcrumbs>
+      <q-breadcrumbs-el
+        label="Project"
+        :to="{
+          name:
+            'project'
+        }"
+      />
+      <q-breadcrumbs-el
+        :label="deploymentUrl"
+      />
+    </q-breadcrumbs>
+  </div>
+
   <ExistingDeploymentDestinationHeader
     :content-id="contentID"
     :url="deploymentUrl"
