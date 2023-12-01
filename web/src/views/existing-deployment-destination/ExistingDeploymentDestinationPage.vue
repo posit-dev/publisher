@@ -6,6 +6,11 @@
     :url="deploymentUrl"
     class="q-mt-md"
   />
+
+  <ConfigSettings
+    v-if="deployment"
+    :config="deployment"
+  />
 </template>
 
 <script setup lang="ts">
@@ -15,6 +20,7 @@ import { useRoute } from 'vue-router';
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 
+import ConfigSettings from 'src/components/ConfigSettings.vue';
 import ExistingDeploymentDestinationHeader from './ExistingDeploymentDestinationHeader.vue';
 
 const route = useRoute();
