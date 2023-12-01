@@ -119,7 +119,7 @@ cy *args:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-    
+
     just _with_docker just test/cy/{{ args }}
 
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).
@@ -212,7 +212,7 @@ run *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    echo {{ args }}
+    echo {{ args }} 1>&2
     just _with_docker '$(just executable-path)' {{ args }}
 
 # Creates a fake './web/dist' directory for when it isn't needed.
