@@ -23,4 +23,12 @@ const accountName = computed(() => {
   return route.params.account;
 });
 
+const contentId = computed(() => {
+  // route param can be either string | string[]
+  if (Array.isArray(route.params.contentId)) {
+    return route.params.contentId[0];
+  }
+  return route.params.contentId;
+});
+
 </script>

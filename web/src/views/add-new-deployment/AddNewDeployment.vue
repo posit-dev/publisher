@@ -25,7 +25,7 @@
 
     <div class="flex row reverse">
       <q-btn
-        :to="{ name: 'newDeployment', params: { account: selectedAccountName } }"
+        :to="{ name: 'newDeployment', params: { account: selectedAccountName, contentId: contentId } }"
         type="submit"
         color="primary"
         label="Add"
