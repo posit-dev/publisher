@@ -5,10 +5,9 @@
 
   <h2>Destinations</h2>
 
-  <q-btn @click="showAddNewModal = true">
+  <q-btn :to="{ name: 'addNewDeployment' }">
     Add Destination
   </q-btn>
-  <NewDestinationDialog v-model="showAddNewModal" />
 
   <ul
     v-for="deployment in deployments"
@@ -42,13 +41,10 @@ import { RouterLink } from 'vue-router';
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import { Configuration, ConfigurationError, isConfigurationError } from 'src/api/types/configurations';
-import NewDestinationDialog from 'src/views/project-page/NewDestinationDialog.vue';
 
 const api = useApi();
 const deployments = ref<Deployment[]>([]);
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
-
-const showAddNewModal = ref<boolean>(false);
 
 async function getDeployments() {
   const response = (await api.deployments.getAll()).data;
