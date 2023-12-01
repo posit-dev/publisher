@@ -13,15 +13,14 @@ import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { useApi } from 'src/api';
-import { isDeploymentError } from 'src/api/types/deployments';
+import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 
 import ExistingDeploymentDestinationHeader from './ExistingDeploymentDestinationHeader.vue';
 
 const route = useRoute();
 const api = useApi();
 
-// We do not know what the right account is to select.
-const deploymentUrl = ref('');
+const deployment = ref<Deployment>();
 
 const deploymentID = computed(():string => {
   // route param can be either string | string[]
@@ -31,6 +30,10 @@ const deploymentID = computed(():string => {
   return route.params.id;
 });
 
+const deploymentUrl = computed<string>(() => {
+  return deployment.value?.serverUrl || '';
+});
+
 const contentID = computed(():string => {
   if (Array.isArray(route.params.id)) {
     return route.params.id[0];
@@ -38,16 +41,18 @@ const contentID = computed(():string => {
   return route.params.id;
 });
 
-const determineDeploymentURL = async() => {
+const getDeployment = async() => {
   try {
     if (!deploymentID.value) {
+      deployment.value = undefined;
       return;
     }
-    const deployment = (await api.deployments.get(deploymentID.value)).data;
-    if (isDeploymentError(deployment)) {
-      throw new Error(`API Error /deployment/${deploymentID.value}: ${deployment}`);
+    const response = await api.deployments.get(deploymentID.value);
+    const d = response.data;
+    if (isDeploymentError(d)) {
+      throw new Error(`API Error /deployment/${deploymentID.value}: ${d}`);
     }
-    deploymentUrl.value = deployment.serverUrl;
+    deployment.value = d;
   } catch (err) {
     // TODO: handle the API error
   }
@@ -56,7 +61,7 @@ const determineDeploymentURL = async() => {
 watch(
   () => route.params,
   () => {
-    determineDeploymentURL();
+    getDeployment();
   },
   { immediate: true }
 );
