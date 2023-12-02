@@ -14,10 +14,7 @@ export type Deployment = {
   serverUrl: string,
   id: string,
   files: string[]
-  configurationPath: string
-  configurationName: string
-  configuration: Configuration
-}
+} & Configuration;
 
 export function isDeploymentError(
   d: Deployment | DeploymentError

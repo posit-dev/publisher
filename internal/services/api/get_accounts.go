@@ -10,9 +10,9 @@ import (
 	"github.com/rstudio/connect-client/internal/logging"
 )
 
-// accountGetDTO is the format of returned account data.
+// getAccountResponse is the format of returned account data.
 // It does not include credentials (ApiKey, Token, Secret, or PrivateKey).
-type accountGetDTO struct {
+type getAccountResponse struct {
 	Type        string `json:"type"`         // Which type of API this server provides
 	Source      string `json:"source"`       // Source of the saved server configuration
 	AuthType    string `json:"auth_type"`    // Authentication method (API key, token, etc)
@@ -23,14 +23,14 @@ type accountGetDTO struct {
 	AccountName string `json:"account_name"` // For shinyapps.io and Posit Cloud servers
 }
 
-type accountListDTO struct {
-	Accounts []*accountGetDTO `json:"accounts"`
+type getAccountsResponse struct {
+	Accounts []*getAccountResponse `json:"accounts"`
 }
 
-// toAccountDTO converts an internal Account object
+// toGetAccountResponse converts an internal Account object
 // to the DTO type we return from the API.
-func toAccountDTO(acct *accounts.Account) *accountGetDTO {
-	return &accountGetDTO{
+func toGetAccountResponse(acct *accounts.Account) *getAccountResponse {
+	return &getAccountResponse{
 		Type:        string(acct.ServerType),
 		Source:      string(acct.Source),
 		AuthType:    string(acct.AuthType),
@@ -50,9 +50,9 @@ func GetAccountsHandlerFunc(lister accounts.AccountList, log logging.Logger) htt
 			InternalError(w, req, log, err)
 			return
 		}
-		data := &accountListDTO{}
+		data := &getAccountsResponse{}
 		for _, acct := range accounts {
-			data.Accounts = append(data.Accounts, toAccountDTO(&acct))
+			data.Accounts = append(data.Accounts, toGetAccountResponse(&acct))
 		}
 
 		w.Header().Set("content-type", "application/json")
