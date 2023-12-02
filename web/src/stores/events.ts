@@ -33,9 +33,6 @@ export const useEventStore = defineStore('event', () => {
 
   const publishStatusMap = ref(new Map<string, PublishStatus>());
 
-  // Temporary storage of events
-  // const allEvents = ref<EventStreamMessage[]>([]);
-
   const closeEventStream = () => {
     eventStream.close();
   };
@@ -46,6 +43,7 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishStart = (msg: PublishStart) => {
     console.log('received start');
+    publishInProgess.value = true;
     const localId = getLocalId(msg);
     publishStatusMap.value.set(localId, {
       completed: false,
@@ -94,7 +92,6 @@ export const useEventStore = defineStore('event', () => {
 
   const init = () => {
     eventStream.addEventMonitorCallback('*', incomingEvent);
-    eventStream.addEventMonitorCallback('publish/start', onPublishStart);
     eventStream.addEventMonitorCallback('publish/start', onPublishStart);
     eventStream.addEventMonitorCallback('publish/success', onPublishSuccess);
     eventStream.addEventMonitorCallback('publish/failure', onPublishFailure);
