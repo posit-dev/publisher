@@ -25,31 +25,36 @@
           color="white"
           text-color="black"
           label="Publish"
-          :disable="disablePublishing"
-          @click="onPublish"
+          :disable="eventStore.publishInProgess"
+          @click="initiatePublishProcess"
         />
       </div>
     </div>
     <div class="q-mt-lg">
       TEMP: Selected Account Name = {{ selectedAccount?.name }}
     </div>
+    <div class="q-mt-lg">
+      TEMP: Publishing Status = {{ publishingStatusString }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Account, useApi } from 'src/api';
 
 import SelectAccount from 'src/components/SelectAccount.vue';
+import { useEventStore } from 'src/stores/events';
 
 const api = useApi();
+const eventStore = useEventStore();
 
 const accounts = ref<Account[]>([]);
 const filteredAccountList = ref<Account[]>([]);
 const destinationURL = ref('');
 const selectedAccount = ref<Account>();
-const disablePublishing = ref(false);
+const publishingLocalId = ref('');
 
 const emit = defineEmits(['publish']);
 
@@ -62,7 +67,7 @@ const onChange = (account: Account) => {
   selectedAccount.value = account;
 };
 
-const onPublish = async() => {
+const initiatePublishProcess = async() => {
   const accountName = selectedAccount.value?.name;
   if (!accountName) {
     // internal error
@@ -70,19 +75,36 @@ const onPublish = async() => {
     return;
   }
   emit('publish');
-  disablePublishing.value = true;
-  try {
-    await api.deployments.publish(
-      accountName,
-      props.contentId,
-    );
-    disablePublishing.value = false;
-  } catch (e) {
-    // Temporary until we determine the mechanism to notify users of general errors.
-    console.log('An error has occurred when calling publish.start:', e);
-    disablePublishing.value = false;
+
+  const result = await eventStore.initiatePublishProcessWithEvents(
+    accountName,
+    props.contentId,
+  );
+  if (result instanceof Error) {
+    return result;
   }
+  publishingLocalId.value = result;
 };
+
+const publishingStatus = computed(() => {
+  if (!publishingLocalId.value) {
+    return undefined;
+  }
+  return eventStore.publishStatusMap.get(publishingLocalId.value);
+});
+
+const publishingStatusString = computed(() => {
+  if (publishingStatus.value) {
+    const stat = publishingStatus.value;
+    if (!stat.completed) {
+      return 'in-progress';
+    } else if (!stat.error) {
+      return 'completed - successfully';
+    }
+    return `completed - error: ${stat.error}`;
+  }
+  return 'unknown';
+});
 
 const updateAccountList = async() => {
   try {
