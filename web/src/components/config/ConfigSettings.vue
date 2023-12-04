@@ -1,3 +1,5 @@
+<!-- Copyright (C) 2023 by Posit Software, PBC. -->
+
 <template>
   <div>
     <h2>Configuration</h2>
@@ -9,93 +11,20 @@
       </template>
 
       <template v-else>
-        <div>
-          <dt>Content Type</dt>
-          <dd>{{ config.configuration.type }}</dd>
-        </div>
-
-        <div v-if="config.configuration.entrypoint">
-          <dt>Entrypoint</dt>
-          <dd>{{ config.configuration.entrypoint }}</dd>
-        </div>
-
-        <div v-if="config.configuration.title">
-          <dt>Title</dt>
-          <dd>{{ config.configuration.title }}</dd>
-        </div>
-
-        <div v-if="config.configuration.description">
-          <dt>Description</dt>
-          <dd>{{ config.configuration.description }}</dd>
-        </div>
-
-        <div v-if="config.configuration.thumbnail">
-          <dt>Thumbnail</dt>
-          <dd>{{ config.configuration.thumbnail }}</dd>
-        </div>
-
-        <div v-if="config.configuration.tags">
-          <dt>Tags</dt>
-          <dd>
-            <ul>
-              <li
-                v-for="tag in config.configuration.tags"
-                :key="tag"
-              >
-                {{ tag }}
-              </li>
-            </ul>
-          </dd>
-        </div>
-
-        <div v-if="config.configuration.python">
-          <dt>Python</dt>
-          <dd>{{ config.configuration.python }}</dd>
-        </div>
-
-        <div v-if="config.configuration.r">
-          <dt>R</dt>
-          <dd>{{ config.configuration.r }}</dd>
-        </div>
-
-        <div v-if="config.configuration.quarto">
-          <dt>Quarto</dt>
-          <dd>{{ config.configuration.quarto }}</dd>
-        </div>
-
-        <div v-if="config.configuration.environment">
-          <dt>Environment</dt>
-          <dd>{{ config.configuration.entrypoint }}</dd>
-        </div>
-
-        <div v-if="config.configuration.secrets">
-          <dt>Secrets</dt>
-          <dd>
-            <ul>
-              <li
-                v-for="secret in config.configuration.secrets"
-                :key="secret"
-              >
-                {{ secret }}
-              </li>
-            </ul>
-          </dd>
-        </div>
-
-        <div v-if="config.configuration.schedules">
-          <dt>Schedules</dt>
-          <dd>{{ config.configuration.schedules }}</dd>
-        </div>
-
-        <div v-if="config.configuration.access">
-          <dt>Access</dt>
-          <dd>{{ config.configuration.access }}</dd>
-        </div>
-
-        <div v-if="config.configuration.connect">
-          <dt>Connect</dt>
-          <dd>{{ config.configuration.connect }}</dd>
-        </div>
+        <ConfigType :type="config.configuration.type" />
+        <ConfigEntrypoint :entrypoint="config.configuration.entrypoint" />
+        <ConfigTitle :title="config.configuration.title" />
+        <ConfigDescription :description="config.configuration.description" />
+        <ConfigThumbnail :thumbnail="config.configuration.thumbnail" />
+        <ConfigTags :tags="config.configuration.tags" />
+        <ConfigPython :python="config.configuration.python" />
+        <ConfigR :r="config.configuration.r" />
+        <ConfigQuarto :quarto="config.configuration.quarto" />
+        <ConfigEnvironment :environment="config.configuration.environment" />
+        <ConfigSecrets :secrets="config.configuration.secrets" />
+        <ConfigSchedules :schedules="config.configuration.schedules" />
+        <ConfigAccess :access="config.configuration.access" />
+        <ConfigConnect :connect="config.configuration.connect" />
       </template>
     </template>
   </div>
@@ -105,6 +34,20 @@
 import { PropType } from 'vue';
 
 import { Configuration, ConfigurationError, isConfigurationError } from 'src/api/types/configurations';
+import ConfigType from 'src/components/config/ConfigType.vue';
+import ConfigEntrypoint from 'src/components/config/ConfigEntrypoint.vue';
+import ConfigTitle from 'src/components/config/ConfigTitle.vue';
+import ConfigDescription from 'src/components/config/ConfigDescription.vue';
+import ConfigThumbnail from 'src/components/config/ConfigThumbnail.vue';
+import ConfigTags from 'src/components/config/ConfigTags.vue';
+import ConfigPython from 'src/components/config/ConfigPython.vue';
+import ConfigR from 'src/components/config/ConfigR.vue';
+import ConfigQuarto from 'src/components/config/ConfigQuarto.vue';
+import ConfigEnvironment from 'src/components/config/ConfigEnvironment.vue';
+import ConfigSecrets from 'src/components/config/ConfigSecrets.vue';
+import ConfigSchedules from 'src/components/config/ConfigSchedules.vue';
+import ConfigAccess from 'src/components/config/ConfigAccess.vue';
+import ConfigConnect from 'src/components/config/ConfigConnect.vue';
 
 defineProps({
   config: {
