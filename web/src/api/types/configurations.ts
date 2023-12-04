@@ -22,7 +22,7 @@ export function isConfigurationError(
   return (c as ConfigurationError).error !== undefined;
 }
 
-enum ContentType {
+export enum ContentType {
   HTML = 'html',
   JUPYTER_NOTEBOOK = 'jupyter-notebook',
   JUPYTER_VOILA = 'jupyter-voila',
