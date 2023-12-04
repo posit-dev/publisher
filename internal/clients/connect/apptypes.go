@@ -1,4 +1,4 @@
-package apptypes
+package connect
 
 // Copyright (C) 2022 by Posit Software, PBC.
 

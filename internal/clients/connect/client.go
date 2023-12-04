@@ -1,15 +1,14 @@
-package clients
+package connect
+
+// Copyright (C) 2023 by Posit Software, PBC.
 
 import (
 	"io"
 
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
 )
-
-// Copyright (C) 2023 by Posit Software, PBC.
 
 type ContentName string
 type ContentID string
@@ -29,17 +28,10 @@ type User struct {
 type APIClient interface {
 	TestConnection() error
 	TestAuthentication() (*User, error)
-	CreateDeployment(*state.ConnectContent) (types.ContentID, error)
-	UpdateDeployment(types.ContentID, *state.ConnectContent) error
+	CreateDeployment(*ConnectContent) (types.ContentID, error)
+	UpdateDeployment(types.ContentID, *ConnectContent) error
 	SetEnvVars(types.ContentID, config.Environment) error
 	UploadBundle(types.ContentID, io.Reader) (types.BundleID, error)
 	DeployBundle(types.ContentID, types.BundleID) (types.TaskID, error)
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
-}
-
-// PublishingClient provides higher-level client methods that work
-// on any type of publishing server, using the APIClient to abstract
-// any details of specific server types.
-type PublishingClient struct {
-	APIClient
 }

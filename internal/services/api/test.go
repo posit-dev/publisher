@@ -3,39 +3,11 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
-	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/stretchr/testify/mock"
 )
-
-type MockDeploymentsService struct {
-	mock.Mock
-	deployments.DeploymentsService
-}
-
-func (m *MockDeploymentsService) GetDeployment() *state.OldDeployment {
-	args := m.Called()
-	return args.Get(0).(*state.OldDeployment)
-}
-
-func (m *MockDeploymentsService) SetDeploymentFiles(files []string) *state.OldDeployment {
-	args := m.Called()
-	return args.Get(0).(*state.OldDeployment)
-}
-
-func (m *MockDeploymentsService) SetDeploymentTitle(title string) *state.OldDeployment {
-	args := m.Called()
-	return args.Get(0).(*state.OldDeployment)
-}
-
-func (m *MockDeploymentsService) SetDeploymentAccount(lister accounts.AccountList, account_name string) (*state.OldDeployment, error) {
-	args := m.Called()
-	return args.Get(0).(*state.OldDeployment), nil
-}
 
 type MockFilesService struct {
 	mock.Mock

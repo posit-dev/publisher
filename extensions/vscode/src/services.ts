@@ -2,7 +2,9 @@ var mutexify = require('mutexify/promise');
 
 import * as vscode from 'vscode';
 
+import { HOST } from '.';
 import { Assistant } from './assistants';
+import { Panel } from './panels';
 import * as ports from './ports';
 
 type State = "NEW" | "STARTING" | "RUNNING" | "STOPPING" | "TERMINATED" | "FAILED";
@@ -80,16 +82,31 @@ export class Service {
 	private assistant: Assistant;
 
 	static get = async (context: vscode.ExtensionContext): Promise<Service> => {
-		if (Service.instance === undefined) {
-			const port = await ports.acquire();
-			const resources = [
-				vscode.Uri.joinPath(context.extensionUri, "out"),
-				vscode.Uri.joinPath(context.extensionUri, "assets")
-			];
-			const assistant = new Assistant(port, resources);
-			Service.instance = new Service(assistant);
+		if (Service.instance !== undefined) {
+			return Service.instance;
 		}
-		return Service.instance;
+
+		// create panel
+		const port = await ports.acquire();
+		const resources = [
+			vscode.Uri.joinPath(context.extensionUri, "out"),
+			vscode.Uri.joinPath(context.extensionUri, "assets")
+		];
+		const uri = await vscode.env.asExternalUri(vscode.Uri.parse(`http://${HOST}:${port}`));
+		const url = uri.toString();
+		const panel = new Panel(context, resources, url);
+
+		// create assistant
+		const path = vscode.workspace.workspaceFolders?.at(0)?.uri.path;
+		if (path === undefined) {
+			throw new Error("workspace path is undefined");
+		}
+		const assistant = new Assistant(panel, path, port);
+
+		// create service
+		const service = new Service(assistant);
+		Service.instance = service;
+		return service;
 	};
 
 	private constructor(assistant: Assistant) {

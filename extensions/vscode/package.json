@@ -1,11 +1,11 @@
 {
   "name": "publisher",
-  "displayName": "Positron Publisher",
-  "description": "Publish your applications from Positron to Posit products",
+  "displayName": "Posit Publisher",
+  "description": "Publish and share your Python and R content on Posit Connect",
   "version": "0.0.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rstudio/publishing-client/tree/main/extensions/positron"
+    "url": "https://github.com/rstudio/publishing-client/tree/main/extensions/vscode"
   },
   "engines": {
     "vscode": "^1.83.0"
@@ -37,7 +37,7 @@
     "configuration": {
       "title": "Posit",
       "properties": {
-        "positron.publisher.executable.path": {
+        "posit.publisher.executable.path": {
           "description": "A path to the Posit Publisher executable. By default, the extension looks for `publisher` in the `PATH`",
           "type": "string"
         }
@@ -46,7 +46,6 @@
     "menus": {
       "editor/title": [
         {
-          "when": "resourceLangId == python",
           "command": "posit.publisher.assistant.start",
           "group": "navigation"
         }

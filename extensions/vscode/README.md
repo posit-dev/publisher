@@ -8,7 +8,7 @@ Download the release executable for your operating system from [GitHub](https://
 
 ### Option 1
 
-Configure the `positron.publisher.executable.path` property in your *User* or *Workspace* settings.
+Configure the `posit.publisher.executable.path` property in your *User* or *Workspace* settings.
 
 ![Settings](settings.png)
 

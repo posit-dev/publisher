@@ -5,6 +5,9 @@
     <div class="col text-center col-6">
       <div>Destination Summary</div>
       <div>New Deployment to {{ destinationURL }}</div>
+      <div v-if="contentId">
+        Content ID: {{ contentId }}
+      </div>
     </div>
     <div class="col-3">
       <SelectAccount
@@ -43,6 +46,7 @@ const emit = defineEmits(['publish']);
 
 const props = defineProps({
   accountName: { type: String, required: true },
+  contentId: { type: String, default: undefined, required: false },
 });
 
 const onPublish = async() => {
@@ -51,6 +55,7 @@ const onPublish = async() => {
   try {
     await api.deployments.publish(
       props.accountName,
+      props.contentId,
     );
     disablePublishing.value = false;
   } catch (e) {
