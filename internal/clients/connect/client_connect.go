@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/clients/http_client"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/events"
@@ -127,7 +126,7 @@ type connectGetContentDTO struct {
 	Created            types.Time         `json:"created_time"`
 	LastDeployed       types.Time         `json:"last_deployed_time"`
 	BundleId           types.NullInt64Str `json:"bundle_id"`
-	AppMode            apptypes.AppMode   `json:"app_mode"`
+	AppMode            AppMode            `json:"app_mode"`
 	ContentCategory    string             `json:"content_category"`
 	Parameterized      bool               `json:"parameterized"`
 	ClusterName        types.NullString   `json:"cluster_name"`

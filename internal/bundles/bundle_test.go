@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
 	"github.com/rstudio/connect-client/internal/bundles/bundlestest"
+	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/logging/loggingtest"
@@ -160,7 +160,7 @@ func (s *BundlerSuite) SetupTest() {
 	s.cwd.MkdirAll(0700)
 
 	s.manifest = NewManifest()
-	s.manifest.Metadata.AppMode = apptypes.StaticMode
+	s.manifest.Metadata.AppMode = connect.StaticMode
 	s.manifest.Metadata.Entrypoint = "subdir/testfile"
 }
 
