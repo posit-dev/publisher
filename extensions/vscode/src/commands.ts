@@ -7,7 +7,7 @@ const EXECUTABLE_DEFAULT = "publisher";
 export type Command = string;
 
 export const create = (path: string, port: number, subcommand: string = "publish-ui"): Command => {
-    const configuration =  vscode.workspace.getConfiguration('positron');
+    const configuration =  vscode.workspace.getConfiguration('posit');
     let executable: string = configuration.get<string>('publisher.executable.path', EXECUTABLE_DEFAULT);
     if (!executable) {
         executable = EXECUTABLE_DEFAULT;

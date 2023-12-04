@@ -66,7 +66,7 @@ package:
     npx @vscode/vsce package --skip-license -o ${path}/${name}-${version}.vsix
 
 
-# Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just positron run test`)
+# Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just vscode run test`)
 run *args:
     #!/usr/bin/env bash
     set -eou pipefail
