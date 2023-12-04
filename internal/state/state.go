@@ -11,7 +11,6 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
-	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -133,17 +132,6 @@ func New(path util.Path, accountName, configName, targetID string, accountList a
 		Config:      cfg,
 		Target:      target,
 	}, nil
-}
-
-type OldTargetID struct {
-	ServerType  accounts.ServerType `json:"server_type"`                                            // Which type of API this server provides
-	ServerURL   string              `json:"server_url"`                                             // Server URL
-	ContentId   types.ContentID     `json:"content_id" help:"Unique ID of content item to update."` // Content ID (GUID for Connect)
-	ContentName types.ContentName   `json:"content_name" help:"Name of content item to update."`    // Content Name (unique per user)
-
-	// These fields are informational and don't affect future deployments.
-	Username string             `json:"username,omitempty"` // Username, if known
-	BundleId types.NullBundleID `json:"bundle_id"`          // Bundle ID that was deployed
 }
 
 type LocalDeploymentID string

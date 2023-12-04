@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/api_client/clients/clienttest"
 	"github.com/rstudio/connect-client/internal/bundles"
+	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
@@ -110,7 +110,7 @@ func (s *PublishSuite) publishWithClient(target *deployment.Deployment, createEr
 	myBundleID := types.BundleID("myBundleID")
 	myTaskID := types.TaskID("myTaskID")
 
-	client := clienttest.NewMockClient()
+	client := connect.NewMockClient()
 	if target == nil {
 		client.On("CreateDeployment", mock.Anything).Return(myContentID, createErr)
 	}

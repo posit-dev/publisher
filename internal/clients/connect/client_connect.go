@@ -1,4 +1,4 @@
-package clients
+package connect
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -13,17 +13,16 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/clients/http_client"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type ConnectClient struct {
-	client  HTTPClient
+	client  http_client.HTTPClient
 	account *accounts.Account
 	log     logging.Logger
 }
@@ -33,7 +32,7 @@ func NewConnectClient(
 	timeout time.Duration,
 	log logging.Logger) (*ConnectClient, error) {
 
-	httpClient, err := NewDefaultHTTPClient(account, timeout, log)
+	httpClient, err := http_client.NewDefaultHTTPClient(account, timeout, log)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +48,7 @@ func (c *ConnectClient) TestConnection() error {
 	c.log.Info("Testing connection", "url", c.account.URL)
 	acctWithoutAuth := *(c.account)
 	acctWithoutAuth.AuthType = accounts.AuthTypeNone
-	client, err := newHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.log)
+	client, err := http_client.NewHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.log)
 	if err != nil {
 		return err
 	}
@@ -127,7 +126,7 @@ type connectGetContentDTO struct {
 	Created            types.Time         `json:"created_time"`
 	LastDeployed       types.Time         `json:"last_deployed_time"`
 	BundleId           types.NullInt64Str `json:"bundle_id"`
-	AppMode            apptypes.AppMode   `json:"app_mode"`
+	AppMode            AppMode            `json:"app_mode"`
 	ContentCategory    string             `json:"content_category"`
 	Parameterized      bool               `json:"parameterized"`
 	ClusterName        types.NullString   `json:"cluster_name"`
@@ -146,7 +145,7 @@ type connectGetContentDTO struct {
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
 
-func (c *ConnectClient) CreateDeployment(body *state.ConnectContent) (types.ContentID, error) {
+func (c *ConnectClient) CreateDeployment(body *ConnectContent) (types.ContentID, error) {
 	content := connectGetContentDTO{}
 	err := c.client.Post("/__api__/v1/content", body, &content)
 	if err != nil {
@@ -155,7 +154,7 @@ func (c *ConnectClient) CreateDeployment(body *state.ConnectContent) (types.Cont
 	return content.GUID, nil
 }
 
-func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *state.ConnectContent) error {
+func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *ConnectContent) error {
 	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
 	return c.client.Patch(url, body, nil)
 }

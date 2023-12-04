@@ -10,7 +10,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 )
@@ -43,12 +43,12 @@ type Manifest struct {
 
 // Metadata contains details about this deployment (type, etc).
 type Metadata struct {
-	AppMode         apptypes.AppMode `json:"appmode" help:"Type of content being deployed. Default is to auto detect."` // Selects the runtime for this content.
-	ContentCategory string           `json:"content_category,omitempty"`                                                // A refinement of the AppMode used by plots and sites
-	Entrypoint      string           `json:"entrypoint,omitempty"`                                                      // The main file being deployed.
-	PrimaryRmd      string           `json:"primary_rmd,omitempty"`                                                     // The rendering target for Rmd deployments.
-	PrimaryHtml     string           `json:"primary_html,omitempty"`                                                    // The default document for static deployments.
-	HasParameters   bool             `json:"has_parameters,omitempty"`                                                  // True if this is content allows parameter customization.
+	AppMode         connect.AppMode `json:"appmode" help:"Type of content being deployed. Default is to auto detect."` // Selects the runtime for this content.
+	ContentCategory string          `json:"content_category,omitempty"`                                                // A refinement of the AppMode used by plots and sites
+	Entrypoint      string          `json:"entrypoint,omitempty"`                                                      // The main file being deployed.
+	PrimaryRmd      string          `json:"primary_rmd,omitempty"`                                                     // The rendering target for Rmd deployments.
+	PrimaryHtml     string          `json:"primary_html,omitempty"`                                                    // The default document for static deployments.
+	HasParameters   bool            `json:"has_parameters,omitempty"`                                                  // True if this is content allows parameter customization.
 }
 
 type Environment struct {
@@ -154,28 +154,28 @@ func NewManifest() *Manifest {
 	}
 }
 
-var connectContentTypeMap = map[config.ContentType]apptypes.AppMode{
-	config.ContentTypeHTML:            apptypes.StaticMode,
-	config.ContentTypeJupyterNotebook: apptypes.StaticJupyterMode,
-	config.ContentTypeJupyterVoila:    apptypes.JupyterVoilaMode,
-	config.ContentTypePythonBokeh:     apptypes.PythonBokehMode,
-	config.ContentTypePythonDash:      apptypes.PythonDashMode,
-	config.ContentTypePythonFastAPI:   apptypes.PythonFastAPIMode,
-	config.ContentTypePythonFlask:     apptypes.PythonAPIMode,
-	config.ContentTypePythonShiny:     apptypes.PythonShinyMode,
-	config.ContentTypePythonStreamlit: apptypes.PythonStreamlitMode,
-	config.ContentTypeQuartoShiny:     apptypes.ShinyQuartoMode,
-	config.ContentTypeQuarto:          apptypes.StaticQuartoMode,
-	config.ContentTypeRPlumber:        apptypes.PlumberAPIMode,
-	config.ContentTypeRShiny:          apptypes.ShinyMode,
-	config.ContentTypeRMarkdownShiny:  apptypes.ShinyRmdMode,
-	config.ContentTypeRMarkdown:       apptypes.StaticRmdMode,
+var connectContentTypeMap = map[config.ContentType]connect.AppMode{
+	config.ContentTypeHTML:            connect.StaticMode,
+	config.ContentTypeJupyterNotebook: connect.StaticJupyterMode,
+	config.ContentTypeJupyterVoila:    connect.JupyterVoilaMode,
+	config.ContentTypePythonBokeh:     connect.PythonBokehMode,
+	config.ContentTypePythonDash:      connect.PythonDashMode,
+	config.ContentTypePythonFastAPI:   connect.PythonFastAPIMode,
+	config.ContentTypePythonFlask:     connect.PythonAPIMode,
+	config.ContentTypePythonShiny:     connect.PythonShinyMode,
+	config.ContentTypePythonStreamlit: connect.PythonStreamlitMode,
+	config.ContentTypeQuartoShiny:     connect.ShinyQuartoMode,
+	config.ContentTypeQuarto:          connect.StaticQuartoMode,
+	config.ContentTypeRPlumber:        connect.PlumberAPIMode,
+	config.ContentTypeRShiny:          connect.ShinyMode,
+	config.ContentTypeRMarkdownShiny:  connect.ShinyRmdMode,
+	config.ContentTypeRMarkdown:       connect.StaticRmdMode,
 }
 
 func NewManifestFromConfig(cfg *config.Config) *Manifest {
 	contentType, ok := connectContentTypeMap[cfg.Type]
 	if !ok {
-		contentType = apptypes.UnknownMode
+		contentType = connect.UnknownMode
 	}
 	m := &Manifest{
 		Version: 1,

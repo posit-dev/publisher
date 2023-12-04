@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/api_client/clients"
 	"github.com/rstudio/connect-client/internal/bundles"
+	"github.com/rstudio/connect-client/internal/clients/connect"
+	"github.com/rstudio/connect-client/internal/clients/http_client"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
@@ -82,7 +83,7 @@ func (p *defaultPublisher) publish(
 
 	// TODO: factory method to create client based on server type
 	// TODO: timeout option
-	client, err := clients.NewConnectClient(p.Account, 2*time.Minute, log)
+	client, err := connect.NewConnectClient(p.Account, 2*time.Minute, log)
 	if err != nil {
 		return err
 	}
@@ -160,7 +161,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 func (p *defaultPublisher) publishWithClient(
 	bundler bundles.Bundler,
 	account *accounts.Account,
-	client clients.APIClient,
+	client connect.APIClient,
 	log logging.Logger) error {
 
 	log.Start("Starting deployment to server",
@@ -176,7 +177,7 @@ func (p *defaultPublisher) publishWithClient(
 	} else {
 		// Create a new deployment; we will update it with details later.
 		contentID, err = withLog(events.PublishCreateDeploymentOp, "Creating deployment", "content_id", log, func() (types.ContentID, error) {
-			return client.CreateDeployment(&state.ConnectContent{})
+			return client.CreateDeployment(&connect.ConnectContent{})
 		})
 		if err != nil {
 			return err
@@ -213,12 +214,12 @@ func (p *defaultPublisher) publishWithClient(
 	}
 
 	// Update app settings
-	connectContent := state.ConnectContentFromConfig(p.Config)
+	connectContent := connect.ConnectContentFromConfig(p.Config)
 	_, err = withLog(events.PublishCreateDeploymentOp, "Updating deployment settings", "content_id", log, func() (any, error) {
 		return contentID, client.UpdateDeployment(contentID, connectContent)
 	})
 	if err != nil {
-		httpErr, ok := err.(*clients.HTTPError)
+		httpErr, ok := err.(*http_client.HTTPError)
 		if ok && httpErr.Status == http.StatusNotFound {
 			details := DeploymentNotFoundDetails{
 				ContentID: contentID,
