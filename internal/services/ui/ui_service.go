@@ -10,7 +10,6 @@ import (
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/services/api"
-	"github.com/rstudio/connect-client/internal/services/api/deployments"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
 	"github.com/rstudio/connect-client/internal/services/middleware"
@@ -56,7 +55,6 @@ func NewUIService(
 }
 
 func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
-	deploymentsService := deployments.CreateDeploymentsService(stateStore)
 	filesService := files.CreateFilesService(base, log)
 	pathsService := paths.CreatePathsService(base, log)
 
@@ -94,18 +92,6 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 
 	// POST /api/deployments
 	r.Handle(ToPath("deployments"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
-		Methods(http.MethodPost)
-
-	// GET /api/deployment - DEPRECATED
-	r.Handle(ToPath("deployment"), api.OldGetDeploymentHandlerFunc(deploymentsService)).
-		Methods(http.MethodGet)
-
-	// PUT /api/deployment/account - DEPRECATED
-	r.Handle(ToPath("deployment", "account"), api.PutDeploymentAccountHandlerFunc(lister, deploymentsService, log)).
-		Methods(http.MethodPut)
-
-	// POST /api/publish - DEPRECATED
-	r.Handle(ToPath("publish"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister, state.New, publish.NewFromState)).
 		Methods(http.MethodPost)
 
 	// GET /
