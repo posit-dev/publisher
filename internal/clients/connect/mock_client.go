@@ -1,14 +1,12 @@
-package clienttest
+package connect
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
 	"io"
 
-	"github.com/rstudio/connect-client/internal/clients"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/stretchr/testify/mock"
 )
@@ -21,7 +19,7 @@ func NewMockClient() *MockClient {
 	return new(MockClient)
 }
 
-var _ clients.APIClient = &MockClient{}
+var _ APIClient = &MockClient{}
 
 func (m *MockClient) Read(p []byte) (n int, err error) {
 	args := m.Called(p)
@@ -33,17 +31,17 @@ func (m *MockClient) TestConnection() error {
 	return args.Error(0)
 }
 
-func (m *MockClient) TestAuthentication() (*clients.User, error) {
+func (m *MockClient) TestAuthentication() (*User, error) {
 	args := m.Called()
-	return args.Get(0).(*clients.User), args.Error(1)
+	return args.Get(0).(*User), args.Error(1)
 }
 
-func (m *MockClient) CreateDeployment(s *state.ConnectContent) (types.ContentID, error) {
+func (m *MockClient) CreateDeployment(s *ConnectContent) (types.ContentID, error) {
 	args := m.Called(s)
 	return args.Get(0).(types.ContentID), args.Error(1)
 }
 
-func (m *MockClient) UpdateDeployment(id types.ContentID, s *state.ConnectContent) error {
+func (m *MockClient) UpdateDeployment(id types.ContentID, s *ConnectContent) error {
 	args := m.Called(id, s)
 	return args.Error(0)
 }

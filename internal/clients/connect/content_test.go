@@ -1,4 +1,4 @@
-package state
+package connect
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ConnectStateSuite struct {
+type ConnectContentSuite struct {
 	utiltest.Suite
 }
 
-func TestConnectStateSuite(t *testing.T) {
-	suite.Run(t, new(ConnectStateSuite))
+func TestConnectContentSuite(t *testing.T) {
+	suite.Run(t, new(ConnectContentSuite))
 }

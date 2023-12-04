@@ -14,12 +14,10 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/apptypes"
-	"github.com/rstudio/connect-client/internal/clients"
 	"github.com/rstudio/connect-client/internal/clients/http_client"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
@@ -83,8 +81,8 @@ type UserDTO struct {
 	GUID        types.UserID   `json:"guid"`
 }
 
-func (u *UserDTO) toUser() *clients.User {
-	return &clients.User{
+func (u *UserDTO) toUser() *User {
+	return &User{
 		Id:        u.GUID,
 		Username:  u.Username,
 		FirstName: u.FirstName,
@@ -93,7 +91,7 @@ func (u *UserDTO) toUser() *clients.User {
 	}
 }
 
-func (c *ConnectClient) TestAuthentication() (*clients.User, error) {
+func (c *ConnectClient) TestAuthentication() (*User, error) {
 	c.log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
 	err := c.client.Get("/__api__/v1/user", &connectUser)
@@ -148,7 +146,7 @@ type connectGetContentDTO struct {
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
 
-func (c *ConnectClient) CreateDeployment(body *state.ConnectContent) (types.ContentID, error) {
+func (c *ConnectClient) CreateDeployment(body *ConnectContent) (types.ContentID, error) {
 	content := connectGetContentDTO{}
 	err := c.client.Post("/__api__/v1/content", body, &content)
 	if err != nil {
@@ -157,7 +155,7 @@ func (c *ConnectClient) CreateDeployment(body *state.ConnectContent) (types.Cont
 	return content.GUID, nil
 }
 
-func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *state.ConnectContent) error {
+func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *ConnectContent) error {
 	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
 	return c.client.Patch(url, body, nil)
 }

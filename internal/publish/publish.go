@@ -12,7 +12,6 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/clients"
 	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/clients/http_client"
 	"github.com/rstudio/connect-client/internal/deployment"
@@ -162,7 +161,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 func (p *defaultPublisher) publishWithClient(
 	bundler bundles.Bundler,
 	account *accounts.Account,
-	client clients.APIClient,
+	client connect.APIClient,
 	log logging.Logger) error {
 
 	log.Start("Starting deployment to server",
@@ -178,7 +177,7 @@ func (p *defaultPublisher) publishWithClient(
 	} else {
 		// Create a new deployment; we will update it with details later.
 		contentID, err = withLog(events.PublishCreateDeploymentOp, "Creating deployment", "content_id", log, func() (types.ContentID, error) {
-			return client.CreateDeployment(&state.ConnectContent{})
+			return client.CreateDeployment(&connect.ConnectContent{})
 		})
 		if err != nil {
 			return err
@@ -215,7 +214,7 @@ func (p *defaultPublisher) publishWithClient(
 	}
 
 	// Update app settings
-	connectContent := state.ConnectContentFromConfig(p.Config)
+	connectContent := connect.ConnectContentFromConfig(p.Config)
 	_, err = withLog(events.PublishCreateDeploymentOp, "Updating deployment settings", "content_id", log, func() (any, error) {
 		return contentID, client.UpdateDeployment(contentID, connectContent)
 	})
