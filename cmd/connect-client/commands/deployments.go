@@ -11,7 +11,7 @@ import (
 )
 
 type ListDeploymentsCmd struct {
-	Path       util.Path `default:"." help:"Path to directory containing files to publish. Defaults to the current directory." arg:"" default:"."`
+	Path       util.Path `default:"." help:"Path to directory containing files to publish. Defaults to the current directory." arg:""`
 	ConfigName string    `name:"config" short:"c" help:"List deployments using the specified configuration."`
 }
 
