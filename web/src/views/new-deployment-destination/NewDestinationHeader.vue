@@ -5,6 +5,9 @@
     <div class="col text-center col-6">
       <div>Destination Summary</div>
       <div>New Deployment to {{ destinationURL }}</div>
+      <div v-if="contentId">
+        Content ID: {{ contentId }}
+      </div>
     </div>
     <div class="col-3">
       <SelectAccount
@@ -48,6 +51,7 @@ const emit = defineEmits(['publish']);
 
 const props = defineProps({
   accountName: { type: String, required: true },
+  contentId: { type: String, default: undefined, required: false },
 });
 
 const initiatePublishProcess = async() => {
@@ -55,6 +59,7 @@ const initiatePublishProcess = async() => {
 
   const result = await eventStore.initiatePublishProcessWithEvents(
     props.accountName,
+    props.contentId,
   );
   if (result instanceof Error) {
     return result;

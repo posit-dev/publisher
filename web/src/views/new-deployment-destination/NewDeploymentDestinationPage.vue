@@ -3,6 +3,7 @@
 <template>
   <NewDestinationHeader
     :account-name="accountName"
+    :content-id="contentId"
     class="q-mt-md"
   />
 </template>
@@ -21,6 +22,14 @@ const accountName = computed(() => {
     return route.params.account[0];
   }
   return route.params.account;
+});
+
+const contentId = computed(() => {
+  // route param can be either string | string[]
+  if (Array.isArray(route.params.contentId)) {
+    return route.params.contentId[0] || undefined;
+  }
+  return route.params.contentId || undefined;
 });
 
 </script>
