@@ -4,6 +4,11 @@
   <h1>Project Page</h1>
 
   <h2>Destinations</h2>
+
+  <q-btn :to="{ name: 'addNewDeployment' }">
+    Add Destination
+  </q-btn>
+
   <ul
     v-for="deployment in deployments"
     :key="deployment.id"
