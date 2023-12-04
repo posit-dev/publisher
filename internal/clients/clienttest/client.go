@@ -5,7 +5,7 @@ package clienttest
 import (
 	"io"
 
-	"github.com/rstudio/connect-client/internal/api_client/clients"
+	"github.com/rstudio/connect-client/internal/clients"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/state"

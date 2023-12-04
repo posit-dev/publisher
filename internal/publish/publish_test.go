@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/api_client/clients/clienttest"
 	"github.com/rstudio/connect-client/internal/bundles"
+	"github.com/rstudio/connect-client/internal/clients/clienttest"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"

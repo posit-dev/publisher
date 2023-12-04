@@ -1,4 +1,4 @@
-package clients
+package connect
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -14,6 +14,8 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/apptypes"
+	"github.com/rstudio/connect-client/internal/clients"
+	"github.com/rstudio/connect-client/internal/clients/http_client"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
@@ -23,7 +25,7 @@ import (
 )
 
 type ConnectClient struct {
-	client  HTTPClient
+	client  http_client.HTTPClient
 	account *accounts.Account
 	log     logging.Logger
 }
@@ -33,7 +35,7 @@ func NewConnectClient(
 	timeout time.Duration,
 	log logging.Logger) (*ConnectClient, error) {
 
-	httpClient, err := NewDefaultHTTPClient(account, timeout, log)
+	httpClient, err := http_client.NewDefaultHTTPClient(account, timeout, log)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +51,7 @@ func (c *ConnectClient) TestConnection() error {
 	c.log.Info("Testing connection", "url", c.account.URL)
 	acctWithoutAuth := *(c.account)
 	acctWithoutAuth.AuthType = accounts.AuthTypeNone
-	client, err := newHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.log)
+	client, err := http_client.NewHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.log)
 	if err != nil {
 		return err
 	}
@@ -81,8 +83,8 @@ type UserDTO struct {
 	GUID        types.UserID   `json:"guid"`
 }
 
-func (u *UserDTO) toUser() *User {
-	return &User{
+func (u *UserDTO) toUser() *clients.User {
+	return &clients.User{
 		Id:        u.GUID,
 		Username:  u.Username,
 		FirstName: u.FirstName,
@@ -91,7 +93,7 @@ func (u *UserDTO) toUser() *User {
 	}
 }
 
-func (c *ConnectClient) TestAuthentication() (*User, error) {
+func (c *ConnectClient) TestAuthentication() (*clients.User, error) {
 	c.log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
 	err := c.client.Get("/__api__/v1/user", &connectUser)

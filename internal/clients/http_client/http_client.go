@@ -1,4 +1,4 @@
-package clients
+package http_client
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -44,7 +44,7 @@ type defaultHTTPClient struct {
 }
 
 func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (*defaultHTTPClient, error) {
-	baseClient, err := newHTTPClientForAccount(account, timeout, log)
+	baseClient, err := NewHTTPClientForAccount(account, timeout, log)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func loadCACertificates(path string, log logging.Logger) (*x509.CertPool, error)
 	return certPool, nil
 }
 
-func newHTTPClientForAccount(account *accounts.Account, timeout time.Duration, log logging.Logger) (*http.Client, error) {
+func NewHTTPClientForAccount(account *accounts.Account, timeout time.Duration, log logging.Logger) (*http.Client, error) {
 	cookieJar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})

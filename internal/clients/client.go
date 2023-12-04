@@ -36,10 +36,3 @@ type APIClient interface {
 	DeployBundle(types.ContentID, types.BundleID) (types.TaskID, error)
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
 }
-
-// PublishingClient provides higher-level client methods that work
-// on any type of publishing server, using the APIClient to abstract
-// any details of specific server types.
-type PublishingClient struct {
-	APIClient
-}
