@@ -46,7 +46,6 @@
     "menus": {
       "editor/title": [
         {
-          "when": "resourceLangId == python",
           "command": "posit.publisher.assistant.start",
           "group": "navigation"
         }
