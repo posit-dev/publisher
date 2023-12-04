@@ -5,6 +5,7 @@ package deployment
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -21,6 +22,7 @@ type Deployment struct {
 	ConfigName    string              `toml:"configuration-name" json:"configuration-name"`
 	Configuration config.Config       `toml:"configuration" json:"configuration"`
 	Files         []string            `toml:"files" json:"files"`
+	DeployedAt    time.Time           `toml:"deployed-at" json:"deployed-at"`
 }
 
 const DeploymentSchema config.SchemaURL = "https://github.com/rstudio/publishing-client/blob/main/schemas/posit-publishing-record-schema-v3.json"

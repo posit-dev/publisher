@@ -137,6 +137,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ConfigName:    p.ConfigName,
 		Files:         createdManifest.GetFilenames(),
 		Configuration: *p.Config,
+		DeployedAt:    time.Now().UTC(),
 	}
 	// Save current deployment information for this target
 	recordPath := deployment.GetLatestDeploymentPath(p.Dir, string(contentID))
