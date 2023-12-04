@@ -20,7 +20,7 @@ import { useRoute } from 'vue-router';
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 
-import ConfigSettings from 'src/components/ConfigSettings.vue';
+import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import ExistingDeploymentDestinationHeader from './ExistingDeploymentDestinationHeader.vue';
 
 const route = useRoute();

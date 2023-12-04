@@ -23,7 +23,7 @@ import { computed, ref } from 'vue';
 import { onBeforeRouteLeave, useRoute } from 'vue-router';
 
 import { Configuration, ConfigurationError, useApi } from 'src/api';
-import ConfigSettings from 'src/components/ConfigSettings.vue';
+import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import NewDestinationHeader from './NewDestinationHeader.vue';
 
 const route = useRoute();
