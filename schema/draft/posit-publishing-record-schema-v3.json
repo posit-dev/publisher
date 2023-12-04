@@ -37,6 +37,14 @@
         "de2e7bdb-b085-401e-a65c-443e40009749"
       ]
     },
+    "deployed-at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time the deployment was created.",
+      "examples": [
+        "2023-12-04T19:44:59.937393Z"
+      ]
+    },
     "configuration-name": {
       "type": "string",
       "description": "Name of the configuration that was used during deployment.",
