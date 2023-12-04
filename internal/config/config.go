@@ -16,7 +16,8 @@ const DefaultConfigName = "default"
 
 func New() *Config {
 	return &Config{
-		Schema: ConfigSchema,
+		Schema:   ConfigSchema,
+		Validate: true,
 	}
 }
 

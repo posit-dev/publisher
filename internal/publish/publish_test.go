@@ -55,48 +55,53 @@ func (s *PublishSuite) TestNewFromState() {
 }
 
 func (s *PublishSuite) TestPublishWithClient() {
-	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil)
+	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func (s *PublishSuite) TestPublishWithClientUpdate() {
 	target := deployment.New()
 	target.Id = "myContentID"
-	s.publishWithClient(target, nil, nil, nil, nil, nil, nil)
+	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailCreate() {
 	createErr := errors.New("error from Create")
-	s.publishWithClient(nil, createErr, nil, nil, nil, nil, createErr)
+	s.publishWithClient(nil, createErr, nil, nil, nil, nil, nil, createErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailUpdate() {
 	target := deployment.New()
 	target.Id = "myContentID"
 	updateErr := errors.New("error from Update")
-	s.publishWithClient(target, updateErr, nil, nil, nil, nil, updateErr)
+	s.publishWithClient(target, updateErr, nil, nil, nil, nil, nil, updateErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailEnvVars() {
 	envVarErr := errors.New("error from SetEnvVars")
-	s.publishWithClient(nil, nil, envVarErr, nil, nil, nil, envVarErr)
+	s.publishWithClient(nil, nil, envVarErr, nil, nil, nil, nil, envVarErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailUpload() {
 	uploadErr := errors.New("error from Upload")
-	s.publishWithClient(nil, nil, nil, uploadErr, nil, nil, uploadErr)
+	s.publishWithClient(nil, nil, nil, uploadErr, nil, nil, nil, uploadErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailDeploy() {
 	deployErr := errors.New("error from Deploy")
-	s.publishWithClient(nil, nil, nil, nil, deployErr, nil, deployErr)
+	s.publishWithClient(nil, nil, nil, nil, deployErr, nil, nil, deployErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientFailWaitForTask() {
 	waitErr := errors.New("error from WaitForTask")
-	s.publishWithClient(nil, nil, nil, nil, nil, waitErr, waitErr)
+	s.publishWithClient(nil, nil, nil, nil, nil, waitErr, nil, waitErr)
 }
 
-func (s *PublishSuite) publishWithClient(target *deployment.Deployment, createErr, envVarErr, uploadErr, deployErr, waitErr, expectedErr error) {
+func (s *PublishSuite) TestPublishWithClientFailValidation() {
+	validateErr := errors.New("error from ValidateDeployment")
+	s.publishWithClient(nil, nil, nil, nil, nil, nil, validateErr, validateErr)
+}
+
+func (s *PublishSuite) publishWithClient(target *deployment.Deployment, createErr, envVarErr, uploadErr, deployErr, waitErr, validateErr, expectedErr error) {
 	bundler, err := bundles.NewBundler(s.cwd, bundles.NewManifest(), nil, s.log)
 	s.NoError(err)
 
@@ -119,6 +124,7 @@ func (s *PublishSuite) publishWithClient(target *deployment.Deployment, createEr
 	client.On("UploadBundle", myContentID, mock.Anything).Return(myBundleID, uploadErr)
 	client.On("DeployBundle", myContentID, myBundleID).Return(myTaskID, deployErr)
 	client.On("WaitForTask", myTaskID, mock.Anything).Return(waitErr)
+	client.On("ValidateDeployment", myContentID).Return(validateErr)
 
 	cfg := config.New()
 	cfg.Environment = map[string]string{

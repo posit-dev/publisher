@@ -75,6 +75,11 @@
         "images/thumbnail.jpg"
       ]
     },
+    "validate": {
+      "type": "boolean",
+      "description": "Access the content after deploying, to validate that it is live.",
+      "default": true
+    },
     "tags": {
       "type": "array",
       "description": "List of tags to apply to this deployment. When publishing to Connect, tags must be pre-defined by an administrator.",

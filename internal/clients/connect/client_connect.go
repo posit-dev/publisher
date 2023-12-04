@@ -387,3 +387,9 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 		time.Sleep(500 * time.Millisecond)
 	}
 }
+
+func (c *ConnectClient) ValidateDeployment(contentID types.ContentID) error {
+	url := fmt.Sprintf("/content/%s", contentID)
+	_, err := c.client.GetRaw(url)
+	return err
+}
