@@ -87,18 +87,15 @@ const initiatePublishProcess = async() => {
 };
 
 const publishingStatus = computed(() => {
-  if (!publishingLocalId.value) {
-    return undefined;
-  }
-  return eventStore.publishStatusMap.get(publishingLocalId.value);
+  return eventStore.publishStatusMap.get(props.contentId);
 });
 
 const publishingStatusString = computed(() => {
   if (publishingStatus.value) {
     const stat = publishingStatus.value;
-    if (!stat.completed) {
+    if (stat.completion === 'started') {
       return 'in-progress';
-    } else if (!stat.error) {
+    } else if (stat.completion === 'success') {
       return 'completed - successfully';
     }
     return `completed - error: ${stat.error}`;

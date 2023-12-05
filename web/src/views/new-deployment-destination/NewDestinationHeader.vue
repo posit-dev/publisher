@@ -78,9 +78,9 @@ const publishingStatus = computed(() => {
 const publishingStatusString = computed(() => {
   if (publishingStatus.value) {
     const stat = publishingStatus.value;
-    if (!stat.completed) {
+    if (stat.completion === 'started') {
       return 'in-progress';
-    } else if (!stat.error) {
+    } else if (stat.completion === 'success') {
       return 'completed - successfully';
     }
     return `completed - error: ${stat.error}`;

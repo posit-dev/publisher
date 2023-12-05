@@ -81,16 +81,10 @@ export class EventStream {
         entry.callback(msg);
       }
     });
-    if (numMatched === 0 && msg.type !== 'errors/open') {
-      const strMsg = JSON.stringify(msg);
-      this.logMsg(`WARNING! No subscriber/handler found for msg: ${strMsg}`);
-      this.dispatchMessage({
-        type: 'errors/unknownEvent',
-        time: new Date().toString(),
-        data: {
-          event: strMsg,
-        },
-      });
+    if (numMatched === 0 && msg.type !== 'errors/open' && msg.type !== 'open/sse') {
+      const strError = `WARNING! No subscriber/handler found for msg: ${msg.type}`;
+      console.log(strError);
+      this.logMsg(strError);
     }
   }
 

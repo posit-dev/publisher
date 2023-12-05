@@ -30,50 +30,6 @@ export type CallbackQueueEntry = {
   callback: OnMessageEventSourceCallback,
 }
 
-// Sample publishing stream of events as of 9/26
-// { "time": "2023-09-26T09:23:10.103322-07:00", "type": "open/sse", "data": {} }
-// { "time": "2023-09-26T09:23:14.188926-07:00", "type": "agent/log", "data": { "level": "WARN", "message": "Service is operating in DEVELOPMENT MODE with NO browser to server authentication" } }
-// { "time": "2023-09-26T09:23:14.189194-07:00", "type": "agent/log", "data": { "level": "INFO", "message": "UI server running", "url": "http://127.0.0.1:9001/" } }
-// { "time": "2023-09-26T09:23:20.390417-07:00", "type": "publish/start", "data": { "level": "INFO", "message": "Starting deployment to server", "localId": "O-6_TzmRRBWtd4rm", "server": "https://rsc.radixu.com" } }
-// { "time": "2023-09-26T09:23:20.390636-07:00", "type": "publish/createBundle/start", "data": { "level": "INFO", "message": "Creating bundle", "localId": "O-6_TzmRRBWtd4rm" } }
-// { "time": "2023-09-26T09:23:20.390671-07:00", "type": "agent/log", "data": { "level": "INFO", "message": "Creating bundle from directory", "localId": "O-6_TzmRRBWtd4rm", "sourceDir": "/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple" } }
-// { "time": "2023-09-26T09:23:20.390944-07:00", "type": "agent/log", "data": { "level": "INFO", "message": "Adding file", "localId": "O-6_TzmRRBWtd4rm", "path": "/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/meta.yaml", "size": 63 } }
-// { "time": "2023-09-26T09:23:20.392273-07:00", "type": "agent/log", "data": { "level": "INFO", "message": "Adding file", "localId": "O-6_TzmRRBWtd4rm", "path": "/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/requirements.in", "size": 124 } }
-// { "time": "2023-09-26T09:23:20.392861-07:00", "type": "agent/log", "data": { "level": "INFO", "message": "Adding file", "localId": "O-6_TzmRRBWtd4rm", "path": "/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/requirements.txt", "size": 235 } }
-// { "time": "2023-09-26T09:23:20.393121-07:00", "type": "agent/log", "data": { "level": "INFO", "message": "Adding file", "localId": "O-6_TzmRRBWtd4rm", "path": "/Users/billsager/dev/publishing-client/test/sample-content/fastapi-simple/simple.py", "size": 369 } }
-// { "time": "2023-09-26T09:23:20.39462-07:00", "type": "agent/log", "data": { "level": "INFO", "message": "Bundle created", "files": 4, "localId": "O-6_TzmRRBWtd4rm", "totalBytes": 791 } }
-// { "time": "2023-09-26T09:23:20.39491-07:00", "type": "publish/createBundle/success", "data": { "level": "INFO", "message": "Done", "filename": "/var/folders/p8/lrgc44n53k92bbdj58jbnmj40000gn/T/bundle-2901151170.tar.gz", "localId": "O-6_TzmRRBWtd4rm" } }
-// { "time": "2023-09-26T09:23:20.394953-07:00", "type": "publish/createDeployment/start", "data": { "level": "INFO", "message": "Creating deployment", "localId": "O-6_TzmRRBWtd4rm" } }
-// { "time": "2023-09-26T09:23:21.142721-07:00", "type": "publish/createDeployment/success", "data": { "level": "INFO", "message": "Done", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm" } }
-// { "time": "2023-09-26T09:23:21.142778-07:00", "type": "agent/log", "data": { "!badkey": "0d976b10-8f98-463c-9647-9738338f53d8", "level": "INFO", "message": "content_id", "localId": "O-6_TzmRRBWtd4rm" } }
-// { "time": "2023-09-26T09:23:21.142802-07:00", "type": "publish/uploadBundle/start", "data": { "level": "INFO", "message": "Uploading deployment bundle", "localId": "O-6_TzmRRBWtd4rm" } }
-// { "time": "2023-09-26T09:23:21.472895-07:00", "type": "publish/uploadBundle/success", "data": { "level": "INFO", "message": "Done", "bundleId": "44523", "localId": "O-6_TzmRRBWtd4rm" } }
-// { "time": "2023-09-26T09:23:21.472953-07:00", "type": "publish/deployBundle/start", "data": { "level": "INFO", "message": "Initiating bundle deployment", "localId": "O-6_TzmRRBWtd4rm" } }
-// { "time": "2023-09-26T09:23:21.721971-07:00", "type": "publish/deployBundle/success", "data": { "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm", "taskId": "hKKvYQzemoXdNB0f" } }
-// { "time": "2023-09-26T09:23:22.312315-07:00", "type": "publish/restorePythonEnv/start", "data": { "level": "INFO", "message": "Building FastAPI application...", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.312461-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "Bundle created with Python version 3.9.10 is compatible with environment Local with Python version 3.9.7 from /opt/python/3.9.7/bin/python3.9 ", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.312514-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "Bundle requested Python version 3.9.10; using /opt/python/3.9.7/bin/python3.9 which has version 3.9.7", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.312563-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:21.791559255 [rsc-session] Content GUID: 0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.312877-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:21.791600229 [rsc-session] Content ID: 25433", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.312954-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:21.791607274 [rsc-session] Bundle ID: 44523", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.313001-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:21.791611317 [rsc-session] Job Key: aP8OhvuRjXlz50oj", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.31316-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:21.959040190 Running on host: dogfood01", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.313222-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:21.978406756 Linux distribution: Ubuntu 22.04.2 LTS (jammy)", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.313373-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:22.001314693 Running as user: uid=1031(rstudio-connect) gid=999(rstudio-connect) groups=999(rstudio-connect)", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.313456-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:22.001354961 Connect version: 2023.10.0-dev+202-g99a203d308", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.313597-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:22.001775018 LANG: C.UTF-8", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.313673-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:22.001778626 Working directory: /opt/rstudio-connect/mnt/app", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.313737-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:22.001788663 Building environment using Python 3.9.7 (default, Jun 4 2023, 23:06:07) [GCC 11.3.0] at /opt/python/3.9.7/bin/python3.9", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.313778-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:22.050120696 Skipped packages: rsconnect-python==1.17.0", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:22.313901-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:22.050137035 Using cached environment: Pa5tKYxKMSNr6xGrmbr8Nw", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:23.825299-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:23.652963987 Packages in the environment: aiofiles==23.2.1, anyio==3.6.2, asgiref==3.6.0, click==8.1.3, fastapi==0.95.2, h11==0.14.0, idna==3.4, pydantic==1.10.7, PyJWT==2.7.0, semver==2.13.0, six==1.16.0, sniffio==1.3.0, starlette==0.27.0, typing_extensions==4.5.0, uvicorn==0.22.0, websockets==11.0.3, ", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:23.825459-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "2023/09/26 16:23:23.656037631 Creating lockfile: python/requirements.txt.lock", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:25.310946-07:00", "type": "publish/restorePythonEnv/log", "data": { "level": "INFO", "message": "Completed Python build against Python version: '3.9.7'", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:25.311036-07:00", "type": "publish/restorePythonEnv/success", "data": { "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:25.311066-07:00", "type": "publish/runContent/start", "data": { "level": "INFO", "message": "Launching FastAPI application...", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:25.311112-07:00", "type": "publish/runContent/success", "data": { "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log" } }
-// { "time": "2023-09-26T09:23:25.311155-07:00", "type": "publish/success", "data": { "level": "INFO", "message": "Deployment successful", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "dashboardUrl": "https://rsc.radixu.com/connect/#/apps/0d976b10-8f98-463c-9647-9738338f53d8", "directUrl": "https://rsc.radixu.com/content/0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm", "serverUrl": "https://rsc.radixu.com" } }
-
 export type EventSubscriptionTarget = keyof EventSubscriptionTargetCallbackMap;
 
 /**
@@ -102,12 +58,20 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/**/failure': OnMessageEventSourceCallback
   'publish/start': OnPublishStartCallback
 
+  // 'publish/createBundle/failure/authFailure' | // received but temporarily converted
+  'publish/createNewDeployment/start': OnPublishCreateNewDeploymentStartCallback
+  'publish/createNewDeployment/success': OnPublishCreateNewDeploymentSuccessCallback
+  'publish/createNewDeployment/failure': OnPublishCreateNewDeploymentFailureCallback
+
+  'publish/setEnvVars/start': OnPublishSetEnvVarsStartCallback
+  'publish/setEnvVars/success': OnPublishSetEnvVarsSuccessCallback
+  'publish/setEnvVars/failure': OnPublishSetEnvVarsFailureCallback
+
   'publish/createBundle/start': OnPublishCreateBundleStartCallback
   'publish/createBundle/log': OnPublishCreateBundleLogCallback
   'publish/createBundle/success': OnPublishCreateBundleSuccessCallback
   'publish/createBundle/failure': OnPublishCreateBundleFailureCallback
 
-  // 'publish/createBundle/failure/authFailure' | // received but temporarily converted
   'publish/createDeployment/start': OnPublishCreateDeploymentStartCallback
   'publish/createDeployment/success': OnPublishCreateDeploymentSuccessCallback
   'publish/createDeployment/failure': OnPublishCreateDeploymentFailureCallback
@@ -119,9 +83,6 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/deployBundle/start': OnPublishDeployBundleStartCallback
   'publish/deployBundle/success': OnPublishDeployBundleSuccessCallback
   'publish/deployBundle/failure': OnPublishDeployBundleFailureCallback
-
-  // 'publish/restore' | // found during agent code searches but not received
-  // 'publish/restore/log' | // found during agent code searches but not received
 
   'publish/restorePythonEnv/start': OnPublishRestorePythonEnvStartCallback
   'publish/restorePythonEnv/log': OnPublishRestorePythonEnvLogCallback
@@ -136,7 +97,15 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/runContent/success': OnPublishRunContentSuccessCallback
   'publish/runContent/failure': OnPublishRunContentFailureCallback
 
-  // 'publish/setVanityURL' | // new, but on hold
+  'publish/setVanityURL/start': OnPublishSetVanityURLStartCallback
+  'publish/setVanityURL/log': OnPublishSetVanityURLLogCallback
+  'publish/setVanityURL/success': OnPublishSetVanityURLSuccessCallback
+  'publish/setVanityURL/failure': OnPublishSetVanityURLFailureCallback
+
+  'publish/validateDeployment/start': OnPublishValidateDeploymentStartCallback
+  'publish/validateDeployment/log': OnPublishValidateDeploymentLogCallback
+  'publish/validateDeployment/success': OnPublishValidateDeploymentSuccessCallback
+  'publish/validateDeployment/failure': OnPublishValidateDeploymentFailureCallback
 
   'publish/success': OnPublishSuccessCallback
   'publish/failure': OnPublishFailureCallback
@@ -237,6 +206,97 @@ export type OnPublishStartCallback = (msg: PublishStart) => void;
 export function isPublishStart(arg: Events):
   arg is PublishStart {
   return arg.type === 'publish/start';
+}
+
+export interface PublishCreateNewDeploymentStart extends EventStreamMessage {
+  type: 'publish/createNewDeployment/start',
+  data: {
+    // "level": "INFO", "message": "Creating deployment", "localId": "O-6_TzmRRBWtd4rm"
+    level: string,
+    message: string,
+    localId: string,
+    contentId: string,
+  }
+}
+export type OnPublishCreateNewDeploymentStartCallback =
+  (msg: PublishCreateNewDeploymentStart) => void;
+export function isPublishCreateNewDeploymentStart(arg: Events):
+  arg is PublishCreateNewDeploymentStart {
+  return arg.type === 'publish/createNewDeployment/start';
+}
+
+export interface PublishCreateNewDeploymentSuccess extends EventStreamMessage {
+  type: 'publish/createNewDeployment/success',
+  data: {
+    // "level": "INFO", "message": "Done", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm"
+    level: string,
+    message: string,
+    contentId: string,
+    localId: string,
+  }
+}
+export type OnPublishCreateNewDeploymentSuccessCallback =
+  (msg: PublishCreateNewDeploymentSuccess) => void;
+export function isPublishCreateNewDeploymentSuccess(arg: Events):
+  arg is PublishCreateNewDeploymentSuccess {
+  return arg.type === 'publish/createNewDeployment/success';
+}
+
+export interface PublishCreateNewDeploymentFailure extends EventStreamMessage {
+  type: 'publish/createNewDeployment/failure',
+  error: string, // translated internally
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishCreateNewDeploymentFailureCallback =
+  (msg: PublishCreateNewDeploymentFailure) => void;
+export function isPublishCreateNewDeploymentFailure(arg: Events):
+  arg is PublishCreateNewDeploymentFailure {
+  return arg.type === 'publish/createDeployment/failure';
+}
+
+export interface PublishSetEnvVarsStart extends EventStreamMessage {
+  type: 'publish/setEnvVars/start',
+  data: {
+    // "level": "INFO", "message": "Creating deployment", "localId": "O-6_TzmRRBWtd4rm"
+    level: string,
+    message: string,
+    localId: string,
+  }
+}
+export type OnPublishSetEnvVarsStartCallback = (msg: PublishSetEnvVarsStart) => void;
+export function isPublishSetEnvVarsStart(arg: Events):
+  arg is PublishSetEnvVarsStart {
+  return arg.type === 'publish/setEnvVars/start';
+}
+
+export interface PublishSetEnvVarsSuccess extends EventStreamMessage {
+  type: 'publish/setEnvVars/success',
+  data: {
+    level: string,
+    message: string,
+    localId: string,
+    // should include echo of variables/values
+  }
+}
+export type OnPublishSetEnvVarsSuccessCallback =
+  (msg: PublishSetEnvVarsSuccess) => void;
+export function isPublishSetEnvVarsSuccess(arg: Events):
+  arg is PublishSetEnvVarsSuccess {
+  return arg.type === 'publish/setEnvVars/success';
+}
+
+export interface PublishSetEnvVarsFailure extends EventStreamMessage {
+  type: 'publish/setEnvVars/failure',
+  error: string, // translated internally
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishSetEnvVarsFailureCallback =
+  (msg: PublishSetEnvVarsFailure) => void;
+export function isPublishSetEnvVarsFailure(arg: Events):
+  arg is PublishSetEnvVarsFailure {
+  return arg.type === 'publish/setEnvVars/failure';
 }
 
 export interface PublishCreateBundleStart extends EventStreamMessage {
@@ -571,6 +631,116 @@ export type OnPublishRunContentFailureCallback = (msg: PublishRunContentFailure)
 export function isPublishRunContentFailure(arg: Events):
   arg is PublishRestorePythonEnvFailure {
   return arg.type === 'publish/runContent/failure';
+}
+
+export interface PublishSetVanityURLStart extends EventStreamMessage {
+  type: 'publish/setVanityURL/start',
+  data: {
+    // "level": "INFO", "message": "Launching FastAPI application...", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log"
+    level: string,
+    message: string,
+    localId: string,
+    source: string,
+  }
+}
+export type OnPublishSetVanityURLStartCallback = (msg: PublishSetVanityURLStart) => void;
+export function isPublishSetVanityURLStart(arg: Events):
+  arg is PublishSetVanityURLStart {
+  return arg.type === 'publish/setVanityURL/start';
+}
+
+export interface PublishSetVanityURLLog extends EventStreamMessage {
+  type: 'publish/setVanityURL/log',
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishSetVanityURLLogCallback = (msg: PublishSetVanityURLLog) => void;
+export function isPublishSetVanityURLLog(arg: Events):
+  arg is PublishSetVanityURLLog {
+  return arg.type === 'publish/setVanityURL/log';
+}
+
+export interface PublishSetVanityURLSuccess extends EventStreamMessage {
+  type: 'publish/setVanityURL/success',
+  data: {
+    // "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log"
+    level: string,
+    message: string,
+    localId: string,
+    source: string,
+  }
+}
+export type OnPublishSetVanityURLSuccessCallback = (msg: PublishSetVanityURLSuccess) => void;
+export function isPublishSetVanityURLSuccess(arg: Events):
+  arg is PublishSetVanityURLSuccess {
+  return arg.type === 'publish/setVanityURL/success';
+}
+
+export interface PublishSetVanityURLFailure extends EventStreamMessage {
+  type: 'publish/setVanityURL/failure',
+  error: string, // translated internally
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishSetVanityURLFailureCallback = (msg: PublishSetVanityURLFailure) => void;
+export function isPublishSetVanityURLFailure(arg: Events):
+  arg is PublishRestorePythonEnvFailure {
+  return arg.type === 'publish/setVanityURL/failure';
+}
+export interface PublishValidateDeploymentStart extends EventStreamMessage {
+  type: 'publish/validateDeployment/start',
+  data: {
+    level: string,
+    message: string,
+    localId: string,
+    source: string,
+  }
+}
+export type OnPublishValidateDeploymentStartCallback =
+  (msg: PublishValidateDeploymentStart) => void;
+export function isPublishValidateDeploymentStart(arg: Events):
+  arg is PublishValidateDeploymentStart {
+  return arg.type === 'publish/validateDeployment/start';
+}
+
+export interface PublishValidateDeploymentLog extends EventStreamMessage {
+  type: 'publish/validateDeployment/log',
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishValidateDeploymentLogCallback = (msg: PublishValidateDeploymentLog) => void;
+export function isPublishValidateDeploymentLog(arg: Events):
+  arg is PublishValidateDeploymentLog {
+  return arg.type === 'publish/validateDeployment/log';
+}
+
+export interface PublishValidateDeploymentSuccess extends EventStreamMessage {
+  type: 'publish/validateDeployment/success',
+  data: {
+    level: string,
+    message: string,
+    localId: string,
+    source: string,
+  }
+}
+export type OnPublishValidateDeploymentSuccessCallback =
+  (msg: PublishValidateDeploymentSuccess) => void;
+export function isPublisValidateDeploymentSuccess(arg: Events):
+  arg is PublishValidateDeploymentSuccess {
+  return arg.type === 'publish/validateDeployment/success';
+}
+
+export interface PublishValidateDeploymentFailure extends EventStreamMessage {
+  type: 'publish/validateDeployment/failure',
+  error: string, // translated internally
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishValidateDeploymentFailureCallback =
+  (msg: PublishValidateDeploymentFailure) => void;
+export function isPublishValidateDeploymentFailure(arg: Events):
+  arg is PublishValidateDeploymentFailure {
+  return arg.type === 'publish/validateDeployment/failure';
 }
 
 export interface PublishSuccess extends EventStreamMessage {
