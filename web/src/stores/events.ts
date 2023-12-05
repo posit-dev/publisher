@@ -96,7 +96,7 @@ export type PublishStatus = {
   }
 }
 
-export const newPublishStatus = () => {
+const newPublishStatus = () => {
   return ref({
     completion: <PublishStepCompletionStatus>'unknown',
     error: undefined,

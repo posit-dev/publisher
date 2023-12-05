@@ -696,7 +696,8 @@ export interface PublishValidateDeploymentStart extends EventStreamMessage {
     source: string,
   }
 }
-export type OnPublishValidateDeploymentStartCallback = (msg: PublishSetVanityURLStart) => void;
+export type OnPublishValidateDeploymentStartCallback =
+  (msg: PublishValidateDeploymentStart) => void;
 export function isPublishValidateDeploymentStart(arg: Events):
   arg is PublishValidateDeploymentStart {
   return arg.type === 'publish/validateDeployment/start';
