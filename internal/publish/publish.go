@@ -90,6 +90,13 @@ func (p *defaultPublisher) publish(
 	err = p.publishWithClient(bundler, p.Account, client, log)
 	if err != nil {
 		log.Failure(err)
+
+		// Also fail the overall operation
+		agentErr, ok := err.(*types.AgentError)
+		if ok {
+			agentErr.SetOperation(events.PublishOp)
+			log.Failure(agentErr)
+		}
 	}
 	return nil
 }
@@ -186,7 +193,7 @@ func (p *defaultPublisher) publishWithClient(
 	}
 	err = p.createDeploymentRecord(bundler, contentID, account, log)
 	if err != nil {
-		return err
+		return types.ErrToAgentError(events.PublishCreateDeploymentOp, err)
 	}
 
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
