@@ -5,6 +5,7 @@
     <div class="col text-center col-6">
       <div>Destination Summary</div>
       <div>New Deployment to {{ destinationURL }}</div>
+      <p>Publishing will add this Destination to your project.</p>
       <div v-if="contentId">
         Content ID: {{ contentId }}
       </div>

@@ -28,7 +28,7 @@
         :to="destinationPage"
         type="submit"
         color="primary"
-        label="Add"
+        label="Continue to Publish"
       />
       <q-btn
         type="reset"
