@@ -107,7 +107,12 @@ func New(path util.Path, accountName, configName, targetID string, accountList a
 			}
 			accountName = account.Name
 		}
+	} else {
+		if configName == "" {
+			configName = config.DefaultConfigName
+		}
 	}
+
 	// Use specified account, or default account
 	account, err = loadAccount(accountName, accountList)
 	if err != nil {

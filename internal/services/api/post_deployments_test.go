@@ -29,6 +29,11 @@ func TestPostDeploymentsHandlerFuncSuite(t *testing.T) {
 	suite.Run(t, new(PostDeploymentsHandlerFuncSuite))
 }
 
+func (s *PostDeploymentsHandlerFuncSuite) SetupTest() {
+	stateFactory = state.New
+	publisherFactory = publish.NewFromState
+}
+
 type mockPublisher struct {
 	mock.Mock
 }
@@ -52,16 +57,16 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
 
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(nil)
-	publisherFactory := func(*state.State) publish.Publisher {
+	publisherFactory = func(*state.State) publish.Publisher {
 		return publisher
 	}
-	stateFactory := func(
+	stateFactory = func(
 		path util.Path,
 		accountName, configName, targetID string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return state.Empty(), nil
 	}
-	handler := PostDeploymentsHandlerFunc(stateStore, util.Path{}, log, lister, stateFactory, publisherFactory)
+	handler := PostDeploymentsHandlerFunc(stateStore, util.Path{}, log, lister)
 	handler(rec, req)
 
 	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
@@ -86,7 +91,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadJSON(
 
 	req.Body = io.NopCloser(strings.NewReader("{\"random\":\"123\"}"))
 
-	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil, nil, nil)
+	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -98,14 +103,14 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncStateErr
 	s.NoError(err)
 	req.Body = io.NopCloser(strings.NewReader("{}"))
 
-	stateFactory := func(
+	stateFactory = func(
 		path util.Path,
 		accountName, configName, targetID string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return nil, errors.New("test error from state factory")
 	}
 
-	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil, stateFactory, nil)
+	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -119,7 +124,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncPublishE
 	lister := &accounts.MockAccountList{}
 	req.Body = io.NopCloser(strings.NewReader("{\"account\":\"local\", \"config\":\"default\"}"))
 
-	stateFactory := func(
+	stateFactory = func(
 		path util.Path,
 		accountName, configName, targetID string,
 		accountList accounts.AccountList) (*state.State, error) {
@@ -129,11 +134,11 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncPublishE
 	testErr := errors.New("test error from PublishDirectory")
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(testErr)
-	publisherFactory := func(*state.State) publish.Publisher {
+	publisherFactory = func(*state.State) publish.Publisher {
 		return publisher
 	}
 
-	handler := PostDeploymentsHandlerFunc(state.Empty(), util.Path{}, log, lister, stateFactory, publisherFactory)
+	handler := PostDeploymentsHandlerFunc(state.Empty(), util.Path{}, log, lister)
 	handler(rec, req)
 
 	// Handler returns 202 Accepted even if publishing errs,

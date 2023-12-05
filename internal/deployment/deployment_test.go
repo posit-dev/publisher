@@ -5,6 +5,7 @@ package deployment
 import (
 	"io/fs"
 	"testing"
+	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/util"
@@ -30,12 +31,14 @@ func (s *DeploymentSuite) SetupTest() {
 	s.cwd.MkdirAll(0700)
 }
 
-func (s *DeploymentSuite) createDeploymentFile(name string) {
-	configFile := GetLatestDeploymentPath(s.cwd, name)
+func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
+	path := GetLatestDeploymentPath(s.cwd, name)
 	deployment := New()
 	deployment.ServerType = accounts.ServerTypeConnect
-	err := deployment.WriteFile(configFile)
+	deployment.DeployedAt = time.Now().UTC()
+	err := deployment.WriteFile(path)
 	s.NoError(err)
+	return deployment
 }
 
 func (s *DeploymentSuite) TestNew() {
@@ -65,12 +68,12 @@ func (s *DeploymentSuite) TestGetLatestDeploymentHistoryPath() {
 }
 
 func (s *DeploymentSuite) TestFromFile() {
-	s.createDeploymentFile("myTargetID")
+	expected := s.createDeploymentFile("myTargetID")
 	path := GetLatestDeploymentPath(s.cwd, "myTargetID")
-	deployment, err := FromFile(path)
+	actual, err := FromFile(path)
 	s.NoError(err)
-	s.NotNil(deployment)
-	s.Equal(accounts.ServerTypeConnect, deployment.ServerType)
+	s.NotNil(actual)
+	s.Equal(expected, actual)
 }
 
 func (s *DeploymentSuite) TestFromFileErr() {

@@ -28,10 +28,6 @@ type PublishCmd struct {
 var errNoAccounts = errors.New("there are no accounts yet; register an account before publishing")
 
 func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	if cmd.ConfigName == "" {
-		cmd.ConfigName = config.DefaultConfigName
-	}
-
 	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
 	if err != nil {
 		return err

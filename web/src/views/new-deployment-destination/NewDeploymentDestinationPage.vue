@@ -5,16 +5,18 @@
     :account-name="accountName"
     :content-id="contentId"
     class="q-mt-md"
+    @publish="hasPublished = true"
   />
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, ref } from 'vue';
+import { onBeforeRouteLeave, useRoute } from 'vue-router';
 
 import NewDestinationHeader from './NewDestinationHeader.vue';
 
 const route = useRoute();
+const hasPublished = ref(false);
 
 const accountName = computed(() => {
   // route param can be either string | string[]
@@ -30,6 +32,14 @@ const contentId = computed(() => {
     return route.params.contentId[0] || undefined;
   }
   return route.params.contentId || undefined;
+});
+
+onBeforeRouteLeave(() => {
+  if (hasPublished.value) {
+    return true;
+  }
+  // eslint-disable-next-line no-alert
+  return confirm('You have not published yet, a destination has not been created. Are you sure you want to leave?');
 });
 
 </script>
