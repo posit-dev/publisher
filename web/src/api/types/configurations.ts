@@ -52,6 +52,7 @@ export type ConfigurationDetails = {
   r?: RConfig,
   quarto?: QuartoConfig,
   environment?: EnvironmentConfig,
+  validate: boolean,
   secrets?: string[],
   schedules?: ScheduleConfig[],
   access?: AccessConfig,
