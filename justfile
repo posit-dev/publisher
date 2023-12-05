@@ -11,7 +11,7 @@ alias v := version
 
 _ci := env_var_or_default("CI", "false")
 
-_cmd := "./cmd/connect-client"
+_cmd := "./cmd/publisher"
 
 _debug := env_var_or_default("DEBUG", "false")
 
@@ -19,7 +19,7 @@ _docker := env_var_or_default("DOCKER", if _ci == "true" { "true" } else { "fals
 
 _docker_file := "./build/ci/Dockerfile"
 
-_docker_image_name := "rstudio/connect-client"
+_docker_image_name := "rstudio/publisher"
 
 _docker_platform := env_var_or_default("DOCKER_PLATFORM", env_var_or_default("DOCKER_DEFAULT_PLATFORM", "linux/amd64"))
 
@@ -119,7 +119,7 @@ cy *args:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-    
+
     just _with_docker just test/cy/{{ args }}
 
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).
