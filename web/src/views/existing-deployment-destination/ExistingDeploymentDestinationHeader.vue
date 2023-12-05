@@ -87,10 +87,7 @@ const initiatePublishProcess = async() => {
 };
 
 const publishingStatus = computed(() => {
-  if (!publishingLocalId.value) {
-    return undefined;
-  }
-  return eventStore.publishStatusMap.get(publishingLocalId.value);
+  return eventStore.publishStatusMap.get(props.contentId);
 });
 
 const publishingStatusString = computed(() => {

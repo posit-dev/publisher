@@ -143,9 +143,10 @@ export const useEventStore = defineStore('event', () => {
     const localId = getLocalId(msg);
     console.log('onPublishStart', JSON.stringify(msg));
 
-    const publishStatus = newPublishStatus();
-    publishStatus.completion = 'started';
-    publishStatusMap.value.set(localId, publishStatus);
+    const publishStatus = publishStatusMap.value.get(localId);
+    if (publishStatus) {
+      publishStatus.completion = 'started';
+    }
     latestLocalId.value = localId;
   };
 
@@ -573,6 +574,13 @@ export const useEventStore = defineStore('event', () => {
         contentId,
       );
       const localId = <string>response.data.localId;
+
+      const publishStatus = newPublishStatus();
+      publishStatusMap.value.set(localId, publishStatus);
+      if (contentId) {
+        publishStatusMap.value.set(contentId, publishStatus);
+      }
+
       return localId;
     } catch (error) {
       return new Error(getErrorMessage(error));
