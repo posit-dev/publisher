@@ -21,7 +21,7 @@ Here is an example using ZSH on macOS with an M1 Chip (ARM64 architecture).
 **~/.zshenv**
 ```shell
 # Replace this with the location of the executable on your machine.
-PATHNAME=$HOME/Downloads/connect-client-0.0.dev2-darwin-arm64
+PATHNAME=$HOME/Downloads/publisher-0.0.dev2-darwin-arm64
 
 export PATH=$PATH:$PATHNAME
 alias publisher=$(basename ${PATHNAME})

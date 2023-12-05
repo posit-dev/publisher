@@ -58,7 +58,7 @@ Building the DOCKER image:
 All tasks are done through the justfile recipes, present within the top level `justfile` file. Recipes present include macro-operations
 for the multiple projects (Go and Web SPA) included in this repo.
 
-Specialized recipes for the Go project are located within the `cmd/connect-client/justfile` and
+Specialized recipes for the Go project are located within the `cmd/publisher/justfile` and
 specialized recipes for the Web project are located within the `web/justfile`.
 
 The top level `justfile` recipes can be displayed from within the top level repo subdirectory by issuing the command: `just --list`

@@ -15,7 +15,7 @@ from tornado.httputil import HTTPServerRequest
 from tornado.web import authenticated
 
 base_url: str = ""
-EXECUTABLE = "connect-client"
+EXECUTABLE = "publisher"
 
 known_ports: Set[int] = set()
 agentsByNotebookPath: Dict[str, Tuple[subprocess.Popen, str]] = {}
