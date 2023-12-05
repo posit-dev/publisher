@@ -34,4 +34,5 @@ type APIClient interface {
 	UploadBundle(types.ContentID, io.Reader) (types.BundleID, error)
 	DeployBundle(types.ContentID, types.BundleID) (types.TaskID, error)
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
+	ValidateDeployment(types.ContentID) error
 }

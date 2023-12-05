@@ -42,6 +42,7 @@ type Config struct {
 	Schema        SchemaURL   `toml:"$schema" json:"$schema"`
 	Type          ContentType `toml:"type" json:"type"`
 	Entrypoint    string      `toml:"entrypoint,omitempty" json:"entrypoint,omitempty"`
+	Validate      bool        `toml:"validate" json:"validate"`
 	Title         string      `toml:"title,omitempty" json:"title,omitempty"`
 	Description   string      `toml:"description,multiline,omitempty" json:"description,omitempty"`
 	ThumbnailFile string      `toml:"thumbnail,omitempty" json:"thumbnail,omitempty"`

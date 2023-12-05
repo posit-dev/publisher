@@ -36,7 +36,7 @@ const (
 	PublishRestoreREnvOp         Operation = "publish/restoreREnv"
 	PublishRunContentOp          Operation = "publish/runContent"
 	PublishSetVanityUrlOp        Operation = "publish/setVanityURL"
-	PublishValidateDeployment    Operation = "publish/validateDeployment"
+	PublishValidateDeploymentOp  Operation = "publish/validateDeployment"
 	PublishOp                    Operation = "publish"
 )
 

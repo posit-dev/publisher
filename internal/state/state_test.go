@@ -82,6 +82,7 @@ func (s *StateSuite) TestLoadConfig() {
 		Schema:      "https://example.com/schema/publishing.json",
 		Type:        "python-dash",
 		Entrypoint:  "app:app",
+		Validate:    true,
 		Title:       "Super Title",
 		Description: "minimal description",
 		Tags:        []string{"a", "b", "c"},
@@ -173,6 +174,7 @@ func (s *StateSuite) TestLoadTarget() {
 			Schema:      "https://example.com/schema/publishing.json",
 			Type:        "python-dash",
 			Entrypoint:  "app:app",
+			Validate:    true,
 			Title:       "Super Title",
 			Description: "minimal description",
 			Tags:        []string{"a", "b", "c"},
@@ -266,7 +268,28 @@ func (s *StateSuite) TestNew() {
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
-	s.Equal(state.ConfigName, "")
+	s.Equal(state.ConfigName, config.DefaultConfigName)
+	s.Equal(state.TargetID, "")
+	s.Nil(state.Account, "")
+	s.Equal(cfg, state.Config)
+	s.Nil(state.Target)
+}
+
+func (s *StateSuite) TestNewNonDefaultConfig() {
+	accts := &accounts.MockAccountList{}
+	accts.On("GetAllAccounts").Return(nil, nil)
+
+	configName := "staging"
+	configPath := config.GetConfigPath(s.cwd, configName)
+	cfg := config.New()
+	err := cfg.WriteFile(configPath)
+	s.NoError(err)
+
+	state, err := New(s.cwd, "", configName, "", accts)
+	s.NoError(err)
+	s.NotNil(state)
+	s.Equal(state.AccountName, "")
+	s.Equal(state.ConfigName, configName)
 	s.Equal(state.TargetID, "")
 	s.Nil(state.Account, "")
 	s.Equal(cfg, state.Config)

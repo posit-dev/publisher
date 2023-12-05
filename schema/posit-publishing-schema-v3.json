@@ -68,6 +68,11 @@
         "This is the quarterly sales report, broken down by region."
       ]
     },
+    "validate": {
+      "type": "boolean",
+      "description": "Access the content after deploying, to validate that it is live.",
+      "default": true
+    },
     "python": {
       "type": "object",
       "additionalProperties": false,

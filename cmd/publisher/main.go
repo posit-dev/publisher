@@ -8,7 +8,7 @@ import (
 	"runtime/pprof"
 
 	"github.com/alecthomas/kong"
-	"github.com/rstudio/connect-client/cmd/connect-client/commands"
+	"github.com/rstudio/connect-client/cmd/publisher/commands"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/events"

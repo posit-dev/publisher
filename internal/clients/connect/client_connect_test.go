@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/clients/http_client"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/logging/loggingtest"
@@ -324,4 +325,69 @@ func (s *ConnectClientSuite) TestWaitForTaskErr() {
 	}, err)
 	s.Equal(events.PublishRestorePythonEnvOp, op)
 	log.AssertExpectations(s.T())
+}
+
+func (s *ConnectClientSuite) TestValidateDeployment() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("GetRaw", mock.Anything).Return(nil, nil)
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+		log:     nil,
+	}
+	contentID := types.ContentID("myContentID")
+	err := client.ValidateDeployment(contentID)
+	s.NoError(err)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentNonHTTPErr() {
+	httpClient := &http_client.MockHTTPClient{}
+	testError := errors.New("test error from GetRaw")
+	httpClient.On("GetRaw", mock.Anything).Return(nil, testError)
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+		log:     nil,
+	}
+	contentID := types.ContentID("myContentID")
+	err := client.ValidateDeployment(contentID)
+	s.ErrorIs(err, testError)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentAppFailure() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpErr := &http_client.HTTPError{
+		Status: 502,
+	}
+	agentError := types.NewAgentError(events.ServerErrorCode, httpErr, nil)
+	httpClient.On("GetRaw", mock.Anything).Return(nil, agentError)
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+		log:     nil,
+	}
+	contentID := types.ContentID("myContentID")
+	err := client.ValidateDeployment(contentID)
+	s.ErrorIs(err, agentError)
+}
+
+func (s *ConnectClientSuite) TestValidateDeploymentHTTPNonAppErr() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpErr := &http_client.HTTPError{
+		Status: 405,
+	}
+	agentError := types.NewAgentError(events.ServerErrorCode, httpErr, nil)
+	httpClient.On("GetRaw", mock.Anything).Return(nil, agentError)
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+		log:     nil,
+	}
+	contentID := types.ContentID("myContentID")
+	err := client.ValidateDeployment(contentID)
+	s.NoError(err)
 }
