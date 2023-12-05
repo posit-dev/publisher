@@ -255,6 +255,16 @@ func (p *defaultPublisher) publishWithClient(
 	if err != nil {
 		return err
 	}
+
+	if p.Config.Validate {
+		_, err := withLog(events.PublishValidateDeploymentOp, "Validating deployment", "ok", log, func() (bool, error) {
+			return true, client.ValidateDeployment(contentID)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	log = log.WithArgs(logging.LogKeyOp, events.AgentOp)
 	return p.logAppInfo(account.URL, contentID, log)
 }

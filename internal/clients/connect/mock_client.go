@@ -65,3 +65,8 @@ func (m *MockClient) WaitForTask(taskID types.TaskID, log logging.Logger) error 
 	args := m.Called(taskID, log)
 	return args.Error(0)
 }
+
+func (m *MockClient) ValidateDeployment(id types.ContentID) error {
+	args := m.Called(id)
+	return args.Error(0)
+}
