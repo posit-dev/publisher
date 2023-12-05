@@ -7,16 +7,15 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 )
-
-const ConfigSchema SchemaURL = "https://github.com/rstudio/publishing-client/blob/main/schemas/posit-publishing-schema-v3.json"
 
 const DefaultConfigName = "default"
 
 func New() *Config {
 	return &Config{
-		Schema:   ConfigSchema,
+		Schema:   schema.ConfigSchemaURL,
 		Validate: true,
 	}
 }
@@ -41,12 +40,24 @@ func ListConfigFiles(base util.Path) ([]util.Path, error) {
 }
 
 func FromFile(path util.Path) (*Config, error) {
+	err := ValidateFile(path)
+	if err != nil {
+		return nil, err
+	}
 	cfg := New()
-	err := util.ReadTOMLFile(path, cfg)
+	err = util.ReadTOMLFile(path, cfg)
 	if err != nil {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+func ValidateFile(path util.Path) error {
+	validator, err := schema.NewValidator(schema.ConfigSchemaURL)
+	if err != nil {
+		return err
+	}
+	return validator.ValidateTOMLFile(path)
 }
 
 func (cfg *Config) Write(w io.Writer) error {

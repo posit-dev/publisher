@@ -46,12 +46,11 @@ func (s *StateSuite) TestEmpty() {
 func (s *StateSuite) createConfigFile(name string, bad bool) {
 	configFile := config.GetConfigPath(s.cwd, name)
 	configData := []byte(`
-		'$schema' = 'https://example.com/schema/publishing.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
 		type = 'python-dash'
 		entrypoint = 'app:app'
 		title = 'Super Title'
 		description = 'minimal description'
-		tags = ['a', 'b', 'c']
 
 		[python]
 		version = "3.11.3"
@@ -79,13 +78,12 @@ func (s *StateSuite) TestLoadConfig() {
 	min_procs := int32(1)
 
 	s.Equal(&config.Config{
-		Schema:      "https://example.com/schema/publishing.json",
+		Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 		Type:        "python-dash",
 		Entrypoint:  "app:app",
 		Validate:    true,
 		Title:       "Super Title",
 		Description: "minimal description",
-		Tags:        []string{"a", "b", "c"},
 		Python: &config.Python{Version: "3.11.3",
 			PackageFile:    "requirements.txt",
 			PackageManager: "pip",
@@ -261,6 +259,8 @@ func (s *StateSuite) TestNew() {
 
 	configPath := config.GetConfigPath(s.cwd, "default")
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
@@ -282,6 +282,8 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	configName := "staging"
 	configPath := config.GetConfigPath(s.cwd, configName)
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
@@ -324,6 +326,8 @@ func (s *StateSuite) TestNewWithTarget() {
 
 	configPath := config.GetConfigPath(s.cwd, "savedConfigName")
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
@@ -364,6 +368,8 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 
 	configPath := config.GetConfigPath(s.cwd, "savedConfigName")
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 

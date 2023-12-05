@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -44,7 +45,7 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 func (s *DeploymentSuite) TestNew() {
 	deployment := New()
 	s.NotNil(deployment)
-	s.Equal(DeploymentSchema, deployment.Schema)
+	s.Equal(schema.DeploymentSchemaURL, deployment.Schema)
 }
 
 func (s *DeploymentSuite) TestGetLatestDeploymentPath() {

@@ -10,12 +10,13 @@ import (
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type Deployment struct {
-	Schema        config.SchemaURL    `toml:"$schema" json:"$schema"`
+	Schema        string              `toml:"$schema" json:"$schema"`
 	ServerType    accounts.ServerType `toml:"server-type" json:"server-type"`
 	ServerURL     string              `toml:"server-url" json:"server-url"`
 	Id            types.ContentID     `toml:"id" json:"id"`
@@ -25,11 +26,9 @@ type Deployment struct {
 	DeployedAt    time.Time           `toml:"deployed-at" json:"deployed-at"`
 }
 
-const DeploymentSchema config.SchemaURL = "https://github.com/rstudio/publishing-client/blob/main/schemas/posit-publishing-record-schema-v3.json"
-
 func New() *Deployment {
 	return &Deployment{
-		Schema:        DeploymentSchema,
+		Schema:        schema.DeploymentSchemaURL,
 		Configuration: *config.New(),
 		Files:         []string{},
 	}
