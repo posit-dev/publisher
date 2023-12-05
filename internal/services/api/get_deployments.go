@@ -19,7 +19,7 @@ type deploymentDTO struct {
 }
 
 func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
-	paths, err := deployment.ListLatestDeploymentFiles(base)
+	paths, err := deployment.ListDeploymentFiles(base)
 	if err != nil {
 		return nil, err
 	}

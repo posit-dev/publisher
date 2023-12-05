@@ -146,7 +146,7 @@ func (s *PublishSuite) publishWithClient(target *deployment.Deployment, createEr
 		s.Equal(expectedErr.Error(), err.Error())
 	}
 	if createErr == nil {
-		recordPath := deployment.GetLatestDeploymentPath(stateStore.Dir, string(stateStore.Target.Id))
+		recordPath := deployment.GetDeploymentPath(stateStore.Dir, string(stateStore.Target.Id))
 		record, err := deployment.FromFile(recordPath)
 		s.NoError(err)
 		s.Equal(myContentID, record.Id)

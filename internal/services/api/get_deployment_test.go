@@ -42,7 +42,7 @@ func (s *GetDeploymentSuite) SetupTest() {
 }
 
 func (s *GetDeploymentSuite) TestGetDeployment() {
-	path := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
+	path := deployment.GetDeploymentPath(s.cwd, "myTargetID")
 	d := deployment.New()
 	d.Id = "myTargetID"
 	d.ServerType = accounts.ServerTypeConnect
@@ -70,7 +70,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 }
 
 func (s *GetDeploymentSuite) TestGetDeploymentError() {
-	path2 := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
+	path2 := deployment.GetDeploymentPath(s.cwd, "myTargetID")
 	err := path2.WriteFile([]byte(`foo = 1`), 0666)
 	s.NoError(err)
 
@@ -96,7 +96,7 @@ func (s *GetDeploymentSuite) TestGetDeploymentError() {
 }
 
 func (s *GetDeploymentSuite) TestGetDeploymentNotFound() {
-	path2 := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
+	path2 := deployment.GetDeploymentPath(s.cwd, "myTargetID")
 	err := path2.WriteFile([]byte(`foo = 1`), 0666)
 	s.NoError(err)
 

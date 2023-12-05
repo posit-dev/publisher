@@ -116,7 +116,7 @@ func (s *StateSuite) TestLoadConfigErr() {
 }
 
 func (s *StateSuite) createTargetFile(name string, bad bool) {
-	targetFile := deployment.GetLatestDeploymentPath(s.cwd, name)
+	targetFile := deployment.GetDeploymentPath(s.cwd, name)
 	targetData := []byte(`
 		'$schema' = 'https://example.com/schema/publishing-record.json'
 		server-url = 'https://connect.example.com'
@@ -327,7 +327,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
-	targetPath := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
+	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetID")
 	d := deployment.New()
 	d.Id = "myTargetID"
 	d.ConfigName = "savedConfigName"
@@ -367,7 +367,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
-	targetPath := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
+	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetID")
 	d := deployment.New()
 	d.Id = "myTargetID"
 	d.ConfigName = "savedConfigName"

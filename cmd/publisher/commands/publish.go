@@ -4,6 +4,7 @@ package commands
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
@@ -32,6 +33,7 @@ func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext
 	if err != nil {
 		return err
 	}
+	cmd.TargetID = strings.TrimSuffix(cmd.TargetID, ".toml")
 	stateStore, err := state.New(cmd.Path, cmd.AccountName, cmd.ConfigName, cmd.TargetID, ctx.Accounts)
 	if err != nil {
 		return err
