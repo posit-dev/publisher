@@ -146,6 +146,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = newPublishStatus();
     publishStatus.value.completion = 'started';
+    publishStatusMap.value.set(localId, publishStatus);
     latestLocalId.value = localId;
   };
 
