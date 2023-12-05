@@ -1,51 +1,51 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-breadcrumbs>
-    <q-breadcrumbs-el
-      label="Project"
-      :to="{ name: 'project' }"
-    />
-    <q-breadcrumbs-el label="New Destination" />
-  </q-breadcrumbs>
+  <div class="publisher-layout">
+    <q-breadcrumbs>
+      <q-breadcrumbs-el
+        label="Project"
+        :to="{ name: 'project' }"
+      />
+      <q-breadcrumbs-el label="New Destination" />
+    </q-breadcrumbs>
 
-  <q-form
-    class="q-gutter-md"
-    @reset="resetForm"
-    @submit.prevent="navigateToNewDestinationPage"
-  >
-    <div class="q-pa-sm">
-      <q-list>
-        <AccountRadio
-          v-for="account in accounts"
-          :key="account.name"
-          v-model="selectedAccountName"
-          :account="account"
+    <q-form
+      class="q-gutter-md"
+      @reset="resetForm"
+      @submit.prevent="navigateToNewDestinationPage"
+    >
+      <div class="q-pa-sm">
+        <q-list>
+          <AccountRadio
+            v-for="account in accounts"
+            :key="account.name"
+            v-model="selectedAccountName"
+            :account="account"
+          />
+        </q-list>
+      </div>
+      <q-input
+        v-model="contentId"
+        label="Content ID"
+        hint="Optional"
+      />
+      <div class="flex row reverse">
+        <q-btn
+          :to="destinationPage"
+          type="submit"
+          color="primary"
+          label="Continue to Publish"
         />
-      </q-list>
-    </div>
-
-    <q-input
-      v-model="contentId"
-      label="Content ID"
-      hint="Optional"
-    />
-
-    <div class="flex row reverse">
-      <q-btn
-        :to="destinationPage"
-        type="submit"
-        color="primary"
-        label="Continue to Publish"
-      />
-      <q-btn
-        type="reset"
-        class="q-mr-sm"
-        label="Cancel"
-        @click="router.back()"
-      />
-    </div>
-  </q-form>
+        <q-btn
+          type="reset"
+          class="q-mr-sm"
+          label="Cancel"
+          @click="router.back()"
+        />
+      </div>
+    </q-form>
+  </div>
 </template>
 
 <script setup lang="ts">

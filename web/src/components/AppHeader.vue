@@ -1,11 +1,8 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-header
-    elevated
-    class="my-class"
-  >
-    <q-toolbar class="max-width-md q-pa-auto">
+  <q-header>
+    <q-toolbar class="publisher-layout">
       <AppMenu />
       <router-link
         :to="{ name: 'root' }"

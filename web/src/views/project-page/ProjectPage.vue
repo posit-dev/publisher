@@ -1,41 +1,43 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-breadcrumbs>
-    <q-breadcrumbs-el label="Project" />
-  </q-breadcrumbs>
+  <div class="publisher-layout">
+    <q-breadcrumbs>
+      <q-breadcrumbs-el label="Project" />
+    </q-breadcrumbs>
 
-  <h1>Project Page</h1>
+    <h1>Project Page</h1>
 
-  <h2>Destinations</h2>
+    <h2>Destinations</h2>
 
-  <q-btn :to="{ name: 'addNewDeployment' }">
-    Add Destination
-  </q-btn>
+    <q-btn :to="{ name: 'addNewDeployment' }">
+      Add Destination
+    </q-btn>
 
-  <div class="card-grid">
-    <DeploymentCard
-      v-for="deployment in deployments"
-      :key="deployment.id"
-      :deployment="deployment"
-    />
+    <div class="card-grid">
+      <DeploymentCard
+        v-for="deployment in deployments"
+        :key="deployment.id"
+        :deployment="deployment"
+      />
+    </div>
+
+    <h2>Configurations</h2>
+    <ul
+      v-for="config in configurations"
+      :key="config.configurationName"
+    >
+      <li>
+        {{ config.configurationName }}
+        <span v-if="isConfigurationError(config)">
+          {{ config.error }}
+        </span>
+      </li>
+    </ul>
+
+    <h2>Files</h2>
+    <FileTree />
   </div>
-
-  <h2>Configurations</h2>
-  <ul
-    v-for="config in configurations"
-    :key="config.configurationName"
-  >
-    <li>
-      {{ config.configurationName }}
-      <span v-if="isConfigurationError(config)">
-        {{ config.error }}
-      </span>
-    </li>
-  </ul>
-
-  <h2>Files</h2>
-  <FileTree />
 </template>
 
 <script setup lang="ts">

@@ -12,7 +12,6 @@
   <NewDestinationHeader
     :account-name="accountName"
     :content-id="contentId"
-    class="q-mt-md"
     @publish="hasPublished = true"
   />
 

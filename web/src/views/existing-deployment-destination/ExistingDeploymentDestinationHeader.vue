@@ -1,15 +1,34 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div>
-    <div class="col-4 vertical-top q-gutter-x-md">
-      <div class="col text-center col-4">
-        <div>Destination Summary</div>
-        <div>
-          Redeployment to {{ url }}
+  <div class="destination-header">
+    <div class="publisher-layout q-py-lg">
+      <div class="row vertical-top q-gutter-x-md">
+        <div class="col text-center col-6">
+          <div>Destination Summary</div>
+          <div>
+            Redeployment to {{ url }}
+          </div>
+          <div>
+            Content ID: {{ contentId }}
+          </div>
         </div>
-        <div>
-          Content ID: {{ contentId }}
+        <div class="col-3">
+          <SelectAccount
+            :accounts="filteredAccountList"
+            :url="destinationURL"
+            @change="onChange"
+          />
+        </div>
+        <div class="col-2">
+          <q-btn
+            no-caps
+            color="white"
+            text-color="black"
+            label="Publish"
+            :disable="eventStore.publishInProgess"
+            @click="initiatePublishProcess"
+          />
         </div>
       </div>
       <div class="col q-mt-md">
@@ -119,3 +138,10 @@ watch(
   { immediate: true }
 );
 </script>
+
+<style scoped lang="scss">
+.destination-header {
+  background-color: white;
+  border-bottom: 1px solid $grey-4;
+}
+</style>

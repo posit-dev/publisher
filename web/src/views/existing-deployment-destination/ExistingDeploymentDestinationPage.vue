@@ -17,7 +17,6 @@
   <ExistingDeploymentDestinationHeader
     :content-id="contentID"
     :url="deploymentUrl"
-    class="q-mt-md"
   />
 
   <ConfigSettings
