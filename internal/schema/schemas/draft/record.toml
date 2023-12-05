@@ -15,13 +15,13 @@ secrets = ["API_KEY"]
 
 [configuration.python]
 version = "3.11.3"
-package_file = "requirements.txt"
-package_manager = "pip"
+package-file = "requirements.txt"
+package-manager = "pip"
 
 [configuration.r]
 version = "4.3.1"
-package_file = "renv.lock"
-package_manager = "renv"
+package-file = "renv.lock"
+package-manager = "renv"
 
 [configuration.quarto]
 version = "1.4"
@@ -46,27 +46,27 @@ name = "Data Science Team"
 permissions = "editor"
 
 [configuration.connect.access]
-run_as = "rstudio-connect"
-run_as_current_user = false
+run-as = "rstudio-connect"
+run-as-current-user = false
 
 [configuration.connect.runtime]
-connection_timeout = 5
-read_timeout = 30
-init_timeout = 60
-idle_timeout = 120
-max_processes = 5
-min_processes = 1
-max_conns_per_process = 50
-load_factor = 0.5
+connection-timeout = 5
+read-timeout = 30
+init-timeout = 60
+idle-timeout = 120
+max-processes = 5
+min-processes = 1
+max-connections = 50
+load-factor = 0.5
 
 [configuration.connect.kubernetes]
-amd_gpu_limit = 0
-cpu_limit = 1
-cpu_request = 0.5
-image_name = "posit/connect-runtime-python3.11-r4.3"
-memory_limit = "100000000"
-memory_request = "20000000"
-nvidia_gpu_limit = 0
-service_account_name = "posit-connect-content"
-r_environment_management = true
-py_environment_management = true
+amd-gpu-limit = 0
+cpu-limit = 1
+cpu-request = 0.5
+image-name = "posit/connect-runtime-python3.11-r4.3"
+memory-limit = "100000000"
+memory-request = "20000000"
+nvidia-gpu-limit = 0
+service-account-name = "posit-connect-content"
+r-environment-management = true
+py-environment-management = true

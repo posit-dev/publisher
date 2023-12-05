@@ -55,7 +55,7 @@
     },
     "title": {
       "type": "string",
-      "pattern": "^[^\t\n\f\r]{3,1024}$|",
+      "pattern": "^[^\t\n\f\r]{3,1000}$|",
       "description": "Human-readable title for this content.",
       "examples": [
         "Quarterly Sales Report"
