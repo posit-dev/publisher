@@ -54,7 +54,7 @@ import {
 } from 'src/plugins/eventStream';
 import { getErrorMessage } from 'src/util/errors';
 
-import { Ref, ref } from 'vue';
+import { ref } from 'vue';
 
 export type PublishStepCompletionStatus =
   'unknown' | 'started' | 'success' | 'error';
@@ -97,7 +97,7 @@ export type PublishStatus = {
 }
 
 const newPublishStatus = () => {
-  return ref({
+  return {
     completion: <PublishStepCompletionStatus>'unknown',
     error: undefined,
     steps: {
@@ -112,7 +112,7 @@ const newPublishStatus = () => {
       runContent: { ...emptyPublishStepStatus },
       validateDeployment: { ...emptyPublishStepStatus },
     },
-  });
+  };
 };
 
 export const useEventStore = defineStore('event', () => {
@@ -124,9 +124,8 @@ export const useEventStore = defineStore('event', () => {
   const latestLocalId = ref('');
 
   // Map of localId -> publish status
-  const publishStatusMap = ref(new Map<string, Ref<PublishStatus>>());
-  // Map of contentId -> localId
-  const contentIdToLocalIdMap = ref(new Map<string, string>());
+  // and when available (since they don't overlap), contentId -> publish status 
+  const publishStatusMap = ref(new Map<string, PublishStatus>());
 
   const closeEventStream = () => {
     eventStream.close();
@@ -145,7 +144,7 @@ export const useEventStore = defineStore('event', () => {
     console.log('onPublishStart', JSON.stringify(msg));
 
     const publishStatus = newPublishStatus();
-    publishStatus.value.completion = 'started';
+    publishStatus.completion = 'started';
     publishStatusMap.value.set(localId, publishStatus);
     latestLocalId.value = localId;
   };
@@ -156,7 +155,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.completion = 'success';
+      publishStatus.completion = 'success';
     }
     publishInProgess.value = false;
   };
@@ -167,8 +166,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.completion = 'error';
-      publishStatus.value.error = msg.error;
+      publishStatus.completion = 'error';
+      publishStatus.error = msg.error;
     }
     publishInProgess.value = false;
   };
@@ -179,7 +178,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.createNewDeployment.completion = 'started';
+      publishStatus.steps.createNewDeployment.completion = 'started';
     }
   };
 
@@ -189,7 +188,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.createNewDeployment.completion = 'success';
+      publishStatus.steps.createNewDeployment.completion = 'success';
     }
   };
 
@@ -199,8 +198,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.createNewDeployment.completion = 'error';
-      publishStatus.value.steps.createNewDeployment.error = msg.error;
+      publishStatus.steps.createNewDeployment.completion = 'error';
+      publishStatus.steps.createNewDeployment.error = msg.error;
     }
   };
 
@@ -210,7 +209,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.setEnvVars.completion = 'started';
+      publishStatus.steps.setEnvVars.completion = 'started';
     }
   };
 
@@ -220,7 +219,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.setEnvVars.completion = 'success';
+      publishStatus.steps.setEnvVars.completion = 'success';
     }
   };
   const onPublishSetEnvVarsFailure = (msg: PublishSetEnvVarsFailure) => {
@@ -229,8 +228,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.setEnvVars.completion = 'error';
-      publishStatus.value.steps.setEnvVars.error = msg.error;
+      publishStatus.steps.setEnvVars.completion = 'error';
+      publishStatus.steps.setEnvVars.error = msg.error;
     }
   };
 
@@ -240,7 +239,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.createBundle.completion = 'started';
+      publishStatus.steps.createBundle.completion = 'started';
     }
   };
 
@@ -250,7 +249,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.createBundle.logs.push(msg);
+      publishStatus.steps.createBundle.logs.push(msg);
     }
   };
 
@@ -260,7 +259,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.createBundle.completion = 'success';
+      publishStatus.steps.createBundle.completion = 'success';
     }
   };
 
@@ -270,8 +269,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.createBundle.completion = 'error';
-      publishStatus.value.steps.createBundle.error = msg.error;
+      publishStatus.steps.createBundle.completion = 'error';
+      publishStatus.steps.createBundle.error = msg.error;
     }
   };
 
@@ -281,7 +280,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.createDeployment.completion = 'started';
+      publishStatus.steps.createDeployment.completion = 'started';
     }
   };
 
@@ -291,8 +290,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.createDeployment.completion = 'success';
-      contentIdToLocalIdMap.value.set(localId, msg.data.contentId);
+      publishStatus.steps.createDeployment.completion = 'success';
+      publishStatusMap.value.set(msg.data.contentId, publishStatus);
     }
   };
 
@@ -302,8 +301,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.createDeployment.completion = 'error';
-      publishStatus.value.steps.createDeployment.error = msg.error;
+      publishStatus.steps.createDeployment.completion = 'error';
+      publishStatus.steps.createDeployment.error = msg.error;
     }
   };
 
@@ -313,7 +312,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.uploadBundle.completion = 'started';
+      publishStatus.steps.uploadBundle.completion = 'started';
     }
   };
 
@@ -323,7 +322,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.uploadBundle.completion = 'success';
+      publishStatus.steps.uploadBundle.completion = 'success';
     }
   };
 
@@ -333,8 +332,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.uploadBundle.completion = 'error';
-      publishStatus.value.steps.uploadBundle.error = msg.error;
+      publishStatus.steps.uploadBundle.completion = 'error';
+      publishStatus.steps.uploadBundle.error = msg.error;
     }
   };
 
@@ -344,7 +343,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.deployBundle.completion = 'started';
+      publishStatus.steps.deployBundle.completion = 'started';
     }
   };
 
@@ -354,7 +353,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.deployBundle.completion = 'success';
+      publishStatus.steps.deployBundle.completion = 'success';
     }
   };
 
@@ -364,8 +363,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.uploadBundle.completion = 'error';
-      publishStatus.value.steps.deployBundle.error = msg.error;
+      publishStatus.steps.uploadBundle.completion = 'error';
+      publishStatus.steps.deployBundle.error = msg.error;
     }
   };
 
@@ -375,7 +374,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.restorePythonEnv.completion = 'started';
+      publishStatus.steps.restorePythonEnv.completion = 'started';
     }
   };
 
@@ -385,7 +384,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.restorePythonEnv.logs.push(msg);
+      publishStatus.steps.restorePythonEnv.logs.push(msg);
     }
   };
 
@@ -395,10 +394,10 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      if (!publishStatus.value.steps.restorePythonEnv.progress) {
-        publishStatus.value.steps.restorePythonEnv.progress = [];
+      if (!publishStatus.steps.restorePythonEnv.progress) {
+        publishStatus.steps.restorePythonEnv.progress = [];
       }
-      publishStatus.value.steps.restorePythonEnv.progress.push(JSON.stringify(msg.data));
+      publishStatus.steps.restorePythonEnv.progress.push(JSON.stringify(msg.data));
     }
   };
 
@@ -408,10 +407,10 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      if (!publishStatus.value.steps.restorePythonEnv.status) {
-        publishStatus.value.steps.restorePythonEnv.status = [];
+      if (!publishStatus.steps.restorePythonEnv.status) {
+        publishStatus.steps.restorePythonEnv.status = [];
       }
-      publishStatus.value.steps.restorePythonEnv.status.push(JSON.stringify(msg.data));
+      publishStatus.steps.restorePythonEnv.status.push(JSON.stringify(msg.data));
     }
   };
 
@@ -421,7 +420,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.restorePythonEnv.completion = 'success';
+      publishStatus.steps.restorePythonEnv.completion = 'success';
     }
   };
 
@@ -431,8 +430,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.uploadBundle.completion = 'error';
-      publishStatus.value.steps.restorePythonEnv.error = msg.error;
+      publishStatus.steps.uploadBundle.completion = 'error';
+      publishStatus.steps.restorePythonEnv.error = msg.error;
     }
   };
 
@@ -442,7 +441,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.runContent.completion = 'started';
+      publishStatus.steps.runContent.completion = 'started';
     }
   };
 
@@ -452,7 +451,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.runContent.logs.push(msg);
+      publishStatus.steps.runContent.logs.push(msg);
     }
   };
 
@@ -462,7 +461,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.runContent.completion = 'success';
+      publishStatus.steps.runContent.completion = 'success';
     }
   };
 
@@ -472,8 +471,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.runContent.completion = 'error';
-      publishStatus.value.steps.runContent.error = msg.error;
+      publishStatus.steps.runContent.completion = 'error';
+      publishStatus.steps.runContent.error = msg.error;
     }
   };
 
@@ -483,7 +482,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.setVanityURL.completion = 'started';
+      publishStatus.steps.setVanityURL.completion = 'started';
     }
   };
 
@@ -493,7 +492,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.setVanityURL.logs.push(msg);
+      publishStatus.steps.setVanityURL.logs.push(msg);
     }
   };
 
@@ -503,7 +502,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.setVanityURL.completion = 'success';
+      publishStatus.steps.setVanityURL.completion = 'success';
     }
   };
 
@@ -513,8 +512,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.runContent.completion = 'error';
-      publishStatus.value.steps.setVanityURL.error = msg.error;
+      publishStatus.steps.runContent.completion = 'error';
+      publishStatus.steps.setVanityURL.error = msg.error;
     }
   };
 
@@ -524,7 +523,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.validateDeployment.completion = 'started';
+      publishStatus.steps.validateDeployment.completion = 'started';
     }
   };
 
@@ -534,7 +533,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.validateDeployment.logs.push(msg);
+      publishStatus.steps.validateDeployment.logs.push(msg);
     }
   };
 
@@ -544,7 +543,7 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.validateDeployment.completion = 'success';
+      publishStatus.steps.validateDeployment.completion = 'success';
     }
   };
 
@@ -554,8 +553,8 @@ export const useEventStore = defineStore('event', () => {
 
     const publishStatus = publishStatusMap.value.get(localId);
     if (publishStatus) {
-      publishStatus.value.steps.validateDeployment.completion = 'error';
-      publishStatus.value.steps.validateDeployment.error = msg.error;
+      publishStatus.steps.validateDeployment.completion = 'error';
+      publishStatus.steps.validateDeployment.error = msg.error;
     }
   };
 
