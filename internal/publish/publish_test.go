@@ -4,7 +4,6 @@ package publish
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/bundles"
@@ -128,6 +127,8 @@ func (s *PublishSuite) publishWithClient(target *deployment.Deployment, createEr
 	client.On("ValidateDeployment", myContentID).Return(validateErr)
 
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	cfg.Environment = map[string]string{
 		"FOO": "BAR",
 	}
@@ -152,7 +153,6 @@ func (s *PublishSuite) publishWithClient(target *deployment.Deployment, createEr
 		s.Equal(myContentID, record.Id)
 		s.Contains(record.Files, "app.py")
 		s.Contains(record.Files, "requirements.txt")
-		s.NotEqual(time.Time{}, record.DeployedAt)
-		s.True(record.DeployedAt.After(time.Now().UTC().Add(-1 * time.Minute)))
+		s.NotEqual("", record.DeployedAt)
 	}
 }

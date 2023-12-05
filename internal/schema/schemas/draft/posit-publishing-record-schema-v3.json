@@ -30,6 +30,16 @@
         "https://connect.example.com"
       ]
     },
+    "server-type": {
+      "type": "string",
+      "description": "Type of server",
+      "enum": [
+        "connect"
+      ],
+      "examples": [
+        "connect"
+      ]
+    },
     "id": {
       "type": "string",
       "description": "Unique ID of this deployment.",

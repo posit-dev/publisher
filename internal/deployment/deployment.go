@@ -5,7 +5,6 @@ package deployment
 import (
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -23,12 +22,13 @@ type Deployment struct {
 	ConfigName    string              `toml:"configuration-name" json:"configuration-name"`
 	Configuration config.Config       `toml:"configuration" json:"configuration"`
 	Files         []string            `toml:"files" json:"files"`
-	DeployedAt    time.Time           `toml:"deployed-at" json:"deployed-at"`
+	DeployedAt    string              `toml:"deployed-at" json:"deployed-at"`
 }
 
 func New() *Deployment {
 	return &Deployment{
 		Schema:        schema.DeploymentSchemaURL,
+		ServerType:    accounts.ServerTypeConnect,
 		Configuration: *config.New(),
 		Files:         []string{},
 	}
@@ -64,12 +64,24 @@ func GetDeploymentHistoryPath(base util.Path, id string) (util.Path, error) {
 }
 
 func FromFile(path util.Path) (*Deployment, error) {
+	err := ValidateFile(path)
+	if err != nil {
+		return nil, err
+	}
 	deployment := New()
-	err := util.ReadTOMLFile(path, deployment)
+	err = util.ReadTOMLFile(path, deployment)
 	if err != nil {
 		return nil, err
 	}
 	return deployment, nil
+}
+
+func ValidateFile(path util.Path) error {
+	validator, err := schema.NewValidator(schema.DeploymentSchemaURL)
+	if err != nil {
+		return err
+	}
+	return validator.ValidateTOMLFile(path)
 }
 
 func (record *Deployment) Write(w io.Writer) error {
