@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/rstudio/publishing-client/posit-publishing-schema-v3.json",
+  "$id": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
   "type": "object",
   "additionalProperties": false,
   "description": "Posit Publishing Configuration",
@@ -13,12 +13,12 @@
     "$schema": {
       "type": "string",
       "format": "url",
-      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/connect/posit-publishing-schema-v3.json'.",
+      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'.",
       "enum": [
-        "./posit-publishing-schema-v3.json"
+        "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
       ],
       "examples": [
-        "https://cdn.posit.co/connect/posit-publishing-schema-v3.json"
+        "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
       ]
     },
     "type": {

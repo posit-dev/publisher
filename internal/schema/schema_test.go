@@ -32,3 +32,21 @@ func (s *SchemaSuite) TestValidateDeployment() {
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
+
+func (s *SchemaSuite) TestValidateDraftConfig() {
+	const draftConfigSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
+	validator, err := NewValidator(draftConfigSchemaURL)
+	s.NoError(err)
+	path := util.NewPath(".", nil).Join("schemas", "draft", "deploy.toml")
+	err = validator.ValidateTOMLFile(path)
+	s.NoError(err)
+}
+
+func (s *SchemaSuite) TestValidateDraftDeployment() {
+	const draftDeploymentSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json"
+	validator, err := NewValidator(draftDeploymentSchemaURL)
+	s.NoError(err)
+	path := util.NewPath(".", nil).Join("schemas", "draft", "record.toml")
+	err = validator.ValidateTOMLFile(path)
+	s.NoError(err)
+}

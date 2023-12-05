@@ -1,4 +1,4 @@
-"$schema" = "./posit-publishing-schema-v3.json"
+"$schema" = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
 type = "quarto"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"

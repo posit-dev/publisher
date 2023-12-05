@@ -1,10 +1,10 @@
-"$schema" = "./posit-publishing-record-schema-v3.json"
+"$schema" = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json"
 server-url = "https://connect.example.com"
 id = "de2e7bdb-b085-401e-a65c-443e40009749"
 configuration-name = "production.json"
 
 [configuration]
-"$schema" = "./posit-publishing-schema-v3.json"
+"$schema" = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
 type = "quarto"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"

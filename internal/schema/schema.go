@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"embed"
 	"io"
-	"path"
+	"strings"
 
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/santhosh-tekuri/jsonschema/v5"
@@ -15,8 +15,9 @@ import (
 //go:embed schemas
 var schemaFS embed.FS
 
-const ConfigSchemaURL = "https://github.com/rstudio/publishing-client/blob/main/schemas/posit-publishing-schema-v3.json"
-const DeploymentSchemaURL = "https://github.com/rstudio/publishing-client/blob/main/schemas/posit-publishing-record-schema-v3.json"
+const schemaPrefix = "https://cdn.posit.co/publisher/schemas/"
+const ConfigSchemaURL = schemaPrefix + "posit-publishing-schema-v3.json"
+const DeploymentSchemaURL = schemaPrefix + "posit-publishing-record-schema-v3.json"
 
 type Validator struct {
 	schema *jsonschema.Schema
@@ -45,7 +46,7 @@ func (v *Validator) ValidateTOMLFile(path util.Path) error {
 }
 
 func loadSchema(url string) (io.ReadCloser, error) {
-	name := path.Base(url)
+	name := strings.TrimPrefix(url, schemaPrefix)
 	content, err := schemaFS.ReadFile("schemas/" + name)
 	if err != nil {
 		return nil, err
