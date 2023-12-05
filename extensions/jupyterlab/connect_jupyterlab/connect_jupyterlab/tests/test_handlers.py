@@ -69,7 +69,7 @@ async def test_launch_ui(popen):
     log.info.assert_called()
     popen.assert_called_once_with(
         [
-            "connect-client",
+            "publisher",
             "publish-ui",
             "notebooks/MyNotebook.ipynb",
             "--python",
@@ -102,7 +102,7 @@ async def test_launch_ui_no_executable(popen):
     try:
         handlers.launch_ui("notebooks/MyNotebook.ipynb", "/path/to/python", "3.4.5", "dark", log)
     except Exception as exc:
-        assert str(exc) == "Could not find connect-client on PATH."
+        assert str(exc) == "Could not find publisher on PATH."
 
 
 @patch("subprocess.Popen")
@@ -181,7 +181,7 @@ async def test_launch_ui_reuse_agent(popen):
     # only one process is launched
     popen.assert_called_once_with(
         [
-            "connect-client",
+            "publisher",
             "publish-ui",
             "notebooks/MyNotebook.ipynb",
             "--python",
@@ -238,7 +238,7 @@ async def test_launch_ui_cant_reuse_agent(popen):
     assert len(popen.call_args_list) == 2
     popen.assert_called_with(
         [
-            "connect-client",
+            "publisher",
             "publish-ui",
             "notebooks/MyNotebook.ipynb",
             "--python",
