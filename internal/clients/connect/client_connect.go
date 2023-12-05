@@ -389,7 +389,22 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 }
 
 func (c *ConnectClient) ValidateDeployment(contentID types.ContentID) error {
-	url := fmt.Sprintf("/content/%s", contentID)
+	url := fmt.Sprintf("/content/%s/", contentID)
 	_, err := c.client.GetRaw(url)
+	agentErr, ok := err.(*types.AgentError)
+	if ok {
+		httpErr, ok := agentErr.Err.(*http_client.HTTPError)
+		if ok {
+			if httpErr.Status >= 500 {
+				// Validation failed - the content is not up and running
+				return err
+			} else {
+				// Other HTTP codes are acceptable, for example
+				// if the content doesn't implement GET /,
+				// it may return a 404 or 405.
+				return nil
+			}
+		}
+	}
 	return err
 }
