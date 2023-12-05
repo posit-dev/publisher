@@ -124,7 +124,7 @@ export const useEventStore = defineStore('event', () => {
   const latestLocalId = ref('');
 
   // Map of localId -> publish status
-  // and when available (since they don't overlap), contentId -> publish status 
+  // and when available (since they don't overlap), contentId -> publish status
   const publishStatusMap = ref(new Map<string, PublishStatus>());
 
   const closeEventStream = () => {
