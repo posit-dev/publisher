@@ -177,7 +177,7 @@ func (p *defaultPublisher) publishWithClient(
 		contentID = p.Target.Id
 	} else {
 		// Create a new deployment; we will update it with details later.
-		contentID, err = withLog(events.PublishCreateDeploymentOp, "Creating deployment", "content_id", log, func() (types.ContentID, error) {
+		contentID, err = withLog(events.PublishCreateNewDeploymentOp, "Creating deployment", "content_id", log, func() (types.ContentID, error) {
 			return client.CreateDeployment(&connect.ConnectContent{})
 		})
 		if err != nil {

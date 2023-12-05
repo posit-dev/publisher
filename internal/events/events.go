@@ -26,16 +26,18 @@ type Phase = logging.Phase
 const (
 	AgentOp Operation = "agent"
 
-	PublishCreateDeploymentOp Operation = "publish/createDeployment"
-	PublishSetEnvVarsOp       Operation = "publish/setEnvVars"
-	PublishCreateBundleOp     Operation = "publish/createBundle"
-	PublishUploadBundleOp     Operation = "publish/uploadBundle"
-	PublishDeployBundleOp     Operation = "publish/deployBundle"
-	PublishRestorePythonEnvOp Operation = "publish/restorePythonEnv"
-	PublishRestoreREnvOp      Operation = "publish/restoreREnv"
-	PublishRunContentOp       Operation = "publish/runContent"
-	PublishSetVanityUrlOp     Operation = "publish/setVanityURL"
-	PublishOp                 Operation = "publish"
+	PublishCreateNewDeploymentOp Operation = "publish/createNewDeployment"
+	PublishSetEnvVarsOp          Operation = "publish/setEnvVars"
+	PublishCreateBundleOp        Operation = "publish/createBundle"
+	PublishCreateDeploymentOp    Operation = "publish/createDeployment"
+	PublishUploadBundleOp        Operation = "publish/uploadBundle"
+	PublishDeployBundleOp        Operation = "publish/deployBundle"
+	PublishRestorePythonEnvOp    Operation = "publish/restorePythonEnv"
+	PublishRestoreREnvOp         Operation = "publish/restoreREnv"
+	PublishRunContentOp          Operation = "publish/runContent"
+	PublishSetVanityUrlOp        Operation = "publish/setVanityURL"
+	PublishValidateDeployment    Operation = "publish/validateDeployment"
+	PublishOp                    Operation = "publish"
 )
 
 func EventTypeOf(op Operation, phase Phase, errCode ErrorCode) EventType {
