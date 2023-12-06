@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -123,7 +124,7 @@ func (s *ManifestSuite) TestReadManifestFileErr() {
 
 func (s *ManifestSuite) TestNewManifestFromConfig() {
 	cfg := &config.Config{
-		Schema:      config.ConfigSchema,
+		Schema:      schema.ConfigSchemaURL,
 		Type:        "python-dash",
 		Entrypoint:  "app:myapp",
 		Title:       "Super Title",

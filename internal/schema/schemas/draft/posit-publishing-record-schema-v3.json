@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/rstudio/publishing-client/posit-publishing-record-schema-v3.json",
+  "$id": "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json",
   "type": "object",
   "additionalProperties": false,
   "description": "Posit Publishing Record",
@@ -14,12 +14,12 @@
     "$schema": {
       "type": "string",
       "format": "url",
-      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/connect/posit-publishing-record-schema-v3.json'.",
+      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json'.",
       "enum": [
-        "./posit-publishing-record-schema-v3.json"
+        "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json"
       ],
       "examples": [
-        "https://cdn.posit.co/connect/posit-publishing-record-schema-v3.json"
+        "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json"
       ]
     },
     "server-url": {
@@ -28,6 +28,16 @@
       "description": "URL of the server where this content was deployed.",
       "examples": [
         "https://connect.example.com"
+      ]
+    },
+    "server-type": {
+      "type": "string",
+      "description": "Type of server",
+      "enum": [
+        "connect"
+      ],
+      "examples": [
+        "connect"
       ]
     },
     "id": {
@@ -53,7 +63,7 @@
       ]
     },
     "configuration": {
-      "$ref": "./posit-publishing-schema-v3.json"
+      "$ref": "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
     },
     "files": {
       "type": "array",

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -33,18 +35,20 @@ func (s *DeploymentSuite) SetupTest() {
 
 func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 	path := GetLatestDeploymentPath(s.cwd, name)
-	deployment := New()
-	deployment.ServerType = accounts.ServerTypeConnect
-	deployment.DeployedAt = time.Now().UTC()
-	err := deployment.WriteFile(path)
+	d := New()
+	d.ServerType = accounts.ServerTypeConnect
+	d.DeployedAt = time.Now().UTC().Format(time.RFC3339)
+	d.Configuration.Type = config.ContentTypePythonDash
+	d.Configuration.Entrypoint = "app.py"
+	err := d.WriteFile(path)
 	s.NoError(err)
-	return deployment
+	return d
 }
 
 func (s *DeploymentSuite) TestNew() {
 	deployment := New()
 	s.NotNil(deployment)
-	s.Equal(DeploymentSchema, deployment.Schema)
+	s.Equal(schema.DeploymentSchemaURL, deployment.Schema)
 }
 
 func (s *DeploymentSuite) TestGetLatestDeploymentPath() {

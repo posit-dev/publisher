@@ -17,6 +17,7 @@ import (
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
@@ -137,14 +138,14 @@ func (p *defaultPublisher) createDeploymentRecord(
 		return err
 	}
 	p.Target = &deployment.Deployment{
-		Schema:        deployment.DeploymentSchema,
+		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    account.ServerType,
 		ServerURL:     account.URL,
 		Id:            contentID,
 		ConfigName:    p.ConfigName,
 		Files:         createdManifest.GetFilenames(),
 		Configuration: *p.Config,
-		DeployedAt:    time.Now().UTC(),
+		DeployedAt:    time.Now().UTC().Format(time.RFC3339),
 	}
 	// Save current deployment information for this target
 	recordPath := deployment.GetLatestDeploymentPath(p.Dir, string(contentID))

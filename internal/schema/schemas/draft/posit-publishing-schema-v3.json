@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/rstudio/publishing-client/posit-publishing-schema-v3.json",
+  "$id": "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json",
   "type": "object",
   "additionalProperties": false,
   "description": "Posit Publishing Configuration",
@@ -13,12 +13,12 @@
     "$schema": {
       "type": "string",
       "format": "url",
-      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/connect/posit-publishing-schema-v3.json'.",
+      "description": "URL of the json-schema definition for this file. Must be 'https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json'.",
       "enum": [
-        "./posit-publishing-schema-v3.json"
+        "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
       ],
       "examples": [
-        "https://cdn.posit.co/connect/posit-publishing-schema-v3.json"
+        "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
       ]
     },
     "type": {
@@ -55,7 +55,7 @@
     },
     "title": {
       "type": "string",
-      "pattern": "^[^\t\n\f\r]{3,1024}$|",
+      "pattern": "^[^\t\n\f\r]{3,1000}$|",
       "description": "Human-readable title for this content.",
       "examples": [
         "Quarterly Sales Report"
@@ -68,10 +68,29 @@
         "This is the quarterly sales report, broken down by region."
       ]
     },
+    "thumbnail": {
+      "type": "string",
+      "description": "Path to thumbnail preview image for this content.",
+      "examples": [
+        "images/thumbnail.jpg"
+      ]
+    },
     "validate": {
       "type": "boolean",
       "description": "Access the content after deploying, to validate that it is live.",
       "default": true
+    },
+    "tags": {
+      "type": "array",
+      "description": "List of tags to apply to this deployment. When publishing to Connect, tags must be pre-defined by an administrator.",
+      "items": {
+        "type": "string",
+        "examples": [
+          "sales",
+          "quarterly",
+          "regional"
+        ]
+      }
     },
     "python": {
       "type": "object",
@@ -196,6 +215,154 @@
           "API_URL": "https://example.com/api"
         }
       ]
+    },
+    "secrets": {
+      "type": "array",
+      "items": {
+        "type": [
+          "string"
+        ]
+      },
+      "description": "Names of secrets that should be injected as environment variables.",
+      "examples": [
+        "API_KEY"
+      ]
+    },
+    "schedules": {
+      "type": "array",
+      "description": "Schedules for recurring execution of this content. Only applies to reports, such as Quarto, R Markdown, and Jupyter Notebooks.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "start",
+          "recurrence"
+        ],
+        "properties": {
+          "start": {
+            "type": "string",
+            "description": "Time for the first run of the content.",
+            "examples": [
+              "2023-10-25T08:00:00Z"
+            ]
+          },
+          "recurrence": {
+            "type": "string",
+            "description": "Recurrence scheme for the content, in cron or iCalendar RRULE format.",
+            "examples": [
+              "FREQ=MONTHLY;INTERVAL=3",
+              "0 2 * * *"
+            ]
+          }
+        }
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Access control settings.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "default": "acl",
+          "description": "Type of access control. 'public' make the deployment public (no login required), with no login required. 'all-users' allows all logged-in users to access the content. 'acl' (the default) allows only specific users and groups to access the content.",
+          "enum": [
+            "public",
+            "all-users",
+            "acl"
+          ],
+          "examples": [
+            "all-users"
+          ]
+        },
+        "users": {
+          "type": "array",
+          "description": "List of users who have access to this content.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "anyOf": [
+              { "required": ["id"] },
+              { "required": ["guid"] }
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique ID from the authentication provider that identifies this user. This may be a username, LDAP CN/DN, email address, etc. depending on the provider.",
+                "examples": [
+                  "jqpublic"
+                ]
+              },
+              "guid": {
+                "type": "string",
+                "description": "Unique identifier assigned by Connect. When deploying to the same server, this will determine the user who is granted access. When deploying to a different server, the provider-id will be used to look up the user.",
+                "examples": [
+                  "cd2e7cef-a195-512e-b76d-554f4f5a239c"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "User's name. This field is informational only.",
+                "examples": [
+                  "John Q. Public"
+                ]
+              },
+              "permissions": {
+                "type": "string",
+                "description": "Permission level assigned to this user.",
+                "enum": ["viewer", "editor", "owner"],
+                "examples": [
+                  "viewer"
+                ]
+              }
+            }
+          }
+        },
+        "groups": {
+          "type": "array",
+          "description": "List of groups who have access to this content.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "anyOf": [
+              { "required": ["id"] },
+              { "required": ["guid"] }
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique ID from the authentication provider that identifies this group. For groups created by Connect, this will be the group name. This may be a group name, LDAP CN/DN, etc. depending on the provider.",
+                "examples": [
+                  "Data Science Team"
+                ]
+              },
+              "guid": {
+                "type": "string",
+                "description": "Unique identifier assigned by Connect. When deploying to the same server, this will determine the user who is granted access. When deploying to a different server, the provider-id will be used to look up the user.",
+                "examples": [
+                  "8b4fde3e-f995-4894-bc02-ae47538262ff"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "Group name. This field is informational only.",
+                "examples": [
+                  "Data Science Team"
+                ]
+              },
+              "permissions": {
+                "type": "string",
+                "default": "viewer",
+                "description": "Permission level assigned to this group.",
+                "enum": ["viewer", "editor", "owner"],
+                "examples": [
+                  "editor"
+                ]
+              }
+            }
+          }
+        }
+      }
     },
     "connect": {
       "type": "object",
