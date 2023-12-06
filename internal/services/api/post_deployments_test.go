@@ -62,7 +62,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
 	}
 	stateFactory = func(
 		path util.Path,
-		accountName, configName, targetID string,
+		accountName, configName, targetName string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return state.Empty(), nil
 	}
@@ -105,7 +105,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncStateErr
 
 	stateFactory = func(
 		path util.Path,
-		accountName, configName, targetID string,
+		accountName, configName, targetName string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return nil, errors.New("test error from state factory")
 	}
@@ -126,7 +126,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncPublishE
 
 	stateFactory = func(
 		path util.Path,
-		accountName, configName, targetID string,
+		accountName, configName, targetName string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return state.Empty(), nil
 	}

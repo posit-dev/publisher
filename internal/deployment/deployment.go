@@ -38,13 +38,19 @@ func GetDeploymentsPath(base util.Path) util.Path {
 	return base.Join(".posit", "publish", "deployments")
 }
 
-func GetDeploymentPath(base util.Path, id string) util.Path {
-	return GetDeploymentsPath(base).Join(id + ".toml")
+func GetDeploymentPath(base util.Path, name string) util.Path {
+	return GetDeploymentsPath(base).Join(name + ".toml")
 }
 
 func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
 	dir := GetDeploymentsPath(base)
 	return dir.Glob("*.toml")
+}
+
+func RenameDeployment(base util.Path, oldName, newName string) error {
+	oldPath := GetDeploymentPath(base, oldName)
+	newPath := GetDeploymentPath(base, newName)
+	return oldPath.Rename(newPath)
 }
 
 func FromFile(path util.Path) (*Deployment, error) {

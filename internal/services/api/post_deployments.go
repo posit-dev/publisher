@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
@@ -14,9 +15,10 @@ import (
 )
 
 type PostPublishRequestBody struct {
-	AccountName string `json:"account"`
-	ConfigName  string `json:"config"`
-	TargetID    string `json:"target"`
+	AccountName  string `json:"account"`
+	ConfigName   string `json:"config"`
+	TargetName   string `json:"target"`
+	SaveTargetAs string `json:"save-as"`
 }
 
 type PostPublishReponse struct {
@@ -41,12 +43,20 @@ func PostDeploymentsHandlerFunc(
 			BadRequestJson(w, req, log, err)
 			return
 		}
+		if b.TargetName != "" && b.SaveTargetAs != "" {
+			err = deployment.RenameDeployment(base, b.TargetName, b.SaveTargetAs)
+			if err != nil {
+				InternalError(w, req, log, err)
+				return
+			}
+			b.TargetName = b.SaveTargetAs
+		}
 		localID, err := state.NewLocalID()
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
-		newState, err := stateFactory(base, b.AccountName, b.ConfigName, b.TargetID, accountList)
+		newState, err := stateFactory(base, b.AccountName, b.ConfigName, b.TargetName, b.SaveTargetAs, accountList)
 		if err != nil {
 			BadRequestJson(w, req, log, err)
 			return

@@ -41,9 +41,9 @@ func (s *GetDeploymentsSuite) SetupTest() {
 }
 
 func (s *GetDeploymentsSuite) TestGetDeployments() {
-	path := deployment.GetDeploymentPath(s.cwd, "myTargetID")
+	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetID"
+	d.Id = "myTargetName"
 	d.ServerType = accounts.ServerTypeConnect
 	err := d.WriteFile(path)
 	s.NoError(err)
@@ -64,7 +64,7 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 1)
 	s.Equal(d, res[0].Deployment)
-	s.Equal(types.ContentID("myTargetID"), res[0].Deployment.Id)
+	s.Equal(types.ContentID("myTargetName"), res[0].Deployment.Id)
 	s.Equal("", res[0].Error)
 }
 

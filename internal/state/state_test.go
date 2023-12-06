@@ -269,7 +269,7 @@ func (s *StateSuite) TestNew() {
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
 	s.Equal(state.ConfigName, config.DefaultConfigName)
-	s.Equal(state.TargetID, "")
+	s.Equal(state.TargetName, "")
 	s.Nil(state.Account, "")
 	s.Equal(cfg, state.Config)
 	s.Nil(state.Target)
@@ -290,7 +290,7 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
 	s.Equal(state.ConfigName, configName)
-	s.Equal(state.TargetID, "")
+	s.Equal(state.TargetName, "")
 	s.Nil(state.Account, "")
 	s.Equal(cfg, state.Config)
 	s.Nil(state.Target)
@@ -327,20 +327,20 @@ func (s *StateSuite) TestNewWithTarget() {
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
-	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetID")
+	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetID"
+	d.Id = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", "", "myTargetID", accts)
+	state, err := New(s.cwd, "", "", "myTargetName", accts)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "acct1")
 	s.Equal(state.ConfigName, "savedConfigName")
-	s.Equal(state.TargetID, "myTargetID")
+	s.Equal(state.TargetName, "myTargetName")
 	s.Equal(state.Account, &acct1)
 	s.Equal(state.Config, cfg)
 	s.Equal(state.Target, d)
@@ -367,20 +367,20 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
-	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetID")
+	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetID"
+	d.Id = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "acct2", "", "myTargetID", accts)
+	state, err := New(s.cwd, "acct2", "", "myTargetName", accts)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "acct2")
 	s.Equal(state.ConfigName, "savedConfigName")
-	s.Equal(state.TargetID, "myTargetID")
+	s.Equal(state.TargetName, "myTargetName")
 	s.Equal(state.Account, &acct2)
 	s.Equal(state.Config, cfg)
 	s.Equal(state.Target, d)

@@ -18,7 +18,7 @@ type State struct {
 	Dir         util.Path
 	AccountName string
 	ConfigName  string
-	TargetID    string
+	TargetName  string
 	Account     *accounts.Account
 	Config      *config.Config
 	Target      *deployment.Deployment
@@ -37,8 +37,8 @@ func loadConfig(path util.Path, configName string) (*config.Config, error) {
 	return cfg, nil
 }
 
-func loadTarget(path util.Path, targetID string) (*deployment.Deployment, error) {
-	configPath := deployment.GetDeploymentPath(path, targetID)
+func loadTarget(path util.Path, targetName string) (*deployment.Deployment, error) {
+	configPath := deployment.GetDeploymentPath(path, targetName)
 	target, err := deployment.FromFile(configPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -84,14 +84,14 @@ func Empty() *State {
 	}
 }
 
-func New(path util.Path, accountName, configName, targetID string, accountList accounts.AccountList) (*State, error) {
+func New(path util.Path, accountName, configName, targetName string, saveTargetAs string, accountList accounts.AccountList) (*State, error) {
 	var target *deployment.Deployment
 	var account *accounts.Account
 	var cfg *config.Config
 	var err error
 
-	if targetID != "" {
-		target, err = loadTarget(path, targetID)
+	if targetName != "" {
+		target, err = loadTarget(path, targetName)
 		if err != nil {
 			return nil, err
 		}
@@ -128,11 +128,14 @@ func New(path util.Path, accountName, configName, targetID string, accountList a
 			return nil, err
 		}
 	}
+	if saveTargetAs == "" {
+		saveTargetAs = targetName
+	}
 	return &State{
 		Dir:         path,
 		AccountName: accountName,
 		ConfigName:  configName,
-		TargetID:    targetID,
+		TargetName:  saveTargetAs,
 		Account:     account,
 		Config:      cfg,
 		Target:      target,
