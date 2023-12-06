@@ -41,6 +41,8 @@ func (s *GetConfigurationsSuite) SetupTest() {
 func (s *GetConfigurationsSuite) TestGetConfigurations() {
 	path := config.GetConfigPath(s.cwd, "myConfig")
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(path)
 	s.NoError(err)
 
@@ -71,8 +73,10 @@ func (s *GetConfigurationsSuite) TestGetConfigurations() {
 
 func (s *GetConfigurationsSuite) TestGetConfigurationsError() {
 	path := config.GetConfigPath(s.cwd, "config1")
-	d := config.New()
-	err := d.WriteFile(path)
+	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
+	err := cfg.WriteFile(path)
 	s.NoError(err)
 
 	path2 := config.GetConfigPath(s.cwd, "config2")
@@ -101,7 +105,7 @@ func (s *GetConfigurationsSuite) TestGetConfigurationsError() {
 
 	s.Equal("config1", res[0].Name)
 	s.Equal("", res[0].Error)
-	s.Equal(d, res[0].Configuration)
+	s.Equal(cfg, res[0].Configuration)
 
 	var nilConfiguration *config.Config
 	actualPath, err = util.NewPath(res[1].Path, s.cwd.Fs()).Rel(s.cwd)

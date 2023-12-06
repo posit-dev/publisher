@@ -7,16 +7,30 @@
     class="q-mt-md"
     @publish="hasPublished = true"
   />
+
+  <ConfigSettings
+    v-if="defaultConfig"
+    :config="defaultConfig"
+  />
+  <p v-else>
+    No default configuration found.
+    One will be created automatically on publish.
+  </p>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { onBeforeRouteLeave, useRoute } from 'vue-router';
 
+import { Configuration, ConfigurationError, useApi } from 'src/api';
+import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import NewDestinationHeader from './NewDestinationHeader.vue';
 
 const route = useRoute();
 const hasPublished = ref(false);
+const api = useApi();
+
+const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 const accountName = computed(() => {
   // route param can be either string | string[]
@@ -34,6 +48,10 @@ const contentId = computed(() => {
   return route.params.contentId || undefined;
 });
 
+const defaultConfig = computed(() => {
+  return configurations.value.find((c) => c.configurationName === 'default');
+});
+
 onBeforeRouteLeave(() => {
   if (hasPublished.value) {
     return true;
@@ -42,4 +60,10 @@ onBeforeRouteLeave(() => {
   return confirm('You have not published yet, a destination has not been created. Are you sure you want to leave?');
 });
 
+async function getConfigurations() {
+  const response = await api.configurations.getAll();
+  configurations.value = response.data;
+}
+
+getConfigurations();
 </script>

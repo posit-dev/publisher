@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -33,6 +34,7 @@ func (s *ConfigSuite) createConfigFile(name string) {
 	configFile := GetConfigPath(s.cwd, name)
 	cfg := New()
 	cfg.Type = "python-dash"
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configFile)
 	s.NoError(err)
 }
@@ -40,7 +42,7 @@ func (s *ConfigSuite) createConfigFile(name string) {
 func (s *ConfigSuite) TestNew() {
 	cfg := New()
 	s.NotNil(cfg)
-	s.Equal(ConfigSchema, cfg.Schema)
+	s.Equal(schema.ConfigSchemaURL, cfg.Schema)
 }
 
 func (s *ConfigSuite) TestGetConfigPath() {

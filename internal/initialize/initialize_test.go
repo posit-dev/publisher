@@ -157,6 +157,8 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 	configName := ""
 	configPath := config.GetConfigPath(s.cwd, configName)
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	cfg.WriteFile(configPath)
 
 	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
