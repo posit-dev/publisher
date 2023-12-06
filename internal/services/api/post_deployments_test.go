@@ -12,17 +12,21 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
 type PostDeploymentsHandlerFuncSuite struct {
 	utiltest.Suite
+	cwd util.Path
 }
 
 func TestPostDeploymentsHandlerFuncSuite(t *testing.T) {
@@ -32,6 +36,12 @@ func TestPostDeploymentsHandlerFuncSuite(t *testing.T) {
 func (s *PostDeploymentsHandlerFuncSuite) SetupTest() {
 	stateFactory = state.New
 	publisherFactory = publish.NewFromState
+
+	afs := afero.NewMemMapFs()
+	cwd, err := util.Getwd(afs)
+	s.Nil(err)
+	s.cwd = cwd
+	s.cwd.MkdirAll(0700)
 }
 
 type mockPublisher struct {
@@ -53,7 +63,11 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
 	s.NoError(err)
 
 	lister := &accounts.MockAccountList{}
-	req.Body = io.NopCloser(strings.NewReader("{\"account\":\"local\", \"config\":\"default\"}"))
+	req.Body = io.NopCloser(strings.NewReader(
+		`{
+			"account": "local",
+			"config": "default"
+		}`))
 
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(nil)
@@ -62,11 +76,78 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
 	}
 	stateFactory = func(
 		path util.Path,
-		accountName, configName, targetName string,
+		accountName, configName, targetName, saveTargetAs string,
 		accountList accounts.AccountList) (*state.State, error) {
+		s.Equal("local", accountName)
+		s.Equal("default", configName)
 		return state.Empty(), nil
 	}
 	handler := PostDeploymentsHandlerFunc(stateStore, util.Path{}, log, lister)
+	handler(rec, req)
+
+	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := &PostPublishReponse{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(res))
+
+	s.NotEqual(state.LocalDeploymentID(""), stateStore.LocalID)
+	s.NotEqual(oldID, stateStore.LocalID)
+	s.Equal(stateStore.LocalID, res.LocalID)
+}
+
+func (s *PostDeploymentsHandlerFuncSuite) createDeploymentFile(name string) {
+	path := deployment.GetDeploymentPath(s.cwd, name)
+	d := deployment.New()
+	d.Id = "myTargetID"
+	d.ServerType = accounts.ServerTypeConnect
+	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
+	d.Configuration = *cfg
+	err := d.WriteFile(path)
+	s.NoError(err)
+}
+
+func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncWithTarget() {
+	stateStore := state.Empty()
+	oldID := stateStore.LocalID
+	log := logging.New()
+
+	s.createDeploymentFile("fe97ce15-b3b5-40c4-90ca-27de15c4a8ce")
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/publish", nil)
+	s.NoError(err)
+
+	lister := &accounts.MockAccountList{}
+	req.Body = io.NopCloser(strings.NewReader(
+		`{
+			"target":"fe97ce15-b3b5-40c4-90ca-27de15c4a8ce",
+			"save-as":"staging",
+			"config": "default"
+		}`))
+
+	publisher := &mockPublisher{}
+	publisher.On("PublishDirectory", mock.Anything).Return(nil)
+	publisherFactory = func(*state.State) publish.Publisher {
+		return publisher
+	}
+	stateFactory = func(
+		path util.Path,
+		accountName, configName, targetName, saveTargetAs string,
+		accountList accounts.AccountList) (*state.State, error) {
+		s.Equal("staging", targetName)
+		s.Equal("staging", saveTargetAs)
+		s.Equal("default", configName)
+
+		exists, err := deployment.GetDeploymentPath(s.cwd, targetName).Exists()
+		s.NoError(err)
+		s.True(exists)
+		return state.Empty(), nil
+	}
+	handler := PostDeploymentsHandlerFunc(stateStore, s.cwd, log, lister)
 	handler(rec, req)
 
 	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
@@ -105,7 +186,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncStateErr
 
 	stateFactory = func(
 		path util.Path,
-		accountName, configName, targetName string,
+		accountName, configName, targetName, saveTargetAs string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return nil, errors.New("test error from state factory")
 	}
@@ -126,7 +207,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncPublishE
 
 	stateFactory = func(
 		path util.Path,
-		accountName, configName, targetName string,
+		accountName, configName, targetName, saveTargetAs string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return state.Empty(), nil
 	}

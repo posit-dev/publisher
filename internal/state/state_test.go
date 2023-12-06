@@ -264,7 +264,7 @@ func (s *StateSuite) TestNew() {
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", "", "", accts)
+	state, err := New(s.cwd, "", "", "", "", accts)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
@@ -285,7 +285,7 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", configName, "", accts)
+	state, err := New(s.cwd, "", configName, "", "", accts)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
@@ -300,7 +300,7 @@ func (s *StateSuite) TestNewConfigErr() {
 	accts := &accounts.MockAccountList{}
 	accts.On("GetAllAccounts").Return(nil, nil)
 
-	state, err := New(s.cwd, "", "", "", accts)
+	state, err := New(s.cwd, "", "", "", "", accts)
 	s.NotNil(err)
 	s.ErrorContains(err, "couldn't load configuration")
 	s.Nil(state)
@@ -335,7 +335,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", "", "myTargetName", accts)
+	state, err := New(s.cwd, "", "", "myTargetName", "", accts)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "acct1")
@@ -375,12 +375,12 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "acct2", "", "myTargetName", accts)
+	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "acct2")
 	s.Equal(state.ConfigName, "savedConfigName")
-	s.Equal(state.TargetName, "myTargetName")
+	s.Equal(state.TargetName, "mySaveName")
 	s.Equal(state.Account, &acct2)
 	s.Equal(state.Config, cfg)
 	s.Equal(state.Target, d)
