@@ -3,7 +3,6 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/pelletier/go-toml/v2"
@@ -34,33 +33,17 @@ func New() *Deployment {
 	}
 }
 
-const latestDeploymentName = "latest.toml"
-
 func GetDeploymentsPath(base util.Path) util.Path {
 	return base.Join(".posit", "publish", "deployments")
 }
 
-func GetLatestDeploymentPath(base util.Path, id string) util.Path {
-	return GetDeploymentsPath(base).Join(id, latestDeploymentName)
+func GetDeploymentPath(base util.Path, id string) util.Path {
+	return GetDeploymentsPath(base).Join(id + ".toml")
 }
 
-func ListLatestDeploymentFiles(base util.Path) ([]util.Path, error) {
+func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
 	dir := GetDeploymentsPath(base)
-	return dir.Glob("*/" + latestDeploymentName)
-}
-
-func GetDeploymentHistoryPath(base util.Path, id string) (util.Path, error) {
-	for i := 1; ; i++ {
-		name := fmt.Sprintf("v%d.toml", i)
-		path := GetDeploymentsPath(base).Join(id, name)
-		exists, err := path.Exists()
-		if err != nil {
-			return util.Path{}, err
-		}
-		if !exists {
-			return path, nil
-		}
-	}
+	return dir.Glob("*.toml")
 }
 
 func FromFile(path util.Path) (*Deployment, error) {

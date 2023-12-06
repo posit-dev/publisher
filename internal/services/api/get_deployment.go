@@ -16,7 +16,7 @@ import (
 )
 
 func readLatestDeploymentFile(base util.Path, id string) (*deploymentDTO, error) {
-	path := deployment.GetLatestDeploymentPath(base, id)
+	path := deployment.GetDeploymentPath(base, id)
 	d, err := deployment.FromFile(path)
 	if err != nil {
 		// Not found errors will return a 404

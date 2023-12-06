@@ -34,7 +34,7 @@ func (s *DeploymentSuite) SetupTest() {
 }
 
 func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
-	path := GetLatestDeploymentPath(s.cwd, name)
+	path := GetDeploymentPath(s.cwd, name)
 	d := New()
 	d.ServerType = accounts.ServerTypeConnect
 	d.DeployedAt = time.Now().UTC().Format(time.RFC3339)
@@ -51,29 +51,14 @@ func (s *DeploymentSuite) TestNew() {
 	s.Equal(schema.DeploymentSchemaURL, deployment.Schema)
 }
 
-func (s *DeploymentSuite) TestGetLatestDeploymentPath() {
-	path := GetLatestDeploymentPath(s.cwd, "myTargetID")
-	s.Equal(path, s.cwd.Join(".posit", "publish", "deployments", "myTargetID", "latest.toml"))
-}
-
-func (s *DeploymentSuite) TestGetLatestDeploymentHistoryPath() {
-	path, err := GetDeploymentHistoryPath(s.cwd, "myTargetID")
-	s.NoError(err)
-	s.Equal(path, s.cwd.Join(".posit", "publish", "deployments", "myTargetID", "v1.toml"))
-
-	f, err := path.Create()
-	s.NoError(err)
-	err = f.Close()
-	s.NoError(err)
-
-	path, err = GetDeploymentHistoryPath(s.cwd, "myTargetID")
-	s.NoError(err)
-	s.Equal(path, s.cwd.Join(".posit", "publish", "deployments", "myTargetID", "v2.toml"))
+func (s *DeploymentSuite) TestGetDeploymentPath() {
+	path := GetDeploymentPath(s.cwd, "myTargetID")
+	s.Equal(path, s.cwd.Join(".posit", "publish", "deployments", "myTargetID.toml"))
 }
 
 func (s *DeploymentSuite) TestFromFile() {
 	expected := s.createDeploymentFile("myTargetID")
-	path := GetLatestDeploymentPath(s.cwd, "myTargetID")
+	path := GetDeploymentPath(s.cwd, "myTargetID")
 	actual, err := FromFile(path)
 	s.NoError(err)
 	s.NotNil(actual)
@@ -87,14 +72,14 @@ func (s *DeploymentSuite) TestFromFileErr() {
 }
 
 func (s *DeploymentSuite) TestWriteFile() {
-	configFile := GetLatestDeploymentPath(s.cwd, "myTargetID")
+	configFile := GetDeploymentPath(s.cwd, "myTargetID")
 	deployment := New()
 	err := deployment.WriteFile(configFile)
 	s.NoError(err)
 }
 
 func (s *DeploymentSuite) TestWriteFileErr() {
-	configFile := GetLatestDeploymentPath(s.cwd, "myTargetID")
+	configFile := GetDeploymentPath(s.cwd, "myTargetID")
 	readonlyFile := util.NewPath(configFile.Path(), afero.NewReadOnlyFs(configFile.Fs()))
 	deployment := New()
 	err := deployment.WriteFile(readonlyFile)

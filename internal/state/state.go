@@ -38,7 +38,7 @@ func loadConfig(path util.Path, configName string) (*config.Config, error) {
 }
 
 func loadTarget(path util.Path, targetID string) (*deployment.Deployment, error) {
-	configPath := deployment.GetLatestDeploymentPath(path, targetID)
+	configPath := deployment.GetDeploymentPath(path, targetID)
 	target, err := deployment.FromFile(configPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {

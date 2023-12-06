@@ -148,23 +148,9 @@ func (p *defaultPublisher) createDeploymentRecord(
 		DeployedAt:    time.Now().UTC().Format(time.RFC3339),
 	}
 	// Save current deployment information for this target
-	recordPath := deployment.GetLatestDeploymentPath(p.Dir, string(contentID))
+	recordPath := deployment.GetDeploymentPath(p.Dir, string(contentID))
 	log.Info("Writing deployment record", "path", recordPath)
-	err = p.Target.WriteFile(recordPath)
-	if err != nil {
-		return err
-	}
-	// and create a new history entry
-	historyPath, err := deployment.GetDeploymentHistoryPath(p.Dir, string(contentID))
-	if err != nil {
-		return err
-	}
-	log.Info("Writing history record", "path", historyPath)
-	err = p.Target.WriteFile(historyPath)
-	if err != nil {
-		return err
-	}
-	return nil
+	return p.Target.WriteFile(recordPath)
 }
 
 func (p *defaultPublisher) publishWithClient(
