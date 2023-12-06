@@ -10,24 +10,26 @@ import (
 	"github.com/rstudio/connect-client/internal/logging"
 )
 
-func logLevel(debug bool) slog.Level {
-	if debug {
-		return slog.LevelDebug
-	} else {
+func logLevel(verbosity int) slog.Level {
+	switch verbosity {
+	case 0:
+		return slog.LevelWarn
+	case 1:
 		return slog.LevelInfo
 	}
+	return slog.LevelDebug
 }
 
-func NewLogger(debug bool) logging.Logger {
-	level := logLevel(debug)
+func NewLogger(verbosity int) logging.Logger {
+	level := logLevel(verbosity)
 	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
 	return logging.FromStdLogger(slog.New(stderrHandler))
 }
 
-func NewLoggerWithSSE(debug bool, eventServer *sse.Server) logging.Logger {
-	level := logLevel(debug)
+func NewLoggerWithSSE(verbosity int, eventServer *sse.Server) logging.Logger {
+	level := logLevel(verbosity)
 	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
-	sseHandler := NewSSEHandler(eventServer, &SSEHandlerOptions{Level: level})
+	sseHandler := NewSSEHandler(eventServer, &SSEHandlerOptions{Level: slog.LevelInfo})
 	multiHandler := logging.NewMultiHandler(stderrHandler, sseHandler)
 	return logging.FromStdLogger(slog.New(multiHandler))
 }

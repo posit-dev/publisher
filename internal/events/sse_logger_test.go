@@ -22,14 +22,14 @@ func TestLoggerSuite(t *testing.T) {
 }
 
 func (s *LoggerSuite) TestNewLogger() {
-	log := NewLogger(false)
+	log := NewLogger(1)
 	s.IsType(log.Handler(), &slog.TextHandler{})
 	debugEnabled := log.Handler().Enabled(context.Background(), slog.LevelDebug)
 	s.False(debugEnabled)
 }
 
 func (s *LoggerSuite) TestNewLoggerDebug() {
-	log := NewLogger(true)
+	log := NewLogger(2)
 	s.IsType(log.Handler(), &slog.TextHandler{})
 	debugEnabled := log.Handler().Enabled(context.Background(), slog.LevelDebug)
 	s.True(debugEnabled)
@@ -37,6 +37,6 @@ func (s *LoggerSuite) TestNewLoggerDebug() {
 
 func (s *LoggerSuite) TestNewLoggerWithSSE() {
 	sseServer := sse.New()
-	log := NewLoggerWithSSE(false, sseServer)
+	log := NewLoggerWithSSE(1, sseServer)
 	s.IsType(log.Handler(), &logging.MultiHandler{})
 }

@@ -50,9 +50,7 @@ func Fatal(log logging.Logger, msg string, err error, args ...any) {
 }
 
 func main() {
-	log := events.NewLogger(false)
-	logVersion(log)
-
+	log := events.NewLogger(0)
 	ctx, err := makeContext(log)
 	if err != nil {
 		Fatal(log, "Error initializing client", err)
@@ -70,9 +68,8 @@ func main() {
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
-	if cli.Debug {
-		ctx.Logger = events.NewLogger(true)
-	}
+	ctx.Logger = events.NewLogger(cli.Verbose)
+	logVersion(ctx.Logger)
 	err = args.Run(&cli.CommonArgs)
 	if err != nil {
 		Fatal(log, "Error running command", err)
