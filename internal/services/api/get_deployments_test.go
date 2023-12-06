@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
@@ -45,6 +46,10 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	d := deployment.New()
 	d.Id = "myTargetName"
 	d.ServerType = accounts.ServerTypeConnect
+	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
+	d.Configuration = *cfg
 	err := d.WriteFile(path)
 	s.NoError(err)
 
@@ -63,9 +68,10 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 1)
+	s.Equal("", res[0].Error)
+	s.NotNil(res[0].Deployment)
 	s.Equal(d, res[0].Deployment)
 	s.Equal(types.ContentID("myTargetName"), res[0].Deployment.Id)
-	s.Equal("", res[0].Error)
 }
 
 func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
@@ -73,6 +79,10 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	d := deployment.New()
 	d.Id = "target1"
 	d.ServerType = accounts.ServerTypeConnect
+	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
+	d.Configuration = *cfg
 	err := d.WriteFile(path)
 	s.NoError(err)
 
@@ -95,9 +105,10 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 2)
+	s.Equal("", res[0].Error)
+	s.NotNil(res[0].Deployment)
 	s.Equal(d, res[0].Deployment)
 	s.Equal(types.ContentID("target1"), res[0].Deployment.Id)
-	s.Equal("", res[0].Error)
 
 	var nilDeployment *deployment.Deployment
 	s.Equal(nilDeployment, res[1].Deployment)

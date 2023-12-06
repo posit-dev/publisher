@@ -46,12 +46,11 @@ func (s *StateSuite) TestEmpty() {
 func (s *StateSuite) createConfigFile(name string, bad bool) {
 	configFile := config.GetConfigPath(s.cwd, name)
 	configData := []byte(`
-		'$schema' = 'https://example.com/schema/publishing.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
 		type = 'python-dash'
 		entrypoint = 'app:app'
 		title = 'Super Title'
 		description = 'minimal description'
-		tags = ['a', 'b', 'c']
 
 		[python]
 		version = "3.11.3"
@@ -79,13 +78,12 @@ func (s *StateSuite) TestLoadConfig() {
 	min_procs := int32(1)
 
 	s.Equal(&config.Config{
-		Schema:      "https://example.com/schema/publishing.json",
+		Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 		Type:        "python-dash",
 		Entrypoint:  "app:app",
 		Validate:    true,
 		Title:       "Super Title",
 		Description: "minimal description",
-		Tags:        []string{"a", "b", "c"},
 		Python: &config.Python{Version: "3.11.3",
 			PackageFile:    "requirements.txt",
 			PackageManager: "pip",
@@ -118,7 +116,7 @@ func (s *StateSuite) TestLoadConfigErr() {
 func (s *StateSuite) createTargetFile(name string, bad bool) {
 	targetFile := deployment.GetDeploymentPath(s.cwd, name)
 	targetData := []byte(`
-		'$schema' = 'https://example.com/schema/publishing-record.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json'
 		server-url = 'https://connect.example.com'
 		server-type = "connect"
 		id = '1234567890ABCDEF'
@@ -128,12 +126,11 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 			'requirements.txt'
 		]
 		[configuration]
-		'$schema' = 'https://example.com/schema/publishing.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
 		type = 'python-dash'
 		entrypoint = 'app:app'
 		title = 'Super Title'
 		description = 'minimal description'
-		tags = ['a', 'b', 'c']
 
 		[configuration.python]
 		version = "3.11.3"
@@ -161,7 +158,7 @@ func (s *StateSuite) TestLoadTarget() {
 	min_procs := int32(1)
 
 	s.Equal(&deployment.Deployment{
-		Schema:     "https://example.com/schema/publishing-record.json",
+		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json",
 		ServerURL:  "https://connect.example.com",
 		ServerType: "connect",
 		ConfigName: "myConfig",
@@ -171,13 +168,12 @@ func (s *StateSuite) TestLoadTarget() {
 		},
 		Id: "1234567890ABCDEF",
 		Configuration: config.Config{
-			Schema:      "https://example.com/schema/publishing.json",
+			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 			Type:        "python-dash",
 			Entrypoint:  "app:app",
 			Validate:    true,
 			Title:       "Super Title",
 			Description: "minimal description",
-			Tags:        []string{"a", "b", "c"},
 			Python: &config.Python{Version: "3.11.3",
 				PackageFile:    "requirements.txt",
 				PackageManager: "pip",
@@ -261,6 +257,8 @@ func (s *StateSuite) TestNew() {
 
 	configPath := config.GetConfigPath(s.cwd, "default")
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
@@ -282,6 +280,8 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	configName := "staging"
 	configPath := config.GetConfigPath(s.cwd, configName)
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
@@ -324,6 +324,8 @@ func (s *StateSuite) TestNewWithTarget() {
 
 	configPath := config.GetConfigPath(s.cwd, "savedConfigName")
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
@@ -332,6 +334,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	d.Id = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
+	d.Configuration = *cfg
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 
@@ -364,6 +367,8 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 
 	configPath := config.GetConfigPath(s.cwd, "savedConfigName")
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
@@ -372,6 +377,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	d.Id = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
+	d.Configuration = *cfg
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 

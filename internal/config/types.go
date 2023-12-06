@@ -39,7 +39,7 @@ func (t ContentType) IsPythonContent() bool {
 }
 
 type Config struct {
-	Schema        SchemaURL   `toml:"$schema" json:"$schema"`
+	Schema        string      `toml:"$schema" json:"$schema"`
 	Type          ContentType `toml:"type" json:"type"`
 	Entrypoint    string      `toml:"entrypoint,omitempty" json:"entrypoint,omitempty"`
 	Validate      bool        `toml:"validate" json:"validate"`
@@ -56,8 +56,6 @@ type Config struct {
 	Access        *Access     `toml:"access,omitempty" json:"access,omitempty"`
 	Connect       *Connect    `toml:"connect,omitempty" json:"connect,omitempty"`
 }
-
-type SchemaURL string
 
 type Environment = map[string]string
 

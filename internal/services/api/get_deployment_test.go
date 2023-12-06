@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
@@ -46,6 +47,11 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	d := deployment.New()
 	d.Id = "myTargetName"
 	d.ServerType = accounts.ServerTypeConnect
+	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
+	d.Configuration = *cfg
+
 	err := d.WriteFile(path)
 	s.NoError(err)
 
@@ -64,9 +70,10 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
+	s.NotNil(res.Deployment)
+	s.Equal("", res.Error)
 	s.Equal(d, res.Deployment)
 	s.Equal(types.ContentID("myTargetName"), res.Deployment.Id)
-	s.Equal("", res.Error)
 }
 
 func (s *GetDeploymentSuite) TestGetDeploymentError() {
