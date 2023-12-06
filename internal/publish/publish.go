@@ -3,7 +3,6 @@ package publish
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -48,7 +47,7 @@ type appInfo struct {
 	DirectURL    string `json:"direct-url"`
 }
 
-func (p *defaultPublisher) logAppInfo(accountURL string, contentID types.ContentID, log logging.Logger) error {
+func (p *defaultPublisher) logAppInfo(accountURL string, contentID types.ContentID, log logging.Logger) {
 	appInfo := appInfo{
 		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
 		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
@@ -60,12 +59,8 @@ func (p *defaultPublisher) logAppInfo(accountURL string, contentID types.Content
 		"serverURL", accountURL,
 		"contentID", contentID,
 	)
-	jsonInfo, err := json.Marshal(appInfo)
-	if err != nil {
-		return err
-	}
-	_, err = fmt.Printf("%s\n", jsonInfo)
-	return err
+	fmt.Println("Dashboard URL: ", appInfo.DashboardURL)
+	fmt.Println("Direct URL:    ", appInfo.DirectURL)
 }
 
 func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
@@ -289,5 +284,6 @@ func (p *defaultPublisher) publishWithClient(
 	}
 
 	log = log.WithArgs(logging.LogKeyOp, events.AgentOp)
-	return p.logAppInfo(account.URL, contentID, log)
+	p.logAppInfo(account.URL, contentID, log)
+	return nil
 }
