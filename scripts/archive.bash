@@ -1,16 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ ! -d "./web/dist" ]; then
-    echo "error: Missing frontend distribution. Run \`just web build\` or \`just stub\`." 1>&2
-    exit 1
-fi
-
 CI="${CI:-false}"
 
 cmd=$1
 if [[ -z "$cmd" ]]; then
-  echo "usage: $0 <cmd>" 1>&2
+  echo "usage: $0 <cmd>"
   exit 1
 fi
 echo "Command: $cmd" 1>&2
@@ -20,9 +15,6 @@ echo "Version: $version" 1>&2
 
 name=$(basename "$cmd")
 echo "Name: $name" 1>&2
-
-mode=${MODE:-"dev"}
-echo "Mode: $mode" 1>&2
 
 platforms=("$(go env GOHOSTOS)/$(go env GOHOSTARCH)")
 if [ "$CI" = "true" ]; then
@@ -59,21 +51,22 @@ fi
 
 for platform in "${platforms[@]}"
 do
-    echo "Building: $platform" 1>&2
+    echo "Archiving: $platform" 1>&2
     os=${platform/\/*}   # retain the part before the slash
     arch=${platform/*\/} # retain the part after the slash
 
     executable=$(./scripts/get-executable-path.bash "$name" "$version" "$os" "$arch" )
+    if [ ! -f "$executable" ]; then
+        echo "error: Missing executable. Run \`just build\`." 1>&2
+        exit 1
+    fi
 
-    env\
-        CGO_ENABLED=0\
-        GOOS="$os"\
-        GOARCH="$arch"\
-        go build\
-        -o "$executable"\
-        -ldflags "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$mode'"\
-        "$cmd"
+    archive=$(./scripts/get-archive-path.bash "$name" "$version" "$os" "$arch" )
+    dir=$(mktemp -d)
+    mkdir -p "${dir}"/"${name}"/bin
+    cp "${executable}" "${dir}"/"${name}"/bin
+    mkdir -p "$(dirname "$archive")"
+    tar -a -cf "$archive" -C "${dir}" .
 
-    chmod +x "$executable"
-    echo "Executable: $executable" 1>&2
+    echo "Archive: $archive" 1>&2
 done
