@@ -29,7 +29,7 @@ func NewLogger(verbosity int) logging.Logger {
 func NewLoggerWithSSE(verbosity int, eventServer *sse.Server) logging.Logger {
 	level := logLevel(verbosity)
 	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
-	sseHandler := NewSSEHandler(eventServer, &SSEHandlerOptions{Level: slog.LevelInfo})
+	sseHandler := NewSSEHandler(eventServer, &SSEHandlerOptions{Level: slog.LevelDebug})
 	multiHandler := logging.NewMultiHandler(stderrHandler, sseHandler)
 	return logging.FromStdLogger(slog.New(multiHandler))
 }
