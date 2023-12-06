@@ -1,3 +1,7 @@
+.body--light {
+  background-color: #fafafa;
+}
+
 .publisher-layout {
   max-width: 1280px;
   margin-left: auto;
