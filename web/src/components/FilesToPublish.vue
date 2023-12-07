@@ -29,6 +29,7 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
     label: file.base,
     children: file.files.map(fileToTreeNode),
     tickable: !file.exclusion,
+    icon: file.isDir ? 'folder' : undefined,
   };
 
   return node;
