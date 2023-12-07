@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -90,12 +92,20 @@ func (u *UserDTO) toUser() *User {
 	}
 }
 
+var ErrTimedOut = errors.New("request timed out")
+
 func (c *ConnectClient) TestAuthentication() (*User, error) {
 	c.log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
 	err := c.client.Get("/__api__/v1/user", &connectUser)
 	if err != nil {
-		return nil, err
+		if e, ok := err.(net.Error); ok && e.Timeout() {
+			return nil, ErrTimedOut
+		} else if e, ok := err.(*url.Error); ok {
+			return nil, e.Err
+		} else {
+			return nil, err
+		}
 	}
 	if connectUser.Locked {
 		return nil, fmt.Errorf("user account %s is locked", connectUser.Username)

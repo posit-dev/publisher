@@ -18,11 +18,11 @@ type UserID string
 
 // Simplified user structure common to all servers
 type User struct {
-	Id        types.UserID
-	Username  string
-	FirstName string
-	LastName  string
-	Email     string
+	Id        types.UserID `json:"id"`
+	Username  string       `json:"username"`
+	FirstName string       `json:"first_name"`
+	LastName  string       `json:"last_name"`
+	Email     string       `json:"email"`
 }
 
 type APIClient interface {
