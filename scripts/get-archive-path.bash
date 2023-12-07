@@ -14,7 +14,7 @@ arch=$4
 name=$(basename "$cmd")
 
 if [ "$os" = "windows" ]; then
-    printf "$(pwd)/bin/%s/%s/%s/%s" "$os" "$arch" "$version" "$name.exe"
+    printf "$(pwd)/archives/%s" "$name-$version-$os-$arch.zip"
 else
-    printf "$(pwd)/bin/%s/%s/%s/%s" "$os" "$arch" "$version" "$name"
+    printf "$(pwd)/archives/%s" "$name-$version-$os-$arch.tar.gz"
 fi

@@ -65,6 +65,14 @@ all +args='default':
         fi
     done
 
+# Archives the application for distribution. Archives are written to `./archives`. If invoked with `env CI=true` then archives are create for all architectures supported by the Go toolchain.
+archive:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker ./scripts/archive.bash {{ _cmd }}
+
 # Executes commands in ./test/bats/justfile. Equivalent to `just test/bats/`, but inside of Docker (i.e., just _with_docker just test/bats/).
 bats *args:
     #!/usr/bin/env bash
@@ -87,7 +95,9 @@ clean:
     set -eou pipefail
     {{ _with_debug }}
 
+    rm -rf ./archives
     rm -rf ./bin
+    rm -rf ./packages
 
 # Prints shell commands to configure executable on path. Configure your shell via: eval "$(just configure)"
 configure:
