@@ -149,14 +149,16 @@ func (p *defaultPublisher) createDeploymentRecord(
 	}
 
 	// Save current deployment information for this target
-	if p.TargetName == "" {
-		p.TargetName = string(contentID)
-	} else if p.SaveName != "" {
-		err := deployment.RenameDeployment(p.Dir, p.TargetName, p.SaveName)
-		if err != nil {
-			return err
+	if p.SaveName != "" {
+		if p.TargetName != "" {
+			err := deployment.RenameDeployment(p.Dir, p.TargetName, p.SaveName)
+			if err != nil {
+				return err
+			}
 		}
 		p.TargetName = p.SaveName
+	} else if p.TargetName == "" {
+		p.TargetName = string(contentID)
 	}
 	recordPath := deployment.GetDeploymentPath(p.Dir, p.TargetName)
 	log.Info("Writing deployment record", "path", recordPath)
