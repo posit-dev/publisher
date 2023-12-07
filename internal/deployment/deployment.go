@@ -3,7 +3,6 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
 	"io"
 	"strings"
 
@@ -53,24 +52,8 @@ func SaveNameFromPath(path util.Path) string {
 	return strings.TrimSuffix(path.Base(), ".toml")
 }
 
-const badChars = `/:\*?"<>|`
-
-var errInvalidName = errors.New("invalid name: cannot contain any of these characters: " + badChars)
-
-func ValidateFilename(name string) error {
-	if strings.ContainsAny(name, badChars) {
-		return errInvalidName
-	}
-	for _, c := range name {
-		if int(c) < 32 {
-			return errInvalidName
-		}
-	}
-	return nil
-}
-
 func RenameDeployment(base util.Path, oldName, newName string) error {
-	err := ValidateFilename(newName)
+	err := util.ValidateFilename(newName)
 	if err != nil {
 		return err
 	}

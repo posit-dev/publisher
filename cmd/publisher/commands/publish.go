@@ -31,7 +31,7 @@ var errNoAccounts = errors.New("there are no accounts yet; register an account b
 
 func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	if cmd.SaveName != "" {
-		err := deployment.ValidateFilename(cmd.SaveName)
+		err := util.ValidateFilename(cmd.SaveName)
 		if err != nil {
 			return err
 		}

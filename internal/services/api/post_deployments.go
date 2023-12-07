@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
@@ -44,7 +43,7 @@ func PostDeploymentsHandlerFunc(
 			return
 		}
 		if b.SaveName != "" {
-			err = deployment.ValidateFilename(b.SaveName)
+			err = util.ValidateFilename(b.SaveName)
 			if err != nil {
 				BadRequestJson(w, req, log, err)
 				return
