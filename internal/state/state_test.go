@@ -390,5 +390,6 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	s.Equal("myTargetName", state.TargetName)
 	s.Equal(&acct2, state.Account)
 	s.Equal(cfg, state.Config)
+	d.SaveName = "mySaveName"
 	s.Equal(d, state.Target)
 }

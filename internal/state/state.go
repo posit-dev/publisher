@@ -108,6 +108,11 @@ func New(path util.Path, accountName, configName, targetName string, saveName st
 			}
 			accountName = account.Name
 		}
+		if saveName != "" {
+			target.SaveName = saveName
+		} else {
+			target.SaveName = targetName
+		}
 	} else {
 		if configName == "" {
 			configName = config.DefaultConfigName
