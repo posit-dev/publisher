@@ -24,6 +24,7 @@ type Deployment struct {
 	Configuration config.Config       `toml:"configuration" json:"configuration"`
 	Files         []string            `toml:"files" json:"files"`
 	DeployedAt    string              `toml:"deployed-at" json:"deployed-at"`
+	SaveName      string              `toml:"-" json:"save-name"`
 }
 
 func New() *Deployment {
@@ -46,6 +47,10 @@ func GetDeploymentPath(base util.Path, name string) util.Path {
 func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
 	dir := GetDeploymentsPath(base)
 	return dir.Glob("*.toml")
+}
+
+func SaveNameFromPath(path util.Path) string {
+	return strings.TrimSuffix(path.Base(), ".toml")
 }
 
 const badChars = `/:\*?"<>|`
@@ -79,12 +84,13 @@ func FromFile(path util.Path) (*Deployment, error) {
 	if err != nil {
 		return nil, err
 	}
-	deployment := New()
-	err = util.ReadTOMLFile(path, deployment)
+	d := New()
+	err = util.ReadTOMLFile(path, d)
 	if err != nil {
 		return nil, err
 	}
-	return deployment, nil
+	d.SaveName = SaveNameFromPath(path)
+	return d, nil
 }
 
 func ValidateFile(path util.Path) error {
@@ -95,12 +101,12 @@ func ValidateFile(path util.Path) error {
 	return validator.ValidateTOMLFile(path)
 }
 
-func (record *Deployment) Write(w io.Writer) error {
+func (d *Deployment) Write(w io.Writer) error {
 	enc := toml.NewEncoder(w)
-	return enc.Encode(record)
+	return enc.Encode(d)
 }
 
-func (record *Deployment) WriteFile(path util.Path) error {
+func (d *Deployment) WriteFile(path util.Path) error {
 	err := path.Dir().MkdirAll(0777)
 	if err != nil {
 		return err
@@ -110,5 +116,10 @@ func (record *Deployment) WriteFile(path util.Path) error {
 		return err
 	}
 	defer f.Close()
-	return record.Write(f)
+	err = d.Write(f)
+	if err != nil {
+		return err
+	}
+	d.SaveName = SaveNameFromPath(path)
+	return nil
 }
