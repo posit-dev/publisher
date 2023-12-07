@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
@@ -20,7 +19,6 @@ import (
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
-	"github.com/rstudio/connect-client/internal/util"
 )
 
 type ConnectClient struct {
@@ -43,29 +41,6 @@ func NewConnectClient(
 		account: account,
 		log:     log,
 	}, nil
-}
-
-func (c *ConnectClient) TestConnection() error {
-	// Make a client without auth so we're just testing the connection.
-	c.log.Info("Testing connection", "url", c.account.URL)
-	acctWithoutAuth := *(c.account)
-	acctWithoutAuth.AuthType = accounts.AuthTypeNone
-	client, err := http_client.NewHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.log)
-	if err != nil {
-		return err
-	}
-	testURL := util.URLJoin(c.account.URL, "/__api__/server_settings")
-	resp, err := client.Get(testURL)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("the server '%s' does not appear to be a Connect server", c.account.URL)
-	} else if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected response from Connect server: %s", resp.Status)
-	}
-	return nil
 }
 
 type UserDTO struct {

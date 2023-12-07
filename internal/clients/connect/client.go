@@ -26,7 +26,6 @@ type User struct {
 }
 
 type APIClient interface {
-	TestConnection() error
 	TestAuthentication() (*User, error)
 	CreateDeployment(*ConnectContent) (types.ContentID, error)
 	UpdateDeployment(types.ContentID, *ConnectContent) error
