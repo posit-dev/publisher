@@ -17,7 +17,7 @@ type PostPublishRequestBody struct {
 	AccountName string `json:"account"`
 	ConfigName  string `json:"config"`
 	TargetName  string `json:"target"`
-	SaveName    string `json:"save-name"`
+	SaveName    string `json:"saveName"`
 }
 
 type PostPublishReponse struct {

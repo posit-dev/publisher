@@ -16,14 +16,14 @@ import (
 
 type Deployment struct {
 	Schema        string              `toml:"$schema" json:"$schema"`
-	ServerType    accounts.ServerType `toml:"server-type" json:"server-type"`
-	ServerURL     string              `toml:"server-url" json:"server-url"`
+	ServerType    accounts.ServerType `toml:"server-type" json:"serverType"`
+	ServerURL     string              `toml:"server-url" json:"serverUrl"`
 	Id            types.ContentID     `toml:"id" json:"id"`
-	ConfigName    string              `toml:"configuration-name" json:"configuration-name"`
+	ConfigName    string              `toml:"configuration-name" json:"configurationName"`
 	Configuration config.Config       `toml:"configuration" json:"configuration"`
 	Files         []string            `toml:"files" json:"files"`
-	DeployedAt    string              `toml:"deployed-at" json:"deployed-at"`
-	SaveName      string              `toml:"-" json:"save-name"`
+	DeployedAt    string              `toml:"deployed-at" json:"deployedAt"`
+	SaveName      string              `toml:"-" json:"saveName"`
 }
 
 func New() *Deployment {

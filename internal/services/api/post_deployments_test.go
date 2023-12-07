@@ -103,7 +103,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadJSON(
 	req, err := http.NewRequest("POST", "/api/publish", nil)
 	s.NoError(err)
 
-	req.Body = io.NopCloser(strings.NewReader("{\"random\":\"123\"}"))
+	req.Body = io.NopCloser(strings.NewReader(`{"random": "123"}`))
 
 	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil)
 	handler(rec, req)
@@ -117,7 +117,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadSaveA
 	req, err := http.NewRequest("POST", "/api/publish", nil)
 	s.NoError(err)
 
-	req.Body = io.NopCloser(strings.NewReader(`{"save-name": "a/b"}`))
+	req.Body = io.NopCloser(strings.NewReader(`{"saveName": "a/b"}`))
 
 	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil)
 	handler(rec, req)
@@ -150,7 +150,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncPublishE
 	s.NoError(err)
 
 	lister := &accounts.MockAccountList{}
-	req.Body = io.NopCloser(strings.NewReader("{\"account\":\"local\", \"config\":\"default\"}"))
+	req.Body = io.NopCloser(strings.NewReader(`{"account": "local", "config": "default"}`))
 
 	stateFactory = func(
 		path util.Path,

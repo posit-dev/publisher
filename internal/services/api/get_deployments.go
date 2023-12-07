@@ -14,7 +14,7 @@ import (
 
 type deploymentDTO struct {
 	*deployment.Deployment
-	ConfigPath string `json:"configuration-path,omitempty"`
+	ConfigPath string `json:"configurationPath,omitempty"`
 	Error      string `json:"error,omitempty"`
 }
 
