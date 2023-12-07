@@ -12,8 +12,6 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
@@ -96,19 +94,6 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
 	s.NotEqual(state.LocalDeploymentID(""), stateStore.LocalID)
 	s.NotEqual(oldID, stateStore.LocalID)
 	s.Equal(stateStore.LocalID, res.LocalID)
-}
-
-func (s *PostDeploymentsHandlerFuncSuite) createDeploymentFile(name string) {
-	path := deployment.GetDeploymentPath(s.cwd, name)
-	d := deployment.New()
-	d.Id = "myTargetID"
-	d.ServerType = accounts.ServerTypeConnect
-	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
-	cfg.Entrypoint = "app.py"
-	d.Configuration = *cfg
-	err := d.WriteFile(path)
-	s.NoError(err)
 }
 
 func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadJSON() {
