@@ -85,3 +85,18 @@ func (s *DeploymentSuite) TestWriteFileErr() {
 	err := deployment.WriteFile(readonlyFile)
 	s.NotNil(err)
 }
+
+func (s *DeploymentSuite) TestValidateFilename() {
+	err := ValidateFilename(`hello there!`)
+	s.NoError(err)
+	err = ValidateFilename(`hello/there!`)
+	s.ErrorIs(err, errInvalidName)
+	err = ValidateFilename(`hello\there!`)
+	s.ErrorIs(err, errInvalidName)
+	err = ValidateFilename(`hello? are you there?`)
+	s.ErrorIs(err, errInvalidName)
+	err = ValidateFilename("super nully\x00")
+	s.ErrorIs(err, errInvalidName)
+	err = ValidateFilename("you\tcant\rcontrol\nme")
+	s.ErrorIs(err, errInvalidName)
+}

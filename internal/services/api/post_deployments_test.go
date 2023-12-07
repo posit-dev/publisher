@@ -76,7 +76,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
 	}
 	stateFactory = func(
 		path util.Path,
-		accountName, configName, targetName, saveTargetAs string,
+		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList) (*state.State, error) {
 		s.Equal("local", accountName)
 		s.Equal("default", configName)
@@ -111,58 +111,6 @@ func (s *PostDeploymentsHandlerFuncSuite) createDeploymentFile(name string) {
 	s.NoError(err)
 }
 
-func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncWithTarget() {
-	stateStore := state.Empty()
-	oldID := stateStore.LocalID
-	log := logging.New()
-
-	s.createDeploymentFile("fe97ce15-b3b5-40c4-90ca-27de15c4a8ce")
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/publish", nil)
-	s.NoError(err)
-
-	lister := &accounts.MockAccountList{}
-	req.Body = io.NopCloser(strings.NewReader(
-		`{
-			"target":"fe97ce15-b3b5-40c4-90ca-27de15c4a8ce",
-			"save-as":"staging",
-			"config": "default"
-		}`))
-
-	publisher := &mockPublisher{}
-	publisher.On("PublishDirectory", mock.Anything).Return(nil)
-	publisherFactory = func(*state.State) publish.Publisher {
-		return publisher
-	}
-	stateFactory = func(
-		path util.Path,
-		accountName, configName, targetName, saveTargetAs string,
-		accountList accounts.AccountList) (*state.State, error) {
-		s.Equal("staging", targetName)
-		s.Equal("staging", saveTargetAs)
-		s.Equal("default", configName)
-
-		exists, err := deployment.GetDeploymentPath(s.cwd, targetName).Exists()
-		s.NoError(err)
-		s.True(exists)
-		return state.Empty(), nil
-	}
-	handler := PostDeploymentsHandlerFunc(stateStore, s.cwd, log, lister)
-	handler(rec, req)
-
-	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
-	s.Equal("application/json", rec.Header().Get("content-type"))
-
-	res := &PostPublishReponse{}
-	dec := json.NewDecoder(rec.Body)
-	dec.DisallowUnknownFields()
-	s.NoError(dec.Decode(res))
-
-	s.NotEqual(state.LocalDeploymentID(""), stateStore.LocalID)
-	s.NotEqual(oldID, stateStore.LocalID)
-	s.Equal(stateStore.LocalID, res.LocalID)
-}
-
 func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadJSON() {
 	log := logging.New()
 
@@ -171,6 +119,20 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadJSON(
 	s.NoError(err)
 
 	req.Body = io.NopCloser(strings.NewReader("{\"random\":\"123\"}"))
+
+	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil)
+	handler(rec, req)
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+}
+
+func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadSaveAsName() {
+	log := logging.New()
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/publish", nil)
+	s.NoError(err)
+
+	req.Body = io.NopCloser(strings.NewReader(`{"save-name": "a/b"}`))
 
 	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil)
 	handler(rec, req)
@@ -186,7 +148,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncStateErr
 
 	stateFactory = func(
 		path util.Path,
-		accountName, configName, targetName, saveTargetAs string,
+		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return nil, errors.New("test error from state factory")
 	}
@@ -207,7 +169,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncPublishE
 
 	stateFactory = func(
 		path util.Path,
-		accountName, configName, targetName, saveTargetAs string,
+		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return state.Empty(), nil
 	}

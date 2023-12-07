@@ -3,7 +3,9 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"io"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -46,7 +48,27 @@ func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
 	return dir.Glob("*.toml")
 }
 
+const badChars = `/:\*?"<>|`
+
+var errInvalidName = errors.New("invalid name: cannot contain any of these characters: " + badChars)
+
+func ValidateFilename(name string) error {
+	if strings.ContainsAny(name, badChars) {
+		return errInvalidName
+	}
+	for _, c := range name {
+		if int(c) < 32 {
+			return errInvalidName
+		}
+	}
+	return nil
+}
+
 func RenameDeployment(base util.Path, oldName, newName string) error {
+	err := ValidateFilename(newName)
+	if err != nil {
+		return err
+	}
 	oldPath := GetDeploymentPath(base, oldName)
 	newPath := GetDeploymentPath(base, newName)
 	return oldPath.Rename(newPath)

@@ -31,8 +31,8 @@ type defaultPublisher struct {
 	*state.State
 }
 
-func New(path util.Path, accountName, configName, targetName string, saveTargetAs string, accountList accounts.AccountList) (Publisher, error) {
-	s, err := state.New(path, accountName, configName, targetName, saveTargetAs, accountList)
+func New(path util.Path, accountName, configName, targetName string, saveName string, accountList accounts.AccountList) (Publisher, error) {
+	s, err := state.New(path, accountName, configName, targetName, saveName, accountList)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,6 @@ func withLog[T any](
 func (p *defaultPublisher) createDeploymentRecord(
 	bundler bundles.Bundler,
 	contentID types.ContentID,
-	targetName string,
 	account *accounts.Account,
 	log logging.Logger) error {
 
@@ -148,11 +147,18 @@ func (p *defaultPublisher) createDeploymentRecord(
 		Configuration: *p.Config,
 		DeployedAt:    time.Now().UTC().Format(time.RFC3339),
 	}
+
 	// Save current deployment information for this target
-	if targetName == "" {
-		targetName = string(contentID)
+	if p.TargetName == "" {
+		p.TargetName = string(contentID)
+	} else if p.SaveName != "" {
+		err := deployment.RenameDeployment(p.Dir, p.TargetName, p.SaveName)
+		if err != nil {
+			return err
+		}
+		p.TargetName = p.SaveName
 	}
-	recordPath := deployment.GetDeploymentPath(p.Dir, targetName)
+	recordPath := deployment.GetDeploymentPath(p.Dir, p.TargetName)
 	log.Info("Writing deployment record", "path", recordPath)
 	return p.Target.WriteFile(recordPath)
 }
@@ -182,7 +188,7 @@ func (p *defaultPublisher) publishWithClient(
 			return err
 		}
 	}
-	err = p.createDeploymentRecord(bundler, contentID, p.TargetName, account, log)
+	err = p.createDeploymentRecord(bundler, contentID, account, log)
 	if err != nil {
 		return types.ErrToAgentError(events.PublishCreateDeploymentOp, err)
 	}

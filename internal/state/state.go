@@ -19,6 +19,7 @@ type State struct {
 	AccountName string
 	ConfigName  string
 	TargetName  string
+	SaveName    string
 	Account     *accounts.Account
 	Config      *config.Config
 	Target      *deployment.Deployment
@@ -84,7 +85,7 @@ func Empty() *State {
 	}
 }
 
-func New(path util.Path, accountName, configName, targetName string, saveTargetAs string, accountList accounts.AccountList) (*State, error) {
+func New(path util.Path, accountName, configName, targetName string, saveName string, accountList accounts.AccountList) (*State, error) {
 	var target *deployment.Deployment
 	var account *accounts.Account
 	var cfg *config.Config
@@ -128,14 +129,12 @@ func New(path util.Path, accountName, configName, targetName string, saveTargetA
 			return nil, err
 		}
 	}
-	if saveTargetAs == "" {
-		saveTargetAs = targetName
-	}
 	return &State{
 		Dir:         path,
 		AccountName: accountName,
 		ConfigName:  configName,
-		TargetName:  saveTargetAs,
+		TargetName:  targetName,
+		SaveName:    saveName,
 		Account:     account,
 		Config:      cfg,
 		Target:      target,
