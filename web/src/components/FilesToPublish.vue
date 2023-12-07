@@ -2,6 +2,7 @@
 
 <template>
   <q-tree
+    v-model:expanded="expanded"
     :nodes="files"
     :node-key="NODE_KEY"
     dense
@@ -18,7 +19,9 @@ import { DeploymentFile } from 'src/api/types/files';
 const NODE_KEY = 'key';
 
 const api = useApi();
+
 const files = ref<QTreeNode[]>([]);
+const expanded = ref<string[]>([]);
 
 function fileToTreeNode(file: DeploymentFile): QTreeNode {
   const node: QTreeNode = {
@@ -33,7 +36,14 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
 
 async function getFiles() {
   const response = await api.files.get();
-  files.value = [fileToTreeNode(response.data)];
+  const file = response.data;
+
+  files.value = [fileToTreeNode(file)];
+
+  if (file.isDir) {
+    // start with the top level directory expanded
+    expanded.value = [file.rel];
+  }
 }
 
 getFiles();
