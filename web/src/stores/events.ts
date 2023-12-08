@@ -57,31 +57,67 @@ import { getErrorMessage } from 'src/util/errors';
 import { ref } from 'vue';
 
 export type PublishStepCompletionStatus =
-  'unknown' | 'started' | 'success' | 'error';
+'notStarted' | 'inProgress' | 'success' | 'error';
+
+export const publishStepCompletionStatusNames: Record<PublishStepCompletionStatus, string> = {
+  notStarted: 'Not Started',
+  inProgress: 'In Progress',
+  success: 'Completed Successfully',
+  error: 'Resulted in Error',
+};
 
 export type PublishStep =
   'createNewDeployment' | 'setEnvVars' | 'createBundle' |
-  'createDeployment' | 'uploadBundle' | 'deployBundle' |
+  'uploadBundle' | 'createDeployment' | 'deployBundle' |
   'restorePythonEnv' | 'setVanityURL' | 'runContent' |
   'validateDeployment';
 
+export const publishStepDisplayNames: Record<PublishStep, string> = {
+  createNewDeployment: 'Create New Deployment',
+  setEnvVars: 'Set Environment Varables',
+  createBundle: 'Create Bundle',
+  uploadBundle: 'Upload Bundle',
+  createDeployment: 'Create Deployment',
+  deployBundle: 'Deploy Bundle',
+  restorePythonEnv: 'Restore Python Runtime Environment',
+  setVanityURL: 'Set Vanity URL',
+  runContent: 'Run Content',
+  validateDeployment: 'Validate Deployment',
+};
+
+export const publishStepOrder: Record<PublishStep, number> = {
+  createNewDeployment: 1,
+  setEnvVars: 2,
+  createBundle: 3,
+  uploadBundle: 4,
+  createDeployment: 5,
+  deployBundle: 6,
+  restorePythonEnv: 7,
+  setVanityURL: 8,
+  runContent: 9,
+  validateDeployment: 10,
+};
+
 export type PublishStepStatus = {
   completion: PublishStepCompletionStatus;
-  error?: string;
+  error?: string[];
   lastLogMsg?: string;
   logs: EventStreamMessage[];
-  status?: string[];
+  status?: Record<string, string>[];
   progress?: string[];
 }
 
 const emptyPublishStepStatus = {
-  completion: <PublishStepCompletionStatus>'unknown',
+  completion: <PublishStepCompletionStatus>'notStarted',
   logs: <EventStreamMessage[]>[],
 };
 
 export type PublishStatus = {
   completion: PublishStepCompletionStatus;
-  error?: string;
+  error?: string[];
+  dashboardURL: string,
+  directURL: string,
+  currentStep?: PublishStep,
   steps: {
     createNewDeployment: PublishStepStatus,
     setEnvVars: PublishStepStatus,
@@ -93,13 +129,18 @@ export type PublishStatus = {
     setVanityURL: PublishStepStatus,
     runContent: PublishStepStatus,
     validateDeployment: PublishStepStatus,
-  }
+  },
 }
+
+const agentLogs = ref<EventStreamMessage[]>([]);
 
 const newPublishStatus = () => {
   return {
-    completion: <PublishStepCompletionStatus>'unknown',
+    completion: <PublishStepCompletionStatus>'notStarted',
     error: undefined,
+    dashboardURL: '',
+    directURL: '',
+    currentStep: undefined,
     steps: {
       createNewDeployment: { ...emptyPublishStepStatus },
       setEnvVars: { ...emptyPublishStepStatus },
@@ -115,6 +156,12 @@ const newPublishStatus = () => {
   };
 };
 
+export const splitMsgIntoNameValuePairs = ((msg: Record<string, string>) => {
+  const result: string[] = [];
+  Object.keys(msg).forEach(key => result.push(`${key}: ${msg[key]}`));
+  return result;
+});
+
 export const useEventStore = defineStore('event', () => {
   const eventStream = useEventStream();
 
@@ -123,9 +170,31 @@ export const useEventStore = defineStore('event', () => {
   const publishInProgess = ref(false);
   const latestLocalId = ref('');
 
-  // Map of localId -> publish status
-  // and when available (since they don't overlap), contentId -> publish status
-  const publishStatusMap = ref(new Map<string, PublishStatus>());
+  type CurrentPublishStatus = {
+    localId: string,
+    contentId: string,
+    status: PublishStatus,
+  };
+
+  const currentPublishStatus = ref<CurrentPublishStatus>({
+    localId: '',
+    contentId: '',
+    status: newPublishStatus(),
+  });
+
+  const doesPublishStatusApply = ((id: string) => {
+    return (
+      currentPublishStatus.value.localId === id ||
+      currentPublishStatus.value.contentId === id
+    );
+  });
+
+  const isPublishActiveByID = ((id: string) => {
+    return (
+      publishInProgess.value &&
+      doesPublishStatusApply(id)
+    );
+  });
 
   const closeEventStream = () => {
     eventStream.close();
@@ -136,265 +205,276 @@ export const useEventStore = defineStore('event', () => {
   };
 
   const onAgentLog = (msg: AgentLog) => {
-    console.log(`Agent Log: ${msg.data.message}`);
+    agentLogs.value.push(msg);
   };
 
   const onPublishStart = (msg: PublishStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishStart', JSON.stringify(msg));
+    // console.log('onPublishStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.completion = 'started';
-    }
     latestLocalId.value = localId;
+    currentPublishStatus.value.localId = localId;
+
+    const publishStatus = currentPublishStatus.value.status;
+    publishStatus.completion = 'inProgress';
   };
 
   const onPublishSuccess = (msg: PublishSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishSuccess', JSON.stringify(msg));
+    // console.log('onPublishSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = undefined;
       publishStatus.completion = 'success';
+      publishStatus.dashboardURL = msg.data.dashboardUrl;
+      publishStatus.directURL = msg.data.directUrl;
     }
     publishInProgess.value = false;
   };
 
   const onPublishFailure = (msg: PublishFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishFailure', JSON.stringify(msg));
+    // console.log('onPublishFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.completion = 'error';
-      publishStatus.error = msg.error;
+      publishStatus.error = splitMsgIntoNameValuePairs(msg.data);
     }
     publishInProgess.value = false;
   };
 
   const onPublishCreateNewDeploymentStart = (msg: PublishCreateNewDeploymentStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishCreateNewDeploymentStart', JSON.stringify(msg));
+    // console.log('onPublishCreateNewDeploymentStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.steps.createNewDeployment.completion = 'started';
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'createNewDeployment';
+      publishStatus.steps.createNewDeployment.completion = 'inProgress';
     }
   };
 
   const onPublishCreateNewDeploymentSuccess = (msg: PublishCreateNewDeploymentSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishCreateNewDeploymentSuccess', JSON.stringify(msg));
+    // console.log('onPublishCreateNewDeploymentSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createNewDeployment.completion = 'success';
     }
   };
 
   const onPublishCreateNewDeploymentFailure = (msg: PublishCreateNewDeploymentFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishCreateNewDeploymentFailure', JSON.stringify(msg));
+    // console.log('onPublishCreateNewDeploymentFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createNewDeployment.completion = 'error';
-      publishStatus.steps.createNewDeployment.error = msg.error;
+      publishStatus.steps.createNewDeployment.error = splitMsgIntoNameValuePairs(msg.data);
     }
   };
 
   const onPublishSetEnvVarsStart = (msg: PublishSetEnvVarsStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishSetEnvVarsStart', JSON.stringify(msg));
+    // console.log('onPublishSetEnvVarsStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.steps.setEnvVars.completion = 'started';
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'setEnvVars';
+      publishStatus.steps.setEnvVars.completion = 'inProgress';
     }
   };
 
   const onPublishSetEnvVarsSuccess = (msg: PublishSetEnvVarsSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishSetEnvVarsSuccess', JSON.stringify(msg));
+    // console.log('onPublishSetEnvVarsSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.setEnvVars.completion = 'success';
     }
   };
   const onPublishSetEnvVarsFailure = (msg: PublishSetEnvVarsFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishSetEnvVarsFailure', JSON.stringify(msg));
+    // console.log('onPublishSetEnvVarsFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.setEnvVars.completion = 'error';
-      publishStatus.steps.setEnvVars.error = msg.error;
+      publishStatus.steps.setEnvVars.error = splitMsgIntoNameValuePairs(msg.data);
     }
   };
 
   const onPublishCreateBundleStart = (msg: PublishCreateBundleStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishCreateBundleStart', JSON.stringify(msg));
+    // console.log('onPublishCreateBundleStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.steps.createBundle.completion = 'started';
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'createBundle';
+      publishStatus.steps.createBundle.completion = 'inProgress';
     }
   };
 
   const onPublishCreateBundleLog = (msg: PublishCreateBundleLog) => {
     const localId = getLocalId(msg);
-    console.log('onPublishCreateBundleLog', JSON.stringify(msg));
+    // console.log('onPublishCreateBundleLog', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createBundle.logs.push(msg);
     }
   };
 
   const onPublishCreateBundleSuccess = (msg: PublishCreateBundleSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishCreateBundleSuccess', JSON.stringify(msg));
+    // console.log('onPublishCreateBundleSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createBundle.completion = 'success';
     }
   };
 
   const onPublishCreateBundleFailure = (msg: PublishCreateBundleFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishCreateBundleFailure', JSON.stringify(msg));
+    // console.log('onPublishCreateBundleFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createBundle.completion = 'error';
-      publishStatus.steps.createBundle.error = msg.error;
+      publishStatus.steps.createBundle.error = splitMsgIntoNameValuePairs(msg.data);
     }
   };
 
   const onPublishCreateDeploymentStart = (msg: PublishCreateDeploymentStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishCreateDeploymentStart', JSON.stringify(msg));
+    // console.log('onPublishCreateDeploymentStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.steps.createDeployment.completion = 'started';
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'createDeployment';
+      publishStatus.steps.createDeployment.completion = 'inProgress';
     }
   };
 
   const onPublishCreateDeploymentSuccess = (msg: PublishCreateDeploymentSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishCreateDeploymentSuccess', JSON.stringify(msg));
+    // console.log('onPublishCreateDeploymentSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createDeployment.completion = 'success';
-      publishStatusMap.value.set(msg.data.contentId, publishStatus);
+      currentPublishStatus.value.contentId = msg.data.contentId;
     }
   };
 
   const onPublishCreateDeploymentFailure = (msg: PublishCreateDeploymentFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishCreateDeploymentFailure', JSON.stringify(msg));
+    // console.log('onPublishCreateDeploymentFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createDeployment.completion = 'error';
-      publishStatus.steps.createDeployment.error = msg.error;
+      publishStatus.steps.createDeployment.error = splitMsgIntoNameValuePairs(msg.data);
     }
   };
 
   const onPublishUploadBundleStart = (msg: PublishUploadBundleStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishUploadBundleStart', JSON.stringify(msg));
+    // console.log('onPublishUploadBundleStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.steps.uploadBundle.completion = 'started';
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'uploadBundle';
+      publishStatus.steps.uploadBundle.completion = 'inProgress';
     }
   };
 
   const onPublishUploadBundleSuccess = (msg: PublishUploadBundleSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishUploadBundleSuccess', JSON.stringify(msg));
+    // console.log('onPublishUploadBundleSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'success';
     }
   };
 
   const onPublishUploadBundleFailure = (msg: PublishUploadBundleFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishUploadBundleFailure', JSON.stringify(msg));
+    // console.log('onPublishUploadBundleFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'error';
-      publishStatus.steps.uploadBundle.error = msg.error;
+      publishStatus.steps.uploadBundle.error = splitMsgIntoNameValuePairs(msg.data);
     }
   };
 
   const onPublishDeployBundleStart = (msg: PublishDeployBundleStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishDeployBundleStart', JSON.stringify(msg));
+    // console.log('onPublishDeployBundleStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.steps.deployBundle.completion = 'started';
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'deployBundle';
+      publishStatus.steps.deployBundle.completion = 'inProgress';
     }
   };
 
   const onPublishDeployBundleSuccess = (msg: PublishDeployBundleSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishDeployBundleSuccess', JSON.stringify(msg));
+    // console.log('onPublishDeployBundleSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.deployBundle.completion = 'success';
     }
   };
 
   const onPublishDeployBundleFailure = (msg: PublishDeployBundleFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishDeployBundleFailure', JSON.stringify(msg));
+    // console.log('onPublishDeployBundleFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'error';
-      publishStatus.steps.deployBundle.error = msg.error;
+      publishStatus.steps.deployBundle.error = splitMsgIntoNameValuePairs(msg.data);
     }
   };
 
   const onPublishRestorePythonEnvStart = (msg: PublishRestorePythonEnvStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishRestorePythonEnvStart', JSON.stringify(msg));
+    // console.log('onPublishRestorePythonEnvStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.steps.restorePythonEnv.completion = 'started';
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'restorePythonEnv';
+      publishStatus.steps.restorePythonEnv.completion = 'inProgress';
     }
   };
 
   const onPublishRestorePythonEnvLog = (msg: PublishRestorePythonEnvLog) => {
     const localId = getLocalId(msg);
-    console.log('onPublishRestorePythonEnvLog', JSON.stringify(msg));
+    // console.log('onPublishRestorePythonEnvLog', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.restorePythonEnv.logs.push(msg);
+      // Not summarizing log messages
     }
   };
 
   const onPublishRestorePythonEnvProgress = (msg: PublishRestorePythonEnvProgress) => {
     const localId = getLocalId(msg);
-    console.log('onPublishRestorePythonEnvProgress', JSON.stringify(msg));
+    // console.log('onPublishRestorePythonEnvProgress', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       if (!publishStatus.steps.restorePythonEnv.progress) {
         publishStatus.steps.restorePythonEnv.progress = [];
       }
@@ -404,158 +484,171 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRestorePythonEnvStatus = (msg: PublishRestorePythonEnvStatus) => {
     const localId = getLocalId(msg);
-    console.log('onPublishRestorePythonEnvStatus', JSON.stringify(msg));
+    // console.log('onPublishRestorePythonEnvStatus', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       if (!publishStatus.steps.restorePythonEnv.status) {
         publishStatus.steps.restorePythonEnv.status = [];
       }
-      publishStatus.steps.restorePythonEnv.status.push(JSON.stringify(msg.data));
+      publishStatus.steps.restorePythonEnv.status.push(msg.data);
+      // status msg.data = {
+      //     "level": "INFO",
+      //     "message": "Package restore",
+      //     "localId": "E_JAH58AYf5l7bLq",
+      //     "name": "setuptools",
+      //     "runtime": "python",
+      //     "source": "server.log",
+      //     "status": "install",
+      //     "version": ""
+      // }
     }
   };
 
   const onPublishRestorePythonEnvSuccess = (msg: PublishRestorePythonEnvSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishRestorePythonEnvSuccess', JSON.stringify(msg));
+    // console.log('onPublishRestorePythonEnvSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.restorePythonEnv.completion = 'success';
     }
   };
 
   const onPublishRestorePythonEnvFailure = (msg: PublishRestorePythonEnvFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishRestorePythonEnvFailure', JSON.stringify(msg));
+    // console.log('onPublishRestorePythonEnvFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'error';
-      publishStatus.steps.restorePythonEnv.error = msg.error;
+      publishStatus.steps.restorePythonEnv.error = splitMsgIntoNameValuePairs(msg.data);
     }
   };
 
   const onPublishRunContentStart = (msg: PublishRunContentStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishRunContentStart', JSON.stringify(msg));
+    // console.log('onPublishRunContentStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.steps.runContent.completion = 'started';
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'runContent';
+      publishStatus.steps.runContent.completion = 'inProgress';
     }
   };
 
   const onPublishRunContentLog = (msg: PublishRunContentLog) => {
     const localId = getLocalId(msg);
-    console.log('onPublishRunContentLog', JSON.stringify(msg));
+    // console.log('onPublishRunContentLog', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.runContent.logs.push(msg);
     }
   };
 
   const onPublishRunContentSuccess = (msg: PublishRunContentSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishRunContentSuccess', JSON.stringify(msg));
+    // console.log('onPublishRunContentSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.runContent.completion = 'success';
     }
   };
 
   const onPublishRunContentFailure = (msg: PublishRunContentFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishRunContentFailure', JSON.stringify(msg));
+    // console.log('onPublishRunContentFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.runContent.completion = 'error';
-      publishStatus.steps.runContent.error = msg.error;
+      publishStatus.steps.runContent.error = splitMsgIntoNameValuePairs(msg.data);
     }
   };
 
   const onPublishSetVanityURLStart = (msg: PublishSetVanityURLStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishSetVanityURLStartlishStart', JSON.stringify(msg));
+    // console.log('onPublishSetVanityURLStartlishStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.steps.setVanityURL.completion = 'started';
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'setVanityURL';
+      publishStatus.steps.setVanityURL.completion = 'inProgress';
     }
   };
 
   const onPublishSetVanityURLLog = (msg: PublishSetVanityURLLog) => {
     const localId = getLocalId(msg);
-    console.log('onPublishSetVanityURLLog', JSON.stringify(msg));
+    // console.log('onPublishSetVanityURLLog', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.setVanityURL.logs.push(msg);
     }
   };
 
   const onPublishSetVanityURLSuccess = (msg: PublishSetVanityURLSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishSetVanityURLSuccess', JSON.stringify(msg));
+    // console.log('onPublishSetVanityURLSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.setVanityURL.completion = 'success';
     }
   };
 
   const onPublishSetVanityURLFailure = (msg: PublishSetVanityURLFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishSetVanityURLFailure', JSON.stringify(msg));
+    // console.log('onPublishSetVanityURLFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.runContent.completion = 'error';
-      publishStatus.steps.setVanityURL.error = msg.error;
+      publishStatus.steps.setVanityURL.error = splitMsgIntoNameValuePairs(msg.data);
     }
   };
 
   const onPublishValidateDeploymentStart = (msg: PublishValidateDeploymentStart) => {
     const localId = getLocalId(msg);
-    console.log('onPublishValidateDeploymentStart', JSON.stringify(msg));
+    // console.log('onPublishValidateDeploymentStart', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
-      publishStatus.steps.validateDeployment.completion = 'started';
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'validateDeployment';
+      publishStatus.steps.validateDeployment.completion = 'inProgress';
     }
   };
 
   const onPublishValidateDeploymentLog = (msg: PublishValidateDeploymentLog) => {
     const localId = getLocalId(msg);
-    console.log('onPublishValidateDeploymentLog', JSON.stringify(msg));
+    // console.log('onPublishValidateDeploymentLog', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.validateDeployment.logs.push(msg);
     }
   };
 
   const onPublishValidateDeploymentSuccess = (msg: PublishValidateDeploymentSuccess) => {
     const localId = getLocalId(msg);
-    console.log('onPublishValidateDeploymentSuccess', JSON.stringify(msg));
+    // console.log('onPublishValidateDeploymentSuccess', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.validateDeployment.completion = 'success';
     }
   };
 
   const onPublishValidateDeploymentFailure = (msg: PublishValidateDeploymentFailure) => {
     const localId = getLocalId(msg);
-    console.log('onPublishValidateDeploymentFailure', JSON.stringify(msg));
+    // console.log('onPublishValidateDeploymentFailure', JSON.stringify(msg));
 
-    const publishStatus = publishStatusMap.value.get(localId);
-    if (publishStatus) {
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.validateDeployment.completion = 'error';
-      publishStatus.steps.validateDeployment.error = msg.error;
+      publishStatus.steps.validateDeployment.error = splitMsgIntoNameValuePairs(msg.data);
     }
   };
 
@@ -569,18 +662,16 @@ export const useEventStore = defineStore('event', () => {
 
     try {
       publishInProgess.value = true;
+      currentPublishStatus.value.localId = '';
+      currentPublishStatus.value.contentId = contentId || '';
+      currentPublishStatus.value.status = newPublishStatus();
+
       const response = await api.deployments.publish(
         accountName,
         contentId,
       );
       const localId = <string>response.data.localId;
-
-      const publishStatus = newPublishStatus();
-      publishStatusMap.value.set(localId, publishStatus);
-      if (contentId) {
-        publishStatusMap.value.set(contentId, publishStatus);
-      }
-
+      currentPublishStatus.value.localId = localId;
       return localId;
     } catch (error) {
       return new Error(getErrorMessage(error));
@@ -651,15 +742,20 @@ export const useEventStore = defineStore('event', () => {
 
     eventStream.setDebugMode(false);
     eventStream.open('api/events?stream=messages');
-    console.log(eventStream.status());
+    // console.log(eventStream.status());
   };
   init();
 
   return {
     closeEventStream,
-    publishStatusMap,
+    currentPublishStatus,
     publishInProgess,
     initiatePublishProcessWithEvents,
     latestLocalId,
+    isPublishActiveByID,
+    doesPublishStatusApply,
+    publishStepDisplayNames,
+    publishStepOrder,
+    publishStepCompletionStatusNames,
   };
 });
