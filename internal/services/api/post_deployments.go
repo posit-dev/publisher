@@ -16,7 +16,8 @@ import (
 type PostPublishRequestBody struct {
 	AccountName string `json:"account"`
 	ConfigName  string `json:"config"`
-	TargetID    string `json:"target"`
+	TargetName  string `json:"target"`
+	SaveName    string `json:"saveName"`
 }
 
 type PostPublishReponse struct {
@@ -41,12 +42,19 @@ func PostDeploymentsHandlerFunc(
 			BadRequestJson(w, req, log, err)
 			return
 		}
+		if b.SaveName != "" {
+			err = util.ValidateFilename(b.SaveName)
+			if err != nil {
+				BadRequestJson(w, req, log, err)
+				return
+			}
+		}
 		localID, err := state.NewLocalID()
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
-		newState, err := stateFactory(base, b.AccountName, b.ConfigName, b.TargetID, accountList)
+		newState, err := stateFactory(base, b.AccountName, b.ConfigName, b.TargetName, b.SaveName, accountList)
 		if err != nil {
 			BadRequestJson(w, req, log, err)
 			return

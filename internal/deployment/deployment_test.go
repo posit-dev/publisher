@@ -52,13 +52,13 @@ func (s *DeploymentSuite) TestNew() {
 }
 
 func (s *DeploymentSuite) TestGetDeploymentPath() {
-	path := GetDeploymentPath(s.cwd, "myTargetID")
-	s.Equal(path, s.cwd.Join(".posit", "publish", "deployments", "myTargetID.toml"))
+	path := GetDeploymentPath(s.cwd, "myTargetName")
+	s.Equal(path, s.cwd.Join(".posit", "publish", "deployments", "myTargetName.toml"))
 }
 
 func (s *DeploymentSuite) TestFromFile() {
-	expected := s.createDeploymentFile("myTargetID")
-	path := GetDeploymentPath(s.cwd, "myTargetID")
+	expected := s.createDeploymentFile("myTargetName")
+	path := GetDeploymentPath(s.cwd, "myTargetName")
 	actual, err := FromFile(path)
 	s.NoError(err)
 	s.NotNil(actual)
@@ -72,14 +72,14 @@ func (s *DeploymentSuite) TestFromFileErr() {
 }
 
 func (s *DeploymentSuite) TestWriteFile() {
-	configFile := GetDeploymentPath(s.cwd, "myTargetID")
+	configFile := GetDeploymentPath(s.cwd, "myTargetName")
 	deployment := New()
 	err := deployment.WriteFile(configFile)
 	s.NoError(err)
 }
 
 func (s *DeploymentSuite) TestWriteFileErr() {
-	configFile := GetDeploymentPath(s.cwd, "myTargetID")
+	configFile := GetDeploymentPath(s.cwd, "myTargetName")
 	readonlyFile := util.NewPath(configFile.Path(), afero.NewReadOnlyFs(configFile.Fs()))
 	deployment := New()
 	err := deployment.WriteFile(readonlyFile)

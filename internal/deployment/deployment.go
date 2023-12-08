@@ -4,6 +4,7 @@ package deployment
 
 import (
 	"io"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -15,13 +16,14 @@ import (
 
 type Deployment struct {
 	Schema        string              `toml:"$schema" json:"$schema"`
-	ServerType    accounts.ServerType `toml:"server-type" json:"server-type"`
-	ServerURL     string              `toml:"server-url" json:"server-url"`
+	ServerType    accounts.ServerType `toml:"server-type" json:"serverType"`
+	ServerURL     string              `toml:"server-url" json:"serverUrl"`
 	Id            types.ContentID     `toml:"id" json:"id"`
-	ConfigName    string              `toml:"configuration-name" json:"configuration-name"`
+	ConfigName    string              `toml:"configuration-name" json:"configurationName"`
 	Configuration config.Config       `toml:"configuration" json:"configuration"`
 	Files         []string            `toml:"files" json:"files"`
-	DeployedAt    string              `toml:"deployed-at" json:"deployed-at"`
+	DeployedAt    string              `toml:"deployed-at" json:"deployedAt"`
+	SaveName      string              `toml:"-" json:"saveName"`
 }
 
 func New() *Deployment {
@@ -37,8 +39,8 @@ func GetDeploymentsPath(base util.Path) util.Path {
 	return base.Join(".posit", "publish", "deployments")
 }
 
-func GetDeploymentPath(base util.Path, id string) util.Path {
-	return GetDeploymentsPath(base).Join(id + ".toml")
+func GetDeploymentPath(base util.Path, name string) util.Path {
+	return GetDeploymentsPath(base).Join(name + ".toml")
 }
 
 func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
@@ -46,17 +48,32 @@ func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
 	return dir.Glob("*.toml")
 }
 
+func SaveNameFromPath(path util.Path) string {
+	return strings.TrimSuffix(path.Base(), ".toml")
+}
+
+func RenameDeployment(base util.Path, oldName, newName string) error {
+	err := util.ValidateFilename(newName)
+	if err != nil {
+		return err
+	}
+	oldPath := GetDeploymentPath(base, oldName)
+	newPath := GetDeploymentPath(base, newName)
+	return oldPath.Rename(newPath)
+}
+
 func FromFile(path util.Path) (*Deployment, error) {
 	err := ValidateFile(path)
 	if err != nil {
 		return nil, err
 	}
-	deployment := New()
-	err = util.ReadTOMLFile(path, deployment)
+	d := New()
+	err = util.ReadTOMLFile(path, d)
 	if err != nil {
 		return nil, err
 	}
-	return deployment, nil
+	d.SaveName = SaveNameFromPath(path)
+	return d, nil
 }
 
 func ValidateFile(path util.Path) error {
@@ -67,12 +84,12 @@ func ValidateFile(path util.Path) error {
 	return validator.ValidateTOMLFile(path)
 }
 
-func (record *Deployment) Write(w io.Writer) error {
+func (d *Deployment) Write(w io.Writer) error {
 	enc := toml.NewEncoder(w)
-	return enc.Encode(record)
+	return enc.Encode(d)
 }
 
-func (record *Deployment) WriteFile(path util.Path) error {
+func (d *Deployment) WriteFile(path util.Path) error {
 	err := path.Dir().MkdirAll(0777)
 	if err != nil {
 		return err
@@ -82,5 +99,10 @@ func (record *Deployment) WriteFile(path util.Path) error {
 		return err
 	}
 	defer f.Close()
-	return record.Write(f)
+	err = d.Write(f)
+	if err != nil {
+		return err
+	}
+	d.SaveName = SaveNameFromPath(path)
+	return nil
 }
