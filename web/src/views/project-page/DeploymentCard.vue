@@ -38,7 +38,6 @@ defineProps({
 <style scoped lang="scss">
 .deployment-card {
     position: relative;
-    align-items: center;
     border-radius: 8px;
     border: 1px solid;
     padding: 24px;
