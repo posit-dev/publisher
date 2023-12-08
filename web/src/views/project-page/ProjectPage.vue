@@ -1,6 +1,10 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
+  <q-breadcrumbs>
+    <q-breadcrumbs-el label="Project" />
+  </q-breadcrumbs>
+
   <h1>Project Page</h1>
 
   <h2>Destinations</h2>
