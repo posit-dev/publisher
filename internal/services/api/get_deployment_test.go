@@ -43,9 +43,9 @@ func (s *GetDeploymentSuite) SetupTest() {
 }
 
 func (s *GetDeploymentSuite) TestGetDeployment() {
-	path := deployment.GetDeploymentPath(s.cwd, "myTargetID")
+	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetID"
+	d.Id = "myTargetName"
 	d.ServerType = accounts.ServerTypeConnect
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
@@ -58,9 +58,9 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	h := GetDeploymentHandlerFunc(s.cwd, s.log)
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/api/deployments/myTargetID", nil)
+	req, err := http.NewRequest("GET", "/api/deployments/myTargetName", nil)
 	s.NoError(err)
-	req = mux.SetURLVars(req, map[string]string{"id": "myTargetID"})
+	req = mux.SetURLVars(req, map[string]string{"id": "myTargetName"})
 	h(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
@@ -73,20 +73,20 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	s.NotNil(res.Deployment)
 	s.Equal("", res.Error)
 	s.Equal(d, res.Deployment)
-	s.Equal(types.ContentID("myTargetID"), res.Deployment.Id)
+	s.Equal(types.ContentID("myTargetName"), res.Deployment.Id)
 }
 
 func (s *GetDeploymentSuite) TestGetDeploymentError() {
-	path2 := deployment.GetDeploymentPath(s.cwd, "myTargetID")
+	path2 := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	err := path2.WriteFile([]byte(`foo = 1`), 0666)
 	s.NoError(err)
 
 	h := GetDeploymentHandlerFunc(s.cwd, s.log)
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/api/deployments/myTargetID", nil)
+	req, err := http.NewRequest("GET", "/api/deployments/myTargetName", nil)
 	s.NoError(err)
-	req = mux.SetURLVars(req, map[string]string{"id": "myTargetID"})
+	req = mux.SetURLVars(req, map[string]string{"id": "myTargetName"})
 	h(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
@@ -103,7 +103,7 @@ func (s *GetDeploymentSuite) TestGetDeploymentError() {
 }
 
 func (s *GetDeploymentSuite) TestGetDeploymentNotFound() {
-	path2 := deployment.GetDeploymentPath(s.cwd, "myTargetID")
+	path2 := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	err := path2.WriteFile([]byte(`foo = 1`), 0666)
 	s.NoError(err)
 

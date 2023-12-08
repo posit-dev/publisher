@@ -10,11 +10,12 @@ export type DeploymentError = {
 
 export type Deployment = {
   $schema: SchemaURL,
-  serverType: ServerType
+  serverType: ServerType,
   serverUrl: string,
   id: string,
-  files: string[]
-  deployedAt: string
+  files: string[],
+  deployedAt: string,
+  saveName: string,
 } & Configuration;
 
 export function isDeploymentError(
