@@ -115,7 +115,19 @@ watch(
 
 <style scoped lang="scss">
 .destination-header {
-  background-color: white;
-  border-bottom: 1px solid $grey-4;
+  border-bottom: 1px solid;
+}
+
+.body--light {
+  .destination-header {
+    background-color: white;
+    border-color: $grey-4;
+  }
+}
+
+.body--dark {
+  .destination-header {
+    border-color: $grey-8;
+  }
 }
 </style>
