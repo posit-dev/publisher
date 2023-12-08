@@ -20,6 +20,7 @@ const (
 	ContentTypeRShiny          ContentType = "r-shiny"
 	ContentTypeRMarkdownShiny  ContentType = "rmd-shiny"
 	ContentTypeRMarkdown       ContentType = "rmd"
+	ContentTypeUnknown         ContentType = "unknown"
 )
 
 func (t ContentType) IsPythonContent() bool {
