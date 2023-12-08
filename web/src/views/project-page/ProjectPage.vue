@@ -13,16 +13,13 @@
     Add Destination
   </q-btn>
 
-  <ul
-    v-for="deployment in deployments"
-    :key="deployment.id"
-  >
-    <li>
-      <RouterLink :to="`/deployments/${deployment.id}`">
-        {{ deployment.serverUrl }}
-      </RouterLink>
-    </li>
-  </ul>
+  <div class="card-grid">
+    <DeploymentCard
+      v-for="deployment in deployments"
+      :key="deployment.id"
+      :deployment="deployment"
+    />
+  </div>
 
   <h2>Configurations</h2>
   <ul
@@ -40,11 +37,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { RouterLink } from 'vue-router';
 
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import { Configuration, ConfigurationError, isConfigurationError } from 'src/api/types/configurations';
+import DeploymentCard from './DeploymentCard.vue';
 
 const api = useApi();
 const deployments = ref<Deployment[]>([]);
@@ -65,3 +62,11 @@ async function getConfigurations() {
 getDeployments();
 getConfigurations();
 </script>
+
+<style scoped lang="scss">
+.card-grid {
+  margin-top: 24px;
+  display: grid;
+  grid-gap: 28px;
+}
+</style>
