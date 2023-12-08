@@ -35,7 +35,7 @@
   </ul>
 
   <h2>Files</h2>
-  <FilesToPublish />
+  <FileTree />
 </template>
 
 <script setup lang="ts">
@@ -45,7 +45,7 @@ import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import { Configuration, ConfigurationError, isConfigurationError } from 'src/api/types/configurations';
 import DeploymentCard from './DeploymentCard.vue';
-import FilesToPublish from 'src/components/FilesToPublish.vue';
+import FileTree from 'src/components/FileTree.vue';
 
 const api = useApi();
 const deployments = ref<Deployment[]>([]);
