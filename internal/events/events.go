@@ -26,6 +26,7 @@ type Phase = logging.Phase
 const (
 	AgentOp Operation = "agent"
 
+	PublishCheckCapabilitiesOp   Operation = "publish/checkCapabilities"
 	PublishCreateNewDeploymentOp Operation = "publish/createNewDeployment"
 	PublishSetEnvVarsOp          Operation = "publish/setEnvVars"
 	PublishCreateBundleOp        Operation = "publish/createBundle"

@@ -69,6 +69,20 @@ func (u *UserDTO) toUser() *User {
 
 var ErrTimedOut = errors.New("request timed out")
 
+const (
+	AuthRoleAdmin     = "administrator"
+	AuthRolePublisher = "publisher"
+	AuthRoleViewer    = "viewer"
+)
+
+func (u *UserDTO) CanAdmin() bool {
+	return u.UserRole == AuthRoleAdmin
+}
+
+func (u *UserDTO) CanPublish() bool {
+	return u.UserRole == AuthRoleAdmin || u.UserRole == AuthRolePublisher
+}
+
 func (c *ConnectClient) TestAuthentication() (*User, error) {
 	c.log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO

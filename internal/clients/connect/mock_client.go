@@ -65,3 +65,8 @@ func (m *MockClient) ValidateDeployment(id types.ContentID) error {
 	args := m.Called(id)
 	return args.Error(0)
 }
+
+func (m *MockClient) CheckCapabilities(cfg *config.Config) error {
+	args := m.Called(cfg)
+	return args.Error(0)
+}

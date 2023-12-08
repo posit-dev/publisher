@@ -38,6 +38,28 @@ func (t ContentType) IsPythonContent() bool {
 	return false
 }
 
+func (t ContentType) IsAPIContent() bool {
+	switch t {
+	case ContentTypePythonFlask,
+		ContentTypePythonFastAPI,
+		ContentTypeRPlumber:
+		return true
+	}
+	return false
+}
+
+func (t ContentType) IsAppContent() bool {
+	switch t {
+	case ContentTypePythonShiny,
+		ContentTypeRShiny,
+		ContentTypePythonBokeh,
+		ContentTypePythonDash,
+		ContentTypePythonStreamlit:
+		return true
+	}
+	return false
+}
+
 type Config struct {
 	Schema        string      `toml:"$schema" json:"$schema"`
 	Type          ContentType `toml:"type" json:"type"`
@@ -132,12 +154,14 @@ type ConnectRuntime struct {
 }
 
 type ConnectKubernetes struct {
-	MemoryRequest      *int64   `toml:"memory-request,omitempty" json:"memory-request,omitempty"`
-	MemoryLimit        *int64   `toml:"memory-limit,omitempty" json:"memory-limit,omitempty"`
-	CPURequest         *float64 `toml:"cpu-request,omitempty" json:"cpu-request,omitempty"`
-	CPULimit           *float64 `toml:"cpu-limit,omitempty" json:"cpu-limit,omitempty"`
-	AMDGPULimit        *int64   `toml:"amd-gpu-limit,omitempty" json:"amd-gpu-limit,omitempty"`
-	NvidiaGPULimit     *int64   `toml:"nvidia-gpu-limit,omitempty" json:"nvidia-gpu-limit,omitempty"`
-	ServiceAccountName string   `toml:"service-account-name,omitempty" json:"service-account-name,omitempty"`
-	DefaultImageName   string   `toml:"image-name,omitempty" json:"image-name,omitempty"`
+	MemoryRequest                  *int64   `toml:"memory-request,omitempty" json:"memory-request,omitempty"`
+	MemoryLimit                    *int64   `toml:"memory-limit,omitempty" json:"memory-limit,omitempty"`
+	CPURequest                     *float64 `toml:"cpu-request,omitempty" json:"cpu-request,omitempty"`
+	CPULimit                       *float64 `toml:"cpu-limit,omitempty" json:"cpu-limit,omitempty"`
+	AMDGPULimit                    *int64   `toml:"amd-gpu-limit,omitempty" json:"amd-gpu-limit,omitempty"`
+	NvidiaGPULimit                 *int64   `toml:"nvidia-gpu-limit,omitempty" json:"nvidia-gpu-limit,omitempty"`
+	ServiceAccountName             string   `toml:"service-account-name,omitempty" json:"service-account-name,omitempty"`
+	DefaultImageName               string   `toml:"image-name,omitempty" json:"image-name,omitempty"`
+	DefaultREnvironmentManagement  *bool    `toml:"default-r-environment-management,omitempty" json:"defaultREnvironmentManagement"`
+	DefaultPyEnvironmentManagement *bool    `toml:"default-py-environment-management,omitempty" json:"defaultPyEnvironmentManagement"`
 }
