@@ -28,7 +28,7 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
     [NODE_KEY]: file.id,
     label: file.base,
     children: file.files.map(fileToTreeNode),
-    tickable: !file.exclusion,
+    disabled: Boolean(file.exclusion),
     icon: file.isDir ? 'folder' : undefined,
   };
 
