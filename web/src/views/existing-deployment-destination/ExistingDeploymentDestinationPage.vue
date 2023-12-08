@@ -24,6 +24,9 @@
     v-if="deployment"
     :config="deployment"
   />
+
+  <h2>Files</h2>
+  <FileTree />
 </template>
 
 <script setup lang="ts">
@@ -34,6 +37,7 @@ import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
+import FileTree from 'src/components/FileTree.vue';
 import ExistingDeploymentDestinationHeader from './ExistingDeploymentDestinationHeader.vue';
 
 const route = useRoute();
