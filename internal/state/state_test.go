@@ -46,12 +46,11 @@ func (s *StateSuite) TestEmpty() {
 func (s *StateSuite) createConfigFile(name string, bad bool) {
 	configFile := config.GetConfigPath(s.cwd, name)
 	configData := []byte(`
-		'$schema' = 'https://example.com/schema/publishing.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
 		type = 'python-dash'
 		entrypoint = 'app:app'
 		title = 'Super Title'
 		description = 'minimal description'
-		tags = ['a', 'b', 'c']
 
 		[python]
 		version = "3.11.3"
@@ -79,13 +78,12 @@ func (s *StateSuite) TestLoadConfig() {
 	min_procs := int32(1)
 
 	s.Equal(&config.Config{
-		Schema:      "https://example.com/schema/publishing.json",
+		Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 		Type:        "python-dash",
 		Entrypoint:  "app:app",
 		Validate:    true,
 		Title:       "Super Title",
 		Description: "minimal description",
-		Tags:        []string{"a", "b", "c"},
 		Python: &config.Python{Version: "3.11.3",
 			PackageFile:    "requirements.txt",
 			PackageManager: "pip",
@@ -116,9 +114,9 @@ func (s *StateSuite) TestLoadConfigErr() {
 }
 
 func (s *StateSuite) createTargetFile(name string, bad bool) {
-	targetFile := deployment.GetLatestDeploymentPath(s.cwd, name)
+	targetFile := deployment.GetDeploymentPath(s.cwd, name)
 	targetData := []byte(`
-		'$schema' = 'https://example.com/schema/publishing-record.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json'
 		server-url = 'https://connect.example.com'
 		server-type = "connect"
 		id = '1234567890ABCDEF'
@@ -128,12 +126,11 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 			'requirements.txt'
 		]
 		[configuration]
-		'$schema' = 'https://example.com/schema/publishing.json'
+		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
 		type = 'python-dash'
 		entrypoint = 'app:app'
 		title = 'Super Title'
 		description = 'minimal description'
-		tags = ['a', 'b', 'c']
 
 		[configuration.python]
 		version = "3.11.3"
@@ -161,7 +158,7 @@ func (s *StateSuite) TestLoadTarget() {
 	min_procs := int32(1)
 
 	s.Equal(&deployment.Deployment{
-		Schema:     "https://example.com/schema/publishing-record.json",
+		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json",
 		ServerURL:  "https://connect.example.com",
 		ServerType: "connect",
 		ConfigName: "myConfig",
@@ -169,15 +166,15 @@ func (s *StateSuite) TestLoadTarget() {
 			"app.py",
 			"requirements.txt",
 		},
-		Id: "1234567890ABCDEF",
+		Id:       "1234567890ABCDEF",
+		SaveName: "myTarget",
 		Configuration: config.Config{
-			Schema:      "https://example.com/schema/publishing.json",
+			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 			Type:        "python-dash",
 			Entrypoint:  "app:app",
 			Validate:    true,
 			Title:       "Super Title",
 			Description: "minimal description",
-			Tags:        []string{"a", "b", "c"},
 			Python: &config.Python{Version: "3.11.3",
 				PackageFile:    "requirements.txt",
 				PackageManager: "pip",
@@ -261,15 +258,17 @@ func (s *StateSuite) TestNew() {
 
 	configPath := config.GetConfigPath(s.cwd, "default")
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", "", "", accts)
+	state, err := New(s.cwd, "", "", "", "", accts)
 	s.NoError(err)
 	s.NotNil(state)
 	s.Equal(state.AccountName, "")
 	s.Equal(state.ConfigName, config.DefaultConfigName)
-	s.Equal(state.TargetID, "")
+	s.Equal(state.TargetName, "")
 	s.Nil(state.Account, "")
 	s.Equal(cfg, state.Config)
 	s.Nil(state.Target)
@@ -282,16 +281,18 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	configName := "staging"
 	configPath := config.GetConfigPath(s.cwd, configName)
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", configName, "", accts)
+	state, err := New(s.cwd, "", configName, "", "", accts)
 	s.NoError(err)
 	s.NotNil(state)
-	s.Equal(state.AccountName, "")
-	s.Equal(state.ConfigName, configName)
-	s.Equal(state.TargetID, "")
-	s.Nil(state.Account, "")
+	s.Equal("", state.AccountName)
+	s.Equal(configName, state.ConfigName)
+	s.Equal("", state.TargetName)
+	s.Nil(state.Account)
 	s.Equal(cfg, state.Config)
 	s.Nil(state.Target)
 }
@@ -300,7 +301,7 @@ func (s *StateSuite) TestNewConfigErr() {
 	accts := &accounts.MockAccountList{}
 	accts.On("GetAllAccounts").Return(nil, nil)
 
-	state, err := New(s.cwd, "", "", "", accts)
+	state, err := New(s.cwd, "", "", "", "", accts)
 	s.NotNil(err)
 	s.ErrorContains(err, "couldn't load configuration")
 	s.Nil(state)
@@ -324,26 +325,29 @@ func (s *StateSuite) TestNewWithTarget() {
 
 	configPath := config.GetConfigPath(s.cwd, "savedConfigName")
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
-	targetPath := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
+	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetID"
+	d.Id = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
+	d.Configuration = *cfg
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "", "", "myTargetID", accts)
+	state, err := New(s.cwd, "", "", "myTargetName", "", accts)
 	s.NoError(err)
 	s.NotNil(state)
-	s.Equal(state.AccountName, "acct1")
-	s.Equal(state.ConfigName, "savedConfigName")
-	s.Equal(state.TargetID, "myTargetID")
-	s.Equal(state.Account, &acct1)
-	s.Equal(state.Config, cfg)
-	s.Equal(state.Target, d)
+	s.Equal("acct1", state.AccountName)
+	s.Equal("savedConfigName", state.ConfigName)
+	s.Equal("myTargetName", state.TargetName)
+	s.Equal(&acct1, state.Account)
+	s.Equal(cfg, state.Config)
+	s.Equal(d, state.Target)
 }
 
 func (s *StateSuite) TestNewWithTargetAndAccount() {
@@ -364,24 +368,28 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 
 	configPath := config.GetConfigPath(s.cwd, "savedConfigName")
 	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(configPath)
 	s.NoError(err)
 
-	targetPath := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
+	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetID"
+	d.Id = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
+	d.Configuration = *cfg
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 
-	state, err := New(s.cwd, "acct2", "", "myTargetID", accts)
+	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts)
 	s.NoError(err)
 	s.NotNil(state)
-	s.Equal(state.AccountName, "acct2")
-	s.Equal(state.ConfigName, "savedConfigName")
-	s.Equal(state.TargetID, "myTargetID")
-	s.Equal(state.Account, &acct2)
-	s.Equal(state.Config, cfg)
-	s.Equal(state.Target, d)
+	s.Equal("acct2", state.AccountName)
+	s.Equal("savedConfigName", state.ConfigName)
+	s.Equal("myTargetName", state.TargetName)
+	s.Equal(&acct2, state.Account)
+	s.Equal(cfg, state.Config)
+	d.SaveName = "mySaveName"
+	s.Equal(d, state.Target)
 }

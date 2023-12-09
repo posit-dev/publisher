@@ -14,7 +14,7 @@ arch=$4
 name=$(basename "$cmd")
 
 if [ "$os" = "windows" ]; then
-    printf "$(pwd)/bin/%s/%s/%s" "$os" "$arch" "$name-$version-$os-$arch.exe"
+    printf "$(pwd)/bin/%s/%s/%s/%s" "$os" "$arch" "$version" "$name.exe"
 else
-    printf "$(pwd)/bin/%s/%s/%s" "$os" "$arch" "$name-$version-$os-$arch"
+    printf "$(pwd)/bin/%s/%s/%s/%s" "$os" "$arch" "$version" "$name"
 fi

@@ -17,6 +17,7 @@ import (
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
@@ -30,8 +31,8 @@ type defaultPublisher struct {
 	*state.State
 }
 
-func New(path util.Path, accountName, configName, targetID string, accountList accounts.AccountList) (Publisher, error) {
-	s, err := state.New(path, accountName, configName, targetID, accountList)
+func New(path util.Path, accountName, configName, targetName string, saveName string, accountList accounts.AccountList) (Publisher, error) {
+	s, err := state.New(path, accountName, configName, targetName, saveName, accountList)
 	if err != nil {
 		return nil, err
 	}
@@ -137,33 +138,31 @@ func (p *defaultPublisher) createDeploymentRecord(
 		return err
 	}
 	p.Target = &deployment.Deployment{
-		Schema:        deployment.DeploymentSchema,
+		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    account.ServerType,
 		ServerURL:     account.URL,
 		Id:            contentID,
 		ConfigName:    p.ConfigName,
 		Files:         createdManifest.GetFilenames(),
 		Configuration: *p.Config,
-		DeployedAt:    time.Now().UTC(),
+		DeployedAt:    time.Now().UTC().Format(time.RFC3339),
 	}
+
 	// Save current deployment information for this target
-	recordPath := deployment.GetLatestDeploymentPath(p.Dir, string(contentID))
+	if p.SaveName != "" {
+		if p.TargetName != "" {
+			err := deployment.RenameDeployment(p.Dir, p.TargetName, p.SaveName)
+			if err != nil {
+				return err
+			}
+		}
+		p.TargetName = p.SaveName
+	} else if p.TargetName == "" {
+		p.TargetName = string(contentID)
+	}
+	recordPath := deployment.GetDeploymentPath(p.Dir, p.TargetName)
 	log.Info("Writing deployment record", "path", recordPath)
-	err = p.Target.WriteFile(recordPath)
-	if err != nil {
-		return err
-	}
-	// and create a new history entry
-	historyPath, err := deployment.GetDeploymentHistoryPath(p.Dir, string(contentID))
-	if err != nil {
-		return err
-	}
-	log.Info("Writing history record", "path", historyPath)
-	err = p.Target.WriteFile(historyPath)
-	if err != nil {
-		return err
-	}
-	return nil
+	return p.Target.WriteFile(recordPath)
 }
 
 func (p *defaultPublisher) publishWithClient(

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
@@ -41,10 +42,14 @@ func (s *GetDeploymentsSuite) SetupTest() {
 }
 
 func (s *GetDeploymentsSuite) TestGetDeployments() {
-	path := deployment.GetLatestDeploymentPath(s.cwd, "myTargetID")
+	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetID"
+	d.Id = "myTargetName"
 	d.ServerType = accounts.ServerTypeConnect
+	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
+	d.Configuration = *cfg
 	err := d.WriteFile(path)
 	s.NoError(err)
 
@@ -63,20 +68,25 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 1)
-	s.Equal(d, res[0].Deployment)
-	s.Equal(types.ContentID("myTargetID"), res[0].Deployment.Id)
 	s.Equal("", res[0].Error)
+	s.NotNil(res[0].Deployment)
+	s.Equal(d, res[0].Deployment)
+	s.Equal(types.ContentID("myTargetName"), res[0].Deployment.Id)
 }
 
 func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
-	path := deployment.GetLatestDeploymentPath(s.cwd, "target1")
+	path := deployment.GetDeploymentPath(s.cwd, "target1")
 	d := deployment.New()
 	d.Id = "target1"
 	d.ServerType = accounts.ServerTypeConnect
+	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
+	d.Configuration = *cfg
 	err := d.WriteFile(path)
 	s.NoError(err)
 
-	path2 := deployment.GetLatestDeploymentPath(s.cwd, "target2")
+	path2 := deployment.GetDeploymentPath(s.cwd, "target2")
 	err = path2.WriteFile([]byte(`foo = 1`), 0666)
 	s.NoError(err)
 
@@ -95,9 +105,10 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 2)
+	s.Equal("", res[0].Error)
+	s.NotNil(res[0].Deployment)
 	s.Equal(d, res[0].Deployment)
 	s.Equal(types.ContentID("target1"), res[0].Deployment.Id)
-	s.Equal("", res[0].Error)
 
 	var nilDeployment *deployment.Deployment
 	s.Equal(nilDeployment, res[1].Deployment)

@@ -3,82 +3,93 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"io"
-	"time"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type Deployment struct {
-	Schema        config.SchemaURL    `toml:"$schema" json:"$schema"`
-	ServerType    accounts.ServerType `toml:"server-type" json:"server-type"`
-	ServerURL     string              `toml:"server-url" json:"server-url"`
+	Schema        string              `toml:"$schema" json:"$schema"`
+	ServerType    accounts.ServerType `toml:"server-type" json:"serverType"`
+	ServerURL     string              `toml:"server-url" json:"serverUrl"`
 	Id            types.ContentID     `toml:"id" json:"id"`
-	ConfigName    string              `toml:"configuration-name" json:"configuration-name"`
+	ConfigName    string              `toml:"configuration-name" json:"configurationName"`
 	Configuration config.Config       `toml:"configuration" json:"configuration"`
 	Files         []string            `toml:"files" json:"files"`
-	DeployedAt    time.Time           `toml:"deployed-at" json:"deployed-at"`
+	DeployedAt    string              `toml:"deployed-at" json:"deployedAt"`
+	SaveName      string              `toml:"-" json:"saveName"`
 }
-
-const DeploymentSchema config.SchemaURL = "https://github.com/rstudio/publishing-client/blob/main/schemas/posit-publishing-record-schema-v3.json"
 
 func New() *Deployment {
 	return &Deployment{
-		Schema:        DeploymentSchema,
+		Schema:        schema.DeploymentSchemaURL,
+		ServerType:    accounts.ServerTypeConnect,
 		Configuration: *config.New(),
 		Files:         []string{},
 	}
 }
 
-const latestDeploymentName = "latest.toml"
-
 func GetDeploymentsPath(base util.Path) util.Path {
 	return base.Join(".posit", "publish", "deployments")
 }
 
-func GetLatestDeploymentPath(base util.Path, id string) util.Path {
-	return GetDeploymentsPath(base).Join(id, latestDeploymentName)
+func GetDeploymentPath(base util.Path, name string) util.Path {
+	return GetDeploymentsPath(base).Join(name + ".toml")
 }
 
-func ListLatestDeploymentFiles(base util.Path) ([]util.Path, error) {
+func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
 	dir := GetDeploymentsPath(base)
-	return dir.Glob("*/" + latestDeploymentName)
+	return dir.Glob("*.toml")
 }
 
-func GetDeploymentHistoryPath(base util.Path, id string) (util.Path, error) {
-	for i := 1; ; i++ {
-		name := fmt.Sprintf("v%d.toml", i)
-		path := GetDeploymentsPath(base).Join(id, name)
-		exists, err := path.Exists()
-		if err != nil {
-			return util.Path{}, err
-		}
-		if !exists {
-			return path, nil
-		}
+func SaveNameFromPath(path util.Path) string {
+	return strings.TrimSuffix(path.Base(), ".toml")
+}
+
+func RenameDeployment(base util.Path, oldName, newName string) error {
+	err := util.ValidateFilename(newName)
+	if err != nil {
+		return err
 	}
+	oldPath := GetDeploymentPath(base, oldName)
+	newPath := GetDeploymentPath(base, newName)
+	return oldPath.Rename(newPath)
 }
 
 func FromFile(path util.Path) (*Deployment, error) {
-	deployment := New()
-	err := util.ReadTOMLFile(path, deployment)
+	err := ValidateFile(path)
 	if err != nil {
 		return nil, err
 	}
-	return deployment, nil
+	d := New()
+	err = util.ReadTOMLFile(path, d)
+	if err != nil {
+		return nil, err
+	}
+	d.SaveName = SaveNameFromPath(path)
+	return d, nil
 }
 
-func (record *Deployment) Write(w io.Writer) error {
+func ValidateFile(path util.Path) error {
+	validator, err := schema.NewValidator(schema.DeploymentSchemaURL)
+	if err != nil {
+		return err
+	}
+	return validator.ValidateTOMLFile(path)
+}
+
+func (d *Deployment) Write(w io.Writer) error {
 	enc := toml.NewEncoder(w)
-	return enc.Encode(record)
+	return enc.Encode(d)
 }
 
-func (record *Deployment) WriteFile(path util.Path) error {
+func (d *Deployment) WriteFile(path util.Path) error {
 	err := path.Dir().MkdirAll(0777)
 	if err != nil {
 		return err
@@ -88,5 +99,10 @@ func (record *Deployment) WriteFile(path util.Path) error {
 		return err
 	}
 	defer f.Close()
-	return record.Write(f)
+	err = d.Write(f)
+	if err != nil {
+		return err
+	}
+	d.SaveName = SaveNameFromPath(path)
+	return nil
 }

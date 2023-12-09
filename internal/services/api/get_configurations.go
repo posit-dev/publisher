@@ -13,8 +13,8 @@ import (
 )
 
 type configDTO struct {
-	Name          string         `json:"configuration-name"`
-	Path          string         `json:"configuration-path"`
+	Name          string         `json:"configurationName"`
+	Path          string         `json:"configurationPath"`
 	Configuration *config.Config `json:"configuration,omitempty"`
 	Error         string         `json:"error,omitempty"`
 }

@@ -3,7 +3,9 @@ package util
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"os"
+	"strings"
 )
 
 func Chdir(dir string) (string, error) {
@@ -48,4 +50,20 @@ func IsPythonEnvironmentDir(path Path) bool {
 		}
 	}
 	return false
+}
+
+const badChars = `/:\*?"<>|`
+
+var ErrInvalidName = errors.New("invalid name: cannot contain any of these characters: " + badChars)
+
+func ValidateFilename(name string) error {
+	if strings.ContainsAny(name, badChars) {
+		return ErrInvalidName
+	}
+	for _, c := range name {
+		if int(c) < 32 {
+			return ErrInvalidName
+		}
+	}
+	return nil
 }
