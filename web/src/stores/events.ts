@@ -100,7 +100,7 @@ export const publishStepOrder: Record<PublishStep, number> = {
 
 export type PublishStepStatus = {
   completion: PublishStepCompletionStatus;
-  error?: string[];
+  error?: string[][];
   lastLogMsg?: string;
   logs: EventStreamMessage[];
   status?: Record<string, string>[];
@@ -114,7 +114,7 @@ const emptyPublishStepStatus = {
 
 export type PublishStatus = {
   completion: PublishStepCompletionStatus;
-  error?: string[];
+  error?: string[][];
   dashboardURL: string,
   directURL: string,
   currentStep?: PublishStep,
@@ -157,8 +157,8 @@ const newPublishStatus = () => {
 };
 
 export const splitMsgIntoNameValuePairs = ((msg: Record<string, string>) => {
-  const result: string[] = [];
-  Object.keys(msg).forEach(key => result.push(`${key}: ${msg[key]}`));
+  const result: string[][] = [];
+  Object.keys(msg).forEach(key => result.push([key, msg[key]]));
   return result;
 });
 

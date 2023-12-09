@@ -63,21 +63,27 @@
       </div>
     </div>
     <div
-      v-if="showPublishSuccessError"
+      v-if="showPublishError"
       class="q-ma-lg error q-pa-sm row text-left items-center"
     >
-      <div class="col">
-        &nbsp;
+      <div class="col q-ml-sm">
+        <q-icon
+          name="error"
+          size="3rem"
+        />
       </div>
       <div class="col-10 text-caption">
         <div class="text-bold">
           Publishing Operation has failed.
         </div>
         <div
-          v-for="(value, index) in eventStore.currentPublishStatus.status.error"
+          v-for="(array, index) in eventStore.currentPublishStatus.status.error"
           :key="index"
         >
-          {{ value }}
+          <span class="text-bold">
+            {{ array[0] }}
+          </span>
+          {{ array[1] }}
         </div>
       </div>
     </div>
@@ -111,7 +117,10 @@ const showPublishSuccessSummary = computed(() => {
   );
 });
 
-const showPublishSuccessError = computed(() => {
+const showPublishError = computed(() => {
+  console.log('id: ', props.id);
+  console.log('apply?', eventStore.doesPublishStatusApply(props.id));
+  console.log('completion.value', completion.value);
   return (
     eventStore.doesPublishStatusApply(props.id)
     &&
