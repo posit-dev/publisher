@@ -123,9 +123,6 @@ const showPublishSuccessSummary = computed(() => {
 });
 
 const showPublishError = computed(() => {
-  console.log('id: ', props.id);
-  console.log('apply?', eventStore.doesPublishStatusApply(props.id));
-  console.log('completion.value', completion.value);
   return (
     eventStore.doesPublishStatusApply(props.id)
     &&

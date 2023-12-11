@@ -15,6 +15,11 @@
         <p>{{ deployment.serverUrl }}</p>
         <p>{{ deployment.id }}</p>
         <p>Last Published on {{ formatDateString(deployment.deployedAt) }}</p>
+        <p>
+          <PublishProcessLine
+            :id="deployment.id"
+          />
+        </p>
       </div>
     </RouterLink>
   </div>
@@ -26,6 +31,8 @@ import { RouterLink } from 'vue-router';
 
 import { Deployment } from 'src/api';
 import { formatDateString } from 'src/utils/date';
+
+import PublishProcessLine from 'src/components/PublishProcessLine.vue';
 
 defineProps({
   deployment: {
