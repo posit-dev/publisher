@@ -9,7 +9,6 @@ import (
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/services/ui"
-	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -35,10 +34,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 	if err != nil {
 		return err
 	}
-	stateStore := state.Empty()
-	stateStore.Dir = cmd.Path
-
-	ctx.Logger.Info("created state store")
 
 	log := events.NewLoggerWithSSE(args.Debug, eventServer)
 	ctx.Logger.Info("created SSE logger")
@@ -55,7 +50,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		cmd.TLSKeyFile,
 		cmd.TLSCertFile,
 		cmd.Path,
-		stateStore,
 		ctx.Accounts,
 		log,
 		eventServer)
