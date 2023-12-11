@@ -36,7 +36,13 @@ func (c *ConnectClient) CheckCapabilities(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/server_settings/scheduler", &settings.scheduler)
+
+	schedulerPath := ""
+	appMode := AppModeFromType(cfg.Type)
+	if appMode != UnknownMode {
+		schedulerPath = "/" + string(appMode)
+	}
+	err = c.client.Get("/__api__/server_settings/scheduler"+schedulerPath, &settings.scheduler)
 	if err != nil {
 		return err
 	}
