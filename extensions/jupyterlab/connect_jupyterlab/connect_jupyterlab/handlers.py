@@ -129,9 +129,7 @@ def launch_ui(
     args = [
         EXECUTABLE,
         "ui",
-        notebookPath,
-        "--python",
-        pythonPath,
+        os.path.dirname(notebookPath),
     ]
     log.info("Starting: %s", " ".join(map(shlex.quote, args)))
     try:
