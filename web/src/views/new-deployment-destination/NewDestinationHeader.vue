@@ -31,9 +31,11 @@
       </div>
       <div class="row justify-left q-ma-sm q-mr-md">
         <div class="col-11">
-          <PublishProgressSummary
-            :id="publishingLocalId"
-          />
+          <RouterLink :to="`/progress/detailed`">
+            <PublishProgressSummary
+              :id="publishingLocalId"
+            />
+          </RouterLink>
         </div>
       </div>
     </div>
