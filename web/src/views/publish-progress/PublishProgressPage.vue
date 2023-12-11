@@ -1,10 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-page
-    class="max-width-md q-mx-auto"
-    padding
-  >
+  <div class="publisher-layout q-pt-md q-pb-xl">
     <q-breadcrumbs>
       <q-breadcrumbs-el
         label="Project"
@@ -14,17 +11,12 @@
         }"
       />
       <q-breadcrumbs-el
-        label="deployment url goes here"
-      />
-      <q-breadcrumbs-el
         label="Publish Process"
       />
     </q-breadcrumbs>
-    <div class="q-mt-lg">
-      <!-- <PublishSummary /> -->
-      <PublishStepper />
-    </div>
-  </q-page>
+
+    <PublishStepper class="q-mt-xl" />
+  </div>
 </template>
 
 <script setup lang="ts">
