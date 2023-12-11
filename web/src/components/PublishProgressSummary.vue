@@ -67,6 +67,7 @@
     <div
       v-if="showPublishError"
       class="q-ma-lg error q-pa-sm row text-left items-center"
+      :class="textClass"
     >
       <div class="col q-ml-sm">
         <q-icon
