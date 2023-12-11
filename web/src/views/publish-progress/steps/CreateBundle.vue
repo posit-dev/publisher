@@ -3,9 +3,9 @@
 <template>
   <PublishStep
     :name="name"
-    title="Set Environment Variables"
-    icon="sync"
-    summary="Setting Environment Variables on Connect Server."
+    title="Create Bundle"
+    icon="compress"
+    summary="Collecting and bundling up the files included in your project, so that they can be uploaded to the server within a bundle."
     :done="done"
     :messages="messages"
   />
@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from 'src/views/publish-log-view/PublishStep.vue';
+import PublishStep from 'src/views/publish-progress/PublishStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
@@ -27,10 +27,10 @@ defineProps({
 const emit = defineEmits(['start', 'done']);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.setEnvVars.logs);
+const messages = ref(eventStore.currentPublishStatus.status.steps.createBundle.allMsgs);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.setEnvVars.completion,
+  () => eventStore.currentPublishStatus.status.steps.createBundle.completion,
   (value) => {
     if (value === 'inProgress') {
       emit('start');
@@ -43,5 +43,6 @@ watch(
     immediate: true,
   }
 );
+
 </script>
 

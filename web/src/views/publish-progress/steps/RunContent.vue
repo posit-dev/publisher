@@ -3,9 +3,9 @@
 <template>
   <PublishStep
     :name="name"
-    title="Deploy Bundle"
-    icon="publish"
-    summary="Associating the uploaded bundle with the deployment object."
+    title="Run Content"
+    icon="sync"
+    summary="Performing execution checks ahead of applying settings."
     :done="done"
     :messages="messages"
   />
@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from 'src/views/publish-log-view/PublishStep.vue';
+import PublishStep from 'src/views/publish-progress/PublishStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
@@ -27,10 +27,10 @@ defineProps({
 const emit = defineEmits(['start', 'done']);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.deployBundle.logs);
+const messages = ref(eventStore.currentPublishStatus.status.steps.runContent.allMsgs);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.deployBundle.completion,
+  () => eventStore.currentPublishStatus.status.steps.runContent.completion,
   (value) => {
     if (value === 'inProgress') {
       emit('start');
@@ -44,3 +44,4 @@ watch(
   }
 );
 </script>
+

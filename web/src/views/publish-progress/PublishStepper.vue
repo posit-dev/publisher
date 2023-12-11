@@ -65,7 +65,7 @@ import {
   WrappingUpDeployment,
   CreateNewDeployment,
   SetVanityURL,
-} from 'src/views/publish-log-view/steps';
+} from 'src/views/publish-progress/steps';
 
 const openStep = ref<number | undefined>(undefined);
 

@@ -3,9 +3,9 @@
 <template>
   <PublishStep
     :name="name"
-    title="Validate Deployment"
+    title="Set Environment Variables"
     icon="sync"
-    summary="Validating your content on the Connect Server"
+    summary="Setting Environment Variables on Connect Server."
     :done="done"
     :messages="messages"
   />
@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from 'src/views/publish-log-view/PublishStep.vue';
+import PublishStep from 'src/views/publish-progress/PublishStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
@@ -27,10 +27,10 @@ defineProps({
 const emit = defineEmits(['start', 'done']);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.validateDeployment.logs);
+const messages = ref(eventStore.currentPublishStatus.status.steps.setEnvVars.allMsgs);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.validateDeployment.completion,
+  () => eventStore.currentPublishStatus.status.steps.setEnvVars.completion,
   (value) => {
     if (value === 'inProgress') {
       emit('start');

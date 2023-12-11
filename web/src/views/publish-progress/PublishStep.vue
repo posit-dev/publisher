@@ -30,7 +30,7 @@
             <span class="text-error text-weight-medium">{{ msg.data.message }}</span>
           </template>
           <template v-else>
-            {{ msg.data.message }}
+            {{ msg.data.message }} {{ msg.data.name }}
           </template>
         </q-item-section>
       </q-item>

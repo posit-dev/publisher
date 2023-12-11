@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import PublishStep from 'src/views/publish-log-view/PublishStep.vue';
+import PublishStep from 'src/views/publish-progress/PublishStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';

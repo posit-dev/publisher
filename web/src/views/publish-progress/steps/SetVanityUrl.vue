@@ -3,9 +3,9 @@
 <template>
   <PublishStep
     :name="name"
-    title="Run Content"
+    title="Set Vanity URL"
     icon="sync"
-    summary="Performing execution checks ahead of applying settings."
+    summary="Setting Vanity URL to access your content on the Connect Server."
     :done="done"
     :messages="messages"
   />
@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from 'src/views/publish-log-view/PublishStep.vue';
+import PublishStep from 'src/views/publish-progress/PublishStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
@@ -27,10 +27,10 @@ defineProps({
 const emit = defineEmits(['start', 'done']);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.runContent.logs);
+const messages = ref(eventStore.currentPublishStatus.status.steps.setVanityURL.allMsgs);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.runContent.completion,
+  () => eventStore.currentPublishStatus.status.steps.setVanityURL.completion,
   (value) => {
     if (value === 'inProgress') {
       emit('start');

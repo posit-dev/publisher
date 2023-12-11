@@ -3,9 +3,9 @@
 <template>
   <PublishStep
     :name="name"
-    title="Restore Python Environment"
-    icon="move_down"
-    summary="Installing the dependent python packages on the server in order to reproduce your runtime environment."
+    title="Deploy Bundle"
+    icon="publish"
+    summary="Associating the uploaded bundle with the deployment object."
     :done="done"
     :messages="messages"
   />
@@ -14,22 +14,23 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from 'src/views/publish-log-view/PublishStep.vue';
+import PublishStep from 'src/views/publish-progress/PublishStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
 
 const eventStore = useEventStore();
+
 defineProps({
   name: { type: [String, Number], required: true },
 });
 const emit = defineEmits(['start', 'done']);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.restorePythonEnv.logs);
+const messages = ref(eventStore.currentPublishStatus.status.steps.deployBundle.allMsgs);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.restorePythonEnv.completion,
+  () => eventStore.currentPublishStatus.status.steps.deployBundle.completion,
   (value) => {
     if (value === 'inProgress') {
       emit('start');
@@ -43,4 +44,3 @@ watch(
   }
 );
 </script>
-

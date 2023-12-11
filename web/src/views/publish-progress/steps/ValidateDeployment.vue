@@ -3,9 +3,9 @@
 <template>
   <PublishStep
     :name="name"
-    title="Create New Deployment"
-    icon="create_new_folder"
-    summary="Creating a new deployment file."
+    title="Validate Deployment"
+    icon="sync"
+    summary="Validating your content on the Connect Server"
     :done="done"
     :messages="messages"
   />
@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from 'src/views/publish-log-view/PublishStep.vue';
+import PublishStep from 'src/views/publish-progress/PublishStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
@@ -27,10 +27,10 @@ defineProps({
 const emit = defineEmits(['start', 'done']);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.createNewDeployment.logs);
+const messages = ref(eventStore.currentPublishStatus.status.steps.validateDeployment.allMsgs);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.createNewDeployment.completion,
+  () => eventStore.currentPublishStatus.status.steps.validateDeployment.completion,
   (value) => {
     if (value === 'inProgress') {
       emit('start');
@@ -44,3 +44,4 @@ watch(
   }
 );
 </script>
+

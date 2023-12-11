@@ -3,9 +3,9 @@
 <template>
   <PublishStep
     :name="name"
-    title="Create Bundle"
-    icon="compress"
-    summary="Collecting and bundling up the files included in your project, so that they can be uploaded to the server within a bundle."
+    title="Upload Bundle"
+    icon="login"
+    summary="Transferring the files from your local workstation to the server."
     :done="done"
     :messages="messages"
   />
@@ -14,23 +14,22 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from 'src/views/publish-log-view/PublishStep.vue';
+import PublishStep from 'src/views/publish-progress/PublishStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
 
 const eventStore = useEventStore();
-
 defineProps({
   name: { type: [String, Number], required: true },
 });
 const emit = defineEmits(['start', 'done']);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.createBundle.logs);
+const messages = ref(eventStore.currentPublishStatus.status.steps.uploadBundle.allMsgs);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.createBundle.completion,
+  () => eventStore.currentPublishStatus.status.steps.uploadBundle.completion,
   (value) => {
     if (value === 'inProgress') {
       emit('start');
@@ -43,6 +42,5 @@ watch(
     immediate: true,
   }
 );
-
 </script>
 
