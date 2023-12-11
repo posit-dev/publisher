@@ -1,31 +1,19 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-breadcrumbs>
-    <q-breadcrumbs-el
-      label="Project"
-      :to="{
-        name:
-          'project'
-      }"
-    />
-    <q-breadcrumbs-el
-      :label="deploymentUrl"
-    />
-  </q-breadcrumbs>
-
   <ExistingDeploymentDestinationHeader
     :content-id="contentID"
     :url="deploymentUrl"
   />
 
-  <ConfigSettings
-    v-if="deployment"
-    :config="deployment"
-  />
-
-  <h2>Files</h2>
-  <FileTree />
+  <div class="publisher-layout">
+    <ConfigSettings
+      v-if="deployment"
+      :config="deployment"
+    />
+    <h2>Files</h2>
+    <FileTree />
+  </div>
 </template>
 
 <script setup lang="ts">
