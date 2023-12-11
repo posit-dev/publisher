@@ -105,12 +105,8 @@ export type PublishStepStatus = {
   logs: EventStreamMessage[];
   status?: Record<string, string>[];
   progress?: string[];
+  allMsgs: EventStreamMessage[];
 }
-
-const emptyPublishStepStatus = {
-  completion: <PublishStepCompletionStatus>'notStarted',
-  logs: <EventStreamMessage[]>[],
-};
 
 export type PublishStatus = {
   completion: PublishStepCompletionStatus;
@@ -142,16 +138,56 @@ const newPublishStatus = () => {
     directURL: '',
     currentStep: undefined,
     steps: {
-      createNewDeployment: { ...emptyPublishStepStatus },
-      setEnvVars: { ...emptyPublishStepStatus },
-      createBundle: { ...emptyPublishStepStatus },
-      createDeployment: { ...emptyPublishStepStatus },
-      uploadBundle: { ...emptyPublishStepStatus },
-      deployBundle: { ...emptyPublishStepStatus },
-      restorePythonEnv: { ...emptyPublishStepStatus },
-      setVanityURL: { ...emptyPublishStepStatus },
-      runContent: { ...emptyPublishStepStatus },
-      validateDeployment: { ...emptyPublishStepStatus },
+      createNewDeployment: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
+      setEnvVars: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
+      createBundle: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
+      createDeployment: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
+      uploadBundle: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
+      deployBundle: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
+      restorePythonEnv: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
+      setVanityURL: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
+      runContent: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
+      validateDeployment: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
     },
   };
 };
@@ -253,6 +289,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'createNewDeployment';
       publishStatus.steps.createNewDeployment.completion = 'inProgress';
+      publishStatus.steps.createNewDeployment.logs.push(msg);
     }
   };
 
@@ -263,6 +300,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createNewDeployment.completion = 'success';
+      publishStatus.steps.createNewDeployment.logs.push(msg);
     }
   };
 
@@ -274,6 +312,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createNewDeployment.completion = 'error';
       publishStatus.steps.createNewDeployment.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.createNewDeployment.logs.push(msg);
     }
   };
 
@@ -285,6 +324,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'setEnvVars';
       publishStatus.steps.setEnvVars.completion = 'inProgress';
+      publishStatus.steps.setEnvVars.logs.push(msg);
     }
   };
 
@@ -295,6 +335,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.setEnvVars.completion = 'success';
+      publishStatus.steps.setEnvVars.logs.push(msg);
     }
   };
   const onPublishSetEnvVarsFailure = (msg: PublishSetEnvVarsFailure) => {
@@ -305,6 +346,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.setEnvVars.completion = 'error';
       publishStatus.steps.setEnvVars.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.setEnvVars.logs.push(msg);
     }
   };
 
@@ -316,6 +358,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'createBundle';
       publishStatus.steps.createBundle.completion = 'inProgress';
+      publishStatus.steps.createBundle.logs.push(msg);
     }
   };
 
@@ -336,6 +379,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createBundle.completion = 'success';
+      publishStatus.steps.createBundle.logs.push(msg);
     }
   };
 
@@ -347,6 +391,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createBundle.completion = 'error';
       publishStatus.steps.createBundle.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.createBundle.logs.push(msg);
     }
   };
 
@@ -358,6 +403,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'createDeployment';
       publishStatus.steps.createDeployment.completion = 'inProgress';
+      publishStatus.steps.createDeployment.logs.push(msg);
     }
   };
 
@@ -369,6 +415,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createDeployment.completion = 'success';
       currentPublishStatus.value.contentId = msg.data.contentId;
+      publishStatus.steps.createDeployment.logs.push(msg);
     }
   };
 
@@ -380,6 +427,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createDeployment.completion = 'error';
       publishStatus.steps.createDeployment.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.createDeployment.logs.push(msg);
     }
   };
 
@@ -391,6 +439,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'uploadBundle';
       publishStatus.steps.uploadBundle.completion = 'inProgress';
+      publishStatus.steps.uploadBundle.logs.push(msg);
     }
   };
 
@@ -401,6 +450,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'success';
+      publishStatus.steps.uploadBundle.logs.push(msg);
     }
   };
 
@@ -412,6 +462,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'error';
       publishStatus.steps.uploadBundle.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.uploadBundle.logs.push(msg);
     }
   };
 
@@ -423,6 +474,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'deployBundle';
       publishStatus.steps.deployBundle.completion = 'inProgress';
+      publishStatus.steps.deployBundle.logs.push(msg);
     }
   };
 
@@ -433,6 +485,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.deployBundle.completion = 'success';
+      publishStatus.steps.deployBundle.logs.push(msg);
     }
   };
 
@@ -444,6 +497,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'error';
       publishStatus.steps.deployBundle.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.deployBundle.logs.push(msg);
     }
   };
 
@@ -455,6 +509,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'restorePythonEnv';
       publishStatus.steps.restorePythonEnv.completion = 'inProgress';
+      publishStatus.steps.restorePythonEnv.logs.push(msg);
     }
   };
 
@@ -479,6 +534,7 @@ export const useEventStore = defineStore('event', () => {
         publishStatus.steps.restorePythonEnv.progress = [];
       }
       publishStatus.steps.restorePythonEnv.progress.push(JSON.stringify(msg.data));
+      publishStatus.steps.restorePythonEnv.logs.push(msg);
     }
   };
 
@@ -492,6 +548,7 @@ export const useEventStore = defineStore('event', () => {
         publishStatus.steps.restorePythonEnv.status = [];
       }
       publishStatus.steps.restorePythonEnv.status.push(msg.data);
+      publishStatus.steps.restorePythonEnv.logs.push(msg);
       // status msg.data = {
       //     "level": "INFO",
       //     "message": "Package restore",
@@ -512,6 +569,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.restorePythonEnv.completion = 'success';
+      publishStatus.steps.restorePythonEnv.logs.push(msg);
     }
   };
 
@@ -523,6 +581,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'error';
       publishStatus.steps.restorePythonEnv.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.restorePythonEnv.logs.push(msg);
     }
   };
 
@@ -534,6 +593,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'runContent';
       publishStatus.steps.runContent.completion = 'inProgress';
+      publishStatus.steps.runContent.logs.push(msg);
     }
   };
 
@@ -554,6 +614,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.runContent.completion = 'success';
+      publishStatus.steps.runContent.logs.push(msg);
     }
   };
 
@@ -565,6 +626,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.runContent.completion = 'error';
       publishStatus.steps.runContent.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.runContent.logs.push(msg);
     }
   };
 
@@ -576,6 +638,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'setVanityURL';
       publishStatus.steps.setVanityURL.completion = 'inProgress';
+      publishStatus.steps.setVanityURL.logs.push(msg);
     }
   };
 
@@ -596,6 +659,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.setVanityURL.completion = 'success';
+      publishStatus.steps.setVanityURL.logs.push(msg);
     }
   };
 
@@ -607,6 +671,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.runContent.completion = 'error';
       publishStatus.steps.setVanityURL.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.setVanityURL.logs.push(msg);
     }
   };
 
@@ -618,6 +683,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'validateDeployment';
       publishStatus.steps.validateDeployment.completion = 'inProgress';
+      publishStatus.steps.validateDeployment.logs.push(msg);
     }
   };
 
@@ -638,6 +704,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.validateDeployment.completion = 'success';
+      publishStatus.steps.validateDeployment.logs.push(msg);
     }
   };
 
@@ -649,6 +716,7 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.validateDeployment.completion = 'error';
       publishStatus.steps.validateDeployment.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.validateDeployment.logs.push(msg);
     }
   };
 

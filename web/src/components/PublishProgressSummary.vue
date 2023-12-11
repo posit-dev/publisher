@@ -7,6 +7,7 @@
     <div
       v-if="publishInProgess"
       class="summary row q-ma-lg items-center"
+      :class="textClass"
     >
       <div class="col q-ml-sm">
         <q-spinner-grid
@@ -29,6 +30,7 @@
     <div
       v-if="showPublishSuccessSummary"
       class="q-ma-lg summary q-pa-sm row text-left items-center"
+      :class="textClass"
     >
       <div class="col q-ml-sm">
         <q-icon
@@ -94,8 +96,10 @@
 
 import { useEventStore } from 'src/stores/events';
 import { computed } from 'vue';
+import { useQuasar } from 'quasar';
 
 const eventStore = useEventStore();
+const $q = useQuasar();
 
 const props = defineProps({
   id: { type: String, required: true }, // Can be either localId or contentId
@@ -155,6 +159,13 @@ const currentStepInfo = computed(() => {
     operation,
     stepStatus,
   };
+});
+
+const textClass = computed(() => {
+  if ($q.dark.isActive) {
+    return 'text-white';
+  }
+  return 'text-black';
 });
 
 </script>
