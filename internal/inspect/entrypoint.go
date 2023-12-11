@@ -18,7 +18,7 @@ type defaultInferenceHelper struct{}
 // If it's a directory, it specifies the deployment directory.
 // - If preferredFilename exists in the directory, it is the entrypoint.
 // - If there is only one file with the specified suffix, it is the entrypoint.
-func (h defaultInferenceHelper) InferEntrypoint(path util.Path, suffix string, preferredFilename string) (string, util.Path, error) {
+func (h defaultInferenceHelper) InferEntrypoint(path util.Path, suffix string, preferredFilenames ...string) (string, util.Path, error) {
 	isDir, err := path.IsDir()
 	if err != nil {
 		return "", util.Path{}, err
@@ -33,14 +33,16 @@ func (h defaultInferenceHelper) InferEntrypoint(path util.Path, suffix string, p
 			relPath, err := matchingFiles[0].Rel(path)
 			return relPath.Path(), matchingFiles[0], err
 		} else {
-			// Favor preferredFilename as an entrypoint
-			preferredPath := path.Join(preferredFilename)
-			exists, err := preferredPath.Exists()
-			if err != nil {
-				return "", util.Path{}, err
-			}
-			if exists {
-				return preferredFilename, preferredPath, nil
+			for _, preferredFilename := range preferredFilenames {
+				// Favor one of the preferredFilenames as an entrypoint
+				preferredPath := path.Join(preferredFilename)
+				exists, err := preferredPath.Exists()
+				if err != nil {
+					return "", util.Path{}, err
+				}
+				if exists {
+					return preferredFilename, preferredPath, nil
+				}
 			}
 			// else entrypoint is ambiguous
 			return "", util.Path{}, nil
