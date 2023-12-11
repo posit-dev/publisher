@@ -19,10 +19,10 @@
           Publishing project...
         </div>
         <div>
-          {{ currentStepInfo.operation }}
+          {{ eventStore.summaryOfCurrentPublishingProcess.operation }}
         </div>
         <div class="text-caption">
-          {{ currentStepInfo.stepStatus }}
+          {{ eventStore.summaryOfCurrentPublishingProcess.stepStatus }}
         </div>
       </div>
     </div>
@@ -77,13 +77,13 @@
           Publishing Operation has failed.
         </div>
         <div
-          v-for="(array, index) in eventStore.currentPublishStatus.status.error"
-          :key="index"
+          v-for="keyValuePair in eventStore.currentPublishStatus.status.error"
+          :key="keyValuePair.key"
         >
           <span class="text-bold">
-            {{ array[0] }}
+            {{ keyValuePair.key }}
           </span>
-          {{ array[1] }}
+          {{ keyValuePair.value }}
         </div>
       </div>
     </div>
@@ -128,35 +128,6 @@ const showPublishError = computed(() => {
   );
 });
 
-const currentStepInfo = computed(() => {
-  const currentStep = eventStore.currentPublishStatus.status.currentStep;
-  if (
-    !eventStore.doesPublishStatusApply(props.id) ||
-    currentStep === undefined
-  ) {
-    return {
-      operation: 'unknown',
-      stepStatus: 'unknown',
-    };
-  }
-  const currentStepNumber = eventStore.publishStepOrder[currentStep];
-  const numberOfSteps = Object.keys(eventStore.publishStepDisplayNames).length;
-  const operation = `${eventStore.publishStepDisplayNames[currentStep]} (${currentStepNumber} of ${numberOfSteps} steps)`;
-  let stepStatus;
-  const statusList = eventStore.currentPublishStatus.status.steps[currentStep].status;
-  if (statusList) {
-    const statusMsg = statusList[statusList.length - 1];
-    stepStatus = `${statusMsg.message}: ${statusMsg.name}`;
-  } else {
-    const stepCompletion = eventStore.currentPublishStatus.status.steps[currentStep].completion;
-    stepStatus = eventStore.publishStepCompletionStatusNames[stepCompletion];
-  }
-  return {
-    operation,
-    stepStatus,
-  };
-});
-
 </script>
 <style scoped lang="scss">
   .q-stepper :deep(.q-stepper__step-inner) {
@@ -178,8 +149,5 @@ const currentStepInfo = computed(() => {
     min-height: 4.5rem;
     line-height: 4.5rem;
     width: 100%;
-  }
-  .hide-overflow {
-    overflow: hidden;
   }
 </style>
