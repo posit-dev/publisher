@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div class="publisher-layout q-py-md">
+  <div class="publisher-layout q-pt-md q-pb-xl">
     <q-breadcrumbs>
       <q-breadcrumbs-el
         label="Project"

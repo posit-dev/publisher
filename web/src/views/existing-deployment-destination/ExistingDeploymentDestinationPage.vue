@@ -6,7 +6,7 @@
     :url="deploymentUrl"
   />
 
-  <div class="publisher-layout">
+  <div class="publisher-layout q-pb-xl">
     <ConfigSettings
       v-if="deployment"
       :config="deployment"

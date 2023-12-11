@@ -7,7 +7,7 @@
     @publish="hasPublished = true"
   />
 
-  <div class="publisher-layout">
+  <div class="publisher-layout q-pb-xl">
     <ConfigSettings
       v-if="defaultConfig"
       :config="defaultConfig"
