@@ -23,6 +23,7 @@ type cliSpec struct {
 
 	Init    commands.InitCommand `kong:"cmd" help:"Create a configuration file based on the contents of the directory."`
 	Create  commands.CreateCmd   `kong:"cmd" help:"Create a new deployment."`
+	Update  commands.UpdateCmd   `kong:"cmd" help:"Update an existing deployment."`
 	UI      commands.UICmd       `kong:"cmd" help:"Serve the publisher UI."`
 	Version commands.VersionFlag `help:"Show the client software version and exit."`
 }
