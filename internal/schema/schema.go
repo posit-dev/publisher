@@ -5,6 +5,7 @@ package schema
 import (
 	"bytes"
 	"embed"
+	"fmt"
 	"io"
 	"strings"
 
@@ -42,7 +43,18 @@ func (v *Validator) ValidateTOMLFile(path util.Path) error {
 	if err != nil {
 		return err
 	}
-	return v.schema.Validate(content)
+	err = v.schema.Validate(content)
+	if err != nil {
+		validationErr, ok := err.(*jsonschema.ValidationError)
+		if ok {
+			cause := validationErr.Causes[0]
+			loc := strings.TrimPrefix(cause.InstanceLocation, "/")
+			return fmt.Errorf("\nerror in file '%s'. Keyword '%s' %s", path, loc, cause.Message)
+		} else {
+			return err
+		}
+	}
+	return nil
 }
 
 func loadSchema(url string) (io.ReadCloser, error) {
