@@ -1,32 +1,25 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-breadcrumbs>
-    <q-breadcrumbs-el
-      label="Project"
-      :to="{ name: 'project' }"
-    />
-    <q-breadcrumbs-el label="New Destination" />
-  </q-breadcrumbs>
-
   <NewDestinationHeader
     :account-name="accountName"
     :content-id="contentId"
-    class="q-mt-md"
     @publish="hasPublished = true"
   />
 
-  <ConfigSettings
-    v-if="defaultConfig"
-    :config="defaultConfig"
-  />
-  <p v-else>
-    No default configuration found.
-    One will be created automatically on publish.
-  </p>
+  <div class="publisher-layout q-pb-xl">
+    <ConfigSettings
+      v-if="defaultConfig"
+      :config="defaultConfig"
+    />
+    <p v-else>
+      No default configuration found.
+      One will be created automatically on publish.
+    </p>
 
-  <h2>Files</h2>
-  <FileTree />
+    <h2>Files</h2>
+    <FileTree />
+  </div>
 </template>
 
 <script setup lang="ts">
