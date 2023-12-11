@@ -4,6 +4,7 @@ package files
 
 import (
 	"io/fs"
+	"path/filepath"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/logging"
@@ -46,6 +47,18 @@ func (s filesService) GetFile(p util.Path) (*File, error) {
 
 	walker := util.NewSymlinkWalker(util.FSWalker{}, s.log)
 	err = walker.Walk(p, func(path util.Path, info fs.FileInfo, err error) error {
+		if info.IsDir() {
+			// Load .positignore from every directory where it exists
+			err = gitignore.LoadPositIgnoreIfPresent(path, s.ignore)
+			if err != nil {
+				return err
+			}
+			// Ignore Python environment directories. We check for these
+			// separately because they aren't expressible as gitignore patterns.
+			if util.IsPythonEnvironmentDir(path) {
+				return filepath.SkipDir
+			}
+		}
 		if err != nil {
 			return err
 		}
