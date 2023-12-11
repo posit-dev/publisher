@@ -37,6 +37,9 @@
             <PublishProgressSummary
               :id="contentId"
             />
+            <RouterLink :to="{ name: 'progress' }">
+              Log View
+            </RouterLink>
           </div>
         </div>
       </div>

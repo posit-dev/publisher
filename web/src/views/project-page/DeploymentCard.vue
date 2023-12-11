@@ -2,7 +2,7 @@
 
 <template>
   <div class="deployment-card focus-shadow">
-    <RouterLink :to="`/deployments/${deployment.id}`">
+    <RouterLink :to="{ name: 'deployments', params: { id: `${deployment.id}` }}">
       <span
         class="link-fill"
         aria-hidden="true"
