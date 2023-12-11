@@ -154,29 +154,8 @@ func NewManifest() *Manifest {
 	}
 }
 
-var connectContentTypeMap = map[config.ContentType]connect.AppMode{
-	config.ContentTypeHTML:            connect.StaticMode,
-	config.ContentTypeJupyterNotebook: connect.StaticJupyterMode,
-	config.ContentTypeJupyterVoila:    connect.JupyterVoilaMode,
-	config.ContentTypePythonBokeh:     connect.PythonBokehMode,
-	config.ContentTypePythonDash:      connect.PythonDashMode,
-	config.ContentTypePythonFastAPI:   connect.PythonFastAPIMode,
-	config.ContentTypePythonFlask:     connect.PythonAPIMode,
-	config.ContentTypePythonShiny:     connect.PythonShinyMode,
-	config.ContentTypePythonStreamlit: connect.PythonStreamlitMode,
-	config.ContentTypeQuartoShiny:     connect.ShinyQuartoMode,
-	config.ContentTypeQuarto:          connect.StaticQuartoMode,
-	config.ContentTypeRPlumber:        connect.PlumberAPIMode,
-	config.ContentTypeRShiny:          connect.ShinyMode,
-	config.ContentTypeRMarkdownShiny:  connect.ShinyRmdMode,
-	config.ContentTypeRMarkdown:       connect.StaticRmdMode,
-}
-
 func NewManifestFromConfig(cfg *config.Config) *Manifest {
-	contentType, ok := connectContentTypeMap[cfg.Type]
-	if !ok {
-		contentType = connect.UnknownMode
-	}
+	contentType := connect.AppModeFromType(cfg.Type)
 	m := &Manifest{
 		Version: 1,
 		Metadata: Metadata{
