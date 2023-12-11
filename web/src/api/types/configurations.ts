@@ -37,7 +37,8 @@ export enum ContentType {
   R_PLUMBER = 'r-plumber',
   R_SHINY = 'r-shiny',
   RMD_SHINY = 'rmd-shiny',
-  RMD = 'rmd'
+  RMD = 'rmd',
+  UNKNOWN = 'unknown'
 }
 
 export type ConfigurationDetails = {
