@@ -4,10 +4,12 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
@@ -30,6 +32,13 @@ func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 		err := util.ValidateFilename(cmd.SaveName)
 		if err != nil {
 			return err
+		}
+		exists, err := deployment.GetDeploymentPath(cmd.Path, cmd.SaveName).Exists()
+		if err != nil {
+			return err
+		}
+		if exists {
+			return fmt.Errorf("there is already a deployment named '%s'; did you mean to use the 'update' command?", cmd.SaveName)
 		}
 	}
 	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
