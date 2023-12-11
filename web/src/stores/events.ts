@@ -54,7 +54,7 @@ import {
 } from 'src/plugins/eventStream';
 import { getErrorMessage } from 'src/util/errors';
 
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 export type PublishStepCompletionStatus =
 'notStarted' | 'inProgress' | 'success' | 'error';
@@ -100,7 +100,7 @@ export const publishStepOrder: Record<PublishStep, number> = {
 
 export type PublishStepStatus = {
   completion: PublishStepCompletionStatus;
-  error?: string[][];
+  error?: keyValuePair[];
   lastLogMsg?: string;
   logs: EventStreamMessage[];
   status?: Record<string, string>[];
@@ -110,7 +110,7 @@ export type PublishStepStatus = {
 
 export type PublishStatus = {
   completion: PublishStepCompletionStatus;
-  error?: string[][];
+  error?: keyValuePair[];
   dashboardURL: string,
   directURL: string,
   currentStep?: PublishStep,
@@ -192,9 +192,17 @@ const newPublishStatus = () => {
   };
 };
 
-export const splitMsgIntoNameValuePairs = ((msg: Record<string, string>) => {
-  const result: string[][] = [];
-  Object.keys(msg).forEach(key => result.push([key, msg[key]]));
+export type keyValuePair = {
+  key: string,
+  value: string,
+};
+
+export const splitMsgIntoKeyValuePairs = ((msg: Record<string, string>) => {
+  const result: keyValuePair[] = [];
+  Object.keys(msg).forEach(key => result.push({
+    key,
+    value: msg[key],
+  }));
   return result;
 });
 
@@ -230,6 +238,35 @@ export const useEventStore = defineStore('event', () => {
       publishInProgess.value &&
       doesPublishStatusApply(id)
     );
+  });
+
+  const numberOfPublishSteps = () => {
+    return Object.keys(publishStepDisplayNames).length;
+  };
+
+  const summaryOfCurrentPublishingProcess = computed(() => {
+    const currentStep = currentPublishStatus.value.status.currentStep;
+    if (!currentStep) {
+      return {
+        operation: 'Publishing not currently in progress',
+        stepStatus: '',
+      };
+    }
+    const currentStepNumber = publishStepOrder[currentStep];
+    const operation = `${publishStepDisplayNames[currentStep]} (${currentStepNumber} of ${numberOfPublishSteps()} steps)`;
+    let stepStatus;
+    const statusList = currentPublishStatus.value.status.steps[currentStep].status;
+    if (statusList) {
+      const statusMsg = statusList[statusList.length - 1];
+      stepStatus = `${statusMsg.message}: ${statusMsg.name}`;
+    } else {
+      const stepCompletion = currentPublishStatus.value.status.steps[currentStep].completion;
+      stepStatus = publishStepCompletionStatusNames[stepCompletion];
+    }
+    return {
+      operation,
+      stepStatus,
+    };
   });
 
   const closeEventStream = () => {
@@ -276,7 +313,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.completion = 'error';
-      publishStatus.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.error = splitMsgIntoKeyValuePairs(msg.data);
     }
     publishInProgess.value = false;
   };
@@ -311,7 +348,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createNewDeployment.completion = 'error';
-      publishStatus.steps.createNewDeployment.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.createNewDeployment.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.createNewDeployment.logs.push(msg);
     }
   };
@@ -345,7 +382,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.setEnvVars.completion = 'error';
-      publishStatus.steps.setEnvVars.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.setEnvVars.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.setEnvVars.logs.push(msg);
     }
   };
@@ -390,7 +427,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createBundle.completion = 'error';
-      publishStatus.steps.createBundle.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.createBundle.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.createBundle.logs.push(msg);
     }
   };
@@ -426,7 +463,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createDeployment.completion = 'error';
-      publishStatus.steps.createDeployment.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.createDeployment.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.createDeployment.logs.push(msg);
     }
   };
@@ -461,7 +498,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'error';
-      publishStatus.steps.uploadBundle.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.uploadBundle.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.uploadBundle.logs.push(msg);
     }
   };
@@ -496,7 +533,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'error';
-      publishStatus.steps.deployBundle.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.deployBundle.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.deployBundle.logs.push(msg);
     }
   };
@@ -580,7 +617,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.uploadBundle.completion = 'error';
-      publishStatus.steps.restorePythonEnv.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.restorePythonEnv.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.restorePythonEnv.logs.push(msg);
     }
   };
@@ -625,7 +662,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.runContent.completion = 'error';
-      publishStatus.steps.runContent.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.runContent.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.runContent.logs.push(msg);
     }
   };
@@ -670,7 +707,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.runContent.completion = 'error';
-      publishStatus.steps.setVanityURL.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.setVanityURL.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.setVanityURL.logs.push(msg);
     }
   };
@@ -715,7 +752,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.validateDeployment.completion = 'error';
-      publishStatus.steps.validateDeployment.error = splitMsgIntoNameValuePairs(msg.data);
+      publishStatus.steps.validateDeployment.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.validateDeployment.logs.push(msg);
     }
   };
@@ -825,5 +862,7 @@ export const useEventStore = defineStore('event', () => {
     publishStepDisplayNames,
     publishStepOrder,
     publishStepCompletionStatusNames,
+    numberOfPublishSteps,
+    summaryOfCurrentPublishingProcess,
   };
 });
