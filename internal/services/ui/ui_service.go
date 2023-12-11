@@ -40,7 +40,6 @@ func NewUIService(
 	handler := RouterHandlerFunc(dir, stateStore, lister, log, eventServer)
 
 	return api.NewService(
-		stateStore,
 		handler,
 		listen,
 		fragment,

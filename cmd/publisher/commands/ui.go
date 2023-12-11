@@ -35,10 +35,9 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 	if err != nil {
 		return err
 	}
-	stateStore, err := state.New(cmd.Path, "", config.DefaultConfigName, "", "", ctx.Accounts)
-	if err != nil {
-		return err
-	}
+	stateStore := state.Empty()
+	stateStore.Dir = cmd.Path
+
 	ctx.Logger.Info("created state store")
 
 	log := events.NewLoggerWithSSE(args.Debug, eventServer)
