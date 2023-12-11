@@ -16,7 +16,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type PublishCmd struct {
+type CreateCmd struct {
 	Path        util.Path              `help:"Path to directory containing files to publish." arg:"" default:"."`
 	AccountName string                 `name:"account" short:"n" help:"Nickname of destination publishing account."`
 	ConfigName  string                 `name:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
@@ -29,7 +29,7 @@ type PublishCmd struct {
 
 var errNoAccounts = errors.New("there are no accounts yet; register an account before publishing")
 
-func (cmd *PublishCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	if cmd.SaveName != "" {
 		err := util.ValidateFilename(cmd.SaveName)
 		if err != nil {
