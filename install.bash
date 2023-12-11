@@ -119,14 +119,15 @@ execute() {
 # =============================================================================
 
 # Commands
-DOWNLOAD=("gh" "release" "download")
-MKTMP=("/usr/bin/mktemp" "-d")
-TAR=("/usr/bin/tar")
+DOWNLOAD=("curl")
+MKTMP=("mktemp" "-d")
+TAR=("tar")
 
 # Variables
 NAME="publisher"
 PREFIX="/usr/local/bin"
 VERSION="0.0.dev4"
+URL="https://cdn.posit.co/publisher/releases/tags/v${VERSION}"
 
 # USER isn't always set so provide a fall back for the installer and subprocesses.
 if [[ -z "${USER-}" ]]
@@ -178,7 +179,8 @@ fi
   # Download and install executable
   TMPDIR=$(execute "${MKTMP[@]}")
   info "Downloading and installing Posit Publisher..."
-  execute "${DOWNLOAD[@]}" "--dir" "${TMPDIR}" "v${VERSION}"
+  execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" "${URL}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" > /dev/null 2>&1
+  execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}.vsix" "${URL}/${NAME}-${VERSION}.vsix" > /dev/null 2>&1
   execute "${TAR[@]}" "-C" "${TMPDIR}" "-xf" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz"
   execute_sudo "${INSTALL[@]}" "${TMPDIR}/${NAME}/bin/${NAME}" "${PREFIX}"
   info "Installed Posit Publisher to ${PREFIX}/${NAME}"
