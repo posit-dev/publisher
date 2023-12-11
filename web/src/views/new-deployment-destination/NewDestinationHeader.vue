@@ -2,7 +2,15 @@
 
 <template>
   <div class="destination-header">
-    <div class="publisher-layout q-py-lg">
+    <div class="publisher-layout q-py-md">
+      <q-breadcrumbs>
+        <q-breadcrumbs-el
+          label="Project"
+          :to="{ name: 'project' }"
+        />
+        <q-breadcrumbs-el label="New Destination" />
+      </q-breadcrumbs>
+
       <div class="col-4 vertical-top q-gutter-x-md">
         <div class="col text-center col-4">
           <div>Destination Summary</div>
