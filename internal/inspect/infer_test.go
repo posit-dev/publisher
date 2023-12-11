@@ -27,8 +27,8 @@ type MockInferenceHelper struct {
 	mock.Mock
 }
 
-func (m *MockInferenceHelper) InferEntrypoint(path util.Path, suffix string, preferredFilename string) (string, util.Path, error) {
-	args := m.Called(path, suffix, preferredFilename)
+func (m *MockInferenceHelper) InferEntrypoint(path util.Path, suffix string, preferredFilenames ...string) (string, util.Path, error) {
+	args := m.Called(path, suffix, preferredFilenames)
 	return args.String(0), args.Get(1).(util.Path), args.Error(2)
 }
 
