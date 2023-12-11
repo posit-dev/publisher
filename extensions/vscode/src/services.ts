@@ -36,7 +36,7 @@ class StateManager {
 			}
 			this.state = "FAILED";
 			console.warn("unhandled error", e);
-			vscode.window.showInformationMessage("The Publish Assistant failed. Please try again.");
+			vscode.window.showInformationMessage("Posit Publisher failed. Please try again.");
 			return false;
 		} finally {
 			// always release the lock
@@ -64,7 +64,7 @@ class StateManager {
 			}
 			this.state = "FAILED";
 			console.warn("unhandled error", e);
-			vscode.window.showInformationMessage("The Publish Assistant failed. Please try again.");
+			vscode.window.showInformationMessage("Posit Publisher failed. Please try again.");
 			return this.state;
 		} finally {
 			// always release the lock
@@ -125,7 +125,7 @@ export class Service {
 		let message: vscode.Disposable;
 		await this.manager.transition("NEW", "STARTING", async () => {
 			console.debug("the service is starting");
-			message = vscode.window.setStatusBarMessage("Starting the Publish Assistant. Please wait...");
+			message = vscode.window.setStatusBarMessage("Starting Posit Publisher. Please wait...");
 			await this.assistant.start();
 		});
 
@@ -149,7 +149,7 @@ export class Service {
 		let message: vscode.Disposable;
 		await this.manager.transition("RUNNING", "STOPPING", async () => {
 			console.debug("the service is stopping");
-			message = vscode.window.setStatusBarMessage("Shutting down the Publish Assistant. Please wait...");
+			message = vscode.window.setStatusBarMessage("Shutting down Posit Publisher. Please wait...");
 			await this.assistant.stop();
 		});
 

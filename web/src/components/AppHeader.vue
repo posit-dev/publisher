@@ -18,7 +18,7 @@
           alt="Posit PBC Logo"
         />
         <q-toolbar-title class="q-pl-xs">
-          Publishing Assistant
+          Publisher
         </q-toolbar-title>
       </router-link>
     </q-toolbar>
