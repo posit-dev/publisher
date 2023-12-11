@@ -16,8 +16,8 @@
         />
       </q-breadcrumbs>
 
-      <div class="row vertical-top q-gutter-x-md">
-        <div class="col text-center col-6">
+      <div class="col-4 vertical-top q-gutter-x-md">
+        <div class="col text-center col-4">
           <div>Destination Summary</div>
           <div>
             Redeployment to {{ url }}
@@ -26,52 +26,35 @@
             Content ID: {{ contentId }}
           </div>
         </div>
-        <div class="col-3">
-          <SelectAccount
-            :accounts="filteredAccountList"
-            :url="destinationURL"
-            @change="onChange"
-          />
-        </div>
-        <div class="col-2">
-          <q-btn
-            no-caps
-            color="white"
-            text-color="black"
-            label="Publish"
-            :disable="eventStore.publishInProgess"
-            @click="initiatePublishProcess"
-          />
-        </div>
-      </div>
-      <div class="col q-mt-md">
-        <div class="row justify-around">
-          <div class="col-7">
-            <SelectAccount
-              :accounts="filteredAccountList"
-              :url="destinationURL"
-              @change="onChange"
-            />
+        <div class="col q-mt-md">
+          <div class="row justify-around">
+            <div class="col-7">
+              <SelectAccount
+                :accounts="filteredAccountList"
+                :url="destinationURL"
+                @change="onChange"
+              />
+            </div>
+            <div class="col-2">
+              <q-btn
+                no-caps
+                color="white"
+                text-color="black"
+                label="Publish"
+                :disable="eventStore.publishInProgess"
+                @click="initiatePublishProcess"
+              />
+            </div>
           </div>
-          <div class="col-2">
-            <q-btn
-              no-caps
-              color="white"
-              text-color="black"
-              label="Publish"
-              :disable="eventStore.publishInProgess"
-              @click="initiatePublishProcess"
-            />
-          </div>
-        </div>
-        <div class="row justify-left q-ma-sm q-mr-md">
-          <div class="col-11">
-            <PublishProgressSummary
-              :id="contentId"
-            />
-            <RouterLink :to="{ name: 'progress' }">
-              Log View
-            </RouterLink>
+          <div class="row justify-left q-ma-sm q-mr-md">
+            <div class="col-11">
+              <PublishProgressSummary
+                :id="contentId"
+              />
+              <RouterLink :to="{ name: 'progress' }">
+                Log View
+              </RouterLink>
+            </div>
           </div>
         </div>
       </div>
