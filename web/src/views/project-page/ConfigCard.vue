@@ -4,13 +4,13 @@
   <PCard :title="config.configurationName">
     <div
       v-if="isConfigurationError(config)"
-      class="row items-center"
+      class="flex items-center"
     >
       <q-icon
         name="error"
         size="1rem"
       />
-      <p class="q-ml-sm">
+      <p class="q-ml-sm text-bold">
         {{ config.error }}
       </p>
     </div>
