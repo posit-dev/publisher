@@ -15,12 +15,12 @@
         aria-hidden="true"
       />
 
-      <p
+      <h3
         v-if="title"
         class="card-title"
       >
         {{ title }}
-      </p>
+      </h3>
 
       <slot />
     </component>
