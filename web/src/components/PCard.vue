@@ -15,12 +15,21 @@
         aria-hidden="true"
       />
 
+      <div class="card-header flex no-wrap items-center">
+        <q-icon
+          v-if="icon"
+          :name="icon"
+          size="20px"
+          class="q-mr-sm"
+        />
+
       <h3
         v-if="title"
         class="card-title truncate"
       >
         {{ title }}
       </h3>
+      </div>
 
       <slot />
     </component>
@@ -41,6 +50,12 @@ defineProps({
     type: String,
     default: undefined,
     required: false,
+  },
+  icon: {
+    type: String,
+    default: undefined,
+    required: false
+  },
   }
 });
 </script>
@@ -67,14 +82,16 @@ defineProps({
       }
     }
 
+    .card-header {
+      &:not(:last-child) {
+        margin-bottom: 12px;
+      }
+    }
+
     .card-title {
       font-size: 16px;
       font-weight: 500;
       line-height: 1.5;
-
-      &:not(:last-child) {
-        margin-bottom: 12px;
-      }
     }
 }
 
