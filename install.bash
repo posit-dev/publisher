@@ -57,7 +57,7 @@ error() {
 
 # Check sudo access
 unset HAVE_SUDO_ACCESS # unset this from the environment
-has_sudo_access() {
+have_sudo_access() {
   if [[ ! -x "/usr/bin/sudo" ]]
   then
     return 1
@@ -94,7 +94,7 @@ has_sudo_access() {
 # execute with sudo function
 execute_sudo() {
   local -a args=("$@")
-  if [[ "${EUID:-${UID}}" != "0" ]] && has_sudo_access
+  if [[ "${EUID:-${UID}}" != "0" ]] && have_sudo_access
   then
     if [[ -n "${SUDO_ASKPASS-}" ]]
     then
@@ -114,9 +114,49 @@ execute() {
   fi
 }
 
+getc() {
+  local save_state
+  save_state="$(/bin/stty -g)"
+  /bin/stty raw -echo
+  IFS='' read -r -n 1 -d '' "$@"
+  /bin/stty "${save_state}"
+}
+
+wait_for_user() {
+  local c
+  echo "Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to continue or any other key to abort:"
+  getc c
+  # we test for \r and \n because some stuff does \r instead
+  if ! [[ "${c}" == $'\r' || "${c}" == $'\n' ]]
+  then
+    exit 1
+  fi
+}
+
 # =============================================================================
 # main
 # =============================================================================
+
+# USER isn't always set so provide a fall back for the installer and subprocesses.
+if [[ -z "${USER-}" ]]
+then
+    USER="$(chomp "$(id -un)")"
+    export USER
+fi
+
+info "Checking for \`sudo\` access (which may request your password)..."
+if [[ "${OS}" == "darwin" ]]
+then
+  [[ "${EUID:-${UID}}" == "0" ]] || have_sudo_access
+elif ! [[ -w "${PREFIX}" ]] &&
+     ! have_sudo_access
+then
+  error "$(
+    cat <<EOABORT
+Insufficient permissions to install Posit Publisher to ${PREFIX}.
+EOABORT
+  )"
+fi
 
 # Commands
 DOWNLOAD=("curl")
@@ -128,13 +168,8 @@ NAME="publisher"
 PREFIX="/usr/local/bin"
 VERSION="0.0.dev4"
 URL="https://cdn.posit.co/publisher/releases/tags/v${VERSION}"
+TMPDIR=$(execute "${MKTMP[@]}")
 
-# USER isn't always set so provide a fall back for the installer and subprocesses.
-if [[ -z "${USER-}" ]]
-then
-    USER="$(chomp "$(id -un)")"
-    export USER
-fi
 
 # OS specific settings
 OS="$(uname)"
@@ -165,63 +200,15 @@ else
     error "This script is only supported on arm64 and x86_64 architectures."
 fi
 
-if command -v "${NAME}" &> /dev/null
-then
-    warn "Posit Publisher is already installed at $(which ${NAME})."
-    info "If you wish to install a new version, please remove the existing installation first using the following command:"
-    info
-    info "rm $(which ${NAME})"
-    info
-    exit 1
-fi
-
-(
-  # Download and install executable
-  TMPDIR=$(execute "${MKTMP[@]}")
-  info "Downloading and installing Posit Publisher..."
-  execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" "${URL}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" > /dev/null 2>&1
-  execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}.vsix" "${URL}/${NAME}-${VERSION}.vsix" > /dev/null 2>&1
-  execute "${TAR[@]}" "-C" "${TMPDIR}" "-xf" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz"
-  execute_sudo "${INSTALL[@]}" "${TMPDIR}/${NAME}/bin/${NAME}" "${PREFIX}"
-  info "Installed Posit Publisher to ${PREFIX}/${NAME}"
-
-  # Prompt and install VSCode extension
-  if command -v code &> /dev/null
-  then
-      info "Installing VSCode extension..."
-      while true; do
-        read -p "Do you want to proceed? (y/n) " yn
-        case $yn in
-            [yY])
-                execute "code" --install-extension "${TMPDIR}/${NAME}-${VERSION}.vsix" > /dev/null 2>&1
-                break;;
-            [nN])
-                info "Skipping...";
-                break;;
-            * )
-              warn "Invalid response.";;
-        esac
-      done
-  fi
-
-  # Prompt and install Positron extension
-  if command -v positron &> /dev/null
-  then
-      info "Installing Positron extension..."
-      while true; do
-        read -p "Do you want to proceed? (y/n) " yn
-        case $yn in
-            [yY])
-                execute "positron" --install-extension "${TMPDIR}/${NAME}-${VERSION}.vsix" > /dev/null 2>&1
-                break;;
-            [nN])
-                info "Skipping...";
-                break;;
-            * )
-              warn "Invalid response.";;
-        esac
-      done
-  fi
-) || exit 1
-
-info "Done!"
+info "This script will install:"
+echo "${PREFIX}/${NAME}"
+wait_for_user
+info "Downloading and installing Posit Publisher..."
+execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" "${URL}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" > /dev/null 2>&1
+execute "${TAR[@]}" "-C" "${TMPDIR}" "-xf" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz"
+execute_sudo "${INSTALL[@]}" "${TMPDIR}/${NAME}/bin/${NAME}" "${PREFIX}"
+info "Installation successful!"
+info "Next Steps..."
+cat <<EOS
+  Run ${tty_bold}publisher --help${tty_reset} to get started.
+EOS
