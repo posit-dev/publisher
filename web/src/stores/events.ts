@@ -764,6 +764,7 @@ export const useEventStore = defineStore('event', () => {
   const initiatePublishProcessWithEvents = async(
     accountName : string,
     contentId?: string,
+    saveName?: string,
   ) : Promise<string | Error> => {
     if (publishInProgess.value) {
       return new Error('Publishing already in progress');
@@ -778,6 +779,7 @@ export const useEventStore = defineStore('event', () => {
       const response = await api.deployments.publish(
         accountName,
         contentId,
+        saveName,
       );
       const localId = <string>response.data.localId;
       currentPublishStatus.value.localId = localId;
