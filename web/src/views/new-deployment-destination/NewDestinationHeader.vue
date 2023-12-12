@@ -94,13 +94,15 @@ const initiatePublishProcess = async() => {
 
 const updateAccountList = async() => {
   try {
-    const response = await api.accounts.getAll();
-    accounts.value = response.data.accounts;
+    const response = await api.accounts.get(props.accountName);
+    if (response.data) {
+      destinationURL.value = response.data.url;
+      fixedAccountList.value = [response.data];
+    }
   } catch (err) {
     // TODO: handle the API error
   }
 };
-updateAccountList();
 
 watch(
   () => [
@@ -108,13 +110,7 @@ watch(
     accounts.value,
   ],
   () => {
-    const credentials = accounts.value.find(
-      (account: Account) => account.name === props.accountName
-    );
-    if (credentials) {
-      destinationURL.value = credentials.url;
-      fixedAccountList.value = [credentials];
-    }
+    updateAccountList();
   },
   { immediate: true }
 );
