@@ -14,11 +14,8 @@
       <div class="col-4 vertical-top q-gutter-x-md">
         <div class="col text-center col-4">
           <div>Destination Summary</div>
-          <div>New Deployment to {{ destinationURL }}</div>
-          <p>Publishing will add this Destination to your project.</p>
-          <div v-if="contentId">
-            Content ID: {{ contentId }}
-          </div>
+          <p> {{ destinationMessage }}.</p>
+          <p> {{ addingDestinationMessage }}</p>
         </div>
         <div class="col q-mt-md">
           <div class="row justify-around">
@@ -57,7 +54,7 @@
 
 <script setup lang="ts">
 
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Account, useApi } from 'src/api';
 
 import SelectAccount from 'src/components/SelectAccount.vue';
@@ -77,6 +74,7 @@ const emit = defineEmits(['publish']);
 const props = defineProps({
   accountName: { type: String, required: true },
   contentId: { type: String, default: undefined, required: false },
+  destinationName: { type: String, default: undefined, required: false },
 });
 
 const initiatePublishProcess = async() => {
@@ -85,6 +83,7 @@ const initiatePublishProcess = async() => {
   const result = await eventStore.initiatePublishProcessWithEvents(
     props.accountName,
     props.contentId,
+    props.destinationName,
   );
   if (result instanceof Error) {
     return result;
@@ -101,6 +100,20 @@ const updateAccountList = async() => {
   }
 };
 updateAccountList();
+
+const destinationMessage = computed(() => {
+  if (props.contentId) {
+    return `Updating existing content (${props.contentId}) on ${destinationURL.value}.`;
+  }
+  return `New deployment of content to ${destinationURL.value}`;
+});
+
+const addingDestinationMessage = computed(() => {
+  if (props.destinationName) {
+    return `Publishing will add a destination named "${props.destinationName}" to your project.`;
+  }
+  return 'Publishing will add this Destination to your project.';
+});
 
 watch(
   () => [

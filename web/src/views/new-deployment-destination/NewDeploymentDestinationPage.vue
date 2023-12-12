@@ -4,6 +4,7 @@
   <NewDestinationHeader
     :account-name="accountName"
     :content-id="contentId"
+    :destination-name="destinationName"
     @publish="hasPublished = true"
   />
 
@@ -46,11 +47,19 @@ const accountName = computed(() => {
 });
 
 const contentId = computed(() => {
-  // route param can be either string | string[]
-  if (Array.isArray(route.params.contentId)) {
+  // route query can be either string | string[]
+  if (Array.isArray(route.query.id)) {
     return route.params.contentId[0] || undefined;
   }
-  return route.params.contentId || undefined;
+  return route.query.id || undefined;
+});
+
+const destinationName = computed(() => {
+  // route query can be either string | string[]
+  if (Array.isArray(route.query.name)) {
+    return route.params.name[0] || undefined;
+  }
+  return route.query.name || undefined;
 });
 
 const defaultConfig = computed(() => {
