@@ -10,12 +10,6 @@ import (
 	"github.com/rstudio/connect-client/internal/types"
 )
 
-type ContentName string
-type ContentID string
-type BundleID string
-type TaskID string
-type UserID string
-
 // Simplified user structure common to all servers
 type User struct {
 	Id        types.UserID `json:"id"`
@@ -34,4 +28,5 @@ type APIClient interface {
 	DeployBundle(types.ContentID, types.BundleID) (types.TaskID, error)
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
 	ValidateDeployment(types.ContentID) error
+	CheckCapabilities(*config.Config) error
 }

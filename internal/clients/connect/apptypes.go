@@ -4,6 +4,8 @@ package connect
 
 import (
 	"fmt"
+
+	"github.com/rstudio/connect-client/internal/config"
 )
 
 type AppMode string
@@ -241,4 +243,30 @@ func (t AppMode) Description() string {
 	default:
 		return "unknown content type"
 	}
+}
+
+var connectContentTypeMap = map[config.ContentType]AppMode{
+	config.ContentTypeHTML:            StaticMode,
+	config.ContentTypeJupyterNotebook: StaticJupyterMode,
+	config.ContentTypeJupyterVoila:    JupyterVoilaMode,
+	config.ContentTypePythonBokeh:     PythonBokehMode,
+	config.ContentTypePythonDash:      PythonDashMode,
+	config.ContentTypePythonFastAPI:   PythonFastAPIMode,
+	config.ContentTypePythonFlask:     PythonAPIMode,
+	config.ContentTypePythonShiny:     PythonShinyMode,
+	config.ContentTypePythonStreamlit: PythonStreamlitMode,
+	config.ContentTypeQuartoShiny:     ShinyQuartoMode,
+	config.ContentTypeQuarto:          StaticQuartoMode,
+	config.ContentTypeRPlumber:        PlumberAPIMode,
+	config.ContentTypeRShiny:          ShinyMode,
+	config.ContentTypeRMarkdownShiny:  ShinyRmdMode,
+	config.ContentTypeRMarkdown:       StaticRmdMode,
+}
+
+func AppModeFromType(t config.ContentType) AppMode {
+	mode, ok := connectContentTypeMap[t]
+	if !ok {
+		mode = UnknownMode
+	}
+	return mode
 }
