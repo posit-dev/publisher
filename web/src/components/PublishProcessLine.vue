@@ -1,33 +1,31 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div>
-    <div
-      v-if="publishInProgess"
-      class="row"
-      :class="textClass"
-    >
-      <q-spinner
-        color="primary"
-        size="1rem"
-      />
-      <div class="q-ml-sm text-left">
-        {{ eventStore.summaryOfCurrentPublishingProcess.operation }} :
-        {{ eventStore.summaryOfCurrentPublishingProcess.stepStatus }}
-      </div>
+  <div
+    v-if="publishInProgess"
+    class="flex items-center"
+    :class="textClass"
+  >
+    <q-spinner
+      color="primary"
+      size="1rem"
+    />
+    <div class="q-ml-sm text-left">
+      {{ eventStore.summaryOfCurrentPublishingProcess.operation }} :
+      {{ eventStore.summaryOfCurrentPublishingProcess.stepStatus }}
     </div>
-    <div
-      v-if="showPublishError"
-      class="row"
-      :class="textClass"
-    >
-      <q-icon
-        name="error"
-        size="1rem"
-      />
-      <div class="q-ml-sm text-left bold">
-        Publishing Operation has failed.
-      </div>
+  </div>
+  <div
+    v-if="showPublishError"
+    class="flex items-center"
+    :class="textClass"
+  >
+    <q-icon
+      name="error"
+      size="1rem"
+    />
+    <div class="q-ml-sm text-left text-bold">
+      Publishing Operation has failed.
     </div>
   </div>
 </template>
