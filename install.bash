@@ -202,6 +202,7 @@ fi
 
 info "This script will install:"
 echo "${PREFIX}/${NAME}"
+echo
 wait_for_user
 info "Downloading and installing Posit Publisher..."
 execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" "${URL}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" > /dev/null 2>&1
@@ -210,5 +211,10 @@ execute_sudo "${INSTALL[@]}" "${TMPDIR}/${NAME}/bin/${NAME}" "${PREFIX}"
 info "Installation successful!"
 info "Next Steps..."
 cat <<EOS
+
   Run ${tty_bold}publisher --help${tty_reset} to get started.
+
+  An extension for VSCode is available for download at
+  ${URL}/${NAME}-${VERSION}.vsix
+
 EOS
