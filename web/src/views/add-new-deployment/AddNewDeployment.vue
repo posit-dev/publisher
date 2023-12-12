@@ -39,6 +39,7 @@
         <q-btn
           no-caps
           :to="destinationPage"
+          :disable="disableToDestinationPage"
           type="submit"
           color="primary"
           label="Continue to Publish"
@@ -91,6 +92,10 @@ const destinationPage = computed<RouteLocationRaw>(() => ({
     name: deploymentName.value,
   }
 }));
+
+const disableToDestinationPage = computed(() => {
+  return Boolean(!selectedAccountName.value);
+});
 
 function navigateToNewDestinationPage() {
   router.push(destinationPage.value);
