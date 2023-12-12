@@ -12,14 +12,14 @@ let service: Service;
 export async function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('posit.publisher.assistant.start', async () => {
+		vscode.commands.registerCommand('posit.publisher.start', async () => {
 			service = await Service.get(context);
 			await service.start();
 		})
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('posit.publisher.assistant.stop', async () => {
+		vscode.commands.registerCommand('posit.publisher.stop', async () => {
 			service = await Service.get(context);
 			await service.stop();
 		})

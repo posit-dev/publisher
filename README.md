@@ -1,6 +1,6 @@
-# Publishing Client
+# Posit Publisher
 
-Publishing Client is used to publish content to Posit products.
+An application and associated tooling for Posit publishers.
 
 ## Getting Started
 

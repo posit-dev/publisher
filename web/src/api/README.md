@@ -1,6 +1,6 @@
-# Publishing Client API Wrapper Library
+#  API Wrapper Library
 
-A library to enable convenient access to the Publishing Client API and its
+A library to enable convenient access to the Publisher Client API and its
 response types.
 
 ## Usage
