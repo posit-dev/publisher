@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/pprof"
+	"strings"
 
 	"github.com/alecthomas/kong"
 	"github.com/rstudio/connect-client/cmd/publisher/commands"
@@ -44,7 +45,7 @@ func makeContext(log logging.Logger) (*cli_types.CLIContext, error) {
 func Fatal(log logging.Logger, msg string, err error, args ...any) {
 	args = append([]any{"error", err.Error()}, args...)
 	log.Error(msg, args...)
-	fmt.Fprintln(os.Stderr, "\n", err)
+	fmt.Fprintln(os.Stderr, "\n"+strings.TrimSpace(err.Error())+".")
 	os.Exit(1)
 }
 
