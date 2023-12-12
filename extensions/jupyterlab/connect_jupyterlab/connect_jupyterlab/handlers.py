@@ -128,18 +128,8 @@ def launch_ui(
 
     args = [
         EXECUTABLE,
-        "publish-ui",
-        notebookPath,
-        "--python",
-        pythonPath,
-        "--python-version",
-        pythonVersion,
-        "--theme",
-        theme,
-        "--title",
-        title,
-        "-n",
-        "dogfood",  # cheating, no target selection in the UI yet
+        "ui",
+        os.path.dirname(notebookPath),
     ]
     log.info("Starting: %s", " ".join(map(shlex.quote, args)))
     try:
