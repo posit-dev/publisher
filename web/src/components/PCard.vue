@@ -70,6 +70,7 @@ defineProps({
     .card-title {
       font-size: 16px;
       font-weight: 500;
+      line-height: 1.5;
 
       &:not(:last-child) {
         margin-bottom: 12px;
