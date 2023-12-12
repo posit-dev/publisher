@@ -4,17 +4,17 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 
 import ProjectPage from 'src/views/project-page/ProjectPage.vue';
 import AddNewDeployment from 'src/views/add-new-deployment/AddNewDeployment.vue';
-import ExistingDeploymentDestinationPageVue from 'src/views/existing-deployment-destination/ExistingDeploymentDestinationPage.vue';
-import NewDeploymentDestinationPageVue from 'src/views/new-deployment-destination/NewDeploymentDestinationPage.vue';
-import PublishProcessPageVue from 'src/components/PublishProcessPage.vue';
+import ExistingDeploymentDestinationPage from 'src/views/existing-deployment-destination/ExistingDeploymentDestinationPage.vue';
+import NewDeploymentDestinationPage from 'src/views/new-deployment-destination/NewDeploymentDestinationPage.vue';
+import PublishProgressPage from 'src/views/publish-progress/PublishProgressPage.vue';
 
 const routes = [
   { name: 'root', path: '/', redirect: { name: 'project' } },
   { name: 'project', path: '/project', component: ProjectPage },
   { name: 'addNewDeployment', path: '/add-new-deployment', component: AddNewDeployment },
-  { name: 'newDeployment', path: '/new-deployment/:account/:contentId?', component: NewDeploymentDestinationPageVue },
-  { name: 'deployments', path: '/deployments/:id', component: ExistingDeploymentDestinationPageVue },
-  { name: 'progress', path: '/progress', component: PublishProcessPageVue },
+  { name: 'newDeployment', path: '/new-deployment/:account/:contentId?', component: NewDeploymentDestinationPage },
+  { name: 'deployments', path: '/deployments/:id', component: ExistingDeploymentDestinationPage },
+  { name: 'progress', path: '/progress', component: PublishProgressPage },
   { name: 'default', path: '/:pathMatch(.*)*', redirect: '/' },
 ];
 

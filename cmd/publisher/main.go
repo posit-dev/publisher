@@ -21,10 +21,11 @@ type cliSpec struct {
 	cli_types.CommonArgs
 	commands.AccountCommands `group:"Accounts"`
 
-	Init      commands.InitCommand  `kong:"cmd" help:"Create a configuration file based on the contents of the directory."`
-	Publish   commands.PublishCmd   `kong:"cmd" help:"Publish a project."`
-	PublishUI commands.PublishUICmd `kong:"cmd" help:"Publish a project using the UI."`
-	Version   commands.VersionFlag  `help:"Show the client software version and exit."`
+	Init    commands.InitCommand `kong:"cmd" help:"Create a configuration file based on the contents of the directory."`
+	Create  commands.CreateCmd   `kong:"cmd" help:"Create a new deployment."`
+	Update  commands.UpdateCmd   `kong:"cmd" help:"Update an existing deployment."`
+	UI      commands.UICmd       `kong:"cmd" help:"Serve the publisher UI."`
+	Version commands.VersionFlag `help:"Show the client software version and exit."`
 }
 
 func logVersion(log logging.Logger) {
