@@ -23,6 +23,27 @@ const (
 	ContentTypeUnknown         ContentType = "unknown"
 )
 
+func AllValidContentTypeNames() []string {
+	return []string{
+		string(ContentTypeHTML),
+		string(ContentTypeJupyterNotebook),
+		string(ContentTypeJupyterVoila),
+		string(ContentTypePythonBokeh),
+		string(ContentTypePythonDash),
+		string(ContentTypePythonFastAPI),
+		string(ContentTypePythonFlask),
+		string(ContentTypePythonShiny),
+		string(ContentTypePythonStreamlit),
+		string(ContentTypeQuartoShiny),
+		string(ContentTypeQuarto),
+		string(ContentTypeRPlumber),
+		string(ContentTypeRShiny),
+		string(ContentTypeRMarkdownShiny),
+		string(ContentTypeRMarkdown),
+		// omit ContentTypeUnknown
+	}
+}
+
 func (t ContentType) IsPythonContent() bool {
 	switch t {
 	case
