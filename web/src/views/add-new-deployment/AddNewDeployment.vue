@@ -88,8 +88,8 @@ const destinationPage = computed<RouteLocationRaw>(() => ({
     account: selectedAccountName.value,
   },
   query: {
-    id: contentId.value,
-    name: deploymentName.value,
+    id: contentId.value || undefined,
+    name: deploymentName.value || undefined,
   }
 }));
 
