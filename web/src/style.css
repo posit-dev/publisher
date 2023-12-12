@@ -64,3 +64,9 @@ h1, h2, h3, h4, h5, h6, p {
 .space-between-xl > :not([hidden]) ~ :not([hidden]) {
   margin-top: 48px;
 }
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
