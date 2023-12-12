@@ -14,7 +14,13 @@
       <div class="card-details">
         <p>{{ deployment.serverUrl }}</p>
         <p>{{ deployment.id }}</p>
-        <p>Last Published on {{ formatDateString(deployment.deployedAt) }}</p>
+        <PublishProgressLine
+          v-if="showProgressLine"
+          :id="deployment.id"
+        />
+        <p v-else>
+          Last Published on {{ formatDateString(deployment.deployedAt) }}
+        </p>
       </div>
     </RouterLink>
   </div>
@@ -26,13 +32,31 @@ import { RouterLink } from 'vue-router';
 
 import { Deployment } from 'src/api';
 import { formatDateString } from 'src/utils/date';
+import { useEventStore } from 'src/stores/events';
 
-defineProps({
+import PublishProgressLine from 'src/components/PublishProgressLine.vue';
+import { computed } from 'vue';
+
+const eventStore = useEventStore();
+
+const props = defineProps({
   deployment: {
     type: Object as PropType<Deployment>,
     required: true,
   },
 });
+
+const showProgressLine = computed(() => {
+  return (
+    eventStore.isPublishActiveByID(props.deployment.id) ||
+    (
+      eventStore.doesPublishStatusApply(props.deployment.id)
+      &&
+      eventStore.currentPublishStatus.status.completion === 'error'
+    )
+  );
+});
+
 </script>
 
 <style scoped lang="scss">
