@@ -30,7 +30,7 @@
     <h2 class="text-h6">
       Configurations
     </h2>
-    <div class="card-grid">
+    <div class="config-grid">
       <ConfigCard
         v-for="config in configurations"
         :key="config.configurationName"
@@ -79,5 +79,24 @@ getConfigurations();
 .card-grid {
   display: grid;
   grid-gap: 28px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 800px) {
+  .card-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+
+.config-grid {
+  display: grid;
+  grid-gap: 28px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 800px) {
+  .config-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>
