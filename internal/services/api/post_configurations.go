@@ -13,7 +13,7 @@ import (
 )
 
 type PostConfigurationsRequestBody struct {
-	ConfigName string `json:"configuration-name"`
+	ConfigName string `json:"configurationName"`
 }
 
 func PostConfigurationsHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {

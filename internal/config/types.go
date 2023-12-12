@@ -20,7 +20,29 @@ const (
 	ContentTypeRShiny          ContentType = "r-shiny"
 	ContentTypeRMarkdownShiny  ContentType = "rmd-shiny"
 	ContentTypeRMarkdown       ContentType = "rmd"
+	ContentTypeUnknown         ContentType = "unknown"
 )
+
+func AllValidContentTypeNames() []string {
+	return []string{
+		string(ContentTypeHTML),
+		string(ContentTypeJupyterNotebook),
+		string(ContentTypeJupyterVoila),
+		string(ContentTypePythonBokeh),
+		string(ContentTypePythonDash),
+		string(ContentTypePythonFastAPI),
+		string(ContentTypePythonFlask),
+		string(ContentTypePythonShiny),
+		string(ContentTypePythonStreamlit),
+		string(ContentTypeQuartoShiny),
+		string(ContentTypeQuarto),
+		string(ContentTypeRPlumber),
+		string(ContentTypeRShiny),
+		string(ContentTypeRMarkdownShiny),
+		string(ContentTypeRMarkdown),
+		// omit ContentTypeUnknown
+	}
+}
 
 func (t ContentType) IsPythonContent() bool {
 	switch t {
@@ -83,14 +105,14 @@ type Environment = map[string]string
 
 type Python struct {
 	Version        string `toml:"version" json:"version"`
-	PackageFile    string `toml:"package-file" json:"package-file"`
-	PackageManager string `toml:"package-manager" json:"package-manager"`
+	PackageFile    string `toml:"package-file" json:"packageFile"`
+	PackageManager string `toml:"package-manager" json:"packageManager"`
 }
 
 type R struct {
 	Version        string `toml:"version" json:"version"`
-	PackageFile    string `toml:"package-file" json:"package-file"`
-	PackageManager string `toml:"package-manager" json:"package-manager"`
+	PackageFile    string `toml:"package-file" json:"packageFile"`
+	PackageManager string `toml:"package-manager" json:"packageManager"`
 }
 
 type Quarto struct {
@@ -138,30 +160,30 @@ type Connect struct {
 }
 
 type ConnectAccess struct {
-	RunAs            string `toml:"run-as,omitempty" json:"run-as,omitempty"`
-	RunAsCurrentUser *bool  `toml:"run-as-current-user,omitempty" json:"run-as-current-user,omitempty"`
+	RunAs            string `toml:"run-as,omitempty" json:"runAs,omitempty"`
+	RunAsCurrentUser *bool  `toml:"run-as-current-user,omitempty" json:"runAsCurrentUser,omitempty"`
 }
 
 type ConnectRuntime struct {
-	ConnectionTimeout  *int32   `toml:"connection-timeout,omitempty" json:"connection-timeout,omitempty"`
-	ReadTimeout        *int32   `toml:"read-timeout,omitempty" json:"read-timeout,omitempty"`
-	InitTimeout        *int32   `toml:"init-timeout,omitempty" json:"init-timeout,omitempty"`
-	IdleTimeout        *int32   `toml:"idle-timeout,omitempty" json:"idle-timeout,omitempty"`
-	MaxProcesses       *int32   `toml:"max-processes,omitempty" json:"max-processes,omitempty"`
-	MinProcesses       *int32   `toml:"min-processes,omitempty" json:"min-processes,omitempty"`
-	MaxConnsPerProcess *int32   `toml:"max-connections,omitempty" json:"max-connections,omitempty"`
-	LoadFactor         *float64 `toml:"load-factor,omitempty" json:"load-factor,omitempty"`
+	ConnectionTimeout  *int32   `toml:"connection-timeout,omitempty" json:"connectionTimeout,omitempty"`
+	ReadTimeout        *int32   `toml:"read-timeout,omitempty" json:"readTimeout,omitempty"`
+	InitTimeout        *int32   `toml:"init-timeout,omitempty" json:"initTimeout,omitempty"`
+	IdleTimeout        *int32   `toml:"idle-timeout,omitempty" json:"idleTimeout,omitempty"`
+	MaxProcesses       *int32   `toml:"max-processes,omitempty" json:"maxProcesses,omitempty"`
+	MinProcesses       *int32   `toml:"min-processes,omitempty" json:"minProcesses,omitempty"`
+	MaxConnsPerProcess *int32   `toml:"max-connections,omitempty" json:"maxConnections,omitempty"`
+	LoadFactor         *float64 `toml:"load-factor,omitempty" json:"loadFactor,omitempty"`
 }
 
 type ConnectKubernetes struct {
-	MemoryRequest                  *int64   `toml:"memory-request,omitempty" json:"memory-request,omitempty"`
-	MemoryLimit                    *int64   `toml:"memory-limit,omitempty" json:"memory-limit,omitempty"`
-	CPURequest                     *float64 `toml:"cpu-request,omitempty" json:"cpu-request,omitempty"`
-	CPULimit                       *float64 `toml:"cpu-limit,omitempty" json:"cpu-limit,omitempty"`
-	AMDGPULimit                    *int64   `toml:"amd-gpu-limit,omitempty" json:"amd-gpu-limit,omitempty"`
-	NvidiaGPULimit                 *int64   `toml:"nvidia-gpu-limit,omitempty" json:"nvidia-gpu-limit,omitempty"`
-	ServiceAccountName             string   `toml:"service-account-name,omitempty" json:"service-account-name,omitempty"`
-	DefaultImageName               string   `toml:"image-name,omitempty" json:"image-name,omitempty"`
-	DefaultREnvironmentManagement  *bool    `toml:"default-r-environment-management,omitempty" json:"defaultREnvironmentManagement"`
-	DefaultPyEnvironmentManagement *bool    `toml:"default-py-environment-management,omitempty" json:"defaultPyEnvironmentManagement"`
+	MemoryRequest                  *int64   `toml:"memory-request,omitempty" json:"memoryRequest,omitempty"`
+	MemoryLimit                    *int64   `toml:"memory-limit,omitempty" json:"memoryLimit,omitempty"`
+	CPURequest                     *float64 `toml:"cpu-request,omitempty" json:"cpuRequest,omitempty"`
+	CPULimit                       *float64 `toml:"cpu-limit,omitempty" json:"cpuLimit,omitempty"`
+	AMDGPULimit                    *int64   `toml:"amd-gpu-limit,omitempty" json:"amdGpuLimit,omitempty"`
+	NvidiaGPULimit                 *int64   `toml:"nvidia-gpu-limit,omitempty" json:"nvidiaGpuLimit,omitempty"`
+	ServiceAccountName             string   `toml:"service-account-name,omitempty" json:"serviceAccountName,omitempty"`
+	DefaultImageName               string   `toml:"image-name,omitempty" json:"imageName,omitempty"`
+	DefaultREnvironmentManagement  *bool    `toml:"defaultREnvironmentManagement,omitempty" json:"defaultREnvironmentManagement"`
+	DefaultPyEnvironmentManagement *bool    `toml:"defaultPyEnvironmentManagement,omitempty" json:"defaultPyEnvironmentManagement"`
 }

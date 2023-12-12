@@ -27,7 +27,7 @@ type ContentTypeInferer interface {
 }
 
 type inferenceHelper interface {
-	InferEntrypoint(path util.Path, suffix string, preferredFilename string) (string, util.Path, error)
+	InferEntrypoint(path util.Path, suffix string, preferredFilenames ...string) (string, util.Path, error)
 	HasPythonImports(r io.Reader, packages []string) (bool, error)
 	FileHasPythonImports(path util.Path, packages []string) (bool, error)
 }

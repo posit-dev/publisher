@@ -13,13 +13,11 @@ import (
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/services/middleware"
-	"github.com/rstudio/connect-client/internal/state"
 
 	"github.com/pkg/browser"
 )
 
 type Service struct {
-	state         *state.State
 	handler       http.HandlerFunc
 	listen        string
 	path          string
@@ -34,7 +32,6 @@ type Service struct {
 var errTlsRequiredFiles error = errors.New("TLS requires both a private key file and a certificate chain file")
 
 func NewService(
-	state *state.State,
 	handler http.HandlerFunc,
 	listen string,
 	path string,
@@ -51,7 +48,6 @@ func NewService(
 	handler = middleware.PanicRecovery(log, handler)
 
 	return &Service{
-		state:         state,
 		handler:       handler,
 		listen:        listen,
 		path:          path,

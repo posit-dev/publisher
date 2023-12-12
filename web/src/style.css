@@ -1,3 +1,46 @@
-.max-width-md {
-  max-width: 800px;
+.body--light {
+  background-color: #fafafa;
+}
+
+.publisher-layout {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 48px;
+  padding-right: 48px;
+}
+
+@media (max-width: 1024px) {
+  .publisher-layout {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .publisher-layout {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+.body--light {
+  --focus-shadow-color: 0, 0, 0;
+  --focus-shadow-color-opacity: 0.14;
+  --focus-shadow-border-color: 0, 0, 0;
+  --focus-shadow-border-color-opacity: 0.2;
+}
+
+.body--dark {
+  --focus-shadow-color: 255, 255, 255;
+  --focus-shadow-color-opacity: 0.18;
+  --focus-shadow-border-color: 255, 255, 255;
+  --focus-shadow-border-color-opacity: 0.25;
+}
+
+.focus-shadow:focus,
+.focus-shadow:focus-within {
+  --focus-shadow: 0 0 0 4px rgba(var(--focus-shadow-color), var(--focus-shadow-color-opacity));
+  --border-shadow: 0 0 1px 1px rgba(var(--focus-shadow-border-color), var(--focus-shadow-border-color-opacity));
+  box-shadow: var(--focus-shadow), var(--border-shadow);
 }

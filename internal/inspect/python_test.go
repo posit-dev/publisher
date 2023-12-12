@@ -54,6 +54,29 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 	}, t)
 }
 
+func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
+	dir := util.NewPath("/", afero.NewMemMapFs())
+	err := dir.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "main.py"
+	err = dir.Join(filename).WriteFile([]byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
+	s.Nil(err)
+
+	// a distraction
+	err = dir.Join("random.py").WriteFile([]byte("import dash\n"), 0600)
+	s.Nil(err)
+
+	detector := NewFlaskDetector()
+	t, err := detector.InferType(dir)
+	s.Nil(err)
+	s.Equal(&ContentType{
+		Type:           config.ContentTypePythonFlask,
+		Entrypoint:     filename,
+		RequiresPython: true,
+	}, t)
+}
+
 func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 	filename := "myapp.py"
 	path := util.NewPath(filename, afero.NewMemMapFs())

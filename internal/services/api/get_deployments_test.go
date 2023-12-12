@@ -42,9 +42,9 @@ func (s *GetDeploymentsSuite) SetupTest() {
 }
 
 func (s *GetDeploymentsSuite) TestGetDeployments() {
-	path := deployment.GetDeploymentPath(s.cwd, "myTargetID")
+	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetID"
+	d.Id = "myTargetName"
 	d.ServerType = accounts.ServerTypeConnect
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
@@ -71,7 +71,7 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	s.Equal("", res[0].Error)
 	s.NotNil(res[0].Deployment)
 	s.Equal(d, res[0].Deployment)
-	s.Equal(types.ContentID("myTargetID"), res[0].Deployment.Id)
+	s.Equal(types.ContentID("myTargetName"), res[0].Deployment.Id)
 }
 
 func (s *GetDeploymentsSuite) TestGetDeploymentsError() {

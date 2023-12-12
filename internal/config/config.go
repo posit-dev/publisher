@@ -15,8 +15,10 @@ const DefaultConfigName = "default"
 
 func New() *Config {
 	return &Config{
-		Schema:   schema.ConfigSchemaURL,
-		Validate: true,
+		Schema:     schema.ConfigSchemaURL,
+		Type:       ContentTypeUnknown,
+		Entrypoint: "unknown",
+		Validate:   true,
 	}
 }
 

@@ -1,6 +1,7 @@
 .cache/
 cover.out
 
+archives/
 bin/
 certs/
 packages/

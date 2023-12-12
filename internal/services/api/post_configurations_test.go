@@ -88,7 +88,7 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsNamed() {
 	h := PostConfigurationsHandlerFunc(s.cwd, s.log)
 
 	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"configuration-name": "newConfig"}`)
+	body := strings.NewReader(`{"configurationName": "newConfig"}`)
 	req, err := http.NewRequest("POST", "/api/configurations", body)
 	s.NoError(err)
 	h(rec, req)
@@ -113,7 +113,7 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsConflict() {
 	h := PostConfigurationsHandlerFunc(s.cwd, s.log)
 
 	rec := httptest.NewRecorder()
-	body := strings.NewReader(`{"configuration-name": "newConfig"}`)
+	body := strings.NewReader(`{"configurationName": "newConfig"}`)
 	req, err := http.NewRequest("POST", "/api/configurations", body)
 	s.NoError(err)
 	h(rec, req)

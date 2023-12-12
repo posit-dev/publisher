@@ -31,8 +31,8 @@ type defaultPublisher struct {
 	*state.State
 }
 
-func New(path util.Path, accountName, configName, targetID string, accountList accounts.AccountList) (Publisher, error) {
-	s, err := state.New(path, accountName, configName, targetID, accountList)
+func New(path util.Path, accountName, configName, targetName string, saveName string, accountList accounts.AccountList) (Publisher, error) {
+	s, err := state.New(path, accountName, configName, targetName, saveName, accountList)
 	if err != nil {
 		return nil, err
 	}
@@ -147,8 +147,20 @@ func (p *defaultPublisher) createDeploymentRecord(
 		Configuration: *p.Config,
 		DeployedAt:    time.Now().UTC().Format(time.RFC3339),
 	}
+
 	// Save current deployment information for this target
-	recordPath := deployment.GetDeploymentPath(p.Dir, string(contentID))
+	if p.SaveName != "" {
+		if p.TargetName != "" {
+			err := deployment.RenameDeployment(p.Dir, p.TargetName, p.SaveName)
+			if err != nil {
+				return err
+			}
+		}
+		p.TargetName = p.SaveName
+	} else if p.TargetName == "" {
+		p.TargetName = string(contentID)
+	}
+	recordPath := deployment.GetDeploymentPath(p.Dir, p.TargetName)
 	log.Info("Writing deployment record", "path", recordPath)
 	return p.Target.WriteFile(recordPath)
 }
