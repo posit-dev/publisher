@@ -1,8 +1,10 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div>
-    <h2>Configuration</h2>
+  <div class="space-between-lg">
+    <h2 class="text-h6">
+      Configuration
+    </h2>
     {{ config?.configurationName }}
 
     <template v-if="config">
