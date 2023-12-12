@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+if [ "${DEBUG:-false}" = true ];
+then
+  set -x
+fi
 
 if [ ! -d "./web/dist" ]; then
     echo "error: Missing frontend distribution. Run \`just web build\` or \`just stub\`." 1>&2
