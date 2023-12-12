@@ -9,11 +9,10 @@ import (
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/services/ui"
-	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type PublishUICmd struct {
+type UICmd struct {
 	Path          util.Path `help:"Path to directory containing files to publish." arg:"" default:"."`
 	Interactive   bool      `short:"i" help:"Launch a browser to show the UI at the listen address."`
 	OpenBrowserAt string    `help:"Launch a browser to show the UI at specific network address." placeholder:"HOST[:PORT]" hidden:""`
@@ -24,7 +23,7 @@ type PublishUICmd struct {
 	TLSCertFile   string    `help:"Path to TLS certificate chain file for the UI server."`
 }
 
-func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	ctx.Logger.Info("Starting PublishUICmd.Run")
 	eventServer := sse.New()
 	ctx.Logger.Info("created event server")
@@ -35,11 +34,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 	if err != nil {
 		return err
 	}
-	stateStore, err := state.New(cmd.Path, "", config.DefaultConfigName, "", "", ctx.Accounts)
-	if err != nil {
-		return err
-	}
-	ctx.Logger.Info("created state store")
 
 	log := events.NewLoggerWithSSE(args.Debug, eventServer)
 	ctx.Logger.Info("created SSE logger")
@@ -56,7 +50,6 @@ func (cmd *PublishUICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIConte
 		cmd.TLSKeyFile,
 		cmd.TLSCertFile,
 		cmd.Path,
-		stateStore,
 		ctx.Accounts,
 		log,
 		eventServer)

@@ -22,9 +22,7 @@ type File struct {
 	ModifiedDatetime string           `json:"modified_datetime"` // the last modified datetime
 	Rel              string           `json:"rel"`               // the relative path to the project root, which is used as the identifier
 	Size             int64            `json:"size"`              // nullable; length in bytes for regular files; system-dependent
-
-	// internal fields
-	Abs string // the absolute path
+	Abs              string           `json:"abs"`               // the absolute path
 }
 
 func CreateFile(root util.Path, path util.Path, exclusion *gitignore.Match) (*File, error) {

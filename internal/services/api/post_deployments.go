@@ -28,7 +28,6 @@ var stateFactory = state.New
 var publisherFactory = publish.NewFromState
 
 func PostDeploymentsHandlerFunc(
-	stateStore *state.State,
 	base util.Path,
 	log logging.Logger,
 	accountList accounts.AccountList) http.HandlerFunc {
@@ -66,9 +65,8 @@ func PostDeploymentsHandlerFunc(
 		w.WriteHeader(http.StatusAccepted)
 		json.NewEncoder(w).Encode(response)
 
-		*stateStore = *newState
-		stateStore.LocalID = localID
-		publisher := publisherFactory(stateStore)
+		newState.LocalID = localID
+		publisher := publisherFactory(newState)
 
 		go func() {
 			log = log.WithArgs("local_id", localID)
