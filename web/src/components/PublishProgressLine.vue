@@ -52,9 +52,6 @@ const publishInProgess = computed(() => {
 });
 
 const showPublishError = computed(() => {
-  if (!eventStore.doesPublishStatusApply(props.id)) {
-    return false;
-  }
   return (
     eventStore.doesPublishStatusApply(props.id)
     &&

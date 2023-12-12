@@ -14,7 +14,7 @@
       <div class="card-details">
         <p>{{ deployment.serverUrl }}</p>
         <p>{{ deployment.id }}</p>
-        <PublishProcessLine
+        <PublishProgressLine
           v-if="showProgressLine"
           :id="deployment.id"
         />
@@ -34,7 +34,7 @@ import { Deployment } from 'src/api';
 import { formatDateString } from 'src/utils/date';
 import { useEventStore } from 'src/stores/events';
 
-import PublishProcessLine from 'src/components/PublishProcessLine.vue';
+import PublishProgressLine from 'src/components/PublishProgressLine.vue';
 import { computed } from 'vue';
 
 const eventStore = useEventStore();
@@ -47,7 +47,14 @@ const props = defineProps({
 });
 
 const showProgressLine = computed(() => {
-  return eventStore.doesPublishStatusApply(props.deployment.id);
+  return (
+    eventStore.isPublishActiveByID(props.deployment.id) ||
+    (
+      eventStore.doesPublishStatusApply(props.deployment.id)
+      &&
+      eventStore.currentPublishStatus.status.completion === 'error'
+    )
+  );
 });
 
 </script>
