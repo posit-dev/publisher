@@ -7,17 +7,20 @@
     :url="deploymentUrl"
   />
 
-  <div class="publisher-layout q-pb-xl space-between-lg">
+  <DeploymentSection
+    v-if="deployment"
+    title="Configuration"
+    :subtitle="deployment.configurationName"
+  >
     <ConfigSettings
-      v-if="deployment"
       :config="deployment"
     />
-
-    <h2 class="text-h6">
-      Files
-    </h2>
+  </DeploymentSection>
+  <DeploymentSection
+    title="Files"
+  >
     <FileTree />
-  </div>
+  </DeploymentSection>
 </template>
 
 <script setup lang="ts">
@@ -30,6 +33,7 @@ import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
 import ExistingDeploymentDestinationHeader from './ExistingDeploymentDestinationHeader.vue';
+import DeploymentSection from 'src/components/DeploymentSection.vue';
 
 const route = useRoute();
 const api = useApi();

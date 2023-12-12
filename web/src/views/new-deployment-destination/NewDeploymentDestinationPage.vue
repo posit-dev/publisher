@@ -7,22 +7,20 @@
     @publish="hasPublished = true"
   />
 
-  <div class="publisher-layout q-pb-xl space-between-lg">
+  <DeploymentSection
+    title="Configuration"
+    :subtitle="defaultConfig?.configurationName ||
+      'No default configuration found. One will be created automatically on publish'"
+  >
     <ConfigSettings
       v-if="defaultConfig"
-      class="q-mt-lg"
       :config="defaultConfig"
     />
-    <p v-else>
-      No default configuration found.
-      One will be created automatically on publish.
-    </p>
+  </DeploymentSection>
 
-    <h2 class="text-h6">
-      Files
-    </h2>
+  <DeploymentSection title="Files">
     <FileTree />
-  </div>
+  </DeploymentSection>
 </template>
 
 <script setup lang="ts">
@@ -33,6 +31,7 @@ import { Configuration, ConfigurationError, useApi } from 'src/api';
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
 import NewDestinationHeader from './NewDestinationHeader.vue';
+import DeploymentSection from 'src/components/DeploymentSection.vue';
 
 const route = useRoute();
 const hasPublished = ref(false);
