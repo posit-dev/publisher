@@ -63,6 +63,10 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	r.Handle(ToPath("accounts", "{name}"), api.GetAccountHandlerFunc(lister, log)).
 		Methods(http.MethodGet)
 
+	// POST /api/accounts/{name}/verify
+	r.Handle(ToPath("accounts", "{name}", "verify"), api.PostAccountVerifyHandlerFunc(lister, log)).
+		Methods(http.MethodPost)
+
 	// GET /api/events
 	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
 

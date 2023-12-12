@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/clients/connect"
 )
@@ -25,27 +24,21 @@ func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLICon
 	if err != nil {
 		return err
 	}
-	err = client.TestConnection()
+	user, err := client.TestAuthentication()
 	if err != nil {
 		return err
 	}
-	if account.AuthType != accounts.AuthTypeNone {
-		user, err := client.TestAuthentication()
-		if err != nil {
-			return err
-		}
-		if user.FirstName != "" || user.LastName != "" {
-			fmt.Printf("Name:     %s %s\n", user.FirstName, user.LastName)
-		}
-		if user.Username != "" {
-			fmt.Printf("Username: %s\n", user.Username)
-		}
-		if user.Id != "" {
-			fmt.Printf("ID:       %s\n", user.Id)
-		}
-		if user.Email != "" {
-			fmt.Printf("Email:    %s\n", user.Email)
-		}
+	if user.FirstName != "" || user.LastName != "" {
+		fmt.Printf("Name:     %s %s\n", user.FirstName, user.LastName)
+	}
+	if user.Username != "" {
+		fmt.Printf("Username: %s\n", user.Username)
+	}
+	if user.Id != "" {
+		fmt.Printf("ID:       %s\n", user.Id)
+	}
+	if user.Email != "" {
+		fmt.Printf("Email:    %s\n", user.Email)
 	}
 	return nil
 }

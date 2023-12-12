@@ -8,7 +8,7 @@ import { Panel } from './panels';
 
 export class Assistant {
 
-    private readonly name: string = "Publish Assistant";
+    private readonly name: string = "Publisher";
 
 	private readonly panel: Panel;
 	private readonly path: string;
@@ -30,7 +30,7 @@ export class Assistant {
 		const command: commands.Command = commands.create(this.path, this.port);
 		this.terminal.sendText(command);
 		if (!(await ports.ping(this.port))) {
-			throw Error("assistant failed to start");
+			throw Error("publisher failed to start");
 		}
 	};
 
@@ -43,7 +43,7 @@ export class Assistant {
 			this.terminal.sendText("\u0003");
 			const pong = await ports.ping(this.port, 1000);
 			if (pong) {
-				throw Error("assistant still running");
+				throw Error("application is still running");
 			}
 		});
 	};
