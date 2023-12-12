@@ -6,12 +6,15 @@
     :url="deploymentUrl"
   />
 
-  <div class="publisher-layout q-pb-xl">
+  <div class="publisher-layout q-pb-xl space-between-lg">
     <ConfigSettings
       v-if="deployment"
       :config="deployment"
     />
-    <h2>Files</h2>
+
+    <h2 class="text-h6">
+      Files
+    </h2>
     <FileTree />
   </div>
 </template>

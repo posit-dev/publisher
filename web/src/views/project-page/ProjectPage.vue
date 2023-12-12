@@ -1,18 +1,23 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div class="publisher-layout q-pt-md q-pb-xl">
+  <div class="publisher-layout q-pt-md q-pb-xl space-between-lg">
     <q-breadcrumbs>
       <q-breadcrumbs-el label="Project" />
     </q-breadcrumbs>
 
-    <h1>Project Page</h1>
+    <div class="flex items-center justify-between">
+      <h2 class="text-h6">
+        Destinations
+      </h2>
 
-    <h2>Destinations</h2>
-
-    <q-btn :to="{ name: 'addNewDeployment' }">
-      Add Destination
-    </q-btn>
+      <q-btn
+        no-caps
+        :to="{ name: 'addNewDeployment' }"
+      >
+        Add Destination
+      </q-btn>
+    </div>
 
     <div class="card-grid">
       <DeploymentCard
@@ -22,7 +27,9 @@
       />
     </div>
 
-    <h2>Configurations</h2>
+    <h2 class="text-h6">
+      Configurations
+    </h2>
     <ul
       v-for="config in configurations"
       :key="config.configurationName"
@@ -35,7 +42,9 @@
       </li>
     </ul>
 
-    <h2>Files</h2>
+    <h2 class="text-h6">
+      Files
+    </h2>
     <FileTree />
   </div>
 </template>
@@ -71,7 +80,6 @@ getConfigurations();
 
 <style scoped lang="scss">
 .card-grid {
-  margin-top: 24px;
   display: grid;
   grid-gap: 28px;
 }
