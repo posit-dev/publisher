@@ -23,12 +23,23 @@
           class="q-mr-sm"
         />
 
-      <h3
-        v-if="title"
-        class="card-title truncate"
-      >
-        {{ title }}
-      </h3>
+        <h3
+          v-if="title"
+          class="card-title truncate"
+        >
+          {{ title }}
+        </h3>
+
+        <q-tooltip
+          v-if="titleTooltip"
+          class="text-body2"
+          anchor="top left"
+          self="bottom middle"
+          max-width="300px"
+          :offset="[0, 10]"
+        >
+          {{ titleTooltip }}
+        </q-tooltip>
       </div>
 
       <slot />
@@ -56,6 +67,10 @@ defineProps({
     default: undefined,
     required: false
   },
+  titleTooltip: {
+    type: String,
+    default: undefined,
+    required: false
   }
 });
 </script>
