@@ -30,17 +30,13 @@
     <h2 class="text-h6">
       Configurations
     </h2>
-    <ul
-      v-for="config in configurations"
-      :key="config.configurationName"
-    >
-      <li>
-        {{ config.configurationName }}
-        <span v-if="isConfigurationError(config)">
-          {{ config.error }}
-        </span>
-      </li>
-    </ul>
+    <div class="card-grid">
+      <ConfigCard
+        v-for="config in configurations"
+        :key="config.configurationName"
+        :config="config"
+      />
+    </div>
 
     <h2 class="text-h6">
       Files
@@ -54,7 +50,8 @@ import { ref } from 'vue';
 
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
-import { Configuration, ConfigurationError, isConfigurationError } from 'src/api/types/configurations';
+import { Configuration, ConfigurationError } from 'src/api/types/configurations';
+import ConfigCard from './ConfigCard.vue';
 import DeploymentCard from './DeploymentCard.vue';
 import FileTree from 'src/components/FileTree.vue';
 
