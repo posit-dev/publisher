@@ -35,7 +35,16 @@ do
     mkdir -p "${dir}"/"${name}"/bin
     cp "${executable}" "${dir}"/"${name}"/bin
     mkdir -p "$(dirname "$archive")"
-    tar -a -cf "$archive" -C "${dir}" .
+
+    if [ "${os}" = "windows" ];
+    then
+    (
+      cd "$dir"
+      zip -r "$archive" . &>/dev/null
+    )
+    else
+      tar -a -cf "$archive" -C "${dir}" .
+    fi
 
     echo "Archive: $archive" 1>&2
 done
