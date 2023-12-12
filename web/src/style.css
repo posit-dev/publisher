@@ -1,3 +1,7 @@
+h1, h2, h3, h4, h5, h6, p {
+  margin: 0;
+}
+
 .body--light {
   background-color: #fafafa;
 }
@@ -43,4 +47,20 @@
   --focus-shadow: 0 0 0 4px rgba(var(--focus-shadow-color), var(--focus-shadow-color-opacity));
   --border-shadow: 0 0 1px 1px rgba(var(--focus-shadow-border-color), var(--focus-shadow-border-color-opacity));
   box-shadow: var(--focus-shadow), var(--border-shadow);
+}
+
+.space-between-xs > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 4px;
+}
+.space-between-sm > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 8px;
+}
+.space-between-md > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 16px;
+}
+.space-between-lg > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 24px;
+}
+.space-between-xl > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 48px;
 }

@@ -273,9 +273,9 @@ export const useEventStore = defineStore('event', () => {
     eventStream.close();
   };
 
-  const incomingEvent = (msg: EventStreamMessage) => {
-    console.log(msg.type, msg.data);
-  };
+  // const incomingEvent = (msg: EventStreamMessage) => {
+  //   console.log(msg.type, msg.data);
+  // };
 
   const onAgentLog = (msg: AgentLog) => {
     agentLogs.value.push(msg);
@@ -283,7 +283,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishStart = (msg: PublishStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishStart', JSON.stringify(msg));
 
     latestLocalId.value = localId;
     currentPublishStatus.value.localId = localId;
@@ -294,7 +293,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishSuccess = (msg: PublishSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -308,7 +306,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishFailure = (msg: PublishFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -320,7 +317,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishCreateNewDeploymentStart = (msg: PublishCreateNewDeploymentStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishCreateNewDeploymentStart', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -332,7 +328,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishCreateNewDeploymentSuccess = (msg: PublishCreateNewDeploymentSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishCreateNewDeploymentSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -343,7 +338,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishCreateNewDeploymentFailure = (msg: PublishCreateNewDeploymentFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishCreateNewDeploymentFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -355,7 +349,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishSetEnvVarsStart = (msg: PublishSetEnvVarsStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishSetEnvVarsStart', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -367,7 +360,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishSetEnvVarsSuccess = (msg: PublishSetEnvVarsSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishSetEnvVarsSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -377,7 +369,6 @@ export const useEventStore = defineStore('event', () => {
   };
   const onPublishSetEnvVarsFailure = (msg: PublishSetEnvVarsFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishSetEnvVarsFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -389,7 +380,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishCreateBundleStart = (msg: PublishCreateBundleStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishCreateBundleStart', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -401,7 +391,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishCreateBundleLog = (msg: PublishCreateBundleLog) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishCreateBundleLog', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -412,7 +401,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishCreateBundleSuccess = (msg: PublishCreateBundleSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishCreateBundleSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -423,7 +411,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishCreateBundleFailure = (msg: PublishCreateBundleFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishCreateBundleFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -435,7 +422,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishCreateDeploymentStart = (msg: PublishCreateDeploymentStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishCreateDeploymentStart', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -447,7 +433,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishCreateDeploymentSuccess = (msg: PublishCreateDeploymentSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishCreateDeploymentSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -459,7 +444,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishCreateDeploymentFailure = (msg: PublishCreateDeploymentFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishCreateDeploymentFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -471,7 +455,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishUploadBundleStart = (msg: PublishUploadBundleStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishUploadBundleStart', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -483,7 +466,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishUploadBundleSuccess = (msg: PublishUploadBundleSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishUploadBundleSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -494,7 +476,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishUploadBundleFailure = (msg: PublishUploadBundleFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishUploadBundleFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -506,7 +487,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishDeployBundleStart = (msg: PublishDeployBundleStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishDeployBundleStart', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -518,7 +498,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishDeployBundleSuccess = (msg: PublishDeployBundleSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishDeployBundleSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -529,7 +508,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishDeployBundleFailure = (msg: PublishDeployBundleFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishDeployBundleFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -541,7 +519,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRestorePythonEnvStart = (msg: PublishRestorePythonEnvStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishRestorePythonEnvStart', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -553,7 +530,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRestorePythonEnvLog = (msg: PublishRestorePythonEnvLog) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishRestorePythonEnvLog', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -564,7 +540,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRestorePythonEnvProgress = (msg: PublishRestorePythonEnvProgress) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishRestorePythonEnvProgress', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -578,7 +553,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRestorePythonEnvStatus = (msg: PublishRestorePythonEnvStatus) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishRestorePythonEnvStatus', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -602,7 +576,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRestorePythonEnvSuccess = (msg: PublishRestorePythonEnvSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishRestorePythonEnvSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -613,7 +586,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRestorePythonEnvFailure = (msg: PublishRestorePythonEnvFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishRestorePythonEnvFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -625,7 +597,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRunContentStart = (msg: PublishRunContentStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishRunContentStart', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -637,7 +608,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRunContentLog = (msg: PublishRunContentLog) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishRunContentLog', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -648,7 +618,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRunContentSuccess = (msg: PublishRunContentSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishRunContentSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -659,7 +628,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishRunContentFailure = (msg: PublishRunContentFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishRunContentFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -671,7 +639,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishSetVanityURLStart = (msg: PublishSetVanityURLStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishSetVanityURLStartlishStart', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -683,8 +650,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishSetVanityURLLog = (msg: PublishSetVanityURLLog) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishSetVanityURLLog', JSON.stringify(msg));
-
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.setVanityURL.logs.push(msg);
@@ -694,7 +659,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishSetVanityURLSuccess = (msg: PublishSetVanityURLSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishSetVanityURLSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -705,7 +669,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishSetVanityURLFailure = (msg: PublishSetVanityURLFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishSetVanityURLFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -717,7 +680,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishValidateDeploymentStart = (msg: PublishValidateDeploymentStart) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishValidateDeploymentStart', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -729,7 +691,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishValidateDeploymentLog = (msg: PublishValidateDeploymentLog) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishValidateDeploymentLog', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -740,7 +701,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishValidateDeploymentSuccess = (msg: PublishValidateDeploymentSuccess) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishValidateDeploymentSuccess', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -751,7 +711,6 @@ export const useEventStore = defineStore('event', () => {
 
   const onPublishValidateDeploymentFailure = (msg: PublishValidateDeploymentFailure) => {
     const localId = getLocalId(msg);
-    // console.log('onPublishValidateDeploymentFailure', JSON.stringify(msg));
 
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
@@ -790,7 +749,7 @@ export const useEventStore = defineStore('event', () => {
   };
 
   const init = () => {
-    eventStream.addEventMonitorCallback('*', incomingEvent);
+    // eventStream.addEventMonitorCallback('*', incomingEvent);
 
     // NOT SEEING THESE LOG messages now.
     eventStream.addEventMonitorCallback('agent/log', onAgentLog);
@@ -853,7 +812,6 @@ export const useEventStore = defineStore('event', () => {
 
     eventStream.setDebugMode(false);
     eventStream.open('api/events?stream=messages');
-    // console.log(eventStream.status());
   };
   init();
 

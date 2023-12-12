@@ -52,8 +52,6 @@ func (m *mockPublisher) PublishDirectory(log logging.Logger) error {
 }
 
 func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
-	stateStore := state.Empty()
-	oldID := stateStore.LocalID
 	log := logging.New()
 
 	rec := httptest.NewRecorder()
@@ -80,7 +78,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
 		s.Equal("default", configName)
 		return state.Empty(), nil
 	}
-	handler := PostDeploymentsHandlerFunc(stateStore, util.Path{}, log, lister)
+	handler := PostDeploymentsHandlerFunc(util.Path{}, log, lister)
 	handler(rec, req)
 
 	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
@@ -90,10 +88,6 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(res))
-
-	s.NotEqual(state.LocalDeploymentID(""), stateStore.LocalID)
-	s.NotEqual(oldID, stateStore.LocalID)
-	s.Equal(stateStore.LocalID, res.LocalID)
 }
 
 func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadJSON() {
@@ -105,7 +99,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadJSON(
 
 	req.Body = io.NopCloser(strings.NewReader(`{"random": "123"}`))
 
-	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil)
+	handler := PostDeploymentsHandlerFunc(util.Path{}, log, nil)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -119,7 +113,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadSaveA
 
 	req.Body = io.NopCloser(strings.NewReader(`{"saveName": "a/b"}`))
 
-	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil)
+	handler := PostDeploymentsHandlerFunc(util.Path{}, log, nil)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -138,7 +132,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncStateErr
 		return nil, errors.New("test error from state factory")
 	}
 
-	handler := PostDeploymentsHandlerFunc(nil, util.Path{}, log, nil)
+	handler := PostDeploymentsHandlerFunc(util.Path{}, log, nil)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -166,7 +160,7 @@ func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncPublishE
 		return publisher
 	}
 
-	handler := PostDeploymentsHandlerFunc(state.Empty(), util.Path{}, log, lister)
+	handler := PostDeploymentsHandlerFunc(util.Path{}, log, lister)
 	handler(rec, req)
 
 	// Handler returns 202 Accepted even if publishing errs,

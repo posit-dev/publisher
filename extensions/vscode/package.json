@@ -20,18 +20,18 @@
   "contributes": {
     "commands": [
       {
-        "command": "posit.publisher.assistant.start",
-        "title": "Open Assistant",
-        "category": "Publisher",
+        "command": "posit.publisher.start",
+        "title": "Open",
+        "category": "Posit Publisher",
         "icon": {
           "light": "assets/icons/light.svg",
           "dark": "assets/icons/dark.svg"
         }
       },
       {
-        "command": "posit.publisher.assistant.stop",
-        "title": "Shut Down Assistant",
-        "category": "Publisher"
+        "command": "posit.publisher.stop",
+        "title": "Stop",
+        "category": "Posit Publisher"
       }
     ],
     "configuration": {
@@ -46,7 +46,7 @@
     "menus": {
       "editor/title": [
         {
-          "command": "posit.publisher.assistant.start",
+          "command": "posit.publisher.start",
           "group": "navigation"
         }
       ]

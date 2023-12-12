@@ -7,7 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
+	"net"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -18,7 +19,6 @@ import (
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
-	"github.com/rstudio/connect-client/internal/util"
 )
 
 type ConnectClient struct {
@@ -41,29 +41,6 @@ func NewConnectClient(
 		account: account,
 		log:     log,
 	}, nil
-}
-
-func (c *ConnectClient) TestConnection() error {
-	// Make a client without auth so we're just testing the connection.
-	c.log.Info("Testing connection", "url", c.account.URL)
-	acctWithoutAuth := *(c.account)
-	acctWithoutAuth.AuthType = accounts.AuthTypeNone
-	client, err := http_client.NewHTTPClientForAccount(&acctWithoutAuth, 30*time.Second, c.log)
-	if err != nil {
-		return err
-	}
-	testURL := util.URLJoin(c.account.URL, "/__api__/server_settings")
-	resp, err := client.Get(testURL)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("the server '%s' does not appear to be a Connect server", c.account.URL)
-	} else if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected response from Connect server: %s", resp.Status)
-	}
-	return nil
 }
 
 type UserDTO struct {
@@ -90,12 +67,34 @@ func (u *UserDTO) toUser() *User {
 	}
 }
 
+var ErrTimedOut = errors.New("request timed out")
+
+const (
+	AuthRoleAdmin     = "administrator"
+	AuthRolePublisher = "publisher"
+	AuthRoleViewer    = "viewer"
+)
+
+func (u *UserDTO) CanAdmin() bool {
+	return u.UserRole == AuthRoleAdmin
+}
+
+func (u *UserDTO) CanPublish() bool {
+	return u.UserRole == AuthRoleAdmin || u.UserRole == AuthRolePublisher
+}
+
 func (c *ConnectClient) TestAuthentication() (*User, error) {
 	c.log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
 	err := c.client.Get("/__api__/v1/user", &connectUser)
 	if err != nil {
-		return nil, err
+		if e, ok := err.(net.Error); ok && e.Timeout() {
+			return nil, ErrTimedOut
+		} else if e, ok := err.(*url.Error); ok {
+			return nil, e.Err
+		} else {
+			return nil, err
+		}
 	}
 	if connectUser.Locked {
 		return nil, fmt.Errorf("user account %s is locked", connectUser.Username)

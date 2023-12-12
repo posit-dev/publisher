@@ -20,7 +20,29 @@ const (
 	ContentTypeRShiny          ContentType = "r-shiny"
 	ContentTypeRMarkdownShiny  ContentType = "rmd-shiny"
 	ContentTypeRMarkdown       ContentType = "rmd"
+	ContentTypeUnknown         ContentType = "unknown"
 )
+
+func AllValidContentTypeNames() []string {
+	return []string{
+		string(ContentTypeHTML),
+		string(ContentTypeJupyterNotebook),
+		string(ContentTypeJupyterVoila),
+		string(ContentTypePythonBokeh),
+		string(ContentTypePythonDash),
+		string(ContentTypePythonFastAPI),
+		string(ContentTypePythonFlask),
+		string(ContentTypePythonShiny),
+		string(ContentTypePythonStreamlit),
+		string(ContentTypeQuartoShiny),
+		string(ContentTypeQuarto),
+		string(ContentTypeRPlumber),
+		string(ContentTypeRShiny),
+		string(ContentTypeRMarkdownShiny),
+		string(ContentTypeRMarkdown),
+		// omit ContentTypeUnknown
+	}
+}
 
 func (t ContentType) IsPythonContent() bool {
 	switch t {
@@ -32,6 +54,28 @@ func (t ContentType) IsPythonContent() bool {
 		ContentTypePythonFastAPI,
 		ContentTypePythonFlask,
 		ContentTypePythonShiny,
+		ContentTypePythonStreamlit:
+		return true
+	}
+	return false
+}
+
+func (t ContentType) IsAPIContent() bool {
+	switch t {
+	case ContentTypePythonFlask,
+		ContentTypePythonFastAPI,
+		ContentTypeRPlumber:
+		return true
+	}
+	return false
+}
+
+func (t ContentType) IsAppContent() bool {
+	switch t {
+	case ContentTypePythonShiny,
+		ContentTypeRShiny,
+		ContentTypePythonBokeh,
+		ContentTypePythonDash,
 		ContentTypePythonStreamlit:
 		return true
 	}
@@ -132,12 +176,14 @@ type ConnectRuntime struct {
 }
 
 type ConnectKubernetes struct {
-	MemoryRequest      *int64   `toml:"memory-request,omitempty" json:"memoryRequest,omitempty"`
-	MemoryLimit        *int64   `toml:"memory-limit,omitempty" json:"memoryLimit,omitempty"`
-	CPURequest         *float64 `toml:"cpu-request,omitempty" json:"cpuRequest,omitempty"`
-	CPULimit           *float64 `toml:"cpu-limit,omitempty" json:"cpuLimit,omitempty"`
-	AMDGPULimit        *int64   `toml:"amd-gpu-limit,omitempty" json:"amdGpuLimit,omitempty"`
-	NvidiaGPULimit     *int64   `toml:"nvidia-gpu-limit,omitempty" json:"nvidiaGpuLimit,omitempty"`
-	ServiceAccountName string   `toml:"service-account-name,omitempty" json:"serviceAccountName,omitempty"`
-	DefaultImageName   string   `toml:"image-name,omitempty" json:"imageName,omitempty"`
+	MemoryRequest                  *int64   `toml:"memory-request,omitempty" json:"memoryRequest,omitempty"`
+	MemoryLimit                    *int64   `toml:"memory-limit,omitempty" json:"memoryLimit,omitempty"`
+	CPURequest                     *float64 `toml:"cpu-request,omitempty" json:"cpuRequest,omitempty"`
+	CPULimit                       *float64 `toml:"cpu-limit,omitempty" json:"cpuLimit,omitempty"`
+	AMDGPULimit                    *int64   `toml:"amd-gpu-limit,omitempty" json:"amdGpuLimit,omitempty"`
+	NvidiaGPULimit                 *int64   `toml:"nvidia-gpu-limit,omitempty" json:"nvidiaGpuLimit,omitempty"`
+	ServiceAccountName             string   `toml:"service-account-name,omitempty" json:"serviceAccountName,omitempty"`
+	DefaultImageName               string   `toml:"image-name,omitempty" json:"imageName,omitempty"`
+	DefaultREnvironmentManagement  *bool    `toml:"defaultREnvironmentManagement,omitempty" json:"defaultREnvironmentManagement"`
+	DefaultPyEnvironmentManagement *bool    `toml:"defaultPyEnvironmentManagement,omitempty" json:"defaultPyEnvironmentManagement"`
 }

@@ -6,7 +6,27 @@
     :nodes="files"
     :node-key="NODE_KEY"
     dense
-  />
+  >
+    <template #default-header="{ node }">
+      <q-icon
+        v-if="node.icon"
+        class="q-mr-sm"
+        :name="node.icon"
+      />
+      <div :class="{ 'excluded-file': node.exclusion }">
+        {{ node.label }}
+        <q-tooltip
+          v-if="node.exclusion"
+          class="text-body2"
+          anchor="center right"
+          self="center left"
+          :offset="[10, 10]"
+        >
+          {{ node.exclusion }}
+        </q-tooltip>
+      </div>
+    </template>
+  </q-tree>
 </template>
 
 <script setup lang="ts">
@@ -28,8 +48,8 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
     [NODE_KEY]: file.id,
     label: file.base,
     children: file.files.map(fileToTreeNode),
-    disabled: Boolean(file.exclusion),
     icon: file.isDir ? 'folder' : undefined,
+    exclusion: file.exclusion,
   };
 
   return node;
@@ -49,4 +69,10 @@ async function getFiles() {
 
 getFiles();
 </script>
+
+<style scoped lang="scss">
+.excluded-file {
+  opacity: 60%;
+}
+</style>
 

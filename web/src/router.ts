@@ -14,7 +14,7 @@ const routes = [
   { name: 'addNewDeployment', path: '/add-new-deployment', component: AddNewDeployment },
   // newDeployment route also supports optional query parameters of id and name
   { name: 'newDeployment', path: '/new-deployment/:account', component: NewDeploymentDestinationPage },
-  { name: 'deployments', path: '/deployments/:id', component: ExistingDeploymentDestinationPage },
+  { name: 'deployments', path: '/deployments/:name', component: ExistingDeploymentDestinationPage },
   { name: 'progress', path: '/progress', component: PublishProgressPage },
   { name: 'default', path: '/:pathMatch(.*)*', redirect: '/' },
 ];

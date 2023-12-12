@@ -63,6 +63,7 @@
     },
     "description": {
       "type": "string",
+      "pattern": "^[^\t\f\r]*$",
       "description": "Human-readable description for this content.",
       "examples": [
         "This is the quarterly sales report, broken down by region."
@@ -391,6 +392,7 @@
             "connection-timeout": {
               "type": "integer",
               "minimum": 0,
+              "maximum": 2592000,
               "description": "Maximum number of seconds allowed without data sent or received across a client connection. A value of `0` means connections will never time-out (not recommended).",
               "examples": [
                 5
@@ -399,6 +401,7 @@
             "read-timeout": {
               "type": "integer",
               "minimum": 0,
+              "maximum": 2592000,
               "description": "Maximum number of seconds allowed without data received from a client connection. A value of `0` means a lack of client (browser) interaction never causes the connection to close.",
               "examples": [
                 30
@@ -406,6 +409,8 @@
             },
             "init-timeout": {
               "type": "integer",
+              "minimum": 0,
+              "maximum": 2592000,
               "description": "The maximum number of seconds allowed for an interactive application to start. Posit Connect must be able to connect to a newly launched application before this threshold has elapsed.",
               "examples": [
                 60
@@ -413,6 +418,8 @@
             },
             "idle-timeout": {
               "type": "integer",
+              "minimum": 0,
+              "maximum": 2592000,
               "description": "The maximum number of seconds a worker process for an interactive application to remain alive after it goes idle (no active connections).",
               "examples": [
                 120
@@ -460,6 +467,7 @@
           "properties": {
             "amd-gpu-limit": {
               "type": "integer",
+              "minimum": 0,
               "description": "The number of AMD GPUs that will be allocated by Kubernetes to run this content.",
               "examples": [
                 0
@@ -467,6 +475,7 @@
             },
             "cpu-limit": {
               "type": "integer",
+              "minimum": 0,
               "description": "The maximum amount of compute power this content will be allowed to consume when executing or rendering, expressed in CPU Units, where 1.0 unit is equivalent to 1 physical or virtual core. Fractional values are allowed. If the process tries to use more CPU than allowed, it will be throttled.",
               "examples": [
                 1
@@ -474,6 +483,7 @@
             },
             "cpu-request": {
               "type": "number",
+              "minimum": 0,
               "description": "The minimum amount of compute power this content needs when executing virtual core. Fractional values are allowed.",
               "examples": [
                 0.5
@@ -481,6 +491,7 @@
             },
             "image-name": {
               "type": "string",
+              "pattern": "^[^\t\n\b\f\r ]*$",
               "description": "Name of the target container image.",
               "examples": [
                 "posit/connect-runtime-python3.11-r4.3"
@@ -488,6 +499,7 @@
             },
             "memory-limit": {
               "type": "string",
+              "minimum": 0,
               "description": "The maximum amount of RAM this content will be allowed to consume when executing or rendering, expressed in bytes. If the process tries to use more memory than allowed, it will be terminated",
               "examples": [
                 "100000000"
@@ -495,6 +507,7 @@
             },
             "memory-request": {
               "type": "string",
+              "minimum": 0,
               "description": "The minimum amount of RAM this content needs when executing or rendering, expressed in bytes.",
               "examples": [
                 "20000000"
@@ -502,6 +515,7 @@
             },
             "nvidia-gpu-limit": {
               "type": "integer",
+              "minimum": 0,
               "description": "The number of NVIDIA GPUs that will be allocated by Kubernetes to run this content.",
               "examples": [
                 0
@@ -509,6 +523,7 @@
             },
             "service-account-name": {
               "type": "string",
+              "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
               "description": "The name of the Kubernetes service account that is used to run this content. It must adhere to Kubernetes service account naming rules. You must be an administrator to set this value.",
               "examples": [
                 "posit-connect-content"

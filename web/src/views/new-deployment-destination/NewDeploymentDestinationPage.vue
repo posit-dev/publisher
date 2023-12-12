@@ -8,9 +8,10 @@
     @publish="hasPublished = true"
   />
 
-  <div class="publisher-layout q-pb-xl">
+  <div class="publisher-layout q-pb-xl space-between-lg">
     <ConfigSettings
       v-if="defaultConfig"
+      class="q-mt-lg"
       :config="defaultConfig"
     />
     <p v-else>
@@ -18,7 +19,9 @@
       One will be created automatically on publish.
     </p>
 
-    <h2>Files</h2>
+    <h2 class="text-h6">
+      Files
+    </h2>
     <FileTree />
   </div>
 </template>

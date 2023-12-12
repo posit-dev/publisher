@@ -40,8 +40,8 @@ func (s *InitializeSuite) SetupTest() {
 func (s *InitializeSuite) TestInitEmpty() {
 	log := logging.New()
 	cfg, err := Init(s.cwd, "", util.Path{}, log)
-	s.Nil(cfg)
-	s.ErrorIs(err, inspect.ErrCantDetectContentType)
+	s.Nil(err)
+	s.Equal(config.ContentTypeUnknown, cfg.Type)
 }
 
 func (s *InitializeSuite) createAppPy() {

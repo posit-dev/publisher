@@ -3,6 +3,7 @@
 <template>
   <div class="row">
     <q-btn
+      no-caps
       flat
       icon="menu"
       class="q-px-xs"

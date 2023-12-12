@@ -37,12 +37,14 @@
       />
       <div class="flex row reverse">
         <q-btn
+          no-caps
           :to="destinationPage"
           type="submit"
           color="primary"
           label="Continue to Publish"
         />
         <q-btn
+          no-caps
           type="reset"
           class="q-mr-sm"
           label="Cancel"

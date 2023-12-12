@@ -2,16 +2,20 @@
 
 <template>
   <ExistingDeploymentDestinationHeader
-    :content-id="contentID"
+    v-if="deployment"
+    :content-id="deployment.id"
     :url="deploymentUrl"
   />
 
-  <div class="publisher-layout q-pb-xl">
+  <div class="publisher-layout q-pb-xl space-between-lg">
     <ConfigSettings
       v-if="deployment"
       :config="deployment"
     />
-    <h2>Files</h2>
+
+    <h2 class="text-h6">
+      Files
+    </h2>
     <FileTree />
   </div>
 </template>
@@ -32,35 +36,28 @@ const api = useApi();
 
 const deployment = ref<Deployment>();
 
-const deploymentID = computed(():string => {
+const deploymentName = computed(():string => {
   // route param can be either string | string[]
-  if (Array.isArray(route.params.id)) {
-    return route.params.id[0];
+  if (Array.isArray(route.params.name)) {
+    return route.params.name[0];
   }
-  return route.params.id;
+  return route.params.name;
 });
 
 const deploymentUrl = computed<string>(() => {
   return deployment.value?.serverUrl || '';
 });
 
-const contentID = computed(():string => {
-  if (Array.isArray(route.params.id)) {
-    return route.params.id[0];
-  }
-  return route.params.id;
-});
-
 const getDeployment = async() => {
   try {
-    if (!deploymentID.value) {
+    if (!deploymentName.value) {
       deployment.value = undefined;
       return;
     }
-    const response = await api.deployments.get(deploymentID.value);
+    const response = await api.deployments.get(deploymentName.value);
     const d = response.data;
     if (isDeploymentError(d)) {
-      throw new Error(`API Error /deployment/${deploymentID.value}: ${d}`);
+      throw new Error(`API Error /deployment/${deploymentName.value}: ${d}`);
     }
     deployment.value = d;
   } catch (err) {

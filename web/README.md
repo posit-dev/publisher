@@ -1,4 +1,4 @@
-# Publishing Client UX
+# Web Application
 
 This application is built using:
 - [VueJS](https://vuejs.org)

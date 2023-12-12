@@ -46,8 +46,8 @@ export class Panel implements vscode.Disposable {
 
         // initialize panel
         this.state.panel = vscode.window.createWebviewPanel(
-            'posit.publisher.assistant',
-            'Publish Assistant',
+            'posit.publisher',
+            'Posit Publisher',
             this.state.column,
             {
                 enableScripts: true,
