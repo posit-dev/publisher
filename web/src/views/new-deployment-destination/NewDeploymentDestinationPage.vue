@@ -4,6 +4,7 @@
   <NewDestinationHeader
     :account-name="accountName"
     :content-id="contentId"
+    :destination-name="destinationName"
     @publish="hasPublished = true"
   />
 
@@ -26,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { PropType, computed, ref } from 'vue';
 import { onBeforeRouteLeave, useRoute } from 'vue-router';
 
 import { Configuration, ConfigurationError, useApi } from 'src/api';
@@ -40,6 +41,19 @@ const api = useApi();
 
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
+const props = defineProps({
+  id: {
+    type: [String, Array] as PropType<string | string[]>,
+    required: false,
+    default: undefined,
+  },
+  name: {
+    type: [String, Array] as PropType<string | string[]>,
+    required: false,
+    default: undefined,
+  },
+});
+
 const accountName = computed(() => {
   // route param can be either string | string[]
   if (Array.isArray(route.params.account)) {
@@ -49,11 +63,19 @@ const accountName = computed(() => {
 });
 
 const contentId = computed(() => {
-  // route param can be either string | string[]
-  if (Array.isArray(route.params.contentId)) {
-    return route.params.contentId[0] || undefined;
+  // route query can be either string | string[]
+  if (Array.isArray(props.id)) {
+    return props.id[0] || undefined;
   }
-  return route.params.contentId || undefined;
+  return props.id || undefined;
+});
+
+const destinationName = computed(() => {
+  // route query can be either string | string[]
+  if (Array.isArray(props.name)) {
+    return props.name[0] || undefined;
+  }
+  return props.name || undefined;
 });
 
 const defaultConfig = computed(() => {

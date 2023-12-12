@@ -26,6 +26,11 @@
         </q-list>
       </div>
       <q-input
+        v-model="deploymentName"
+        label="Deployment Name"
+        hint="Optional"
+      />
+      <q-input
         v-model="contentId"
         label="Content ID"
         hint="Optional"
@@ -34,6 +39,7 @@
         <q-btn
           no-caps
           :to="destinationPage"
+          :disable="disableToDestinationPage"
           type="submit"
           color="primary"
           label="Continue to Publish"
@@ -59,6 +65,7 @@ import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 
 const accounts = ref<Account[]>([]);
 const selectedAccountName = ref<string>('');
+const deploymentName = ref<string>('');
 const contentId = ref<string>('');
 
 const api = useApi();
@@ -72,15 +79,23 @@ async function getAccounts() {
 function resetForm() {
   selectedAccountName.value = '';
   contentId.value = '';
+  deploymentName.value = '';
 }
 
 const destinationPage = computed<RouteLocationRaw>(() => ({
   name: 'newDeployment',
   params: {
     account: selectedAccountName.value,
-    contentId: contentId.value,
   },
+  query: {
+    id: contentId.value || undefined,
+    name: deploymentName.value || undefined,
+  }
 }));
+
+const disableToDestinationPage = computed(() => {
+  return Boolean(!selectedAccountName.value);
+});
 
 function navigateToNewDestinationPage() {
   router.push(destinationPage.value);
