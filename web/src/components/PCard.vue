@@ -2,7 +2,7 @@
 
 <template>
   <div
-    class="p-card focus-shadow"
+    class="p-card focus-shadow truncate"
     :class="{ hoverable: to }"
   >
     <component
@@ -15,12 +15,32 @@
         aria-hidden="true"
       />
 
-      <h3
-        v-if="title"
-        class="card-title"
-      >
-        {{ title }}
-      </h3>
+      <div class="card-header flex no-wrap items-center">
+        <q-icon
+          v-if="icon"
+          :name="icon"
+          size="20px"
+          class="q-mr-sm"
+        />
+
+        <h3
+          v-if="title"
+          class="card-title truncate"
+        >
+          {{ title }}
+        </h3>
+
+        <q-tooltip
+          v-if="titleTooltip"
+          class="text-body2"
+          anchor="top left"
+          self="bottom middle"
+          max-width="300px"
+          :offset="[0, 10]"
+        >
+          {{ titleTooltip }}
+        </q-tooltip>
+      </div>
 
       <slot />
     </component>
@@ -41,6 +61,16 @@ defineProps({
     type: String,
     default: undefined,
     required: false,
+  },
+  icon: {
+    type: String,
+    default: undefined,
+    required: false
+  },
+  titleTooltip: {
+    type: String,
+    default: undefined,
+    required: false
   }
 });
 </script>
@@ -67,14 +97,16 @@ defineProps({
       }
     }
 
+    .card-header {
+      &:not(:last-child) {
+        margin-bottom: 12px;
+      }
+    }
+
     .card-title {
       font-size: 16px;
       font-weight: 500;
       line-height: 1.5;
-
-      &:not(:last-child) {
-        margin-bottom: 12px;
-      }
     }
 }
 

@@ -1,19 +1,12 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <PCard :title="config.configurationName">
-    <div
-      v-if="isConfigurationError(config)"
-      class="flex items-center"
-    >
-      <q-icon
-        name="error"
-        size="1rem"
-      />
-      <p class="q-ml-sm text-bold">
-        {{ config.error }}
-      </p>
-    </div>
+  <PCard
+    :title="config.configurationName"
+    :icon="isConfigurationError(config) ? 'error' : undefined"
+    :title-tooltip="isConfigurationError(config) ? config.error : undefined"
+  >
+    <p>{{ config.configurationPath }}</p>
   </pcard>
 </template>
 
