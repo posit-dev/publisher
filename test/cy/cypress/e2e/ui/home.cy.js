@@ -5,6 +5,6 @@ describe('Landing', () => {
     });
   });
   it('.should() - assert that <title> is correct', () => {
-    cy.title().should('include', 'Posit Publishing Assistant');
+    cy.title().should('include', 'Posit Publisher');
   });
 });

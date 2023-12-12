@@ -3,8 +3,7 @@ package inspect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
-
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -30,8 +29,6 @@ func NewContentTypeDetector() *ContentTypeDetector {
 	}
 }
 
-var ErrCantDetectContentType = errors.New("could not automatically detect content type. Please specify it with the -t option")
-
 func (t *ContentTypeDetector) InferType(path util.Path) (*ContentType, error) {
 	for _, detector := range t.detectors {
 		contentType, err := detector.InferType(path)
@@ -42,7 +39,10 @@ func (t *ContentTypeDetector) InferType(path util.Path) (*ContentType, error) {
 			return contentType, nil
 		}
 	}
-	return nil, ErrCantDetectContentType
+	return &ContentType{
+		Type:       config.ContentTypeUnknown,
+		Entrypoint: "unknown",
+	}, nil
 }
 
 var _ ContentTypeInferer = &ContentTypeDetector{}

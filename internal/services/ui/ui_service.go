@@ -12,7 +12,6 @@ import (
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
 	"github.com/rstudio/connect-client/internal/services/middleware"
-	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/web"
 
@@ -32,15 +31,13 @@ func NewUIService(
 	tlsKeyFile string,
 	tlsCertFile string,
 	dir util.Path,
-	stateStore *state.State,
 	lister accounts.AccountList,
 	log logging.Logger,
 	eventServer *sse.Server) *api.Service {
 
-	handler := RouterHandlerFunc(dir, stateStore, lister, log, eventServer)
+	handler := RouterHandlerFunc(dir, lister, log, eventServer)
 
 	return api.NewService(
-		stateStore,
 		handler,
 		listen,
 		fragment,
@@ -53,7 +50,7 @@ func NewUIService(
 	)
 }
 
-func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
+func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
 	filesService := files.CreateFilesService(base, log)
 	pathsService := paths.CreatePathsService(base, log)
 
@@ -65,6 +62,10 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 	// GET /api/accounts/{name}
 	r.Handle(ToPath("accounts", "{name}"), api.GetAccountHandlerFunc(lister, log)).
 		Methods(http.MethodGet)
+
+	// POST /api/accounts/{name}/verify
+	r.Handle(ToPath("accounts", "{name}", "verify"), api.PostAccountVerifyHandlerFunc(lister, log)).
+		Methods(http.MethodPost)
 
 	// GET /api/events
 	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
@@ -90,7 +91,7 @@ func RouterHandlerFunc(base util.Path, stateStore *state.State, lister accounts.
 		Methods(http.MethodGet)
 
 	// POST /api/deployments
-	r.Handle(ToPath("deployments"), api.PostDeploymentsHandlerFunc(stateStore, base, log, lister)).
+	r.Handle(ToPath("deployments"), api.PostDeploymentsHandlerFunc(base, log, lister)).
 		Methods(http.MethodPost)
 
 	// GET /

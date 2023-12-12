@@ -26,11 +26,6 @@ func (m *MockClient) Read(p []byte) (n int, err error) {
 	return args.Int(0), args.Error(1)
 }
 
-func (m *MockClient) TestConnection() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
 func (m *MockClient) TestAuthentication() (*User, error) {
 	args := m.Called()
 	return args.Get(0).(*User), args.Error(1)

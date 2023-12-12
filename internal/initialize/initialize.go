@@ -23,7 +23,7 @@ func inspectProjectType(path util.Path, log logging.Logger) (*inspect.ContentTyp
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
-	log.Info("Deployment type", "Entrypoint", contentType.Entrypoint, "AppMode", contentType.Type)
+	log.Info("Deployment type", "Entrypoint", contentType.Entrypoint, "Type", contentType.Type)
 	return contentType, nil
 }
 
@@ -73,6 +73,9 @@ func Init(path util.Path, configName string, python util.Path, log logging.Logge
 	if err != nil {
 		return nil, err
 	}
+	if cfg.Type == config.ContentTypeUnknown {
+		log.Warn("Could not determine content type; creating config file with unknown type", "path", path)
+	}
 	cfg.Type = contentType.Type
 	cfg.Entrypoint = contentType.Entrypoint
 
@@ -89,11 +92,10 @@ func Init(path util.Path, configName string, python util.Path, log logging.Logge
 	}
 	configPath := config.GetConfigPath(path, configName)
 	err = cfg.WriteFile(configPath)
-	log.Info("Wrote config file", "path", configPath)
-
 	if err != nil {
 		return nil, err
 	}
+	log.Info("Wrote config file", "path", configPath)
 	return cfg, nil
 }
 

@@ -65,7 +65,9 @@ func NewPyShinyDetector() *PythonAppDetector {
 }
 
 func (d *PythonAppDetector) InferType(path util.Path) (*ContentType, error) {
-	entrypoint, entrypointPath, err := d.InferEntrypoint(path, ".py", "app.py")
+	entrypoint, entrypointPath, err := d.InferEntrypoint(
+		path, ".py", "main.py", "app.py", "streamlit_app.py", "api.py")
+
 	if err != nil {
 		return nil, err
 	}

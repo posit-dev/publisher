@@ -65,15 +65,15 @@ func LoadPositIgnoreIfPresent(dir util.Path, ignoreList IgnoreList) error {
 func (i *excludingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 	return i.ignoreList.Walk(path, func(path util.Path, info fs.FileInfo, err error) error {
 		if info.IsDir() {
-			// Load .positignore from every directory where it exists
-			err = LoadPositIgnoreIfPresent(path, i.ignoreList)
-			if err != nil {
-				return err
-			}
 			// Ignore Python environment directories. We check for these
 			// separately because they aren't expressible as gitignore patterns.
 			if util.IsPythonEnvironmentDir(path) {
 				return filepath.SkipDir
+			}
+			// Load .positignore from every directory where it exists
+			err = LoadPositIgnoreIfPresent(path, i.ignoreList)
+			if err != nil {
+				return err
 			}
 		}
 		return fn(path, info, err)

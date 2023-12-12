@@ -4,18 +4,22 @@
   <NewDestinationHeader
     :account-name="accountName"
     :content-id="contentId"
-    class="q-mt-md"
     @publish="hasPublished = true"
   />
 
-  <ConfigSettings
-    v-if="defaultConfig"
-    :config="defaultConfig"
-  />
-  <p v-else>
-    No default configuration found.
-    One will be created automatically on publish.
-  </p>
+  <div class="publisher-layout q-pb-xl">
+    <ConfigSettings
+      v-if="defaultConfig"
+      :config="defaultConfig"
+    />
+    <p v-else>
+      No default configuration found.
+      One will be created automatically on publish.
+    </p>
+
+    <h2>Files</h2>
+    <FileTree />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -24,6 +28,7 @@ import { onBeforeRouteLeave, useRoute } from 'vue-router';
 
 import { Configuration, ConfigurationError, useApi } from 'src/api';
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
+import FileTree from 'src/components/FileTree.vue';
 import NewDestinationHeader from './NewDestinationHeader.vue';
 
 const route = useRoute();

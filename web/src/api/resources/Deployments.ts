@@ -26,11 +26,13 @@ export class Deployments {
   publish(
     accountName? : string,
     target?: string,
+    saveName?: string,
   ){
     const params = {
       account: accountName,
       config: 'default', // hardcoded for now
       target,
+      saveName,
     };
     return this.client.post(
       '/deployments',

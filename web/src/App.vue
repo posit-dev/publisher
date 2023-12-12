@@ -8,9 +8,9 @@
       <AppHeader />
 
       <q-page-container>
-        <!-- route outlet -->
-        <!-- component matched by the route will render here -->
-        <router-view />
+        <q-page>
+          <router-view />
+        </q-page>
       </q-page-container>
     </q-layout>
   </div>
