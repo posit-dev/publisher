@@ -179,6 +179,12 @@ func (p *defaultPublisher) publishWithClient(
 	var contentID types.ContentID
 	var err error
 
+	user, err := client.TestAuthentication()
+	if err != nil {
+		return types.ErrToAgentError(events.PublishCreateDeploymentOp, err)
+	}
+	log.Info("Publishing with credentials", "username", user.Username, "email", user.Email)
+
 	if p.Target != nil {
 		contentID = p.Target.Id
 	} else {
