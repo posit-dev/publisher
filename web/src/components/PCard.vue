@@ -2,7 +2,7 @@
 
 <template>
   <div
-    class="p-card focus-shadow"
+    class="p-card focus-shadow truncate"
     :class="{ hoverable: to }"
   >
     <component
@@ -17,7 +17,7 @@
 
       <h3
         v-if="title"
-        class="card-title"
+        class="card-title truncate"
       >
         {{ title }}
       </h3>
