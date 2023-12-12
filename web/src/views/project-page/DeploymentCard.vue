@@ -2,7 +2,7 @@
 
 <template>
   <PCard
-    :to="{ name: 'deployments', params: { id: `${deployment.saveName}` }}"
+    :to="{ name: 'deployments', params: { name: `${deployment.saveName}` }}"
     :title="deployment.saveName"
   >
     <div class="space-between-sm">
