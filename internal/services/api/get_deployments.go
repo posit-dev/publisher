@@ -31,8 +31,15 @@ func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
 				Error: err.Error(),
 			})
 		} else {
+			configPath := config.GetConfigPath(base, d.ConfigName)
+			relPath, err := configPath.Rel(base)
+			if err != nil {
+				// This error should never happen. But, if it does,
+				// still return as much data as we can.
+				relPath = configPath
+			}
 			response = append(response, deploymentDTO{
-				ConfigPath: config.GetConfigPath(base, d.ConfigName).String(),
+				ConfigPath: relPath.String(),
 				Deployment: d,
 			})
 		}
