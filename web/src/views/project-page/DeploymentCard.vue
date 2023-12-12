@@ -1,41 +1,32 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div class="deployment-card focus-shadow">
-    <RouterLink :to="{ name: 'deployments', params: { name: `${deployment.saveName}` }}">
-      <span
-        class="link-fill"
-        aria-hidden="true"
+  <PCard
+    :to="{ name: 'deployments', params: { id: `${deployment.saveName}` }}"
+    :title="deployment.saveName"
+  >
+    <div class="space-between-sm">
+      <p>{{ deployment.serverUrl }}</p>
+      <p>{{ deployment.id }}</p>
+      <PublishProgressLine
+        v-if="showProgressLine"
+        :id="deployment.id"
       />
-
-      <p class="card-title">
-        {{ deployment.saveName }}
+      <p v-else>
+        Last Published on {{ formatDateString(deployment.deployedAt) }}
       </p>
-      <div class="card-details">
-        <p>{{ deployment.serverUrl }}</p>
-        <p>{{ deployment.id }}</p>
-        <PublishProgressLine
-          v-if="showProgressLine"
-          :id="deployment.id"
-        />
-        <p v-else>
-          Last Published on {{ formatDateString(deployment.deployedAt) }}
-        </p>
-      </div>
-    </RouterLink>
-  </div>
+    </div>
+  </PCard>
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { RouterLink } from 'vue-router';
+import { computed, PropType } from 'vue';
 
 import { Deployment } from 'src/api';
 import { formatDateString } from 'src/utils/date';
 import { useEventStore } from 'src/stores/events';
-
+import PCard from 'src/components/PCard.vue';
 import PublishProgressLine from 'src/components/PublishProgressLine.vue';
-import { computed } from 'vue';
 
 const eventStore = useEventStore();
 
@@ -58,66 +49,3 @@ const showProgressLine = computed(() => {
 });
 
 </script>
-
-<style scoped lang="scss">
-.deployment-card {
-    position: relative;
-    border-radius: 8px;
-    border: 1px solid;
-    padding: 24px;
-
-    a {
-      color: inherit;
-      text-decoration: none;
-
-      &:focus {
-        outline: 2px solid transparent;
-        outline-offset: 2px;
-      }
-
-      .link-fill {
-        position: absolute;
-        inset: 0px;
-      }
-    }
-
-    .card-title {
-      font-size: 16px;
-      font-weight: 500;
-    }
-
-    .card-details {
-      margin-top: 12px;
-
-      & > :not([hidden]) ~ :not([hidden]) {
-        margin-top: 8px;
-      }
-    }
-
-    p {
-      margin: unset;
-      padding: unset;
-    }
-}
-
-.body--light {
-  .deployment-card {
-    background-color: white;
-    border-color: $grey-4;
-
-    &:hover {
-      border-color: $grey-6;
-    }
-  }
-}
-
-.body--dark {
-  .deployment-card {
-    border-color: $grey-8;
-
-    &:hover {
-      border-color: $grey-6;
-    }
-  }
-}
-</style>
