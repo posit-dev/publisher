@@ -216,20 +216,20 @@ export const useEventStore = defineStore('event', () => {
 
   type CurrentPublishStatus = {
     localId: string,
-    contentId: string,
+    target: string,
     status: PublishStatus,
   };
 
   const currentPublishStatus = ref<CurrentPublishStatus>({
     localId: '',
-    contentId: '',
+    target: '',
     status: newPublishStatus(),
   });
 
   const doesPublishStatusApply = ((id: string) => {
     return (
       currentPublishStatus.value.localId === id ||
-      currentPublishStatus.value.contentId === id
+      currentPublishStatus.value.target === id
     );
   });
 
@@ -437,7 +437,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createDeployment.completion = 'success';
-      currentPublishStatus.value.contentId = msg.data.contentId;
+      currentPublishStatus.value.target = msg.data.contentId;
       publishStatus.steps.createDeployment.allMsgs.push(msg);
     }
   };
@@ -722,7 +722,7 @@ export const useEventStore = defineStore('event', () => {
 
   const initiatePublishProcessWithEvents = async(
     accountName : string,
-    contentId?: string,
+    target?: string,
     saveName?: string,
   ) : Promise<string | Error> => {
     if (publishInProgess.value) {
@@ -732,12 +732,12 @@ export const useEventStore = defineStore('event', () => {
     try {
       publishInProgess.value = true;
       currentPublishStatus.value.localId = '';
-      currentPublishStatus.value.contentId = contentId || '';
+      currentPublishStatus.value.target = target || '';
       currentPublishStatus.value.status = newPublishStatus();
 
       const response = await api.deployments.publish(
         accountName,
-        contentId,
+        target,
         saveName,
       );
       const localId = <string>response.data.localId;
