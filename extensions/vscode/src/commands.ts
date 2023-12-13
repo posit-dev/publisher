@@ -13,5 +13,5 @@ export const create = (path: string, port: number, subcommand: string = "ui"): C
         executable = EXECUTABLE_DEFAULT;
     }
 
-    return `${executable} ${subcommand} --listen=${HOST}:${port} ${path}`;
+    return `${executable} ${subcommand} -v --listen=${HOST}:${port} ${path}`;
 };

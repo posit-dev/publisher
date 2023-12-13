@@ -204,7 +204,7 @@ func (p *defaultPublisher) publishWithClient(
 	}
 	err = p.createDeploymentRecord(bundler, contentID, account, log)
 	if err != nil {
-		return types.ErrToAgentError(events.PublishCreateDeploymentOp, err)
+		return types.ErrToAgentError(events.PublishCreateNewDeploymentOp, err)
 	}
 
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
@@ -234,7 +234,7 @@ func (p *defaultPublisher) publishWithClient(
 
 	// Update app settings
 	connectContent := connect.ConnectContentFromConfig(p.Config)
-	_, err = withLog(events.PublishCreateDeploymentOp, "Updating deployment settings", "content_id", log, func() (any, error) {
+	_, err = withLog(events.PublishUpdateDeploymentOp, "Updating deployment settings", "content_id", log, func() (any, error) {
 		return contentID, client.UpdateDeployment(contentID, connectContent)
 	})
 	if err != nil {

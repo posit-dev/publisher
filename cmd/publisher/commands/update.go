@@ -8,6 +8,7 @@ import (
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
@@ -23,6 +24,8 @@ type UpdateCmd struct {
 }
 
 func (cmd *UpdateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+	ctx.Logger = events.NewSimpleLogger(args.Verbose)
+
 	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
 	if err != nil {
 		return err

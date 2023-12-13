@@ -46,7 +46,7 @@ func main() {
 	ctx := &cli_types.CLIContext{
 		Accounts: nil,
 		Fs:       afero.NewOsFs(),
-		Logger:   events.NewLogger(0),
+		Logger:   events.NewStructuredLogger(0),
 	}
 	cli := cliSpec{
 		CommonArgs: cli_types.CommonArgs{},
@@ -61,7 +61,7 @@ func main() {
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
-	ctx.Logger = events.NewLogger(cli.Verbose)
+	ctx.Logger = events.NewStructuredLogger(cli.Verbose)
 	ctx.Accounts = accounts.NewAccountList(ctx.Fs, ctx.Logger)
 	logVersion(ctx.Logger)
 	err := args.Run(&cli.CommonArgs)

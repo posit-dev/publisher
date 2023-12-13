@@ -20,12 +20,6 @@ func logLevel(verbosity int) slog.Level {
 	return slog.LevelDebug
 }
 
-func NewLogger(verbosity int) logging.Logger {
-	level := logLevel(verbosity)
-	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
-	return logging.FromStdLogger(slog.New(stderrHandler))
-}
-
 func NewLoggerWithSSE(verbosity int, eventServer *sse.Server) logging.Logger {
 	level := logLevel(verbosity)
 	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})

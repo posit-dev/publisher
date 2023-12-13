@@ -342,7 +342,7 @@ func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (ty
 			op = nextOp
 			log.Start(line, logging.LogKeyOp, op)
 		} else {
-			log.Debug(line, logging.LogKeyOp, op)
+			log.Info(line, logging.LogKeyOp, op)
 		}
 
 		// Log a progress event for certain matching log lines.
