@@ -1,19 +1,21 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <section class="publisher-layout q-pt-lg q-pb-xl space-between-lg">
-    <div>
-      <h2 class="text-h6">
-        {{ title }}
-      </h2>
-      <p
-        v-if="subtitle"
-        class="q-mt-xs"
-      >
-        {{ subtitle }}
-      </p>
+  <section class="q-pt-lg q-pb-xl">
+    <div class="publisher-layout space-between-lg">
+      <div>
+        <h2 class="text-h6">
+          {{ title }}
+        </h2>
+        <p
+          v-if="subtitle"
+          class="q-mt-xs"
+        >
+          {{ subtitle }}
+        </p>
+      </div>
+      <slot />
     </div>
-    <slot />
   </section>
 </template>
 
