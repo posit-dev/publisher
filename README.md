@@ -4,6 +4,7 @@
 
 - [Posit Publisher](#posit-publisher)
   - [Table of Contents](#table-of-contents)
+  - [Features](#features)
   - [Installation](#installation)
     - [Manual Installation](#manual-installation)
   - [Verification](#verification)
@@ -23,6 +24,39 @@
         - [ARM64 / AArch64 / ARMv8 / ARMv9](#arm64--aarch64--armv8--armv9)
         - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64-2)
     - [Support Grid](#support-grid)
+
+
+## Features
+Supported features:
+* Publish projects to Connect
+* UI available via VSCode extension
+* CLI can publish, or launch the UI for browser access
+* Configuration-file based workflow
+* Configuration schema enables editing with the Even Better TOML VSCode extension
+* Exclude files from deployment with .positignore files
+* Python content: APIs, applications, and notebooks
+* Automatic detection of client Python version.
+* Publish Quarto documents (using the jupyter engine only)
+* Collaborate via git, or by downloading a source bundle from Connect
+* Uses existing publishing accounts from rsconnect and rsconnect-python
+* Preflight checking of settings before deploying to Connect.
+* Verification that deployed apps can successfully start up.
+
+What's not supported yet but is on our to-do list:
+* Publish to servers other than Connect (shinyapps.io, Cloud, etc.)
+* Manage the list of accounts, and provide an import function for existing accounts
+* R content such as Shiny, R Markdown, and Quarto (with the knitr engine).
+* Automatic detection of Quarto and R version and dependencies.
+* Support for multiple configuration files and configuration editing in the UI.
+* Show more information in the UI such as package dependencies.
+* Inject secrets as environment variables
+* More metadata such as tags, thumbnail image
+* Configure permissions for sharing
+* Option to export a manifest.json for compatibility with prior tool
+* Schedule reports
+* Streamlined "update deployment" command in VSCode extension
+* Support VSCode windows with multiple workspaces
+* Better error handling
 
 
 ## Installation
