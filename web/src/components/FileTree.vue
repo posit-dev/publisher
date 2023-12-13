@@ -22,7 +22,7 @@
           self="center left"
           :offset="[10, 10]"
         >
-          {{ node.exclusion }}
+          {{ exclusionDisplay(node.exclusion) }}
         </q-tooltip>
       </div>
     </template>
@@ -34,7 +34,7 @@ import { QTreeNode } from 'quasar';
 import { ref } from 'vue';
 
 import { useApi } from 'src/api';
-import { DeploymentFile } from 'src/api/types/files';
+import { DeploymentFile, ExclusionMatch, ExclusionMatchSource } from 'src/api/types/files';
 
 const NODE_KEY = 'key';
 
@@ -64,6 +64,17 @@ async function getFiles() {
   if (file.isDir) {
     // start with the top level directory expanded
     expanded.value = [file.rel];
+  }
+}
+
+function exclusionDisplay(match: ExclusionMatch): string {
+  switch (match.source) {
+    case ExclusionMatchSource.BUILT_IN:
+      return 'Automatically ignored by Posit Publisher';
+    case ExclusionMatchSource.FILE:
+      return `Ignored by "${match.filePath}" on line ${match.line} with pattern "${match.pattern}"`;
+    case ExclusionMatchSource.USER:
+      return 'Ignored by user';
   }
 }
 
