@@ -36,10 +36,6 @@
       :name="7"
       @start="openStep = 7"
     />
-    <SetVanityURL
-      :name="8"
-      @start="openStep = 8"
-    />
     <RunContent
       :name="9"
       @start="openStep = 9"
@@ -64,7 +60,6 @@ import {
   RunContent,
   WrappingUpDeployment,
   CreateNewDeployment,
-  SetVanityURL,
 } from 'src/views/publish-progress/steps';
 
 const openStep = ref<number | undefined>(undefined);
