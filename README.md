@@ -12,16 +12,16 @@
     - [Linux](#linux)
   - [Operating Systems](#operating-systems)
     - [macOS](#macos-1)
-    - [Architectures](#architectures)
-      - [Apple Silicon (M-Series) / ARMv8.5-A / ARMv8.6-A](#apple-silicon-m-series--armv85-a--armv86-a)
-      - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64)
+      - [Architectures](#architectures)
+        - [Apple Silicon (M-Series) / ARMv8.5-A / ARMv8.6-A](#apple-silicon-m-series--armv85-a--armv86-a)
+        - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64)
     - [Windows](#windows-1)
-    - [Architectures](#architectures-1)
-      - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64-1)
+      - [Architectures](#architectures-1)
+        - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64-1)
     - [Linux](#linux-1)
-    - [Architectures](#architectures-2)
-      - [ARM64 / AArch64 / ARMv8 / ARMv9](#arm64--aarch64--armv8--armv9)
-      - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64-2)
+      - [Architectures](#architectures-2)
+        - [ARM64 / AArch64 / ARMv8 / ARMv9](#arm64--aarch64--armv8--armv9)
+        - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64-2)
     - [Support Grid](#support-grid)
 
 
@@ -92,9 +92,9 @@ The following operating systems are supported.
 - macOS 13 (Ventura)
 - macOS 14 (Sonoma)
 
-### Architectures
+#### Architectures
 
-#### Apple Silicon (M-Series) / ARMv8.5-A / ARMv8.6-A
+##### Apple Silicon (M-Series) / ARMv8.5-A / ARMv8.6-A
 
 When running MacOS with Apple silicon processors install `darwin-arm64.tar.gz`.
 
@@ -112,7 +112,7 @@ This includes, but is not limited to the following processors:
 - Apple M3 Pro
 - Apple M3 Max
 
-#### x86-64 / x86_64 / x64 / AMD64 / Intel 64
+##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
 
 When running MacOS with x86-64 compliant processors install `darwin-amd64.tar.gz`.
 
@@ -123,9 +123,9 @@ This includes, all Apple Mac products prior to Apple Silicon.
 - Windows 10
 - Windows 11
 
-### Architectures
+#### Architectures
 
-#### x86-64 / x86_64 / x64 / AMD64 / Intel 64
+##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
 
 When running Windows with x86-64 compliant processors install `windows-amd64.tar.gz`.
 
@@ -138,13 +138,13 @@ When running Windows with x86-64 compliant processors install `windows-amd64.tar
 - SUSE Linux Enterprise Server 15 SP5
 - openSUSE 15.5
 
-### Architectures
+#### Architectures
 
-#### ARM64 / AArch64 / ARMv8 / ARMv9
+##### ARM64 / AArch64 / ARMv8 / ARMv9
 
 When running Linux with ARM64 compliant processors install `linux-arm64.tar.gz`.
 
-#### x86-64 / x86_64 / x64 / AMD64 / Intel 64
+##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
 
 When running Linux with x86-64 compliant processors install `linux-amd64.tar.gz`.
 
