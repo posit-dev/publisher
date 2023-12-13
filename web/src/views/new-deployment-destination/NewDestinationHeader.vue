@@ -11,34 +11,52 @@
         <q-breadcrumbs-el label="New Destination" />
       </q-breadcrumbs>
 
-      <div class="col-4 vertical-top q-gutter-x-md">
-        <div class="col text-center col-4">
-          <div>Destination Summary</div>
-          <div>New Deployment to {{ destinationURL }}</div>
-          <p>Publishing will add this Destination to your project.</p>
-          <div v-if="contentId">
-            Content ID: {{ contentId }}
-          </div>
+      <div
+        class="flex justify-between q-mt-md row-gap-lg column-gap-xl"
+      >
+        <div class="space-between-sm">
+          <h1
+            v-if="destinationName"
+            class="text-h6"
+          >
+            {{ destinationName }}
+          </h1>
+          <template v-if="contentId">
+            <p>
+              Redeployment to: <a :href="destinationURL">{{ destinationURL }}</a>
+            </p>
+            <p>
+              {{ contentId }}
+            </p>
+          </template>
+          <p v-else>
+            New deployment to: <a :href="destinationURL">{{ destinationURL }}</a>
+          </p>
+          <p> {{ addingDestinationMessage }}</p>
         </div>
+
+        <div
+          class="flex no-wrap items-start"
+        >
+          <SelectAccount
+            class="account-width"
+            :accounts="fixedAccountList"
+            :url="destinationURL"
+          />
+          <q-btn
+            class="q-ml-md"
+            no-caps
+            color="white"
+            text-color="black"
+            label="Publish"
+            :disable="eventStore.publishInProgess"
+            @click="initiatePublishProcess"
+          />
+        </div>
+      </div>
+
+      <div class="col-4 vertical-top q-gutter-x-md">
         <div class="col q-mt-md">
-          <div class="row justify-around">
-            <div class="col-7">
-              <SelectAccount
-                :accounts="fixedAccountList"
-                :url="destinationURL"
-              />
-            </div>
-            <div class="col-2">
-              <q-btn
-                no-caps
-                color="white"
-                text-color="black"
-                label="Publish"
-                :disable="eventStore.publishInProgess"
-                @click="initiatePublishProcess"
-              />
-            </div>
-          </div>
           <div class="row justify-left q-ma-sm q-mr-md">
             <div class="col-11">
               <PublishProgressSummary
@@ -57,7 +75,7 @@
 
 <script setup lang="ts">
 
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Account, useApi } from 'src/api';
 
 import SelectAccount from 'src/components/SelectAccount.vue';
@@ -77,6 +95,7 @@ const emit = defineEmits(['publish']);
 const props = defineProps({
   accountName: { type: String, required: true },
   contentId: { type: String, default: undefined, required: false },
+  destinationName: { type: String, default: undefined, required: false },
 });
 
 const initiatePublishProcess = async() => {
@@ -85,6 +104,7 @@ const initiatePublishProcess = async() => {
   const result = await eventStore.initiatePublishProcessWithEvents(
     props.accountName,
     props.contentId,
+    props.destinationName,
   );
   if (result instanceof Error) {
     return result;
@@ -94,13 +114,22 @@ const initiatePublishProcess = async() => {
 
 const updateAccountList = async() => {
   try {
-    const response = await api.accounts.getAll();
-    accounts.value = response.data.accounts;
+    const response = await api.accounts.get(props.accountName);
+    if (response.data) {
+      destinationURL.value = response.data.url;
+      fixedAccountList.value = [response.data];
+    }
   } catch (err) {
     // TODO: handle the API error
   }
 };
-updateAccountList();
+
+const addingDestinationMessage = computed(() => {
+  if (props.destinationName) {
+    return `Publishing will add a destination named "${props.destinationName}" to your project.`;
+  }
+  return 'Publishing will add this Destination to your project.';
+});
 
 watch(
   () => [
@@ -108,13 +137,7 @@ watch(
     accounts.value,
   ],
   () => {
-    const credentials = accounts.value.find(
-      (account: Account) => account.name === props.accountName
-    );
-    if (credentials) {
-      destinationURL.value = credentials.url;
-      fixedAccountList.value = [credentials];
-    }
+    updateAccountList();
   },
   { immediate: true }
 );
@@ -124,6 +147,10 @@ watch(
 <style scoped lang="scss">
 .destination-header {
   border-bottom: 1px solid;
+
+  .account-width {
+    min-width: 300px;
+  }
 }
 
 .body--light {

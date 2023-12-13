@@ -1,6 +1,6 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { createRouter, createWebHashHistory } from 'vue-router';
+import { RouteLocationNormalizedLoaded, createRouter, createWebHashHistory } from 'vue-router';
 
 import ProjectPage from 'src/views/project-page/ProjectPage.vue';
 import AddNewDeployment from 'src/views/add-new-deployment/AddNewDeployment.vue';
@@ -12,7 +12,15 @@ const routes = [
   { name: 'root', path: '/', redirect: { name: 'project' } },
   { name: 'project', path: '/project', component: ProjectPage },
   { name: 'addNewDeployment', path: '/add-new-deployment', component: AddNewDeployment },
-  { name: 'newDeployment', path: '/new-deployment/:account/:contentId?', component: NewDeploymentDestinationPage },
+  {
+    name: 'newDeployment',
+    path: '/new-deployment/:account',
+    component: NewDeploymentDestinationPage,
+    props: (route: RouteLocationNormalizedLoaded) => ({
+      id: route.query.id,
+      name: route.query.name,
+    }),
+  },
   { name: 'deployments', path: '/deployments/:name', component: ExistingDeploymentDestinationPage },
   { name: 'progress', path: '/progress', component: PublishProgressPage },
   { name: 'default', path: '/:pathMatch(.*)*', redirect: '/' },
@@ -21,4 +29,8 @@ const routes = [
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: routes,
+  scrollBehavior() {
+    // always scroll to top
+    return { top: 0 };
+  },
 });

@@ -19,7 +19,7 @@ export class Assistant {
 		this.panel = panel;
 		this.path = path;
 		this.port = port;
-		this.terminal = vscode.window.createTerminal({ name: this.name, hideFromUser: true });
+		this.terminal = vscode.window.createTerminal({ name: this.name, hideFromUser: false });
 	}
 
 	show = async () => {

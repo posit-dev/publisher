@@ -14,4 +14,8 @@ export class Accounts {
   getAll() {
     return this.client.get<{ accounts: Account[] }>('/accounts');
   }
+
+  get(accountName: string) {
+    return this.client.get<Account>(`/accounts/${accountName}`);
+  }
 }

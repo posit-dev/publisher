@@ -4,38 +4,54 @@
   <NewDestinationHeader
     :account-name="accountName"
     :content-id="contentId"
+    :destination-name="destinationName"
     @publish="hasPublished = true"
   />
 
-  <div class="publisher-layout q-pb-xl">
+  <DeploymentSection
+    title="Configuration"
+    :subtitle="defaultConfig?.configurationName ||
+      'No default configuration found. One will be created automatically on publish'"
+  >
     <ConfigSettings
       v-if="defaultConfig"
       :config="defaultConfig"
     />
-    <p v-else>
-      No default configuration found.
-      One will be created automatically on publish.
-    </p>
+  </DeploymentSection>
 
-    <h2>Files</h2>
+  <DeploymentSection title="Files">
     <FileTree />
-  </div>
+  </DeploymentSection>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { PropType, computed, ref } from 'vue';
 import { onBeforeRouteLeave, useRoute } from 'vue-router';
 
 import { Configuration, ConfigurationError, useApi } from 'src/api';
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
 import NewDestinationHeader from './NewDestinationHeader.vue';
+import DeploymentSection from 'src/components/DeploymentSection.vue';
 
 const route = useRoute();
 const hasPublished = ref(false);
 const api = useApi();
 
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
+
+const props = defineProps({
+  id: {
+    type: [String, Array] as PropType<string | string[]>,
+    required: false,
+    default: undefined,
+  },
+  name: {
+    type: [String, Array] as PropType<string | string[]>,
+    required: false,
+    default: undefined,
+  },
+});
 
 const accountName = computed(() => {
   // route param can be either string | string[]
@@ -46,11 +62,19 @@ const accountName = computed(() => {
 });
 
 const contentId = computed(() => {
-  // route param can be either string | string[]
-  if (Array.isArray(route.params.contentId)) {
-    return route.params.contentId[0] || undefined;
+  // route query can be either string | string[]
+  if (Array.isArray(props.id)) {
+    return props.id[0] || undefined;
   }
-  return route.params.contentId || undefined;
+  return props.id || undefined;
+});
+
+const destinationName = computed(() => {
+  // route query can be either string | string[]
+  if (Array.isArray(props.name)) {
+    return props.name[0] || undefined;
+  }
+  return props.name || undefined;
 });
 
 const defaultConfig = computed(() => {

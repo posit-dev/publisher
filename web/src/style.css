@@ -1,3 +1,7 @@
+h1, h2, h3, h4, h5, h6, p {
+  margin: 0;
+}
+
 .body--light {
   background-color: #fafafa;
 }
@@ -43,4 +47,72 @@
   --focus-shadow: 0 0 0 4px rgba(var(--focus-shadow-color), var(--focus-shadow-color-opacity));
   --border-shadow: 0 0 1px 1px rgba(var(--focus-shadow-border-color), var(--focus-shadow-border-color-opacity));
   box-shadow: var(--focus-shadow), var(--border-shadow);
+}
+
+.space-between-xs > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 4px;
+}
+.space-between-sm > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 8px;
+}
+.space-between-md > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 16px;
+}
+.space-between-lg > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 24px;
+}
+.space-between-xl > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 48px;
+}
+
+.gap-xs {
+  gap: 4px;
+}
+.gap-sm {
+  gap: 8px;
+}
+.gap-md {
+  gap: 16px;
+}
+.gap-lg {
+  gap: 24px;
+}
+.gap-xl {
+  gap: 48px;
+}
+.row-gap-xs {
+  row-gap: 4px;
+}
+.row-gap-sm {
+  row-gap: 8px;
+}
+.row-gap-md {
+  row-gap: 16px;
+}
+.row-gap-lg {
+  row-gap: 24px;
+}
+.row-gap-xl {
+  row-gap: 48px;
+}
+.column-gap-xs {
+  column-gap: 4px;
+}
+.column-gap-sm {
+  column-gap: 8px;
+}
+.column-gap-md {
+  column-gap: 16px;
+}
+.column-gap-lg {
+  column-gap: 24px;
+}
+.column-gap-xl {
+  column-gap: 48px;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

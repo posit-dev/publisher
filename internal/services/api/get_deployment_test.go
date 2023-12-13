@@ -47,6 +47,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	d := deployment.New()
 	d.Id = "myTargetName"
 	d.ServerType = accounts.ServerTypeConnect
+	d.ConfigName = "myConfig"
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
@@ -73,6 +74,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	s.NotNil(res.Deployment)
 	s.Equal("", res.Error)
 	s.Equal(d, res.Deployment)
+	s.Equal(".posit/publish/myConfig.toml", res.ConfigPath)
 	s.Equal(types.ContentID("myTargetName"), res.Deployment.Id)
 }
 

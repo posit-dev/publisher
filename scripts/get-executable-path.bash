@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+if [ "${DEBUG:-false}" = true ];
+then
+  set -x
+fi
 
 if [ "$#" -ne 4 ]; then
     echo "usage: $0 <cmd> <version> <os> <arch>"

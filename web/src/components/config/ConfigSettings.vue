@@ -1,31 +1,26 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div>
-    <h2>Configuration</h2>
-    {{ config?.configurationName }}
+  <div class="space-between-lg">
+    <template v-if="isConfigurationError(config)">
+      {{ config.error }}
+    </template>
 
-    <template v-if="config">
-      <template v-if="isConfigurationError(config)">
-        {{ config.error }}
-      </template>
-
-      <template v-else>
-        <ConfigType :type="config.configuration.type" />
-        <ConfigEntrypoint :entrypoint="config.configuration.entrypoint" />
-        <ConfigTitle :title="config.configuration.title" />
-        <ConfigDescription :description="config.configuration.description" />
-        <ConfigThumbnail :thumbnail="config.configuration.thumbnail" />
-        <ConfigTags :tags="config.configuration.tags" />
-        <ConfigPython :python="config.configuration.python" />
-        <ConfigR :r="config.configuration.r" />
-        <ConfigQuarto :quarto="config.configuration.quarto" />
-        <ConfigEnvironment :environment="config.configuration.environment" />
-        <ConfigSecrets :secrets="config.configuration.secrets" />
-        <ConfigSchedules :schedules="config.configuration.schedules" />
-        <ConfigAccess :access="config.configuration.access" />
-        <ConfigConnect :connect="config.configuration.connect" />
-      </template>
+    <template v-else>
+      <ConfigType :type="config.configuration.type" />
+      <ConfigEntrypoint :entrypoint="config.configuration.entrypoint" />
+      <ConfigTitle :title="config.configuration.title" />
+      <ConfigDescription :description="config.configuration.description" />
+      <ConfigThumbnail :thumbnail="config.configuration.thumbnail" />
+      <ConfigTags :tags="config.configuration.tags" />
+      <ConfigPython :python="config.configuration.python" />
+      <ConfigR :r="config.configuration.r" />
+      <ConfigQuarto :quarto="config.configuration.quarto" />
+      <ConfigEnvironment :environment="config.configuration.environment" />
+      <ConfigSecrets :secrets="config.configuration.secrets" />
+      <ConfigSchedules :schedules="config.configuration.schedules" />
+      <ConfigAccess :access="config.configuration.access" />
+      <ConfigConnect :connect="config.configuration.connect" />
     </template>
   </div>
 </template>

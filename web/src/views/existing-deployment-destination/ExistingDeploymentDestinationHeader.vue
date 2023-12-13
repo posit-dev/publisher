@@ -12,40 +12,51 @@
           }"
         />
         <q-breadcrumbs-el
-          :label="url"
+          :label="deployment.saveName"
         />
       </q-breadcrumbs>
 
-      <div class="col-4 vertical-top q-gutter-x-md">
-        <div class="col text-center col-4">
-          <div>Destination Summary</div>
-          <div>
-            Redeployment to {{ url }}
-          </div>
-          <div>
-            Content ID: {{ contentId }}
-          </div>
+      <div
+        class="flex justify-between q-mt-md row-gap-lg column-gap-xl"
+      >
+        <div class="space-between-sm">
+          <h1 class="text-h6">
+            {{ deployment.saveName }}
+          </h1>
+          <p>
+            Redeployment to: <a :href="deployment.serverUrl">{{ deployment.serverUrl }}</a>
+          </p>
+          <p>
+            {{ deployment.id }}
+          </p>
+          <p>
+            Last Published on {{ formatDateString(deployment.deployedAt) }}
+          </p>
         </div>
+
+        <div
+          class="flex no-wrap items-start"
+        >
+          <SelectAccount
+            class="account-width"
+            :accounts="filteredAccountList"
+            :url="destinationURL"
+            @change="onChange"
+          />
+          <q-btn
+            class="q-ml-md"
+            no-caps
+            color="white"
+            text-color="black"
+            label="Publish"
+            :disable="eventStore.publishInProgess"
+            @click="initiatePublishProcess"
+          />
+        </div>
+      </div>
+
+      <div class="col-4 vertical-top q-gutter-x-md">
         <div class="col q-mt-md">
-          <div class="row justify-around">
-            <div class="col-7">
-              <SelectAccount
-                :accounts="filteredAccountList"
-                :url="destinationURL"
-                @change="onChange"
-              />
-            </div>
-            <div class="col-2">
-              <q-btn
-                no-caps
-                color="white"
-                text-color="black"
-                label="Publish"
-                :disable="eventStore.publishInProgess"
-                @click="initiatePublishProcess"
-              />
-            </div>
-          </div>
           <div class="row justify-left q-ma-sm q-mr-md">
             <div class="col-11">
               <PublishProgressSummary
@@ -64,12 +75,13 @@
 
 <script setup lang="ts">
 
-import { ref, watch } from 'vue';
-import { Account, useApi } from 'src/api';
+import { ref, watch, PropType } from 'vue';
 
+import { Account, Deployment, useApi } from 'src/api';
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
+import { formatDateString } from 'src/utils/date';
 
 const api = useApi();
 const eventStore = useEventStore();
@@ -83,6 +95,7 @@ const publishingLocalId = ref('');
 const emit = defineEmits(['publish']);
 
 const props = defineProps({
+  deployment: { type: Object as PropType<Deployment>, required: true },
   contentId: { type: String, required: true },
   url: { type: String, required: true },
 });
@@ -102,7 +115,7 @@ const initiatePublishProcess = async() => {
 
   const result = await eventStore.initiatePublishProcessWithEvents(
     accountName,
-    props.contentId,
+    props.deployment.saveName,
   );
   if (result instanceof Error) {
     return result;
@@ -138,6 +151,10 @@ watch(
 <style scoped lang="scss">
 .destination-header {
   border-bottom: 1px solid;
+
+  .account-width {
+    min-width: 300px;
+  }
 }
 
 .body--light {
