@@ -43,8 +43,8 @@ const api = useApi();
 const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);
 
-function fileToTreeNode(file: DeploymentFile): QTreeNode {
-  const node: QTreeNode = {
+function fileToTreeNode(file: DeploymentFile) {
+  const node: QTreeNode & Pick<DeploymentFile, 'exclusion'> = {
     [NODE_KEY]: file.id,
     label: file.base,
     children: file.files.map(fileToTreeNode),
