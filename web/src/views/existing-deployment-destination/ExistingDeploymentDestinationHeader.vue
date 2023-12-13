@@ -65,11 +65,12 @@
 <script setup lang="ts">
 
 import { ref, watch } from 'vue';
-import { Account, useApi } from 'src/api';
+import { Account, Deployment, useApi } from 'src/api';
 
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
+import { PropType } from 'vue';
 
 const api = useApi();
 const eventStore = useEventStore();
@@ -85,6 +86,7 @@ const emit = defineEmits(['publish']);
 const props = defineProps({
   contentId: { type: String, required: true },
   url: { type: String, required: true },
+  deployment: { type: Object as PropType<Deployment>, required: true }
 });
 
 const onChange = (account: Account) => {
@@ -102,7 +104,7 @@ const initiatePublishProcess = async() => {
 
   const result = await eventStore.initiatePublishProcessWithEvents(
     accountName,
-    props.contentId,
+    props.deployment.saveName,
   );
   if (result instanceof Error) {
     return result;
