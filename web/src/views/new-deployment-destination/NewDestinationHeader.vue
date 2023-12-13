@@ -85,6 +85,7 @@ const initiatePublishProcess = async() => {
   emit('publish');
 
   try {
+    publishingLocalId.value = ''; // This should guarantee that any errors apply to us
     const result = await eventStore.initiatePublishProcessWithEvents(
       props.accountName,
       props.contentId,

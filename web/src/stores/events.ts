@@ -744,7 +744,16 @@ export const useEventStore = defineStore('event', () => {
       currentPublishStatus.value.localId = localId;
       return localId;
     } catch (error) {
-      return new Error(getErrorMessage(error));
+      const msg = getErrorMessage(error);
+      publishInProgess.value = false;
+      currentPublishStatus.value.status.completion = 'error';
+      currentPublishStatus.value.status.error = [
+        {
+          key: 'msg',
+          value: msg,
+        },
+      ];
+      return new Error(msg);
     }
   };
 
