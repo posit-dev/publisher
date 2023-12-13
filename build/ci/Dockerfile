@@ -26,6 +26,8 @@ RUN \
         libxtst6\
         xauth\
         xvfb\
+        # The following are required for tooling
+        zip\
         # NodeJS is required by this project. The source code for the client is written in it!
         && mkdir -p /etc/apt/keyrings\
         && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg\
