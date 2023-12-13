@@ -29,4 +29,8 @@ const routes = [
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: routes,
+  scrollBehavior() {
+    // always scroll to top
+    return { top: 0 };
+  },
 });
