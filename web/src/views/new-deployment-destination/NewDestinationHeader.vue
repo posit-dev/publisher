@@ -59,9 +59,13 @@ import { Account, useApi } from 'src/api';
 
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
+
 import { useEventStore } from 'src/stores/events';
+import { routeToErrorPage, getErrorMessage } from 'src/util/errors';
+import { useRouter } from 'vue-router';
 
 const api = useApi();
+const router = useRouter();
 const eventStore = useEventStore();
 
 const accounts = ref<Account[]>([]);
@@ -80,15 +84,19 @@ const props = defineProps({
 const initiatePublishProcess = async() => {
   emit('publish');
 
-  const result = await eventStore.initiatePublishProcessWithEvents(
-    props.accountName,
-    props.contentId,
-    props.destinationName,
-  );
-  if (result instanceof Error) {
-    return result;
+  try {
+    const result = await eventStore.initiatePublishProcessWithEvents(
+      props.accountName,
+      props.contentId,
+      props.destinationName,
+    );
+    if (result instanceof Error) {
+      return result;
+    }
+    publishingLocalId.value = result;
+  } catch (err: unknown) {
+    return getErrorMessage(err);
   }
-  publishingLocalId.value = result;
 };
 
 const updateAccountList = async() => {
@@ -98,8 +106,13 @@ const updateAccountList = async() => {
       destinationURL.value = response.data.url;
       fixedAccountList.value = [response.data];
     }
-  } catch (err) {
-    // TODO: handle the API error
+  } catch (err: unknown) {
+    // Fatal!
+    routeToErrorPage(
+      router,
+      getErrorMessage(err),
+      'NewDestinationHeader::updateAccountList'
+    );
   }
 };
 

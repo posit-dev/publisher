@@ -7,6 +7,7 @@ import AddNewDeployment from 'src/views/add-new-deployment/AddNewDeployment.vue'
 import ExistingDeploymentDestinationPage from 'src/views/existing-deployment-destination/ExistingDeploymentDestinationPage.vue';
 import NewDeploymentDestinationPage from 'src/views/new-deployment-destination/NewDeploymentDestinationPage.vue';
 import PublishProgressPage from 'src/views/publish-progress/PublishProgressPage.vue';
+import FatalErrorPage from 'src/views/fatal-error/FatalErrorPage.vue';
 
 const routes = [
   { name: 'root', path: '/', redirect: { name: 'project' } },
@@ -23,6 +24,15 @@ const routes = [
   },
   { name: 'deployments', path: '/deployments/:name', component: ExistingDeploymentDestinationPage },
   { name: 'progress', path: '/progress', component: PublishProgressPage },
+  {
+    name: 'fatalError',
+    path: '/error',
+    component: FatalErrorPage,
+    props: (route: RouteLocationNormalizedLoaded) => ({
+      msg: route.query.msg,
+      location: route.query.location,
+    }),
+  },
   { name: 'default', path: '/:pathMatch(.*)*', redirect: '/' },
 ];
 

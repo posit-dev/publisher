@@ -22,16 +22,18 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
+import { routeToErrorPage, getErrorMessage } from 'src/util/errors';
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
 import ExistingDeploymentDestinationHeader from './ExistingDeploymentDestinationHeader.vue';
 
 const route = useRoute();
+const router = useRouter();
 const api = useApi();
 
 const deployment = ref<Deployment>();
@@ -57,11 +59,21 @@ const getDeployment = async() => {
     const response = await api.deployments.get(deploymentName.value);
     const d = response.data;
     if (isDeploymentError(d)) {
-      throw new Error(`API Error /deployment/${deploymentName.value}: ${d}`);
+      routeToErrorPage(
+        router,
+        `API Error /deployment/${deploymentName.value}: ${d}`,
+        'ExistingDeploymentDestinationPage::getDeployment'
+      );
+      return;
     }
     deployment.value = d;
-  } catch (err) {
-    // TODO: handle the API error
+  } catch (err: unknown) {
+    // Fatal!
+    routeToErrorPage(
+      router,
+      getErrorMessage(err),
+      'ExistingDeploymentDestinationPage::getDeployment'
+    );
   }
 };
 

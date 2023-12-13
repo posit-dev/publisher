@@ -60,6 +60,7 @@
 import { Account, useApi } from 'src/api';
 import { computed, ref } from 'vue';
 import { RouteLocationRaw, useRouter } from 'vue-router';
+import { routeToErrorPage, getErrorMessage } from 'src/util/errors';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 
@@ -72,8 +73,17 @@ const api = useApi();
 const router = useRouter();
 
 async function getAccounts() {
-  const response = await api.accounts.getAll();
-  accounts.value = response.data.accounts;
+  try {
+    const response = await api.accounts.getAll();
+    accounts.value = response.data.accounts;
+  } catch (err: unknown) {
+    // Fatal!
+    routeToErrorPage(
+      router,
+      getErrorMessage(err),
+      'AddNewDeployment::getAccounts'
+    );
+  }
 }
 
 function resetForm() {

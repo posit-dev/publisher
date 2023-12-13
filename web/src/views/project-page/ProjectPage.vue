@@ -51,24 +51,46 @@ import { ref } from 'vue';
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import { Configuration, ConfigurationError } from 'src/api/types/configurations';
+import { routeToErrorPage, getErrorMessage } from 'src/util/errors';
+
 import ConfigCard from './ConfigCard.vue';
 import DeploymentCard from './DeploymentCard.vue';
 import FileTree from 'src/components/FileTree.vue';
+import { useRouter } from 'vue-router';
 
 const api = useApi();
+const router = useRouter();
 const deployments = ref<Deployment[]>([]);
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 async function getDeployments() {
-  const response = (await api.deployments.getAll()).data;
-  deployments.value = response.filter<Deployment>((d): d is Deployment => {
-    return !isDeploymentError(d);
-  });
+  try {
+    const response = (await api.deployments.getAll()).data;
+    deployments.value = response.filter<Deployment>((d): d is Deployment => {
+      return !isDeploymentError(d);
+    });
+  } catch (err: unknown) {
+    // Fatal!
+    routeToErrorPage(
+      router,
+      getErrorMessage(err),
+      'ProjectPage::getDeployments'
+    );
+  }
 }
 
 async function getConfigurations() {
-  const response = await api.configurations.getAll();
-  configurations.value = response.data;
+  try {
+    const response = await api.configurations.getAll();
+    configurations.value = response.data;
+  } catch (err: unknown) {
+    // Fatal!
+    routeToErrorPage(
+      router,
+      getErrorMessage(err),
+      'ProjectPage::getConfigurations'
+    );
+  }
 }
 
 getDeployments();
