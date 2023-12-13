@@ -5,7 +5,14 @@
     v-if="r"
     label="R"
   >
-    {{ r }}
+    <dt>Version</dt>
+    <dd>{{ r.version }}</dd>
+
+    <dt>Package File</dt>
+    <dd>{{ r.packageFile }}</dd>
+
+    <dt>Package Manager</dt>
+    <dd>{{ r.packageManager }}</dd>
   </ConfigSetting>
 </template>
 
