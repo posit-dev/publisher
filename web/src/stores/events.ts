@@ -38,10 +38,6 @@ import {
   PublishRunContentLog,
   PublishRunContentSuccess,
   PublishRunContentFailure,
-  PublishSetVanityURLStart,
-  PublishSetVanityURLLog,
-  PublishSetVanityURLSuccess,
-  PublishSetVanityURLFailure,
   PublishValidateDeploymentStart,
   PublishValidateDeploymentLog,
   PublishValidateDeploymentSuccess,
@@ -67,9 +63,14 @@ export const publishStepCompletionStatusNames: Record<PublishStepCompletionStatu
 };
 
 export type PublishStep =
-  'createNewDeployment' | 'setEnvVars' | 'createBundle' |
-  'uploadBundle' | 'createDeployment' | 'deployBundle' |
-  'restorePythonEnv' | 'setVanityURL' | 'runContent' |
+  'createNewDeployment' |
+  'setEnvVars' |
+  'createBundle' |
+  'uploadBundle' |
+  'createDeployment' |
+  'deployBundle' |
+  'restorePythonEnv' |
+  'runContent' |
   'validateDeployment';
 
 export const publishStepDisplayNames: Record<PublishStep, string> = {
@@ -80,7 +81,6 @@ export const publishStepDisplayNames: Record<PublishStep, string> = {
   createDeployment: 'Create Deployment',
   deployBundle: 'Deploy Bundle',
   restorePythonEnv: 'Restore Python Runtime Environment',
-  setVanityURL: 'Set Vanity URL',
   runContent: 'Run Content',
   validateDeployment: 'Validate Deployment',
 };
@@ -93,9 +93,8 @@ export const publishStepOrder: Record<PublishStep, number> = {
   createDeployment: 5,
   deployBundle: 6,
   restorePythonEnv: 7,
-  setVanityURL: 8,
-  runContent: 9,
-  validateDeployment: 10,
+  runContent: 8,
+  validateDeployment: 9,
 };
 
 export type PublishStepStatus = {
@@ -122,7 +121,6 @@ export type PublishStatus = {
     uploadBundle: PublishStepStatus,
     deployBundle: PublishStepStatus,
     restorePythonEnv: PublishStepStatus,
-    setVanityURL: PublishStepStatus,
     runContent: PublishStepStatus,
     validateDeployment: PublishStepStatus,
   },
@@ -169,11 +167,6 @@ const newPublishStatus = () => {
         allMsgs: <EventStreamMessage[]>[],
       },
       restorePythonEnv: {
-        completion: <PublishStepCompletionStatus>'notStarted',
-        logs: <EventStreamMessage[]>[],
-        allMsgs: <EventStreamMessage[]>[],
-      },
-      setVanityURL: {
         completion: <PublishStepCompletionStatus>'notStarted',
         logs: <EventStreamMessage[]>[],
         allMsgs: <EventStreamMessage[]>[],
@@ -637,47 +630,6 @@ export const useEventStore = defineStore('event', () => {
     }
   };
 
-  const onPublishSetVanityURLStart = (msg: PublishSetVanityURLStart) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.currentStep = 'setVanityURL';
-      publishStatus.steps.setVanityURL.completion = 'inProgress';
-      publishStatus.steps.setVanityURL.allMsgs.push(msg);
-    }
-  };
-
-  const onPublishSetVanityURLLog = (msg: PublishSetVanityURLLog) => {
-    const localId = getLocalId(msg);
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.steps.setVanityURL.logs.push(msg);
-      publishStatus.steps.setVanityURL.allMsgs.push(msg);
-    }
-  };
-
-  const onPublishSetVanityURLSuccess = (msg: PublishSetVanityURLSuccess) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.steps.setVanityURL.completion = 'success';
-      publishStatus.steps.setVanityURL.allMsgs.push(msg);
-    }
-  };
-
-  const onPublishSetVanityURLFailure = (msg: PublishSetVanityURLFailure) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.steps.runContent.completion = 'error';
-      publishStatus.steps.setVanityURL.error = splitMsgIntoKeyValuePairs(msg.data);
-      publishStatus.steps.setVanityURL.allMsgs.push(msg);
-    }
-  };
-
   const onPublishValidateDeploymentStart = (msg: PublishValidateDeploymentStart) => {
     const localId = getLocalId(msg);
 
@@ -799,11 +751,6 @@ export const useEventStore = defineStore('event', () => {
     eventStream.addEventMonitorCallback('publish/runContent/log', onPublishRunContentLog);
     eventStream.addEventMonitorCallback('publish/runContent/success', onPublishRunContentSuccess);
     eventStream.addEventMonitorCallback('publish/runContent/failure', onPublishRunContentFailure);
-
-    eventStream.addEventMonitorCallback('publish/setVanityURL/start', onPublishSetVanityURLStart);
-    eventStream.addEventMonitorCallback('publish/setVanityURL/log', onPublishSetVanityURLLog);
-    eventStream.addEventMonitorCallback('publish/setVanityURL/success', onPublishSetVanityURLSuccess);
-    eventStream.addEventMonitorCallback('publish/setVanityURL/failure', onPublishSetVanityURLFailure);
 
     eventStream.addEventMonitorCallback('publish/validateDeployment/start', onPublishValidateDeploymentStart);
     eventStream.addEventMonitorCallback('publish/validateDeployment/log', onPublishValidateDeploymentLog);
