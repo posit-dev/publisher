@@ -21,7 +21,7 @@
     "commands": [
       {
         "command": "posit.publisher.start",
-        "title": "Open",
+        "title": "Open Publisher",
         "category": "Posit Publisher",
         "icon": {
           "light": "assets/icons/light.svg",
@@ -30,7 +30,7 @@
       },
       {
         "command": "posit.publisher.stop",
-        "title": "Stop",
+        "title": "Stop Publisher",
         "category": "Posit Publisher"
       }
     ],
