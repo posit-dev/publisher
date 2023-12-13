@@ -5,7 +5,17 @@
     v-if="environment"
     label="Environment"
   >
-    {{ environment }}
+    <template
+      v-for="(value, key) in environment"
+      :key="key"
+    >
+      <dt>
+        {{ key }}
+      </dt>
+      <dd>
+        {{ value }}
+      </dd>
+    </template>
   </ConfigSetting>
 </template>
 
