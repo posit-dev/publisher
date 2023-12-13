@@ -11,31 +11,52 @@
         <q-breadcrumbs-el label="New Destination" />
       </q-breadcrumbs>
 
-      <div class="col-4 vertical-top q-gutter-x-md">
-        <div class="col text-center col-4">
-          <div>Destination Summary</div>
-          <p> {{ destinationMessage }}.</p>
+      <div
+        class="flex justify-between q-mt-md row-gap-lg column-gap-xl"
+      >
+        <div class="space-between-sm">
+          <h1
+            v-if="destinationName"
+            class="text-h6"
+          >
+            {{ destinationName }}
+          </h1>
+          <template v-if="contentId">
+            <p>
+              Redeployment to: <a :href="destinationURL">{{ destinationURL }}</a>
+            </p>
+            <p>
+              {{ contentId }}
+            </p>
+          </template>
+          <p v-else>
+            New deployment to: <a :href="destinationURL">{{ destinationURL }}</a>
+          </p>
           <p> {{ addingDestinationMessage }}</p>
         </div>
+
+        <div
+          class="flex no-wrap items-start"
+        >
+          <SelectAccount
+            class="account-width"
+            :accounts="fixedAccountList"
+            :url="destinationURL"
+          />
+          <q-btn
+            class="q-ml-md"
+            no-caps
+            color="white"
+            text-color="black"
+            label="Publish"
+            :disable="eventStore.publishInProgess"
+            @click="initiatePublishProcess"
+          />
+        </div>
+      </div>
+
+      <div class="col-4 vertical-top q-gutter-x-md">
         <div class="col q-mt-md">
-          <div class="row justify-around">
-            <div class="col-7">
-              <SelectAccount
-                :accounts="fixedAccountList"
-                :url="destinationURL"
-              />
-            </div>
-            <div class="col-2">
-              <q-btn
-                no-caps
-                color="white"
-                text-color="black"
-                label="Publish"
-                :disable="eventStore.publishInProgess"
-                @click="initiatePublishProcess"
-              />
-            </div>
-          </div>
           <div class="row justify-left q-ma-sm q-mr-md">
             <div class="col-11">
               <PublishProgressSummary
@@ -103,13 +124,6 @@ const updateAccountList = async() => {
   }
 };
 
-const destinationMessage = computed(() => {
-  if (props.contentId) {
-    return `Updating existing content (${props.contentId}) on ${destinationURL.value}.`;
-  }
-  return `New deployment of content to ${destinationURL.value}`;
-});
-
 const addingDestinationMessage = computed(() => {
   if (props.destinationName) {
     return `Publishing will add a destination named "${props.destinationName}" to your project.`;
@@ -133,6 +147,10 @@ watch(
 <style scoped lang="scss">
 .destination-header {
   border-bottom: 1px solid;
+
+  .account-width {
+    min-width: 300px;
+  }
 }
 
 .body--light {
