@@ -5,7 +5,11 @@
     v-if="quarto"
     label="Quarto"
   >
-    {{ quarto }}
+    <dt>Version</dt>
+    <dd>{{ quarto.version }}</dd>
+
+    <dt>Engines</dt>
+    <dd>{{ quarto.engines.join(', ') }}</dd>
   </ConfigSetting>
 </template>
 
