@@ -3,9 +3,9 @@
 <template>
   <ExistingDeploymentDestinationHeader
     v-if="deployment"
+    :deployment="deployment"
     :content-id="deployment.id"
     :url="deploymentUrl"
-    :deployment="deployment"
   />
 
   <DeploymentSection
