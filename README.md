@@ -1,5 +1,30 @@
 # Posit Publisher
 
+## Table of Contents
+
+- [Posit Publisher](#posit-publisher)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+    - [Manual Installation](#manual-installation)
+  - [Verification](#verification)
+    - [MacOS](#macos)
+    - [Windows](#windows)
+    - [Linux](#linux)
+  - [Operating Systems](#operating-systems)
+    - [macOS](#macos-1)
+    - [Architectures](#architectures)
+      - [Apple Silicon (M-Series) / ARMv8.5-A / ARMv8.6-A](#apple-silicon-m-series--armv85-a--armv86-a)
+      - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64)
+    - [Windows](#windows-1)
+    - [Architectures](#architectures-1)
+      - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64-1)
+    - [Linux](#linux-1)
+    - [Architectures](#architectures-2)
+      - [ARM64 / AArch64 / ARMv8 / ARMv9](#arm64--aarch64--armv8--armv9)
+      - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64-2)
+    - [Support Grid](#support-grid)
+
+
 ## Installation
 
 **This method is only supported on MacOS and Linux.**
@@ -12,7 +37,7 @@ The script explains what it will do and then pauses before it does it. Read abou
 /bin/bash -c "$(curl -fsSL https://cdn.posit.co/publisher/install.bash)"
 ```
 
-## Manual Installation
+### Manual Installation
 
 1. Go to [GitHub releases](https://github.com/rstudio/publishing-client/releases).
 1. Select the version for installation.
@@ -22,9 +47,9 @@ The script explains what it will do and then pauses before it does it. Read abou
     - To view locations on your PATH, invoke `/bin/bash -c "echo $PATH"` from your terminal or shell prompt.
     - In most cases, the correctly installation location in `/usr/local/bin` on macOS and Linux operating systems.
 
-### Verification
+## Verification
 
-#### MacOS
+### MacOS
 
 Verify that you have installed Posit Publisher
 
@@ -36,7 +61,7 @@ Verify that you have installed Posit Publisher
 publisher
 ```
 
-#### Windows
+### Windows
 
 Verify that you have installed Posit Publisher.
 
@@ -48,7 +73,7 @@ Verify that you have installed Posit Publisher.
 publisher
 ```
 
-#### Linux
+### Linux
 
 Verify that you have installed Posit Publisher.
 
@@ -58,25 +83,20 @@ Verify that you have installed Posit Publisher.
 publisher
 ```
 
-### Operating Systems
+## Operating Systems
 
 The following operating systems are supported.
 
-- MacOS Monterey (12.7.2)
-- Ubuntu 22.04 (jammy)
-- Windows 11
+### macOS
+- macOS 12 (Monterey)
+- macOS 13 (Ventura)
+- macOS 14 (Sonoma)
 
-When choosing a distribution, use the following guide.
+### Architectures
 
-### MacOS / Intel x86
+#### Apple Silicon (M-Series) / ARMv8.5-A / ARMv8.6-A
 
-When running MacOS with Intel x86 processors download `darwin-amd64.tar.gz`.
-
-This includes, all Apple Mac products prior to Apple Silicon.
-
-### MacOS / Apple Silicon (M-Series)
-
-When running MacOS with Apple silicon processors download `darwin-arm64.tar.gz`.
+When running MacOS with Apple silicon processors install `darwin-arm64.tar.gz`.
 
 This includes, but is not limited to the following processors:
 
@@ -92,14 +112,45 @@ This includes, but is not limited to the following processors:
 - Apple M3 Pro
 - Apple M3 Max
 
-### Windows / Intel x86
+#### x86-64 / x86_64 / x64 / AMD64 / Intel 64
 
-When running Windows with Intel x86 processors download `windows-amd64.zip`.
+When running MacOS with x86-64 compliant processors install `darwin-amd64.tar.gz`.
 
-### Ubuntu (Linux) / Intel x86
+This includes, all Apple Mac products prior to Apple Silicon.
 
-When running Ubuntu with Intel x86 processors download `linux-amd64.tar.gz`.
+### Windows
 
-### Ubuntu (Linux) / ARM
+- Windows 10
+- Windows 11
 
-When running Ubuntu with Intel x86 processors download `linux-arm64.tar.gz`.
+### Architectures
+
+#### x86-64 / x86_64 / x64 / AMD64 / Intel 64
+
+When running Windows with x86-64 compliant processors install `windows-amd64.tar.gz`.
+
+### Linux
+
+- RHEL 8
+- RHEL 9
+- Ubuntu 20.04 (focal)
+- Ubuntu 22.04 (jammy)
+- SUSE Linux Enterprise Server 15 SP5
+- openSUSE 15.5
+
+### Architectures
+
+#### ARM64 / AArch64 / ARMv8 / ARMv9
+
+When running Linux with ARM64 compliant processors install `linux-arm64.tar.gz`.
+
+#### x86-64 / x86_64 / x64 / AMD64 / Intel 64
+
+When running Linux with x86-64 compliant processors install `linux-amd64.tar.gz`.
+
+### Support Grid
+
+|             | `darwin` | `linux` | `windows` |             |
+| ----------: | :------: | :-----: | :-------: | :---------- |
+| **`amd64`** |   `x`    |   `x`   |    `x`    | **`amd64`** |
+| **`arm64`** |   `x`    |   `x`   |           | **`arm64`** |
