@@ -1,6 +1,7 @@
 "$schema" = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json"
 server-url = "https://connect.example.com"
 id = "de2e7bdb-b085-401e-a65c-443e40009749"
+client-version = '1.0.1'
 configuration-name = "production.json"
 
 [configuration]

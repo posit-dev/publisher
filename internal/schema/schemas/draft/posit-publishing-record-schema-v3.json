@@ -47,6 +47,10 @@
         "de2e7bdb-b085-401e-a65c-443e40009749"
       ]
     },
+    "client-version": {
+      "type": "string",
+      "description": "Version of the publisher that deployed the content."
+    },
     "deployed-at": {
       "type": "string",
       "format": "date-time",
