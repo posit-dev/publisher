@@ -5,7 +5,14 @@
     v-if="python"
     label="Python"
   >
-    {{ python }}
+    <dt>Version</dt>
+    <dd>{{ python.version }}</dd>
+
+    <dt>Package File</dt>
+    <dd>{{ python.packageFile }}</dd>
+
+    <dt>Package Manager</dt>
+    <dd>{{ python.packageManager }}</dd>
   </ConfigSetting>
 </template>
 
