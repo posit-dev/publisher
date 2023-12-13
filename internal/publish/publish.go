@@ -17,6 +17,7 @@ import (
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
@@ -141,6 +142,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    account.ServerType,
 		ServerURL:     account.URL,
+		ClientVersion: project.Version,
 		Id:            contentID,
 		ConfigName:    p.ConfigName,
 		Files:         createdManifest.GetFilenames(),
