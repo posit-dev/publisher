@@ -11,9 +11,12 @@
 <!-- What types of changes does your code introduce? Put an `x` in all the boxes that apply. -->
 <!-- If you check more than one box, you may need to refactor this change into separate pull requests -->
 
-- [ ] Bug Fix           <!-- A change which fixes an existing issue -->
-- [ ] New Feature       <!-- A change which adds additional functionality -->
-- [ ] Breaking Change   <!-- A breaking change which causes existing functionality to change -->
+* - [ ] Bug Fix           <!-- A change which fixes an existing issue -->
+* - [ ] New Feature       <!-- A change which adds additional functionality -->
+* - [ ] Breaking Change   <!-- A breaking change which causes existing functionality to change -->
+* - [ ] Documentation     <!-- User or developer documentation -->
+* - [ ] Refactor          <!-- Code restructuring -->
+* - [ ] Tooling           <!-- Build, CI, or release scripts and configuration -->
 
 ## Approach
 <!-- Describe how you solved this problem and any trade-offs you encountered. -->
