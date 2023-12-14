@@ -51,7 +51,7 @@ func (cmd *listAccountsCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLICo
 		return err
 	}
 	if len(accounts) == 0 {
-		fmt.Println("No accounts are saved. To add an account, see `connect-client add-server --help`.")
+		fmt.Println("No accounts found. Use rsconnect or rsconnect-python to register an account.")
 	} else {
 		fmt.Println()
 		for _, account := range accounts {
