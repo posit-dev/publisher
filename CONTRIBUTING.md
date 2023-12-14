@@ -1,12 +1,98 @@
 # Contributing
 
+## Quick Start
+
+The get this project up and running on your local machine, execute the following Just commands:
+
+```console
+just
+just run
+```
+
+## Getting Started
+
+These instructions will give you a copy of the project up and running on your local machine for development and testing purposes.
+
+### Prerequisites
+
+#### Option 1 - Native
+
+Utilizing your machines native software will result in a faster development iteration cycle, but requires more setup. The project defaults to native tooling in most environments. If you wish to use native tooling, but do not see the correct behavior, set the environment variable `DOCKER=false`.
+
+- [Go](https://go.dev/dl/)
+- [Just](https://just.systems/man/en/chapter_4.html)
+- [Node.js](https://nodejs.org/en/download/)
+
+#### Option 2 - Docker
+
+All build tooling is Docker compliant. In order to get started using Docker, set the environment variable `DOCKER=true` in your shell.
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Just](https://just.systems/man/en/chapter_4.html)
+
+### Installing
+
+To get your development environment up and running, invoke the default Just command.
+
+```console
+just
+```
+
+On success, a `publisher` executable will exist in the `./bin` directory.
+
+### Execution
+
+Invoke the following Just command to run the built executable.
+
+```console
+just run
+```
+
+## Testing
+
+This project follows the guidance written by *Ham Vocke* in the *[The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html).* Please read the article for a detailed overview of different test types and how they are utilized.
+
+### Unit Tests
+
+Unit tests are written in Go and utilize the [Testify](https://github.com/stretchr/testify) framework for assertions and mocking.
+
+```console
+just test
+```
+
+#### Coverage Reporting
+
+Coverage reporting is captured by the [cover](https://pkg.go.dev/cmd/cover) standard library. To capture coverage, run the following Just command:
+
+```console
+just cover
+```
+
+Once complete, a coverage report will open in your default browser.
+
+### Integration Tests
+
+The [Bats](https://bats-core.readthedocs.io/en/stable/) framework is used to perform integration tests. For this project we use Bats to assert integrations with native machines via the Bash shell.
+
+```
+just bats
+```
+
+### UI Tests
+
+The [Cypress](https://www.cypress.io) framework is used to perform UI tests.
+
+```
+just cy
+```
+
 ## Development
 
 ### Build Tools
 
 The build tooling entrypoint is `just`. See the [installation instructions](https://just.systems/man/en/chapter_4.html) for your operating system to install Just.
 
-Execute `just -l` for a list of avaiable commands and documentation.
+Execute `just -l` for a list of available commands and documentation.
 
 ### Environment Variables
 
@@ -20,9 +106,9 @@ When executing commands the following variables are accepted to change behavior.
 | MODE     | dev     | enum | When set to `dev`, development is enabled. All other values disable development mode.                    |
 
 
-#### Continous Integration in GitHub Actions
+#### Continuous Integration in GitHub Actions
 
-When running in GitHub Actions, the env varabile `CI` is set to `true` by GitHub. When `CI=true`, the defaults for the following values are adjusted.
+When running in GitHub Actions, the env variable `CI` is set to `true` by GitHub. When `CI=true`, the defaults for the following values are adjusted.
 
 This mode can be reproduced on your local machine by setting `CI=true`.
 

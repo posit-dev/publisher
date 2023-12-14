@@ -1,103 +1,190 @@
 # Posit Publisher
 
-An application and associated tooling for Posit publishers.
+## Table of Contents
 
-## Getting Started
+- [Posit Publisher](#posit-publisher)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Installation](#installation)
+    - [Manual Installation](#manual-installation)
+  - [Verification](#verification)
+    - [MacOS](#macos)
+    - [Windows](#windows)
+    - [Linux](#linux)
+  - [Operating Systems](#operating-systems)
+    - [macOS](#macos-1)
+      - [Architectures](#architectures)
+        - [Apple Silicon (M-Series) / ARMv8.5-A / ARMv8.6-A](#apple-silicon-m-series--armv85-a--armv86-a)
+        - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64)
+    - [Windows](#windows-1)
+      - [Architectures](#architectures-1)
+        - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64-1)
+    - [Linux](#linux-1)
+      - [Architectures](#architectures-2)
+        - [ARM64 / AArch64 / ARMv8 / ARMv9](#arm64--aarch64--armv8--armv9)
+        - [x86-64 / x86\_64 / x64 / AMD64 / Intel 64](#x86-64--x86_64--x64--amd64--intel-64-2)
+    - [Support Grid](#support-grid)
 
-These instructions will give you a copy of the project up and running on
-your local machine for development and testing purposes.
 
-### Prerequisites
+## Features
+Supported features:
+* Publish projects to Connect
+* UI available via VSCode extension
+* CLI can publish, or launch the UI for browser access
+* Configuration-file based workflow
+* Configuration schema enables editing with the Even Better TOML VSCode extension
+* Exclude files from deployment with .positignore files
+* Python content: APIs, applications, and notebooks
+* Automatic detection of client Python version.
+* Publish Quarto documents (using the jupyter engine only)
+* Collaborate via git, or by downloading a source bundle from Connect
+* Uses existing publishing accounts from rsconnect and rsconnect-python
+* Preflight checking of settings before deploying to Connect.
+* Verification that deployed apps can successfully start up.
 
-NOTE: This project has been configured to use docker by default, which minimizes
-the prerequisites which need to be installed. Use of docker can be controlled
-via the DOCKER environment variable:
-if (DOCKER is undefined || DOCKER === 'true') {
-    Tasks will be executed in a docker container using the image `build/ci/Dockerfile`
-} else {
-    Docker will NOT be used and tasks will be natively executed.
-    This is much faster than using Docker containers on Mac.
-    Recommend adding `export DOCKER="false"` to your bash/zsh profile
-    ex. `DOCKER="false" just`
-}
+What's not supported yet but is on our to-do list:
+* Publish to servers other than Connect (shinyapps.io, Cloud, etc.)
+* Manage the list of accounts, and provide an import function for existing accounts
+* R content such as Shiny, R Markdown, and Quarto (with the knitr engine).
+* Automatic detection of Quarto and R version and dependencies.
+* Support for multiple configuration files and configuration editing in the UI.
+* Show more information in the UI such as package dependencies.
+* Inject secrets as environment variables
+* More metadata such as tags, thumbnail image
+* Configure permissions for sharing
+* Option to export a manifest.json for compatibility with prior tool
+* Schedule reports
+* Streamlined "update deployment" command in VSCode extension
+* Support VSCode windows with multiple workspaces
+* Better error handling
 
-If using Docker, you must have Docker installed: [Docker](https://www.docker.com)
 
-Just (justfile runner) is used to run commands: [Just](https://just.systems)
+## Installation
 
-See the additional pre-requisites required for development tasks without Docker at:
-- CLI: TBD
-- UX: [`web/README.md`](./web/README.md)
+**This method is available for macOS and Linux only.**
 
-If you are using an Apple Silicon (M1) laptop, you may need to set the following environment variable to force Docker Desktop to build amd64 images:
+Paste the following command into your terminal or shell prompt.
 
-```shell
-export DOCKER_DEFAULT_PLATFORM=linux/amd64
+The script explains what it will do and then pauses before it does it. Read about other installation options below.
+
+```console
+/bin/bash -c "$(curl -fsSL https://cdn.posit.co/publisher/install.bash)"
 ```
 
-### Common Development Tasks
+### Manual Installation
 
-#### Building and Testing
+1. Go to [GitHub releases](https://github.com/rstudio/publishing-client/releases).
+1. Select the version for installation.
+1. Download the asset for your operating system and architecture. See below for additional information on operating systems and architectures.
+1. Once downloaded, extract the archive file (e.g., unzip or untar).
+1. Place the executable in a location available on your `PATH` (e.g., `/usr/local/bin`).
+    - To view locations on your PATH, invoke `/bin/bash -c "echo $PATH"` from your terminal or shell prompt.
+    - In most cases, the correct installation location is `/usr/local/bin` on macOS and Linux operating systems.
 
-Simplest approach to perform all of the applicable steps:
-- `DOCKER="true" just` or because DOCKER=true is the default: `just`
-    - This will execute the steps within a docker container, so it minimizes the setup required.
-    - This is the setup which is used by dockerhub actions within CI
-- `DOCKER="false" just`
-    - Best for active development usage. This mode, without docker, greatly improves the I/O performance which should
-      improve your development cycle.
+## Verification
 
-Building the DOCKER image:
-- If using docker (by either not setting the DOCKER environment variable or setting it to "true"), you'll need
-  to build the DOCKER image. This is done as one of the steps within the `default` recipe, but you can also
-  perform it with the command `just image`.
-- If you are not using docker, you can skip this step, although performing the recipe is a NO-OP.
+### MacOS
 
-#### Justfiles
+Verify that you have installed Posit Publisher.
 
-All tasks are done through the justfile recipes, present within the top level `justfile` file. Recipes present include macro-operations
-for the multiple projects (Go and Web SPA) included in this repo.
+1. In MacOS, open Spotlight.
+1. In the search box, type `Terminal`, and press Return.
+1. In the Terminal window that appears, type the following command.
 
-Specialized recipes for the Go project are located within the `cmd/publisher/justfile` and
-specialized recipes for the Web project are located within the `web/justfile`.
-
-The top level `justfile` recipes can be displayed from within the top level repo subdirectory by issuing the command: `just --list`
-
-A supporting `justfile` exists for the web project. The recipes included within this justfile are dedicated to Web Development.
-
-If you want to build the development version the easiest (after switching branches for example), run `just build-dev`.
-
-#### Development workflow for UX modifications
-
-1. Build and start the vite web server, to support error reporting and hot-reloading: `just web/dev` in one terminal. Keep the terminal window open.
-    - This will launch the `vite` web server on `http://127.0.0.1:9000`
-2. Within a new terminal window, build the development version of the CLI: `just build-dev`. Keep this terminal open, so that you can rebuild as needed.
-3. Within a new terminal window, launch the development version of the CLI for the current platform (with these parameters): `./connect-client ui <PROJECT_PATH> --listen=127.0.0.1:9001 --open-browser-at="http://127.0.0.1:9000"`
-    - *Where** `<PROJECT_PATH>` above is replaced with a location of a sample project. For example, with a python project at `~/dev/connect-content/bundles/python-flaskapi`, your complete command line would become: `./connect-client ui ~/dev/connect-content/bundles/python-flaskapi --listen=127.0.0.1:9001 --open-browser-at="http://127.0.0.1:9000"`.
-    - This launches the CLI and configures it to listen on port `9001`, while launching a browser to the address which is being served by the `vite` web server.
-
-You now should have a Web UX loaded within the browser, which is loading from the `vite` dev server, but has its APIs serviced from the CLI backend.
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code
-of conduct, and the process for submitting pull requests to us.
-
-### VSCode Setup
-
-If developing using VSCode you can install the recommended extensions and setup
-your workspace with our recommended settings to get started:
-
-```bash
-cp .vscode/recommended.settings.json .vscode/settings.json
+```console
+publisher
 ```
 
-## Versioning
+### Windows
 
-We use [Semantic Versioning](http://semver.org/) for versioning. For the versions
-available, see the [tags on this repository](https://github.com/rstudio/publishing-client/tags).
+Verify that you have installed Posit Publisher.
 
-## Authors
+1. In Windows, click the Start menu.
+1. In the search box, type `cmd`, then press Enter.
+1. In the Command Prompt window that appears, type the following command.
 
-See also the list of [contributors](https://github.com/rstudio/publishing-client/contributors)
-who participated in this project.
+```console
+publisher
+```
+
+### Linux
+
+Verify that you have installed Posit Publisher.
+
+1. Open a shell prompt and type the following command.
+
+```console
+publisher
+```
+
+## Operating Systems
+
+The following operating systems are supported.
+
+### macOS
+- macOS 12 (Monterey)
+- macOS 13 (Ventura)
+- macOS 14 (Sonoma)
+
+#### Architectures
+
+##### Apple Silicon (M-Series) / ARMv8.5-A / ARMv8.6-A
+
+When running MacOS with Apple silicon processors, install `darwin-arm64.tar.gz`.
+
+This includes, but is not limited to, the following processors:
+
+- Apple M1
+- Apple M1 Pro
+- Apple M1 Max
+- Apple M1 Ultra
+- Apple M2
+- Apple M2 Pro
+- Apple M2 Max
+- Apple M2 Ultra
+- Apple M3
+- Apple M3 Pro
+- Apple M3 Max
+
+##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
+
+When running MacOS with x86-64 compliant processors, install `darwin-amd64.tar.gz`.
+
+This includes all Apple Mac products before Apple Silicon.
+
+### Windows
+
+- Windows 10
+- Windows 11
+
+#### Architectures
+
+##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
+
+When running Windows with x86-64 compliant processors, install `windows-amd64.tar.gz`.
+
+### Linux
+
+- RHEL 8
+- RHEL 9
+- Ubuntu 20.04 (focal)
+- Ubuntu 22.04 (jammy)
+- SUSE Linux Enterprise Server 15 SP5
+- openSUSE 15.5
+
+#### Architectures
+
+##### ARM64 / AArch64 / ARMv8 / ARMv9
+
+When running Linux with ARM64 compliant processors, install `linux-arm64.tar.gz`.
+
+##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
+
+When running Linux with x86-64 compliant processors, install `linux-amd64.tar.gz`.
+
+### Support Grid
+
+|             | `darwin` | `linux` | `windows` |             |
+| ----------: | :------: | :-----: | :-------: | :---------- |
+| **`amd64`** |   `x`    |   `x`   |    `x`    | **`amd64`** |
+| **`arm64`** |   `x`    |   `x`   |           | **`arm64`** |
