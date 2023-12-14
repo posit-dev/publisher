@@ -98,7 +98,7 @@ defineProps({
     }
 
     .card-header {
-      &:not(:last-child) {
+      &:not(:empty) {
         margin-bottom: 12px;
       }
     }
