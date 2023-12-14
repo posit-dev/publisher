@@ -197,9 +197,13 @@ func (p *defaultPublisher) publishWithClient(
 		contentID = p.Target.Id
 	} else {
 		// Create a new deployment; we will update it with details later.
-		contentID, err = withLog(events.PublishCreateNewDeploymentOp, "Creating deployment", "content_id", log, func() (types.ContentID, error) {
-			return client.CreateDeployment(&connect.ConnectContent{})
-		})
+		contentID, err = withLog(
+			events.PublishCreateNewDeploymentOp,
+			"Creating deployment", "content_id",
+			log.WithArgs("save_name", p.SaveName),
+			func() (types.ContentID, error) {
+				return client.CreateDeployment(&connect.ConnectContent{})
+			})
 		if err != nil {
 			return err
 		}
@@ -236,9 +240,13 @@ func (p *defaultPublisher) publishWithClient(
 
 	// Update app settings
 	connectContent := connect.ConnectContentFromConfig(p.Config)
-	_, err = withLog(events.PublishUpdateDeploymentOp, "Updating deployment settings", "content_id", log, func() (any, error) {
-		return contentID, client.UpdateDeployment(contentID, connectContent)
-	})
+	_, err = withLog(
+		events.PublishUpdateDeploymentOp,
+		"Updating deployment settings", "content_id",
+		log.WithArgs("save_name", p.SaveName),
+		func() (any, error) {
+			return contentID, client.UpdateDeployment(contentID, connectContent)
+		})
 	if err != nil {
 		httpErr, ok := err.(*http_client.HTTPError)
 		if ok && httpErr.Status == http.StatusNotFound {

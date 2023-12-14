@@ -32,4 +32,4 @@ tenacity==8.2.2
 typing-extensions
 tzdata==2023.3
 uvicorn
-werkzeug==2.3.4
+werkzeug==2.3.8

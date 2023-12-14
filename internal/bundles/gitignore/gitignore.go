@@ -28,7 +28,6 @@ type MatchSource string
 
 const MatchSourceFile MatchSource = "file"
 const MatchSourceBuiltIn MatchSource = "built-in"
-const MatchSourceUser MatchSource = "user"
 
 type Match struct {
 	Source   MatchSource `json:"source"`  // type of match, e.g. file or a caller-provided value
@@ -45,6 +44,7 @@ type ignoreFile struct {
 
 type GitIgnoreList struct {
 	files []ignoreFile
+	base  util.Path
 	cwd   []string
 	fs    afero.Fs
 }
@@ -67,9 +67,10 @@ func New(cwd util.Path) GitIgnoreList {
 	files[0].abspath = toSplit(absPath.Path())
 
 	return GitIgnoreList{
-		files,
-		toSplit(absPath.Path()),
-		absPath.Fs(),
+		files: files,
+		base:  cwd,
+		cwd:   toSplit(absPath.Path()),
+		fs:    absPath.Fs(),
 	}
 }
 
@@ -195,11 +196,15 @@ func (ign *GitIgnoreList) append(path util.Path, dir []string) error {
 		if err != nil {
 			return err
 		}
+		relPath, err := path.Rel(ign.base)
+		if err != nil {
+			return err
+		}
 		match := &Match{
 			Source:   MatchSourceFile,
 			Pattern:  s,
 			glob:     g,
-			FilePath: path.Path(),
+			FilePath: relPath.Path(),
 			Line:     line,
 		}
 		ignf.matches = append(ignf.matches, match)
