@@ -1,5 +1,6 @@
 {
   "name": "publisher",
+  "publisher": "posit",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
   "version": "0.0.0",
