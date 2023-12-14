@@ -23,7 +23,6 @@ export type DeploymentFile = {
 export enum ExclusionMatchSource {
     FILE = 'file',
     BUILT_IN = 'built-in',
-    USER = 'user',
 }
 
 export type ExclusionMatch = {

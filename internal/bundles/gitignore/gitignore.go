@@ -28,7 +28,6 @@ type MatchSource string
 
 const MatchSourceFile MatchSource = "file"
 const MatchSourceBuiltIn MatchSource = "built-in"
-const MatchSourceUser MatchSource = "user"
 
 type Match struct {
 	Source   MatchSource `json:"source"`  // type of match, e.g. file or a caller-provided value

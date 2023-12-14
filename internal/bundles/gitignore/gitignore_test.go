@@ -52,7 +52,7 @@ func (s *GitIgnoreSuite) TestMatch() {
 	ign, err := From(ignoreFilePath)
 	s.NoError(err)
 
-	err = ign.AppendGlobs([]string{"*.bak"}, MatchSourceUser)
+	err = ign.AppendGlobs([]string{"*.bak"}, MatchSourceBuiltIn)
 	s.NoError(err)
 
 	// Match returns nil if no match
@@ -73,7 +73,7 @@ func (s *GitIgnoreSuite) TestMatch() {
 	m, err = ign.Match("app.py.bak")
 	s.NoError(err)
 	s.NotNil(m)
-	s.Equal(MatchSourceUser, m.Source)
+	s.Equal(MatchSourceBuiltIn, m.Source)
 	s.Equal("*.bak", m.Pattern)
 	s.Equal("", m.FilePath)
 	s.Equal(0, m.Line)
@@ -81,13 +81,13 @@ func (s *GitIgnoreSuite) TestMatch() {
 	ignoredir := s.cwd.Join("ignoredir")
 	err = ignoredir.MkdirAll(0700)
 	s.NoError(err)
-	err = ign.AppendGlobs([]string{"ignoredir/"}, MatchSourceUser)
+	err = ign.AppendGlobs([]string{"ignoredir/"}, MatchSourceBuiltIn)
 	s.NoError(err)
 
 	m, err = ign.Match(ignoredir.Path())
 	s.NoError(err)
 	s.NotNil(m)
-	s.Equal(MatchSourceUser, m.Source)
+	s.Equal(MatchSourceBuiltIn, m.Source)
 	s.Equal("ignoredir/", m.Pattern)
 	s.Equal("", m.FilePath)
 	s.Equal(0, m.Line)
