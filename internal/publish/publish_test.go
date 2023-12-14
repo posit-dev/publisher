@@ -13,6 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
@@ -176,6 +177,7 @@ func (s *PublishSuite) publishWithClient(
 		s.Equal(myContentID, record.Id)
 		s.Contains(record.Files, "app.py")
 		s.Contains(record.Files, "requirements.txt")
+		s.Equal(project.Version, record.ClientVersion)
 		s.NotEqual("", record.DeployedAt)
 
 		logs := s.logBuffer.String()

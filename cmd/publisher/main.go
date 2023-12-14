@@ -35,13 +35,6 @@ func logVersion(log logging.Logger) {
 	log.Info("Development build", "DevelopmentBuild", project.DevelopmentBuild())
 }
 
-func makeContext(log logging.Logger) (*cli_types.CLIContext, error) {
-	fs := afero.NewOsFs()
-	accountList := accounts.NewAccountList(fs, log)
-	ctx := cli_types.NewCLIContext(accountList, fs, log)
-	return ctx, nil
-}
-
 func Fatal(log logging.Logger, msg string, err error, args ...any) {
 	args = append([]any{"error", err.Error()}, args...)
 	log.Error(msg, args...)
@@ -50,12 +43,10 @@ func Fatal(log logging.Logger, msg string, err error, args ...any) {
 }
 
 func main() {
-	log := events.NewLogger(false)
-	logVersion(log)
-
-	ctx, err := makeContext(log)
-	if err != nil {
-		Fatal(log, "Error initializing client", err)
+	ctx := &cli_types.CLIContext{
+		Accounts: nil,
+		Fs:       afero.NewOsFs(),
+		Logger:   events.NewStructuredLogger(0),
 	}
 	cli := cliSpec{
 		CommonArgs: cli_types.CommonArgs{},
@@ -65,16 +56,16 @@ func main() {
 	if cli.Profile != "" {
 		f, err := os.Create(cli.Profile)
 		if err != nil {
-			Fatal(log, "Error creating file for profile data", err)
+			Fatal(ctx.Logger, "Error creating file for profile data", err)
 		}
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
-	if cli.Debug {
-		ctx.Logger = events.NewLogger(true)
-	}
-	err = args.Run(&cli.CommonArgs)
+	ctx.Logger = events.NewStructuredLogger(cli.Verbose)
+	ctx.Accounts = accounts.NewAccountList(ctx.Fs, ctx.Logger)
+	logVersion(ctx.Logger)
+	err := args.Run(&cli.CommonArgs)
 	if err != nil {
-		Fatal(log, "Error running command", err)
+		Fatal(ctx.Logger, "Error running command", err)
 	}
 }

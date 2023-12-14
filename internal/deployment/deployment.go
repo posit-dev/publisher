@@ -9,6 +9,7 @@ import (
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
@@ -18,6 +19,7 @@ type Deployment struct {
 	Schema        string              `toml:"$schema" json:"$schema"`
 	ServerType    accounts.ServerType `toml:"server-type" json:"serverType"`
 	ServerURL     string              `toml:"server-url" json:"serverUrl"`
+	ClientVersion string              `toml:"client-version" json:"-"`
 	Id            types.ContentID     `toml:"id" json:"id"`
 	ConfigName    string              `toml:"configuration-name" json:"configurationName"`
 	Configuration config.Config       `toml:"configuration" json:"configuration"`
@@ -30,6 +32,7 @@ func New() *Deployment {
 	return &Deployment{
 		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    accounts.ServerTypeConnect,
+		ClientVersion: project.Version,
 		Configuration: *config.New(),
 		Files:         []string{},
 	}
