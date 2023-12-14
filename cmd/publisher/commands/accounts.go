@@ -11,11 +11,11 @@ import (
 )
 
 type testAccountCmd struct {
-	Name string `short:"n" help:"Nickname of account to test."`
+	AccountName string `arg:"" help:"Nickname of account to test."`
 }
 
 func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	account, err := ctx.Accounts.GetAccountByName(cmd.Name)
+	account, err := ctx.Accounts.GetAccountByName(cmd.AccountName)
 	if err != nil {
 		return err
 	}
