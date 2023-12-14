@@ -43,15 +43,15 @@
             :accounts="fixedAccountList"
             :url="destinationURL"
           />
-          <q-btn
+          <PButton
+            hierarchy="primary"
             class="q-ml-md"
-            no-caps
-            color="white"
-            text-color="black"
-            label="Publish"
+            padding="sm md"
             :disable="eventStore.publishInProgess"
             @click="initiatePublishProcess"
-          />
+          >
+            Publish
+          </PButton>
         </div>
       </div>
 
@@ -81,6 +81,7 @@ import { Account, useApi } from 'src/api';
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
+import PButton from 'src/components/PButton.vue';
 
 const api = useApi();
 const eventStore = useEventStore();

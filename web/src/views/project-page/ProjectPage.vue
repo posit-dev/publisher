@@ -11,12 +11,12 @@
         Destinations
       </h2>
 
-      <q-btn
-        no-caps
+      <PButton
+        hierarchy="primary"
         :to="{ name: 'addNewDeployment' }"
       >
         Add Destination
-      </q-btn>
+      </PButton>
     </div>
 
     <div class="card-grid">
@@ -54,6 +54,7 @@ import { Configuration, ConfigurationError } from 'src/api/types/configurations'
 import ConfigCard from './ConfigCard.vue';
 import DeploymentCard from './DeploymentCard.vue';
 import FileTree from 'src/components/FileTree.vue';
+import PButton from 'src/components/PButton.vue';
 
 const api = useApi();
 const deployments = ref<Deployment[]>([]);
