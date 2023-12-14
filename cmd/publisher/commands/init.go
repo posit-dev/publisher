@@ -3,7 +3,9 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/cli_types"
@@ -24,6 +26,8 @@ const contentTypeDetectionFailed = " Could not determine content type and entryp
 	"Set 'entrypoint' to the main file being deployed. For apps and APIs\n" +
 	"this is usually app.py, api.py, app.R, or plumber.R; for reports,\n" +
 	"it is your .qmd, .Rmd, or .ipynb file"
+
+var errDetectionFailed = errors.New("could not determine content type and entrypoint")
 
 func formatValidTypes() string {
 	t := config.AllValidContentTypeNames()
@@ -49,9 +53,16 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if err != nil {
 		return err
 	}
+	configPath := config.GetConfigPath(cmd.Path, cmd.ConfigName)
 	if cfg.Type == config.ContentTypeUnknown {
-		configPath := config.GetConfigPath(cmd.Path, cmd.ConfigName)
-		return fmt.Errorf(contentTypeDetectionFailed, configPath, formatValidTypes())
+		fmt.Printf(contentTypeDetectionFailed, configPath, formatValidTypes())
+		return errDetectionFailed
+	} else {
+		fmt.Printf("Created config file %q\n", configPath.String())
+		if args.Verbose >= 2 {
+			fmt.Println()
+			cfg.Write(os.Stdout)
+		}
 	}
 	return nil
 }

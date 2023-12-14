@@ -68,14 +68,14 @@ func Init(path util.Path, configName string, python util.Path, log logging.Logge
 	if configName == "" {
 		configName = config.DefaultConfigName
 	}
-	cfg := config.New()
 	contentType, err := inspectProjectType(path, log)
 	if err != nil {
 		return nil, err
 	}
-	if cfg.Type == config.ContentTypeUnknown {
+	if contentType.Type == config.ContentTypeUnknown {
 		log.Warn("Could not determine content type; creating config file with unknown type", "path", path)
 	}
+	cfg := config.New()
 	cfg.Type = contentType.Type
 	cfg.Entrypoint = contentType.Entrypoint
 
@@ -95,7 +95,6 @@ func Init(path util.Path, configName string, python util.Path, log logging.Logge
 	if err != nil {
 		return nil, err
 	}
-	log.Info("Wrote config file", "path", configPath)
 	return cfg, nil
 }
 
