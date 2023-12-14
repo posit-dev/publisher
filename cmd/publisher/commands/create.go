@@ -5,6 +5,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
@@ -29,7 +30,7 @@ type CreateCmd struct {
 var errNoAccounts = errors.New("there are no accounts yet; register an account before publishing")
 
 func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	ctx.Logger = events.NewSimpleLogger(args.Verbose)
+	ctx.Logger = events.NewSimpleLogger(args.Verbose, os.Stderr)
 
 	if cmd.SaveName != "" {
 		err := util.ValidateFilename(cmd.SaveName)
