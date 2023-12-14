@@ -10,6 +10,7 @@ import (
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
@@ -28,6 +29,8 @@ type CreateCmd struct {
 var errNoAccounts = errors.New("there are no accounts yet; register an account before publishing")
 
 func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+	ctx.Logger = events.NewSimpleLogger(args.Verbose)
+
 	if cmd.SaveName != "" {
 		err := util.ValidateFilename(cmd.SaveName)
 		if err != nil {

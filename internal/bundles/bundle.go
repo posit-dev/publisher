@@ -230,7 +230,7 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
-		pathLogger.Info("Adding file")
+		pathLogger.Debug("Adding file")
 		err = writeHeaderToTar(info, relPath.Path(), b.archive)
 		if err != nil {
 			return err

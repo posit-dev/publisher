@@ -3,7 +3,6 @@ package publish
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -49,7 +48,7 @@ type appInfo struct {
 	DirectURL    string `json:"direct-url"`
 }
 
-func (p *defaultPublisher) logAppInfo(accountURL string, contentID types.ContentID, log logging.Logger) error {
+func (p *defaultPublisher) logAppInfo(accountURL string, contentID types.ContentID, log logging.Logger) {
 	appInfo := appInfo{
 		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
 		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
@@ -61,12 +60,8 @@ func (p *defaultPublisher) logAppInfo(accountURL string, contentID types.Content
 		"serverURL", accountURL,
 		"contentID", contentID,
 	)
-	jsonInfo, err := json.Marshal(appInfo)
-	if err != nil {
-		return err
-	}
-	_, err = fmt.Printf("%s\n", jsonInfo)
-	return err
+	fmt.Println("Dashboard URL: ", appInfo.DashboardURL)
+	fmt.Println("Direct URL:    ", appInfo.DirectURL)
 }
 
 func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
@@ -211,7 +206,7 @@ func (p *defaultPublisher) publishWithClient(
 	}
 	err = p.createDeploymentRecord(bundler, contentID, account, log)
 	if err != nil {
-		return types.ErrToAgentError(events.PublishCreateDeploymentOp, err)
+		return types.ErrToAgentError(events.PublishCreateNewDeploymentOp, err)
 	}
 
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
@@ -241,7 +236,7 @@ func (p *defaultPublisher) publishWithClient(
 
 	// Update app settings
 	connectContent := connect.ConnectContentFromConfig(p.Config)
-	_, err = withLog(events.PublishCreateDeploymentOp, "Updating deployment settings", "content_id", log, func() (any, error) {
+	_, err = withLog(events.PublishUpdateDeploymentOp, "Updating deployment settings", "content_id", log, func() (any, error) {
 		return contentID, client.UpdateDeployment(contentID, connectContent)
 	})
 	if err != nil {
@@ -291,5 +286,6 @@ func (p *defaultPublisher) publishWithClient(
 	}
 
 	log = log.WithArgs(logging.LogKeyOp, events.AgentOp)
-	return p.logAppInfo(account.URL, contentID, log)
+	p.logAppInfo(account.URL, contentID, log)
+	return nil
 }
