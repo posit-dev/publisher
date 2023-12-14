@@ -43,17 +43,15 @@
             :url="destinationURL"
             @change="onChange"
           />
-          <q-btn
+          <PButton
+            hierarchy="primary"
             class="q-ml-md"
-            no-caps
-            unelevated
-            :color="$q.dark.isActive ? 'grey-1' : 'grey-10'"
-            :text-color="$q.dark.isActive ? 'black' : 'white'"
             padding="sm md"
-            label="Publish"
             :disable="eventStore.publishInProgess"
             @click="initiatePublishProcess"
-          />
+          >
+            Publish
+          </PButton>
         </div>
       </div>
 
@@ -81,6 +79,7 @@ import { ref, watch, PropType } from 'vue';
 
 import { Account, Deployment, useApi } from 'src/api';
 import SelectAccount from 'src/components/SelectAccount.vue';
+import PButton from 'src/components/PButton.vue';
 import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
 import { formatDateString } from 'src/utils/date';
