@@ -46,8 +46,10 @@
           <q-btn
             class="q-ml-md"
             no-caps
-            color="white"
-            text-color="black"
+            unelevated
+            :color="$q.dark.isActive ? 'grey-1' : 'grey-10'"
+            :text-color="$q.dark.isActive ? 'black' : 'white'"
+            padding="sm md"
             label="Publish"
             :disable="eventStore.publishInProgess"
             @click="initiatePublishProcess"

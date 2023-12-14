@@ -38,15 +38,19 @@
       <div class="flex row reverse">
         <q-btn
           no-caps
+          unelevated
           :to="destinationPage"
           :disable="disableToDestinationPage"
           type="submit"
-          color="primary"
+          :color="$q.dark.isActive ? 'grey-1' : 'grey-10'"
+          :text-color="$q.dark.isActive ? 'black' : 'white'"
           label="Continue to Publish"
         />
         <q-btn
           no-caps
+          unelevated
           type="reset"
+          outline
           class="q-mr-sm"
           label="Cancel"
           @click="router.back()"

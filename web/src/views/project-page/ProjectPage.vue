@@ -13,6 +13,9 @@
 
       <q-btn
         no-caps
+        unelevated
+        :color="$q.dark.isActive ? 'grey-1' : 'grey-10'"
+        :text-color="$q.dark.isActive ? 'black' : 'white'"
         :to="{ name: 'addNewDeployment' }"
       >
         Add Destination
