@@ -2,7 +2,9 @@ package publish
 
 // Copyright (C) 2023 by Posit Software, PBC.
 import (
+	"bytes"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -22,9 +24,10 @@ import (
 
 type PublishSuite struct {
 	utiltest.Suite
-	log logging.Logger
-	fs  afero.Fs
-	cwd util.Path
+	log       logging.Logger
+	logBuffer *bytes.Buffer
+	fs        afero.Fs
+	cwd       util.Path
 }
 
 func TestPublishSuite(t *testing.T) {
@@ -32,7 +35,10 @@ func TestPublishSuite(t *testing.T) {
 }
 
 func (s *PublishSuite) SetupTest() {
-	s.log = logging.New()
+	s.logBuffer = new(bytes.Buffer)
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	stdLogger := slog.New(slog.NewTextHandler(s.logBuffer, opts))
+	s.log = logging.FromStdLogger(stdLogger)
 	s.fs = afero.NewMemMapFs()
 	cwd, err := util.Getwd(s.fs)
 	s.Nil(err)
@@ -149,10 +155,11 @@ func (s *PublishSuite) publishWithClient(
 		"FOO": "BAR",
 	}
 	stateStore := &state.State{
-		Dir:     s.cwd,
-		Account: nil,
-		Config:  cfg,
-		Target:  target,
+		Dir:      s.cwd,
+		Account:  nil,
+		Config:   cfg,
+		Target:   target,
+		SaveName: "saveAsThis",
 	}
 	publisher := &defaultPublisher{stateStore}
 	err = publisher.publishWithClient(bundler, account, client, s.log)
@@ -163,12 +170,16 @@ func (s *PublishSuite) publishWithClient(
 		s.Equal(expectedErr.Error(), err.Error())
 	}
 	if authErr == nil && capErr == nil && createErr == nil {
-		recordPath := deployment.GetDeploymentPath(stateStore.Dir, string(stateStore.Target.Id))
+		recordPath := deployment.GetDeploymentPath(stateStore.Dir, "saveAsThis")
 		record, err := deployment.FromFile(recordPath)
 		s.NoError(err)
 		s.Equal(myContentID, record.Id)
 		s.Contains(record.Files, "app.py")
 		s.Contains(record.Files, "requirements.txt")
 		s.NotEqual("", record.DeployedAt)
+
+		logs := s.logBuffer.String()
+		s.Contains(logs, "save_name=saveAsThis")
+		s.Contains(logs, "content_id="+myContentID)
 	}
 }
