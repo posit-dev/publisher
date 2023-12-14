@@ -61,7 +61,7 @@ What's not supported yet but is on our to-do list:
 
 ## Installation
 
-**This method is only supported on MacOS and Linux.**
+**This method is available for macOS and Linux only.**
 
 Paste the following command into your terminal or shell prompt.
 
@@ -79,13 +79,13 @@ The script explains what it will do and then pauses before it does it. Read abou
 1. Once downloaded, extract the archive file (e.g., unzip or untar).
 1. Place the executable in a location available on your `PATH` (e.g., `/usr/local/bin`).
     - To view locations on your PATH, invoke `/bin/bash -c "echo $PATH"` from your terminal or shell prompt.
-    - In most cases, the correctly installation location in `/usr/local/bin` on macOS and Linux operating systems.
+    - In most cases, the correct installation location is `/usr/local/bin` on macOS and Linux operating systems.
 
 ## Verification
 
 ### MacOS
 
-Verify that you have installed Posit Publisher
+Verify that you have installed Posit Publisher.
 
 1. In MacOS, open Spotlight.
 1. In the search box, type `Terminal`, and press Return.
@@ -130,9 +130,9 @@ The following operating systems are supported.
 
 ##### Apple Silicon (M-Series) / ARMv8.5-A / ARMv8.6-A
 
-When running MacOS with Apple silicon processors install `darwin-arm64.tar.gz`.
+When running MacOS with Apple silicon processors, install `darwin-arm64.tar.gz`.
 
-This includes, but is not limited to the following processors:
+This includes, but is not limited to, the following processors:
 
 - Apple M1
 - Apple M1 Pro
@@ -148,9 +148,9 @@ This includes, but is not limited to the following processors:
 
 ##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
 
-When running MacOS with x86-64 compliant processors install `darwin-amd64.tar.gz`.
+When running MacOS with x86-64 compliant processors, install `darwin-amd64.tar.gz`.
 
-This includes, all Apple Mac products prior to Apple Silicon.
+This includes all Apple Mac products before Apple Silicon.
 
 ### Windows
 
@@ -161,7 +161,7 @@ This includes, all Apple Mac products prior to Apple Silicon.
 
 ##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
 
-When running Windows with x86-64 compliant processors install `windows-amd64.tar.gz`.
+When running Windows with x86-64 compliant processors, install `windows-amd64.tar.gz`.
 
 ### Linux
 
@@ -176,11 +176,11 @@ When running Windows with x86-64 compliant processors install `windows-amd64.tar
 
 ##### ARM64 / AArch64 / ARMv8 / ARMv9
 
-When running Linux with ARM64 compliant processors install `linux-arm64.tar.gz`.
+When running Linux with ARM64 compliant processors, install `linux-arm64.tar.gz`.
 
 ##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
 
-When running Linux with x86-64 compliant processors install `linux-amd64.tar.gz`.
+When running Linux with x86-64 compliant processors, install `linux-amd64.tar.gz`.
 
 ### Support Grid
 
