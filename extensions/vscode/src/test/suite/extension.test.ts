@@ -8,12 +8,8 @@ import * as vscode from 'vscode';
 suite('Extension Test Suite', () => {
 	test('extension can activate', async () => {
 		const extension: vscode.Extension<any> = vscode.extensions.getExtension("posit.publisher")!;
-		if (extension.isActive) {
-			assert.fail();
-		}
+		assert.ok(!extension.isActive);
 		await extension.activate();
-		if (!extension.isActive) {
-			assert.fail();
-		}
+		assert.ok(extension.isActive);
 	});
 });
