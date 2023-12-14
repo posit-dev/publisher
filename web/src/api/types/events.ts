@@ -216,6 +216,7 @@ export interface PublishCreateNewDeploymentStart extends EventStreamMessage {
     message: string,
     localId: string,
     contentId: string,
+    saveName: string,
   }
 }
 export type OnPublishCreateNewDeploymentStartCallback =
@@ -232,6 +233,7 @@ export interface PublishCreateNewDeploymentSuccess extends EventStreamMessage {
     level: string,
     message: string,
     contentId: string,
+    saveName: string,
     localId: string,
   }
 }
@@ -359,6 +361,7 @@ export interface PublishCreateDeploymentStart extends EventStreamMessage {
     // "level": "INFO", "message": "Creating deployment", "localId": "O-6_TzmRRBWtd4rm"
     level: string,
     message: string,
+    saveName: string,
     localId: string,
   }
 }
@@ -375,6 +378,7 @@ export interface PublishCreateDeploymentSuccess extends EventStreamMessage {
     level: string,
     message: string,
     contentId: string,
+    saveName: string,
     localId: string,
   }
 }
