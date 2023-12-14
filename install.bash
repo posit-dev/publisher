@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -e
+if [ "${DEBUG:-false}" = true ];
+then
+  set -x
+fi
 
 # Fail fast with a concise message when not using bash
 # Single brackets are needed here for POSIX compatibility
@@ -166,7 +170,7 @@ TAR=("tar")
 # Variables
 NAME="publisher"
 PREFIX="/usr/local/bin"
-VERSION="0.0.dev4"
+VERSION="0.0.dev6"
 URL="https://cdn.posit.co/publisher/releases/tags/v${VERSION}"
 TMPDIR=$(execute "${MKTMP[@]}")
 
