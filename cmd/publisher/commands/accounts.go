@@ -11,7 +11,7 @@ import (
 )
 
 type testAccountCmd struct {
-	AccountName string `arg:"" help:"Nickname of account to test."`
+	AccountName string `kong:"arg,required" help:"Nickname of account to test."`
 }
 
 func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
