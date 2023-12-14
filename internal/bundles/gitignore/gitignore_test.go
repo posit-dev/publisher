@@ -66,7 +66,7 @@ func (s *GitIgnoreSuite) TestMatch() {
 	s.NotNil(m)
 	s.Equal(MatchSourceFile, m.Source)
 	s.Equal(".Rhistory", m.Pattern)
-	s.Equal(ignoreFilePath.Path(), m.FilePath)
+	s.Equal(".positignore", m.FilePath)
 	s.Equal(1, m.Line)
 
 	// Non-file matches don't include file info
