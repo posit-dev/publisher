@@ -38,7 +38,7 @@ func (s *WalkerSuite) SetupTest() {
 }
 
 func (s *WalkerSuite) TestNewExcludingWalker() {
-	w, err := NewExcludingWalker(s.cwd, []string{"*.log"})
+	w, err := NewExcludingWalker(s.cwd)
 	s.NoError(err)
 	s.NotNil(w)
 }
@@ -50,7 +50,7 @@ func (s *WalkerSuite) TestNewWalkerBadIgnoreFile() {
 	err := giPath.WriteFile(data, 0600)
 	s.NoError(err)
 
-	w, err := NewExcludingWalker(s.cwd, nil)
+	w, err := NewExcludingWalker(s.cwd)
 	s.NoError(err)
 	s.NotNil(w)
 
@@ -60,18 +60,12 @@ func (s *WalkerSuite) TestNewWalkerBadIgnoreFile() {
 	s.NotNil(err)
 }
 
-func (s *WalkerSuite) TestNewWalkerBadIgnore() {
-	w, err := NewExcludingWalker(s.cwd, []string{"[Z-A]"})
-	s.NotNil(err)
-	s.Nil(w)
-}
-
 func (s *WalkerSuite) TestWalkErrorLoadingPositIgnore() {
 	positIgnorePath := s.cwd.Join(".positignore")
 	err := positIgnorePath.WriteFile([]byte("[Z-A]"), 0600)
 	s.NoError(err)
 
-	w, err := NewExcludingWalker(s.cwd, nil)
+	w, err := NewExcludingWalker(s.cwd)
 	s.NoError(err)
 	s.NotNil(w)
 
@@ -118,7 +112,7 @@ func (s *WalkerSuite) TestWalk() {
 		s.NoError(err)
 	}
 
-	w, err := NewExcludingWalker(s.cwd, nil)
+	w, err := NewExcludingWalker(s.cwd)
 	s.NoError(err)
 	s.NotNil(w)
 

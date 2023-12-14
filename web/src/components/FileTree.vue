@@ -73,8 +73,6 @@ function exclusionDisplay(match: ExclusionMatch): string {
       return 'Automatically ignored by Posit Publisher';
     case ExclusionMatchSource.FILE:
       return `Ignored by "${match.filePath}" on line ${match.line} with pattern "${match.pattern}"`;
-    case ExclusionMatchSource.USER:
-      return 'Ignored by user';
   }
 }
 

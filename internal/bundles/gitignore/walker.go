@@ -84,8 +84,8 @@ func (i *excludingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 // Exclusions are sourced from the built-in exclusions, gitignore, and the
 // specified ignore list. Python environment directories are also excluded,
 // and .positignore files are processed as they are encountered.
-func NewExcludingWalker(dir util.Path, ignores []string) (util.Walker, error) {
-	gitIgnore, err := NewIgnoreList(dir, ignores)
+func NewExcludingWalker(dir util.Path) (util.Walker, error) {
+	gitIgnore, err := NewIgnoreList(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -96,13 +96,9 @@ func NewExcludingWalker(dir util.Path, ignores []string) (util.Walker, error) {
 
 // NewIgnoreList returns an IgnoreList populated with the built-in
 // exclusions, gitignore contents, and the provided ignore list.
-func NewIgnoreList(dir util.Path, ignores []string) (IgnoreList, error) {
+func NewIgnoreList(dir util.Path) (IgnoreList, error) {
 	gitIgnore := New(dir)
 	err := gitIgnore.AppendGlobs(standardIgnores, MatchSourceBuiltIn)
-	if err != nil {
-		return nil, err
-	}
-	err = gitIgnore.AppendGlobs(ignores, MatchSourceUser)
 	if err != nil {
 		return nil, err
 	}
