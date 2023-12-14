@@ -14,7 +14,8 @@
     :subtitle="deployment.configurationName"
   >
     <ConfigSettings
-      :config="deployment"
+      v-if="defaultConfig"
+      :config="defaultConfig"
     />
   </DeploymentSection>
   <DeploymentSection
@@ -28,7 +29,7 @@
 import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
-import { useApi } from 'src/api';
+import { Configuration, ConfigurationError, useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
@@ -40,6 +41,8 @@ const route = useRoute();
 const api = useApi();
 
 const deployment = ref<Deployment>();
+
+const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 const deploymentName = computed(():string => {
   // route param can be either string | string[]
@@ -69,6 +72,17 @@ const getDeployment = async() => {
     // TODO: handle the API error
   }
 };
+
+const defaultConfig = computed(() => {
+  return configurations.value.find((c) => c.configurationName === 'default');
+});
+
+async function getConfigurations() {
+  const response = await api.configurations.getAll();
+  configurations.value = response.data;
+}
+
+getConfigurations();
 
 watch(
   () => route.params,
