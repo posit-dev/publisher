@@ -85,7 +85,7 @@
       </div>
     </div>
     <div
-      v-if="true || showPublishError"
+      v-if="showPublishError"
       class="error row text-left items-center"
       :class="textClass"
     >
