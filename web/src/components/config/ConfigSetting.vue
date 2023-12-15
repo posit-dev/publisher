@@ -1,3 +1,5 @@
+<!-- Copyright (C) 2023 by Posit Software, PBC. -->
+
 <template>
   <div class="config-setting">
     <dt class="config-label text-weight-medium">
