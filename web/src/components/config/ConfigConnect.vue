@@ -1,7 +1,10 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <h3 class="connect-title">
+  <h3
+    v-if="connect"
+    class="connect-title"
+  >
     Connect
   </h3>
 
