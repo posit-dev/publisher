@@ -1,19 +1,25 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ConfigSetting
-    v-if="connect"
-    label="Connect"
-  >
-    {{ connect }}
-  </ConfigSetting>
+  <h3 class="connect-title">
+    Connect
+  </h3>
+
+  <ConfigConnectAccess :access="connect?.access" />
+
+  <ConfigConnectKubernetes :kubernetes="connect?.kubernetes" />
+
+  <ConfigConnectRuntime :runtime="connect?.runtime" />
 </template>
 
 <script setup lang="ts">
 import { PropType } from 'vue';
 
 import { ConnectConfig } from 'src/api';
-import ConfigSetting from 'src/components/config/ConfigSetting.vue';
+
+import ConfigConnectAccess from './ConfigConnectAccess.vue';
+import ConfigConnectKubernetes from './ConfigConnectKubernetes.vue';
+import ConfigConnectRuntime from './ConfigConnectRuntime.vue';
 
 defineProps({
   connect: {
@@ -24,3 +30,10 @@ defineProps({
 });
 </script>
 
+<style scoped lang="scss">
+.connect-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+</style>
