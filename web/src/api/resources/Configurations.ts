@@ -11,6 +11,9 @@ export class Configurations {
     this.client = client;
   }
 
+  // Returns:
+  // 200 - success
+  // 500 - internal server error
   getAll() {
     return this.client.get<Array<Configuration | ConfigurationError>>(
       '/configurations',

@@ -48,7 +48,6 @@ import {
 import {
   useEventStream,
 } from 'src/plugins/eventStream';
-import { getErrorMessage } from 'src/util/errors';
 
 import { computed, ref } from 'vue';
 
@@ -676,28 +675,30 @@ export const useEventStore = defineStore('event', () => {
     accountName : string,
     target?: string,
     saveName?: string,
-  ) : Promise<string | Error> => {
+  ) : Promise<Error | string> => {
     if (publishInProgess.value) {
       return new Error('Publishing already in progress');
     }
 
-    try {
-      publishInProgess.value = true;
-      currentPublishStatus.value.localId = '';
-      currentPublishStatus.value.target = target || '';
-      currentPublishStatus.value.status = newPublishStatus();
+    publishInProgess.value = true;
+    currentPublishStatus.value.localId = '';
+    currentPublishStatus.value.target = target || '';
+    currentPublishStatus.value.status = newPublishStatus();
 
-      const response = await api.deployments.publish(
-        accountName,
-        target,
-        saveName,
-      );
-      const localId = <string>response.data.localId;
-      currentPublishStatus.value.localId = localId;
-      return localId;
-    } catch (error) {
-      return new Error(getErrorMessage(error));
-    }
+    // Returns:
+    // 200 - success
+    // 400 - bad request
+    // 500 - internal server error
+    // Errors returned through event stream
+    // Handle errors at the top level caller
+    const response = await api.deployments.publish(
+      accountName,
+      target,
+      saveName,
+    );
+    const localId = <string>response.data.localId;
+    currentPublishStatus.value.localId = localId;
+    return localId;
   };
 
   const init = () => {

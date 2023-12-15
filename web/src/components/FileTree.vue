@@ -35,10 +35,17 @@ import { ref } from 'vue';
 
 import { useApi } from 'src/api';
 import { DeploymentFile } from 'src/api/types/files';
+import {
+  checkForResponseWithStatus,
+  getSummaryFromError,
+  sendErrorToFatalErrorComponent,
+} from 'src/util/errors';
+import { useRouter } from 'vue-router';
 
 const NODE_KEY = 'key';
 
 const api = useApi();
+const router = useRouter();
 
 const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);
@@ -56,14 +63,26 @@ function fileToTreeNode(file: DeploymentFile): QTreeNode {
 }
 
 async function getFiles() {
-  const response = await api.files.get();
-  const file = response.data;
+  try {
+    // Returns:
+    // 200 - success
+    // 403 - pathname is not safe - forbidden
+    // 500 - internal server error
+    const response = await api.files.get();
+    const file = response.data;
 
-  files.value = [fileToTreeNode(file)];
+    files.value = [fileToTreeNode(file)];
 
-  if (file.isDir) {
-    // start with the top level directory expanded
-    expanded.value = [file.rel];
+    if (file.isDir) {
+      // start with the top level directory expanded
+      expanded.value = [file.rel];
+    }
+  } catch (error: unknown) {
+    if (checkForResponseWithStatus(error, 403)) {
+      throw new Error(`API Error: ${getSummaryFromError(error)}`);
+    } else {
+      sendErrorToFatalErrorComponent(error, router, 'FileTree: getFiles()');
+    }
   }
 }
 

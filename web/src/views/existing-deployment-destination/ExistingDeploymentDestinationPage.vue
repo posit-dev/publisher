@@ -26,10 +26,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
+import {
+  checkForResponseWithStatus,
+  getSummaryFromError,
+  sendErrorToFatalErrorComponent,
+} from 'src/util/errors';
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
@@ -37,6 +42,7 @@ import ExistingDeploymentDestinationHeader from './ExistingDeploymentDestination
 import DeploymentSection from 'src/components/DeploymentSection.vue';
 
 const route = useRoute();
+const router = useRouter();
 const api = useApi();
 
 const deployment = ref<Deployment>();
@@ -59,14 +65,22 @@ const getDeployment = async() => {
       deployment.value = undefined;
       return;
     }
+    // API Returns:
+    // 200 - success
+    // 404 - not found
+    // 500 - internal server error
     const response = await api.deployments.get(deploymentName.value);
     const d = response.data;
     if (isDeploymentError(d)) {
       throw new Error(`API Error /deployment/${deploymentName.value}: ${d}`);
     }
     deployment.value = d;
-  } catch (err) {
-    // TODO: handle the API error
+  } catch (error: unknown) {
+    if (checkForResponseWithStatus(error, 404)) {
+      throw new Error(`API Error: ${getSummaryFromError(error)}`);
+    } else {
+      sendErrorToFatalErrorComponent(error, router, 'ExistingDeploymentDestinationPage::getDeployment()');
+    }
   }
 };
 

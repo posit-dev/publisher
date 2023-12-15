@@ -82,9 +82,12 @@ import SelectAccount from 'src/components/SelectAccount.vue';
 import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
 import { formatDateString } from 'src/utils/date';
+import { checkForResponseWithStatus, getMessageFromError, getSummaryFromError, sendErrorToFatalErrorComponent } from 'src/util/errors';
+import { useRouter } from 'vue-router';
 
 const api = useApi();
 const eventStore = useEventStore();
+const router = useRouter();
 
 const accounts = ref<Account[]>([]);
 const filteredAccountList = ref<Account[]>([]);
@@ -113,22 +116,39 @@ const initiatePublishProcess = async() => {
   }
   emit('publish');
 
-  const result = await eventStore.initiatePublishProcessWithEvents(
-    accountName,
-    props.deployment.saveName,
-  );
-  if (result instanceof Error) {
-    return result;
+  // Returns:
+  // 200 - success
+  // 400 - bad request
+  // 500 - internal server error
+  // Errors returned through event stream
+  try {
+    const result = await eventStore.initiatePublishProcessWithEvents(
+      accountName,
+      props.contentId,
+      props.deployment.saveName,
+    );
+    if (result instanceof Error) {
+      throw new Error(`initiatePublishProcessWithEvents: ${getMessageFromError(result)}`);
+    }
+    publishingLocalId.value = result;
+  } catch (error: unknown) {
+    if (checkForResponseWithStatus(error, 400)) {
+      throw new Error(`API Error: ${getSummaryFromError(error)}`);
+    } else {
+      sendErrorToFatalErrorComponent(error, router, 'ExistingDeploymentDestinationHeader::initiatePublishProcess()');
+    }
   }
-  publishingLocalId.value = result;
 };
 
 const updateAccountList = async() => {
   try {
+    // API returns:
+    // 200 - success
+    // 500 - internal server error
     const response = await api.accounts.getAll();
     accounts.value = response.data.accounts;
-  } catch (err) {
-    // TODO: handle the API error
+  } catch (error: unknown) {
+    sendErrorToFatalErrorComponent(error, router, 'ExistingDeploymentDestinationHeader::updateAccountList()');
   }
 };
 updateAccountList();

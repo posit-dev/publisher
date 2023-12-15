@@ -80,10 +80,19 @@ import { Account, useApi } from 'src/api';
 
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
+
 import { useEventStore } from 'src/stores/events';
+import {
+  checkForResponseWithStatus,
+  getMessageFromError,
+  getSummaryFromError,
+  sendErrorToFatalErrorComponent,
+} from 'src/util/errors';
+import { useRouter } from 'vue-router';
 
 const api = useApi();
 const eventStore = useEventStore();
+const router = useRouter();
 
 const accounts = ref<Account[]>([]);
 const fixedAccountList = ref<Account[]>([]);
@@ -100,27 +109,47 @@ const props = defineProps({
 
 const initiatePublishProcess = async() => {
   emit('publish');
-
-  const result = await eventStore.initiatePublishProcessWithEvents(
-    props.accountName,
-    props.contentId,
-    props.destinationName,
-  );
-  if (result instanceof Error) {
-    return result;
+  // Returns:
+  // 200 - success
+  // 400 - bad request
+  // 500 - internal server error
+  // Errors returned through event stream
+  try {
+    const result = await eventStore.initiatePublishProcessWithEvents(
+      props.accountName,
+      props.contentId,
+      props.destinationName,
+    );
+    if (result instanceof Error) {
+      throw new Error(`initiatePublishProcessWithEvents: ${getMessageFromError(result)}`);
+    }
+    publishingLocalId.value = result;
+  } catch (error: unknown) {
+    if (checkForResponseWithStatus(error, 400)) {
+      throw new Error(`API Error: ${getSummaryFromError(error)}`);
+    } else {
+      sendErrorToFatalErrorComponent(error, router, 'NewDestinationHeader::initiatePublishProcess()');
+    }
   }
-  publishingLocalId.value = result;
 };
 
 const updateAccountList = async() => {
   try {
+    // API Returns:
+    // 200 - success
+    // 404 - account not found
+    // 500 - internal server error
     const response = await api.accounts.get(props.accountName);
     if (response.data) {
       destinationURL.value = response.data.url;
       fixedAccountList.value = [response.data];
     }
-  } catch (err) {
-    // TODO: handle the API error
+  } catch (error: unknown) {
+    if (checkForResponseWithStatus(error, 404)) {
+      throw new Error(`API Error: ${getSummaryFromError(error)}`);
+    } else {
+      sendErrorToFatalErrorComponent(error, router, 'NewDestinationHeader::updateAccountList()');
+    }
   }
 };
 
