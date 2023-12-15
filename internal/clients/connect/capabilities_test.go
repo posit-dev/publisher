@@ -12,6 +12,9 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var flexiBoolTrue = server_settings.FlexiBool{IsTrue: true}
+var flexiBoolFalse = server_settings.FlexiBool{IsTrue: false}
+
 type CapabilitiesSuite struct {
 	utiltest.Suite
 }
@@ -105,7 +108,7 @@ func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
 		},
 		general: server_settings.ServerSettings{
 			License: server_settings.LicenseStatus{
-				CurrentUserExecution: true,
+				CurrentUserExecution: flexiBoolTrue,
 			},
 		},
 		application: server_settings.ApplicationSettings{
@@ -124,7 +127,7 @@ func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
 	s.NoError(goodSettings.checkConfig(&cfg))
 
 	noLicense := goodSettings
-	noLicense.general.License.CurrentUserExecution = false
+	noLicense.general.License.CurrentUserExecution = flexiBoolFalse
 	s.ErrorIs(noLicense.checkConfig(&cfg), errCurrentUserExecutionNotLicensed)
 
 	noConfig := goodSettings
@@ -144,15 +147,23 @@ func (s *CapabilitiesSuite) TestAPILicense() {
 	allowed := allSettings{
 		general: server_settings.ServerSettings{
 			License: server_settings.LicenseStatus{
-				AllowAPIs: true,
+				AllowAPIs: flexiBoolTrue,
 			},
 		},
 	}
-	notAllowed := allSettings{}
+	notAllowed := allSettings{
+		general: server_settings.ServerSettings{
+			License: server_settings.LicenseStatus{
+				AllowAPIs: flexiBoolFalse,
+			},
+		},
+	}
+	missing := allSettings{}
 	cfg := &config.Config{
 		Type: config.ContentTypePythonFlask,
 	}
 	s.NoError(allowed.checkConfig(cfg))
+	s.ErrorIs(missing.checkConfig(cfg), errAPIsNotLicensed)
 	s.ErrorIs(notAllowed.checkConfig(cfg), errAPIsNotLicensed)
 }
 
@@ -174,7 +185,7 @@ func (s *CapabilitiesSuite) TestKubernetesEnablement() {
 			ExecutionType:                server_settings.ExecutionTypeKubernetes,
 			DefaultImageSelectionEnabled: true,
 			License: server_settings.LicenseStatus{
-				LauncherEnabled: true,
+				LauncherEnabled: flexiBoolTrue,
 			},
 		},
 	}
@@ -190,7 +201,7 @@ func (s *CapabilitiesSuite) TestKubernetesEnablement() {
 	s.NoError(goodSettings.checkConfig(&cfg))
 
 	noLicense := goodSettings
-	noLicense.general.License.LauncherEnabled = false
+	noLicense.general.License.LauncherEnabled = flexiBoolFalse
 	s.ErrorIs(noLicense.checkConfig(&cfg), errKubernetesNotLicensed)
 
 	noConfig := goodSettings
@@ -243,7 +254,7 @@ var kubernetesEnabledSettings = allSettings{
 	general: server_settings.ServerSettings{
 		ExecutionType: server_settings.ExecutionTypeKubernetes,
 		License: server_settings.LicenseStatus{
-			LauncherEnabled: true,
+			LauncherEnabled: flexiBoolTrue,
 		},
 	},
 }

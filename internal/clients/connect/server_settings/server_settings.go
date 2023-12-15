@@ -1,6 +1,8 @@
 package server_settings
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -8,53 +10,53 @@ import (
 // See the Connect source for more information on these fields.
 
 type ServerSettings struct {
-	NodeName                              string                 `json:"hostname"`
-	Version                               string                 `json:"version"`
-	Build                                 string                 `json:"build"`
-	About                                 string                 `json:"about"`
-	Authentication                        authenticationSettings `json:"authentication"`
-	License                               LicenseStatus          `json:"license"`
-	LicenseExpirationUIWarning            bool                   `json:"license_expiration_ui_warning"`
-	DeprecatedSettings                    bool                   `json:"deprecated_settings"`
-	DeprecatedSettingsUIWarning           bool                   `json:"deprecated_settings_ui_warning"`
-	ViewerKiosk                           bool                   `json:"viewer_kiosk"`
-	MailAll                               bool                   `json:"mail_all"`
-	MailConfigured                        bool                   `json:"mail_configured"`
-	PublicWarning                         string                 `json:"public_warning"`
-	LoggedInWarning                       string                 `json:"logged_in_warning"`
-	LogoutURL                             string                 `json:"logout_url"`
-	MetricsRRDEnabled                     bool                   `json:"metrics_rrd_enabled"`
-	MetricsInstrumentation                bool                   `json:"metrics_instrumentation"`
-	CustomizedLanding                     bool                   `json:"customized_landing"`
-	SelfRegistration                      bool                   `json:"self_registration"`
-	ProhibitedUsernames                   []string               `json:"prohibited_usernames"`
-	UsernameValidator                     string                 `json:"username_validator"`
-	ViewersCanOnlySeeThemselves           bool                   `json:"viewers_can_only_see_themselves"`
-	HTTPWarning                           bool                   `json:"http_warning"`
-	QueueUI                               bool                   `json:"queue_ui"`
-	Runtimes                              []string               `json:"runtimes"`
-	DefaultContentListView                string                 `json:"default_content_list_view"`
-	MaximumAppImageSize                   int                    `json:"maximum_app_image_size"`
-	ServerSettingsToggler                 bool                   `json:"server_settings_toggler"`
-	GitEnabled                            bool                   `json:"git_enabled"`
-	GitAvailable                          bool                   `json:"git_available"`
-	DashboardPath                         string                 `json:"dashboard_path"`
-	SystemDisplayName                     string                 `json:"system_display_name"`
-	HideViewerDocumentation               bool                   `json:"hide_viewer_documentation"`
-	JumpStartEnabled                      bool                   `json:"jump_start_enabled"`
-	PermissionRequest                     bool                   `json:"permission_request"`
-	TableauIntegrationEnabled             bool                   `json:"tableau_integration_enabled"`
-	SelfTestEnabled                       bool                   `json:"self_test_enabled"`
-	ExecutionType                         string                 `json:"execution_type"`
-	EnableRuntimeConstraints              bool                   `json:"enable_runtime_constraints"`
-	EnableImageManagement                 bool                   `json:"enable_image_management"`
-	AllowRuntimeCacheManagement           bool                   `json:"enable_runtime_cache_management"`
-	DefaultImageSelectionEnabled          bool                   `json:"default_image_selection_enabled"`
-	DefaultEnvironmentManagementSelection bool                   `json:"default_environment_management_selection"`
-	DefaultREnvironmentManagement         bool                   `json:"default_r_environment_management"`
-	DefaultPyEnvironmentManagement        bool                   `json:"default_py_environment_management"`
-	NewParameterizationEnabled            bool                   `json:"new_parameterization_enabled"`
-	UseWindowLocation                     bool                   `json:"use_window_location"`
+	// NodeName                              string                 `json:"hostname"`
+	// Version                               string                 `json:"version"`
+	// Build                                 string                 `json:"build"`
+	// About                                 string                 `json:"about"`
+	// Authentication                        AuthenticationSettings `json:"authentication"`
+	License LicenseStatus `json:"license"`
+	// LicenseExpirationUIWarning            bool                   `json:"license_expiration_ui_warning"`
+	// DeprecatedSettings                    bool                   `json:"deprecated_settings"`
+	// DeprecatedSettingsUIWarning           bool                   `json:"deprecated_settings_ui_warning"`
+	// ViewerKiosk                           bool                   `json:"viewer_kiosk"`
+	// MailAll                               bool                   `json:"mail_all"`
+	// MailConfigured                        bool                   `json:"mail_configured"`
+	// PublicWarning                         string                 `json:"public_warning"`
+	// LoggedInWarning                       string                 `json:"logged_in_warning"`
+	// LogoutURL                             string                 `json:"logout_url"`
+	// MetricsRRDEnabled                     bool                   `json:"metrics_rrd_enabled"`
+	// MetricsInstrumentation                bool                   `json:"metrics_instrumentation"`
+	// CustomizedLanding                     bool                   `json:"customized_landing"`
+	// SelfRegistration                      bool                   `json:"self_registration"`
+	// ProhibitedUsernames                   []string               `json:"prohibited_usernames"`
+	// UsernameValidator                     string                 `json:"username_validator"`
+	// ViewersCanOnlySeeThemselves           bool                   `json:"viewers_can_only_see_themselves"`
+	// HTTPWarning                           bool                   `json:"http_warning"`
+	// QueueUI                               bool                   `json:"queue_ui"`
+	Runtimes []string `json:"runtimes"`
+	// DefaultContentListView                string                 `json:"default_content_list_view"`
+	// MaximumAppImageSize                   int                    `json:"maximum_app_image_size"`
+	// ServerSettingsToggler                 bool                   `json:"server_settings_toggler"`
+	GitEnabled   bool `json:"git_enabled"`
+	GitAvailable bool `json:"git_available"`
+	// DashboardPath                         string                 `json:"dashboard_path"`
+	// SystemDisplayName                     string                 `json:"system_display_name"`
+	// HideViewerDocumentation               bool                   `json:"hide_viewer_documentation"`
+	// JumpStartEnabled                      bool                   `json:"jump_start_enabled"`
+	// PermissionRequest                     bool                   `json:"permission_request"`
+	// TableauIntegrationEnabled             bool                   `json:"tableau_integration_enabled"`
+	// SelfTestEnabled                       bool                   `json:"self_test_enabled"`
+	ExecutionType            string `json:"execution_type"`
+	EnableRuntimeConstraints bool   `json:"enable_runtime_constraints"`
+	EnableImageManagement    bool   `json:"enable_image_management"`
+	// AllowRuntimeCacheManagement           bool                   `json:"enable_runtime_cache_management"`
+	DefaultImageSelectionEnabled          bool `json:"default_image_selection_enabled"`
+	DefaultEnvironmentManagementSelection bool `json:"default_environment_management_selection"`
+	DefaultREnvironmentManagement         bool `json:"default_r_environment_management"`
+	DefaultPyEnvironmentManagement        bool `json:"default_py_environment_management"`
+	// NewParameterizationEnabled            bool                   `json:"new_parameterization_enabled"`
+	// UseWindowLocation                     bool                   `json:"use_window_location"`
 }
 
 const ExecutionTypeNative = "native"
@@ -62,12 +64,12 @@ const ExecutionTypeLocal = "launcher-local"
 const ExecutionTypeKubernetes = "launcher-kubernetes"
 
 type ApplicationSettings struct {
-	ViewerOnDemandReports   bool     `json:"viewer_ondemand_reports"`
-	ViewerCustomizedReports bool     `json:"viewer_customized_reports"`
-	AccessTypes             []string `json:"access_types"`
-	RunAs                   string   `json:"run_as"`
-	RunAsGroup              string   `json:"run_as_group"`
-	RunAsCurrentUser        bool     `json:"run_as_current_user"`
+	// ViewerOnDemandReports   bool     `json:"viewer_ondemand_reports"`
+	// ViewerCustomizedReports bool     `json:"viewer_customized_reports"`
+	AccessTypes      []string `json:"access_types"`
+	RunAs            string   `json:"run_as"`
+	RunAsGroup       string   `json:"run_as_group"`
+	RunAsCurrentUser bool     `json:"run_as_current_user"`
 }
 
 type SchedulerSettings struct {
@@ -96,7 +98,7 @@ type SchedulerSettings struct {
 	MaxNvidiaGPULimit int64   `json:"max_nvidia_gpu_limit"`
 }
 
-type authenticationSettings struct {
+type AuthenticationSettings struct {
 	ProviderAttributes
 	Name         string `json:"name"`
 	Notice       string `json:"notice"`
@@ -134,29 +136,51 @@ type ProviderGroupAttributes struct {
 	ExternalGroupOwner   bool `json:"external_group_owner"`
 }
 
+type FlexiBool struct {
+	IsTrue bool
+}
+
+var errInvalidFlexiBool = errors.New("invalid value for flex boolean")
+
+func (b *FlexiBool) UnmarshalJSON(data []byte) error {
+	b.IsTrue = false
+	s := string(data)
+	switch s {
+	case "true", "1":
+		b.IsTrue = true
+	case "false", "0":
+		break
+	default:
+		return fmt.Errorf("%q: %w", s, errInvalidFlexiBool)
+	}
+	return nil
+}
+
 type LicenseStatus struct {
-	Timestamp            float64 `json:"ts"`
-	Status               string  `json:"status"`
-	Expiration           float64 `json:"expiration"`
-	DaysLeft             int64   `json:"days-left"`
-	HasKey               bool    `json:"has-key"`
-	HasTrial             bool    `json:"has-trial"`
-	Tier                 string  `json:"tier"`
-	SKUYear              string  `json:"sku-year"`
-	Edition              string  `json:"edition"`
-	Cores                int     `json:"cores"`
-	Connections          int     `json:"connections"`
-	Type                 string  `json:"type"`
-	Users                int     `json:"users"`
-	UserActivityDays     int     `json:"user-activity-days"`
-	UsersGrace           bool    `json:"users-grace,string"`
-	ShinyUsers           int     `json:"shiny-users"`
-	AllowAPIs            bool    `json:"allow-apis"`
-	CustomBranding       bool    `json:"custom-branding"`
-	CurrentUserExecution bool    `json:"current-user-execution"`
-	AnonymousServers     bool    `json:"anonymous-servers"`
-	AnonymousBranding    bool    `json:"anonymous-branding"`
-	LauncherEnabled      bool    `json:"enable-launcher"`
+	// Some fields unexpectedly come across as strings...
+	// https://github.com/rstudio/publishing-client/issues/593
+	// Commented out all the fields we don't use.
+	// Timestamp            float64 `json:"ts"`
+	// Status               string  `json:"status"`
+	// Expiration           float64 `json:"expiration"`
+	// DaysLeft             int64   `json:"days-left"`
+	// HasKey               bool    `json:"has-key"`
+	// HasTrial             bool    `json:"has-trial"`
+	// Tier                 string  `json:"tier"`
+	// SKUYear              string  `json:"sku-year"`
+	// Edition              string  `json:"edition"`
+	// Connections          any     `json:"connections"`
+	// Type                 string  `json:"type"`
+	// Users                any     `json:"users"`
+	// UserActivityDays     any     `json:"user-activity-days"`
+	// UsersGrace           bool    `json:"users-grace,string"`
+	// ShinyUsers           any     `json:"shiny-users"`
+	AllowAPIs FlexiBool `json:"allow-apis"` // sometimes a bool, sometimes an int-string like "1"?
+	// CustomBranding       bool    `json:"custom-branding"`
+	CurrentUserExecution FlexiBool `json:"current-user-execution"`
+	// AnonymousServers     bool    `json:"anonymous-servers"`
+	// AnonymousBranding    bool    `json:"anonymous-branding"`
+	LauncherEnabled FlexiBool `json:"enable-launcher"`
 }
 
 type UserInfoEditableBy UserInfoEditableType
