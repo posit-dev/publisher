@@ -11,11 +11,11 @@ import (
 )
 
 type testAccountCmd struct {
-	Name string `short:"n" help:"Nickname of account to test."`
+	AccountName string `kong:"arg,required" help:"Nickname of account to test."`
 }
 
 func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	account, err := ctx.Accounts.GetAccountByName(cmd.Name)
+	account, err := ctx.Accounts.GetAccountByName(cmd.AccountName)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (cmd *listAccountsCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLICo
 		return err
 	}
 	if len(accounts) == 0 {
-		fmt.Println("No accounts are saved. To add an account, see `connect-client add-server --help`.")
+		fmt.Println("No accounts found. Use rsconnect or rsconnect-python to register an account.")
 	} else {
 		fmt.Println()
 		for _, account := range accounts {

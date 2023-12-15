@@ -30,7 +30,7 @@ const (
 	PublishCreateNewDeploymentOp Operation = "publish/createNewDeployment"
 	PublishSetEnvVarsOp          Operation = "publish/setEnvVars"
 	PublishCreateBundleOp        Operation = "publish/createBundle"
-	PublishCreateDeploymentOp    Operation = "publish/createDeployment"
+	PublishUpdateDeploymentOp    Operation = "publish/createDeployment"
 	PublishUploadBundleOp        Operation = "publish/uploadBundle"
 	PublishDeployBundleOp        Operation = "publish/deployBundle"
 	PublishRestorePythonEnvOp    Operation = "publish/restorePythonEnv"

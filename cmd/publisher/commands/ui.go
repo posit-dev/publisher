@@ -35,7 +35,7 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 		return err
 	}
 
-	log := events.NewLoggerWithSSE(args.Debug, eventServer)
+	log := events.NewLoggerWithSSE(args.Verbose, eventServer)
 	ctx.Logger.Info("created SSE logger")
 
 	// Auto-initialize if needed. This will be replaced by an API call from the UI

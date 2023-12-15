@@ -11,20 +11,45 @@
         Destinations
       </h2>
 
-      <q-btn
-        no-caps
+      <PButton
+        v-if="hasDeployments"
+        hierarchy="primary"
         :to="{ name: 'addNewDeployment' }"
       >
         Add Destination
-      </q-btn>
+      </PButton>
     </div>
 
-    <div class="card-grid">
+    <div
+      v-if="hasDeployments"
+      class="card-grid"
+    >
       <DeploymentCard
         v-for="deployment in deployments"
         :key="deployment.id"
         :deployment="deployment"
       />
+    </div>
+    <div v-else>
+      <PCard
+        :to="{ name: 'addNewDeployment' }"
+      >
+        <div class="flex column items-center">
+          <q-icon
+            name="add"
+            size="2rem"
+          />
+          <h3 class="text-body1 text-weight-medium q-mt-sm">
+            Add a New Destination
+          </h3>
+          <p class="q-mt-xs text-low-contrast">
+            This project hasn't been published yet.
+          </p>
+          <p class="text-low-contrast">
+            Get started by adding a destination.
+          </p>
+        </div>
+      </PCard>
     </div>
 
     <h2 class="text-h6">
@@ -46,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
@@ -57,11 +82,17 @@ import { useRouter } from 'vue-router';
 import ConfigCard from './ConfigCard.vue';
 import DeploymentCard from './DeploymentCard.vue';
 import FileTree from 'src/components/FileTree.vue';
+import PButton from 'src/components/PButton.vue';
+import PCard from 'src/components/PCard.vue';
 
 const api = useApi();
 const router = useRouter();
 const deployments = ref<Deployment[]>([]);
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
+
+const hasDeployments = computed(() => {
+  return deployments.value.length > 0;
+});
 
 async function getDeployments() {
   try {

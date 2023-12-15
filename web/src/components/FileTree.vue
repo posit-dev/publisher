@@ -22,7 +22,7 @@
           self="center left"
           :offset="[10, 10]"
         >
-          {{ node.exclusion }}
+          {{ exclusionDisplay(node.exclusion) }}
         </q-tooltip>
       </div>
     </template>
@@ -34,7 +34,7 @@ import { QTreeNode } from 'quasar';
 import { ref } from 'vue';
 
 import { useApi } from 'src/api';
-import { DeploymentFile } from 'src/api/types/files';
+import { DeploymentFile, ExclusionMatch, ExclusionMatchSource } from 'src/api/types/files';
 import {
   checkForResponseWithStatus,
   getSummaryFromError,
@@ -50,8 +50,8 @@ const router = useRouter();
 const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);
 
-function fileToTreeNode(file: DeploymentFile): QTreeNode {
-  const node: QTreeNode = {
+function fileToTreeNode(file: DeploymentFile) {
+  const node: QTreeNode & Pick<DeploymentFile, 'exclusion'> = {
     [NODE_KEY]: file.id,
     label: file.base,
     children: file.files.map(fileToTreeNode),
@@ -86,6 +86,15 @@ async function getFiles() {
   }
 }
 
+function exclusionDisplay(match: ExclusionMatch): string {
+  switch (match.source) {
+    case ExclusionMatchSource.BUILT_IN:
+      return 'Automatically ignored by Posit Publisher';
+    case ExclusionMatchSource.FILE:
+      return `Ignored by "${match.filePath}" on line ${match.line} with pattern "${match.pattern}"`;
+  }
+}
+
 getFiles();
 </script>
 
@@ -94,4 +103,3 @@ getFiles();
   opacity: 60%;
 }
 </style>
-

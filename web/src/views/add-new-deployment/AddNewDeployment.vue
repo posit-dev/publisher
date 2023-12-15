@@ -36,21 +36,22 @@
         hint="Optional"
       />
       <div class="flex row reverse">
-        <q-btn
-          no-caps
+        <PButton
+          hierarchy="primary"
           :to="destinationPage"
           :disable="disableToDestinationPage"
           type="submit"
-          color="primary"
-          label="Continue to Publish"
-        />
-        <q-btn
-          no-caps
-          type="reset"
+        >
+          Continue to Publish
+        </PButton>
+        <PButton
+          hierarchy="secondary"
           class="q-mr-sm"
-          label="Cancel"
+          type="reset"
           @click="router.back()"
-        />
+        >
+          Cancel
+        </PButton>
       </div>
     </q-form>
   </div>
@@ -63,6 +64,7 @@ import { RouteLocationRaw, useRouter } from 'vue-router';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 import { sendErrorToFatalErrorComponent } from 'src/util/errors';
+import PButton from 'src/components/PButton.vue';
 
 const accounts = ref<Account[]>([]);
 const selectedAccountName = ref<string>('');

@@ -331,7 +331,7 @@
               ]
             },
             "memory-limit": {
-              "type": "string",
+              "type": "integer",
               "minimum": 0,
               "description": "The maximum amount of RAM this content will be allowed to consume when executing or rendering, expressed in bytes. If the process tries to use more memory than allowed, it will be terminated",
               "examples": [
@@ -339,7 +339,7 @@
               ]
             },
             "memory-request": {
-              "type": "string",
+              "type": "integer",
               "minimum": 0,
               "description": "The minimum amount of RAM this content needs when executing or rendering, expressed in bytes.",
               "examples": [

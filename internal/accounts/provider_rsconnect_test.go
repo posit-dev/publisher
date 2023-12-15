@@ -5,6 +5,7 @@ package accounts
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -51,6 +52,9 @@ func (s *RsconnectProviderSuite) TestNewRSConnectProvider() {
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirRUserConfig() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
 	os.Setenv("R_USER_CONFIG_DIR", "/r/config")
 	s.provider.goos = "linux"
 	dir, err := s.provider.configDir()
@@ -59,6 +63,9 @@ func (s *RsconnectProviderSuite) TestConfigDirRUserConfig() {
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirXdgConfig() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
 	os.Setenv("XDG_CONFIG_HOME", "/home/myconfig")
 	s.provider.goos = "linux"
 	dir, err := s.provider.configDir()
@@ -67,7 +74,10 @@ func (s *RsconnectProviderSuite) TestConfigDirXdgConfig() {
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirLinux() {
-	os.Setenv("HOME", "/home/somebody")
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+	setHome("/home/somebody")
 	s.provider.goos = "linux"
 	dir, err := s.provider.configDir()
 	s.Nil(err)
@@ -75,6 +85,9 @@ func (s *RsconnectProviderSuite) TestConfigDirLinux() {
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirLinuxNoHome() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
 	s.provider.goos = "linux"
 	dir, err := s.provider.configDir()
 	s.ErrorContains(err, "$HOME is not defined")
@@ -82,7 +95,10 @@ func (s *RsconnectProviderSuite) TestConfigDirLinuxNoHome() {
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirMac() {
-	os.Setenv("HOME", "/Users/somebody")
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+	setHome("/Users/somebody")
 	s.provider.goos = "darwin"
 	dir, err := s.provider.configDir()
 	s.Nil(err)
@@ -90,6 +106,9 @@ func (s *RsconnectProviderSuite) TestConfigDirMac() {
 }
 
 func (s *RsconnectProviderSuite) TestConfigDirMacNoHome() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
 	s.provider.goos = "darwin"
 	dir, err := s.provider.configDir()
 	s.ErrorContains(err, "$HOME is not defined")
@@ -101,10 +120,13 @@ func (s *RsconnectProviderSuite) TestConfigDirWindows() {
 	s.provider.goos = "windows"
 	dir, err := s.provider.configDir()
 	s.Nil(err)
-	s.Equal(`C:\Users\somebody\AppData/R/config/R/rsconnect`, dir.Path())
+	s.Equal(filepath.Join(`C:\Users\somebody\AppData`, "R", "config", "R", "rsconnect"), dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirNoHome() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
 	s.provider.goos = "linux"
 	dir, err := s.provider.oldConfigDir()
 	s.ErrorContains(err, "$HOME is not defined")
@@ -112,7 +134,10 @@ func (s *RsconnectProviderSuite) TestOldConfigDirNoHome() {
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirRUserConfig() {
-	os.Setenv("HOME", "/home/someuser")
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+	setHome("/home/someuser")
 	os.Setenv("R_USER_CONFIG_DIR", "/r/config")
 	s.provider.goos = "linux"
 	dir, err := s.provider.oldConfigDir()
@@ -121,7 +146,10 @@ func (s *RsconnectProviderSuite) TestOldConfigDirRUserConfig() {
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirXdgConfig() {
-	os.Setenv("HOME", "/home/someuser")
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+	setHome("/home/someuser")
 	os.Setenv("XDG_CONFIG_HOME", "/home/myconfig")
 	s.provider.goos = "linux"
 	dir, err := s.provider.oldConfigDir()
@@ -130,7 +158,10 @@ func (s *RsconnectProviderSuite) TestOldConfigDirXdgConfig() {
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirLinux() {
-	os.Setenv("HOME", "/home/somebody")
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+	setHome("/home/somebody")
 	s.provider.goos = "linux"
 	dir, err := s.provider.oldConfigDir()
 	s.Nil(err)
@@ -138,7 +169,10 @@ func (s *RsconnectProviderSuite) TestOldConfigDirLinux() {
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirMac() {
-	os.Setenv("HOME", "/Users/somebody")
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
+	setHome("/Users/somebody")
 	s.provider.goos = "darwin"
 	dir, err := s.provider.oldConfigDir()
 	s.Nil(err)
@@ -146,15 +180,17 @@ func (s *RsconnectProviderSuite) TestOldConfigDirMac() {
 }
 
 func (s *RsconnectProviderSuite) TestOldConfigDirWindows() {
-	os.Setenv("HOME", `C:\Users\somebody`)
-	// Using /Users here instead of C:\Users because when running
-	// these tests on Mac/Linux, the call to Abs in oldConfigDir
+	// When running these tests on Mac/Linux, the call to Abs in oldConfigDir
 	// does not recognize C:\Users as an absolute path.
-	os.Setenv("APPDATA", `/Users\somebody\AppData\Roaming`)
+	if runtime.GOOS != "windows" {
+		s.T().Skip()
+	}
+	setHome(`C:\Users\somebody`)
+	os.Setenv("APPDATA", `C:\Users\somebody\AppData\Roaming`)
 	s.provider.goos = "windows"
 	dir, err := s.provider.oldConfigDir()
 	s.Nil(err)
-	s.Equal(`/Users\somebody\AppData\Roaming/R/rsconnect`, dir.Path())
+	s.Equal(`C:\Users\somebody\AppData\Roaming\R\rsconnect`, dir.Path())
 }
 
 func (s *RsconnectProviderSuite) TestAccountsFromConfigShinyapps() {
@@ -260,14 +296,14 @@ func TestRsconnectProviderLoadSuite(t *testing.T) {
 }
 
 func (s *RsconnectProviderLoadSuite) SetupTest() {
-	s.envVarHelper.Setup("HOME", "R_USER_CONFIG_DIR", "XDG_CONFIG_HOME", "APPDATA")
+	s.envVarHelper.Setup("HOME", "R_USER_CONFIG_DIR", "XDG_CONFIG_HOME", "USERPROFILE", "APPDATA")
 	log := logging.New()
 	s.fs = utiltest.NewMockFs()
 	s.provider = newRSConnectProvider(s.fs, log)
 
 	// Record some config paths so we don't need to keep inventing them
 	var err error
-	os.Setenv("HOME", "/home/someuser")
+	setHome("/home/someuser")
 	s.configDir, err = s.provider.configDir()
 	s.Nil(err)
 	s.oldConfigDir, err = s.provider.oldConfigDir()

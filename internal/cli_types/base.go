@@ -10,7 +10,7 @@ import (
 )
 
 type CommonArgs struct {
-	Debug   bool   `help:"Enable debug mode." env:"CONNECT_DEBUG"`
+	Verbose int    `short:"v" type:"counter" help:"Enable verbose logging. Use -vv or --verbose=2 for debug logging."`
 	Profile string `help:"Enable CPU profiling" kong:"hidden"`
 }
 
