@@ -39,9 +39,13 @@ func (s *InitializeSuite) SetupTest() {
 
 func (s *InitializeSuite) TestInitEmpty() {
 	log := logging.New()
-	cfg, err := Init(s.cwd, "", util.Path{}, log)
+	path := s.cwd.Join("My App")
+	err := path.Mkdir(0777)
+	s.NoError(err)
+	cfg, err := Init(path, "", util.Path{}, log)
 	s.Nil(err)
 	s.Equal(config.ContentTypeUnknown, cfg.Type)
+	s.Equal("My App", cfg.Title)
 }
 
 func (s *InitializeSuite) createAppPy() {
@@ -86,7 +90,7 @@ func (s *InitializeSuite) TestInitInferredType() {
 	configPath := config.GetConfigPath(s.cwd, configName)
 	cfg2, err := config.FromFile(configPath)
 	s.NoError(err)
-	s.Equal(cfg.Type, config.ContentTypePythonFlask)
+	s.Equal(config.ContentTypePythonFlask, cfg.Type)
 	s.Equal("3.4.5", cfg.Python.Version)
 	s.Equal(cfg, cfg2)
 }
