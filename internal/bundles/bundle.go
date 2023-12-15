@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"path/filepath"
 
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/events"
@@ -279,7 +280,7 @@ func (b *bundle) addFile(name string, content []byte) error {
 		return err
 	}
 	if name != ManifestFilename {
-		b.manifest.AddFile(name, fileMD5)
+		b.manifest.AddFile(filepath.ToSlash(name), fileMD5)
 	}
 	return nil
 }

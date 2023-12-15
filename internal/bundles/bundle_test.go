@@ -6,7 +6,6 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"crypto/md5"
 	"errors"
 	"io"
 	"io/fs"
@@ -20,7 +19,6 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/bundles/bundlestest"
-	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/logging/loggingtest"
@@ -134,9 +132,8 @@ func (s *TarSuite) TestWriteFileContentsToTarWriteErr() {
 type BundlerSuite struct {
 	utiltest.Suite
 
-	fs       afero.Fs
-	cwd      util.Path
-	manifest *Manifest
+	fs  afero.Fs
+	cwd util.Path
 }
 
 func TestBundlerSuite(t *testing.T) {
@@ -162,10 +159,6 @@ func (s *BundlerSuite) SetupTest() {
 	// gitignore.IgnoreList uses relative paths internally
 	// and expects to be able to call Abs on them.
 	s.cwd.MkdirAll(0700)
-
-	s.manifest = NewManifest()
-	s.manifest.Metadata.AppMode = connect.StaticMode
-	s.manifest.Metadata.Entrypoint = "subdir/testfile"
 }
 
 func (s *BundlerSuite) TestNewBundlerDirectory() {
@@ -200,9 +193,6 @@ func (s *BundlerSuite) makeFileWithContents(relPath string, contents []byte) {
 
 	err = path.WriteFile(contents, 0600)
 	s.Nil(err)
-
-	md5sum := md5.Sum(contents)
-	s.manifest.AddFile(relPath, md5sum[:])
 }
 
 func (s *BundlerSuite) TestCreateBundle() {
@@ -212,7 +202,7 @@ func (s *BundlerSuite) TestCreateBundle() {
 	dest := new(bytes.Buffer)
 	log := logging.New()
 
-	bundler, err := NewBundler(s.cwd, s.manifest, nil, log)
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
@@ -223,6 +213,12 @@ func (s *BundlerSuite) TestCreateBundle() {
 		"subdir/testfile",
 		"testfile",
 	}, manifest.GetFilenames())
+	s.Equal([]string{
+		"manifest.json",
+		"subdir/",
+		"subdir/testfile",
+		"testfile",
+	}, s.getTarFileNames(dest))
 }
 
 func (s *BundlerSuite) TestCreateBundleAutoDetect() {
@@ -236,6 +232,10 @@ func (s *BundlerSuite) TestCreateBundleAutoDetect() {
 	s.Nil(err)
 	s.NotNil(manifest)
 	s.Len(manifest.Files, 1)
+	s.Equal([]string{
+		"app.py",
+		"manifest.json",
+	}, s.getTarFileNames(dest))
 }
 
 func (s *BundlerSuite) TestCreateBundlePythonPackages() {
@@ -252,6 +252,11 @@ func (s *BundlerSuite) TestCreateBundlePythonPackages() {
 	s.Nil(err)
 	s.NotNil(manifestOut)
 	s.Len(manifestOut.Files, 2)
+	s.Equal([]string{
+		"app.py",
+		"manifest.json",
+		"requirements.txt",
+	}, s.getTarFileNames(dest))
 }
 
 func (s *BundlerSuite) TestCreateBundleMissingDirectory() {
@@ -330,7 +335,7 @@ func (s *BundlerSuite) TestCreateManifest() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	log := logging.New()
-	bundler, err := NewBundler(s.cwd, s.manifest, nil, log)
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
@@ -350,7 +355,7 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	log := logging.New()
-	bundler, err := NewBundler(s.cwd, s.manifest, nil, log)
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
