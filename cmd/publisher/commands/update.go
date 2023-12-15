@@ -34,7 +34,7 @@ func (cmd *UpdateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 	cmd.TargetName = strings.TrimSuffix(cmd.TargetName, ".toml")
 	err = util.ValidateFilename(cmd.TargetName)
 	if err != nil {
-		return fmt.Errorf("invalid deployment name %q: %w", cmd.TargetName, err)
+		return fmt.Errorf("invalid deployment name '%s': %w", cmd.TargetName, err)
 	}
 	stateStore, err := state.New(cmd.Path, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts)
 	if err != nil {

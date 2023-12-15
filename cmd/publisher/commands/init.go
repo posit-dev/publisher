@@ -55,7 +55,7 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 		fmt.Printf(contentTypeDetectionFailed, configPath, formatValidTypes())
 		return nil
 	} else {
-		fmt.Printf("Created config file %q\n", configPath.String())
+		fmt.Printf("Created config file '%s'\n", configPath.String())
 		if args.Verbose >= 2 {
 			fmt.Println()
 			cfg.Write(os.Stdout)
