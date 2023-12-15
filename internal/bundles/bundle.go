@@ -47,7 +47,7 @@ func NewBundler(path util.Path, manifest *Manifest, pythonRequirements []byte, l
 	if err != nil {
 		return nil, err
 	}
-	excluder, err := gitignore.NewExcludingWalker(dir)
+	excluder, err := gitignore.NewExcludingWalker(absDir)
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
