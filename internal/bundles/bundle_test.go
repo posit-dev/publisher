@@ -221,6 +221,90 @@ func (s *BundlerSuite) TestCreateBundle() {
 	}, s.getTarFileNames(dest))
 }
 
+func (s *BundlerSuite) TestCreateBundleWithPositignore() {
+	s.makeFile("testfile")
+	s.makeFile(filepath.Join("subdir", "testfile"))
+	err := s.cwd.Join(".positignore").WriteFile([]byte(`subdir/`), 0666)
+	s.NoError(err)
+
+	dest := new(bytes.Buffer)
+	log := logging.New()
+
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
+	s.Nil(err)
+	manifest, err := bundler.CreateBundle(dest)
+	s.Nil(err)
+	s.NotNil(manifest)
+	s.Len(manifest.Files, 2)
+	// Manifest filenames are always Posix paths, not Windows paths
+	s.Equal([]string{
+		".positignore",
+		"testfile",
+	}, manifest.GetFilenames())
+	s.Equal([]string{
+		".positignore",
+		"manifest.json",
+		"testfile",
+	}, s.getTarFileNames(dest))
+}
+
+func (s *BundlerSuite) TestCreateBundleWithPositignoreInSubdirectory() {
+	s.makeFile("testfile")
+	s.makeFile(filepath.Join("subdir", "testfile"))
+	err := s.cwd.Join("subdir", ".positignore").WriteFile([]byte(`testfile`), 0666)
+	s.NoError(err)
+
+	dest := new(bytes.Buffer)
+	log := logging.New()
+
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
+	s.Nil(err)
+	manifest, err := bundler.CreateBundle(dest)
+	s.Nil(err)
+	s.NotNil(manifest)
+	s.Len(manifest.Files, 2)
+	// Manifest filenames are always Posix paths, not Windows paths
+	s.Equal([]string{
+		"subdir/.positignore",
+		"testfile",
+	}, manifest.GetFilenames())
+	s.Equal([]string{
+		"manifest.json",
+		"subdir/",
+		"subdir/.positignore",
+		"testfile",
+	}, s.getTarFileNames(dest))
+}
+
+func (s *BundlerSuite) TestCreateBundleWithPositignoreInSubdirectoryRelativePath() {
+	s.makeFile("testfile")
+	s.makeFile(filepath.Join("subdir", "testfile"))
+	err := s.cwd.Join("subdir", ".positignore").WriteFile([]byte(`testfile`), 0666)
+	s.NoError(err)
+
+	dest := new(bytes.Buffer)
+	log := logging.New()
+
+	path := util.NewPath(".", s.cwd.Fs())
+	bundler, err := NewBundler(path, NewManifest(), nil, log)
+	s.Nil(err)
+	manifest, err := bundler.CreateBundle(dest)
+	s.Nil(err)
+	s.NotNil(manifest)
+	s.Len(manifest.Files, 2)
+	// Manifest filenames are always Posix paths, not Windows paths
+	s.Equal([]string{
+		"subdir/.positignore",
+		"testfile",
+	}, manifest.GetFilenames())
+	s.Equal([]string{
+		"manifest.json",
+		"subdir/",
+		"subdir/.positignore",
+		"testfile",
+	}, s.getTarFileNames(dest))
+}
+
 func (s *BundlerSuite) TestCreateBundleAutoDetect() {
 	s.makeFileWithContents("app.py", []byte("import flask"))
 	dest := new(bytes.Buffer)
