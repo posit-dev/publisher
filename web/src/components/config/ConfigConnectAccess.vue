@@ -2,19 +2,21 @@
 
 <template>
   <ConfigSection
-    v-if="r"
-    title="R"
+    v-if="access"
+    title="Connect Access"
   >
-    <ConfigSetting label="Version">
-      {{ r.version }}
+    <ConfigSetting
+      v-if="access.runAs !== undefined"
+      label="Run As"
+    >
+      {{ access.runAs }}
     </ConfigSetting>
 
-    <ConfigSetting label="Package File">
-      {{ r.packageFile }}
-    </ConfigSetting>
-
-    <ConfigSetting label="Package Manager">
-      {{ r.packageManager }}
+    <ConfigSetting
+      v-if="access.runAsCurrentUser !== undefined"
+      label="Run As Current User"
+    >
+      {{ access.runAsCurrentUser }}
     </ConfigSetting>
   </ConfigSection>
 </template>
@@ -22,16 +24,15 @@
 <script setup lang="ts">
 import { PropType } from 'vue';
 
-import { RConfig } from 'src/api';
+import { ConnectAccess } from 'src/api';
 import ConfigSection from 'src/components/config/ConfigSection.vue';
 import ConfigSetting from 'src/components/config/ConfigSetting.vue';
 
 defineProps({
-  r: {
-    type: Object as PropType<RConfig>,
+  access: {
+    type: Object as PropType<ConnectAccess>,
     default: undefined,
     required: false,
   },
 });
 </script>
-
