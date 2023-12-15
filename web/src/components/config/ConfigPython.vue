@@ -1,25 +1,29 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ConfigSetting
+  <ConfigSection
     v-if="python"
-    label="Python"
+    title="Python"
   >
-    <dt>Version</dt>
-    <dd>{{ python.version }}</dd>
+    <ConfigSetting label="Version">
+      {{ python.version }}
+    </ConfigSetting>
 
-    <dt>Package File</dt>
-    <dd>{{ python.packageFile }}</dd>
+    <ConfigSetting label="Package File">
+      {{ python.packageFile }}
+    </ConfigSetting>
 
-    <dt>Package Manager</dt>
-    <dd>{{ python.packageManager }}</dd>
-  </ConfigSetting>
+    <ConfigSetting label="Package Manager">
+      {{ python.packageManager }}
+    </ConfigSetting>
+  </ConfigSection>
 </template>
 
 <script setup lang="ts">
 import { PropType } from 'vue';
 
 import { PythonConfig } from 'src/api';
+import ConfigSection from 'src/components/config/ConfigSection.vue';
 import ConfigSetting from 'src/components/config/ConfigSetting.vue';
 
 defineProps({
