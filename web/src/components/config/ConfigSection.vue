@@ -2,7 +2,7 @@
 
 <template>
   <div>
-    <h3 class="config-section-title">
+    <h3 class="config-section-title q-mt-md">
       {{ title }}
     </h3>
     <p
@@ -11,7 +11,7 @@
     >
       {{ subtitle }}
     </p>
-    <dl class="q-mt-sm q-pt-sm space-between-lg">
+    <dl class="q-mt-sm q-pt-sm space-between-sm">
       <slot />
     </dl>
   </div>

@@ -3,7 +3,7 @@
 <template>
   <h3
     v-if="connect"
-    class="connect-title"
+    class="connect-title q-mt-md"
   >
     Connect
   </h3>
