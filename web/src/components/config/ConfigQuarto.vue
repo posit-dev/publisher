@@ -1,22 +1,28 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ConfigSetting
+  <ConfigSection
     v-if="quarto"
-    label="Quarto"
+    title="Quarto"
   >
-    <dt>Version</dt>
-    <dd>{{ quarto.version }}</dd>
+    <ConfigSetting label="Version">
+      {{ quarto.version }}
+    </ConfigSetting>
 
-    <dt>Engines</dt>
-    <dd>{{ quarto.engines.join(', ') }}</dd>
-  </ConfigSetting>
+    <ConfigSetting
+      v-if="quarto.engines"
+      label="Engines"
+    >
+      {{ quarto.engines.join(', ') }}
+    </ConfigSetting>
+  </ConfigSection>
 </template>
 
 <script setup lang="ts">
 import { PropType } from 'vue';
 
 import { QuartoConfig } from 'src/api';
+import ConfigSection from 'src/components/config/ConfigSection.vue';
 import ConfigSetting from 'src/components/config/ConfigSetting.vue';
 
 defineProps({

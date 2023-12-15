@@ -1,25 +1,29 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ConfigSetting
+  <ConfigSection
     v-if="r"
-    label="R"
+    title="R"
   >
-    <dt>Version</dt>
-    <dd>{{ r.version }}</dd>
+    <ConfigSetting label="Version">
+      {{ r.version }}
+    </ConfigSetting>
 
-    <dt>Package File</dt>
-    <dd>{{ r.packageFile }}</dd>
+    <ConfigSetting label="Package File">
+      {{ r.packageFile }}
+    </ConfigSetting>
 
-    <dt>Package Manager</dt>
-    <dd>{{ r.packageManager }}</dd>
-  </ConfigSetting>
+    <ConfigSetting label="Package Manager">
+      {{ r.packageManager }}
+    </ConfigSetting>
+  </ConfigSection>
 </template>
 
 <script setup lang="ts">
 import { PropType } from 'vue';
 
 import { RConfig } from 'src/api';
+import ConfigSection from 'src/components/config/ConfigSection.vue';
 import ConfigSetting from 'src/components/config/ConfigSetting.vue';
 
 defineProps({

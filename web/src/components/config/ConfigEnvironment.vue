@@ -1,28 +1,25 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ConfigSetting
+  <ConfigSection
     v-if="environment"
-    label="Environment"
+    title="Environment"
   >
-    <template
+    <ConfigSetting
       v-for="(value, key) in environment"
       :key="key"
+      :label="key"
     >
-      <dt>
-        {{ key }}
-      </dt>
-      <dd>
-        {{ value }}
-      </dd>
-    </template>
-  </ConfigSetting>
+      {{ value }}
+    </ConfigSetting>
+  </ConfigSection>
 </template>
 
 <script setup lang="ts">
 import { PropType } from 'vue';
 
 import { EnvironmentConfig } from 'src/api';
+import ConfigSection from 'src/components/config/ConfigSection.vue';
 import ConfigSetting from 'src/components/config/ConfigSetting.vue';
 
 defineProps({
