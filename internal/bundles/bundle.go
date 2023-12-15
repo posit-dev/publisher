@@ -225,13 +225,15 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 		"size", info.Size(),
 	)
 	if info.IsDir() {
-		err = writeHeaderToTar(info, relPath.Path(), b.archive)
+		// Manifest filenames are always Posix paths, not Windows paths
+		err = writeHeaderToTar(info, relPath.ToSlash(), b.archive)
 		if err != nil {
 			return err
 		}
 	} else if info.Mode().IsRegular() {
 		pathLogger.Debug("Adding file")
-		err = writeHeaderToTar(info, relPath.Path(), b.archive)
+		// Manifest filenames are always Posix paths, not Windows paths
+		err = writeHeaderToTar(info, relPath.ToSlash(), b.archive)
 		if err != nil {
 			return err
 		}
@@ -244,7 +246,7 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		b.manifest.AddFile(relPath.Path(), fileMD5)
+		b.manifest.AddFile(relPath.ToSlash(), fileMD5)
 		b.numFiles++
 		b.size += info.Size()
 	} else {
