@@ -12,7 +12,7 @@ export type ConnectAccess = {
 }
 
 export type ConnectRuntime = {
-    connectTimeout?: number,
+    connectionTimeout?: number,
     readTimeout?: number,
     initTimeout?: number,
     idleTimeout?: number,
