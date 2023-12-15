@@ -78,6 +78,11 @@ func Init(path util.Path, configName string, python util.Path, log logging.Logge
 	cfg := config.New()
 	cfg.Type = contentType.Type
 	cfg.Entrypoint = contentType.Entrypoint
+	absPath, err := path.Abs()
+	if err != nil {
+		return nil, err
+	}
+	cfg.Title = absPath.Base()
 
 	requiresPython, err := requiresPython(contentType.Type, path, python)
 	if err != nil {

@@ -143,5 +143,7 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsInspectionFails() {
 	s.NoError(err)
 	s.Equal("default", res.Name)
 	s.Equal(filepath.Join(".posit", "publish", "default.toml"), actualPath.String())
-	s.Equal(config.New(), res.Configuration)
+	expected := config.New()
+	expected.Title = s.cwd.Base()
+	s.Equal(expected, res.Configuration)
 }
