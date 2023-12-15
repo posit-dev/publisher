@@ -57,7 +57,7 @@
 
       <div class="col-4 vertical-top q-gutter-x-md">
         <div class="col q-mt-md">
-          <div class="row justify-left q-ma-sm q-mr-md">
+          <div class="row justify-left">
             <div class="col-11">
               <PublishProgressSummary
                 :id="publishingLocalId"

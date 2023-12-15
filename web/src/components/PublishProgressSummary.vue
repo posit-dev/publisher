@@ -5,8 +5,28 @@
     style="min-width:100%; min-height: 5rem;"
   >
     <div
-      v-if="publishInProgess"
-      class="summary row q-ma-lg items-center"
+      v-if="showOtherPublishOperationInProgress"
+      class="summary row items-center"
+      :class="textClass"
+    >
+      <div class="col q-ml-sm">
+        <q-spinner-grid
+          color="primary"
+          size="2rem"
+        />
+      </div>
+      <div class="col-10 text-left">
+        <div class="text-bold">
+          Your project is being published to another destination.
+        </div>
+        <div>
+          Please wait until that operation is complete.
+        </div>
+      </div>
+    </div>
+    <div
+      v-if="showPublishInProgress"
+      class="summary row items-center"
       :class="textClass"
     >
       <div class="col q-ml-sm">
@@ -29,7 +49,7 @@
     </div>
     <div
       v-if="showPublishSuccessSummary"
-      class="q-ma-lg summary q-pa-sm row text-left items-center"
+      class="summary row text-left items-center"
       :class="textClass"
     >
       <div class="col q-ml-sm">
@@ -65,8 +85,8 @@
       </div>
     </div>
     <div
-      v-if="showPublishError"
-      class="q-ma-lg error q-pa-sm row text-left items-center"
+      v-if="true || showPublishError"
+      class="error row text-left items-center"
       :class="textClass"
     >
       <div class="col q-ml-sm">
@@ -110,8 +130,18 @@ const completion = computed(() => {
   return eventStore.currentPublishStatus.status.completion;
 });
 
-const publishInProgess = computed(() => {
-  return eventStore.isPublishActiveByID(props.id);
+const showOtherPublishOperationInProgress = computed(() => {
+  return (
+    eventStore.publishInProgess &&
+    !eventStore.doesPublishStatusApply(props.id)
+  );
+});
+
+const showPublishInProgress = computed(() => {
+  return (
+    eventStore.isPublishActiveByID(props.id) &&
+    eventStore.currentPublishStatus.status.currentStep // Make sure it has started
+  );
 });
 
 const showPublishSuccessSummary = computed(() => {
