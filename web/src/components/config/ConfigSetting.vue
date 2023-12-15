@@ -1,7 +1,9 @@
 <template>
-  <div>
-    <dt>{{ label }}</dt>
-    <dd>
+  <div class="config-setting">
+    <dt class="config-label text-weight-medium">
+      {{ label }}
+    </dt>
+    <dd class="config-value">
       <slot />
     </dd>
   </div>
@@ -15,3 +17,29 @@ defineProps({
   },
 });
 </script>
+
+<style scoped lang="scss">
+
+@media (max-width: 600px) {
+  .config-setting {
+    .config-value {
+      margin-top: 4px;
+    }
+  }
+}
+
+@media (min-width: 601px) {
+  .config-setting {
+    display: flex;
+
+    .config-label {
+      min-width: 15rem;
+      padding-right: 24px;
+    }
+
+    .config-value {
+      margin-top: 0px;
+    }
+  }
+}
+</style>
