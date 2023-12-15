@@ -65,11 +65,13 @@ func (s *PythonSuite) TestNewPythonInspector() {
 
 func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 	log := logging.New()
-	pythonPath := util.NewPath("/usr/bin/python3", nil)
+	pythonPath := s.cwd.Join("bin", "python3")
+	pythonPath.Dir().MkdirAll(0777)
+	pythonPath.WriteFile(nil, 0777)
 	i := NewPythonInspector(util.Path{}, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
-	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return([]byte("3.10.4"), nil)
+	executor.On("runPythonCommand", pythonPath.String(), mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
 	version, err := inspector.GetPythonVersion()
 	s.NoError(err)
@@ -78,13 +80,15 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 
 func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	projectDir := util.NewPath("/myproject", afero.NewMemMapFs())
-	pythonPath := util.NewPath("/usr/bin/python3", nil)
+	pythonPath := s.cwd.Join("bin", "python3")
+	pythonPath.Dir().MkdirAll(0777)
+	pythonPath.WriteFile(nil, 0777)
 	log := logging.New()
 	i := NewPythonInspector(projectDir, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
 	testError := errors.New("test error from runPythonCommand")
-	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(nil, testError)
+	executor.On("runPythonCommand", pythonPath.String(), mock.Anything).Return(nil, testError)
 	inspector.executor = executor
 	version, err := inspector.GetPythonVersion()
 	s.NotNil(err)
@@ -230,13 +234,15 @@ func (s *PythonSuite) TestEnsurePythonRequirementsFileErr() {
 }
 
 func (s *PythonSuite) TestEnsurePythonRequirementsFileFromExecutable() {
-	pythonPath := util.NewPath("/usr/bin/python3", nil)
+	pythonPath := s.cwd.Join("bin", "python3")
+	pythonPath.Dir().MkdirAll(0777)
+	pythonPath.WriteFile(nil, 0777)
 	log := logging.New()
 	i := NewPythonInspector(s.cwd, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
 	freezeOutput := []byte("numpy\npandas\n")
-	executor.On("runPythonCommand", "/usr/bin/python3", mock.Anything).Return(freezeOutput, nil)
+	executor.On("runPythonCommand", pythonPath.String(), mock.Anything).Return(freezeOutput, nil)
 	inspector.executor = executor
 	err := inspector.EnsurePythonRequirementsFile()
 	s.NoError(err)

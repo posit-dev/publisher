@@ -42,12 +42,8 @@ func (s *ErrorsSuite) TestGoErrorWithAttrs() {
 
 	s.NotEqual(time.Time{}, event.Time)
 	s.Equal("publish/restoreREnv/failure/unknown", event.Type)
-	s.Equal(EventData{
-		"msg":  "stat /nonexistent: no such file or directory",
-		"Err":  syscall.Errno(2),
-		"Op":   "stat",
-		"Path": "/nonexistent",
-	}, event.Data)
+	s.Equal(syscall.Errno(2), event.Data["Err"])
+	s.Equal("/nonexistent", event.Data["Path"])
 }
 
 type testErrorDetails struct {
@@ -84,11 +80,7 @@ func (s *ErrorsSuite) TestErrorObjectAndDetails() {
 
 	s.NotEqual(time.Time{}, event.Time)
 	s.Equal("publish/restorePythonEnv/failure/serverErr", event.Type)
-	s.Equal(EventData{
-		"msg":    "stat /nonexistent: no such file or directory",
-		"Err":    syscall.Errno(2),
-		"Op":     "stat",
-		"Path":   "/nonexistent",
-		"Status": 500,
-	}, event.Data)
+	s.Equal(syscall.Errno(2), event.Data["Err"])
+	s.Equal("/nonexistent", event.Data["Path"])
+	s.Equal(500, event.Data["Status"])
 }

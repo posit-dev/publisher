@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -72,7 +73,7 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	s.Equal("", res[0].Error)
 	s.NotNil(res[0].Deployment)
 	s.Equal(d, res[0].Deployment)
-	s.Equal(".posit/publish/myConfig.toml", res[0].ConfigPath)
+	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res[0].ConfigPath)
 	s.Equal(types.ContentID("myTargetName"), res[0].Deployment.Id)
 }
 

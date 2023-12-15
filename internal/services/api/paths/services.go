@@ -52,7 +52,7 @@ func (s pathsService) isSymlink(p util.Path) (bool, error) {
 		if ok {
 			perr, pok := err.(*os.PathError)
 			// if cast is ok and err op is lstat, return (false, nil) since it is not a symlink
-			if pok && perr.Op == "lstat" {
+			if pok && (perr.Op == "lstat" || perr.Op == "CreateFile") {
 				return false, nil
 			}
 		}
