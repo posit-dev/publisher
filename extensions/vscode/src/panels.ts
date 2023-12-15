@@ -23,6 +23,7 @@ export class Panel implements vscode.Disposable {
             /*html*/
             `
             <!DOCTYPE html>
+            <html lang="en">
                 <head>
                     <meta
                         http-equiv="content-security-policy"
@@ -30,6 +31,28 @@ export class Panel implements vscode.Disposable {
                     />
                 </head>
                 <body style="padding: 0;">
+                    <script>
+                        console.log("THIS IS A SCRIPT");
+                        (function() {
+                            console.log("Registering VSCodeAPI");
+                            const vscode = acquireVsCodeApi();
+
+                            window.addEventListener(
+                                'message',
+                                (event) => {
+                                    console.log('message received', event);
+                                    switch (event.data.command) {
+                                        case 'alert':
+                                            vscode.postMessage({
+                                                command: 'alert',
+                                                text: 'it worked!'
+                                            });
+                                    }
+                                }
+                            )
+                        }())
+                    </script>
+
                     <iframe src="${url}" style="width: 100vw; height: calc(100vh - 3px); border: 0;">
                 </body>
             </html>
@@ -58,6 +81,19 @@ export class Panel implements vscode.Disposable {
 
         // set html content
         this.state.panel.webview.html = this.html;
+
+        // Handle messages from the webview
+        this.state.panel.webview.onDidReceiveMessage(
+            message => {
+            switch (message.command) {
+                case 'alert':
+                vscode.window.showErrorMessage(message.text);
+                return;
+            }
+            },
+            undefined,
+            this.context.subscriptions
+        );
 
         // register view state change
         this.state.panel.onDidChangeViewState(

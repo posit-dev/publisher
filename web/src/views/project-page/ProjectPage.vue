@@ -104,6 +104,9 @@ async function getConfigurations() {
 
 getDeployments();
 getConfigurations();
+
+console.log('Sending window parent the message', window.parent);
+window.parent.postMessage({ command: 'alert', text: 'it worked' }, '*');
 </script>
 
 <style scoped lang="scss">
