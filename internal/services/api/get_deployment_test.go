@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -74,7 +75,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	s.NotNil(res.Deployment)
 	s.Equal("", res.Error)
 	s.Equal(d, res.Deployment)
-	s.Equal(".posit/publish/myConfig.toml", res.ConfigPath)
+	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res.ConfigPath)
 	s.Equal(types.ContentID("myTargetName"), res.Deployment.Id)
 }
 

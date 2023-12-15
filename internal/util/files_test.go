@@ -4,6 +4,7 @@ package util
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -57,13 +58,14 @@ func (s *FilesSuite) TestDirFromPathFile() {
 func (s *FilesSuite) TestChdir() {
 	initialWd, err := os.Getwd()
 	s.Nil(err)
-	wd, err := Chdir("/")
+	parent := filepath.Dir(initialWd)
+	wd, err := Chdir(parent)
 	s.Nil(err)
 	s.Equal(initialWd, wd)
 
 	newWd, err := os.Getwd()
 	s.Nil(err)
-	s.Equal("/", newWd)
+	s.Equal(parent, newWd)
 }
 
 func (s *FilesSuite) TestChdirNonexistent() {

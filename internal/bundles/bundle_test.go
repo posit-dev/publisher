@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -214,6 +215,11 @@ func (s *BundlerSuite) TestCreateBundle() {
 	s.Nil(err)
 	s.NotNil(manifest)
 	s.Len(manifest.Files, 2)
+	// Manifest filenames are always Posix paths, not Windows paths
+	s.Equal([]string{
+		"subdir/testfile",
+		"testfile",
+	}, manifest.GetFilenames())
 }
 
 func (s *BundlerSuite) TestCreateBundleAutoDetect() {
@@ -308,6 +314,7 @@ func (s *BundlerSuite) TestCreateManifest() {
 	manifest, err := bundler.CreateManifest()
 	s.Nil(err)
 	s.NotNil(manifest)
+	// Manifest filenames are always Posix paths, not Windows paths
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
@@ -327,6 +334,7 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	manifest, err := bundler.CreateManifest()
 	s.Nil(err)
 	s.NotNil(manifest)
+	// Manifest filenames are always Posix paths, not Windows paths
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
@@ -336,6 +344,7 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	manifest2, err := bundler.CreateBundle(dest)
 	s.Nil(err)
 	s.NotNil(manifest2)
+	// Manifest filenames are always Posix paths, not Windows paths
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
@@ -343,6 +352,9 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 }
 
 func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
 	// afero's MemFs doesn't have symlink support, so we
 	// are using a fixture directory under ./testdata.
 	fs := afero.NewOsFs()
@@ -355,6 +367,7 @@ func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
 	s.NotNil(manifest)
+	// Manifest filenames are always Posix paths, not Windows paths
 	s.Equal([]string{
 		"linked_dir/testfile",
 		"linked_file",

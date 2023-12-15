@@ -125,10 +125,11 @@ func (s *WalkerSuite) TestWalk() {
 		return nil
 	})
 	s.NoError(err)
+	dirPath := util.NewPath("test", s.fs).Join("dir")
 	s.Equal([]util.Path{
-		util.NewPath("test/dir", s.fs),
-		util.NewPath("test/dir/.positignore", s.fs),
-		util.NewPath("test/dir/included", s.fs),
-		util.NewPath("test/dir/included/includeme", s.fs),
+		dirPath,
+		dirPath.Join(".positignore"),
+		dirPath.Join("included"),
+		dirPath.Join("included", "includeme"),
 	}, seen)
 }
