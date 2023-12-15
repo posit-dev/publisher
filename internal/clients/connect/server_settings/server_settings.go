@@ -136,19 +136,17 @@ type ProviderGroupAttributes struct {
 	ExternalGroupOwner   bool `json:"external_group_owner"`
 }
 
-type FlexiBool struct {
-	IsTrue bool
-}
+type FlexiBool bool
 
 var errInvalidFlexiBool = errors.New("invalid value for flex boolean")
 
 func (b *FlexiBool) UnmarshalJSON(data []byte) error {
-	b.IsTrue = false
+	*b = false
 	s := string(data)
 	switch s {
-	case "true", "1":
-		b.IsTrue = true
-	case "false", "0":
+	case "true", `"1"`:
+		*b = true
+	case "false", `"0"`:
 		break
 	default:
 		return fmt.Errorf("%q: %w", s, errInvalidFlexiBool)

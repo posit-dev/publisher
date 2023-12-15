@@ -12,9 +12,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var flexiBoolTrue = server_settings.FlexiBool{IsTrue: true}
-var flexiBoolFalse = server_settings.FlexiBool{IsTrue: false}
-
 type CapabilitiesSuite struct {
 	utiltest.Suite
 }
@@ -108,7 +105,7 @@ func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
 		},
 		general: server_settings.ServerSettings{
 			License: server_settings.LicenseStatus{
-				CurrentUserExecution: flexiBoolTrue,
+				CurrentUserExecution: true,
 			},
 		},
 		application: server_settings.ApplicationSettings{
@@ -127,7 +124,7 @@ func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
 	s.NoError(goodSettings.checkConfig(&cfg))
 
 	noLicense := goodSettings
-	noLicense.general.License.CurrentUserExecution = flexiBoolFalse
+	noLicense.general.License.CurrentUserExecution = false
 	s.ErrorIs(noLicense.checkConfig(&cfg), errCurrentUserExecutionNotLicensed)
 
 	noConfig := goodSettings
@@ -147,14 +144,14 @@ func (s *CapabilitiesSuite) TestAPILicense() {
 	allowed := allSettings{
 		general: server_settings.ServerSettings{
 			License: server_settings.LicenseStatus{
-				AllowAPIs: flexiBoolTrue,
+				AllowAPIs: true,
 			},
 		},
 	}
 	notAllowed := allSettings{
 		general: server_settings.ServerSettings{
 			License: server_settings.LicenseStatus{
-				AllowAPIs: flexiBoolFalse,
+				AllowAPIs: false,
 			},
 		},
 	}
@@ -185,7 +182,7 @@ func (s *CapabilitiesSuite) TestKubernetesEnablement() {
 			ExecutionType:                server_settings.ExecutionTypeKubernetes,
 			DefaultImageSelectionEnabled: true,
 			License: server_settings.LicenseStatus{
-				LauncherEnabled: flexiBoolTrue,
+				LauncherEnabled: true,
 			},
 		},
 	}
@@ -201,7 +198,7 @@ func (s *CapabilitiesSuite) TestKubernetesEnablement() {
 	s.NoError(goodSettings.checkConfig(&cfg))
 
 	noLicense := goodSettings
-	noLicense.general.License.LauncherEnabled = flexiBoolFalse
+	noLicense.general.License.LauncherEnabled = false
 	s.ErrorIs(noLicense.checkConfig(&cfg), errKubernetesNotLicensed)
 
 	noConfig := goodSettings
@@ -254,7 +251,7 @@ var kubernetesEnabledSettings = allSettings{
 	general: server_settings.ServerSettings{
 		ExecutionType: server_settings.ExecutionTypeKubernetes,
 		License: server_settings.LicenseStatus{
-			LauncherEnabled: flexiBoolTrue,
+			LauncherEnabled: true,
 		},
 	},
 }

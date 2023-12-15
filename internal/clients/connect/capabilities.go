@@ -100,7 +100,7 @@ func (a *allSettings) checkKubernetes(cfg *config.Config) error {
 		// No kubernetes config present
 		return nil
 	}
-	if !a.general.License.LauncherEnabled.IsTrue {
+	if !a.general.License.LauncherEnabled {
 		return errKubernetesNotLicensed
 	}
 	if a.general.ExecutionType != server_settings.ExecutionTypeKubernetes {
@@ -180,7 +180,7 @@ func (a *allSettings) checkAccess(cfg *config.Config) error {
 	}
 	racu := cfg.Connect.Access.RunAsCurrentUser
 	if racu != nil && *racu {
-		if !a.general.License.CurrentUserExecution.IsTrue {
+		if !a.general.License.CurrentUserExecution {
 			return errCurrentUserExecutionNotLicensed
 		}
 		if !a.application.RunAsCurrentUser {
@@ -201,8 +201,10 @@ func (a *allSettings) checkAccess(cfg *config.Config) error {
 }
 
 func (a *allSettings) checkConfig(cfg *config.Config) error {
-	if cfg.Type.IsAPIContent() && !a.general.License.AllowAPIs.IsTrue {
-		return errAPIsNotLicensed
+	if cfg.Type.IsAPIContent() {
+		if !a.general.License.AllowAPIs {
+			return errAPIsNotLicensed
+		}
 	}
 	if len(cfg.Description) > 4096 {
 		return errDescriptionTooLong
