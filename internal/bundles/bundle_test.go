@@ -5,13 +5,16 @@ package bundles
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"crypto/md5"
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -303,6 +306,25 @@ func (s *BundlerSuite) TestCreateBundleAddManifestError() {
 	s.Nil(manifest)
 }
 
+func (s *BundlerSuite) getTarFileNames(buf *bytes.Buffer) []string {
+	unzipper, err := gzip.NewReader(buf)
+	s.NoError(err)
+	reader := tar.NewReader(unzipper)
+	names := []string(nil)
+
+	for {
+		header, err := reader.Next()
+		if err == io.EOF {
+			// End of archive
+			break
+		}
+		s.NoError(err)
+		names = append(names, header.Name)
+	}
+	slices.Sort(names)
+	return names
+}
+
 func (s *BundlerSuite) TestCreateManifest() {
 	s.makeFile("testfile")
 	s.makeFile(filepath.Join("subdir", "testfile"))
@@ -349,6 +371,12 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 		"subdir/testfile",
 		"testfile",
 	}, manifest2.GetFilenames())
+	s.Equal([]string{
+		"manifest.json",
+		"subdir/",
+		"subdir/testfile",
+		"testfile",
+	}, s.getTarFileNames(dest))
 }
 
 func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
@@ -373,6 +401,13 @@ func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
 		"linked_file",
 		"somefile",
 	}, manifest.GetFilenames())
+	s.Equal([]string{
+		"linked_dir/",
+		"linked_dir/testfile",
+		"linked_file",
+		"manifest.json",
+		"somefile",
+	}, s.getTarFileNames(dest))
 }
 
 func (s *BundlerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
