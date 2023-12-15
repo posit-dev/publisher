@@ -54,9 +54,12 @@ func IsPythonEnvironmentDir(path Path) bool {
 
 const badChars = `/:\*?"<>|`
 
-var ErrInvalidName = errors.New("invalid name: cannot contain any of these characters: " + badChars)
+var ErrInvalidName = errors.New("invalid name: cannot be '.' or contain '..' or any of these characters: " + badChars)
 
 func ValidateFilename(name string) error {
+	if name == "." || strings.Contains(name, "..") {
+		return ErrInvalidName
+	}
 	if strings.ContainsAny(name, badChars) {
 		return ErrInvalidName
 	}
