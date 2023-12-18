@@ -35,16 +35,34 @@ export class Deployments {
   // 400 - bad request
   // 500 - internal server error
   // Errors returned through event stream
-  publish(
+  publishNew(
     accountName? : string,
-    target?: string,
     saveName?: string,
   ){
     const params = {
       account: accountName,
       config: 'default', // hardcoded for now
-      target,
       saveName,
+    };
+    return this.client.post(
+      '/deployments',
+      params,
+    );
+  }
+
+  // Returns:
+  // 200 - success
+  // 400 - bad request
+  // 500 - internal server error
+  // Errors returned through event stream
+  publishUpdate(
+    accountName? : string,
+    targetName?: string,
+  ){
+    const params = {
+      account: accountName,
+      config: 'default', // hardcoded for now
+      target: targetName,
     };
     return this.client.post(
       '/deployments',

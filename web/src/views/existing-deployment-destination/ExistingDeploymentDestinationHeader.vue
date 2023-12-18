@@ -55,12 +55,15 @@
         </div>
       </div>
 
-      <div class="col-4 vertical-top q-gutter-x-md">
+      <div
+        v-if="showPublishStatus"
+        class="col-4 vertical-top q-gutter-x-md"
+      >
         <div class="col q-mt-md">
           <div class="row justify-left">
             <div class="col-11">
               <PublishProgressSummary
-                :id="contentId"
+                :id="deployment.id"
               />
               <RouterLink :to="{ name: 'progress' }">
                 Log View
@@ -75,7 +78,7 @@
 
 <script setup lang="ts">
 
-import { ref, watch, PropType } from 'vue';
+import { ref, watch, PropType, computed } from 'vue';
 
 import { Account, Deployment, useApi } from 'src/api';
 import SelectAccount from 'src/components/SelectAccount.vue';
@@ -95,13 +98,12 @@ const filteredAccountList = ref<Account[]>([]);
 const destinationURL = ref('');
 const selectedAccount = ref<Account>();
 const publishingLocalId = ref('');
+const numSuccessfulPublishes = ref(0);
 
 const emit = defineEmits(['publish']);
 
 const props = defineProps({
   deployment: { type: Object as PropType<Deployment>, required: true },
-  contentId: { type: String, required: true },
-  url: { type: String, required: true },
 });
 
 const onChange = (account: Account) => {
@@ -130,9 +132,10 @@ const initiatePublishProcess = async() => {
   // Errors returned through event stream
   try {
     const result = await eventStore.initiatePublishProcessWithEvents(
+      false, // this is never a new deployment
       accountName,
-      props.contentId,
       props.deployment.saveName,
+      props.deployment.id,
     );
     publishingLocalId.value = result;
   } catch (error: unknown) {
@@ -162,17 +165,50 @@ updateAccountList();
 
 watch(
   () => [
-    props.url,
+    props.deployment.serverUrl,
     accounts.value,
   ],
   () => {
     const credentials = accounts.value.filter(
-      (account: Account) => account.url === props.url
+      (account: Account) => account.url === props.deployment.serverUrl
     );
     filteredAccountList.value = credentials;
   },
   { immediate: true }
 );
+
+// Watch the events in order to know when we have
+// published enough to go from new deployment to an update
+watch(
+  () => eventStore.publishInProgess,
+  (newVal: boolean, oldVal: boolean) => {
+    if (
+      // we have progressed from publishing to not publishing
+      !newVal &&
+      oldVal &&
+      // and last publishing run was ours
+      (
+        eventStore.doesPublishStatusApply(publishingLocalId.value) ||
+        eventStore.doesPublishStatusApply(props.deployment.id)
+      ) &&
+      // and it was successful enough to get a content id assigned
+      eventStore.currentPublishStatus.contentId
+    ) {
+      // increment our counter
+      numSuccessfulPublishes.value += 1;
+    }
+  }
+);
+
+const showPublishStatus = computed(() => {
+  // Show only if we've previously published or if this is the first one,
+  // then only if it applies to us.
+  return (
+    numSuccessfulPublishes.value ||
+    eventStore.doesPublishStatusApply(publishingLocalId.value)
+  );
+});
+
 </script>
 
 <style scoped lang="scss">

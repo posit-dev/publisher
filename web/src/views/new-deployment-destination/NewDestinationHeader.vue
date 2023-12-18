@@ -21,7 +21,15 @@
           >
             {{ destinationName }}
           </h1>
-          <template v-if="contentId">
+          <template v-if="publishAsNew">
+            <p>
+              New deployment to: <a :href="destinationURL">{{ destinationURL }}</a>
+            </p>
+            <p>
+              {{ addingDestinationMessage }}
+            </p>
+          </template>
+          <template v-else>
             <p>
               Redeployment to: <a :href="destinationURL">{{ destinationURL }}</a>
             </p>
@@ -29,12 +37,7 @@
               {{ contentId }}
             </p>
           </template>
-          <p v-else>
-            New deployment to: <a :href="destinationURL">{{ destinationURL }}</a>
-          </p>
-          <p> {{ addingDestinationMessage }}</p>
         </div>
-
         <div
           class="flex no-wrap items-start"
         >
@@ -54,8 +57,10 @@
           </PButton>
         </div>
       </div>
-
-      <div class="col-4 vertical-top q-gutter-x-md">
+      <div
+        v-if="showPublishStatus"
+        class="col-4 vertical-top q-gutter-x-md"
+      >
         <div class="col q-mt-md">
           <div class="row justify-left">
             <div class="col-11">
@@ -96,12 +101,13 @@ const accounts = ref<Account[]>([]);
 const fixedAccountList = ref<Account[]>([]);
 const destinationURL = ref('');
 const publishingLocalId = ref('');
+const contentId = ref('');
+const numSuccessfulPublishes = ref(0);
 
 const emit = defineEmits(['publish']);
 
 const props = defineProps({
   accountName: { type: String, required: true },
-  contentId: { type: String, default: undefined, required: false },
   destinationName: { type: String, default: undefined, required: false },
 });
 
@@ -115,9 +121,10 @@ const initiatePublishProcess = async() => {
   // Errors returned through event stream
   try {
     const result = await eventStore.initiatePublishProcessWithEvents(
+      publishAsNew.value,
       props.accountName,
-      props.contentId,
       props.destinationName,
+      contentId.value,
     );
     publishingLocalId.value = result;
   } catch (error: unknown) {
@@ -159,6 +166,42 @@ const addingDestinationMessage = computed(() => {
     return `Publishing will add a destination named "${props.destinationName}" to your project.`;
   }
   return 'Publishing will add this Destination to your project.';
+});
+
+const showPublishStatus = computed(() => {
+  // Show only if we've previously published or if this is the first one,
+  // then only if it applies to us.
+  return (
+    numSuccessfulPublishes.value ||
+    eventStore.doesPublishStatusApply(publishingLocalId.value)
+  );
+});
+
+// Watch the events in order to know when we have
+// published enough to go from new deployment to an update
+watch(
+  () => eventStore.publishInProgess,
+  (newVal: boolean, oldVal: boolean) => {
+    if (
+      // we have progressed from publishing to not publishing
+      !newVal &&
+      oldVal &&
+      // and last publishing run was ours
+      (
+        eventStore.doesPublishStatusApply(publishingLocalId.value) ||
+        eventStore.doesPublishStatusApply(contentId.value)
+      ) &&
+      // and it was successful enough to get a content id assigned
+      eventStore.currentPublishStatus.contentId
+    ) {
+      // increment our counter
+      numSuccessfulPublishes.value += 1;
+    }
+  }
+);
+
+const publishAsNew = computed(() => {
+  return numSuccessfulPublishes.value === 0;
 });
 
 watch(

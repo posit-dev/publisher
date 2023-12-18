@@ -3,7 +3,6 @@
 <template>
   <NewDestinationHeader
     :account-name="accountName"
-    :content-id="contentId"
     :destination-name="destinationName"
     @publish="hasPublished = true"
   />
@@ -46,11 +45,6 @@ const $q = useQuasar();
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 const props = defineProps({
-  id: {
-    type: [String, Array] as PropType<string | string[]>,
-    required: false,
-    default: undefined,
-  },
   name: {
     type: [String, Array] as PropType<string | string[]>,
     required: false,
@@ -64,14 +58,6 @@ const accountName = computed(() => {
     return route.params.account[0];
   }
   return route.params.account;
-});
-
-const contentId = computed(() => {
-  // route query can be either string | string[]
-  if (Array.isArray(props.id)) {
-    return props.id[0] || undefined;
-  }
-  return props.id || undefined;
 });
 
 const destinationName = computed(() => {

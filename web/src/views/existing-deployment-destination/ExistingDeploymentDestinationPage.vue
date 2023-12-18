@@ -4,10 +4,7 @@
   <ExistingDeploymentDestinationHeader
     v-if="deployment"
     :deployment="deployment"
-    :content-id="deployment.id"
-    :url="deploymentUrl"
   />
-
   <DeploymentSection
     v-if="deployment"
     title="Configuration"
@@ -54,10 +51,6 @@ const deploymentName = computed(():string => {
     return route.params.name[0];
   }
   return route.params.name;
-});
-
-const deploymentUrl = computed<string>(() => {
-  return deployment.value?.serverUrl || '';
 });
 
 const getDeployment = async() => {

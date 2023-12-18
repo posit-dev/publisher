@@ -208,20 +208,20 @@ export const useEventStore = defineStore('event', () => {
 
   type CurrentPublishStatus = {
     localId: string,
-    target: string,
+    contentId: string,
     status: PublishStatus,
   };
 
   const currentPublishStatus = ref<CurrentPublishStatus>({
     localId: '',
-    target: '',
+    contentId: '',
     status: newPublishStatus(),
   });
 
   const doesPublishStatusApply = ((id: string) => {
     return (
       currentPublishStatus.value.localId === id ||
-      currentPublishStatus.value.target === id
+      currentPublishStatus.value.contentId === id
     );
   });
 
@@ -429,7 +429,7 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createDeployment.completion = 'success';
-      currentPublishStatus.value.target = msg.data.contentId;
+      currentPublishStatus.value.contentId = msg.data.contentId;
       publishStatus.steps.createDeployment.allMsgs.push(msg);
     }
   };
@@ -673,9 +673,10 @@ export const useEventStore = defineStore('event', () => {
 
   // Will throw Error or API exceptions
   const initiatePublishProcessWithEvents = async(
+    newDeployment: boolean,
     accountName : string,
-    target?: string,
-    saveName?: string,
+    destinationName?: string,
+    contentId?: string,
   ) : Promise<string> => {
     if (publishInProgess.value) {
       throw new Error('Publishing already in progress');
@@ -683,7 +684,7 @@ export const useEventStore = defineStore('event', () => {
 
     publishInProgess.value = true;
     currentPublishStatus.value.localId = '';
-    currentPublishStatus.value.target = target || '';
+    currentPublishStatus.value.contentId = contentId || '';
     currentPublishStatus.value.status = newPublishStatus();
 
     try {
@@ -693,11 +694,19 @@ export const useEventStore = defineStore('event', () => {
       // 500 - internal server error
       // Errors returned through event stream
       // Handle errors at the top level caller
-      const response = await api.deployments.publish(
-        accountName,
-        target,
-        saveName,
-      );
+      let response;
+
+      if (newDeployment) {
+        response = await api.deployments.publishNew(
+          accountName,
+          destinationName,
+        );
+      } else {
+        response = await api.deployments.publishUpdate(
+          accountName,
+          destinationName,
+        );
+      }
       const localId = <string>response.data.localId;
       currentPublishStatus.value.localId = localId;
       return localId;
