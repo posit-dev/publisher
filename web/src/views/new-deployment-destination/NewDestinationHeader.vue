@@ -23,14 +23,14 @@
           </h1>
           <template v-if="contentId">
             <p>
-              Redeployment to: <a :href="destinationURL">{{ destinationURL }}</a>
+              Redeployment to: {{ destinationURL }}
             </p>
             <p>
               {{ contentId }}
             </p>
           </template>
           <p v-else>
-            New deployment to: <a :href="destinationURL">{{ destinationURL }}</a>
+            New deployment to: {{ destinationURL }}
           </p>
           <p> {{ addingDestinationMessage }}</p>
         </div>
