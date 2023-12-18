@@ -63,17 +63,6 @@ export const getSummaryFromError = (error: unknown) => {
   return undefined;
 };
 
-export const buildSummaryMsgFromError = (error: unknown) => {
-  const info = getSummaryFromError(error);
-  if (!info) {
-    return `Error encountered: ${String(error)}`;
-  }
-  if (!info.msg && !info.code && !info.baseURL && !info.method && !info.url) {
-    return 'An error has occurred, but no specific information is available.';
-  }
-  return `message: ${info.msg}, status: ${info.code}, URL: ${info.method} ${info.baseURL}/${info.url}`;
-};
-
 export const checkForResponseWithStatus = (error: unknown, statusValue: number) => {
   const errorStatus = getStatusFromError(error);
   return errorStatus === statusValue;
