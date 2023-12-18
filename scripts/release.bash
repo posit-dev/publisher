@@ -5,7 +5,14 @@ then
   set -x
 fi
 
-REF=${GITHUB_REF:
+
+# Obtain the Git ref for use in output path.
+#
+# Use the GITHUB_REF value if supplied. Otherwise, stub a "fake" ref based on the current branch.
+# See https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
+ref="${GITHUB_REF:-"heads/$(git rev-parse --abbrev-ref HEAD)"}"
+ref=${ref#"refs/"}
+echo "Reference: $ref" 1>&2
 
 cmd=$1
 if [[ -z "$cmd" ]]; then
@@ -29,7 +36,10 @@ do
     arch=${platform/*\/} # retain the part after the slash
 
     archive=$(./scripts/get-archive-path.bash "$name" "$version" "$os" "$arch" )
-    echo $archive
+    echo "Archive: $archive" 1>&2
 
+    object="s3://posit-publisher/$name/releases/$ref/$(basename $archive)"
+    echo "Object: $object" 1>&2
 
+    aws s3 cp $archive $object > /dev/null 2>&1
 done

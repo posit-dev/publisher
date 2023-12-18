@@ -216,6 +216,14 @@ pre-release:
 
     ./scripts/is-pre-release.bash
 
+# Releses the application. Releases are written to AWS S3. If invoked with `env CI=true` then releases are created for all architectures supported by the Go toolchain.
+release:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker ./scripts/release.bash {{ _cmd }}
+
 # Runs the CLI via `go run`.
 run *args:
     #!/usr/bin/env bash
