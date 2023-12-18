@@ -65,6 +65,19 @@ func (s *DeploymentSuite) TestFromFile() {
 	s.Equal(expected, actual)
 }
 
+func (s *DeploymentSuite) TestFromExampleFile() {
+	realDir, err := util.Getwd(nil)
+	s.NoError(err)
+	path := realDir.Join("..", "schema", "schemas", "record.toml")
+	d, err := FromFile(path)
+	s.NoError(err)
+	s.NotNil(d)
+
+	valuePtr := d.Configuration.Connect.Kubernetes.DefaultREnvironmentManagement
+	s.NotNil(valuePtr)
+	s.Equal(true, *valuePtr)
+}
+
 func (s *DeploymentSuite) TestFromFileErr() {
 	deployment, err := FromFile(s.cwd.Join("nonexistent.toml"))
 	s.ErrorIs(err, fs.ErrNotExist)
