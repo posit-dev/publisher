@@ -83,9 +83,6 @@ import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
 
 import { useEventStore } from 'src/stores/events';
 import {
-  checkForResponseWithStatus,
-  getMessageFromError,
-  getSummaryFromError,
   newFatalErrorRouteLocation,
 } from 'src/util/errors';
 import { useRouter } from 'vue-router';
@@ -124,14 +121,14 @@ const initiatePublishProcess = async() => {
     );
     publishingLocalId.value = result;
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      throw new Error(`initiatePublishProcessWithEvents: ${getMessageFromError(error)}`);
-    }
-    if (checkForResponseWithStatus(error, 400)) {
-      throw new Error(`API Error: ${getSummaryFromError(error)}`);
-    } else {
-      router.push(newFatalErrorRouteLocation(error, 'NewDestinationHeader::initiatePublishProcess()'));
-    }
+    // Send all errors to the fatal error page. There is nothing the user can do here
+    // easily. This includes 400 errors.
+    router.push(
+      newFatalErrorRouteLocation(
+        error,
+        'NewDestinationHeader::initiatePublishProcess()'
+      ),
+    );
   }
 };
 
@@ -147,11 +144,13 @@ const updateAccountList = async() => {
       fixedAccountList.value = [response.data];
     }
   } catch (error: unknown) {
-    if (checkForResponseWithStatus(error, 404)) {
-      throw new Error(`API Error: ${getSummaryFromError(error)}`);
-    } else {
-      router.push(newFatalErrorRouteLocation(error, 'NewDestinationHeader::updateAccountList()'));
-    }
+    // send all errors, including 404, to the fatal error page.
+    router.push(
+      newFatalErrorRouteLocation(
+        error,
+        'NewDestinationHeader::updateAccountList()',
+      ),
+    );
   }
 };
 

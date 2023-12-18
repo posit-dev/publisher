@@ -32,8 +32,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { Configuration, ConfigurationError, useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import {
-  checkForResponseWithStatus,
-  getSummaryFromError,
   newFatalErrorRouteLocation,
 } from 'src/util/errors';
 
@@ -75,15 +73,15 @@ const getDeployment = async() => {
     const response = await api.deployments.get(deploymentName.value);
     const d = response.data;
     if (isDeploymentError(d)) {
-      throw new Error(`API Error /deployment/${deploymentName.value}: ${d}`);
-    }
-    deployment.value = d;
-  } catch (error: unknown) {
-    if (checkForResponseWithStatus(error, 404)) {
-      throw new Error(`API Error: ${getSummaryFromError(error)}`);
+      // let the fatal error page handle this deployment error.
+      // we're in a header, they can't fix it here.
+      throw new Error(d.error);
     } else {
-      router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentDestinationPage::getDeployment()'));
+      deployment.value = d;
     }
+  } catch (error: unknown) {
+    // For this page, we send all errors to the fatal error page, including 404
+    router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentDestinationPage::getDeployment()'));
   }
 };
 

@@ -3,6 +3,9 @@
 import axios from 'axios';
 import { RouteLocationRaw } from 'vue-router';
 
+export type ErrorMessage = string[];
+export type ErrorMessages = ErrorMessage[];
+
 export const getStatusFromError = (error: unknown) : (number | undefined) => {
   if (axios.isAxiosError(error)) {
     return error.status;
@@ -22,6 +25,14 @@ export const getMessageFromError = (error: unknown) : string => {
     return error.message;
   }
   return String(error);
+};
+
+export const buildErrorBannerMessage = (errorMsg: string, resolveMsg: string) => {
+  return [
+    'An error has been detected:',
+    errorMsg,
+    resolveMsg,
+  ];
 };
 
 export const getAPIURLFromError = (error: unknown) => {
@@ -50,6 +61,17 @@ export const getSummaryFromError = (error: unknown) => {
     };
   }
   return undefined;
+};
+
+export const buildSummaryMsgFromError = (error: unknown) => {
+  const info = getSummaryFromError(error);
+  if (!info) {
+    return `Error encountered: ${String(error)}`;
+  }
+  if (!info.msg && !info.code && !info.baseURL && !info.method && !info.url) {
+    return 'An error has occurred, but no specific information is available.';
+  }
+  return `message: ${info.msg}, status: ${info.code}, URL: ${info.method} ${info.baseURL}/${info.url}`;
 };
 
 export const checkForResponseWithStatus = (error: unknown, statusValue: number) => {
