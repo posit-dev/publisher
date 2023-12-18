@@ -25,6 +25,7 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
 import { PropType, computed, ref } from 'vue';
 import { onBeforeRouteLeave, useRoute } from 'vue-router';
 
@@ -37,6 +38,7 @@ import DeploymentSection from 'src/components/DeploymentSection.vue';
 const route = useRoute();
 const hasPublished = ref(false);
 const api = useApi();
+const $q = useQuasar();
 
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
@@ -81,12 +83,22 @@ const defaultConfig = computed(() => {
   return configurations.value.find((c) => c.configurationName === 'default');
 });
 
-onBeforeRouteLeave(() => {
+onBeforeRouteLeave((_to, _from, next) => {
   if (hasPublished.value) {
-    return true;
+    return next();
   }
-  // eslint-disable-next-line no-alert
-  return confirm('You have not published yet, a destination has not been created. Are you sure you want to leave?');
+  $q.dialog({
+    title: 'Warning',
+    message: 'You have not published yet, a destination has not been created. Are you sure you want to leave?',
+    cancel: true,
+  }).onOk(() => {
+    console.log('OK');
+    next();
+  })
+    .onCancel(() => {
+      console.log('CANCEL');
+      next(false);
+    });
 });
 
 async function getConfigurations() {
