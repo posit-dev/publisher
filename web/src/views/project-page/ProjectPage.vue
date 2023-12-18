@@ -22,7 +22,7 @@
 
     <ErrorBanner
       :error-messages="errorMessages"
-      @click="dismissError"
+      @dismiss="dismissError"
     />
 
     <div
@@ -114,10 +114,7 @@ async function getDeployments() {
     deployments.value = response.filter<Deployment>((d): d is Deployment => {
       return !isDeploymentError(d);
     });
-    const deploymentErrors: DeploymentError[] =
-      response.filter<DeploymentError>((d): d is DeploymentError => {
-        return isDeploymentError(d);
-      });
+    const deploymentErrors: DeploymentError[] = response.filter(isDeploymentError);
     if (deploymentErrors) {
       // We will show deployment errors on this page, while all other pages
       // route these towards the fatal error page. This is because the user
