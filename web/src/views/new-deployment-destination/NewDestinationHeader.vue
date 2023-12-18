@@ -23,7 +23,7 @@
           </h1>
           <template v-if="publishAsNew">
             <p>
-              New deployment to: <a :href="destinationURL">{{ destinationURL }}</a>
+              New deployment to: {{ destinationURL }}
             </p>
             <p>
               {{ addingDestinationMessage }}
@@ -31,7 +31,7 @@
           </template>
           <template v-else>
             <p>
-              Redeployment to: <a :href="destinationURL">{{ destinationURL }}</a>
+              Redeployment to: {{ destinationURL }}
             </p>
             <p>
               {{ contentId }}

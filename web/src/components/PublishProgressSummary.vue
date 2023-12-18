@@ -63,24 +63,10 @@
           Publish was successful!
         </div>
         <div>
-          Access Directly:
-          <a
-            :href="eventStore.currentPublishStatus.status.directURL"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            URL
-          </a>
-        </div>
-        <div>
           Access through Dashboard:
-          <a
-            :href="eventStore.currentPublishStatus.status.dashboardURL"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            URL
-          </a>
+          <span>
+            eventStore.currentPublishStatus.status.dashboardURL
+          </span>
         </div>
       </div>
     </div>

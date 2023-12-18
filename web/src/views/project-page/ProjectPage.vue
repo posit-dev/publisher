@@ -22,7 +22,7 @@
 
     <ErrorBanner
       :error-messages="errorMessages"
-      @click="dismissError"
+      @dismiss="dismissError"
     />
 
     <div
@@ -30,7 +30,7 @@
       class="card-grid"
     >
       <DeploymentCard
-        v-for="deployment in deployments"
+        v-for="deployment in sortedDeployments"
         :key="deployment.id"
         :deployment="deployment"
       />
@@ -90,6 +90,7 @@ import FileTree from 'src/components/FileTree.vue';
 import PButton from 'src/components/PButton.vue';
 import PCard from 'src/components/PCard.vue';
 import ErrorBanner from 'src/components/ErrorBanner.vue';
+import { sortByDateString } from 'src/utils/date';
 
 const api = useApi();
 const router = useRouter();
@@ -105,6 +106,12 @@ const dismissError = () => {
   errorMessages.value = [];
 };
 
+const sortedDeployments = computed(() => {
+  return [...deployments.value].sort((a, b) => {
+    return sortByDateString(a.deployedAt, b.deployedAt);
+  });
+});
+
 async function getDeployments() {
   try {
     // API Returns:
@@ -114,10 +121,7 @@ async function getDeployments() {
     deployments.value = response.filter<Deployment>((d): d is Deployment => {
       return !isDeploymentError(d);
     });
-    const deploymentErrors: DeploymentError[] =
-      response.filter<DeploymentError>((d): d is DeploymentError => {
-        return isDeploymentError(d);
-      });
+    const deploymentErrors: DeploymentError[] = response.filter(isDeploymentError);
     if (deploymentErrors) {
       // We will show deployment errors on this page, while all other pages
       // route these towards the fatal error page. This is because the user
