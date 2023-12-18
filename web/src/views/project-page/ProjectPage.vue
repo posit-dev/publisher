@@ -20,6 +20,11 @@
       </PButton>
     </div>
 
+    <ErrorBanner
+      :error-messages="errorMessages"
+      @dismiss="dismissError"
+    />
+
     <div
       v-if="hasDeployments"
       class="card-grid"
@@ -74,26 +79,32 @@
 import { computed, ref } from 'vue';
 
 import { useApi } from 'src/api';
-import { Deployment, isDeploymentError } from 'src/api/types/deployments';
+import { Deployment, DeploymentError, isDeploymentError } from 'src/api/types/deployments';
 import { Configuration, ConfigurationError } from 'src/api/types/configurations';
-import { newFatalErrorRouteLocation } from 'src/util/errors';
 import { useRouter } from 'vue-router';
+import { ErrorMessages, buildErrorBannerMessage, newFatalErrorRouteLocation } from 'src/util/errors';
 
 import ConfigCard from './ConfigCard.vue';
 import DeploymentCard from './DeploymentCard.vue';
 import FileTree from 'src/components/FileTree.vue';
 import PButton from 'src/components/PButton.vue';
 import PCard from 'src/components/PCard.vue';
+import ErrorBanner from 'src/components/ErrorBanner.vue';
 import { sortByDateString } from 'src/utils/date';
 
 const api = useApi();
 const router = useRouter();
 const deployments = ref<Deployment[]>([]);
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
+const errorMessages = ref<ErrorMessages>([]);
 
 const hasDeployments = computed(() => {
   return deployments.value.length > 0;
 });
+
+const dismissError = () => {
+  errorMessages.value = [];
+};
 
 const sortedDeployments = computed(() => {
   return [...deployments.value].sort((a, b) => {
@@ -110,6 +121,24 @@ async function getDeployments() {
     deployments.value = response.filter<Deployment>((d): d is Deployment => {
       return !isDeploymentError(d);
     });
+    const deploymentErrors: DeploymentError[] = response.filter(isDeploymentError);
+    if (deploymentErrors) {
+      // We will show deployment errors on this page, while all other pages
+      // route these towards the fatal error page. This is because the user
+      // can see the list of deployments for their project and hopefully is
+      // in a position of resolving issues.
+      errorMessages.value = [];
+      deploymentErrors.forEach((d) => {
+        return errorMessages.value.push(
+          buildErrorBannerMessage(
+            d.error,
+            `Please correct errors within the indicated destination file(s).
+            The files will not appear on the list below until they are valid and
+            you have reloaded this page.`,
+          ),
+        );
+      });
+    }
   } catch (error: unknown) {
     router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getDeployments()'));
   }

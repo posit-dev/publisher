@@ -83,7 +83,7 @@ import PButton from 'src/components/PButton.vue';
 import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
 import { formatDateString } from 'src/utils/date';
-import { checkForResponseWithStatus, getMessageFromError, getSummaryFromError, newFatalErrorRouteLocation } from 'src/util/errors';
+import { newFatalErrorRouteLocation } from 'src/util/errors';
 import { useRouter } from 'vue-router';
 
 const api = useApi();
@@ -112,8 +112,13 @@ const initiatePublishProcess = async() => {
   const accountName = selectedAccount.value?.name;
   if (!accountName) {
     // internal error
-    console.log('An internal error has occurred when calling publish.start - no accountName');
-    return;
+    router.push(
+      newFatalErrorRouteLocation(
+        'An internal error has occurred when calling publish.start - no accountName',
+        'ExistingDeploymentDestinationHeader::initiatePublishProcess()',
+      ),
+    );
+    return; // not reachable but we need this here for intellisense
   }
   emit('publish');
 
@@ -131,14 +136,14 @@ const initiatePublishProcess = async() => {
     );
     publishingLocalId.value = result;
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      throw new Error(`initiatePublishProcessWithEvents: ${getMessageFromError(error)}`);
-    }
-    if (checkForResponseWithStatus(error, 400)) {
-      throw new Error(`API Error: ${getSummaryFromError(error)}`);
-    } else {
-      router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentDestinationHeader::initiatePublishProcess()'));
-    }
+    // We'll send all errors to the fatal page. Nothing the user can do about this
+    // error here. This includes 400 errors.
+    router.push(
+      newFatalErrorRouteLocation(
+        error,
+        'ExistingDeploymentDestinationHeader::initiatePublishProcess()',
+      ),
+    );
   }
 };
 

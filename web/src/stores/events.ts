@@ -703,6 +703,7 @@ export const useEventStore = defineStore('event', () => {
       return localId;
     } catch (error) {
       publishInProgess.value = false;
+      // need to re-throw to be handled by caller.
       throw error;
     }
   };

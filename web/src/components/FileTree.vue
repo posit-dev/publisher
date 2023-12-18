@@ -36,8 +36,6 @@ import { ref } from 'vue';
 import { useApi } from 'src/api';
 import { DeploymentFile, ExclusionMatch, ExclusionMatchSource } from 'src/api/types/files';
 import {
-  checkForResponseWithStatus,
-  getSummaryFromError,
   newFatalErrorRouteLocation,
 } from 'src/util/errors';
 import { useRouter } from 'vue-router';
@@ -78,11 +76,9 @@ async function getFiles() {
       expanded.value = [file.rel];
     }
   } catch (error: unknown) {
-    if (checkForResponseWithStatus(error, 403)) {
-      throw new Error(`API Error: ${getSummaryFromError(error)}`);
-    } else {
-      router.push(newFatalErrorRouteLocation(error, 'FileTree: getFiles()'));
-    }
+    // handle all erros via the fatal error page, even 403's.
+    // not much of a correction action for the user.
+    router.push(newFatalErrorRouteLocation(error, 'FileTree: getFiles()'));
   }
 }
 
