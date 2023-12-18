@@ -5,18 +5,20 @@ package bundles
 import (
 	"archive/tar"
 	"bytes"
-	"crypto/md5"
+	"compress/gzip"
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/rstudio/connect-client/internal/bundles/bundlestest"
-	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/logging/loggingtest"
@@ -130,9 +132,8 @@ func (s *TarSuite) TestWriteFileContentsToTarWriteErr() {
 type BundlerSuite struct {
 	utiltest.Suite
 
-	fs       afero.Fs
-	cwd      util.Path
-	manifest *Manifest
+	fs  afero.Fs
+	cwd util.Path
 }
 
 func TestBundlerSuite(t *testing.T) {
@@ -158,10 +159,6 @@ func (s *BundlerSuite) SetupTest() {
 	// gitignore.IgnoreList uses relative paths internally
 	// and expects to be able to call Abs on them.
 	s.cwd.MkdirAll(0700)
-
-	s.manifest = NewManifest()
-	s.manifest.Metadata.AppMode = connect.StaticMode
-	s.manifest.Metadata.Entrypoint = "subdir/testfile"
 }
 
 func (s *BundlerSuite) TestNewBundlerDirectory() {
@@ -196,9 +193,6 @@ func (s *BundlerSuite) makeFileWithContents(relPath string, contents []byte) {
 
 	err = path.WriteFile(contents, 0600)
 	s.Nil(err)
-
-	md5sum := md5.Sum(contents)
-	s.manifest.AddFile(relPath, md5sum[:])
 }
 
 func (s *BundlerSuite) TestCreateBundle() {
@@ -208,12 +202,107 @@ func (s *BundlerSuite) TestCreateBundle() {
 	dest := new(bytes.Buffer)
 	log := logging.New()
 
-	bundler, err := NewBundler(s.cwd, s.manifest, nil, log)
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
 	s.Nil(err)
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
 	s.NotNil(manifest)
 	s.Len(manifest.Files, 2)
+	// Manifest filenames are always Posix paths, not Windows paths
+	s.Equal([]string{
+		"subdir/testfile",
+		"testfile",
+	}, manifest.GetFilenames())
+	s.Equal([]string{
+		"manifest.json",
+		"subdir/",
+		"subdir/testfile",
+		"testfile",
+	}, s.getTarFileNames(dest))
+}
+
+func (s *BundlerSuite) TestCreateBundleWithPositignore() {
+	s.makeFile("testfile")
+	s.makeFile(filepath.Join("subdir", "testfile"))
+	err := s.cwd.Join(".positignore").WriteFile([]byte(`subdir/`), 0666)
+	s.NoError(err)
+
+	dest := new(bytes.Buffer)
+	log := logging.New()
+
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
+	s.Nil(err)
+	manifest, err := bundler.CreateBundle(dest)
+	s.Nil(err)
+	s.NotNil(manifest)
+	s.Len(manifest.Files, 2)
+	// Manifest filenames are always Posix paths, not Windows paths
+	s.Equal([]string{
+		".positignore",
+		"testfile",
+	}, manifest.GetFilenames())
+	s.Equal([]string{
+		".positignore",
+		"manifest.json",
+		"testfile",
+	}, s.getTarFileNames(dest))
+}
+
+func (s *BundlerSuite) TestCreateBundleWithPositignoreInSubdirectory() {
+	s.makeFile("testfile")
+	s.makeFile(filepath.Join("subdir", "testfile"))
+	err := s.cwd.Join("subdir", ".positignore").WriteFile([]byte(`testfile`), 0666)
+	s.NoError(err)
+
+	dest := new(bytes.Buffer)
+	log := logging.New()
+
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
+	s.Nil(err)
+	manifest, err := bundler.CreateBundle(dest)
+	s.Nil(err)
+	s.NotNil(manifest)
+	s.Len(manifest.Files, 2)
+	// Manifest filenames are always Posix paths, not Windows paths
+	s.Equal([]string{
+		"subdir/.positignore",
+		"testfile",
+	}, manifest.GetFilenames())
+	s.Equal([]string{
+		"manifest.json",
+		"subdir/",
+		"subdir/.positignore",
+		"testfile",
+	}, s.getTarFileNames(dest))
+}
+
+func (s *BundlerSuite) TestCreateBundleWithPositignoreInSubdirectoryRelativePath() {
+	s.makeFile("testfile")
+	s.makeFile(filepath.Join("subdir", "testfile"))
+	err := s.cwd.Join("subdir", ".positignore").WriteFile([]byte(`testfile`), 0666)
+	s.NoError(err)
+
+	dest := new(bytes.Buffer)
+	log := logging.New()
+
+	path := util.NewPath(".", s.cwd.Fs())
+	bundler, err := NewBundler(path, NewManifest(), nil, log)
+	s.Nil(err)
+	manifest, err := bundler.CreateBundle(dest)
+	s.Nil(err)
+	s.NotNil(manifest)
+	s.Len(manifest.Files, 2)
+	// Manifest filenames are always Posix paths, not Windows paths
+	s.Equal([]string{
+		"subdir/.positignore",
+		"testfile",
+	}, manifest.GetFilenames())
+	s.Equal([]string{
+		"manifest.json",
+		"subdir/",
+		"subdir/.positignore",
+		"testfile",
+	}, s.getTarFileNames(dest))
 }
 
 func (s *BundlerSuite) TestCreateBundleAutoDetect() {
@@ -227,6 +316,10 @@ func (s *BundlerSuite) TestCreateBundleAutoDetect() {
 	s.Nil(err)
 	s.NotNil(manifest)
 	s.Len(manifest.Files, 1)
+	s.Equal([]string{
+		"app.py",
+		"manifest.json",
+	}, s.getTarFileNames(dest))
 }
 
 func (s *BundlerSuite) TestCreateBundlePythonPackages() {
@@ -243,6 +336,11 @@ func (s *BundlerSuite) TestCreateBundlePythonPackages() {
 	s.Nil(err)
 	s.NotNil(manifestOut)
 	s.Len(manifestOut.Files, 2)
+	s.Equal([]string{
+		"app.py",
+		"manifest.json",
+		"requirements.txt",
+	}, s.getTarFileNames(dest))
 }
 
 func (s *BundlerSuite) TestCreateBundleMissingDirectory() {
@@ -297,17 +395,37 @@ func (s *BundlerSuite) TestCreateBundleAddManifestError() {
 	s.Nil(manifest)
 }
 
+func (s *BundlerSuite) getTarFileNames(buf *bytes.Buffer) []string {
+	unzipper, err := gzip.NewReader(buf)
+	s.NoError(err)
+	reader := tar.NewReader(unzipper)
+	names := []string(nil)
+
+	for {
+		header, err := reader.Next()
+		if err == io.EOF {
+			// End of archive
+			break
+		}
+		s.NoError(err)
+		names = append(names, header.Name)
+	}
+	slices.Sort(names)
+	return names
+}
+
 func (s *BundlerSuite) TestCreateManifest() {
 	s.makeFile("testfile")
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	log := logging.New()
-	bundler, err := NewBundler(s.cwd, s.manifest, nil, log)
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
 	s.Nil(err)
 	s.NotNil(manifest)
+	// Manifest filenames are always Posix paths, not Windows paths
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
@@ -321,12 +439,13 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	s.makeFile(filepath.Join("subdir", "testfile"))
 
 	log := logging.New()
-	bundler, err := NewBundler(s.cwd, s.manifest, nil, log)
+	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
 	s.Nil(err)
 
 	manifest, err := bundler.CreateManifest()
 	s.Nil(err)
 	s.NotNil(manifest)
+	// Manifest filenames are always Posix paths, not Windows paths
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
@@ -336,13 +455,23 @@ func (s *BundlerSuite) TestMultipleCallsFromDirectory() {
 	manifest2, err := bundler.CreateBundle(dest)
 	s.Nil(err)
 	s.NotNil(manifest2)
+	// Manifest filenames are always Posix paths, not Windows paths
 	s.Equal([]string{
 		"subdir/testfile",
 		"testfile",
 	}, manifest2.GetFilenames())
+	s.Equal([]string{
+		"manifest.json",
+		"subdir/",
+		"subdir/testfile",
+		"testfile",
+	}, s.getTarFileNames(dest))
 }
 
 func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
 	// afero's MemFs doesn't have symlink support, so we
 	// are using a fixture directory under ./testdata.
 	fs := afero.NewOsFs()
@@ -355,11 +484,19 @@ func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
 	manifest, err := bundler.CreateBundle(dest)
 	s.Nil(err)
 	s.NotNil(manifest)
+	// Manifest filenames are always Posix paths, not Windows paths
 	s.Equal([]string{
 		"linked_dir/testfile",
 		"linked_file",
 		"somefile",
 	}, manifest.GetFilenames())
+	s.Equal([]string{
+		"linked_dir/",
+		"linked_dir/testfile",
+		"linked_file",
+		"manifest.json",
+		"somefile",
+	}, s.getTarFileNames(dest))
 }
 
 func (s *BundlerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {

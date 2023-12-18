@@ -2,8 +2,29 @@ name: Agent
 on:
   workflow_call:
 jobs:
-  agent:
-    runs-on: ubuntu-latest
+  native:
+    env:
+      DOCKER: false
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: extractions/setup-just@v1
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+      - run: just test
+  docker:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest]
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v3
         with:

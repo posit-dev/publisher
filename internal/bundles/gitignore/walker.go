@@ -55,7 +55,7 @@ func LoadPositIgnoreIfPresent(dir util.Path, ignoreList IgnoreList) error {
 		err = nil
 	}
 	if err != nil {
-		return fmt.Errorf("error loading ignore file %q: %w", ignorePath, err)
+		return fmt.Errorf("error loading ignore file '%s': %w", ignorePath, err)
 	}
 	return nil
 }

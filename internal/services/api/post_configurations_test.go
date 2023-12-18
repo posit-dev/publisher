@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -79,7 +80,7 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsDefault() {
 	actualPath, err := util.NewPath(res.Path, s.cwd.Fs()).Rel(s.cwd)
 	s.NoError(err)
 	s.Equal("default", res.Name)
-	s.Equal(".posit/publish/default.toml", actualPath.String())
+	s.Equal(filepath.Join(".posit", "publish", "default.toml"), actualPath.String())
 	s.Equal(config.ContentTypePythonFlask, res.Configuration.Type)
 }
 
@@ -104,7 +105,7 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsNamed() {
 	actualPath, err := util.NewPath(res.Path, s.cwd.Fs()).Rel(s.cwd)
 	s.NoError(err)
 	s.Equal("newConfig", res.Name)
-	s.Equal(".posit/publish/newConfig.toml", actualPath.String())
+	s.Equal(filepath.Join(".posit", "publish", "newConfig.toml"), actualPath.String())
 	s.Equal(config.ContentTypePythonFlask, res.Configuration.Type)
 }
 
@@ -141,6 +142,8 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsInspectionFails() {
 	actualPath, err := util.NewPath(res.Path, s.cwd.Fs()).Rel(s.cwd)
 	s.NoError(err)
 	s.Equal("default", res.Name)
-	s.Equal(".posit/publish/default.toml", actualPath.String())
-	s.Equal(config.New(), res.Configuration)
+	s.Equal(filepath.Join(".posit", "publish", "default.toml"), actualPath.String())
+	expected := config.New()
+	expected.Title = s.cwd.Base()
+	s.Equal(expected, res.Configuration)
 }

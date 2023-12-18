@@ -2,7 +2,7 @@
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import { Dark, Quasar } from 'quasar';
+import { Dark, Dialog, Quasar } from 'quasar';
 
 // Import Quasar Roboto Font
 import '@quasar/extras/roboto-font/roboto-font.css';
@@ -23,7 +23,7 @@ const app = createApp(App);
 
 app.use(router);
 app.use(pinia);
-app.use(Quasar, { plugins: { Dark } });
+app.use(Quasar, { plugins: { Dark, Dialog } });
 app.use(eventStream);
 
 app.mount('#app');

@@ -43,21 +43,21 @@
             :url="destinationURL"
             @change="onChange"
           />
-          <q-btn
+          <PButton
+            hierarchy="primary"
             class="q-ml-md"
-            no-caps
-            color="white"
-            text-color="black"
-            label="Publish"
+            padding="sm md"
             :disable="eventStore.publishInProgess"
             @click="initiatePublishProcess"
-          />
+          >
+            Publish
+          </PButton>
         </div>
       </div>
 
       <div class="col-4 vertical-top q-gutter-x-md">
         <div class="col q-mt-md">
-          <div class="row justify-left q-ma-sm q-mr-md">
+          <div class="row justify-left">
             <div class="col-11">
               <PublishProgressSummary
                 :id="contentId"
@@ -79,6 +79,7 @@ import { ref, watch, PropType } from 'vue';
 
 import { Account, Deployment, useApi } from 'src/api';
 import SelectAccount from 'src/components/SelectAccount.vue';
+import PButton from 'src/components/PButton.vue';
 import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
 import { formatDateString } from 'src/utils/date';
