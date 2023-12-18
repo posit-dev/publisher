@@ -64,6 +64,19 @@ func (s *ConfigSuite) TestFromFile() {
 	s.Equal(ContentTypePythonDash, cfg.Type)
 }
 
+func (s *ConfigSuite) TestFromExampleFile() {
+	realDir, err := util.Getwd(nil)
+	s.NoError(err)
+	path := realDir.Join("..", "schema", "schemas", "deploy.toml")
+	cfg, err := FromFile(path)
+	s.NoError(err)
+	s.NotNil(cfg)
+
+	valuePtr := cfg.Connect.Kubernetes.DefaultPyEnvironmentManagement
+	s.NotNil(valuePtr)
+	s.Equal(true, *valuePtr)
+}
+
 func (s *ConfigSuite) TestFromFileErr() {
 	cfg, err := FromFile(s.cwd.Join("nonexistent.toml"))
 	s.ErrorIs(err, fs.ErrNotExist)

@@ -24,7 +24,7 @@
             {{ deployment.saveName }}
           </h1>
           <p>
-            Redeployment to: <a :href="deployment.serverUrl">{{ deployment.serverUrl }}</a>
+            Redeployment to: {{ deployment.serverUrl }}
           </p>
           <p>
             {{ deployment.id }}

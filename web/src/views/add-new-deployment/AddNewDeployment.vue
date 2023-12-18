@@ -38,7 +38,6 @@
       <div class="flex row reverse">
         <PButton
           hierarchy="primary"
-          :to="destinationPage"
           :disable="disableToDestinationPage"
           type="submit"
         >

@@ -8,3 +8,7 @@ export function formatDateString(dateString: string) {
   });
 }
 
+export function sortByDateString(a: string, b: string) {
+  return Date.parse(a) > Date.parse(b) ? -1 : 1;
+}
+
