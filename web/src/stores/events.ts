@@ -686,20 +686,25 @@ export const useEventStore = defineStore('event', () => {
     currentPublishStatus.value.target = target || '';
     currentPublishStatus.value.status = newPublishStatus();
 
-    // Returns:
-    // 200 - success
-    // 400 - bad request
-    // 500 - internal server error
-    // Errors returned through event stream
-    // Handle errors at the top level caller
-    const response = await api.deployments.publish(
-      accountName,
-      target,
-      saveName,
-    );
-    const localId = <string>response.data.localId;
-    currentPublishStatus.value.localId = localId;
-    return localId;
+    try {
+      // Returns:
+      // 200 - success
+      // 400 - bad request
+      // 500 - internal server error
+      // Errors returned through event stream
+      // Handle errors at the top level caller
+      const response = await api.deployments.publish(
+        accountName,
+        target,
+        saveName,
+      );
+      const localId = <string>response.data.localId;
+      currentPublishStatus.value.localId = localId;
+      return localId;
+    } catch (error) {
+      publishInProgess.value = false;
+      throw error;
+    }
   };
 
   const init = () => {

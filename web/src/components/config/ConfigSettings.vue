@@ -1,18 +1,20 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div class="space-between-lg">
+  <div>
     <template v-if="isConfigurationError(config)">
       {{ config.error }}
     </template>
 
     <template v-else>
-      <ConfigType :type="config.configuration.type" />
-      <ConfigEntrypoint :entrypoint="config.configuration.entrypoint" />
-      <ConfigTitle :title="config.configuration.title" />
-      <ConfigDescription :description="config.configuration.description" />
-      <ConfigThumbnail :thumbnail="config.configuration.thumbnail" />
-      <ConfigTags :tags="config.configuration.tags" />
+      <div class="space-between-sm">
+        <ConfigType :type="config.configuration.type" />
+        <ConfigEntrypoint :entrypoint="config.configuration.entrypoint" />
+        <ConfigTitle :title="config.configuration.title" />
+        <ConfigDescription :description="config.configuration.description" />
+        <ConfigThumbnail :thumbnail="config.configuration.thumbnail" />
+        <ConfigTags :tags="config.configuration.tags" />
+      </div>
       <ConfigPython :python="config.configuration.python" />
       <ConfigR :r="config.configuration.r" />
       <ConfigQuarto :quarto="config.configuration.quarto" />

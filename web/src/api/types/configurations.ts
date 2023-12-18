@@ -74,7 +74,7 @@ export type RConfig = {
 
 export type QuartoConfig = {
   version: string,
-  engines: string[]
+  engines?: string[]
 }
 
 export type EnvironmentConfig = Record<string, string>
