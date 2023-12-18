@@ -11,7 +11,13 @@ export class Files {
     this.client = client;
   }
 
+  // Returns:
+  // 200 - success
+  // 403 - pathname is not safe - forbidden
+  // 500 - internal server error
   get() {
-    return this.client.get<DeploymentFile>('/files');
+    return this.client.get<DeploymentFile>(
+      '/files',
+    );
   }
 }

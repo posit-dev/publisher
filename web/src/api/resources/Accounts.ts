@@ -11,11 +11,22 @@ export class Accounts {
     this.client = client;
   }
 
+  // Returns:
+  // 200 - success
+  // 500 - internal server error
   getAll() {
-    return this.client.get<{ accounts: Account[] }>('/accounts');
+    return this.client.get<{ accounts: Account[] }>(
+      '/accounts',
+    );
   }
 
+  // Returns:
+  // 200 - success
+  // 404 - account not found
+  // 500 - internal server error
   get(accountName: string) {
-    return this.client.get<Account>(`/accounts/${accountName}`);
+    return this.client.get<Account>(
+      `/accounts/${accountName}`,
+    );
   }
 }

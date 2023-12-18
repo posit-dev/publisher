@@ -62,6 +62,7 @@ import { computed, ref } from 'vue';
 import { RouteLocationRaw, useRouter } from 'vue-router';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
+import { newFatalErrorRouteLocation } from 'src/util/errors';
 import PButton from 'src/components/PButton.vue';
 
 const accounts = ref<Account[]>([]);
@@ -73,8 +74,14 @@ const api = useApi();
 const router = useRouter();
 
 async function getAccounts() {
-  const response = await api.accounts.getAll();
-  accounts.value = response.data.accounts;
+  try {
+    // 200 - success
+    // 500 - internal server error
+    const response = await api.accounts.getAll();
+    accounts.value = response.data.accounts;
+  } catch (error: unknown) {
+    router.push(newFatalErrorRouteLocation(error, 'AddNewDeployment::getAccounts()'));
+  }
 }
 
 function resetForm() {
