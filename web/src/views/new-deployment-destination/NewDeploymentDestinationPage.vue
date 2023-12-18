@@ -29,7 +29,7 @@ import { PropType, computed, ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 
 import { Configuration, ConfigurationError, useApi } from 'src/api';
-import { sendErrorToFatalErrorComponent } from 'src/util/errors';
+import { newFatalErrorRouteLocation } from 'src/util/errors';
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
@@ -100,7 +100,7 @@ async function getConfigurations() {
     const response = await api.configurations.getAll();
     configurations.value = response.data;
   } catch (error: unknown) {
-    sendErrorToFatalErrorComponent(error, router, 'NewDeploymentDestinationPage::getConfigurations()');
+    router.push(newFatalErrorRouteLocation(error, 'NewDeploymentDestinationPage::getConfigurations()'));
   }
 }
 

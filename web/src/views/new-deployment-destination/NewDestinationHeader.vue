@@ -86,7 +86,7 @@ import {
   checkForResponseWithStatus,
   getMessageFromError,
   getSummaryFromError,
-  sendErrorToFatalErrorComponent,
+  newFatalErrorRouteLocation,
 } from 'src/util/errors';
 import { useRouter } from 'vue-router';
 import PButton from 'src/components/PButton.vue';
@@ -114,6 +114,7 @@ const initiatePublishProcess = async() => {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
+  // ERROR - publishing checks
   // Errors returned through event stream
   try {
     const result = await eventStore.initiatePublishProcessWithEvents(
@@ -121,15 +122,15 @@ const initiatePublishProcess = async() => {
       props.contentId,
       props.destinationName,
     );
-    if (result instanceof Error) {
-      throw new Error(`initiatePublishProcessWithEvents: ${getMessageFromError(result)}`);
-    }
     publishingLocalId.value = result;
   } catch (error: unknown) {
+    if (error instanceof Error) {
+      throw new Error(`initiatePublishProcessWithEvents: ${getMessageFromError(error)}`);
+    }
     if (checkForResponseWithStatus(error, 400)) {
       throw new Error(`API Error: ${getSummaryFromError(error)}`);
     } else {
-      sendErrorToFatalErrorComponent(error, router, 'NewDestinationHeader::initiatePublishProcess()');
+      router.push(newFatalErrorRouteLocation(error, 'NewDestinationHeader::initiatePublishProcess()'));
     }
   }
 };
@@ -149,7 +150,7 @@ const updateAccountList = async() => {
     if (checkForResponseWithStatus(error, 404)) {
       throw new Error(`API Error: ${getSummaryFromError(error)}`);
     } else {
-      sendErrorToFatalErrorComponent(error, router, 'NewDestinationHeader::updateAccountList()');
+      router.push(newFatalErrorRouteLocation(error, 'NewDestinationHeader::updateAccountList()'));
     }
   }
 };

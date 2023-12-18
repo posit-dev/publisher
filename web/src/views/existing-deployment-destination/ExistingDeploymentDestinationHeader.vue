@@ -83,7 +83,7 @@ import PButton from 'src/components/PButton.vue';
 import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
 import { formatDateString } from 'src/utils/date';
-import { checkForResponseWithStatus, getMessageFromError, getSummaryFromError, sendErrorToFatalErrorComponent } from 'src/util/errors';
+import { checkForResponseWithStatus, getMessageFromError, getSummaryFromError, newFatalErrorRouteLocation } from 'src/util/errors';
 import { useRouter } from 'vue-router';
 
 const api = useApi();
@@ -121,6 +121,7 @@ const initiatePublishProcess = async() => {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
+  // ERROR - pulishing prechecks
   // Errors returned through event stream
   try {
     const result = await eventStore.initiatePublishProcessWithEvents(
@@ -128,15 +129,15 @@ const initiatePublishProcess = async() => {
       props.contentId,
       props.deployment.saveName,
     );
-    if (result instanceof Error) {
-      throw new Error(`initiatePublishProcessWithEvents: ${getMessageFromError(result)}`);
-    }
     publishingLocalId.value = result;
   } catch (error: unknown) {
+    if (error instanceof Error) {
+      throw new Error(`initiatePublishProcessWithEvents: ${getMessageFromError(error)}`);
+    }
     if (checkForResponseWithStatus(error, 400)) {
       throw new Error(`API Error: ${getSummaryFromError(error)}`);
     } else {
-      sendErrorToFatalErrorComponent(error, router, 'ExistingDeploymentDestinationHeader::initiatePublishProcess()');
+      router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentDestinationHeader::initiatePublishProcess()'));
     }
   }
 };
@@ -149,7 +150,7 @@ const updateAccountList = async() => {
     const response = await api.accounts.getAll();
     accounts.value = response.data.accounts;
   } catch (error: unknown) {
-    sendErrorToFatalErrorComponent(error, router, 'ExistingDeploymentDestinationHeader::updateAccountList()');
+    router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentDestinationHeader::updateAccountList()'));
   }
 };
 updateAccountList();

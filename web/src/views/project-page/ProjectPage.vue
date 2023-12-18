@@ -76,7 +76,7 @@ import { computed, ref } from 'vue';
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import { Configuration, ConfigurationError } from 'src/api/types/configurations';
-import { sendErrorToFatalErrorComponent } from 'src/util/errors';
+import { newFatalErrorRouteLocation } from 'src/util/errors';
 import { useRouter } from 'vue-router';
 
 import ConfigCard from './ConfigCard.vue';
@@ -104,7 +104,7 @@ async function getDeployments() {
       return !isDeploymentError(d);
     });
   } catch (error: unknown) {
-    sendErrorToFatalErrorComponent(error, router, 'ProjectPage::getDeployments()');
+    router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getDeployments()'));
   }
 }
 
@@ -116,7 +116,7 @@ async function getConfigurations() {
     const response = await api.configurations.getAll();
     configurations.value = response.data;
   } catch (error: unknown) {
-    sendErrorToFatalErrorComponent(error, router, 'ProjectPage::getConfigurations()');
+    router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getConfigurations()'));
   }
 }
 

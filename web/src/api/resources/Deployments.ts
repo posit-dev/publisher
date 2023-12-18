@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from 'axios';
 
-import { Deployment } from 'src/api/types/deployments';
+import { Deployment, DeploymentError } from 'src/api/types/deployments';
 
 export class Deployments {
   private client: AxiosInstance;
@@ -15,7 +15,7 @@ export class Deployments {
   // 200 - success
   // 500 - internal server error
   getAll() {
-    return this.client.get<Array<Deployment>>(
+    return this.client.get<Array<Deployment | DeploymentError>>(
       '/deployments',
     );
   }
@@ -25,7 +25,7 @@ export class Deployments {
   // 404 - not found
   // 500 - internal server error
   get(id: string) {
-    return this.client.get<Deployment>(
+    return this.client.get<Deployment | DeploymentError>(
       `deployments/${id}`,
     );
   }

@@ -63,7 +63,7 @@ import { computed, ref } from 'vue';
 import { RouteLocationRaw, useRouter } from 'vue-router';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
-import { sendErrorToFatalErrorComponent } from 'src/util/errors';
+import { newFatalErrorRouteLocation } from 'src/util/errors';
 import PButton from 'src/components/PButton.vue';
 
 const accounts = ref<Account[]>([]);
@@ -81,7 +81,7 @@ async function getAccounts() {
     const response = await api.accounts.getAll();
     accounts.value = response.data.accounts;
   } catch (error: unknown) {
-    sendErrorToFatalErrorComponent(error, router, 'AddNewDeployment::getAccounts()');
+    router.push(newFatalErrorRouteLocation(error, 'AddNewDeployment::getAccounts()'));
   }
 }
 

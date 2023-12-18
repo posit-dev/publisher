@@ -671,13 +671,14 @@ export const useEventStore = defineStore('event', () => {
     }
   };
 
+  // Will throw Error or API exceptions
   const initiatePublishProcessWithEvents = async(
     accountName : string,
     target?: string,
     saveName?: string,
-  ) : Promise<Error | string> => {
+  ) : Promise<string> => {
     if (publishInProgess.value) {
-      return new Error('Publishing already in progress');
+      throw new Error('Publishing already in progress');
     }
 
     publishInProgess.value = true;

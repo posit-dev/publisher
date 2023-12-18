@@ -38,7 +38,7 @@ import { DeploymentFile, ExclusionMatch, ExclusionMatchSource } from 'src/api/ty
 import {
   checkForResponseWithStatus,
   getSummaryFromError,
-  sendErrorToFatalErrorComponent,
+  newFatalErrorRouteLocation,
 } from 'src/util/errors';
 import { useRouter } from 'vue-router';
 
@@ -81,7 +81,7 @@ async function getFiles() {
     if (checkForResponseWithStatus(error, 403)) {
       throw new Error(`API Error: ${getSummaryFromError(error)}`);
     } else {
-      sendErrorToFatalErrorComponent(error, router, 'FileTree: getFiles()');
+      router.push(newFatalErrorRouteLocation(error, 'FileTree: getFiles()'));
     }
   }
 }

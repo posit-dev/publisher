@@ -6,8 +6,8 @@
       A Fatal Error Has Occurred
     </h4>
     <p class="q-my-md">
-      The Posit Publisher has encountered an internal error, from which,
-      it is unable to recover. Details regarding this error are listed below:
+      The Posit Publisher has encountered an unexpected error.
+      Details regarding this error are listed below:
     </p>
     <h5>
       Error info:
@@ -55,22 +55,24 @@
         </span>
         {{ method }} {{ baseURL }}  {{ url }}
       </p>
-      <p class="q-my-md">
+      <p
+        if="location"
+        class="q-my-md"
+      >
         <span class="text-bold">
           This error originated:
         </span>
         {{ location }}
       </p>
     </div>
-    <p class="q-my-md">
-      Click
-      <a
-        href="/"
-      >
-        here
-      </a>
-      to reload the application.
-    </p>
+    <PButton
+      class="q-my-md"
+      hierarchy="primary"
+      href="/"
+      type="submit"
+    >
+      Reload Application
+    </PButton>
     <p class="q-my-md">
       If this error persists, try restarting the agent.
     </p>
@@ -79,8 +81,10 @@
 
 <script setup lang="ts">
 
+import PButton from 'src/components/PButton.vue';
+
 defineProps({
-  location: { type: String, required: true },
+  location: { type: String, required: true, default: undefined },
   stat: { type: String, required: false, default: undefined },
   code: { type: String, required: false, default: undefined },
   msg: { type: String, required: false, default: undefined },

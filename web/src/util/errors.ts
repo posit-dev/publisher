@@ -1,7 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import axios from 'axios';
-import { Router } from 'vue-router';
+import { RouteLocationRaw } from 'vue-router';
 
 export const getStatusFromError = (error: unknown) : (number | undefined) => {
   if (axios.isAxiosError(error)) {
@@ -18,10 +18,7 @@ export const getCodeStringFromError = (error: unknown) : (string | undefined) =>
 };
 
 export const getMessageFromError = (error: unknown) : string => {
-  if (axios.isAxiosError(error)) {
-    return error.message;
-  }
-  if (error instanceof Error) {
+  if (axios.isAxiosError(error) || error instanceof Error) {
     return error.message;
   }
   return String(error);
@@ -60,10 +57,10 @@ export const checkForResponseWithStatus = (error: unknown, statusValue: number) 
   return errorStatus === statusValue;
 };
 
-export const sendErrorToFatalErrorComponent =
-  (error: unknown, router: Router, locationHint: string): void => {
+export const newFatalErrorRouteLocation =
+  (error: unknown, locationHint: string): RouteLocationRaw => {
     const info = getSummaryFromError(error);
-    router.push({
+    return {
       name: 'fatalError',
       query: {
         location: locationHint,
@@ -74,5 +71,5 @@ export const sendErrorToFatalErrorComponent =
         method: info?.method,
         url: info?.url,
       },
-    });
+    };
   };

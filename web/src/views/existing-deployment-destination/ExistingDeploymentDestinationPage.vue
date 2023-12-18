@@ -34,7 +34,7 @@ import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import {
   checkForResponseWithStatus,
   getSummaryFromError,
-  sendErrorToFatalErrorComponent,
+  newFatalErrorRouteLocation,
 } from 'src/util/errors';
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
@@ -82,7 +82,7 @@ const getDeployment = async() => {
     if (checkForResponseWithStatus(error, 404)) {
       throw new Error(`API Error: ${getSummaryFromError(error)}`);
     } else {
-      sendErrorToFatalErrorComponent(error, router, 'ExistingDeploymentDestinationPage::getDeployment()');
+      router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentDestinationPage::getDeployment()'));
     }
   }
 };
