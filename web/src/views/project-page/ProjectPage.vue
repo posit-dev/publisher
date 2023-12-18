@@ -25,7 +25,7 @@
       class="card-grid"
     >
       <DeploymentCard
-        v-for="deployment in deployments"
+        v-for="deployment in sortedDeployments"
         :key="deployment.id"
         :deployment="deployment"
       />
@@ -81,6 +81,7 @@ import DeploymentCard from './DeploymentCard.vue';
 import FileTree from 'src/components/FileTree.vue';
 import PButton from 'src/components/PButton.vue';
 import PCard from 'src/components/PCard.vue';
+import { sortByDateString } from 'src/utils/date';
 
 const api = useApi();
 const deployments = ref<Deployment[]>([]);
@@ -88,6 +89,12 @@ const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 const hasDeployments = computed(() => {
   return deployments.value.length > 0;
+});
+
+const sortedDeployments = computed(() => {
+  return [...deployments.value].sort((a, b) => {
+    return sortByDateString(a.deployedAt, b.deployedAt);
+  });
 });
 
 async function getDeployments() {
