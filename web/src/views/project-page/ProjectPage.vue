@@ -76,6 +76,9 @@ import { computed, ref } from 'vue';
 import { useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import { Configuration, ConfigurationError } from 'src/api/types/configurations';
+import { newFatalErrorRouteLocation } from 'src/util/errors';
+import { useRouter } from 'vue-router';
+
 import ConfigCard from './ConfigCard.vue';
 import DeploymentCard from './DeploymentCard.vue';
 import FileTree from 'src/components/FileTree.vue';
@@ -83,6 +86,7 @@ import PButton from 'src/components/PButton.vue';
 import PCard from 'src/components/PCard.vue';
 
 const api = useApi();
+const router = useRouter();
 const deployments = ref<Deployment[]>([]);
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
@@ -91,15 +95,29 @@ const hasDeployments = computed(() => {
 });
 
 async function getDeployments() {
-  const response = (await api.deployments.getAll()).data;
-  deployments.value = response.filter<Deployment>((d): d is Deployment => {
-    return !isDeploymentError(d);
-  });
+  try {
+    // API Returns:
+    // 200 - success
+    // 500 - internal server error
+    const response = (await api.deployments.getAll()).data;
+    deployments.value = response.filter<Deployment>((d): d is Deployment => {
+      return !isDeploymentError(d);
+    });
+  } catch (error: unknown) {
+    router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getDeployments()'));
+  }
 }
 
 async function getConfigurations() {
-  const response = await api.configurations.getAll();
-  configurations.value = response.data;
+  try {
+    // API Returns:
+    // 200 - success
+    // 500 - internal server error
+    const response = await api.configurations.getAll();
+    configurations.value = response.data;
+  } catch (error: unknown) {
+    router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getConfigurations()'));
+  }
 }
 
 getDeployments();

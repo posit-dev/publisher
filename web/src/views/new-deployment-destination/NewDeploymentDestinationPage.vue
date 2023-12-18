@@ -26,15 +26,18 @@
 
 <script setup lang="ts">
 import { PropType, computed, ref } from 'vue';
-import { onBeforeRouteLeave, useRoute } from 'vue-router';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 
 import { Configuration, ConfigurationError, useApi } from 'src/api';
+import { newFatalErrorRouteLocation } from 'src/util/errors';
+
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
 import NewDestinationHeader from './NewDestinationHeader.vue';
 import DeploymentSection from 'src/components/DeploymentSection.vue';
 
 const route = useRoute();
+const router = useRouter();
 const hasPublished = ref(false);
 const api = useApi();
 
@@ -90,8 +93,15 @@ onBeforeRouteLeave(() => {
 });
 
 async function getConfigurations() {
-  const response = await api.configurations.getAll();
-  configurations.value = response.data;
+  try {
+    // API Returns:
+    // 200 - success
+    // 500 - internal server error
+    const response = await api.configurations.getAll();
+    configurations.value = response.data;
+  } catch (error: unknown) {
+    router.push(newFatalErrorRouteLocation(error, 'NewDeploymentDestinationPage::getConfigurations()'));
+  }
 }
 
 getConfigurations();

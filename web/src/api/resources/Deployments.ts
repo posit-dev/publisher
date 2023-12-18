@@ -11,18 +11,30 @@ export class Deployments {
     this.client = client;
   }
 
+  // Returns:
+  // 200 - success
+  // 500 - internal server error
   getAll() {
     return this.client.get<Array<Deployment | DeploymentError>>(
-      '/deployments'
+      '/deployments',
     );
   }
 
+  // Returns:
+  // 200 - success
+  // 404 - not found
+  // 500 - internal server error
   get(id: string) {
     return this.client.get<Deployment | DeploymentError>(
-      `deployments/${id}`
+      `deployments/${id}`,
     );
   }
 
+  // Returns:
+  // 200 - success
+  // 400 - bad request
+  // 500 - internal server error
+  // Errors returned through event stream
   publish(
     accountName? : string,
     target?: string,
