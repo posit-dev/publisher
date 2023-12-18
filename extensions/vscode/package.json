@@ -23,16 +23,16 @@
       {
         "command": "posit.publisher.start",
         "title": "Open Publisher",
-        "category": "Posit Publisher",
+        "category": "Posit",
         "icon": {
           "light": "assets/icons/light.svg",
           "dark": "assets/icons/dark.svg"
         }
       },
       {
-        "command": "posit.publisher.stop",
-        "title": "Stop Publisher",
-        "category": "Posit Publisher"
+        "command": "posit.publisher.close",
+        "title": "Close Publisher",
+        "category": "Posit"
       }
     ],
     "configuration": {

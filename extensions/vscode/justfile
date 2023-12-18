@@ -63,7 +63,7 @@ package:
     version="$(just ../../version)"
     path="../../packages"
     mkdir -p "${path}"
-    npx @vscode/vsce package --skip-license -o ${path}/${name}-${version}.vsix
+    npx @vscode/vsce package -o ${path}/${name}-${version}.vsix --skip-license -t web
 
 
 # Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just vscode run test`)
