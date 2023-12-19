@@ -78,7 +78,7 @@ onBeforeRouteLeave((_to, _from, next) => {
   }
   $q.dialog({
     title: 'Warning',
-    message: 'You have not published yet, a destination has not been created. Are you sure you want to leave?',
+    message: 'You have not deployed yet, a deployment has not been created. Are you sure you want to leave?',
     cancel: true,
   }).onOk(() => {
     console.log('OK');
