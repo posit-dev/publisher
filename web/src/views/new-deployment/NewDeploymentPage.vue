@@ -4,13 +4,13 @@
   <NewDeploymentHeader
     :account-name="accountName"
     :deployment-name="deploymentName"
-    @publish="hasPublished = true"
+    @deploy="hasDeployed = true"
   />
 
   <DeploymentSection
     title="Configuration"
     :subtitle="defaultConfig?.configurationName ||
-      'No default configuration found. One will be created automatically on publish'"
+      'No default configuration found. One will be created automatically on deploy'"
   >
     <ConfigSettings
       v-if="defaultConfig"
@@ -38,7 +38,7 @@ import DeploymentSection from 'src/components/DeploymentSection.vue';
 
 const route = useRoute();
 const router = useRouter();
-const hasPublished = ref(false);
+const hasDeployed = ref(false);
 const api = useApi();
 const $q = useQuasar();
 
@@ -73,7 +73,7 @@ const defaultConfig = computed(() => {
 });
 
 onBeforeRouteLeave((_to, _from, next) => {
-  if (hasPublished.value) {
+  if (hasDeployed.value) {
     return next();
   }
   $q.dialog({

@@ -5,7 +5,7 @@
     style="min-width:100%; min-height: 5rem;"
   >
     <div
-      v-if="showOtherPublishOperationInProgress"
+      v-if="showOtherDeployOperationInProgress"
       class="summary row items-center"
       :class="textClass"
     >
@@ -25,7 +25,7 @@
       </div>
     </div>
     <div
-      v-if="showPublishInProgress"
+      v-if="showDeployInProgress"
       class="summary row items-center"
       :class="textClass"
     >
@@ -37,7 +37,7 @@
       </div>
       <div class="col-10 text-left">
         <div class="text-bold">
-          Publishing project...
+          Deploying project...
         </div>
         <div>
           {{ eventStore.summaryOfCurrentPublishingProcess.operation }}
@@ -48,7 +48,7 @@
       </div>
     </div>
     <div
-      v-if="showPublishSuccessSummary"
+      v-if="showDeploySuccessSummary"
       class="summary row text-left items-center"
       :class="textClass"
     >
@@ -60,7 +60,7 @@
       </div>
       <div class="col-10 text-caption">
         <div class="text-bold">
-          {{ pastTenseModifier }} Publish was successful!
+          {{ pastTenseModifier }} Deploy was successful!
         </div>
         <div>
           Access through Dashboard:
@@ -71,7 +71,7 @@
       </div>
     </div>
     <div
-      v-if="showPublishError"
+      v-if="showDeployError"
       class="error row text-left items-center"
       :class="textClass"
     >
@@ -83,7 +83,7 @@
       </div>
       <div class="col-10 text-caption">
         <div class="text-bold">
-          {{ pastTenseModifier }} Publishing Operation has failed.
+          {{ pastTenseModifier }} Deploying Operation has failed.
         </div>
         <div
           v-for="keyValuePair in eventStore.currentPublishStatus.status.error"
@@ -117,21 +117,21 @@ const completion = computed(() => {
   return eventStore.currentPublishStatus.status.completion;
 });
 
-const showOtherPublishOperationInProgress = computed(() => {
+const showOtherDeployOperationInProgress = computed(() => {
   return (
     eventStore.publishInProgess &&
     !eventStore.doesPublishStatusApply(props.id)
   );
 });
 
-const showPublishInProgress = computed(() => {
+const showDeployInProgress = computed(() => {
   return (
     eventStore.isPublishActiveByID(props.id) &&
     eventStore.currentPublishStatus.status.currentStep // Make sure it has started
   );
 });
 
-const showPublishSuccessSummary = computed(() => {
+const showDeploySuccessSummary = computed(() => {
   return (
     eventStore.doesPublishStatusApply(props.id)
     &&
@@ -139,7 +139,7 @@ const showPublishSuccessSummary = computed(() => {
   );
 });
 
-const showPublishError = computed(() => {
+const showDeployError = computed(() => {
   return (
     eventStore.doesPublishStatusApply(props.id)
     &&

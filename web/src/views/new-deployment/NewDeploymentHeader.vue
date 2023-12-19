@@ -21,7 +21,7 @@
           >
             {{ deploymentName }}
           </h1>
-          <template v-if="publishAsNew">
+          <template v-if="deployAsNew">
             <p>
               New deployment to: {{ deploymentURL }}
             </p>
@@ -51,9 +51,14 @@
             class="q-ml-md"
             padding="sm md"
             :disable="eventStore.publishInProgess"
-            @click="initiatePublishProcess"
+            @click="initiateDeploy"
           >
-            Publish
+            <template v-if="deployAsNew">
+              Deploy
+            </template>
+            <template v-else>
+              Redeploy
+            </template>
           </PButton>
         </div>
       </div>
@@ -64,8 +69,8 @@
           <div class="row justify-left">
             <div class="col-11">
               <DeployProgressSummary
-                :id="publishingLocalId"
-                :current-tense="showPublishStatusAsCurrent"
+                :id="deployingLocalId"
+                :current-tense="showDeployStatusAsCurrent"
               />
               <RouterLink :to="{ name: 'progress' }">
                 View summarized deploment logs
@@ -100,19 +105,19 @@ const router = useRouter();
 const accounts = ref<Account[]>([]);
 const fixedAccountList = ref<Account[]>([]);
 const deploymentURL = ref('');
-const publishingLocalId = ref('');
+const deployingLocalId = ref('');
 const contentId = ref('');
-const numSuccessfulPublishes = ref(0);
+const numSuccessfulDeploys = ref(0);
 
-const emit = defineEmits(['publish']);
+const emit = defineEmits(['deploy']);
 
 const props = defineProps({
   accountName: { type: String, required: true },
   deploymentName: { type: String, default: undefined, required: false },
 });
 
-const initiatePublishProcess = async() => {
-  emit('publish');
+const initiateDeploy = async() => {
+  emit('deploy');
   // Returns:
   // 200 - success
   // 400 - bad request
@@ -121,19 +126,19 @@ const initiatePublishProcess = async() => {
   // Errors returned through event stream
   try {
     const result = await eventStore.initiatePublishProcessWithEvents(
-      publishAsNew.value,
+      deployAsNew.value,
       props.accountName,
       props.deploymentName,
       contentId.value,
     );
-    publishingLocalId.value = result;
+    deployingLocalId.value = result;
   } catch (error: unknown) {
     // Send all errors to the fatal error page. There is nothing the user can do here
     // easily. This includes 400 errors.
     router.push(
       newFatalErrorRouteLocation(
         error,
-        'NewDeploymentHeader::initiatePublishProcess()'
+        'NewDeploymentHeader::initiateDeploy()'
       ),
     );
   }
@@ -168,12 +173,12 @@ const addingDeploymentMessage = computed(() => {
   return 'Deploying will add this deployment to your project.';
 });
 
-const showPublishStatusAsCurrent = computed(() => {
-  // Show only if we've previously published or if this is the first one,
+const showDeployStatusAsCurrent = computed(() => {
+  // Show only if we've previously deployed or if this is the first one,
   // then only if it applies to us.
   return Boolean(
-    numSuccessfulPublishes.value ||
-    eventStore.doesPublishStatusApply(publishingLocalId.value)
+    numSuccessfulDeploys.value ||
+    eventStore.doesPublishStatusApply(deployingLocalId.value)
   );
 });
 
@@ -188,20 +193,20 @@ watch(
       oldVal &&
       // and last publishing run was ours
       (
-        eventStore.doesPublishStatusApply(publishingLocalId.value) ||
+        eventStore.doesPublishStatusApply(deployingLocalId.value) ||
         eventStore.doesPublishStatusApply(contentId.value)
       ) &&
       // and it was successful enough to get a content id assigned
       eventStore.currentPublishStatus.contentId
     ) {
       // increment our counter
-      numSuccessfulPublishes.value += 1;
+      numSuccessfulDeploys.value += 1;
     }
   }
 );
 
-const publishAsNew = computed(() => {
-  return numSuccessfulPublishes.value === 0;
+const deployAsNew = computed(() => {
+  return numSuccessfulDeploys.value === 0;
 });
 
 watch(

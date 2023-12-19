@@ -11,7 +11,7 @@
         }"
       />
       <q-breadcrumbs-el
-        label="Publish Process"
+        label="Deploy Progress"
       />
     </q-breadcrumbs>
 

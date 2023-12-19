@@ -29,11 +29,11 @@ const done = ref(false);
 
 const summary = computed(() => {
   if (done.value) {
-    return `Your project has been successfully published and is 
+    return `Your project has been successfully deployed and is 
     available via the Connect Dashboard (${eventStore.currentPublishStatus.status.dashboardURL})
     or directly (${eventStore.currentPublishStatus.status.directURL}).`;
   }
-  return `Your project is still being published...`;
+  return `Your project is still being deployed...`;
 });
 
 watch(
