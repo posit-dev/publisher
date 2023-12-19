@@ -391,3 +391,114 @@ func (s *ConnectClientSuite) TestValidateDeploymentHTTPNonAppErr() {
 	err := client.ValidateDeployment(contentID)
 	s.NoError(err)
 }
+
+func (s *ConnectClientSuite) TestTestAuthentication() {
+	httpClient := &http_client.MockHTTPClient{}
+	expectedUser := &User{
+		Id:        types.UserID("40d1c1dc-d554-4905-99f1-359517e1a7c0"),
+		Username:  "bob",
+		FirstName: "Bob",
+		LastName:  "Bobberson",
+		Email:     "bob@example.com",
+	}
+
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything).Return(nil).RunFn = func(args mock.Arguments) {
+		user := args.Get(1).(*UserDTO)
+		*user = UserDTO{
+			Email:     expectedUser.Email,
+			Username:  expectedUser.Username,
+			FirstName: expectedUser.FirstName,
+			LastName:  expectedUser.LastName,
+			UserRole:  "publisher",
+			Confirmed: true,
+			Locked:    false,
+			GUID:      expectedUser.Id,
+		}
+	}
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+		log:     logging.New(),
+	}
+	user, err := client.TestAuthentication()
+	s.Equal(expectedUser, user)
+	s.NoError(err)
+}
+
+func (s *ConnectClientSuite) TestTestAuthentication404() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpErr := &http_client.HTTPError{
+		Status: 404,
+	}
+	agentError := types.NewAgentError(events.ServerErrorCode, httpErr, nil)
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything).Return(agentError)
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+		log:     logging.New(),
+	}
+	user, err := client.TestAuthentication()
+	s.Nil(user)
+	s.NotNil(err)
+	s.ErrorIs(err, errInvalidServerOrCredentials)
+}
+
+func (s *ConnectClientSuite) TestTestAuthenticationLocked() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything).Return(nil).RunFn = func(args mock.Arguments) {
+		user := args.Get(1).(*UserDTO)
+		user.Username = "bob"
+		user.Locked = true
+	}
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+		log:     logging.New(),
+	}
+	user, err := client.TestAuthentication()
+	s.Nil(user)
+	s.NotNil(err)
+	s.ErrorContains(err, "user account bob is locked")
+}
+
+func (s *ConnectClientSuite) TestTestAuthenticationNotConfirmed() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything).Return(nil).RunFn = func(args mock.Arguments) {
+		user := args.Get(1).(*UserDTO)
+		user.Username = "bob"
+		user.Confirmed = false
+	}
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+		log:     logging.New(),
+	}
+	user, err := client.TestAuthentication()
+	s.Nil(user)
+	s.NotNil(err)
+	s.ErrorContains(err, "user account bob is not confirmed")
+}
+
+func (s *ConnectClientSuite) TestTestAuthenticationNotPublisher() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything).Return(nil).RunFn = func(args mock.Arguments) {
+		user := args.Get(1).(*UserDTO)
+		user.Username = "bob"
+		user.Confirmed = true
+		user.UserRole = "viewer"
+	}
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+		log:     logging.New(),
+	}
+	user, err := client.TestAuthentication()
+	s.Nil(user)
+	s.NotNil(err)
+	s.ErrorContains(err, "user account bob with role 'viewer' does not have permission to publish content")
+}
