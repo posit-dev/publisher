@@ -4,20 +4,26 @@
   <q-header>
     <q-toolbar class="publisher-layout">
       <AppMenu />
-      <router-link
-        :to="{ name: 'root' }"
-        class="header row"
-      >
-        <WhitePositLogo
-          width="70px"
-          height="30px"
-          class="posit-logo"
-          alt="Posit PBC Logo"
-        />
-        <q-toolbar-title class="q-pl-xs">
-          Publisher
-        </q-toolbar-title>
-      </router-link>
+      <q-toolbar-title>
+        <router-link
+          class="posit-logo-link"
+          :to="{ name: 'root' }"
+        >
+          <WhitePositLogo
+            width="70px"
+            height="30px"
+            class="posit-logo"
+            alt="Posit PBC Logo"
+          />
+          <span class="q-pl-xs">Publisher</span>
+        </router-link>
+      </q-toolbar-title>
+      <q-btn
+        flat
+        dense
+        icon="refresh"
+        @click="$router.go(0)"
+      />
     </q-toolbar>
   </q-header>
 </template>
@@ -29,17 +35,19 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 </script>
 
-<style lang="scss">
-
+<style scoped lang="scss">
 .posit-logo {
   fill: white;
   stroke: none;
-  cursor: pointer;
 }
 
-.header {
+.posit-logo-link {
   text-decoration: none;
   color: white;
+
+  & > * {
+    vertical-align: middle;
+  }
 }
 
 </style>
