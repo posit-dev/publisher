@@ -13,9 +13,9 @@ import (
 )
 
 type UICmd struct {
-	Path          util.Path `help:"Path to directory containing files to publish." arg:"" default:"."`
-	Interactive   bool      `short:"i" help:"Launch a browser to show the UI at the listen address."`
-	OpenBrowserAt string    `help:"Launch a browser to show the UI at specific network address." placeholder:"HOST[:PORT]" hidden:""`
+	Path          util.Path `help:"Path to project directory containing files to publish." arg:"" default:"."`
+	Interactive   bool      `short:"i" help:"Launch a browser to show the UI."`
+	OpenBrowserAt string    `help:"Network address to use when launching the browser." placeholder:"HOST[:PORT]" hidden:""`
 	Theme         string    `help:"UI theme, 'light' or 'dark'." hidden:""`
 	Listen        string    `help:"Network address to listen on." placeholder:"HOST[:PORT]" default:"localhost:0"`
 	AccessLog     bool      `help:"Log all HTTP requests."`

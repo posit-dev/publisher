@@ -70,7 +70,7 @@ var opNameMap = map[Operation]string{
 	PublishSetEnvVarsOp:          "Set environment variables",
 	PublishCreateBundleOp:        "Prepare Files",
 	PublishUploadBundleOp:        "Upload Files",
-	PublishUpdateDeploymentOp:    "Updating Deployment Settings",
+	PublishUpdateDeploymentOp:    "Update Deployment Settings",
 	PublishDeployBundleOp:        "Activate Deployment",
 	PublishRestorePythonEnvOp:    "Restore Python environment",
 	PublishRestoreREnvOp:         "Restore R environment",
