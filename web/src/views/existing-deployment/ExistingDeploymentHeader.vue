@@ -40,7 +40,7 @@
           <SelectAccount
             class="account-width"
             :accounts="filteredAccountList"
-            :url="deploymentURL"
+            :url="deployment.serverUrl"
             @change="onChange"
           />
           <PButton
@@ -98,7 +98,6 @@ const router = useRouter();
 
 const accounts = ref<Account[]>([]);
 const filteredAccountList = ref<Account[]>([]);
-const deploymentURL = ref('');
 const selectedAccount = ref<Account>();
 const deployingLocalId = ref('');
 const numSuccessfulDeploys = ref(0);
@@ -122,10 +121,21 @@ const routerLocation = computed(() => {
     name: 'progress',
     query: {
       name: props.deployment.saveName,
-      operation: `Redeployment to: ${props.deployment.serverUrl}`,
+      operation: operationStr.value,
       id: props.deployment.id,
     },
   };
+});
+
+const operationStr = computed(() => {
+  if (eventStore.currentPublishStatus.deploymentMode === 'deploy') {
+    return `New deployment to: ${props.deployment.serverUrl}`;
+  }
+  if (eventStore.currentPublishStatus.deploymentMode === 'redeploy') {
+    return `Redeployment to: ${props.deployment.serverUrl}`;
+  }
+  // return something better than just 'unknown'
+  return `Deploying to: ${props.deployment.serverUrl}`;
 });
 
 const initiateRedeploy = async() => {
