@@ -2,27 +2,39 @@
 
 ## Quick Start
 
-Download the release executable for your operating system from [GitHub](https://github.com/rstudio/publishing-client/releases).
+Follow the Posit Publisher [installation guide](https://github.com/rstudio/publishing-client#installation).
 
-### Configure the Extension
+Once complete, download and install the extension.
+[https://cdn.posit.co/publisher/releases/tags/v0.0.dev6/publisher-0.0.dev6.vsix](https://cdn.posit.co/publisher/releases/tags/v0.0.dev6/publisher-0.0.dev6.vsix).
 
-### Option 1
+To learn how to install a `.vsix` file, see the [*Install from a VSIX*](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix) guide from Visual Studio Code.
+
+## Tutorial
+
+Once installed, open *Posit Publisher* by clicking the icon in the editor menu bar.
+
+![](https://cdn.posit.co/publisher/assets/img/tutorial.png)
+
+## Command Pallette Commands
+
+### Posit: Open Publisher
+
+This command opens *Posit Publisher* in a new window or focuses on an existing window.
+
+This command invokes the same action as clicking the *Posit Publisher* icon.
+
+When opening *Posit Publisher* for the first time, a background process is started on your machine. To shut down the background process, invoke the *Posit: Close Publisher* command.
+
+### Posit: Close Publisher
+
+This command closes *Posit Publisher* and shuts down the corresponding background process.
+
+## Configuration
+
+### `posit.publisher.executable.path`
+
+If the Posit Publisher executable doesn't exist on `PATH`, the location may be manually configured using this setting.
 
 Configure the `posit.publisher.executable.path` property in your *User* or *Workspace* settings.
 
-![Settings](settings.png)
-
-### Option 2
-
-Configure your shell with executable on path and alias it to `publisher`.
-
-Here is an example using ZSH on macOS with an M1 Chip (ARM64 architecture).
-
-**~/.zshenv**
-```shell
-# Replace this with the location of the executable on your machine.
-PATHNAME=$HOME/Downloads/publisher-0.0.dev2-darwin-arm64
-
-export PATH=$PATH:$PATHNAME
-alias publisher=$(basename ${PATHNAME})
-```
+![](https://cdn.posit.co/publisher/assets/img/settings.png)
