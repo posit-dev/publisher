@@ -98,7 +98,7 @@ async function getConfigurations() {
     const response = await api.configurations.getAll();
     configurations.value = response.data;
   } catch (error: unknown) {
-    router.push(newFatalErrorRouteLocation(error, 'NewDeploymentDestinationPage::getConfigurations()'));
+    router.push(newFatalErrorRouteLocation(error, 'NewDeploymentPage::getConfigurations()'));
   }
 }
 

@@ -16,10 +16,10 @@
       >
         <div class="space-between-sm">
           <h1
-            v-if="destinationName"
+            v-if="deploymentName"
             class="text-h6"
           >
-            {{ destinationName }}
+            {{ deploymentName }}
           </h1>
           <template v-if="publishAsNew">
             <p>
@@ -108,7 +108,7 @@ const emit = defineEmits(['publish']);
 
 const props = defineProps({
   accountName: { type: String, required: true },
-  destinationName: { type: String, default: undefined, required: false },
+  deploymentName: { type: String, default: undefined, required: false },
 });
 
 const initiatePublishProcess = async() => {
@@ -123,7 +123,7 @@ const initiatePublishProcess = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       publishAsNew.value,
       props.accountName,
-      props.destinationName,
+      props.deploymentName,
       contentId.value,
     );
     publishingLocalId.value = result;
@@ -162,8 +162,8 @@ const updateAccountList = async() => {
 };
 
 const addingDeploymentMessage = computed(() => {
-  if (props.destinationName) {
-    return `Deploying will add a deployment named "${props.destinationName}" to your project.`;
+  if (props.deploymentName) {
+    return `Deploying will add a deployment named "${props.deploymentName}" to your project.`;
   }
   return 'Deploying will add this deployment to your project.';
 });
