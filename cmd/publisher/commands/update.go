@@ -4,6 +4,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/cli_types"
@@ -25,7 +26,7 @@ type UpdateCmd struct {
 }
 
 func (cmd *UpdateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	ctx.Logger = events.NewSimpleLogger(args.Verbose)
+	ctx.Logger = events.NewSimpleLogger(args.Verbose, os.Stderr)
 
 	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
 	if err != nil {
