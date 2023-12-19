@@ -30,11 +30,6 @@
         label="Deployment Name"
         hint="Optional"
       />
-      <q-input
-        v-model="contentId"
-        label="Content ID"
-        hint="Optional"
-      />
       <div class="flex row reverse">
         <PButton
           hierarchy="primary"
@@ -68,7 +63,6 @@ import PButton from 'src/components/PButton.vue';
 const accounts = ref<Account[]>([]);
 const selectedAccountName = ref<string>('');
 const deploymentName = ref<string>('');
-const contentId = ref<string>('');
 
 const api = useApi();
 const router = useRouter();
@@ -86,7 +80,6 @@ async function getAccounts() {
 
 function resetForm() {
   selectedAccountName.value = '';
-  contentId.value = '';
   deploymentName.value = '';
 }
 
@@ -96,7 +89,6 @@ const destinationPage = computed<RouteLocationRaw>(() => ({
     account: selectedAccountName.value,
   },
   query: {
-    id: contentId.value || undefined,
     name: deploymentName.value || undefined,
   }
 }));
