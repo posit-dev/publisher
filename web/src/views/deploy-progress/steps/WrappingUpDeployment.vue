@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <PublishStep
+  <DeployStep
     :name="name"
     title="Wrapping Up Deployment"
     icon="checklist"
@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import PublishStep from 'src/views/publish-progress/PublishStep.vue';
+import DeployStep from 'src/views/deploy-progress/DeployStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';

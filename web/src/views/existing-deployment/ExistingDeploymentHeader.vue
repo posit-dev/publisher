@@ -61,7 +61,7 @@
         <div class="col q-mt-md">
           <div class="row justify-left">
             <div class="col-11">
-              <PublishProgressSummary
+              <DeployProgressSummary
                 :id="deployment.id"
                 :current-tense="showPublishStatusAsCurrent"
               />
@@ -83,7 +83,7 @@ import { ref, watch, PropType, computed } from 'vue';
 import { Account, Deployment, useApi } from 'src/api';
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PButton from 'src/components/PButton.vue';
-import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
+import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
 import { formatDateString } from 'src/utils/date';
 import { newFatalErrorRouteLocation } from 'src/util/errors';

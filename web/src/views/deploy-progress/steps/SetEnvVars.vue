@@ -1,11 +1,11 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <PublishStep
+  <DeployStep
     :name="name"
-    title="Deploy Bundle"
-    icon="publish"
-    summary="Associating the uploaded bundle with the deployment object."
+    title="Set Environment Variables"
+    icon="sync"
+    summary="Setting Environment Variables on Connect Server."
     :done="done"
     :messages="messages"
   />
@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from 'src/views/publish-progress/PublishStep.vue';
+import DeployStep from 'src/views/deploy-progress/DeployStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
@@ -27,10 +27,10 @@ defineProps({
 const emit = defineEmits(['start', 'done']);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.deployBundle.allMsgs);
+const messages = ref(eventStore.currentPublishStatus.status.steps.setEnvVars.allMsgs);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.deployBundle.completion,
+  () => eventStore.currentPublishStatus.status.steps.setEnvVars.completion,
   (value) => {
     if (value === 'inProgress') {
       emit('start');
@@ -44,3 +44,4 @@ watch(
   }
 );
 </script>
+
