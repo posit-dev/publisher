@@ -1,11 +1,11 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <PublishStep
+  <DeployStep
     :name="name"
-    title="Create New Deployment"
-    icon="create_new_folder"
-    summary="Creating a new deployment file."
+    title="Deploy Bundle"
+    icon="publish"
+    summary="Associating the uploaded bundle with the deployment object."
     :done="done"
     :messages="messages"
   />
@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from 'src/views/publish-progress/PublishStep.vue';
+import DeployStep from 'src/views/deploy-progress/DeployStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
@@ -27,10 +27,10 @@ defineProps({
 const emit = defineEmits(['start', 'done']);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.createNewDeployment.allMsgs);
+const messages = ref(eventStore.currentPublishStatus.status.steps.deployBundle.allMsgs);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.createNewDeployment.completion,
+  () => eventStore.currentPublishStatus.status.steps.deployBundle.completion,
   (value) => {
     if (value === 'inProgress') {
       emit('start');

@@ -60,8 +60,9 @@ import {
   RunContent,
   WrappingUpDeployment,
   CreateNewDeployment,
-} from 'src/views/publish-progress/steps';
+} from 'src/views/deploy-progress/steps';
 
 const openStep = ref<number | undefined>(undefined);
 
 </script>
+src/views/deploy-progress/steps

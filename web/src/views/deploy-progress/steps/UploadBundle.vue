@@ -1,11 +1,11 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <PublishStep
+  <DeployStep
     :name="name"
-    title="Restore Python Environment"
-    icon="move_down"
-    summary="Installing the dependent python packages on the server in order to reproduce your runtime environment."
+    title="Upload Bundle"
+    icon="login"
+    summary="Transferring the files from your local workstation to the server."
     :done="done"
     :messages="messages"
   />
@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PublishStep from 'src/views/publish-progress/PublishStep.vue';
+import DeployStep from 'src/views/deploy-progress/DeployStep.vue';
 
 import { watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
@@ -26,10 +26,10 @@ defineProps({
 const emit = defineEmits(['start', 'done']);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.restorePythonEnv.allMsgs);
+const messages = ref(eventStore.currentPublishStatus.status.steps.uploadBundle.allMsgs);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.restorePythonEnv.completion,
+  () => eventStore.currentPublishStatus.status.steps.uploadBundle.completion,
   (value) => {
     if (value === 'inProgress') {
       emit('start');

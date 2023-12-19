@@ -15,10 +15,10 @@
       />
     </q-breadcrumbs>
 
-    <PublishStepper class="q-mt-xl" />
+    <DeployStepper class="q-mt-xl" />
   </div>
 </template>
 
 <script setup lang="ts">
-import PublishStepper from 'src/views/publish-progress/PublishStepper.vue';
+import DeployStepper from 'src/views/deploy-progress/DeployStepper.vue';
 </script>

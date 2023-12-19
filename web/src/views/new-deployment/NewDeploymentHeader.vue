@@ -63,7 +63,7 @@
         <div class="col q-mt-md">
           <div class="row justify-left">
             <div class="col-11">
-              <PublishProgressSummary
+              <DeployProgressSummary
                 :id="publishingLocalId"
                 :current-tense="showPublishStatusAsCurrent"
               />
@@ -84,7 +84,7 @@ import { computed, ref, watch } from 'vue';
 import { Account, useApi } from 'src/api';
 
 import SelectAccount from 'src/components/SelectAccount.vue';
-import PublishProgressSummary from 'src/components/PublishProgressSummary.vue';
+import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';
 
 import { useEventStore } from 'src/stores/events';
 import {
