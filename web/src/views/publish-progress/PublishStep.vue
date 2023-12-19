@@ -67,7 +67,23 @@
 
 <script setup lang="ts">
 import { PropType, computed } from 'vue';
-import { EventStreamMessage, isErrorEventStreamMessage, isPublishCreateBundleLog, isPublishCreateBundleSuccess, isPublishCreateDeploymentStart, isPublishCreateDeploymentSuccess, isPublishCreateNewDeploymentStart, isPublishCreateNewDeploymentSuccess, isPublishDeployBundleSuccess, isPublishRestorePythonEnvLog, isPublishRestorePythonEnvStart, isPublishRestorePythonEnvStatus, isPublishRunContentLog, isPublishSetVanityURLLog, isPublishUploadBundleSuccess, isPublishValidateDeploymentLog } from 'src/api/types/events';
+import {
+  EventStreamMessage,
+  isErrorEventStreamMessage,
+  isPublishCreateBundleLog,
+  isPublishCreateBundleSuccess,
+  isPublishCreateDeploymentStart,
+  isPublishCreateDeploymentSuccess,
+  isPublishCreateNewDeploymentStart,
+  isPublishCreateNewDeploymentSuccess,
+  isPublishDeployBundleSuccess,
+  isPublishRestorePythonEnvLog,
+  isPublishRestorePythonEnvStart,
+  isPublishRestorePythonEnvStatus,
+  isPublishRunContentLog,
+  isPublishSetVanityURLLog,
+  isPublishValidateDeploymentLog
+} from 'src/api/types/events';
 
 const props = defineProps({
   name: { type: [String, Number], required: true },
