@@ -222,7 +222,7 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 		return err
 	}
 	pathLogger := b.log.WithArgs(
-		"path", path,
+		"path", relPath,
 		"size", info.Size(),
 	)
 	if info.IsDir() {
