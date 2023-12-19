@@ -7,7 +7,7 @@
         label="Project"
         :to="{ name: 'project' }"
       />
-      <q-breadcrumbs-el label="New Destination" />
+      <q-breadcrumbs-el label="New Deployment" />
     </q-breadcrumbs>
 
     <q-form
