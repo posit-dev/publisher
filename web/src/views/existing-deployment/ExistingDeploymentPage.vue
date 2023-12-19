@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ExistingDeploymentDestinationHeader
+  <ExistingDeploymentHeader
     v-if="deployment"
     :deployment="deployment"
   />
@@ -34,7 +34,7 @@ import {
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
-import ExistingDeploymentDestinationHeader from './ExistingDeploymentDestinationHeader.vue';
+import ExistingDeploymentHeader from './ExistingDeploymentHeader.vue';
 import DeploymentSection from 'src/components/DeploymentSection.vue';
 
 const route = useRoute();
@@ -74,7 +74,7 @@ const getDeployment = async() => {
     }
   } catch (error: unknown) {
     // For this page, we send all errors to the fatal error page, including 404
-    router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentDestinationPage::getDeployment()'));
+    router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentPage::getDeployment()'));
   }
 };
 

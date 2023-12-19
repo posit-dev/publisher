@@ -4,8 +4,8 @@ import { RouteLocationNormalizedLoaded, createRouter, createWebHashHistory } fro
 
 import ProjectPage from 'src/views/project-page/ProjectPage.vue';
 import AddNewDeployment from 'src/views/add-new-deployment/AddNewDeployment.vue';
-import ExistingDeploymentDestinationPage from 'src/views/existing-deployment-destination/ExistingDeploymentDestinationPage.vue';
-import NewDeploymentDestinationPage from 'src/views/new-deployment-destination/NewDeploymentDestinationPage.vue';
+import ExistingDeploymentPage from 'src/views/existing-deployment/ExistingDeploymentPage.vue';
+import NewDeploymentPage from 'src/views/new-deployment/NewDeploymentPage.vue';
 import PublishProgressPage from 'src/views/publish-progress/PublishProgressPage.vue';
 import FatalErrorPage from 'src/views/fatal-error/FatalErrorPage.vue';
 
@@ -16,12 +16,12 @@ const routes = [
   {
     name: 'newDeployment',
     path: '/new-deployment/:account',
-    component: NewDeploymentDestinationPage,
+    component: NewDeploymentPage,
     props: (route: RouteLocationNormalizedLoaded) => ({
       name: route.query.name,
     }),
   },
-  { name: 'deployments', path: '/deployments/:name', component: ExistingDeploymentDestinationPage },
+  { name: 'deployments', path: '/deployments/:name', component: ExistingDeploymentPage },
   { name: 'progress', path: '/progress', component: PublishProgressPage },
   {
     name: 'fatalError',

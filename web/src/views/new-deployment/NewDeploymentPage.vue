@@ -1,9 +1,9 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <NewDestinationHeader
+  <NewDeploymentHeader
     :account-name="accountName"
-    :destination-name="destinationName"
+    :deployment-name="deploymentName"
     @publish="hasPublished = true"
   />
 
@@ -33,7 +33,7 @@ import { newFatalErrorRouteLocation } from 'src/util/errors';
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
-import NewDestinationHeader from './NewDestinationHeader.vue';
+import NewDeploymentHeader from './NewDeploymentHeader.vue';
 import DeploymentSection from 'src/components/DeploymentSection.vue';
 
 const route = useRoute();
@@ -60,7 +60,7 @@ const accountName = computed(() => {
   return route.params.account;
 });
 
-const destinationName = computed(() => {
+const deploymentName = computed(() => {
   // route query can be either string | string[]
   if (Array.isArray(props.name)) {
     return props.name[0] || undefined;
@@ -78,7 +78,7 @@ onBeforeRouteLeave((_to, _from, next) => {
   }
   $q.dialog({
     title: 'Warning',
-    message: 'You have not published yet, a destination has not been created. Are you sure you want to leave?',
+    message: 'You have not deployed yet, a deployment has not been created. Are you sure you want to leave?',
     cancel: true,
   }).onOk(() => {
     console.log('OK');
@@ -98,7 +98,7 @@ async function getConfigurations() {
     const response = await api.configurations.getAll();
     configurations.value = response.data;
   } catch (error: unknown) {
-    router.push(newFatalErrorRouteLocation(error, 'NewDeploymentDestinationPage::getConfigurations()'));
+    router.push(newFatalErrorRouteLocation(error, 'NewDeploymentPage::getConfigurations()'));
   }
 }
 

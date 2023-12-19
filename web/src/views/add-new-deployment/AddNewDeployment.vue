@@ -7,13 +7,13 @@
         label="Project"
         :to="{ name: 'project' }"
       />
-      <q-breadcrumbs-el label="New Destination" />
+      <q-breadcrumbs-el label="New Deployment" />
     </q-breadcrumbs>
 
     <q-form
       class="q-gutter-md"
       @reset="resetForm"
-      @submit.prevent="navigateToNewDestinationPage"
+      @submit.prevent="navigateToNewDeploymentPage"
     >
       <div class="q-pa-sm">
         <q-list>
@@ -33,10 +33,10 @@
       <div class="flex row reverse">
         <PButton
           hierarchy="primary"
-          :disable="disableToDestinationPage"
+          :disable="disableToDeploymentPage"
           type="submit"
         >
-          Continue to Publish
+          Continue to Deploy
         </PButton>
         <PButton
           hierarchy="secondary"
@@ -83,7 +83,7 @@ function resetForm() {
   deploymentName.value = '';
 }
 
-const destinationPage = computed<RouteLocationRaw>(() => ({
+const deploymentPage = computed<RouteLocationRaw>(() => ({
   name: 'newDeployment',
   params: {
     account: selectedAccountName.value,
@@ -93,12 +93,12 @@ const destinationPage = computed<RouteLocationRaw>(() => ({
   }
 }));
 
-const disableToDestinationPage = computed(() => {
+const disableToDeploymentPage = computed(() => {
   return Boolean(!selectedAccountName.value);
 });
 
-function navigateToNewDestinationPage() {
-  router.push(destinationPage.value);
+function navigateToNewDeploymentPage() {
+  router.push(deploymentPage.value);
 }
 
 getAccounts();

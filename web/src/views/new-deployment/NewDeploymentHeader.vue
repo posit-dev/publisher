@@ -1,14 +1,14 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div class="destination-header">
+  <div class="deployment-header">
     <div class="publisher-layout q-py-md">
       <q-breadcrumbs>
         <q-breadcrumbs-el
           label="Project"
           :to="{ name: 'project' }"
         />
-        <q-breadcrumbs-el label="New Destination" />
+        <q-breadcrumbs-el label="New Deployment" />
       </q-breadcrumbs>
 
       <div
@@ -16,22 +16,22 @@
       >
         <div class="space-between-sm">
           <h1
-            v-if="destinationName"
+            v-if="deploymentName"
             class="text-h6"
           >
-            {{ destinationName }}
+            {{ deploymentName }}
           </h1>
           <template v-if="publishAsNew">
             <p>
-              New deployment to: {{ destinationURL }}
+              New deployment to: {{ deploymentURL }}
             </p>
             <p>
-              {{ addingDestinationMessage }}
+              {{ addingDeploymentMessage }}
             </p>
           </template>
           <template v-else>
             <p>
-              Redeployment to: {{ destinationURL }}
+              Redeployment to: {{ deploymentURL }}
             </p>
             <p>
               {{ contentId }}
@@ -44,7 +44,7 @@
           <SelectAccount
             class="account-width"
             :accounts="fixedAccountList"
-            :url="destinationURL"
+            :url="deploymentURL"
           />
           <PButton
             hierarchy="primary"
@@ -99,7 +99,7 @@ const router = useRouter();
 
 const accounts = ref<Account[]>([]);
 const fixedAccountList = ref<Account[]>([]);
-const destinationURL = ref('');
+const deploymentURL = ref('');
 const publishingLocalId = ref('');
 const contentId = ref('');
 const numSuccessfulPublishes = ref(0);
@@ -108,7 +108,7 @@ const emit = defineEmits(['publish']);
 
 const props = defineProps({
   accountName: { type: String, required: true },
-  destinationName: { type: String, default: undefined, required: false },
+  deploymentName: { type: String, default: undefined, required: false },
 });
 
 const initiatePublishProcess = async() => {
@@ -123,7 +123,7 @@ const initiatePublishProcess = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       publishAsNew.value,
       props.accountName,
-      props.destinationName,
+      props.deploymentName,
       contentId.value,
     );
     publishingLocalId.value = result;
@@ -133,7 +133,7 @@ const initiatePublishProcess = async() => {
     router.push(
       newFatalErrorRouteLocation(
         error,
-        'NewDestinationHeader::initiatePublishProcess()'
+        'NewDeploymentHeader::initiatePublishProcess()'
       ),
     );
   }
@@ -147,7 +147,7 @@ const updateAccountList = async() => {
     // 500 - internal server error
     const response = await api.accounts.get(props.accountName);
     if (response.data) {
-      destinationURL.value = response.data.url;
+      deploymentURL.value = response.data.url;
       fixedAccountList.value = [response.data];
     }
   } catch (error: unknown) {
@@ -155,17 +155,17 @@ const updateAccountList = async() => {
     router.push(
       newFatalErrorRouteLocation(
         error,
-        'NewDestinationHeader::updateAccountList()',
+        'NewDeploymentHeader::updateAccountList()',
       ),
     );
   }
 };
 
-const addingDestinationMessage = computed(() => {
-  if (props.destinationName) {
-    return `Publishing will add a destination named "${props.destinationName}" to your project.`;
+const addingDeploymentMessage = computed(() => {
+  if (props.deploymentName) {
+    return `Deploying will add a deployment named "${props.deploymentName}" to your project.`;
   }
-  return 'Publishing will add this Destination to your project.';
+  return 'Deploying will add this deployment to your project.';
 });
 
 const showPublishStatusAsCurrent = computed(() => {
@@ -218,7 +218,7 @@ watch(
 </script>
 
 <style scoped lang="scss">
-.destination-header {
+.deployment-header {
   border-bottom: 1px solid;
 
   .account-width {
@@ -227,14 +227,14 @@ watch(
 }
 
 .body--light {
-  .destination-header {
+  .deployment-header {
     background-color: white;
     border-color: $grey-4;
   }
 }
 
 .body--dark {
-  .destination-header {
+  .deployment-header {
     border-color: $grey-8;
   }
 }
