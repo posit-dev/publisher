@@ -13,7 +13,7 @@
         :id="deployment.id"
       />
       <p v-else>
-        Last Published on {{ formatDateString(deployment.deployedAt) }}
+        Last Deployed on {{ formatDateString(deployment.deployedAt) }}
       </p>
     </div>
   </PCard>

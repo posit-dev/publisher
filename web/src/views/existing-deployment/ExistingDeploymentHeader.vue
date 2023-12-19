@@ -30,7 +30,7 @@
             {{ deployment.id }}
           </p>
           <p>
-            Last Published on {{ formatDateString(deployment.deployedAt) }}
+            Last Deployed on {{ formatDateString(deployment.deployedAt) }}
           </p>
         </div>
 
@@ -48,9 +48,9 @@
             class="q-ml-md"
             padding="sm md"
             :disable="eventStore.publishInProgess"
-            @click="initiatePublishProcess"
+            @click="initiateDeploy"
           >
-            Publish
+            Redeploy
           </PButton>
         </div>
       </div>
@@ -63,7 +63,7 @@
             <div class="col-11">
               <DeployProgressSummary
                 :id="deployment.id"
-                :current-tense="showPublishStatusAsCurrent"
+                :current-tense="showDeployStatusAsCurrent"
               />
               <RouterLink :to="{ name: 'progress' }">
                 View summarized redeploment logs
@@ -97,10 +97,10 @@ const accounts = ref<Account[]>([]);
 const filteredAccountList = ref<Account[]>([]);
 const deploymentURL = ref('');
 const selectedAccount = ref<Account>();
-const publishingLocalId = ref('');
-const numSuccessfulPublishes = ref(0);
+const deployingLocalId = ref('');
+const numSuccessfulDeploys = ref(0);
 
-const emit = defineEmits(['publish']);
+const emit = defineEmits(['deploy']);
 
 const props = defineProps({
   deployment: { type: Object as PropType<Deployment>, required: true },
@@ -110,19 +110,19 @@ const onChange = (account: Account) => {
   selectedAccount.value = account;
 };
 
-const initiatePublishProcess = async() => {
+const initiateDeploy = async() => {
   const accountName = selectedAccount.value?.name;
   if (!accountName) {
     // internal error
     router.push(
       newFatalErrorRouteLocation(
         'An internal error has occurred when calling publish.start - no accountName',
-        'ExistingDeploymentHeader::initiatePublishProcess()',
+        'ExistingDeploymentHeader::initiateDeploy()',
       ),
     );
     return; // not reachable but we need this here for intellisense
   }
-  emit('publish');
+  emit('deploy');
 
   // Returns:
   // 200 - success
@@ -137,14 +137,14 @@ const initiatePublishProcess = async() => {
       props.deployment.saveName,
       props.deployment.id,
     );
-    publishingLocalId.value = result;
+    deployingLocalId.value = result;
   } catch (error: unknown) {
     // We'll send all errors to the fatal page. Nothing the user can do about this
     // error here. This includes 400 errors.
     router.push(
       newFatalErrorRouteLocation(
         error,
-        'ExistingDeploymentHeader::initiatePublishProcess()',
+        'ExistingDeploymentHeader::initiateDeploy()',
       ),
     );
   }
@@ -188,24 +188,24 @@ watch(
       oldVal &&
       // and last publishing run was ours
       (
-        eventStore.doesPublishStatusApply(publishingLocalId.value) ||
+        eventStore.doesPublishStatusApply(deployingLocalId.value) ||
         eventStore.doesPublishStatusApply(props.deployment.id)
       ) &&
       // and it was successful enough to get a content id assigned
       eventStore.currentPublishStatus.contentId
     ) {
       // increment our counter
-      numSuccessfulPublishes.value += 1;
+      numSuccessfulDeploys.value += 1;
     }
   }
 );
 
-const showPublishStatusAsCurrent = computed(() => {
+const showDeployStatusAsCurrent = computed(() => {
   // Show only if we've previously published or if this is the first one,
   // then only if it applies to us.
   return Boolean(
-    numSuccessfulPublishes.value ||
-    eventStore.doesPublishStatusApply(publishingLocalId.value)
+    numSuccessfulDeploys.value ||
+    eventStore.doesPublishStatusApply(deployingLocalId.value)
   );
 });
 

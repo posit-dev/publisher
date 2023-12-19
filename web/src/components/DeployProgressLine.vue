@@ -2,7 +2,7 @@
 
 <template>
   <div
-    v-if="publishInProgess"
+    v-if="deployInProgress"
     class="flex items-center"
     :class="textClass"
   >
@@ -16,7 +16,7 @@
     </div>
   </div>
   <div
-    v-if="showPublishError"
+    v-if="showDeployError"
     class="flex items-center"
     :class="textClass"
   >
@@ -25,7 +25,7 @@
       size="1rem"
     />
     <div class="q-ml-sm text-left text-bold">
-      Publishing Operation has failed.
+      Deploying Operation has failed.
     </div>
   </div>
 </template>
@@ -47,11 +47,11 @@ const completion = computed(() => {
   return eventStore.currentPublishStatus.status.completion;
 });
 
-const publishInProgess = computed(() => {
+const deployInProgress = computed(() => {
   return eventStore.isPublishActiveByID(props.id);
 });
 
-const showPublishError = computed(() => {
+const showDeployError = computed(() => {
   return (
     eventStore.doesPublishStatusApply(props.id)
     &&
