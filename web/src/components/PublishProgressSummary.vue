@@ -60,7 +60,7 @@
       </div>
       <div class="col-10 text-caption">
         <div class="text-bold">
-          Publish was successful!
+          {{ pastTenseModifier }} Publish was successful!
         </div>
         <div>
           Access through Dashboard:
@@ -83,7 +83,7 @@
       </div>
       <div class="col-10 text-caption">
         <div class="text-bold">
-          Publishing Operation has failed.
+          {{ pastTenseModifier }} Publishing Operation has failed.
         </div>
         <div
           v-for="keyValuePair in eventStore.currentPublishStatus.status.error"
@@ -110,6 +110,7 @@ const $q = useQuasar();
 
 const props = defineProps({
   id: { type: String, required: true }, // Can be either localId or contentId
+  currentTense: { type: Boolean, required: true },
 });
 
 const completion = computed(() => {
@@ -151,6 +152,13 @@ const textClass = computed(() => {
     return 'text-white';
   }
   return 'text-black';
+});
+
+const pastTenseModifier = computed((): string => {
+  if (!props.currentTense) {
+    return 'Previous ';
+  }
+  return '';
 });
 
 </script>

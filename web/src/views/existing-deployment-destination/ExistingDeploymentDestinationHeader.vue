@@ -56,7 +56,6 @@
       </div>
 
       <div
-        v-if="showPublishStatus"
         class="col-4 vertical-top q-gutter-x-md"
       >
         <div class="col q-mt-md">
@@ -64,6 +63,7 @@
             <div class="col-11">
               <PublishProgressSummary
                 :id="deployment.id"
+                :current-tense="showPublishStatusAsCurrent"
               />
               <RouterLink :to="{ name: 'progress' }">
                 Log View
@@ -200,10 +200,10 @@ watch(
   }
 );
 
-const showPublishStatus = computed(() => {
+const showPublishStatusAsCurrent = computed(() => {
   // Show only if we've previously published or if this is the first one,
   // then only if it applies to us.
-  return (
+  return Boolean(
     numSuccessfulPublishes.value ||
     eventStore.doesPublishStatusApply(publishingLocalId.value)
   );
