@@ -17,7 +17,7 @@
       </div>
       <div class="col-10 text-left">
         <div class="text-bold">
-          Your project is being published to another destination.
+          Your project is already being deployed to another deployment.
         </div>
         <div>
           Please wait until that operation is complete.

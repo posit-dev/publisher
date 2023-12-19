@@ -132,7 +132,7 @@ async function getDeployments() {
         return errorMessages.value.push(
           buildErrorBannerMessage(
             d.error,
-            `Please correct errors within the indicated destination file(s).
+            `Please correct errors within the indicated deployment file(s).
             The files will not appear on the list below until they are valid and
             you have reloaded this page.`,
           ),

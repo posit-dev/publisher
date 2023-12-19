@@ -8,7 +8,7 @@
           label="Project"
           :to="{ name: 'project' }"
         />
-        <q-breadcrumbs-el label="New Destination" />
+        <q-breadcrumbs-el label="New Deployment" />
       </q-breadcrumbs>
 
       <div
@@ -163,9 +163,9 @@ const updateAccountList = async() => {
 
 const addingDestinationMessage = computed(() => {
   if (props.destinationName) {
-    return `Publishing will add a destination named "${props.destinationName}" to your project.`;
+    return `Deploying will add a deployment named "${props.destinationName}" to your project.`;
   }
-  return 'Publishing will add this Destination to your project.';
+  return 'Deploying will add this deployment to your project.';
 });
 
 const showPublishStatusAsCurrent = computed(() => {
