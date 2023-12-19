@@ -73,7 +73,7 @@
                 :current-tense="showDeployStatusAsCurrent"
               />
               <RouterLink :to="{ name: 'progress' }">
-                View summarized deploment logs
+                View summarized deployment logs
               </RouterLink>
             </div>
           </div>
