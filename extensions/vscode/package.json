@@ -4,6 +4,7 @@
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
   "version": "0.0.0",
+  "icon": "assets/img/color.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/rstudio/publishing-client/tree/main/extensions/vscode"
@@ -23,16 +24,16 @@
       {
         "command": "posit.publisher.start",
         "title": "Open Publisher",
-        "category": "Posit Publisher",
+        "category": "Posit",
         "icon": {
-          "light": "assets/icons/light.svg",
-          "dark": "assets/icons/dark.svg"
+          "light": "assets/img/light.svg",
+          "dark": "assets/img/dark.svg"
         }
       },
       {
-        "command": "posit.publisher.stop",
-        "title": "Stop Publisher",
-        "category": "Posit Publisher"
+        "command": "posit.publisher.close",
+        "title": "Close Publisher",
+        "category": "Posit"
       }
     ],
     "configuration": {

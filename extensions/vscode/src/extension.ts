@@ -19,7 +19,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('posit.publisher.stop', async () => {
+		vscode.commands.registerCommand('posit.publisher.close', async () => {
 			service = await Service.get(context);
 			await service.stop();
 		})
