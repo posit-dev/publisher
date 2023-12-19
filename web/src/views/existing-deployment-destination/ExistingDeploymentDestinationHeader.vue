@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div class="destination-header">
+  <div class="deployment-header">
     <div class="publisher-layout q-py-md">
       <q-breadcrumbs>
         <q-breadcrumbs-el
@@ -40,7 +40,7 @@
           <SelectAccount
             class="account-width"
             :accounts="filteredAccountList"
-            :url="destinationURL"
+            :url="deploymentURL"
             @change="onChange"
           />
           <PButton
@@ -95,7 +95,7 @@ const router = useRouter();
 
 const accounts = ref<Account[]>([]);
 const filteredAccountList = ref<Account[]>([]);
-const destinationURL = ref('');
+const deploymentURL = ref('');
 const selectedAccount = ref<Account>();
 const publishingLocalId = ref('');
 const numSuccessfulPublishes = ref(0);
@@ -212,7 +212,7 @@ const showPublishStatusAsCurrent = computed(() => {
 </script>
 
 <style scoped lang="scss">
-.destination-header {
+.deployment-header {
   border-bottom: 1px solid;
 
   .account-width {
@@ -221,14 +221,14 @@ const showPublishStatusAsCurrent = computed(() => {
 }
 
 .body--light {
-  .destination-header {
+  .deployment-header {
     background-color: white;
     border-color: $grey-4;
   }
 }
 
 .body--dark {
-  .destination-header {
+  .deployment-header {
     border-color: $grey-8;
   }
 }

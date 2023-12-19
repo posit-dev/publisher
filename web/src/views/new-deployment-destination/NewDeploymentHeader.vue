@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div class="destination-header">
+  <div class="deployment-header">
     <div class="publisher-layout q-py-md">
       <q-breadcrumbs>
         <q-breadcrumbs-el
@@ -23,15 +23,15 @@
           </h1>
           <template v-if="publishAsNew">
             <p>
-              New deployment to: {{ destinationURL }}
+              New deployment to: {{ deploymentURL }}
             </p>
             <p>
-              {{ addingDestinationMessage }}
+              {{ addingDeploymentMessage }}
             </p>
           </template>
           <template v-else>
             <p>
-              Redeployment to: {{ destinationURL }}
+              Redeployment to: {{ deploymentURL }}
             </p>
             <p>
               {{ contentId }}
@@ -44,7 +44,7 @@
           <SelectAccount
             class="account-width"
             :accounts="fixedAccountList"
-            :url="destinationURL"
+            :url="deploymentURL"
           />
           <PButton
             hierarchy="primary"
@@ -99,7 +99,7 @@ const router = useRouter();
 
 const accounts = ref<Account[]>([]);
 const fixedAccountList = ref<Account[]>([]);
-const destinationURL = ref('');
+const deploymentURL = ref('');
 const publishingLocalId = ref('');
 const contentId = ref('');
 const numSuccessfulPublishes = ref(0);
@@ -133,7 +133,7 @@ const initiatePublishProcess = async() => {
     router.push(
       newFatalErrorRouteLocation(
         error,
-        'NewDestinationHeader::initiatePublishProcess()'
+        'NewDeploymentHeader::initiatePublishProcess()'
       ),
     );
   }
@@ -147,7 +147,7 @@ const updateAccountList = async() => {
     // 500 - internal server error
     const response = await api.accounts.get(props.accountName);
     if (response.data) {
-      destinationURL.value = response.data.url;
+      deploymentURL.value = response.data.url;
       fixedAccountList.value = [response.data];
     }
   } catch (error: unknown) {
@@ -155,13 +155,13 @@ const updateAccountList = async() => {
     router.push(
       newFatalErrorRouteLocation(
         error,
-        'NewDestinationHeader::updateAccountList()',
+        'NewDeploymentHeader::updateAccountList()',
       ),
     );
   }
 };
 
-const addingDestinationMessage = computed(() => {
+const addingDeploymentMessage = computed(() => {
   if (props.destinationName) {
     return `Deploying will add a deployment named "${props.destinationName}" to your project.`;
   }
@@ -218,7 +218,7 @@ watch(
 </script>
 
 <style scoped lang="scss">
-.destination-header {
+.deployment-header {
   border-bottom: 1px solid;
 
   .account-width {
@@ -227,14 +227,14 @@ watch(
 }
 
 .body--light {
-  .destination-header {
+  .deployment-header {
     background-color: white;
     border-color: $grey-4;
   }
 }
 
 .body--dark {
-  .destination-header {
+  .deployment-header {
     border-color: $grey-8;
   }
 }
