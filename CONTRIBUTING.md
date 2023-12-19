@@ -2,6 +2,30 @@
 
 ## Quick Start
 
+- [Contributing](#contributing)
+  - [Quick Start](#quick-start)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+      - [Option 1 - Native](#option-1---native)
+      - [Option 2 - Docker](#option-2---docker)
+    - [Installing](#installing)
+    - [Execution](#execution)
+  - [Testing](#testing)
+    - [Unit Tests](#unit-tests)
+      - [Coverage Reporting](#coverage-reporting)
+    - [Integration Tests](#integration-tests)
+    - [UI Tests](#ui-tests)
+  - [Development](#development)
+    - [Build Tools](#build-tools)
+    - [Environment Variables](#environment-variables)
+      - [Behavior in GitHub Actions](#behavior-in-github-actions)
+    - [Extension Development](#extension-development)
+  - [Release](#release)
+    - [Instructions](#instructions)
+    - [Pre-Releases](#pre-releases)
+    - [Release Lifecycle](#release-lifecycle)
+
+
 The get this project up and running on your local machine, execute the following Just commands:
 
 ```console
@@ -106,7 +130,7 @@ When executing commands the following variables are accepted to change behavior.
 | MODE     | dev     | enum | When set to `dev`, development is enabled. All other values disable development mode.                    |
 
 
-#### Continuous Integration in GitHub Actions
+#### Behavior in GitHub Actions
 
 When running in GitHub Actions, the env variable `CI` is set to `true` by GitHub. When `CI=true`, the defaults for the following values are adjusted.
 
@@ -124,6 +148,8 @@ Extensions require the executable to exist on your `$PATH`.
 Execute `eval "$(just configure)"` to configure the executable on your current `$PATH`.
 
 ## Release
+
+### Instructions
 
 To start a release create a semver compatible tag.
 
@@ -158,9 +184,7 @@ For additional definitions see https://en.wikipedia.org/wiki/Software_release_li
 
 Currently, the following suffix lineage is in use:
 
-## Release Lifecycle
-
-### Key
+### Release Lifecycle
 
 - `X`: The major version.
 - `Y`: The minor version.

@@ -50,6 +50,8 @@ default:
     just clean
     just web
     just build
+    just package
+    just archive
 
 # Executes command against every justfile where avaiable. WARNING your mileage may very.
 all +args='default':
@@ -208,6 +210,13 @@ name:
 
     basename {{ _cmd }}
 
+package:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just vscode package
+
 # Prints the pre-release status based on the version (see `just version`).
 pre-release:
     #!/usr/bin/env bash
@@ -215,14 +224,6 @@ pre-release:
     {{ _with_debug }}
 
     ./scripts/is-pre-release.bash
-
-# Releses the application. Releases are written to AWS S3. If invoked with `env CI=true` then releases are created for all architectures supported by the Go toolchain.
-release:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just _with_docker ./scripts/release.bash {{ _cmd }}
 
 # Runs the CLI via `go run`.
 run *args:
@@ -262,6 +263,14 @@ test *args=("./..."): stub
     {{ _with_debug }}
 
     just _with_docker go test {{ args }} -covermode set -coverprofile=cover.out
+
+# Uploads distributions to object storage. If invoked with `env CI=true` then all architectures supported by the Go toolchain are uploaded.
+upload:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker ./scripts/upload.bash {{ _cmd }}
 
 # Executes commands in ./web/Justfile. Equivalent to `just web/dist`, but inside of Docker (i.e., just _with_docker web/dist).
 web *args:
@@ -309,6 +318,8 @@ _with_docker *args:
         -e GOCACHE=/work/.cache/go/cache\
         -e GOMODCACHE=/work/.cache/go/mod\
         -e MODE={{ _mode }}\
+        --env-file <(env | grep AWS_)\
+        --env-file <(env | grep GITHUB_)\
         --platform {{ _docker_platform }}\
         -v "$(pwd)":/work\
         -w /work\

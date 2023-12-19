@@ -168,10 +168,12 @@ MKTMP=("mktemp" "-d")
 TAR=("tar")
 
 # Variables
-POSIT_PUBLISHER_NAME="publisher"
-POSIT_PUBLISHER_VERSION="0.0.dev6"
-POSIT_PUBLISHER_URL="https://cdn.posit.co/publisher/releases/tags/v${VERSION}"
-POSIT_PUBLISHER_TMPDIR=$(execute "${MKTMP[@]}")
+NAME="publisher"
+PREFIX="/usr/local/bin"
+VERSION="1.0.dev0"
+URL="https://cdn.posit.co/publisher/releases/tags/v${VERSION}"
+TMPDIR=$(execute "${MKTMP[@]}")
+
 
 # OS specific settings
 OS="$(uname)"

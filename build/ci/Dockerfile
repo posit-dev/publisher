@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM ubuntu:jammy
+FROM ubuntu:jammy
 
 ARG NODEVERSION=18
 RUN \
@@ -55,3 +55,11 @@ RUN\
     && go env -w GOPATH=/usr/local/go\
     # staticcheck is required to for linting Go
     && go install honnef.co/go/tools/cmd/staticcheck@latest
+
+# AWS is required by this project. The build tooling uses it!
+ARG AWSARCHIVE=awscli-exe-linux-x86_64.zip
+RUN curl -L -O "https://awscli.amazonaws.com/${AWSARCHIVE}" \
+    && unzip -q "${AWSARCHIVE}" \
+    && rm "${AWSARCHIVE}"\
+    && ./aws/install\
+    && rm -r ./aws
