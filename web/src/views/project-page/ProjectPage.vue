@@ -8,7 +8,7 @@
 
     <div class="flex items-center justify-between">
       <h2 class="text-h6">
-        Destinations
+        Deployments
       </h2>
 
       <PButton
@@ -16,7 +16,7 @@
         hierarchy="primary"
         :to="{ name: 'addNewDeployment' }"
       >
-        Add Destination
+        New Deployment
       </PButton>
     </div>
 
@@ -45,13 +45,13 @@
             size="2rem"
           />
           <h3 class="text-body1 text-weight-medium q-mt-sm">
-            Add a New Destination
+            Add a New Deployment
           </h3>
           <p class="q-mt-xs text-low-contrast">
-            This project hasn't been published yet.
+            This project hasn't been deployed yet.
           </p>
           <p class="text-low-contrast">
-            Get started by adding a destination.
+            Get started by adding a new deployment.
           </p>
         </div>
       </PCard>
