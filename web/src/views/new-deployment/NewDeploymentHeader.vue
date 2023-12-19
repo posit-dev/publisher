@@ -72,7 +72,10 @@
                 :id="deployingLocalId"
                 :current-tense="showDeployStatusAsCurrent"
               />
-              <RouterLink :to="{ name: 'progress' }">
+              <RouterLink
+                v-if="showLogsLink"
+                :to="routerLocation"
+              >
                 View summarized deployment logs
               </RouterLink>
             </div>
@@ -95,7 +98,7 @@ import { useEventStore } from 'src/stores/events';
 import {
   newFatalErrorRouteLocation,
 } from 'src/util/errors';
-import { useRouter } from 'vue-router';
+import { RouteLocationRaw, useRouter } from 'vue-router';
 import PButton from 'src/components/PButton.vue';
 
 const api = useApi();
@@ -114,6 +117,32 @@ const emit = defineEmits(['deploy']);
 const props = defineProps({
   accountName: { type: String, required: true },
   deploymentName: { type: String, default: undefined, required: false },
+});
+
+const showLogsLink = computed(() => {
+  return eventStore.doesPublishStatusApply(deployingLocalId.value);
+});
+
+const routerLocation = computed((): RouteLocationRaw => {
+  return {
+    name: 'progress',
+    query: {
+      name: props.deploymentName,
+      operation: operationStr.value,
+      id: contentId.value,
+    },
+  };
+});
+
+const operationStr = computed(() => {
+  if (eventStore.currentPublishStatus.deploymentMode === 'deploy') {
+    return `New deployment to: ${deploymentURL.value}`;
+  }
+  if (eventStore.currentPublishStatus.deploymentMode === 'redeploy') {
+    return `Redeployment to: ${deploymentURL.value}`;
+  }
+  // return something better than just 'unknown'
+  return `Deploying to: ${deploymentURL.value}`;
 });
 
 const initiateDeploy = async() => {

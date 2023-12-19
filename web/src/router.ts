@@ -22,7 +22,16 @@ const routes = [
     }),
   },
   { name: 'deployments', path: '/deployments/:name', component: ExistingDeploymentPage },
-  { name: 'progress', path: '/progress', component: DeployProgressPage },
+  {
+    name: 'progress',
+    path: '/progress',
+    component: DeployProgressPage,
+    props: (route: RouteLocationNormalizedLoaded) => ({
+      name: route.query.name,
+      operation: route.query.operation,
+      id: route.query.id,
+    }),
+  },
   {
     name: 'fatalError',
     path: '/error',

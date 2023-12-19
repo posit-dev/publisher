@@ -65,8 +65,11 @@
                 :id="deployment.id"
                 :current-tense="showDeployStatusAsCurrent"
               />
-              <RouterLink :to="{ name: 'progress' }">
-                View summarized redeploment logs
+              <RouterLink
+                v-if="showLogsLink"
+                :to="routerLocation"
+              >
+                View summarized redeployment logs
               </RouterLink>
             </div>
           </div>
@@ -109,6 +112,21 @@ const props = defineProps({
 const onChange = (account: Account) => {
   selectedAccount.value = account;
 };
+
+const showLogsLink = computed(() => {
+  return eventStore.doesPublishStatusApply(props.deployment.id);
+});
+
+const routerLocation = computed(() => {
+  return {
+    name: 'progress',
+    query: {
+      name: props.deployment.saveName,
+      operation: `Redeployment to: ${props.deployment.serverUrl}`,
+      id: props.deployment.id,
+    },
+  };
+});
 
 const initiateRedeploy = async() => {
   const accountName = selectedAccount.value?.name;
