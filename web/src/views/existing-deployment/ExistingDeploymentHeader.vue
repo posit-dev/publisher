@@ -48,7 +48,7 @@
             class="q-ml-md"
             padding="sm md"
             :disable="eventStore.publishInProgess"
-            @click="initiateDeploy"
+            @click="initiateRedeploy"
           >
             Redeploy
           </PButton>
@@ -110,14 +110,14 @@ const onChange = (account: Account) => {
   selectedAccount.value = account;
 };
 
-const initiateDeploy = async() => {
+const initiateRedeploy = async() => {
   const accountName = selectedAccount.value?.name;
   if (!accountName) {
     // internal error
     router.push(
       newFatalErrorRouteLocation(
         'An internal error has occurred when calling publish.start - no accountName',
-        'ExistingDeploymentHeader::initiateDeploy()',
+        'ExistingDeploymentHeader::initiateRedeploy()',
       ),
     );
     return; // not reachable but we need this here for intellisense
@@ -144,7 +144,7 @@ const initiateDeploy = async() => {
     router.push(
       newFatalErrorRouteLocation(
         error,
-        'ExistingDeploymentHeader::initiateDeploy()',
+        'ExistingDeploymentHeader::initiateRedeploy()',
       ),
     );
   }
