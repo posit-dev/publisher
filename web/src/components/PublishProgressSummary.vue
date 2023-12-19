@@ -65,7 +65,7 @@
         <div>
           Access through Dashboard:
           <span>
-            eventStore.currentPublishStatus.status.dashboardURL
+            {{ eventStore.currentPublishStatus.status.dashboardURL }}
           </span>
         </div>
       </div>
