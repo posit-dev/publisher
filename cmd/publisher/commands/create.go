@@ -19,8 +19,8 @@ import (
 )
 
 type CreateCmd struct {
-	Path        util.Path         `help:"Path to directory containing files to publish." arg:"" default:"."`
-	AccountName string            `name:"account" short:"a" help:"Nickname of destination publishing account (run list-accounts to see them)."`
+	Path        util.Path         `help:"Path to project directory containing files to publish." arg:"" default:"."`
+	AccountName string            `name:"account" short:"a" help:"Nickname of the publishing account to use (run list-accounts to see them)."`
 	ConfigName  string            `name:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
 	SaveName    string            `name:"name" short:"n" help:"Save deployment with this name (in .posit/deployments/)"`
 	Account     *accounts.Account `kong:"-"`

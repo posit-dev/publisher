@@ -22,7 +22,7 @@ type cliSpec struct {
 	cli_types.CommonArgs
 	commands.AccountCommands `group:"Accounts"`
 
-	Init    commands.InitCommand `kong:"cmd" help:"Create a configuration file based on the contents of the directory."`
+	Init    commands.InitCommand `kong:"cmd" help:"Create a configuration file based on the contents of the project directory."`
 	Create  commands.CreateCmd   `kong:"cmd" help:"Create a new deployment."`
 	Update  commands.UpdateCmd   `kong:"cmd" help:"Update an existing deployment."`
 	UI      commands.UICmd       `kong:"cmd" help:"Serve the publisher UI."`

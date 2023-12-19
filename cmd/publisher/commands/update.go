@@ -19,7 +19,7 @@ import (
 
 type UpdateCmd struct {
 	TargetName string                 `arg:"" help:"Name of deployment to update (in .posit/deployments/)"`
-	Path       util.Path              `help:"Path to directory containing files to publish." arg:"" default:"."`
+	Path       util.Path              `help:"Path to project directory containing files to publish." arg:"" default:"."`
 	ConfigName string                 `name:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
 	Config     *config.Config         `kong:"-"`
 	Target     *deployment.Deployment `kong:"-"`
