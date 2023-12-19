@@ -44,7 +44,7 @@ func (s *LoggerSuite) TestNewSimpleLogger() {
 
 func (s *LoggerSuite) TestHandleStart() {
 	w := utiltest.NewMockWriter()
-	expected := []byte("Preparing file archive...          ")
+	expected := []byte("Prepare Files...                   ")
 	w.On("Write", expected).Return(len(expected), nil)
 	h := NewCLIHandler(newStructuredLogWriter(w))
 
@@ -91,5 +91,5 @@ func (s *LoggerSuite) TestHandleNewLine() {
 	log.Error("test error")
 	log.Failure(errors.New("Failed!"))
 	str := w.String()
-	s.Contains(str, "Preparing file archive...          \ntime=")
+	s.Contains(str, "Prepare Files...                   \ntime=")
 }

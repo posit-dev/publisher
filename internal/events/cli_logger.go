@@ -65,18 +65,18 @@ func (h *CLIHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 var opNameMap = map[Operation]string{
-	PublishCheckCapabilitiesOp:   "Checking server capabilities",
-	PublishCreateNewDeploymentOp: "Creating deployment",
-	PublishSetEnvVarsOp:          "Setting environment variables",
-	PublishCreateBundleOp:        "Preparing file archive",
-	PublishUpdateDeploymentOp:    "Updating deployment settings",
-	PublishUploadBundleOp:        "Uploading files",
-	PublishDeployBundleOp:        "Initiating deployment",
-	PublishRestorePythonEnvOp:    "Restoring Python environment",
-	PublishRestoreREnvOp:         "Restoring R environment",
-	PublishRunContentOp:          "Executing deployed content",
-	PublishSetVanityUrlOp:        "Setting custom URL",
-	PublishValidateDeploymentOp:  "Validating deployment",
+	PublishCheckCapabilitiesOp:   "Check Configuration",
+	PublishCreateNewDeploymentOp: "Create New Deployment",
+	PublishSetEnvVarsOp:          "Set environment variables",
+	PublishCreateBundleOp:        "Prepare Files",
+	PublishUploadBundleOp:        "Upload Files",
+	PublishUpdateDeploymentOp:    "Updating Deployment Settings",
+	PublishDeployBundleOp:        "Activate Deployment",
+	PublishRestorePythonEnvOp:    "Restore Python environment",
+	PublishRestoreREnvOp:         "Restore R environment",
+	PublishRunContentOp:          "Run Content",
+	PublishSetVanityUrlOp:        "Sett Custom URL",
+	PublishValidateDeploymentOp:  "Test Deployment",
 }
 
 func (h *CLIHandler) Handle(ctx context.Context, rec slog.Record) error {
