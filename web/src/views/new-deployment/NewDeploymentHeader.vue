@@ -8,7 +8,9 @@
           label="Project"
           :to="{ name: 'project' }"
         />
-        <q-breadcrumbs-el label="New Deployment" />
+        <q-breadcrumbs-el
+          label="Deploy"
+        />
       </q-breadcrumbs>
 
       <div
@@ -31,7 +33,7 @@
           </template>
           <template v-else>
             <p>
-              Redeployment to: {{ deploymentURL }}
+              Deployment to: {{ deploymentURL }}
             </p>
             <p>
               {{ contentId }}
