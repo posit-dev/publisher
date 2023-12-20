@@ -307,7 +307,7 @@
               ]
             },
             "cpu-limit": {
-              "type": "integer",
+              "type": "number",
               "minimum": 0,
               "description": "The maximum amount of compute power this content will be allowed to consume when executing or rendering, expressed in CPU Units, where 1.0 unit is equivalent to 1 physical or virtual core. Fractional values are allowed. If the process tries to use more CPU than allowed, it will be throttled.",
               "examples": [
