@@ -9,9 +9,7 @@
           :to="{ name: 'project' }"
         />
         <q-breadcrumbs-el
-          :label="deploymentPageName"
-          class="click-target"
-          @click="router.go(-1)"
+          label="Deploy"
         />
       </q-breadcrumbs>
 
@@ -121,24 +119,6 @@ const emit = defineEmits(['deploy']);
 const props = defineProps({
   accountName: { type: String, required: true },
   deploymentName: { type: String, default: undefined, required: false },
-});
-
-const deploymentPageName = computed(() => {
-  let value = '';
-  if (
-    eventStore.currentPublishStatus.deploymentMode === 'redeploy' &&
-    eventStore.doesPublishStatusApply(deployingLocalId.value)
-  ) {
-    value = `Redeploy`;
-  } else {
-    value = 'Deploy';
-  }
-  if (props.deploymentName) {
-    value += ` ${props.deploymentName}`;
-  } else if (contentId.value) {
-    value += ` ${contentId.value}`;
-  }
-  return value;
 });
 
 const showLogsLink = computed(() => {
@@ -272,9 +252,5 @@ watch(
   .deployment-header {
     border-color: $grey-8;
   }
-}
-
-.click-target {
-  cursor: pointer;
 }
 </style>

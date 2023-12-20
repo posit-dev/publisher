@@ -11,7 +11,7 @@
         }"
       />
       <q-breadcrumbs-el
-        :label="deploymentPageName"
+        label="Deploy"
         class="click-target"
         @click="router.go(-1)"
       />
@@ -55,21 +55,6 @@ const router = useRouter();
 
 const saveName = computed(() => {
   return eventStore.currentPublishStatus.saveName;
-});
-
-const deploymentPageName = computed(() => {
-  let value = '';
-  if (eventStore.currentPublishStatus.deploymentMode === 'deploy') {
-    value = `Deploy`;
-  } else {
-    value = 'Redeploy';
-  }
-  if (saveName.value) {
-    value += ` ${saveName.value}`;
-  } else if (id.value) {
-    value += ` ${id.value}`;
-  }
-  return value;
 });
 
 const operation = computed(() => {
