@@ -11,7 +11,12 @@
         }"
       />
       <q-breadcrumbs-el
-        label="Deploy Progress"
+        :label="deploymentPageName"
+        class="click-target"
+        @click="router.go(-1)"
+      />
+      <q-breadcrumbs-el
+        label="Progress"
       />
     </q-breadcrumbs>
 
@@ -41,13 +46,30 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useEventStore } from 'src/stores/events';
+import { useRouter } from 'vue-router';
 
 import DeployStepper from 'src/views/deploy-progress/DeployStepper.vue';
 
 const eventStore = useEventStore();
+const router = useRouter();
 
 const saveName = computed(() => {
   return eventStore.currentPublishStatus.saveName;
+});
+
+const deploymentPageName = computed(() => {
+  let value = '';
+  if (eventStore.currentPublishStatus.deploymentMode === 'deploy') {
+    value = `Deploy`;
+  } else {
+    value = 'Redeploy';
+  }
+  if (saveName.value) {
+    value += ` ${saveName.value}`;
+  } else if (id.value) {
+    value += ` ${id.value}`;
+  }
+  return value;
 });
 
 const operation = computed(() => {
@@ -70,3 +92,9 @@ const id = computed(() => {
 //   id: { type: String, required: false, default: '' },
 // });
 </script>
+
+<style scoped lang="scss">
+.click-target {
+  cursor: pointer;
+}
+</style>

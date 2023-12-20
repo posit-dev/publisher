@@ -12,7 +12,9 @@
           }"
         />
         <q-breadcrumbs-el
-          :label="deployment.saveName"
+          :label="deploymentPageName"
+          class="click-target"
+          @click="router.go(-1)"
         />
       </q-breadcrumbs>
 
@@ -106,6 +108,16 @@ const emit = defineEmits(['deploy']);
 
 const props = defineProps({
   deployment: { type: Object as PropType<Deployment>, required: true },
+});
+
+const deploymentPageName = computed(() => {
+  let value = 'Redeploy';
+  if (props.deployment.saveName) {
+    value += ` ${props.deployment.saveName}`;
+  } else {
+    value += ` ${props.deployment.id}`;
+  }
+  return value;
 });
 
 const onChange = (account: Account) => {
@@ -261,5 +273,9 @@ const showDeployStatusAsCurrent = computed(() => {
   .deployment-header {
     border-color: $grey-8;
   }
+}
+
+.click-target {
+  cursor: pointer;
 }
 </style>
