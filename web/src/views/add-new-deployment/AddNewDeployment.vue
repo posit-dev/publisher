@@ -28,7 +28,8 @@
       <q-input
         v-model="deploymentName"
         label="Deployment Name"
-        hint="Optional"
+        hint="Optional, used locally to identify this deployment."
+        clearable
       />
       <div class="flex row reverse">
         <PButton
@@ -55,6 +56,7 @@
 import { Account, useApi } from 'src/api';
 import { computed, ref } from 'vue';
 import { RouteLocationRaw, useRouter } from 'vue-router';
+import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 import { newFatalErrorRouteLocation } from 'src/util/errors';
@@ -63,6 +65,7 @@ import PButton from 'src/components/PButton.vue';
 const accounts = ref<Account[]>([]);
 const selectedAccountName = ref<string>('');
 const deploymentName = ref<string>('');
+const deployments = ref<Deployment[]>([]);
 
 const api = useApi();
 const router = useRouter();
@@ -73,8 +76,26 @@ async function getAccounts() {
     // 500 - internal server error
     const response = await api.accounts.getAll();
     accounts.value = response.data.accounts;
+    if (accounts.value.length > 0) {
+      // select the first one
+      selectedAccountName.value = accounts.value[0].name;
+    }
   } catch (error: unknown) {
     router.push(newFatalErrorRouteLocation(error, 'AddNewDeployment::getAccounts()'));
+  }
+}
+
+async function getDeployments() {
+  try {
+    // API Returns:
+    // 200 - success
+    // 500 - internal server error
+    const response = (await api.deployments.getAll()).data;
+    deployments.value = response.filter<Deployment>((d): d is Deployment => {
+      return !isDeploymentError(d);
+    });
+  } catch (error: unknown) {
+    router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getDeployments()'));
   }
 }
 
@@ -101,5 +122,24 @@ function navigateToNewDeploymentPage() {
   router.push(deploymentPage.value);
 }
 
-getAccounts();
+const generateDefaultName = () => {
+  let id = 0;
+  let defaultName = '';
+  do {
+    id += 1;
+    const trialName = `Untitled-${id}`;
+    if (!deployments.value.find((deployment) => deployment.saveName === trialName)) {
+      defaultName = trialName;
+    }
+  } while (!defaultName);
+  return defaultName;
+};
+
+const init = async() => {
+  getAccounts();
+  await getDeployments();
+  deploymentName.value = generateDefaultName();
+};
+init();
+
 </script>
