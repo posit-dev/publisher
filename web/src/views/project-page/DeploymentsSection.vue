@@ -123,7 +123,7 @@ async function getDeployments() {
   }
 }
 
-getDeployments();
+await getDeployments();
 </script>
 
 <style scoped lang="scss">

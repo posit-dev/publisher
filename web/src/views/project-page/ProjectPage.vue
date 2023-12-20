@@ -6,7 +6,24 @@
       <q-breadcrumbs-el label="Project" />
     </q-breadcrumbs>
 
-    <DeploymentsSection />
+    <Suspense>
+      <DeploymentsSection />
+
+      <template #fallback>
+        <div>
+          <h2 class="text-h6 header-button-offset">
+            Deployments
+          </h2>
+          <div class="q-my-xl flex column items-center">
+            <q-spinner
+              color="primary"
+              size="3em"
+            />
+            <span class="q-mt-md">Loading your deployments...</span>
+          </div>
+        </div>
+      </template>
+    </Suspense>
 
     <div>
       <h2 class="text-h6">
@@ -78,6 +95,10 @@ getConfigurations();
 </script>
 
 <style scoped lang="scss">
+// Offset to make the Suspense deployments header pixel perfect
+.header-button-offset {
+  line-height: 36px;
+}
 
 .config-grid {
   display: grid;
