@@ -115,9 +115,9 @@ export type PublishStatus = {
   steps: {
     createNewDeployment: PublishStepStatus,
     createBundle: PublishStepStatus,
+    uploadBundle: PublishStepStatus,
     createDeployment: PublishStepStatus,
     setEnvVars: PublishStepStatus,
-    uploadBundle: PublishStepStatus,
     deployBundle: PublishStepStatus,
     restorePythonEnv: PublishStepStatus,
     runContent: PublishStepStatus,
@@ -145,17 +145,17 @@ const newPublishStatus = () => {
         logs: <EventStreamMessage[]>[],
         allMsgs: <EventStreamMessage[]>[],
       },
+      uploadBundle: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
       createDeployment: {
         completion: <PublishStepCompletionStatus>'notStarted',
         logs: <EventStreamMessage[]>[],
         allMsgs: <EventStreamMessage[]>[],
       },
       setEnvVars: {
-        completion: <PublishStepCompletionStatus>'notStarted',
-        logs: <EventStreamMessage[]>[],
-        allMsgs: <EventStreamMessage[]>[],
-      },
-      uploadBundle: {
         completion: <PublishStepCompletionStatus>'notStarted',
         logs: <EventStreamMessage[]>[],
         allMsgs: <EventStreamMessage[]>[],
@@ -393,6 +393,38 @@ export const useEventStore = defineStore('event', () => {
     }
   };
 
+  const onPublishUploadBundleStart = (msg: PublishUploadBundleStart) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'uploadBundle';
+      publishStatus.steps.uploadBundle.completion = 'inProgress';
+      publishStatus.steps.uploadBundle.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishUploadBundleSuccess = (msg: PublishUploadBundleSuccess) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.uploadBundle.completion = 'success';
+      publishStatus.steps.uploadBundle.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishUploadBundleFailure = (msg: PublishUploadBundleFailure) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.uploadBundle.completion = 'error';
+      publishStatus.steps.uploadBundle.error = splitMsgIntoKeyValuePairs(msg.data);
+      publishStatus.steps.uploadBundle.allMsgs.push(msg);
+    }
+  };
+
   const onPublishCreateDeploymentStart = (msg: PublishCreateDeploymentStart) => {
     const localId = getLocalId(msg);
 
@@ -454,38 +486,6 @@ export const useEventStore = defineStore('event', () => {
       publishStatus.steps.setEnvVars.completion = 'error';
       publishStatus.steps.setEnvVars.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.setEnvVars.allMsgs.push(msg);
-    }
-  };
-
-  const onPublishUploadBundleStart = (msg: PublishUploadBundleStart) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.currentStep = 'uploadBundle';
-      publishStatus.steps.uploadBundle.completion = 'inProgress';
-      publishStatus.steps.uploadBundle.allMsgs.push(msg);
-    }
-  };
-
-  const onPublishUploadBundleSuccess = (msg: PublishUploadBundleSuccess) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.steps.uploadBundle.completion = 'success';
-      publishStatus.steps.uploadBundle.allMsgs.push(msg);
-    }
-  };
-
-  const onPublishUploadBundleFailure = (msg: PublishUploadBundleFailure) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.steps.uploadBundle.completion = 'error';
-      publishStatus.steps.uploadBundle.error = splitMsgIntoKeyValuePairs(msg.data);
-      publishStatus.steps.uploadBundle.allMsgs.push(msg);
     }
   };
 
@@ -752,6 +752,10 @@ export const useEventStore = defineStore('event', () => {
     eventStream.addEventMonitorCallback('publish/createBundle/success', onPublishCreateBundleSuccess);
     eventStream.addEventMonitorCallback('publish/createBundle/failure', onPublishCreateBundleFailure);
 
+    eventStream.addEventMonitorCallback('publish/uploadBundle/start', onPublishUploadBundleStart);
+    eventStream.addEventMonitorCallback('publish/uploadBundle/success', onPublishUploadBundleSuccess);
+    eventStream.addEventMonitorCallback('publish/uploadBundle/failure', onPublishUploadBundleFailure);
+
     eventStream.addEventMonitorCallback('publish/createDeployment/start', onPublishCreateDeploymentStart);
     eventStream.addEventMonitorCallback('publish/createDeployment/success', onPublishCreateDeploymentSuccess);
     eventStream.addEventMonitorCallback('publish/createDeployment/failure', onPublishCreateDeploymentFailure);
@@ -759,10 +763,6 @@ export const useEventStore = defineStore('event', () => {
     eventStream.addEventMonitorCallback('publish/setEnvVars/start', onPublishSetEnvVarsStart);
     eventStream.addEventMonitorCallback('publish/setEnvVars/success', onPublishSetEnvVarsSuccess);
     eventStream.addEventMonitorCallback('publish/setEnvVars/failure', onPublishSetEnvVarsFailure);
-
-    eventStream.addEventMonitorCallback('publish/uploadBundle/start', onPublishUploadBundleStart);
-    eventStream.addEventMonitorCallback('publish/uploadBundle/success', onPublishUploadBundleSuccess);
-    eventStream.addEventMonitorCallback('publish/uploadBundle/failure', onPublishUploadBundleFailure);
 
     eventStream.addEventMonitorCallback('publish/deployBundle/start', onPublishDeployBundleStart);
     eventStream.addEventMonitorCallback('publish/deployBundle/success', onPublishDeployBundleSuccess);
