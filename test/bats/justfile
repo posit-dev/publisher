@@ -55,7 +55,7 @@ test:
     exe=$(just ../../executable-path)
 
     if [ ! -f $exe ]; then
-        echo "error: Missing executable. Run \`just build\`." 1>&2
+        echo "error: Missing executable $exe. Run \`just build\`." 1>&2
         exit 1
     fi
 
