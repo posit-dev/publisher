@@ -7,9 +7,17 @@
     </q-breadcrumbs>
 
     <div class="flex items-center justify-between">
-      <h2 class="text-h6">
-        Deployments
-      </h2>
+      <div class="col">
+        <h2 class="text-h6">
+          Deployments
+        </h2>
+        <p
+          v-if="hasDeployments"
+          class="q-mt-xs"
+        >
+          Your project has been deployed to:
+        </p>
+      </div>
 
       <PButton
         v-if="hasDeployments"
@@ -24,7 +32,6 @@
       :error-messages="errorMessages"
       @dismiss="dismissError"
     />
-
     <div
       v-if="hasDeployments"
       class="card-grid"
@@ -57,9 +64,19 @@
       </PCard>
     </div>
 
-    <h2 class="text-h6">
-      Configurations
-    </h2>
+    <div>
+      <h2 class="text-h6">
+        Configurations
+      </h2>
+      <p class="q-mt-xs">
+        The configuration file(s) available for this project, which specify the settings applied during
+        deployments.
+      </p>
+      <p class="q-mt-xs">
+        NOTE: Edit these files to add or modify settings which will be applied during this project's
+        next deployment.
+      </p>
+    </div>
     <div class="config-grid">
       <ConfigCard
         v-for="config in configurations"
@@ -73,7 +90,12 @@
         Files
       </h2>
       <p class="q-mt-xs">
-        The files for this project. Ignored files will not be part of your deployments.
+        The files detected for this project. Unless ignored,
+        these files will be uploaded to the server each time you deploy this project.
+      </p>
+      <p class="q-mt-xs">
+        NOTE: A <span class="text-bold">.positignore</span> file can be used to indicate which files should
+        not be included in your deployments to the server.
       </p>
     </div>
     <FileTree />

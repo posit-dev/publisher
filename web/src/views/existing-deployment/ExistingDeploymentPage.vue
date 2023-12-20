@@ -8,16 +8,18 @@
   <DeploymentSection
     v-if="deployment"
     title="Configuration"
-    :subtitle="deployment.configurationName"
+    :subtitles="configurationSubTitles"
   >
     <ConfigSettings
       v-if="defaultConfig"
       :config="defaultConfig"
     />
   </DeploymentSection>
+
   <DeploymentSection
+    v-if="deployment"
     title="Files"
-    subtitle="The files for this project. Ignored files will not be part of your deployments."
+    :subtitles="fileSubTitles"
   >
     <FileTree />
   </DeploymentSection>
@@ -52,6 +54,25 @@ const deploymentName = computed(():string => {
     return route.params.name[0];
   }
   return route.params.name;
+});
+
+const configurationSubTitles = computed(() => {
+  return [
+    `Using ${defaultConfig.value?.configurationPath}`,
+    `The settings present in this file are listed below and will be used during 
+      the next deployment of your project.`,
+    `Edit this file to add or modify settings which will be applied 
+      during this project's next deployment.`,
+  ];
+});
+
+const fileSubTitles = computed(() => {
+  return [
+    `The files detected for this project. Unless ignored, these files will be
+      uploaded to the server each time you deploy this project.`,
+    `NOTE: A .positignore file can be used to indicate which files should
+      not be included in your deployments to the server.`,
+  ];
 });
 
 const getDeployment = async() => {
