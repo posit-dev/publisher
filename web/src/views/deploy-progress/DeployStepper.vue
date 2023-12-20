@@ -12,19 +12,19 @@
       :name="1"
       @start="openStep = 1"
     />
-    <SetEnvVars
+    <CreateBundle
       :name="2"
       @start="openStep = 2"
     />
-    <CreateBundle
+    <UploadBundle
       :name="3"
       @start="openStep = 3"
     />
-    <UploadBundle
+    <CreateDeployment
       :name="4"
       @start="openStep = 4"
     />
-    <CreateDeployment
+    <SetEnvVars
       :name="5"
       @start="openStep = 5"
     />
