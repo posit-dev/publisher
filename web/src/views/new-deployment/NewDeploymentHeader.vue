@@ -33,7 +33,7 @@
           </template>
           <template v-else>
             <p>
-              Redeployment to: {{ deploymentURL }}
+              Deployment to: {{ deploymentURL }}
             </p>
             <p>
               {{ contentId }}

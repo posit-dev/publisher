@@ -24,7 +24,7 @@
             {{ deployment.saveName }}
           </h1>
           <p>
-            Redeployment to: {{ deployment.serverUrl }}
+            Deploying to: {{ deployment.serverUrl }}
           </p>
           <p>
             {{ deployment.id }}
@@ -69,7 +69,7 @@
                 v-if="showLogsLink"
                 :to="routerLocation"
               >
-                View summarized redeployment logs
+                View summarized deployment logs
               </RouterLink>
             </div>
           </div>
@@ -128,13 +128,6 @@ const routerLocation = computed(() => {
 });
 
 const operationStr = computed(() => {
-  if (eventStore.currentPublishStatus.deploymentMode === 'deploy') {
-    return `New deployment to: ${props.deployment.serverUrl}`;
-  }
-  if (eventStore.currentPublishStatus.deploymentMode === 'redeploy') {
-    return `Redeployment to: ${props.deployment.serverUrl}`;
-  }
-  // return something better than just 'unknown'
   return `Deploying to: ${props.deployment.serverUrl}`;
 });
 
