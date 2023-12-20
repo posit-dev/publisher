@@ -11,9 +11,10 @@
 
       <template #fallback>
         <div>
-          <h2 class="text-h6 header-button-offset">
+          <h2 class="text-h6">
             Deployments
           </h2>
+
           <div class="q-my-xl flex column items-center">
             <q-spinner
               color="primary"
@@ -95,11 +96,6 @@ getConfigurations();
 </script>
 
 <style scoped lang="scss">
-// Offset to make the Suspense deployments header pixel perfect
-.header-button-offset {
-  line-height: 36px;
-}
-
 .config-grid {
   display: grid;
   grid-gap: 28px;
