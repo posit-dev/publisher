@@ -69,7 +69,7 @@ func PostDeploymentsHandlerFunc(
 		publisher := publisherFactory(newState)
 
 		go func() {
-			log = log.WithArgs("local_id", localID)
+			log := log.WithArgs("local_id", localID)
 			err = publisher.PublishDirectory(log)
 			if err != nil {
 				log.Error("Deployment failed", "error", err.Error())
