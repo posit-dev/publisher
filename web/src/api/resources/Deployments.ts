@@ -25,8 +25,9 @@ export class Deployments {
   // 404 - not found
   // 500 - internal server error
   get(id: string) {
+    const encodedId = encodeURIComponent(id);
     return this.client.get<Deployment | DeploymentError>(
-      `deployments/${id}`,
+      `deployments/${encodedId}`,
     );
   }
 

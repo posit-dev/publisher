@@ -25,8 +25,9 @@ export class Accounts {
   // 404 - account not found
   // 500 - internal server error
   get(accountName: string) {
+    const encodedAccountName = encodeURIComponent(accountName);
     return this.client.get<Account>(
-      `/accounts/${accountName}`,
+      `/accounts/${encodedAccountName}`,
     );
   }
 }
