@@ -72,7 +72,10 @@
                 :id="deployingLocalId"
                 :current-tense="showDeployStatusAsCurrent"
               />
-              <RouterLink :to="{ name: 'progress' }">
+              <RouterLink
+                v-if="showLogsLink"
+                :to="{name: 'progress'}"
+              >
                 View summarized deployment logs
               </RouterLink>
             </div>
@@ -116,6 +119,10 @@ const props = defineProps({
   deploymentName: { type: String, default: undefined, required: false },
 });
 
+const showLogsLink = computed(() => {
+  return eventStore.doesPublishStatusApply(deployingLocalId.value);
+});
+
 const initiateDeploy = async() => {
   emit('deploy');
   // Returns:
@@ -128,6 +135,7 @@ const initiateDeploy = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       deployAsNew.value,
       props.accountName,
+      deploymentURL.value,
       props.deploymentName,
       contentId.value,
     );

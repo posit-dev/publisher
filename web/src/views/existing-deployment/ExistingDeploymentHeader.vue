@@ -40,7 +40,7 @@
           <SelectAccount
             class="account-width"
             :accounts="filteredAccountList"
-            :url="deploymentURL"
+            :url="deployment.serverUrl"
             @change="onChange"
           />
           <PButton
@@ -65,8 +65,11 @@
                 :id="deployment.id"
                 :current-tense="showDeployStatusAsCurrent"
               />
-              <RouterLink :to="{ name: 'progress' }">
-                View summarized redeploment logs
+              <RouterLink
+                v-if="showLogsLink"
+                :to="routerLocation"
+              >
+                View summarized redeployment logs
               </RouterLink>
             </div>
           </div>
@@ -95,7 +98,6 @@ const router = useRouter();
 
 const accounts = ref<Account[]>([]);
 const filteredAccountList = ref<Account[]>([]);
-const deploymentURL = ref('');
 const selectedAccount = ref<Account>();
 const deployingLocalId = ref('');
 const numSuccessfulDeploys = ref(0);
@@ -110,8 +112,35 @@ const onChange = (account: Account) => {
   selectedAccount.value = account;
 };
 
+const showLogsLink = computed(() => {
+  return eventStore.doesPublishStatusApply(props.deployment.id);
+});
+
+const routerLocation = computed(() => {
+  return {
+    name: 'progress',
+    query: {
+      name: props.deployment.saveName,
+      operation: operationStr.value,
+      id: props.deployment.id,
+    },
+  };
+});
+
+const operationStr = computed(() => {
+  if (eventStore.currentPublishStatus.deploymentMode === 'deploy') {
+    return `New deployment to: ${props.deployment.serverUrl}`;
+  }
+  if (eventStore.currentPublishStatus.deploymentMode === 'redeploy') {
+    return `Redeployment to: ${props.deployment.serverUrl}`;
+  }
+  // return something better than just 'unknown'
+  return `Deploying to: ${props.deployment.serverUrl}`;
+});
+
 const initiateRedeploy = async() => {
   const accountName = selectedAccount.value?.name;
+  const destinationURL = selectedAccount.value?.url;
   if (!accountName) {
     // internal error
     router.push(
@@ -134,6 +163,7 @@ const initiateRedeploy = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       false, // this is never a new deployment
       accountName,
+      destinationURL,
       props.deployment.saveName,
       props.deployment.id,
     );

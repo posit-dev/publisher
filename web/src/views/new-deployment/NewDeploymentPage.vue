@@ -53,6 +53,11 @@ const props = defineProps({
     required: false,
     default: undefined,
   },
+  url: {
+    type: [String, Array] as PropType<string | string[]>,
+    required: false,
+    default: undefined,
+  },
 });
 
 const accountName = computed(() => {

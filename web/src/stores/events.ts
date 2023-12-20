@@ -189,6 +189,8 @@ export type keyValuePair = {
   value: string,
 };
 
+export type DeploymentMode = 'deploy' | 'redeploy';
+
 export const splitMsgIntoKeyValuePairs = ((msg: Record<string, string>) => {
   const result: keyValuePair[] = [];
   Object.keys(msg).forEach(key => result.push({
@@ -209,19 +211,28 @@ export const useEventStore = defineStore('event', () => {
   type CurrentPublishStatus = {
     localId: string,
     contentId: string,
+    deploymentMode?: DeploymentMode,
+    saveName?: string,
+    destinationURL?: string,
     status: PublishStatus,
   };
 
   const currentPublishStatus = ref<CurrentPublishStatus>({
     localId: '',
     contentId: '',
+    deploymentMode: undefined,
+    saveName: undefined,
+    destinationURL: undefined,
     status: newPublishStatus(),
   });
 
   const doesPublishStatusApply = ((id: string) => {
     return (
-      currentPublishStatus.value.localId === id ||
-      currentPublishStatus.value.contentId === id
+      id &&
+      (
+        currentPublishStatus.value.localId === id ||
+        currentPublishStatus.value.contentId === id
+      )
     );
   });
 
@@ -675,6 +686,7 @@ export const useEventStore = defineStore('event', () => {
   const initiatePublishProcessWithEvents = async(
     newDeployment: boolean,
     accountName : string,
+    destinationURL?: string,
     destinationName?: string,
     contentId?: string,
   ) : Promise<string> => {
@@ -685,6 +697,9 @@ export const useEventStore = defineStore('event', () => {
     publishInProgess.value = true;
     currentPublishStatus.value.localId = '';
     currentPublishStatus.value.contentId = contentId || '';
+    currentPublishStatus.value.deploymentMode = newDeployment ? 'deploy' : 'redeploy';
+    currentPublishStatus.value.saveName = destinationName;
+    currentPublishStatus.value.destinationURL = destinationURL;
     currentPublishStatus.value.status = newPublishStatus();
 
     try {
