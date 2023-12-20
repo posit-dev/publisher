@@ -19,6 +19,7 @@ const routes = [
     component: NewDeploymentPage,
     props: (route: RouteLocationNormalizedLoaded) => ({
       name: route.query.name,
+      url: route.query.url,
     }),
   },
   { name: 'deployments', path: '/deployments/:name', component: ExistingDeploymentPage },

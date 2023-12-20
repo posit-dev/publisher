@@ -212,6 +212,8 @@ export const useEventStore = defineStore('event', () => {
     localId: string,
     contentId: string,
     deploymentMode?: DeploymentMode,
+    saveName?: string,
+    destinationURL?: string,
     status: PublishStatus,
   };
 
@@ -219,6 +221,8 @@ export const useEventStore = defineStore('event', () => {
     localId: '',
     contentId: '',
     deploymentMode: undefined,
+    saveName: undefined,
+    destinationURL: undefined,
     status: newPublishStatus(),
   });
 
@@ -682,6 +686,7 @@ export const useEventStore = defineStore('event', () => {
   const initiatePublishProcessWithEvents = async(
     newDeployment: boolean,
     accountName : string,
+    destinationURL?: string,
     destinationName?: string,
     contentId?: string,
   ) : Promise<string> => {
@@ -693,6 +698,8 @@ export const useEventStore = defineStore('event', () => {
     currentPublishStatus.value.localId = '';
     currentPublishStatus.value.contentId = contentId || '';
     currentPublishStatus.value.deploymentMode = newDeployment ? 'deploy' : 'redeploy';
+    currentPublishStatus.value.saveName = destinationName;
+    currentPublishStatus.value.destinationURL = destinationURL;
     currentPublishStatus.value.status = newPublishStatus();
 
     try {

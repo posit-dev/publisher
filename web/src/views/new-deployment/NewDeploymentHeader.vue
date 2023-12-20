@@ -74,7 +74,7 @@
               />
               <RouterLink
                 v-if="showLogsLink"
-                :to="routerLocation"
+                :to="{name: 'progress'}"
               >
                 View summarized deployment logs
               </RouterLink>
@@ -98,7 +98,7 @@ import { useEventStore } from 'src/stores/events';
 import {
   newFatalErrorRouteLocation,
 } from 'src/util/errors';
-import { RouteLocationRaw, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import PButton from 'src/components/PButton.vue';
 
 const api = useApi();
@@ -123,28 +123,6 @@ const showLogsLink = computed(() => {
   return eventStore.doesPublishStatusApply(deployingLocalId.value);
 });
 
-const routerLocation = computed((): RouteLocationRaw => {
-  return {
-    name: 'progress',
-    query: {
-      name: props.deploymentName,
-      operation: operationStr.value,
-      id: contentId.value,
-    },
-  };
-});
-
-const operationStr = computed(() => {
-  if (eventStore.currentPublishStatus.deploymentMode === 'deploy') {
-    return `New deployment to: ${deploymentURL.value}`;
-  }
-  if (eventStore.currentPublishStatus.deploymentMode === 'redeploy') {
-    return `Redeployment to: ${deploymentURL.value}`;
-  }
-  // return something better than just 'unknown'
-  return `Deploying to: ${deploymentURL.value}`;
-});
-
 const initiateDeploy = async() => {
   emit('deploy');
   // Returns:
@@ -157,6 +135,7 @@ const initiateDeploy = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       deployAsNew.value,
       props.accountName,
+      deploymentURL.value,
       props.deploymentName,
       contentId.value,
     );

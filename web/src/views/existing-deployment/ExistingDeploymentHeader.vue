@@ -140,6 +140,7 @@ const operationStr = computed(() => {
 
 const initiateRedeploy = async() => {
   const accountName = selectedAccount.value?.name;
+  const destinationURL = selectedAccount.value?.url;
   if (!accountName) {
     // internal error
     router.push(
@@ -162,6 +163,7 @@ const initiateRedeploy = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       false, // this is never a new deployment
       accountName,
+      destinationURL,
       props.deployment.saveName,
       props.deployment.id,
     );
