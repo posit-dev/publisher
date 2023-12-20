@@ -127,7 +127,7 @@ const generateDefaultName = () => {
   let defaultName = '';
   do {
     id += 1;
-    const trialName = `Untitled #${id}`;
+    const trialName = `Untitled-${id}`;
     if (!deployments.value.find((deployment) => deployment.saveName === trialName)) {
       defaultName = trialName;
     }
