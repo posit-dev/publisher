@@ -30,7 +30,7 @@ do
 
     executable=$(./scripts/get-executable-path.bash "$name" "$version" "$os" "$arch" )
     if [ ! -f "$executable" ]; then
-        echo "error: Missing executable. Run \`just build\`." 1>&2
+        echo "error: Missing executable $executable. Run \`just build\`." 1>&2
         exit 1
     fi
 

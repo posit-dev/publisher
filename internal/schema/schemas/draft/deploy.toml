@@ -56,7 +56,7 @@ load-factor = 0.5
 
 [connect.kubernetes]
 amd-gpu-limit = 0
-cpu-limit = 1
+cpu-limit = 1.5
 cpu-request = 0.5
 image-name = "posit/connect-runtime-python3.11-r4.3"
 memory-limit = 100000000
