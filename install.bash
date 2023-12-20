@@ -170,7 +170,7 @@ TAR=("tar")
 # Variables
 NAME="publisher"
 PREFIX="/usr/local/bin"
-VERSION="0.0.dev6"
+VERSION="1.0.alpha1"
 URL="https://cdn.posit.co/publisher/releases/tags/v${VERSION}"
 TMPDIR=$(execute "${MKTMP[@]}")
 
