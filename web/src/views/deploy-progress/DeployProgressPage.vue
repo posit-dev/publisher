@@ -58,13 +58,6 @@ const saveName = computed(() => {
 });
 
 const operation = computed(() => {
-  if (eventStore.currentPublishStatus.deploymentMode === 'deploy') {
-    return `New deployment to: ${eventStore.currentPublishStatus.destinationURL}`;
-  }
-  if (eventStore.currentPublishStatus.deploymentMode === 'redeploy') {
-    return `Redeployment to: ${eventStore.currentPublishStatus.destinationURL}`;
-  }
-  // return something better than just 'unknown'
   return `Deploying to: ${eventStore.currentPublishStatus.destinationURL}`;
 });
 
