@@ -75,6 +75,10 @@ async function getAccounts() {
     // 500 - internal server error
     const response = await api.accounts.getAll();
     accounts.value = response.data.accounts;
+    if (accounts.value.length > 0) {
+      // select the first one
+      selectedAccountName.value = accounts.value[0].name;
+    }
   } catch (error: unknown) {
     router.push(newFatalErrorRouteLocation(error, 'AddNewDeployment::getAccounts()'));
   }
