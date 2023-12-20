@@ -28,7 +28,8 @@
       <q-input
         v-model="deploymentName"
         label="Deployment Name"
-        hint="Optional"
+        hint="Optional, used locally to identify this deployment."
+        clearable
       />
       <div class="flex row reverse">
         <PButton
@@ -53,7 +54,7 @@
 
 <script setup lang="ts">
 import { Account, useApi } from 'src/api';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { RouteLocationRaw, useRouter } from 'vue-router';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
@@ -63,6 +64,7 @@ import PButton from 'src/components/PButton.vue';
 const accounts = ref<Account[]>([]);
 const selectedAccountName = ref<string>('');
 const deploymentName = ref<string>('');
+const lastDefaultName = ref<string>('');
 
 const api = useApi();
 const router = useRouter();
@@ -100,6 +102,32 @@ const disableToDeploymentPage = computed(() => {
 function navigateToNewDeploymentPage() {
   router.push(deploymentPage.value);
 }
+
+const generateDefaultName = (accountName: string) => {
+  return `Deployment using ${accountName}`;
+};
+
+watch(
+  () => selectedAccountName.value,
+  (newVal, oldVal) => {
+    let update = false;
+    if (
+      oldVal &&
+      lastDefaultName.value === generateDefaultName(oldVal) &&
+      deploymentName.value === lastDefaultName.value
+    ) {
+      // ok to update it, the value is still our last generated default
+      update = true;
+    } else if (!oldVal && !deploymentName.value) {
+      // ok to update, the field is blank and we have never had a default
+      update = true;
+    }
+    if (update) {
+      lastDefaultName.value = generateDefaultName(newVal);
+      deploymentName.value = lastDefaultName.value;
+    }
+  }
+);
 
 getAccounts();
 </script>
