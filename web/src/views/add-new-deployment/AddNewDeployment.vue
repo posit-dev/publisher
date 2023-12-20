@@ -54,8 +54,9 @@
 
 <script setup lang="ts">
 import { Account, useApi } from 'src/api';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { RouteLocationRaw, useRouter } from 'vue-router';
+import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 import { newFatalErrorRouteLocation } from 'src/util/errors';
@@ -64,7 +65,7 @@ import PButton from 'src/components/PButton.vue';
 const accounts = ref<Account[]>([]);
 const selectedAccountName = ref<string>('');
 const deploymentName = ref<string>('');
-const lastDefaultName = ref<string>('');
+const deployments = ref<Deployment[]>([]);
 
 const api = useApi();
 const router = useRouter();
@@ -81,6 +82,20 @@ async function getAccounts() {
     }
   } catch (error: unknown) {
     router.push(newFatalErrorRouteLocation(error, 'AddNewDeployment::getAccounts()'));
+  }
+}
+
+async function getDeployments() {
+  try {
+    // API Returns:
+    // 200 - success
+    // 500 - internal server error
+    const response = (await api.deployments.getAll()).data;
+    deployments.value = response.filter<Deployment>((d): d is Deployment => {
+      return !isDeploymentError(d);
+    });
+  } catch (error: unknown) {
+    router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getDeployments()'));
   }
 }
 
@@ -107,31 +122,24 @@ function navigateToNewDeploymentPage() {
   router.push(deploymentPage.value);
 }
 
-const generateDefaultName = (accountName: string) => {
-  return `Deployment using ${accountName}`;
+const generateDefaultName = () => {
+  let id = 0;
+  let defaultName = '';
+  do {
+    id += 1;
+    const trialName = `Untitled #${id}`;
+    if (!deployments.value.find((deployment) => deployment.saveName === trialName)) {
+      defaultName = trialName;
+    }
+  } while (!defaultName);
+  return defaultName;
 };
 
-watch(
-  () => selectedAccountName.value,
-  (newVal, oldVal) => {
-    let update = false;
-    if (
-      oldVal &&
-      lastDefaultName.value === generateDefaultName(oldVal) &&
-      deploymentName.value === lastDefaultName.value
-    ) {
-      // ok to update it, the value is still our last generated default
-      update = true;
-    } else if (!oldVal && !deploymentName.value) {
-      // ok to update, the field is blank and we have never had a default
-      update = true;
-    }
-    if (update) {
-      lastDefaultName.value = generateDefaultName(newVal);
-      deploymentName.value = lastDefaultName.value;
-    }
-  }
-);
+const init = async() => {
+  await getAccounts();
+  await getDeployments();
+  deploymentName.value = generateDefaultName();
+};
+init();
 
-getAccounts();
 </script>
