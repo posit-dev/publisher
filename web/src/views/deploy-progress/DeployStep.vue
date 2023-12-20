@@ -29,7 +29,7 @@
           <!-- {{ JSON.stringify(msg) }} -->
           <template v-if="isErrorEventStreamMessage(msg)">
             <span class="text-error text-weight-medium">
-              {{ formatMsg(msg) }}<br>
+              {{ formatMsg(msg) }}
             </span>
             <ul>
               <li
@@ -168,20 +168,22 @@ const splitErrorLog = (msg: EventStreamMessage) => {
 //     "error": "permissionErr"
 // }
   const nameValues: NameValue[] = [];
-  Object.keys(msg).forEach(key => {
-    if (key !== 'data' && msg[key] !== null) {
+  for (const [key, value] of Object.entries(msg)) {
+    if (key !== 'data' && value) {
       nameValues.push({
         name: key,
-        value: msg[key],
+        value: value,
       });
     }
-  });
-  Object.keys(msg.data).forEach(key => {
-    nameValues.push({
-      name: `data.${key}`,
-      value: msg.data[key],
-    });
-  });
+  }
+  for (const [key, value] of Object.entries(msg.data)) {
+    if (value) {
+      nameValues.push({
+        name: key,
+        value: value,
+      });
+    }
+  }
   return nameValues;
 };
 
