@@ -278,6 +278,7 @@ export const useEventStore = defineStore('event', () => {
 
     latestLocalId.value = localId;
     currentPublishStatus.value.localId = localId;
+    currentPublishStatus.value.status = newPublishStatus();
 
     const publishStatus = currentPublishStatus.value.status;
     publishStatus.completion = 'inProgress';
@@ -723,7 +724,6 @@ export const useEventStore = defineStore('event', () => {
     // NOT SEEING THESE LOG messages now.
     eventStream.addEventMonitorCallback('agent/log', onAgentLog);
 
-    eventStream.addEventMonitorCallback('publish/start', onPublishStart);
     eventStream.addEventMonitorCallback('publish/start', onPublishStart);
     eventStream.addEventMonitorCallback('publish/success', onPublishSuccess);
     eventStream.addEventMonitorCallback('publish/failure', onPublishFailure);
