@@ -31,6 +31,20 @@
             <span class="text-error text-weight-medium">
               {{ formatMsg(msg) }}
             </span>
+            <ul>
+              <li
+                v-for="(nameValue, i) in splitErrorLog(msg)"
+                :key="i"
+                class="text-caption q-ml-md"
+              >
+                <span class="text-weight-medium">
+                  {{ nameValue.name }}:
+                </span>
+                <span>
+                  {{ nameValue.value }}<br>
+                </span>
+              </li>
+            </ul>
           </template>
           <template v-else>
             <template v-if="msg.type.endsWith('/start')">
@@ -125,8 +139,52 @@ const formatMsg = (msg: EventStreamMessage): string => {
     return `${msg.data.message} ${msg.data.path}`;
   } else if (isPublishRestorePythonEnvStatus(msg)) {
     return `${msg.data.message} ${msg.data.name} (${msg.data.version})`;
+  } else if (isErrorEventStreamMessage(msg)) {
+    return `${msg.data.error}`;
   }
   return msg.data.message;
+};
+
+type NameValue = {
+  name: string,
+  value: string,
+};
+
+const splitErrorLog = (msg: EventStreamMessage) => {
+//   {
+//     "time": "2023-12-19T14:53:23.611707-08:00",
+//     "type": "publish/uploadBundle/failure",
+//     "data": {
+//         "level": "ERROR",
+//         "message": "unexpected response from the server",
+//         "method": "POST",
+//         "status": 403,
+//         "url": "https://connect.localtest.me/rsc/dev-password/__api__/v1/content/20b5a116-a8f8-4213-b4c4-9eef29bc308c/bundles",
+//         "code": 21,
+//         "error": "You don't have permission to change this item.",
+//         "localId": "0EM40IJmUrzfM277",
+//         "payload": null
+//     },
+//     "error": "permissionErr"
+// }
+  const nameValues: NameValue[] = [];
+  for (const [key, value] of Object.entries(msg)) {
+    if (key !== 'data' && value) {
+      nameValues.push({
+        name: key,
+        value: value,
+      });
+    }
+  }
+  for (const [key, value] of Object.entries(msg.data)) {
+    if (value) {
+      nameValues.push({
+        name: key,
+        value: value,
+      });
+    }
+  }
+  return nameValues;
 };
 
 </script>
