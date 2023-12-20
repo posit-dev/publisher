@@ -9,8 +9,7 @@
 
   <DeploymentSection
     title="Configuration"
-    :subtitle="defaultConfig?.configurationName ||
-      'No default configuration found. One will be created automatically on deploy'"
+    :subtitles="configurationSubTitles"
   >
     <ConfigSettings
       v-if="defaultConfig"
@@ -20,7 +19,7 @@
 
   <DeploymentSection
     title="Files"
-    subtitle="The files for this project. Ignored files will not be part of your deployments."
+    :subtitles="fileSubTitles"
   >
     <FileTree />
   </DeploymentSection>
@@ -78,6 +77,25 @@ const deploymentName = computed(() => {
 
 const defaultConfig = computed(() => {
   return configurations.value.find((c) => c.configurationName === 'default');
+});
+
+const configurationSubTitles = computed(() => {
+  return [
+    `Using ${defaultConfig.value?.configurationPath}`,
+    `The settings present in this file are listed below and will be used during 
+      the next deployment of your project.`,
+    `Edit this file to add or modify settings which will be applied 
+      during this project's next deployment.`,
+  ];
+});
+
+const fileSubTitles = computed(() => {
+  return [
+    `The files detected for this project. Unless ignored, these files will be
+      uploaded to the server each time you deploy this project.`,
+    `NOTE: A .positignore file can be used to indicate which files should
+      not be included in your deployments to the server.`,
+  ];
 });
 
 onBeforeRouteLeave((_to, _from, next) => {
