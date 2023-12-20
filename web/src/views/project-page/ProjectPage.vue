@@ -68,9 +68,14 @@
       />
     </div>
 
-    <h2 class="text-h6">
-      Files
-    </h2>
+    <div>
+      <h2 class="text-h6">
+        Files
+      </h2>
+      <p class="q-mt-xs">
+        The files for this project. Ignored files will not be part of your deployments.
+      </p>
+    </div>
     <FileTree />
   </div>
 </template>

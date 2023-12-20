@@ -18,7 +18,10 @@
     />
   </DeploymentSection>
 
-  <DeploymentSection title="Files">
+  <DeploymentSection
+    title="Files"
+    subtitle="The files for this project. Ignored files will not be part of your deployments."
+  >
     <FileTree />
   </DeploymentSection>
 </template>
