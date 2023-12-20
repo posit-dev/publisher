@@ -6,6 +6,7 @@ import { HOST } from '.';
 import { Assistant } from './assistants';
 import { Panel } from './panels';
 import * as ports from './ports';
+import * as workspaces from './workspaces';
 
 type State = "NEW" | "STARTING" | "RUNNING" | "STOPPING" | "TERMINATED" | "FAILED";
 
@@ -97,7 +98,7 @@ export class Service {
 		const panel = new Panel(context, resources, url);
 
 		// create assistant
-		const path = vscode.workspace.workspaceFolders?.at(0)?.uri.path;
+		const path = workspaces.path();
 		if (path === undefined) {
 			throw new Error("workspace path is undefined");
 		}
