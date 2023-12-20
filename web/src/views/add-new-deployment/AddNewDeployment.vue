@@ -136,7 +136,7 @@ const generateDefaultName = () => {
 };
 
 const init = async() => {
-  await getAccounts();
+  getAccounts();
   await getDeployments();
   deploymentName.value = generateDefaultName();
 };
