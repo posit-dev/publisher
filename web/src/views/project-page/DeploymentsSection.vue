@@ -123,14 +123,6 @@ async function getDeployments() {
   }
 }
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-const yourFunction = async() => {
-  await delay(5000);
-  console.log('Waited 5s');
-};
-
-await yourFunction();
-
 await getDeployments();
 </script>
 
