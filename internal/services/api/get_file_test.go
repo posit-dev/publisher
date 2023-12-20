@@ -33,7 +33,7 @@ func (s *GetFileHandlerFuncSuite) SetupSuite() {
 
 func (s *GetFileHandlerFuncSuite) TestGetFileHandlerFunc() {
 	files := new(MockFilesService)
-	files.On("GetFile", mock.Anything).Return(nil, nil)
+	files.On("GetFile", mock.Anything, mock.Anything).Return(nil, nil)
 
 	paths := new(MockPathsService)
 	paths.On("IsSafe", mock.Anything).Return(nil, nil)
@@ -51,7 +51,7 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFunc() {
 	src := &files.File{Rel: base.String()}
 
 	filesService := new(MockFilesService)
-	filesService.On("GetFile", mock.Anything).Return(src, nil)
+	filesService.On("GetFile", mock.Anything, mock.Anything).Return(src, nil)
 
 	pathsService := new(MockPathsService)
 	pathsService.On("IsSafe", mock.Anything).Return(true, nil)
@@ -84,7 +84,7 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFuncUsingPathname() {
 	src := &files.File{Rel: pathname}
 
 	filesService := new(MockFilesService)
-	filesService.On("GetFile", mock.Anything).Return(src, nil)
+	filesService.On("GetFile", mock.Anything, mock.Anything).Return(src, nil)
 
 	pathsService := new(MockPathsService)
 	pathsService.On("IsSafe", mock.Anything).Return(true, nil)
@@ -157,7 +157,7 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFuncGetFileReturnsError() {
 	src := &files.File{Rel: base.String()}
 
 	filesService := new(MockFilesService)
-	filesService.On("GetFile", mock.Anything).Return(src, errors.New(""))
+	filesService.On("GetFile", mock.Anything, mock.Anything).Return(src, errors.New(""))
 
 	pathsService := new(MockPathsService)
 	pathsService.On("IsSafe", mock.Anything).Return(true, nil)

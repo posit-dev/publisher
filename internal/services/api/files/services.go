@@ -12,30 +12,24 @@ import (
 )
 
 type FilesService interface {
-	GetFile(path util.Path) (*File, error)
+	GetFile(path util.Path, ignore gitignore.IgnoreList) (*File, error)
 }
 
 func CreateFilesService(base util.Path, log logging.Logger) FilesService {
-	ignore, err := gitignore.NewIgnoreList(base)
-	if err != nil {
-		log.Warn("failed to load .gitignore file")
-	}
 	return filesService{
-		root:   base,
-		log:    log,
-		ignore: ignore,
+		root: base,
+		log:  log,
 	}
 }
 
 type filesService struct {
-	root   util.Path
-	log    logging.Logger
-	ignore gitignore.IgnoreList
+	root util.Path
+	log  logging.Logger
 }
 
-func (s filesService) GetFile(p util.Path) (*File, error) {
+func (s filesService) GetFile(p util.Path, ignore gitignore.IgnoreList) (*File, error) {
 	p = p.Clean()
-	m, err := s.ignore.Match(p.String())
+	m, err := ignore.Match(p.String())
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +48,7 @@ func (s filesService) GetFile(p util.Path) (*File, error) {
 				return filepath.SkipDir
 			}
 			// Load .positignore from every directory where it exists
-			err = gitignore.LoadPositIgnoreIfPresent(path, s.ignore)
+			err = gitignore.LoadPositIgnoreIfPresent(path, ignore)
 			if err != nil {
 				return err
 			}
@@ -62,7 +56,7 @@ func (s filesService) GetFile(p util.Path) (*File, error) {
 		if err != nil {
 			return err
 		}
-		_, err = file.insert(s.root, path, s.ignore)
+		_, err = file.insert(s.root, path, ignore)
 		return err
 	})
 
