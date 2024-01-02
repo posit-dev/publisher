@@ -128,11 +128,12 @@ getc() {
 
 wait_for_user() {
   local c
-  echo "Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to continue or any other key to abort:"
+  info "Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to continue or any other key to abort:"
   getc c
   # we test for \r and \n because some stuff does \r instead
   if ! [[ "${c}" == $'\r' || "${c}" == $'\n' ]]
   then
+    info "Aborting..."
     exit 1
   fi
 }
