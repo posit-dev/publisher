@@ -1,5 +1,7 @@
 package accounts
 
+import "strings"
+
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type ServerType string
@@ -28,14 +30,12 @@ func (t ServerType) Description() string {
 // it returns the corresponding type. Otherwise,
 // it assumes a Connect server.
 func serverTypeFromURL(url string) ServerType {
-	switch url {
-	case "https://api.posit.cloud":
+	if strings.HasSuffix(url, ".posit.cloud") {
 		return ServerTypeCloud
-	case "https://api.rstudio.cloud":
+	} else if strings.HasSuffix(url, ".rstudio.cloud") {
 		return ServerTypeCloud
-	case "https://api.shinyapps.io":
+	} else if strings.HasSuffix(url, ".shinyapps.io") {
 		return ServerTypeShinyappsIO
-	default:
-		return ServerTypeConnect
 	}
+	return ServerTypeConnect
 }
