@@ -85,7 +85,7 @@ func (s *CapabilitiesSuite) TestRuntimeNonWorker() {
 		},
 	}
 	a := allSettings{}
-	s.ErrorIs(a.checkConfig(cfg), errRuntimeSettingsForNonWorker)
+	s.ErrorIs(a.checkConfig(cfg), errRuntimeSettingsForStaticContent)
 }
 
 func (s *CapabilitiesSuite) TestRunAs() {
