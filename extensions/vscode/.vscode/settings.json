@@ -10,5 +10,6 @@
     "typescript.tsc.autoDetect": "off",
     "cSpell.words": [
         "mutexify"
-    ]
+    ],
+    "svg.preview.background": "editor"
 }

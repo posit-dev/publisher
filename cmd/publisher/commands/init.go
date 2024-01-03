@@ -3,7 +3,6 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -15,19 +14,17 @@ import (
 )
 
 type InitCommand struct {
-	Path       util.Path `help:"Path to directory containing files to publish." arg:"" default:"."`
+	Path       util.Path `help:"Path to project directory containing files to publish." arg:"" default:"."`
 	Python     util.Path `help:"Path to Python interpreter for this content, if it is Python-based. Default is the Python 3 on your PATH."`
 	ConfigName string    `name:"config" short:"c" help:"Configuration name to create (in .posit/publish/)"`
 }
 
-const contentTypeDetectionFailed = " Could not determine content type and entrypoint.\n\n" +
+const contentTypeDetectionFailed = "Could not determine content type and entrypoint.\n\n" +
 	"Edit the configuration file (%s) \n" +
 	"and set the 'type' to a valid deployment type. Valid types are: \n%s\n\n" +
 	"Set 'entrypoint' to the main file being deployed. For apps and APIs\n" +
 	"this is usually app.py, api.py, app.R, or plumber.R; for reports,\n" +
-	"it is your .qmd, .Rmd, or .ipynb file"
-
-var errDetectionFailed = errors.New("could not determine content type and entrypoint")
+	"it is your .qmd, .Rmd, or .ipynb file.\n"
 
 func formatValidTypes() string {
 	t := config.AllValidContentTypeNames()
@@ -56,9 +53,9 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	configPath := config.GetConfigPath(cmd.Path, cmd.ConfigName)
 	if cfg.Type == config.ContentTypeUnknown {
 		fmt.Printf(contentTypeDetectionFailed, configPath, formatValidTypes())
-		return errDetectionFailed
+		return nil
 	} else {
-		fmt.Printf("Created config file %q\n", configPath.String())
+		fmt.Printf("Created config file '%s'\n", configPath.String())
 		if args.Verbose >= 2 {
 			fmt.Println()
 			cfg.Write(os.Stdout)

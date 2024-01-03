@@ -6,30 +6,39 @@
       <q-breadcrumbs-el label="Project" />
     </q-breadcrumbs>
 
-    <div class="flex items-center justify-between">
+    <Suspense>
+      <DeploymentsSection />
+
+      <template #fallback>
+        <div>
+          <h2 class="text-h6">
+            Deployments
+          </h2>
+
+          <div class="q-my-xl flex column items-center">
+            <q-spinner
+              color="primary"
+              size="3em"
+            />
+            <span class="q-mt-md">Loading your deployments...</span>
+          </div>
+        </div>
+      </template>
+    </Suspense>
+
+    <div>
       <h2 class="text-h6">
-        Destinations
+        Configurations
       </h2>
-
-      <q-btn
-        no-caps
-        :to="{ name: 'addNewDeployment' }"
-      >
-        Add Destination
-      </q-btn>
+      <p class="q-mt-xs">
+        The configuration file(s) available for this project, which specify the settings applied during
+        deployments.
+      </p>
+      <p class="q-mt-xs">
+        NOTE: Edit these files to add or modify settings which will be applied during this project's
+        next deployment.
+      </p>
     </div>
-
-    <div class="card-grid">
-      <DeploymentCard
-        v-for="deployment in deployments"
-        :key="deployment.id"
-        :deployment="deployment"
-      />
-    </div>
-
-    <h2 class="text-h6">
-      Configurations
-    </h2>
     <div class="config-grid">
       <ConfigCard
         v-for="config in configurations"
@@ -38,9 +47,19 @@
       />
     </div>
 
-    <h2 class="text-h6">
-      Files
-    </h2>
+    <div>
+      <h2 class="text-h6">
+        Files
+      </h2>
+      <p class="q-mt-xs">
+        The files detected for this project. Unless ignored,
+        these files will be uploaded to the server each time you deploy this project.
+      </p>
+      <p class="q-mt-xs">
+        NOTE: A <span class="text-bold">.positignore</span> file can be used to indicate which files should
+        not be included in your deployments to the server.
+      </p>
+    </div>
     <FileTree />
   </div>
 </template>
@@ -49,45 +68,34 @@
 import { ref } from 'vue';
 
 import { useApi } from 'src/api';
-import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import { Configuration, ConfigurationError } from 'src/api/types/configurations';
+import { useRouter } from 'vue-router';
+
+import { newFatalErrorRouteLocation } from 'src/util/errors';
 import ConfigCard from './ConfigCard.vue';
-import DeploymentCard from './DeploymentCard.vue';
 import FileTree from 'src/components/FileTree.vue';
+import DeploymentsSection from './DeploymentsSection.vue';
 
 const api = useApi();
-const deployments = ref<Deployment[]>([]);
+const router = useRouter();
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
-async function getDeployments() {
-  const response = (await api.deployments.getAll()).data;
-  deployments.value = response.filter<Deployment>((d): d is Deployment => {
-    return !isDeploymentError(d);
-  });
-}
-
 async function getConfigurations() {
-  const response = await api.configurations.getAll();
-  configurations.value = response.data;
+  try {
+    // API Returns:
+    // 200 - success
+    // 500 - internal server error
+    const response = await api.configurations.getAll();
+    configurations.value = response.data;
+  } catch (error: unknown) {
+    router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getConfigurations()'));
+  }
 }
 
-getDeployments();
 getConfigurations();
 </script>
 
 <style scoped lang="scss">
-.card-grid {
-  display: grid;
-  grid-gap: 28px;
-  grid-template-columns: repeat(2, 1fr);
-}
-
-@media (max-width: 800px) {
-  .card-grid {
-    grid-template-columns: repeat(1, 1fr);
-  }
-}
-
 .config-grid {
   display: grid;
   grid-gap: 28px;

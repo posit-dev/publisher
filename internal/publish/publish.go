@@ -43,25 +43,36 @@ func NewFromState(s *state.State) Publisher {
 	return &defaultPublisher{s}
 }
 
-type appInfo struct {
-	DashboardURL string `json:"dashboard-url"`
-	DirectURL    string `json:"direct-url"`
+func getDashboardURL(accountURL string, contentID types.ContentID) string {
+	return fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID)
 }
 
-func (p *defaultPublisher) logAppInfo(accountURL string, contentID types.ContentID, log logging.Logger) {
-	appInfo := appInfo{
-		DashboardURL: fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID),
-		DirectURL:    fmt.Sprintf("%s/content/%s", accountURL, contentID),
+func getDirectURL(accountURL string, contentID types.ContentID) string {
+	return fmt.Sprintf("%s/content/%s", accountURL, contentID)
+}
+
+func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log logging.Logger, publishingErr error) {
+	dashboardURL := getDashboardURL(accountURL, contentID)
+	directURL := getDirectURL(accountURL, contentID)
+	if publishingErr != nil {
+		if contentID == "" {
+			// Publishing failed before a content ID was known
+			return
+		}
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Dashboard URL: ", dashboardURL)
+	} else {
+		log.Success("Deployment successful",
+			logging.LogKeyOp, events.PublishOp,
+			"dashboardURL", dashboardURL,
+			"directURL", directURL,
+			"serverURL", accountURL,
+			"contentID", contentID,
+		)
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Dashboard URL: ", dashboardURL)
+		fmt.Fprintln(w, "Direct URL:    ", directURL)
 	}
-	log.Success("Deployment successful",
-		logging.LogKeyOp, events.PublishOp,
-		"dashboardURL", appInfo.DashboardURL,
-		"directURL", appInfo.DirectURL,
-		"serverURL", accountURL,
-		"contentID", contentID,
-	)
-	fmt.Println("Dashboard URL: ", appInfo.DashboardURL)
-	fmt.Println("Direct URL:    ", appInfo.DirectURL)
 }
 
 func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
@@ -92,8 +103,14 @@ func (p *defaultPublisher) publish(
 		agentErr, ok := err.(*types.AgentError)
 		if ok {
 			agentErr.SetOperation(events.PublishOp)
+			if p.Target != nil {
+				agentErr.Data["dashboard_url"] = getDashboardURL(p.Account.URL, p.Target.Id)
+			}
 			log.Failure(agentErr)
 		}
+	}
+	if p.Target != nil {
+		logAppInfo(os.Stderr, p.Account.URL, p.Target.Id, log, err)
 	}
 	return nil
 }
@@ -294,6 +311,5 @@ func (p *defaultPublisher) publishWithClient(
 	}
 
 	log = log.WithArgs(logging.LogKeyOp, events.AgentOp)
-	p.logAppInfo(account.URL, contentID, log)
 	return nil
 }

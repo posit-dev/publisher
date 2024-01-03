@@ -48,7 +48,6 @@ import {
 import {
   useEventStream,
 } from 'src/plugins/eventStream';
-import { getErrorMessage } from 'src/util/errors';
 
 import { computed, ref } from 'vue';
 
@@ -64,10 +63,10 @@ export const publishStepCompletionStatusNames: Record<PublishStepCompletionStatu
 
 export type PublishStep =
   'createNewDeployment' |
-  'setEnvVars' |
   'createBundle' |
   'uploadBundle' |
   'createDeployment' |
+  'setEnvVars' |
   'deployBundle' |
   'restorePythonEnv' |
   'runContent' |
@@ -75,10 +74,10 @@ export type PublishStep =
 
 export const publishStepDisplayNames: Record<PublishStep, string> = {
   createNewDeployment: 'Create New Deployment',
-  setEnvVars: 'Set Environment Varables',
   createBundle: 'Create Bundle',
   uploadBundle: 'Upload Bundle',
   createDeployment: 'Create Deployment',
+  setEnvVars: 'Set Environment Varables',
   deployBundle: 'Deploy Bundle',
   restorePythonEnv: 'Restore Python Runtime Environment',
   runContent: 'Run Content',
@@ -87,10 +86,10 @@ export const publishStepDisplayNames: Record<PublishStep, string> = {
 
 export const publishStepOrder: Record<PublishStep, number> = {
   createNewDeployment: 1,
-  setEnvVars: 2,
-  createBundle: 3,
-  uploadBundle: 4,
-  createDeployment: 5,
+  createBundle: 2,
+  uploadBundle: 3,
+  createDeployment: 4,
+  setEnvVars: 5,
   deployBundle: 6,
   restorePythonEnv: 7,
   runContent: 8,
@@ -115,10 +114,10 @@ export type PublishStatus = {
   currentStep?: PublishStep,
   steps: {
     createNewDeployment: PublishStepStatus,
-    setEnvVars: PublishStepStatus,
     createBundle: PublishStepStatus,
-    createDeployment: PublishStepStatus,
     uploadBundle: PublishStepStatus,
+    createDeployment: PublishStepStatus,
+    setEnvVars: PublishStepStatus,
     deployBundle: PublishStepStatus,
     restorePythonEnv: PublishStepStatus,
     runContent: PublishStepStatus,
@@ -141,12 +140,12 @@ const newPublishStatus = () => {
         logs: <EventStreamMessage[]>[],
         allMsgs: <EventStreamMessage[]>[],
       },
-      setEnvVars: {
+      createBundle: {
         completion: <PublishStepCompletionStatus>'notStarted',
         logs: <EventStreamMessage[]>[],
         allMsgs: <EventStreamMessage[]>[],
       },
-      createBundle: {
+      uploadBundle: {
         completion: <PublishStepCompletionStatus>'notStarted',
         logs: <EventStreamMessage[]>[],
         allMsgs: <EventStreamMessage[]>[],
@@ -156,7 +155,7 @@ const newPublishStatus = () => {
         logs: <EventStreamMessage[]>[],
         allMsgs: <EventStreamMessage[]>[],
       },
-      uploadBundle: {
+      setEnvVars: {
         completion: <PublishStepCompletionStatus>'notStarted',
         logs: <EventStreamMessage[]>[],
         allMsgs: <EventStreamMessage[]>[],
@@ -190,6 +189,8 @@ export type keyValuePair = {
   value: string,
 };
 
+export type DeploymentMode = 'deploy' | 'redeploy';
+
 export const splitMsgIntoKeyValuePairs = ((msg: Record<string, string>) => {
   const result: keyValuePair[] = [];
   Object.keys(msg).forEach(key => result.push({
@@ -209,20 +210,29 @@ export const useEventStore = defineStore('event', () => {
 
   type CurrentPublishStatus = {
     localId: string,
-    target: string,
+    contentId: string,
+    deploymentMode?: DeploymentMode,
+    saveName?: string,
+    destinationURL?: string,
     status: PublishStatus,
   };
 
   const currentPublishStatus = ref<CurrentPublishStatus>({
     localId: '',
-    target: '',
+    contentId: '',
+    deploymentMode: undefined,
+    saveName: undefined,
+    destinationURL: undefined,
     status: newPublishStatus(),
   });
 
   const doesPublishStatusApply = ((id: string) => {
     return (
-      currentPublishStatus.value.localId === id ||
-      currentPublishStatus.value.target === id
+      id &&
+      (
+        currentPublishStatus.value.localId === id ||
+        currentPublishStatus.value.contentId === id
+      )
     );
   });
 
@@ -279,6 +289,7 @@ export const useEventStore = defineStore('event', () => {
 
     latestLocalId.value = localId;
     currentPublishStatus.value.localId = localId;
+    currentPublishStatus.value.status = newPublishStatus();
 
     const publishStatus = currentPublishStatus.value.status;
     publishStatus.completion = 'inProgress';
@@ -340,37 +351,6 @@ export const useEventStore = defineStore('event', () => {
     }
   };
 
-  const onPublishSetEnvVarsStart = (msg: PublishSetEnvVarsStart) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.currentStep = 'setEnvVars';
-      publishStatus.steps.setEnvVars.completion = 'inProgress';
-      publishStatus.steps.setEnvVars.allMsgs.push(msg);
-    }
-  };
-
-  const onPublishSetEnvVarsSuccess = (msg: PublishSetEnvVarsSuccess) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.steps.setEnvVars.completion = 'success';
-      publishStatus.steps.setEnvVars.allMsgs.push(msg);
-    }
-  };
-  const onPublishSetEnvVarsFailure = (msg: PublishSetEnvVarsFailure) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.steps.setEnvVars.completion = 'error';
-      publishStatus.steps.setEnvVars.error = splitMsgIntoKeyValuePairs(msg.data);
-      publishStatus.steps.setEnvVars.allMsgs.push(msg);
-    }
-  };
-
   const onPublishCreateBundleStart = (msg: PublishCreateBundleStart) => {
     const localId = getLocalId(msg);
 
@@ -413,39 +393,6 @@ export const useEventStore = defineStore('event', () => {
     }
   };
 
-  const onPublishCreateDeploymentStart = (msg: PublishCreateDeploymentStart) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.currentStep = 'createDeployment';
-      publishStatus.steps.createDeployment.completion = 'inProgress';
-      publishStatus.steps.createDeployment.allMsgs.push(msg);
-    }
-  };
-
-  const onPublishCreateDeploymentSuccess = (msg: PublishCreateDeploymentSuccess) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.steps.createDeployment.completion = 'success';
-      currentPublishStatus.value.target = msg.data.contentId;
-      publishStatus.steps.createDeployment.allMsgs.push(msg);
-    }
-  };
-
-  const onPublishCreateDeploymentFailure = (msg: PublishCreateDeploymentFailure) => {
-    const localId = getLocalId(msg);
-
-    if (currentPublishStatus.value.localId === localId) {
-      const publishStatus = currentPublishStatus.value.status;
-      publishStatus.steps.createDeployment.completion = 'error';
-      publishStatus.steps.createDeployment.error = splitMsgIntoKeyValuePairs(msg.data);
-      publishStatus.steps.createDeployment.allMsgs.push(msg);
-    }
-  };
-
   const onPublishUploadBundleStart = (msg: PublishUploadBundleStart) => {
     const localId = getLocalId(msg);
 
@@ -475,6 +422,70 @@ export const useEventStore = defineStore('event', () => {
       publishStatus.steps.uploadBundle.completion = 'error';
       publishStatus.steps.uploadBundle.error = splitMsgIntoKeyValuePairs(msg.data);
       publishStatus.steps.uploadBundle.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishCreateDeploymentStart = (msg: PublishCreateDeploymentStart) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'createDeployment';
+      publishStatus.steps.createDeployment.completion = 'inProgress';
+      publishStatus.steps.createDeployment.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishCreateDeploymentSuccess = (msg: PublishCreateDeploymentSuccess) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.createDeployment.completion = 'success';
+      currentPublishStatus.value.contentId = msg.data.contentId;
+      publishStatus.steps.createDeployment.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishCreateDeploymentFailure = (msg: PublishCreateDeploymentFailure) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.createDeployment.completion = 'error';
+      publishStatus.steps.createDeployment.error = splitMsgIntoKeyValuePairs(msg.data);
+      publishStatus.steps.createDeployment.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishSetEnvVarsStart = (msg: PublishSetEnvVarsStart) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'setEnvVars';
+      publishStatus.steps.setEnvVars.completion = 'inProgress';
+      publishStatus.steps.setEnvVars.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishSetEnvVarsSuccess = (msg: PublishSetEnvVarsSuccess) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.setEnvVars.completion = 'success';
+      publishStatus.steps.setEnvVars.allMsgs.push(msg);
+    }
+  };
+  const onPublishSetEnvVarsFailure = (msg: PublishSetEnvVarsFailure) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.setEnvVars.completion = 'error';
+      publishStatus.steps.setEnvVars.error = splitMsgIntoKeyValuePairs(msg.data);
+      publishStatus.steps.setEnvVars.allMsgs.push(msg);
     }
   };
 
@@ -672,31 +683,53 @@ export const useEventStore = defineStore('event', () => {
     }
   };
 
+  // Will throw Error or API exceptions
   const initiatePublishProcessWithEvents = async(
+    newDeployment: boolean,
     accountName : string,
-    target?: string,
-    saveName?: string,
-  ) : Promise<string | Error> => {
+    destinationURL?: string,
+    destinationName?: string,
+    contentId?: string,
+  ) : Promise<string> => {
     if (publishInProgess.value) {
-      return new Error('Publishing already in progress');
+      throw new Error('Publishing already in progress');
     }
 
-    try {
-      publishInProgess.value = true;
-      currentPublishStatus.value.localId = '';
-      currentPublishStatus.value.target = target || '';
-      currentPublishStatus.value.status = newPublishStatus();
+    publishInProgess.value = true;
+    currentPublishStatus.value.localId = '';
+    currentPublishStatus.value.contentId = contentId || '';
+    currentPublishStatus.value.deploymentMode = newDeployment ? 'deploy' : 'redeploy';
+    currentPublishStatus.value.saveName = destinationName;
+    currentPublishStatus.value.destinationURL = destinationURL;
+    currentPublishStatus.value.status = newPublishStatus();
 
-      const response = await api.deployments.publish(
-        accountName,
-        target,
-        saveName,
-      );
+    try {
+      // Returns:
+      // 200 - success
+      // 400 - bad request
+      // 500 - internal server error
+      // Errors returned through event stream
+      // Handle errors at the top level caller
+      let response;
+
+      if (newDeployment) {
+        response = await api.deployments.publishNew(
+          accountName,
+          destinationName,
+        );
+      } else {
+        response = await api.deployments.publishUpdate(
+          accountName,
+          destinationName,
+        );
+      }
       const localId = <string>response.data.localId;
       currentPublishStatus.value.localId = localId;
       return localId;
     } catch (error) {
-      return new Error(getErrorMessage(error));
+      publishInProgess.value = false;
+      // need to re-throw to be handled by caller.
+      throw error;
     }
   };
 
@@ -707,7 +740,6 @@ export const useEventStore = defineStore('event', () => {
     eventStream.addEventMonitorCallback('agent/log', onAgentLog);
 
     eventStream.addEventMonitorCallback('publish/start', onPublishStart);
-    eventStream.addEventMonitorCallback('publish/start', onPublishStart);
     eventStream.addEventMonitorCallback('publish/success', onPublishSuccess);
     eventStream.addEventMonitorCallback('publish/failure', onPublishFailure);
 
@@ -715,22 +747,22 @@ export const useEventStore = defineStore('event', () => {
     eventStream.addEventMonitorCallback('publish/createNewDeployment/success', onPublishCreateNewDeploymentSuccess);
     eventStream.addEventMonitorCallback('publish/createNewDeployment/failure', onPublishCreateNewDeploymentFailure);
 
-    eventStream.addEventMonitorCallback('publish/setEnvVars/start', onPublishSetEnvVarsStart);
-    eventStream.addEventMonitorCallback('publish/setEnvVars/success', onPublishSetEnvVarsSuccess);
-    eventStream.addEventMonitorCallback('publish/setEnvVars/failure', onPublishSetEnvVarsFailure);
-
     eventStream.addEventMonitorCallback('publish/createBundle/start', onPublishCreateBundleStart);
     eventStream.addEventMonitorCallback('publish/createBundle/log', onPublishCreateBundleLog);
     eventStream.addEventMonitorCallback('publish/createBundle/success', onPublishCreateBundleSuccess);
     eventStream.addEventMonitorCallback('publish/createBundle/failure', onPublishCreateBundleFailure);
 
+    eventStream.addEventMonitorCallback('publish/uploadBundle/start', onPublishUploadBundleStart);
+    eventStream.addEventMonitorCallback('publish/uploadBundle/success', onPublishUploadBundleSuccess);
+    eventStream.addEventMonitorCallback('publish/uploadBundle/failure', onPublishUploadBundleFailure);
+
     eventStream.addEventMonitorCallback('publish/createDeployment/start', onPublishCreateDeploymentStart);
     eventStream.addEventMonitorCallback('publish/createDeployment/success', onPublishCreateDeploymentSuccess);
     eventStream.addEventMonitorCallback('publish/createDeployment/failure', onPublishCreateDeploymentFailure);
 
-    eventStream.addEventMonitorCallback('publish/uploadBundle/start', onPublishUploadBundleStart);
-    eventStream.addEventMonitorCallback('publish/uploadBundle/success', onPublishUploadBundleSuccess);
-    eventStream.addEventMonitorCallback('publish/uploadBundle/failure', onPublishUploadBundleFailure);
+    eventStream.addEventMonitorCallback('publish/setEnvVars/start', onPublishSetEnvVarsStart);
+    eventStream.addEventMonitorCallback('publish/setEnvVars/success', onPublishSetEnvVarsSuccess);
+    eventStream.addEventMonitorCallback('publish/setEnvVars/failure', onPublishSetEnvVarsFailure);
 
     eventStream.addEventMonitorCallback('publish/deployBundle/start', onPublishDeployBundleStart);
     eventStream.addEventMonitorCallback('publish/deployBundle/success', onPublishDeployBundleSuccess);

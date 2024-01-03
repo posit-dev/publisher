@@ -201,8 +201,10 @@ func (a *allSettings) checkAccess(cfg *config.Config) error {
 }
 
 func (a *allSettings) checkConfig(cfg *config.Config) error {
-	if cfg.Type.IsAPIContent() && !a.general.License.AllowAPIs {
-		return errAPIsNotLicensed
+	if cfg.Type.IsAPIContent() {
+		if !a.general.License.AllowAPIs {
+			return errAPIsNotLicensed
+		}
 	}
 	if len(cfg.Description) > 4096 {
 		return errDescriptionTooLong

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
@@ -83,6 +84,16 @@ func (u *UserDTO) CanPublish() bool {
 	return u.UserRole == AuthRoleAdmin || u.UserRole == AuthRolePublisher
 }
 
+var errInvalidServerOrCredentials = errors.New("could not validate credentials; check server URL and API key or token")
+
+func isConnectAuthError(err error) bool {
+	// You might expect a 401 for a bad API key (and we'll handle that).
+	// But Connect returns a 404 on this endpoint if the API key is invalid.
+	// A non-Connect server would also 404, so it could be an invalid URL.
+	httpErr, ok := err.(*http_client.HTTPError)
+	return ok && (httpErr.Status == http.StatusNotFound || httpErr.Status == http.StatusUnauthorized)
+}
+
 func (c *ConnectClient) TestAuthentication() (*User, error) {
 	c.log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
@@ -90,11 +101,14 @@ func (c *ConnectClient) TestAuthentication() (*User, error) {
 	if err != nil {
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			return nil, ErrTimedOut
+		} else if agentErr, ok := err.(*types.AgentError); ok {
+			if isConnectAuthError(agentErr.Err) {
+				return nil, errInvalidServerOrCredentials
+			}
 		} else if e, ok := err.(*url.Error); ok {
 			return nil, e.Err
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 	if connectUser.Locked {
 		return nil, fmt.Errorf("user account %s is locked", connectUser.Username)

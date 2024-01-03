@@ -13,6 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/logging/loggingtest"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
@@ -184,4 +185,56 @@ func (s *PublishSuite) publishWithClient(
 		s.Contains(logs, "save_name=saveAsThis")
 		s.Contains(logs, "content_id="+myContentID)
 	}
+}
+
+func (s *PublishSuite) TestGetDashboardURL() {
+	expected := "https://connect.example.com:1234/connect/#/apps/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"
+	s.Equal(expected, getDashboardURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"))
+}
+
+func (s *PublishSuite) TestGetDirectURL() {
+	expected := "https://connect.example.com:1234/content/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"
+	s.Equal(expected, getDirectURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"))
+}
+
+func (s *PublishSuite) TestLogAppInfo() {
+	accountURL := "https://connect.example.com:1234"
+	contentID := types.ContentID("myContentID")
+	directURL := getDirectURL(accountURL, contentID)
+	dashboardURL := getDashboardURL(accountURL, contentID)
+
+	buf := new(bytes.Buffer)
+	a := mock.Anything
+	log := loggingtest.NewMockLogger()
+	log.On("Success", "Deployment successful", a, a, a, a, a, a, a, a, a, a).Return()
+
+	logAppInfo(buf, accountURL, contentID, log, nil)
+	str := buf.String()
+	s.Contains(str, directURL)
+	s.Contains(str, dashboardURL)
+}
+
+func (s *PublishSuite) TestLogAppInfoErr() {
+	accountURL := "https://connect.example.com:1234"
+	contentID := types.ContentID("myContentID")
+	directURL := getDirectURL(accountURL, contentID)
+	dashboardURL := getDashboardURL(accountURL, contentID)
+
+	buf := new(bytes.Buffer)
+
+	testError := errors.New("test error")
+	logAppInfo(buf, accountURL, contentID, nil, testError)
+	str := buf.String()
+	s.NotContains(str, directURL)
+	s.Contains(str, dashboardURL)
+}
+
+func (s *PublishSuite) TestLogAppInfoErrNoContentID() {
+	accountURL := "https://connect.example.com:1234"
+	contentID := types.ContentID("")
+
+	buf := new(bytes.Buffer)
+	testError := errors.New("test error")
+	logAppInfo(buf, accountURL, contentID, nil, testError)
+	s.Equal("", buf.String())
 }

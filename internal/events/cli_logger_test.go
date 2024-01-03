@@ -3,9 +3,11 @@ package events
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"log/slog"
+	"os"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/logging"
@@ -36,16 +38,15 @@ func (s *CLILoggerSuite) TestNewStructuredLoggerDebug() {
 }
 
 func (s *LoggerSuite) TestNewSimpleLogger() {
-	log := NewSimpleLogger(0)
+	log := NewSimpleLogger(0, os.Stderr)
 	s.IsType(log.Handler(), &logging.MultiHandler{})
 }
 
 func (s *LoggerSuite) TestHandleStart() {
-	h := NewCLIHandler()
 	w := utiltest.NewMockWriter()
-	expected := []byte("Preparing file archive...          ")
+	expected := []byte("Prepare Files...                   ")
 	w.On("Write", expected).Return(len(expected), nil)
-	h.file = w
+	h := NewCLIHandler(newStructuredLogWriter(w))
 
 	log := logging.FromStdLogger(slog.New(h))
 	log = log.WithArgs(logging.LogKeyOp, PublishCreateBundleOp)
@@ -53,11 +54,10 @@ func (s *LoggerSuite) TestHandleStart() {
 }
 
 func (s *LoggerSuite) TestHandleSuccess() {
-	h := NewCLIHandler()
 	w := utiltest.NewMockWriter()
 	expected := []byte("[OK]\n")
 	w.On("Write", expected).Return(len(expected), nil)
-	h.file = w
+	h := NewCLIHandler(newStructuredLogWriter(w))
 
 	log := logging.FromStdLogger(slog.New(h))
 	log = log.WithArgs(logging.LogKeyOp, PublishCreateBundleOp)
@@ -65,11 +65,10 @@ func (s *LoggerSuite) TestHandleSuccess() {
 }
 
 func (s *LoggerSuite) TestHandleFailure() {
-	h := NewCLIHandler()
 	w := utiltest.NewMockWriter()
 	expected := []byte("[ERROR]\n")
 	w.On("Write", expected).Return(len(expected), nil)
-	h.file = w
+	h := NewCLIHandler(newStructuredLogWriter(w))
 
 	log := logging.FromStdLogger(slog.New(h))
 	log = log.WithArgs(logging.LogKeyOp, PublishCreateBundleOp)
@@ -77,11 +76,20 @@ func (s *LoggerSuite) TestHandleFailure() {
 }
 
 func (s *LoggerSuite) TestHandleOtherOp() {
-	h := NewCLIHandler()
 	// The handler won't write anything
-	h.file = nil
-
+	h := NewCLIHandler(nil)
 	log := logging.FromStdLogger(slog.New(h))
 	log = log.WithArgs(logging.LogKeyOp, PublishOp)
 	log.Start("Publishing")
+}
+
+func (s *LoggerSuite) TestHandleNewLine() {
+	w := new(bytes.Buffer)
+	log := NewSimpleLogger(0, w)
+	log = log.WithArgs(logging.LogKeyOp, PublishCreateBundleOp)
+	log.Start("Creating bundle")
+	log.Error("test error")
+	log.Failure(errors.New("Failed!"))
+	str := w.String()
+	s.Contains(str, "Prepare Files...                   \ntime=")
 }

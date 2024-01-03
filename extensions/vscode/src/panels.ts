@@ -53,6 +53,7 @@ export class Panel implements vscode.Disposable {
                 enableScripts: true,
                 enableForms: true,
                 localResourceRoots: this.resources,
+                retainContextWhenHidden: true
             }
         );
 

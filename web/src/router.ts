@@ -4,9 +4,10 @@ import { RouteLocationNormalizedLoaded, createRouter, createWebHashHistory } fro
 
 import ProjectPage from 'src/views/project-page/ProjectPage.vue';
 import AddNewDeployment from 'src/views/add-new-deployment/AddNewDeployment.vue';
-import ExistingDeploymentDestinationPage from 'src/views/existing-deployment-destination/ExistingDeploymentDestinationPage.vue';
-import NewDeploymentDestinationPage from 'src/views/new-deployment-destination/NewDeploymentDestinationPage.vue';
-import PublishProgressPage from 'src/views/publish-progress/PublishProgressPage.vue';
+import ExistingDeploymentPage from 'src/views/existing-deployment/ExistingDeploymentPage.vue';
+import NewDeploymentPage from 'src/views/new-deployment/NewDeploymentPage.vue';
+import DeployProgressPage from 'src/views/deploy-progress/DeployProgressPage.vue';
+import FatalErrorPage from 'src/views/fatal-error/FatalErrorPage.vue';
 
 const routes = [
   { name: 'root', path: '/', redirect: { name: 'project' } },
@@ -15,14 +16,37 @@ const routes = [
   {
     name: 'newDeployment',
     path: '/new-deployment/:account',
-    component: NewDeploymentDestinationPage,
+    component: NewDeploymentPage,
     props: (route: RouteLocationNormalizedLoaded) => ({
-      id: route.query.id,
       name: route.query.name,
+      url: route.query.url,
     }),
   },
-  { name: 'deployments', path: '/deployments/:name', component: ExistingDeploymentDestinationPage },
-  { name: 'progress', path: '/progress', component: PublishProgressPage },
+  { name: 'deployments', path: '/deployments/:name', component: ExistingDeploymentPage },
+  {
+    name: 'progress',
+    path: '/progress',
+    component: DeployProgressPage,
+    props: (route: RouteLocationNormalizedLoaded) => ({
+      name: route.query.name,
+      operation: route.query.operation,
+      id: route.query.id,
+    }),
+  },
+  {
+    name: 'fatalError',
+    path: '/error',
+    component: FatalErrorPage,
+    props: (route: RouteLocationNormalizedLoaded) => ({
+      location: route.query.location,
+      stat: route.query.status,
+      code: route.query.code,
+      msg: route.query.msg,
+      baseURL: route.query.baseURL,
+      method: route.query.method,
+      url: route.query.url,
+    }),
+  },
   { name: 'default', path: '/:pathMatch(.*)*', redirect: '/' },
 ];
 

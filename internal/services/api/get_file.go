@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
@@ -34,8 +35,14 @@ func GetFileHandlerFunc(base util.Path, filesService files.FilesService, pathsSe
 			w.Write([]byte(http.StatusText(http.StatusForbidden)))
 			return
 		}
+		ignore, err := gitignore.NewIgnoreList(base)
+		if err != nil {
+			log.Warn("failed to initialize ignore list")
+			InternalError(w, r, log, err)
+			return
+		}
 
-		file, err := filesService.GetFile(p)
+		file, err := filesService.GetFile(p, ignore)
 		if err != nil {
 			InternalError(w, r, log, err)
 			return

@@ -148,11 +148,19 @@ func (s *CapabilitiesSuite) TestAPILicense() {
 			},
 		},
 	}
-	notAllowed := allSettings{}
+	notAllowed := allSettings{
+		general: server_settings.ServerSettings{
+			License: server_settings.LicenseStatus{
+				AllowAPIs: false,
+			},
+		},
+	}
+	missing := allSettings{}
 	cfg := &config.Config{
 		Type: config.ContentTypePythonFlask,
 	}
 	s.NoError(allowed.checkConfig(cfg))
+	s.ErrorIs(missing.checkConfig(cfg), errAPIsNotLicensed)
 	s.ErrorIs(notAllowed.checkConfig(cfg), errAPIsNotLicensed)
 }
 

@@ -8,12 +8,12 @@
     <div class="space-between-sm">
       <p>{{ deployment.serverUrl }}</p>
       <p>{{ deployment.id }}</p>
-      <PublishProgressLine
+      <DeployProgressLine
         v-if="showProgressLine"
         :id="deployment.id"
       />
       <p v-else>
-        Last Published on {{ formatDateString(deployment.deployedAt) }}
+        Last Deployed on {{ formatDateString(deployment.deployedAt) }}
       </p>
     </div>
   </PCard>
@@ -26,7 +26,7 @@ import { Deployment } from 'src/api';
 import { formatDateString } from 'src/utils/date';
 import { useEventStore } from 'src/stores/events';
 import PCard from 'src/components/PCard.vue';
-import PublishProgressLine from 'src/components/PublishProgressLine.vue';
+import DeployProgressLine from 'src/components/DeployProgressLine.vue';
 
 const eventStore = useEventStore();
 
