@@ -39,7 +39,7 @@ func (c *ConnectClient) CheckCapabilities(cfg *config.Config) error {
 
 	schedulerPath := ""
 	appMode := AppModeFromType(cfg.Type)
-	if appMode != UnknownMode {
+	if appMode.IsWorkerApp() {
 		schedulerPath = "/" + string(appMode)
 	}
 	err = c.client.Get("/__api__/server_settings/scheduler"+schedulerPath, &settings.scheduler)

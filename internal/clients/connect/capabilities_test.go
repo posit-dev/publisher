@@ -50,6 +50,7 @@ func (s *CapabilitiesSuite) TestCheckMatchingPython() {
 
 func makeMinMaxProcs(min, max int32) *config.Config {
 	return &config.Config{
+		Type: config.ContentTypePythonShiny,
 		Connect: &config.Connect{
 			Runtime: &config.ConnectRuntime{
 				MinProcesses: &min,
