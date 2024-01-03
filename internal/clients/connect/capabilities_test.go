@@ -77,6 +77,17 @@ func (s *CapabilitiesSuite) TestMinMaxProcs() {
 	s.ErrorContains(a.checkConfig(makeMinMaxProcs(-1, 5)), "min-processes value cannot be less than 0")
 }
 
+func (s *CapabilitiesSuite) TestRuntimeNonWorker() {
+	cfg := &config.Config{
+		Type: config.ContentTypeHTML,
+		Connect: &config.Connect{
+			Runtime: &config.ConnectRuntime{},
+		},
+	}
+	a := allSettings{}
+	s.ErrorIs(a.checkConfig(cfg), errRuntimeSettingsForNonWorker)
+}
+
 func (s *CapabilitiesSuite) TestRunAs() {
 	adminSettings := allSettings{
 		user: UserDTO{

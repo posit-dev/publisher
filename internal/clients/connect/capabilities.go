@@ -70,6 +70,7 @@ var (
 	errKubernetesNotLicensed             = errors.New("off-host execution with Kubernetes is not licensed on this Connect server")
 	errKubernetesNotConfigured           = errors.New("off-host execution with Kubernetes is not configured on this Connect server")
 	errImageSelectionNotEnabled          = errors.New("default image selection is not enabled on this Connect server")
+	errRuntimeSettingsForNonWorker       = errors.New("runtime settings can only be set for content that serves an app or API")
 )
 
 func adminError(attr string) error {
@@ -154,6 +155,10 @@ func (a *allSettings) checkRuntime(cfg *config.Config) error {
 	if r == nil {
 		// No runtime configuration present
 		return nil
+	}
+	appMode := AppModeFromType(cfg.Type)
+	if !appMode.IsWorkerApp() {
+		return errRuntimeSettingsForNonWorker
 	}
 	s := a.scheduler
 
