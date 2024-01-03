@@ -26,6 +26,7 @@ func (s *AccountTypeSuite) TestDescription() {
 
 func (s *AccountTypeSuite) TestAccountTypeFromURL() {
 	s.Equal(ServerTypeShinyappsIO, serverTypeFromURL("https://api.shinyapps.io"))
+	s.Equal(ServerTypeShinyappsIO, serverTypeFromURL("https://api.staging.shinyapps.io"))
 	s.Equal(ServerTypeCloud, serverTypeFromURL("https://api.posit.cloud"))
 	s.Equal(ServerTypeCloud, serverTypeFromURL("https://api.rstudio.cloud"))
 	s.Equal(ServerTypeConnect, serverTypeFromURL("https://example.com"))
