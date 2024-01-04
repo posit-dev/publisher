@@ -195,7 +195,7 @@ lint: stub
     set -eou pipefail
     {{ _with_debug }}
 
-    # ./scripts/ccheck.py ./scripts/ccheck.config
+    ./scripts/ccheck.py ./scripts/ccheck.config
     just _with_docker staticcheck ./...
     just _with_docker go vet -all ./...
     just _with_docker ./scripts/fmt-check.bash
