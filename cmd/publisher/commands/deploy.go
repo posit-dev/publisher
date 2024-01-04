@@ -42,7 +42,7 @@ func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 			return err
 		}
 		if exists {
-			return fmt.Errorf("there is already a deployment named '%s'; did you mean to use the 'update' command?", cmd.SaveName)
+			return fmt.Errorf("there is already a deployment named '%s'; did you mean to use the 'redeploy' command?", cmd.SaveName)
 		}
 	}
 	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
