@@ -16,15 +16,15 @@ describe('Publish', () => {
     cy.get('button[data-automation="continue-deployment"]')
       .click();
 
-      // Deploy
+    // Deploy
     cy.get('button[data-automation="deploy"]')
       .click();
 
-      // Wait for Deployment Success message
+    // Wait for Deployment Success message
     cy.get('div[data-automation="deploy-message"]', { timeout: 30000 })
       .contains("Deploy was successful!");
 
-      // Get the link from the deployment logs
+    // Get the link from the deployment logs
     cy.get('a[href="#/progress')
       .click();
     cy.get('div[class="space-between-sm"]')
@@ -45,7 +45,6 @@ describe('Publish', () => {
         // app mode should be correct
         expect(response.body).to.have.property('app_mode', 'python-fastapi')
       });
-        });
-
-});
+    });
+  });
 });

@@ -90,7 +90,7 @@ fuzzbucket-start:
 fuzzbucket-stop:
     #!/usr/bin/env bash
     set -eou pipefail
-    pip install fuzzbucket-client
+    pip install -r ../setup/requirements.txt
     fuzzbucket-client rm connect-publishing-client
 
 test-deploy:
