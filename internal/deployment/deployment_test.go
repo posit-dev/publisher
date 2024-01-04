@@ -102,7 +102,7 @@ func (s *DeploymentSuite) TestWriteFileErr() {
 func (s *DeploymentSuite) TestUntitledDeploymentName() {
 	name, err := UntitledDeploymentName(s.cwd)
 	s.NoError(err)
-	s.Equal(s.cwd.Base()+"-1", name)
+	s.Equal("Untitled-1", name)
 }
 
 func (s *DeploymentSuite) TestUntitledDeploymentName2() {
@@ -114,5 +114,5 @@ func (s *DeploymentSuite) TestUntitledDeploymentName2() {
 	s.NoError(err)
 	name, err = UntitledDeploymentName(s.cwd)
 	s.NoError(err)
-	s.Equal(s.cwd.Base()+"-2", name)
+	s.Equal("Untitled-2", name)
 }

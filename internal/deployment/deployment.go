@@ -53,14 +53,8 @@ func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
 }
 
 func UntitledDeploymentName(base util.Path) (string, error) {
-	absPath, err := base.Abs()
-	if err != nil {
-		return "", err
-	}
-	baseName := absPath.Base() // or "untitled"?
-
 	for i := 1; ; i++ {
-		name := fmt.Sprintf("%s-%d", baseName, i)
+		name := fmt.Sprintf("Untitled-%d", i)
 		exists, err := GetDeploymentPath(base, name).Exists()
 		if err != nil {
 			return "", err
