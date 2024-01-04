@@ -58,7 +58,10 @@ func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.
 func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
 	args := []string{"--version"}
 	_, err := i.executor.runPythonCommand(pythonExecutable, args)
-	return err
+	if err != nil {
+		return fmt.Errorf("could not run python executable '%s': %w", pythonExecutable, err)
+	}
+	return nil
 }
 
 func (i *defaultPythonInspector) getPythonExecutable(exec util.PathLooker) (string, error) {
