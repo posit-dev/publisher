@@ -58,6 +58,11 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/**/failure': OnMessageEventSourceCallback
   'publish/start': OnPublishStartCallback
 
+  'publish/checkCapabilities/start': OnPublishCheckCapabilitiesStartCallback
+  'publish/checkCapabilities/log': OnPublishCheckCapabilitiesLogCallback
+  'publish/checkCapabilities/success': OnPublishCheckCapabilitiesSuccessCallback
+  'publish/checkCapabilities/failure': OnPublishCheckCapabilitiesFailureCallback
+
   // 'publish/createBundle/failure/authFailure' | // received but temporarily converted
   'publish/createNewDeployment/start': OnPublishCreateNewDeploymentStartCallback
   'publish/createNewDeployment/success': OnPublishCreateNewDeploymentSuccessCallback
@@ -111,14 +116,24 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/failure': OnPublishFailureCallback
 }
 
-export function getLocalId(arg: EventStreamMessage) {
-  return arg.data.localId;
+export function getLocalId(arg: EventStreamMessage | EventStreamMessageWithBooleans) {
+  if (typeof arg.data.localId === 'string') {
+    return arg.data.localId;
+  }
+  throw new Error(`LocalId not a string, but rather ${typeof arg.data.localId}`);
 }
 
 export interface EventStreamMessage {
   type: EventSubscriptionTarget,
   time: string,
   data: Record<string, string>,
+  error?: string,
+}
+
+export interface EventStreamMessageWithBooleans {
+  type: EventSubscriptionTarget,
+  time: string,
+  data: Record<string, string | boolean>,
   error?: string,
 }
 
@@ -206,6 +221,64 @@ export type OnPublishStartCallback = (msg: PublishStart) => void;
 export function isPublishStart(arg: Events):
   arg is PublishStart {
   return arg.type === 'publish/start';
+}
+
+export interface PublishCheckCapabilitiesStart extends EventStreamMessage {
+  type: 'publish/checkCapabilities/start',
+  data: {
+    // "level": "INFO", "message": "Checking configuration against server capabilities", "localId": "DVP6zKpd_QzudMUS"
+    level: string,
+    message: string,
+    localId: string,
+  }
+}
+export type OnPublishCheckCapabilitiesStartCallback =
+  (msg: PublishCheckCapabilitiesStart) => void;
+export function isPublishCheckCapabilitiesStart(arg: Events):
+  arg is PublishCheckCapabilitiesStart {
+  return arg.type === 'publish/checkCapabilities/start';
+}
+
+export interface PublishCheckCapabilitiesLog extends EventStreamMessage {
+  type: 'publish/checkCapabilities/log',
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishCheckCapabilitiesLogCallback =
+  (msg: PublishCheckCapabilitiesLog) => void;
+export function isPublishCheckCapabilitiesLog(arg: Events):
+  arg is PublishCheckCapabilitiesLog {
+  return arg.type === 'publish/checkCapabilities/log';
+}
+
+export interface PublishCheckCapabilitiesSuccess extends EventStreamMessageWithBooleans {
+  type: 'publish/checkCapabilities/success',
+  data: {
+    // "level": "INFO", "message": "Done", "localId": "DVP6zKpd_QzudMUS", "ok": true
+    level: string,
+    message: string,
+    localId: string,
+    ok: boolean,
+  }
+}
+export type OnPublishCheckCapabilitiesSuccessCallback =
+  (msg: PublishCheckCapabilitiesSuccess) => void;
+export function isPublishCheckCapabilitiesSuccess(arg: Events):
+  arg is PublishCheckCapabilitiesSuccess {
+  return arg.type === 'publish/checkCapabilities/success';
+}
+
+export interface PublishCheckCapabilitiesFailure extends EventStreamMessage {
+  type: 'publish/checkCapabilities/failure',
+  error: string, // translated internally
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishCheckCapabilitiesFailureCallback =
+  (msg: PublishCheckCapabilitiesFailure) => void;
+export function isPublishCheckCapabilitiesFailure(arg: Events):
+  arg is PublishCheckCapabilitiesFailure {
+  return arg.type === 'publish/checkCapabilities/failure';
 }
 
 export interface PublishCreateNewDeploymentStart extends EventStreamMessage {
@@ -780,6 +853,7 @@ export function isPublishFailure(arg: Events):
 // Events are a union type of our base and our extended interfaces
 export type Events =
   EventStreamMessage |
+  EventStreamMessageWithBooleans |
   AgentLog |
   ErrorsSse |
   ErrorsOpen |
