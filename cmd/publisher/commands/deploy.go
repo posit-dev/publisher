@@ -3,7 +3,6 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -26,8 +25,6 @@ type CreateCmd struct {
 	Account     *accounts.Account `kong:"-"`
 	Config      *config.Config    `kong:"-"`
 }
-
-var errNoAccounts = errors.New("there are no accounts yet; register an account before publishing")
 
 func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	ctx.Logger = events.NewSimpleLogger(args.Verbose, os.Stderr)
@@ -53,13 +50,11 @@ func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 	if err != nil {
 		return err
 	}
-	if stateStore.Account == nil {
-		return errNoAccounts
-	}
-	ctx.Logger.Info(
-		"Running create",
-		"configuration", stateStore.ConfigName,
-		"account", stateStore.AccountName)
+	fmt.Printf("Deploy to server %s using account %s and configuration %s, creating deployment %s\n",
+		stateStore.Account.URL,
+		stateStore.Account.Name,
+		stateStore.ConfigName,
+		stateStore.SaveName)
 	publisher := publish.NewFromState(stateStore)
 	return publisher.PublishDirectory(ctx.Logger)
 }

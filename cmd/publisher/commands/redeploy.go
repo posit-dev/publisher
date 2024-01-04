@@ -41,13 +41,12 @@ func (cmd *UpdateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 	if err != nil {
 		return err
 	}
-	if stateStore.Account == nil {
-		return errNoAccounts
-	}
-	ctx.Logger.Info(
-		"Update",
-		"name", stateStore.TargetName,
-		"configuration", stateStore.ConfigName)
+	fmt.Printf("Redeploy %s to server %s using account %s and configuration %s\n",
+		stateStore.TargetName,
+		stateStore.Account.URL,
+		stateStore.Account.Name,
+		stateStore.ConfigName)
+
 	publisher := publish.NewFromState(stateStore)
 	return publisher.PublishDirectory(ctx.Logger)
 }
