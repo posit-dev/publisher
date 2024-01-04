@@ -4,22 +4,27 @@ describe('Publish', () => {
       url: '/',
       qs: { token: Cypress.env('token') }
     });
+
     // Add a New Deployment button
-    cy.get('a[href="#/add-new-deployment"')
+    cy.get('div[data-automation="add-new-deployment"]')
       .click();
+
     // Continue to Deploy
-    cy.get('div[class="flex row reverse"]')
-      .find('span[class="q-btn__content text-center col items-center q-anchor--skip justify-center row"]')
-      .contains("Continue to Deploy")
+    // ensure accounts are loaded to stall before clicking
+    cy.get('label[data-automation="account"]')
+      .should('exist');
+    cy.get('button[data-automation="continue-deployment"]')
       .click();
-    // Deploy
-    cy.get('span[class="q-btn__content text-center col items-center q-anchor--skip justify-center row"]')
-      .contains("Deploy")
+
+      // Deploy
+    cy.get('button[data-automation="deploy"]')
       .click();
-    // Wait for Deployment Success message
-    cy.get('div[class="summary row text-left items-center text-black"]', { timeout: 30000 })
+
+      // Wait for Deployment Success message
+    cy.get('div[data-automation="deploy-message"]', { timeout: 30000 })
       .contains("Deploy was successful!");
-    // Get the link from the deployment logs
+
+      // Get the link from the deployment logs
     cy.get('a[href="#/progress')
       .click();
     cy.get('div[class="space-between-sm"]')
@@ -33,7 +38,7 @@ describe('Publish', () => {
           url: Cypress.env('CYPRESS_CONNECT_ADDRESS') + Cypress.env('DEPLOYED_APP_URL'),
           'auth': {
             'bearer': Cypress.env('CONNECT_API_KEY')
-          },
+        },
       }).then((response) => {
         // API Call should succeed
         expect(response.status).to.equal(200);
