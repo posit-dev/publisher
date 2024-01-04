@@ -3,6 +3,7 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"io"
 	"strings"
 
@@ -49,6 +50,25 @@ func GetDeploymentPath(base util.Path, name string) util.Path {
 func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
 	dir := GetDeploymentsPath(base)
 	return dir.Glob("*.toml")
+}
+
+func UntitledDeploymentName(base util.Path) (string, error) {
+	absPath, err := base.Abs()
+	if err != nil {
+		return "", err
+	}
+	baseName := absPath.Base() // or "untitled"?
+
+	for i := 1; ; i++ {
+		name := fmt.Sprintf("%s-%d", baseName, i)
+		exists, err := GetDeploymentPath(base, name).Exists()
+		if err != nil {
+			return "", err
+		}
+		if !exists {
+			return name, nil
+		}
+	}
 }
 
 func SaveNameFromPath(path util.Path) string {

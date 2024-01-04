@@ -98,3 +98,21 @@ func (s *DeploymentSuite) TestWriteFileErr() {
 	err := deployment.WriteFile(readonlyFile)
 	s.NotNil(err)
 }
+
+func (s *DeploymentSuite) TestUntitledDeploymentName() {
+	name, err := UntitledDeploymentName(s.cwd)
+	s.NoError(err)
+	s.Equal(s.cwd.Base()+"-1", name)
+}
+
+func (s *DeploymentSuite) TestUntitledDeploymentName2() {
+	name, err := UntitledDeploymentName(s.cwd)
+	s.NoError(err)
+	f, err := GetDeploymentPath(s.cwd, name).Create()
+	s.NoError(err)
+	err = f.Close()
+	s.NoError(err)
+	name, err = UntitledDeploymentName(s.cwd)
+	s.NoError(err)
+	s.Equal(s.cwd.Base()+"-2", name)
+}

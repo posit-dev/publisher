@@ -46,6 +46,12 @@ func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 	if err != nil {
 		return err
 	}
+	if cmd.SaveName == "" {
+		cmd.SaveName, err = deployment.UntitledDeploymentName(cmd.Path)
+		if err != nil {
+			return err
+		}
+	}
 	stateStore, err := state.New(cmd.Path, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts)
 	if err != nil {
 		return err
