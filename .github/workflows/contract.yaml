@@ -25,7 +25,7 @@ jobs:
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
-          name: executables
+          name: bin
           path: bin
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/cy/fuzzbucket-ssh-key && chmod 600 test/cy/fuzzbucket-ssh-key
