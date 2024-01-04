@@ -17,7 +17,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type UpdateCmd struct {
+type RedeployCmd struct {
 	TargetName string                 `name:"deployment-name" arg:"" help:"Name of deployment to update (in .posit/deployments/)"`
 	Path       util.Path              `help:"Path to project directory containing files to publish." arg:"" default:"."`
 	ConfigName string                 `name:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
@@ -25,7 +25,7 @@ type UpdateCmd struct {
 	Target     *deployment.Deployment `kong:"-"`
 }
 
-func (cmd *UpdateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	ctx.Logger = events.NewSimpleLogger(args.Verbose, os.Stderr)
 
 	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)

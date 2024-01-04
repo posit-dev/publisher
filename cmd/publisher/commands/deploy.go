@@ -17,7 +17,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type CreateCmd struct {
+type DeployCmd struct {
 	Path        util.Path         `help:"Path to project directory containing files to publish." arg:"" default:"."`
 	AccountName string            `name:"account" short:"a" help:"Nickname of the publishing account to use (run list-accounts to see them)."`
 	ConfigName  string            `name:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
@@ -26,7 +26,7 @@ type CreateCmd struct {
 	Config      *config.Config    `kong:"-"`
 }
 
-func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	ctx.Logger = events.NewSimpleLogger(args.Verbose, os.Stderr)
 
 	if cmd.SaveName != "" {
