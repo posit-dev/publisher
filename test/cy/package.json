@@ -10,8 +10,8 @@
     "test-deploy-windows": "start-server-and-test --expect 200 start http-get://127.0.0.1:9000 run-deploy-windows",
     "open": "cypress open",
     "run": "cypress run --spec ./cypress/e2e/ui/*.cy.js --env token=token",
-    "run-deploy": "cypress run --spec ./cypress/e2e/contract/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS",
-    "run-deploy-windows": "cypress run --spec ./cypress/e2e/contract/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=%CYPRESS_CONNECT_ADDRESS%"
+    "run-deploy": "cypress run --spec ./cypress/e2e/contract/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=$CYPRESS_CONNECT_ADDRESS,CONNECT_API_KEY=$CONNECT_API_KEY",
+    "run-deploy-windows": "cypress run --spec ./cypress/e2e/contract/*.cy.js --env token=token,CYPRESS_CONNECT_ADDRESS=%CYPRESS_CONNECT_ADDRESS%,CONNECT_API_KEY=%CONNECT_API_KEY%"
   },
   "devDependencies": {
     "cypress": "^13.3.0",
