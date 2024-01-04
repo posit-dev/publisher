@@ -54,13 +54,20 @@ var errMultipleAccounts = errors.New("there are multiple accounts; please specif
 
 // getDefaultAccount returns the name of the default account,
 // which is the first Connect account alphabetically by name.
-func getDefaultAccount(accounts []accounts.Account) (*accounts.Account, error) {
-	if len(accounts) == 0 {
+func getDefaultAccount(accountList []accounts.Account) (*accounts.Account, error) {
+	if len(accountList) == 0 {
 		return nil, errNoAccounts
-	} else if len(accounts) > 1 {
+	} else if len(accountList) > 1 {
+		// If an account was provided via environment variables, use it.
+		for _, acct := range accountList {
+			if acct.Source == accounts.AccountSourceEnvironment {
+				return &acct, nil
+			}
+		}
+		// Otherwise we don't have a way to choose
 		return nil, errMultipleAccounts
 	}
-	return &accounts[0], nil
+	return &accountList[0], nil
 }
 
 func loadAccount(accountName string, accountList accounts.AccountList) (*accounts.Account, error) {
