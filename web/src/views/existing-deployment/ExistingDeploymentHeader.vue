@@ -47,8 +47,9 @@
             hierarchy="primary"
             class="q-ml-md"
             padding="sm md"
-            :disable="eventStore.publishInProgess"
             data-automation="redeploy"
+            :disable="Boolean(configError) || eventStore.publishInProgess"
+            :title="redeployDisableTitle"
             @click="initiateRedeploy"
           >
             Redeploy
@@ -84,7 +85,7 @@
 
 import { ref, watch, PropType, computed } from 'vue';
 
-import { Account, Deployment, useApi } from 'src/api';
+import { Account, ConfigurationError, Deployment, useApi } from 'src/api';
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PButton from 'src/components/PButton.vue';
 import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';
@@ -107,6 +108,11 @@ const emit = defineEmits(['deploy']);
 
 const props = defineProps({
   deployment: { type: Object as PropType<Deployment>, required: true },
+  configError: {
+    type: Object as PropType<ConfigurationError>,
+    required: false,
+    default: undefined
+  },
 });
 
 const onChange = (account: Account) => {
@@ -126,6 +132,16 @@ const routerLocation = computed(() => {
       id: props.deployment.id,
     },
   };
+});
+
+const redeployDisableTitle = computed(() => {
+  if (eventStore.publishInProgess) {
+    return 'Another deployment is in progress';
+  }
+  if (props.configError) {
+    return 'Cannot deploy with configuration errors';
+  }
+  return undefined;
 });
 
 const operationStr = computed(() => {
