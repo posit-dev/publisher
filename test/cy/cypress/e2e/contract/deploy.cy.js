@@ -32,6 +32,7 @@ describe('Publish', () => {
         Cypress.env('DEPLOYED_APP_URL', '/__api__/v1/content/' + guid);
         cy.log("MY GUID " + Cypress.env('DEPLOYED_APP_URL'));
         cy.log("MY URL " + Cypress.env('CYPRESS_CONNECT_ADDRESS') + Cypress.env('DEPLOYED_APP_URL'))
+
         // Use API to check the content on Connect
         cy.request({
           method: 'GET',
@@ -40,7 +41,6 @@ describe('Publish', () => {
             'bearer': Cypress.env('CONNECT_API_KEY')
         },
       }).then((response) => {
-        // API Call should succeed
         expect(response.status).to.equal(200);
         // app mode should be correct
         expect(response.body).to.have.property('app_mode', 'python-fastapi')
