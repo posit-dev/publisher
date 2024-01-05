@@ -2,8 +2,10 @@
 
 <template>
   <NewDeploymentHeader
+    v-if="defaultConfig"
     :account-name="accountName"
     :deployment-name="deploymentName"
+    :config-error="isConfigurationError(defaultConfig) ? defaultConfig : undefined"
     @deploy="hasDeployed = true"
   />
 
@@ -30,7 +32,7 @@ import { useQuasar } from 'quasar';
 import { PropType, computed, ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 
-import { Configuration, ConfigurationError, useApi } from 'src/api';
+import { Configuration, ConfigurationError, isConfigurationError, useApi } from 'src/api';
 import { newFatalErrorRouteLocation } from 'src/util/errors';
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
