@@ -99,7 +99,7 @@ func newPythonNotAvailableErr(requested string, installations []server_settings.
 
 const pythonNotAvailableCode types.ErrorCode = "pythonNotAvailable"
 const pythonNotAvailableMsg = `Python %s is not available on the server.
-Consider editing your configuration file request one of the available versions:
+Consider editing your configuration file to request one of the available versions:
 %s.`
 
 func (e *pythonNotAvailableErr) Error() string {
