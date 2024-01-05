@@ -45,7 +45,9 @@ func (s *CapabilitiesSuite) TestCheckMatchingPython() {
 	}
 	s.NoError(a.checkConfig(makePythonConfig("3.10.1")))
 	s.NoError(a.checkConfig(makePythonConfig("3.11.1")))
-	s.NotNil(a.checkConfig(makePythonConfig("3.9.1")))
+	err := a.checkConfig(makePythonConfig("3.9.1"))
+	s.NotNil(err)
+	s.ErrorContains(err, "Python 3.9 is not available on the server")
 }
 
 func makeMinMaxProcs(min, max int32) *config.Config {
