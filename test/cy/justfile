@@ -106,17 +106,3 @@ test-deploy:
     else
         npm run test-deploy
     fi
-
-test-deploy-open:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-    pip install -r ../setup/requirements.txt
-    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
-    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
-    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}"
-    if [[ ${RUNNER_OS} =~ "Windows" ]]; then \
-        npm run test-deploy-windows
-    else
-        npm run test-deploy-open
-    fi
