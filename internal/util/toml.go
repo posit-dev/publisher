@@ -5,15 +5,59 @@ package util
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
+	"github.com/rstudio/connect-client/internal/types"
 )
 
-func ReadTOML(r io.Reader, dest any) error {
+func readTOML(r io.Reader, dest any) error {
 	dec := toml.NewDecoder(r)
 	dec.DisallowUnknownFields()
 	return dec.Decode(dest)
 }
+
+// DecodeError mirrors toml.DecodeError, with exported fields
+type DecodeError struct {
+	File    string `mapstructure:"file"`
+	Line    int    `mapstructure:"line"`
+	Column  int    `mapstructure:"column"`
+	Key     string `mapstructure:"key"`
+	Problem string `mapstructure:"problem"`
+}
+
+func (e *DecodeError) Error() string {
+	msg := fmt.Sprintf("%s:%d:%d: %s",
+		e.File, e.Line, e.Column, e.Problem)
+	if len(e.Key) != 0 {
+		msg += fmt.Sprintf(" '%s'", e.Key)
+	}
+	return msg
+}
+
+var substitutions = map[string]string{
+	"toml: ":            "",
+	"missing field":     "",
+	"incomplete number": "unquoted string or incomplete number",
+}
+
+func decodeErrFromTOMLErr(e *toml.DecodeError, path Path) *DecodeError {
+	line, col := e.Position()
+	msg := e.Error()
+	for old, new := range substitutions {
+		msg = strings.ReplaceAll(msg, old, new)
+	}
+	return &DecodeError{
+		File:    path.String(),
+		Line:    line,
+		Column:  col,
+		Key:     strings.Join(e.Key(), "."),
+		Problem: msg,
+	}
+}
+
+const invalidTOMLCode types.ErrorCode = "invalidTOML"
+const unknownTOMLKeyCode types.ErrorCode = "unknownTOMLKey"
 
 func ReadTOMLFile(path Path, dest any) error {
 	f, err := path.Open()
@@ -21,15 +65,18 @@ func ReadTOMLFile(path Path, dest any) error {
 		return err
 	}
 	defer f.Close()
-	err = ReadTOML(f, dest)
+	err = readTOML(f, dest)
 	if err != nil {
 		decodeErr, ok := err.(*toml.DecodeError)
 		if ok {
-			return fmt.Errorf("can't load file '%s': %s", path, decodeErr.String())
+			e := decodeErrFromTOMLErr(decodeErr, path)
+			return types.NewAgentError(invalidTOMLCode, e, nil)
 		}
 		strictErr, ok := err.(*toml.StrictMissingError)
 		if ok {
-			return fmt.Errorf("can't load file '%s': \n%s", path, strictErr.String())
+			e := decodeErrFromTOMLErr(&strictErr.Errors[0], path)
+			e.Problem = "unknown key"
+			return types.NewAgentError(unknownTOMLKeyCode, e, nil)
 		}
 		return err
 	}

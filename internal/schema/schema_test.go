@@ -18,7 +18,8 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaSuite) TestValidateConfig() {
-	validator, err := NewValidator(ConfigSchemaURL)
+	var content map[string]any
+	validator, err := NewValidator(ConfigSchemaURL, &content)
 	s.NoError(err)
 	path := util.NewPath(".", nil).Join("schemas", "deploy.toml")
 	err = validator.ValidateTOMLFile(path)
@@ -26,7 +27,8 @@ func (s *SchemaSuite) TestValidateConfig() {
 }
 
 func (s *SchemaSuite) TestValidateDeployment() {
-	validator, err := NewValidator(DeploymentSchemaURL)
+	var content map[string]any
+	validator, err := NewValidator(DeploymentSchemaURL, &content)
 	s.NoError(err)
 	path := util.NewPath(".", nil).Join("schemas", "record.toml")
 	err = validator.ValidateTOMLFile(path)
@@ -35,7 +37,8 @@ func (s *SchemaSuite) TestValidateDeployment() {
 
 func (s *SchemaSuite) TestValidateDraftConfig() {
 	const draftConfigSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
-	validator, err := NewValidator(draftConfigSchemaURL)
+	var content map[string]any
+	validator, err := NewValidator(draftConfigSchemaURL, &content)
 	s.NoError(err)
 	path := util.NewPath(".", nil).Join("schemas", "draft", "deploy.toml")
 	err = validator.ValidateTOMLFile(path)
@@ -44,7 +47,8 @@ func (s *SchemaSuite) TestValidateDraftConfig() {
 
 func (s *SchemaSuite) TestValidateDraftDeployment() {
 	const draftDeploymentSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json"
-	validator, err := NewValidator(draftDeploymentSchemaURL)
+	var content map[string]any
+	validator, err := NewValidator(draftDeploymentSchemaURL, &content)
 	s.NoError(err)
 	path := util.NewPath(".", nil).Join("schemas", "draft", "record.toml")
 	err = validator.ValidateTOMLFile(path)

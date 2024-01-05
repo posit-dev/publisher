@@ -109,7 +109,7 @@ func (s *StateSuite) TestLoadConfigNonexistent() {
 func (s *StateSuite) TestLoadConfigErr() {
 	s.createConfigFile("myConfig", true)
 	cfg, err := loadConfig(s.cwd, "myConfig")
-	s.ErrorContains(err, "can't load file")
+	s.ErrorContains(err, "unquoted string or incomplete number")
 	s.Nil(cfg)
 }
 
@@ -202,7 +202,7 @@ func (s *StateSuite) TestLoadTargetNonexistent() {
 func (s *StateSuite) TestLoadTargetErr() {
 	s.createTargetFile("myTarget", true)
 	cfg, err := loadTarget(s.cwd, "myTarget")
-	s.ErrorContains(err, "can't load file")
+	s.ErrorContains(err, "unquoted string or incomplete number")
 	s.Nil(cfg)
 }
 

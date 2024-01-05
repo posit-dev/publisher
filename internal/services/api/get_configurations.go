@@ -9,14 +9,15 @@ import (
 
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type configDTO struct {
-	Name          string         `json:"configurationName"`
-	Path          string         `json:"configurationPath"`
-	Configuration *config.Config `json:"configuration,omitempty"`
-	Error         string         `json:"error,omitempty"`
+	Name          string            `json:"configurationName"`
+	Path          string            `json:"configurationPath"`
+	Configuration *config.Config    `json:"configuration,omitempty"`
+	Error         *types.AgentError `json:"error,omitempty"`
 }
 
 func readConfigFiles(base util.Path) ([]configDTO, error) {
@@ -39,7 +40,7 @@ func readConfigFiles(base util.Path) ([]configDTO, error) {
 			response = append(response, configDTO{
 				Name:  name,
 				Path:  relPath.String(),
-				Error: err.Error(),
+				Error: types.AsAgentError(err),
 			})
 		} else {
 			response = append(response, configDTO{

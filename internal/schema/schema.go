@@ -9,6 +9,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
@@ -22,9 +23,10 @@ const DeploymentSchemaURL = schemaPrefix + "posit-publishing-record-schema-v3.js
 
 type Validator struct {
 	schema *jsonschema.Schema
+	object any
 }
 
-func NewValidator(schemaURL string) (*Validator, error) {
+func NewValidator(schemaURL string, object any) (*Validator, error) {
 	jsonschema.Loaders = map[string]func(url string) (io.ReadCloser, error){
 		"https": loadSchema,
 	}
@@ -34,12 +36,50 @@ func NewValidator(schemaURL string) (*Validator, error) {
 	}
 	return &Validator{
 		schema: schema,
+		object: object,
 	}, nil
 }
 
+const tomlValidationErrorCode types.ErrorCode = "tomlValidationError"
+
+type tomlValidationError struct {
+	Key             string `mapstructure:"key"`
+	Problem         string `mapstructure:"problem"`
+	SchemaReference string `mapstructure:"schema-reference"`
+}
+
+func (e *tomlValidationError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Key, e.Problem)
+}
+
+func toTomlValidationError(e *jsonschema.ValidationError) *tomlValidationError {
+	if len(e.Causes) != 0 {
+		e = e.Causes[0]
+	}
+	key := e.InstanceLocation
+	key = strings.TrimPrefix(key, "/")
+	key = strings.ReplaceAll(key, "/", ".")
+
+	return &tomlValidationError{
+		Key:             key,
+		Problem:         e.Message,
+		SchemaReference: e.AbsoluteKeywordLocation,
+	}
+}
+
 func (v *Validator) ValidateTOMLFile(path util.Path) error {
+	// First, try to read the TOML into the object.
+	// This will return nicer errors from the toml package
+	// for things like fields that cannot be mapped.
+	err := util.ReadTOMLFile(path, v.object)
+	if err != nil {
+		return err
+	}
+	// Read the TOML generically to get the content.
+	// Can't use v.object here because Validate
+	// doesn't accept some object types.
 	var content any
-	err := util.ReadTOMLFile(path, &content)
+	err = util.ReadTOMLFile(path, &content)
 	if err != nil {
 		return err
 	}
@@ -47,9 +87,9 @@ func (v *Validator) ValidateTOMLFile(path util.Path) error {
 	if err != nil {
 		validationErr, ok := err.(*jsonschema.ValidationError)
 		if ok {
-			cause := validationErr.Causes[0]
-			loc := strings.TrimPrefix(cause.InstanceLocation, "/")
-			return fmt.Errorf("error in file '%s'. Keyword '%s' %s", path, loc, cause.Message)
+			// Return all causes in the Data field of a single error.
+			e := toTomlValidationError(validationErr)
+			return types.NewAgentError(tomlValidationErrorCode, e, nil)
 		} else {
 			return err
 		}

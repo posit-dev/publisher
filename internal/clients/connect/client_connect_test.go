@@ -318,10 +318,11 @@ func (s *ConnectClientSuite) TestWaitForTaskErr() {
 	op := events.Operation("")
 	op, err := handleTaskUpdate(&task, op, log)
 	s.Equal(&types.AgentError{
-		Code: events.DeploymentFailedCode,
-		Err:  errors.New("exit status 1"),
-		Data: types.ErrorData{},
-		Op:   events.PublishRestorePythonEnvOp,
+		Code:    events.DeploymentFailedCode,
+		Err:     errors.New("exit status 1"),
+		Message: "exit status 1",
+		Data:    types.ErrorData{},
+		Op:      events.PublishRestorePythonEnvOp,
 	}, err)
 	s.Equal(events.PublishRestorePythonEnvOp, op)
 	log.AssertExpectations(s.T())

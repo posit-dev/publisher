@@ -2,7 +2,9 @@ package types
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import "github.com/mitchellh/mapstructure"
+import (
+	"github.com/mitchellh/mapstructure"
+)
 
 type ErrorCode string
 type ErrorData map[string]any
@@ -17,17 +19,31 @@ type EventableError interface {
 }
 
 type AgentError struct {
-	Code ErrorCode `json:"-"`
-	Err  error
-	Data ErrorData
-	Op   Operation `json:"-"`
+	Code    ErrorCode `json:"code"`
+	Err     error     `json:"-"`
+	Message string    `json:"msg"`
+	Data    ErrorData `json:"data"`
+	Op      Operation `json:"-"`
 }
 
 const UnknownErrorCode ErrorCode = "unknown"
 
+func AsAgentError(e error) *AgentError {
+	if e == nil {
+		return nil
+	}
+	agentErr, ok := e.(*AgentError)
+	if ok {
+		return agentErr
+	}
+	return NewAgentError(UnknownErrorCode, e, nil)
+}
+
 func NewAgentError(code ErrorCode, err error, details any) *AgentError {
 	data := make(ErrorData)
+	msg := ""
 	if err != nil {
+		msg = err.Error()
 		mapstructure.Decode(err, &data)
 	}
 	if details != nil {
@@ -38,9 +54,10 @@ func NewAgentError(code ErrorCode, err error, details any) *AgentError {
 		}
 	}
 	return &AgentError{
-		Code: code,
-		Err:  err,
-		Data: data,
+		Message: msg,
+		Code:    code,
+		Err:     err,
+		Data:    data,
 	}
 }
 
