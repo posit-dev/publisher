@@ -27,7 +27,6 @@ class PublishingClientApi {
   constructor() {
     const client = axios.create({
       baseURL: './api',
-      withCredentials: true,
     });
 
     client.interceptors.response.use(camelCaseInterceptor);

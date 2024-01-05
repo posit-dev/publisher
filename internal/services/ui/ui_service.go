@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/rs/cors"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services/api"
@@ -99,7 +100,9 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 		Handler(middleware.InsertPrefix(web.Handler, web.Prefix)).
 		Methods("GET")
 
-	return r.ServeHTTP
+	c := cors.AllowAll().Handler(r)
+
+	return c.ServeHTTP
 }
 
 func ToPath(elements ...string) string {

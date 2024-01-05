@@ -89,13 +89,8 @@ export class Service {
 
 		// create panel
 		const port = await ports.acquire();
-		const resources = [
-			vscode.Uri.joinPath(context.extensionUri, "out"),
-			vscode.Uri.joinPath(context.extensionUri, "assets")
-		];
-		const uri = await vscode.env.asExternalUri(vscode.Uri.parse(`http://${HOST}:${port}`));
-		const url = uri.toString();
-		const panel = new Panel(context, resources, url);
+		const url = `http://${HOST}:${port}`;
+		const panel = new Panel(context, url);
 
 		// create assistant
 		const path = workspaces.path();

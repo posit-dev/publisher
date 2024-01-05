@@ -1,6 +1,6 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { RouteLocationNormalizedLoaded, createRouter, createWebHashHistory } from 'vue-router';
+import { RouteLocationNormalizedLoaded, createRouter, createMemoryHistory } from 'vue-router';
 
 import ProjectPage from 'src/views/project-page/ProjectPage.vue';
 import AddNewDeployment from 'src/views/add-new-deployment/AddNewDeployment.vue';
@@ -51,7 +51,7 @@ const routes = [
 ];
 
 export const router = createRouter({
-  history: createWebHashHistory(),
+  history: createMemoryHistory(),
   routes: routes,
   scrollBehavior() {
     // always scroll to top

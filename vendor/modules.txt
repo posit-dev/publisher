@@ -45,6 +45,9 @@ github.com/pmezard/go-difflib/difflib
 github.com/r3labs/sse/v2
 # github.com/rogpeppe/go-internal v1.8.0
 ## explicit; go 1.11
+# github.com/rs/cors v1.10.1
+## explicit; go 1.13
+github.com/rs/cors
 # github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 ## explicit; go 1.19
 github.com/santhosh-tekuri/jsonschema/v5
