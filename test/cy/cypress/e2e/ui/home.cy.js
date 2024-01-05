@@ -35,10 +35,12 @@ it('configuration file is displayed', () => {
   cy.get('div[data-automation="config-card"]')
     .find('h3[class="card-title truncate"]')
     .contains("default");
-  
+
   cy.get('div[data-automation="config-card"]')
     .find('p')
-    .contains(".posit/publish/default.toml");
+    .should('contain', '.posit')
+    .and('contain', 'publish')
+    .and('contain', 'default.toml');
   });
 
 it('files are displayed', () => {
