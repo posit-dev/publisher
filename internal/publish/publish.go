@@ -193,18 +193,18 @@ func (p *defaultPublisher) publishWithClient(
 	var contentID types.ContentID
 	var err error
 
-	_, err = withLog(events.PublishCheckCapabilitiesOp, "Checking configuration against server capabilities", "ok", log, func() (bool, error) {
+	_, err = withLog(events.PublishCheckCapabilitiesOp, "Checking configuration against server capabilities", "status", log, func() (string, error) {
 		user, err := client.TestAuthentication()
 		if err != nil {
-			return false, err
+			return "fail", err
 		}
 		log.Info("Publishing with credentials", "username", user.Username, "email", user.Email)
 
 		err = client.CheckCapabilities(p.Config)
 		if err != nil {
-			return false, err
+			return "fail", err
 		}
-		return true, nil
+		return "pass", nil
 	})
 	if err != nil {
 		return err
@@ -302,8 +302,12 @@ func (p *defaultPublisher) publishWithClient(
 	}
 
 	if p.Config.Validate {
-		_, err := withLog(events.PublishValidateDeploymentOp, "Validating deployment", "ok", log, func() (bool, error) {
-			return true, client.ValidateDeployment(contentID)
+		_, err := withLog(events.PublishValidateDeploymentOp, "Validating deployment", "status", log, func() (string, error) {
+			err := client.ValidateDeployment(contentID)
+			if err != nil {
+				return "fail", err
+			}
+			return "pass", nil
 		})
 		if err != nil {
 			return err
