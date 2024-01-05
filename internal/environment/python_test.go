@@ -201,6 +201,8 @@ func (s *PythonSuite) TestGetPythonExecutableNoRunnablePython() {
 	exec.On("LookPath", "python").Return("/some/python", nil)
 	executable, err := inspector.getPythonExecutable(exec)
 	s.NotNil(err)
+	s.ErrorIs(err, testError)
+	s.ErrorContains(err, "could not run python executable")
 	s.Equal("", executable)
 }
 
