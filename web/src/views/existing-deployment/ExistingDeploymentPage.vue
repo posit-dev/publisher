@@ -59,9 +59,9 @@ const deploymentName = computed(():string => {
 const configurationSubTitles = computed(() => {
   return [
     `Using ${defaultConfig.value?.configurationPath}`,
-    `The settings present in this file are listed below and will be used during 
+    `The settings present in this file are listed below and will be used during
       the next deployment of your project.`,
-    `Edit this file to add or modify settings which will be applied 
+    `Edit this file to add or modify settings which will be applied
       during this project's next deployment.`,
   ];
 });
@@ -90,7 +90,7 @@ const getDeployment = async() => {
     if (isDeploymentError(d)) {
       // let the fatal error page handle this deployment error.
       // we're in a header, they can't fix it here.
-      throw new Error(d.error);
+      throw new Error(d.error.msg);
     } else {
       deployment.value = d;
     }

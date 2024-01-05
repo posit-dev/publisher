@@ -1,5 +1,6 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
+import { AgentError } from 'src/api/types/error';
 import { ConnectConfig } from 'src/api/types/connect';
 import { SchemaURL } from 'src/api/types/schema';
 
@@ -9,7 +10,7 @@ export type ConfigurationLocation = {
 }
 
 export type ConfigurationError = {
-  error: string;
+  error: AgentError;
 } & ConfigurationLocation
 
 export type Configuration = {

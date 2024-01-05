@@ -110,7 +110,7 @@ async function getDeployments() {
       deploymentErrors.forEach((d) => {
         return errorMessages.value.push(
           buildErrorBannerMessage(
-            d.error,
+            d.error.msg,
             `Please correct errors within the indicated deployment file(s).
             The files will not appear on the list below until they are valid and
             you have reloaded this page.`,
