@@ -13,7 +13,7 @@
         :id="deployment.id"
       />
       <p v-else>
-        Last Deployed on {{ formatDateTimeString(deployment.deployedAt) }}
+        Last Deployed on {{ formatDateString(deployment.deployedAt) }}
       </p>
     </div>
   </PCard>
@@ -23,7 +23,7 @@
 import { computed, PropType } from 'vue';
 
 import { Deployment } from 'src/api';
-import { formatDateTimeString } from 'src/utils/date';
+import { formatDateString } from 'src/utils/date';
 import { useEventStore } from 'src/stores/events';
 import PCard from 'src/components/PCard.vue';
 import DeployProgressLine from 'src/components/DeployProgressLine.vue';
