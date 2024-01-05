@@ -26,7 +26,7 @@ type cliSpec struct {
 	Deploy   commands.CreateCmd   `kong:"cmd" help:"Create a new deployment."`
 	Redeploy commands.UpdateCmd   `kong:"cmd" help:"Update an existing deployment."`
 	UI       commands.UICmd       `kong:"cmd" help:"Serve the publisher UI."`
-	Version  commands.VersionFlag `help:"Show the client software version and exit."`
+	Version  commands.VersionCmd  `kong:"cmd" help:"Show the client software version and exit."`
 }
 
 func logVersion(log logging.Logger) {
