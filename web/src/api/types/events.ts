@@ -116,24 +116,14 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/failure': OnPublishFailureCallback
 }
 
-export function getLocalId(arg: EventStreamMessage | EventStreamMessageWithBooleans) {
-  if (typeof arg.data.localId === 'string') {
-    return arg.data.localId;
-  }
-  throw new Error(`LocalId not a string, but rather ${typeof arg.data.localId}`);
+export function getLocalId(arg: EventStreamMessage) {
+  return arg.data.localId;
 }
 
 export interface EventStreamMessage {
   type: EventSubscriptionTarget,
   time: string,
   data: Record<string, string>,
-  error?: string,
-}
-
-export interface EventStreamMessageWithBooleans {
-  type: EventSubscriptionTarget,
-  time: string,
-  data: Record<string, string | boolean>,
   error?: string,
 }
 
@@ -251,14 +241,14 @@ export function isPublishCheckCapabilitiesLog(arg: Events):
   return arg.type === 'publish/checkCapabilities/log';
 }
 
-export interface PublishCheckCapabilitiesSuccess extends EventStreamMessageWithBooleans {
+export interface PublishCheckCapabilitiesSuccess extends EventStreamMessage {
   type: 'publish/checkCapabilities/success',
   data: {
-    // "level": "INFO", "message": "Done", "localId": "DVP6zKpd_QzudMUS", "ok": true
+    // "level": "INFO", "message": "Done", "localId": "DVP6zKpd_QzudMUS", "ok": "true"
     level: string,
     message: string,
     localId: string,
-    ok: boolean,
+    ok: string,
   }
 }
 export type OnPublishCheckCapabilitiesSuccessCallback =
@@ -853,7 +843,6 @@ export function isPublishFailure(arg: Events):
 // Events are a union type of our base and our extended interfaces
 export type Events =
   EventStreamMessage |
-  EventStreamMessageWithBooleans |
   AgentLog |
   ErrorsSse |
   ErrorsOpen |

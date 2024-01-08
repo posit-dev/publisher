@@ -47,7 +47,6 @@ import {
   PublishValidateDeploymentSuccess,
   PublishValidateDeploymentFailure,
   AgentLog,
-  EventStreamMessageWithBooleans,
 } from 'src/api/types/events';
 
 import {
@@ -118,10 +117,6 @@ export type PublishStepStatus = PublishStepStatusBase & {
   allMsgs: EventStreamMessage[];
 }
 
-export type PublishStepStatusWithBooleans = PublishStepStatusBase & {
-  allMsgs: EventStreamMessageWithBooleans[];
-}
-
 export type PublishStatus = {
   completion: PublishStepCompletionStatus;
   error?: keyValuePair[];
@@ -129,7 +124,7 @@ export type PublishStatus = {
   directURL: string,
   currentStep?: PublishStep,
   steps: {
-    checkCapabilities: PublishStepStatusWithBooleans,
+    checkCapabilities: PublishStepStatus,
     createNewDeployment: PublishStepStatus,
     createBundle: PublishStepStatus,
     uploadBundle: PublishStepStatus,
