@@ -37,6 +37,7 @@
         <PButton
           hierarchy="primary"
           :disable="disableToDeploymentPage"
+          data-automation="continue-deployment"
           type="submit"
         >
           Continue to Deploy

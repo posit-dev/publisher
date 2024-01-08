@@ -44,6 +44,7 @@
         v-for="config in configurations"
         :key="config.configurationName"
         :config="config"
+        data-automation="config-card"
       />
     </div>
 
@@ -60,7 +61,9 @@
         not be included in your deployments to the server.
       </p>
     </div>
-    <FileTree />
+    <FileTree
+      data-automation="file-tree"
+    />
   </div>
 </template>
 

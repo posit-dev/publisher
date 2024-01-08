@@ -51,6 +51,7 @@
       v-if="showDeploySuccessSummary"
       class="summary row text-left items-center"
       :class="textClass"
+      data-automation="deploy-message"
     >
       <div class="col q-ml-sm">
         <q-icon
