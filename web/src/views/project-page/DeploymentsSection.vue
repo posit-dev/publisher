@@ -41,6 +41,7 @@
   <div v-else>
     <PCard
       :to="{ name: 'addNewDeployment' }"
+      data-automation="add-new-deployment"
     >
       <div class="flex column items-center">
         <q-icon

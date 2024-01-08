@@ -53,6 +53,7 @@
             class="q-ml-md"
             padding="sm md"
             :disable="eventStore.publishInProgess"
+            data-automation="deploy"
             @click="initiateDeploy"
           >
             <template v-if="deployAsNew">

@@ -139,16 +139,16 @@ func (s *PublishSuite) publishWithClient(
 
 	client := connect.NewMockClient()
 	if target == nil {
-		client.On("CreateDeployment", mock.Anything).Return(myContentID, createErr)
+		client.On("CreateDeployment", mock.Anything, mock.Anything).Return(myContentID, createErr)
 	}
-	client.On("TestAuthentication").Return(&connect.User{}, authErr)
-	client.On("CheckCapabilities", mock.Anything).Return(capErr)
-	client.On("UpdateDeployment", myContentID, mock.Anything).Return(createErr)
-	client.On("SetEnvVars", myContentID, mock.Anything).Return(envVarErr)
-	client.On("UploadBundle", myContentID, mock.Anything).Return(myBundleID, uploadErr)
-	client.On("DeployBundle", myContentID, myBundleID).Return(myTaskID, deployErr)
-	client.On("WaitForTask", myTaskID, mock.Anything).Return(waitErr)
-	client.On("ValidateDeployment", myContentID).Return(validateErr)
+	client.On("TestAuthentication", mock.Anything).Return(&connect.User{}, authErr)
+	client.On("CheckCapabilities", mock.Anything, mock.Anything).Return(capErr)
+	client.On("UpdateDeployment", myContentID, mock.Anything, mock.Anything).Return(createErr)
+	client.On("SetEnvVars", myContentID, mock.Anything, mock.Anything).Return(envVarErr)
+	client.On("UploadBundle", myContentID, mock.Anything, mock.Anything).Return(myBundleID, uploadErr)
+	client.On("DeployBundle", myContentID, myBundleID, mock.Anything).Return(myTaskID, deployErr)
+	client.On("WaitForTask", myTaskID, mock.Anything, mock.Anything).Return(waitErr)
+	client.On("ValidateDeployment", myContentID, mock.Anything).Return(validateErr)
 
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
