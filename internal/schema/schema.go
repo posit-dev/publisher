@@ -21,12 +21,11 @@ const schemaPrefix = "https://cdn.posit.co/publisher/schemas/"
 const ConfigSchemaURL = schemaPrefix + "posit-publishing-schema-v3.json"
 const DeploymentSchemaURL = schemaPrefix + "posit-publishing-record-schema-v3.json"
 
-type Validator struct {
+type Validator[T any] struct {
 	schema *jsonschema.Schema
-	object any
 }
 
-func NewValidator(schemaURL string, object any) (*Validator, error) {
+func NewValidator[T any](schemaURL string) (*Validator[T], error) {
 	jsonschema.Loaders = map[string]func(url string) (io.ReadCloser, error){
 		"https": loadSchema,
 	}
@@ -34,9 +33,8 @@ func NewValidator(schemaURL string, object any) (*Validator, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Validator{
+	return &Validator[T]{
 		schema: schema,
-		object: object,
 	}, nil
 }
 
@@ -67,23 +65,24 @@ func toTomlValidationError(e *jsonschema.ValidationError) *tomlValidationError {
 	}
 }
 
-func (v *Validator) ValidateTOMLFile(path util.Path) error {
+func (v *Validator[T]) ValidateTOMLFile(path util.Path) error {
 	// First, try to read the TOML into the object.
 	// This will return nicer errors from the toml package
 	// for things like fields that cannot be mapped.
-	err := util.ReadTOMLFile(path, v.object)
+	var typedContent T
+	err := util.ReadTOMLFile(path, &typedContent)
 	if err != nil {
 		return err
 	}
-	// Read the TOML generically to get the content.
+	// Read the TOML generically to get the anyContent.
 	// Can't use v.object here because Validate
 	// doesn't accept some object types.
-	var content any
-	err = util.ReadTOMLFile(path, &content)
+	var anyContent any
+	err = util.ReadTOMLFile(path, &anyContent)
 	if err != nil {
 		return err
 	}
-	err = v.schema.Validate(content)
+	err = v.schema.Validate(anyContent)
 	if err != nil {
 		validationErr, ok := err.(*jsonschema.ValidationError)
 		if ok {

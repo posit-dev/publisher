@@ -80,8 +80,7 @@ func FromFile(path util.Path) (*Deployment, error) {
 }
 
 func ValidateFile(path util.Path) error {
-	var d Deployment
-	validator, err := schema.NewValidator(schema.DeploymentSchemaURL, &d)
+	validator, err := schema.NewValidator[Deployment](schema.DeploymentSchemaURL)
 	if err != nil {
 		return err
 	}
