@@ -111,9 +111,6 @@ const hasError = computed(() => props.messages.some(msg => isErrorEventStreamMes
 
 const formatMsg = (msg: EventStreamMessage): string => {
   if (isPublishCreateNewDeploymentStart(msg) || isPublishCreateNewDeploymentSuccess(msg)) {
-    if (msg.data.contentId) {
-      return `${msg.data.message} ${msg.data.saveName}, ContentID: ${msg.data.contentId}`;
-    }
     return `${msg.data.message} ${msg.data.saveName}`;
   } else if (isPublishCheckCapabilitiesSuccess(msg)) {
     return `${msg.data.message} (${msg.data.status})`;
