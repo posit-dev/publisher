@@ -9,6 +9,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/clients/connect/server_settings"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
 )
 
@@ -22,7 +23,7 @@ type allSettings struct {
 	quarto      server_settings.QuartoInfo
 }
 
-func (c *ConnectClient) CheckCapabilities(cfg *config.Config) error {
+func (c *ConnectClient) CheckCapabilities(cfg *config.Config, log logging.Logger) error {
 	settings := &allSettings{}
 
 	err := c.client.Get("/__api__/v1/user", &settings.user)

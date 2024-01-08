@@ -35,7 +35,6 @@ func (s *ConnectClientSuite) TestNewConnectClient() {
 	client, err := NewConnectClient(account, timeout, log)
 	s.NoError(err)
 	s.Equal(account, client.account)
-	s.Equal(log, client.log)
 	s.NotNil(client.client)
 }
 
@@ -334,10 +333,9 @@ func (s *ConnectClientSuite) TestValidateDeployment() {
 	client := &ConnectClient{
 		client:  httpClient,
 		account: &accounts.Account{},
-		log:     nil,
 	}
 	contentID := types.ContentID("myContentID")
-	err := client.ValidateDeployment(contentID)
+	err := client.ValidateDeployment(contentID, logging.New())
 	s.NoError(err)
 }
 
@@ -349,7 +347,6 @@ func (s *ConnectClientSuite) TestValidateDeploymentNonHTTPErr() {
 	client := &ConnectClient{
 		client:  httpClient,
 		account: &accounts.Account{},
-		log:     nil,
 	}
 	contentID := types.ContentID("myContentID")
 	err := client.ValidateDeployment(contentID)
@@ -367,7 +364,6 @@ func (s *ConnectClientSuite) TestValidateDeploymentAppFailure() {
 	client := &ConnectClient{
 		client:  httpClient,
 		account: &accounts.Account{},
-		log:     nil,
 	}
 	contentID := types.ContentID("myContentID")
 	err := client.ValidateDeployment(contentID)
@@ -385,7 +381,6 @@ func (s *ConnectClientSuite) TestValidateDeploymentHTTPNonAppErr() {
 	client := &ConnectClient{
 		client:  httpClient,
 		account: &accounts.Account{},
-		log:     nil,
 	}
 	contentID := types.ContentID("myContentID")
 	err := client.ValidateDeployment(contentID)
@@ -419,9 +414,8 @@ func (s *ConnectClientSuite) TestTestAuthentication() {
 	client := &ConnectClient{
 		client:  httpClient,
 		account: &accounts.Account{},
-		log:     logging.New(),
 	}
-	user, err := client.TestAuthentication()
+	user, err := client.TestAuthentication(logging.New())
 	s.Equal(expectedUser, user)
 	s.NoError(err)
 }
@@ -437,9 +431,8 @@ func (s *ConnectClientSuite) TestTestAuthentication404() {
 	client := &ConnectClient{
 		client:  httpClient,
 		account: &accounts.Account{},
-		log:     logging.New(),
 	}
-	user, err := client.TestAuthentication()
+	user, err := client.TestAuthentication(logging.New())
 	s.Nil(user)
 	s.NotNil(err)
 	s.ErrorIs(err, errInvalidServerOrCredentials)
@@ -456,9 +449,8 @@ func (s *ConnectClientSuite) TestTestAuthenticationLocked() {
 	client := &ConnectClient{
 		client:  httpClient,
 		account: &accounts.Account{},
-		log:     logging.New(),
 	}
-	user, err := client.TestAuthentication()
+	user, err := client.TestAuthentication(logging.New())
 	s.Nil(user)
 	s.NotNil(err)
 	s.ErrorContains(err, "user account bob is locked")
@@ -475,9 +467,8 @@ func (s *ConnectClientSuite) TestTestAuthenticationNotConfirmed() {
 	client := &ConnectClient{
 		client:  httpClient,
 		account: &accounts.Account{},
-		log:     logging.New(),
 	}
-	user, err := client.TestAuthentication()
+	user, err := client.TestAuthentication(logging.New())
 	s.Nil(user)
 	s.NotNil(err)
 	s.ErrorContains(err, "user account bob is not confirmed")
@@ -495,9 +486,8 @@ func (s *ConnectClientSuite) TestTestAuthenticationNotPublisher() {
 	client := &ConnectClient{
 		client:  httpClient,
 		account: &accounts.Account{},
-		log:     logging.New(),
 	}
-	user, err := client.TestAuthentication()
+	user, err := client.TestAuthentication(logging.New())
 	s.Nil(user)
 	s.NotNil(err)
 	s.ErrorContains(err, "user account bob with role 'viewer' does not have permission to publish content")

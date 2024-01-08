@@ -124,13 +124,13 @@ func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logg
 	log = log.WithArgs(logging.LogKeyOp, op)
 	log.Start("Checking configuration against server capabilities")
 
-	user, err := client.TestAuthentication()
+	user, err := client.TestAuthentication(log)
 	if err != nil {
 		return types.ErrToAgentError(op, err)
 	}
 	log.Info("Publishing with credentials", "username", user.Username, "email", user.Email)
 
-	err = client.CheckCapabilities(p.Config)
+	err = client.CheckCapabilities(p.Config, log)
 	if err != nil {
 		return types.ErrToAgentError(op, err)
 	}
@@ -143,7 +143,7 @@ func (p *defaultPublisher) createDeployment(client connect.APIClient, log loggin
 	log = log.WithArgs(logging.LogKeyOp, op)
 	log.Start("Creating new deployment")
 
-	contentID, err := client.CreateDeployment(&connect.ConnectContent{})
+	contentID, err := client.CreateDeployment(&connect.ConnectContent{}, log)
 	if err != nil {
 		return "", types.ErrToAgentError(op, err)
 	}
@@ -220,7 +220,7 @@ func (p *defaultPublisher) createAndUploadBundle(
 	uploadLog := log.WithArgs(logging.LogKeyOp, op)
 	uploadLog.Start("Uploading files")
 
-	bundleID, err := client.UploadBundle(contentID, bundleFile)
+	bundleID, err := client.UploadBundle(contentID, bundleFile, log)
 	if err != nil {
 		return "", types.ErrToAgentError(op, err)
 	}
@@ -238,7 +238,7 @@ func (p *defaultPublisher) updateContent(
 	log.Start("Updating deployment settings", "content_id", contentID, "save_name", p.SaveName)
 
 	connectContent := connect.ConnectContentFromConfig(p.Config)
-	err := client.UpdateDeployment(contentID, connectContent)
+	err := client.UpdateDeployment(contentID, connectContent, log)
 	if err != nil {
 		return types.ErrToAgentError(op, err)
 	}
@@ -273,7 +273,7 @@ func (p *defaultPublisher) setEnvVars(
 	for name, value := range env {
 		log.Info("Setting environment variable", "name", name, "value", value)
 	}
-	err := client.SetEnvVars(contentID, env)
+	err := client.SetEnvVars(contentID, env, log)
 	if err != nil {
 		return types.ErrToAgentError(op, err)
 	}
@@ -292,7 +292,7 @@ func (p *defaultPublisher) deployBundle(
 	log = log.WithArgs(logging.LogKeyOp, op)
 	log.Start("Activating Deployment")
 
-	taskID, err := client.DeployBundle(contentID, bundleID)
+	taskID, err := client.DeployBundle(contentID, bundleID, log)
 	if err != nil {
 		return "", types.ErrToAgentError(op, err)
 	}
@@ -309,7 +309,7 @@ func (p *defaultPublisher) validateContent(
 	log = log.WithArgs(logging.LogKeyOp, op)
 	log.Start("Validating Deployment")
 
-	err := client.ValidateDeployment(contentID)
+	err := client.ValidateDeployment(contentID, log)
 	if err != nil {
 		return types.ErrToAgentError(op, err)
 	}
