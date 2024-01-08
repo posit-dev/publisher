@@ -37,7 +37,7 @@ func PostAccountVerifyHandlerFunc(lister accounts.AccountList, log logging.Logge
 			return
 		}
 		var response *PostAccountVerifyResponse
-		user, err := client.TestAuthentication()
+		user, err := client.TestAuthentication(log)
 
 		if err != nil {
 			response = &PostAccountVerifyResponse{

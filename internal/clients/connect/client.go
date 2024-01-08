@@ -20,13 +20,13 @@ type User struct {
 }
 
 type APIClient interface {
-	TestAuthentication() (*User, error)
-	CreateDeployment(*ConnectContent) (types.ContentID, error)
-	UpdateDeployment(types.ContentID, *ConnectContent) error
-	SetEnvVars(types.ContentID, config.Environment) error
-	UploadBundle(types.ContentID, io.Reader) (types.BundleID, error)
-	DeployBundle(types.ContentID, types.BundleID) (types.TaskID, error)
+	TestAuthentication(logging.Logger) (*User, error)
+	CreateDeployment(*ConnectContent, logging.Logger) (types.ContentID, error)
+	UpdateDeployment(types.ContentID, *ConnectContent, logging.Logger) error
+	SetEnvVars(types.ContentID, config.Environment, logging.Logger) error
+	UploadBundle(types.ContentID, io.Reader, logging.Logger) (types.BundleID, error)
+	DeployBundle(types.ContentID, types.BundleID, logging.Logger) (types.TaskID, error)
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
-	ValidateDeployment(types.ContentID) error
-	CheckCapabilities(*config.Config) error
+	ValidateDeployment(types.ContentID, logging.Logger) error
+	CheckCapabilities(*config.Config, logging.Logger) error
 }

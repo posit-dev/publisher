@@ -25,7 +25,7 @@ func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLICon
 	if err != nil {
 		return err
 	}
-	user, err := client.TestAuthentication()
+	user, err := client.TestAuthentication(ctx.Logger)
 	if err != nil {
 		return err
 	}
