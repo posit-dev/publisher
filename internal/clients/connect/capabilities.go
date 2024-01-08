@@ -9,6 +9,8 @@ import (
 
 	"github.com/rstudio/connect-client/internal/clients/connect/server_settings"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 )
 
 type allSettings struct {
@@ -21,18 +23,18 @@ type allSettings struct {
 	quarto      server_settings.QuartoInfo
 }
 
-func (c *ConnectClient) CheckCapabilities(cfg *config.Config) error {
+func (c *ConnectClient) CheckCapabilities(cfg *config.Config, log logging.Logger) error {
 	settings := &allSettings{}
 
-	err := c.client.Get("/__api__/v1/user", &settings.user)
+	err := c.client.Get("/__api__/v1/user", &settings.user, log)
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/server_settings", &settings.general)
+	err = c.client.Get("/__api__/server_settings", &settings.general, log)
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/server_settings/applications", &settings.application)
+	err = c.client.Get("/__api__/server_settings/applications", &settings.application, log)
 	if err != nil {
 		return err
 	}
@@ -42,19 +44,19 @@ func (c *ConnectClient) CheckCapabilities(cfg *config.Config) error {
 	if appMode != UnknownMode {
 		schedulerPath = "/" + string(appMode)
 	}
-	err = c.client.Get("/__api__/server_settings/scheduler"+schedulerPath, &settings.scheduler)
+	err = c.client.Get("/__api__/server_settings/scheduler"+schedulerPath, &settings.scheduler, log)
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/v1/server_settings/python", &settings.python)
+	err = c.client.Get("/__api__/v1/server_settings/python", &settings.python, log)
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/v1/server_settings/r", &settings.r)
+	err = c.client.Get("/__api__/v1/server_settings/r", &settings.r, log)
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/v1/server_settings/quarto", &settings.quarto)
+	err = c.client.Get("/__api__/v1/server_settings/quarto", &settings.quarto, log)
 	if err != nil {
 		return err
 	}
@@ -80,18 +82,44 @@ func majorMinorVersion(version string) string {
 	return strings.Join(strings.Split(version, ".")[:2], ".")
 }
 
+type pythonNotAvailableErr struct {
+	Requested string
+	Available []string
+}
+
+func newPythonNotAvailableErr(requested string, installations []server_settings.PyInstallation) *pythonNotAvailableErr {
+	available := make([]string, 0, len(installations))
+	for _, inst := range installations {
+		available = append(available, inst.Version)
+	}
+	return &pythonNotAvailableErr{
+		Requested: requested,
+		Available: available,
+	}
+}
+
+const pythonNotAvailableCode types.ErrorCode = "pythonNotAvailable"
+const pythonNotAvailableMsg = `Python %s is not available on the server.
+Consider editing your configuration file to request one of the available versions:
+%s.`
+
+func (e *pythonNotAvailableErr) Error() string {
+	return fmt.Sprintf(pythonNotAvailableMsg, e.Requested, strings.Join(e.Available, ", "))
+}
+
 func (a *allSettings) checkMatchingPython(version string) error {
 	if version == "" {
 		// This is prevented by version being mandatory in the schema.
 		return nil
 	}
-	need := majorMinorVersion(version)
+	requested := majorMinorVersion(version)
 	for _, inst := range a.python.Installations {
-		if majorMinorVersion(inst.Version) == need {
+		if majorMinorVersion(inst.Version) == requested {
 			return nil
 		}
 	}
-	return fmt.Errorf("python %s is not available on the server", need)
+	return types.NewAgentError(pythonNotAvailableCode,
+		newPythonNotAvailableErr(requested, a.python.Installations), nil)
 }
 
 func (a *allSettings) checkKubernetes(cfg *config.Config) error {

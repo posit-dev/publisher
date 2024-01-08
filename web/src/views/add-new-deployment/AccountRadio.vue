@@ -4,6 +4,7 @@
   <q-item
     tag="label"
     class="q-my-sm row items-center"
+    data-automation="account"
     :class="activeClass"
   >
     <q-item-section

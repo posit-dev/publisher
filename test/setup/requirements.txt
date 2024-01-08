@@ -1,2 +1,2 @@
 requests
-fuzzbucket-client
+fuzzbucket-client<=0.13.0
