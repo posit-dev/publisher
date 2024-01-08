@@ -81,9 +81,10 @@ export class Panel implements IPanel {
  *
  * @param {string} url - The target server URL (i.e., http://localhost:8080).
  * @param {vscode.Webview} webview - A VSCode webview instance.
- * @returns
+ * @returns {string}
  */
 export const createHTML = (url: string, webview: vscode.Webview): string => {
+    const nonce = createNonce();
     return (
         // install https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html to enable code highlighting below
         /*html*/
@@ -93,13 +94,13 @@ export const createHTML = (url: string, webview: vscode.Webview): string => {
                 <base href="${url}" />
                 <meta
                     http-equiv="Content-Security-Policy"
-                    content="${createContentSecurityPolicyContent(url, webview.cspSource)}"
+                    content="${createContentSecurityPolicyContent(nonce, url, webview.cspSource)}"
                 />
                 <link rel="stylesheet" href="./assets/index.css">
             </head>
             <body>
                 <div id="app"></div>
-                <script type="text/javascript" src="./assets/index.js"></script>
+                <script type="text/javascript" nonce="${nonce}" src="./assets/index.js"></script>
             </body>
         </html>
         `
@@ -112,19 +113,33 @@ export const createHTML = (url: string, webview: vscode.Webview): string => {
  * The Content-Security-Policy controls the resources that the user agent is allowed to load.
  *
  * @param {string[]} allowable - The allowable URLs to inject into the Content-Security-Policy.
- * @returns
+ * @returns {string}
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
  */
-export const createContentSecurityPolicyContent = (...allowable: string[]): string => {
+export const createContentSecurityPolicyContent = (nonce: string, ...allowable: string[]): string => {
     const directives: string[] = [
         'connect-src',
         'font-src',
         'frame-src',
-        'script-src',
+        `script-src nonce-${nonce}`,
         'style-src',
     ];
     const urls: string = allowable.join(" ");
     const content: string = directives.map(_ => `${_} ${urls} https:;`).join(" ");
     return `default-src 'none'; ${content}`;
+};
+
+/**
+ * Creates a unique nonce value.
+ *
+ * @returns {string}
+ */
+const createNonce = (): string => {
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	for (let i = 0; i < 32; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
 };
