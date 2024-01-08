@@ -244,11 +244,11 @@ export function isPublishCheckCapabilitiesLog(arg: Events):
 export interface PublishCheckCapabilitiesSuccess extends EventStreamMessage {
   type: 'publish/checkCapabilities/success',
   data: {
-    // "level": "INFO", "message": "Done", "localId": "DVP6zKpd_QzudMUS", "ok": "true"
+    // "level": "INFO", "message": "Done", "localId": "DVP6zKpd_QzudMUS", "status": "pass"
     level: string,
     message: string,
     localId: string,
-    ok: string,
+    status: string,
   }
 }
 export type OnPublishCheckCapabilitiesSuccessCallback =
@@ -292,10 +292,9 @@ export function isPublishCreateNewDeploymentStart(arg: Events):
 export interface PublishCreateNewDeploymentSuccess extends EventStreamMessage {
   type: 'publish/createNewDeployment/success',
   data: {
-    // "level": "INFO", "message": "Done", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm"
+    // "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm"
     level: string,
     message: string,
-    contentId: string,
     saveName: string,
     localId: string,
   }

@@ -84,6 +84,7 @@ import { PropType, computed } from 'vue';
 import {
   EventStreamMessage,
   isErrorEventStreamMessage,
+  isPublishCheckCapabilitiesSuccess,
   isPublishCreateBundleLog,
   isPublishCreateBundleSuccess,
   isPublishCreateDeploymentStart,
@@ -114,6 +115,8 @@ const formatMsg = (msg: EventStreamMessage): string => {
       return `${msg.data.message} ${msg.data.saveName}, ContentID: ${msg.data.contentId}`;
     }
     return `${msg.data.message} ${msg.data.saveName}`;
+  } else if (isPublishCheckCapabilitiesSuccess(msg)) {
+    return `${msg.data.message} (${msg.data.status})`;
   } else if (isPublishCreateBundleSuccess(msg)) {
     return `${msg.data.message} ${msg.data.filename}`;
   } else if (isPublishCreateDeploymentStart(msg) || isPublishCreateDeploymentSuccess(msg)) {

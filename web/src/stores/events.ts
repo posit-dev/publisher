@@ -321,6 +321,7 @@ export const useEventStore = defineStore('event', () => {
       publishStatus.completion = 'success';
       publishStatus.dashboardURL = msg.data.dashboardUrl;
       publishStatus.directURL = msg.data.directUrl;
+      currentPublishStatus.value.contentId = msg.data.contentId;
     }
     publishInProgess.value = false;
   };
@@ -501,7 +502,6 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createDeployment.completion = 'success';
-      currentPublishStatus.value.contentId = msg.data.contentId;
       publishStatus.steps.createDeployment.allMsgs.push(msg);
     }
   };
