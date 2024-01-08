@@ -132,7 +132,7 @@ func withLog[T any](
 	if err != nil {
 		// Using implicit return values here since we
 		// can't construct an empty T{}
-		err = types.ErrToAgentError(op, err)
+		err = types.OperationError(op, err)
 		return
 	}
 	log.Success("Done", label, value)
@@ -227,12 +227,12 @@ func (p *defaultPublisher) publishWithClient(
 	}
 	err = p.createDeploymentRecord(bundler, contentID, account, log)
 	if err != nil {
-		return types.ErrToAgentError(events.PublishCreateNewDeploymentOp, err)
+		return types.OperationError(events.PublishCreateNewDeploymentOp, err)
 	}
 
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
-		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
+		return types.OperationError(events.PublishCreateBundleOp, err)
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
@@ -241,11 +241,11 @@ func (p *defaultPublisher) publishWithClient(
 		return bundleFile.Name(), err
 	})
 	if err != nil {
-		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
+		return types.OperationError(events.PublishCreateBundleOp, err)
 	}
 	_, err = bundleFile.Seek(0, io.SeekStart)
 	if err != nil {
-		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
+		return types.OperationError(events.PublishCreateBundleOp, err)
 	}
 
 	bundleID, err := withLog(events.PublishUploadBundleOp, "Uploading deployment bundle", "count", log, func() (types.BundleID, error) {

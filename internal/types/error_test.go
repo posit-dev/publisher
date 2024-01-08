@@ -20,7 +20,7 @@ func TestErrorSuite(t *testing.T) {
 
 func (s *ErrorSuite) TestError() {
 	err := errors.New("an error occurred")
-	agentErr := ErrToAgentError(Operation("testOp"), err)
+	agentErr := OperationError(Operation("testOp"), err)
 	s.Equal(err.Error(), agentErr.Error())
 }
 
