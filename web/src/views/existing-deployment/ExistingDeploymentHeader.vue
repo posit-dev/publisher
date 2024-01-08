@@ -48,6 +48,7 @@
             class="q-ml-md"
             padding="sm md"
             :disable="eventStore.publishInProgess"
+            data-automation="redeploy"
             @click="initiateRedeploy"
           >
             Redeploy

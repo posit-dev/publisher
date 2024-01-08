@@ -9,6 +9,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/clients/connect/server_settings"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
 )
 
@@ -22,18 +23,18 @@ type allSettings struct {
 	quarto      server_settings.QuartoInfo
 }
 
-func (c *ConnectClient) CheckCapabilities(cfg *config.Config) error {
+func (c *ConnectClient) CheckCapabilities(cfg *config.Config, log logging.Logger) error {
 	settings := &allSettings{}
 
-	err := c.client.Get("/__api__/v1/user", &settings.user)
+	err := c.client.Get("/__api__/v1/user", &settings.user, log)
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/server_settings", &settings.general)
+	err = c.client.Get("/__api__/server_settings", &settings.general, log)
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/server_settings/applications", &settings.application)
+	err = c.client.Get("/__api__/server_settings/applications", &settings.application, log)
 	if err != nil {
 		return err
 	}
@@ -43,19 +44,19 @@ func (c *ConnectClient) CheckCapabilities(cfg *config.Config) error {
 	if appMode != UnknownMode {
 		schedulerPath = "/" + string(appMode)
 	}
-	err = c.client.Get("/__api__/server_settings/scheduler"+schedulerPath, &settings.scheduler)
+	err = c.client.Get("/__api__/server_settings/scheduler"+schedulerPath, &settings.scheduler, log)
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/v1/server_settings/python", &settings.python)
+	err = c.client.Get("/__api__/v1/server_settings/python", &settings.python, log)
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/v1/server_settings/r", &settings.r)
+	err = c.client.Get("/__api__/v1/server_settings/r", &settings.r, log)
 	if err != nil {
 		return err
 	}
-	err = c.client.Get("/__api__/v1/server_settings/quarto", &settings.quarto)
+	err = c.client.Get("/__api__/v1/server_settings/quarto", &settings.quarto, log)
 	if err != nil {
 		return err
 	}

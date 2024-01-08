@@ -23,3 +23,24 @@ jobs:
       - run: just cy install
       - run: just cy init
       - run: just cy test
+
+
+      # Videos are captured whether the suite fails or passes
+      - name: Save videos
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-videos
+          path: test/cy/cypress/videos
+          if-no-files-found: ignore
+          retention-days: 1
+
+      # Screenshots are only captured on failure
+      - name: Save screenshots
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: test/cy/cypress/screenshots
+          if-no-files-found: ignore
+          retention-days: 1

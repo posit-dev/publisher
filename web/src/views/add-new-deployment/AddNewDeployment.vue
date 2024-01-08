@@ -28,13 +28,16 @@
       <q-input
         v-model="deploymentName"
         label="Deployment Name"
-        hint="Optional, used locally to identify this deployment."
+        hint="Required, used locally to identify this deployment."
+        :error="Boolean(deploymentNameError)"
+        :error-message="deploymentNameError"
         clearable
       />
       <div class="flex row reverse">
         <PButton
           hierarchy="primary"
           :disable="disableToDeploymentPage"
+          data-automation="continue-deployment"
           type="submit"
         >
           Continue to Deploy
@@ -99,6 +102,16 @@ async function getDeployments() {
   }
 }
 
+const deploymentNameError = computed(() => {
+  if (!deploymentName.value) {
+    return 'A unique deployment name must be provided.';
+  }
+  if (deployments.value.find((deployment) => deployment.saveName === deploymentName.value)) {
+    return 'Deployment name already in use. Please supply a unique name.';
+  }
+  return undefined;
+});
+
 function resetForm() {
   selectedAccountName.value = '';
   deploymentName.value = '';
@@ -115,7 +128,7 @@ const deploymentPage = computed<RouteLocationRaw>(() => ({
 }));
 
 const disableToDeploymentPage = computed(() => {
-  return Boolean(!selectedAccountName.value);
+  return Boolean(!selectedAccountName.value || deploymentNameError.value);
 });
 
 function navigateToNewDeploymentPage() {
