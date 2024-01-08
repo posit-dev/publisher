@@ -4,17 +4,28 @@ package schema
 import (
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 )
 
 type SchemaSuite struct {
 	utiltest.Suite
+	cwd util.Path
 }
 
 func TestSchemaSuite(t *testing.T) {
 	suite.Run(t, new(SchemaSuite))
+}
+
+func (s *SchemaSuite) SetupTest() {
+	cwd, err := util.Getwd(afero.NewMemMapFs())
+	s.NoError(err)
+	s.cwd = cwd
+	err = cwd.MkdirAll(0700)
+	s.NoError(err)
 }
 
 func (s *SchemaSuite) TestValidateConfig() {
@@ -53,4 +64,19 @@ func (s *SchemaSuite) TestValidateDraftDeployment() {
 	path := util.NewPath(".", nil).Join("schemas", "draft", "record.toml")
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
+}
+
+func (s *SchemaSuite) TestValidationError() {
+	badTOML := []byte("bad-attr = 1\n")
+	path := s.cwd.Join("test.toml")
+	err := path.WriteFile(badTOML, 0600)
+	s.NoError(err)
+
+	var content map[string]any
+	v, err := NewValidator(ConfigSchemaURL, &content)
+	s.NoError(err)
+	err = v.ValidateTOMLFile(path)
+	agentErr, ok := err.(*types.AgentError)
+	s.True(ok)
+	s.Equal(agentErr.Code, tomlValidationErrorCode)
 }

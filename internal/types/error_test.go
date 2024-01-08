@@ -46,3 +46,13 @@ func (s *ErrorSuite) TestUsage() {
 	}, agentErr.GetData())
 	s.Equal(op, agentErr.GetOperation())
 }
+
+func (s *ErrorSuite) TestAsAgentError() {
+	s.Nil(AsAgentError(nil))
+
+	err := errors.New("an error occurred")
+	s.Equal(err, AsAgentError(err).Err)
+
+	agentErr := OperationError(Operation("testOp"), err)
+	s.Equal(agentErr, AsAgentError(agentErr))
+}
