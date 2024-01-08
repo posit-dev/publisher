@@ -14,6 +14,8 @@ export default defineConfig({
       output: {
         // The default value is "assets/[name]-[hash][extname]". The [hash] pattern is removed in order to force a deterministic filename name when loading index.css and index.js from additional locations, such as the VSCode extension.
         assetFileNames: 'assets/[name][extname]',
+        chunkFileNames: 'assets/[name].js',
+        entryFileNames: 'assets/[name].js',
       },
     },
   },
