@@ -95,7 +95,7 @@ func isConnectAuthError(err error) bool {
 func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 	log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
-	err := c.client.Get("/__api__/v1/user", &connectUser)
+	err := c.client.Get("/__api__/v1/user", &connectUser, log)
 	if err != nil {
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			return nil, ErrTimedOut
@@ -158,7 +158,7 @@ type connectGetContentDTO struct {
 
 func (c *ConnectClient) CreateDeployment(body *ConnectContent, log logging.Logger) (types.ContentID, error) {
 	content := connectGetContentDTO{}
-	err := c.client.Post("/__api__/v1/content", body, &content)
+	err := c.client.Post("/__api__/v1/content", body, &content, log)
 	if err != nil {
 		return "", err
 	}
@@ -167,7 +167,7 @@ func (c *ConnectClient) CreateDeployment(body *ConnectContent, log logging.Logge
 
 func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *ConnectContent, log logging.Logger) error {
 	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
-	return c.client.Patch(url, body, nil)
+	return c.client.Patch(url, body, nil, log)
 }
 
 type connectEnvVar struct {
@@ -184,7 +184,7 @@ func (c *ConnectClient) SetEnvVars(contentID types.ContentID, env config.Environ
 		})
 	}
 	url := fmt.Sprintf("/__api__/v1/content/%s/environment", contentID)
-	return c.client.Patch(url, body, nil)
+	return c.client.Patch(url, body, nil, log)
 }
 
 type bundleMetadataDTO struct {
@@ -212,7 +212,7 @@ type connectGetBundleDTO struct {
 
 func (c *ConnectClient) UploadBundle(contentID types.ContentID, body io.Reader, log logging.Logger) (types.BundleID, error) {
 	url := fmt.Sprintf("/__api__/v1/content/%s/bundles", contentID)
-	resp, err := c.client.PostRaw(url, body, "application/gzip")
+	resp, err := c.client.PostRaw(url, body, "application/gzip", log)
 	if err != nil {
 		return "", err
 	}
@@ -238,7 +238,7 @@ func (c *ConnectClient) DeployBundle(contentId types.ContentID, bundleId types.B
 	}
 	url := fmt.Sprintf("/__api__/v1/content/%s/deploy", contentId)
 	output := deployOutputDTO{}
-	err := c.client.Post(url, body, &output)
+	err := c.client.Post(url, body, &output, log)
 	if err != nil {
 		return "", err
 	}
@@ -256,14 +256,14 @@ type taskDTO struct {
 	Last     int32        `json:"last"`
 }
 
-func (c *ConnectClient) getTask(taskID types.TaskID, previous *taskDTO) (*taskDTO, error) {
+func (c *ConnectClient) getTask(taskID types.TaskID, previous *taskDTO, log logging.Logger) (*taskDTO, error) {
 	var task taskDTO
 	var firstLine int32
 	if previous != nil {
 		firstLine = previous.Last
 	}
 	url := fmt.Sprintf("/__api__/v1/tasks/%s?first=%d", taskID, firstLine)
-	err := c.client.Get(url, &task)
+	err := c.client.Get(url, &task, log)
 	if err != nil {
 		return nil, err
 	}
@@ -386,7 +386,7 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 	var op events.Operation
 
 	for {
-		task, err := c.getTask(taskID, previous)
+		task, err := c.getTask(taskID, previous, log)
 		if err != nil {
 			return err
 		}
@@ -401,7 +401,7 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 
 func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log logging.Logger) error {
 	url := fmt.Sprintf("/content/%s/", contentID)
-	_, err := c.client.GetRaw(url)
+	_, err := c.client.GetRaw(url, log)
 	agentErr, ok := err.(*types.AgentError)
 	if ok {
 		httpErr, ok := agentErr.Err.(*http_client.HTTPError)

@@ -28,19 +28,18 @@ import (
 )
 
 type HTTPClient interface {
-	GetRaw(path string) ([]byte, error)
-	PostRaw(path string, body io.Reader, bodyType string) ([]byte, error)
-	Get(path string, into any) error
-	Post(path string, body any, into any) error
-	Put(path string, body any, into any) error
-	Patch(path string, body any, into any) error
-	Delete(path string) error
+	GetRaw(path string, log logging.Logger) ([]byte, error)
+	PostRaw(path string, body io.Reader, bodyType string, log logging.Logger) ([]byte, error)
+	Get(path string, into any, log logging.Logger) error
+	Post(path string, body any, into any, log logging.Logger) error
+	Put(path string, body any, into any, log logging.Logger) error
+	Patch(path string, body any, into any, log logging.Logger) error
+	Delete(path string, log logging.Logger) error
 }
 
 type defaultHTTPClient struct {
 	client  *http.Client
 	baseURL string
-	log     logging.Logger
 }
 
 func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log logging.Logger) (*defaultHTTPClient, error) {
@@ -51,7 +50,6 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log 
 	return &defaultHTTPClient{
 		client:  baseClient,
 		baseURL: account.URL,
-		log:     log,
 	}, nil
 }
 
@@ -73,7 +71,7 @@ func (e *HTTPError) Error() string {
 	return "unexpected response from the server"
 }
 
-func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyType string) ([]byte, error) {
+func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyType string, log logging.Logger) ([]byte, error) {
 	apiURL := util.URLJoin(c.baseURL, path)
 	req, err := http.NewRequest(method, apiURL, body)
 	if err != nil {
@@ -117,7 +115,7 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 	}
 }
 
-func (c *defaultHTTPClient) doJSON(method string, path string, body any, into any) error {
+func (c *defaultHTTPClient) doJSON(method string, path string, body any, into any, log logging.Logger) error {
 	reqBody := io.Reader(nil)
 	bodyJSON := []byte(nil)
 	var err error
@@ -129,9 +127,9 @@ func (c *defaultHTTPClient) doJSON(method string, path string, body any, into an
 		}
 		reqBody = bytes.NewReader(bodyJSON)
 	}
-	respBody, err := c.do(method, path, reqBody, "application/json")
-	if c.log.Enabled(context.Background(), slog.LevelDebug) {
-		c.log.Debug("API request", "method", method, "path", path, "body", string(bodyJSON), "response", string(respBody), "error", err)
+	respBody, err := c.do(method, path, reqBody, "application/json", log)
+	if log.Enabled(context.Background(), slog.LevelDebug) {
+		log.Debug("API request", "method", method, "path", path, "body", string(bodyJSON), "response", string(respBody), "error", err)
 	}
 	if err != nil {
 		return err
@@ -148,32 +146,32 @@ func (c *defaultHTTPClient) doJSON(method string, path string, body any, into an
 	return nil
 }
 
-func (c *defaultHTTPClient) GetRaw(path string) ([]byte, error) {
-	return c.do("GET", path, nil, "")
+func (c *defaultHTTPClient) GetRaw(path string, log logging.Logger) ([]byte, error) {
+	return c.do("GET", path, nil, "", log)
 }
 
-func (c *defaultHTTPClient) PostRaw(path string, body io.Reader, bodyType string) ([]byte, error) {
-	return c.do("POST", path, body, bodyType)
+func (c *defaultHTTPClient) PostRaw(path string, body io.Reader, bodyType string, log logging.Logger) ([]byte, error) {
+	return c.do("POST", path, body, bodyType, log)
 }
 
-func (c *defaultHTTPClient) Get(path string, into any) error {
-	return c.doJSON("GET", path, nil, into)
+func (c *defaultHTTPClient) Get(path string, into any, log logging.Logger) error {
+	return c.doJSON("GET", path, nil, into, log)
 }
 
-func (c *defaultHTTPClient) Post(path string, body any, into any) error {
-	return c.doJSON("POST", path, body, into)
+func (c *defaultHTTPClient) Post(path string, body any, into any, log logging.Logger) error {
+	return c.doJSON("POST", path, body, into, log)
 }
 
-func (c *defaultHTTPClient) Put(path string, body any, into any) error {
-	return c.doJSON("PUT", path, body, into)
+func (c *defaultHTTPClient) Put(path string, body any, into any, log logging.Logger) error {
+	return c.doJSON("PUT", path, body, into, log)
 }
 
-func (c *defaultHTTPClient) Patch(path string, body any, into any) error {
-	return c.doJSON("PATCH", path, body, into)
+func (c *defaultHTTPClient) Patch(path string, body any, into any, log logging.Logger) error {
+	return c.doJSON("PATCH", path, body, into, log)
 }
 
-func (c *defaultHTTPClient) Delete(path string) error {
-	return c.doJSON("DELETE", path, nil, nil)
+func (c *defaultHTTPClient) Delete(path string, log logging.Logger) error {
+	return c.doJSON("DELETE", path, nil, nil, log)
 }
 
 func loadCACertificates(path string, log logging.Logger) (*x509.CertPool, error) {
