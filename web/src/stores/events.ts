@@ -9,6 +9,10 @@ import {
   PublishSuccess,
   PublishFailure,
   getLocalId,
+  PublishCheckCapabilitiesStart,
+  PublishCheckCapabilitiesLog,
+  PublishCheckCapabilitiesSuccess,
+  PublishCheckCapabilitiesFailure,
   PublishCreateNewDeploymentStart,
   PublishCreateNewDeploymentSuccess,
   PublishCreateNewDeploymentFailure,
@@ -62,6 +66,7 @@ export const publishStepCompletionStatusNames: Record<PublishStepCompletionStatu
 };
 
 export type PublishStep =
+  'checkCapabilities' |
   'createNewDeployment' |
   'createBundle' |
   'uploadBundle' |
@@ -73,6 +78,7 @@ export type PublishStep =
   'validateDeployment';
 
 export const publishStepDisplayNames: Record<PublishStep, string> = {
+  checkCapabilities: 'Check Capabilities',
   createNewDeployment: 'Create New Deployment',
   createBundle: 'Create Bundle',
   uploadBundle: 'Upload Bundle',
@@ -85,24 +91,29 @@ export const publishStepDisplayNames: Record<PublishStep, string> = {
 };
 
 export const publishStepOrder: Record<PublishStep, number> = {
-  createNewDeployment: 1,
-  createBundle: 2,
-  uploadBundle: 3,
-  createDeployment: 4,
-  setEnvVars: 5,
-  deployBundle: 6,
-  restorePythonEnv: 7,
-  runContent: 8,
-  validateDeployment: 9,
+  checkCapabilities: 1,
+  createNewDeployment: 2,
+  createBundle: 3,
+  uploadBundle: 4,
+  createDeployment: 5,
+  setEnvVars: 6,
+  deployBundle: 7,
+  restorePythonEnv: 8,
+  runContent: 9,
+  validateDeployment: 10,
 };
 
-export type PublishStepStatus = {
+export type PublishStepStatusBase = {
   completion: PublishStepCompletionStatus;
   error?: keyValuePair[];
   lastLogMsg?: string;
   logs: EventStreamMessage[];
   status?: Record<string, string>[];
   progress?: string[];
+  allMsgs: EventStreamMessage[];
+}
+
+export type PublishStepStatus = PublishStepStatusBase & {
   allMsgs: EventStreamMessage[];
 }
 
@@ -113,6 +124,7 @@ export type PublishStatus = {
   directURL: string,
   currentStep?: PublishStep,
   steps: {
+    checkCapabilities: PublishStepStatus,
     createNewDeployment: PublishStepStatus,
     createBundle: PublishStepStatus,
     uploadBundle: PublishStepStatus,
@@ -135,6 +147,11 @@ const newPublishStatus = () => {
     directURL: '',
     currentStep: undefined,
     steps: {
+      checkCapabilities: {
+        completion: <PublishStepCompletionStatus>'notStarted',
+        logs: <EventStreamMessage[]>[],
+        allMsgs: <EventStreamMessage[]>[],
+      },
       createNewDeployment: {
         completion: <PublishStepCompletionStatus>'notStarted',
         logs: <EventStreamMessage[]>[],
@@ -276,9 +293,9 @@ export const useEventStore = defineStore('event', () => {
     eventStream.close();
   };
 
-  // const incomingEvent = (msg: EventStreamMessage) => {
-  //   console.log(msg.type, msg.data);
-  // };
+  const incomingEvent = (msg: EventStreamMessage) => {
+    console.log(msg.type, msg.data);
+  };
 
   const onAgentLog = (msg: AgentLog) => {
     agentLogs.value.push(msg);
@@ -304,6 +321,7 @@ export const useEventStore = defineStore('event', () => {
       publishStatus.completion = 'success';
       publishStatus.dashboardURL = msg.data.dashboardUrl;
       publishStatus.directURL = msg.data.directUrl;
+      currentPublishStatus.value.contentId = msg.data.contentId;
     }
     publishInProgess.value = false;
   };
@@ -317,6 +335,48 @@ export const useEventStore = defineStore('event', () => {
       publishStatus.error = splitMsgIntoKeyValuePairs(msg.data);
     }
     publishInProgess.value = false;
+  };
+
+  const onPublishCheckCapabilitiesStart = (msg: PublishCheckCapabilitiesStart) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.currentStep = 'checkCapabilities';
+      publishStatus.steps.checkCapabilities.completion = 'inProgress';
+      publishStatus.steps.checkCapabilities.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishCheckCapabilitiesLog = (msg: PublishCheckCapabilitiesLog) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.checkCapabilities.logs.push(msg);
+      publishStatus.steps.checkCapabilities.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishCheckCapabilitiesSuccess = (msg: PublishCheckCapabilitiesSuccess) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.checkCapabilities.completion = 'success';
+      publishStatus.steps.checkCapabilities.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishCheckCapabilitiesFailure = (msg: PublishCheckCapabilitiesFailure) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.checkCapabilities.completion = 'error';
+      publishStatus.steps.checkCapabilities.error = splitMsgIntoKeyValuePairs(msg.data);
+      publishStatus.steps.checkCapabilities.allMsgs.push(msg);
+    }
   };
 
   const onPublishCreateNewDeploymentStart = (msg: PublishCreateNewDeploymentStart) => {
@@ -442,7 +502,6 @@ export const useEventStore = defineStore('event', () => {
     if (currentPublishStatus.value.localId === localId) {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.steps.createDeployment.completion = 'success';
-      currentPublishStatus.value.contentId = msg.data.contentId;
       publishStatus.steps.createDeployment.allMsgs.push(msg);
     }
   };
@@ -734,7 +793,7 @@ export const useEventStore = defineStore('event', () => {
   };
 
   const init = () => {
-    // eventStream.addEventMonitorCallback('*', incomingEvent);
+    eventStream.addEventMonitorCallback('*', incomingEvent);
 
     // NOT SEEING THESE LOG messages now.
     eventStream.addEventMonitorCallback('agent/log', onAgentLog);
@@ -742,6 +801,11 @@ export const useEventStore = defineStore('event', () => {
     eventStream.addEventMonitorCallback('publish/start', onPublishStart);
     eventStream.addEventMonitorCallback('publish/success', onPublishSuccess);
     eventStream.addEventMonitorCallback('publish/failure', onPublishFailure);
+
+    eventStream.addEventMonitorCallback('publish/checkCapabilities/start', onPublishCheckCapabilitiesStart);
+    eventStream.addEventMonitorCallback('publish/checkCapabilities/log', onPublishCheckCapabilitiesLog);
+    eventStream.addEventMonitorCallback('publish/checkCapabilities/success', onPublishCheckCapabilitiesSuccess);
+    eventStream.addEventMonitorCallback('publish/checkCapabilities/failure', onPublishCheckCapabilitiesFailure);
 
     eventStream.addEventMonitorCallback('publish/createNewDeployment/start', onPublishCreateNewDeploymentStart);
     eventStream.addEventMonitorCallback('publish/createNewDeployment/success', onPublishCreateNewDeploymentSuccess);

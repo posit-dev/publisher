@@ -1,5 +1,6 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
+export { default as CheckCapabilities } from './CheckCapabilities.vue';
 export { default as CreateNewDeployment } from './CreateNewDeployment.vue';
 export { default as SetEnvVars } from './SetEnvVars.vue';
 export { default as CreateBundle } from './CreateBundle.vue';

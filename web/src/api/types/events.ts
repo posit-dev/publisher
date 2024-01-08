@@ -58,6 +58,11 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/**/failure': OnMessageEventSourceCallback
   'publish/start': OnPublishStartCallback
 
+  'publish/checkCapabilities/start': OnPublishCheckCapabilitiesStartCallback
+  'publish/checkCapabilities/log': OnPublishCheckCapabilitiesLogCallback
+  'publish/checkCapabilities/success': OnPublishCheckCapabilitiesSuccessCallback
+  'publish/checkCapabilities/failure': OnPublishCheckCapabilitiesFailureCallback
+
   // 'publish/createBundle/failure/authFailure' | // received but temporarily converted
   'publish/createNewDeployment/start': OnPublishCreateNewDeploymentStartCallback
   'publish/createNewDeployment/success': OnPublishCreateNewDeploymentSuccessCallback
@@ -208,6 +213,64 @@ export function isPublishStart(arg: Events):
   return arg.type === 'publish/start';
 }
 
+export interface PublishCheckCapabilitiesStart extends EventStreamMessage {
+  type: 'publish/checkCapabilities/start',
+  data: {
+    // "level": "INFO", "message": "Checking configuration against server capabilities", "localId": "DVP6zKpd_QzudMUS"
+    level: string,
+    message: string,
+    localId: string,
+  }
+}
+export type OnPublishCheckCapabilitiesStartCallback =
+  (msg: PublishCheckCapabilitiesStart) => void;
+export function isPublishCheckCapabilitiesStart(arg: Events):
+  arg is PublishCheckCapabilitiesStart {
+  return arg.type === 'publish/checkCapabilities/start';
+}
+
+export interface PublishCheckCapabilitiesLog extends EventStreamMessage {
+  type: 'publish/checkCapabilities/log',
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishCheckCapabilitiesLogCallback =
+  (msg: PublishCheckCapabilitiesLog) => void;
+export function isPublishCheckCapabilitiesLog(arg: Events):
+  arg is PublishCheckCapabilitiesLog {
+  return arg.type === 'publish/checkCapabilities/log';
+}
+
+export interface PublishCheckCapabilitiesSuccess extends EventStreamMessage {
+  type: 'publish/checkCapabilities/success',
+  data: {
+    // "level": "INFO", "message": "Done", "localId": "DVP6zKpd_QzudMUS", "status": "pass"
+    level: string,
+    message: string,
+    localId: string,
+    status: string,
+  }
+}
+export type OnPublishCheckCapabilitiesSuccessCallback =
+  (msg: PublishCheckCapabilitiesSuccess) => void;
+export function isPublishCheckCapabilitiesSuccess(arg: Events):
+  arg is PublishCheckCapabilitiesSuccess {
+  return arg.type === 'publish/checkCapabilities/success';
+}
+
+export interface PublishCheckCapabilitiesFailure extends EventStreamMessage {
+  type: 'publish/checkCapabilities/failure',
+  error: string, // translated internally
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishCheckCapabilitiesFailureCallback =
+  (msg: PublishCheckCapabilitiesFailure) => void;
+export function isPublishCheckCapabilitiesFailure(arg: Events):
+  arg is PublishCheckCapabilitiesFailure {
+  return arg.type === 'publish/checkCapabilities/failure';
+}
+
 export interface PublishCreateNewDeploymentStart extends EventStreamMessage {
   type: 'publish/createNewDeployment/start',
   data: {
@@ -229,10 +292,9 @@ export function isPublishCreateNewDeploymentStart(arg: Events):
 export interface PublishCreateNewDeploymentSuccess extends EventStreamMessage {
   type: 'publish/createNewDeployment/success',
   data: {
-    // "level": "INFO", "message": "Done", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm"
+    // "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm"
     level: string,
     message: string,
-    contentId: string,
     saveName: string,
     localId: string,
   }
