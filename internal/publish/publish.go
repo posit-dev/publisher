@@ -119,24 +119,36 @@ type DeploymentNotFoundDetails struct {
 	ContentID types.ContentID
 }
 
-func withLog[T any](
-	op events.Operation,
-	msg string,
-	label string,
-	log logging.Logger,
-	fn func() (T, error)) (value T, err error) {
-
+func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logging.Logger) error {
+	op := events.PublishCheckCapabilitiesOp
 	log = log.WithArgs(logging.LogKeyOp, op)
-	log.Start(msg)
-	value, err = fn()
+	log.Start("Checking configuration against server capabilities")
+
+	user, err := client.TestAuthentication()
 	if err != nil {
-		// Using implicit return values here since we
-		// can't construct an empty T{}
-		err = types.ErrToAgentError(op, err)
-		return
+		return types.ErrToAgentError(op, err)
 	}
-	log.Success("Done", label, value)
-	return value, nil
+	log.Info("Publishing with credentials", "username", user.Username, "email", user.Email)
+
+	err = client.CheckCapabilities(p.Config)
+	if err != nil {
+		return types.ErrToAgentError(op, err)
+	}
+	log.Success("Configuration OK")
+	return nil
+}
+
+func (p *defaultPublisher) createDeployment(client connect.APIClient, log logging.Logger) (types.ContentID, error) {
+	op := events.PublishCreateNewDeploymentOp
+	log = log.WithArgs(logging.LogKeyOp, op)
+	log.Start("Creating new deployment")
+
+	contentID, err := client.CreateDeployment(&connect.ConnectContent{})
+	if err != nil {
+		return "", types.ErrToAgentError(op, err)
+	}
+	log.Success("Created deployment", "content_id", contentID, "save_name", p.SaveName)
+	return contentID, nil
 }
 
 func (p *defaultPublisher) createDeploymentRecord(
@@ -179,6 +191,132 @@ func (p *defaultPublisher) createDeploymentRecord(
 	return p.Target.WriteFile(recordPath)
 }
 
+func (p *defaultPublisher) createAndUploadBundle(
+	client connect.APIClient,
+	bundler bundles.Bundler,
+	contentID types.ContentID,
+	log logging.Logger) (types.BundleID, error) {
+
+	op := events.PublishCreateBundleOp
+	prepareLog := log.WithArgs(logging.LogKeyOp, op)
+	prepareLog.Start("Preparing files")
+	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
+	if err != nil {
+		return "", types.ErrToAgentError(op, err)
+	}
+	defer os.Remove(bundleFile.Name())
+	defer bundleFile.Close()
+	_, err = bundler.CreateBundle(bundleFile)
+	if err != nil {
+		return "", types.ErrToAgentError(op, err)
+	}
+	_, err = bundleFile.Seek(0, io.SeekStart)
+	if err != nil {
+		return "", types.ErrToAgentError(op, err)
+	}
+	prepareLog.Success("Done preparing files", "filename", bundleFile.Name())
+
+	op = events.PublishUploadBundleOp
+	uploadLog := log.WithArgs(logging.LogKeyOp, op)
+	uploadLog.Start("Uploading files")
+
+	bundleID, err := client.UploadBundle(contentID, bundleFile)
+	if err != nil {
+		return "", types.ErrToAgentError(op, err)
+	}
+	uploadLog.Success("Done uploading files", "bundle_id", bundleID)
+	return bundleID, nil
+}
+
+func (p *defaultPublisher) updateContent(
+	client connect.APIClient,
+	contentID types.ContentID,
+	log logging.Logger) error {
+
+	op := events.PublishUpdateDeploymentOp
+	log = log.WithArgs(logging.LogKeyOp, op)
+	log.Start("Updating deployment settings", "content_id", contentID, "save_name", p.SaveName)
+
+	connectContent := connect.ConnectContentFromConfig(p.Config)
+	err := client.UpdateDeployment(contentID, connectContent)
+	if err != nil {
+		return types.ErrToAgentError(op, err)
+	}
+	if err != nil {
+		httpErr, ok := err.(*http_client.HTTPError)
+		if ok && httpErr.Status == http.StatusNotFound {
+			details := DeploymentNotFoundDetails{
+				ContentID: contentID,
+			}
+			return types.NewAgentError(events.DeploymentNotFoundCode, err, details)
+		}
+		return err
+	}
+	log.Success("Done updating settings")
+	return nil
+}
+
+func (p *defaultPublisher) setEnvVars(
+	client connect.APIClient,
+	contentID types.ContentID,
+	log logging.Logger) error {
+
+	env := p.Config.Environment
+	if len(env) == 0 {
+		return nil
+	}
+
+	op := events.PublishSetEnvVarsOp
+	log = log.WithArgs(logging.LogKeyOp, op)
+	log.Start("Setting environment variables")
+
+	for name, value := range env {
+		log.Info("Setting environment variable", "name", name, "value", value)
+	}
+	err := client.SetEnvVars(contentID, env)
+	if err != nil {
+		return types.ErrToAgentError(op, err)
+	}
+
+	log.Success("Done setting environment variables")
+	return nil
+}
+
+func (p *defaultPublisher) deployBundle(
+	client connect.APIClient,
+	contentID types.ContentID,
+	bundleID types.BundleID,
+	log logging.Logger) (types.TaskID, error) {
+
+	op := events.PublishDeployBundleOp
+	log = log.WithArgs(logging.LogKeyOp, op)
+	log.Start("Activating Deployment")
+
+	taskID, err := client.DeployBundle(contentID, bundleID)
+	if err != nil {
+		return "", types.ErrToAgentError(op, err)
+	}
+	log.Success("Activation requested")
+	return taskID, nil
+}
+
+func (p *defaultPublisher) validateContent(
+	client connect.APIClient,
+	contentID types.ContentID,
+	log logging.Logger) error {
+
+	op := events.PublishValidateDeploymentOp
+	log = log.WithArgs(logging.LogKeyOp, op)
+	log.Start("Validating Deployment")
+
+	err := client.ValidateDeployment(contentID)
+	if err != nil {
+		return types.ErrToAgentError(op, err)
+	}
+	log.Success("Done validating deployment")
+	return nil
+}
+
 func (p *defaultPublisher) publishWithClient(
 	bundler bundles.Bundler,
 	account *accounts.Account,
@@ -190,37 +328,17 @@ func (p *defaultPublisher) publishWithClient(
 		"server", account.URL,
 	)
 
-	var contentID types.ContentID
-	var err error
-
-	_, err = withLog(events.PublishCheckCapabilitiesOp, "Checking configuration against server capabilities", "ok", log, func() (bool, error) {
-		user, err := client.TestAuthentication()
-		if err != nil {
-			return false, err
-		}
-		log.Info("Publishing with credentials", "username", user.Username, "email", user.Email)
-
-		err = client.CheckCapabilities(p.Config)
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-	})
+	err := p.checkConfiguration(client, log)
 	if err != nil {
 		return err
 	}
 
+	var contentID types.ContentID
 	if p.Target != nil {
 		contentID = p.Target.Id
 	} else {
 		// Create a new deployment; we will update it with details later.
-		contentID, err = withLog(
-			events.PublishCreateNewDeploymentOp,
-			"Creating deployment", "content_id",
-			log.WithArgs("save_name", p.SaveName),
-			func() (types.ContentID, error) {
-				return client.CreateDeployment(&connect.ConnectContent{})
-			})
+		contentID, err = p.createDeployment(client, log)
 		if err != nil {
 			return err
 		}
@@ -230,67 +348,22 @@ func (p *defaultPublisher) publishWithClient(
 		return types.ErrToAgentError(events.PublishCreateNewDeploymentOp, err)
 	}
 
-	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
-	if err != nil {
-		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
-	}
-	defer os.Remove(bundleFile.Name())
-	defer bundleFile.Close()
-	_, err = withLog(events.PublishCreateBundleOp, "Creating bundle", "filename", log, func() (any, error) {
-		_, err = bundler.CreateBundle(bundleFile)
-		return bundleFile.Name(), err
-	})
-	if err != nil {
-		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
-	}
-	_, err = bundleFile.Seek(0, io.SeekStart)
-	if err != nil {
-		return types.ErrToAgentError(events.PublishCreateBundleOp, err)
-	}
-
-	bundleID, err := withLog(events.PublishUploadBundleOp, "Uploading deployment bundle", "count", log, func() (types.BundleID, error) {
-		return client.UploadBundle(contentID, bundleFile)
-	})
+	bundleID, err := p.createAndUploadBundle(client, bundler, contentID, log)
 	if err != nil {
 		return err
 	}
 
-	// Update app settings
-	connectContent := connect.ConnectContentFromConfig(p.Config)
-	_, err = withLog(
-		events.PublishUpdateDeploymentOp,
-		"Updating deployment settings", "content_id",
-		log.WithArgs("save_name", p.SaveName),
-		func() (any, error) {
-			return contentID, client.UpdateDeployment(contentID, connectContent)
-		})
+	err = p.updateContent(client, contentID, log)
 	if err != nil {
-		httpErr, ok := err.(*http_client.HTTPError)
-		if ok && httpErr.Status == http.StatusNotFound {
-			details := DeploymentNotFoundDetails{
-				ContentID: contentID,
-			}
-			return types.NewAgentError(events.DeploymentNotFoundCode, err, details)
-		}
 		return err
 	}
 
-	env := p.Config.Environment
-	if len(env) != 0 {
-		_, err = withLog(events.PublishSetEnvVarsOp, "Setting environment variables", "count", log, func() (int, error) {
-			for name, value := range env {
-				log.Info("Setting environment variable", "name", name, "value", value)
-			}
-			return len(env), client.SetEnvVars(contentID, env)
-		})
-		if err != nil {
-			return err
-		}
+	err = p.setEnvVars(client, contentID, log)
+	if err != nil {
+		return err
 	}
 
-	taskID, err := withLog(events.PublishDeployBundleOp, "Initiating bundle deployment", "task_id", log, func() (types.TaskID, error) {
-		return client.DeployBundle(contentID, bundleID)
-	})
+	taskID, err := p.deployBundle(client, contentID, bundleID, log)
 	if err != nil {
 		return err
 	}
@@ -302,14 +375,10 @@ func (p *defaultPublisher) publishWithClient(
 	}
 
 	if p.Config.Validate {
-		_, err := withLog(events.PublishValidateDeploymentOp, "Validating deployment", "ok", log, func() (bool, error) {
-			return true, client.ValidateDeployment(contentID)
-		})
+		err = p.validateContent(client, contentID, log)
 		if err != nil {
 			return err
 		}
 	}
-
-	log = log.WithArgs(logging.LogKeyOp, events.AgentOp)
 	return nil
 }
