@@ -1,7 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "test": "bats -r -T -t ./tests"
+    "contract": "bats -r -T -t ./contract",
+    "cli": "bats -r -T -t ./cli"
   },
   "devDependencies": {
     "bats": "^1.10.0",

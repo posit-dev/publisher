@@ -2,6 +2,9 @@ alias c := clean
 alias i := install
 alias t := test
 
+# RUNNER_OS from gh actions for windows tests
+export RUNNER_OS := env_var_or_default("RUNNER_OS", "local")
+
 _ci := env_var_or_default("CI", "false")
 
 _debug := env_var_or_default("DEBUG", "false")
@@ -47,11 +50,14 @@ run *args:
 
 
 # Executes Cypress tests
-test:
+test-deploy:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-
+        pip install -r ../setup/requirements.txt
+    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}"
     exe=$(just ../../executable-path)
 
     if [ ! -f $exe ]; then
@@ -59,4 +65,8 @@ test:
         exit 1
     fi
 
-    EXE=$exe npm test
+    if [[ ${RUNNER_OS} =~ "Windows" ]]; then \
+        EXE=$exe npm run contract
+    else
+        EXE=$exe npm run contract
+    fi
