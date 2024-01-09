@@ -52,6 +52,7 @@ func (s *CapabilitiesSuite) TestCheckMatchingPython() {
 
 func makeMinMaxProcs(min, max int32) *config.Config {
 	return &config.Config{
+		Type: config.ContentTypePythonShiny,
 		Connect: &config.Connect{
 			Runtime: &config.ConnectRuntime{
 				MinProcesses: &min,
@@ -76,6 +77,17 @@ func (s *CapabilitiesSuite) TestMinMaxProcs() {
 	s.ErrorContains(a.checkConfig(makeMinMaxProcs(0, 21)), "max-processes value of 21 is higher than configured maximum of 20 on this server")
 	s.ErrorContains(a.checkConfig(makeMinMaxProcs(5, 1)), "min-processes value of 5 is higher than max-processes value of 1")
 	s.ErrorContains(a.checkConfig(makeMinMaxProcs(-1, 5)), "min-processes value cannot be less than 0")
+}
+
+func (s *CapabilitiesSuite) TestRuntimeNonWorker() {
+	cfg := &config.Config{
+		Type: config.ContentTypeHTML,
+		Connect: &config.Connect{
+			Runtime: &config.ConnectRuntime{},
+		},
+	}
+	a := allSettings{}
+	s.ErrorIs(a.checkConfig(cfg), errRuntimeSettingsForStaticContent)
 }
 
 func (s *CapabilitiesSuite) TestRunAs() {
