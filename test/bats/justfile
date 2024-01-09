@@ -1,9 +1,6 @@
 alias c := clean
 alias i := install
-alias t := test-deploy
-
-# RUNNER_OS from gh actions for windows tests
-export RUNNER_OS := env_var_or_default("RUNNER_OS", "local")
+alias t := test
 
 _ci := env_var_or_default("CI", "false")
 
@@ -49,15 +46,12 @@ run *args:
     npm run {{ args }}
 
 
-# Executes Cypress tests
+# Executes bats deploy tests
 test-deploy:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-        pip install -r ../setup/requirements.txt
-    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
-    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
-    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}"
+
     exe=$(just ../../executable-path)
 
     if [ ! -f $exe ]; then
@@ -65,8 +59,19 @@ test-deploy:
         exit 1
     fi
 
-    if [[ ${RUNNER_OS} =~ "Windows" ]]; then \
-        EXE=$exe npm run contract
-    else
-        EXE=$exe npm run contract
+    EXE=$exe npm contract
+
+# Executes bats local tests
+test:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    exe=$(just ../../executable-path)
+
+    if [ ! -f $exe ]; then
+        echo "error: Missing executable $exe. Run \`just build\`." 1>&2
+        exit 1
     fi
+
+    EXE=$exe npm cli
