@@ -1,6 +1,6 @@
 alias c := clean
 alias i := install
-alias t := test
+alias t := test-deploy
 
 # RUNNER_OS from gh actions for windows tests
 export RUNNER_OS := env_var_or_default("RUNNER_OS", "local")
