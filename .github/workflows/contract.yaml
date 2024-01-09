@@ -32,6 +32,8 @@ jobs:
       - run: just cy install
       - run: just cy test
       - run: just cy test-deploy
+      - run: just bats install
+      - run: just bats test
       - run: just bats test-deploy
 
       # Videos are captured whether the suite fails or passes
