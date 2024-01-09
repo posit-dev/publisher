@@ -166,7 +166,7 @@ func (s *StateSuite) TestLoadTarget() {
 			"app.py",
 			"requirements.txt",
 		},
-		Id:       "1234567890ABCDEF",
+		ID:       "1234567890ABCDEF",
 		SaveName: "myTarget",
 		Configuration: config.Config{
 			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
@@ -332,7 +332,7 @@ func (s *StateSuite) TestNewWithTarget() {
 
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetName"
+	d.ID = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	d.Configuration = *cfg
@@ -375,7 +375,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetName"
+	d.ID = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	d.Configuration = *cfg

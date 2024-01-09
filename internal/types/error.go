@@ -19,11 +19,11 @@ type EventableError interface {
 }
 
 type AgentError struct {
-	Code    ErrorCode `json:"code"`
-	Err     error     `json:"-"`
-	Message string    `json:"msg"`
-	Data    ErrorData `json:"data"`
-	Op      Operation `json:"-"`
+	Code    ErrorCode `json:"code" toml:"code"`
+	Err     error     `json:"-" toml:"-"`
+	Message string    `json:"msg" toml:"message"`
+	Op      Operation `json:"operation" toml:"operation"`
+	Data    ErrorData `json:"data" toml:"data,omitempty"`
 }
 
 const UnknownErrorCode ErrorCode = "unknown"
