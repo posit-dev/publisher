@@ -54,15 +54,15 @@
             padding="sm md"
             data-automation="deploy"
             :disable="Boolean(configError) || eventStore.publishInProgess"
-            :title="redeployDisableTitle"
             @click="initiateDeploy"
           >
-            <template v-if="deployAsNew">
-              Deploy
-            </template>
-            <template v-else>
-              Redeploy
-            </template>
+            <q-tooltip
+              v-if="redeployDisableTitle"
+              class="text-body2"
+            >
+              {{ redeployDisableTitle }}
+            </q-tooltip>
+            {{ deployAsNew ? 'Deploy' : 'Redeploy' }}
           </PButton>
         </div>
       </div>
