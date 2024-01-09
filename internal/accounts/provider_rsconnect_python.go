@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/spf13/afero"
@@ -80,7 +81,7 @@ type rsconnectPythonAccount struct {
 func (r *rsconnectPythonAccount) toAccount() Account {
 	account := Account{
 		Name:        r.Name,
-		URL:         r.URL,
+		URL:         strings.TrimRight(r.URL, "/"),
 		Insecure:    r.Insecure,
 		Certificate: r.Certificate,
 		ApiKey:      r.ApiKey,
