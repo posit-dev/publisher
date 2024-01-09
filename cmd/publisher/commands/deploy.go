@@ -3,7 +3,6 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -18,7 +17,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type CreateCmd struct {
+type DeployCmd struct {
 	Path        util.Path         `help:"Path to project directory containing files to publish." arg:"" default:"."`
 	AccountName string            `name:"account" short:"a" help:"Nickname of the publishing account to use (run list-accounts to see them)."`
 	ConfigName  string            `name:"config" short:"c" help:"Configuration name (in .posit/publish/)"`
@@ -27,9 +26,7 @@ type CreateCmd struct {
 	Config      *config.Config    `kong:"-"`
 }
 
-var errNoAccounts = errors.New("there are no accounts yet; register an account before publishing")
-
-func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	ctx.Logger = events.NewSimpleLogger(args.Verbose, os.Stderr)
 
 	if cmd.SaveName != "" {
@@ -42,24 +39,28 @@ func (cmd *CreateCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 			return err
 		}
 		if exists {
-			return fmt.Errorf("there is already a deployment named '%s'; did you mean to use the 'update' command?", cmd.SaveName)
+			return fmt.Errorf("there is already a deployment named '%s'; did you mean to use the 'redeploy' command?", cmd.SaveName)
 		}
 	}
 	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
 	if err != nil {
 		return err
 	}
+	if cmd.SaveName == "" {
+		cmd.SaveName, err = deployment.UntitledDeploymentName(cmd.Path)
+		if err != nil {
+			return err
+		}
+	}
 	stateStore, err := state.New(cmd.Path, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts)
 	if err != nil {
 		return err
 	}
-	if stateStore.Account == nil {
-		return errNoAccounts
-	}
-	ctx.Logger.Info(
-		"Running create",
-		"configuration", stateStore.ConfigName,
-		"account", stateStore.AccountName)
+	fmt.Printf("Deploy to server %s using account %s and configuration %s, creating deployment %s\n",
+		stateStore.Account.URL,
+		stateStore.Account.Name,
+		stateStore.ConfigName,
+		stateStore.SaveName)
 	publisher := publish.NewFromState(stateStore)
 	return publisher.PublishDirectory(ctx.Logger)
 }
