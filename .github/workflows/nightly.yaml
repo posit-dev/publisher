@@ -22,7 +22,7 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/contract.yaml
   cleanup:
-    needs: cypress-nightly
+    needs: nightly
     secrets: inherit
     uses: ./.github/workflows/cleanup.yaml
 
