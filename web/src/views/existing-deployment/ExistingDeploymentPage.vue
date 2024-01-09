@@ -2,8 +2,9 @@
 
 <template>
   <ExistingDeploymentHeader
-    v-if="deployment"
+    v-if="deployment && defaultConfig"
     :deployment="deployment"
+    :config-error="isConfigurationError(defaultConfig) ? defaultConfig : undefined"
   />
   <DeploymentSection
     v-if="deployment"
@@ -29,7 +30,7 @@
 import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { Configuration, ConfigurationError, useApi } from 'src/api';
+import { Configuration, ConfigurationError, isConfigurationError, useApi } from 'src/api';
 import { Deployment, isDeploymentError } from 'src/api/types/deployments';
 import {
   newFatalErrorRouteLocation,
