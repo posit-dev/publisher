@@ -59,7 +59,7 @@ test-deploy:
         exit 1
     fi
 
-    EXE=$exe npm contract
+    EXE=$exe npm run contract
 
 # Executes bats local tests
 test:
@@ -74,4 +74,4 @@ test:
         exit 1
     fi
 
-    EXE=$exe npm cli
+    EXE=$exe npm run cli
