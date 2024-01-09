@@ -1,8 +1,9 @@
 alias c := clean
-alias i := install
 alias t := test
 
 _ci := env_var_or_default("CI", "false")
+
+_target_platform := env("TARGETPLATFORM", "`go env GOOS`/`go env GOARCH`")
 
 _debug := env_var_or_default("DEBUG", "false")
 
@@ -13,13 +14,14 @@ _with_debug := if _debug == "true" {
     }
 
 # Quick start
-default:
+default os="$(just ../../os)" arch="$(just ../../arch)":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    just install
-    just test
+    just clean
+    just configure {{ os }} {{ arch }}
+    just package {{ os }} {{ arch }}
 
 # Deletes ephemeral project files (i.e., cleans the project).
 clean:
@@ -27,23 +29,31 @@ clean:
     set -eou pipefail
     {{ _with_debug }}
 
-    rm -f *.vsix
     rm -rf .vscode-test
+    rm -rf dist
     rm -rf node_modules
     rm -rf out
 
-
-# Installs dependencies
-install:
+configure os="$(just ../../os)" arch="$(just ../../arch)":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-
     if [ {{ _ci }} = "true" ]; then
         npm ci --no-audit --no-fund
     else
         npm install --no-audit --no-fund
     fi
+
+    binary_executable=$(just ../../executable-path {{ os }} {{ arch }})
+    if ! [ -f "$binary_executable" ]; then
+        echo "warn: binary executable '"$binary_executable"' not found." 1>&2
+        echo "info: Did you run 'just ../../build'?" 1>&2
+        exit 0
+    fi
+
+    rm -rf ./bin
+    mkdir -p ./bin
+    cp "$binary_executable" ./bin/publisher
 
 # Performs static code analysis with ESLint
 lint:
@@ -54,16 +64,49 @@ lint:
     npm run lint
 
 # Packages the extension.
-package:
+package os="$(just ../../os)" arch="$(just ../../arch)":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
     name="$(just ../../name)"
     version="$(just ../../version)"
-    path="../../packages"
-    mkdir -p "${path}"
-    npx @vscode/vsce package -o ${path}/${name}-${version}.vsix --skip-license -t web
+    case {{ os }} in
+        darwin)
+            target_os="darwin"
+            ;;
+        linux)
+            target_os="linux"
+            ;;
+        windows)
+            target_os="win32"
+            ;;
+        *)
+            echo "error: target architecture '$os' not supported." 1>&2
+            echo "info: skipping '$target_platform'..." 1>&2
+            ;;
+    esac
+
+    case {{ arch }} in
+        amd64)
+            target_arch="x64"
+            ;;
+        arm64)
+            target_arch="arm64"
+            ;;
+        *)
+            echo "error: target architecture '$arch' not supported." 1>&2
+            echo "info: skipping '$target_platform'..." 1>&2
+            ;;
+    esac
+
+    echo "Packaging: .vsix" 1>&2
+    target="$target_os-$target_arch"
+    echo "Target: $target" 1>&2
+    package="$name-$version-$target.vsix"
+    mkdir -p "../../packages/"
+    npx @vscode/vsce package -o "../../packages/$package" --skip-license -t "$target"
+    echo "Package: $package" 1>&2
 
 
 # Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just vscode run test`)
@@ -73,7 +116,6 @@ run *args:
     {{ _with_debug }}
 
     npm run {{ args }}
-
 
 # Executes npm test
 test:

@@ -28,7 +28,7 @@ jobs:
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
           key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
-      - run: just vscode install
+      - run: just vscode configure
       - run: just vscode lint
       - run: just vscode test
       - uses: actions/cache/save@v3
@@ -51,7 +51,7 @@ jobs:
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
           key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
-      - run: just vscode install
+      - run: just vscode configure
       - run: just vscode lint
       - run: just vscode test
       - uses: actions/cache/save@v3
