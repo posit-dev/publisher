@@ -1,12 +1,18 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
+import { AgentError } from 'src/api/types/error';
 import { Configuration } from 'src/api/types/configurations';
 import { SchemaURL } from 'src/api/types/schema';
 import { ServerType } from 'src/api/types/accounts';
 
-export type DeploymentError = {
-  error: string,
+export type DeploymentLocation = {
+  deploymentName: string;
+  deploymentPath: string;
 }
+
+export type DeploymentError = {
+  error: AgentError,
+} & DeploymentLocation
 
 export type Deployment = {
   $schema: SchemaURL,
@@ -16,7 +22,7 @@ export type Deployment = {
   files: string[],
   deployedAt: string,
   saveName: string,
-} & Configuration;
+} & DeploymentLocation & Configuration;
 
 export function isDeploymentError(
   d: Deployment | DeploymentError

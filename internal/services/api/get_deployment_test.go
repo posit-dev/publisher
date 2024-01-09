@@ -62,7 +62,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/api/deployments/myTargetName", nil)
 	s.NoError(err)
-	req = mux.SetURLVars(req, map[string]string{"id": "myTargetName"})
+	req = mux.SetURLVars(req, map[string]string{"name": "myTargetName"})
 	h(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
@@ -73,7 +73,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.NotNil(res.Deployment)
-	s.Equal("", res.Error)
+	s.Nil(res.Error)
 	s.Equal(d, res.Deployment)
 	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res.ConfigPath)
 	s.Equal(types.ContentID("myTargetName"), res.Deployment.Id)
@@ -89,7 +89,7 @@ func (s *GetDeploymentSuite) TestGetDeploymentError() {
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/api/deployments/myTargetName", nil)
 	s.NoError(err)
-	req = mux.SetURLVars(req, map[string]string{"id": "myTargetName"})
+	req = mux.SetURLVars(req, map[string]string{"name": "myTargetName"})
 	h(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)

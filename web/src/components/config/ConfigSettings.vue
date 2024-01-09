@@ -3,7 +3,7 @@
 <template>
   <div>
     <template v-if="isConfigurationError(config)">
-      {{ config.error }}
+      {{ config.error.msg }}
     </template>
 
     <template v-else>

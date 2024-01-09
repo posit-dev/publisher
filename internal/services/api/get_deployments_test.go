@@ -70,7 +70,7 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 1)
-	s.Equal("", res[0].Error)
+	s.Nil(res[0].Error)
 	s.NotNil(res[0].Deployment)
 	s.Equal(d, res[0].Deployment)
 	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res[0].ConfigPath)
@@ -108,12 +108,12 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 2)
-	s.Equal("", res[0].Error)
+	s.Nil(res[0].Error)
 	s.NotNil(res[0].Deployment)
 	s.Equal(d, res[0].Deployment)
 	s.Equal(types.ContentID("target1"), res[0].Deployment.Id)
 
 	var nilDeployment *deployment.Deployment
 	s.Equal(nilDeployment, res[1].Deployment)
-	s.NotEqual("", res[1].Error)
+	s.NotNil(res[1].Error)
 }

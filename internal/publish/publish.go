@@ -126,13 +126,13 @@ func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logg
 
 	user, err := client.TestAuthentication(log)
 	if err != nil {
-		return types.ErrToAgentError(op, err)
+		return types.OperationError(op, err)
 	}
 	log.Info("Publishing with credentials", "username", user.Username, "email", user.Email)
 
 	err = client.CheckCapabilities(p.Config, log)
 	if err != nil {
-		return types.ErrToAgentError(op, err)
+		return types.OperationError(op, err)
 	}
 	log.Success("Configuration OK")
 	return nil
@@ -145,7 +145,7 @@ func (p *defaultPublisher) createDeployment(client connect.APIClient, log loggin
 
 	contentID, err := client.CreateDeployment(&connect.ConnectContent{}, log)
 	if err != nil {
-		return "", types.ErrToAgentError(op, err)
+		return "", types.OperationError(op, err)
 	}
 	log.Success("Created deployment", "content_id", contentID, "save_name", p.SaveName)
 	return contentID, nil
@@ -202,17 +202,17 @@ func (p *defaultPublisher) createAndUploadBundle(
 	prepareLog.Start("Preparing files")
 	bundleFile, err := os.CreateTemp("", "bundle-*.tar.gz")
 	if err != nil {
-		return "", types.ErrToAgentError(op, err)
+		return "", types.OperationError(op, err)
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
 	_, err = bundler.CreateBundle(bundleFile)
 	if err != nil {
-		return "", types.ErrToAgentError(op, err)
+		return "", types.OperationError(op, err)
 	}
 	_, err = bundleFile.Seek(0, io.SeekStart)
 	if err != nil {
-		return "", types.ErrToAgentError(op, err)
+		return "", types.OperationError(op, err)
 	}
 	prepareLog.Success("Done preparing files", "filename", bundleFile.Name())
 
@@ -222,7 +222,7 @@ func (p *defaultPublisher) createAndUploadBundle(
 
 	bundleID, err := client.UploadBundle(contentID, bundleFile, log)
 	if err != nil {
-		return "", types.ErrToAgentError(op, err)
+		return "", types.OperationError(op, err)
 	}
 	uploadLog.Success("Done uploading files", "bundle_id", bundleID)
 	return bundleID, nil
@@ -240,7 +240,7 @@ func (p *defaultPublisher) updateContent(
 	connectContent := connect.ConnectContentFromConfig(p.Config)
 	err := client.UpdateDeployment(contentID, connectContent, log)
 	if err != nil {
-		return types.ErrToAgentError(op, err)
+		return types.OperationError(op, err)
 	}
 	if err != nil {
 		httpErr, ok := err.(*http_client.HTTPError)
@@ -275,7 +275,7 @@ func (p *defaultPublisher) setEnvVars(
 	}
 	err := client.SetEnvVars(contentID, env, log)
 	if err != nil {
-		return types.ErrToAgentError(op, err)
+		return types.OperationError(op, err)
 	}
 
 	log.Success("Done setting environment variables")
@@ -294,7 +294,7 @@ func (p *defaultPublisher) deployBundle(
 
 	taskID, err := client.DeployBundle(contentID, bundleID, log)
 	if err != nil {
-		return "", types.ErrToAgentError(op, err)
+		return "", types.OperationError(op, err)
 	}
 	log.Success("Activation requested")
 	return taskID, nil
@@ -311,7 +311,7 @@ func (p *defaultPublisher) validateContent(
 
 	err := client.ValidateDeployment(contentID, log)
 	if err != nil {
-		return types.ErrToAgentError(op, err)
+		return types.OperationError(op, err)
 	}
 	log.Success("Done validating deployment")
 	return nil
@@ -345,7 +345,7 @@ func (p *defaultPublisher) publishWithClient(
 	}
 	err = p.createDeploymentRecord(bundler, contentID, account, log)
 	if err != nil {
-		return types.ErrToAgentError(events.PublishCreateNewDeploymentOp, err)
+		return types.OperationError(events.PublishCreateNewDeploymentOp, err)
 	}
 
 	bundleID, err := p.createAndUploadBundle(client, bundler, contentID, log)

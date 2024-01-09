@@ -65,7 +65,7 @@ func (s *GetConfigurationsSuite) TestGetConfigurations() {
 
 	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res[0].Path)
 	s.Equal("myConfig", res[0].Name)
-	s.Equal("", res[0].Error)
+	s.Nil(res[0].Error)
 	s.Equal(cfg, res[0].Configuration)
 }
 
@@ -99,12 +99,12 @@ func (s *GetConfigurationsSuite) TestGetConfigurationsError() {
 
 	s.Equal(filepath.Join(".posit", "publish", "config1.toml"), res[0].Path)
 	s.Equal("config1", res[0].Name)
-	s.Equal("", res[0].Error)
+	s.Nil(res[0].Error)
 	s.Equal(cfg, res[0].Configuration)
 
 	var nilConfiguration *config.Config
 	s.Equal(filepath.Join(".posit", "publish", "config2.toml"), res[1].Path)
 	s.Equal("config2", res[1].Name)
-	s.NotEqual("", res[1].Error)
+	s.NotNil(res[1].Error)
 	s.Equal(nilConfiguration, res[1].Configuration)
 }

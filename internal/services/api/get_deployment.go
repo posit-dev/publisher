@@ -12,11 +12,12 @@ import (
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func readLatestDeploymentFile(base util.Path, id string) (*deploymentDTO, error) {
-	path := deployment.GetDeploymentPath(base, id)
+func readLatestDeploymentFile(base util.Path, name string) (*deploymentDTO, error) {
+	path := deployment.GetDeploymentPath(base, name)
 	d, err := deployment.FromFile(path)
 	if err != nil {
 		// Not found errors will return a 404
@@ -25,7 +26,9 @@ func readLatestDeploymentFile(base util.Path, id string) (*deploymentDTO, error)
 		}
 		// Other errors are returned to the caller
 		return &deploymentDTO{
-			Error: err.Error(),
+			Name:  name,
+			Path:  path.String(),
+			Error: types.AsAgentError(err),
 		}, nil
 	} else {
 		configPath := config.GetConfigPath(base, d.ConfigName)
@@ -36,6 +39,8 @@ func readLatestDeploymentFile(base util.Path, id string) (*deploymentDTO, error)
 			relPath = configPath
 		}
 		return &deploymentDTO{
+			Name:       name,
+			Path:       path.String(),
 			ConfigPath: relPath.String(),
 			Deployment: d,
 		}, nil
@@ -44,8 +49,8 @@ func readLatestDeploymentFile(base util.Path, id string) (*deploymentDTO, error)
 
 func GetDeploymentHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		id := mux.Vars(req)["id"]
-		response, err := readLatestDeploymentFile(base, id)
+		name := mux.Vars(req)["name"]
+		response, err := readLatestDeploymentFile(base, name)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
 				http.NotFound(w, req)

@@ -9,13 +9,16 @@ import (
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type deploymentDTO struct {
 	*deployment.Deployment
-	ConfigPath string `json:"configurationPath,omitempty"`
-	Error      string `json:"error,omitempty"`
+	Name       string            `json:"deploymentName"`
+	Path       string            `json:"deploymentPath"`
+	ConfigPath string            `json:"configurationPath,omitempty"`
+	Error      *types.AgentError `json:"error,omitempty"`
 }
 
 func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
@@ -28,7 +31,9 @@ func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
 		d, err := deployment.FromFile(path)
 		if err != nil {
 			response = append(response, deploymentDTO{
-				Error: err.Error(),
+				Name:  path.Base(),
+				Path:  path.String(),
+				Error: types.AsAgentError(err),
 			})
 		} else {
 			configPath := config.GetConfigPath(base, d.ConfigName)
@@ -39,6 +44,8 @@ func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
 				relPath = configPath
 			}
 			response = append(response, deploymentDTO{
+				Name:       path.Base(),
+				Path:       path.String(),
 				ConfigPath: relPath.String(),
 				Deployment: d,
 			})

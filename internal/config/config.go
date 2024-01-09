@@ -55,7 +55,7 @@ func FromFile(path util.Path) (*Config, error) {
 }
 
 func ValidateFile(path util.Path) error {
-	validator, err := schema.NewValidator(schema.ConfigSchemaURL)
+	validator, err := schema.NewValidator[Config](schema.ConfigSchemaURL)
 	if err != nil {
 		return err
 	}

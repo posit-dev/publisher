@@ -86,8 +86,8 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	r.Handle(ToPath("deployments"), api.GetDeploymentsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
-	// GET /api/deployments/$ID
-	r.Handle(ToPath("deployments", "{id}"), api.GetDeploymentHandlerFunc(base, log)).
+	// GET /api/deployments/$NAME
+	r.Handle(ToPath("deployments", "{name}"), api.GetDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
 	// POST /api/deployments
