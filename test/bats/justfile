@@ -47,7 +47,7 @@ run *args:
 
 
 # Executes bats deploy tests
-test-deploy:
+test-contract:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
