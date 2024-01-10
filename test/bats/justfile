@@ -61,8 +61,15 @@ test-contract:
     pip install -r ../setup/requirements.txt
     export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
     export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
-
-    EXE=$exe npm run contract
+    content_list=$(python ../deploy_helper.py)
+    echo "contents: ${content_list}"
+    for content in ${content_list}
+    do
+      export CONTENT=${content}
+      EXE=$exe npm run contract
+    done
+    
+    
 
 # Executes bats local tests
 test:

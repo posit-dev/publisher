@@ -1,0 +1,5 @@
+flask<=2.3.3
+flask-restx
+pandas
+numpy
+werkzeug
