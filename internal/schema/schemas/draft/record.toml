@@ -3,6 +3,10 @@ server-url = "https://connect.example.com"
 id = "de2e7bdb-b085-401e-a65c-443e40009749"
 client-version = '1.0.1'
 configuration-name = "production.json"
+bundle-id = '123'
+bundle-url = 'https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download'
+dashboard-url = 'https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/'
+direct-url = 'https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40009749/'
 
 [configuration]
 "$schema" = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"

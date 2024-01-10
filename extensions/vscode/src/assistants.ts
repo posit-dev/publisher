@@ -4,18 +4,18 @@ import * as vscode from 'vscode';
 
 import * as commands from './commands';
 import * as ports from './ports';
-import { Panel } from './panels';
+import { IPanel } from './panels';
 
 export class Assistant {
 
     private readonly name: string = "Publisher";
 
-	private readonly panel: Panel;
+	private readonly panel: IPanel;
 	private readonly path: string;
 	private readonly port: number;
 	private readonly terminal: vscode.Terminal;
 
-	constructor (panel: Panel, path: string, port: number) {
+	constructor (panel: IPanel, path: string, port: number) {
 		this.panel = panel;
 		this.path = path;
 		this.port = port;

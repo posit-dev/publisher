@@ -41,7 +41,9 @@ func (c *ConnectClient) CheckCapabilities(cfg *config.Config, log logging.Logger
 
 	schedulerPath := ""
 	appMode := AppModeFromType(cfg.Type)
-	if appMode != UnknownMode {
+	if !appMode.IsStaticContent() {
+		// Scheduler settings don't apply to static content,
+		// and the API will err if you try.
 		schedulerPath = "/" + string(appMode)
 	}
 	err = c.client.Get("/__api__/server_settings/scheduler"+schedulerPath, &settings.scheduler, log)
@@ -72,6 +74,7 @@ var (
 	errKubernetesNotLicensed             = errors.New("off-host execution with Kubernetes is not licensed on this Connect server")
 	errKubernetesNotConfigured           = errors.New("off-host execution with Kubernetes is not configured on this Connect server")
 	errImageSelectionNotEnabled          = errors.New("default image selection is not enabled on this Connect server")
+	errRuntimeSettingsForStaticContent   = errors.New("runtime settings cannot be applied to static content")
 )
 
 func adminError(attr string) error {
@@ -182,6 +185,10 @@ func (a *allSettings) checkRuntime(cfg *config.Config) error {
 	if r == nil {
 		// No runtime configuration present
 		return nil
+	}
+	appMode := AppModeFromType(cfg.Type)
+	if appMode.IsStaticContent() {
+		return errRuntimeSettingsForStaticContent
 	}
 	s := a.scheduler
 

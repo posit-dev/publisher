@@ -45,7 +45,7 @@ func (s *GetDeploymentsSuite) SetupTest() {
 func (s *GetDeploymentsSuite) TestGetDeployments() {
 	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetName"
+	d.ID = "myTargetName"
 	d.ServerType = accounts.ServerTypeConnect
 	d.ConfigName = "myConfig"
 	cfg := config.New()
@@ -74,13 +74,13 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	s.NotNil(res[0].Deployment)
 	s.Equal(d, res[0].Deployment)
 	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res[0].ConfigPath)
-	s.Equal(types.ContentID("myTargetName"), res[0].Deployment.Id)
+	s.Equal(types.ContentID("myTargetName"), res[0].Deployment.ID)
 }
 
 func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	path := deployment.GetDeploymentPath(s.cwd, "target1")
 	d := deployment.New()
-	d.Id = "target1"
+	d.ID = "target1"
 	d.ServerType = accounts.ServerTypeConnect
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
@@ -111,7 +111,7 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	s.Nil(res[0].Error)
 	s.NotNil(res[0].Deployment)
 	s.Equal(d, res[0].Deployment)
-	s.Equal(types.ContentID("target1"), res[0].Deployment.Id)
+	s.Equal(types.ContentID("target1"), res[0].Deployment.ID)
 
 	var nilDeployment *deployment.Deployment
 	s.Equal(nilDeployment, res[1].Deployment)

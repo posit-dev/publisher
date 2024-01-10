@@ -3,6 +3,7 @@ package main
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -16,4 +17,9 @@ type MainSuite struct {
 
 func TestMainSuite(t *testing.T) {
 	suite.Run(t, new(MainSuite))
+}
+
+func (s *MainSuite) TestVersion() {
+	os.Args = []string{"publisher", "version"}
+	main()
 }
