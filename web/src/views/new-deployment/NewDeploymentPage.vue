@@ -51,8 +51,7 @@ const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 const props = defineProps({
   name: {
     type: [String, Array] as PropType<string | string[]>,
-    required: false,
-    default: undefined,
+    required: true,
   },
   url: {
     type: [String, Array] as PropType<string | string[]>,
@@ -72,9 +71,9 @@ const accountName = computed(() => {
 const deploymentName = computed(() => {
   // route query can be either string | string[]
   if (Array.isArray(props.name)) {
-    return props.name[0] || undefined;
+    return props.name[0];
   }
-  return props.name || undefined;
+  return props.name;
 });
 
 const defaultConfig = computed(() => {
@@ -84,9 +83,9 @@ const defaultConfig = computed(() => {
 const configurationSubTitles = computed(() => {
   return [
     `Using ${defaultConfig.value?.configurationPath}`,
-    `The settings present in this file are listed below and will be used during 
+    `The settings present in this file are listed below and will be used during
       the next deployment of your project.`,
-    `Edit this file to add or modify settings which will be applied 
+    `Edit this file to add or modify settings which will be applied
       during this project's next deployment.`,
   ];
 });

@@ -746,8 +746,8 @@ export const useEventStore = defineStore('event', () => {
   const initiatePublishProcessWithEvents = async(
     newDeployment: boolean,
     accountName : string,
+    destinationName: string,
     destinationURL?: string,
-    destinationName?: string,
     contentId?: string,
   ) : Promise<string> => {
     if (publishInProgess.value) {
@@ -763,25 +763,23 @@ export const useEventStore = defineStore('event', () => {
     currentPublishStatus.value.status = newPublishStatus();
 
     try {
+      if (newDeployment) {
+        await api.deployments.createNew(
+          accountName,
+          destinationName,
+        );
+      }
       // Returns:
       // 200 - success
       // 400 - bad request
       // 500 - internal server error
       // Errors returned through event stream
       // Handle errors at the top level caller
-      let response;
+      const response = await api.deployments.publish(
+        destinationName,
+        accountName,
+      );
 
-      if (newDeployment) {
-        response = await api.deployments.publishNew(
-          accountName,
-          destinationName,
-        );
-      } else {
-        response = await api.deployments.publishUpdate(
-          accountName,
-          destinationName,
-        );
-      }
       const localId = <string>response.data.localId;
       currentPublishStatus.value.localId = localId;
       return localId;

@@ -120,7 +120,7 @@ const emit = defineEmits(['deploy']);
 
 const props = defineProps({
   accountName: { type: String, required: true },
-  deploymentName: { type: String, default: undefined, required: false },
+  deploymentName: { type: String, required: true },
   configError: {
     type: Object as PropType<ConfigurationError>,
     required: false,
@@ -154,8 +154,8 @@ const initiateDeploy = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       deployAsNew.value,
       props.accountName,
-      deploymentURL.value,
       props.deploymentName,
+      deploymentURL.value,
       contentId.value,
     );
     deployingLocalId.value = result;

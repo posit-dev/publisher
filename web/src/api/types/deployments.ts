@@ -29,3 +29,9 @@ export function isDeploymentError(
 ): d is DeploymentError {
   return (d as DeploymentError).error !== undefined;
 }
+
+export function isPreDeployment(
+  d: Deployment | DeploymentError
+): boolean {
+  return !isDeploymentError(d) && (d as Deployment).id === '';
+}

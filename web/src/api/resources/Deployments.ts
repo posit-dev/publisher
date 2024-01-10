@@ -36,7 +36,7 @@ export class Deployments {
   // 400 - bad request
   // 500 - internal server error
   // Errors returned through event stream
-  publishNew(
+  createNew(
     accountName? : string,
     saveName?: string,
   ){
@@ -56,17 +56,17 @@ export class Deployments {
   // 400 - bad request
   // 500 - internal server error
   // Errors returned through event stream
-  publishUpdate(
+  publish(
+    targetName: string,
     accountName? : string,
-    targetName?: string,
   ){
     const params = {
       account: accountName,
       config: 'default', // hardcoded for now
-      target: targetName,
     };
+    const encodedTarget = encodeURIComponent(targetName);
     return this.client.post(
-      '/deployments',
+      `deployments/${encodedTarget}`,
       params,
     );
   }
