@@ -300,17 +300,18 @@ func (s *ConnectClientSuite) TestWaitForTaskErr() {
 	log.On("Start", "Building Jupyter notebook...", logging.LogKeyOp, events.PublishRestorePythonEnvOp)
 	log.On("Info", str, str, anything)
 
+	msg := "An error occurred while building your content. (Error code: python-package-version-not-available)"
 	task := taskDTO{
 		Id: types.TaskID("W3YpnrwUOQJxL5DS"),
 		Output: []string{
 			"Building Jupyter notebook...",
 			"Bundle created with Python version 3.11.3 is compatible with environment Local with Python version 3.11.3 from /opt/python/3.11.3/bin/python3.11",
 			"Bundle requested Python version 3.11.3; using /opt/python/3.11.3/bin/python3.11 which has version 3.11.3",
-			"2023/09/12 13:34:48.308740036 Execution halted",
-			"Build error: exit status 1",
+			"2024/01/09 11:20:47 AM: ERROR: Could not find a version that satisfies the requirement nonexistent (from versions: none) 2024/01/09 11:20:47 AM: ERROR: No matching distribution found for nonexistent",
+			"2024/01/09 11:20:51 AM: pip install failed with exit code 1",
 		},
 		Finished: true,
-		Error:    "exit status 1",
+		Error:    msg,
 		Last:     5,
 	}
 
@@ -318,10 +319,13 @@ func (s *ConnectClientSuite) TestWaitForTaskErr() {
 	op, err := handleTaskUpdate(&task, op, log)
 	s.Equal(&types.AgentError{
 		Code:    events.DeploymentFailedCode,
-		Err:     errors.New("exit status 1"),
-		Message: "exit status 1",
-		Data:    types.ErrorData{},
-		Op:      events.PublishRestorePythonEnvOp,
+		Err:     errors.New(msg),
+		Message: msg,
+		Data: types.ErrorData{
+			"ConnectErrorCode":  "python-package-version-not-available",
+			"DocumentationLink": "https://docs.posit.co/connect/user/troubleshooting/#python-package-version-not-available",
+		},
+		Op: events.PublishRestorePythonEnvOp,
 	}, err)
 	s.Equal(events.PublishRestorePythonEnvOp, op)
 	log.AssertExpectations(s.T())

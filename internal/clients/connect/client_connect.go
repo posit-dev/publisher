@@ -341,6 +341,24 @@ func packageEventFromLogLine(line string) *packageEvent {
 	return nil
 }
 
+type deploymentFailedDetails struct {
+	ConnectErrorCode  string
+	DocumentationLink string
+}
+
+var connectErrorRE = regexp.MustCompile("Error code: ([a-z-]+)")
+
+func connectErrorDetails(msg string) *deploymentFailedDetails {
+	m := connectErrorRE.FindStringSubmatch(msg)
+	if m == nil {
+		return nil
+	}
+	return &deploymentFailedDetails{
+		ConnectErrorCode:  m[1],
+		DocumentationLink: fmt.Sprintf("https://docs.posit.co/connect/user/troubleshooting/#%s", m[1]),
+	}
+}
+
 func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (types.Operation, error) {
 	var nextOp types.Operation
 
@@ -370,9 +388,8 @@ func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (ty
 	}
 	if task.Finished {
 		if task.Error != "" {
-			// TODO: make these errors more specific, maybe by
-			// using the Connect error codes from the logs.
-			err := types.NewAgentError(events.DeploymentFailedCode, errors.New(task.Error), nil)
+			details := connectErrorDetails(task.Error)
+			err := types.NewAgentError(events.DeploymentFailedCode, errors.New(task.Error), details)
 			err.SetOperation(op)
 			return op, err
 		}

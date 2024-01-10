@@ -68,7 +68,7 @@ func (s *PublishSuite) TestPublishWithClient() {
 
 func (s *PublishSuite) TestPublishWithClientUpdate() {
 	target := deployment.New()
-	target.Id = "myContentID"
+	target.ID = "myContentID"
 	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
@@ -89,7 +89,7 @@ func (s *PublishSuite) TestPublishWithClientFailCreate() {
 
 func (s *PublishSuite) TestPublishWithClientFailUpdate() {
 	target := deployment.New()
-	target.Id = "myContentID"
+	target.ID = "myContentID"
 	updateErr := errors.New("error from Update")
 	s.publishWithClient(target, nil, nil, updateErr, nil, nil, nil, nil, nil, updateErr)
 }
@@ -157,8 +157,10 @@ func (s *PublishSuite) publishWithClient(
 		"FOO": "BAR",
 	}
 	stateStore := &state.State{
-		Dir:      s.cwd,
-		Account:  nil,
+		Dir: s.cwd,
+		Account: &accounts.Account{
+			URL: "https://connect.example.com",
+		},
 		Config:   cfg,
 		Target:   target,
 		SaveName: "saveAsThis",
@@ -175,15 +177,19 @@ func (s *PublishSuite) publishWithClient(
 		recordPath := deployment.GetDeploymentPath(stateStore.Dir, "saveAsThis")
 		record, err := deployment.FromFile(recordPath)
 		s.NoError(err)
-		s.Equal(myContentID, record.Id)
-		s.Contains(record.Files, "app.py")
-		s.Contains(record.Files, "requirements.txt")
+		s.Equal(myContentID, record.ID)
 		s.Equal(project.Version, record.ClientVersion)
 		s.NotEqual("", record.DeployedAt)
 
 		logs := s.logBuffer.String()
 		s.Contains(logs, "save_name=saveAsThis")
 		s.Contains(logs, "content_id="+myContentID)
+
+		// Files are written after upload.
+		if uploadErr == nil {
+			s.Contains(record.Files, "app.py")
+			s.Contains(record.Files, "requirements.txt")
+		}
 	}
 }
 
