@@ -52,7 +52,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
-	d.Configuration = *cfg
+	d.Configuration = cfg
 
 	err := d.WriteFile(path)
 	s.NoError(err)

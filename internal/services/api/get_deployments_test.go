@@ -51,7 +51,7 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
-	d.Configuration = *cfg
+	d.Configuration = cfg
 	err := d.WriteFile(path)
 	s.NoError(err)
 
@@ -85,7 +85,7 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
-	d.Configuration = *cfg
+	d.Configuration = cfg
 	err := d.WriteFile(path)
 	s.NoError(err)
 

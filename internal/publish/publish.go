@@ -89,6 +89,10 @@ func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 	return p.publish(bundler, log)
 }
 
+func (p *defaultPublisher) hasContentID() bool {
+	return p.Target != nil && p.Target.ID != ""
+}
+
 func (p *defaultPublisher) publish(
 	bundler bundles.Bundler,
 	log logging.Logger) error {
@@ -110,15 +114,17 @@ func (p *defaultPublisher) publish(
 				p.Target.Error = agentErr
 				writeErr := p.writeDeploymentRecord(log)
 				if writeErr != nil {
-					log.Warn("failed to write updated deployment record", "id", p.Target.SaveName, "err", err)
+					log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", err)
 				}
-				agentErr.Data["dashboard_url"] = getDashboardURL(p.Account.URL, p.Target.ID)
+				if p.hasContentID() {
+					agentErr.Data["dashboard_url"] = getDashboardURL(p.Account.URL, p.Target.ID)
+				}
 			}
 			agentErr.SetOperation(events.PublishOp)
 			log.Failure(agentErr)
 		}
 	}
-	if p.Target != nil {
+	if p.hasContentID() {
 		logAppInfo(os.Stderr, p.Account.URL, p.Target.ID, log, err)
 	}
 	return err
@@ -174,6 +180,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 	// Initial deployment record doesn't know the files or
 	// bundleID. These will be added after the
 	// bundle upload.
+	cfg := *p.Config
 	p.Target = &deployment.Deployment{
 		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    account.ServerType,
@@ -182,7 +189,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ID:            contentID,
 		ConfigName:    p.ConfigName,
 		Files:         nil,
-		Configuration: *p.Config,
+		Configuration: &cfg,
 		DeployedAt:    time.Now().UTC().Format(time.RFC3339),
 		BundleID:      "",
 		DashboardURL:  getDashboardURL(p.Account.URL, contentID),
@@ -361,7 +368,7 @@ func (p *defaultPublisher) publishWithClient(
 	}
 
 	var contentID types.ContentID
-	if p.Target != nil {
+	if p.hasContentID() {
 		contentID = p.Target.ID
 	} else {
 		// Create a new deployment; we will update it with details later.
