@@ -1,5 +1,5 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-export const vscodeApi = typeof acquireVsCodeApi !== 'undefined' ?
+export const vscode = typeof acquireVsCodeApi !== 'undefined' ?
   acquireVsCodeApi()
   : undefined;
