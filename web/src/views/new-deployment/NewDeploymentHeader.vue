@@ -16,7 +16,7 @@
       <div
         class="flex justify-between q-mt-md row-gap-lg column-gap-xl"
       >
-        <div class="space-between-sm">
+        <div class="space-between-y-sm">
           <h1
             v-if="deploymentName"
             class="text-h6"
