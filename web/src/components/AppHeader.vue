@@ -5,7 +5,7 @@
     <q-toolbar class="publisher-layout">
       <AppMenu />
       <q-toolbar-title>
-        <router-link
+        <PLink
           class="posit-logo-link"
           :to="{ name: 'root' }"
         >
@@ -16,7 +16,7 @@
             alt="Posit PBC Logo"
           />
           <span class="q-pl-xs">Publisher</span>
-        </router-link>
+        </PLink>
       </q-toolbar-title>
       <q-btn
         flat
@@ -29,10 +29,9 @@
 </template>
 
 <script setup lang="ts">
-
 import AppMenu from 'src/components/AppMenu.vue';
+import PLink from 'src/components/PLink.vue';
 import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
-
 </script>
 
 <style scoped lang="scss">
