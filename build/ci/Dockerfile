@@ -24,6 +24,9 @@ RUN \
         libxss1\
         libasound2\
         libxtst6\
+        python3\
+        python-is-python3\
+        python3-pip\
         xauth\
         xvfb\
         # The following are required for tooling
