@@ -43,8 +43,8 @@ RUN git config --global --add safe.directory '*'
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
 # Go is required by this project. The source code is written in it!
-ARG GOVERSION=1.21.5
-ARG GOCHECKSUM=e2bc0b3e4b64111ec117295c088bde5f00eeed1567999ff77bc859d7df70078e
+ARG GOVERSION=1.21.6
+ARG GOCHECKSUM=3f934f40ac360b9c01f616a9aa1796d227d8b0328bf64cb045c7b8c4ee9caea4
 ARG GOARCHIVE=go$GOVERSION.linux-amd64.tar.gz
 ENV PATH="$PATH:/usr/local/go/bin"
 RUN\
