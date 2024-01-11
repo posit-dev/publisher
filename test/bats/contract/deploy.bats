@@ -33,7 +33,7 @@ source ../sample-content/python/${CONTENT}/.env
     # now test the deployment via api
     GUID="$(echo "${output}" | \
         grep "Direct URL:" | \
-        grep -o -E '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')"
+        grep -o -E '[0-9a-f-]{36}')"
     run curl --silent --show-error -L --max-redirs 0 --fail \
         -X GET \
         -H "Authorization: Key ${CONNECT_API_KEY}" "${CONNECT_SERVER}/__api__/v1/content/${GUID}"
@@ -48,7 +48,7 @@ source ../sample-content/python/${CONTENT}/.env
     # now test the deployment via api
     GUID="$(echo "${output}" | \
         grep "Direct URL:" | \
-        grep -o -E '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')"
+        grep -o -E '[0-9a-f-]{36}')"
     run curl --silent --show-error -L --max-redirs 0 --fail \
         -X GET \
         -H "Authorization: Key ${CONNECT_API_KEY}" "${CONNECT_SERVER}/__api__/v1/content/${GUID}"
