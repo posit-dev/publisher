@@ -2,7 +2,7 @@
 
 <template>
   <span
-    v-if="vscodeApi"
+    v-if="vscode"
     class="no-outline cursor-pointer"
     tabindex="0"
     @click="navigate"
@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterLinkProps, useRouter } from 'vue-router';
 
-import { vscodeApi } from 'src/vscode';
+import { vscode } from 'src/vscode';
 
 const router = useRouter();
 
