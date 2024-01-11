@@ -31,7 +31,8 @@ jobs:
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/cy/fuzzbucket-ssh-key && chmod 600 test/cy/fuzzbucket-ssh-key
       - run: just cy install
       - run: just cy test
-      - run: just cy test-contract
+      # disable cypress contract tests until new deploy workflow
+      # - run: just cy test-contract
       - run: just bats install
       - run: just bats test
       - run: just bats test-contract
