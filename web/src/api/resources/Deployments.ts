@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from 'axios';
 
-import { Deployment, DeploymentError } from 'src/api/types/deployments';
+import { Deployment, DeploymentRecordError } from 'src/api/types/deployments';
 
 export class Deployments {
   private client: AxiosInstance;
@@ -15,7 +15,7 @@ export class Deployments {
   // 200 - success
   // 500 - internal server error
   getAll() {
-    return this.client.get<Array<Deployment | DeploymentError>>(
+    return this.client.get<Array<Deployment | DeploymentRecordError>>(
       '/deployments',
     );
   }
@@ -26,7 +26,7 @@ export class Deployments {
   // 500 - internal server error
   get(id: string) {
     const encodedId = encodeURIComponent(id);
-    return this.client.get<Deployment | DeploymentError>(
+    return this.client.get<Deployment | DeploymentRecordError>(
       `deployments/${encodedId}`,
     );
   }

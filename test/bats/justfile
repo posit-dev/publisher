@@ -46,7 +46,25 @@ run *args:
     npm run {{ args }}
 
 
-# Executes Cypress tests
+# Executes bats deploy tests
+test-contract:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    exe=$(just ../../executable-path)
+
+    if [ ! -f $exe ]; then
+        echo "error: Missing executable $exe. Run \`just build\`." 1>&2
+        exit 1
+    fi
+    pip install -r ../setup/requirements.txt
+    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+
+    EXE=$exe npm run contract
+
+# Executes bats local tests
 test:
     #!/usr/bin/env bash
     set -eou pipefail
@@ -58,5 +76,5 @@ test:
         echo "error: Missing executable $exe. Run \`just build\`." 1>&2
         exit 1
     fi
-
-    EXE=$exe npm test
+    
+    EXE=$exe npm run cli
