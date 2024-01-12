@@ -14,6 +14,13 @@ export type DeploymentRecordError = {
   error: AgentError,
 } & DeploymentLocation
 
+export type DeploymentError = {
+  code: string,
+  msg: string,
+  operation: string,
+  data: Record<string, string>,
+}
+
 export type Deployment = {
   $schema: SchemaURL,
   serverType: ServerType,
@@ -22,6 +29,9 @@ export type Deployment = {
   files: string[],
   deployedAt: string,
   saveName: string,
+  bundleId: string,
+  bundleUrL: string,
+  deploymentError?: DeploymentError,
 } & DeploymentLocation & Configuration;
 
 export function isDeploymentRecordError(

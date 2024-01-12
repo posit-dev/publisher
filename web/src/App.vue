@@ -23,6 +23,7 @@ import { useQuasar } from 'quasar';
 import AppHeader from 'src/components/AppHeader.vue';
 import { onBeforeUnmount } from 'vue';
 import { useEventStore } from 'src/stores/events';
+import { useDeploymentStore } from 'src/stores/deployments';
 
 const $q = useQuasar();
 $q.dark.set('auto');
@@ -33,6 +34,9 @@ const eventStore = useEventStore();
 onBeforeUnmount(() => {
   eventStore.closeEventStream();
 });
+
+// Let's start population of the deployments as quickly as possible
+useDeploymentStore();
 
 </script>
 

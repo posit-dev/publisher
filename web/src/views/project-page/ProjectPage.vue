@@ -75,12 +75,14 @@ import { Configuration, ConfigurationError } from 'src/api/types/configurations'
 import { useRouter } from 'vue-router';
 
 import { newFatalErrorRouteLocation } from 'src/util/errors';
+
 import ConfigCard from './ConfigCard.vue';
 import FileTree from 'src/components/FileTree.vue';
 import DeploymentsSection from './DeploymentsSection.vue';
 
 const api = useApi();
 const router = useRouter();
+
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 async function getConfigurations() {

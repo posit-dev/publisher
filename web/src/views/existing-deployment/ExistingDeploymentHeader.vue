@@ -208,6 +208,13 @@ const updateAccountList = async() => {
 };
 updateAccountList();
 
+const normalizeURL = (url: string) => {
+  if (!url.endsWith('/')) {
+    url += '/';
+  }
+  return url;
+};
+
 watch(
   () => [
     props.deployment.serverUrl,
@@ -215,7 +222,7 @@ watch(
   ],
   () => {
     const credentials = accounts.value.filter(
-      (account: Account) => account.url === props.deployment.serverUrl
+      (account: Account) => normalizeURL(account.url) === normalizeURL(props.deployment.serverUrl)
     );
     filteredAccountList.value = credentials;
   },
