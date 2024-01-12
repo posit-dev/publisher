@@ -3,10 +3,6 @@ alias t := test
 
 _ci := env_var_or_default("CI", "false")
 
-_editor := env("EDITOR", "code")
-
-_target_platform := env("TARGETPLATFORM", "`go env GOOS`/`go env GOARCH`")
-
 _debug := env_var_or_default("DEBUG", "false")
 
 _with_debug := if _debug == "true" {
@@ -74,7 +70,7 @@ configure os="$(just ../../os)" arch="$(just ../../arch)":
     just assert-binary-executable-exists
 
 # Installs the packaged extension on your configured editor using the editor's CLI. The editor CLI defaults to 'code'. Modify this value via the EDITOR environment variable.
-install os="$(just ../../os)" arch="$(just ../../arch)":
+install os="$(just ../../os)" arch="$(just ../../arch)" editor="code":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
@@ -82,8 +78,8 @@ install os="$(just ../../os)" arch="$(just ../../arch)":
     package=$(just package-name {{ os }} {{ arch }})
     package_path=$(just package-path)
 
-    echo "info: installing extension using {{ _editor }}..." 1>&2
-    {{ _editor }} --install-extension "$package_path/$package" 2>&1 | sed 's/^/debug: /'
+    echo "info: installing extension using {{ editor }}..." 1>&2
+    {{ editor }} --install-extension "$package_path/$package" 2>&1 | sed 's/^/debug: /'
 
 # Performs static code analysis with ESLint
 lint:
@@ -185,10 +181,10 @@ test:
     fi
 
 
-uninstall:
+uninstall editor="code":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    echo "info: uninstalling extension using '{{ _editor }}'..." 1>&2
-    {{ _editor }} --uninstall-extension 'posit.publisher' 2>&1 | sed 's/^/debug: /'
+    echo "info: uninstalling extension using '{{ editor }}'..." 1>&2
+    {{ editor }} --uninstall-extension 'posit.publisher' 2>&1 | sed 's/^/debug: /'
