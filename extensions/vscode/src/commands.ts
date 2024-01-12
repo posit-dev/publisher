@@ -23,9 +23,18 @@ const getExecutableBinary = async (context: vscode.ExtensionContext): Promise<st
         } catch {
             vscode.window.showErrorMessage(
                 `
-                The user does not have executable access to '${executable}'.\n
-                This option is configured via '${CONFIG_KEY}'.\n
-                Is it set to correct value?
+                Error: Configuration Property Not Set Correctly
+
+                It seems that the configuration property 'posit.${CONFIG_KEY}' is not set correctly in your settings. To resolve this issue, please follow these steps:
+
+                1. Open your settings by clicking on the gear icon in the bottom left corner and selecting "Settings" or by using the shortcut 'Ctrl + ,'.
+
+                2. Navigate to the extension settings by clicking on the "Extensions" icon in the sidebar and selecting your extension.
+
+                3. Search for the configuration property 'posit.${CONFIG_KEY}' and ensure it is set correctly.
+
+                Example:
+                "posit.${CONFIG_KEY}": "/usr/local/bin/publisher"
                 `,
                 { modal: true }
             );

@@ -43,6 +43,7 @@ clean:
     {{ _with_debug }}
 
     rm -rf .vscode-test
+    rm -rf bin
     rm -rf dist
     rm -rf node_modules
     rm -rf out
