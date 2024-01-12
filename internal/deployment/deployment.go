@@ -3,6 +3,7 @@ package deployment
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"io"
 	"strings"
 
@@ -20,12 +21,17 @@ type Deployment struct {
 	ServerType    accounts.ServerType `toml:"server-type" json:"serverType"`
 	ServerURL     string              `toml:"server-url" json:"serverUrl"`
 	ClientVersion string              `toml:"client-version" json:"-"`
-	Id            types.ContentID     `toml:"id" json:"id"`
+	ID            types.ContentID     `toml:"id" json:"id"`
 	ConfigName    string              `toml:"configuration-name" json:"configurationName"`
-	Configuration config.Config       `toml:"configuration" json:"configuration"`
-	Files         []string            `toml:"files" json:"files"`
 	DeployedAt    string              `toml:"deployed-at" json:"deployedAt"`
 	SaveName      string              `toml:"-" json:"saveName"`
+	BundleID      types.BundleID      `toml:"bundle-id" json:"bundleId"`
+	BundleURL     string              `toml:"bundle-url" json:"bundleUrl"`
+	DashboardURL  string              `toml:"dashboard-url" json:"dashboardUrl"`
+	DirectURL     string              `toml:"direct-url" json:"directUrl"`
+	Error         *types.AgentError   `toml:"deployment-error" json:"deploymentError"`
+	Files         []string            `toml:"files,multiline" json:"files"`
+	Configuration config.Config       `toml:"configuration" json:"configuration"`
 }
 
 func New() *Deployment {
@@ -49,6 +55,19 @@ func GetDeploymentPath(base util.Path, name string) util.Path {
 func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
 	dir := GetDeploymentsPath(base)
 	return dir.Glob("*.toml")
+}
+
+func UntitledDeploymentName(base util.Path) (string, error) {
+	for i := 1; ; i++ {
+		name := fmt.Sprintf("Untitled-%d", i)
+		exists, err := GetDeploymentPath(base, name).Exists()
+		if err != nil {
+			return "", err
+		}
+		if !exists {
+			return name, nil
+		}
+	}
 }
 
 func SaveNameFromPath(path util.Path) string {

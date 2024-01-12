@@ -208,7 +208,7 @@ func (s *RsconnectPythonProviderSuite) TestLoad() {
 			Source:     AccountSourceRsconnectPython,
 			AuthType:   AuthTypeAPIKey,
 			Name:       "local",
-			URL:        "http://localhost:3939/",
+			URL:        "http://localhost:3939",
 			Insecure:   true,
 			ApiKey:     "0123456789ABCDEF0123456789ABCDEF",
 		},

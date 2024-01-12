@@ -854,7 +854,7 @@ export const useEventStore = defineStore('event', () => {
     eventStream.addEventMonitorCallback('publish/validateDeployment/failure', onPublishValidateDeploymentFailure);
 
     eventStream.setDebugMode(false);
-    eventStream.open('api/events?stream=messages');
+    eventStream.open('/api/events?stream=messages');
   };
   init();
 

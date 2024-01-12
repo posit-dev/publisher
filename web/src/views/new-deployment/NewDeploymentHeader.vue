@@ -52,16 +52,17 @@
             hierarchy="primary"
             class="q-ml-md"
             padding="sm md"
-            :disable="eventStore.publishInProgess"
             data-automation="deploy"
+            :disable="Boolean(configError) || eventStore.publishInProgess"
             @click="initiateDeploy"
           >
-            <template v-if="deployAsNew">
-              Deploy
-            </template>
-            <template v-else>
-              Redeploy
-            </template>
+            <q-tooltip
+              v-if="redeployDisableTitle"
+              class="text-body2"
+            >
+              {{ redeployDisableTitle }}
+            </q-tooltip>
+            {{ deployAsNew ? 'Deploy' : 'Redeploy' }}
           </PButton>
         </div>
       </div>
@@ -91,8 +92,8 @@
 
 <script setup lang="ts">
 
-import { computed, ref, watch } from 'vue';
-import { Account, useApi } from 'src/api';
+import { PropType, computed, ref, watch } from 'vue';
+import { Account, ConfigurationError, useApi } from 'src/api';
 
 import SelectAccount from 'src/components/SelectAccount.vue';
 import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';
@@ -120,10 +121,25 @@ const emit = defineEmits(['deploy']);
 const props = defineProps({
   accountName: { type: String, required: true },
   deploymentName: { type: String, default: undefined, required: false },
+  configError: {
+    type: Object as PropType<ConfigurationError>,
+    required: false,
+    default: undefined
+  },
 });
 
 const showLogsLink = computed(() => {
   return eventStore.doesPublishStatusApply(deployingLocalId.value);
+});
+
+const redeployDisableTitle = computed(() => {
+  if (eventStore.publishInProgess) {
+    return 'Another deployment is in progress';
+  }
+  if (props.configError) {
+    return 'Cannot deploy with configuration errors';
+  }
+  return undefined;
 });
 
 const initiateDeploy = async() => {

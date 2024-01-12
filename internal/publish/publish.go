@@ -51,6 +51,10 @@ func getDirectURL(accountURL string, contentID types.ContentID) string {
 	return fmt.Sprintf("%s/content/%s", accountURL, contentID)
 }
 
+func getBundleURL(accountURL string, contentID types.ContentID, bundleID types.BundleID) string {
+	return fmt.Sprintf("%s/__api__/v1/content/%s/bundles/%s/download", accountURL, contentID, bundleID)
+}
+
 func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log logging.Logger, publishingErr error) {
 	dashboardURL := getDashboardURL(accountURL, contentID)
 	directURL := getDirectURL(accountURL, contentID)
@@ -102,17 +106,22 @@ func (p *defaultPublisher) publish(
 		// Also fail the overall operation
 		agentErr, ok := err.(*types.AgentError)
 		if ok {
-			agentErr.SetOperation(events.PublishOp)
 			if p.Target != nil {
-				agentErr.Data["dashboard_url"] = getDashboardURL(p.Account.URL, p.Target.Id)
+				p.Target.Error = agentErr
+				writeErr := p.writeDeploymentRecord(log)
+				if writeErr != nil {
+					log.Warn("failed to write updated deployment record", "id", p.Target.SaveName, "err", err)
+				}
+				agentErr.Data["dashboard_url"] = getDashboardURL(p.Account.URL, p.Target.ID)
 			}
+			agentErr.SetOperation(events.PublishOp)
 			log.Failure(agentErr)
 		}
 	}
 	if p.Target != nil {
-		logAppInfo(os.Stderr, p.Account.URL, p.Target.Id, log, err)
+		logAppInfo(os.Stderr, p.Account.URL, p.Target.ID, log, err)
 	}
-	return nil
+	return err
 }
 
 type DeploymentNotFoundDetails struct {
@@ -151,27 +160,34 @@ func (p *defaultPublisher) createDeployment(client connect.APIClient, log loggin
 	return contentID, nil
 }
 
+func (p *defaultPublisher) writeDeploymentRecord(log logging.Logger) error {
+	recordPath := deployment.GetDeploymentPath(p.Dir, p.TargetName)
+	return p.Target.WriteFile(recordPath)
+}
+
 func (p *defaultPublisher) createDeploymentRecord(
 	bundler bundles.Bundler,
 	contentID types.ContentID,
 	account *accounts.Account,
 	log logging.Logger) error {
 
-	// Scan the directory to get the file list for the deployment record
-	createdManifest, err := bundler.CreateManifest()
-	if err != nil {
-		return err
-	}
+	// Initial deployment record doesn't know the files or
+	// bundleID. These will be added after the
+	// bundle upload.
 	p.Target = &deployment.Deployment{
 		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    account.ServerType,
 		ServerURL:     account.URL,
 		ClientVersion: project.Version,
-		Id:            contentID,
+		ID:            contentID,
 		ConfigName:    p.ConfigName,
-		Files:         createdManifest.GetFilenames(),
+		Files:         nil,
 		Configuration: *p.Config,
 		DeployedAt:    time.Now().UTC().Format(time.RFC3339),
+		BundleID:      "",
+		DashboardURL:  getDashboardURL(p.Account.URL, contentID),
+		DirectURL:     getDirectURL(p.Account.URL, contentID),
+		Error:         nil,
 	}
 
 	// Save current deployment information for this target
@@ -186,9 +202,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 	} else if p.TargetName == "" {
 		p.TargetName = string(contentID)
 	}
-	recordPath := deployment.GetDeploymentPath(p.Dir, p.TargetName)
-	log.Info("Writing deployment record", "path", recordPath)
-	return p.Target.WriteFile(recordPath)
+	return p.writeDeploymentRecord(log)
 }
 
 func (p *defaultPublisher) createAndUploadBundle(
@@ -197,6 +211,7 @@ func (p *defaultPublisher) createAndUploadBundle(
 	contentID types.ContentID,
 	log logging.Logger) (types.BundleID, error) {
 
+	// Create Bundle step
 	op := events.PublishCreateBundleOp
 	prepareLog := log.WithArgs(logging.LogKeyOp, op)
 	prepareLog.Start("Preparing files")
@@ -206,16 +221,18 @@ func (p *defaultPublisher) createAndUploadBundle(
 	}
 	defer os.Remove(bundleFile.Name())
 	defer bundleFile.Close()
-	_, err = bundler.CreateBundle(bundleFile)
+	manifest, err := bundler.CreateBundle(bundleFile)
 	if err != nil {
 		return "", types.OperationError(op, err)
 	}
+
 	_, err = bundleFile.Seek(0, io.SeekStart)
 	if err != nil {
 		return "", types.OperationError(op, err)
 	}
 	prepareLog.Success("Done preparing files", "filename", bundleFile.Name())
 
+	// Upload Bundle step
 	op = events.PublishUploadBundleOp
 	uploadLog := log.WithArgs(logging.LogKeyOp, op)
 	uploadLog.Start("Uploading files")
@@ -223,6 +240,16 @@ func (p *defaultPublisher) createAndUploadBundle(
 	bundleID, err := client.UploadBundle(contentID, bundleFile, log)
 	if err != nil {
 		return "", types.OperationError(op, err)
+	}
+
+	// Update deployment record with new information
+	p.Target.Files = manifest.GetFilenames()
+	p.Target.BundleID = bundleID
+	p.Target.BundleURL = getBundleURL(p.Account.URL, contentID, bundleID)
+
+	err = p.writeDeploymentRecord(log)
+	if err != nil {
+		return "", err
 	}
 	uploadLog.Success("Done uploading files", "bundle_id", bundleID)
 	return bundleID, nil
@@ -335,7 +362,7 @@ func (p *defaultPublisher) publishWithClient(
 
 	var contentID types.ContentID
 	if p.Target != nil {
-		contentID = p.Target.Id
+		contentID = p.Target.ID
 	} else {
 		// Create a new deployment; we will update it with details later.
 		contentID, err = p.createDeployment(client, log)

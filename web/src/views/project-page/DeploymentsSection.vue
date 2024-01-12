@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import { Deployment, DeploymentError, isDeploymentError, useApi } from 'src/api';
+import { Deployment, DeploymentRecordError, isDeploymentRecordError, useApi } from 'src/api';
 import { ErrorMessages, buildErrorBannerMessage, newFatalErrorRouteLocation } from 'src/util/errors';
 import { sortByDateString } from 'src/utils/date';
 import { router } from 'src/router';
@@ -99,9 +99,9 @@ async function getDeployments() {
     // 500 - internal server error
     const response = (await api.deployments.getAll()).data;
     deployments.value = response.filter<Deployment>((d): d is Deployment => {
-      return !isDeploymentError(d);
+      return !isDeploymentRecordError(d);
     });
-    const deploymentErrors: DeploymentError[] = response.filter(isDeploymentError);
+    const deploymentErrors: DeploymentRecordError[] = response.filter(isDeploymentRecordError);
     if (deploymentErrors) {
       // We will show deployment errors on this page, while all other pages
       // route these towards the fatal error page. This is because the user

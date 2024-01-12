@@ -46,7 +46,7 @@ func (s *GetDeploymentSuite) SetupTest() {
 func (s *GetDeploymentSuite) TestGetDeployment() {
 	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetName"
+	d.ID = "myTargetName"
 	d.ServerType = accounts.ServerTypeConnect
 	d.ConfigName = "myConfig"
 	cfg := config.New()
@@ -75,8 +75,9 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	s.NotNil(res.Deployment)
 	s.Nil(res.Error)
 	s.Equal(d, res.Deployment)
+	s.Equal("myTargetName", res.Name)
 	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res.ConfigPath)
-	s.Equal(types.ContentID("myTargetName"), res.Deployment.Id)
+	s.Equal(types.ContentID("myTargetName"), res.Deployment.ID)
 }
 
 func (s *GetDeploymentSuite) TestGetDeploymentError() {

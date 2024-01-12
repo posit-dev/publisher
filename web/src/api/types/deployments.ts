@@ -10,7 +10,7 @@ export type DeploymentLocation = {
   deploymentPath: string;
 }
 
-export type DeploymentError = {
+export type DeploymentRecordError = {
   error: AgentError,
 } & DeploymentLocation
 
@@ -24,8 +24,8 @@ export type Deployment = {
   saveName: string,
 } & DeploymentLocation & Configuration;
 
-export function isDeploymentError(
-  d: Deployment | DeploymentError
-): d is DeploymentError {
-  return (d as DeploymentError).error !== undefined;
+export function isDeploymentRecordError(
+  d: Deployment | DeploymentRecordError
+): d is DeploymentRecordError {
+  return (d as DeploymentRecordError).error !== undefined;
 }

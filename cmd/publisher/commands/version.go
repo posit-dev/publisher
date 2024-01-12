@@ -5,15 +5,13 @@ package commands
 import (
 	"fmt"
 
+	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/project"
-
-	"github.com/alecthomas/kong"
 )
 
-type VersionFlag bool
+type VersionCmd struct{}
 
-func (v VersionFlag) BeforeReset(cli *kong.Kong) error {
+func (cmd *VersionCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	fmt.Println(project.Version)
-	cli.Exit(0)
 	return nil
 }
