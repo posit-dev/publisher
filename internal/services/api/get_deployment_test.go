@@ -10,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
@@ -44,17 +42,7 @@ func (s *GetDeploymentSuite) SetupTest() {
 }
 
 func (s *GetDeploymentSuite) TestGetDeployment() {
-	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
-	d := deployment.New()
-	d.ID = "myTargetName"
-	d.ServerType = accounts.ServerTypeConnect
-	d.ConfigName = "myConfig"
-	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
-	cfg.Entrypoint = "app.py"
-	d.Configuration = *cfg
-
-	err := d.WriteFile(path)
+	d, err := createSampleDeployment(s.cwd, "myTargetName")
 	s.NoError(err)
 
 	h := GetDeploymentHandlerFunc(s.cwd, s.log)
@@ -77,7 +65,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	s.Equal(d, res.Deployment)
 	s.Equal("myTargetName", res.Name)
 	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res.ConfigPath)
-	s.Equal(types.ContentID("myTargetName"), res.Deployment.ID)
+	s.Equal(types.ContentID("12345678"), res.Deployment.ID)
 }
 
 func (s *GetDeploymentSuite) TestGetDeploymentError() {
