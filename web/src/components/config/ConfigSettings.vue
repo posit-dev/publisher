@@ -7,7 +7,7 @@
     </template>
 
     <template v-else>
-      <div class="space-between-sm">
+      <div class="space-between-y-sm">
         <ConfigType :type="config.configuration.type" />
         <ConfigEntrypoint :entrypoint="config.configuration.entrypoint" />
         <ConfigTitle :title="config.configuration.title" />

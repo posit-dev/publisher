@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div class="publisher-layout q-pt-md q-pb-xl space-between-lg">
+  <div class="publisher-layout q-pt-md q-pb-xl space-between-y-lg">
     <q-breadcrumbs>
       <q-breadcrumbs-el label="Project" />
     </q-breadcrumbs>
