@@ -89,7 +89,7 @@ func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 	return p.publish(bundler, log)
 }
 
-func (p *defaultPublisher) hasContentID() bool {
+func (p *defaultPublisher) isDeployed() bool {
 	return p.Target != nil && p.Target.ID != ""
 }
 
@@ -116,7 +116,7 @@ func (p *defaultPublisher) publish(
 				if writeErr != nil {
 					log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", err)
 				}
-				if p.hasContentID() {
+				if p.isDeployed() {
 					agentErr.Data["dashboard_url"] = getDashboardURL(p.Account.URL, p.Target.ID)
 				}
 			}
@@ -124,7 +124,7 @@ func (p *defaultPublisher) publish(
 			log.Failure(agentErr)
 		}
 	}
-	if p.hasContentID() {
+	if p.isDeployed() {
 		logAppInfo(os.Stderr, p.Account.URL, p.Target.ID, log, err)
 	}
 	return err
@@ -368,7 +368,7 @@ func (p *defaultPublisher) publishWithClient(
 	}
 
 	var contentID types.ContentID
-	if p.hasContentID() {
+	if p.isDeployed() {
 		contentID = p.Target.ID
 	} else {
 		// Create a new deployment; we will update it with details later.
