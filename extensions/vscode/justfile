@@ -3,6 +3,8 @@ alias t := test
 
 _ci := env_var_or_default("CI", "false")
 
+_editor := env("EDITOR", "code")
+
 _target_platform := env("TARGETPLATFORM", "`go env GOOS`/`go env GOARCH`")
 
 _debug := env_var_or_default("DEBUG", "false")
@@ -23,6 +25,17 @@ default os="$(just ../../os)" arch="$(just ../../arch)":
     just configure {{ os }} {{ arch }}
     just package {{ os }} {{ arch }}
 
+assert-binary-executable-exists:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+    echo "info: asserting binary executable exists..." 1>&2
+    if ! [ -f ./bin/publisher ]; then
+        echo "error: binary executable not found!" 1>&2
+        echo "debug: did you run 'just configure'?" 1>&2
+        exit 1
+    fi
+
 # Deletes ephemeral project files (i.e., cleans the project).
 clean:
     #!/usr/bin/env bash
@@ -39,11 +52,12 @@ configure os="$(just ../../os)" arch="$(just ../../arch)":
     set -eou pipefail
     {{ _with_debug }}
     if [ {{ _ci }} = "true" ]; then
-        npm ci --no-audit --no-fund
+        npm ci --no-audit --no-fund | sed 's/^/debug: /'
     else
-        npm install --no-audit --no-fund
+        npm install --no-audit --no-fund | sed 's/^/debug: /'
     fi
 
+    echo "info: checking for compatible binary executable..." 1>&2
     binary_executable=$(just ../../executable-path {{ os }} {{ arch }})
     if ! [ -f "$binary_executable" ]; then
         echo "warn: binary executable '"$binary_executable"' not found." 1>&2
@@ -51,9 +65,23 @@ configure os="$(just ../../os)" arch="$(just ../../arch)":
         exit 0
     fi
 
+    echo "info: writing binary executable to ./bin/publisher..." 1>&2
     rm -rf ./bin
     mkdir -p ./bin
     cp "$binary_executable" ./bin/publisher
+    just assert-binary-executable-exists
+
+# Installs the packaged extension on your configured editor using the editor's CLI. The editor CLI defaults to 'code'. Modify this value via the EDITOR environment variable.
+install os="$(just ../../os)" arch="$(just ../../arch)":
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    package=$(just package-name {{ os }} {{ arch }})
+    package_path=$(just package-path)
+
+    echo "info: installing extension using {{ _editor }}..." 1>&2
+    {{ _editor }} --install-extension "$package_path/$package" 2>&1 | sed 's/^/debug: /'
 
 # Performs static code analysis with ESLint
 lint:
@@ -68,9 +96,40 @@ package os="$(just ../../os)" arch="$(just ../../arch)":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
+    just assert-binary-executable-exists
+    echo "info: getting package target platform..." 1>&2
+    target_platform=$(just package-target-platform)
+    echo "info: getting package output path..." 1>&2
+    path="$(just package-path)"
+    mkdir -p "$path"
+    echo "info: getting output package name..." 1>&2
+    package="$path"/$(just package-name {{ os }} {{ arch }})
+    echo "info: packaging..." 1>&2
+    npx @vscode/vsce package -o "$package" --skip-license -t "$target_platform" | sed 's/^/debug: /'
+    echo "info: writing package to $package..." 1>&2
+
+package-name os="$(just ../../os)" arch="$(just ../../arch)":
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
 
     name="$(just ../../name)"
     version="$(just ../../version)"
+    echo "$name-$version-{{ os }}-{{ arch }}.vsix"
+
+package-path:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    echo $(readlink -f ../../)/packages
+
+package-target-platform os="$(just ../../os)" arch="$(just ../../arch)":
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    echo "info: finding target operating system..." 1>&2
     case {{ os }} in
         darwin)
             target_os="darwin"
@@ -83,10 +142,11 @@ package os="$(just ../../os)" arch="$(just ../../arch)":
             ;;
         *)
             echo "error: target architecture '$os' not supported." 1>&2
-            echo "info: skipping '$target_platform'..." 1>&2
+            exit 1
             ;;
     esac
 
+    echo "info: finding target architecture..." 1>&2
     case {{ arch }} in
         amd64)
             target_arch="x64"
@@ -96,18 +156,11 @@ package os="$(just ../../os)" arch="$(just ../../arch)":
             ;;
         *)
             echo "error: target architecture '$arch' not supported." 1>&2
-            echo "info: skipping '$target_platform'..." 1>&2
+            exit 1
             ;;
     esac
 
-    echo "Packaging: .vsix" 1>&2
-    target="$target_os-$target_arch"
-    echo "Target: $target" 1>&2
-    package="$name-$version-$target.vsix"
-    mkdir -p "../../packages/"
-    npx @vscode/vsce package -o "../../packages/$package" --skip-license -t "$target"
-    echo "Package: $package" 1>&2
-
+    echo "$target_os-$target_arch"
 
 # Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just vscode run test`)
 run *args:
@@ -128,3 +181,12 @@ test:
     else
         npm test
     fi
+
+
+uninstall:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    echo "info: uninstalling extension using '{{ _editor }}'..." 1>&2
+    {{ _editor }} --uninstall-extension 'posit.publisher' 2>&1 | sed 's/^/debug: /'
