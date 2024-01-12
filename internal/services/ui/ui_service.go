@@ -91,6 +91,10 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	r.Handle(ToPath("deployments", "{name}"), api.GetDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
+	// DELETE /api/deployments/$NAME
+	r.Handle(ToPath("deployments", "{name}"), api.DeleteDeploymentHandlerFunc(base, log)).
+		Methods(http.MethodDelete)
+
 	// POST /api/deployments
 	r.Handle(ToPath("deployments"), api.PostDeploymentsHandlerFunc(base, log, lister)).
 		Methods(http.MethodPost)
