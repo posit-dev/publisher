@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/rstudio/connect-client/internal/bundles"
+	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/environment"
 	"github.com/rstudio/connect-client/internal/inspect"
@@ -43,6 +44,23 @@ func requiresPython(contentType config.ContentType, path util.Path, python util.
 		return false, err
 	}
 	return exists, nil
+}
+
+const defaultPositignoreContent = `# List any files or directories that should not be included in the deployment.
+# Wildcards are supported as in .gitignore: https://git-scm.com/docs/gitignore
+`
+
+func createPositignoreIfNeeded(path util.Path, log logging.Logger) error {
+	ignorePath := path.Join(gitignore.IgnoreFilename)
+	exists, err := ignorePath.Exists()
+	if err != nil {
+		return err
+	}
+	if exists {
+		log.Debug(".positignore exists; not creating it")
+		return nil
+	}
+	return ignorePath.WriteFile([]byte(defaultPositignoreContent), 0666)
 }
 
 func inspectPython(path util.Path, python util.Path, log logging.Logger) (*config.Python, error) {
@@ -94,6 +112,10 @@ func Init(path util.Path, configName string, python util.Path, log logging.Logge
 			return nil, err
 		}
 		cfg.Python = pythonConfig
+	}
+	err = createPositignoreIfNeeded(path, log)
+	if err != nil {
+		return nil, err
 	}
 	configPath := config.GetConfigPath(path, configName)
 	err = cfg.WriteFile(configPath)
