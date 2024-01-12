@@ -30,7 +30,7 @@ assert-binary-executable-exists:
     set -eou pipefail
     {{ _with_debug }}
     echo "info: asserting binary executable exists..." 1>&2
-    if ! [ -f ./bin/publisher ]; then
+    if ! [ -f ./bin/publisher* ]; then
         echo "error: binary executable not found!" 1>&2
         echo "debug: did you run 'just configure'?" 1>&2
         exit 1
@@ -69,7 +69,8 @@ configure os="$(just ../../os)" arch="$(just ../../arch)":
     echo "info: writing binary executable to ./bin/publisher..." 1>&2
     rm -rf ./bin
     mkdir -p ./bin
-    cp "$binary_executable" ./bin/publisher
+
+    cp "$binary_executable" ./bin/$(basename -- "$binary_executable")
     just assert-binary-executable-exists
 
 # Installs the packaged extension on your configured editor using the editor's CLI. The editor CLI defaults to 'code'. Modify this value via the EDITOR environment variable.
