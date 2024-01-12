@@ -12,43 +12,51 @@ export enum DeploymentState {
 }
 
 export type DeploymentLocation = {
-  state: DeploymentState;
   deploymentName: string;
   deploymentPath: string;
 }
 
 export type DeploymentRecordError = {
   error: AgentError,
+  state: DeploymentState.ERROR,
 } & DeploymentLocation
 
-export type PreDeployment = {
+type DeploymentRecord = {
   $schema: SchemaURL,
   serverType: ServerType,
   serverUrl: string,
   saveName: string,
 } & DeploymentLocation;
 
-export type Deployment = PreDeployment & {
+export type PreDeployment = {
+  state: DeploymentState.NEW,
+} & DeploymentRecord;
+
+export type Deployment = {
   id: string,
+  bundleId: string,
+  bindleUrl: string,
+  dashboardUrl: string,
+  directUrl: string,
   files: string[],
   deployedAt: string,
-  saveName: string,
-} & Configuration;
+  state: DeploymentState.DEPLOYED,
+} & DeploymentRecord & Configuration;
 
 export function isDeploymentRecordError(
-  d: Deployment | DeploymentRecordError
+  d: Deployment | PreDeployment | DeploymentRecordError
 ): d is DeploymentRecordError {
-  return (d as DeploymentRecordError).error !== undefined;
+  return d.state === DeploymentState.ERROR;
 }
 
 export function isPreDeployment(
   d: Deployment | PreDeployment | DeploymentRecordError
 ): d is PreDeployment {
-  return (d as PreDeployment).state === DeploymentState.NEW;
+  return d.state === DeploymentState.NEW;
 }
 
 export function isDeployment(
   d: Deployment | PreDeployment | DeploymentRecordError
 ): d is Deployment {
-  return (d as Deployment).state === DeploymentState.DEPLOYED;
+  return d.state === DeploymentState.DEPLOYED;
 }
