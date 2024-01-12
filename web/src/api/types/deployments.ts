@@ -35,7 +35,7 @@ export type PreDeployment = {
 export type Deployment = {
   id: string,
   bundleId: string,
-  bindleUrl: string,
+  bundleUrl: string,
   dashboardUrl: string,
   directUrl: string,
   files: string[],
