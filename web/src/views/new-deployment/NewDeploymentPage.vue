@@ -51,7 +51,8 @@ const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 const props = defineProps({
   name: {
     type: [String, Array] as PropType<string | string[]>,
-    required: true,
+    required: false,
+    default: undefined,
   },
   url: {
     type: [String, Array] as PropType<string | string[]>,
@@ -71,9 +72,9 @@ const accountName = computed(() => {
 const deploymentName = computed(() => {
   // route query can be either string | string[]
   if (Array.isArray(props.name)) {
-    return props.name[0];
+    return props.name[0] || undefined;
   }
-  return props.name;
+  return props.name || undefined;
 });
 
 const defaultConfig = computed(() => {

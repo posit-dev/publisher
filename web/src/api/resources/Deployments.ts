@@ -42,7 +42,6 @@ export class Deployments {
   ){
     const params = {
       account: accountName,
-      config: 'default', // hardcoded for now
       saveName,
     };
     return this.client.post(
