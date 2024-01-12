@@ -3,7 +3,7 @@
 <template>
   <span
     v-if="vscode"
-    class="no-outline cursor-pointer"
+    class="vscode-router-link cursor-pointer"
     tabindex="0"
     @click="navigate"
     @keyup.enter="navigate"
@@ -31,3 +31,17 @@ function navigate() {
   router.push(props.to);
 }
 </script>
+
+<style lang="scss" scoped>
+span.vscode-router-link {
+  color: var(--vscode-textLink-foreground);
+
+  &:not(:focus-visible) {
+    outline: none;
+  }
+
+  &:hover {
+    color: var(--vscode-textLink-activeForeground);
+  }
+}
+</style>

@@ -36,7 +36,7 @@
 
     <PLink
       v-if="to"
-      class="link-fill"
+      class="link-fill no-outline"
       :to="to"
     />
   </div>

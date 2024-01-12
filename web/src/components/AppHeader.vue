@@ -6,7 +6,7 @@
       <AppMenu />
       <q-toolbar-title>
         <PLink
-          class="posit-logo-link"
+          class="posit-logo-link text-white"
           :to="{ name: 'root' }"
         >
           <WhitePositLogo
@@ -42,7 +42,6 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 .posit-logo-link {
   text-decoration: none;
-  color: white;
 
   & > * {
     vertical-align: middle;
