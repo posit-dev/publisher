@@ -109,6 +109,7 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 2)
 	s.Nil(res[0].Error)
+	s.Equal(deploymentStateDeployed, res[0].State)
 	s.NotNil(res[0].Deployment)
 	s.Equal(d, res[0].Deployment)
 	s.Equal(types.ContentID("target1"), res[0].Deployment.ID)
@@ -116,4 +117,5 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	var nilDeployment *deployment.Deployment
 	s.Equal(nilDeployment, res[1].Deployment)
 	s.NotNil(res[1].Error)
+	s.Equal(deploymentStateError, res[1].State)
 }

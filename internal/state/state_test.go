@@ -131,6 +131,7 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 		entrypoint = 'app:app'
 		title = 'Super Title'
 		description = 'minimal description'
+		validate = true
 
 		[configuration.python]
 		version = "3.11.3"

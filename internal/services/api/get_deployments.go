@@ -6,19 +6,37 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
+type deploymentState string
+
+const (
+	deploymentStateNew      deploymentState = "new"
+	deploymentStateDeployed deploymentState = "deployed"
+	deploymentStateError    deploymentState = "error"
+)
+
 type deploymentDTO struct {
 	*deployment.Deployment
+	State      deploymentState   `json:"state"`
 	Name       string            `json:"deploymentName"`
 	Path       string            `json:"deploymentPath"`
 	ConfigPath string            `json:"configurationPath,omitempty"`
 	Error      *types.AgentError `json:"error,omitempty"`
+}
+
+func stateFromDeployment(d *deployment.Deployment) deploymentState {
+	if d.Error != nil {
+		return deploymentStateError
+	} else if d.ID != "" {
+		return deploymentStateDeployed
+	} else {
+		return deploymentStateNew
+	}
 }
 
 func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
@@ -31,22 +49,17 @@ func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
 		d, err := deployment.FromFile(path)
 		if err != nil {
 			response = append(response, deploymentDTO{
+				State: deploymentStateError,
 				Name:  path.Base(),
 				Path:  path.String(),
 				Error: types.AsAgentError(err),
 			})
 		} else {
-			configPath := config.GetConfigPath(base, d.ConfigName)
-			relPath, err := configPath.Rel(base)
-			if err != nil {
-				// This error should never happen. But, if it does,
-				// still return as much data as we can.
-				relPath = configPath
-			}
 			response = append(response, deploymentDTO{
+				State:      stateFromDeployment(d),
 				Name:       path.Base(),
 				Path:       path.String(),
-				ConfigPath: relPath.String(),
+				ConfigPath: getConfigPath(base, d.ConfigName).String(),
 				Deployment: d,
 			})
 		}

@@ -3,11 +3,9 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"io/fs"
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
@@ -17,7 +15,6 @@ import (
 
 type PostDeploymentsRequestBody struct {
 	AccountName string `json:"account"`
-	ConfigName  string `json:"config"` // optional
 	SaveName    string `json:"saveName"`
 }
 
@@ -47,26 +44,6 @@ func PostDeploymentsHandlerFunc(
 			}
 		}
 
-		configRelPath := util.Path{}
-		if b.ConfigName != "" {
-			configPath := config.GetConfigPath(base, b.ConfigName)
-			_, err := config.FromFile(configPath)
-			if err != nil {
-				if errors.Is(err, fs.ErrNotExist) {
-					NotFound(w, log, err)
-					return
-				} else {
-					InternalError(w, req, log, err)
-					return
-				}
-			}
-			configRelPath, err = configPath.Rel(base)
-			if err != nil {
-				InternalError(w, req, log, err)
-				return
-			}
-		}
-
 		path := deployment.GetDeploymentPath(base, b.SaveName)
 		exists, err := path.Exists()
 		if err != nil {
@@ -77,8 +54,8 @@ func PostDeploymentsHandlerFunc(
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
+
 		d := deployment.New()
-		d.ConfigName = b.ConfigName
 		d.ServerURL = acct.URL
 		d.ServerType = acct.ServerType
 
@@ -88,9 +65,9 @@ func PostDeploymentsHandlerFunc(
 			return
 		}
 		response := &deploymentDTO{
+			State:      stateFromDeployment(d),
 			Name:       b.SaveName,
 			Path:       path.String(),
-			ConfigPath: configRelPath.String(),
 			Deployment: d,
 		}
 		w.Header().Set("content-type", "application/json")

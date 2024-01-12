@@ -16,6 +16,20 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
+func getConfigPath(base util.Path, configName string) util.Path {
+	if configName == "" {
+		return util.Path{}
+	}
+	configPath := config.GetConfigPath(base, configName)
+	relConfigPath, err := configPath.Rel(base)
+	if err != nil {
+		// This error should never happen. But, if it does,
+		// still return as much data as we can.
+		return configPath
+	}
+	return relConfigPath
+}
+
 func readLatestDeploymentFile(base util.Path, name string) (*deploymentDTO, error) {
 	path := deployment.GetDeploymentPath(base, name)
 	d, err := deployment.FromFile(path)
@@ -26,25 +40,19 @@ func readLatestDeploymentFile(base util.Path, name string) (*deploymentDTO, erro
 		}
 		// Other errors are returned to the caller
 		return &deploymentDTO{
+			State: deploymentStateError,
 			Name:  name,
 			Path:  path.String(),
 			Error: types.AsAgentError(err),
 		}, nil
-	} else {
-		configPath := config.GetConfigPath(base, d.ConfigName)
-		relPath, err := configPath.Rel(base)
-		if err != nil {
-			// This error should never happen. But, if it does,
-			// still return as much data as we can.
-			relPath = configPath
-		}
-		return &deploymentDTO{
-			Name:       name,
-			Path:       path.String(),
-			ConfigPath: relPath.String(),
-			Deployment: d,
-		}, nil
 	}
+	return &deploymentDTO{
+		State:      stateFromDeployment(d),
+		Name:       name,
+		Path:       path.String(),
+		ConfigPath: getConfigPath(base, d.ConfigName).String(),
+		Deployment: d,
+	}, nil
 }
 
 func GetDeploymentHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
