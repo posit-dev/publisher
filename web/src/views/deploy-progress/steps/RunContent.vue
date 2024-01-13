@@ -5,10 +5,13 @@
     :name="name"
     title="Run Content"
     icon="sync"
-    summary="Performing execution checks ahead of applying settings."
     :done="done"
     :messages="messages"
-  />
+  >
+    <template #summary>
+      Performing execution checks ahead of applying settings.
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">

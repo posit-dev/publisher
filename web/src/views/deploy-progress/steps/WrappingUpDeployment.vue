@@ -5,13 +5,31 @@
     :name="name"
     title="Wrapping Up Deployment"
     icon="checklist"
-    :summary="summary"
     :done="done"
-  />
+  >
+    <template #summary>
+      <template v-if="done">
+        Your project has been successfully deployed and is
+        available via the <a
+          :href="eventStore.currentPublishStatus.status.dashboardURL"
+          target="_blank"
+          rel="noopener noreferrer"
+        >Connect Dashboard</a>
+        or <a
+          :href="eventStore.currentPublishStatus.status.directURL"
+          target="_blank"
+          rel="noopener noreferrer"
+        >directly</a>.
+      </template>
+      <template v-else>
+        Your project is still being deployed...
+      </template>
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 
 import DeployStep from 'src/views/deploy-progress/DeployStep.vue';
 
@@ -26,15 +44,6 @@ defineProps({
 const emit = defineEmits(['done']);
 
 const done = ref(false);
-
-const summary = computed(() => {
-  if (done.value) {
-    return `Your project has been successfully deployed and is 
-    available via the Connect Dashboard (${eventStore.currentPublishStatus.status.dashboardURL})
-    or directly (${eventStore.currentPublishStatus.status.directURL}).`;
-  }
-  return `Your project is still being deployed...`;
-});
 
 watch(
   () => eventStore.currentPublishStatus.status.completion,

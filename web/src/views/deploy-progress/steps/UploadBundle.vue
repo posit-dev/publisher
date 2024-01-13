@@ -5,10 +5,13 @@
     :name="name"
     title="Upload Bundle"
     icon="login"
-    summary="Transferring the files from your local workstation to the server."
     :done="done"
     :messages="messages"
-  />
+  >
+    <template #summary>
+      Transferring the files from your local workstation to the server.
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">
