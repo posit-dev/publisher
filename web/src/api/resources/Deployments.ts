@@ -70,4 +70,15 @@ export class Deployments {
       params,
     );
   }
+
+  // Returns:
+  // 204 - no content
+  // 404 - not found
+  // 500 - internal server error
+  delete(saveName: string) {
+    const encodedSaveName = encodeURIComponent(saveName);
+    return this.client.delete(
+      `deployments/${encodedSaveName}`
+    );
+  }
 }
