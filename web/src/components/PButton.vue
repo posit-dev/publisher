@@ -6,6 +6,9 @@
     no-caps
     unelevated
     :outline="props.hierarchy === 'secondary'"
+    :to="vscode ? undefined : to"
+    @click="vscode ? router.push(to) : undefined"
+    @keyup.enter="vscode ? router.push(to) : undefined"
   >
     <template
       v-for="(_, slot) of $slots"
@@ -23,9 +26,14 @@
 <script setup lang="ts">
 import { QBtn, QBtnProps, useQuasar } from 'quasar';
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+
+import { vscode } from 'src/vscode';
 
 type Hierarchy = 'primary' | 'secondary';
 type QBtnPassthroughProps = Omit<QBtnProps, 'color' | 'textColor' | 'noCaps' | 'unelevated'>;
+
+const router = useRouter();
 
 const $q = useQuasar();
 const props = defineProps<{
@@ -45,7 +53,7 @@ const colors = computed(() => {
 
 const qBtnPassthroughProps = computed(() => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { hierarchy, ...rest } = props;
+  const { hierarchy, to, ...rest } = props;
   return rest;
 });
 </script>
