@@ -25,7 +25,13 @@
           </h1>
           <template v-if="deployAsNew">
             <p>
-              New deployment to: {{ deploymentURL }}
+              New deployment to: <a
+                :href="deploymentURL"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ deploymentURL }}
+              </a>
             </p>
             <p>
               {{ addingDeploymentMessage }}
@@ -33,7 +39,13 @@
           </template>
           <template v-else>
             <p>
-              Deployment to: {{ deploymentURL }}
+              Deployment to: <a
+                :href="deploymentURL"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ deploymentURL }}
+              </a>
             </p>
             <p>
               {{ contentId }}
