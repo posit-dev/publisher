@@ -29,7 +29,7 @@ _interactive := `tty -s && echo "-it" || echo ""`
 
 _mode := env_var_or_default("MODE", if _ci == "true" { "prod" } else { "dev" })
 
-_target_platform := env("TARGETPLATFORM", "`go env GOOS`/`go env GOARCH`")
+_target_platform := env_var_or_default("TARGETPLATFORM", "`go env GOOS`/`go env GOARCH`")
 
 _with_debug := if _debug == "true" {
         "set -x pipefail"
