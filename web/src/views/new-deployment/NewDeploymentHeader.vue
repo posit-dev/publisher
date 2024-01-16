@@ -102,7 +102,7 @@ import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
 import {
   newFatalErrorRouteLocation,
-} from 'src/util/errors';
+} from 'src/utils/errors';
 import { useRouter } from 'vue-router';
 import PButton from 'src/components/PButton.vue';
 

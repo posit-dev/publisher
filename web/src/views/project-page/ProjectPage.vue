@@ -74,7 +74,7 @@ import { useApi } from 'src/api';
 import { Configuration, ConfigurationError } from 'src/api/types/configurations';
 import { useRouter } from 'vue-router';
 
-import { newFatalErrorRouteLocation } from 'src/util/errors';
+import { newFatalErrorRouteLocation } from 'src/utils/errors';
 import ConfigCard from './ConfigCard.vue';
 import FileTree from 'src/components/FileTree.vue';
 import DeploymentsSection from './DeploymentsSection.vue';

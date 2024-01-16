@@ -62,7 +62,7 @@ import { RouteLocationRaw, useRouter } from 'vue-router';
 import { Deployment, isDeploymentRecordError } from 'src/api/types/deployments';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
-import { newFatalErrorRouteLocation } from 'src/util/errors';
+import { newFatalErrorRouteLocation } from 'src/utils/errors';
 import PButton from 'src/components/PButton.vue';
 
 const accounts = ref<Account[]>([]);
