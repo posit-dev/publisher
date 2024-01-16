@@ -2,6 +2,8 @@ alias c := clean
 alias i := install
 alias t := test
 
+export CONTENT := env_var_or_default("CONTENT", "all")
+
 _ci := env_var_or_default("CI", "false")
 
 _debug := env_var_or_default("DEBUG", "false")
@@ -49,7 +51,7 @@ run *args:
 # Executes bats deploy tests
 test-contract:
     #!/usr/bin/env bash
-    set -exo pipefail
+    set -eou pipefail
     {{ _with_debug }}
 
     exe=$(just ../../executable-path)
@@ -61,16 +63,16 @@ test-contract:
     pip install -r ../setup/requirements.txt
     export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
     export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
-    if [[ -z "${CONTENT}" ]]; then
+    EXE=$exe npm run accounts
+    if [[ ${CONTENT}="all" ]]; then
         content_list=$(python ../deploy_helper.py)
-        echo "contents: ${content_list}"
         for content in ${content_list}
         do
             export CONTENT=${content}
-            EXE=$exe npm run contract
+            EXE=$exe npm run deploy
         done
     else
-        EXE=$exe npm run contract
+        EXE=$exe npm run deploy
     fi
     
     
