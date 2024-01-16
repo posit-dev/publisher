@@ -5,15 +5,29 @@
     v-if="title"
     label="Title"
   >
-    {{ title }}
+    <div class="space-between-x-xs">
+      <span
+        v-if="Boolean(previousTitle)"
+        class="text-strike"
+      >
+        {{ previousTitle }}
+      </span>
+      <span>{{ title }}</span>
+    </div>
   </ConfigSetting>
 </template>
 
 <script setup lang="ts">
+
 import ConfigSetting from 'src/components/config/ConfigSetting.vue';
 
 defineProps({
   title: {
+    type: String,
+    default: undefined,
+    required: false,
+  },
+  previousTitle: {
     type: String,
     default: undefined,
     required: false,
