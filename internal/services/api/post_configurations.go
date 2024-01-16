@@ -23,7 +23,7 @@ func PostConfigurationsHandlerFunc(base util.Path, log logging.Logger) http.Hand
 		var b PostConfigurationsRequestBody
 		err := dec.Decode(&b)
 		if err != nil {
-			BadRequestJson(w, req, log, err)
+			BadRequest(w, req, log, err)
 			return
 		}
 		if b.ConfigName == "" {

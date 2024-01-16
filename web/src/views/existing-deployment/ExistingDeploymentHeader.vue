@@ -179,8 +179,8 @@ const initiateRedeploy = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       false, // this is never a new deployment
       accountName,
-      destinationURL,
       props.deployment.saveName,
+      destinationURL,
       props.deployment.id,
     );
     deployingLocalId.value = result;

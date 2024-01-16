@@ -3,6 +3,7 @@ type = "quarto"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
+validate = true
 
 [python]
 version = "3.11.3"

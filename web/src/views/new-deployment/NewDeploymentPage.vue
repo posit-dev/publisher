@@ -84,9 +84,9 @@ const defaultConfig = computed(() => {
 const configurationSubTitles = computed(() => {
   return [
     `Using ${defaultConfig.value?.configurationPath}`,
-    `The settings present in this file are listed below and will be used during 
+    `The settings present in this file are listed below and will be used during
       the next deployment of your project.`,
-    `Edit this file to add or modify settings which will be applied 
+    `Edit this file to add or modify settings which will be applied
       during this project's next deployment.`,
   ];
 });

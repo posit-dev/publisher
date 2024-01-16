@@ -12,6 +12,7 @@ direct-url = 'https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40
 "$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
 type = "quarto"
 entrypoint = "report.qmd"
+validate = true
 title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
 

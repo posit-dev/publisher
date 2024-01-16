@@ -53,7 +53,7 @@
             class="q-ml-md"
             padding="sm md"
             data-automation="deploy"
-            :disable="Boolean(configError) || eventStore.publishInProgess"
+            :disable="Boolean(configError) || eventStore.publishInProgess || !deploymentName"
             @click="initiateDeploy"
           >
             <q-tooltip
@@ -144,6 +144,9 @@ const redeployDisableTitle = computed(() => {
 });
 
 const initiateDeploy = async() => {
+  if (props.deploymentName === undefined) {
+    return;
+  }
   emit('deploy');
   // Returns:
   // 200 - success
@@ -155,8 +158,8 @@ const initiateDeploy = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       deployAsNew.value,
       props.accountName,
-      deploymentURL.value,
       props.deploymentName,
+      deploymentURL.value,
       contentId.value,
     );
     deployingLocalId.value = result;
