@@ -24,7 +24,13 @@
             {{ deployment.saveName }}
           </h1>
           <p>
-            Deploying to: {{ deployment.serverUrl }}
+            Deploying to: <a
+              :href="deployment.serverUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ deployment.serverUrl }}
+            </a>
           </p>
           <p>
             {{ deployment.id }}
