@@ -19,7 +19,7 @@
       <div
         class="flex justify-between q-mt-md row-gap-lg column-gap-xl"
       >
-        <div class="space-between-sm">
+        <div class="space-between-y-sm">
           <h1 class="text-h6">
             {{ deployment.saveName }}
           </h1>
@@ -72,12 +72,12 @@
                 :id="deployment.id"
                 :current-tense="showDeployStatusAsCurrent"
               />
-              <RouterLink
+              <PLink
                 v-if="showLogsLink"
                 :to="routerLocation"
               >
                 View summarized deployment logs
-              </RouterLink>
+              </PLink>
             </div>
           </div>
         </div>
@@ -91,6 +91,7 @@
 import { ref, watch, PropType, computed } from 'vue';
 
 import { Account, ConfigurationError, Deployment, useApi } from 'src/api';
+import PLink from 'src/components/PLink.vue';
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PButton from 'src/components/PButton.vue';
 import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';

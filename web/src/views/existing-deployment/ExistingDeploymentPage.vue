@@ -31,7 +31,7 @@ import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { Configuration, ConfigurationError, isConfigurationError, useApi } from 'src/api';
-import { Deployment, isDeploymentError } from 'src/api/types/deployments';
+import { Deployment, isDeploymentRecordError } from 'src/api/types/deployments';
 import {
   newFatalErrorRouteLocation,
 } from 'src/util/errors';
@@ -88,7 +88,7 @@ const getDeployment = async() => {
     // 500 - internal server error
     const response = await api.deployments.get(deploymentName.value);
     const d = response.data;
-    if (isDeploymentError(d)) {
+    if (isDeploymentRecordError(d)) {
       // let the fatal error page handle this deployment error.
       // we're in a header, they can't fix it here.
       throw new Error(d.error.msg);

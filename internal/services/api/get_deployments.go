@@ -31,7 +31,7 @@ func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
 		d, err := deployment.FromFile(path)
 		if err != nil {
 			response = append(response, deploymentDTO{
-				Name:  path.Base(),
+				Name:  deployment.SaveNameFromPath(path),
 				Path:  path.String(),
 				Error: types.AsAgentError(err),
 			})
@@ -44,7 +44,7 @@ func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
 				relPath = configPath
 			}
 			response = append(response, deploymentDTO{
-				Name:       path.Base(),
+				Name:       deployment.SaveNameFromPath(path),
 				Path:       path.String(),
 				ConfigPath: relPath.String(),
 				Deployment: d,

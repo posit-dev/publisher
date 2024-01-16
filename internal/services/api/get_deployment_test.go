@@ -75,6 +75,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	s.NotNil(res.Deployment)
 	s.Nil(res.Error)
 	s.Equal(d, res.Deployment)
+	s.Equal("myTargetName", res.Name)
 	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res.ConfigPath)
 	s.Equal(types.ContentID("myTargetName"), res.Deployment.ID)
 }

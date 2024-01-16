@@ -9,8 +9,12 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: just vscode install
-      - run: just vscode package
+      - uses: actions/download-artifact@v3
+        with:
+          name: bin
+          path: bin
+      - run: chmod -R +x ./bin
+      - run: just package
       - uses: actions/upload-artifact@v3
         id: upload
         with:

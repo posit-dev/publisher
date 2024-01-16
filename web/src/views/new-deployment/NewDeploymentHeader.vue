@@ -16,7 +16,7 @@
       <div
         class="flex justify-between q-mt-md row-gap-lg column-gap-xl"
       >
-        <div class="space-between-sm">
+        <div class="space-between-y-sm">
           <h1
             v-if="deploymentName"
             class="text-h6"
@@ -76,12 +76,12 @@
                 :id="deployingLocalId"
                 :current-tense="showDeployStatusAsCurrent"
               />
-              <RouterLink
+              <PLink
                 v-if="showLogsLink"
                 :to="{name: 'progress'}"
               >
                 View summarized deployment logs
-              </RouterLink>
+              </PLink>
             </div>
           </div>
         </div>
@@ -95,6 +95,7 @@
 import { PropType, computed, ref, watch } from 'vue';
 import { Account, ConfigurationError, useApi } from 'src/api';
 
+import PLink from 'src/components/PLink.vue';
 import SelectAccount from 'src/components/SelectAccount.vue';
 import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';
 

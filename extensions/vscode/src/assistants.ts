@@ -10,12 +10,14 @@ export class Assistant {
 
     private readonly name: string = "Publisher";
 
+	private readonly context: vscode.ExtensionContext;
 	private readonly panel: IPanel;
 	private readonly path: string;
 	private readonly port: number;
 	private readonly terminal: vscode.Terminal;
 
-	constructor (panel: IPanel, path: string, port: number) {
+	constructor (context: vscode.ExtensionContext, panel: IPanel, path: string, port: number) {
+		this.context = context;
 		this.panel = panel;
 		this.path = path;
 		this.port = port;
@@ -27,7 +29,7 @@ export class Assistant {
 	};
 
 	start = async (): Promise<void> => {
-		const command: commands.Command = commands.create(this.path, this.port);
+		const command: commands.Command = await commands.create(this.context, this.path, this.port);
 		this.terminal.sendText(command);
 		if (!(await ports.ping(this.port))) {
 			throw Error("publisher failed to start");

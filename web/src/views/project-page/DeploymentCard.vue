@@ -5,7 +5,7 @@
     :to="{ name: 'deployments', params: { name: `${deployment.saveName}` }}"
     :title="deployment.saveName"
   >
-    <div class="space-between-sm">
+    <div class="space-between-y-sm">
       <p>{{ deployment.serverUrl }}</p>
       <p>{{ deployment.id }}</p>
       <DeployProgressLine

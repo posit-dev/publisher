@@ -11,7 +11,7 @@
     >
       {{ subtitle }}
     </p>
-    <dl class="q-mt-sm q-pt-sm space-between-sm">
+    <dl class="q-mt-sm q-pt-sm space-between-y-sm">
       <slot />
     </dl>
   </div>

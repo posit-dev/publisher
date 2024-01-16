@@ -59,7 +59,7 @@
 import { Account, useApi } from 'src/api';
 import { computed, ref } from 'vue';
 import { RouteLocationRaw, useRouter } from 'vue-router';
-import { Deployment, isDeploymentError } from 'src/api/types/deployments';
+import { Deployment, isDeploymentRecordError } from 'src/api/types/deployments';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 import { newFatalErrorRouteLocation } from 'src/util/errors';
@@ -95,7 +95,7 @@ async function getDeployments() {
     // 500 - internal server error
     const response = (await api.deployments.getAll()).data;
     deployments.value = response.filter<Deployment>((d): d is Deployment => {
-      return !isDeploymentError(d);
+      return !isDeploymentRecordError(d);
     });
   } catch (error: unknown) {
     router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getDeployments()'));
