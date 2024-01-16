@@ -21,17 +21,17 @@ type Deployment struct {
 	ServerType    accounts.ServerType `toml:"server-type" json:"serverType"`
 	ServerURL     string              `toml:"server-url" json:"serverUrl"`
 	ClientVersion string              `toml:"client-version" json:"-"`
-	ID            types.ContentID     `toml:"id" json:"id,omitempty"`
-	ConfigName    string              `toml:"configuration-name" json:"configurationName,omitempty"`
-	DeployedAt    string              `toml:"deployed-at" json:"deployedAt,omitempty"`
+	ID            types.ContentID     `toml:"id" json:"id"`
+	ConfigName    string              `toml:"configuration-name" json:"configurationName"`
+	DeployedAt    string              `toml:"deployed-at" json:"deployedAt"`
 	SaveName      string              `toml:"-" json:"saveName"`
-	BundleID      types.BundleID      `toml:"bundle-id" json:"bundleId,omitempty"`
-	BundleURL     string              `toml:"bundle-url" json:"bundleUrl,omitempty"`
-	DashboardURL  string              `toml:"dashboard-url" json:"dashboardUrl,omitempty"`
-	DirectURL     string              `toml:"direct-url" json:"directUrl,omitempty"`
-	Error         *types.AgentError   `toml:"deployment-error" json:"deploymentError,omitempty"`
-	Files         []string            `toml:"files,multiline,omitempty" json:"files,omitempty"`
-	Configuration *config.Config      `toml:"configuration" json:"configuration,omitempty"`
+	BundleID      types.BundleID      `toml:"bundle-id" json:"bundleId"`
+	BundleURL     string              `toml:"bundle-url" json:"bundleUrl"`
+	DashboardURL  string              `toml:"dashboard-url" json:"dashboardUrl"`
+	DirectURL     string              `toml:"direct-url" json:"directUrl"`
+	Error         *types.AgentError   `toml:"deployment-error" json:"deploymentError"`
+	Files         []string            `toml:"files,multiline,omitempty" json:"files"`
+	Configuration *config.Config      `toml:"configuration" json:"configuration"`
 }
 
 func New() *Deployment {
