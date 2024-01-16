@@ -34,7 +34,7 @@ import { Configuration, ConfigurationError, isConfigurationError, useApi } from 
 import { Deployment, isDeploymentRecordError, isPreDeployment } from 'src/api/types/deployments';
 import {
   newFatalErrorRouteLocation,
-} from 'src/util/errors';
+} from 'src/utils/errors';
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';

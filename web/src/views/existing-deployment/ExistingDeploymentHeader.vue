@@ -97,7 +97,7 @@ import PButton from 'src/components/PButton.vue';
 import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
 import { formatDateString } from 'src/utils/date';
-import { newFatalErrorRouteLocation } from 'src/util/errors';
+import { newFatalErrorRouteLocation } from 'src/utils/errors';
 import { useRouter } from 'vue-router';
 
 const api = useApi();
