@@ -31,7 +31,7 @@ import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { Configuration, ConfigurationError, isConfigurationError, useApi } from 'src/api';
-import { Deployment, isDeploymentRecordError, isPreDeployment } from 'src/api/types/deployments';
+import { Deployment, PreDeployment, isDeploymentRecordError } from 'src/api/types/deployments';
 import {
   newFatalErrorRouteLocation,
 } from 'src/util/errors';
@@ -45,7 +45,7 @@ const route = useRoute();
 const router = useRouter();
 const api = useApi();
 
-const deployment = ref<Deployment>();
+const deployment = ref<Deployment | PreDeployment>();
 
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
@@ -92,10 +92,6 @@ const getDeployment = async() => {
       // let the fatal error page handle this deployment error.
       // we're in a header, they can't fix it here.
       throw new Error(d.error.msg);
-    } else if (isPreDeployment(d)) {
-      // let the fatal error page handle this deployment error.
-      // we're in a header, they can't fix it here.
-      throw new Error('This page doesn\'t support pre-deployments yet.');
     } else {
       deployment.value = d;
     }

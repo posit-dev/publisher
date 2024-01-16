@@ -26,12 +26,22 @@
           <p>
             Deploying to: {{ deployment.serverUrl }}
           </p>
-          <p>
-            {{ deployment.id }}
-          </p>
-          <p>
-            Last Deployed on {{ formatDateString(deployment.deployedAt) }}
-          </p>
+          <template v-if="isDeployment(deployment)">
+            <p>
+              {{ deployment.id }}
+            </p>
+            <p>
+              Last Deployed on {{ formatDateString(deployment.deployedAt) }}
+            </p>
+          </template>
+          <template v-else>
+            <p>
+              An ID will be created on first deployment.
+            </p>
+            <p>
+              Never Deployed
+            </p>
+          </template>
         </div>
 
         <div
@@ -69,12 +79,13 @@
           <div class="row justify-left">
             <div class="col-11">
               <DeployProgressSummary
+                v-if="isDeployment(deployment)"
                 :id="deployment.id"
                 :current-tense="showDeployStatusAsCurrent"
               />
               <PLink
-                v-if="showLogsLink"
-                :to="routerLocation"
+                v-if="progressLink"
+                :to="progressLink"
               >
                 View summarized deployment logs
               </PLink>
@@ -90,7 +101,15 @@
 
 import { ref, watch, PropType, computed } from 'vue';
 
-import { Account, ConfigurationError, Deployment, useApi } from 'src/api';
+import {
+  Account,
+  ConfigurationError,
+  Deployment,
+  PreDeployment,
+  useApi,
+  isDeployment,
+  isPreDeployment
+} from 'src/api';
 import PLink from 'src/components/PLink.vue';
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PButton from 'src/components/PButton.vue';
@@ -113,7 +132,7 @@ const numSuccessfulDeploys = ref(0);
 const emit = defineEmits(['deploy']);
 
 const props = defineProps({
-  deployment: { type: Object as PropType<Deployment>, required: true },
+  deployment: { type: Object as PropType<Deployment | PreDeployment>, required: true },
   configError: {
     type: Object as PropType<ConfigurationError>,
     required: false,
@@ -125,19 +144,23 @@ const onChange = (account: Account) => {
   selectedAccount.value = account;
 };
 
-const showLogsLink = computed(() => {
-  return eventStore.doesPublishStatusApply(props.deployment.id);
-});
+const progressLink = computed(() => {
+  if (isPreDeployment(props.deployment)) {
+    return undefined;
+  }
 
-const routerLocation = computed(() => {
-  return {
-    name: 'progress',
-    query: {
-      name: props.deployment.saveName,
-      operation: operationStr.value,
-      id: props.deployment.id,
-    },
-  };
+  if (eventStore.doesPublishStatusApply(props.deployment.id)) {
+    return {
+      name: 'progress',
+      query: {
+        name: props.deployment.saveName,
+        operation: operationStr.value,
+        id: props.deployment.id,
+      },
+    };
+  }
+
+  return undefined;
 });
 
 const redeployDisableTitle = computed(() => {
@@ -181,7 +204,7 @@ const initiateRedeploy = async() => {
       accountName,
       props.deployment.saveName,
       destinationURL,
-      props.deployment.id,
+      isDeployment(props.deployment) ? props.deployment.id : undefined,
     );
     deployingLocalId.value = result;
   } catch (error: unknown) {
@@ -235,7 +258,10 @@ watch(
       // and last publishing run was ours
       (
         eventStore.doesPublishStatusApply(deployingLocalId.value) ||
-        eventStore.doesPublishStatusApply(props.deployment.id)
+        (
+          isDeployment(props.deployment) &&
+          eventStore.doesPublishStatusApply(props.deployment.id)
+        )
       ) &&
       // and it was successful enough to get a content id assigned
       eventStore.currentPublishStatus.contentId
