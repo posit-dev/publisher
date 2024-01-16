@@ -4,17 +4,9 @@
   <ConfigSetting
     v-if="title"
     label="Title"
-  >
-    <div class="space-between-x-xs">
-      <span
-        v-if="Boolean(previousTitle)"
-        class="text-strike"
-      >
-        {{ previousTitle }}
-      </span>
-      <span>{{ title }}</span>
-    </div>
-  </ConfigSetting>
+    :value="title"
+    :previous-value="previousTitle"
+  />
 </template>
 
 <script setup lang="ts">

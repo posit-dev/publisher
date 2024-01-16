@@ -6,6 +6,18 @@
       {{ label }}
     </dt>
     <dd class="config-value">
+      <div
+        v-if="Boolean(value)"
+        class="space-between-x-xs"
+      >
+        <span
+          v-if="Boolean(previousValue)"
+          class="text-strike"
+        >
+          {{ previousValue }}
+        </span>
+        <span>{{ value }}</span>
+      </div>
       <slot />
     </dd>
   </div>
@@ -16,6 +28,16 @@ defineProps({
   label: {
     type: String,
     required: true,
+  },
+  value: {
+    type: String,
+    required: false,
+    default: undefined,
+  },
+  previousValue: {
+    type: String,
+    required: false,
+    default: undefined,
   },
 });
 </script>
