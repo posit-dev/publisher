@@ -14,7 +14,6 @@ import (
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -61,7 +60,7 @@ func (s *PostDeploymentsSuite) TestPostDeployments() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
 
-	res := deploymentDTO{}
+	res := preDeploymentDTO{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
@@ -74,22 +73,7 @@ func (s *PostDeploymentsSuite) TestPostDeployments() {
 	s.Equal("newDeployment", res.SaveName)
 	s.Equal(accounts.ServerTypeConnect, res.ServerType)
 	s.Equal(acct.URL, res.ServerURL)
-
-	// The deployment at Connect doesn't exist yet.
 	s.Equal(deploymentStateNew, res.State)
-	s.Equal(types.ContentID(""), res.ID)
-	s.Equal("", res.DeployedAt)
-	s.Equal(types.BundleID(""), res.BundleID)
-	s.Equal("", res.BundleURL)
-	s.Equal("", res.DashboardURL)
-	s.Equal("", res.DirectURL)
-	s.Nil(res.Error)
-	s.Nil(res.Files)
-
-	// We did not specify the optional configuration name
-	s.Equal("", res.ConfigName)
-	s.Equal("", res.ConfigPath)
-	s.Nil(res.Configuration)
 }
 
 func (s *PostDeploymentsSuite) TestPostDeploymentsBadRequest() {

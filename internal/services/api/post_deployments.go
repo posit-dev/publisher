@@ -64,12 +64,7 @@ func PostDeploymentsHandlerFunc(
 			InternalError(w, req, log, err)
 			return
 		}
-		response := &deploymentDTO{
-			State:      stateFromDeployment(d),
-			Name:       b.SaveName,
-			Path:       path.String(),
-			Deployment: d,
-		}
+		response := deploymentAsDTO(d, err, base, path)
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}

@@ -9,64 +9,21 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
-
-func getConfigPath(base util.Path, configName string) util.Path {
-	if configName == "" {
-		return util.Path{}
-	}
-	configPath := config.GetConfigPath(base, configName)
-	relConfigPath, err := configPath.Rel(base)
-	if err != nil {
-		// This error should never happen. But, if it does,
-		// still return as much data as we can.
-		return configPath
-	}
-	return relConfigPath
-}
-
-func readLatestDeploymentFile(base util.Path, name string) (*deploymentDTO, error) {
-	path := deployment.GetDeploymentPath(base, name)
-	d, err := deployment.FromFile(path)
-	if err != nil {
-		// Not found errors will return a 404
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, err
-		}
-		// Other errors are returned to the caller
-		return &deploymentDTO{
-			State: deploymentStateError,
-			Name:  name,
-			Path:  path.String(),
-			Error: types.AsAgentError(err),
-		}, nil
-	}
-	return &deploymentDTO{
-		State:      stateFromDeployment(d),
-		Name:       name,
-		Path:       path.String(),
-		ConfigPath: getConfigPath(base, d.ConfigName).String(),
-		Deployment: d,
-	}, nil
-}
 
 func GetDeploymentHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
-		response, err := readLatestDeploymentFile(base, name)
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				http.NotFound(w, req)
-			} else {
-				InternalError(w, req, log, err)
-			}
+		path := deployment.GetDeploymentPath(base, name)
+		d, err := deployment.FromFile(path)
+		if err != nil && errors.Is(err, fs.ErrNotExist) {
+			http.NotFound(w, req)
 			return
 		}
+		response := deploymentAsDTO(d, err, base, path)
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}
