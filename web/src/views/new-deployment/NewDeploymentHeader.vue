@@ -4,10 +4,11 @@
   <div class="deployment-header">
     <div class="publisher-layout q-py-md">
       <q-breadcrumbs>
-        <q-breadcrumbs-el
-          label="Project"
-          :to="{ name: 'project' }"
-        />
+        <q-breadcrumbs-el>
+          <PLink :to="{ name: 'project' }">
+            Project
+          </PLink>
+        </q-breadcrumbs-el>
         <q-breadcrumbs-el
           label="Deploy"
         />

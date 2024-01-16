@@ -3,10 +3,11 @@
 <template>
   <div class="publisher-layout q-pt-md q-pb-xl">
     <q-breadcrumbs>
-      <q-breadcrumbs-el
-        label="Project"
-        :to="{ name: 'project' }"
-      />
+      <q-breadcrumbs-el>
+        <PLink :to="{ name: 'project' }">
+          Project
+        </PLink>
+      </q-breadcrumbs-el>
       <q-breadcrumbs-el label="New Deployment" />
     </q-breadcrumbs>
 
@@ -64,6 +65,7 @@ import { Deployment, isDeploymentRecordError } from 'src/api/types/deployments';
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 import { newFatalErrorRouteLocation } from 'src/utils/errors';
 import PButton from 'src/components/PButton.vue';
+import PLink from 'src/components/PLink.vue';
 
 const accounts = ref<Account[]>([]);
 const selectedAccountName = ref<string>('');
