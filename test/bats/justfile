@@ -63,12 +63,13 @@ test-contract:
     pip install -r ../setup/requirements.txt
     export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
     export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+    echo "CONTENT: ${CONTENT}"
     EXE=$exe npm run accounts
-    if [[ ${CONTENT}="all" ]]; then
+    if [[ "${CONTENT}" == "all" ]]; then
         content_list=$(python ../deploy_helper.py)
-        for content in ${content_list}
+        for i in ${content_list}
         do
-            export CONTENT=${content}
+            export CONTENT=${i}
             EXE=$exe npm run deploy
         done
     else
