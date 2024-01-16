@@ -5,10 +5,13 @@
     :name="name"
     title="Create New Deployment"
     icon="create_new_folder"
-    summary="Creating a new deployment file."
     :done="done"
     :messages="messages"
-  />
+  >
+    <template #summary>
+      Creating a new deployment file.
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">
