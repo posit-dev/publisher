@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -99,10 +100,11 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 	detector := NewNotebookDetector()
 	t, err := detector.InferType(path)
 	s.Nil(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypeJupyterNotebook,
-		Entrypoint:     filename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeJupyterNotebook,
+		Entrypoint: filename,
+		Validate:   true,
 	}, t)
 }
 
@@ -115,10 +117,11 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 	detector := NewNotebookDetector()
 	t, err := detector.InferType(path)
 	s.Nil(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypeJupyterVoila,
-		Entrypoint:     filename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeJupyterVoila,
+		Entrypoint: filename,
+		Validate:   true,
 	}, t)
 }
 

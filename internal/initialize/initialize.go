@@ -17,15 +17,15 @@ import (
 var ContentDetectorFactory = inspect.NewContentTypeDetector
 var PythonInspectorFactory = environment.NewPythonInspector
 
-func inspectProjectType(path util.Path, log logging.Logger) (*inspect.ContentType, error) {
+func inspectProjectType(path util.Path, log logging.Logger) (*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory()
-	contentType, err := typeDetector.InferType(path)
+	cfg, err := typeDetector.InferType(path)
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
-	log.Info("Deployment type", "Entrypoint", contentType.Entrypoint, "Type", contentType.Type)
-	return contentType, nil
+	log.Info("Deployment type", "Entrypoint", cfg.Entrypoint, "Type", cfg.Type)
+	return cfg, nil
 }
 
 func requiresPython(contentType config.ContentType, path util.Path, python util.Path) (bool, error) {
@@ -83,26 +83,24 @@ func inspectPython(path util.Path, python util.Path, log logging.Logger) (*confi
 }
 
 func Init(path util.Path, configName string, python util.Path, log logging.Logger) (*config.Config, error) {
-	if configName == "" {
-		configName = config.DefaultConfigName
-	}
-	contentType, err := inspectProjectType(path, log)
-	if err != nil {
-		return nil, err
-	}
-	if contentType.Type == config.ContentTypeUnknown {
-		log.Warn("Could not determine content type; creating config file with unknown type", "path", path)
-	}
-	cfg := config.New()
-	cfg.Type = contentType.Type
-	cfg.Entrypoint = contentType.Entrypoint
 	absPath, err := path.Abs()
 	if err != nil {
 		return nil, err
 	}
-	cfg.Title = absPath.Base()
-
-	requiresPython, err := requiresPython(contentType.Type, path, python)
+	if configName == "" {
+		configName = config.DefaultConfigName
+	}
+	cfg, err := inspectProjectType(absPath, log)
+	if err != nil {
+		return nil, err
+	}
+	if cfg.Type == config.ContentTypeUnknown {
+		log.Warn("Could not determine content type; creating config file with unknown type", "path", path)
+	}
+	if cfg.Title == "" {
+		cfg.Title = absPath.Base()
+	}
+	requiresPython, err := requiresPython(cfg.Type, path, python)
 	if err != nil {
 		return nil, err
 	}

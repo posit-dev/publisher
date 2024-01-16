@@ -17,7 +17,7 @@ func NewStaticHTMLDetector() *StaticHTMLDetector {
 	}
 }
 
-func (d *StaticHTMLDetector) InferType(path util.Path) (*ContentType, error) {
+func (d *StaticHTMLDetector) InferType(path util.Path) (*config.Config, error) {
 	entrypoint, _, err := d.InferEntrypoint(path, ".html", "index.html")
 	if err != nil {
 		return nil, err
@@ -29,10 +29,10 @@ func (d *StaticHTMLDetector) InferType(path util.Path) (*ContentType, error) {
 		}
 	}
 	if entrypoint != "" {
-		return &ContentType{
-			Type:       config.ContentTypeHTML,
-			Entrypoint: entrypoint,
-		}, nil
+		cfg := config.New()
+		cfg.Type = config.ContentTypeHTML
+		cfg.Entrypoint = entrypoint
+		return cfg, nil
 	}
 	return nil, nil
 }

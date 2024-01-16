@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -31,9 +32,11 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeSpecifiedFile() {
 	detector := NewStaticHTMLDetector()
 	t, err := detector.InferType(path)
 	s.Nil(err)
-	s.Equal(&ContentType{
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeHTML,
 		Entrypoint: filename,
+		Validate:   true,
 	}, t)
 }
 
@@ -46,9 +49,11 @@ func (s *StaticHTMLDetectorSuite) TestInferTypePreferredFilename() {
 	detector := NewStaticHTMLDetector()
 	t, err := detector.InferType(path)
 	s.Nil(err)
-	s.Equal(&ContentType{
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeHTML,
 		Entrypoint: filename,
+		Validate:   true,
 	}, t)
 }
 
@@ -61,9 +66,11 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeOnlyHTMLFile() {
 	detector := NewStaticHTMLDetector()
 	t, err := detector.InferType(path)
 	s.Nil(err)
-	s.Equal(&ContentType{
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeHTML,
 		Entrypoint: filename,
+		Validate:   true,
 	}, t)
 }
 

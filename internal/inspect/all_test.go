@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -34,10 +35,11 @@ func (s *AllSuite) TestInferTypeDirectory() {
 	detector := NewContentTypeDetector()
 	t, err := detector.InferType(path)
 	s.NoError(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypePythonDash,
-		Entrypoint:     appFilename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonDash,
+		Entrypoint: appFilename,
+		Validate:   true,
 	}, t)
 }
 
@@ -56,9 +58,11 @@ func (s *AllSuite) TestInferTypeFileLowerPriority() {
 	detector := NewContentTypeDetector()
 	t, err := detector.InferType(htmlPath)
 	s.NoError(err)
-	s.Equal(&ContentType{
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeHTML,
 		Entrypoint: htmlFilename,
+		Validate:   true,
 	}, t)
 }
 
@@ -77,10 +81,11 @@ func (s *AllSuite) TestInferTypeFileHigherPriority() {
 	detector := NewContentTypeDetector()
 	t, err := detector.InferType(appPath)
 	s.NoError(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypePythonDash,
-		Entrypoint:     appFilename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonDash,
+		Entrypoint: appFilename,
+		Validate:   true,
 	}, t)
 }
 
@@ -98,10 +103,11 @@ func (s *AllSuite) TestInferTypeDirectoryPriority() {
 	detector := NewContentTypeDetector()
 	t, err := detector.InferType(path)
 	s.NoError(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypePythonDash,
-		Entrypoint:     appFilename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonDash,
+		Entrypoint: appFilename,
+		Validate:   true,
 	}, t)
 }
 

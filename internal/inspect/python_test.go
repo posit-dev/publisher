@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -31,10 +32,11 @@ func (s *PythonSuite) TestInferTypeSpecifiedFile() {
 	detector := NewFlaskDetector()
 	t, err := detector.InferType(path)
 	s.Nil(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypePythonFlask,
-		Entrypoint:     filename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonFlask,
+		Entrypoint: filename,
+		Validate:   true,
 	}, t)
 }
 
@@ -47,10 +49,11 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 	detector := NewFlaskDetector()
 	t, err := detector.InferType(path)
 	s.Nil(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypePythonFlask,
-		Entrypoint:     filename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonFlask,
+		Entrypoint: filename,
+		Validate:   true,
 	}, t)
 }
 
@@ -70,10 +73,11 @@ func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
 	detector := NewFlaskDetector()
 	t, err := detector.InferType(dir)
 	s.Nil(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypePythonFlask,
-		Entrypoint:     filename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonFlask,
+		Entrypoint: filename,
+		Validate:   true,
 	}, t)
 }
 
@@ -86,10 +90,11 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 	detector := NewFlaskDetector()
 	t, err := detector.InferType(path)
 	s.Nil(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypePythonFlask,
-		Entrypoint:     filename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonFlask,
+		Entrypoint: filename,
+		Validate:   true,
 	}, t)
 }
 

@@ -34,7 +34,7 @@ var voilaImportNames = []string{
 	"ipywebrtc",
 }
 
-func (d *NotebookDetector) InferType(path util.Path) (*ContentType, error) {
+func (d *NotebookDetector) InferType(path util.Path) (*config.Config, error) {
 	entrypoint, entrypointPath, err := d.InferEntrypoint(path, ".ipynb", "index.ipynb")
 	if err != nil {
 		return nil, err
@@ -48,16 +48,15 @@ func (d *NotebookDetector) InferType(path util.Path) (*ContentType, error) {
 		if err != nil {
 			return nil, err
 		}
-		t := &ContentType{
-			Entrypoint:     entrypoint,
-			RequiresPython: true,
-		}
+		cfg := config.New()
+		cfg.Type = config.ContentTypeHTML
+		cfg.Entrypoint = entrypoint
 		if isVoila {
-			t.Type = config.ContentTypeJupyterVoila
+			cfg.Type = config.ContentTypeJupyterVoila
 		} else {
-			t.Type = config.ContentTypeJupyterNotebook
+			cfg.Type = config.ContentTypeJupyterNotebook
 		}
-		return t, nil
+		return cfg, nil
 	}
 	return nil, nil
 }
