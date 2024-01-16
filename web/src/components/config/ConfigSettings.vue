@@ -10,7 +10,10 @@
       <div class="space-between-y-sm">
         <ConfigType :type="config.configuration.type" />
         <ConfigEntrypoint :entrypoint="config.configuration.entrypoint" />
-        <ConfigTitle :title="config.configuration.title" />
+        <ConfigTitle
+          :title="config.configuration.title"
+          :previous-title="previousConfig?.configuration.title"
+        />
         <ConfigDescription :description="config.configuration.description" />
         <ConfigThumbnail :thumbnail="config.configuration.thumbnail" />
         <ConfigTags :tags="config.configuration.tags" />
@@ -51,5 +54,10 @@ defineProps({
     type: Object as PropType<Configuration | ConfigurationError>,
     required: true,
   },
+  previousConfig: {
+    type: Object as PropType<Configuration>,
+    required: false,
+    default: undefined,
+  }
 });
 </script>
