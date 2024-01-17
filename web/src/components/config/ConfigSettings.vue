@@ -20,7 +20,10 @@
           :title="config.configuration.title"
           :previous-title="previousConfig?.configuration.title"
         />
-        <ConfigDescription :description="config.configuration.description" />
+        <ConfigDescription
+          :description="config.configuration.description"
+          :previous-description="previousConfig?.configuration.description"
+        />
         <ConfigThumbnail :thumbnail="config.configuration.thumbnail" />
         <ConfigTags :tags="config.configuration.tags" />
       </div>
