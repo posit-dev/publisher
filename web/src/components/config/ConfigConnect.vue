@@ -13,7 +13,10 @@
     :previous-access="previousConnect?.access"
   />
 
-  <ConfigConnectKubernetes :kubernetes="connect?.kubernetes" />
+  <ConfigConnectKubernetes
+    :kubernetes="connect?.kubernetes"
+    :previous-kubernetes="previousConnect?.kubernetes"
+  />
 
   <ConfigConnectRuntime :runtime="connect?.runtime" />
 </template>
