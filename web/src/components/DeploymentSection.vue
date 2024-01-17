@@ -2,7 +2,7 @@
 
 <template>
   <section class="q-pt-lg q-pb-xl">
-    <div class="publisher-layout space-between-lg">
+    <div class="publisher-layout space-between-y-lg">
       <div>
         <h2 class="text-h6">
           {{ title }}

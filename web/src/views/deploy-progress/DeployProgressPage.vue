@@ -3,13 +3,11 @@
 <template>
   <div class="publisher-layout q-pt-md q-pb-xl">
     <q-breadcrumbs>
-      <q-breadcrumbs-el
-        label="Project"
-        :to="{
-          name:
-            'project'
-        }"
-      />
+      <q-breadcrumbs-el>
+        <PLink :to="{ name: 'project' }">
+          Project
+        </PLink>
+      </q-breadcrumbs-el>
       <q-breadcrumbs-el
         label="Deploy"
         class="click-target"
@@ -23,7 +21,7 @@
     <div
       class="flex justify-between q-mt-md row-gap-lg column-gap-xl"
     >
-      <div class="space-between-sm">
+      <div class="space-between-y-sm">
         <h1
           v-if="saveName"
           class="text-h6"
@@ -49,6 +47,7 @@ import { useEventStore } from 'src/stores/events';
 import { useRouter } from 'vue-router';
 
 import DeployStepper from 'src/views/deploy-progress/DeployStepper.vue';
+import PLink from 'src/components/PLink.vue';
 
 const eventStore = useEventStore();
 const router = useRouter();

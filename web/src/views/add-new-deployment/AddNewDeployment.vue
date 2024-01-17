@@ -3,10 +3,11 @@
 <template>
   <div class="publisher-layout q-pt-md q-pb-xl">
     <q-breadcrumbs>
-      <q-breadcrumbs-el
-        label="Project"
-        :to="{ name: 'project' }"
-      />
+      <q-breadcrumbs-el>
+        <PLink :to="{ name: 'project' }">
+          Project
+        </PLink>
+      </q-breadcrumbs-el>
       <q-breadcrumbs-el label="New Deployment" />
     </q-breadcrumbs>
 
@@ -62,8 +63,9 @@ import { RouteLocationRaw, useRouter } from 'vue-router';
 import { Deployment, isDeploymentRecordError } from 'src/api/types/deployments';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
-import { newFatalErrorRouteLocation } from 'src/util/errors';
+import { newFatalErrorRouteLocation } from 'src/utils/errors';
 import PButton from 'src/components/PButton.vue';
+import PLink from 'src/components/PLink.vue';
 
 const accounts = ref<Account[]>([]);
 const selectedAccountName = ref<string>('');
@@ -106,7 +108,11 @@ const deploymentNameError = computed(() => {
   if (!deploymentName.value) {
     return 'A unique deployment name must be provided.';
   }
-  if (deployments.value.find((deployment) => deployment.saveName === deploymentName.value)) {
+  if (
+    deployments.value.find(
+      (deployment) => deployment.saveName.toLowerCase() === deploymentName.value.toLowerCase()
+    )
+  ) {
     return 'Deployment name already in use. Please supply a unique name.';
   }
   return undefined;

@@ -5,10 +5,13 @@
     :name="name"
     title="Validate Deployment"
     icon="sync"
-    summary="Validating your content on the Connect Server"
     :done="done"
     :messages="messages"
-  />
+  >
+    <template #summary>
+      Validating your content on the Connect Server
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">

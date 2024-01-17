@@ -37,6 +37,7 @@ func (s *DeploymentSuite) SetupTest() {
 func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 	path := GetDeploymentPath(s.cwd, name)
 	d := New()
+	d.Configuration = config.New()
 	d.ServerType = accounts.ServerTypeConnect
 	d.DeployedAt = time.Now().UTC().Format(time.RFC3339)
 	d.Configuration.Type = config.ContentTypePythonDash
@@ -79,7 +80,7 @@ func (s *DeploymentSuite) TestFromExampleFile() {
 	cfgPath := schemaDir.Join("deploy.toml")
 	cfg, err := config.FromFile(cfgPath)
 	s.NoError(err)
-	s.Equal(cfg, &d.Configuration)
+	s.Equal(cfg, d.Configuration)
 
 	s.Equal("https://connect.example.com", d.ServerURL)
 	s.Equal(types.ContentID("de2e7bdb-b085-401e-a65c-443e40009749"), d.ID)

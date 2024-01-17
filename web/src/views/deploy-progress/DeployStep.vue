@@ -13,9 +13,9 @@
     error-color="red"
   >
     <div
-      class="text-bold q-pa-sm summaryClass"
+      class="text-bold q-pa-sm"
     >
-      {{ summary }}
+      <slot name="summary" />
     </div>
     <q-list
       dense
@@ -103,7 +103,6 @@ import {
 const props = defineProps({
   name: { type: [String, Number], required: true },
   icon: { type: String, required: true },
-  summary: { type: String, required: true },
   messages: { type: Array as PropType<EventStreamMessage[]>, required: false, default: () => [] },
 });
 
@@ -188,7 +187,3 @@ const splitErrorLog = (msg: EventStreamMessage) => {
 };
 
 </script>
-
-<style scoped>
-
-</style>

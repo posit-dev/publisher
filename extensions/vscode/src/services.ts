@@ -97,7 +97,7 @@ export class Service {
 		if (path === undefined) {
 			throw new Error("workspace path is undefined");
 		}
-		const assistant = new Assistant(panel, path, port);
+		const assistant = new Assistant(context, panel, path, port);
 
 		// create service
 		const service = new Service(assistant);

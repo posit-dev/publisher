@@ -65,9 +65,13 @@
         </div>
         <div>
           Access through Dashboard:
-          <span>
+          <a
+            :href="eventStore.currentPublishStatus.status.dashboardURL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {{ eventStore.currentPublishStatus.status.dashboardURL }}
-          </span>
+          </a>
         </div>
       </div>
     </div>
@@ -101,10 +105,10 @@
 </template>
 
 <script setup lang="ts">
-
-import { useEventStore } from 'src/stores/events';
 import { computed } from 'vue';
 import { useQuasar } from 'quasar';
+
+import { useEventStore } from 'src/stores/events';
 
 const eventStore = useEventStore();
 const $q = useQuasar();

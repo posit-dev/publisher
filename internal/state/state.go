@@ -122,9 +122,7 @@ func New(path util.Path, accountName, configName, targetName string, saveName st
 			target.SaveName = targetName
 		}
 	} else {
-		if configName == "" {
-			configName = config.DefaultConfigName
-		}
+		target = deployment.New()
 	}
 
 	// Use specified account, or default account
@@ -133,6 +131,9 @@ func New(path util.Path, accountName, configName, targetName string, saveName st
 		return nil, err
 	}
 
+	if configName == "" {
+		configName = config.DefaultConfigName
+	}
 	cfg, err = loadConfig(path, configName)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {

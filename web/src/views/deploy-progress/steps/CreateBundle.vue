@@ -5,10 +5,13 @@
     :name="name"
     title="Create Bundle"
     icon="compress"
-    summary="Collecting and bundling up the files included in your project, so that they can be uploaded to the server within a bundle."
     :done="done"
     :messages="messages"
-  />
+  >
+    <template #summary>
+      Collecting and bundling up the files included in your project, so that they can be uploaded to the server within a bundle.
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">

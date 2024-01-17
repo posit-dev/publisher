@@ -49,7 +49,7 @@ func createSampleDeployment(root util.Path, name string) (*deployment.Deployment
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
-	d.Configuration = *cfg
+	d.Configuration = cfg
 	return d, d.WriteFile(path)
 }
 

@@ -5,10 +5,13 @@
     :name="name"
     title="Restore Python Environment"
     icon="move_down"
-    summary="Installing the dependent python packages on the server in order to reproduce your runtime environment."
     :done="done"
     :messages="messages"
-  />
+  >
+    <template #summary>
+      Installing the dependent python packages on the server in order to reproduce your runtime environment.
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">

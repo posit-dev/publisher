@@ -5,10 +5,13 @@
     :name="name"
     title="Check Capabilities"
     icon="create_new_folder"
-    summary="Checking capabilities and performing pre-deployment checks."
     :done="done"
     :messages="messages"
-  />
+  >
+    <template #summary>
+      Checking capabilities and performing pre-deployment checks.
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">

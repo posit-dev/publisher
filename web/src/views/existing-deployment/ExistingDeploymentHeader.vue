@@ -4,13 +4,11 @@
   <div class="deployment-header">
     <div class="publisher-layout q-py-md">
       <q-breadcrumbs>
-        <q-breadcrumbs-el
-          label="Project"
-          :to="{
-            name:
-              'project'
-          }"
-        />
+        <q-breadcrumbs-el>
+          <PLink :to="{ name: 'project' }">
+            Project
+          </PLink>
+        </q-breadcrumbs-el>
         <q-breadcrumbs-el
           label="Deploy"
         />
@@ -19,19 +17,35 @@
       <div
         class="flex justify-between q-mt-md row-gap-lg column-gap-xl"
       >
-        <div class="space-between-sm">
+        <div class="space-between-y-sm">
           <h1 class="text-h6">
             {{ deployment.saveName }}
           </h1>
           <p>
-            Deploying to: {{ deployment.serverUrl }}
+            Deploying to: <a
+              :href="deployment.serverUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ deployment.serverUrl }}
+            </a>
           </p>
-          <p>
-            {{ deployment.id }}
-          </p>
-          <p>
-            Last Deployed on {{ formatDateString(deployment.deployedAt) }}
-          </p>
+          <template v-if="isDeployment(deployment)">
+            <p>
+              {{ deployment.id }}
+            </p>
+            <p>
+              Last Deployed on {{ formatDateString(deployment.deployedAt) }}
+            </p>
+          </template>
+          <template v-else>
+            <p>
+              An ID will be created on first deployment.
+            </p>
+            <p>
+              Never Deployed
+            </p>
+          </template>
         </div>
 
         <div
@@ -69,15 +83,16 @@
           <div class="row justify-left">
             <div class="col-11">
               <DeployProgressSummary
+                v-if="isDeployment(deployment)"
                 :id="deployment.id"
                 :current-tense="showDeployStatusAsCurrent"
               />
-              <RouterLink
-                v-if="showLogsLink"
-                :to="routerLocation"
+              <PLink
+                v-if="progressLink"
+                :to="progressLink"
               >
                 View summarized deployment logs
-              </RouterLink>
+              </PLink>
             </div>
           </div>
         </div>
@@ -90,13 +105,22 @@
 
 import { ref, watch, PropType, computed } from 'vue';
 
-import { Account, ConfigurationError, Deployment, useApi } from 'src/api';
+import {
+  Account,
+  ConfigurationError,
+  Deployment,
+  PreDeployment,
+  useApi,
+  isDeployment,
+  isPreDeployment
+} from 'src/api';
+import PLink from 'src/components/PLink.vue';
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PButton from 'src/components/PButton.vue';
 import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
 import { formatDateString } from 'src/utils/date';
-import { newFatalErrorRouteLocation } from 'src/util/errors';
+import { newFatalErrorRouteLocation } from 'src/utils/errors';
 import { useRouter } from 'vue-router';
 
 const api = useApi();
@@ -112,7 +136,7 @@ const numSuccessfulDeploys = ref(0);
 const emit = defineEmits(['deploy']);
 
 const props = defineProps({
-  deployment: { type: Object as PropType<Deployment>, required: true },
+  deployment: { type: Object as PropType<Deployment | PreDeployment>, required: true },
   configError: {
     type: Object as PropType<ConfigurationError>,
     required: false,
@@ -124,19 +148,23 @@ const onChange = (account: Account) => {
   selectedAccount.value = account;
 };
 
-const showLogsLink = computed(() => {
-  return eventStore.doesPublishStatusApply(props.deployment.id);
-});
+const progressLink = computed(() => {
+  if (isPreDeployment(props.deployment)) {
+    return undefined;
+  }
 
-const routerLocation = computed(() => {
-  return {
-    name: 'progress',
-    query: {
-      name: props.deployment.saveName,
-      operation: operationStr.value,
-      id: props.deployment.id,
-    },
-  };
+  if (eventStore.doesPublishStatusApply(props.deployment.id)) {
+    return {
+      name: 'progress',
+      query: {
+        name: props.deployment.saveName,
+        operation: operationStr.value,
+        id: props.deployment.id,
+      },
+    };
+  }
+
+  return undefined;
 });
 
 const redeployDisableTitle = computed(() => {
@@ -178,9 +206,9 @@ const initiateRedeploy = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       false, // this is never a new deployment
       accountName,
-      destinationURL,
       props.deployment.saveName,
-      props.deployment.id,
+      destinationURL,
+      isDeployment(props.deployment) ? props.deployment.id : undefined,
     );
     deployingLocalId.value = result;
   } catch (error: unknown) {
@@ -234,7 +262,10 @@ watch(
       // and last publishing run was ours
       (
         eventStore.doesPublishStatusApply(deployingLocalId.value) ||
-        eventStore.doesPublishStatusApply(props.deployment.id)
+        (
+          isDeployment(props.deployment) &&
+          eventStore.doesPublishStatusApply(props.deployment.id)
+        )
       ) &&
       // and it was successful enough to get a content id assigned
       eventStore.currentPublishStatus.contentId

@@ -54,14 +54,15 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
 
-	res := []deploymentDTO{}
+	res := []fullDeploymentDTO{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 1)
+
 	s.Nil(res[0].Error)
 	s.NotNil(res[0].Deployment)
-	s.Equal(d, res[0].Deployment)
+	s.Equal(*d, res[0].Deployment)
 	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res[0].ConfigPath)
 	s.Equal(types.ContentID("12345678"), res[0].Deployment.ID)
 }
@@ -84,19 +85,23 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
 
-	res := []deploymentDTO{}
+	res := []struct {
+		fullDeploymentDTO
+		Error *types.AgentError `json:"error,omitempty"`
+	}{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 2)
+
 	s.Nil(res[0].Error)
+	s.Equal(deploymentStateDeployed, res[0].State)
 	s.NotNil(res[0].Deployment)
 	s.Equal("target1", res[0].Name)
-	s.Equal(d, res[0].Deployment)
+	s.Equal(*d, res[0].Deployment)
 	s.Equal(types.ContentID("12345678"), res[0].Deployment.ID)
 
-	var nilDeployment *deployment.Deployment
-	s.Equal(nilDeployment, res[1].Deployment)
 	s.Equal("target2", res[1].Name)
 	s.NotNil(res[1].Error)
+	s.Equal(deploymentStateError, res[1].State)
 }
