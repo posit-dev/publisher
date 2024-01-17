@@ -22,79 +22,68 @@ func TestEntrypointSuite(t *testing.T) {
 	suite.Run(t, new(EntrypointSuite))
 }
 
-func (s *EntrypointSuite) TestInferEntrypointSpecifiedFile() {
-	path := util.NewPath("app.py", afero.NewMemMapFs())
-	err := path.WriteFile([]byte{}, 0600)
-	s.Nil(err)
-
-	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".py", "app.py")
-	s.Nil(err)
-	s.Equal("app.py", entrypoint)
-	s.Equal("app.py", entrypointPath.Base())
-}
-
 func (s *EntrypointSuite) TestInferEntrypointMatchingPreferredFileAndAnother() {
-	path := util.NewPath(".", afero.NewMemMapFs())
-	err := path.Join("app.py").WriteFile([]byte{}, 0600)
+	base := util.NewPath(".", afero.NewMemMapFs())
+	err := base.Join("app.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
-	err = path.Join("mylib.py").WriteFile([]byte{}, 0600)
+	err = base.Join("mylib.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(base, ".py", "app.py")
 	s.Nil(err)
 	s.Equal("app.py", entrypoint)
 	s.Equal("app.py", entrypointPath.Base())
 }
 
 func (s *EntrypointSuite) TestInferEntrypointAlternatePreferredFileAndAnother() {
-	path := util.NewPath(".", afero.NewMemMapFs())
-	err := path.Join("main.py").WriteFile([]byte{}, 0600)
+	base := util.NewPath(".", afero.NewMemMapFs())
+	err := base.Join("main.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
-	err = path.Join("mylib.py").WriteFile([]byte{}, 0600)
+	err = base.Join("mylib.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".py", "app.py", "main.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(base, ".py", "app.py", "main.py")
 	s.Nil(err)
 	s.Equal("main.py", entrypoint)
 	s.Equal("main.py", entrypointPath.Base())
 }
 
 func (s *EntrypointSuite) TestInferEntrypointNonMatchingFile() {
-	path := util.NewPath("app.py", afero.NewMemMapFs())
+	base := util.NewPath(".", afero.NewMemMapFs())
+	path := base.Join("app.py")
 	err := path.WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".ipynb", "index.ipynb")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(base, ".ipynb", "index.ipynb")
 	s.Nil(err)
 	s.Equal("", entrypoint)
 	s.Equal(util.Path{}, entrypointPath)
 }
 
 func (s *EntrypointSuite) TestInferEntrypointOnlyMatchingFile() {
-	path := util.NewPath(".", afero.NewMemMapFs())
-	err := path.Join("myapp.py").WriteFile([]byte{}, 0600)
+	base := util.NewPath(".", afero.NewMemMapFs())
+	err := base.Join("myapp.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(base, ".py", "app.py")
 	s.Nil(err)
 	s.Equal("myapp.py", entrypoint)
 	s.Equal("myapp.py", entrypointPath.Base())
 }
 
 func (s *EntrypointSuite) TestInferEntrypointMultipleMatchingFiles() {
-	path := util.NewPath(".", afero.NewMemMapFs())
-	err := path.Join("myapp.py").WriteFile([]byte{}, 0600)
+	base := util.NewPath(".", afero.NewMemMapFs())
+	err := base.Join("myapp.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
-	err = path.Join("mylib.py").WriteFile([]byte{}, 0600)
+	err = base.Join("mylib.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
-	entrypoint, entrypointPath, err := h.InferEntrypoint(path, ".py", "app.py")
+	entrypoint, entrypointPath, err := h.InferEntrypoint(base, ".py", "app.py")
 	s.Nil(err)
 	s.Equal("", entrypoint)
 	s.Equal(util.Path{}, entrypointPath)

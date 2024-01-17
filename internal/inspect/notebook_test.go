@@ -92,70 +92,86 @@ func (s *NotebookDetectorSuite) TestGetNotebookInputsNoCells() {
 }
 
 func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
 	filename := "my_notebook.ipynb"
-	path := util.NewPath(filename, afero.NewMemMapFs())
-	err := path.WriteFile(notebookWithCell("import sys\nprint(sys.executable)\n"), 0600)
+	err = base.Join(filename).WriteFile(notebookWithCell("import sys\nprint(sys.executable)\n"), 0600)
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	t, err := detector.InferType(path)
+	t, err := detector.InferType(base)
 	s.Nil(err)
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeJupyterNotebook,
 		Entrypoint: filename,
 		Validate:   true,
+		Python:     &config.Python{},
 	}, t)
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
 	filename := "my_notebook.ipynb"
-	path := util.NewPath(filename, afero.NewMemMapFs())
-	err := path.WriteFile(notebookWithCell("import ipywidgets\nprint('hello')\n"), 0600)
+	path := base.Join(filename)
+	err = path.WriteFile(notebookWithCell("import ipywidgets\nprint('hello')\n"), 0600)
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	t, err := detector.InferType(path)
+	t, err := detector.InferType(base)
 	s.Nil(err)
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeJupyterVoila,
 		Entrypoint: filename,
 		Validate:   true,
+		Python:     &config.Python{},
 	}, t)
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeNonNotebook() {
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
 	filename := "app.py"
-	path := util.NewPath(filename, afero.NewMemMapFs())
-	err := path.WriteFile(notebookWithCell("import ipywidgets\nprint('hello')\n"), 0600)
+	path := base.Join(filename)
+	err = path.WriteFile(notebookWithCell("import ipywidgets\nprint('hello')\n"), 0600)
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	t, err := detector.InferType(path)
+	t, err := detector.InferType(base)
 	s.Nil(err)
 	s.Nil(t)
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeFsErr() {
-	filename := "my_notebook.ipynb"
-	path := util.NewPath(filename, afero.NewMemMapFs())
+	base := util.NewPath("/nonexistent", afero.NewMemMapFs())
 	detector := NewNotebookDetector()
-	t, err := detector.InferType(path)
+	t, err := detector.InferType(base)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(t)
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeBadNotebook() {
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
 	filename := "my_notebook.ipynb"
-	path := util.NewPath(filename, afero.NewMemMapFs())
+	path := base.Join(filename)
 	// oops, content is not in notebook format
-	err := path.WriteFile([]byte("import ipywidgets\nprint('hello')\n"), 0600)
+	err = path.WriteFile([]byte("import ipywidgets\nprint('hello')\n"), 0600)
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	t, err := detector.InferType(path)
+	t, err := detector.InferType(base)
 	s.NotNil(err)
 	s.Nil(t)
 }

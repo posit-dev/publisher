@@ -56,6 +56,8 @@ func (d *NotebookDetector) InferType(path util.Path) (*config.Config, error) {
 		} else {
 			cfg.Type = config.ContentTypeJupyterNotebook
 		}
+		// indicate that Python inspection is needed
+		cfg.Python = &config.Python{}
 		return cfg, nil
 	}
 	return nil, nil

@@ -2,18 +2,25 @@ package environmenttest
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import "github.com/stretchr/testify/mock"
+import (
+	"github.com/rstudio/connect-client/internal/config"
+	"github.com/stretchr/testify/mock"
+)
 
 type MockPythonInspector struct {
 	mock.Mock
 }
 
-func (m *MockPythonInspector) GetPythonVersion() (string, error) {
-	args := m.Called()
-	return args.String(0), args.Error(1)
+func NewMockPythonInspector() *MockPythonInspector {
+	return &MockPythonInspector{}
 }
 
-func (m *MockPythonInspector) EnsurePythonRequirementsFile() error {
+func (m *MockPythonInspector) InspectPython() (*config.Python, error) {
 	args := m.Called()
-	return args.Error(0)
+	cfg := args.Get(0)
+	if cfg == nil {
+		return nil, args.Error(1)
+	} else {
+		return cfg.(*config.Python), args.Error(1)
+	}
 }

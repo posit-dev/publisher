@@ -17,28 +17,53 @@ import (
 var ContentDetectorFactory = inspect.NewContentTypeDetector
 var PythonInspectorFactory = environment.NewPythonInspector
 
-func inspectProjectType(path util.Path, log logging.Logger) (*config.Config, error) {
+func inspectProject(base util.Path, python util.Path, log logging.Logger) (*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory()
-	cfg, err := typeDetector.InferType(path)
+
+	cfg, err := typeDetector.InferType(base)
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
 	log.Info("Deployment type", "Entrypoint", cfg.Entrypoint, "Type", cfg.Type)
+
+	if cfg.Type == config.ContentTypeUnknown {
+		log.Warn("Could not determine content type; creating config file with unknown type", "path", base)
+	}
+	if cfg.Title == "" {
+		// Default title is the name of the project directory.
+		cfg.Title = base.Base()
+	}
+
+	needPython, err := requiresPython(cfg, base, python)
+	if err != nil {
+		return nil, err
+	}
+	if needPython {
+		inspector := PythonInspectorFactory(base, python, log)
+		pyConfig, err := inspector.InspectPython()
+		if err != nil {
+			return nil, err
+		}
+		cfg.Python = pyConfig
+	}
 	return cfg, nil
 }
 
-func requiresPython(contentType config.ContentType, path util.Path, python util.Path) (bool, error) {
-	if contentType.IsPythonContent() {
+func requiresPython(cfg *config.Config, base util.Path, python util.Path) (bool, error) {
+	if python.Path() != "" {
+		// If user provided Python on the command line,
+		// then configure Python for the project.
 		return true, nil
 	}
-	if python.Path() != "" {
+	if cfg.Python != nil && cfg.Python.Version == "" {
+		// InferType returned a python configuration for us to fill in.
 		return true, nil
 	}
 	// Presence of requirements.txt implies Python is needed.
 	// This is the preferred approach since it is unambiguous and
 	// doesn't rely on environment inspection.
-	requirementsPath := path.Join(bundles.PythonRequirementsFilename)
+	requirementsPath := base.Join(bundles.PythonRequirementsFilename)
 	exists, err := requirementsPath.Exists()
 	if err != nil {
 		return false, err
@@ -50,8 +75,8 @@ const defaultPositignoreContent = `# List any files or directories that should n
 # Wildcards are supported as in .gitignore: https://git-scm.com/docs/gitignore
 `
 
-func createPositignoreIfNeeded(path util.Path, log logging.Logger) error {
-	ignorePath := path.Join(gitignore.IgnoreFilename)
+func createPositignoreIfNeeded(base util.Path, log logging.Logger) error {
+	ignorePath := base.Join(gitignore.IgnoreFilename)
 	exists, err := ignorePath.Exists()
 	if err != nil {
 		return err
@@ -63,59 +88,23 @@ func createPositignoreIfNeeded(path util.Path, log logging.Logger) error {
 	return ignorePath.WriteFile([]byte(defaultPositignoreContent), 0666)
 }
 
-func inspectPython(path util.Path, python util.Path, log logging.Logger) (*config.Python, error) {
-	cfg := &config.Python{}
-	inspector := PythonInspectorFactory(path, python, log)
-	version, err := inspector.GetPythonVersion()
-	if err != nil {
-		return nil, err
-	}
-	cfg.Version = version
-
-	err = inspector.EnsurePythonRequirementsFile()
-	if err != nil {
-		return nil, err
-	}
-	// Package list will be written to requirements.txt, if not already present.
-	cfg.PackageManager = "pip"
-	cfg.PackageFile = bundles.PythonRequirementsFilename
-	return cfg, nil
-}
-
-func Init(path util.Path, configName string, python util.Path, log logging.Logger) (*config.Config, error) {
-	absPath, err := path.Abs()
+func Init(base util.Path, configName string, python util.Path, log logging.Logger) (*config.Config, error) {
+	absPath, err := base.Abs()
 	if err != nil {
 		return nil, err
 	}
 	if configName == "" {
 		configName = config.DefaultConfigName
 	}
-	cfg, err := inspectProjectType(absPath, log)
+	cfg, err := inspectProject(absPath, python, log)
 	if err != nil {
 		return nil, err
 	}
-	if cfg.Type == config.ContentTypeUnknown {
-		log.Warn("Could not determine content type; creating config file with unknown type", "path", path)
-	}
-	if cfg.Title == "" {
-		cfg.Title = absPath.Base()
-	}
-	requiresPython, err := requiresPython(cfg.Type, path, python)
+	err = createPositignoreIfNeeded(base, log)
 	if err != nil {
 		return nil, err
 	}
-	if requiresPython {
-		pythonConfig, err := inspectPython(path, python, log)
-		if err != nil {
-			return nil, err
-		}
-		cfg.Python = pythonConfig
-	}
-	err = createPositignoreIfNeeded(path, log)
-	if err != nil {
-		return nil, err
-	}
-	configPath := config.GetConfigPath(path, configName)
+	configPath := config.GetConfigPath(base, configName)
 	err = cfg.WriteFile(configPath)
 	if err != nil {
 		return nil, err
