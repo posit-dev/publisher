@@ -8,16 +8,16 @@
     <ConfigSetting
       v-if="access.runAs !== undefined"
       label="Run As"
-    >
-      {{ access.runAs }}
-    </ConfigSetting>
+      :value="access.runAs"
+      :previous-value="previousAccess?.runAs"
+    />
 
     <ConfigSetting
       v-if="access.runAsCurrentUser !== undefined"
       label="Run As Current User"
-    >
-      {{ access.runAsCurrentUser }}
-    </ConfigSetting>
+      :value="access.runAsCurrentUser.toString()"
+      :previous-value="previousAccess?.runAsCurrentUser?.toString()"
+    />
   </ConfigSection>
 </template>
 
@@ -34,5 +34,10 @@ defineProps({
     default: undefined,
     required: false,
   },
+  previousAccess: {
+    type: Object as PropType<ConnectAccess>,
+    default: undefined,
+    required: false,
+  }
 });
 </script>

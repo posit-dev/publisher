@@ -52,7 +52,10 @@
         :access="config.configuration.access"
         :previous-access="previousConfig?.configuration.access"
       />
-      <ConfigConnect :connect="config.configuration.connect" />
+      <ConfigConnect
+        :connect="config.configuration.connect"
+        :previous-connect="previousConfig?.configuration.connect"
+      />
     </template>
   </div>
 </template>
