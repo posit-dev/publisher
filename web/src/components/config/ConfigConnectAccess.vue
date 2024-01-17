@@ -15,8 +15,8 @@
     <ConfigSetting
       v-if="access.runAsCurrentUser !== undefined"
       label="Run As Current User"
-      :value="access.runAsCurrentUser.toString()"
-      :previous-value="previousAccess?.runAsCurrentUser?.toString()"
+      :value="access.runAsCurrentUser"
+      :previous-value="previousAccess?.runAsCurrentUser"
     />
   </ConfigSection>
 </template>

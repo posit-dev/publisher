@@ -32,12 +32,12 @@ const props = defineProps({
     required: true,
   },
   value: {
-    type: String,
+    type: [String, Boolean, Number],
     required: false,
     default: undefined,
   },
   previousValue: {
-    type: String,
+    type: [String, Boolean, Number],
     required: false,
     default: undefined,
   },
