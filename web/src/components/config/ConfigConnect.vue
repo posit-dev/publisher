@@ -18,7 +18,10 @@
     :previous-kubernetes="previousConnect?.kubernetes"
   />
 
-  <ConfigConnectRuntime :runtime="connect?.runtime" />
+  <ConfigConnectRuntime
+    :runtime="connect?.runtime"
+    :previous-runtime="previousConnect?.runtime"
+  />
 </template>
 
 <script setup lang="ts">
