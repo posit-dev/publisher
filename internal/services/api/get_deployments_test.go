@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
@@ -43,16 +41,7 @@ func (s *GetDeploymentsSuite) SetupTest() {
 }
 
 func (s *GetDeploymentsSuite) TestGetDeployments() {
-	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
-	d := deployment.New()
-	d.ID = "myTargetName"
-	d.ServerType = accounts.ServerTypeConnect
-	d.ConfigName = "myConfig"
-	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
-	cfg.Entrypoint = "app.py"
-	d.Configuration = cfg
-	err := d.WriteFile(path)
+	d, err := createSampleDeployment(s.cwd, "myTargetName")
 	s.NoError(err)
 
 	h := GetDeploymentsHandlerFunc(s.cwd, s.log)
@@ -75,19 +64,11 @@ func (s *GetDeploymentsSuite) TestGetDeployments() {
 	s.NotNil(res[0].Deployment)
 	s.Equal(*d, res[0].Deployment)
 	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res[0].ConfigPath)
-	s.Equal(types.ContentID("myTargetName"), res[0].Deployment.ID)
+	s.Equal(types.ContentID("12345678"), res[0].Deployment.ID)
 }
 
 func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
-	path := deployment.GetDeploymentPath(s.cwd, "target1")
-	d := deployment.New()
-	d.ID = "target1"
-	d.ServerType = accounts.ServerTypeConnect
-	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
-	cfg.Entrypoint = "app.py"
-	d.Configuration = cfg
-	err := d.WriteFile(path)
+	d, err := createSampleDeployment(s.cwd, "target1")
 	s.NoError(err)
 
 	path2 := deployment.GetDeploymentPath(s.cwd, "target2")
@@ -118,7 +99,7 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsError() {
 	s.NotNil(res[0].Deployment)
 	s.Equal("target1", res[0].Name)
 	s.Equal(*d, res[0].Deployment)
-	s.Equal(types.ContentID("target1"), res[0].Deployment.ID)
+	s.Equal(types.ContentID("12345678"), res[0].Deployment.ID)
 
 	s.Equal("target2", res[1].Name)
 	s.NotNil(res[1].Error)
