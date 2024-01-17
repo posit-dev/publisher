@@ -12,7 +12,10 @@
           :type="config.configuration.type"
           :previous-type="previousConfig?.configuration.type"
         />
-        <ConfigEntrypoint :entrypoint="config.configuration.entrypoint" />
+        <ConfigEntrypoint
+          :entrypoint="config.configuration.entrypoint"
+          :previous-entrypoint="previousConfig?.configuration.entrypoint"
+        />
         <ConfigTitle
           :title="config.configuration.title"
           :previous-title="previousConfig?.configuration.title"
