@@ -34,7 +34,10 @@
         :python="config.configuration.python"
         :previous-python="previousConfig?.configuration.python"
       />
-      <ConfigR :r="config.configuration.r" />
+      <ConfigR
+        :r="config.configuration.r"
+        :previous-r="previousConfig?.configuration.r"
+      />
       <ConfigQuarto :quarto="config.configuration.quarto" />
       <ConfigEnvironment :environment="config.configuration.environment" />
       <ConfigSecrets :secrets="config.configuration.secrets" />
