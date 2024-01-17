@@ -8,15 +8,22 @@
     <dd class="config-value">
       <div
         v-if="value !== undefined"
-        class="space-between-x-xs"
+        class="space-between-x-md"
       >
-        <span
-          v-if="showPreviousValue"
-          class="text-strike"
+        <template
+          v-if="previousValue !== value"
         >
-          {{ previousValue }}
-        </span>
-        <span>{{ value }}</span>
+          <DiffTag
+            v-if="previousValue !== undefined"
+            diff-type="removed"
+            :value="previousValue"
+          />
+          <DiffTag
+            diff-type="inserted"
+            :value="value"
+          />
+        </template>
+        <span v-else>{{ value }}</span>
       </div>
       <slot />
     </dd>
@@ -24,9 +31,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import DiffTag from '../DiffTag.vue';
 
-const props = defineProps({
+defineProps({
   label: {
     type: String,
     required: true,
@@ -42,14 +49,9 @@ const props = defineProps({
     default: undefined,
   },
 });
-
-const showPreviousValue = computed((): boolean => {
-  return props.previousValue !== undefined && props.previousValue !== props.value;
-});
 </script>
 
 <style scoped lang="scss">
-
 @media (max-width: 600px) {
   .config-setting {
     .config-value {
@@ -63,6 +65,8 @@ const showPreviousValue = computed((): boolean => {
     display: flex;
 
     .config-label {
+      display: flex;
+      align-items: center;
       min-width: 15rem;
       padding-right: 24px;
     }
