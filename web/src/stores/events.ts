@@ -744,7 +744,6 @@ export const useEventStore = defineStore('event', () => {
 
   // Will throw Error or API exceptions
   const initiatePublishProcessWithEvents = async(
-    newDeployment: boolean,
     accountName : string,
     destinationName: string,
     destinationURL?: string,
@@ -757,18 +756,12 @@ export const useEventStore = defineStore('event', () => {
     publishInProgess.value = true;
     currentPublishStatus.value.localId = '';
     currentPublishStatus.value.contentId = contentId || '';
-    currentPublishStatus.value.deploymentMode = newDeployment ? 'deploy' : 'redeploy';
+    currentPublishStatus.value.deploymentMode = contentId ? 'redeploy' : 'deploy';
     currentPublishStatus.value.saveName = destinationName;
     currentPublishStatus.value.destinationURL = destinationURL;
     currentPublishStatus.value.status = newPublishStatus();
 
     try {
-      if (newDeployment) {
-        await api.deployments.createNew(
-          accountName,
-          destinationName,
-        );
-      }
       // Returns:
       // 200 - success
       // 400 - bad request

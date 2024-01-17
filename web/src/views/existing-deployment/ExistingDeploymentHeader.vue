@@ -43,7 +43,7 @@
               An ID will be created on first deployment.
             </p>
             <p>
-              Never Deployed
+              This project has never been deployed using these credentials
             </p>
           </template>
         </div>
@@ -54,6 +54,7 @@
           <SelectAccount
             class="account-width"
             :accounts="filteredAccountList"
+            :preferred-account="props.preferredAccount"
             :url="deployment.serverUrl"
             @change="onChange"
           />
@@ -63,7 +64,7 @@
             padding="sm md"
             data-automation="redeploy"
             :disable="Boolean(configError) || eventStore.publishInProgess"
-            @click="initiateRedeploy"
+            @click="initiateDeployment"
           >
             <q-tooltip
               v-if="redeployDisableTitle"
@@ -71,7 +72,7 @@
             >
               {{ redeployDisableTitle }}
             </q-tooltip>
-            Redeploy
+            {{ deploymentLabel }}
           </PButton>
         </div>
       </div>
@@ -83,8 +84,7 @@
           <div class="row justify-left">
             <div class="col-11">
               <DeployProgressSummary
-                v-if="isDeployment(deployment)"
-                :id="deployment.id"
+                :id="summaryStatusId"
                 :current-tense="showDeployStatusAsCurrent"
               />
               <PLink
@@ -142,11 +142,18 @@ const props = defineProps({
     required: false,
     default: undefined
   },
+  preferredAccount: { type: String, required: false, default: '' },
 });
 
 const onChange = (account: Account) => {
   selectedAccount.value = account;
 };
+
+const deploymentLabel = computed(() => {
+  return isPreDeployment(props.deployment) ?
+    'Deploy' :
+    'Redeploy';
+});
 
 const progressLink = computed(() => {
   if (isPreDeployment(props.deployment)) {
@@ -181,7 +188,13 @@ const operationStr = computed(() => {
   return `Deploying to: ${props.deployment.serverUrl}`;
 });
 
-const initiateRedeploy = async() => {
+const summaryStatusId = computed(() => {
+  return isDeployment(props.deployment) ?
+    props.deployment.id :
+    deployingLocalId.value;
+});
+
+const initiateDeployment = async() => {
   const accountName = selectedAccount.value?.name;
   const destinationURL = selectedAccount.value?.url;
   if (!accountName) {
@@ -189,7 +202,7 @@ const initiateRedeploy = async() => {
     router.push(
       newFatalErrorRouteLocation(
         'An internal error has occurred when calling publish.start - no accountName',
-        'ExistingDeploymentHeader::initiateRedeploy()',
+        'ExistingDeploymentHeader::initiateDeployment()',
       ),
     );
     return; // not reachable but we need this here for intellisense
@@ -204,7 +217,6 @@ const initiateRedeploy = async() => {
   // Errors returned through event stream
   try {
     const result = await eventStore.initiatePublishProcessWithEvents(
-      false, // this is never a new deployment
       accountName,
       props.deployment.saveName,
       destinationURL,
@@ -217,7 +229,7 @@ const initiateRedeploy = async() => {
     router.push(
       newFatalErrorRouteLocation(
         error,
-        'ExistingDeploymentHeader::initiateRedeploy()',
+        'ExistingDeploymentHeader::initiateDeployment()',
       ),
     );
   }

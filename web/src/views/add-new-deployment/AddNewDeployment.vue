@@ -13,8 +13,8 @@
 
     <q-form
       class="q-gutter-md"
-      @reset="resetForm"
-      @submit.prevent="navigateToNewDeploymentPage"
+      @reset="init"
+      @submit.prevent="navigateToDeploymentPage"
     >
       <div class="q-pa-sm">
         <q-list>
@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import { Account, useApi } from 'src/api';
 import { computed, ref } from 'vue';
-import { RouteLocationRaw, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { Deployment, isDeploymentRecordError } from 'src/api/types/deployments';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
@@ -71,6 +71,7 @@ const accounts = ref<Account[]>([]);
 const selectedAccountName = ref<string>('');
 const deploymentName = ref<string>('');
 const deployments = ref<Deployment[]>([]);
+const navigationInProgress = ref<boolean>(false);
 
 const api = useApi();
 const router = useRouter();
@@ -118,28 +119,34 @@ const deploymentNameError = computed(() => {
   return undefined;
 });
 
-function resetForm() {
-  selectedAccountName.value = '';
-  deploymentName.value = '';
-}
-
-const deploymentPage = computed<RouteLocationRaw>(() => ({
-  name: 'newDeployment',
-  params: {
-    account: selectedAccountName.value,
-  },
-  query: {
-    name: deploymentName.value || undefined,
-  }
-}));
-
 const disableToDeploymentPage = computed(() => {
-  return Boolean(!selectedAccountName.value || deploymentNameError.value);
+  return Boolean(
+    !selectedAccountName.value ||
+    deploymentNameError.value ||
+    navigationInProgress.value
+  );
 });
 
-function navigateToNewDeploymentPage() {
-  router.push(deploymentPage.value);
-}
+const navigateToDeploymentPage = async() => {
+  navigationInProgress.value = true;
+  try {
+    await api.deployments.createNew(
+      selectedAccountName.value,
+      deploymentName.value,
+    );
+  } catch (error: unknown) {
+    router.push(newFatalErrorRouteLocation(error, 'navigateToDeploymentPage::createNew()'));
+  }
+  router.push({
+    name: 'deployments',
+    params: {
+      name: deploymentName.value,
+    },
+    query: {
+      preferredAccount: selectedAccountName.value,
+    }
+  });
+};
 
 const generateDefaultName = () => {
   let id = 0;

@@ -5,6 +5,7 @@
     v-if="deployment && defaultConfig"
     :deployment="deployment"
     :config-error="isConfigurationError(defaultConfig) ? defaultConfig : undefined"
+    :preferred-account="props.preferredAccount"
   />
   <DeploymentSection
     v-if="deployment"
@@ -48,6 +49,10 @@ const api = useApi();
 const deployment = ref<Deployment | PreDeployment>();
 
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
+
+const props = defineProps({
+  preferredAccount: { type: String, required: false, default: '' },
+});
 
 const deploymentName = computed(():string => {
   // route param can be either string | string[]
