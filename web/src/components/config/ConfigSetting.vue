@@ -11,7 +11,7 @@
         class="space-between-x-xs"
       >
         <span
-          v-if="Boolean(previousValue)"
+          v-if="showPreviousValue"
           class="text-strike"
         >
           {{ previousValue }}
@@ -24,7 +24,9 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
+import { computed } from 'vue';
+
+const props = defineProps({
   label: {
     type: String,
     required: true,
@@ -39,6 +41,10 @@ defineProps({
     required: false,
     default: undefined,
   },
+});
+
+const showPreviousValue = computed((): boolean => {
+  return Boolean(props.previousValue) && props.previousValue !== props.value;
 });
 </script>
 
