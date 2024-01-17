@@ -8,7 +8,10 @@
 
     <template v-else>
       <div class="space-between-y-sm">
-        <ConfigType :type="config.configuration.type" />
+        <ConfigType
+          :type="config.configuration.type"
+          :previous-type="previousConfig?.configuration.type"
+        />
         <ConfigEntrypoint :entrypoint="config.configuration.entrypoint" />
         <ConfigTitle
           :title="config.configuration.title"
