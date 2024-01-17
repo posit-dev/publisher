@@ -38,7 +38,10 @@
         :r="config.configuration.r"
         :previous-r="previousConfig?.configuration.r"
       />
-      <ConfigQuarto :quarto="config.configuration.quarto" />
+      <ConfigQuarto
+        :quarto="config.configuration.quarto"
+        :previous-quarto="previousConfig?.configuration.quarto"
+      />
       <ConfigEnvironment :environment="config.configuration.environment" />
       <ConfigSecrets :secrets="config.configuration.secrets" />
       <ConfigSchedules :schedules="config.configuration.schedules" />
