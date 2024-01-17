@@ -7,7 +7,7 @@
     </dt>
     <dd class="config-value">
       <div
-        v-if="Boolean(value)"
+        v-if="value !== undefined"
         class="space-between-x-xs"
       >
         <span
@@ -44,7 +44,7 @@ const props = defineProps({
 });
 
 const showPreviousValue = computed((): boolean => {
-  return Boolean(props.previousValue) && props.previousValue !== props.value;
+  return props.previousValue !== undefined && props.previousValue !== props.value;
 });
 </script>
 
