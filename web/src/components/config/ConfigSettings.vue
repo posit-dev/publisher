@@ -48,7 +48,10 @@
       />
       <ConfigSecrets :secrets="config.configuration.secrets" />
       <ConfigSchedules :schedules="config.configuration.schedules" />
-      <ConfigAccess :access="config.configuration.access" />
+      <ConfigAccess
+        :access="config.configuration.access"
+        :previous-access="previousConfig?.configuration.access"
+      />
       <ConfigConnect :connect="config.configuration.connect" />
     </template>
   </div>

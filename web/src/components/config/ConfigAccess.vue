@@ -21,6 +21,11 @@ defineProps({
     default: undefined,
     required: false,
   },
+  previousAccess: {
+    type: Object as PropType<AccessConfig>,
+    default: undefined,
+    required: false,
+  }
 });
 </script>
 
