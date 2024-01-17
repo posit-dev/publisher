@@ -2,8 +2,14 @@
 
 <template>
   <div class="config-setting">
-    <dt class="config-label text-weight-medium">
-      {{ label }}
+    <dt class="config-label text-weight-medium space-between-x-sm">
+      <span>{{ label }}</span>
+      <span
+        v-if="previousValue !== value"
+        class="text-low-contrast text-weight-regular"
+      >
+        Changed since last deploy
+      </span>
     </dt>
     <dd class="config-value">
       <div
@@ -52,7 +58,7 @@ defineProps({
 </script>
 
 <style scoped lang="scss">
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   .config-setting {
     .config-value {
       margin-top: 4px;
@@ -60,14 +66,14 @@ defineProps({
   }
 }
 
-@media (min-width: 601px) {
+@media (min-width: 701px) {
   .config-setting {
     display: flex;
 
     .config-label {
       display: flex;
       align-items: center;
-      min-width: 15rem;
+      min-width: 18rem;
       padding-right: 24px;
     }
 
