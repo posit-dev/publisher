@@ -202,7 +202,7 @@ const initiateDeployment = async() => {
     router.push(
       newFatalErrorRouteLocation(
         'An internal error has occurred when calling publish.start - no accountName',
-        'ExistingDeploymentHeader::initiateDeployment()',
+        'DeploymentHeader::initiateDeployment()',
       ),
     );
     return; // not reachable but we need this here for intellisense
@@ -229,7 +229,7 @@ const initiateDeployment = async() => {
     router.push(
       newFatalErrorRouteLocation(
         error,
-        'ExistingDeploymentHeader::initiateDeployment()',
+        'DeploymentHeader::initiateDeployment()',
       ),
     );
   }
@@ -243,7 +243,7 @@ const updateAccountList = async() => {
     const response = await api.accounts.getAll();
     accounts.value = response.data.accounts;
   } catch (error: unknown) {
-    router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentHeader::updateAccountList()'));
+    router.push(newFatalErrorRouteLocation(error, 'DeploymentHeader::updateAccountList()'));
   }
 };
 updateAccountList();

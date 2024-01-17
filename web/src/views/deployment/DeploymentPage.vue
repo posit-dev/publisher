@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ExistingDeploymentHeader
+  <DeploymentHeader
     v-if="deployment && defaultConfig"
     :deployment="deployment"
     :config-error="isConfigurationError(defaultConfig) ? defaultConfig : undefined"
@@ -39,7 +39,7 @@ import {
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
-import ExistingDeploymentHeader from './ExistingDeploymentHeader.vue';
+import DeploymentHeader from './DeploymentHeader.vue';
 import DeploymentSection from 'src/components/DeploymentSection.vue';
 
 const route = useRoute();
@@ -102,7 +102,7 @@ const getDeployment = async() => {
     }
   } catch (error: unknown) {
     // For this page, we send all errors to the fatal error page, including 404
-    router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentPage::getDeployment()'));
+    router.push(newFatalErrorRouteLocation(error, 'DeploymentPage::getDeployment()'));
   }
 };
 

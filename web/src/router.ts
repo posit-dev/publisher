@@ -4,7 +4,7 @@ import { RouteLocationNormalizedLoaded, createRouter, createWebHistory } from 'v
 
 import ProjectPage from 'src/views/project-page/ProjectPage.vue';
 import AddNewDeployment from 'src/views/add-new-deployment/AddNewDeployment.vue';
-import ExistingDeploymentPage from 'src/views/existing-deployment/ExistingDeploymentPage.vue';
+import DeploymentPage from 'src/views/deployment/DeploymentPage.vue';
 import DeployProgressPage from 'src/views/deploy-progress/DeployProgressPage.vue';
 import FatalErrorPage from 'src/views/fatal-error/FatalErrorPage.vue';
 
@@ -15,7 +15,7 @@ const routes = [
   {
     name: 'deployments',
     path: '/deployments/:name',
-    component: ExistingDeploymentPage,
+    component: DeploymentPage,
     props: (route: RouteLocationNormalizedLoaded) => ({
       preferredAccount: route.query.preferredAccount,
     }),
