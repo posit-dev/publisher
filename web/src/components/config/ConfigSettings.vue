@@ -24,7 +24,10 @@
           :description="config.configuration.description"
           :previous-description="previousConfig?.configuration.description"
         />
-        <ConfigThumbnail :thumbnail="config.configuration.thumbnail" />
+        <ConfigThumbnail
+          :thumbnail="config.configuration.thumbnail"
+          :previous-thumbnail="previousConfig?.configuration.thumbnail"
+        />
         <ConfigTags :tags="config.configuration.tags" />
       </div>
       <ConfigPython :python="config.configuration.python" />
