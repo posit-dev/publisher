@@ -30,7 +30,10 @@
         />
         <ConfigTags :tags="config.configuration.tags" />
       </div>
-      <ConfigPython :python="config.configuration.python" />
+      <ConfigPython
+        :python="config.configuration.python"
+        :previous-python="previousConfig?.configuration.python"
+      />
       <ConfigR :r="config.configuration.r" />
       <ConfigQuarto :quarto="config.configuration.quarto" />
       <ConfigEnvironment :environment="config.configuration.environment" />
