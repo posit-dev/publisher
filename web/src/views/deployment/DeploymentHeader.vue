@@ -142,7 +142,7 @@ const props = defineProps({
     required: false,
     default: undefined
   },
-  preferredAccount: { type: String, required: false, default:  },
+  preferredAccount: { type: String, required: false, default: undefined },
 });
 
 const onChange = (account: Account) => {
