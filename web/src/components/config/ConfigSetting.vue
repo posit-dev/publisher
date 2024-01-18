@@ -14,7 +14,7 @@
     <dd class="config-value">
       <div
         v-if="value !== undefined"
-        class="space-between-x-md"
+        class="flex gap-md"
       >
         <template
           v-if="previousValue !== value"
@@ -72,7 +72,6 @@ defineProps({
 
     .config-label {
       display: flex;
-      align-items: center;
       min-width: 18rem;
       padding-right: 24px;
     }
