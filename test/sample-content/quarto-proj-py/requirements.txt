@@ -1,0 +1,8 @@
+black==21.12b0
+certifi==2022.6.15.1
+click==8.0.3
+mypy-extensions==0.4.3
+pathspec==0.9.0
+platformdirs==2.4.1
+tomli==1.2.3
+typing_extensions==4.0.1
