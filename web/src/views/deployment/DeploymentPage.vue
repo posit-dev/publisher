@@ -2,10 +2,11 @@
 
 <template>
   <DeploymentHeader
-    v-if="deployment && defaultConfig"
+    v-if="deployment && !isDeploymentError(deployment) && defaultConfig"
     :deployment="deployment"
     :config-error="isConfigurationError(defaultConfig) ? defaultConfig : undefined"
     :preferred-account="props.preferredAccount"
+    @deploy="onDeployInitiated"
   />
   <DeploymentSection
     v-if="deployment"
@@ -28,11 +29,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useDeploymentStore } from 'src/stores/deployments';
 
 import { Configuration, ConfigurationError, isConfigurationError, useApi } from 'src/api';
-import { Deployment, PreDeployment, isDeploymentRecordError } from 'src/api/types/deployments';
+import { isDeploymentError } from 'src/api/types/deployments';
 import {
   newFatalErrorRouteLocation,
 } from 'src/utils/errors';
@@ -45,8 +47,10 @@ import DeploymentSection from 'src/components/DeploymentSection.vue';
 const route = useRoute();
 const router = useRouter();
 const api = useApi();
+const deployments = useDeploymentStore();
 
-const deployment = ref<Deployment | PreDeployment>();
+// keep track if the user initiated publishing or not
+let publishInitiated = false;
 
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
@@ -61,6 +65,23 @@ const deploymentName = computed(():string => {
   }
   return route.params.name;
 });
+
+const deployment = computed(() => {
+  return deployments.deploymentMap[deploymentName.value];
+});
+
+watch(
+  () => deployment.value,
+  () => {
+    if (!deployment.value || isDeploymentError(deployment.value)) {
+      // go to fatal error page.
+      router.push(newFatalErrorRouteLocation(
+        new Error('Invalid Value for Deployment Object'),
+        'DeploymentPage::deployment()',
+      ));
+    }
+  }
+);
 
 const configurationSubTitles = computed(() => {
   return [
@@ -81,48 +102,25 @@ const fileSubTitles = computed(() => {
   ];
 });
 
-const getDeployment = async() => {
-  try {
-    if (!deploymentName.value) {
-      deployment.value = undefined;
-      return;
-    }
-    // API Returns:
-    // 200 - success
-    // 404 - not found
-    // 500 - internal server error
-    const response = await api.deployments.get(deploymentName.value);
-    const d = response.data;
-    if (isDeploymentRecordError(d)) {
-      // let the fatal error page handle this deployment error.
-      // we're in a header, they can't fix it here.
-      throw new Error(d.error.msg);
-    } else {
-      deployment.value = d;
-    }
-  } catch (error: unknown) {
-    // For this page, we send all errors to the fatal error page, including 404
-    router.push(newFatalErrorRouteLocation(error, 'DeploymentPage::getDeployment()'));
-  }
-};
-
 const defaultConfig = computed(() => {
   return configurations.value.find((c) => c.configurationName === 'default');
+});
+
+const onDeployInitiated = () => {
+  publishInitiated = true;
+};
+
+// Refresh the main deployment list on exit if we haven't published.
+// This handles the add new, but did not publish scenaro.
+onBeforeUnmount(() => {
+  if (!publishInitiated && deploymentName.value) {
+    deployments.refreshDeployment(deploymentName.value);
+  }
 });
 
 async function getConfigurations() {
   const response = await api.configurations.getAll();
   configurations.value = response.data;
 }
-
 getConfigurations();
-
-watch(
-  () => route.params,
-  () => {
-    getDeployment();
-  },
-  { immediate: true }
-);
-
 </script>
