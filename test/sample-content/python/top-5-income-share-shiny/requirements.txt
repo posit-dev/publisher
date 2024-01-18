@@ -1,5 +1,0 @@
-shiny
-shinywidgets
-altair
-pandas
-vega

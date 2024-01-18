@@ -1,5 +1,0 @@
-fastapitableau
-joblib
-pandas
-scikit-learn
-typing

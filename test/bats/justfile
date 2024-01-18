@@ -3,6 +3,7 @@ alias i := install
 alias t := test
 
 export CONTENT := env_var_or_default("CONTENT", "all")
+export CONTENT_REPO := env_var_or_default("CONTENT_REPO", "/work/connect-content")
 
 _ci := env_var_or_default("CI", "false")
 
@@ -49,34 +50,38 @@ run *args:
 
 
 # Executes bats deploy tests
+# Content being tested lives in the connect-content githu repo
 test-contract:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
     exe=$(just ../../executable-path)
-
+    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+    
     if [ ! -f $exe ]; then
         echo "error: Missing executable $exe. Run \`just build\`." 1>&2
         exit 1
     fi
     pip install -r ../setup/requirements.txt
-    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
-    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
-    echo "CONTENT: ${CONTENT}"
+
     EXE=$exe npm run accounts
     if [[ "${CONTENT}" == "all" ]]; then
-        content_list=$(python ../deploy_helper.py)
+        cp -R "${HOME}${CONTENT_REPO}/bundles" ../
+        content_list=$(python ../deploy_helper.py "${HOME}${CONTENT_REPO}/bundles")
         for i in ${content_list}
         do
-            export CONTENT=${i}
-            EXE=$exe npm run deploy
+            # only test when we have a .publisher-env file for the content
+            if [[ -f ../bundles/${i}/test/.publisher-env ]]; then
+                export CONTENT=${i}
+                EXE=$exe npm run deploy
+            fi
         done
+        rm -rf ../bundles
     else
         EXE=$exe npm run deploy
     fi
-    
-    
 
 # Executes bats local tests
 test:

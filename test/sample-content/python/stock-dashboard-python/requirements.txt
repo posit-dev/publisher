@@ -1,3 +1,0 @@
-dash
-dash_bootstrap_components
-pandas>=2.0
