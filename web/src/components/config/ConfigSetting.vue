@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import DiffTag from '../DiffTag.vue';
+import DiffTag from 'src/components/DiffTag.vue';
 
 defineProps({
   label: {
