@@ -3,7 +3,7 @@
 <template>
   <q-header>
     <q-toolbar class="publisher-layout">
-      <AppMenu />
+      <AppMenu v-if="!vscode" />
       <q-toolbar-title>
         <PLink
           class="posit-logo-link text-white"
@@ -29,6 +29,7 @@
 </template>
 
 <script setup lang="ts">
+import { vscode } from 'src/vscode';
 import AppMenu from 'src/components/AppMenu.vue';
 import PLink from 'src/components/PLink.vue';
 import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
