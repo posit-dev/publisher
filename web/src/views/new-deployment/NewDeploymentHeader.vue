@@ -4,10 +4,11 @@
   <div class="deployment-header">
     <div class="publisher-layout q-py-md">
       <q-breadcrumbs>
-        <q-breadcrumbs-el
-          label="Project"
-          :to="{ name: 'project' }"
-        />
+        <q-breadcrumbs-el>
+          <PLink :to="{ name: 'project' }">
+            Project
+          </PLink>
+        </q-breadcrumbs-el>
         <q-breadcrumbs-el
           label="Deploy"
         />
@@ -25,7 +26,13 @@
           </h1>
           <template v-if="deployAsNew">
             <p>
-              New deployment to: {{ deploymentURL }}
+              New deployment to: <a
+                :href="deploymentURL"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ deploymentURL }}
+              </a>
             </p>
             <p>
               {{ addingDeploymentMessage }}
@@ -33,7 +40,13 @@
           </template>
           <template v-else>
             <p>
-              Deployment to: {{ deploymentURL }}
+              Deployment to: <a
+                :href="deploymentURL"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ deploymentURL }}
+              </a>
             </p>
             <p>
               {{ contentId }}
@@ -53,7 +66,7 @@
             class="q-ml-md"
             padding="sm md"
             data-automation="deploy"
-            :disable="Boolean(configError) || eventStore.publishInProgess"
+            :disable="Boolean(configError) || eventStore.publishInProgess || !deploymentName"
             @click="initiateDeploy"
           >
             <q-tooltip
@@ -102,7 +115,7 @@ import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';
 import { useEventStore } from 'src/stores/events';
 import {
   newFatalErrorRouteLocation,
-} from 'src/util/errors';
+} from 'src/utils/errors';
 import { useRouter } from 'vue-router';
 import PButton from 'src/components/PButton.vue';
 
@@ -144,6 +157,9 @@ const redeployDisableTitle = computed(() => {
 });
 
 const initiateDeploy = async() => {
+  if (props.deploymentName === undefined) {
+    return;
+  }
   emit('deploy');
   // Returns:
   // 200 - success
@@ -155,8 +171,8 @@ const initiateDeploy = async() => {
     const result = await eventStore.initiatePublishProcessWithEvents(
       deployAsNew.value,
       props.accountName,
-      deploymentURL.value,
       props.deploymentName,
+      deploymentURL.value,
       contentId.value,
     );
     deployingLocalId.value = result;

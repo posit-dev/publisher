@@ -4,166 +4,131 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/publish"
-	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
-type PostDeploymentsHandlerFuncSuite struct {
+type PostDeploymentsSuite struct {
 	utiltest.Suite
 	cwd util.Path
 }
 
-func TestPostDeploymentsHandlerFuncSuite(t *testing.T) {
-	suite.Run(t, new(PostDeploymentsHandlerFuncSuite))
+func TestPostDeploymentsSuite(t *testing.T) {
+	suite.Run(t, new(PostDeploymentsSuite))
 }
 
-func (s *PostDeploymentsHandlerFuncSuite) SetupTest() {
-	stateFactory = state.New
-	publisherFactory = publish.NewFromState
-
-	afs := afero.NewMemMapFs()
-	cwd, err := util.Getwd(afs)
+func (s *PostDeploymentsSuite) SetupTest() {
+	fs := afero.NewMemMapFs()
+	cwd, err := util.Getwd(fs)
 	s.Nil(err)
 	s.cwd = cwd
 	s.cwd.MkdirAll(0700)
 }
 
-type mockPublisher struct {
-	mock.Mock
-}
+func (s *PostDeploymentsSuite) TestPostDeployments() {
+	lister := &accounts.MockAccountList{}
+	acct := &accounts.Account{
+		Name:       "myAccount",
+		URL:        "https://connect.example.com",
+		ServerType: accounts.ServerTypeConnect,
+	}
+	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
 
-func (m *mockPublisher) PublishDirectory(log logging.Logger) error {
-	args := m.Called(log)
-	return args.Error(0)
-}
-
-func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFunc() {
-	log := logging.New()
+	h := PostDeploymentsHandlerFunc(s.cwd, logging.New(), lister)
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/publish", nil)
+	body := strings.NewReader(`{
+		"account": "myAccount",
+		"saveName": "newDeployment"
+	}`)
+	req, err := http.NewRequest("POST", "/api/deployments", body)
 	s.NoError(err)
+	h(rec, req)
 
-	lister := &accounts.MockAccountList{}
-	req.Body = io.NopCloser(strings.NewReader(
-		`{
-			"account": "local",
-			"config": "default"
-		}`))
-
-	publisher := &mockPublisher{}
-	publisher.On("PublishDirectory", mock.Anything).Return(nil)
-	publisherFactory = func(*state.State) publish.Publisher {
-		return publisher
-	}
-	stateFactory = func(
-		path util.Path,
-		accountName, configName, targetName, saveName string,
-		accountList accounts.AccountList) (*state.State, error) {
-		s.Equal("local", accountName)
-		s.Equal("default", configName)
-		return state.Empty(), nil
-	}
-	handler := PostDeploymentsHandlerFunc(util.Path{}, log, lister)
-	handler(rec, req)
-
-	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
 
-	res := &PostPublishReponse{}
+	res := preDeploymentDTO{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
-	s.NoError(dec.Decode(res))
+	s.NoError(dec.Decode(&res))
+
+	actualPath, err := util.NewPath(res.Path, s.cwd.Fs()).Rel(s.cwd)
+	s.NoError(err)
+	s.Equal(filepath.Join(".posit", "publish", "deployments", "newDeployment.toml"), actualPath.String())
+
+	s.Equal("newDeployment", res.Name)
+	s.Equal("newDeployment", res.SaveName)
+	s.Equal(accounts.ServerTypeConnect, res.ServerType)
+	s.Equal(acct.URL, res.ServerURL)
+	s.Equal(deploymentStateNew, res.State)
 }
 
-func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadJSON() {
-	log := logging.New()
+func (s *PostDeploymentsSuite) TestPostDeploymentsBadRequest() {
+	h := PostDeploymentsHandlerFunc(s.cwd, logging.New(), nil)
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/publish", nil)
+	body := strings.NewReader(`{
+		"what": "huh?",
+	}`)
+	req, err := http.NewRequest("POST", "/api/deployments", body)
 	s.NoError(err)
+	h(rec, req)
 
-	req.Body = io.NopCloser(strings.NewReader(`{"random": "123"}`))
-
-	handler := PostDeploymentsHandlerFunc(util.Path{}, log, nil)
-	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
 
-func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncBadSaveAsName() {
-	log := logging.New()
-
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/publish", nil)
-	s.NoError(err)
-
-	req.Body = io.NopCloser(strings.NewReader(`{"saveName": "a/b"}`))
-
-	handler := PostDeploymentsHandlerFunc(util.Path{}, log, nil)
-	handler(rec, req)
-	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
-}
-
-func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncStateErr() {
-	log := logging.New()
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/publish", nil)
-	s.NoError(err)
-	req.Body = io.NopCloser(strings.NewReader("{}"))
-
-	stateFactory = func(
-		path util.Path,
-		accountName, configName, targetName, saveName string,
-		accountList accounts.AccountList) (*state.State, error) {
-		return nil, errors.New("test error from state factory")
-	}
-
-	handler := PostDeploymentsHandlerFunc(util.Path{}, log, nil)
-	handler(rec, req)
-	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
-}
-
-func (s *PostDeploymentsHandlerFuncSuite) TestPostDeploymentsHandlerFuncPublishErr() {
-	log := logging.New()
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/publish", nil)
-	s.NoError(err)
-
+func (s *PostDeploymentsSuite) TestPostDeploymentsAccountNotFound() {
 	lister := &accounts.MockAccountList{}
-	req.Body = io.NopCloser(strings.NewReader(`{"account": "local", "config": "default"}`))
+	acctErr := fmt.Errorf("cannot get account named 'myAccount': %w", accounts.ErrAccountNotFound)
+	lister.On("GetAccountByName", "myAccount").Return(nil, acctErr)
 
-	stateFactory = func(
-		path util.Path,
-		accountName, configName, targetName, saveName string,
-		accountList accounts.AccountList) (*state.State, error) {
-		return state.Empty(), nil
-	}
+	h := PostDeploymentsHandlerFunc(s.cwd, logging.New(), lister)
 
-	testErr := errors.New("test error from PublishDirectory")
-	publisher := &mockPublisher{}
-	publisher.On("PublishDirectory", mock.Anything).Return(testErr)
-	publisherFactory = func(*state.State) publish.Publisher {
-		return publisher
-	}
+	rec := httptest.NewRecorder()
+	body := strings.NewReader(`{
+		"account": "myAccount",
+		"saveName": "newDeployment"
+	}`)
+	req, err := http.NewRequest("POST", "/api/deployments", body)
+	s.NoError(err)
+	h(rec, req)
 
-	handler := PostDeploymentsHandlerFunc(util.Path{}, log, lister)
-	handler(rec, req)
+	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+	resp, err := io.ReadAll(rec.Result().Body)
+	s.NoError(err)
+	s.Contains(string(resp), "no such account")
+	s.Contains(string(resp), "myAccount")
+}
 
-	// Handler returns 202 Accepted even if publishing errs,
-	// because the publish action is asynchronous.
-	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
+func (s *PostDeploymentsSuite) TestPostDeploymentsConflict() {
+	s.TestPostDeployments()
+	lister := &accounts.MockAccountList{}
+	acct := &accounts.Account{}
+	lister.On("GetAccountByName", "myAccount").Return(acct, nil)
+
+	h := PostDeploymentsHandlerFunc(s.cwd, logging.New(), lister)
+
+	rec := httptest.NewRecorder()
+	body := strings.NewReader(`{
+		"account": "myAccount",
+		"saveName": "newDeployment"
+	}`)
+	req, err := http.NewRequest("POST", "/api/deployments", body)
+	s.NoError(err)
+	h(rec, req)
+
+	s.Equal(http.StatusConflict, rec.Result().StatusCode)
 }

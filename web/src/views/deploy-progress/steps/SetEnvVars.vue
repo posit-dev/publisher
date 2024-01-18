@@ -5,10 +5,13 @@
     :name="name"
     title="Set Environment Variables"
     icon="sync"
-    summary="Setting Environment Variables on Connect Server."
     :done="done"
     :messages="messages"
-  />
+  >
+    <template #summary>
+      Setting Environment Variables on Connect Server.
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">

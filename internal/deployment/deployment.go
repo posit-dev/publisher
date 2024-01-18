@@ -30,8 +30,8 @@ type Deployment struct {
 	DashboardURL  string              `toml:"dashboard-url" json:"dashboardUrl"`
 	DirectURL     string              `toml:"direct-url" json:"directUrl"`
 	Error         *types.AgentError   `toml:"deployment-error" json:"deploymentError"`
-	Files         []string            `toml:"files,multiline" json:"files"`
-	Configuration config.Config       `toml:"configuration" json:"configuration"`
+	Files         []string            `toml:"files,multiline,omitempty" json:"files"`
+	Configuration *config.Config      `toml:"configuration" json:"configuration"`
 }
 
 func New() *Deployment {
@@ -39,8 +39,8 @@ func New() *Deployment {
 		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    accounts.ServerTypeConnect,
 		ClientVersion: project.Version,
-		Configuration: *config.New(),
-		Files:         []string{},
+		Configuration: nil,
+		Files:         nil,
 	}
 }
 
@@ -90,6 +90,7 @@ func FromFile(path util.Path) (*Deployment, error) {
 		return nil, err
 	}
 	d := New()
+
 	err = util.ReadTOMLFile(path, d)
 	if err != nil {
 		return nil, err

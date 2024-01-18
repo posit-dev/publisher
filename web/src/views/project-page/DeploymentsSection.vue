@@ -66,7 +66,7 @@
 import { computed, ref } from 'vue';
 
 import { Deployment, DeploymentRecordError, isDeploymentRecordError, useApi } from 'src/api';
-import { ErrorMessages, buildErrorBannerMessage, newFatalErrorRouteLocation } from 'src/util/errors';
+import { ErrorMessages, buildErrorBannerMessage, newFatalErrorRouteLocation } from 'src/utils/errors';
 import { sortByDateString } from 'src/utils/date';
 import { router } from 'src/router';
 import DeploymentCard from './DeploymentCard.vue';

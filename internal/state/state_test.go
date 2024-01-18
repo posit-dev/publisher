@@ -131,6 +131,7 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 		entrypoint = 'app:app'
 		title = 'Super Title'
 		description = 'minimal description'
+		validate = true
 
 		[configuration.python]
 		version = "3.11.3"
@@ -168,7 +169,7 @@ func (s *StateSuite) TestLoadTarget() {
 		},
 		ID:       "1234567890ABCDEF",
 		SaveName: "myTarget",
-		Configuration: config.Config{
+		Configuration: &config.Config{
 			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 			Type:        "python-dash",
 			Entrypoint:  "app:app",
@@ -272,7 +273,8 @@ func (s *StateSuite) TestNew() {
 	s.Equal(state.TargetName, "")
 	s.Equal(&acct, state.Account)
 	s.Equal(cfg, state.Config)
-	s.Nil(state.Target)
+	// Target is never nil. We create a new target if no target ID was provided.
+	s.NotNil(state.Target)
 }
 
 func (s *StateSuite) TestNewNonDefaultConfig() {
@@ -296,7 +298,8 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	s.Equal("", state.TargetName)
 	s.Equal(&acct, state.Account)
 	s.Equal(cfg, state.Config)
-	s.Nil(state.Target)
+	// Target is never nil. We create a new target if no target ID was provided.
+	s.NotNil(state.Target)
 }
 
 func (s *StateSuite) TestNewConfigErr() {
@@ -338,7 +341,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	d.ID = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
-	d.Configuration = *cfg
+	d.Configuration = cfg
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 
@@ -381,7 +384,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	d.ID = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
-	d.Configuration = *cfg
+	d.Configuration = cfg
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 

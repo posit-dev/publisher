@@ -37,7 +37,7 @@ import { useApi } from 'src/api';
 import { DeploymentFile, ExclusionMatch, ExclusionMatchSource } from 'src/api/types/files';
 import {
   newFatalErrorRouteLocation,
-} from 'src/util/errors';
+} from 'src/utils/errors';
 import { useRouter } from 'vue-router';
 
 const NODE_KEY = 'key';

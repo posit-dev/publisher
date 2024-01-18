@@ -1,10 +1,8 @@
 package environment
 
 import (
-	"bytes"
 	"fmt"
 	"io/fs"
-	"os/exec"
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/logging"
@@ -19,7 +17,7 @@ type PythonInspector interface {
 }
 
 type defaultPythonInspector struct {
-	executor   pythonExecutor
+	executor   util.Executor
 	projectDir util.Path
 	pythonPath util.Path
 	log        logging.Logger
@@ -27,28 +25,9 @@ type defaultPythonInspector struct {
 
 var _ PythonInspector = &defaultPythonInspector{}
 
-type pythonExecutor interface {
-	runPythonCommand(pythonExecutable string, args []string) ([]byte, error)
-}
-
-type defaultPythonExecutor struct{}
-
-var _ pythonExecutor = &defaultPythonExecutor{}
-
-func (e *defaultPythonExecutor) runPythonCommand(pythonExecutable string, args []string) ([]byte, error) {
-	cmd := exec.Command(pythonExecutable, args...)
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err := cmd.Run()
-	if err != nil {
-		return nil, err
-	}
-	return stdout.Bytes(), nil
-}
-
 func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.Logger) PythonInspector {
 	return &defaultPythonInspector{
-		executor:   &defaultPythonExecutor{},
+		executor:   util.NewExecutor(),
 		projectDir: projectDir,
 		pythonPath: pythonPath,
 		log:        log,
@@ -57,7 +36,7 @@ func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.
 
 func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
 	args := []string{"--version"}
-	_, err := i.executor.runPythonCommand(pythonExecutable, args)
+	_, err := i.executor.RunCommand(pythonExecutable, args)
 	if err != nil {
 		return fmt.Errorf("could not run python executable '%s': %w", pythonExecutable, err)
 	}
@@ -111,7 +90,7 @@ func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
 		`-c`, // execute the next argument as python code
 		`import sys; v = sys.version_info; print("%d.%d.%d" % (v[0], v[1], v[2]))`,
 	}
-	output, err := i.executor.runPythonCommand(pythonExecutable, args)
+	output, err := i.executor.RunCommand(pythonExecutable, args)
 	if err != nil {
 		return "", err
 	}
@@ -138,7 +117,7 @@ func (i *defaultPythonInspector) EnsurePythonRequirementsFile() error {
 	source := fmt.Sprintf("%s -m pip freeze", pythonExecutable)
 	i.log.Info("Using Python packages", "source", source)
 	args := []string{"-m", "pip", "freeze"}
-	out, err := i.executor.runPythonCommand(pythonExecutable, args)
+	out, err := i.executor.RunCommand(pythonExecutable, args)
 	if err != nil {
 		return err
 	}

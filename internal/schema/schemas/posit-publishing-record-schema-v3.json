@@ -6,9 +6,7 @@
   "description": "Posit Publishing Record",
   "required": [
     "$schema",
-    "server-url",
-    "id",
-    "configuration-name"
+    "server-url"
   ],
   "properties": {
     "$schema": {
