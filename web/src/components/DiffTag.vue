@@ -59,6 +59,9 @@ const marker = computed(() => {
   }
 
   .diff-marker {
+    display: flex;
+    align-self: stretch;
+    align-items: center;
     border-right: 1px solid;
     padding-right: 6px;
   }
