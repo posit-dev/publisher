@@ -6,7 +6,6 @@
     :deployment="deployment"
     :config-error="isConfigurationError(defaultConfig) ? defaultConfig : undefined"
     :preferred-account="props.preferredAccount"
-    @deploy="onDeployInitiated"
   />
   <DeploymentSection
     v-if="deployment"
@@ -29,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDeploymentStore } from 'src/stores/deployments';
 
@@ -48,9 +47,6 @@ const route = useRoute();
 const router = useRouter();
 const api = useApi();
 const deployments = useDeploymentStore();
-
-// keep track if the user initiated publishing or not
-let publishInitiated = false;
 
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
@@ -104,18 +100,6 @@ const fileSubTitles = computed(() => {
 
 const defaultConfig = computed(() => {
   return configurations.value.find((c) => c.configurationName === 'default');
-});
-
-const onDeployInitiated = () => {
-  publishInitiated = true;
-};
-
-// Refresh the main deployment list on exit if we haven't published.
-// This handles the add new, but did not publish scenaro.
-onBeforeUnmount(() => {
-  if (!publishInitiated && deploymentName.value) {
-    deployments.refreshDeployment(deploymentName.value);
-  }
 });
 
 async function getConfigurations() {
