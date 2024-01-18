@@ -13,7 +13,6 @@
 
     <q-form
       class="q-gutter-md"
-      @reset="init"
       @submit.prevent="navigateToDeploymentPage"
     >
       <div class="q-pa-sm">
@@ -130,22 +129,22 @@ const disableToDeploymentPage = computed(() => {
 const navigateToDeploymentPage = async() => {
   navigationInProgress.value = true;
   try {
-    await api.deployments.createNew(
+    const response = await api.deployments.createNew(
       selectedAccountName.value,
       deploymentName.value,
     );
+    router.push({
+      name: 'deployments',
+      params: {
+        name: response.data.deploymentName,
+      },
+      query: {
+        preferredAccount: selectedAccountName.value,
+      }
+    });
   } catch (error: unknown) {
     router.push(newFatalErrorRouteLocation(error, 'navigateToDeploymentPage::createNew()'));
   }
-  router.push({
-    name: 'deployments',
-    params: {
-      name: deploymentName.value,
-    },
-    query: {
-      preferredAccount: selectedAccountName.value,
-    }
-  });
 };
 
 const generateDefaultName = () => {

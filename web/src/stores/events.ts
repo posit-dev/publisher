@@ -243,6 +243,10 @@ export const useEventStore = defineStore('event', () => {
     status: newPublishStatus(),
   });
 
+  const doesPublishStatusApplyToDeployment = ((deploymentName: string) => {
+    return deploymentName === currentPublishStatus.value.saveName;
+  });
+
   const doesPublishStatusApply = ((id: string) => {
     return (
       id &&
@@ -857,6 +861,7 @@ export const useEventStore = defineStore('event', () => {
     latestLocalId,
     isPublishActiveByID,
     doesPublishStatusApply,
+    doesPublishStatusApplyToDeployment,
     publishStepDisplayNames,
     publishStepOrder,
     publishStepCompletionStatusNames,

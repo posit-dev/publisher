@@ -142,7 +142,7 @@ const props = defineProps({
     required: false,
     default: undefined
   },
-  preferredAccount: { type: String, required: false, default: '' },
+  preferredAccount: { type: String, required: false, default:  },
 });
 
 const onChange = (account: Account) => {
@@ -164,7 +164,6 @@ const progressLink = computed(() => {
     return {
       name: 'progress',
       query: {
-        name: props.deployment.saveName,
         operation: operationStr.value,
         id: props.deployment.id,
       },

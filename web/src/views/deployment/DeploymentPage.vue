@@ -51,7 +51,7 @@ const deployment = ref<Deployment | PreDeployment>();
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 const props = defineProps({
-  preferredAccount: { type: String, required: false, default: '' },
+  preferredAccount: { type: String, required: false, default: undefined },
 });
 
 const deploymentName = computed(():string => {
