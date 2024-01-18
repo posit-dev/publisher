@@ -14,7 +14,7 @@
     <dd class="config-value">
       <div
         v-if="value !== undefined"
-        class="flex gap-md"
+        class="flex gap-sm"
       >
         <template
           v-if="previousValue !== value"
