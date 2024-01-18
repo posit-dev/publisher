@@ -30,7 +30,7 @@ type MockPythonExecutor struct {
 	mock.Mock
 }
 
-func (m *MockPythonExecutor) runPythonCommand(pythonExecutable string, callArgs []string) ([]byte, error) {
+func (m *MockPythonExecutor) RunCommand(pythonExecutable string, callArgs []string) ([]byte, error) {
 	args := m.Called(pythonExecutable, callArgs)
 	data := args.Get(0)
 	if data == nil {
@@ -71,7 +71,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 	i := NewPythonInspector(util.Path{}, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
-	executor.On("runPythonCommand", pythonPath.String(), mock.Anything).Return([]byte("3.10.4"), nil)
+	executor.On("RunCommand", pythonPath.String(), mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
 	version, err := inspector.GetPythonVersion()
 	s.NoError(err)
@@ -87,8 +87,8 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	i := NewPythonInspector(projectDir, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
-	testError := errors.New("test error from runPythonCommand")
-	executor.On("runPythonCommand", pythonPath.String(), mock.Anything).Return(nil, testError)
+	testError := errors.New("test error from RunCommand")
+	executor.On("RunCommand", pythonPath.String(), mock.Anything).Return(nil, testError)
 	inspector.executor = executor
 	version, err := inspector.GetPythonVersion()
 	s.NotNil(err)
@@ -101,7 +101,7 @@ func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	i := NewPythonInspector(util.Path{}, util.Path{}, log)
 	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
-	executor.On("runPythonCommand", mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
+	executor.On("RunCommand", mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
 	version, err := inspector.GetPythonVersion()
 	s.NoError(err)
@@ -129,9 +129,9 @@ type mockPythonExecutor struct {
 	mock.Mock
 }
 
-var _ pythonExecutor = &mockPythonExecutor{}
+var _ util.Executor = &mockPythonExecutor{}
 
-func (m *mockPythonExecutor) runPythonCommand(pythonExecutable string, args []string) ([]byte, error) {
+func (m *mockPythonExecutor) RunCommand(pythonExecutable string, args []string) ([]byte, error) {
 	mockArgs := m.Called(pythonExecutable, args)
 	out := mockArgs.Get(0)
 	if out != nil {
@@ -146,7 +146,7 @@ func (s *PythonSuite) TestGetPythonExecutableFallbackPython() {
 	// python exists and is runnable
 	log := logging.New()
 	executor := &mockPythonExecutor{}
-	executor.On("runPythonCommand", "/some/python", mock.Anything).Return(nil, nil)
+	executor.On("RunCommand", "/some/python", mock.Anything).Return(nil, nil)
 	inspector := &defaultPythonInspector{
 		executor: executor,
 		log:      log,
@@ -166,8 +166,8 @@ func (s *PythonSuite) TestGetPythonExecutablePython3NotRunnable() {
 	log := logging.New()
 	executor := &mockPythonExecutor{}
 	testError := errors.New("exit status 9009")
-	executor.On("runPythonCommand", "/some/python3", mock.Anything).Return(nil, testError)
-	executor.On("runPythonCommand", "/some/python", mock.Anything).Return(nil, nil)
+	executor.On("RunCommand", "/some/python3", mock.Anything).Return(nil, testError)
+	executor.On("RunCommand", "/some/python", mock.Anything).Return(nil, nil)
 
 	inspector := &defaultPythonInspector{
 		executor: executor,
@@ -188,8 +188,8 @@ func (s *PythonSuite) TestGetPythonExecutableNoRunnablePython() {
 	log := logging.New()
 	executor := &mockPythonExecutor{}
 	testError := errors.New("exit status 9009")
-	executor.On("runPythonCommand", "/some/python3", mock.Anything).Return(nil, testError)
-	executor.On("runPythonCommand", "/some/python", mock.Anything).Return(nil, testError)
+	executor.On("RunCommand", "/some/python3", mock.Anything).Return(nil, testError)
+	executor.On("RunCommand", "/some/python", mock.Anything).Return(nil, testError)
 
 	inspector := &defaultPythonInspector{
 		executor: executor,
@@ -244,7 +244,7 @@ func (s *PythonSuite) TestEnsurePythonRequirementsFileFromExecutable() {
 	inspector := i.(*defaultPythonInspector)
 	executor := NewMockPythonExecutor()
 	freezeOutput := []byte("numpy\npandas\n")
-	executor.On("runPythonCommand", pythonPath.String(), mock.Anything).Return(freezeOutput, nil)
+	executor.On("RunCommand", pythonPath.String(), mock.Anything).Return(freezeOutput, nil)
 	inspector.executor = executor
 	err := inspector.EnsurePythonRequirementsFile()
 	s.NoError(err)
