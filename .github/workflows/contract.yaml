@@ -30,6 +30,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: rstudio/connect-content
+          ref: 'kg-add-python-apis'
           path: 'test'
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
