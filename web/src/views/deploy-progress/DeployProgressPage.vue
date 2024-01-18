@@ -23,10 +23,10 @@
     >
       <div class="space-between-y-sm">
         <h1
-          v-if="saveName"
+          v-if="name"
           class="text-h6"
         >
-          {{ saveName }}
+          {{ name }}
         </h1>
         <p>
           {{ operation }}
@@ -52,22 +52,25 @@ import PLink from 'src/components/PLink.vue';
 const eventStore = useEventStore();
 const router = useRouter();
 
-const saveName = computed(() => {
-  return eventStore.currentPublishStatus.saveName;
-});
-
-const operation = computed(() => {
-  return `Deploying to: ${eventStore.currentPublishStatus.destinationURL}`;
-});
-
 const id = computed(() => {
   return eventStore.currentPublishStatus.contentId;
 });
-// defineProps({
-//   name: { type: String, required: true },
-//   operation: { type: String, required: true },
-//   id: { type: String, required: false, default: '' },
-// });
+
+defineProps({
+  name: {
+    type: String,
+    required: true,
+  },
+  operation: {
+    type: String,
+    required: true,
+  },
+  // Temp until we figure out how to make this work right
+  // id: {
+  //   type: String,
+  //   required: true,
+  // },
+});
 </script>
 
 <style scoped lang="scss">

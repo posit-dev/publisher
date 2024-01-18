@@ -4,8 +4,7 @@ import { RouteLocationNormalizedLoaded, createRouter, createWebHistory } from 'v
 
 import ProjectPage from 'src/views/project-page/ProjectPage.vue';
 import AddNewDeployment from 'src/views/add-new-deployment/AddNewDeployment.vue';
-import ExistingDeploymentPage from 'src/views/existing-deployment/ExistingDeploymentPage.vue';
-import NewDeploymentPage from 'src/views/new-deployment/NewDeploymentPage.vue';
+import DeploymentPage from 'src/views/deployment/DeploymentPage.vue';
 import DeployProgressPage from 'src/views/deploy-progress/DeployProgressPage.vue';
 import FatalErrorPage from 'src/views/fatal-error/FatalErrorPage.vue';
 
@@ -14,21 +13,18 @@ const routes = [
   { name: 'project', path: '/project', component: ProjectPage },
   { name: 'addNewDeployment', path: '/add-new-deployment', component: AddNewDeployment },
   {
-    name: 'newDeployment',
-    path: '/new-deployment/:account',
-    component: NewDeploymentPage,
+    name: 'deployments',
+    path: '/deployments/:name',
+    component: DeploymentPage,
     props: (route: RouteLocationNormalizedLoaded) => ({
-      name: route.query.name,
-      url: route.query.url,
+      preferredAccount: route.query.preferredAccount,
     }),
   },
-  { name: 'deployments', path: '/deployments/:name', component: ExistingDeploymentPage },
   {
     name: 'progress',
-    path: '/progress',
+    path: '/deployments/:name/progress',
     component: DeployProgressPage,
     props: (route: RouteLocationNormalizedLoaded) => ({
-      name: route.query.name,
       operation: route.query.operation,
       id: route.query.id,
     }),

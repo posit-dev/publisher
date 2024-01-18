@@ -1,10 +1,11 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ExistingDeploymentHeader
+  <DeploymentHeader
     v-if="deployment && defaultConfig"
     :deployment="deployment"
     :config-error="isConfigurationError(defaultConfig) ? defaultConfig : undefined"
+    :preferred-account="props.preferredAccount"
   />
   <DeploymentSection
     v-if="deployment"
@@ -38,7 +39,7 @@ import {
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
-import ExistingDeploymentHeader from './ExistingDeploymentHeader.vue';
+import DeploymentHeader from './DeploymentHeader.vue';
 import DeploymentSection from 'src/components/DeploymentSection.vue';
 
 const route = useRoute();
@@ -48,6 +49,10 @@ const api = useApi();
 const deployment = ref<Deployment | PreDeployment>();
 
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
+
+const props = defineProps({
+  preferredAccount: { type: String, required: false, default: undefined },
+});
 
 const deploymentName = computed(():string => {
   // route param can be either string | string[]
@@ -97,7 +102,7 @@ const getDeployment = async() => {
     }
   } catch (error: unknown) {
     // For this page, we send all errors to the fatal error page, including 404
-    router.push(newFatalErrorRouteLocation(error, 'ExistingDeploymentPage::getDeployment()'));
+    router.push(newFatalErrorRouteLocation(error, 'DeploymentPage::getDeployment()'));
   }
 };
 

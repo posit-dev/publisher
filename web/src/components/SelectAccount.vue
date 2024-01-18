@@ -38,6 +38,7 @@ import { Account } from 'src/api';
 const emit = defineEmits(['change']);
 const props = defineProps({
   url: { type: String, required: true },
+  preferredAccount: { type: String, required: false, default: undefined },
   accounts: { type: Object as PropType<Account[]>, required: true },
 });
 
@@ -66,7 +67,18 @@ const options = computed(() => {
 watch(
   options,
   () => {
-    if (!options.value.find((option) => option.label === selectedAccount.value?.label)) {
+    // if the user hasn't selected anything yet...
+    if (!selectedAccount.value) {
+      // pick a default.
+      // if there is a preferred, use it
+      if (props.preferredAccount) {
+        const account = options.value.find((option) => option.label === props.preferredAccount);
+        if (account) {
+          selectedAccount.value = account;
+          return;
+        }
+      }
+      // otherwise, use the first one.
       if (options.value.length > 0) {
         selectedAccount.value = options.value[0];
       } else {
