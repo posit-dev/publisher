@@ -17,15 +17,9 @@
 </template>
 
 <script setup lang="ts">
-
-import { useQuasar } from 'quasar';
-
 import AppHeader from 'src/components/AppHeader.vue';
 import { onBeforeUnmount } from 'vue';
 import { useEventStore } from 'src/stores/events';
-
-const $q = useQuasar();
-$q.dark.set('auto');
 
 const eventStore = useEventStore();
 
