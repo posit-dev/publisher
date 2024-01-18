@@ -122,7 +122,6 @@ import { useEventStore } from 'src/stores/events';
 import { formatDateString } from 'src/utils/date';
 import { newFatalErrorRouteLocation } from 'src/utils/errors';
 import { useRouter } from 'vue-router';
-import { normalizeURL } from 'src/utils/urls';
 
 const api = useApi();
 const eventStore = useEventStore();
@@ -255,7 +254,7 @@ watch(
   ],
   () => {
     const credentials = accounts.value.filter(
-      (account: Account) => normalizeURL(account.url) === normalizeURL(props.deployment.serverUrl)
+      (account: Account) => account.url === props.deployment.serverUrl
     );
     filteredAccountList.value = credentials;
   },
