@@ -9,21 +9,13 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type ContentType struct {
-	Type           config.ContentType
-	Entrypoint     string
-	RequiresR      bool
-	RequiresPython bool
-	RequiresQuarto bool
-}
-
 // ContentTypeInferer infers as much as possible about the
 // provided content. If inference is succcessful, InferType
-// returns the content type. If it's not successful, it returns
+// returns a partially filled Config. If it's not successful, it returns
 // (nil, nil), i.e. failing inference is not an error.
 // If there's an error during inferences, it returns (nil, err).
 type ContentTypeInferer interface {
-	InferType(path util.Path) (*ContentType, error)
+	InferType(path util.Path) (*config.Config, error)
 }
 
 type inferenceHelper interface {

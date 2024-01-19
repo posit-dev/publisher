@@ -29,20 +29,20 @@ func NewContentTypeDetector() *ContentTypeDetector {
 	}
 }
 
-func (t *ContentTypeDetector) InferType(path util.Path) (*ContentType, error) {
+func (t *ContentTypeDetector) InferType(path util.Path) (*config.Config, error) {
 	for _, detector := range t.detectors {
-		contentType, err := detector.InferType(path)
+		cfg, err := detector.InferType(path)
 		if err != nil {
 			return nil, err
 		}
-		if contentType != nil {
-			return contentType, nil
+		if cfg != nil {
+			return cfg, nil
 		}
 	}
-	return &ContentType{
-		Type:       config.ContentTypeUnknown,
-		Entrypoint: "unknown",
-	}, nil
+	cfg := config.New()
+	cfg.Type = config.ContentTypeUnknown
+	cfg.Entrypoint = "unknown"
+	return cfg, nil
 }
 
 var _ ContentTypeInferer = &ContentTypeDetector{}

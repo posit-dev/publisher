@@ -26,6 +26,8 @@ func NewFlaskDetector() *PythonAppDetector {
 		"flask", // also matches flask_api, flask_openapi3, etc.
 		"flasgger",
 		"falcon", // must check for this after falcon.asgi (FastAPI)
+		"bottle",
+		"pycnic",
 	})
 }
 
@@ -64,26 +66,28 @@ func NewPyShinyDetector() *PythonAppDetector {
 	})
 }
 
-func (d *PythonAppDetector) InferType(path util.Path) (*ContentType, error) {
+func (d *PythonAppDetector) InferType(path util.Path) (*config.Config, error) {
 	entrypoint, entrypointPath, err := d.InferEntrypoint(
 		path, ".py", "main.py", "app.py", "streamlit_app.py", "api.py")
 
 	if err != nil {
 		return nil, err
 	}
-	if entrypoint != "" {
-		matches, err := d.FileHasPythonImports(entrypointPath, d.imports)
-		if err != nil {
-			return nil, err
-		}
-		if matches {
-			return &ContentType{
-				Entrypoint:     entrypoint,
-				Type:           d.contentType,
-				RequiresPython: true,
-			}, nil
-		}
-		// else we didn't find a matching import
+	if entrypoint == "" {
+		// We didn't find a matching import
+		return nil, nil
+	}
+	matches, err := d.FileHasPythonImports(entrypointPath, d.imports)
+	if err != nil {
+		return nil, err
+	}
+	if matches {
+		cfg := config.New()
+		cfg.Entrypoint = entrypoint
+		cfg.Type = d.contentType
+		// indicate that Python inspection is needed
+		cfg.Python = &config.Python{}
+		return cfg, nil
 	}
 	return nil, nil
 }
