@@ -174,11 +174,13 @@
             "type": "string",
             "enum": [
               "knitr",
-              "jupyter"
+              "jupyter",
+              "markdown"
             ],
             "examples": [
               "knitr",
-              "jupyter"
+              "jupyter",
+              "markdown"
             ]
           }
         }
