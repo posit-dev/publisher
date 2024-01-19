@@ -154,15 +154,20 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 
 func (s *StateSuite) TestLoadTarget() {
 	s.createTargetFile("myTarget", false)
-	cfg, err := loadTarget(s.cwd, "myTarget")
+	d, err := loadTarget(s.cwd, "myTarget")
 	s.NoError(err)
 	min_procs := int32(1)
+
+	// Since we don't know the exact value of CreatedAt, skip it.
+	s.NotEmpty(d.CreatedAt)
+	d.CreatedAt = ""
 
 	s.Equal(&deployment.Deployment{
 		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json",
 		ServerURL:  "https://connect.example.com",
 		ServerType: "connect",
 		ConfigName: "myConfig",
+		CreatedAt:  "",
 		Files: []string{
 			"app.py",
 			"requirements.txt",
@@ -189,7 +194,7 @@ func (s *StateSuite) TestLoadTarget() {
 				},
 			},
 		},
-	}, cfg)
+	}, d)
 }
 
 func (s *StateSuite) TestLoadTargetNonexistent() {

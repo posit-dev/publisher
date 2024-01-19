@@ -26,6 +26,7 @@ type DeploymentRecord = {
   serverType: ServerType,
   serverUrl: string,
   saveName: string,
+  createdAt: string,
 } & DeploymentLocation;
 
 export type PreDeployment = {

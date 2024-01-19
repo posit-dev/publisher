@@ -48,9 +48,11 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 }
 
 func (s *DeploymentSuite) TestNew() {
-	deployment := New()
-	s.NotNil(deployment)
-	s.Equal(schema.DeploymentSchemaURL, deployment.Schema)
+	d := New()
+	s.NotNil(d)
+	s.Equal(schema.DeploymentSchemaURL, d.Schema)
+	s.NotEmpty(d.CreatedAt)
+	s.Empty(d.DeployedAt)
 }
 
 func (s *DeploymentSuite) TestGetDeploymentPath() {

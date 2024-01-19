@@ -181,16 +181,24 @@ func (p *defaultPublisher) createDeploymentRecord(
 	// bundleID. These will be added after the
 	// bundle upload.
 	cfg := *p.Config
+
+	now := time.Now().Format(time.RFC3339)
+	created := now
+	if p.Target != nil {
+		created = p.Target.CreatedAt
+	}
+
 	p.Target = &deployment.Deployment{
 		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    account.ServerType,
 		ServerURL:     account.URL,
 		ClientVersion: project.Version,
+		CreatedAt:     created,
 		ID:            contentID,
 		ConfigName:    p.ConfigName,
 		Files:         nil,
 		Configuration: &cfg,
-		DeployedAt:    time.Now().UTC().Format(time.RFC3339),
+		DeployedAt:    now,
 		BundleID:      "",
 		DashboardURL:  getDashboardURL(p.Account.URL, contentID),
 		DirectURL:     getDirectURL(p.Account.URL, contentID),

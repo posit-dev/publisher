@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -21,6 +22,7 @@ type Deployment struct {
 	ServerType    accounts.ServerType `toml:"server-type" json:"serverType"`
 	ServerURL     string              `toml:"server-url" json:"serverUrl"`
 	ClientVersion string              `toml:"client-version" json:"-"`
+	CreatedAt     string              `toml:"created-at" json:"createdAt"`
 	ID            types.ContentID     `toml:"id" json:"id"`
 	ConfigName    string              `toml:"configuration-name" json:"configurationName"`
 	DeployedAt    string              `toml:"deployed-at" json:"deployedAt"`
@@ -39,6 +41,7 @@ func New() *Deployment {
 		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    accounts.ServerTypeConnect,
 		ClientVersion: project.Version,
+		CreatedAt:     time.Now().Format(time.RFC3339),
 		Configuration: nil,
 		Files:         nil,
 	}

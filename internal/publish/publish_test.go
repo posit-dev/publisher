@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/bundles"
@@ -69,6 +70,8 @@ func (s *PublishSuite) TestPublishWithClient() {
 func (s *PublishSuite) TestPublishWithClientUpdate() {
 	target := deployment.New()
 	target.ID = "myContentID"
+	// Make CreatedAt earlier so it will differ from DeployedAt.
+	target.CreatedAt = time.Now().Add(-time.Hour).Format(time.RFC3339)
 	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
@@ -90,6 +93,8 @@ func (s *PublishSuite) TestPublishWithClientFailCreate() {
 func (s *PublishSuite) TestPublishWithClientFailUpdate() {
 	target := deployment.New()
 	target.ID = "myContentID"
+	// Make CreatedAt earlier so it will differ from DeployedAt.
+	target.CreatedAt = time.Now().Add(-time.Hour).Format(time.RFC3339)
 	updateErr := errors.New("error from Update")
 	s.publishWithClient(target, nil, nil, updateErr, nil, nil, nil, nil, nil, updateErr)
 }
@@ -172,6 +177,14 @@ func (s *PublishSuite) publishWithClient(
 	} else {
 		s.NotNil(err)
 		s.Equal(expectedErr.Error(), err.Error())
+	}
+	if stateStore.Target != nil {
+		if target != nil {
+			// Successful redeployment should update the timestamp.
+			s.NotEqual(stateStore.Target.CreatedAt, stateStore.Target.DeployedAt)
+		} else {
+			s.Equal(stateStore.Target.CreatedAt, stateStore.Target.DeployedAt)
+		}
 	}
 	if authErr == nil && capErr == nil && createErr == nil {
 		recordPath := deployment.GetDeploymentPath(stateStore.Dir, "saveAsThis")

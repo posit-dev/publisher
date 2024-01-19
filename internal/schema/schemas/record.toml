@@ -2,7 +2,9 @@
 server-url = "https://connect.example.com"
 id = "de2e7bdb-b085-401e-a65c-443e40009749"
 client-version = '1.0.1'
+created-at = '2024-01-19T09:33:33.131481-05:00'
 configuration-name = "production"
+deployed-at = '2024-01-19T09:33:33.131481-05:00'
 bundle-id = '123'
 bundle-url = 'https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download'
 dashboard-url = 'https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/'
