@@ -5,17 +5,23 @@
     v-if="python"
     title="Python"
   >
-    <ConfigSetting label="Version">
-      {{ python.version }}
-    </ConfigSetting>
+    <ConfigSetting
+      label="Version"
+      :value="python.version"
+      :previous-value="previousPython?.version"
+    />
 
-    <ConfigSetting label="Package File">
-      {{ python.packageFile }}
-    </ConfigSetting>
+    <ConfigSetting
+      label="Package File"
+      :value="python.packageFile"
+      :previous-value="previousPython?.packageFile"
+    />
 
-    <ConfigSetting label="Package Manager">
-      {{ python.packageManager }}
-    </ConfigSetting>
+    <ConfigSetting
+      label="Package Manager"
+      :value="python.packageManager"
+      :previous-value="previousPython?.packageManager"
+    />
   </ConfigSection>
 </template>
 
@@ -32,6 +38,11 @@ defineProps({
     default: undefined,
     required: false,
   },
+  previousPython: {
+    type: Object as PropType<PythonConfig>,
+    default: undefined,
+    required: false,
+  }
 });
 </script>
 

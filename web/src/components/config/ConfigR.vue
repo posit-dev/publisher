@@ -5,17 +5,23 @@
     v-if="r"
     title="R"
   >
-    <ConfigSetting label="Version">
-      {{ r.version }}
-    </ConfigSetting>
+    <ConfigSetting
+      label="Version"
+      :value="r.version"
+      :previous-value="previousR?.version"
+    />
 
-    <ConfigSetting label="Package File">
-      {{ r.packageFile }}
-    </ConfigSetting>
+    <ConfigSetting
+      label="Package File"
+      :value="r.packageFile"
+      :previous-value="previousR?.packageFile"
+    />
 
-    <ConfigSetting label="Package Manager">
-      {{ r.packageManager }}
-    </ConfigSetting>
+    <ConfigSetting
+      label="Package Manager"
+      :value="r.packageManager"
+      :previous-value="previousR?.packageManager"
+    />
   </ConfigSection>
 </template>
 
@@ -32,6 +38,11 @@ defineProps({
     default: undefined,
     required: false,
   },
+  previousR: {
+    type: Object as PropType<RConfig>,
+    default: undefined,
+    required: false,
+  }
 });
 </script>
 

@@ -5,16 +5,18 @@
     v-if="quarto"
     title="Quarto"
   >
-    <ConfigSetting label="Version">
-      {{ quarto.version }}
-    </ConfigSetting>
+    <ConfigSetting
+      label="Version"
+      :value="quarto.version"
+      :previous-value="previousQuarto?.version"
+    />
 
     <ConfigSetting
       v-if="quarto.engines"
       label="Engines"
-    >
-      {{ quarto.engines.join(', ') }}
-    </ConfigSetting>
+      :value="quarto.engines.join(', ')"
+      :previous-value="previousQuarto?.engines?.join(', ')"
+    />
   </ConfigSection>
 </template>
 
@@ -31,6 +33,11 @@ defineProps({
     default: undefined,
     required: false,
   },
+  previousQuarto: {
+    type: Object as PropType<QuartoConfig>,
+    default: undefined,
+    required: false,
+  }
 });
 </script>
 

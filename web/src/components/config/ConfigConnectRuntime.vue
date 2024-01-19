@@ -8,58 +8,58 @@
     <ConfigSetting
       v-if="runtime.connectionTimeout !== undefined"
       label="Connection Timeout"
-    >
-      {{ runtime.connectionTimeout }}
-    </ConfigSetting>
+      :value="runtime.connectionTimeout"
+      :previous-value="previousRuntime?.connectionTimeout"
+    />
 
     <ConfigSetting
       v-if="runtime.readTimeout !== undefined"
       label="Read Timeout"
-    >
-      {{ runtime.readTimeout }}
-    </ConfigSetting>
+      :value="runtime.readTimeout"
+      :previous-value="previousRuntime?.readTimeout"
+    />
 
     <ConfigSetting
       v-if="runtime.initTimeout !== undefined"
       label="Init Timeout"
-    >
-      {{ runtime.initTimeout }}
-    </ConfigSetting>
+      :value="runtime.initTimeout"
+      :previous-value="previousRuntime?.initTimeout"
+    />
 
     <ConfigSetting
       v-if="runtime.idleTimeout !== undefined"
       label="Idle Timeout"
-    >
-      {{ runtime.idleTimeout }}
-    </ConfigSetting>
+      :value="runtime.idleTimeout"
+      :previous-value="previousRuntime?.idleTimeout"
+    />
 
     <ConfigSetting
       v-if="runtime.maxProcesses !== undefined"
       label="Max Processes"
-    >
-      {{ runtime.maxProcesses }}
-    </ConfigSetting>
+      :value="runtime.maxProcesses"
+      :previous-value="previousRuntime?.maxProcesses"
+    />
 
     <ConfigSetting
       v-if="runtime.minProcesses !== undefined"
       label="Min Processes"
-    >
-      {{ runtime.minProcesses }}
-    </ConfigSetting>
+      :value="runtime.minProcesses"
+      :previous-value="previousRuntime?.minProcesses"
+    />
 
     <ConfigSetting
       v-if="runtime.maxConnections !== undefined"
       label="Max Connections"
-    >
-      {{ runtime.maxConnections }}
-    </ConfigSetting>
+      :value="runtime.maxConnections"
+      :previous-value="previousRuntime?.maxConnections"
+    />
 
     <ConfigSetting
       v-if="runtime.loadFactor !== undefined"
       label="Load Factor"
-    >
-      {{ runtime.loadFactor }}
-    </ConfigSetting>
+      :value="runtime.loadFactor"
+      :previous-value="previousRuntime?.loadFactor"
+    />
   </ConfigSection>
 </template>
 
@@ -76,6 +76,11 @@ defineProps({
     default: undefined,
     required: false,
   },
+  previousRuntime: {
+    type: Object as PropType<ConnectRuntime>,
+    default: undefined,
+    required: false,
+  }
 });
 </script>
 
