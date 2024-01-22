@@ -8,11 +8,11 @@
           Project
         </PLink>
       </q-breadcrumbs-el>
-      <q-breadcrumbs-el
-        label="Deploy"
-        class="click-target"
-        @click="router.go(-1)"
-      />
+      <q-breadcrumbs-el>
+        <PLink :to="{ name: 'deployments', params: { name: name }}">
+          Deploy
+        </PLink>
+      </q-breadcrumbs-el>
       <q-breadcrumbs-el
         label="Progress"
       />
@@ -44,13 +44,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useEventStore } from 'src/stores/events';
-import { useRouter } from 'vue-router';
 
 import DeployStepper from 'src/views/deploy-progress/DeployStepper.vue';
 import PLink from 'src/components/PLink.vue';
 
 const eventStore = useEventStore();
-const router = useRouter();
 
 const id = computed(() => {
   return eventStore.currentPublishStatus.contentId;
