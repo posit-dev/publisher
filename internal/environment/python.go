@@ -1,37 +1,62 @@
 package environment
 
+// Copyright (C) 2023 by Posit Software, PBC.
+
 import (
 	"fmt"
 	"io/fs"
 	"strings"
 
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-// Copyright (C) 2023 by Posit Software, PBC.
-
 type PythonInspector interface {
-	GetPythonVersion() (string, error)
-	EnsurePythonRequirementsFile() error
+	InspectPython() (*config.Python, error)
 }
 
 type defaultPythonInspector struct {
 	executor   util.Executor
-	projectDir util.Path
+	pathLooker util.PathLooker
+	base       util.Path
 	pythonPath util.Path
 	log        logging.Logger
 }
 
 var _ PythonInspector = &defaultPythonInspector{}
 
-func NewPythonInspector(projectDir util.Path, pythonPath util.Path, log logging.Logger) PythonInspector {
+func NewPythonInspector(base util.Path, pythonPath util.Path, log logging.Logger) PythonInspector {
 	return &defaultPythonInspector{
 		executor:   util.NewExecutor(),
-		projectDir: projectDir,
+		pathLooker: util.NewPathLooker(),
+		base:       base,
 		pythonPath: pythonPath,
 		log:        log,
 	}
+}
+
+// InspectPython inspects the specified project directory,
+// returning a Python configuration.
+// If requirements.txt does not exist, it will be
+// created using `pip freeze`.
+// The python version (and packages if needed) will
+// be determined by the specified pythonExecutable,
+// or by `python3` or `python` on $PATH.
+func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
+	pythonVersion, err := i.getPythonVersion()
+	if err != nil {
+		return nil, err
+	}
+	filename, err := i.ensurePythonRequirementsFile()
+	if err != nil {
+		return nil, err
+	}
+	return &config.Python{
+		Version:        pythonVersion,
+		PackageFile:    filename,
+		PackageManager: "pip",
+	}, nil
 }
 
 func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
@@ -43,7 +68,7 @@ func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable strin
 	return nil
 }
 
-func (i *defaultPythonInspector) getPythonExecutable(exec util.PathLooker) (string, error) {
+func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
 	if i.pythonPath.Path() != "" {
 		// User-provided python executable
 		exists, err := i.pythonPath.Exists()
@@ -58,7 +83,7 @@ func (i *defaultPythonInspector) getPythonExecutable(exec util.PathLooker) (stri
 			i.pythonPath, fs.ErrNotExist)
 	} else {
 		// Use whatever is on PATH
-		path, err := exec.LookPath("python3")
+		path, err := i.pathLooker.LookPath("python3")
 		if err == nil {
 			// Ensure the Python is actually runnable. This is especially
 			// needed on Windows, where `python3` is (by default)
@@ -67,7 +92,7 @@ func (i *defaultPythonInspector) getPythonExecutable(exec util.PathLooker) (stri
 			err = i.validatePythonExecutable(path)
 		}
 		if err != nil {
-			path, err = exec.LookPath("python")
+			path, err = i.pathLooker.LookPath("python")
 			if err == nil {
 				err = i.validatePythonExecutable(path)
 			}
@@ -79,12 +104,12 @@ func (i *defaultPythonInspector) getPythonExecutable(exec util.PathLooker) (stri
 	}
 }
 
-func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
-	pythonExecutable, err := i.getPythonExecutable(util.NewPathLooker())
+func (i *defaultPythonInspector) getPythonVersion() (string, error) {
+	pythonExecutable, err := i.getPythonExecutable()
 	if err != nil {
 		return "", err
 	}
-	i.log.Info("Running Python", "python", pythonExecutable)
+	i.log.Info("Getting Python version", "python", pythonExecutable)
 	args := []string{
 		`-E`, // ignore python-specific environment variables
 		`-c`, // execute the next argument as python code
@@ -99,32 +124,32 @@ func (i *defaultPythonInspector) GetPythonVersion() (string, error) {
 	return version, nil
 }
 
-func (i *defaultPythonInspector) EnsurePythonRequirementsFile() error {
-	requirementsFilename := i.projectDir.Join("requirements.txt")
+func (i *defaultPythonInspector) ensurePythonRequirementsFile() (string, error) {
+	requirementsFilename := i.base.Join("requirements.txt")
 	exists, err := requirementsFilename.Exists()
 	if err != nil {
-		return err
+		return "", err
 	}
 	if exists {
 		i.log.Info("Using Python packages", "source", requirementsFilename)
-		return nil
+		return requirementsFilename.Base(), nil
 	}
-	pythonExecutable, err := i.getPythonExecutable(util.NewPathLooker())
+	pythonExecutable, err := i.getPythonExecutable()
 	if err != nil {
-		return err
+		return "", err
 	}
-	i.log.Info("Running Python", "python", pythonExecutable)
+	i.log.Info("Getting installed Python packages", "python", pythonExecutable)
 	source := fmt.Sprintf("%s -m pip freeze", pythonExecutable)
 	i.log.Info("Using Python packages", "source", source)
 	args := []string{"-m", "pip", "freeze"}
 	out, err := i.executor.RunCommand(pythonExecutable, args)
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = requirementsFilename.WriteFile(out, 0666)
 	if err != nil {
-		return err
+		return "", err
 	}
 	i.log.Info("Wrote requirements file", "path", requirementsFilename)
-	return nil
+	return requirementsFilename.Base(), nil
 }

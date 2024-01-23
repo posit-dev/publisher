@@ -8,11 +8,20 @@
     Connect
   </h3>
 
-  <ConfigConnectAccess :access="connect?.access" />
+  <ConfigConnectAccess
+    :access="connect?.access"
+    :previous-access="previousConnect?.access"
+  />
 
-  <ConfigConnectKubernetes :kubernetes="connect?.kubernetes" />
+  <ConfigConnectKubernetes
+    :kubernetes="connect?.kubernetes"
+    :previous-kubernetes="previousConnect?.kubernetes"
+  />
 
-  <ConfigConnectRuntime :runtime="connect?.runtime" />
+  <ConfigConnectRuntime
+    :runtime="connect?.runtime"
+    :previous-runtime="previousConnect?.runtime"
+  />
 </template>
 
 <script setup lang="ts">
@@ -30,6 +39,11 @@ defineProps({
     default: undefined,
     required: false,
   },
+  previousConnect: {
+    type: Object as PropType<ConnectConfig>,
+    default: undefined,
+    required: false,
+  }
 });
 </script>
 

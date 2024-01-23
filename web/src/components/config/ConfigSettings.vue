@@ -8,21 +8,54 @@
 
     <template v-else>
       <div class="space-between-y-sm">
-        <ConfigType :type="config.configuration.type" />
-        <ConfigEntrypoint :entrypoint="config.configuration.entrypoint" />
-        <ConfigTitle :title="config.configuration.title" />
-        <ConfigDescription :description="config.configuration.description" />
-        <ConfigThumbnail :thumbnail="config.configuration.thumbnail" />
+        <ConfigType
+          :type="config.configuration.type"
+          :previous-type="previousConfig?.configuration.type"
+        />
+        <ConfigEntrypoint
+          :entrypoint="config.configuration.entrypoint"
+          :previous-entrypoint="previousConfig?.configuration.entrypoint"
+        />
+        <ConfigTitle
+          :title="config.configuration.title"
+          :previous-title="previousConfig?.configuration.title"
+        />
+        <ConfigDescription
+          :description="config.configuration.description"
+          :previous-description="previousConfig?.configuration.description"
+        />
+        <ConfigThumbnail
+          :thumbnail="config.configuration.thumbnail"
+          :previous-thumbnail="previousConfig?.configuration.thumbnail"
+        />
         <ConfigTags :tags="config.configuration.tags" />
       </div>
-      <ConfigPython :python="config.configuration.python" />
-      <ConfigR :r="config.configuration.r" />
-      <ConfigQuarto :quarto="config.configuration.quarto" />
-      <ConfigEnvironment :environment="config.configuration.environment" />
+      <ConfigPython
+        :python="config.configuration.python"
+        :previous-python="previousConfig?.configuration.python"
+      />
+      <ConfigR
+        :r="config.configuration.r"
+        :previous-r="previousConfig?.configuration.r"
+      />
+      <ConfigQuarto
+        :quarto="config.configuration.quarto"
+        :previous-quarto="previousConfig?.configuration.quarto"
+      />
+      <ConfigEnvironment
+        :environment="config.configuration.environment"
+        :previous-environment="previousConfig?.configuration.environment"
+      />
       <ConfigSecrets :secrets="config.configuration.secrets" />
       <ConfigSchedules :schedules="config.configuration.schedules" />
-      <ConfigAccess :access="config.configuration.access" />
-      <ConfigConnect :connect="config.configuration.connect" />
+      <ConfigAccess
+        :access="config.configuration.access"
+        :previous-access="previousConfig?.configuration.access"
+      />
+      <ConfigConnect
+        :connect="config.configuration.connect"
+        :previous-connect="previousConfig?.configuration.connect"
+      />
     </template>
   </div>
 </template>
@@ -51,5 +84,10 @@ defineProps({
     type: Object as PropType<Configuration | ConfigurationError>,
     required: true,
   },
+  previousConfig: {
+    type: Object as PropType<Configuration>,
+    required: false,
+    default: undefined,
+  }
 });
 </script>
