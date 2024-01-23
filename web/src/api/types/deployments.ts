@@ -16,7 +16,7 @@ export type DeploymentLocation = {
   deploymentPath: string;
 }
 
-export type DeploymentRecordError = {
+export type DeploymentError = {
   error: AgentError,
   state: DeploymentState.ERROR,
 } & DeploymentLocation
@@ -41,22 +41,23 @@ export type Deployment = {
   files: string[],
   deployedAt: string,
   state: DeploymentState.DEPLOYED,
+  deploymentError: AgentError | null,
 } & DeploymentRecord & Configuration;
 
-export function isDeploymentRecordError(
-  d: Deployment | PreDeployment | DeploymentRecordError
-): d is DeploymentRecordError {
+export function isDeploymentError(
+  d: Deployment | PreDeployment | DeploymentError
+): d is DeploymentError {
   return d.state === DeploymentState.ERROR;
 }
 
 export function isPreDeployment(
-  d: Deployment | PreDeployment | DeploymentRecordError
+  d: Deployment | PreDeployment | DeploymentError
 ): d is PreDeployment {
   return d.state === DeploymentState.NEW;
 }
 
 export function isDeployment(
-  d: Deployment | PreDeployment | DeploymentRecordError
+  d: Deployment | PreDeployment | DeploymentError
 ): d is Deployment {
   return d.state === DeploymentState.DEPLOYED;
 }

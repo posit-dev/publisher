@@ -7,36 +7,41 @@
         Deployments
       </h2>
       <p
-        v-if="hasDeployments"
+        v-if="deployments.hasDeployments"
         class="q-mt-xs"
       >
         Your project has been deployed to:
       </p>
     </div>
-
     <PButton
-      v-if="hasDeployments"
+      v-if="deployments.hasDeployments"
       hierarchy="primary"
       :to="{ name: 'addNewDeployment' }"
     >
       New Deployment
     </PButton>
   </div>
-
-  <ErrorBanner
-    :error-messages="errorMessages"
-    @dismiss="dismissError"
-  />
-
   <div
-    v-if="hasDeployments"
+    v-if="deployments.hasDeployments"
     class="card-grid"
   >
-    <DeploymentCard
-      v-for="deployment in sortedDeployments"
-      :key="deployment.id"
-      :deployment="deployment"
-    />
+    <div
+      v-for="deployment in deployments.sortedDeployments"
+      :key="deployment.deploymentName"
+    >
+      <DeploymentErrorCard
+        v-if="isDeploymentError(deployment)"
+        :deployment-error="deployment"
+      />
+      <PreDeploymentCard
+        v-if="isPreDeployment(deployment)"
+        :pre-deployment="deployment"
+      />
+      <DeploymentCard
+        v-if="!isDeploymentError(deployment) && !isPreDeployment(deployment)"
+        :deployment="deployment"
+      />
+    </div>
   </div>
   <div v-else>
     <PCard
@@ -63,68 +68,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { useDeploymentStore } from 'src/stores/deployments';
+import { isDeploymentError, isPreDeployment } from 'src/api';
 
-import { Deployment, DeploymentRecordError, isDeploymentRecordError, useApi } from 'src/api';
-import { ErrorMessages, buildErrorBannerMessage, newFatalErrorRouteLocation } from 'src/utils/errors';
-import { sortByDateString } from 'src/utils/date';
-import { router } from 'src/router';
 import DeploymentCard from './DeploymentCard.vue';
+import PreDeploymentCard from './PreDeploymentCard.vue';
+import DeploymentErrorCard from './DeploymentErrorCard.vue';
 import PButton from 'src/components/PButton.vue';
 import PCard from 'src/components/PCard.vue';
-import ErrorBanner from 'src/components/ErrorBanner.vue';
 
-const api = useApi();
-const deployments = ref<Deployment[]>([]);
-const errorMessages = ref<ErrorMessages>([]);
+const deployments = useDeploymentStore();
 
-const hasDeployments = computed(() => {
-  return deployments.value.length > 0;
-});
-
-const sortedDeployments = computed(() => {
-  return [...deployments.value].sort((a, b) => {
-    return sortByDateString(a.deployedAt, b.deployedAt);
-  });
-});
-
-const dismissError = () => {
-  errorMessages.value = [];
-};
-
-async function getDeployments() {
-  try {
-    // API Returns:
-    // 200 - success
-    // 500 - internal server error
-    const response = (await api.deployments.getAll()).data;
-    deployments.value = response.filter<Deployment>((d): d is Deployment => {
-      return !isDeploymentRecordError(d);
-    });
-    const deploymentErrors: DeploymentRecordError[] = response.filter(isDeploymentRecordError);
-    if (deploymentErrors) {
-      // We will show deployment errors on this page, while all other pages
-      // route these towards the fatal error page. This is because the user
-      // can see the list of deployments for their project and hopefully is
-      // in a position of resolving issues.
-      errorMessages.value = [];
-      deploymentErrors.forEach((d) => {
-        return errorMessages.value.push(
-          buildErrorBannerMessage(
-            d.error.msg,
-            `Please correct errors within the indicated deployment file(s).
-            The files will not appear on the list below until they are valid and
-            you have reloaded this page.`,
-          ),
-        );
-      });
-    }
-  } catch (error: unknown) {
-    router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getDeployments()'));
-  }
-}
-
-await getDeployments();
 </script>
 
 <style scoped lang="scss">

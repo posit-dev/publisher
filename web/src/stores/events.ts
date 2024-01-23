@@ -54,6 +54,7 @@ import {
 } from 'src/plugins/eventStream';
 
 import { computed, ref } from 'vue';
+import { useDeploymentStore } from './deployments';
 
 export type PublishStepCompletionStatus =
 'notStarted' | 'inProgress' | 'success' | 'error';
@@ -317,6 +318,7 @@ export const useEventStore = defineStore('event', () => {
   };
 
   const onPublishSuccess = (msg: PublishSuccess) => {
+    const deployments = useDeploymentStore();
     const localId = getLocalId(msg);
 
     if (currentPublishStatus.value.localId === localId) {
@@ -328,9 +330,13 @@ export const useEventStore = defineStore('event', () => {
       currentPublishStatus.value.contentId = msg.data.contentId;
     }
     publishInProgess.value = false;
+    if (currentPublishStatus.value.saveName) {
+      deployments.refreshDeployment(currentPublishStatus.value.saveName);
+    }
   };
 
   const onPublishFailure = (msg: PublishFailure) => {
+    const deployments = useDeploymentStore();
     const localId = getLocalId(msg);
 
     if (currentPublishStatus.value.localId === localId) {
@@ -339,6 +345,9 @@ export const useEventStore = defineStore('event', () => {
       publishStatus.error = splitMsgIntoKeyValuePairs(msg.data);
     }
     publishInProgess.value = false;
+    if (currentPublishStatus.value.saveName) {
+      deployments.refreshDeployment(currentPublishStatus.value.saveName);
+    }
   };
 
   const onPublishCheckCapabilitiesStart = (msg: PublishCheckCapabilitiesStart) => {

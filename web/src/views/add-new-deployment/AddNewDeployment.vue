@@ -59,21 +59,22 @@
 import { Account, useApi } from 'src/api';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { Deployment, isDeploymentRecordError } from 'src/api/types/deployments';
+import { isDeploymentError } from 'src/api/types/deployments';
 
 import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
 import { newFatalErrorRouteLocation } from 'src/utils/errors';
 import PButton from 'src/components/PButton.vue';
 import PLink from 'src/components/PLink.vue';
+import { useDeploymentStore } from 'src/stores/deployments';
 
 const accounts = ref<Account[]>([]);
 const selectedAccountName = ref<string>('');
 const deploymentName = ref<string>('');
-const deployments = ref<Deployment[]>([]);
 const navigationInProgress = ref<boolean>(false);
 
 const api = useApi();
 const router = useRouter();
+const deployments = useDeploymentStore();
 
 async function getAccounts() {
   try {
@@ -90,27 +91,20 @@ async function getAccounts() {
   }
 }
 
-async function getDeployments() {
-  try {
-    // API Returns:
-    // 200 - success
-    // 500 - internal server error
-    const response = (await api.deployments.getAll()).data;
-    deployments.value = response.filter<Deployment>((d): d is Deployment => {
-      return !isDeploymentRecordError(d);
-    });
-  } catch (error: unknown) {
-    router.push(newFatalErrorRouteLocation(error, 'ProjectPage::getDeployments()'));
-  }
-}
-
 const deploymentNameError = computed(() => {
   if (!deploymentName.value) {
     return 'A unique deployment name must be provided.';
   }
   if (
-    deployments.value.find(
-      (deployment) => deployment.saveName.toLowerCase() === deploymentName.value.toLowerCase()
+    deployments.sortedDeployments.find(
+      (deployment) => {
+        if (isDeploymentError(deployment)) {
+          return (
+            deployment.deploymentName.toLocaleLowerCase() === deploymentName.value.toLowerCase()
+          );
+        }
+        return deployment.saveName.toLowerCase() === deploymentName.value.toLowerCase();
+      }
     )
   ) {
     return 'Deployment name already in use. Please supply a unique name.';
@@ -128,23 +122,36 @@ const disableToDeploymentPage = computed(() => {
 
 const navigateToDeploymentPage = async() => {
   navigationInProgress.value = true;
+  let responseName = deploymentName.value;
+
+  // create a pre-deployment object
   try {
     const response = await api.deployments.createNew(
       selectedAccountName.value,
       deploymentName.value,
     );
-    router.push({
-      name: 'deployments',
-      params: {
-        name: response.data.deploymentName,
-      },
-      query: {
-        preferredAccount: selectedAccountName.value,
-      }
-    });
+    responseName = response.data.deploymentName;
   } catch (error: unknown) {
     router.push(newFatalErrorRouteLocation(error, 'navigateToDeploymentPage::createNew()'));
   }
+
+  // refresh the deployment store to include the new pre-deployment page
+  try {
+    await deployments.refreshDeployment(responseName);
+  } catch (error: unknown) {
+    router.push(newFatalErrorRouteLocation(error, 'navigateToDeploymentPage::refreshDeployment()'));
+  }
+
+  // navigate to the deployment page
+  router.push({
+    name: 'deployments',
+    params: {
+      name: responseName,
+    },
+    query: {
+      preferredAccount: selectedAccountName.value,
+    }
+  });
 };
 
 const generateDefaultName = () => {
@@ -153,7 +160,15 @@ const generateDefaultName = () => {
   do {
     id += 1;
     const trialName = `Untitled-${id}`;
-    if (!deployments.value.find((deployment) => deployment.saveName === trialName)) {
+
+    if (!deployments.sortedDeployments.find(
+      (deployment) => {
+        if (isDeploymentError(deployment)) {
+          return deployment.deploymentName.toLocaleLowerCase() === trialName.toLowerCase();
+        }
+        return deployment.saveName.toLowerCase() === trialName.toLowerCase();
+      }
+    )) {
       defaultName = trialName;
     }
   } while (!defaultName);
@@ -162,7 +177,6 @@ const generateDefaultName = () => {
 
 const init = async() => {
   getAccounts();
-  await getDeployments();
   deploymentName.value = generateDefaultName();
 };
 init();

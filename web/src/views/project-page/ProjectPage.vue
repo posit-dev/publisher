@@ -81,6 +81,7 @@ import DeploymentsSection from './DeploymentsSection.vue';
 
 const api = useApi();
 const router = useRouter();
+
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 async function getConfigurations() {

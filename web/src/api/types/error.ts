@@ -3,6 +3,7 @@
 export type AgentError = {
     code: string;
     msg: string;
+    operation: string;
     data: {
         [key: string]: unknown
     };
