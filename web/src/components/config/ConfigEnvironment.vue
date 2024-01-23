@@ -9,9 +9,9 @@
       v-for="(value, key) in environment"
       :key="key"
       :label="key"
-    >
-      {{ value }}
-    </ConfigSetting>
+      :value="value"
+      :previous-value="previousEnvironment?.[key]"
+    />
   </ConfigSection>
 </template>
 
@@ -28,6 +28,11 @@ defineProps({
     default: undefined,
     required: false,
   },
+  previousEnvironment: {
+    type: Object as PropType<EnvironmentConfig>,
+    default: undefined,
+    required: false,
+  }
 });
 </script>
 

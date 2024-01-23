@@ -1,3 +1,11 @@
+:root {
+  --posit-light-blue-1: #D1DBE5;
+  --posit-light-blue-2: #A2B8CB;
+  --posit-light-blue-3: #7494B1;
+  --posit-blue: #447099;
+  --posit-dark-blue-1: #305775;
+}
+
 h1, h2, h3, h4, h5, h6, p, dd, dl {
   margin: 0;
 }
@@ -35,11 +43,27 @@ h1, h2, h3, h4, h5, h6, p, dd, dl {
   --focus-shadow-border-color-opacity: 0.2;
 }
 
+.body--light a {
+  color: var(--vscode-textLink-foreground, var(--posit-blue));
+}
+
+.body--light a:hover {
+  color: var(--vscode-textLink-activeForeground, var(--posit-dark-blue-1));
+}
+
 .body--dark {
   --focus-shadow-color: 255, 255, 255;
   --focus-shadow-color-opacity: 0.18;
   --focus-shadow-border-color: 255, 255, 255;
   --focus-shadow-border-color-opacity: 0.25;
+}
+
+.body--dark a {
+  color: var(--vscode-textLink-foreground, var(--posit-light-blue-2));
+}
+
+.body--dark a:hover {
+  color: var(--vscode-textLink-activeForeground, var(--posit-light-blue-1));
 }
 
 .focus-shadow:focus,

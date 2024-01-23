@@ -4,16 +4,22 @@
   <ConfigSetting
     v-if="title"
     label="Title"
-  >
-    {{ title }}
-  </ConfigSetting>
+    :value="title"
+    :previous-value="previousTitle"
+  />
 </template>
 
 <script setup lang="ts">
+
 import ConfigSetting from 'src/components/config/ConfigSetting.vue';
 
 defineProps({
   title: {
+    type: String,
+    default: undefined,
+    required: false,
+  },
+  previousTitle: {
     type: String,
     default: undefined,
     required: false,

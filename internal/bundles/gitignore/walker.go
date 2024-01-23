@@ -32,6 +32,9 @@ var standardIgnores = []string{
 	// Other
 	".ipynb_checkpoints/",
 	".posit/publish/deployments/**/v*",
+
+	// Exclude existing manifest.json; we will create one.
+	"manifest.json",
 }
 
 // excludingWalker is a Walker that excludes files and directories

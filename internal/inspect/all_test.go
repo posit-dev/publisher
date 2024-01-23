@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -22,107 +23,65 @@ func TestAllSuite(t *testing.T) {
 }
 
 func (s *AllSuite) TestInferTypeDirectory() {
-	path := util.NewPath(".", afero.NewMemMapFs())
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
 	htmlFilename := "myfile.html"
-	err := path.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
+	err = base.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
 	s.NoError(err)
 
 	appFilename := "myapp.py"
-	err = path.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
+	err = base.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
 	s.NoError(err)
 
 	detector := NewContentTypeDetector()
-	t, err := detector.InferType(path)
+	t, err := detector.InferType(base)
 	s.NoError(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypePythonDash,
-		Entrypoint:     appFilename,
-		RequiresPython: true,
-	}, t)
-}
-
-func (s *AllSuite) TestInferTypeFileLowerPriority() {
-	path := util.NewPath(".", afero.NewMemMapFs())
-
-	htmlFilename := "myfile.html"
-	htmlPath := path.Join(htmlFilename)
-	err := htmlPath.WriteFile([]byte("<html></html>\n"), 0600)
-	s.NoError(err)
-
-	appFilename := "myapp.py"
-	err = path.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
-	s.NoError(err)
-
-	detector := NewContentTypeDetector()
-	t, err := detector.InferType(htmlPath)
-	s.NoError(err)
-	s.Equal(&ContentType{
-		Type:       config.ContentTypeHTML,
-		Entrypoint: htmlFilename,
-	}, t)
-}
-
-func (s *AllSuite) TestInferTypeFileHigherPriority() {
-	path := util.NewPath(".", afero.NewMemMapFs())
-
-	htmlFilename := "myfile.html"
-	err := path.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
-	s.NoError(err)
-
-	appFilename := "myapp.py"
-	appPath := path.Join(appFilename)
-	err = appPath.WriteFile([]byte("import dash\n"), 0600)
-	s.NoError(err)
-
-	detector := NewContentTypeDetector()
-	t, err := detector.InferType(appPath)
-	s.NoError(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypePythonDash,
-		Entrypoint:     appFilename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonDash,
+		Entrypoint: appFilename,
+		Validate:   true,
+		Python:     &config.Python{},
 	}, t)
 }
 
 func (s *AllSuite) TestInferTypeDirectoryPriority() {
-	path := util.NewPath(".", afero.NewMemMapFs())
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
 
 	htmlFilename := "myfile.html"
-	err := path.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
+	err = base.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
 	s.NoError(err)
 
 	appFilename := "myapp.py"
-	err = path.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
+	err = base.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
 	s.NoError(err)
 
 	detector := NewContentTypeDetector()
-	t, err := detector.InferType(path)
+	t, err := detector.InferType(base)
 	s.NoError(err)
-	s.Equal(&ContentType{
-		Type:           config.ContentTypePythonDash,
-		Entrypoint:     appFilename,
-		RequiresPython: true,
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonDash,
+		Entrypoint: appFilename,
+		Validate:   true,
+		Python:     &config.Python{},
 	}, t)
 }
 
 func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
-	path := util.NewPath(".", afero.NewMemMapFs())
-	err := path.Join("myfile").WriteFile([]byte("This is a text file, silly!\n"), 0600)
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	err = base.Join("myfile").WriteFile([]byte("This is a text file, silly!\n"), 0600)
 	s.NoError(err)
 
 	detector := NewContentTypeDetector()
-	t, err := detector.InferType(path)
-	s.NoError(err)
-	s.Equal(config.ContentTypeUnknown, t.Type)
-}
-
-func (s *AllSuite) TestInferTypeFileIndeterminate() {
-	path := util.NewPath("myfile", afero.NewMemMapFs())
-	err := path.WriteFile([]byte("This is a text file, silly!\n"), 0600)
-	s.NoError(err)
-
-	detector := NewContentTypeDetector()
-	t, err := detector.InferType(path)
+	t, err := detector.InferType(base)
 	s.NoError(err)
 	s.Equal(config.ContentTypeUnknown, t.Type)
 }
@@ -130,8 +89,8 @@ func (s *AllSuite) TestInferTypeFileIndeterminate() {
 func (s *AllSuite) TestInferTypeErr() {
 	fs := afero.NewMemMapFs()
 	detector := NewContentTypeDetector()
-	path := util.NewPath("/foo", fs)
-	t, err := detector.InferType(path)
+	base := util.NewPath("/foo", fs)
+	t, err := detector.InferType(base)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(t)

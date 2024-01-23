@@ -15,6 +15,7 @@
     <ConfigSettings
       v-if="defaultConfig"
       :config="defaultConfig"
+      :previous-config="isDeployment(deployment) ? deployment : undefined"
     />
   </DeploymentSection>
 
@@ -32,7 +33,13 @@ import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDeploymentStore } from 'src/stores/deployments';
 
-import { Configuration, ConfigurationError, isConfigurationError, useApi } from 'src/api';
+import {
+  Configuration,
+  ConfigurationError,
+  isConfigurationError,
+  useApi,
+  isDeployment
+} from 'src/api';
 import { isDeploymentError } from 'src/api/types/deployments';
 import {
   newFatalErrorRouteLocation,
