@@ -5,9 +5,7 @@
     :to="{ name: 'deployments', params: { name: `${deployment.saveName}` }}"
     :title="deployment.saveName"
   >
-    <div
-      class="space-between-y-sm"
-    >
+    <diV class="space-between-y-sm">
       <p>{{ deployment.serverUrl }}</p>
       <p>{{ deployment.id }}</p>
       <DeployProgressLine
@@ -24,7 +22,7 @@
 <script setup lang="ts">
 import { computed, PropType } from 'vue';
 
-import { Deployment, isPreDeployment } from 'src/api';
+import { Deployment } from 'src/api';
 import { formatDateString } from 'src/utils/date';
 import { useEventStore } from 'src/stores/events';
 import PCard from 'src/components/PCard.vue';
@@ -40,9 +38,6 @@ const props = defineProps({
 });
 
 const showProgressLine = computed(() => {
-  if (isPreDeployment(props.deployment)) {
-    return false;
-  }
   return (
     eventStore.isPublishActiveByID(props.deployment.id) ||
     (

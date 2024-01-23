@@ -17,6 +17,7 @@ const routes = [
     path: '/deployments/:name',
     component: DeploymentPage,
     props: (route: RouteLocationNormalizedLoaded) => ({
+      name: route.params.name,
       preferredAccount: route.query.preferredAccount,
     }),
   },

@@ -23,6 +23,10 @@ export const useDeploymentStore = defineStore('deployment', () => {
 
   const api = useApi();
 
+  const getDeploymentRef = (deploymentName: string) => {
+    return computed(() => deploymentMap.value[deploymentName]);
+  };
+
   const refreshDeployments = async() => {
     try {
       const newDeploymentMap: DeploymentMap = {};
@@ -111,5 +115,6 @@ export const useDeploymentStore = defineStore('deployment', () => {
     sortedDeployments,
     hasDeployments,
     deploymentMap,
+    getDeploymentRef,
   };
 });

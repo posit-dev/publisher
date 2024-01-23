@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useDeploymentStore } from 'src/stores/deployments';
 
 import {
@@ -50,7 +50,6 @@ import FileTree from 'src/components/FileTree.vue';
 import DeploymentHeader from './DeploymentHeader.vue';
 import DeploymentSection from 'src/components/DeploymentSection.vue';
 
-const route = useRoute();
 const router = useRouter();
 const api = useApi();
 const deployments = useDeploymentStore();
@@ -58,20 +57,11 @@ const deployments = useDeploymentStore();
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 const props = defineProps({
+  name: { type: String, required: true },
   preferredAccount: { type: String, required: false, default: undefined },
 });
 
-const deploymentName = computed(():string => {
-  // route param can be either string | string[]
-  if (Array.isArray(route.params.name)) {
-    return route.params.name[0];
-  }
-  return route.params.name;
-});
-
-const deployment = computed(() => {
-  return deployments.deploymentMap[deploymentName.value];
-});
+const deployment = deployments.getDeploymentRef(props.name);
 
 watch(
   () => deployment.value,
@@ -83,7 +73,8 @@ watch(
         'DeploymentPage::deployment()',
       ));
     }
-  }
+  },
+  { immediate: true }
 );
 
 const configurationSubTitles = computed(() => {

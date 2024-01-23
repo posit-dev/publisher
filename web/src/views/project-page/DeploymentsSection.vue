@@ -7,14 +7,14 @@
         Deployments
       </h2>
       <p
-        v-if="hasDeployments"
+        v-if="deployments.hasDeployments"
         class="q-mt-xs"
       >
         Your project has been deployed to:
       </p>
     </div>
     <PButton
-      v-if="hasDeployments"
+      v-if="deployments.hasDeployments"
       hierarchy="primary"
       :to="{ name: 'addNewDeployment' }"
     >
@@ -22,12 +22,12 @@
     </PButton>
   </div>
   <div
-    v-if="hasDeployments"
+    v-if="deployments.hasDeployments"
     class="card-grid"
   >
     <div
-      v-for="(deployment, i) in deployments.sortedDeployments"
-      :key="i"
+      v-for="deployment in deployments.sortedDeployments"
+      :key="deployment.deploymentName"
     >
       <DeploymentErrorCard
         v-if="isDeploymentError(deployment)"
@@ -68,7 +68,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useDeploymentStore } from 'src/stores/deployments';
 import { isDeploymentError, isPreDeployment } from 'src/api';
 
@@ -80,9 +79,6 @@ import PCard from 'src/components/PCard.vue';
 
 const deployments = useDeploymentStore();
 
-const hasDeployments = computed(() => {
-  return deployments.sortedDeployments.length > 0;
-});
 </script>
 
 <style scoped lang="scss">
