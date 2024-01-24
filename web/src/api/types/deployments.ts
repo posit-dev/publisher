@@ -30,6 +30,7 @@ type DeploymentRecord = {
 
 export type PreDeployment = {
   state: DeploymentState.NEW,
+  deploymentError: AgentError | null,
 } & DeploymentRecord;
 
 export type Deployment = {
@@ -56,8 +57,26 @@ export function isPreDeployment(
   return d.state === DeploymentState.NEW;
 }
 
+export function isUnsuccessfulPreDeployment(
+  d: Deployment | PreDeployment | DeploymentError
+): d is PreDeployment {
+  return d.state === DeploymentState.NEW && Boolean(!d.deploymentError);
+}
+
 export function isDeployment(
   d: Deployment | PreDeployment | DeploymentError
 ): d is Deployment {
   return d.state === DeploymentState.DEPLOYED;
+}
+
+export function isSuccessfulDeployment(
+  d: Deployment | PreDeployment | DeploymentError
+): d is Deployment {
+  return (d.state === DeploymentState.DEPLOYED && Boolean(!d.deploymentError));
+}
+
+export function isUnsuccessfulDeployment(
+  d: Deployment | PreDeployment | DeploymentError
+): d is Deployment {
+  return (d.state === DeploymentState.DEPLOYED && Boolean(d.deploymentError));
 }

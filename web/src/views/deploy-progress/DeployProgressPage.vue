@@ -17,11 +17,13 @@
         label="Progress"
       />
     </q-breadcrumbs>
-
     <div
       class="flex justify-between q-mt-md row-gap-lg column-gap-xl"
     >
-      <div class="space-between-y-sm">
+      <div
+        v-if="showDeployInProgress"
+        class="space-between-y-sm"
+      >
         <h1
           v-if="name"
           class="text-h6"
@@ -34,10 +36,22 @@
         <p v-if="id">
           {{ id }}
         </p>
+        <DeployStepper class="q-mt-xl" />
+      </div>
+      <div v-else>
+        <h1 class="text-h6">
+          Deployment Logs
+        </h1>
+        <p>for this deployment can be viewed on the Posit Connect server.</p>
+        <a
+          :href="connectLogLink"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View deployment logs on Connect
+        </a>
       </div>
     </div>
-
-    <DeployStepper class="q-mt-xl" />
   </div>
 </template>
 
@@ -47,28 +61,49 @@ import { useEventStore } from 'src/stores/events';
 
 import DeployStepper from 'src/views/deploy-progress/DeployStepper.vue';
 import PLink from 'src/components/PLink.vue';
+import { useDeploymentStore } from 'src/stores/deployments';
+import { isDeployment, isDeploymentError } from 'src/api';
 
 const eventStore = useEventStore();
+const deployments = useDeploymentStore();
+
+const props = defineProps({
+  name: {
+    type: String,
+    required: true,
+  },
+});
 
 const id = computed(() => {
   return eventStore.currentPublishStatus.contentId;
 });
 
-defineProps({
-  name: {
-    type: String,
-    required: true,
-  },
-  operation: {
-    type: String,
-    required: true,
-  },
-  // Temp until we figure out how to make this work right
-  // id: {
-  //   type: String,
-  //   required: true,
-  // },
+const deployment = deployments.getDeploymentRef(props.name);
+
+const operation = computed(() => {
+  if (isDeploymentError(deployment.value)) {
+    return undefined;
+  }
+  return `Deploying to: ${deployment.value.serverUrl}`;
 });
+
+const connectLogLink = computed(() => {
+  if (!isDeployment(deployment.value)) {
+    return undefined;
+  }
+  return `${deployment.value.dashboardUrl}/logs`;
+});
+
+const showDeployInProgress = computed(() => {
+  if (!deployment.value || isDeploymentError(deployment.value)) {
+    return false;
+  }
+  if (deployment) {
+    return eventStore.doesPublishStatusApplyToDeployment(deployment.value.deploymentName);
+  }
+  return false;
+});
+
 </script>
 
 <style scoped lang="scss">

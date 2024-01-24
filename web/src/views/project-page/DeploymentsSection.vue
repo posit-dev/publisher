@@ -29,18 +29,7 @@
       v-for="deployment in deployments.sortedDeployments"
       :key="deployment.deploymentName"
     >
-      <DeploymentErrorCard
-        v-if="isDeploymentError(deployment)"
-        :deployment-error="deployment"
-      />
-      <PreDeploymentCard
-        v-if="isPreDeployment(deployment)"
-        :pre-deployment="deployment"
-      />
-      <DeploymentCard
-        v-if="!isDeploymentError(deployment) && !isPreDeployment(deployment)"
-        :deployment="deployment"
-      />
+      <DeploymentCard :deployment="deployment" />
     </div>
   </div>
   <div v-else>
@@ -69,11 +58,8 @@
 
 <script setup lang="ts">
 import { useDeploymentStore } from 'src/stores/deployments';
-import { isDeploymentError, isPreDeployment } from 'src/api';
 
 import DeploymentCard from './DeploymentCard.vue';
-import PreDeploymentCard from './PreDeploymentCard.vue';
-import DeploymentErrorCard from './DeploymentErrorCard.vue';
 import PButton from 'src/components/PButton.vue';
 import PCard from 'src/components/PCard.vue';
 

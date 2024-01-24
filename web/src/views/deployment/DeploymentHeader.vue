@@ -22,7 +22,8 @@
             {{ deployment.saveName }}
           </h1>
           <p>
-            Deploying to: <a
+            Deploying to:
+            <a
               :href="deployment.serverUrl"
               target="_blank"
               rel="noopener noreferrer"
@@ -30,22 +31,9 @@
               {{ deployment.serverUrl }}
             </a>
           </p>
-          <template v-if="isDeployment(deployment)">
-            <p>
-              {{ deployment.id }}
-            </p>
-            <p>
-              Last Deployed on {{ formatDateString(deployment.deployedAt) }}
-            </p>
-          </template>
-          <template v-else>
-            <p>
-              An ID will be created on first deployment.
-            </p>
-            <p>
-              This project has never been deployed using these credentials
-            </p>
-          </template>
+          <DeploymentStatus
+            :name="deployment.deploymentName"
+          />
         </div>
 
         <div
@@ -76,27 +64,6 @@
           </PButton>
         </div>
       </div>
-
-      <div
-        class="col-4 vertical-top q-gutter-x-md"
-      >
-        <div class="col q-mt-md">
-          <div class="row justify-left">
-            <div class="col-11">
-              <DeployProgressSummary
-                :id="summaryStatusId"
-                :current-tense="showDeployStatusAsCurrent"
-              />
-              <PLink
-                v-if="progressLink"
-                :to="progressLink"
-              >
-                View summarized deployment logs
-              </PLink>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -117,9 +84,8 @@ import {
 import PLink from 'src/components/PLink.vue';
 import SelectAccount from 'src/components/SelectAccount.vue';
 import PButton from 'src/components/PButton.vue';
-import DeployProgressSummary from 'src/components/DeployProgressSummary.vue';
+import DeploymentStatus from 'src/components/deploymentStatus/DeploymentStatus.vue';
 import { useEventStore } from 'src/stores/events';
-import { formatDateString } from 'src/utils/date';
 import { newFatalErrorRouteLocation } from 'src/utils/errors';
 import { useRouter } from 'vue-router';
 
@@ -131,7 +97,6 @@ const accounts = ref<Account[]>([]);
 const filteredAccountList = ref<Account[]>([]);
 const selectedAccount = ref<Account>();
 const deployingLocalId = ref('');
-const numSuccessfulDeploys = ref(0);
 
 const emit = defineEmits(['deploy']);
 
@@ -155,24 +120,6 @@ const deploymentLabel = computed(() => {
     'Redeploy';
 });
 
-const progressLink = computed(() => {
-  if (isPreDeployment(props.deployment)) {
-    return undefined;
-  }
-
-  if (eventStore.doesPublishStatusApply(props.deployment.id)) {
-    return {
-      name: 'progress',
-      query: {
-        operation: operationStr.value,
-        id: props.deployment.id,
-      },
-    };
-  }
-
-  return undefined;
-});
-
 const redeployDisableTitle = computed(() => {
   if (eventStore.publishInProgess) {
     return 'Another deployment is in progress';
@@ -181,16 +128,6 @@ const redeployDisableTitle = computed(() => {
     return 'Cannot deploy with configuration errors';
   }
   return undefined;
-});
-
-const operationStr = computed(() => {
-  return `Deploying to: ${props.deployment.serverUrl}`;
-});
-
-const summaryStatusId = computed(() => {
-  return isDeployment(props.deployment) ?
-    props.deployment.id :
-    deployingLocalId.value;
 });
 
 const initiateDeployment = async() => {
@@ -260,42 +197,6 @@ watch(
   },
   { immediate: true }
 );
-
-// Watch the events in order to know when we have
-// published enough to go from new deployment to an update
-watch(
-  () => eventStore.publishInProgess,
-  (newVal: boolean, oldVal: boolean) => {
-    if (
-      // we have progressed from publishing to not publishing
-      !newVal &&
-      oldVal &&
-      // and last publishing run was ours
-      (
-        eventStore.doesPublishStatusApply(deployingLocalId.value) ||
-        (
-          isDeployment(props.deployment) &&
-          eventStore.doesPublishStatusApply(props.deployment.id)
-        )
-      ) &&
-      // and it was successful enough to get a content id assigned
-      eventStore.currentPublishStatus.contentId
-    ) {
-      // increment our counter
-      numSuccessfulDeploys.value += 1;
-    }
-  }
-);
-
-const showDeployStatusAsCurrent = computed(() => {
-  // Show only if we've previously published or if this is the first one,
-  // then only if it applies to us.
-  return Boolean(
-    numSuccessfulDeploys.value ||
-    eventStore.doesPublishStatusApply(deployingLocalId.value)
-  );
-});
-
 </script>
 
 <style scoped lang="scss">

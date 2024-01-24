@@ -33,14 +33,18 @@
 <script setup lang="ts">
 
 import { useEventStore } from 'src/stores/events';
-import { computed } from 'vue';
+import { PropType, computed } from 'vue';
 import { useQuasar } from 'quasar';
+import { Deployment } from 'src/api';
 
 const eventStore = useEventStore();
 const $q = useQuasar();
 
 const props = defineProps({
-  id: { type: String, required: true }, // Can be either localId or contentId
+  deployment: {
+    type: Object as PropType<Deployment>,
+    required: true,
+  },
 });
 
 const completion = computed(() => {
@@ -48,12 +52,12 @@ const completion = computed(() => {
 });
 
 const deployInProgress = computed(() => {
-  return eventStore.isPublishActiveByID(props.id);
+  return eventStore.isPublishActiveForDeployment(props.deployment.saveName);
 });
 
 const showDeployError = computed(() => {
   return (
-    eventStore.doesPublishStatusApply(props.id)
+    eventStore.doesPublishStatusApplyToDeployment(props.deployment.saveName)
     &&
     completion.value === 'error'
   );

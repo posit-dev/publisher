@@ -61,7 +61,7 @@
       </div>
       <div class="col-10 text-caption">
         <div class="text-bold">
-          {{ pastTenseModifier }} Deploy was successful!
+          Last deployment was successful!
         </div>
         <div>
           Access through Dashboard:
@@ -88,7 +88,7 @@
       </div>
       <div class="col-10 text-caption">
         <div class="text-bold">
-          {{ pastTenseModifier }} Deploying Operation has failed.
+          Last attempt to deploy has failed.
         </div>
         <div
           v-for="keyValuePair in eventStore.currentPublishStatus.status.error"
@@ -105,17 +105,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { PropType, computed } from 'vue';
 import { useQuasar } from 'quasar';
 
 import { useEventStore } from 'src/stores/events';
+import { Deployment } from 'src/api';
 
 const eventStore = useEventStore();
 const $q = useQuasar();
 
 const props = defineProps({
-  id: { type: String, required: true }, // Can be either localId or contentId
-  currentTense: { type: Boolean, required: true },
+  deployment: {
+    type: Object as PropType<Deployment>,
+    required: true,
+  },
 });
 
 const completion = computed(() => {
@@ -125,20 +128,20 @@ const completion = computed(() => {
 const showOtherDeployOperationInProgress = computed(() => {
   return (
     eventStore.publishInProgess &&
-    !eventStore.doesPublishStatusApply(props.id)
+    !eventStore.doesPublishStatusApplyToDeployment(props.deployment.saveName)
   );
 });
 
 const showDeployInProgress = computed(() => {
   return (
-    eventStore.isPublishActiveByID(props.id) &&
+    eventStore.isPublishActiveForDeployment(props.deployment.saveName) &&
     eventStore.currentPublishStatus.status.currentStep // Make sure it has started
   );
 });
 
 const showDeploySuccessSummary = computed(() => {
   return (
-    eventStore.doesPublishStatusApply(props.id)
+    eventStore.doesPublishStatusApplyToDeployment(props.deployment.saveName)
     &&
     completion.value === 'success'
   );
@@ -146,7 +149,7 @@ const showDeploySuccessSummary = computed(() => {
 
 const showDeployError = computed(() => {
   return (
-    eventStore.doesPublishStatusApply(props.id)
+    eventStore.doesPublishStatusApplyToDeployment(props.deployment.saveName)
     &&
     completion.value === 'error'
   );
@@ -157,13 +160,6 @@ const textClass = computed(() => {
     return 'text-white';
   }
   return 'text-black';
-});
-
-const pastTenseModifier = computed((): string => {
-  if (!props.currentTense) {
-    return 'Previous ';
-  }
-  return '';
 });
 
 </script>
