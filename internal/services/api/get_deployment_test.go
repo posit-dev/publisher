@@ -4,12 +4,14 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
@@ -106,4 +108,34 @@ func (s *GetDeploymentSuite) TestGetDeploymentNotFound() {
 	h(rec, req)
 
 	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+}
+
+func (s *GetDeploymentSuite) TestGetPreDeployment() {
+	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
+	d := deployment.New()
+	d.ServerType = accounts.ServerTypeConnect
+	testError := errors.New("test error")
+	d.Error = types.AsAgentError(testError)
+	err := d.WriteFile(path)
+	s.NoError(err)
+
+	h := GetDeploymentHandlerFunc(s.cwd, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/deployments/myTargetName", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": "myTargetName"})
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := preDeploymentDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+	s.NotNil(res.Error)
+	s.Equal("test error", res.Error.Message)
+	s.Equal(deploymentStateNew, res.State)
+	s.Equal("myTargetName", res.Name)
 }

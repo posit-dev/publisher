@@ -31,6 +31,7 @@ type preDeploymentDTO struct {
 	ServerURL  string              `json:"serverUrl"`
 	SaveName   string              `json:"saveName"`
 	CreatedAt  string              `json:"createdAt"`
+	Error      *types.AgentError   `json:"error,omitempty"`
 }
 
 type fullDeploymentDTO struct {
@@ -90,6 +91,7 @@ func deploymentAsDTO(d *deployment.Deployment, err error, base util.Path, path u
 			ServerURL:  d.ServerURL,
 			SaveName:   d.SaveName,
 			CreatedAt:  d.CreatedAt,
+			Error:      d.Error,
 		}
 	}
 }
