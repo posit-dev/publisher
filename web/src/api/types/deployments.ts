@@ -61,7 +61,7 @@ export function isPreDeployment(
 export function isUnsuccessfulPreDeployment(
   d: Deployment | PreDeployment | DeploymentError
 ): d is PreDeployment {
-  return d.state === DeploymentState.NEW && Boolean(!d.error);
+  return d.state === DeploymentState.NEW && Boolean(d.error);
 }
 
 export function isDeployment(
