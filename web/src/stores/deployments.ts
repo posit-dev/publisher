@@ -24,7 +24,21 @@ export const useDeploymentStore = defineStore('deployment', () => {
   const api = useApi();
 
   const getDeploymentRef = (deploymentName: string) => {
-    return computed(() => deploymentMap.value[deploymentName]);
+    return computed(() => {
+      if (initializing.value) {
+        return undefined;
+      }
+      const d = deploymentMap.value[deploymentName];
+      if (d !== undefined) {
+        return d;
+      }
+
+      router.push(newFatalErrorRouteLocation(
+        new Error('Invalid Value for Deployment Object'),
+        'deployments::getDeploymentRef::computed()',
+      ));
+      return undefined;
+    });
   };
 
   const refreshDeployments = async() => {
@@ -104,8 +118,11 @@ export const useDeploymentStore = defineStore('deployment', () => {
     return result.concat(deploymentErrors, preDeployments, deployments);
   });
 
-  const init = () => {
-    refreshDeployments();
+  const initializing = ref(true);
+
+  const init = async() => {
+    await refreshDeployments();
+    initializing.value = false;
   };
   init();
 
@@ -116,5 +133,6 @@ export const useDeploymentStore = defineStore('deployment', () => {
     hasDeployments,
     deploymentMap,
     getDeploymentRef,
+    initializing
   };
 });
