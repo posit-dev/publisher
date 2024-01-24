@@ -1,31 +1,21 @@
 import * as vscode from 'vscode';
 
+import { HOST } from '.';
+
 const DEFAULT_COLUMN = vscode.ViewColumn.Beside;
 
-export interface IPanel extends vscode.Disposable {
-    show: () => Promise<undefined>;
-}
+export class Panel {
 
-export class Panel implements IPanel {
-
-    private readonly context: vscode.ExtensionContext;
     private readonly url: string;
 
     private column: vscode.ViewColumn = DEFAULT_COLUMN;
     private panel?: vscode.WebviewPanel;
 
-    /**
-     * Creates a Panel implementation.
-     *
-     * @param {vscode.ExtensionContext} context - The extension content
-     * @param {string} url - The server url (i.e., http://localhost:8080)
-     */
-    constructor(context: vscode.ExtensionContext, url: string) {
-        this.context = context;
-        this.url = url;
+    constructor(port: number) {
+        this.url = `http://${HOST}:${port}`;
     }
 
-    async show(): Promise<undefined> {
+    async show(context: vscode.ExtensionContext): Promise<undefined> {
         // reveal panel if defined
         if (this.panel !== undefined) {
             this.panel.reveal(this.column);
@@ -55,7 +45,7 @@ export class Panel implements IPanel {
                 this.column = event.webviewPanel.viewColumn || DEFAULT_COLUMN;
             },
             null,
-            this.context.subscriptions
+            context.subscriptions
         );
 
         // register dispose
@@ -65,7 +55,7 @@ export class Panel implements IPanel {
                 this.panel = undefined;
             },
             null,
-            this.context.subscriptions
+            context.subscriptions
         );
     }
 
