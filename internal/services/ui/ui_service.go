@@ -103,13 +103,17 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	r.Handle(ToPath("deployments", "{name}"), api.DeleteDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodDelete)
 
-	// GET /
+	// Handle any frontend paths that leak out (for example, on a refresh)
+	// by redirecting to the SPA at "/".
+
+	// GET /<anything>
+	// Serves static files from /web/dist.
+	fileHandler := middleware.InsertPrefix(web.Handler, web.Prefix)
 	r.PathPrefix("/").
-		Handler(middleware.InsertPrefix(web.Handler, web.Prefix)).
+		Handler(middleware.RedirectOn404(fileHandler, "/")).
 		Methods("GET")
 
 	c := cors.AllowAll().Handler(r)
-
 	return c.ServeHTTP
 }
 
