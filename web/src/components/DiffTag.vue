@@ -16,7 +16,7 @@ export type DiffType = 'inserted' | 'removed';
 
 const props = defineProps({
   diffType: {
-    type: Object as PropType<DiffType>,
+    type: String as PropType<DiffType>,
     required: true,
   },
   value: {
