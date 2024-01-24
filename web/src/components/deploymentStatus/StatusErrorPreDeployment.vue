@@ -74,7 +74,7 @@ const scrubbedErrorData = computed(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-shadow
     file, method, status, url,
     ...remainingData
-  } = props.deployment.deploymentError?.data as Record<string, string>;
+  } = props.deployment.error?.data as Record<string, string>;
 
   return remainingData;
 });
