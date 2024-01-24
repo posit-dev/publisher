@@ -17,12 +17,14 @@
     "Machine Learning",
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "posit.publisher.start",
+        "command": "posit.publisher.open",
         "title": "Open Publisher",
         "category": "Posit",
         "icon": {
@@ -48,7 +50,7 @@
     "menus": {
       "editor/title": [
         {
-          "command": "posit.publisher.start",
+          "command": "posit.publisher.open",
           "group": "navigation"
         }
       ]
