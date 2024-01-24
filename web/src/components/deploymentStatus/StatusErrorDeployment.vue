@@ -5,6 +5,9 @@
     class="space-between-y-sm"
   >
     <p>{{ deployment.id }}</p>
+    <p>
+      Last Deployed on {{ formatDateString(deployment.deployedAt) }}
+    </p>
     <template v-if="compact">
       <div class="flex items-center">
         <q-icon
@@ -26,7 +29,7 @@
       >
         <li>
           {{ deployment.deploymentError?.code }}
-          ({{ deployment.deploymentError?.operation }})
+          {{ deployment.deploymentError?.operation }}
         </li>
         <li>
           {{ deployment.deploymentError?.msg }}
@@ -58,6 +61,7 @@
 <script setup lang="ts">
 import { Deployment } from 'src/api';
 import { PropType, computed } from 'vue';
+import { formatDateString } from 'src/utils/date';
 
 const props = defineProps({
   deployment: {

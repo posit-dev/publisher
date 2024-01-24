@@ -2,7 +2,7 @@
 
 <template>
   <PCard
-    :to="{ name: 'deployments', params: { name: `${deployment.deploymentName}` }}"
+    :to="toLink"
     :title="deployment.deploymentName"
   >
     <div class="space-between-y-sm">
@@ -20,17 +20,30 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType, computed } from 'vue';
 
 import { Deployment, DeploymentError, PreDeployment, isDeploymentError } from 'src/api';
 import PCard from 'src/components/PCard.vue';
 import DeploymentStatus from 'src/components/deploymentStatus/DeploymentStatus.vue';
+import { RouteLocationRaw } from 'vue-router';
 
-defineProps({
+const props = defineProps({
   deployment: {
     type: Object as PropType<Deployment | PreDeployment | DeploymentError>,
     required: true,
   },
+});
+
+const toLink = computed((): RouteLocationRaw | undefined => {
+  if (!isDeploymentError(props.deployment)) {
+    return {
+      name: 'deployments',
+      params: {
+        name: `${props.deployment.deploymentName}`,
+      },
+    };
+  }
+  return undefined;
 });
 
 </script>

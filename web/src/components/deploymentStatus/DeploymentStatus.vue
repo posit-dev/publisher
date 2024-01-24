@@ -2,7 +2,10 @@
 
 <template>
   <StatusPreDeployment
-    v-if="isPreDeployment(deployment) && !isActiveDeployment(deployment)"
+    v-if="isPreDeployment(deployment) &&
+      !isUnsuccessfulPreDeployment(deployment) &&
+      !isActiveDeployment(deployment)"
+    :deployment="deployment"
     :compact="compact"
   />
   <StatusErrorPreDeployment
@@ -24,6 +27,11 @@
     :deployment="deployment"
     :compact="compact"
   />
+  <StatusDeploymentFileError
+    v-if="isDeploymentError(deployment)"
+    :deployment="deployment"
+    :compact="compact"
+  />
   <DeploymentLogLink
     :deployment="deployment"
   />
@@ -41,6 +49,7 @@ import {
   isUnsuccessfulPreDeployment,
   isSuccessfulDeployment,
   isUnsuccessfulDeployment,
+  isDeploymentError,
 } from 'src/api';
 
 import StatusActiveDeployment from './StatusActiveDeployment.vue';
@@ -48,6 +57,7 @@ import StatusErrorDeployment from './StatusErrorDeployment.vue';
 import StatusPreDeployment from './StatusPreDeployment.vue';
 import StatusSuccessDeployment from './StatusSuccessDeployment.vue';
 import StatusErrorPreDeployment from './StatusErrorPreDeployment.vue';
+import StatusDeploymentFileError from './StatusDeploymentFileError.vue';
 import DeploymentLogLink from '../DeploymentLogLink.vue';
 
 const deployments = useDeploymentStore();

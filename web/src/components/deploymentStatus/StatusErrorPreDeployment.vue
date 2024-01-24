@@ -5,6 +5,9 @@
     class="space-between-y-sm"
   >
     <template v-if="compact">
+      <p>
+        Created on {{ formatDateString(deployment.createdAt) }}
+      </p>
       <div
         class="flex items-center"
       >
@@ -18,6 +21,9 @@
       </div>
     </template>
     <template v-else>
+      <p>
+        Created on {{ formatDateString(deployment.createdAt) }}
+      </p>
       <p class="text-bold">
         An error has been detected:
       </p>
@@ -27,7 +33,7 @@
       >
         <li>
           {{ deployment.error?.code }}
-          ({{ deployment.error?.operation }})
+          {{ deployment.error?.operation }}
         </li>
         <li>
           {{ deployment.error?.msg }}
@@ -50,6 +56,7 @@
 <script setup lang="ts">
 import { PreDeployment } from 'src/api';
 import { PropType, computed } from 'vue';
+import { formatDateString } from 'src/utils/date';
 
 const props = defineProps({
   deployment: {
