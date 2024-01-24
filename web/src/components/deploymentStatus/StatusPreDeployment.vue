@@ -19,14 +19,8 @@
 </template>
 
 <script setup lang="ts">
-import { PreDeployment } from 'src/api';
-import { PropType } from 'vue';
 
 defineProps({
-  deployment: {
-    type: Object as PropType<PreDeployment>,
-    required: true,
-  },
   compact: {
     type: Boolean,
     required: false,

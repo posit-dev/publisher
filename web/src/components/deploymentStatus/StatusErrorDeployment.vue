@@ -4,8 +4,8 @@
   <div
     class="space-between-y-sm"
   >
+    <p>{{ deployment.id }}</p>
     <template v-if="compact">
-      <p>{{ deployment.id }}</p>
       <div class="flex items-center">
         <q-icon
           name="error"
@@ -17,17 +17,19 @@
       </div>
     </template>
     <template v-else>
-      <p>{{ deployment.id }}</p>
       <p class="text-bold">
         An error has been detected:
       </p>
-      <ul class="text-caption error-msg">
+      <ul
+        v-if="deployment.deploymentError?.code"
+        class="text-caption error-msg"
+      >
         <li>
-          {{ props.deployment.deploymentError?.code }}
-          ({{ $props.deployment.deploymentError?.operation }})
+          {{ deployment.deploymentError?.code }}
+          ({{ deployment.deploymentError?.operation }})
         </li>
         <li>
-          {{ props.deployment.deploymentError?.msg }}
+          {{ deployment.deploymentError?.msg }}
         </li>
         <li
           v-for="(value, name, index) in scrubbedErrorData"
@@ -37,6 +39,9 @@
           {{ name }}: {{ value }}
         </li>
       </ul>
+      <p v-else>
+        No info on error is available.
+      </p>
     </template>
     <div>
       <a

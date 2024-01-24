@@ -3,7 +3,6 @@
 <template>
   <StatusPreDeployment
     v-if="isPreDeployment(deployment) && !isActiveDeployment(deployment)"
-    :deployment="deployment"
     :compact="compact"
   />
   <StatusErrorPreDeployment
