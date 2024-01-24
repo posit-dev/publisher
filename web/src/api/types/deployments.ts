@@ -31,7 +31,7 @@ type DeploymentRecord = {
 
 export type PreDeployment = {
   state: DeploymentState.NEW,
-  deploymentError: AgentError | null,
+  error: AgentError | null,
 } & DeploymentRecord;
 
 export type Deployment = {

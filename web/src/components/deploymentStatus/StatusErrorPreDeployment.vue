@@ -22,15 +22,15 @@
         An error has been detected:
       </p>
       <ul
-        v-if="deployment.deploymentError?.code"
+        v-if="deployment.error?.code"
         class="text-caption error-msg"
       >
         <li>
-          {{ deployment.deploymentError?.code }}
-          ({{ deployment.deploymentError?.operation }})
+          {{ deployment.error?.code }}
+          ({{ deployment.error?.operation }})
         </li>
         <li>
-          {{ deployment.deploymentError?.msg }}
+          {{ deployment.error?.msg }}
         </li>
         <li
           v-for="(value, name, index) in scrubbedErrorData"
@@ -64,7 +64,7 @@ const props = defineProps({
 });
 
 const scrubbedErrorData = computed(() => {
-  if (!props.deployment.deploymentError?.data) {
+  if (!props.deployment.error?.data) {
     return {};
   }
 
