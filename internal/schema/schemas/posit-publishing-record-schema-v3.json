@@ -49,12 +49,20 @@
       "type": "string",
       "description": "Version of the publisher that deployed the content."
     },
-    "deployed-at": {
+    "created-at": {
       "type": "string",
       "format": "date-time",
       "description": "Date and time the deployment was created.",
       "examples": [
-        "2023-12-04T19:44:59.937393Z"
+        "2024-01-19T09:33:33.131481-05:00"
+      ]
+    },
+    "deployed-at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time of the last deployment to the server.",
+      "examples": [
+        "2024-01-19T09:33:33.131481-05:00"
       ]
     },
     "configuration-name": {
