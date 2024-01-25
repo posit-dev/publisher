@@ -110,7 +110,7 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	// Serves static files from /web/dist.
 	fileHandler := middleware.InsertPrefix(web.Handler, web.Prefix)
 	r.PathPrefix("/").
-		Handler(middleware.RedirectOn404(fileHandler, "/")).
+		Handler(middleware.ServeIndexOn404(fileHandler, "/")).
 		Methods("GET")
 
 	c := cors.AllowAll().Handler(r)
