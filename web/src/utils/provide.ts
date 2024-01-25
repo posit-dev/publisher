@@ -7,5 +7,6 @@ import { Deployment, DeploymentError, PreDeployment } from 'src/api';
 export const deploymentKey = Symbol('deployment') as InjectionKey<
     PreDeployment |
     Deployment |
-    DeploymentError
+    DeploymentError |
+    undefined
 >;
