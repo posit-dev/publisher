@@ -21,60 +21,64 @@
       dense
       class="logClass"
     >
-      <q-item
+      <template
         v-for="(msg, index) in messages"
-        :key="index"
       >
-        <q-item-section>
-          <!-- {{ JSON.stringify(msg) }} -->
-          <template v-if="isErrorEventStreamMessage(msg)">
-            <span class="text-error text-weight-medium">
-              {{ formatMsg(msg) }}
-            </span>
-            <ul>
-              <li
-                v-for="(nameValue, i) in splitErrorLog(msg)"
-                :key="i"
-                class="text-caption q-ml-md"
-              >
-                <span class="text-weight-medium">
-                  {{ nameValue.name }}:
+        <q-item
+          v-if="!shouldSkipMessage(msg)"
+          :key="index"
+        >
+          <q-item-section>
+            <!-- {{ JSON.stringify(msg) }} -->
+            <template v-if="isErrorEventStreamMessage(msg)">
+              <span class="text-error text-weight-medium">
+                {{ formatMsg(msg) }}
+              </span>
+              <ul>
+                <li
+                  v-for="(nameValue, i) in splitErrorLog(msg)"
+                  :key="i"
+                  class="text-caption q-ml-md"
+                >
+                  <span class="text-weight-medium">
+                    {{ nameValue.name }}:
+                  </span>
+                  <span>
+                    {{ nameValue.value }}<br>
+                  </span>
+                </li>
+              </ul>
+            </template>
+            <template v-else>
+              <template v-if="msg.type.endsWith('/start')">
+                <span class="text-weight-medium  text-caption">
+                  {{ formatMsg(msg) }}
                 </span>
-                <span>
-                  {{ nameValue.value }}<br>
+              </template>
+              <template v-if="msg.type.endsWith('/success')">
+                <span class="text-caption">
+                  {{ formatMsg(msg) }}
                 </span>
-              </li>
-            </ul>
-          </template>
-          <template v-else>
-            <template v-if="msg.type.endsWith('/start')">
-              <span class="text-weight-medium  text-caption">
-                {{ formatMsg(msg) }}
-              </span>
+              </template>
+              <template v-if="msg.type.endsWith('/status')">
+                <span class="text-weight-medium text-caption">
+                  {{ formatMsg(msg) }}
+                </span>
+              </template>
+              <template v-if="msg.type.endsWith('/log')">
+                <span class="text-caption">
+                  {{ formatMsg(msg) }}
+                </span>
+              </template>
+              <template v-if="msg.type.endsWith('/progress')">
+                <span class="text-caption">
+                  {{ formatMsg(msg) }}
+                </span>
+              </template>
             </template>
-            <template v-if="msg.type.endsWith('/success')">
-              <span class="text-caption">
-                {{ formatMsg(msg) }}
-              </span>
-            </template>
-            <template v-if="msg.type.endsWith('/status')">
-              <span class="text-weight-medium text-caption">
-                {{ formatMsg(msg) }}
-              </span>
-            </template>
-            <template v-if="msg.type.endsWith('/log')">
-              <span class="text-caption">
-                {{ formatMsg(msg) }}
-              </span>
-            </template>
-            <template v-if="msg.type.endsWith('/progress')">
-              <span class="text-caption">
-                {{ formatMsg(msg) }}
-              </span>
-            </template>
-          </template>
-        </q-item-section>
-      </q-item>
+          </q-item-section>
+        </q-item>
+      </template>
     </q-list>
   </q-step>
 </template>
@@ -107,6 +111,10 @@ const props = defineProps({
 });
 
 const hasError = computed(() => props.messages.some(msg => isErrorEventStreamMessage(msg)));
+
+const shouldSkipMessage = (msg: EventStreamMessage): boolean => {
+  return msg.type.endsWith('/log') && msg.data.level === 'DEBUG';
+};
 
 const formatMsg = (msg: EventStreamMessage): string => {
   if (isPublishCreateNewDeploymentStart(msg) || isPublishCreateNewDeploymentSuccess(msg)) {
