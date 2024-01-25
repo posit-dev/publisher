@@ -12,7 +12,7 @@
         {{ deployment.serverUrl }}
       </p>
       <DeploymentStatus
-        :name="deployment.deploymentName"
+        :deployment="deployment"
         :compact="true"
       />
     </div>

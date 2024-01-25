@@ -1,51 +1,50 @@
 <!-- Copyright (C) 2024 by Posit Software, PBC. -->
 
 <template>
-  <StatusPreDeployment
-    v-if="isPreDeployment(deployment) &&
-      !isUnsuccessfulPreDeployment(deployment) &&
-      !isActiveDeployment(deployment)"
-    :deployment="deployment"
-    :compact="compact"
-  />
-  <StatusErrorPreDeployment
-    v-if="isUnsuccessfulPreDeployment(deployment) && !isActiveDeployment(deployment)"
-    :deployment="deployment"
-    :compact="compact"
-  />
-  <StatusSuccessDeployment
-    v-if="isSuccessfulDeployment(deployment) && !isActiveDeployment(deployment)"
-    :deployment="deployment"
-  />
-  <StatusErrorDeployment
-    v-if="isUnsuccessfulDeployment(deployment) && !isActiveDeployment(deployment)"
-    :deployment="deployment"
-    :compact="compact"
-  />
-  <StatusActiveDeployment
-    v-if="isActiveDeployment(deployment)"
-    :deployment="deployment"
-    :compact="compact"
-  />
-  <StatusDeploymentFileError
-    v-if="isDeploymentError(deployment)"
-    :deployment="deployment"
-    :compact="compact"
-  />
-  <DeploymentLogLink
-    :deployment="deployment"
-  />
+  <template v-if="deployment">
+    <StatusPreDeployment
+      v-if="isSuccessfulPreDeployment(deployment) && !isActive(deployment)"
+      :deployment="deployment"
+      :compact="compact"
+    />
+    <StatusErrorPreDeployment
+      v-if="isUnsuccessfulPreDeployment(deployment) && !isActive(deployment)"
+      :deployment="deployment"
+      :compact="compact"
+    />
+    <StatusSuccessDeployment
+      v-if="isSuccessfulDeployment(deployment) && !isActive(deployment)"
+      :deployment="deployment"
+    />
+    <StatusErrorDeployment
+      v-if="isUnsuccessfulDeployment(deployment) && !isActive(deployment)"
+      :deployment="deployment"
+      :compact="compact"
+    />
+    <StatusActiveDeployment
+      v-if="isActive(deployment)"
+      :deployment="deployment"
+      :compact="compact"
+    />
+    <StatusDeploymentFileError
+      v-if="isDeploymentError(deployment)"
+      :deployment="deployment"
+      :compact="compact"
+    />
+    <DeploymentLogLink
+      :deployment="deployment"
+    />
+  </template>
 </template>
 
 <script setup lang="ts">
-import { useDeploymentStore } from 'src/stores/deployments';
 import { useEventStore } from 'src/stores/events';
 import {
   Deployment,
   DeploymentError,
   DeploymentState,
   PreDeployment,
-  isPreDeployment,
+  isSuccessfulPreDeployment,
   isUnsuccessfulPreDeployment,
   isSuccessfulDeployment,
   isUnsuccessfulDeployment,
@@ -54,13 +53,13 @@ import {
 
 import StatusActiveDeployment from './StatusActiveDeployment.vue';
 import StatusErrorDeployment from './StatusErrorDeployment.vue';
-import StatusPreDeployment from './StatusPreDeployment.vue';
 import StatusSuccessDeployment from './StatusSuccessDeployment.vue';
 import StatusErrorPreDeployment from './StatusErrorPreDeployment.vue';
 import StatusDeploymentFileError from './StatusDeploymentFileError.vue';
+import StatusPreDeployment from './StatusPreDeployment.vue';
 import DeploymentLogLink from '../DeploymentLogLink.vue';
+import { PropType } from 'vue';
 
-const deployments = useDeploymentStore();
 const events = useEventStore();
 
 // Will show either:
@@ -69,19 +68,20 @@ const events = useEventStore();
 // - previously deployed error (deployment)
 // - actively being deployed (deployment in event store)
 
-const props = defineProps({
-  name: { type: String, required: true },
+defineProps({
+  deployment: {
+    type: Object as PropType<Deployment | PreDeployment | DeploymentError>,
+    required: true,
+  },
   compact: { type: Boolean, required: false, default: false },
 });
 
-const deployment = deployments.getDeploymentRef(props.name);
-
-const isActiveDeployment = (
+const isActive = (
   d: Deployment | PreDeployment | DeploymentError,
-): d is Deployment => {
+): d is Deployment | PreDeployment => {
   return (
-    d.state === DeploymentState.DEPLOYED &&
-    events.isPublishActiveForDeployment(props.name)
+    d.state !== DeploymentState.ERROR &&
+    events.isPublishActiveForDeployment(d.deploymentName)
   );
 };
 

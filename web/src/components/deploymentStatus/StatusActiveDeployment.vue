@@ -16,7 +16,7 @@
   <div
     v-else
   >
-    <p v-if="deployment.id">
+    <p v-if="isDeployment(deployment)">
       {{ deployment.id }}
     </p>
     <div
@@ -45,15 +45,16 @@
 </template>
 
 <script setup lang="ts">
-import { Deployment } from 'src/api';
+import { Deployment, PreDeployment } from 'src/api';
 import { PropType, computed } from 'vue';
 import { useEventStore } from 'src/stores/events';
+import { isDeployment } from 'src/api/types/deployments';
 
 const events = useEventStore();
 
 const props = defineProps({
   deployment: {
-    type: Object as PropType<Deployment>,
+    type: Object as PropType<Deployment | PreDeployment>,
     required: true,
   },
   compact: {

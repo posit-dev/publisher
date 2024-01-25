@@ -32,7 +32,7 @@
             </a>
           </p>
           <DeploymentStatus
-            :name="deployment.deploymentName"
+            :deployment="deployment"
           />
         </div>
 

@@ -81,6 +81,9 @@ const id = computed(() => {
 const deployment = deployments.getDeploymentRef(props.name);
 
 const operation = computed(() => {
+  if (!deployment.value) {
+    return undefined;
+  }
   if (isDeploymentError(deployment.value)) {
     return undefined;
   }

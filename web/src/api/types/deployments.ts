@@ -47,37 +47,66 @@ export type Deployment = {
 } & DeploymentRecord & Configuration;
 
 export function isDeploymentError(
-  d: Deployment | PreDeployment | DeploymentError
+  d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is DeploymentError {
-  return d.state === DeploymentState.ERROR;
+  return Boolean(
+    d &&
+    d.state === DeploymentState.ERROR
+  );
 }
 
 export function isPreDeployment(
-  d: Deployment | PreDeployment | DeploymentError
+  d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is PreDeployment {
-  return d.state === DeploymentState.NEW;
+  return Boolean(
+    d &&
+    d.state === DeploymentState.NEW
+  );
+}
+
+export function isSuccessfulPreDeployment(
+  d: Deployment | PreDeployment | DeploymentError | undefined
+): d is PreDeployment {
+  return Boolean(
+    d &&
+    d.state === DeploymentState.NEW && Boolean(!d.error)
+  );
 }
 
 export function isUnsuccessfulPreDeployment(
-  d: Deployment | PreDeployment | DeploymentError
+  d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is PreDeployment {
-  return d.state === DeploymentState.NEW && Boolean(d.error);
+  return Boolean(
+    d &&
+    d.state === DeploymentState.NEW && Boolean(d.error)
+  );
 }
 
 export function isDeployment(
-  d: Deployment | PreDeployment | DeploymentError
+  d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is Deployment {
-  return d.state === DeploymentState.DEPLOYED;
+  return Boolean(
+    d &&
+    d.state === DeploymentState.DEPLOYED
+  );
 }
 
 export function isSuccessfulDeployment(
-  d: Deployment | PreDeployment | DeploymentError
+  d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is Deployment {
-  return (d.state === DeploymentState.DEPLOYED && Boolean(!d.deploymentError));
+  return Boolean(
+    d &&
+    d.state === DeploymentState.DEPLOYED &&
+    Boolean(!d.deploymentError)
+  );
 }
 
 export function isUnsuccessfulDeployment(
-  d: Deployment | PreDeployment | DeploymentError
+  d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is Deployment {
-  return (d.state === DeploymentState.DEPLOYED && Boolean(d.deploymentError));
+  return Boolean(
+    d &&
+    d.state === DeploymentState.DEPLOYED &&
+    Boolean(d.deploymentError)
+  );
 }
