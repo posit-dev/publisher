@@ -39,6 +39,14 @@ export class Panel {
         const url = uri.toString();
         this.panel.webview.html = createHTML(url, this.panel.webview);
 
+        // listen for messages
+        this.panel.webview.onDidReceiveMessage(message => {
+            switch (message.command) {
+                case 'reload-webview':
+                    vscode.commands.executeCommand('workbench.action.webview.reloadWebviewAction');
+            }
+        });
+
         // register view state change
         this.panel.onDidChangeViewState(
             (event) => {

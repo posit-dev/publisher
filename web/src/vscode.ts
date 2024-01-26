@@ -47,3 +47,7 @@ export const onVscodeThemeChange = (callback: (theme: VscodeTheme | undefined) =
   observer.observe(document.body, { attributes: true });
   return observer;
 };
+
+export enum VSCodeCommandMessage {
+  RELOAD_WEBVIEW = 'reload-webview',
+}
