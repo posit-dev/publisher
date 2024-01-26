@@ -5,7 +5,6 @@
     <StatusPreDeployment
       v-if="isSuccessfulPreDeployment(deployment) && !isActive(deployment)"
       :deployment="deployment"
-      :compact="compact"
     />
     <StatusErrorPreDeployment
       v-if="isUnsuccessfulPreDeployment(deployment) && !isActive(deployment)"
@@ -29,7 +28,6 @@
     <StatusDeploymentFileError
       v-if="isDeploymentError(deployment)"
       :deployment="deployment"
-      :compact="compact"
     />
     <DeploymentLogLink
       :deployment="deployment"

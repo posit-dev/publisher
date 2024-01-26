@@ -3,8 +3,8 @@
 <template>
   <div v-if="showLinks">
     <PLink
-      v-if="summaryizedLogLink"
-      :to="summaryizedLogLink"
+      v-if="summarizedLogLink"
+      :to="summarizedLogLink"
     >
       View summarized deployment logs
     </PLink>
@@ -37,13 +37,10 @@ const props = defineProps({
 });
 
 const showLinks = computed(() => {
-  return (
-    isDeployment(props.deployment) &&
-    (summaryizedLogLink.value || connectLogLink.value)
-  );
+  return (summarizedLogLink.value || connectLogLink.value);
 });
 
-const summaryizedLogLink = computed((): RouteLocationRaw | undefined => {
+const summarizedLogLink = computed((): RouteLocationRaw | undefined => {
   if (!events.doesPublishStatusApplyToDeployment(props.deployment.deploymentName)) {
     return undefined;
   }

@@ -24,22 +24,25 @@
         An error has been detected:
       </p>
       <ul
-        v-if="deployment.deploymentError?.code"
-        class="text-caption error-msg"
+        v-if="deployment.deploymentError"
+        class="text-caption"
       >
         <li>
-          {{ deployment.deploymentError?.code }}
-          {{ deployment.deploymentError?.operation }}
+          {{ deployment.deploymentError.code }}
+          {{ deployment.deploymentError.operation }}
         </li>
         <li>
-          {{ deployment.deploymentError?.msg }}
+          {{ deployment.deploymentError.msg }}
         </li>
-        <li
-          v-for="(value, name, index) in scrubbedErrorData"
-          :key="index"
-          class="error-data"
-        >
-          {{ name }}: {{ value }}
+        <li>
+          <ul>
+            <li
+              v-for="(value, name, index) in scrubbedErrorData"
+              :key="index"
+            >
+              {{ name }}: {{ value }}
+            </li>
+          </ul>
         </li>
       </ul>
       <p v-else>
@@ -92,13 +95,3 @@ const scrubbedErrorData = computed(() => {
 });
 
 </script>
-<style scoped lang="scss">
-.error-msg {
-  text-wrap: wrap;
-}
-.error-data {
-  margin-left: 15px;
-  margin-top: 2px;
-  margin-bottom: 2px;
-}
-</style>

@@ -15,17 +15,13 @@
           :href="eventStore.currentPublishStatus.status.dashboardURL"
           target="_blank"
           rel="noopener noreferrer"
-        >
-          Connect Dashboard
-        </a>
+        >Connect Dashboard</a>
         or
         <a
           :href="eventStore.currentPublishStatus.status.directURL"
           target="_blank"
           rel="noopener noreferrer"
-        >
-          directly
-        </a>.
+        >directly</a>.
       </template>
       <template v-else>
         Your project is still being deployed...

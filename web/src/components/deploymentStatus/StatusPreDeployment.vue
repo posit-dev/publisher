@@ -24,11 +24,6 @@ defineProps({
     type: Object as PropType<PreDeployment>,
     required: true,
   },
-  compact: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
 });
 
 </script>

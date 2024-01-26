@@ -16,7 +16,7 @@
     </p>
     <ul
       v-if="deployment.error?.code"
-      class="text-caption error-msg"
+      class="text-caption"
     >
       <li>
         {{ deployment.error?.code }}
@@ -25,12 +25,15 @@
       <li>
         {{ deployment.error?.msg }}
       </li>
-      <li
-        v-for="(value, name, index) in scrubbedErrorData"
-        :key="index"
-        class="error-data"
-      >
-        {{ name }}: {{ value }}
+      <li>
+        <ul>
+          <li
+            v-for="(value, name, index) in scrubbedErrorData"
+            :key="index"
+          >
+            {{ name }}: {{ value }}
+          </li>
+        </ul>
       </li>
     </ul>
   </div>
@@ -44,11 +47,6 @@ const props = defineProps({
   deployment: {
     type: Object as PropType<DeploymentError>,
     required: true,
-  },
-  compact: {
-    type: Boolean,
-    required: false,
-    default: false,
   },
 });
 
@@ -69,13 +67,3 @@ const scrubbedErrorData = computed(() => {
 });
 
 </script>
-<style scoped lang="scss">
-.error-msg {
-  text-wrap: wrap;
-}
-.error-data {
-  margin-left: 15px;
-  margin-top: 2px;
-  margin-bottom: 2px;
-}
-</style>

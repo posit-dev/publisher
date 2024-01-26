@@ -46,6 +46,28 @@ export type Deployment = {
   deploymentError: AgentError | null,
 } & DeploymentRecord & Configuration;
 
+export function isSuccessful(
+  d: Deployment | PreDeployment | DeploymentError | undefined
+): boolean | undefined {
+  if (d === undefined) {
+    return undefined;
+  }
+  if (isDeployment(d)) {
+    return Boolean(d.deploymentError);
+  }
+  return Boolean(d.error);
+}
+
+export function isUnsuccessful(
+  d: Deployment | PreDeployment | DeploymentError | undefined
+): boolean | undefined {
+  const result = isSuccessful(d);
+  if (result === undefined) {
+    return undefined;
+  }
+  return !result;
+}
+
 export function isDeploymentError(
   d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is DeploymentError {
@@ -67,19 +89,25 @@ export function isPreDeployment(
 export function isSuccessfulPreDeployment(
   d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is PreDeployment {
-  return Boolean(
-    d &&
-    d.state === DeploymentState.NEW && Boolean(!d.error)
-  );
+  if (isPreDeployment(d)) {
+    const success = isSuccessful(d);
+    if (success !== undefined) {
+      return success;
+    }
+  }
+  return false;
 }
 
 export function isUnsuccessfulPreDeployment(
   d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is PreDeployment {
-  return Boolean(
-    d &&
-    d.state === DeploymentState.NEW && Boolean(d.error)
-  );
+  if (isPreDeployment(d)) {
+    const failure = isUnsuccessful(d);
+    if (failure !== undefined) {
+      return failure;
+    }
+  }
+  return false;
 }
 
 export function isDeployment(
@@ -94,19 +122,23 @@ export function isDeployment(
 export function isSuccessfulDeployment(
   d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is Deployment {
-  return Boolean(
-    d &&
-    d.state === DeploymentState.DEPLOYED &&
-    Boolean(!d.deploymentError)
-  );
+  if (isDeployment(d)) {
+    const success = isSuccessful(d);
+    if (success !== undefined) {
+      return success;
+    }
+  }
+  return false;
 }
 
 export function isUnsuccessfulDeployment(
   d: Deployment | PreDeployment | DeploymentError | undefined
 ): d is Deployment {
-  return Boolean(
-    d &&
-    d.state === DeploymentState.DEPLOYED &&
-    Boolean(d.deploymentError)
-  );
+  if (isDeployment(d)) {
+    const failure = isUnsuccessful(d);
+    if (failure !== undefined) {
+      return failure;
+    }
+  }
+  return false;
 }
