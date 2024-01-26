@@ -44,6 +44,7 @@ export class Panel {
             switch (message.command) {
                 case 'reload-webview':
                     vscode.commands.executeCommand('workbench.action.webview.reloadWebviewAction');
+                    return;
             }
         });
 
