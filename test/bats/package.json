@@ -1,7 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "contract": "bats -r -T -t ./contract",
+    "deploy": "bats -r -T -t ./contract/deploy.bats",
+    "accounts": "bats -r -T -t ./contract/accounts.bats",
     "cli": "bats -r -T -t ./cli"
   },
   "devDependencies": {
