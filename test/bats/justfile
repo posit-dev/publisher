@@ -83,12 +83,12 @@ test-contract:
         for i in ${content_list}
         do
             # only test when we have a .publisher-env file for the content
-            if [[ -f ../bundles/${i}/test/.publisher-env ]]; then
+            if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
                 export CONTENT=${i}
                 EXE=$exe npm run deploy
             fi
         done
-        rm -rf ../content/
+        # rm -rf ../content/
     else
         cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
         EXE=$exe npm run deploy
