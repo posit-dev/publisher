@@ -4,7 +4,6 @@
   <div
     v-if="compact"
     class="flex items-center"
-    :class="textClass"
   >
     <q-spinner
       color="primary"
@@ -50,10 +49,8 @@ import { Deployment, PreDeployment } from 'src/api';
 import { PropType, computed } from 'vue';
 import { useEventStore } from 'src/stores/events';
 import { isDeployment } from 'src/api/types/deployments';
-import { useQuasar } from 'quasar';
 
 const events = useEventStore();
-const $q = useQuasar();
 
 const props = defineProps({
   deployment: {
@@ -69,12 +66,5 @@ const props = defineProps({
 
 const showProgress = computed(() => {
   return events.doesPublishStatusApplyToDeployment(props.deployment.deploymentName);
-});
-
-const textClass = computed(() => {
-  if ($q.dark.isActive) {
-    return 'text-white';
-  }
-  return 'text-black';
 });
 </script>
