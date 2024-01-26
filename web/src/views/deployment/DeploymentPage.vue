@@ -45,6 +45,8 @@ import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
 import DeploymentHeader from './DeploymentHeader.vue';
 import DeploymentSection from 'src/components/DeploymentSection.vue';
+import { provide } from 'vue';
+import { deploymentKey } from 'src/utils/provide';
 
 const api = useApi();
 const deployments = useDeploymentStore();
@@ -57,6 +59,8 @@ const props = defineProps({
 });
 
 const deployment = deployments.getDeploymentRef(props.name);
+
+provide(deploymentKey, deployment.value);
 
 const configurationSubTitles = computed(() => {
   return [
