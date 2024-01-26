@@ -5,7 +5,7 @@ import sys
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Specify the directory name
-directory_name = sys.argv[1]
+directory_name = os.path.join( "content", "bundles" )
 
 # Create the full path to the directory
 directory_path = os.path.join(script_dir, directory_name)

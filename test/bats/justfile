@@ -79,7 +79,7 @@ test-contract:
         fi
         
         # content_list will contain all content in
-        content_list=$(python ../deploy_helper.py content/bundles)
+        content_list=$(python ../deploy_helper.py)
         for i in ${content_list}
         do
             # only test when we have a .publisher-env file for the content
