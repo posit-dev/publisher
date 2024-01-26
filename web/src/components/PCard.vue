@@ -5,32 +5,41 @@
     class="p-card"
     :class="{ hoverable: to }"
   >
-    <div class="card-header flex no-wrap items-center">
-      <q-icon
-        v-if="icon"
-        :name="icon"
-        size="20px"
-        class="q-mr-sm"
+    <section class="card-header flex justify-between">
+      <div class="flex items-center no-wrap">
+        <q-icon
+          v-if="icon"
+          :name="icon"
+          size="20px"
+          class="q-mr-sm"
+        />
+
+        <h3
+          v-if="title"
+          class="card-title truncate"
+        >
+          {{ title }}
+        </h3>
+
+        <q-tooltip
+          v-if="titleTooltip"
+          class="text-body2"
+          anchor="top left"
+          self="bottom middle"
+          max-width="300px"
+          :offset="[0, 10]"
+        >
+          {{ titleTooltip }}
+        </q-tooltip>
+      </div>
+
+      <q-btn
+        style="z-index: 2;"
+        padding="xs"
+        flat
+        icon="more_vert"
       />
-
-      <h3
-        v-if="title"
-        class="card-title truncate"
-      >
-        {{ title }}
-      </h3>
-
-      <q-tooltip
-        v-if="titleTooltip"
-        class="text-body2"
-        anchor="top left"
-        self="bottom middle"
-        max-width="300px"
-        :offset="[0, 10]"
-      >
-        {{ titleTooltip }}
-      </q-tooltip>
-    </div>
+    </section>
 
     <slot />
 
