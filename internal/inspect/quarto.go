@@ -39,9 +39,9 @@ type quartoInspectOutput struct {
 	} `json:"quarto"`
 	Config struct {
 		Project struct {
-			Title      string `json:"title"`
-			PreRender  string `json:"pre-render"`
-			PostRender string `json:"post-render"`
+			Title      string   `json:"title"`
+			PreRender  []string `json:"pre-render"`
+			PostRender []string `json:"post-render"`
 		} `json:"project"`
 		Website struct {
 			Title string `json:"title"`
@@ -68,9 +68,20 @@ func (d *QuartoDetector) quartoInspect(path util.Path) (*quartoInspectOutput, er
 }
 
 func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
-	return slices.Contains(inspectOutput.Engines, "jupyter") ||
-		strings.HasSuffix(inspectOutput.Config.Project.PreRender, ".py") ||
-		strings.HasSuffix(inspectOutput.Config.Project.PostRender, ".py")
+	if slices.Contains(inspectOutput.Engines, "jupyter") {
+		return true
+	}
+	for _, script := range inspectOutput.Config.Project.PreRender {
+		if strings.HasSuffix(script, ".py") {
+			return true
+		}
+	}
+	for _, script := range inspectOutput.Config.Project.PostRender {
+		if strings.HasSuffix(script, ".py") {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *QuartoDetector) hasQuartoFile(path util.Path) (bool, error) {
