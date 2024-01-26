@@ -57,6 +57,9 @@ test-contract:
     {{ _with_debug }}
 
     exe=$(just ../../executable-path)
+    
+    pip install -r ../setup/requirements.txt
+    
     export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
     export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
     
@@ -64,8 +67,7 @@ test-contract:
         echo "error: Missing executable $exe. Run \`just build\`." 1>&2
         exit 1
     fi
-    pip install -r ../setup/requirements.txt
-
+    
     # run contract/accounts.bats
     EXE=$exe npm run accounts
 
