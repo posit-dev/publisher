@@ -129,11 +129,15 @@ func (p *rsconnectProvider) accountsFromConfig(rscServers, rscAccounts dcf.Recor
 		if !ok {
 			return accounts, fmt.Errorf("Account references nonexistent server name '%s'", serverName)
 		}
+		serverURL, err := normalizeServerURL(url)
+		if err != nil {
+			return nil, err
+		}
 		account := Account{
 			Source:      AccountSourceRsconnect,
-			ServerType:  serverTypeFromURL(url),
+			ServerType:  serverTypeFromURL(serverURL),
 			Name:        serverName,
-			URL:         url,
+			URL:         serverURL,
 			AccountName: account["username"],
 			Token:       account["token"],
 			Secret:      account["secret"],

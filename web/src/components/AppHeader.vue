@@ -44,6 +44,10 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 .posit-logo-link {
   text-decoration: none;
 
+  &.vscode-router-link {
+    text-decoration: none;
+  }
+
   & > * {
     vertical-align: middle;
   }

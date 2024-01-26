@@ -2,7 +2,7 @@
 
 <template>
   <div
-    class="p-card focus-shadow truncate"
+    class="p-card"
     :class="{ hoverable: to }"
   >
     <div class="card-header flex no-wrap items-center">
@@ -36,7 +36,7 @@
 
     <PLink
       v-if="to"
-      class="link-fill no-outline"
+      class="link-fill"
       :to="to"
     />
   </div>
@@ -79,17 +79,8 @@ defineProps({
     border: 1px solid;
     padding: 24px;
 
-    a {
-      color: inherit;
-      text-decoration: none;
-
-      &:focus {
-        outline: 2px solid transparent;
-        outline-offset: 2px;
-      }
-    }
-
     .link-fill {
+      text-decoration: none;
       display: block;
       position: absolute;
       inset: 0;
@@ -111,7 +102,7 @@ defineProps({
 
 .body--light {
   .p-card {
-    background-color: white;
+    background-color: var(--vscode-editor-background, white);
     border-color: $grey-4;
 
     &.hoverable:hover {
@@ -128,6 +119,14 @@ defineProps({
       border-color: $grey-6;
     }
   }
+}
+</style>
+
+<style lang="scss">
+.p-card a,
+.p-card .vscode-router-link {
+  position: relative;
+  z-index: 2;
 }
 </style>
 

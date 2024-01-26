@@ -29,8 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed } from 'vue';
 import { useDeploymentStore } from 'src/stores/deployments';
 
 import {
@@ -41,16 +40,14 @@ import {
   isDeployment
 } from 'src/api';
 import { isDeploymentError } from 'src/api/types/deployments';
-import {
-  newFatalErrorRouteLocation,
-} from 'src/utils/errors';
 
 import ConfigSettings from 'src/components/config/ConfigSettings.vue';
 import FileTree from 'src/components/FileTree.vue';
 import DeploymentHeader from './DeploymentHeader.vue';
 import DeploymentSection from 'src/components/DeploymentSection.vue';
+import { provide } from 'vue';
+import { deploymentKey } from 'src/utils/provide';
 
-const router = useRouter();
 const api = useApi();
 const deployments = useDeploymentStore();
 
@@ -63,19 +60,7 @@ const props = defineProps({
 
 const deployment = deployments.getDeploymentRef(props.name);
 
-watch(
-  () => deployment.value,
-  () => {
-    if (!deployment.value || isDeploymentError(deployment.value)) {
-      // go to fatal error page.
-      router.push(newFatalErrorRouteLocation(
-        new Error('Invalid Value for Deployment Object'),
-        'DeploymentPage::deployment()',
-      ));
-    }
-  },
-  { immediate: true }
-);
+provide(deploymentKey, deployment.value);
 
 const configurationSubTitles = computed(() => {
   return [

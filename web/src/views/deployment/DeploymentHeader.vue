@@ -309,7 +309,7 @@ const showDeployStatusAsCurrent = computed(() => {
 
 .body--light {
   .deployment-header {
-    background-color: white;
+    background-color: var(--vscode-editor-background, white);
     border-color: $grey-4;
   }
 }

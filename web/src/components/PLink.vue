@@ -35,6 +35,7 @@ function navigate() {
 <style lang="scss" scoped>
 span.vscode-router-link {
   color: var(--vscode-textLink-foreground);
+  text-decoration: underline;
 
   &:not(:focus-visible) {
     outline: none;
