@@ -59,7 +59,7 @@ test-contract:
     exe=$(just ../../executable-path)
     
     pip install -r ../setup/requirements.txt
-    
+
     export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
     export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
     
@@ -74,11 +74,12 @@ test-contract:
     # pull the content from connect-content repo
     if [[ "${CONTENT}" == "all" ]]; then
         if [[ ${_ci} == false ]]; then
-            cp -R ${HOME}${CONTENT_REPO}/bundles/ ../bundles/
+            mkdir -p ../content/bundles/
+            cp -R ${HOME}${CONTENT_REPO}/bundles/ ../content/bundles/
         fi
         
         # content_list will contain all content in
-        content_list=$(python ../deploy_helper.py bundles)
+        content_list=$(python ../deploy_helper.py content/bundles)
         for i in ${content_list}
         do
             # only test when we have a .publisher-env file for the content
@@ -87,7 +88,7 @@ test-contract:
                 EXE=$exe npm run deploy
             fi
         done
-        # rm -rf ../bundles/
+        rm -rf ../content/
     else
         cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
         EXE=$exe npm run deploy
