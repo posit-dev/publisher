@@ -11,20 +11,21 @@ import (
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/executor"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type QuartoDetector struct {
 	inferenceHelper
-	executor util.Executor
+	executor executor.Executor
 	log      logging.Logger
 }
 
 func NewQuartoDetector() *QuartoDetector {
 	return &QuartoDetector{
 		inferenceHelper: defaultInferenceHelper{},
-		executor:        util.NewExecutor(),
+		executor:        executor.NewExecutor(),
 		log:             logging.New(),
 	}
 }

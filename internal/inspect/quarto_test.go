@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/executor/executortest"
 	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -34,7 +35,7 @@ func (s *QuartoDetectorSuite) TestInferType() {
 	s.Nil(err)
 
 	detector := NewQuartoDetector()
-	executor := utiltest.NewMockExecutor()
+	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return([]byte(`{
 		"quarto": {
 			"version": "1.3.353"
@@ -91,7 +92,7 @@ func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
 	s.Nil(err)
 
 	detector := NewQuartoDetector()
-	executor := utiltest.NewMockExecutor()
+	executor := executortest.NewMockExecutor()
 	out := []byte(`{
 		"quarto": {
 			"version": "1.3.353"
@@ -152,7 +153,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 
 	detector := NewQuartoDetector()
 
-	executor := utiltest.NewMockExecutor()
+	executor := executortest.NewMockExecutor()
 	out := []byte(`{
 		"quarto": {
 		  "version": "1.3.353"

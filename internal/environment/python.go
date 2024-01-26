@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/executor"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
@@ -17,7 +18,7 @@ type PythonInspector interface {
 }
 
 type defaultPythonInspector struct {
-	executor   util.Executor
+	executor   executor.Executor
 	pathLooker util.PathLooker
 	base       util.Path
 	pythonPath util.Path
@@ -28,7 +29,7 @@ var _ PythonInspector = &defaultPythonInspector{}
 
 func NewPythonInspector(base util.Path, pythonPath util.Path, log logging.Logger) PythonInspector {
 	return &defaultPythonInspector{
-		executor:   util.NewExecutor(),
+		executor:   executor.NewExecutor(),
 		pathLooker: util.NewPathLooker(),
 		base:       base,
 		pythonPath: pythonPath,
