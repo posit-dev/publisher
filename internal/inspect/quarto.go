@@ -106,7 +106,10 @@ func (d *QuartoDetector) InferType(base util.Path) (*config.Config, error) {
 	}
 	inspectOutput, err := d.quartoInspect(base)
 	if err != nil {
-		return nil, err
+		// Maybe this isn't really a quarto project, or maybe the user doesn't have quarto.
+		// We log this error and return nil so other inspectors can have a shot at it.
+		d.log.Warn("quarto inspect failed", "error", err)
+		return nil, nil
 	}
 	if slices.Contains(inspectOutput.Engines, "knitr") {
 		return nil, errNoQuartoKnitrSupport
