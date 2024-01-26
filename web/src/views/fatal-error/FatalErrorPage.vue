@@ -66,10 +66,18 @@
       </p>
     </div>
     <PButton
+      v-if="vscode"
+      class="q-my-md"
+      hierarchy="primary"
+      @click="vscode.postMessage({ command: VSCodeCommandMessage.RELOAD_WEBVIEW })"
+    >
+      Reload Extension
+    </PButton>
+    <PButton
+      v-else
       class="q-my-md"
       hierarchy="primary"
       href="/"
-      type="submit"
     >
       Reload Application
     </PButton>
@@ -80,6 +88,7 @@
 </template>
 
 <script setup lang="ts">
+import { VSCodeCommandMessage, vscode } from 'src/vscode';
 
 import PButton from 'src/components/PButton.vue';
 
@@ -92,5 +101,4 @@ defineProps({
   method: { type: String, required: false, default: undefined },
   url: { type: String, required: false, default: undefined },
 });
-
 </script>
