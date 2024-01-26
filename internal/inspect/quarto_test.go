@@ -10,6 +10,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +35,7 @@ func (s *QuartoDetectorSuite) TestInferType() {
 
 	detector := NewQuartoDetector()
 	executor := utiltest.NewMockExecutor()
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}).Return([]byte(`{
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return([]byte(`{
 		"quarto": {
 			"version": "1.3.353"
 		  },
@@ -119,7 +120,7 @@ func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
 			"configResources": []
 		  }
 	}`)
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}).Return(out, nil)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)
@@ -204,7 +205,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		}
 	  }`)
 
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}).Return(out, nil)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)
