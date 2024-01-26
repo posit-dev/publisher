@@ -10,10 +10,6 @@ h1, h2, h3, h4, h5, h6, p, dd, dl {
   margin: 0;
 }
 
-.body--light {
-  background-color: var(--vscode-editor-background, #fafafa);
-}
-
 .publisher-layout {
   max-width: 1280px;
   margin-left: auto;
@@ -36,34 +32,48 @@ h1, h2, h3, h4, h5, h6, p, dd, dl {
   }
 }
 
-.body--light {
+body.body--light {
+  background-color: var(--vscode-editor-background, #fafafa);
   --focus-shadow-color: 0, 0, 0;
   --focus-shadow-color-opacity: 0.14;
   --focus-shadow-border-color: 0, 0, 0;
   --focus-shadow-border-color-opacity: 0.2;
 }
 
-.body--light a {
+body.body--light a {
   color: var(--vscode-textLink-foreground, var(--posit-blue));
 }
 
-.body--light a:hover {
+body.body--light a:hover {
   color: var(--vscode-textLink-activeForeground, var(--posit-dark-blue-1));
 }
 
-.body--dark {
+body.body--light .text-low-contrast {
+  color: #757575;
+}
+
+body.body--light .q-stepper {
+  background: var(--vscode-settings-focusedRowBackground, #fff);
+}
+
+body.body--dark {
+  color: var(--vscode-editor-foreground, #fff);
   --focus-shadow-color: 255, 255, 255;
   --focus-shadow-color-opacity: 0.18;
   --focus-shadow-border-color: 255, 255, 255;
   --focus-shadow-border-color-opacity: 0.25;
 }
 
-.body--dark a {
+body.body--dark a {
   color: var(--vscode-textLink-foreground, var(--posit-light-blue-2));
 }
 
-.body--dark a:hover {
+body.body--dark a:hover {
   color: var(--vscode-textLink-activeForeground, var(--posit-light-blue-1));
+}
+
+body.body--dark .text-low-contrast {
+  color: #9e9e9e;
 }
 
 .focus-shadow:focus,
@@ -155,11 +165,4 @@ h1, h2, h3, h4, h5, h6, p, dd, dl {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.body--light .text-low-contrast {
-  color: #757575;
-}
-.body--dark .text-low-contrast {
-  color: #9e9e9e;
 }
