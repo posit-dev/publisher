@@ -223,19 +223,3 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		},
 	}, t)
 }
-
-// func (s *QuartoDetectorSuite) TestInferTypeEntrypointErr() {
-// 	inferrer := &MockInferenceHelper{}
-// 	testError := errors.New("test error from InferEntrypoint")
-// 	inferrer.On("InferEntrypoint", mock.Anything, ".qmd", mock.Anything).Return("", util.Path{}, testError)
-
-// 	detector := QuartoDetector{inferrer, nil}
-// 	base := util.NewPath("/project", afero.NewMemMapFs())
-// 	err := base.MkdirAll(0777)
-// 	s.NoError(err)
-
-// 	t, err := detector.InferType(base)
-// 	s.NotNil(err)
-// 	s.ErrorIs(err, testError)
-// 	s.Nil(t)
-// }
