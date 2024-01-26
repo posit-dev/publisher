@@ -18,12 +18,6 @@
           <span class="q-pl-xs">Publisher</span>
         </PLink>
       </q-toolbar-title>
-      <q-btn
-        flat
-        dense
-        icon="refresh"
-        @click="$router.go(0)"
-      />
     </q-toolbar>
   </q-header>
 </template>
