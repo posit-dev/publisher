@@ -17,6 +17,7 @@
   </div>
   <div
     v-else
+    class="space-between-y-sm"
   >
     <p v-if="isDeployment(deployment)">
       {{ deployment.id }}
