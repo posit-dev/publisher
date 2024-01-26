@@ -34,10 +34,13 @@
       </div>
 
       <q-btn
+        v-if="$slots.menu"
         padding="xs"
         flat
         icon="more_vert"
-      />
+      >
+        <slot name="menu" />
+      </q-btn>
     </section>
 
     <slot />
