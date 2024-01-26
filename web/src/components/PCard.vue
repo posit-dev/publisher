@@ -2,54 +2,51 @@
 
 <template>
   <div
-    class="p-card focus-shadow truncate"
+    class="p-card"
     :class="{ hoverable: to }"
   >
-    <component
-      :is="to ? RouterLink : 'div'"
-      :to="to"
-    >
-      <span
-        v-if="to"
-        class="link-fill"
-        aria-hidden="true"
+    <div class="card-header flex no-wrap items-center">
+      <q-icon
+        v-if="icon"
+        :name="icon"
+        size="20px"
+        class="q-mr-sm"
       />
 
-      <div class="card-header flex no-wrap items-center">
-        <q-icon
-          v-if="icon"
-          :name="icon"
-          size="20px"
-          class="q-mr-sm"
-        />
+      <h3
+        v-if="title"
+        class="card-title truncate"
+      >
+        {{ title }}
+      </h3>
 
-        <h3
-          v-if="title"
-          class="card-title truncate"
-        >
-          {{ title }}
-        </h3>
+      <q-tooltip
+        v-if="titleTooltip"
+        class="text-body2"
+        anchor="top left"
+        self="bottom middle"
+        max-width="300px"
+        :offset="[0, 10]"
+      >
+        {{ titleTooltip }}
+      </q-tooltip>
+    </div>
 
-        <q-tooltip
-          v-if="titleTooltip"
-          class="text-body2"
-          anchor="top left"
-          self="bottom middle"
-          max-width="300px"
-          :offset="[0, 10]"
-        >
-          {{ titleTooltip }}
-        </q-tooltip>
-      </div>
+    <slot />
 
-      <slot />
-    </component>
+    <PLink
+      v-if="to"
+      class="link-fill"
+      :to="to"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { PropType } from 'vue';
-import { RouteLocationRaw, RouterLink } from 'vue-router';
+import { RouteLocationRaw } from 'vue-router';
+
+import PLink from 'src/components/PLink.vue';
 
 defineProps({
   to: {
@@ -82,19 +79,12 @@ defineProps({
     border: 1px solid;
     padding: 24px;
 
-    a {
-      color: inherit;
+    .link-fill {
       text-decoration: none;
-
-      &:focus {
-        outline: 2px solid transparent;
-        outline-offset: 2px;
-      }
-
-      .link-fill {
-        position: absolute;
-        inset: 0px;
-      }
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 1;
     }
 
     .card-header {
@@ -112,7 +102,7 @@ defineProps({
 
 .body--light {
   .p-card {
-    background-color: white;
+    background-color: var(--vscode-editor-background, white);
     border-color: $grey-4;
 
     &.hoverable:hover {
@@ -129,6 +119,14 @@ defineProps({
       border-color: $grey-6;
     }
   }
+}
+</style>
+
+<style lang="scss">
+.p-card a,
+.p-card .vscode-router-link {
+  position: relative;
+  z-index: 2;
 }
 </style>
 

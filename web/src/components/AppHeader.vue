@@ -3,10 +3,10 @@
 <template>
   <q-header>
     <q-toolbar class="publisher-layout">
-      <AppMenu />
+      <AppMenu v-if="!vscode" />
       <q-toolbar-title>
-        <router-link
-          class="posit-logo-link"
+        <PLink
+          class="posit-logo-link text-white"
           :to="{ name: 'root' }"
         >
           <WhitePositLogo
@@ -16,23 +16,17 @@
             alt="Posit PBC Logo"
           />
           <span class="q-pl-xs">Publisher</span>
-        </router-link>
+        </PLink>
       </q-toolbar-title>
-      <q-btn
-        flat
-        dense
-        icon="refresh"
-        @click="$router.go(0)"
-      />
     </q-toolbar>
   </q-header>
 </template>
 
 <script setup lang="ts">
-
+import { vscode } from 'src/vscode';
 import AppMenu from 'src/components/AppMenu.vue';
+import PLink from 'src/components/PLink.vue';
 import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
-
 </script>
 
 <style scoped lang="scss">
@@ -43,7 +37,10 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
 
 .posit-logo-link {
   text-decoration: none;
-  color: white;
+
+  &.vscode-router-link {
+    text-decoration: none;
+  }
 
   & > * {
     vertical-align: middle;

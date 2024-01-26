@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"sort"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/config"
@@ -50,16 +49,25 @@ func loadTarget(path util.Path, targetName string) (*deployment.Deployment, erro
 	return target, nil
 }
 
+var errNoAccounts = errors.New("there are no accounts yet; register an account before publishing")
+var errMultipleAccounts = errors.New("there are multiple accounts; please specify which one to use with the -a option")
+
 // getDefaultAccount returns the name of the default account,
 // which is the first Connect account alphabetically by name.
-func getDefaultAccount(accounts []accounts.Account) *accounts.Account {
-	if len(accounts) == 0 {
-		return nil
+func getDefaultAccount(accountList []accounts.Account) (*accounts.Account, error) {
+	if len(accountList) == 0 {
+		return nil, errNoAccounts
+	} else if len(accountList) > 1 {
+		// If an account was provided via environment variables, use it.
+		for _, acct := range accountList {
+			if acct.Source == accounts.AccountSourceEnvironment {
+				return &acct, nil
+			}
+		}
+		// Otherwise we don't have a way to choose
+		return nil, errMultipleAccounts
 	}
-	sort.Slice(accounts, func(i, j int) bool {
-		return accounts[i].Name < accounts[j].Name
-	})
-	return &accounts[0]
+	return &accountList[0], nil
 }
 
 func loadAccount(accountName string, accountList accounts.AccountList) (*accounts.Account, error) {
@@ -68,7 +76,7 @@ func loadAccount(accountName string, accountList accounts.AccountList) (*account
 		if err != nil {
 			return nil, err
 		}
-		return getDefaultAccount(accounts), nil
+		return getDefaultAccount(accounts)
 	} else {
 		account, err := accountList.GetAccountByName(accountName)
 		if err != nil {
@@ -114,9 +122,7 @@ func New(path util.Path, accountName, configName, targetName string, saveName st
 			target.SaveName = targetName
 		}
 	} else {
-		if configName == "" {
-			configName = config.DefaultConfigName
-		}
+		target = deployment.New()
 	}
 
 	// Use specified account, or default account
@@ -125,6 +131,9 @@ func New(path util.Path, accountName, configName, targetName string, saveName st
 		return nil, err
 	}
 
+	if configName == "" {
+		configName = config.DefaultConfigName
+	}
 	cfg, err = loadConfig(path, configName)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {

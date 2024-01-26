@@ -4,9 +4,9 @@
   <ConfigSetting
     v-if="type"
     label="Content Type"
-  >
-    {{ type }}
-  </ConfigSetting>
+    :value="type"
+    :previous-value="previousType"
+  />
 </template>
 
 <script setup lang="ts">
@@ -17,6 +17,11 @@ import ConfigSetting from 'src/components/config/ConfigSetting.vue';
 
 defineProps({
   type: {
+    type: String as PropType<ContentType>,
+    default: undefined,
+    required: false,
+  },
+  previousType: {
     type: String as PropType<ContentType>,
     default: undefined,
     required: false,

@@ -1,0 +1,93 @@
+<!-- Copyright (C) 2023 by Posit Software, PBC. -->
+
+<template>
+  <DeploymentHeader
+    v-if="deployment && !isDeploymentError(deployment) && defaultConfig"
+    :deployment="deployment"
+    :config-error="isConfigurationError(defaultConfig) ? defaultConfig : undefined"
+    :preferred-account="props.preferredAccount"
+  />
+  <DeploymentSection
+    v-if="deployment"
+    title="Configuration"
+    :subtitles="configurationSubTitles"
+  >
+    <ConfigSettings
+      v-if="defaultConfig"
+      :config="defaultConfig"
+      :previous-config="isDeployment(deployment) ? deployment : undefined"
+    />
+  </DeploymentSection>
+
+  <DeploymentSection
+    v-if="deployment"
+    title="Files"
+    :subtitles="fileSubTitles"
+  >
+    <FileTree />
+  </DeploymentSection>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { useDeploymentStore } from 'src/stores/deployments';
+
+import {
+  Configuration,
+  ConfigurationError,
+  isConfigurationError,
+  useApi,
+  isDeployment
+} from 'src/api';
+import { isDeploymentError } from 'src/api/types/deployments';
+
+import ConfigSettings from 'src/components/config/ConfigSettings.vue';
+import FileTree from 'src/components/FileTree.vue';
+import DeploymentHeader from './DeploymentHeader.vue';
+import DeploymentSection from 'src/components/DeploymentSection.vue';
+import { provide } from 'vue';
+import { deploymentKey } from 'src/utils/provide';
+
+const api = useApi();
+const deployments = useDeploymentStore();
+
+const configurations = ref<Array<Configuration | ConfigurationError>>([]);
+
+const props = defineProps({
+  name: { type: String, required: true },
+  preferredAccount: { type: String, required: false, default: undefined },
+});
+
+const deployment = deployments.getDeploymentRef(props.name);
+
+provide(deploymentKey, deployment.value);
+
+const configurationSubTitles = computed(() => {
+  return [
+    `Using ${defaultConfig.value?.configurationPath}`,
+    `The settings present in this file are listed below and will be used during
+      the next deployment of your project.`,
+    `Edit this file to add or modify settings which will be applied
+      during this project's next deployment.`,
+  ];
+});
+
+const fileSubTitles = computed(() => {
+  return [
+    `The files detected for this project. Unless ignored, these files will be
+      uploaded to the server each time you deploy this project.`,
+    `NOTE: A .positignore file can be used to indicate which files should
+      not be included in your deployments to the server.`,
+  ];
+});
+
+const defaultConfig = computed(() => {
+  return configurations.value.find((c) => c.configurationName === 'default');
+});
+
+async function getConfigurations() {
+  const response = await api.configurations.getAll();
+  configurations.value = response.data;
+}
+getConfigurations();
+</script>

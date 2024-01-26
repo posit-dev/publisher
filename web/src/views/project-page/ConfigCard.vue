@@ -4,7 +4,7 @@
   <PCard
     :title="config.configurationName"
     :icon="isConfigurationError(config) ? 'error' : undefined"
-    :title-tooltip="isConfigurationError(config) ? config.error : undefined"
+    :title-tooltip="isConfigurationError(config) ? config.error.msg : undefined"
   >
     <p>{{ config.configurationPath }}</p>
   </pcard>

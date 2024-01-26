@@ -5,10 +5,13 @@
     :name="name"
     title="Create Deployment"
     icon="create_new_folder"
-    summary="Registering the deployment object with the Posit Connect Server."
     :done="done"
     :messages="messages"
-  />
+  >
+    <template #summary>
+      Registering the deployment object with the Posit Connect Server.
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">

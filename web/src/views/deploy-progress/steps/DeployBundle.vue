@@ -5,10 +5,13 @@
     :name="name"
     title="Deploy Bundle"
     icon="publish"
-    summary="Associating the uploaded bundle with the deployment object."
     :done="done"
     :messages="messages"
-  />
+  >
+    <template #summary>
+      Associating the uploaded bundle with the deployment object.
+    </template>
+  </DeployStep>
 </template>
 
 <script setup lang="ts">

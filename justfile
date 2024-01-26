@@ -29,6 +29,8 @@ _interactive := `tty -s && echo "-it" || echo ""`
 
 _mode := env_var_or_default("MODE", if _ci == "true" { "prod" } else { "dev" })
 
+_target_platform := env("TARGETPLATFORM", "`go env GOOS`/`go env GOARCH`")
+
 _with_debug := if _debug == "true" {
         "set -x pipefail"
     } else {
@@ -52,6 +54,20 @@ default:
     just build
     just package
     just archive
+
+os:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    go env GOOS
+
+arch:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    go env GOARCH
 
 # Executes command against every justfile where avaiable. WARNING your mileage may very.
 all +args='default':
@@ -134,12 +150,12 @@ cy *args:
     just _with_docker just test/cy/{{ args }}
 
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).
-executable-path:
+executable-path os="$(just os)" arch="$(just arch)":
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker echo '$(./scripts/get-executable-path.bash {{ _cmd }} $(just version) $(go env GOHOSTOS) $(go env GOHOSTARCH))'
+    just _with_docker echo '$(./scripts/get-executable-path.bash {{ _cmd }} $(just version) {{ os }} {{ arch }})'
 
 # Fixes linting errors
 fix:
@@ -197,7 +213,7 @@ lint: stub
     set -eou pipefail
     {{ _with_debug }}
 
-    # ./scripts/ccheck.py ./scripts/ccheck.config
+    ./scripts/ccheck.py ./scripts/ccheck.config
     just _with_docker staticcheck ./...
     just _with_docker go vet -all ./...
     just _with_docker ./scripts/fmt-check.bash
@@ -214,7 +230,7 @@ package:
     set -eou pipefail
     {{ _with_debug }}
 
-    just vscode package
+    ./scripts/package.bash {{ _cmd }}
 
 # Prints the pre-release status based on the version (see `just version`).
 pre-release:

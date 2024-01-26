@@ -38,14 +38,41 @@ func (s *InitializeSuite) SetupTest() {
 }
 
 func (s *InitializeSuite) TestInitEmpty() {
+	// Empty directories can be initialized without error.
 	log := logging.New()
 	path := s.cwd.Join("My App")
 	err := path.Mkdir(0777)
 	s.NoError(err)
+
 	cfg, err := Init(path, "", util.Path{}, log)
 	s.Nil(err)
 	s.Equal(config.ContentTypeUnknown, cfg.Type)
 	s.Equal("My App", cfg.Title)
+
+	ignorePath := path.Join(".positignore")
+	exists, err := ignorePath.Exists()
+	s.NoError(err)
+	s.True(exists)
+}
+
+func (s *InitializeSuite) TestInitIgnoreExists() {
+	// An existing .positignore file is not overwritten.
+	log := logging.New()
+	path := s.cwd.Join("My App")
+	err := path.Mkdir(0777)
+	s.NoError(err)
+
+	ignorePath := path.Join(".positignore")
+	expectedContents := []byte("ignore-this")
+	err = ignorePath.WriteFile(expectedContents, 0666)
+	s.NoError(err)
+
+	_, err = Init(path, "", util.Path{}, log)
+	s.Nil(err)
+
+	contents, err := ignorePath.ReadFile()
+	s.NoError(err)
+	s.Equal(expectedContents, contents)
 }
 
 func (s *InitializeSuite) createAppPy() {
@@ -75,15 +102,22 @@ func (s *InitializeSuite) createRequirementsFile() {
 	s.NoError(err)
 }
 
+var expectedPyConfig = &config.Python{
+	Version:        "3.4.5",
+	PackageManager: "pip",
+	PackageFile:    "requirements.txt",
+}
+
+func makeMockPythonInspector(util.Path, util.Path, logging.Logger) environment.PythonInspector {
+	pyInspector := environmenttest.NewMockPythonInspector()
+	pyInspector.On("InspectPython").Return(expectedPyConfig, nil)
+	return pyInspector
+}
+
 func (s *InitializeSuite) TestInitInferredType() {
 	log := logging.New()
 	s.createAppPy()
-	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		i := &environmenttest.MockPythonInspector{}
-		i.On("GetPythonVersion").Return("3.4.5", nil)
-		i.On("EnsurePythonRequirementsFile").Return(nil)
-		return i
-	}
+	PythonInspectorFactory = makeMockPythonInspector
 	configName := ""
 	cfg, err := Init(s.cwd, configName, util.Path{}, log)
 	s.NoError(err)
@@ -91,19 +125,14 @@ func (s *InitializeSuite) TestInitInferredType() {
 	cfg2, err := config.FromFile(configPath)
 	s.NoError(err)
 	s.Equal(config.ContentTypePythonFlask, cfg.Type)
-	s.Equal("3.4.5", cfg.Python.Version)
+	s.Equal(expectedPyConfig, cfg.Python)
 	s.Equal(cfg, cfg2)
 }
 
 func (s *InitializeSuite) TestInitExplicitPython() {
 	log := logging.New()
 	s.createHTML()
-	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		i := &environmenttest.MockPythonInspector{}
-		i.On("GetPythonVersion").Return("3.4.5", nil)
-		i.On("EnsurePythonRequirementsFile").Return(nil)
-		return i
-	}
+	PythonInspectorFactory = makeMockPythonInspector
 	configName := ""
 	python := util.NewPath("/usr/bin/python", s.cwd.Fs())
 	cfg, err := Init(s.cwd, configName, python, log)
@@ -120,12 +149,7 @@ func (s *InitializeSuite) TestInitRequirementsFile() {
 	log := logging.New()
 	s.createHTML()
 	s.createRequirementsFile()
-	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		i := &environmenttest.MockPythonInspector{}
-		i.On("GetPythonVersion").Return("3.4.5", nil)
-		i.On("EnsurePythonRequirementsFile").Return(nil)
-		return i
-	}
+	PythonInspectorFactory = makeMockPythonInspector
 	configName := ""
 	cfg, err := Init(s.cwd, configName, util.Path{}, log)
 	s.NoError(err)
@@ -140,12 +164,7 @@ func (s *InitializeSuite) TestInitRequirementsFile() {
 func (s *InitializeSuite) TestInitIfNeededWhenNeeded() {
 	log := logging.New()
 	s.createAppPy()
-	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		i := &environmenttest.MockPythonInspector{}
-		i.On("GetPythonVersion").Return("3.4.5", nil)
-		i.On("EnsurePythonRequirementsFile").Return(nil)
-		return i
-	}
+	PythonInspectorFactory = makeMockPythonInspector
 	configName := ""
 	err := InitIfNeeded(s.cwd, configName, log)
 	s.NoError(err)

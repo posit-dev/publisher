@@ -2,7 +2,7 @@ name: VSCode
 on:
   workflow_call:
 env:
-  VSCODE_VERSION: 1.85.0
+  VSCODE_VERSION: stable
 jobs:
   native:
     env:
@@ -20,19 +20,22 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
+      - id: get-date
+        run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+        shell: bash
       - uses: actions/cache/restore@v3
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}
-      - run: just vscode install
+          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
+      - run: just vscode configure
       - run: just vscode lint
       - run: just vscode test
       - uses: actions/cache/save@v3
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}
+          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -40,16 +43,19 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
+      - id: get-date
+        run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+        shell: bash
       - uses: actions/cache/restore@v3
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: docker-vscode-${{ env.VSCODE_VERSION }}
-      - run: just vscode install
+          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
+      - run: just vscode configure
       - run: just vscode lint
       - run: just vscode test
       - uses: actions/cache/save@v3
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: docker-vscode-${{ env.VSCODE_VERSION }}
+          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}

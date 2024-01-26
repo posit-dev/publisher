@@ -20,7 +20,7 @@ func TestErrorSuite(t *testing.T) {
 
 func (s *ErrorSuite) TestError() {
 	err := errors.New("an error occurred")
-	agentErr := ErrToAgentError(Operation("testOp"), err)
+	agentErr := OperationError(Operation("testOp"), err)
 	s.Equal(err.Error(), agentErr.Error())
 }
 
@@ -45,4 +45,14 @@ func (s *ErrorSuite) TestUsage() {
 		"Metadata": "Some metadata",
 	}, agentErr.GetData())
 	s.Equal(op, agentErr.GetOperation())
+}
+
+func (s *ErrorSuite) TestAsAgentError() {
+	s.Nil(AsAgentError(nil))
+
+	err := errors.New("an error occurred")
+	s.Equal(err, AsAgentError(err).Err)
+
+	agentErr := OperationError(Operation("testOp"), err)
+	s.Equal(agentErr, AsAgentError(agentErr))
 }

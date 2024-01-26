@@ -90,17 +90,17 @@ fuzzbucket-start:
 fuzzbucket-stop:
     #!/usr/bin/env bash
     set -eou pipefail
-    pip install fuzzbucket-client
+    pip install -r ../setup/requirements.txt
     fuzzbucket-client rm connect-publishing-client
 
-test-deploy:
+test-contract:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
     pip install -r ../setup/requirements.txt
     export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
     export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
-    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}/connect/\#/login"
+    export CYPRESS_CONNECT_ADDRESS="${CONNECT_SERVER}"
     if [[ ${RUNNER_OS} =~ "Windows" ]]; then \
         npm run test-deploy-windows
     else

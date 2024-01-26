@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/rs/cors"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services/api"
@@ -86,20 +87,34 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	r.Handle(ToPath("deployments"), api.GetDeploymentsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
-	// GET /api/deployments/$ID
-	r.Handle(ToPath("deployments", "{id}"), api.GetDeploymentHandlerFunc(base, log)).
-		Methods(http.MethodGet)
-
-	// POST /api/deployments
+	// POST /api/deployments creates a new deployment record
 	r.Handle(ToPath("deployments"), api.PostDeploymentsHandlerFunc(base, log, lister)).
 		Methods(http.MethodPost)
 
-	// GET /
+	// GET /api/deployments/$NAME
+	r.Handle(ToPath("deployments", "{name}"), api.GetDeploymentHandlerFunc(base, log)).
+		Methods(http.MethodGet)
+
+	// POST /api/deployments/$NAME intiates a deployment
+	r.Handle(ToPath("deployments", "{name}"), api.PostDeploymentHandlerFunc(base, log, lister)).
+		Methods(http.MethodPost)
+
+	// DELETE /api/deployments/$NAME
+	r.Handle(ToPath("deployments", "{name}"), api.DeleteDeploymentHandlerFunc(base, log)).
+		Methods(http.MethodDelete)
+
+	// Handle any frontend paths that leak out (for example, on a refresh)
+	// by redirecting to the SPA at "/".
+
+	// GET /<anything>
+	// Serves static files from /web/dist.
+	fileHandler := middleware.InsertPrefix(web.Handler, web.Prefix)
 	r.PathPrefix("/").
-		Handler(middleware.InsertPrefix(web.Handler, web.Prefix)).
+		Handler(middleware.ServeIndexOn404(fileHandler, "/")).
 		Methods("GET")
 
-	return r.ServeHTTP
+	c := cors.AllowAll().Handler(r)
+	return c.ServeHTTP
 }
 
 func ToPath(elements ...string) string {

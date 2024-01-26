@@ -1,7 +1,7 @@
 name: Nightly
 on:
-  # schedule:
-    # - cron: "0 06 * * *"
+  schedule:
+    - cron: "0 06 * * *"
   workflow_dispatch:
 
 jobs:
@@ -17,12 +17,12 @@ jobs:
   contract-deps:
     secrets: inherit
     uses: ./.github/workflows/contract-deps.yaml
-  cypress-nightly:
+  nightly:
     needs: [build, contract-deps]
     secrets: inherit
     uses: ./.github/workflows/contract.yaml
   cleanup:
-    needs: cypress-nightly
+    needs: nightly
     secrets: inherit
     uses: ./.github/workflows/cleanup.yaml
 

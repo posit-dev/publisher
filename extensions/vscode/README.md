@@ -2,10 +2,8 @@
 
 ## Quick Start
 
-Follow the Posit Publisher [installation guide](https://github.com/rstudio/publishing-client#installation).
-
-Once complete, download and install the extension.
-[https://cdn.posit.co/publisher/releases/tags/v0.0.dev6/publisher-0.0.dev6.vsix](https://cdn.posit.co/publisher/releases/tags/v0.0.dev6/publisher-0.0.dev6.vsix).
+Install the extension.
+[https://cdn.posit.co/publisher/releases/tags/v0.0.alpha2/publisher-0.0.alpha2.vsix](https://cdn.posit.co/publisher/releases/tags/v0.0.alpha2/publisher-0.0.alpha2.vsix).
 
 To learn how to install a `.vsix` file, see the [*Install from a VSIX*](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix) guide from Visual Studio Code.
 

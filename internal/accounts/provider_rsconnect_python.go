@@ -77,10 +77,14 @@ type rsconnectPythonAccount struct {
 	Secret      string `json:"secret"`       //   ...
 }
 
-func (r *rsconnectPythonAccount) toAccount() Account {
-	account := Account{
+func (r *rsconnectPythonAccount) toAccount() (*Account, error) {
+	serverURL, err := normalizeServerURL(r.URL)
+	if err != nil {
+		return nil, err
+	}
+	account := &Account{
 		Name:        r.Name,
-		URL:         r.URL,
+		URL:         serverURL,
 		Insecure:    r.Insecure,
 		Certificate: r.Certificate,
 		ApiKey:      r.ApiKey,
@@ -99,7 +103,7 @@ func (r *rsconnectPythonAccount) toAccount() Account {
 	if account.URL == "https://api.rstudio.cloud" {
 		account.URL = "https://api.posit.cloud"
 	}
-	return account
+	return account, nil
 }
 
 func (p *rsconnectPythonProvider) decodeServerStore(data []byte) ([]Account, error) {
@@ -112,7 +116,11 @@ func (p *rsconnectPythonProvider) decodeServerStore(data []byte) ([]Account, err
 
 	accounts := []Account{}
 	for _, rscpAccount := range accountMap {
-		accounts = append(accounts, rscpAccount.toAccount())
+		acct, err := rscpAccount.toAccount()
+		if err != nil {
+			return nil, err
+		}
+		accounts = append(accounts, *acct)
 	}
 	sort.Slice(accounts, func(i, j int) bool {
 		return accounts[i].Name < accounts[j].Name

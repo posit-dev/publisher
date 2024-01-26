@@ -6,9 +6,7 @@
   "description": "Posit Publishing Record",
   "required": [
     "$schema",
-    "server-url",
-    "id",
-    "configuration-name"
+    "server-url"
   ],
   "properties": {
     "$schema": {
@@ -51,12 +49,20 @@
       "type": "string",
       "description": "Version of the publisher that deployed the content."
     },
-    "deployed-at": {
+    "created-at": {
       "type": "string",
       "format": "date-time",
       "description": "Date and time the deployment was created.",
       "examples": [
-        "2023-12-04T19:44:59.937393Z"
+        "2024-01-19T09:33:33.131481-05:00"
+      ]
+    },
+    "deployed-at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time of the last deployment to the server.",
+      "examples": [
+        "2024-01-19T09:33:33.131481-05:00"
       ]
     },
     "configuration-name": {
@@ -65,6 +71,60 @@
       "examples": [
         "production"
       ]
+    },
+    "bundle-id": {
+      "type": "string",
+      "description": "ID of the uploaded file bundle.",
+      "examples": [
+        "123"
+      ]
+    },
+    "bundle-url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to download the bundle for this deployment.",
+      "examples": [
+        "https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download"
+      ]
+    },
+    "dashboard-url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL of this deployment in the Connect dashboard.",
+      "examples": [
+        "https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/"
+      ]
+    },
+    "direct-url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Direct URL for this deployment. This is the link to use when accessing a deployed API.",
+      "examples": [
+        "https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40009749/"
+      ]
+    },
+    "deployment-error": {
+      "type": "object",
+      "description": "Error from the deployment operation. Will be omitted if no error occurred.",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "Error message"
+        },
+        "code": {
+          "type": "string",
+          "description": "Error code"
+        },
+        "operation": {
+          "type": "string",
+          "description": "Operation that failed"
+        },
+        "data": {
+          "type": "object",
+          "description": "Additional error-specific data",
+          "additionalProperties": true
+        }
+      }
     },
     "configuration": {
       "$ref": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
@@ -81,7 +141,6 @@
         "app.py",
         "model/weights.csv"
       ]
-
     }
   }
 }

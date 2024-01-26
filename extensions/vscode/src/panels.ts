@@ -1,88 +1,148 @@
 import * as vscode from 'vscode';
 
+import { HOST } from '.';
+
 const DEFAULT_COLUMN = vscode.ViewColumn.Beside;
 
-// mutable state
-type State = {
-    column: vscode.ViewColumn;
-    panel?: vscode.WebviewPanel;
-};
+export class Panel {
 
-export class Panel implements vscode.Disposable {
+    private readonly url: string;
 
-    private readonly context: vscode.ExtensionContext;
-    private readonly html: string;
-    private readonly resources: vscode.Uri[];
+    private column: vscode.ViewColumn = DEFAULT_COLUMN;
+    private panel?: vscode.WebviewPanel;
 
-    private state: State = { column: DEFAULT_COLUMN };
-
-    constructor(context: vscode.ExtensionContext, resources: vscode.Uri[], url: string) {
-        this.context = context;
-        this.html =
-            // install https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html to enable code highlighting below
-            /*html*/
-            `
-            <!DOCTYPE html>
-                <head>
-                    <meta
-                        http-equiv="content-security-policy"
-                        content="default-src 'none'; frame-src ${url} https:; img-src 'unsafe-inline' https:; script-src 'unsafe-inline'; style-src 'unsafe-inline';"
-                    />
-                </head>
-                <body style="padding: 0;">
-                    <iframe src="${url}" style="width: 100vw; height: calc(100vh - 3px); border: 0;">
-                </body>
-            </html>
-            `;
-        this.resources = resources;
+    constructor(port: number) {
+        this.url = `http://${HOST}:${port}`;
     }
 
-    show() {
+    async show(context: vscode.ExtensionContext): Promise<undefined> {
         // reveal panel if defined
-        if (this.state.panel !== undefined) {
-            this.state.panel.reveal(this.state.column);
+        if (this.panel !== undefined) {
+            this.panel.reveal(this.column);
             return;
         }
 
         // initialize panel
-        this.state.panel = vscode.window.createWebviewPanel(
+        this.panel = vscode.window.createWebviewPanel(
             'posit.publisher',
             'Posit Publisher',
-            this.state.column,
+            this.column,
             {
                 enableScripts: true,
                 enableForms: true,
-                localResourceRoots: this.resources,
-                retainContextWhenHidden: true
+                retainContextWhenHidden: true,
             }
         );
 
         // set html content
-        this.state.panel.webview.html = this.html;
+        const uri = await vscode.env.asExternalUri(vscode.Uri.parse(this.url));
+        const url = uri.toString();
+        this.panel.webview.html = createHTML(url, this.panel.webview);
+
+        // listen for messages
+        this.panel.webview.onDidReceiveMessage(
+            message => {
+                switch (message.command) {
+                    case 'reload-webview':
+                        vscode.commands.executeCommand('workbench.action.webview.reloadWebviewAction');
+                        return;
+                }
+            },
+            undefined,
+            context.subscriptions
+        );
 
         // register view state change
-        this.state.panel.onDidChangeViewState(
+        this.panel.onDidChangeViewState(
             (event) => {
-                this.state.column = event.webviewPanel.viewColumn || DEFAULT_COLUMN;
+                this.column = event.webviewPanel.viewColumn || DEFAULT_COLUMN;
             },
             null,
-            this.context.subscriptions
+            context.subscriptions
         );
 
         // register dispose
-        this.state.panel.onDidDispose(
+        this.panel.onDidDispose(
             () => {
-                this.state.column = DEFAULT_COLUMN;
-                this.state.panel = undefined;
+                this.column = DEFAULT_COLUMN;
+                this.panel = undefined;
             },
             null,
-            this.context.subscriptions
+            context.subscriptions
         );
     }
 
     dispose() {
-        // this invokes this panel.onDidDispose callback above, which resets the state.
-        this.state.panel?.dispose();
+        // this invokes this panel.onDidDispose callback above, which resets the
+        this.panel?.dispose();
     }
 
 }
+
+
+/**
+ *
+ * @param {string} url - The target server URL (i.e., http://localhost:8080).
+ * @param {vscode.Webview} webview - A VSCode webview instance.
+ * @returns {string}
+ */
+export const createHTML = (url: string, webview: vscode.Webview): string => {
+    const nonce = createNonce();
+    return (
+        // install https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html to enable code highlighting below
+        /*html*/
+        `
+        <!DOCTYPE html>
+            <head>
+                <base href="${url}" />
+                <meta
+                    http-equiv="Content-Security-Policy"
+                    content="${createContentSecurityPolicyContent(nonce, url, webview.cspSource)}"
+                />
+                <link rel="stylesheet" href="./assets/index.css">
+            </head>
+            <body>
+                <div id="app"></div>
+                <script type="text/javascript" nonce="${nonce}" src="./assets/index.js"></script>
+            </body>
+        </html>
+        `
+    );
+};
+
+/**
+ * Creates a Content-Security-Policy value.
+ *
+ * The Content-Security-Policy controls the resources that the user agent is allowed to load.
+ *
+ * @param {string[]} allowable - The allowable URLs to inject into the Content-Security-Policy.
+ * @returns {string}
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+ */
+export const createContentSecurityPolicyContent = (nonce: string, ...allowable: string[]): string => {
+    const directives: string[] = [
+        'connect-src',
+        'font-src',
+        'frame-src',
+        `script-src nonce-${nonce}`,
+        'style-src',
+    ];
+    const urls: string = allowable.join(" ");
+    const content: string = directives.map(_ => `${_} ${urls} https:;`).join(" ");
+    return `default-src 'none'; ${content}`;
+};
+
+/**
+ * Creates a unique nonce value.
+ *
+ * @returns {string}
+ */
+const createNonce = (): string => {
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	for (let i = 0; i < 32; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
+};

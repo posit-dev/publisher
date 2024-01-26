@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/clients/connect"
 )
@@ -24,7 +25,7 @@ func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLICon
 	if err != nil {
 		return err
 	}
-	user, err := client.TestAuthentication()
+	user, err := client.TestAuthentication(ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -46,7 +47,7 @@ func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLICon
 type listAccountsCmd struct{}
 
 func (cmd *listAccountsCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	accounts, err := ctx.Accounts.GetAllAccounts()
+	accounts, err := ctx.Accounts.GetAccountsByServerType(accounts.ServerTypeConnect)
 	if err != nil {
 		return err
 	}

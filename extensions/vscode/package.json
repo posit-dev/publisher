@@ -17,12 +17,14 @@
     "Machine Learning",
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "posit.publisher.start",
+        "command": "posit.publisher.open",
         "title": "Open Publisher",
         "category": "Posit",
         "icon": {
@@ -48,7 +50,7 @@
     "menus": {
       "editor/title": [
         {
-          "command": "posit.publisher.start",
+          "command": "posit.publisher.open",
           "group": "navigation"
         }
       ]
@@ -71,7 +73,7 @@
     "@types/wait-on": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
-    "@vscode/test-electron": "^2.3.4",
+    "@vscode/test-electron": "^2.3.8",
     "eslint": "^8.50.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",

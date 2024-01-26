@@ -2,50 +2,48 @@
 
 <template>
   <PCard
-    :to="{ name: 'deployments', params: { name: `${deployment.saveName}` }}"
-    :title="deployment.saveName"
+    :to="toLink"
+    :title="deployment.deploymentName"
   >
-    <div class="space-between-sm">
-      <p>{{ deployment.serverUrl }}</p>
-      <p>{{ deployment.id }}</p>
-      <DeployProgressLine
-        v-if="showProgressLine"
-        :id="deployment.id"
-      />
-      <p v-else>
-        Last Deployed on {{ formatDateString(deployment.deployedAt) }}
+    <div class="space-between-y-sm">
+      <p
+        v-if="!isDeploymentError(deployment)"
+      >
+        {{ deployment.serverUrl }}
       </p>
+      <DeploymentStatus
+        :deployment="deployment"
+        :compact="true"
+      />
     </div>
   </PCard>
 </template>
 
 <script setup lang="ts">
-import { computed, PropType } from 'vue';
+import { PropType, computed } from 'vue';
 
-import { Deployment } from 'src/api';
-import { formatDateString } from 'src/utils/date';
-import { useEventStore } from 'src/stores/events';
+import { Deployment, DeploymentError, PreDeployment, isDeploymentError } from 'src/api';
 import PCard from 'src/components/PCard.vue';
-import DeployProgressLine from 'src/components/DeployProgressLine.vue';
-
-const eventStore = useEventStore();
+import DeploymentStatus from 'src/components/deploymentStatus/DeploymentStatus.vue';
+import { RouteLocationRaw } from 'vue-router';
 
 const props = defineProps({
   deployment: {
-    type: Object as PropType<Deployment>,
+    type: Object as PropType<Deployment | PreDeployment | DeploymentError>,
     required: true,
   },
 });
 
-const showProgressLine = computed(() => {
-  return (
-    eventStore.isPublishActiveByID(props.deployment.id) ||
-    (
-      eventStore.doesPublishStatusApply(props.deployment.id)
-      &&
-      eventStore.currentPublishStatus.status.completion === 'error'
-    )
-  );
+const toLink = computed((): RouteLocationRaw | undefined => {
+  if (!isDeploymentError(props.deployment)) {
+    return {
+      name: 'deployments',
+      params: {
+        name: `${props.deployment.deploymentName}`,
+      },
+    };
+  }
+  return undefined;
 });
 
 </script>

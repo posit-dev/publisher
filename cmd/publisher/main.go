@@ -23,10 +23,10 @@ type cliSpec struct {
 	commands.AccountCommands `group:"Accounts"`
 
 	Init     commands.InitCommand `kong:"cmd" help:"Create a configuration file based on the contents of the project directory."`
-	Deploy   commands.CreateCmd   `kong:"cmd" help:"Create a new deployment."`
-	Redeploy commands.UpdateCmd   `kong:"cmd" help:"Update an existing deployment."`
+	Deploy   commands.DeployCmd   `kong:"cmd" help:"Create a new deployment."`
+	Redeploy commands.RedeployCmd `kong:"cmd" help:"Update an existing deployment."`
 	UI       commands.UICmd       `kong:"cmd" help:"Serve the publisher UI."`
-	Version  commands.VersionFlag `help:"Show the client software version and exit."`
+	Version  commands.VersionCmd  `kong:"cmd" help:"Show the client software version and exit."`
 }
 
 func logVersion(log logging.Logger) {
@@ -35,9 +35,7 @@ func logVersion(log logging.Logger) {
 	log.Info("Development build", "DevelopmentBuild", project.DevelopmentBuild())
 }
 
-func Fatal(log logging.Logger, msg string, err error, args ...any) {
-	args = append([]any{"error", err.Error()}, args...)
-	log.Error(msg, args...)
+func Fatal(err error) {
 	fmt.Fprintln(os.Stderr, "\n"+strings.TrimSpace(err.Error())+".")
 	os.Exit(1)
 }
@@ -56,7 +54,7 @@ func main() {
 	if cli.Profile != "" {
 		f, err := os.Create(cli.Profile)
 		if err != nil {
-			Fatal(ctx.Logger, "Error creating file for profile data", err)
+			Fatal(err)
 		}
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
@@ -66,6 +64,6 @@ func main() {
 	logVersion(ctx.Logger)
 	err := args.Run(&cli.CommonArgs)
 	if err != nil {
-		Fatal(ctx.Logger, "Error running command", err)
+		Fatal(err)
 	}
 }

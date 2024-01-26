@@ -25,7 +25,6 @@ import (
 type ConnectClient struct {
 	client  http_client.HTTPClient
 	account *accounts.Account
-	log     logging.Logger
 }
 
 func NewConnectClient(
@@ -40,7 +39,6 @@ func NewConnectClient(
 	return &ConnectClient{
 		client:  httpClient,
 		account: account,
-		log:     log,
 	}, nil
 }
 
@@ -94,10 +92,10 @@ func isConnectAuthError(err error) bool {
 	return ok && (httpErr.Status == http.StatusNotFound || httpErr.Status == http.StatusUnauthorized)
 }
 
-func (c *ConnectClient) TestAuthentication() (*User, error) {
-	c.log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
+func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
+	log.Info("Testing authentication", "method", c.account.AuthType.Description(), "url", c.account.URL)
 	var connectUser UserDTO
-	err := c.client.Get("/__api__/v1/user", &connectUser)
+	err := c.client.Get("/__api__/v1/user", &connectUser, log)
 	if err != nil {
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			return nil, ErrTimedOut
@@ -158,18 +156,18 @@ type connectGetContentDTO struct {
 	// Owner        *ownerOutputDTO   `json:"owner,omitempty"`
 }
 
-func (c *ConnectClient) CreateDeployment(body *ConnectContent) (types.ContentID, error) {
+func (c *ConnectClient) CreateDeployment(body *ConnectContent, log logging.Logger) (types.ContentID, error) {
 	content := connectGetContentDTO{}
-	err := c.client.Post("/__api__/v1/content", body, &content)
+	err := c.client.Post("/__api__/v1/content", body, &content, log)
 	if err != nil {
 		return "", err
 	}
 	return content.GUID, nil
 }
 
-func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *ConnectContent) error {
+func (c *ConnectClient) UpdateDeployment(contentID types.ContentID, body *ConnectContent, log logging.Logger) error {
 	url := fmt.Sprintf("/__api__/v1/content/%s", contentID)
-	return c.client.Patch(url, body, nil)
+	return c.client.Patch(url, body, nil, log)
 }
 
 type connectEnvVar struct {
@@ -177,7 +175,7 @@ type connectEnvVar struct {
 	Value string `json:"value"`
 }
 
-func (c *ConnectClient) SetEnvVars(contentID types.ContentID, env config.Environment) error {
+func (c *ConnectClient) SetEnvVars(contentID types.ContentID, env config.Environment, log logging.Logger) error {
 	body := make([]connectEnvVar, 0, len(env))
 	for name, value := range env {
 		body = append(body, connectEnvVar{
@@ -186,7 +184,7 @@ func (c *ConnectClient) SetEnvVars(contentID types.ContentID, env config.Environ
 		})
 	}
 	url := fmt.Sprintf("/__api__/v1/content/%s/environment", contentID)
-	return c.client.Patch(url, body, nil)
+	return c.client.Patch(url, body, nil, log)
 }
 
 type bundleMetadataDTO struct {
@@ -212,9 +210,9 @@ type connectGetBundleDTO struct {
 	Metadata      bundleMetadataDTO `json:"metadata"`
 }
 
-func (c *ConnectClient) UploadBundle(contentID types.ContentID, body io.Reader) (types.BundleID, error) {
+func (c *ConnectClient) UploadBundle(contentID types.ContentID, body io.Reader, log logging.Logger) (types.BundleID, error) {
 	url := fmt.Sprintf("/__api__/v1/content/%s/bundles", contentID)
-	resp, err := c.client.PostRaw(url, body, "application/gzip")
+	resp, err := c.client.PostRaw(url, body, "application/gzip", log)
 	if err != nil {
 		return "", err
 	}
@@ -234,13 +232,13 @@ type deployOutputDTO struct {
 	TaskID types.TaskID `json:"task_id"`
 }
 
-func (c *ConnectClient) DeployBundle(contentId types.ContentID, bundleId types.BundleID) (types.TaskID, error) {
+func (c *ConnectClient) DeployBundle(contentId types.ContentID, bundleId types.BundleID, log logging.Logger) (types.TaskID, error) {
 	body := deployInputDTO{
 		BundleID: bundleId,
 	}
 	url := fmt.Sprintf("/__api__/v1/content/%s/deploy", contentId)
 	output := deployOutputDTO{}
-	err := c.client.Post(url, body, &output)
+	err := c.client.Post(url, body, &output, log)
 	if err != nil {
 		return "", err
 	}
@@ -258,14 +256,14 @@ type taskDTO struct {
 	Last     int32        `json:"last"`
 }
 
-func (c *ConnectClient) getTask(taskID types.TaskID, previous *taskDTO) (*taskDTO, error) {
+func (c *ConnectClient) getTask(taskID types.TaskID, previous *taskDTO, log logging.Logger) (*taskDTO, error) {
 	var task taskDTO
 	var firstLine int32
 	if previous != nil {
 		firstLine = previous.Last
 	}
 	url := fmt.Sprintf("/__api__/v1/tasks/%s?first=%d", taskID, firstLine)
-	err := c.client.Get(url, &task)
+	err := c.client.Get(url, &task, log)
 	if err != nil {
 		return nil, err
 	}
@@ -343,6 +341,24 @@ func packageEventFromLogLine(line string) *packageEvent {
 	return nil
 }
 
+type deploymentFailedDetails struct {
+	ConnectErrorCode  string
+	DocumentationLink string
+}
+
+var connectErrorRE = regexp.MustCompile("Error code: ([a-z-]+)")
+
+func connectErrorDetails(msg string) *deploymentFailedDetails {
+	m := connectErrorRE.FindStringSubmatch(msg)
+	if m == nil {
+		return nil
+	}
+	return &deploymentFailedDetails{
+		ConnectErrorCode:  m[1],
+		DocumentationLink: fmt.Sprintf("https://docs.posit.co/connect/user/troubleshooting/#%s", m[1]),
+	}
+}
+
 func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (types.Operation, error) {
 	var nextOp types.Operation
 
@@ -372,9 +388,8 @@ func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (ty
 	}
 	if task.Finished {
 		if task.Error != "" {
-			// TODO: make these errors more specific, maybe by
-			// using the Connect error codes from the logs.
-			err := types.NewAgentError(events.DeploymentFailedCode, errors.New(task.Error), nil)
+			details := connectErrorDetails(task.Error)
+			err := types.NewAgentError(events.DeploymentFailedCode, errors.New(task.Error), details)
 			err.SetOperation(op)
 			return op, err
 		}
@@ -388,7 +403,7 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 	var op events.Operation
 
 	for {
-		task, err := c.getTask(taskID, previous)
+		task, err := c.getTask(taskID, previous, log)
 		if err != nil {
 			return err
 		}
@@ -401,9 +416,9 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 	}
 }
 
-func (c *ConnectClient) ValidateDeployment(contentID types.ContentID) error {
+func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log logging.Logger) error {
 	url := fmt.Sprintf("/content/%s/", contentID)
-	_, err := c.client.GetRaw(url)
+	_, err := c.client.GetRaw(url, log)
 	agentErr, ok := err.(*types.AgentError)
 	if ok {
 		httpErr, ok := agentErr.Err.(*http_client.HTTPError)

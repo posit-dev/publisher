@@ -6,43 +6,20 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type deploymentDTO struct {
-	*deployment.Deployment
-	ConfigPath string `json:"configurationPath,omitempty"`
-	Error      string `json:"error,omitempty"`
-}
-
-func readLatestDeploymentFiles(base util.Path) ([]deploymentDTO, error) {
+func readLatestDeploymentFiles(base util.Path) ([]any, error) {
 	paths, err := deployment.ListDeploymentFiles(base)
 	if err != nil {
 		return nil, err
 	}
-	response := make([]deploymentDTO, 0, len(paths))
+	response := make([]any, 0, len(paths))
 	for _, path := range paths {
 		d, err := deployment.FromFile(path)
-		if err != nil {
-			response = append(response, deploymentDTO{
-				Error: err.Error(),
-			})
-		} else {
-			configPath := config.GetConfigPath(base, d.ConfigName)
-			relPath, err := configPath.Rel(base)
-			if err != nil {
-				// This error should never happen. But, if it does,
-				// still return as much data as we can.
-				relPath = configPath
-			}
-			response = append(response, deploymentDTO{
-				ConfigPath: relPath.String(),
-				Deployment: d,
-			})
-		}
+		response = append(response, deploymentAsDTO(d, err, base, path))
 	}
 	return response, nil
 }

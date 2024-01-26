@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from 'axios';
 
-import { Deployment, DeploymentError } from 'src/api/types/deployments';
+import { Deployment, DeploymentError, PreDeployment } from 'src/api/types/deployments';
 
 export class Deployments {
   private client: AxiosInstance;
@@ -15,7 +15,7 @@ export class Deployments {
   // 200 - success
   // 500 - internal server error
   getAll() {
-    return this.client.get<Array<Deployment | DeploymentError>>(
+    return this.client.get<Array<Deployment | PreDeployment | DeploymentError>>(
       '/deployments',
     );
   }
@@ -26,7 +26,7 @@ export class Deployments {
   // 500 - internal server error
   get(id: string) {
     const encodedId = encodeURIComponent(id);
-    return this.client.get<Deployment | DeploymentError>(
+    return this.client.get<Deployment | PreDeployment | DeploymentError>(
       `deployments/${encodedId}`,
     );
   }
@@ -34,18 +34,15 @@ export class Deployments {
   // Returns:
   // 200 - success
   // 400 - bad request
+  // 409 - conflict
   // 500 - internal server error
   // Errors returned through event stream
-  publishNew(
-    accountName? : string,
-    saveName?: string,
-  ){
+  createNew(accountName? : string, saveName?: string) {
     const params = {
       account: accountName,
-      config: 'default', // hardcoded for now
       saveName,
     };
-    return this.client.post(
+    return this.client.post<PreDeployment>(
       '/deployments',
       params,
     );
@@ -56,18 +53,26 @@ export class Deployments {
   // 400 - bad request
   // 500 - internal server error
   // Errors returned through event stream
-  publishUpdate(
-    accountName? : string,
-    targetName?: string,
-  ){
+  publish(targetName: string, accountName? : string) {
     const params = {
       account: accountName,
       config: 'default', // hardcoded for now
-      target: targetName,
     };
-    return this.client.post(
-      '/deployments',
+    const encodedTarget = encodeURIComponent(targetName);
+    return this.client.post<{ localId: string }>(
+      `deployments/${encodedTarget}`,
       params,
+    );
+  }
+
+  // Returns:
+  // 204 - no content
+  // 404 - not found
+  // 500 - internal server error
+  delete(saveName: string) {
+    const encodedSaveName = encodeURIComponent(saveName);
+    return this.client.delete(
+      `deployments/${encodedSaveName}`
     );
   }
 }

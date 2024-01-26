@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div class="publisher-layout q-pt-md q-pb-xl space-between-lg">
+  <div class="publisher-layout q-pt-md q-pb-xl space-between-y-lg">
     <q-breadcrumbs>
       <q-breadcrumbs-el label="Project" />
     </q-breadcrumbs>
@@ -44,6 +44,7 @@
         v-for="config in configurations"
         :key="config.configurationName"
         :config="config"
+        data-automation="config-card"
       />
     </div>
 
@@ -60,7 +61,9 @@
         not be included in your deployments to the server.
       </p>
     </div>
-    <FileTree />
+    <FileTree
+      data-automation="file-tree"
+    />
   </div>
 </template>
 
@@ -71,13 +74,14 @@ import { useApi } from 'src/api';
 import { Configuration, ConfigurationError } from 'src/api/types/configurations';
 import { useRouter } from 'vue-router';
 
-import { newFatalErrorRouteLocation } from 'src/util/errors';
+import { newFatalErrorRouteLocation } from 'src/utils/errors';
 import ConfigCard from './ConfigCard.vue';
 import FileTree from 'src/components/FileTree.vue';
 import DeploymentsSection from './DeploymentsSection.vue';
 
 const api = useApi();
 const router = useRouter();
+
 const configurations = ref<Array<Configuration | ConfigurationError>>([]);
 
 async function getConfigurations() {

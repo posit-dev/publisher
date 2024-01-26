@@ -17,15 +17,10 @@
 </template>
 
 <script setup lang="ts">
-
-import { useQuasar } from 'quasar';
-
 import AppHeader from 'src/components/AppHeader.vue';
 import { onBeforeUnmount } from 'vue';
 import { useEventStore } from 'src/stores/events';
-
-const $q = useQuasar();
-$q.dark.set('auto');
+import { useDeploymentStore } from 'src/stores/deployments';
 
 const eventStore = useEventStore();
 
@@ -33,6 +28,9 @@ const eventStore = useEventStore();
 onBeforeUnmount(() => {
   eventStore.closeEventStream();
 });
+
+// Let's start population of the deployments as quickly as possible
+useDeploymentStore();
 
 </script>
 

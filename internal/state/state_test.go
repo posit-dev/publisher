@@ -109,7 +109,7 @@ func (s *StateSuite) TestLoadConfigNonexistent() {
 func (s *StateSuite) TestLoadConfigErr() {
 	s.createConfigFile("myConfig", true)
 	cfg, err := loadConfig(s.cwd, "myConfig")
-	s.ErrorContains(err, "can't load file")
+	s.ErrorContains(err, "unquoted string or incomplete number")
 	s.Nil(cfg)
 }
 
@@ -131,6 +131,7 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 		entrypoint = 'app:app'
 		title = 'Super Title'
 		description = 'minimal description'
+		validate = true
 
 		[configuration.python]
 		version = "3.11.3"
@@ -153,22 +154,27 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 
 func (s *StateSuite) TestLoadTarget() {
 	s.createTargetFile("myTarget", false)
-	cfg, err := loadTarget(s.cwd, "myTarget")
+	d, err := loadTarget(s.cwd, "myTarget")
 	s.NoError(err)
 	min_procs := int32(1)
+
+	// Since we don't know the exact value of CreatedAt, skip it.
+	s.NotEmpty(d.CreatedAt)
+	d.CreatedAt = ""
 
 	s.Equal(&deployment.Deployment{
 		Schema:     "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json",
 		ServerURL:  "https://connect.example.com",
 		ServerType: "connect",
 		ConfigName: "myConfig",
+		CreatedAt:  "",
 		Files: []string{
 			"app.py",
 			"requirements.txt",
 		},
-		Id:       "1234567890ABCDEF",
+		ID:       "1234567890ABCDEF",
 		SaveName: "myTarget",
-		Configuration: config.Config{
+		Configuration: &config.Config{
 			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 			Type:        "python-dash",
 			Entrypoint:  "app:app",
@@ -188,7 +194,7 @@ func (s *StateSuite) TestLoadTarget() {
 				},
 			},
 		},
-	}, cfg)
+	}, d)
 }
 
 func (s *StateSuite) TestLoadTargetNonexistent() {
@@ -202,7 +208,7 @@ func (s *StateSuite) TestLoadTargetNonexistent() {
 func (s *StateSuite) TestLoadTargetErr() {
 	s.createTargetFile("myTarget", true)
 	cfg, err := loadTarget(s.cwd, "myTarget")
-	s.ErrorContains(err, "can't load file")
+	s.ErrorContains(err, "unquoted string or incomplete number")
 	s.Nil(cfg)
 }
 
@@ -228,7 +234,7 @@ func (s *StateSuite) TestLoadAccountNoAccounts() {
 	accts := &accounts.MockAccountList{}
 	accts.On("GetAllAccounts").Return(nil, nil)
 	actual, err := loadAccount("", accts)
-	s.NoError(err)
+	s.ErrorIs(err, errNoAccounts)
 	s.Nil(actual)
 }
 
@@ -254,7 +260,8 @@ func (s *StateSuite) TestNewLocalID() {
 
 func (s *StateSuite) TestNew() {
 	accts := &accounts.MockAccountList{}
-	accts.On("GetAllAccounts").Return(nil, nil)
+	acct := accounts.Account{}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
 	configPath := config.GetConfigPath(s.cwd, "default")
 	cfg := config.New()
@@ -269,14 +276,16 @@ func (s *StateSuite) TestNew() {
 	s.Equal(state.AccountName, "")
 	s.Equal(state.ConfigName, config.DefaultConfigName)
 	s.Equal(state.TargetName, "")
-	s.Nil(state.Account, "")
+	s.Equal(&acct, state.Account)
 	s.Equal(cfg, state.Config)
-	s.Nil(state.Target)
+	// Target is never nil. We create a new target if no target ID was provided.
+	s.NotNil(state.Target)
 }
 
 func (s *StateSuite) TestNewNonDefaultConfig() {
 	accts := &accounts.MockAccountList{}
-	accts.On("GetAllAccounts").Return(nil, nil)
+	acct := accounts.Account{}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
 	configName := "staging"
 	configPath := config.GetConfigPath(s.cwd, configName)
@@ -292,14 +301,16 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	s.Equal("", state.AccountName)
 	s.Equal(configName, state.ConfigName)
 	s.Equal("", state.TargetName)
-	s.Nil(state.Account)
+	s.Equal(&acct, state.Account)
 	s.Equal(cfg, state.Config)
-	s.Nil(state.Target)
+	// Target is never nil. We create a new target if no target ID was provided.
+	s.NotNil(state.Target)
 }
 
 func (s *StateSuite) TestNewConfigErr() {
 	accts := &accounts.MockAccountList{}
-	accts.On("GetAllAccounts").Return(nil, nil)
+	acct := accounts.Account{}
+	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
 	state, err := New(s.cwd, "", "", "", "", accts)
 	s.NotNil(err)
@@ -332,10 +343,10 @@ func (s *StateSuite) TestNewWithTarget() {
 
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetName"
+	d.ID = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
-	d.Configuration = *cfg
+	d.Configuration = cfg
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 
@@ -375,10 +386,10 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	d.Id = "myTargetName"
+	d.ID = "myTargetName"
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
-	d.Configuration = *cfg
+	d.Configuration = cfg
 	err = d.WriteFile(targetPath)
 	s.NoError(err)
 
@@ -392,4 +403,35 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	s.Equal(cfg, state.Config)
 	d.SaveName = "mySaveName"
 	s.Equal(d, state.Target)
+}
+
+func (s *StateSuite) TestGetDefaultAccountNone() {
+	actual, err := getDefaultAccount([]accounts.Account{})
+	s.Nil(actual)
+	s.ErrorIs(err, errNoAccounts)
+}
+
+func (s *StateSuite) TestGetDefaultAccountOne() {
+	expected := accounts.Account{}
+	actual, err := getDefaultAccount([]accounts.Account{expected})
+	s.Equal(&expected, actual)
+	s.NoError(err)
+}
+
+func (s *StateSuite) TestGetDefaultAccountFromEnv() {
+	other := accounts.Account{}
+	expected := accounts.Account{
+		Source: accounts.AccountSourceEnvironment,
+	}
+	actual, err := getDefaultAccount([]accounts.Account{other, expected})
+	s.Equal(&expected, actual)
+	s.NoError(err)
+}
+
+func (s *StateSuite) TestGetDefaultAccountMultiple() {
+	acct1 := accounts.Account{}
+	acct2 := accounts.Account{}
+	actual, err := getDefaultAccount([]accounts.Account{acct1, acct2})
+	s.Nil(actual)
+	s.ErrorIs(err, errMultipleAccounts)
 }

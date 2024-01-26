@@ -31,14 +31,21 @@ func TestPostConfigurationsSuite(t *testing.T) {
 	suite.Run(t, new(PostConfigurationsSuite))
 }
 
+var expectedPyConfig = &config.Python{
+	Version:        "3.4.5",
+	PackageManager: "pip",
+	PackageFile:    "requirements.txt",
+}
+
+func makeMockPythonInspector(util.Path, util.Path, logging.Logger) environment.PythonInspector {
+	pyInspector := environmenttest.NewMockPythonInspector()
+	pyInspector.On("InspectPython").Return(expectedPyConfig, nil)
+	return pyInspector
+}
+
 func (s *PostConfigurationsSuite) SetupSuite() {
 	s.log = logging.New()
-	initialize.PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		i := &environmenttest.MockPythonInspector{}
-		i.On("GetPythonVersion").Return("3.4.5", nil)
-		i.On("EnsurePythonRequirementsFile").Return(nil)
-		return i
-	}
+	initialize.PythonInspectorFactory = makeMockPythonInspector
 }
 
 func (s *PostConfigurationsSuite) SetupTest() {
@@ -82,6 +89,7 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsDefault() {
 	s.Equal("default", res.Name)
 	s.Equal(filepath.Join(".posit", "publish", "default.toml"), actualPath.String())
 	s.Equal(config.ContentTypePythonFlask, res.Configuration.Type)
+	s.Equal(expectedPyConfig, res.Configuration.Python)
 }
 
 func (s *PostConfigurationsSuite) TestPostConfigurationsNamed() {
@@ -107,6 +115,7 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsNamed() {
 	s.Equal("newConfig", res.Name)
 	s.Equal(filepath.Join(".posit", "publish", "newConfig.toml"), actualPath.String())
 	s.Equal(config.ContentTypePythonFlask, res.Configuration.Type)
+	s.Equal(expectedPyConfig, res.Configuration.Python)
 }
 
 func (s *PostConfigurationsSuite) TestPostConfigurationsConflict() {
@@ -146,4 +155,5 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsInspectionFails() {
 	expected := config.New()
 	expected.Title = s.cwd.Base()
 	s.Equal(expected, res.Configuration)
+	s.Nil(res.Configuration.Python)
 }

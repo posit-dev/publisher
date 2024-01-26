@@ -8,33 +8,37 @@
     flat
     :header-nav="true"
   >
-    <CreateNewDeployment
+    <CheckCapabilities
       :name="1"
       @start="openStep = 1"
     />
-    <CreateBundle
+    <CreateNewDeployment
       :name="2"
       @start="openStep = 2"
     />
-    <UploadBundle
+    <CreateBundle
       :name="3"
       @start="openStep = 3"
     />
-    <CreateDeployment
+    <UploadBundle
       :name="4"
       @start="openStep = 4"
     />
-    <SetEnvVars
+    <CreateDeployment
       :name="5"
       @start="openStep = 5"
     />
-    <DeployBundle
+    <SetEnvVars
       :name="6"
       @start="openStep = 6"
     />
-    <RestorePythonEnvironment
+    <DeployBundle
       :name="7"
       @start="openStep = 7"
+    />
+    <RestorePythonEnvironment
+      :name="8"
+      @start="openStep = 8"
     />
     <RunContent
       :name="9"
@@ -51,6 +55,7 @@
 import { ref } from 'vue';
 
 import {
+  CheckCapabilities,
   CreateDeployment,
   SetEnvVars,
   CreateBundle,
@@ -65,4 +70,3 @@ import {
 const openStep = ref<number | undefined>(undefined);
 
 </script>
-src/views/deploy-progress/steps

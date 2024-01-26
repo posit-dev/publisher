@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/bundles"
@@ -68,7 +69,9 @@ func (s *PublishSuite) TestPublishWithClient() {
 
 func (s *PublishSuite) TestPublishWithClientUpdate() {
 	target := deployment.New()
-	target.Id = "myContentID"
+	target.ID = "myContentID"
+	// Make CreatedAt earlier so it will differ from DeployedAt.
+	target.CreatedAt = time.Now().Add(-time.Hour).Format(time.RFC3339)
 	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
@@ -89,7 +92,9 @@ func (s *PublishSuite) TestPublishWithClientFailCreate() {
 
 func (s *PublishSuite) TestPublishWithClientFailUpdate() {
 	target := deployment.New()
-	target.Id = "myContentID"
+	target.ID = "myContentID"
+	// Make CreatedAt earlier so it will differ from DeployedAt.
+	target.CreatedAt = time.Now().Add(-time.Hour).Format(time.RFC3339)
 	updateErr := errors.New("error from Update")
 	s.publishWithClient(target, nil, nil, updateErr, nil, nil, nil, nil, nil, updateErr)
 }
@@ -139,16 +144,16 @@ func (s *PublishSuite) publishWithClient(
 
 	client := connect.NewMockClient()
 	if target == nil {
-		client.On("CreateDeployment", mock.Anything).Return(myContentID, createErr)
+		client.On("CreateDeployment", mock.Anything, mock.Anything).Return(myContentID, createErr)
 	}
-	client.On("TestAuthentication").Return(&connect.User{}, authErr)
-	client.On("CheckCapabilities", mock.Anything).Return(capErr)
-	client.On("UpdateDeployment", myContentID, mock.Anything).Return(createErr)
-	client.On("SetEnvVars", myContentID, mock.Anything).Return(envVarErr)
-	client.On("UploadBundle", myContentID, mock.Anything).Return(myBundleID, uploadErr)
-	client.On("DeployBundle", myContentID, myBundleID).Return(myTaskID, deployErr)
-	client.On("WaitForTask", myTaskID, mock.Anything).Return(waitErr)
-	client.On("ValidateDeployment", myContentID).Return(validateErr)
+	client.On("TestAuthentication", mock.Anything).Return(&connect.User{}, authErr)
+	client.On("CheckCapabilities", mock.Anything, mock.Anything).Return(capErr)
+	client.On("UpdateDeployment", myContentID, mock.Anything, mock.Anything).Return(createErr)
+	client.On("SetEnvVars", myContentID, mock.Anything, mock.Anything).Return(envVarErr)
+	client.On("UploadBundle", myContentID, mock.Anything, mock.Anything).Return(myBundleID, uploadErr)
+	client.On("DeployBundle", myContentID, myBundleID, mock.Anything).Return(myTaskID, deployErr)
+	client.On("WaitForTask", myTaskID, mock.Anything, mock.Anything).Return(waitErr)
+	client.On("ValidateDeployment", myContentID, mock.Anything).Return(validateErr)
 
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
@@ -157,8 +162,10 @@ func (s *PublishSuite) publishWithClient(
 		"FOO": "BAR",
 	}
 	stateStore := &state.State{
-		Dir:      s.cwd,
-		Account:  nil,
+		Dir: s.cwd,
+		Account: &accounts.Account{
+			URL: "https://connect.example.com",
+		},
 		Config:   cfg,
 		Target:   target,
 		SaveName: "saveAsThis",
@@ -171,19 +178,31 @@ func (s *PublishSuite) publishWithClient(
 		s.NotNil(err)
 		s.Equal(expectedErr.Error(), err.Error())
 	}
+	if stateStore.Target != nil {
+		if target != nil {
+			// Successful redeployment should update the timestamp.
+			s.NotEqual(stateStore.Target.CreatedAt, stateStore.Target.DeployedAt)
+		} else {
+			s.Equal(stateStore.Target.CreatedAt, stateStore.Target.DeployedAt)
+		}
+	}
 	if authErr == nil && capErr == nil && createErr == nil {
 		recordPath := deployment.GetDeploymentPath(stateStore.Dir, "saveAsThis")
 		record, err := deployment.FromFile(recordPath)
 		s.NoError(err)
-		s.Equal(myContentID, record.Id)
-		s.Contains(record.Files, "app.py")
-		s.Contains(record.Files, "requirements.txt")
+		s.Equal(myContentID, record.ID)
 		s.Equal(project.Version, record.ClientVersion)
 		s.NotEqual("", record.DeployedAt)
 
 		logs := s.logBuffer.String()
 		s.Contains(logs, "save_name=saveAsThis")
 		s.Contains(logs, "content_id="+myContentID)
+
+		// Files are written after upload.
+		if uploadErr == nil {
+			s.Contains(record.Files, "app.py")
+			s.Contains(record.Files, "requirements.txt")
+		}
 	}
 }
 

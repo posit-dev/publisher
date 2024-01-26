@@ -10,6 +10,7 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/schema"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -36,6 +37,7 @@ func (s *DeploymentSuite) SetupTest() {
 func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 	path := GetDeploymentPath(s.cwd, name)
 	d := New()
+	d.Configuration = config.New()
 	d.ServerType = accounts.ServerTypeConnect
 	d.DeployedAt = time.Now().UTC().Format(time.RFC3339)
 	d.Configuration.Type = config.ContentTypePythonDash
@@ -46,9 +48,11 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 }
 
 func (s *DeploymentSuite) TestNew() {
-	deployment := New()
-	s.NotNil(deployment)
-	s.Equal(schema.DeploymentSchemaURL, deployment.Schema)
+	d := New()
+	s.NotNil(d)
+	s.Equal(schema.DeploymentSchemaURL, d.Schema)
+	s.NotEmpty(d.CreatedAt)
+	s.Empty(d.DeployedAt)
 }
 
 func (s *DeploymentSuite) TestGetDeploymentPath() {
@@ -68,14 +72,22 @@ func (s *DeploymentSuite) TestFromFile() {
 func (s *DeploymentSuite) TestFromExampleFile() {
 	realDir, err := util.Getwd(nil)
 	s.NoError(err)
-	path := realDir.Join("..", "schema", "schemas", "record.toml")
+	schemaDir := realDir.Join("..", "schema", "schemas")
+
+	path := schemaDir.Join("record.toml")
 	d, err := FromFile(path)
 	s.NoError(err)
 	s.NotNil(d)
 
-	valuePtr := d.Configuration.Connect.Kubernetes.DefaultREnvironmentManagement
-	s.NotNil(valuePtr)
-	s.Equal(true, *valuePtr)
+	cfgPath := schemaDir.Join("deploy.toml")
+	cfg, err := config.FromFile(cfgPath)
+	s.NoError(err)
+	s.Equal(cfg, d.Configuration)
+
+	s.Equal("https://connect.example.com", d.ServerURL)
+	s.Equal(types.ContentID("de2e7bdb-b085-401e-a65c-443e40009749"), d.ID)
+	s.Equal(types.BundleID("123"), d.BundleID)
+	s.Equal("https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download", d.BundleURL)
 }
 
 func (s *DeploymentSuite) TestFromFileErr() {
@@ -97,4 +109,22 @@ func (s *DeploymentSuite) TestWriteFileErr() {
 	deployment := New()
 	err := deployment.WriteFile(readonlyFile)
 	s.NotNil(err)
+}
+
+func (s *DeploymentSuite) TestUntitledDeploymentName() {
+	name, err := UntitledDeploymentName(s.cwd)
+	s.NoError(err)
+	s.Equal("Untitled-1", name)
+}
+
+func (s *DeploymentSuite) TestUntitledDeploymentName2() {
+	name, err := UntitledDeploymentName(s.cwd)
+	s.NoError(err)
+	f, err := GetDeploymentPath(s.cwd, name).Create()
+	s.NoError(err)
+	err = f.Close()
+	s.NoError(err)
+	name, err = UntitledDeploymentName(s.cwd)
+	s.NoError(err)
+	s.Equal("Untitled-2", name)
 }

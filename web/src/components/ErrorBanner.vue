@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { PropType, computed } from 'vue';
-import { ErrorMessages } from 'src/util/errors';
+import { ErrorMessages } from 'src/utils/errors';
 
 const emit = defineEmits(['dismiss']);
 const props = defineProps({
@@ -46,4 +46,3 @@ const hasErrorMessages = computed(() => {
 });
 
 </script>
-
