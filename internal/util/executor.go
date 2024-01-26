@@ -4,6 +4,7 @@ package util
 
 import (
 	"bytes"
+	"os"
 	"os/exec"
 )
 
@@ -23,6 +24,7 @@ func (e *defaultExecutor) RunCommand(executable string, args []string) ([]byte, 
 	cmd := exec.Command(executable, args...)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
+	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
 		return nil, err

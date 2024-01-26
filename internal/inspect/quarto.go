@@ -93,7 +93,6 @@ func (d *QuartoDetector) InferType(base util.Path) (*config.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%+v\n", inspectOutput)
 	if slices.Contains(inspectOutput.Engines, "knitr") {
 		return nil, errNoQuartoKnitrSupport
 	}
