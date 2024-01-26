@@ -102,7 +102,7 @@ defineProps({
 
 .body--light {
   .p-card {
-    background-color: white;
+    background-color: var(--vscode-editor-background, white);
     border-color: $grey-4;
 
     &.hoverable:hover {
