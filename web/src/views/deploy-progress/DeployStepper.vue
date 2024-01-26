@@ -70,4 +70,3 @@ import {
 const openStep = ref<number | undefined>(undefined);
 
 </script>
-src/views/deploy-progress/steps
