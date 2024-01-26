@@ -1,7 +1,7 @@
 import os
 import sys
 
-# Get the current script's directory
+# Get the current directory
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Specify the directory name

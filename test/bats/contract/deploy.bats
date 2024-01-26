@@ -2,8 +2,8 @@
 
 load '../node_modules/bats-support/load'
 load '../node_modules/bats-assert/load'
-source ../content/bundles/${CONTENT}/test/.publisher-env
-CONTENT_PATH='../content/bundles/'
+source ../bundles/${CONTENT}/test/.publisher-env
+CONTENT_PATH='../bundles/'
 
 # these python apis cannot be detected by publisher
 # known issue #794

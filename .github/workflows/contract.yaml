@@ -8,6 +8,7 @@ jobs:
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
       FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
+      CI: true
     strategy:
       fail-fast: false
       matrix:
@@ -30,8 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: rstudio/connect-content
-          ref: kg-add-python-apis
-          path: 'test/content'
+          path: 'test'
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}

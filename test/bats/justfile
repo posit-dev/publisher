@@ -5,7 +5,7 @@ alias t := test
 export CONTENT := env_var_or_default("CONTENT", "all")
 export CONTENT_REPO := env_var_or_default("CONTENT_REPO", "/work/connect-content")
 
-_ci := env_var_or_default("CI", "false")
+export _ci := env_var_or_default("CI", "false")
 
 _debug := env_var_or_default("DEBUG", "false")
 
@@ -69,20 +69,23 @@ test-contract:
     # run contract/accounts.bats
     EXE=$exe npm run accounts
 
+    # pull the content from connect-content repo
     if [[ "${CONTENT}" == "all" ]]; then
-        if [[ ! _ci ]]; then
-            cp -R "${HOME}${CONTENT_REPO}/bundles/" ../content/
+        if [[ ${_ci} == false ]]; then
+            cp -R ${HOME}${CONTENT_REPO}/bundles/ ../bundles/
         fi
-        content_list=$(python ../deploy_helper.py content)
+        
+        # content_list will contain all content in
+        content_list=$(python ../deploy_helper.py bundles)
         for i in ${content_list}
         do
             # only test when we have a .publisher-env file for the content
-            if [[ -f ../content/${i}/test/.publisher-env ]]; then
+            if [[ -f ../bundles/${i}/test/.publisher-env ]]; then
                 export CONTENT=${i}
                 EXE=$exe npm run deploy
             fi
         done
-        rm -rf ../content/
+        # rm -rf ../bundles/
     else
         cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
         EXE=$exe npm run deploy
