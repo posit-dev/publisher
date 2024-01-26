@@ -71,7 +71,7 @@
       hierarchy="primary"
       @click="vscode.postMessage({ command: VSCodeCommandMessage.RELOAD_WEBVIEW })"
     >
-      Reload Application
+      Reload Extension
     </PButton>
     <PButton
       v-else
