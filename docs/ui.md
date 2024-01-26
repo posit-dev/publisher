@@ -36,3 +36,8 @@ Click the **Project** link at the top of the page to return to the starting page
 Click the deployment to see details and or to re-deploy, which applies any updates you've made to your project source code or configuration file. Configuration changes since your last deployment are highlighted:
 
 <p><img width="400px" src="images/ui-redeploy-diff.png"/></p>
+
+Currently a reload is needed if any changes have been made to your
+configuration or deployment files while the UI is running. If running in a
+browser, reload the window. If using VSCode, open the Command Palette
+(Ctrl+Shift+P or Cmd+Shift+P) and run  "Developer: Reload Webviews".
