@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 	"slices"
 	"strings"
 
@@ -39,8 +40,14 @@ type quartoInspectOutput struct {
 			PreRender  string `json:"pre-render"`
 			PostRender string `json:"post-render"`
 		} `json:"project"`
+		Website struct {
+			Title string `json:"title"`
+		} `json:"website"`
 	} `json:"config"`
 	Engines []string `json:"engines"`
+	Files   struct {
+		Input []string `json:"input"`
+	} `json:"files"`
 }
 
 func (d *QuartoDetector) quartoInspect(path util.Path) (*quartoInspectOutput, error) {
@@ -63,27 +70,44 @@ func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
 		strings.HasSuffix(inspectOutput.Config.Project.PostRender, ".py")
 }
 
-func (d *QuartoDetector) InferType(path util.Path) (*config.Config, error) {
-	// Quarto default file is based on the project directory name
-	defaultEntrypoint := path.Base() + ".qmd"
-	entrypoint, _, err := d.InferEntrypoint(path, ".qmd", defaultEntrypoint)
+func (d *QuartoDetector) hasQuartoFile(path util.Path) (bool, error) {
+	files, err := path.Glob("*.qmd")
+	if err != nil {
+		return false, err
+	}
+	if len(files) > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (d *QuartoDetector) InferType(base util.Path) (*config.Config, error) {
+	haveQuartoFile, err := d.hasQuartoFile(base)
 	if err != nil {
 		return nil, err
 	}
-	if entrypoint == "" {
+	if !haveQuartoFile {
 		return nil, nil
 	}
-	inspectOutput, err := d.quartoInspect(path)
+	inspectOutput, err := d.quartoInspect(base)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("%+v\n", inspectOutput)
 	if slices.Contains(inspectOutput.Engines, "knitr") {
 		return nil, errNoQuartoKnitrSupport
 	}
+	if len(inspectOutput.Files.Input) == 0 {
+		return nil, nil
+	}
 	cfg := config.New()
 	cfg.Type = config.ContentTypeQuarto
-	cfg.Entrypoint = entrypoint
-	cfg.Title = inspectOutput.Config.Project.Title
+	cfg.Entrypoint = path.Base(inspectOutput.Files.Input[0])
+
+	cfg.Title = inspectOutput.Config.Website.Title
+	if cfg.Title == "" {
+		cfg.Title = inspectOutput.Config.Project.Title
+	}
 
 	cfg.Quarto = &config.Quarto{
 		Version: inspectOutput.Quarto.Version,
