@@ -61,7 +61,7 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 
 func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
 	args := []string{"--version"}
-	_, err := i.executor.RunCommand(pythonExecutable, args)
+	_, err := i.executor.RunCommand(pythonExecutable, args, i.log)
 	if err != nil {
 		return fmt.Errorf("could not run python executable '%s': %w", pythonExecutable, err)
 	}
@@ -115,7 +115,7 @@ func (i *defaultPythonInspector) getPythonVersion() (string, error) {
 		`-c`, // execute the next argument as python code
 		`import sys; v = sys.version_info; print("%d.%d.%d" % (v[0], v[1], v[2]))`,
 	}
-	output, err := i.executor.RunCommand(pythonExecutable, args)
+	output, err := i.executor.RunCommand(pythonExecutable, args, i.log)
 	if err != nil {
 		return "", err
 	}
@@ -142,7 +142,7 @@ func (i *defaultPythonInspector) ensurePythonRequirementsFile() (string, error) 
 	source := fmt.Sprintf("%s -m pip freeze", pythonExecutable)
 	i.log.Info("Using Python packages", "source", source)
 	args := []string{"-m", "pip", "freeze"}
-	out, err := i.executor.RunCommand(pythonExecutable, args)
+	out, err := i.executor.RunCommand(pythonExecutable, args, i.log)
 	if err != nil {
 		return "", err
 	}

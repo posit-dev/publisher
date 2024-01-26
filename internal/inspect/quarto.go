@@ -11,18 +11,21 @@ import (
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type QuartoDetector struct {
 	inferenceHelper
 	executor util.Executor
+	log      logging.Logger
 }
 
 func NewQuartoDetector() *QuartoDetector {
 	return &QuartoDetector{
 		inferenceHelper: defaultInferenceHelper{},
 		executor:        util.NewExecutor(),
+		log:             logging.New(),
 	}
 }
 
@@ -52,7 +55,7 @@ type quartoInspectOutput struct {
 
 func (d *QuartoDetector) quartoInspect(path util.Path) (*quartoInspectOutput, error) {
 	args := []string{"inspect", path.String()}
-	out, err := d.executor.RunCommand("quarto", args)
+	out, err := d.executor.RunCommand("quarto", args, d.log)
 	if err != nil {
 		return nil, fmt.Errorf("quarto inspect failed: %w", err)
 	}
