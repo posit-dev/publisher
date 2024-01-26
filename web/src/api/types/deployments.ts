@@ -53,9 +53,9 @@ export function isSuccessful(
     return undefined;
   }
   if (isDeployment(d)) {
-    return Boolean(d.deploymentError);
+    return Boolean(!d.deploymentError);
   }
-  return Boolean(d.error);
+  return Boolean(!d.error);
 }
 
 export function isUnsuccessful(
