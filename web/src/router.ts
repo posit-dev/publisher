@@ -26,8 +26,7 @@ const routes = [
     path: '/deployments/:name/progress',
     component: DeployProgressPage,
     props: (route: RouteLocationNormalizedLoaded) => ({
-      operation: route.query.operation,
-      id: route.query.id,
+      name: route.params.name,
     }),
   },
   {

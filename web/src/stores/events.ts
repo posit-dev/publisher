@@ -248,20 +248,10 @@ export const useEventStore = defineStore('event', () => {
     return deploymentName === currentPublishStatus.value.saveName;
   });
 
-  const doesPublishStatusApply = ((id: string) => {
-    return (
-      id &&
-      (
-        currentPublishStatus.value.localId === id ||
-        currentPublishStatus.value.contentId === id
-      )
-    );
-  });
-
-  const isPublishActiveByID = ((id: string) => {
+  const isPublishActiveForDeployment = ((deploymentName: string) => {
     return (
       publishInProgess.value &&
-      doesPublishStatusApply(id)
+      doesPublishStatusApplyToDeployment(deploymentName)
     );
   });
 
@@ -868,8 +858,7 @@ export const useEventStore = defineStore('event', () => {
     publishInProgess,
     initiatePublishProcessWithEvents,
     latestLocalId,
-    isPublishActiveByID,
-    doesPublishStatusApply,
+    isPublishActiveForDeployment,
     doesPublishStatusApplyToDeployment,
     publishStepDisplayNames,
     publishStepOrder,

@@ -10,12 +10,14 @@
     <template #summary>
       <template v-if="done">
         Your project has been successfully deployed and is
-        available via the <a
+        available via the
+        <a
           :href="eventStore.currentPublishStatus.status.dashboardURL"
           target="_blank"
           rel="noopener noreferrer"
         >Connect Dashboard</a>
-        or <a
+        or
+        <a
           :href="eventStore.currentPublishStatus.status.directURL"
           target="_blank"
           rel="noopener noreferrer"

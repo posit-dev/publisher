@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div class="publisher-layout q-pt-md q-pb-xl">
+  <div class="publisher-layout q-pt-md q-pb-xl space-between-y-sm">
     <q-breadcrumbs>
       <q-breadcrumbs-el>
         <PLink :to="{ name: 'project' }">
@@ -17,58 +17,112 @@
         label="Progress"
       />
     </q-breadcrumbs>
-
-    <div
-      class="flex justify-between q-mt-md row-gap-lg column-gap-xl"
-    >
-      <div class="space-between-y-sm">
-        <h1
-          v-if="name"
-          class="text-h6"
-        >
-          {{ name }}
-        </h1>
-        <p>
-          {{ operation }}
-        </p>
-        <p v-if="id">
-          {{ id }}
-        </p>
+    <template v-if="showDeployInProgress">
+      <div class="flex justify-between q-mt-md row-gap-lg column-gap-xl">
+        <div class="space-between-y-sm">
+          <h1
+            v-if="name"
+            class="text-h6"
+          >
+            {{ name }}
+          </h1>
+          <p>
+            {{ operation }}
+          </p>
+          <p v-if="id">
+            {{ id }}
+          </p>
+        </div>
       </div>
-    </div>
-
-    <DeployStepper class="q-mt-xl" />
+      <DeployStepper class="q-mt-xl" />
+    </template>
+    <template v-else>
+      <h1
+        v-if="name"
+        class="text-h6"
+      >
+        {{ name }}
+      </h1>
+      <p>Deployment Logs can be viewed on the Posit Connect server.</p>
+      <p>
+        <a
+          :href="connectLogLink"
+          target="_blank"
+          rel="noopener noreferrer"
+        >View deployment logs on Connect</a>
+      </p>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useEventStore } from 'src/stores/events';
 
 import DeployStepper from 'src/views/deploy-progress/DeployStepper.vue';
 import PLink from 'src/components/PLink.vue';
+import { useDeploymentStore } from 'src/stores/deployments';
+import { isDeployment, isDeploymentError, isPreDeployment } from 'src/api';
+import { useRouter } from 'vue-router';
+import { newFatalErrorRouteLocation } from 'src/utils/errors';
 
 const eventStore = useEventStore();
+const deployments = useDeploymentStore();
+const router = useRouter();
+
+const props = defineProps({
+  name: {
+    type: String,
+    required: true,
+  },
+});
 
 const id = computed(() => {
   return eventStore.currentPublishStatus.contentId;
 });
 
-defineProps({
-  name: {
-    type: String,
-    required: true,
+const deployment = deployments.getDeploymentRef(props.name);
+
+watch(
+  deployment,
+  () => {
+    if (isPreDeployment(deployment.value)) {
+      router.push(newFatalErrorRouteLocation(
+        new Error('Attempting to show progress of PreDeployment object'),
+        'DeployProgressPage: watch deployment'
+      ));
+    }
   },
-  operation: {
-    type: String,
-    required: true,
-  },
-  // Temp until we figure out how to make this work right
-  // id: {
-  //   type: String,
-  //   required: true,
-  // },
+  { immediate: true },
+);
+
+const operation = computed(() => {
+  if (!deployment.value) {
+    return undefined;
+  }
+  if (isDeploymentError(deployment.value)) {
+    return undefined;
+  }
+  return `Deploying to: ${deployment.value.serverUrl}`;
 });
+
+const connectLogLink = computed(() => {
+  if (!isDeployment(deployment.value)) {
+    return undefined;
+  }
+  return `${deployment.value.dashboardUrl}/logs`;
+});
+
+const showDeployInProgress = computed(() => {
+  if (!deployment.value || isDeploymentError(deployment.value)) {
+    return false;
+  }
+  if (deployment) {
+    return eventStore.doesPublishStatusApplyToDeployment(deployment.value.deploymentName);
+  }
+  return false;
+});
+
 </script>
 
 <style scoped lang="scss">
