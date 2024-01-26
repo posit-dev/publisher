@@ -34,7 +34,6 @@
       </div>
 
       <q-btn
-        style="z-index: 2;"
         padding="xs"
         flat
         icon="more_vert"
@@ -133,7 +132,8 @@ defineProps({
 
 <style lang="scss">
 .p-card a,
-.p-card .vscode-router-link {
+.p-card .vscode-router-link,
+.p-card button {
   position: relative;
   z-index: 2;
 }
