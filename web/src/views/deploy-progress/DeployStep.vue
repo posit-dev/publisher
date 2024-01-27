@@ -88,14 +88,10 @@ import { PropType, computed } from 'vue';
 import {
   EventStreamMessage,
   isErrorEventStreamMessage,
-  isPublishCheckCapabilitiesSuccess,
   isPublishCreateBundleLog,
   isPublishCreateBundleSuccess,
   isPublishCreateDeploymentStart,
-  isPublishCreateDeploymentSuccess,
-  isPublishCreateNewDeploymentStart,
   isPublishCreateNewDeploymentSuccess,
-  isPublishDeployBundleSuccess,
   isPublishRestorePythonEnvLog,
   isPublishRestorePythonEnvStart,
   isPublishRestorePythonEnvStatus,
@@ -117,16 +113,12 @@ const shouldSkipMessage = (msg: EventStreamMessage): boolean => {
 };
 
 const formatMsg = (msg: EventStreamMessage): string => {
-  if (isPublishCreateNewDeploymentStart(msg) || isPublishCreateNewDeploymentSuccess(msg)) {
+  if (isPublishCreateNewDeploymentSuccess(msg)) {
     return `${msg.data.message} ${msg.data.saveName}`;
-  } else if (isPublishCheckCapabilitiesSuccess(msg)) {
-    return `${msg.data.message} (${msg.data.status})`;
   } else if (isPublishCreateBundleSuccess(msg)) {
     return `${msg.data.message} ${msg.data.filename}`;
-  } else if (isPublishCreateDeploymentStart(msg) || isPublishCreateDeploymentSuccess(msg)) {
-    return `${msg.data.message} ${msg.data.saveName}`;
-  } else if (isPublishDeployBundleSuccess(msg)) {
-    return `${msg.data.message}, TaskID: ${msg.data.taskId}`;
+  } else if (isPublishCreateDeploymentStart(msg)) {
+    return `${msg.data.message}, ContentId: ${msg.data.contentId}`;
   } else if (isPublishRestorePythonEnvStart(msg)) {
     return `${msg.data.message}, Source: ${msg.data.source}`;
   } else if (isPublishCreateBundleLog(msg)) {
