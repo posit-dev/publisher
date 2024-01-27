@@ -44,6 +44,11 @@
           >
             <q-item-section>Dark Mode - auto</q-item-section>
           </q-item>
+          <q-item
+            class="q-my-sm"
+          >
+            <q-item-section>Version {{ version }}</q-item-section>
+          </q-item>
         </q-list>
       </q-menu>
     </q-btn>
@@ -56,4 +61,5 @@ import { vscode } from 'src/vscode';
 
 const $q = useQuasar();
 
+const version = __VERSION__;
 </script>
