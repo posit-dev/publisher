@@ -69,6 +69,9 @@ module.exports = {
     // does not work with type definitions
     'no-unused-vars': 'off',
 
+    // Core `no-undef` rule not recommended for TypeScript
+    'no-undef': 'off',
+
     // allow debugger during development only
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
 
