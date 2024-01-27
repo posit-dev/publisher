@@ -444,16 +444,6 @@ export function isPublishCreateDeploymentStart(arg: Events):
 export interface PublishCreateDeploymentLog extends EventStreamMessage {
   type: 'publish/createDeployment/log',
   data: {
-    // {
-    // "level": "DEBUG",
-    // "message": "API request",
-    // "body": "{\"name\":\"\",\"title\":\"my simple API\",\"description\":\"this is a description\",\"default_r_environment_management\":null,\"default_py_environment_management\":null}",
-    // "error": null,
-    // "localId": "ZGgbfUM6lLxh1VYN",
-    // "method": "PATCH",
-    // "path": "/__api__/v1/content/73078698-65d5-4839-9b42-a3ff32f7b25d",
-    // "response": "{\"guid\":\"73078698-65d5-4839-9b42-a3ff32f7b25d\",\"name\":\"\",\"title\":\"my simple API\",\"description\":\"this is a description\",\"access_type\":\"acl\",\"connection_timeout\":null,\"read_timeout\":null,\"init_timeout\":null,\"idle_timeout\":null,\"max_processes\":null,\"min_processes\":null,\"max_conns_per_process\":null,\"load_factor\":null,\"memory_request\":null,\"memory_limit\":null,\"cpu_request\":null,\"cpu_limit\":null,\"amd_gpu_limit\":null,\"nvidia_gpu_limit\":null,\"service_account_name\":null,\"default_image_name\":null,\"created_time\":\"2024-01-25T20:09:11Z\",\"last_deployed_time\":\"2024-01-26T20:20:19Z\",\"bundle_id\":\"743\",\"app_mode\":\"python-fastapi\",\"content_category\":\"\",\"parameterized\":false,\"cluster_name\":\"Local\",\"image_name\":null,\"r_version\":null,\"py_version\":\"3.11.3\",\"quarto_version\":null,\"r_environment_management\":null,\"default_r_environment_management\":null,\"py_environment_management\":true,\"default_py_environment_management\":null,\"run_as\":null,\"run_as_current_user\":false,\"owner_guid\":\"0addad6f-25bc-46ec-b38d-afb08dc3415e\",\"content_url\":\"https://connect.localtest.me:443/rsc/dev-password/content/73078698-65d5-4839-9b42-a3ff32f7b25d/\",\"dashboard_url\":\"https://connect.localtest.me:443/rsc/dev-password/connect/#/apps/73078698-65d5-4839-9b42-a3ff32f7b25d\",\"app_role\":\"owner\",\"id\":\"204\"}"
-    // }
     // structured data not guaranteed, use selective or generic queries
     // from data map
   }
