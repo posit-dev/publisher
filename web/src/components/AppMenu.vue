@@ -15,6 +15,7 @@
           class="q-pa-sm"
         >
           <q-item
+            v-if="!vscode"
             v-close-popup
             clickable
             class="q-my-sm"
@@ -24,6 +25,7 @@
             <q-item-section>Dark Mode - on</q-item-section>
           </q-item>
           <q-item
+            v-if="!vscode"
             v-close-popup
             clickable
             class="q-my-sm"
@@ -33,6 +35,7 @@
             <q-item-section>Dark Mode - off</q-item-section>
           </q-item>
           <q-item
+            v-if="!vscode"
             v-close-popup
             clickable
             data-automation="dark-auto"
@@ -40,6 +43,11 @@
             @click="$q.dark.set('auto')"
           >
             <q-item-section>Dark Mode - auto</q-item-section>
+          </q-item>
+          <q-item
+            class="q-my-sm"
+          >
+            <q-item-section>Version {{ version }}</q-item-section>
           </q-item>
         </q-list>
       </q-menu>
@@ -49,7 +57,9 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
+import { vscode } from 'src/vscode';
 
 const $q = useQuasar();
 
+const version = __VERSION__;
 </script>
