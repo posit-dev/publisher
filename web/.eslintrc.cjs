@@ -29,7 +29,13 @@ module.exports = {
       parserOptions: {
         sourceType: 'script'
       }
-    }
+    },
+    {
+      files: ['*.ts', '*.mts', '*.cts', '*.tsx', '*.vue'],
+      rules: {
+        'no-undef': 'off',
+      },
+    },
   ],
 
   parserOptions: {
