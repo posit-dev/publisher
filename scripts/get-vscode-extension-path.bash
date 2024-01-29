@@ -15,4 +15,4 @@ version=$2
 
 name=$(basename "$cmd")
 
-printf "$(pwd)/packages/%s" "$name-$version.vsix"
+echo "$(pwd)/packages/$name-$version.vsix"

@@ -20,7 +20,6 @@ echo "Name: $name" 1>&2
 
 ref="${GITHUB_REF}"
 echo "Git Reference: $ref" 1>&2
-echo "Git Commit Hash: $(git show-ref --heads --hash "$ref")"
 ref=${ref#"refs/"}
 
 object_path="s3://posit-publisher/$name/releases/$ref"
