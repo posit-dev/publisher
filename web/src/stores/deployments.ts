@@ -10,8 +10,8 @@ import { sortByDateString } from 'src/utils/date';
 import {
   Deployment,
   DeploymentError,
+  isDeployment,
   isDeploymentError,
-  isPreDeployment,
   PreDeployment,
 } from 'src/api/types/deployments';
 
@@ -91,15 +91,12 @@ export const useDeploymentStore = defineStore('deployment', () => {
   const sortedDeployments = computed(() => {
     const result: Array<Deployment | PreDeployment | DeploymentError> = [];
     const deploymentErrors: Array<DeploymentError> = [];
-    const preDeployments: Array<PreDeployment> = [];
-    const deployments: Array<Deployment> = [];
+    const deployments: Array<Deployment | PreDeployment> = [];
     Object.keys(deploymentMap.value).forEach(
       deploymentName => {
         const deployment = deploymentMap.value[deploymentName];
         if (isDeploymentError(deployment)) {
           deploymentErrors.push(deployment);
-        } else if (isPreDeployment(deployment)) {
-          preDeployments.push(deployment);
         } else {
           deployments.push(deployment);
         }
@@ -108,14 +105,13 @@ export const useDeploymentStore = defineStore('deployment', () => {
     deploymentErrors.sort((a, b) => {
       return a.deploymentName.localeCompare(b.deploymentName, undefined, { sensitivity: 'base' });
     });
-    preDeployments.sort((a, b) => {
-      return a.deploymentName.localeCompare(b.deploymentName, undefined, { sensitivity: 'base' });
-    });
     deployments.sort((a, b) => {
-      return sortByDateString(a.deployedAt, b.deployedAt);
+      const aDate = isDeployment(a) ? a.deployedAt : a.createdAt;
+      const bDate = isDeployment(b) ? b.deployedAt : b.createdAt;
+      return sortByDateString(aDate, bDate);
     });
 
-    return result.concat(deploymentErrors, preDeployments, deployments);
+    return result.concat(deploymentErrors, deployments);
   });
 
   const initializing = ref(true);
