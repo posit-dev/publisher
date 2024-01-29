@@ -56,19 +56,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import { useEventStore } from 'src/stores/events';
 
 import DeployStepper from 'src/views/deploy-progress/DeployStepper.vue';
 import PLink from 'src/components/PLink.vue';
 import { useDeploymentStore } from 'src/stores/deployments';
-import { isDeployment, isDeploymentError, isPreDeployment } from 'src/api';
-import { useRouter } from 'vue-router';
-import { newFatalErrorRouteLocation } from 'src/utils/errors';
+import { isDeployment, isDeploymentError } from 'src/api';
 
 const eventStore = useEventStore();
 const deployments = useDeploymentStore();
-const router = useRouter();
 
 const props = defineProps({
   name: {
@@ -82,19 +79,6 @@ const id = computed(() => {
 });
 
 const deployment = deployments.getDeploymentRef(props.name);
-
-watch(
-  deployment,
-  () => {
-    if (isPreDeployment(deployment.value)) {
-      router.push(newFatalErrorRouteLocation(
-        new Error('Attempting to show progress of PreDeployment object'),
-        'DeployProgressPage: watch deployment'
-      ));
-    }
-  },
-  { immediate: true },
-);
 
 const operation = computed(() => {
   if (!deployment.value) {
