@@ -50,3 +50,8 @@ updates you've made to your project source code or configuration file.
 Configuration changes since your last deployment are highlighted:
 
 <p><img width="400px" src="https://cdn.posit.co/publisher/docs/images/ui-redeploy-diff.png"/></p>
+
+Currently a reload is needed if any changes have been made to your
+configuration or deployment files while the UI is running. If running in a
+browser, reload the window. If using VSCode, open the Command Palette
+(Ctrl+Shift+P or Cmd+Shift+P) and run  "Developer: Reload Webviews".
