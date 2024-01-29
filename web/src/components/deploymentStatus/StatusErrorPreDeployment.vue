@@ -38,7 +38,7 @@
         <li>
           {{ deployment.error.msg }}
         </li>
-        <li>
+        <li v-if="scrubbedErrorData">
           <ul>
             <li
               v-for="(value, name, index) in scrubbedErrorData"
@@ -86,6 +86,10 @@ const scrubbedErrorData = computed(() => {
     file, method, status, url,
     ...remainingData
   } = props.deployment.error?.data as Record<string, string>;
+
+  if (Object.keys(remainingData).length === 0) {
+    return undefined;
+  }
 
   return remainingData;
 });

@@ -24,6 +24,7 @@ import {
   PublishCreateBundleSuccess,
   PublishCreateBundleFailure,
   PublishCreateDeploymentStart,
+  PublishCreateDeploymentLog,
   PublishCreateDeploymentSuccess,
   PublishCreateDeploymentFailure,
   PublishUploadBundleStart,
@@ -499,6 +500,16 @@ export const useEventStore = defineStore('event', () => {
     }
   };
 
+  const onPublishCreateDeploymentLog = (msg: PublishCreateDeploymentLog) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.createDeployment.logs.push(msg);
+      publishStatus.steps.createDeployment.allMsgs.push(msg);
+    }
+  };
+
   const onPublishCreateDeploymentSuccess = (msg: PublishCreateDeploymentSuccess) => {
     const localId = getLocalId(msg);
 
@@ -816,6 +827,7 @@ export const useEventStore = defineStore('event', () => {
 
     eventStream.addEventMonitorCallback('publish/createDeployment/start', onPublishCreateDeploymentStart);
     eventStream.addEventMonitorCallback('publish/createDeployment/success', onPublishCreateDeploymentSuccess);
+    eventStream.addEventMonitorCallback('publish/createDeployment/log', onPublishCreateDeploymentLog);
     eventStream.addEventMonitorCallback('publish/createDeployment/failure', onPublishCreateDeploymentFailure);
 
     eventStream.addEventMonitorCallback('publish/setEnvVars/start', onPublishSetEnvVarsStart);

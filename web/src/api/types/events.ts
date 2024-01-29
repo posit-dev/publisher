@@ -78,6 +78,7 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/createBundle/failure': OnPublishCreateBundleFailureCallback
 
   'publish/createDeployment/start': OnPublishCreateDeploymentStartCallback
+  'publish/createDeployment/log': OnPublishCreateDeploymentLogCallback
   'publish/createDeployment/success': OnPublishCreateDeploymentSuccessCallback
   'publish/createDeployment/failure': OnPublishCreateDeploymentFailureCallback
 
@@ -316,7 +317,7 @@ export type OnPublishCreateNewDeploymentFailureCallback =
   (msg: PublishCreateNewDeploymentFailure) => void;
 export function isPublishCreateNewDeploymentFailure(arg: Events):
   arg is PublishCreateNewDeploymentFailure {
-  return arg.type === 'publish/createDeployment/failure';
+  return arg.type === 'publish/createNewDeployment/failure';
 }
 
 export interface PublishSetEnvVarsStart extends EventStreamMessage {
@@ -420,17 +421,37 @@ export function isPublishCreateBundleFailure(arg: Events):
 export interface PublishCreateDeploymentStart extends EventStreamMessage {
   type: 'publish/createDeployment/start',
   data: {
-    // "level": "INFO", "message": "Creating deployment", "localId": "O-6_TzmRRBWtd4rm"
+    // {
+    // "level": "INFO",
+    // "message": "Updating deployment settings",
+    // "contentId": "73078698-65d5-4839-9b42-a3ff32f7b25d",
+    // "localId": "ZGgbfUM6lLxh1VYN",
+    // "saveName": ""
+    // }
     level: string,
     message: string,
-    saveName: string,
+    contentId: string,
     localId: string,
+    saveName: string,
   }
 }
 export type OnPublishCreateDeploymentStartCallback = (msg: PublishCreateDeploymentStart) => void;
 export function isPublishCreateDeploymentStart(arg: Events):
   arg is PublishCreateDeploymentStart {
   return arg.type === 'publish/createDeployment/start';
+}
+
+export interface PublishCreateDeploymentLog extends EventStreamMessage {
+  type: 'publish/createDeployment/log',
+  data: {
+    // structured data not guaranteed, use selective or generic queries
+    // from data map
+  }
+}
+export type OnPublishCreateDeploymentLogCallback = (msg: PublishCreateDeploymentLog) => void;
+export function isPublishCreateDeploymentLog(arg: Events):
+  arg is PublishCreateDeploymentLog {
+  return arg.type === 'publish/createDeployment/log';
 }
 
 export interface PublishCreateDeploymentSuccess extends EventStreamMessage {
