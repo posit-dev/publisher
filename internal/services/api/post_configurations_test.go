@@ -11,9 +11,8 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/environment"
-	"github.com/rstudio/connect-client/internal/environment/environmenttest"
 	"github.com/rstudio/connect-client/internal/initialize"
+	"github.com/rstudio/connect-client/internal/inspect"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -37,8 +36,8 @@ var expectedPyConfig = &config.Python{
 	PackageFile:    "requirements.txt",
 }
 
-func makeMockPythonInspector(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-	pyInspector := environmenttest.NewMockPythonInspector()
+func makeMockPythonInspector(util.Path, util.Path, logging.Logger) inspect.PythonInspector {
+	pyInspector := inspect.NewMockPythonInspector()
 	pyInspector.On("InspectPython").Return(expectedPyConfig, nil)
 	return pyInspector
 }

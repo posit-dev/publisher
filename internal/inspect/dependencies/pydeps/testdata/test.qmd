@@ -1,0 +1,16 @@
+---
+title: "test-qmd"
+jupyter: python3
+---
+
+This is a Quarto file with embedded Python code.
+
+import this
+
+Not actually an import! That's not in a code block.
+
+```{python}
+import that
+
+that.do_something()
+```

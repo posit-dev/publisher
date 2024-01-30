@@ -8,14 +8,14 @@ import (
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/environment"
 	"github.com/rstudio/connect-client/internal/inspect"
+	"github.com/rstudio/connect-client/internal/inspect/detectors"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-var ContentDetectorFactory = inspect.NewContentTypeDetector
-var PythonInspectorFactory = environment.NewPythonInspector
+var ContentDetectorFactory = detectors.NewContentTypeDetector
+var PythonInspectorFactory = inspect.NewPythonInspector
 
 func inspectProject(base util.Path, python util.Path, log logging.Logger) (*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")

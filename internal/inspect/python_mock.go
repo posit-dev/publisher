@@ -1,4 +1,4 @@
-package environmenttest
+package inspect
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
