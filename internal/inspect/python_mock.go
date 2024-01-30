@@ -4,6 +4,7 @@ package inspect
 
 import (
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -23,4 +24,9 @@ func (m *MockPythonInspector) InspectPython() (*config.Python, error) {
 	} else {
 		return cfg.(*config.Python), args.Error(1)
 	}
+}
+
+func (m *MockPythonInspector) CreateRequirementsFile(base util.Path, dest util.Path) error {
+	args := m.Called(base, dest)
+	return args.Error(0)
 }

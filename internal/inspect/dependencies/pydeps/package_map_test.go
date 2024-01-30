@@ -5,6 +5,7 @@ package pydeps
 import (
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/executor/executortest"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -45,9 +46,9 @@ func (s *PackageMapperSuite) TestGetPackageMap() {
 	infoDir2 := libPath.Join("other-4.5.6.dist-info")
 	infoDir2.Mkdir(0777)
 
-	executor := utiltest.NewMockExecutor()
+	executor := executortest.NewMockExecutor()
 	out := []byte(libDir + "\n/path/to/libraries.zip\n")
-	executor.On("RunCommand", mock.Anything, mock.Anything).Return(out, nil)
+	executor.On("RunCommand", mock.Anything, mock.Anything, mock.Anything).Return(out, nil)
 	m.executor = executor
 
 	mapping, err := m.GetPackageMap("/some/python")
