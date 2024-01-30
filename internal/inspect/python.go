@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/executor"
 	"github.com/rstudio/connect-client/internal/inspect/dependencies/pydeps"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
@@ -15,25 +16,26 @@ import (
 
 type PythonInspector interface {
 	InspectPython() (*config.Python, error)
+	CreateRequirementsFile(base util.Path, dest util.Path) error
 }
 
 type defaultPythonInspector struct {
-	executor   util.Executor
+	executor   executor.Executor
 	pathLooker util.PathLooker
 	scanner    pydeps.DependencyScanner
-	base       util.Path
 	pythonPath util.Path
 	log        logging.Logger
 }
 
 var _ PythonInspector = &defaultPythonInspector{}
 
-func NewPythonInspector(base util.Path, pythonPath util.Path, log logging.Logger) PythonInspector {
+const PythonRequirementsFilename = "requirements.txt"
+
+func NewPythonInspector(pythonPath util.Path, log logging.Logger) PythonInspector {
 	return &defaultPythonInspector{
-		executor:   util.NewExecutor(),
+		executor:   executor.NewExecutor(),
 		pathLooker: util.NewPathLooker(),
 		scanner:    pydeps.NewDependencyScanner(log),
-		base:       base,
 		pythonPath: pythonPath,
 		log:        log,
 	}
@@ -50,20 +52,16 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 	if err != nil {
 		return nil, err
 	}
-	filename, err := i.ensurePythonRequirementsFile()
-	if err != nil {
-		return nil, err
-	}
 	return &config.Python{
 		Version:        pythonVersion,
-		PackageFile:    filename,
+		PackageFile:    PythonRequirementsFilename,
 		PackageManager: "pip",
 	}, nil
 }
 
 func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
 	args := []string{"--version"}
-	_, err := i.executor.RunCommand(pythonExecutable, args)
+	_, err := i.executor.RunCommand(pythonExecutable, args, i.log)
 	if err != nil {
 		return fmt.Errorf("could not run python executable '%s': %w", pythonExecutable, err)
 	}
@@ -117,7 +115,7 @@ func (i *defaultPythonInspector) getPythonVersion() (string, error) {
 		`-c`, // execute the next argument as python code
 		`import sys; v = sys.version_info; print("%d.%d.%d" % (v[0], v[1], v[2]))`,
 	}
-	output, err := i.executor.RunCommand(pythonExecutable, args)
+	output, err := i.executor.RunCommand(pythonExecutable, args, i.log)
 	if err != nil {
 		return "", err
 	}
@@ -126,8 +124,8 @@ func (i *defaultPythonInspector) getPythonVersion() (string, error) {
 	return version, nil
 }
 
-func (i *defaultPythonInspector) miniFreeze(pythonExecutable string, dest util.Path) error {
-	specs, err := i.scanner.ScanDependencies(i.base, pythonExecutable)
+func (i *defaultPythonInspector) miniFreeze(base util.Path, pythonExecutable string, dest util.Path) error {
+	specs, err := i.scanner.ScanDependencies(base, pythonExecutable)
 	if err != nil {
 		return err
 	}
@@ -146,23 +144,20 @@ func (i *defaultPythonInspector) miniFreeze(pythonExecutable string, dest util.P
 	return nil
 }
 
-func (i *defaultPythonInspector) ensurePythonRequirementsFile() (string, error) {
-	requirementsFilename := i.base.Join("requirements.txt")
-	exists, err := requirementsFilename.Exists()
+func (i *defaultPythonInspector) CreateRequirementsFile(base util.Path, dest util.Path) error {
+	oldWD, err := util.Chdir(base.Path())
 	if err != nil {
-		return "", err
+		return nil
 	}
-	if exists {
-		i.log.Info("Using Python packages", "source", requirementsFilename)
-		return requirementsFilename.Base(), nil
-	}
+	defer util.Chdir(oldWD)
+
 	pythonExecutable, err := i.getPythonExecutable()
 	if err != nil {
-		return "", err
+		return err
 	}
-	err = i.miniFreeze(pythonExecutable, requirementsFilename)
+	err = i.miniFreeze(base, pythonExecutable, dest)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return requirementsFilename.Base(), nil
+	return nil
 }

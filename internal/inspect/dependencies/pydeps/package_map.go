@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/rstudio/connect-client/internal/executor"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/spf13/afero"
@@ -38,14 +39,14 @@ type PackageMapper interface {
 }
 
 type defaultPackageMapper struct {
-	executor util.Executor
+	executor executor.Executor
 	fs       afero.Fs
 	log      logging.Logger
 }
 
 func NewPackageMapper(log logging.Logger) *defaultPackageMapper {
 	return &defaultPackageMapper{
-		executor: util.NewExecutor(),
+		executor: executor.NewExecutor(),
 		fs:       nil,
 		log:      log,
 	}
@@ -67,7 +68,7 @@ func packageSpecFromDirName(infoDir util.Path) *PackageSpec {
 
 func (m *defaultPackageMapper) getLibDirs(pythonExecutable string) ([]util.Path, error) {
 	code := "import sys; [print(p) for p in sys.path]"
-	out, err := m.executor.RunCommand(pythonExecutable, []string{"-c", code})
+	out, err := m.executor.RunCommand(pythonExecutable, []string{"-c", code}, m.log)
 	if err != nil {
 		return nil, err
 	}

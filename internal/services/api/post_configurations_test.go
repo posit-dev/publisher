@@ -36,7 +36,7 @@ var expectedPyConfig = &config.Python{
 	PackageFile:    "requirements.txt",
 }
 
-func makeMockPythonInspector(util.Path, util.Path, logging.Logger) inspect.PythonInspector {
+func makeMockPythonInspector(util.Path, logging.Logger) inspect.PythonInspector {
 	pyInspector := inspect.NewMockPythonInspector()
 	pyInspector.On("InspectPython").Return(expectedPyConfig, nil)
 	return pyInspector
