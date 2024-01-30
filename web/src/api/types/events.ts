@@ -850,9 +850,16 @@ export function isPublishSuccess(arg: Events): arg is PublishSuccess {
 
 export interface PublishFailure extends EventStreamMessage {
   type: 'publish/failure',
+  data: {
+    // "level": "ERROR", "message": "unexpected response from the server", "method": "GET", "status": 500, "url": "https://connect.localtest.me/rsc/dev-password/content/c565c960-7cdd-45da-be71-073531971409/", "dashboardUrl": "https://connect.localtest.me/rsc/dev-password/connect/#/apps/c565c960-7cdd-45da-be71-073531971409", "localId": "uqANWSJTNK7K0eWf"
+    level: string,
+    message: string,
+    dashboardUrl: string,
+    url: string,
+    // and other non-defined attributes
+  },
   error: string, // translated internally
-  // structured data not guaranteed, use selective or generic queries
-  // from data map
+
 }
 export type OnPublishFailureCallback = (msg: PublishFailure) => void;
 export function isPublishFailure(arg: Events):

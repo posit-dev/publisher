@@ -12,22 +12,27 @@
         <template v-if="eventStore.currentPublishStatus.status.completion === 'success'">
           Your project has been successfully deployed and is
           available via the
+          <a
+            :href="eventStore.currentPublishStatus.status.dashboardURL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Connect Dashboard</a>
+          or
+          <a
+            :href="eventStore.currentPublishStatus.status.directURL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >directly</a>.
         </template>
         <template v-if="eventStore.currentPublishStatus.status.completion === 'error'">
           Your project has encountered an error while being deployed.
           To diagnose it further, you can access it via the
+          <a
+            :href="eventStore.currentPublishStatus.status.dashboardURL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Connect Dashboard</a>
         </template>
-        <a
-          :href="eventStore.currentPublishStatus.status.dashboardURL"
-          target="_blank"
-          rel="noopener noreferrer"
-        >Connect Dashboard</a>
-        or
-        <a
-          :href="eventStore.currentPublishStatus.status.directURL"
-          target="_blank"
-          rel="noopener noreferrer"
-        >directly</a>.
       </template>
       <template v-else>
         Your project is still being deployed...
