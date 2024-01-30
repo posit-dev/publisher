@@ -334,6 +334,8 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.completion = 'error';
       publishStatus.error = splitMsgIntoKeyValuePairs(msg.data);
+      publishStatus.dashboardURL = msg.data.dashboardUrl;
+      publishStatus.directURL = msg.data.url;
     }
     publishInProgess.value = false;
     if (currentPublishStatus.value.saveName) {
