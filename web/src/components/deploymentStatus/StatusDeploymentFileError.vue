@@ -42,6 +42,7 @@
 <script setup lang="ts">
 import { DeploymentError } from 'src/api';
 import { PropType, computed } from 'vue';
+import { scrubErrorData } from 'src/utils/errors';
 
 const props = defineProps({
   deployment: {
@@ -51,19 +52,7 @@ const props = defineProps({
 });
 
 const scrubbedErrorData = computed(() => {
-  if (!props.deployment.error?.data) {
-    return {};
-  }
-
-  // remove what we don't want to display
-  // in this unknown list of attributes
-  const {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-shadow
-    file, method, status, url,
-    ...remainingData
-  } = props.deployment.error?.data as Record<string, string>;
-
-  return remainingData;
+  return scrubErrorData(props.deployment.error?.data);
 });
 
 </script>
