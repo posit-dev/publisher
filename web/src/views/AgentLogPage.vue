@@ -27,8 +27,8 @@
           v-if="logMsg.data.level !== 'DEBUG' || (logMsg.data.type !== 'DEBUG' && showDebug)"
         >
           <hr>
-          <div class="row q-py-sm logMsg">
-            <div class="col-2">
+          <div class="row row-gap-md q-py-sm logMsg">
+            <div class="col-12 col-sm-2">
               <div class="row">
                 {{ formatDateString(logMsg.time, { includeTime: false }) }}
               </div>
@@ -36,7 +36,7 @@
                 {{ formatTimeString(logMsg.time, { includeSeconds: true }) }}
               </div>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-10">
               <template
                 v-for="key in Object.keys(logMsg.data)"
                 :key="key"
@@ -46,9 +46,9 @@
                   class="row"
                 >
                   <span style="font-weight: bold;">
-                    {{ key }}
+                    {{ key }}:
                   </span>
-                  : {{ logMsg.data[key] }}
+                  {{ logMsg.data[key] }}
                 </div>
               </template>
             </div>

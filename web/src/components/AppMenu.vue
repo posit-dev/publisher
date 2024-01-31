@@ -15,70 +15,65 @@
           class="q-pa-sm"
         >
           <q-item
-            v-if="!vscode"
             v-close-popup
-            clickable
+            :to="{ name: 'project' }"
             data-automation="nav-project"
             class="q-my-sm"
-            @click="router.push({ name: 'project' })"
           >
             <q-item-section>Project View</q-item-section>
           </q-item>
           <q-item
-            v-if="!vscode"
             v-close-popup
-            clickable
+            :to="{ name: 'agentLog' }"
             data-automation="nav-agentLog"
             class="q-my-sm"
-            @click="router.push({ name: 'agentLog' })"
           >
             <q-item-section>View Agent Log</q-item-section>
           </q-item>
           <q-separator />
-          <q-item clickable>
-            <q-item-section>Set Dark Mode</q-item-section>
-            <q-item-section side>
-              <q-icon name="keyboard_arrow_right" />
-            </q-item-section>
-            <q-menu
-              anchor="top end"
-              self="top start"
-            >
-              <q-list>
-                <q-item
-                  v-if="!vscode"
-                  v-close-popup
-                  clickable
-                  class="q-my-sm"
-                  data-automation="dark-on"
-                  @click="$q.dark.set(true)"
-                >
-                  <q-item-section>to On</q-item-section>
-                </q-item>
-                <q-item
-                  v-if="!vscode"
-                  v-close-popup
-                  clickable
-                  class="q-my-sm"
-                  data-automation="dark-off"
-                  @click="$q.dark.set(false)"
-                >
-                  <q-item-section>to Off</q-item-section>
-                </q-item>
-                <q-item
-                  v-if="!vscode"
-                  v-close-popup
-                  clickable
-                  data-automation="dark-auto"
-                  class="q-my-sm"
-                  @click="$q.dark.set('auto')"
-                >
-                  <q-item-section>to Auto</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </q-item>
-          <q-separator />
+          <template v-if="!vscode">
+            <q-item clickable>
+              <q-item-section>Set Dark Mode</q-item-section>
+              <q-item-section side>
+                <q-icon name="keyboard_arrow_right" />
+              </q-item-section>
+              <q-menu
+                anchor="top end"
+                self="top start"
+              >
+                <q-list>
+                  <q-item
+                    v-close-popup
+                    clickable
+                    class="q-my-sm"
+                    data-automation="dark-on"
+                    @click="$q.dark.set(true)"
+                  >
+                    <q-item-section>to On</q-item-section>
+                  </q-item>
+                  <q-item
+                    v-close-popup
+                    clickable
+                    class="q-my-sm"
+                    data-automation="dark-off"
+                    @click="$q.dark.set(false)"
+                  >
+                    <q-item-section>to Off</q-item-section>
+                  </q-item>
+                  <q-item
+                    v-close-popup
+                    clickable
+                    data-automation="dark-auto"
+                    class="q-my-sm"
+                    @click="$q.dark.set('auto')"
+                  >
+                    <q-item-section>to Auto</q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-item>
+            <q-separator />
+          </template>
           <q-item class="q-my-sm">
             <q-item-section>Version {{ version }}</q-item-section>
           </q-item>
