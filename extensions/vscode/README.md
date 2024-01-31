@@ -23,7 +23,7 @@ This command invokes the same action as clicking the *Posit Publisher* icon.
 
 ### Posit: Close Publisher
 
-This command closes *Posit Publisher* and shut down the server.
+This command closes *Posit Publisher* and shuts down the server.
 
 ## Configuration
 
