@@ -14,7 +14,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const port = await ports.acquire();
 	service = new Service(port);
-	await service.start(context);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('posit.publisher.open', async () => {
