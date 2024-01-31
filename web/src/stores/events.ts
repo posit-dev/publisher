@@ -289,9 +289,11 @@ export const useEventStore = defineStore('event', () => {
     eventStream.close();
   };
 
-  const incomingEvent = (msg: EventStreamMessage) => {
-    console.log(msg.type, msg.data);
-  };
+  // Uncomment out for event debugging
+  //
+  // const incomingEvent = (msg: EventStreamMessage) => {
+  //   console.log(msg.type, msg.data);
+  // };
 
   const onAgentLog = (msg: AgentLog) => {
     agentLogs.value.push(msg);
@@ -800,7 +802,8 @@ export const useEventStore = defineStore('event', () => {
   };
 
   const init = () => {
-    eventStream.addEventMonitorCallback('*', incomingEvent);
+    // Uncomment out for event debugging
+    // eventStream.addEventMonitorCallback('*', incomingEvent);
 
     // NOT SEEING THESE LOG messages now.
     eventStream.addEventMonitorCallback('agent/log', onAgentLog);
