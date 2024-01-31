@@ -79,7 +79,7 @@ test-contract:
         fi
         
         # content_list will contain all content in
-        content_list=$(find ../content/bundles -type d -depth 1 -exec basename {} ';')
+        content_list=$(find "../content/bundles" -type d -depth 1 -exec basename {} ';')
         # IFS=' ' read -ra my_array <<< "${content_list}"
         for i in ${content_list}
         do
