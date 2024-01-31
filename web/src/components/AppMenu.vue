@@ -85,7 +85,6 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { router } from 'src/router';
 import { vscode } from 'src/vscode';
 
 const $q = useQuasar();
