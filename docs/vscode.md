@@ -1,4 +1,4 @@
-# Posit Publisher
+# VSCode Extension
 
 ## Quick Start
 
