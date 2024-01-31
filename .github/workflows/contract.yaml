@@ -36,13 +36,6 @@ jobs:
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
 
-      - name: Setup tmate session
-        if: failure()
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
-
-
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/cy/fuzzbucket-ssh-key && chmod 600 test/cy/fuzzbucket-ssh-key
       - run: just cy install
