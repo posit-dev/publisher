@@ -180,7 +180,7 @@ func (s *PythonSuite) TestGetPythonExecutableNoRunnablePython() {
 	s.Equal("", executable)
 }
 
-func (s *PythonSuite) TestEnsurePythonRequirementsFileWhenExists() {
+func (s *PythonSuite) TestWarnIfNoRequirementsFileWhenExists() {
 	fileContent := []byte("numpy\npandas\n")
 	reqPath := s.cwd.Join("requirements.txt")
 	err := reqPath.WriteFile(fileContent, 0600)
@@ -190,16 +190,30 @@ func (s *PythonSuite) TestEnsurePythonRequirementsFileWhenExists() {
 	i := NewPythonInspector(s.cwd, util.Path{}, log)
 	inspector := i.(*defaultPythonInspector)
 
-	filename, err := inspector.ensurePythonRequirementsFile()
+	err = inspector.warnIfNoRequirementsFile()
 	s.NoError(err)
-	s.Equal("requirements.txt", filename)
 
 	requirements, err := reqPath.ReadFile()
 	s.NoError(err)
 	s.Equal(fileContent, requirements)
 }
 
-func (s *PythonSuite) TestEnsurePythonRequirementsFileErr() {
+func (s *PythonSuite) TestWarnIfNoRequirementsFileNonexistent() {
+	log := logging.New()
+	i := NewPythonInspector(s.cwd, util.Path{}, log)
+	inspector := i.(*defaultPythonInspector)
+
+	err := inspector.warnIfNoRequirementsFile()
+	s.NoError(err)
+
+	// It is not created (anymore)
+	reqPath := s.cwd.Join("requirements.txt")
+	exists, err := reqPath.Exists()
+	s.NoError(err)
+	s.False(exists)
+}
+
+func (s *PythonSuite) TestWarnIfNoRequirementsFileErr() {
 	fs := utiltest.NewMockFs()
 	testError := errors.New("test error from Stat")
 	fs.On("Stat", mock.Anything).Return(utiltest.NewMockFileInfo(), testError)
@@ -208,45 +222,8 @@ func (s *PythonSuite) TestEnsurePythonRequirementsFileErr() {
 	i := NewPythonInspector(base, util.Path{}, log)
 	inspector := i.(*defaultPythonInspector)
 
-	filename, err := inspector.ensurePythonRequirementsFile()
-	s.Equal("", filename)
+	err := inspector.warnIfNoRequirementsFile()
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	fs.AssertExpectations(s.T())
-}
-
-func (s *PythonSuite) TestEnsurePythonRequirementsFileFromExecutable() {
-	pythonPath := s.cwd.Join("bin", "python3")
-	pythonPath.Dir().MkdirAll(0777)
-	pythonPath.WriteFile(nil, 0777)
-	log := logging.New()
-	i := NewPythonInspector(s.cwd, pythonPath, log)
-	inspector := i.(*defaultPythonInspector)
-
-	executor := executortest.NewMockExecutor()
-	freezeOutput := []byte("numpy\npandas\n")
-	executor.On("RunCommand", pythonPath.String(), mock.Anything, mock.Anything).Return(freezeOutput, nil)
-	inspector.executor = executor
-
-	filename, err := inspector.ensurePythonRequirementsFile()
-	s.NoError(err)
-	s.Equal("requirements.txt", filename)
-
-	reqPath := s.cwd.Join("requirements.txt")
-	requirements, err := reqPath.ReadFile()
-	s.NoError(err)
-	s.Equal(freezeOutput, requirements)
-	executor.AssertExpectations(s.T())
-}
-
-func (s *PythonSuite) TestGetPythonRequirementsFromExecutableErr() {
-	log := logging.New()
-	pythonPath := util.NewPath("/nonexistent/python3", nil)
-	i := NewPythonInspector(s.cwd, pythonPath, log)
-	inspector := i.(*defaultPythonInspector)
-
-	filename, err := inspector.ensurePythonRequirementsFile()
-	s.Equal("", filename)
-	s.NotNil(err)
-	s.ErrorIs(err, os.ErrNotExist)
 }

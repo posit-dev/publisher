@@ -49,13 +49,13 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 	if err != nil {
 		return nil, err
 	}
-	filename, err := i.ensurePythonRequirementsFile()
+	err = i.warnIfNoRequirementsFile()
 	if err != nil {
 		return nil, err
 	}
 	return &config.Python{
 		Version:        pythonVersion,
-		PackageFile:    filename,
+		PackageFile:    "requirements.txt",
 		PackageManager: "pip",
 	}, nil
 }
@@ -125,32 +125,16 @@ func (i *defaultPythonInspector) getPythonVersion() (string, error) {
 	return version, nil
 }
 
-func (i *defaultPythonInspector) ensurePythonRequirementsFile() (string, error) {
+func (i *defaultPythonInspector) warnIfNoRequirementsFile() error {
 	requirementsFilename := i.base.Join("requirements.txt")
 	exists, err := requirementsFilename.Exists()
 	if err != nil {
-		return "", err
+		return err
 	}
 	if exists {
 		i.log.Info("Using Python packages", "source", requirementsFilename)
-		return requirementsFilename.Base(), nil
+	} else {
+		i.log.Warn("can't find requirements.txt; you will need to create it")
 	}
-	pythonExecutable, err := i.getPythonExecutable()
-	if err != nil {
-		return "", err
-	}
-	i.log.Info("Getting installed Python packages", "python", pythonExecutable)
-	source := fmt.Sprintf("%s -m pip freeze", pythonExecutable)
-	i.log.Info("Using Python packages", "source", source)
-	args := []string{"-m", "pip", "freeze"}
-	out, err := i.executor.RunCommand(pythonExecutable, args, i.log)
-	if err != nil {
-		return "", err
-	}
-	err = requirementsFilename.WriteFile(out, 0666)
-	if err != nil {
-		return "", err
-	}
-	i.log.Info("Wrote requirements file", "path", requirementsFilename)
-	return requirementsFilename.Base(), nil
+	return nil
 }
