@@ -40,7 +40,7 @@ func (s *GetConfigurationsSuite) SetupTest() {
 }
 
 func (s *GetConfigurationsSuite) TestGetConfigurations() {
-	path := config.GetConfigPath(s.cwd, "myConfig")
+	path := config.GetConfigPath(s.cwd, "default")
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
@@ -63,21 +63,21 @@ func (s *GetConfigurationsSuite) TestGetConfigurations() {
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 1)
 
-	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res[0].Path)
-	s.Equal("myConfig", res[0].Name)
+	s.Equal(filepath.Join(".posit", "publish", "default.toml"), res[0].Path)
+	s.Equal("default", res[0].Name)
 	s.Nil(res[0].Error)
 	s.Equal(cfg, res[0].Configuration)
 }
 
 func (s *GetConfigurationsSuite) TestGetConfigurationsError() {
-	path := config.GetConfigPath(s.cwd, "config1")
+	path := config.GetConfigPath(s.cwd, "default")
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
 	err := cfg.WriteFile(path)
 	s.NoError(err)
 
-	path2 := config.GetConfigPath(s.cwd, "config2")
+	path2 := config.GetConfigPath(s.cwd, "other")
 	err = path2.WriteFile([]byte(`foo = 1`), 0666)
 	s.NoError(err)
 
@@ -97,14 +97,14 @@ func (s *GetConfigurationsSuite) TestGetConfigurationsError() {
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 2)
 
-	s.Equal(filepath.Join(".posit", "publish", "config1.toml"), res[0].Path)
-	s.Equal("config1", res[0].Name)
+	s.Equal(filepath.Join(".posit", "publish", "default.toml"), res[0].Path)
+	s.Equal("default", res[0].Name)
 	s.Nil(res[0].Error)
 	s.Equal(cfg, res[0].Configuration)
 
 	var nilConfiguration *config.Config
-	s.Equal(filepath.Join(".posit", "publish", "config2.toml"), res[1].Path)
-	s.Equal("config2", res[1].Name)
+	s.Equal(filepath.Join(".posit", "publish", "other.toml"), res[1].Path)
+	s.Equal("other", res[1].Name)
 	s.NotNil(res[1].Error)
 	s.Equal(nilConfiguration, res[1].Configuration)
 }
