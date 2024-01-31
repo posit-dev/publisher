@@ -18,35 +18,68 @@
             v-if="!vscode"
             v-close-popup
             clickable
+            data-automation="nav-project"
             class="q-my-sm"
-            data-automation="dark-on"
-            @click="$q.dark.set(true)"
+            @click="router.push({ name: 'project' })"
           >
-            <q-item-section>Dark Mode - on</q-item-section>
+            <q-item-section>Project View</q-item-section>
           </q-item>
           <q-item
             v-if="!vscode"
             v-close-popup
             clickable
+            data-automation="nav-agentLog"
             class="q-my-sm"
-            data-automation="dark-off"
-            @click="$q.dark.set(false)"
+            @click="router.push({ name: 'agentLog' })"
           >
-            <q-item-section>Dark Mode - off</q-item-section>
+            <q-item-section>View Agent Log</q-item-section>
           </q-item>
-          <q-item
-            v-if="!vscode"
-            v-close-popup
-            clickable
-            data-automation="dark-auto"
-            class="q-my-sm"
-            @click="$q.dark.set('auto')"
-          >
-            <q-item-section>Dark Mode - auto</q-item-section>
+          <q-separator />
+          <q-item clickable>
+            <q-item-section>Set Dark Mode</q-item-section>
+            <q-item-section side>
+              <q-icon name="keyboard_arrow_right" />
+            </q-item-section>
+            <q-menu
+              anchor="top end"
+              self="top start"
+            >
+              <q-list>
+                <q-item
+                  v-if="!vscode"
+                  v-close-popup
+                  clickable
+                  class="q-my-sm"
+                  data-automation="dark-on"
+                  @click="$q.dark.set(true)"
+                >
+                  <q-item-section>to On</q-item-section>
+                </q-item>
+                <q-item
+                  v-if="!vscode"
+                  v-close-popup
+                  clickable
+                  class="q-my-sm"
+                  data-automation="dark-off"
+                  @click="$q.dark.set(false)"
+                >
+                  <q-item-section>to Off</q-item-section>
+                </q-item>
+                <q-item
+                  v-if="!vscode"
+                  v-close-popup
+                  clickable
+                  data-automation="dark-auto"
+                  class="q-my-sm"
+                  @click="$q.dark.set('auto')"
+                >
+                  <q-item-section>to Auto</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
           </q-item>
-          <q-item
-            class="q-my-sm"
-          >
+          <q-separator />
+          <q-item class="q-my-sm">
             <q-item-section>Version {{ version }}</q-item-section>
           </q-item>
         </q-list>
@@ -57,6 +90,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
+import { router } from 'src/router';
 import { vscode } from 'src/vscode';
 
 const $q = useQuasar();

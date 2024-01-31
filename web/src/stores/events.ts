@@ -879,5 +879,6 @@ export const useEventStore = defineStore('event', () => {
     publishStepCompletionStatusNames,
     numberOfPublishSteps,
     summaryOfCurrentPublishingProcess,
+    agentLogs,
   };
 });
