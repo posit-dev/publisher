@@ -80,7 +80,8 @@ test-contract:
         
         # content_list will contain all content in
         content_list=$(python ../deploy_helper.py)
-        for i in ${content_list}
+        IFS=' ' read -ra my_array <<< "${content_list}"
+        for i in ${my_array[@]}
         do
             # only test when we have a .publisher-env file for the content
             if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then

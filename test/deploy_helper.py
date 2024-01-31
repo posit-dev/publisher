@@ -16,8 +16,10 @@ if os.path.exists(directory_path) and os.path.isdir(directory_path):
     subdirectories = [d for d in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, d))]
 
     # Iterate over the subdirectories
-    print(f"Subdirectories of the '{directory_name}' directory:")
+    content_list = []
     for subdirectory in subdirectories:
-        print(subdirectory)
+        content_list.append(subdirectory)
+    content_string = " ".join(content_list)
+    print(content_string)
 else:
     print(f"The '{directory_name}' directory does not exist in the same directory as the script.")
