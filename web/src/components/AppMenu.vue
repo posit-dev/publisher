@@ -10,10 +10,7 @@
       class="q-px-xs"
     >
       <q-menu>
-        <q-list
-          data-automation="dark-menu"
-          class="q-pa-sm"
-        >
+        <q-list class="q-pa-sm">
           <q-item
             v-close-popup
             :to="{ name: 'project' }"
@@ -32,7 +29,10 @@
           </q-item>
           <q-separator />
           <template v-if="!vscode">
-            <q-item clickable>
+            <q-item
+              clickable
+              data-automation="dark-mode-submenu"
+            >
               <q-item-section>Set Dark Mode</q-item-section>
               <q-item-section side>
                 <q-icon name="keyboard_arrow_right" />
