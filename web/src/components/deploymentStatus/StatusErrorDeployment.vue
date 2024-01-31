@@ -6,7 +6,7 @@
   >
     <p>{{ deployment.id }}</p>
     <p>
-      Last Deployed on {{ formatDateString(deployment.deployedAt) }}
+      Deployed {{ formatDistanceToNow(deployment.deployedAt, { addSuffix: true }) }}
     </p>
     <template v-if="compact">
       <div class="flex items-center">
@@ -62,9 +62,10 @@
 </template>
 
 <script setup lang="ts">
-import { Deployment } from 'src/api';
+import { formatDistanceToNow } from 'date-fns';
 import { PropType, computed } from 'vue';
-import { formatDateString } from 'src/utils/date';
+
+import { Deployment } from 'src/api';
 import { scrubErrorData } from 'src/utils/errors';
 
 const props = defineProps({

@@ -6,7 +6,7 @@
   >
     <template v-if="compact">
       <p>
-        Created on {{ formatDateString(deployment.createdAt) }}
+        Created {{ formatDistanceToNow(deployment.createdAt, { addSuffix: true }) }}
       </p>
       <div
         class="flex items-center"
@@ -22,7 +22,7 @@
     </template>
     <template v-else>
       <p>
-        Created on {{ formatDateString(deployment.createdAt) }}
+        Created {{ formatDistanceToNow(deployment.createdAt, { addSuffix: true }) }}
       </p>
       <p class="text-bold">
         An error has been detected:
@@ -58,9 +58,10 @@
 </template>
 
 <script setup lang="ts">
-import { PreDeployment } from 'src/api';
+import { formatDistanceToNow } from 'date-fns';
 import { PropType, computed } from 'vue';
-import { formatDateString } from 'src/utils/date';
+
+import { PreDeployment } from 'src/api';
 import { scrubErrorData } from 'src/utils/errors';
 
 const props = defineProps({

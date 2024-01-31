@@ -6,7 +6,7 @@
       class="space-between-y-sm"
     >
       <p>
-        Created on {{ formatDateString(deployment.createdAt) }}
+        Created {{ formatDistanceToNow(deployment.createdAt, { addSuffix: true }) }}
       </p>
       <p>An ID will be created on first deployment</p>
       <p>Never has been deployed</p>
@@ -15,9 +15,10 @@
 </template>
 
 <script setup lang="ts">
-import { PreDeployment } from 'src/api';
-import { formatDateString } from 'src/utils/date';
+import { formatDistanceToNow } from 'date-fns';
 import { PropType } from 'vue';
+
+import { PreDeployment } from 'src/api';
 
 defineProps({
   deployment: {

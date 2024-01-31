@@ -6,7 +6,7 @@
   >
     <p>{{ deployment.id }}</p>
     <p>
-      Last Deployed on {{ formatDateString(deployment.deployedAt) }}
+      Last Deployed {{ formatDistanceToNow(deployment.deployedAt, { addSuffix: true }) }}
     </p>
     <div>
       <a
@@ -21,9 +21,10 @@
 </template>
 
 <script setup lang="ts">
-import { Deployment } from 'src/api';
+import { formatDistanceToNow } from 'date-fns';
 import { PropType } from 'vue';
-import { formatDateString } from 'src/utils/date';
+
+import { Deployment } from 'src/api';
 
 defineProps({
   deployment: {
