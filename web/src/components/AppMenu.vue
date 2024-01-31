@@ -5,7 +5,7 @@
     <q-btn
       no-caps
       flat
-      data-automation="dark-mode-button"
+      data-automation="menu-button"
       icon="menu"
       class="q-px-xs"
     >
