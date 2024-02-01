@@ -25,8 +25,10 @@
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 
 Cypress.Commands.add('expandDarkMenu', () => {
-    cy.get('button[data-automation="dark-mode-button"]')
+    cy.get('button[data-automation="menu-button"]')
     .click();
-    cy.get('div[data-automation="dark-menu"]')
+    cy.get('div[data-automation="dark-mode-submenu"]')
+    .click();
+    cy.get('div[data-automation="dark-on"]')
     .should('be.visible');
 });

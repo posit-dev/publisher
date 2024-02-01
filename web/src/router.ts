@@ -6,10 +6,12 @@ import ProjectPage from 'src/views/project-page/ProjectPage.vue';
 import AddNewDeployment from 'src/views/add-new-deployment/AddNewDeployment.vue';
 import DeploymentPage from 'src/views/deployment/DeploymentPage.vue';
 import DeployProgressPage from 'src/views/deploy-progress/DeployProgressPage.vue';
+import AgentLogPage from 'src/views/AgentLogPage.vue';
 import FatalErrorPage from 'src/views/fatal-error/FatalErrorPage.vue';
 
 const routes = [
   { name: 'root', path: '/', redirect: { name: 'project' } },
+  { name: 'agentLog', path: '/agent/log', component: AgentLogPage },
   { name: 'project', path: '/project', component: ProjectPage },
   { name: 'addNewDeployment', path: '/add-new-deployment', component: AddNewDeployment },
   {
