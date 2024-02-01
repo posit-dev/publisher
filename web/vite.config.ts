@@ -1,13 +1,23 @@
 /// <reference types="vitest" />
 
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 
+const getVersion = (mode: string): string => {
+  let version = execSync('git describe --tags').toString()
+    .trimEnd();
+  if (mode === 'development') {
+    version += '-dev';
+  }
+  return JSON.stringify(version);
+};
+
 // https://vitejs.dev/config/
 // eslint-disable-next-line no-restricted-syntax
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base: '/',
   build: {
     rollupOptions: {
@@ -18,6 +28,9 @@ export default defineConfig({
         entryFileNames: 'assets/[name].js',
       },
     },
+  },
+  define: {
+    __VERSION__: getVersion(mode),
   },
   plugins: [
     vue({
@@ -50,4 +63,4 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
   }
-});
+}));

@@ -1,4 +1,4 @@
-# Posit Publisher
+# VSCode Extension
 
 ## Quick Start
 
@@ -9,7 +9,9 @@ To learn how to install a `.vsix` file, see the [*Install from a VSIX*](https://
 
 ## Tutorial
 
-Once installed, open *Posit Publisher* by clicking the icon in the editor menu bar.
+Once installed, open *Posit Publisher* by clicking the icon in the editor menu bar. This will open the *Posit Publisher* UI.
+
+See [./ui.md](./ui.md) for additional instructions.
 
 ![](https://cdn.posit.co/publisher/assets/img/tutorial.png)
 

@@ -171,7 +171,7 @@ TAR=("tar")
 # Variables
 NAME="publisher"
 PREFIX="/usr/local/bin"
-VERSION="1.0.alpha1"
+VERSION="1.0.alpha2"
 URL="https://cdn.posit.co/publisher/releases/tags/v${VERSION}"
 TMPDIR=$(execute "${MKTMP[@]}")
 
@@ -220,6 +220,6 @@ cat <<EOS
   Run ${tty_bold}publisher --help${tty_reset} to get started.
 
   An extension for VSCode is available for download at
-  ${URL}/${NAME}-${VERSION}.vsix
+  ${URL}/${NAME}-${VERSION}-${OS}-${ARCH}.vsix
 
 EOS

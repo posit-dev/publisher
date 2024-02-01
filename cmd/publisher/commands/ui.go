@@ -5,9 +5,7 @@ package commands
 import (
 	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/services/ui"
 	"github.com/rstudio/connect-client/internal/util"
 )
@@ -29,11 +27,6 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 	ctx.Logger.Info("created event server")
 	eventServer.CreateStream("messages")
 	ctx.Logger.Info("created event stream")
-
-	err := initialize.InitIfNeeded(cmd.Path, config.DefaultConfigName, ctx.Logger)
-	if err != nil {
-		return err
-	}
 
 	log := events.NewLoggerWithSSE(args.Verbose, eventServer)
 	ctx.Logger.Info("created SSE logger")

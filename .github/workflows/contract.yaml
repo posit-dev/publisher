@@ -8,6 +8,7 @@ jobs:
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
       FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
+      CI: true
     strategy:
       fail-fast: false
       matrix:
@@ -27,11 +28,20 @@ jobs:
         with:
           name: bin
           path: bin
+      - uses: actions/checkout@v4
+        with:
+          repository: rstudio/connect-content
+          path: 'test/content'
+          sparse-checkout: bundles
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.CONNECT_PAT }}
+
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/cy/fuzzbucket-ssh-key && chmod 600 test/cy/fuzzbucket-ssh-key
       - run: just cy install
       - run: just cy test
-      - run: just cy test-contract
+      # disable cypress contract tests until new deploy workflow
+      # - run: just cy test-contract
       - run: just bats install
       - run: just bats test
       - run: just bats test-contract

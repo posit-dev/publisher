@@ -118,7 +118,7 @@ package os="$(just ../../os)" arch="$(just ../../arch)":
     echo "info: getting output package name..." 1>&2
     package="$path"/$(just package-name {{ os }} {{ arch }})
     echo "info: packaging..." 1>&2
-    npx @vscode/vsce package -o "$package" --skip-license -t "$target_platform" | sed 's/^/debug: /'
+    npx --yes @vscode/vsce package -o "$package" --skip-license -t "$target_platform" | sed 's/^/debug: /'
     echo "info: writing package to $package..." 1>&2
 
 package-name os="$(just ../../os)" arch="$(just ../../arch)":
