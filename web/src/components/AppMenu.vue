@@ -13,7 +13,7 @@
         <q-list class="q-pa-sm">
           <q-item
             v-close-popup
-            :clickable="clickable"
+            clickable
             :to="toProject"
             data-automation="nav-project"
             class="q-my-sm"
@@ -23,7 +23,7 @@
           </q-item>
           <q-item
             v-close-popup
-            :clickable="clickable"
+            clickable
             :to="toAgentLog"
             data-automation="nav-agentLog"
             class="q-my-sm"
@@ -123,10 +123,6 @@ const toAgentLog = computed(() => {
     return { name: 'agentLog' };
   }
   return undefined;
-});
-
-const clickable = computed(() => {
-  return Boolean(vscode);
 });
 
 </script>
