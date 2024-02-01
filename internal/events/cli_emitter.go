@@ -78,13 +78,13 @@ func (e *cliEmitter) EmitEvent(event *AgentEvent) error {
 		opName = string(op)
 	}
 	switch phase {
-	case logging.StartPhase:
+	case StartPhase:
 		fmt.Fprintf(e.writer, "%-35s %s", opName+"...", formatEventData(event.Data))
 		e.writer.NeedNewline = true
-	case logging.SuccessPhase:
+	case SuccessPhase:
 		e.writer.NeedNewline = false
 		fmt.Fprintln(e.writer, "[OK]", formatEventData(event.Data))
-	case logging.FailurePhase:
+	case FailurePhase:
 		e.writer.NeedNewline = false
 		fmt.Fprintln(e.writer, "[ERROR]", errCode, formatEventData(event.Data))
 	}

@@ -6,18 +6,6 @@ import (
 	"log/slog"
 )
 
-// Phase indicates which part of an Operation we are performing
-type Phase string
-
-const (
-	StartPhase    Phase = "start"
-	ProgressPhase Phase = "progress"
-	StatusPhase   Phase = "status"
-	SuccessPhase  Phase = "success"
-	FailurePhase  Phase = "failure"
-	LogPhase      Phase = "log"
-)
-
 // Special attribute keys for use in logging.
 // LogKeyOp should be followed by an Operation,
 // and LogKeyPhase should be followed by a Phase.

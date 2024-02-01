@@ -63,7 +63,7 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	}
 	// Then the ones from this specific message.
 	rec.Attrs(handleAttr)
-	event.Type = EventTypeOf(op, logging.LogPhase, errCode)
+	event.Type = EventTypeOf(op, LogPhase, errCode)
 	return event
 }
 
