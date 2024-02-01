@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
@@ -55,6 +56,11 @@ func readConfigFiles(base util.Path) ([]configDTO, error) {
 
 func GetConfigurationsHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		err := initialize.InitIfNeeded(base, config.DefaultConfigName, log)
+		if err != nil {
+			InternalError(w, req, log, err)
+			return
+		}
 		response, err := readConfigFiles(base)
 		if err != nil {
 			InternalError(w, req, log, err)
