@@ -15,7 +15,7 @@ _cmd := "./cmd/publisher"
 
 _debug := env_var_or_default("DEBUG", "false")
 
-_docker := env_var_or_default("DOCKER", if _ci == "true" { "true" } else { "false" })
+_docker := env_var_or_default("DOCKER", if _ci == "true" { "false" } else { "false" })
 
 _docker_file := "./build/ci/Dockerfile"
 
