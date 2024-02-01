@@ -27,7 +27,7 @@ type DeployCmd struct {
 }
 
 func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	ctx.Logger = events.NewSimpleLogger(args.Verbose, os.Stderr)
+	ctx.Logger = events.NewCLILogger(args.Verbose, os.Stderr)
 
 	if cmd.SaveName != "" {
 		err := util.ValidateFilename(cmd.SaveName)
@@ -62,6 +62,6 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 		stateStore.Account.Name,
 		stateStore.ConfigName,
 		stateStore.SaveName)
-	publisher := publish.NewFromState(stateStore)
+	publisher := publish.NewFromState(stateStore, events.NewCliEmitter(os.Stderr, ctx.Logger))
 	return publisher.PublishDirectory(ctx.Logger)
 }

@@ -9,12 +9,12 @@ import (
 	"github.com/rstudio/connect-client/internal/types"
 )
 
-func NewAgentEvent(e types.EventableError) AgentEvent {
+func NewErrorEvent(e types.EventableError) Event {
 	data := e.GetData()
 	data["msg"] = e.Error()
 
-	return AgentEvent{
-		Time: time.Now().UTC(),
+	return Event{
+		Time: time.Now(),
 		Type: fmt.Sprintf("%s/failure/%s", e.GetOperation(), e.GetCode()),
 		Data: data,
 	}

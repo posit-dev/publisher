@@ -7,13 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
+	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/types"
 )
 
 type EventType = string
 type EventData = types.ErrorData
 
-type AgentEvent struct {
+type Event struct {
 	Time time.Time
 	Type EventType
 	Data EventData
@@ -51,6 +53,21 @@ const (
 	PublishValidateDeploymentOp  Operation = "publish/validateDeployment"
 	PublishOp                    Operation = "publish"
 )
+
+func New(op Operation, phase Phase, errCode ErrorCode, data any) *Event {
+	var eventData EventData
+	err := mapstructure.Decode(data, eventData)
+	if err != nil {
+		if project.DevelopmentBuild() {
+			panic(err)
+		}
+	}
+	return &Event{
+		Time: time.Now(),
+		Type: EventTypeOf(op, phase, errCode),
+		Data: eventData,
+	}
+}
 
 func EventTypeOf(op Operation, phase Phase, errCode ErrorCode) EventType {
 	if phase == FailurePhase && errCode != "" {

@@ -2,6 +2,6 @@ package events
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-type EventEmitter interface {
-	EmitEvent(*AgentEvent) error
+type Emitter interface {
+	Emit(*Event) error
 }

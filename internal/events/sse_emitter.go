@@ -27,7 +27,7 @@ func NewSSEEmitter(server SSEServer) *SSEEmitter {
 	}
 }
 
-func (e *SSEEmitter) EmitEvent(event *AgentEvent) error {
+func (e *SSEEmitter) Emit(event *Event) error {
 	eventJSON, err := json.Marshal(event)
 	if err != nil {
 		return err

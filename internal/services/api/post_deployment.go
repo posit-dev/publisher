@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
@@ -30,7 +31,8 @@ var publisherFactory = publish.NewFromState
 func PostDeploymentHandlerFunc(
 	base util.Path,
 	log logging.Logger,
-	accountList accounts.AccountList) http.HandlerFunc {
+	accountList accounts.AccountList,
+	emitter events.Emitter) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
@@ -64,7 +66,7 @@ func PostDeploymentHandlerFunc(
 		json.NewEncoder(w).Encode(response)
 
 		newState.LocalID = localID
-		publisher := publisherFactory(newState)
+		publisher := publisherFactory(newState, emitter)
 
 		go func() {
 			log := log.WithArgs("local_id", localID)

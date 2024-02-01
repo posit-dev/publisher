@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
 	"github.com/rstudio/connect-client/internal/state"
@@ -68,7 +69,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(nil)
-	publisherFactory = func(*state.State) publish.Publisher {
+	publisherFactory = func(*state.State, events.Emitter) publish.Publisher {
 		return publisher
 	}
 	stateFactory = func(
@@ -81,7 +82,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		s.Equal("", saveName)
 		return state.Empty(), nil
 	}
-	handler := PostDeploymentHandlerFunc(util.Path{}, log, lister)
+	handler := PostDeploymentHandlerFunc(util.Path{}, log, lister, events.NewNullEmitter())
 	handler(rec, req)
 
 	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
@@ -96,7 +97,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncBadJSON() 
 
 	req.Body = io.NopCloser(strings.NewReader(`{"random": "123"}`))
 
-	handler := PostDeploymentHandlerFunc(util.Path{}, log, nil)
+	handler := PostDeploymentHandlerFunc(util.Path{}, log, nil, events.NewNullEmitter())
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -115,7 +116,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 		return nil, errors.New("test error from state factory")
 	}
 
-	handler := PostDeploymentHandlerFunc(util.Path{}, log, nil)
+	handler := PostDeploymentHandlerFunc(util.Path{}, log, nil, events.NewNullEmitter())
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -139,11 +140,11 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 	testErr := errors.New("test error from PublishDirectory")
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(testErr)
-	publisherFactory = func(*state.State) publish.Publisher {
+	publisherFactory = func(*state.State, events.Emitter) publish.Publisher {
 		return publisher
 	}
 
-	handler := PostDeploymentHandlerFunc(util.Path{}, log, lister)
+	handler := PostDeploymentHandlerFunc(util.Path{}, log, lister, events.NewNullEmitter())
 	handler(rec, req)
 
 	// Handler returns 202 Accepted even if publishing errs,

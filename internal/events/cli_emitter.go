@@ -12,13 +12,11 @@ import (
 
 type cliEmitter struct {
 	writer *structuredLogWriter
-	log    logging.Logger
 }
 
 func NewCliEmitter(w io.Writer, log logging.Logger) *cliEmitter {
 	return &cliEmitter{
 		writer: newStructuredLogWriter(w),
-		log:    log,
 	}
 }
 
@@ -70,11 +68,10 @@ func formatEventData(data EventData) string {
 	return fmt.Sprintf("(%s)", b.String())
 }
 
-func (e *cliEmitter) EmitEvent(event *AgentEvent) error {
+func (e *cliEmitter) Emit(event *Event) error {
 	op, phase, errCode := SplitEventType(event.Type)
 	opName, ok := opNameMap[op]
 	if !ok {
-		e.log.Debug("EmitEvent: unknown event operation", "op", op)
 		opName = string(op)
 	}
 	switch phase {

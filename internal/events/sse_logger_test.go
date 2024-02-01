@@ -21,6 +21,7 @@ func TestLoggerSuite(t *testing.T) {
 
 func (s *LoggerSuite) TestNewLoggerWithSSE() {
 	sseServer := sse.New()
-	log := NewLoggerWithSSE(1, sseServer)
+	emitter := NewSSEEmitter(sseServer)
+	log := NewLoggerWithSSE(1, emitter)
 	s.IsType(log.Handler(), &logging.MultiHandler{})
 }

@@ -29,8 +29,8 @@ func (h *SSEHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return true
 }
 
-func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
-	event := &AgentEvent{
+func (h *SSEHandler) recordToEvent(rec slog.Record) *Event {
+	event := &Event{
 		Time: rec.Time,
 		Data: make(EventData),
 	}
@@ -69,7 +69,7 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 
 func (h *SSEHandler) Handle(ctx context.Context, rec slog.Record) error {
 	event := h.recordToEvent(rec)
-	return h.emitter.EmitEvent(event)
+	return h.emitter.Emit(event)
 }
 
 func (h *SSEHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
