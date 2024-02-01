@@ -18,6 +18,7 @@ import App from './App.vue';
 import { router } from './router';
 import eventStream from './plugins/eventStream';
 import { vscode, getVscodeTheme, onVscodeThemeChange } from './vscode';
+import '@github/relative-time-element';
 
 const pinia = createPinia();
 const app = createApp(App);
