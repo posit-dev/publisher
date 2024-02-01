@@ -6,7 +6,10 @@
   >
     <p>{{ deployment.id }}</p>
     <p>
-      Last Deployed on {{ formatDateString(deployment.deployedAt) }}
+      Deployed
+      <relative-time :datetime="deployment.deployedAt">
+        {{ formatDateString(deployment.deployedAt) }}
+      </relative-time>
     </p>
     <template v-if="compact">
       <div class="flex items-center">
