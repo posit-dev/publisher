@@ -28,7 +28,8 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 	eventServer.CreateStream("messages")
 	ctx.Logger.Info("created event stream")
 
-	log := events.NewLoggerWithSSE(args.Verbose, eventServer)
+	emitter := events.NewSSEEmitter(eventServer)
+	log := events.NewLoggerWithSSE(args.Verbose, emitter)
 	ctx.Logger.Info("created SSE logger")
 
 	// Auto-initialize if needed. This will be replaced by an API call from the UI
@@ -45,7 +46,8 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 		cmd.Path,
 		ctx.Accounts,
 		log,
-		eventServer)
+		eventServer,
+		emitter)
 	ctx.Logger.Info("created UI service")
 	return svc.Run()
 }

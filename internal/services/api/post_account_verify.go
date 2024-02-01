@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/clients/connect"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 )
 
@@ -31,7 +32,7 @@ func PostAccountVerifyHandlerFunc(lister accounts.AccountList, log logging.Logge
 			}
 			return
 		}
-		client, err := connect.NewConnectClient(account, 30*time.Second, log)
+		client, err := connect.NewConnectClient(account, 30*time.Second, events.NewNullEmitter(), log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return

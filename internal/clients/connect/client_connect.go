@@ -25,11 +25,13 @@ import (
 type ConnectClient struct {
 	client  http_client.HTTPClient
 	account *accounts.Account
+	emitter events.Emitter
 }
 
 func NewConnectClient(
 	account *accounts.Account,
 	timeout time.Duration,
+	emitter events.Emitter,
 	log logging.Logger) (*ConnectClient, error) {
 
 	httpClient, err := http_client.NewDefaultHTTPClient(account, timeout, log)
@@ -39,6 +41,7 @@ func NewConnectClient(
 	return &ConnectClient{
 		client:  httpClient,
 		account: account,
+		emitter: emitter,
 	}, nil
 }
 
@@ -314,15 +317,15 @@ var rPackagePattern = regexp.MustCompile(`Installing ([[:word:]\.]+) \((\S+)\) .
 var pythonCollectingPackagePattern = regexp.MustCompile(`Collecting (\S+)==(\S+)`)
 var pythonInstallingPackagePattern = regexp.MustCompile(`Found existing installation: (\S+) ()\S+`)
 
-type packageEvent struct {
+type packageStatusEvent struct {
 	runtime packageRuntime
 	status  packageStatus
 	name    string
 	version string
 }
 
-func makePackageEvent(match []string, rt packageRuntime, status packageStatus) *packageEvent {
-	return &packageEvent{
+func makePackageEvent(match []string, rt packageRuntime, status packageStatus) *packageStatusEvent {
+	return &packageStatusEvent{
 		runtime: rt,
 		status:  status,
 		name:    match[1],
@@ -330,7 +333,7 @@ func makePackageEvent(match []string, rt packageRuntime, status packageStatus) *
 	}
 }
 
-func packageEventFromLogLine(line string) *packageEvent {
+func packageEventFromLogLine(line string) *packageStatusEvent {
 	if match := rPackagePattern.FindStringSubmatch(line); match != nil {
 		return makePackageEvent(match, rRuntime, downloadAndInstallPackage)
 	} else if match := pythonCollectingPackagePattern.FindStringSubmatch(line); match != nil {
@@ -359,7 +362,7 @@ func connectErrorDetails(msg string) *deploymentFailedDetails {
 	}
 }
 
-func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (types.Operation, error) {
+func (c *ConnectClient) handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (types.Operation, error) {
 	var nextOp types.Operation
 
 	for _, line := range task.Output {
@@ -367,10 +370,12 @@ func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (ty
 		nextOp = eventOpFromLogLine(op, line)
 		if nextOp != op {
 			if op != "" {
-				log.Success("Done", logging.LogKeyOp, op)
+				c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, nil))
+				log.Info("Done", logging.LogKeyOp, op)
 			}
 			op = nextOp
-			log.Start(line, logging.LogKeyOp, op)
+			c.emitter.Emit(events.New(op, events.StartPhase, events.NoError, nil))
+			log.Info(line, logging.LogKeyOp, op)
 		} else {
 			log.Info(line, logging.LogKeyOp, op)
 		}
@@ -378,7 +383,8 @@ func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (ty
 		// Log a progress event for certain matching log lines.
 		event := packageEventFromLogLine(line)
 		if event != nil {
-			log.Status("Package restore",
+			c.emitter.Emit(events.New(op, events.StatusPhase, events.NoError, event))
+			log.Info("Package restore",
 				"runtime", event.runtime,
 				"status", event.status,
 				"name", event.name,
@@ -393,7 +399,7 @@ func handleTaskUpdate(task *taskDTO, op types.Operation, log logging.Logger) (ty
 			err.SetOperation(op)
 			return op, err
 		}
-		log.Success("Done", logging.LogKeyOp, op)
+		c.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, nil))
 	}
 	return op, nil
 }
@@ -407,7 +413,7 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 		if err != nil {
 			return err
 		}
-		op, err = handleTaskUpdate(task, op, log)
+		op, err = c.handleTaskUpdate(task, op, log)
 		if err != nil || task.Finished {
 			return err
 		}
@@ -418,6 +424,8 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 
 func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log logging.Logger) error {
 	url := fmt.Sprintf("/content/%s/", contentID)
+	log.Info("Testing URL", "url", url)
+
 	_, err := c.client.GetRaw(url, log)
 	agentErr, ok := err.(*types.AgentError)
 	if ok {

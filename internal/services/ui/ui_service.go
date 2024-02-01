@@ -8,6 +8,7 @@ import (
 
 	"github.com/rs/cors"
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/files"
@@ -34,9 +35,10 @@ func NewUIService(
 	dir util.Path,
 	lister accounts.AccountList,
 	log logging.Logger,
-	eventServer *sse.Server) *api.Service {
+	eventServer *sse.Server,
+	emitter events.Emitter) *api.Service {
 
-	handler := RouterHandlerFunc(dir, lister, log, eventServer)
+	handler := RouterHandlerFunc(dir, lister, log, eventServer, emitter)
 
 	return api.NewService(
 		handler,
@@ -51,7 +53,7 @@ func NewUIService(
 	)
 }
 
-func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server) http.HandlerFunc {
+func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server, emitter events.Emitter) http.HandlerFunc {
 	filesService := files.CreateFilesService(base, log)
 	pathsService := paths.CreatePathsService(base, log)
 
@@ -96,7 +98,7 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 		Methods(http.MethodGet)
 
 	// POST /api/deployments/$NAME intiates a deployment
-	r.Handle(ToPath("deployments", "{name}"), api.PostDeploymentHandlerFunc(base, log, lister)).
+	r.Handle(ToPath("deployments", "{name}"), api.PostDeploymentHandlerFunc(base, log, lister, emitter)).
 		Methods(http.MethodPost)
 
 	// DELETE /api/deployments/$NAME

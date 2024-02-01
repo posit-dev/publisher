@@ -9,6 +9,7 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/clients/connect"
+	"github.com/rstudio/connect-client/internal/events"
 )
 
 type testAccountCmd struct {
@@ -21,7 +22,7 @@ func (cmd *testAccountCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLICon
 		return err
 	}
 	// TODO: create and call a generic factory to make a new client for any account
-	client, err := connect.NewConnectClient(account, 30*time.Second, ctx.Logger)
+	client, err := connect.NewConnectClient(account, 30*time.Second, events.NewNullEmitter(), ctx.Logger)
 	if err != nil {
 		return err
 	}

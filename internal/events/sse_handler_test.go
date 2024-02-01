@@ -80,7 +80,7 @@ func (s *SSEHandlerSuite) TestHandleNoAttrs() {
 	server.On("Publish", "messages", mock.Anything).Run(func(args mock.Arguments) {
 		sseEvent := args.Get(1).(*sse.Event)
 		s.Equal(sseEvent.Event, []byte("message"))
-		var event AgentEvent
+		var event Event
 		err := json.Unmarshal(sseEvent.Data, &event)
 		s.NoError(err)
 		s.Equal("log message", event.Data["Message"])
@@ -116,7 +116,7 @@ func (s *SSEHandlerSuite) TestHandleWithAttrs() {
 	rec.AddAttrs(
 		slog.Attr{
 			Key:   logging.LogKeyOp,
-			Value: slog.StringValue("anotherOp"),
+			Value: slog.StringValue("anotherOp/step2"),
 		},
 		slog.Attr{
 			Key:   "random_number",
@@ -130,12 +130,12 @@ func (s *SSEHandlerSuite) TestHandleWithAttrs() {
 	server.On("Publish", "messages", mock.Anything).Run(func(args mock.Arguments) {
 		sseEvent := args.Get(1).(*sse.Event)
 		s.Equal(sseEvent.Event, []byte("message"))
-		var event AgentEvent
+		var event Event
 		err := json.Unmarshal(sseEvent.Data, &event)
 		s.NoError(err)
 		s.Equal("log message", event.Data["Message"])
 		s.Equal("INFO", event.Data["Level"])
-		s.Equal("anotherOp/step/log", event.Type)
+		s.Equal("anotherOp/step2/log", event.Type)
 		s.Equal(float64(123), event.Data["random_number"])
 	})
 	err = handlerWithAttrs.Handle(context.Background(), rec)
