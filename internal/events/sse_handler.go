@@ -43,15 +43,12 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	// log.Info("a message", "op", "publish/restore")
 	// will create an SSE event with Type: "publish/restore/log".
 	op := AgentOp
-	phase := logging.LogPhase
 	errCode := types.UnknownErrorCode
 
 	handleAttr := func(attr slog.Attr) bool {
 		switch attr.Key {
 		case logging.LogKeyOp:
 			op = Operation(attr.Value.String())
-		case logging.LogKeyPhase:
-			phase = Phase(attr.Value.String())
 		case logging.LogKeyErrCode:
 			errCode = ErrorCode(attr.Value.String())
 		case "": // skip empty attrs
@@ -66,7 +63,7 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	}
 	// Then the ones from this specific message.
 	rec.Attrs(handleAttr)
-	event.Type = EventTypeOf(op, phase, errCode)
+	event.Type = EventTypeOf(op, logging.LogPhase, errCode)
 	return event
 }
 
