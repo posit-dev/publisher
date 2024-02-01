@@ -20,32 +20,49 @@ export class Server implements vscode.Disposable {
 
     /**
      * Asynchronously starts the server.
+     * If server is already running, do nothing.
      *
      * @param {vscode.ExtensionContext} context - The VSCode extension context.
      * @returns {Promise<void>} A Promise that resolves when the server starts.
      */
     async start(context: vscode.ExtensionContext): Promise<void> {
+        // Check if the server is stopped
         if (await this.isDown()) {
+            // Display status message to user
             const message = vscode.window.setStatusBarMessage("Starting Posit Publisher. Please wait...");
             // todo - make this configurable
             const path = workspaces.path();
+            // Create command to send to terminal stdin
             const command: commands.Command = await commands.create(context, path!, this.port);
+            // Execute command on system via terminal
             this.terminal.get().sendText(command);
+            // Wait for server to start
             await this.isUp();
+            // Dispose of status message
             message.dispose();
         }
     }
 
     /**
      * Asynchronously stops the server.
+     * If server is already down, do nothing.
      *
      * @async
      * @returns {Promise<void>} A Promise that resolves when the server stops.
      */
     async stop(): Promise<void> {
+        // Check if server is down
+        if (await this.isDown()) {
+            // Do nothing if server is already down
+            return;
+        }
+        // Display status message to user
         const message = vscode.window.setStatusBarMessage("Stopping Posit Publisher. Please wait...");
+        // Send interrupt signal to terminal
         this.terminal.get().sendText("\u0003");
+        // Wait for server to stop
         await this.isDown();
+        // Dispose of status message
         message.dispose();
     }
 
