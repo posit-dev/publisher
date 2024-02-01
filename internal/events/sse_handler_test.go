@@ -25,44 +25,26 @@ func TestSSEHandlerSuite(t *testing.T) {
 	suite.Run(t, new(SSEHandlerSuite))
 }
 
-func (s *SSEHandlerSuite) TestNewSSEHandlerWithOpts() {
+func (s *SSEHandlerSuite) TestNewSSEHandler() {
 	sseServer := sse.New()
-	h := NewSSEHandler(sseServer, &SSEHandlerOptions{
-		Level: slog.LevelDebug,
-	})
+	emitter := NewSSEEmitter(sseServer)
+	h := NewSSEHandler(emitter)
 	s.Equal(&SSEHandler{
-		server: sseServer,
-		opts: SSEHandlerOptions{
-			Level: slog.LevelDebug,
-		},
-		attrs: nil,
-	}, h)
-}
-
-func (s *SSEHandlerSuite) TestNewSSEHandlerNoOpts() {
-	sseServer := sse.New()
-	h := NewSSEHandler(sseServer, nil)
-	s.Equal(&SSEHandler{
-		server: sseServer,
-		opts: SSEHandlerOptions{
-			Level: slog.LevelInfo,
-		},
-		attrs: nil,
+		emitter: emitter,
+		attrs:   nil,
 	}, h)
 }
 
 func (s *SSEHandlerSuite) TestEnabled() {
-	h := NewSSEHandler(nil, &SSEHandlerOptions{
-		Level: slog.LevelInfo,
-	})
-	s.False(h.Enabled(context.Background(), slog.LevelDebug))
+	h := NewSSEHandler(nil)
+	s.True(h.Enabled(context.Background(), slog.LevelDebug))
 	s.True(h.Enabled(context.Background(), slog.LevelInfo))
 	s.True(h.Enabled(context.Background(), slog.LevelWarn))
 	s.True(h.Enabled(context.Background(), slog.LevelError))
 }
 
 func (s *SSEHandlerSuite) TestWithAttrs() {
-	handler := NewSSEHandler(nil, nil)
+	handler := NewSSEHandler(nil)
 	attrs := []slog.Attr{
 		{Key: "hey", Value: slog.StringValue("there")},
 		{Key: "x", Value: slog.StringValue("marks the spot")},
@@ -77,14 +59,15 @@ func (s *SSEHandlerSuite) TestWithAttrs() {
 }
 
 func (s *SSEHandlerSuite) TestWithGroup() {
-	handler := NewSSEHandler(nil, nil)
+	handler := NewSSEHandler(nil)
 	handlerWithGroup := handler.WithGroup("hi")
 	s.Equal(handler, handlerWithGroup)
 }
 
 func (s *SSEHandlerSuite) TestHandleNoAttrs() {
 	server := eventstest.NewMockSSEServer()
-	handler := NewSSEHandler(server, nil)
+	emitter := NewSSEEmitter(server)
+	handler := NewSSEHandler(emitter)
 
 	t, err := time.Parse(time.RFC3339, "2023-08-30T08:22:01-04:00")
 	s.NoError(err)
@@ -111,7 +94,8 @@ func (s *SSEHandlerSuite) TestHandleNoAttrs() {
 
 func (s *SSEHandlerSuite) TestHandleWithAttrs() {
 	server := eventstest.NewMockSSEServer()
-	handler := NewSSEHandler(server, nil)
+	emitter := NewSSEEmitter(server)
+	handler := NewSSEHandler(emitter)
 
 	t, err := time.Parse(time.RFC3339, "2023-08-30T08:22:01-04:00")
 	s.NoError(err)

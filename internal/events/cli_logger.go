@@ -19,25 +19,6 @@ func NewStructuredLogger(verbosity int) logging.Logger {
 	return logging.FromStdLogger(slog.New(stderrHandler))
 }
 
-type structuredLogWriter struct {
-	writer      io.Writer
-	NeedNewline bool
-}
-
-func newStructuredLogWriter(w io.Writer) *structuredLogWriter {
-	return &structuredLogWriter{
-		writer: w,
-	}
-}
-
-func (w *structuredLogWriter) Write(p []byte) (n int, err error) {
-	if w.NeedNewline {
-		fmt.Fprintln(w.writer)
-		w.NeedNewline = false
-	}
-	return w.writer.Write(p)
-}
-
 func NewSimpleLogger(verbosity int, w io.Writer) logging.Logger {
 	level := logLevel(verbosity)
 	writer := newStructuredLogWriter(w)
@@ -64,21 +45,6 @@ func NewCLIHandler(w *structuredLogWriter) *CLIHandler {
 
 func (h *CLIHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return true
-}
-
-var opNameMap = map[Operation]string{
-	PublishCheckCapabilitiesOp:   "Check Configuration",
-	PublishCreateNewDeploymentOp: "Create New Deployment",
-	PublishSetEnvVarsOp:          "Set environment variables",
-	PublishCreateBundleOp:        "Prepare Files",
-	PublishUploadBundleOp:        "Upload Files",
-	PublishUpdateDeploymentOp:    "Update Deployment Settings",
-	PublishDeployBundleOp:        "Activate Deployment",
-	PublishRestorePythonEnvOp:    "Restore Python environment",
-	PublishRestoreREnvOp:         "Restore R environment",
-	PublishRunContentOp:          "Run Content",
-	PublishSetVanityUrlOp:        "Sett Custom URL",
-	PublishValidateDeploymentOp:  "Test Deployment",
 }
 
 func (h *CLIHandler) Handle(ctx context.Context, rec slog.Record) error {
