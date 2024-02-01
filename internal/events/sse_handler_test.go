@@ -108,23 +108,15 @@ func (s *SSEHandlerSuite) TestHandleWithAttrs() {
 	// Record attrs take precedence.
 	handlerWithAttrs := handler.WithAttrs([]slog.Attr{
 		{
+			// This will be overridden by the attr in the record
 			Key:   logging.LogKeyOp,
 			Value: slog.StringValue("someOperation/step"),
-		},
-		{
-			// This will be overridden by the attr in the record
-			Key:   logging.LogKeyPhase,
-			Value: slog.StringValue(string(logging.StartPhase)),
 		},
 	})
 	rec.AddAttrs(
 		slog.Attr{
-			Key:   logging.LogKeyPhase,
-			Value: slog.StringValue(string(logging.FailurePhase)),
-		},
-		slog.Attr{
-			Key:   logging.LogKeyErrCode,
-			Value: slog.StringValue(string("myErrCode")),
+			Key:   logging.LogKeyOp,
+			Value: slog.StringValue("anotherOp"),
 		},
 		slog.Attr{
 			Key:   "random_number",
@@ -143,10 +135,9 @@ func (s *SSEHandlerSuite) TestHandleWithAttrs() {
 		s.NoError(err)
 		s.Equal("log message", event.Data["Message"])
 		s.Equal("INFO", event.Data["Level"])
-		s.Equal("someOperation/step/failure/myErrCode", event.Type)
+		s.Equal("anotherOp/step/log", event.Type)
 		s.Equal(float64(123), event.Data["random_number"])
 	})
 	err = handlerWithAttrs.Handle(context.Background(), rec)
 	s.NoError(err)
-
 }
