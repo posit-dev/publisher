@@ -60,7 +60,8 @@ func (s *PublishSuite) SetupTest() {
 
 func (s *PublishSuite) TestNewFromState() {
 	stateStore := state.Empty()
-	publisher := NewFromState(stateStore, events.NewNullEmitter())
+	publisher, err := NewFromState(stateStore, events.NewNullEmitter())
+	s.NoError(err)
 	s.Equal(stateStore, publisher.(*defaultPublisher).State)
 }
 
@@ -229,7 +230,7 @@ func (s *PublishSuite) TestLogAppInfo() {
 	buf := new(bytes.Buffer)
 	a := mock.Anything
 	log := loggingtest.NewMockLogger()
-	log.On("Info", "Deployment successful", a, a, a, a, a, a, a, a, a, a).Return()
+	log.On("Info", "Deployment information", a, a, a, a, a, a, a, a, a, a).Return()
 
 	logAppInfo(buf, accountURL, contentID, log, nil)
 	str := buf.String()

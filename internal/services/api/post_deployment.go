@@ -66,7 +66,11 @@ func PostDeploymentHandlerFunc(
 		json.NewEncoder(w).Encode(response)
 
 		newState.LocalID = localID
-		publisher := publisherFactory(newState, emitter)
+		publisher, err := publisherFactory(newState, emitter)
+		if err != nil {
+			InternalError(w, req, log, err)
+			return
+		}
 
 		go func() {
 			log := log.WithArgs("local_id", localID)

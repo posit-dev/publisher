@@ -62,6 +62,9 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 		stateStore.Account.Name,
 		stateStore.ConfigName,
 		stateStore.SaveName)
-	publisher := publish.NewFromState(stateStore, events.NewCliEmitter(os.Stderr, ctx.Logger))
+	publisher, err := publish.NewFromState(stateStore, events.NewCliEmitter(os.Stderr, ctx.Logger))
+	if err != nil {
+		return err
+	}
 	return publisher.PublishDirectory(ctx.Logger)
 }
