@@ -13,7 +13,6 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/clients/http_client"
 	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/events/eventstest"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/logging/loggingtest"
 	"github.com/rstudio/connect-client/internal/types"
@@ -61,7 +60,7 @@ type taskTest struct {
 
 func (s *ConnectClientSuite) TestWaitForTask() {
 	var actualPackages []packageStatusEvent
-	emitter := eventstest.NewMockEmitter()
+	emitter := events.NewMockEmitter()
 	emitter.On("Emit", mock.Anything).Run(func(args mock.Arguments) {
 		event := args.Get(0).(*events.Event)
 		if strings.HasSuffix(event.Type, "/status") {
