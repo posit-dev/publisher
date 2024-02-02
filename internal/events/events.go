@@ -4,7 +4,6 @@ package events
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -21,6 +20,10 @@ type Event struct {
 	Time time.Time
 	Type EventType
 	Data EventData
+
+	op      Operation
+	phase   Phase
+	errCode ErrorCode
 }
 
 // We use Operation and Phase to construct the event Type.
@@ -65,9 +68,12 @@ func New(op Operation, phase Phase, errCode ErrorCode, data any) *Event {
 		}
 	}
 	return &Event{
-		Time: time.Now(),
-		Type: EventTypeOf(op, phase, errCode),
-		Data: eventData,
+		Time:    time.Now(),
+		Type:    EventTypeOf(op, phase, errCode),
+		Data:    eventData,
+		op:      op,
+		phase:   phase,
+		errCode: errCode,
 	}
 }
 
@@ -76,17 +82,5 @@ func EventTypeOf(op Operation, phase Phase, errCode ErrorCode) EventType {
 		return fmt.Sprintf("%s/%s/%s", op, phase, errCode)
 	} else {
 		return fmt.Sprintf("%s/%s", op, phase)
-	}
-}
-
-func SplitEventType(t EventType) (Operation, Phase, ErrorCode) {
-	s := strings.SplitN(t, "/", 3)
-	if len(s) == 3 {
-		return Operation(s[0]), Phase(s[1]), ErrorCode(s[2])
-	} else if len(s) == 2 {
-		return Operation(s[0]), Phase(s[1]), ErrorCode("")
-	} else {
-		// Should not happen
-		return Operation(s[0]), Phase(""), ErrorCode("")
 	}
 }

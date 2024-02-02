@@ -46,15 +46,17 @@ type baseEventData struct {
 }
 
 func NewFromState(s *state.State, emitter events.Emitter) (Publisher, error) {
-	data := baseEventData{
-		LocalID: s.LocalID,
+	if s.LocalID != "" {
+		data := baseEventData{
+			LocalID: s.LocalID,
+		}
+		var dataMap events.EventData
+		err := mapstructure.Decode(data, &dataMap)
+		if err != nil {
+			return nil, err
+		}
+		emitter = events.NewDataEmitter(dataMap, emitter)
 	}
-	var dataMap events.EventData
-	err := mapstructure.Decode(data, &dataMap)
-	if err != nil {
-		return nil, err
-	}
-	emitter = events.NewDataEmitter(dataMap, emitter)
 	return &defaultPublisher{
 		State:   s,
 		emitter: emitter,
