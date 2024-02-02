@@ -23,7 +23,7 @@
     },
     "type": {
       "type": "string",
-      "description": "Indicates the type of content being deployed.",
+      "description": "Indicates the type of content being deployed. Valid values are: html, jupyter-notebook, jupyter-voila, python-bokeh, python-dash, python-fastapi, python-flask, python-shiny, python-streamlit, quarto-shiny, quarto, r-plumber, r-shiny, rmd-shiny, rmd",
       "enum": [
         "html",
         "jupyter-notebook",
@@ -47,7 +47,7 @@
     },
     "entrypoint": {
       "type": "string",
-      "description": "Name of the primary file containing the content. For some types of Python executable content, this may also indicate the object within the file in module:object format.",
+      "description": "Name of the primary file containing the content. For Python flask, dash, fastapi, and python-shiny projects, this specifies the object within the file in module:object format. See the documentation at https://docs.posit.co/connect/user/publishing-cli-apps/#publishing-rsconnect-python-entrypoint.",
       "examples": [
         "app.py",
         "report.qmd"
@@ -56,7 +56,7 @@
     "title": {
       "type": "string",
       "pattern": "^[^\t\n\f\r]{3,1000}$|",
-      "description": "Human-readable title for this content.",
+      "description": "Title for this content. If specified, it must be a single line containing between 3 and 1000 characters.",
       "examples": [
         "Quarterly Sales Report"
       ]
@@ -64,14 +64,14 @@
     "description": {
       "type": "string",
       "pattern": "^[^\t\f\r]*$",
-      "description": "Human-readable description for this content.",
+      "description": "Description for this content. It may span multiple lines and be up to 4000 characters.",
       "examples": [
         "This is the quarterly sales report, broken down by region."
       ]
     },
     "validate": {
       "type": "boolean",
-      "description": "Access the content after deploying, to validate that it is live.",
+      "description": "Access the content after deploying, to validate that it is live. Defaults to true.",
       "default": true
     },
     "python": {
@@ -84,7 +84,7 @@
       "properties": {
         "version": {
           "type": "string",
-          "description": "Python version. The server must have a matching Python version in order to run the content.",
+          "description": "Python version. The server must have a matching Python major/minor version in order to run the content.",
           "examples": [
             "3.11.3",
             "3.11"
@@ -92,7 +92,7 @@
         },
         "package-file": {
           "type": "string",
-          "description": "File containing package dependencies. The file must exist and be listed under 'files'.",
+          "description": "File containing package dependencies. The file must exist and be listed under 'files'. The default is 'requirements.txt'.",
           "default": "requirements.txt",
           "examples": [
             "requirements.txt"
@@ -103,9 +103,6 @@
           "default": "pip",
           "enum": [
             "pip",
-            "conda",
-            "pipenv",
-            "poetry",
             "none"
           ],
           "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will not be installed.",
@@ -125,7 +122,7 @@
       "properties": {
         "version": {
           "type": "string",
-          "description": "R version. The server must have a similar R version in order to run the content.",
+          "description": "R version. The server will use the nearest R version to run the content.",
           "examples": [
             "4.3.1"
           ]
@@ -145,7 +142,7 @@
             "renv",
             "none"
           ],
-          "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will not be installed.",
+          "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will be assumed to be pre-installed on the server.",
           "examples": [
             "renv"
           ]
@@ -193,7 +190,7 @@
           "string"
         ]
       },
-      "description": "Environment variable/value map. Secrets such as API keys or tokens should not be stored here.",
+      "description": "Environment variable/value map. All values must be strings. Secrets such as API keys or tokens should not be stored here.",
       "examples": [
         {
           "API_URL": "https://example.com/api"
@@ -216,7 +213,7 @@
           "run-as-current-user": {
             "type": "boolean",
             "default": false,
-            "description": "For application content types, run a separate process for each visiting user under that user's server account. Requires PAM authentication on the Posit Connect server. You must be an administrator to set this value."
+            "description": "For application content types, run a separate process under the user account of each visiting user under that user's server account. Requires PAM authentication on the Posit Connect server. You must be an administrator to set this value."
           }
         },
         "runtime": {
