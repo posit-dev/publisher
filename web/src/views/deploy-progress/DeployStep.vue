@@ -93,9 +93,7 @@ import {
   isPublishCreateDeploymentStart,
   isPublishCreateNewDeploymentSuccess,
   isPublishRestorePythonEnvLog,
-  isPublishRestorePythonEnvStart,
   isPublishRestorePythonEnvStatus,
-  isPublishRunContentLog,
   isPublishSetVanityURLLog,
   isPublishValidateDeploymentLog
 } from 'src/api/types/events';
@@ -118,9 +116,7 @@ const formatMsg = (msg: EventStreamMessage): string => {
   } else if (isPublishCreateBundleSuccess(msg)) {
     return `${msg.data.message} ${msg.data.filename}`;
   } else if (isPublishCreateDeploymentStart(msg)) {
-    return `${msg.data.message}, ContentId: ${msg.data.contentId}`;
-  } else if (isPublishRestorePythonEnvStart(msg)) {
-    return `${msg.data.message}, Source: ${msg.data.source}`;
+    return `ContentId: ${msg.data.contentId}`;
   } else if (isPublishCreateBundleLog(msg)) {
     if (msg.data.sourceDir) {
       return `${msg.data.message} ${msg.data.sourceDir}`;
@@ -132,7 +128,6 @@ const formatMsg = (msg: EventStreamMessage): string => {
   } else if (isPublishRestorePythonEnvLog(msg)) {
     return `${msg.data.message}`;
   } else if (
-    isPublishRunContentLog(msg) ||
     isPublishSetVanityURLLog(msg) ||
     isPublishValidateDeploymentLog(msg)
   ) {
