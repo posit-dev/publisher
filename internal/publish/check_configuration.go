@@ -30,7 +30,7 @@ func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logg
 		return types.OperationError(op, err)
 	}
 
-	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, checkConfigurationSuccessData{}))
 	log.Info("Configuration OK")
+	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, checkConfigurationSuccessData{}))
 	return nil
 }

@@ -29,7 +29,7 @@ func (p *defaultPublisher) deployBundle(
 		return "", types.OperationError(op, err)
 	}
 
-	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, deployBundleSuccessData{}))
 	log.Info("Activation requested")
+	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, deployBundleSuccessData{}))
 	return taskID, nil
 }
