@@ -59,31 +59,39 @@ func formatEventData(data EventData) string {
 		return ""
 	}
 	var b strings.Builder
+	needSeparator := false
+
 	for k, v := range data {
-		vs, ok := v.(fmt.Stringer)
-		if ok {
-			fmt.Fprintf(&b, "%s=%q ", k, vs.String())
+		if needSeparator {
+			b.WriteString(", ")
+		} else {
+			needSeparator = true
 		}
+		fmt.Fprintf(&b, "%s=%q", k, v)
 	}
-	return fmt.Sprintf("(%s)", b.String())
+	result := b.String()
+	if result == "" {
+		return ""
+	}
+	return fmt.Sprintf("(%s)", result)
 }
 
 func (e *cliEmitter) Emit(event *Event) error {
-	op, phase, errCode := SplitEventType(event.Type)
-	opName, ok := opNameMap[op]
+	opName, ok := opNameMap[event.op]
 	if !ok {
-		opName = string(op)
+		// Skip Operations we don't handle, like PublishOp
+		return nil
 	}
-	switch phase {
+	switch event.phase {
 	case StartPhase:
-		fmt.Fprintf(e.writer, "%-35s %s", opName+"...", formatEventData(event.Data))
+		fmt.Fprintf(e.writer, "%-35s", opName+"...")
 		e.writer.NeedNewline = true
 	case SuccessPhase:
 		e.writer.NeedNewline = false
 		fmt.Fprintln(e.writer, "[OK]", formatEventData(event.Data))
 	case FailurePhase:
 		e.writer.NeedNewline = false
-		fmt.Fprintln(e.writer, "[ERROR]", errCode, formatEventData(event.Data))
+		fmt.Fprintln(e.writer, "[ERROR]", event.errCode, formatEventData(event.Data))
 	}
 	return nil
 }
