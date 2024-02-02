@@ -4,7 +4,6 @@ package events
 
 import (
 	"encoding/json"
-	"os"
 
 	"github.com/r3labs/sse/v2"
 )
@@ -33,8 +32,6 @@ func (e *SSEEmitter) Emit(event *Event) error {
 	if err != nil {
 		return err
 	}
-	os.Stderr.Write(eventJSON)
-	os.Stderr.Write([]byte("\n"))
 	e.server.Publish("messages",
 		&sse.Event{
 			Data:  eventJSON,
