@@ -276,7 +276,7 @@ export const useEventStore = defineStore('event', () => {
     const statusList = currentPublishStatus.value.status.steps[currentStep].status;
     if (statusList) {
       const statusMsg = statusList[statusList.length - 1];
-      stepStatus = `${statusMsg.message}: ${statusMsg.name}`;
+      stepStatus = `Package: ${statusMsg.name}`;
     } else {
       const stepCompletion = currentPublishStatus.value.status.steps[currentStep].completion;
       stepStatus = publishStepCompletionStatusNames[stepCompletion];
@@ -664,16 +664,6 @@ export const useEventStore = defineStore('event', () => {
       }
       publishStatus.steps.restorePythonEnv.status.push(msg.data);
       publishStatus.steps.restorePythonEnv.allMsgs.push(msg);
-      // status msg.data = {
-      //     "level": "INFO",
-      //     "message": "Package restore",
-      //     "localId": "E_JAH58AYf5l7bLq",
-      //     "name": "setuptools",
-      //     "runtime": "python",
-      //     "source": "server.log",
-      //     "status": "install",
-      //     "version": ""
-      // }
     }
   };
 

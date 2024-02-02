@@ -15,12 +15,12 @@ import (
 
 type createBundleStartData struct{}
 type createBundleSuccessData struct {
-	Filename string
+	Filename string `mapstructure:"filename"`
 }
 
 type uploadBundleStartData struct{}
 type uploadBundleSuccessData struct {
-	BundleID types.BundleID
+	BundleID types.BundleID `mapstructure:"bundleId"`
 }
 
 func (p *defaultPublisher) createAndUploadBundle(

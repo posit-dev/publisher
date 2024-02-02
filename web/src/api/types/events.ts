@@ -203,9 +203,6 @@ export function isOpenSse(arg: Events):
 export interface PublishStart extends EventStreamMessage {
   type: 'publish/start',
   data: {
-    // "level": "INFO", "message": "Starting deployment to server", "localId": "O-6_TzmRRBWtd4rm", "server": "https://rsc.radixu.com"
-    level: string,
-    message: string,
     localId: string,
     server: string,
   }
@@ -219,9 +216,6 @@ export function isPublishStart(arg: Events):
 export interface PublishCheckCapabilitiesStart extends EventStreamMessage {
   type: 'publish/checkCapabilities/start',
   data: {
-    // "level": "INFO", "message": "Checking configuration against server capabilities", "localId": "DVP6zKpd_QzudMUS"
-    level: string,
-    message: string,
     localId: string,
   }
 }
@@ -247,11 +241,7 @@ export function isPublishCheckCapabilitiesLog(arg: Events):
 export interface PublishCheckCapabilitiesSuccess extends EventStreamMessage {
   type: 'publish/checkCapabilities/success',
   data: {
-    // "level": "INFO", "message": "Done", "localId": "DVP6zKpd_QzudMUS", "status": "pass"
-    level: string,
-    message: string,
     localId: string,
-    status: string,
   }
 }
 export type OnPublishCheckCapabilitiesSuccessCallback =
@@ -277,11 +267,7 @@ export function isPublishCheckCapabilitiesFailure(arg: Events):
 export interface PublishCreateNewDeploymentStart extends EventStreamMessage {
   type: 'publish/createNewDeployment/start',
   data: {
-    // "level": "INFO", "message": "Creating deployment", "localId": "O-6_TzmRRBWtd4rm"
-    level: string,
-    message: string,
     localId: string,
-    contentId: string,
     saveName: string,
   }
 }
@@ -295,11 +281,9 @@ export function isPublishCreateNewDeploymentStart(arg: Events):
 export interface PublishCreateNewDeploymentSuccess extends EventStreamMessage {
   type: 'publish/createNewDeployment/success',
   data: {
-    // "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm"
-    level: string,
-    message: string,
-    saveName: string,
     localId: string,
+    contentId: string,
+    saveName: string,
   }
 }
 export type OnPublishCreateNewDeploymentSuccessCallback =
@@ -325,9 +309,6 @@ export function isPublishCreateNewDeploymentFailure(arg: Events):
 export interface PublishSetEnvVarsStart extends EventStreamMessage {
   type: 'publish/setEnvVars/start',
   data: {
-    // "level": "INFO", "message": "Creating deployment", "localId": "O-6_TzmRRBWtd4rm"
-    level: string,
-    message: string,
     localId: string,
   }
 }
@@ -340,8 +321,6 @@ export function isPublishSetEnvVarsStart(arg: Events):
 export interface PublishSetEnvVarsSuccess extends EventStreamMessage {
   type: 'publish/setEnvVars/success',
   data: {
-    level: string,
-    message: string,
     localId: string,
     // should include echo of variables/values
   }
@@ -369,9 +348,6 @@ export function isPublishSetEnvVarsFailure(arg: Events):
 export interface PublishCreateBundleStart extends EventStreamMessage {
   type: 'publish/createBundle/start',
   data: {
-    // "level": "INFO", "message": "Creating bundle", "localId": "O-6_TzmRRBWtd4rm"
-    level: string,
-    message: string,
     localId: string,
   }
 }
@@ -395,11 +371,8 @@ export function isPublishCreateBundleLog(arg: Events):
 export interface PublishCreateBundleSuccess extends EventStreamMessage {
   type: 'publish/createBundle/success',
   data: {
-    // "level": "INFO", "message": "Done", "filename": "/var/folders/p8/lrgc44n53k92bbdj58jbnmj40000gn/T/bundle-2901151170.tar.gz", "localId": "O-6_TzmRRBWtd4rm"
-    level: string,
-    message: string,
-    filename: string,
     localId: string,
+    filename: string,
   }
 }
 export type OnPublishCreateBundleSuccessCallback = (msg: PublishCreateBundleSuccess) => void;
@@ -423,17 +396,8 @@ export function isPublishCreateBundleFailure(arg: Events):
 export interface PublishCreateDeploymentStart extends EventStreamMessage {
   type: 'publish/createDeployment/start',
   data: {
-    // {
-    // "level": "INFO",
-    // "message": "Updating deployment settings",
-    // "contentId": "73078698-65d5-4839-9b42-a3ff32f7b25d",
-    // "localId": "ZGgbfUM6lLxh1VYN",
-    // "saveName": ""
-    // }
-    level: string,
-    message: string,
-    contentId: string,
     localId: string,
+    contentId: string,
     saveName: string,
   }
 }
@@ -459,11 +423,6 @@ export function isPublishCreateDeploymentLog(arg: Events):
 export interface PublishCreateDeploymentSuccess extends EventStreamMessage {
   type: 'publish/createDeployment/success',
   data: {
-    // "level": "INFO", "message": "Done", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm"
-    level: string,
-    message: string,
-    contentId: string,
-    saveName: string,
     localId: string,
   }
 }
@@ -490,9 +449,6 @@ export function isPublishCreateDeploymentFailure(arg: Events):
 export interface PublishUploadBundleStart extends EventStreamMessage {
   type: 'publish/uploadBundle/start',
   data: {
-    // "level": "INFO", "message": "Uploading deployment bundle", "localId": "O-6_TzmRRBWtd4rm"
-    level: string,
-    message: string,
     localId: string,
   }
 }
@@ -518,11 +474,8 @@ export function isPublishUploadBundleLog(arg: Events):
 export interface PublishUploadBundleSuccess extends EventStreamMessage {
   type: 'publish/uploadBundle/success',
   data: {
-    // "level": "INFO", "message": "Done", "bundleId": "44523", "localId": "O-6_TzmRRBWtd4rm"
-    level: string,
-    message: string,
-    bundleId: string,
     localId: string,
+    bundleId: string,
   }
 }
 export type OnPublishUploadBundleSuccessCallback = (msg: PublishUploadBundleSuccess) => void;
@@ -546,9 +499,6 @@ export function isPublishUploadBundleFailure(arg: Events):
 export interface PublishDeployBundleStart extends EventStreamMessage {
   type: 'publish/deployBundle/start',
   data: {
-    // "level": "INFO", "message": "Uploading deployment bundle", "localId": "O-6_TzmRRBWtd4rm"
-    level: string,
-    message: string,
     localId: string,
   }
 }
@@ -574,9 +524,6 @@ export function isPublishDeployBundleLog(arg: Events):
 export interface PublishDeployBundleSuccess extends EventStreamMessage {
   type: 'publish/deployBundle/success',
   data: {
-    // "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm", "taskId": "hKKvYQzemoXdNB0f"
-    level: string,
-    message: string,
     localId: string,
     taskId: string,
   }
@@ -602,11 +549,7 @@ export function isPublishDeployBundleFailure(arg: Events):
 export interface PublishRestorePythonEnvStart extends EventStreamMessage {
   type: 'publish/restorePythonEnv/start',
   data: {
-    // "level": "INFO", "message": "Building FastAPI application...", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log"
-    level: string,
-    message: string,
     localId: string,
-    source: string,
   }
 }
 export type OnPublishRestorePythonEnvStartCallback = (msg: PublishRestorePythonEnvStart) => void;
@@ -645,12 +588,9 @@ type packageStatus = 'download+install' | 'download' | 'install';
 export interface PublishRestorePythonEnvStatus extends EventStreamMessage {
   type: 'publish/restorePythonEnv/status',
   data: {
-    level: 'INFO',
     localId: string,
-    message: string,
     name: string,
     runtime: packageRuntime,
-    source: 'serverp.log',
     status: packageStatus,
     version: string
   }
@@ -666,11 +606,7 @@ export function isPublishRestorePythonEnvStatus(arg: Events):
 export interface PublishRestorePythonEnvSuccess extends EventStreamMessage {
   type: 'publish/restorePythonEnv/success',
   data: {
-    // "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log"
-    level: string,
-    message: string,
     localId: string,
-    source: string,
   }
 }
 export type OnPublishRestorePythonEnvSuccessCallback =
@@ -696,11 +632,7 @@ export function isPublishRestorePythonEnvFailure(arg: Events):
 export interface PublishRunContentStart extends EventStreamMessage {
   type: 'publish/runContent/start',
   data: {
-    // "level": "INFO", "message": "Launching FastAPI application...", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log"
-    level: string,
-    message: string,
     localId: string,
-    source: string,
   }
 }
 export type OnPublishRunContentStartCallback = (msg: PublishRunContentStart) => void;
@@ -723,11 +655,7 @@ export function isPublishRunContentLog(arg: Events):
 export interface PublishRunContentSuccess extends EventStreamMessage {
   type: 'publish/runContent/success',
   data: {
-    // "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log"
-    level: string,
-    message: string,
     localId: string,
-    source: string,
   }
 }
 export type OnPublishRunContentSuccessCallback = (msg: PublishRunContentSuccess) => void;
@@ -751,11 +679,7 @@ export function isPublishRunContentFailure(arg: Events):
 export interface PublishSetVanityURLStart extends EventStreamMessage {
   type: 'publish/setVanityURL/start',
   data: {
-    // "level": "INFO", "message": "Launching FastAPI application...", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log"
-    level: string,
-    message: string,
     localId: string,
-    source: string,
   }
 }
 export type OnPublishSetVanityURLStartCallback = (msg: PublishSetVanityURLStart) => void;
@@ -778,11 +702,7 @@ export function isPublishSetVanityURLLog(arg: Events):
 export interface PublishSetVanityURLSuccess extends EventStreamMessage {
   type: 'publish/setVanityURL/success',
   data: {
-    // "level": "INFO", "message": "Done", "localId": "O-6_TzmRRBWtd4rm", "source": "serverp.log"
-    level: string,
-    message: string,
     localId: string,
-    source: string,
   }
 }
 export type OnPublishSetVanityURLSuccessCallback = (msg: PublishSetVanityURLSuccess) => void;
@@ -805,10 +725,8 @@ export function isPublishSetVanityURLFailure(arg: Events):
 export interface PublishValidateDeploymentStart extends EventStreamMessage {
   type: 'publish/validateDeployment/start',
   data: {
-    level: string,
-    message: string,
     localId: string,
-    source: string,
+    url: string,
   }
 }
 export type OnPublishValidateDeploymentStartCallback =
@@ -832,10 +750,7 @@ export function isPublishValidateDeploymentLog(arg: Events):
 export interface PublishValidateDeploymentSuccess extends EventStreamMessage {
   type: 'publish/validateDeployment/success',
   data: {
-    level: string,
-    message: string,
     localId: string,
-    source: string,
   }
 }
 export type OnPublishValidateDeploymentSuccessCallback =
@@ -861,13 +776,10 @@ export function isPublishValidateDeploymentFailure(arg: Events):
 export interface PublishSuccess extends EventStreamMessage {
   type: 'publish/success',
   data: {
-    // "level": "INFO", "message": "Deployment information", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "dashboardUrl": "https://rsc.radixu.com/connect/#/apps/0d976b10-8f98-463c-9647-9738338f53d8", "directUrl": "https://rsc.radixu.com/content/0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm", "serverUrl": "https://rsc.radixu.com"
-    level: string,
-    message: string,
+    localId: string,
     contentId: string,
     dashboardUrl: string,
     directUrl: string,
-    localId: string,
     serverUrl: string,
   }
 }
@@ -879,16 +791,13 @@ export function isPublishSuccess(arg: Events): arg is PublishSuccess {
 export interface PublishFailure extends EventStreamMessage {
   type: 'publish/failure',
   data: {
-    // "level": "ERROR", "message": "unexpected response from the server", "method": "GET", "status": 500, "url": "https://connect.localtest.me/rsc/dev-password/content/c565c960-7cdd-45da-be71-073531971409/", "dashboardUrl": "https://connect.localtest.me/rsc/dev-password/connect/#/apps/c565c960-7cdd-45da-be71-073531971409", "localId": "uqANWSJTNK7K0eWf"
-    level: string,
-    message: string,
     dashboardUrl: string,
     url: string,
     // and other non-defined attributes
   },
   error: string, // translated internally
-
 }
+
 export type OnPublishFailureCallback = (msg: PublishFailure) => void;
 export function isPublishFailure(arg: Events):
   arg is PublishFailure {

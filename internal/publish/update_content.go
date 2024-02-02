@@ -13,13 +13,13 @@ import (
 )
 
 type updateContentStartData struct {
-	ContentID types.ContentID
-	SaveName  string
+	ContentID types.ContentID `mapstructure:"contentId"`
+	SaveName  string          `mapstructure:"saveName"`
 }
 type updateContentSuccessData struct{}
 
 type DeploymentNotFoundErrorDetails struct {
-	ContentID types.ContentID
+	ContentID types.ContentID `mapstructure:"contentId"`
 }
 
 func (p *defaultPublisher) updateContent(

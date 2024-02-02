@@ -318,18 +318,18 @@ var pythonCollectingPackagePattern = regexp.MustCompile(`Collecting (\S+)==(\S+)
 var pythonInstallingPackagePattern = regexp.MustCompile(`Found existing installation: (\S+) ()\S+`)
 
 type packageStatusEvent struct {
-	runtime packageRuntime
-	status  packageStatus
-	name    string
-	version string
+	Name    string         `mapstructure:"name"`
+	Runtime packageRuntime `mapstructure:"runtime"`
+	Status  packageStatus  `mapstructure:"status"`
+	Version string         `mapstructure:"version"`
 }
 
 func makePackageEvent(match []string, rt packageRuntime, status packageStatus) *packageStatusEvent {
 	return &packageStatusEvent{
-		runtime: rt,
-		status:  status,
-		name:    match[1],
-		version: match[2],
+		Runtime: rt,
+		Status:  status,
+		Name:    match[1],
+		Version: match[2],
 	}
 }
 
@@ -384,12 +384,6 @@ func (c *ConnectClient) handleTaskUpdate(task *taskDTO, op types.Operation, log 
 		event := packageEventFromLogLine(line)
 		if event != nil {
 			c.emitter.Emit(events.New(op, events.StatusPhase, events.NoError, event))
-			log.Info("Package restore",
-				"runtime", event.runtime,
-				"status", event.status,
-				"name", event.name,
-				"version", event.version,
-				logging.LogKeyOp, op)
 		}
 	}
 	if task.Finished {
