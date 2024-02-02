@@ -94,7 +94,6 @@ import {
   isPublishCreateDeploymentStart,
   isPublishCreateNewDeploymentSuccess,
   isPublishRestorePythonEnvLog,
-  isPublishRestorePythonEnvStatus,
   isPublishSetVanityURLLog,
   isPublishValidateDeploymentLog
 } from 'src/api/types/events';
@@ -108,7 +107,7 @@ const props = defineProps({
 const hasError = computed(() => props.messages.some(msg => isErrorEventStreamMessage(msg)));
 
 const shouldSkipMessage = (msg: EventStreamMessage): boolean => {
-  return msg.type.endsWith('/log') && msg.data.level === 'DEBUG';
+  return (msg.type.endsWith('/log') && msg.data.level === 'DEBUG') || !formatMsg(msg);
 };
 
 const formatMsg = (msg: EventStreamMessage): string => {
@@ -137,8 +136,6 @@ const formatMsg = (msg: EventStreamMessage): string => {
     isPublishValidateDeploymentLog(msg)
   ) {
     return `${msg.data.message} ${msg.data.path}`;
-  } else if (isPublishRestorePythonEnvStatus(msg)) {
-    return `Package: ${msg.data.name} (${msg.data.version})`;
   } else if (isErrorEventStreamMessage(msg)) {
     return `${msg.data.error}`;
   }
