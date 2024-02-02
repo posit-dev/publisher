@@ -6,7 +6,10 @@
   >
     <template v-if="compact">
       <p>
-        Created on {{ formatDateString(deployment.createdAt) }}
+        Created
+        <relative-time :datetime="deployment.createdAt">
+          {{ formatDateString(deployment.createdAt) }}
+        </relative-time>
       </p>
       <div
         class="flex items-center"
@@ -21,9 +24,10 @@
       </div>
     </template>
     <template v-else>
-      <p>
-        Created on {{ formatDateString(deployment.createdAt) }}
-      </p>
+      Created
+      <relative-time :datetime="deployment.createdAt">
+        {{ formatDateString(deployment.createdAt) }}
+      </relative-time>
       <p class="text-bold">
         An error has been detected:
       </p>

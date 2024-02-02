@@ -34,7 +34,12 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     vue({
-      template: { transformAssetUrls }
+      template: {
+        transformAssetUrls,
+        compilerOptions: {
+          isCustomElement: tag => tag === ('relative-time'),
+        }
+      }
     }),
     quasar({
       sassVariables: 'src/quasar-variables.sass'
