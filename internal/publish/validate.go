@@ -9,7 +9,10 @@ import (
 	"github.com/rstudio/connect-client/internal/types"
 )
 
-type validateStartData struct{}
+type validateStartData struct {
+	DirectURL string `mapstructure:"url"`
+}
+
 type validateSuccessData struct{}
 
 func (p *defaultPublisher) validateContent(
@@ -20,7 +23,9 @@ func (p *defaultPublisher) validateContent(
 	op := events.PublishValidateDeploymentOp
 	log = log.WithArgs(logging.LogKeyOp, op)
 
-	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, validateStartData{}))
+	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, validateStartData{
+		DirectURL: getDirectURL(p.Account.URL, p.Target.ID),
+	}))
 	log.Info("Validating Deployment")
 
 	err := client.ValidateDeployment(contentID, log)

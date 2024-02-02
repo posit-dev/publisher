@@ -88,6 +88,7 @@ import { PropType, computed } from 'vue';
 import {
   EventStreamMessage,
   isErrorEventStreamMessage,
+  isPublishCheckCapabilitiesLog,
   isPublishCreateBundleLog,
   isPublishCreateBundleSuccess,
   isPublishCreateDeploymentStart,
@@ -111,12 +112,16 @@ const shouldSkipMessage = (msg: EventStreamMessage): boolean => {
 };
 
 const formatMsg = (msg: EventStreamMessage): string => {
-  if (isPublishCreateNewDeploymentSuccess(msg)) {
-    return `${msg.data.message} ${msg.data.saveName}`;
+  if (isPublishCheckCapabilitiesLog(msg)) {
+    if (msg.data.username) {
+      return `${msg.data.message}: username ${msg.data.username}, email ${msg.data.email}`;
+    }
+  } else if (isPublishCreateNewDeploymentSuccess(msg)) {
+    return `Created new deployment as ${msg.data.saveName}`;
   } else if (isPublishCreateBundleSuccess(msg)) {
-    return `${msg.data.message} ${msg.data.filename}`;
+    return `Prepared file archive: ${msg.data.filename}`;
   } else if (isPublishCreateDeploymentStart(msg)) {
-    return `ContentId: ${msg.data.contentId}`;
+    return `Updating existing deployment with ID ${msg.data.contentId}`;
   } else if (isPublishCreateBundleLog(msg)) {
     if (msg.data.sourceDir) {
       return `${msg.data.message} ${msg.data.sourceDir}`;
@@ -133,7 +138,7 @@ const formatMsg = (msg: EventStreamMessage): string => {
   ) {
     return `${msg.data.message} ${msg.data.path}`;
   } else if (isPublishRestorePythonEnvStatus(msg)) {
-    return `${msg.data.message} ${msg.data.name} (${msg.data.version})`;
+    return `Package: ${msg.data.name} (${msg.data.version})`;
   } else if (isErrorEventStreamMessage(msg)) {
     return `${msg.data.error}`;
   }

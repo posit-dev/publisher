@@ -10,7 +10,9 @@ import (
 )
 
 type deployBundleStartData struct{}
-type deployBundleSuccessData struct{}
+type deployBundleSuccessData struct {
+	TaskID types.TaskID `mapstructure:"taskId"`
+}
 
 func (p *defaultPublisher) deployBundle(
 	client connect.APIClient,
@@ -30,6 +32,8 @@ func (p *defaultPublisher) deployBundle(
 	}
 
 	log.Info("Activation requested")
-	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, deployBundleSuccessData{}))
+	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, deployBundleSuccessData{
+		TaskID: taskID,
+	}))
 	return taskID, nil
 }

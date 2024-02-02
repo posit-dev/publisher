@@ -9,17 +9,22 @@ import (
 	"github.com/rstudio/connect-client/internal/types"
 )
 
-type createDeploymentStartData struct{}
+type createDeploymentStartData struct {
+	SaveName string `mapstructure:"saveName"`
+}
+
 type createDeploymentSuccessData struct {
-	ContentID types.ContentID
-	SaveName  string
+	ContentID types.ContentID `mapstructure:"contentId"`
+	SaveName  string          `mapstructure:"saveName"`
 }
 
 func (p *defaultPublisher) createDeployment(client connect.APIClient, log logging.Logger) (types.ContentID, error) {
 	op := events.PublishCreateNewDeploymentOp
 	log = log.WithArgs(logging.LogKeyOp, op)
 
-	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, createDeploymentStartData{}))
+	p.emitter.Emit(events.New(op, events.StartPhase, events.NoError, createDeploymentStartData{
+		SaveName: p.SaveName,
+	}))
 	log.Info("Creating new deployment")
 
 	contentID, err := client.CreateDeployment(&connect.ConnectContent{}, log)
@@ -27,7 +32,7 @@ func (p *defaultPublisher) createDeployment(client connect.APIClient, log loggin
 		return "", types.OperationError(op, err)
 	}
 
-	log.Info("Created deployment", "content_id", contentID, "save_name", p.SaveName)
+	log.Info("Created deployment", "content_id", contentID)
 	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, createDeploymentSuccessData{
 		ContentID: contentID,
 		SaveName:  p.SaveName,

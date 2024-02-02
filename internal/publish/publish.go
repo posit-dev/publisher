@@ -5,6 +5,7 @@ package publish
 import (
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"time"
 
@@ -30,19 +31,24 @@ type defaultPublisher struct {
 	emitter events.Emitter
 }
 
+type baseEventData struct {
+	LocalID state.LocalDeploymentID `mapstructure:"localId"`
+}
+
 type publishStartData struct {
-	Server string
+	Server string `mapstructure:"server"`
 }
 
 type publishSuccessData struct {
-	DashboardURL string
-	DirectURL    string
-	AccountURL   string
-	ContentID    types.ContentID
+	ContentID    types.ContentID `mapstructure:"contentId"`
+	DashboardURL string          `mapstructure:"dashboardUrl"`
+	DirectURL    string          `mapstructure:"directUrl"`
+	ServerURL    string          `mapstructure:"serverUrl"`
 }
 
-type baseEventData struct {
-	LocalID state.LocalDeploymentID `json:"local_id"`
+type publishFailureData struct {
+	DashboardURL string `mapstructure:"dashboardUrl"`
+	DirectURL    string `mapstructure:"url"`
 }
 
 func NewFromState(s *state.State, emitter events.Emitter) (Publisher, error) {
@@ -114,11 +120,13 @@ func (p *defaultPublisher) isDeployed() bool {
 }
 
 func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
-	// Fail the phase
 	agentErr, ok := err.(*types.AgentError)
 	if !ok {
 		agentErr = types.NewAgentError(types.UnknownErrorCode, err, nil)
 	}
+	dashboardURL := ""
+	directURL := ""
+
 	// Record the error in the deployment record
 	if p.Target != nil {
 		p.Target.Error = agentErr
@@ -128,21 +136,32 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 		}
 		if p.isDeployed() {
 			// Provide URL in the event, if we got far enough in the deployment.
-			agentErr.Data["dashboard_url"] = getDashboardURL(p.Account.URL, p.Target.ID)
+			dashboardURL = getDashboardURL(p.Account.URL, p.Target.ID)
+			directURL = getDirectURL(p.Account.URL, p.Target.ID)
+			agentErr.Data["dashboard_url"] = dashboardURL
 		}
 	}
+
+	var data events.EventData
+	mapstructure.Decode(publishFailureData{
+		DashboardURL: dashboardURL,
+		DirectURL:    directURL,
+	}, &data)
+	maps.Copy(data, agentErr.GetData())
+
+	// Fail the phase
 	p.emitter.Emit(events.New(
 		agentErr.GetOperation(),
 		events.FailurePhase,
 		agentErr.GetCode(),
-		agentErr.GetData()))
+		data))
 
 	// Then fail the publishing operation as a whole
 	p.emitter.Emit(events.New(
 		events.PublishOp,
 		events.FailurePhase,
 		agentErr.GetCode(),
-		agentErr.GetData()))
+		data))
 }
 
 func (p *defaultPublisher) publish(
@@ -170,7 +189,7 @@ func (p *defaultPublisher) publish(
 		p.emitter.Emit(events.New(events.PublishOp, events.SuccessPhase, events.NoError, publishSuccessData{
 			DashboardURL: getDashboardURL(p.Account.URL, p.Target.ID),
 			DirectURL:    getDirectURL(p.Account.URL, p.Target.ID),
-			AccountURL:   p.Account.URL,
+			ServerURL:    p.Account.URL,
 			ContentID:    p.Target.ID,
 		}))
 	}

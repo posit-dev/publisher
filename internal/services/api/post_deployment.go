@@ -22,7 +22,7 @@ type PostDeploymentRequestBody struct {
 }
 
 type PostDeploymentsReponse struct {
-	LocalID state.LocalDeploymentID `json:"local_id"` // Unique ID of this publishing operation. Only valid for this run of the agent.
+	LocalID state.LocalDeploymentID `json:"localId"` // Unique ID of this publishing operation. Only valid for this run of the agent.
 }
 
 var stateFactory = state.New
