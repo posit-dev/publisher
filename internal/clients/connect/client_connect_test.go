@@ -5,12 +5,15 @@ package connect
 import (
 	"errors"
 	"io/fs"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/clients/http_client"
 	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/events/eventstest"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/logging/loggingtest"
 	"github.com/rstudio/connect-client/internal/types"
@@ -57,41 +60,28 @@ type taskTest struct {
 }
 
 func (s *ConnectClientSuite) TestWaitForTask() {
-	log := loggingtest.NewMockLogger()
-
-	str := mock.AnythingOfType("string")
-	anything := mock.Anything
-	log.On("Info", str, str, anything)
-
-	client, err := NewConnectClient(&accounts.Account{}, time.Second, events.NewNullEmitter(), log)
+	var actualPackages []packageStatusEvent
+	emitter := eventstest.NewMockEmitter()
+	emitter.On("Emit", mock.Anything).Run(func(args mock.Arguments) {
+		event := args.Get(0).(*events.Event)
+		if strings.HasSuffix(event.Type, "/status") {
+			var data packageStatusEvent
+			err := mapstructure.Decode(event.Data, &data)
+			s.NoError(err)
+			actualPackages = append(actualPackages, data)
+		}
+	}).Return(nil)
+	client, err := NewConnectClient(&accounts.Account{}, time.Second, emitter, logging.New())
 	s.NoError(err)
 
-	expectedPackages := []struct {
-		rt      packageRuntime
-		status  packageStatus
-		name    string
-		version string
-	}{
-		{pythonRuntime, installPackage, "wheel", ""},
-		{pythonRuntime, installPackage, "setuptools", ""},
-		{pythonRuntime, installPackage, "pip", ""},
-		{pythonRuntime, downloadPackage, "anyio", "3.6.2"},
-		{pythonRuntime, downloadPackage, "argon2-cffi", "21.3.0"},
-		{rRuntime, downloadAndInstallPackage, "R6", "2.5.1"},
-		{rRuntime, downloadAndInstallPackage, "Rcpp", "1.0.10"},
-	}
-	for _, pkg := range expectedPackages {
-		op := events.PublishRestorePythonEnvOp
-		if pkg.rt == rRuntime {
-			op = events.PublishRestoreREnvOp
-		}
-		log.On("Info",
-			"Package restore",
-			"runtime", pkg.rt,
-			"status", pkg.status,
-			"name", pkg.name,
-			"version", pkg.version,
-			logging.LogKeyOp, op)
+	expectedPackages := []packageStatusEvent{
+		{"wheel", pythonRuntime, installPackage, ""},
+		{"setuptools", pythonRuntime, installPackage, ""},
+		{"pip", pythonRuntime, installPackage, ""},
+		{"anyio", pythonRuntime, downloadPackage, "3.6.2"},
+		{"argon2-cffi", pythonRuntime, downloadPackage, "21.3.0"},
+		{"R6", rRuntime, downloadAndInstallPackage, "2.5.1"},
+		{"Rcpp", rRuntime, downloadAndInstallPackage, "1.0.10"},
 	}
 	taskID := types.TaskID("W3YpnrwUOQJxL5DS")
 
@@ -276,7 +266,7 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 	op := events.AgentOp
 
 	for _, test := range tests {
-		op, err = client.handleTaskUpdate(&test.task, op, log)
+		op, err = client.handleTaskUpdate(&test.task, op, logging.New())
 		if test.err != nil {
 			s.ErrorIs(err, test.err)
 		} else {
@@ -284,7 +274,7 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 		}
 		s.Equal(test.nextOp, op)
 	}
-	log.AssertExpectations(s.T())
+	s.Equal(expectedPackages, actualPackages)
 }
 
 func (s *ConnectClientSuite) TestWaitForTaskErr() {

@@ -200,7 +200,6 @@ func (s *PublishSuite) publishWithClient(
 		s.NotEqual("", record.DeployedAt)
 
 		logs := s.logBuffer.String()
-		s.Contains(logs, "save_name=saveAsThis")
 		s.Contains(logs, "content_id="+myContentID)
 
 		// Files are written after upload.
