@@ -28,9 +28,11 @@ import {
   PublishCreateDeploymentSuccess,
   PublishCreateDeploymentFailure,
   PublishUploadBundleStart,
+  PublishUploadBundleLog,
   PublishUploadBundleSuccess,
   PublishUploadBundleFailure,
   PublishDeployBundleStart,
+  PublishDeployBundleLog,
   PublishDeployBundleSuccess,
   PublishDeployBundleFailure,
   PublishRestorePythonEnvStart,
@@ -472,6 +474,16 @@ export const useEventStore = defineStore('event', () => {
     }
   };
 
+  const onPublishUploadBundleLog = (msg: PublishUploadBundleLog) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.uploadBundle.logs.push(msg);
+      publishStatus.steps.uploadBundle.allMsgs.push(msg);
+    }
+  };
+
   const onPublishUploadBundleSuccess = (msg: PublishUploadBundleSuccess) => {
     const localId = getLocalId(msg);
 
@@ -573,6 +585,16 @@ export const useEventStore = defineStore('event', () => {
       const publishStatus = currentPublishStatus.value.status;
       publishStatus.currentStep = 'deployBundle';
       publishStatus.steps.deployBundle.completion = 'inProgress';
+      publishStatus.steps.deployBundle.allMsgs.push(msg);
+    }
+  };
+
+  const onPublishDeployBundleLog = (msg: PublishDeployBundleLog) => {
+    const localId = getLocalId(msg);
+
+    if (currentPublishStatus.value.localId === localId) {
+      const publishStatus = currentPublishStatus.value.status;
+      publishStatus.steps.deployBundle.logs.push(msg);
       publishStatus.steps.deployBundle.allMsgs.push(msg);
     }
   };
@@ -827,6 +849,7 @@ export const useEventStore = defineStore('event', () => {
     eventStream.addEventMonitorCallback('publish/createBundle/failure', onPublishCreateBundleFailure);
 
     eventStream.addEventMonitorCallback('publish/uploadBundle/start', onPublishUploadBundleStart);
+    eventStream.addEventMonitorCallback('publish/uploadBundle/log', onPublishUploadBundleLog);
     eventStream.addEventMonitorCallback('publish/uploadBundle/success', onPublishUploadBundleSuccess);
     eventStream.addEventMonitorCallback('publish/uploadBundle/failure', onPublishUploadBundleFailure);
 
@@ -840,6 +863,7 @@ export const useEventStore = defineStore('event', () => {
     eventStream.addEventMonitorCallback('publish/setEnvVars/failure', onPublishSetEnvVarsFailure);
 
     eventStream.addEventMonitorCallback('publish/deployBundle/start', onPublishDeployBundleStart);
+    eventStream.addEventMonitorCallback('publish/deployBundle/log', onPublishDeployBundleLog);
     eventStream.addEventMonitorCallback('publish/deployBundle/success', onPublishDeployBundleSuccess);
     eventStream.addEventMonitorCallback('publish/deployBundle/failure', onPublishDeployBundleFailure);
 
