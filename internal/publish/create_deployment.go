@@ -27,10 +27,10 @@ func (p *defaultPublisher) createDeployment(client connect.APIClient, log loggin
 		return "", types.OperationError(op, err)
 	}
 
+	log.Info("Created deployment", "content_id", contentID, "save_name", p.SaveName)
 	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, createDeploymentSuccessData{
 		ContentID: contentID,
 		SaveName:  p.SaveName,
 	}))
-	log.Info("Created deployment", "content_id", contentID, "save_name", p.SaveName)
 	return contentID, nil
 }

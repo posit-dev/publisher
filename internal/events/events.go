@@ -15,6 +15,8 @@ import (
 type EventType = string
 type EventData = types.ErrorData
 
+var NoData = struct{}{}
+
 type Event struct {
 	Time time.Time
 	Type EventType
@@ -56,7 +58,7 @@ const (
 
 func New(op Operation, phase Phase, errCode ErrorCode, data any) *Event {
 	var eventData EventData
-	err := mapstructure.Decode(data, eventData)
+	err := mapstructure.Decode(data, &eventData)
 	if err != nil {
 		if project.DevelopmentBuild() {
 			panic(err)

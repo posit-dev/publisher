@@ -52,7 +52,7 @@ func (p *defaultPublisher) updateContent(
 		return err
 	}
 
-	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, updateContentSuccessData{}))
 	log.Info("Done updating settings")
+	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, updateContentSuccessData{}))
 	return nil
 }

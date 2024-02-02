@@ -33,7 +33,13 @@ type defaultPublisher struct {
 type publishStartData struct {
 	Server string
 }
-type publishSuccessData struct{}
+
+type publishSuccessData struct {
+	DashboardURL string
+	DirectURL    string
+	AccountURL   string
+	ContentID    types.ContentID
+}
 
 func New(
 	path util.Path,
@@ -81,8 +87,8 @@ func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log l
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "Dashboard URL: ", dashboardURL)
 	} else {
-		log.Info("Deployment successful",
-			logging.LogKeyOp, events.PublishOp,
+		log.Info("Deployment information",
+			logging.LogKeyOp, events.AgentOp,
 			"dashboardURL", dashboardURL,
 			"directURL", directURL,
 			"serverURL", accountURL,
@@ -95,7 +101,7 @@ func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log l
 }
 
 func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
-	log.Info("Publishing from directory", "path", p.Dir)
+	log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir)
 	manifest := bundles.NewManifestFromConfig(p.Config)
 	bundler, err := bundles.NewBundler(p.Dir, manifest, nil, log)
 	if err != nil {
@@ -114,6 +120,18 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 	if !ok {
 		agentErr = types.NewAgentError(types.UnknownErrorCode, err, nil)
 	}
+	// Record the error in the deployment record
+	if p.Target != nil {
+		p.Target.Error = agentErr
+		writeErr := p.writeDeploymentRecord(log)
+		if writeErr != nil {
+			log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", err)
+		}
+		if p.isDeployed() {
+			// Provide URL in the event, if we got far enough in the deployment.
+			agentErr.Data["dashboard_url"] = getDashboardURL(p.Account.URL, p.Target.ID)
+		}
+	}
 	p.emitter.Emit(events.New(
 		agentErr.GetOperation(),
 		events.FailurePhase,
@@ -126,17 +144,6 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 		events.FailurePhase,
 		agentErr.GetCode(),
 		agentErr.GetData()))
-
-	if p.Target != nil {
-		p.Target.Error = agentErr
-		writeErr := p.writeDeploymentRecord(log)
-		if writeErr != nil {
-			log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", err)
-		}
-		if p.isDeployed() {
-			agentErr.Data["dashboard_url"] = getDashboardURL(p.Account.URL, p.Target.ID)
-		}
-	}
 }
 
 func (p *defaultPublisher) publish(
@@ -155,13 +162,18 @@ func (p *defaultPublisher) publish(
 		return err
 	}
 	err = p.publishWithClient(bundler, p.Account, client, log)
+	if p.isDeployed() {
+		logAppInfo(os.Stderr, p.Account.URL, p.Target.ID, log, err)
+	}
 	if err != nil {
 		p.emitErrorEvents(err, log)
 	} else {
-		p.emitter.Emit(events.New(events.PublishOp, events.SuccessPhase, events.NoError, publishSuccessData{}))
-	}
-	if p.isDeployed() {
-		logAppInfo(os.Stderr, p.Account.URL, p.Target.ID, log, err)
+		p.emitter.Emit(events.New(events.PublishOp, events.SuccessPhase, events.NoError, publishSuccessData{
+			DashboardURL: getDashboardURL(p.Account.URL, p.Target.ID),
+			DirectURL:    getDirectURL(p.Account.URL, p.Target.ID),
+			AccountURL:   p.Account.URL,
+			ContentID:    p.Target.ID,
+		}))
 	}
 	return err
 }

@@ -36,7 +36,7 @@ func (p *defaultPublisher) setEnvVars(
 		return types.OperationError(op, err)
 	}
 
-	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, setEnvVarsSuccessData{}))
 	log.Info("Done setting environment variables")
+	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, setEnvVarsSuccessData{}))
 	return nil
 }

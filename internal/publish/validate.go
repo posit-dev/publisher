@@ -28,7 +28,7 @@ func (p *defaultPublisher) validateContent(
 		return types.OperationError(op, err)
 	}
 
-	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, validateSuccessData{}))
 	log.Info("Done validating deployment")
+	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, validateSuccessData{}))
 	return nil
 }

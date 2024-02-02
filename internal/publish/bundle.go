@@ -50,10 +50,10 @@ func (p *defaultPublisher) createAndUploadBundle(
 	if err != nil {
 		return "", types.OperationError(op, err)
 	}
+	prepareLog.Info("Done preparing files", "filename", bundleFile.Name())
 	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, createBundleSuccessData{
 		Filename: bundleFile.Name(),
 	}))
-	prepareLog.Info("Done preparing files", "filename", bundleFile.Name())
 
 	// Upload Bundle step
 	op = events.PublishUploadBundleOp
@@ -76,9 +76,9 @@ func (p *defaultPublisher) createAndUploadBundle(
 	if err != nil {
 		return "", err
 	}
+	uploadLog.Info("Done uploading files", "bundle_id", bundleID)
 	p.emitter.Emit(events.New(op, events.SuccessPhase, events.NoError, uploadBundleSuccessData{
 		BundleID: bundleID,
 	}))
-	uploadLog.Info("Done uploading files", "bundle_id", bundleID)
 	return bundleID, nil
 }
