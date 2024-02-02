@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/clients/connect"
@@ -18,7 +19,6 @@ import (
 	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
-	"github.com/rstudio/connect-client/internal/util"
 )
 
 type Publisher interface {
@@ -41,27 +41,24 @@ type publishSuccessData struct {
 	ContentID    types.ContentID
 }
 
-func New(
-	path util.Path,
-	accountName, configName, targetName, saveName string,
-	accountList accounts.AccountList,
-	emitter events.Emitter) (Publisher, error) {
+type baseEventData struct {
+	LocalID state.LocalDeploymentID `json:"local_id"`
+}
 
-	s, err := state.New(path, accountName, configName, targetName, saveName, accountList)
+func NewFromState(s *state.State, emitter events.Emitter) (Publisher, error) {
+	data := baseEventData{
+		LocalID: s.LocalID,
+	}
+	var dataMap events.EventData
+	err := mapstructure.Decode(data, &dataMap)
 	if err != nil {
 		return nil, err
 	}
+	emitter = events.NewDataEmitter(dataMap, emitter)
 	return &defaultPublisher{
 		State:   s,
 		emitter: emitter,
 	}, nil
-}
-
-func NewFromState(s *state.State, emitter events.Emitter) Publisher {
-	return &defaultPublisher{
-		State:   s,
-		emitter: emitter,
-	}
 }
 
 func getDashboardURL(accountURL string, contentID types.ContentID) string {

@@ -861,7 +861,7 @@ export function isPublishValidateDeploymentFailure(arg: Events):
 export interface PublishSuccess extends EventStreamMessage {
   type: 'publish/success',
   data: {
-    // "level": "INFO", "message": "Deployment successful", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "dashboardUrl": "https://rsc.radixu.com/connect/#/apps/0d976b10-8f98-463c-9647-9738338f53d8", "directUrl": "https://rsc.radixu.com/content/0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm", "serverUrl": "https://rsc.radixu.com"
+    // "level": "INFO", "message": "Deployment information", "contentId": "0d976b10-8f98-463c-9647-9738338f53d8", "dashboardUrl": "https://rsc.radixu.com/connect/#/apps/0d976b10-8f98-463c-9647-9738338f53d8", "directUrl": "https://rsc.radixu.com/content/0d976b10-8f98-463c-9647-9738338f53d8", "localId": "O-6_TzmRRBWtd4rm", "serverUrl": "https://rsc.radixu.com"
     level: string,
     message: string,
     contentId: string,
