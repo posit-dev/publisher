@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/r3labs/sse/v2"
-	"github.com/rstudio/connect-client/internal/events/eventstest"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
@@ -65,7 +64,7 @@ func (s *SSEHandlerSuite) TestWithGroup() {
 }
 
 func (s *SSEHandlerSuite) TestHandleNoAttrs() {
-	server := eventstest.NewMockSSEServer()
+	server := NewMockSSEServer()
 	emitter := NewSSEEmitter(server)
 	handler := NewSSEHandler(emitter)
 
@@ -93,7 +92,7 @@ func (s *SSEHandlerSuite) TestHandleNoAttrs() {
 }
 
 func (s *SSEHandlerSuite) TestHandleWithAttrs() {
-	server := eventstest.NewMockSSEServer()
+	server := NewMockSSEServer()
 	emitter := NewSSEEmitter(server)
 	handler := NewSSEHandler(emitter)
 
