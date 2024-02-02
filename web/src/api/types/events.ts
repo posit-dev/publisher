@@ -83,10 +83,12 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/createDeployment/failure': OnPublishCreateDeploymentFailureCallback
 
   'publish/uploadBundle/start': OnPublishUploadBundleStartCallback
+  'publish/uploadBundle/log': OnPublishUploadBundleLogCallback
   'publish/uploadBundle/success': OnPublishUploadBundleSuccessCallback
   'publish/uploadBundle/failure': OnPublishUploadBundleFailureCallback
 
   'publish/deployBundle/start': OnPublishDeployBundleStartCallback
+  'publish/deployBundle/log': OnPublishDeployBundleLogCallback
   'publish/deployBundle/success': OnPublishDeployBundleSuccessCallback
   'publish/deployBundle/failure': OnPublishDeployBundleFailureCallback
 
@@ -500,6 +502,19 @@ export function isPublishUploadBundleStart(arg: Events):
   return arg.type === 'publish/uploadBundle/start';
 }
 
+export interface PublishUploadBundleLog extends EventStreamMessage {
+  type: 'publish/uploadBundle/log',
+  data: {
+    // structured data not guaranteed, use selective or generic queries
+    // from data map
+  }
+}
+export type OnPublishUploadBundleLogCallback = (msg: PublishUploadBundleLog) => void;
+export function isPublishUploadBundleLog(arg: Events):
+  arg is PublishUploadBundleLog {
+  return arg.type === 'publish/uploadBundle/log';
+}
+
 export interface PublishUploadBundleSuccess extends EventStreamMessage {
   type: 'publish/uploadBundle/success',
   data: {
@@ -541,6 +556,19 @@ export type OnPublishDeployBundleStartCallback = (msg: PublishDeployBundleStart)
 export function isPublishDeployBundleStart(arg: Events):
   arg is PublishDeployBundleStart {
   return arg.type === 'publish/deployBundle/start';
+}
+
+export interface PublishDeployBundleLog extends EventStreamMessage {
+  type: 'publish/deployBundle/log',
+  data: {
+    // structured data not guaranteed, use selective or generic queries
+    // from data map
+  }
+}
+export type OnPublishDeployBundleLogCallback = (msg: PublishDeployBundleLog) => void;
+export function isPublishDeployBundleLog(arg: Events):
+  arg is PublishDeployBundleLog {
+  return arg.type === 'publish/deployBundle/log';
 }
 
 export interface PublishDeployBundleSuccess extends EventStreamMessage {

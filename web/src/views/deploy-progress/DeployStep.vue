@@ -126,8 +126,9 @@ const formatMsg = (msg: EventStreamMessage): string => {
       return `${msg.data.message} ${msg.data.sourceDir}`;
     } else if (msg.data.totalBytes) {
       return `${msg.data.message} ${msg.data.files} files, ${msg.data.totalBytes} bytes`;
+    } else if (msg.data.path) {
+      return `${msg.data.message} ${msg.data.path} (${msg.data.size} bytes)`;
     }
-    return `${msg.data.message} ${msg.data.path} (${msg.data.size} bytes)`;
   } else if (isPublishRestorePythonEnvLog(msg)) {
     return `${msg.data.message}`;
   } else if (
