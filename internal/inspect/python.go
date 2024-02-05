@@ -17,6 +17,7 @@ import (
 type PythonInspector interface {
 	InspectPython() (*config.Python, error)
 	CreateRequirementsFile(base util.Path, dest util.Path) error
+	GetRequirements(base util.Path) ([]string, string, error)
 }
 
 type defaultPythonInspector struct {
@@ -124,38 +125,35 @@ func (i *defaultPythonInspector) getPythonVersion() (string, error) {
 	return version, nil
 }
 
-func (i *defaultPythonInspector) miniFreeze(base util.Path, pythonExecutable string, dest util.Path) error {
-	specs, err := i.scanner.ScanDependencies(base, pythonExecutable)
-	if err != nil {
-		return err
-	}
-	f, err := dest.Create()
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	for _, spec := range specs {
-		_, err = fmt.Fprintln(f, spec)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (i *defaultPythonInspector) CreateRequirementsFile(base util.Path, dest util.Path) error {
+func (i *defaultPythonInspector) GetRequirements(base util.Path) ([]string, string, error) {
 	oldWD, err := util.Chdir(base.Path())
 	if err != nil {
-		return nil
+		return nil, "", err
 	}
 	defer util.Chdir(oldWD)
 
 	pythonExecutable, err := i.getPythonExecutable()
 	if err != nil {
+		return nil, "", err
+	}
+	specs, err := i.scanner.ScanDependencies(base, pythonExecutable)
+	if err != nil {
+		return nil, "", err
+	}
+	reqs := make([]string, 0, len(specs))
+	for _, spec := range specs {
+		reqs = append(reqs, spec.String())
+	}
+	return reqs, pythonExecutable, nil
+}
+
+func (i *defaultPythonInspector) CreateRequirementsFile(base util.Path, dest util.Path) error {
+	reqs, _, err := i.GetRequirements(base)
+	if err != nil {
 		return err
 	}
-	err = i.miniFreeze(base, pythonExecutable, dest)
+	contents := []byte(strings.Join(reqs, "\n") + "\n")
+	err = dest.WriteFile(contents, 0666)
 	if err != nil {
 		return err
 	}
