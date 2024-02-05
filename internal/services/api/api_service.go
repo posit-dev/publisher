@@ -1,4 +1,4 @@
-package ui
+package api
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -9,7 +9,6 @@ import (
 	"github.com/rs/cors"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
 	"github.com/rstudio/connect-client/internal/services/middleware"
@@ -22,7 +21,7 @@ import (
 
 const APIPrefix string = "api"
 
-func NewUIService(
+func NewService(
 	fragment string,
 	interactive bool,
 	openBrowserAt string,
@@ -34,11 +33,11 @@ func NewUIService(
 	dir util.Path,
 	lister accounts.AccountList,
 	log logging.Logger,
-	eventServer *sse.Server) *api.Service {
+	eventServer *sse.Server) *Service {
 
 	handler := RouterHandlerFunc(dir, lister, log, eventServer)
 
-	return api.NewService(
+	return newHTTPService(
 		handler,
 		listen,
 		fragment,
@@ -57,50 +56,50 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 
 	r := mux.NewRouter()
 	// GET /api/accounts
-	r.Handle(ToPath("accounts"), api.GetAccountsHandlerFunc(lister, log)).
+	r.Handle(ToPath("accounts"), GetAccountsHandlerFunc(lister, log)).
 		Methods(http.MethodGet)
 
 	// GET /api/accounts/{name}
-	r.Handle(ToPath("accounts", "{name}"), api.GetAccountHandlerFunc(lister, log)).
+	r.Handle(ToPath("accounts", "{name}"), GetAccountHandlerFunc(lister, log)).
 		Methods(http.MethodGet)
 
 	// POST /api/accounts/{name}/verify
-	r.Handle(ToPath("accounts", "{name}", "verify"), api.PostAccountVerifyHandlerFunc(lister, log)).
+	r.Handle(ToPath("accounts", "{name}", "verify"), PostAccountVerifyHandlerFunc(lister, log)).
 		Methods(http.MethodPost)
 
 	// GET /api/events
 	r.HandleFunc(ToPath("events"), eventServer.ServeHTTP)
 
 	// GET /api/files
-	r.Handle(ToPath("files"), api.GetFileHandlerFunc(base, filesService, pathsService, log)).
+	r.Handle(ToPath("files"), GetFileHandlerFunc(base, filesService, pathsService, log)).
 		Methods(http.MethodGet)
 
 	// GET /api/configurations
-	r.Handle(ToPath("configurations"), api.GetConfigurationsHandlerFunc(base, log)).
+	r.Handle(ToPath("configurations"), GetConfigurationsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
 	// POST /api/configurations
-	r.Handle(ToPath("configurations"), api.PostConfigurationsHandlerFunc(base, log)).
+	r.Handle(ToPath("configurations"), PostConfigurationsHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
 	// GET /api/deployments
-	r.Handle(ToPath("deployments"), api.GetDeploymentsHandlerFunc(base, log)).
+	r.Handle(ToPath("deployments"), GetDeploymentsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
 	// POST /api/deployments creates a new deployment record
-	r.Handle(ToPath("deployments"), api.PostDeploymentsHandlerFunc(base, log, lister)).
+	r.Handle(ToPath("deployments"), PostDeploymentsHandlerFunc(base, log, lister)).
 		Methods(http.MethodPost)
 
 	// GET /api/deployments/$NAME
-	r.Handle(ToPath("deployments", "{name}"), api.GetDeploymentHandlerFunc(base, log)).
+	r.Handle(ToPath("deployments", "{name}"), GetDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
 	// POST /api/deployments/$NAME intiates a deployment
-	r.Handle(ToPath("deployments", "{name}"), api.PostDeploymentHandlerFunc(base, log, lister)).
+	r.Handle(ToPath("deployments", "{name}"), PostDeploymentHandlerFunc(base, log, lister)).
 		Methods(http.MethodPost)
 
 	// DELETE /api/deployments/$NAME
-	r.Handle(ToPath("deployments", "{name}"), api.DeleteDeploymentHandlerFunc(base, log)).
+	r.Handle(ToPath("deployments", "{name}"), DeleteDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodDelete)
 
 	// Handle any frontend paths that leak out (for example, on a refresh)

@@ -31,7 +31,7 @@ type Service struct {
 
 var errTlsRequiredFiles error = errors.New("TLS requires both a private key file and a certificate chain file")
 
-func NewService(
+func newHTTPService(
 	handler http.HandlerFunc,
 	listen string,
 	path string,
