@@ -27,7 +27,7 @@ func GetQuartoPythonCode(content string) string {
 				inCodeBlock = false
 				codeLines = append(codeLines, "")
 			} else {
-				codeLines = append(codeLines, line)
+				codeLines = append(codeLines, strings.TrimRight(line, "\r"))
 			}
 		} else if strings.HasPrefix(line, "```{python") {
 			inCodeBlock = true
