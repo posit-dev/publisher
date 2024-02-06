@@ -19,7 +19,7 @@ deploy_assertion() {
         run curl --silent --show-error -L --max-redirs 0 --fail \
             -X GET \
             -H "Authorization: Key ${CONNECT_API_KEY}" "${CONNECT_SERVER}/__api__/v1/content/${GUID}"
-        assert_output --partial "\"app_mode\":\"${CONTENT_TYPE}\""
+        assert_output --partial "\"app_mode\":\"${APP_MODE}\""
     fi
 }
 
@@ -31,11 +31,47 @@ quarto_r_content=(
     "quarto-website-r-py-deps"
     )
 
+python_content_types=(
+    "python-flask"  "python-fastapi"  "python-shiny"
+     "python-bokeh"  "python-streamlit"  "python-flask"
+     "jupyter-voila" "jupyter-static"
+)
+
+quarto_content_types=(
+    "quarto" "quarto-static"
+)
 # deploy content with the env account
 @test "deploy ${CONTENT}" {
 
     run ${EXE} deploy ${CONTENT_PATH}/${CONTENT} -n ci_deploy
     deploy_assertion
+}
+
+@test "check config file for ${CONTENT}" {
+    python_version="$(python --version | awk '{print $2}')"
+    quarto_version="$(quarto --version)"
+
+    run cat ${CONTENT_PATH}/${CONTENT}/.posit/publish/default.toml
+    if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
+        skip "${CONTENT} is not yet supported"
+    else
+        if [[ ${python_content_type[@]} =~ ${CONTENT_TYPE} ]]; then
+            assert_line "type = '${CONTENT_TYPE}'"
+            assert_line "entrypoint = '${ENTRYPOINT}'"
+            assert_line "validate = true"
+            assert_line "title = '${TITLE}'"
+            assert_line "version = '${python_version}'"
+            assert_line "package-file = 'requirements.txt'"
+            assert_line "package-manager = 'pip'"
+        elif [[ ${quarto_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
+            assert_line "type = '${CONTENT_TYPE}'"
+            assert_line "entrypoint = '${ENTRYPOINT}'"
+            assert_line "validate = true"
+            assert_line "title = '${TITLE}'"
+            assert_line "version = '${quarto_version}'"
+            assert_line "engines = ['${QUARTO_ENGINE}']"
+        fi 
+    fi
 }
 
 # redeploy content from previous test
