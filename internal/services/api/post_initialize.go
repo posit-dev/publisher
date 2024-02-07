@@ -39,7 +39,7 @@ func PostInitializeHandlerFunc(base util.AbsolutePath, log logging.Logger) http.
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
-		cfg, err := initialize.Init(base, b.ConfigName, util.Path{}, log)
+		cfg, err := initialize.Init(base, b.ConfigName, util.Path{}, util.Path{}, log)
 		if err != nil {
 			cfg = config.New()
 		}

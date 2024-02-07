@@ -89,6 +89,23 @@ func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
 	return false
 }
 
+func (d *QuartoDetector) needsR(inspectOutput *quartoInspectOutput) bool {
+	if slices.Contains(inspectOutput.Engines, "knitr") {
+		return true
+	}
+	for _, script := range inspectOutput.Config.Project.PreRender {
+		if strings.HasSuffix(script, ".R") {
+			return true
+		}
+	}
+	for _, script := range inspectOutput.Config.Project.PostRender {
+		if strings.HasSuffix(script, ".R") {
+			return true
+		}
+	}
+	return false
+}
+
 func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput) string {
 	if inspectOutput.Config.Website.Title != "" {
 		return inspectOutput.Config.Website.Title
@@ -127,7 +144,7 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) (*config.Config, erro
 		d.log.Warn("quarto inspect failed", "error", err)
 		return nil, nil
 	}
-	if len(inspectOutput.Files.Input) == 0 {
+	if inspectOutput.Files.Input != nil && len(inspectOutput.Files.Input) == 0 {
 		return nil, nil
 	}
 	cfg := config.New()
@@ -142,6 +159,10 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) (*config.Config, erro
 	if d.needsPython(inspectOutput) {
 		// Indicate that Python inspection is needed.
 		cfg.Python = &config.Python{}
+	}
+	if d.needsR(inspectOutput) {
+		// Indicate that R inspection is needed.
+		cfg.R = &config.R{}
 	}
 	return cfg, nil
 }

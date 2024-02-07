@@ -223,6 +223,7 @@ func (s *QuartoDetectorSuite) TestInferTypeNonProject() {
 
 	t, err := detector.InferType(base)
 	s.Nil(err)
+	s.NotNil(t)
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
