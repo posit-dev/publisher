@@ -254,8 +254,8 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		},
 		"files": {
 		  "input": [
-			"/project/index.qmd",
-			"/project/about.qmd"
+			"/project/about.qmd",
+			"/project/index.qmd"
 		  ],
 		  "resources": [],
 		  "config": [

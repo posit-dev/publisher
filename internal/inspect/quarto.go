@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -85,23 +84,13 @@ func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
 	return false
 }
 
-func (d *QuartoDetector) hasQuartoFile(path util.Path) (bool, error) {
-	files, err := path.Glob("*.qmd")
-	if err != nil {
-		return false, err
-	}
-	if len(files) > 0 {
-		return true, nil
-	}
-	return false, nil
-}
-
 func (d *QuartoDetector) InferType(base util.Path) (*config.Config, error) {
-	haveQuartoFile, err := d.hasQuartoFile(base)
+	defaultEntrypoint := base.Base() + ".qmd"
+	entrypoint, _, err := d.InferEntrypoint(base, ".qmd", defaultEntrypoint, "index.qmd")
 	if err != nil {
 		return nil, err
 	}
-	if !haveQuartoFile {
+	if entrypoint == "" {
 		return nil, nil
 	}
 	inspectOutput, err := d.quartoInspect(base)
@@ -119,7 +108,7 @@ func (d *QuartoDetector) InferType(base util.Path) (*config.Config, error) {
 	}
 	cfg := config.New()
 	cfg.Type = config.ContentTypeQuarto
-	cfg.Entrypoint = filepath.Base(inspectOutput.Files.Input[0])
+	cfg.Entrypoint = entrypoint
 
 	cfg.Title = inspectOutput.Config.Website.Title
 	if cfg.Title == "" {
