@@ -4,7 +4,6 @@ package detectors
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -28,8 +27,6 @@ func NewQuartoDetector() *QuartoDetector {
 		log:             logging.New(),
 	}
 }
-
-var errNoQuartoKnitrSupport = errors.New("quarto with knitr engine is not yet supported")
 
 type quartoInspectOutput struct {
 	// Only the fields we use are included; the rest
@@ -130,8 +127,8 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) (*config.Config, erro
 		d.log.Warn("quarto inspect failed", "error", err)
 		return nil, nil
 	}
-	if slices.Contains(inspectOutput.Engines, "knitr") {
-		return nil, errNoQuartoKnitrSupport
+	if len(inspectOutput.Files.Input) == 0 {
+		return nil, nil
 	}
 	cfg := config.New()
 	cfg.Type = config.ContentTypeQuarto
