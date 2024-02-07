@@ -3,8 +3,10 @@ package inspect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
+	"regexp"
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/config"
@@ -15,7 +17,7 @@ import (
 )
 
 type PythonInspector interface {
-	InspectPython() (*config.Python, error)
+	InspectPython(base util.Path) (*config.Python, error)
 	CreateRequirementsFile(base util.Path, dest util.Path) error
 }
 
@@ -47,13 +49,19 @@ func NewPythonInspector(pythonPath util.Path, log logging.Logger) PythonInspecto
 // The python version (and packages if needed) will
 // be determined by the specified pythonExecutable,
 // or by `python3` or `python` on $PATH.
-func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
-	pythonVersion, err := i.getPythonVersion()
+func (i *defaultPythonInspector) InspectPython(base util.Path) (*config.Python, error) {
+	version, err := i.getPythonVersionFromFile(base)
 	if err != nil {
 		return nil, err
 	}
+	if version == "" {
+		version, err = i.getPythonVersionFromExecutable()
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &config.Python{
-		Version:        pythonVersion,
+		Version:        version,
 		PackageFile:    PythonRequirementsFilename,
 		PackageManager: "pip",
 	}, nil
@@ -104,7 +112,56 @@ func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
 	}
 }
 
-func (i *defaultPythonInspector) getPythonVersion() (string, error) {
+var fullVersionRE = regexp.MustCompile(`^\d+\.\d+\.\d+`)
+var majorMinorVersionRE = regexp.MustCompile(`^\d+\.\d+`)
+var errInvalidPythonVersionFile = errors.New("the .python-version file contains an invalid version; expected the format x.y or x.y.z")
+
+func (i *defaultPythonInspector) getPythonVersionFromFile(base util.Path) (string, error) {
+	dir := base
+	for {
+		version, err := i.readPythonVersionFile(dir)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				// Look up from here
+				continue
+			} else {
+				return "", err
+			}
+		}
+		if version != "" {
+			return version, err
+		}
+		nextDir := dir.Dir()
+		if nextDir == dir {
+			// Nowhere to go from here
+			return "", nil
+		}
+		dir = nextDir
+	}
+}
+
+func (i *defaultPythonInspector) readPythonVersionFile(dir util.Path) (string, error) {
+	versionFile := dir.Join(".python-version")
+	contents, err := versionFile.ReadFile()
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return "", nil
+		}
+		return "", err
+	}
+	version := strings.TrimSpace(string(contents))
+	i.log.Info("Python version from .python-version file", "version", version)
+
+	if fullVersionRE.MatchString(version) {
+		return version, nil
+	} else if majorMinorVersionRE.MatchString(version) {
+		return version + ".0", nil
+	} else {
+		return "", errInvalidPythonVersionFile
+	}
+}
+
+func (i *defaultPythonInspector) getPythonVersionFromExecutable() (string, error) {
 	pythonExecutable, err := i.getPythonExecutable()
 	if err != nil {
 		return "", err

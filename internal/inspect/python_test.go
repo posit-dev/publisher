@@ -75,7 +75,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 	executor := NewMockPythonExecutor()
 	executor.On("RunCommand", pythonPath.String(), mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
-	version, err := inspector.getPythonVersion()
+	version, err := inspector.getPythonVersionFromExecutable()
 	s.NoError(err)
 	s.Equal("3.10.4", version)
 }
@@ -92,7 +92,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	testError := errors.New("test error from RunCommand")
 	executor.On("RunCommand", pythonPath.String(), mock.Anything, mock.Anything).Return(nil, testError)
 	inspector.executor = executor
-	version, err := inspector.getPythonVersion()
+	version, err := inspector.getPythonVersionFromExecutable()
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.Equal("", version)
@@ -106,7 +106,7 @@ func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	executor := NewMockPythonExecutor()
 	executor.On("RunCommand", mock.Anything, mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
-	version, err := inspector.getPythonVersion()
+	version, err := inspector.getPythonVersionFromExecutable()
 	s.NoError(err)
 	s.Equal("3.10.4", version)
 	executor.AssertExpectations(s.T())
@@ -124,9 +124,54 @@ func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
 	log := logging.New()
 	i := NewPythonInspector(util.Path{}, log)
 	inspector := i.(*defaultPythonInspector)
-	version, err := inspector.getPythonVersion()
+	version, err := inspector.getPythonVersionFromExecutable()
 	s.NoError(err)
 	s.True(strings.HasPrefix(version, "3."))
+}
+
+func (s *PythonSuite) TestGetPythonVersionFromFile() {
+	log := logging.New()
+	i := NewPythonInspector(util.Path{}, log)
+
+	err := s.cwd.Join(".python-version").WriteFile([]byte("3.9"), 0666)
+	s.NoError(err)
+
+	pyConfig, err := i.InspectPython(s.cwd)
+	s.NoError(err)
+	s.Equal("3.9.0", pyConfig.Version)
+}
+
+func (s *PythonSuite) TestGetPythonVersionFromParentDirFile() {
+	log := logging.New()
+	i := NewPythonInspector(util.Path{}, log)
+
+	err := s.cwd.Join(".python-version").WriteFile([]byte("3.9"), 0666)
+	s.NoError(err)
+
+	subdir := s.cwd.Join("subdir")
+	err = subdir.Mkdir(0777)
+	s.NoError(err)
+
+	pyConfig, err := i.InspectPython(subdir)
+	s.NoError(err)
+	s.Equal("3.9.0", pyConfig.Version)
+}
+
+func (s *PythonSuite) TestGetPythonVersionFromFileNonexistent() {
+	log := logging.New()
+	pythonPath := s.cwd.Join("bin", "python3")
+	pythonPath.Dir().MkdirAll(0777)
+	pythonPath.WriteFile(nil, 0777)
+	i := NewPythonInspector(pythonPath, log)
+	inspector := i.(*defaultPythonInspector)
+
+	executor := NewMockPythonExecutor()
+	executor.On("RunCommand", pythonPath.String(), mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
+	inspector.executor = executor
+
+	pyConfig, err := i.InspectPython(s.cwd)
+	s.NoError(err)
+	s.Equal("3.10.4", pyConfig.Version)
 }
 
 type mockPythonExecutor struct {

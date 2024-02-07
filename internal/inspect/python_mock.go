@@ -16,8 +16,8 @@ func NewMockPythonInspector() *MockPythonInspector {
 	return &MockPythonInspector{}
 }
 
-func (m *MockPythonInspector) InspectPython() (*config.Python, error) {
-	args := m.Called()
+func (m *MockPythonInspector) InspectPython(base util.Path) (*config.Python, error) {
+	args := m.Called(base)
 	cfg := args.Get(0)
 	if cfg == nil {
 		return nil, args.Error(1)

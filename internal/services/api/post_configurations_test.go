@@ -17,6 +17,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -38,7 +39,7 @@ var expectedPyConfig = &config.Python{
 
 func makeMockPythonInspector(util.Path, logging.Logger) inspect.PythonInspector {
 	pyInspector := inspect.NewMockPythonInspector()
-	pyInspector.On("InspectPython").Return(expectedPyConfig, nil)
+	pyInspector.On("InspectPython", mock.Anything).Return(expectedPyConfig, nil)
 	return pyInspector
 }
 
