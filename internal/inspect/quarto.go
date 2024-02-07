@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -119,7 +119,7 @@ func (d *QuartoDetector) InferType(base util.Path) (*config.Config, error) {
 	}
 	cfg := config.New()
 	cfg.Type = config.ContentTypeQuarto
-	cfg.Entrypoint = path.Base(inspectOutput.Files.Input[0])
+	cfg.Entrypoint = filepath.Base(inspectOutput.Files.Input[0])
 
 	cfg.Title = inspectOutput.Config.Website.Title
 	if cfg.Title == "" {
