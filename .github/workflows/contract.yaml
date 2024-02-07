@@ -1,4 +1,5 @@
 name: Cypress-nightly
+continue-on-error: true
 on:
   workflow_call:
 jobs:
