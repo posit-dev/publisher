@@ -28,7 +28,9 @@ func (h defaultInferenceHelper) InferEntrypoint(path util.Path, suffix string, p
 		if err != nil {
 			return "", util.Path{}, err
 		}
-		if len(matchingFiles) == 1 {
+		if len(matchingFiles) == 0 {
+			return "", util.Path{}, nil
+		} else if len(matchingFiles) == 1 {
 			// This must be it
 			relPath, err := matchingFiles[0].Rel(path)
 			return relPath.Path(), matchingFiles[0], err
@@ -44,8 +46,10 @@ func (h defaultInferenceHelper) InferEntrypoint(path util.Path, suffix string, p
 					return preferredFilename, preferredPath, nil
 				}
 			}
-			// else entrypoint is ambiguous
-			return "", util.Path{}, nil
+			// else entrypoint is ambiguous.
+			// Return the first one.
+			relPath, err := matchingFiles[0].Rel(path)
+			return relPath.Path(), matchingFiles[0], err
 		}
 	} else {
 		fileSuffix := strings.ToLower(path.Ext())
