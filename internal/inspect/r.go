@@ -111,6 +111,6 @@ func (i *defaultRInspector) getRVersion() (string, error) {
 		return "", fmt.Errorf("couldn't parse R version from output: %s", line)
 	}
 	version := m[1]
-	i.log.Info("Detected R", "version", version)
+	i.log.Info("Detected R version", "version", version)
 	return version, nil
 }

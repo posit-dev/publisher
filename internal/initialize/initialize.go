@@ -19,7 +19,7 @@ var RInspectorFactory = inspect.NewRInspector
 
 func inspectProject(base util.AbsolutePath, python util.Path, rExecutable util.Path, log logging.Logger) (*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
-	typeDetector := ContentDetectorFactory()
+	typeDetector := ContentDetectorFactory(log)
 
 	cfg, err := typeDetector.InferType(base)
 	if err != nil {
@@ -105,7 +105,7 @@ func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path
 
 func GetPossibleConfigs(base util.AbsolutePath, python util.Path, log logging.Logger) ([]*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
-	typeDetector := ContentDetectorFactory()
+	typeDetector := ContentDetectorFactory(log)
 	configs, err := typeDetector.InferAll(base)
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)

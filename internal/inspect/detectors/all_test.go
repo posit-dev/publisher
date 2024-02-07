@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -35,7 +36,7 @@ func (s *AllSuite) TestInferTypeDirectory() {
 	err = base.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
 	s.NoError(err)
 
-	detector := NewContentTypeDetector()
+	detector := NewContentTypeDetector(logging.New())
 	t, err := detector.InferType(base)
 	s.NoError(err)
 	s.Equal(&config.Config{
@@ -61,7 +62,7 @@ func (s *AllSuite) TestInferTypeDirectoryPriority() {
 	err = base.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
 	s.NoError(err)
 
-	detector := NewContentTypeDetector()
+	detector := NewContentTypeDetector(logging.New())
 	t, err := detector.InferType(base)
 	s.NoError(err)
 	s.Equal(&config.Config{
@@ -82,7 +83,7 @@ func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
 	err = base.Join("myfile").WriteFile([]byte("This is a text file, silly!\n"), 0600)
 	s.NoError(err)
 
-	detector := NewContentTypeDetector()
+	detector := NewContentTypeDetector(logging.New())
 	t, err := detector.InferType(base)
 	s.NoError(err)
 	s.Equal(config.ContentTypeUnknown, t.Type)
@@ -90,7 +91,7 @@ func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
 
 func (s *AllSuite) TestInferTypeErr() {
 	fs := afero.NewMemMapFs()
-	detector := NewContentTypeDetector()
+	detector := NewContentTypeDetector(logging.New())
 	base := util.NewAbsolutePath("/foo", fs)
 	t, err := detector.InferType(base)
 	s.NotNil(err)
@@ -111,7 +112,7 @@ func (s *AllSuite) TestInferAll() {
 	err = base.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
 	s.NoError(err)
 
-	detector := NewContentTypeDetector()
+	detector := NewContentTypeDetector(logging.New())
 	t, err := detector.InferAll(base)
 	s.NoError(err)
 	s.Equal([]*config.Config{
@@ -142,7 +143,7 @@ func (s *AllSuite) TestInferAllIndeterminate() {
 	err = base.Join("myfile").WriteFile([]byte("This is a text file, silly!\n"), 0600)
 	s.NoError(err)
 
-	detector := NewContentTypeDetector()
+	detector := NewContentTypeDetector(logging.New())
 	configs, err := detector.InferAll(base)
 	s.NoError(err)
 

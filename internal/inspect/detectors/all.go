@@ -4,6 +4,7 @@ package detectors
 
 import (
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -11,13 +12,14 @@ type ContentTypeDetector struct {
 	detectors []ContentTypeInferer
 }
 
-func NewContentTypeDetector() *ContentTypeDetector {
+func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 	return &ContentTypeDetector{
 		detectors: []ContentTypeInferer{
 			// The order here is important, since the first
 			// ContentTypeInferer to return a non-nil
 			// ContentType will determine the result.
 			NewQuartoDetector(),
+			NewRMarkdownDetector(log),
 			NewNotebookDetector(),
 			NewPyShinyDetector(),
 			NewFastAPIDetector(),

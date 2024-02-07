@@ -35,3 +35,30 @@ func GetQuartoPythonCode(content string) string {
 	}
 	return strings.Join(codeLines, "\n")
 }
+
+func DetectMarkdownLanguages(base util.AbsolutePath) (bool, bool, error) {
+	needsR := false
+	needsPython := false
+
+	files, err := base.Glob("*.Rmd")
+	if err != nil {
+		return false, false, err
+	}
+	for _, path := range files {
+		content, err := path.ReadFile()
+		if err != nil {
+			return false, false, err
+		}
+		if strings.Contains(string(content), "\n```{r") {
+			needsR = true
+		}
+		if strings.Contains(string(content), "\n```{python") {
+			needsPython = true
+		}
+		if needsR && needsPython {
+			// No need to look further
+			break
+		}
+	}
+	return needsR, needsPython, nil
+}
