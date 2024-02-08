@@ -25,6 +25,9 @@ func TestQuartoDetectorSuite(t *testing.T) {
 }
 
 func (s *QuartoDetectorSuite) TestInferType() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
 	base := util.NewPath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
@@ -84,6 +87,9 @@ func (s *QuartoDetectorSuite) TestInferType() {
 }
 
 func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
 	base := util.NewPath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
@@ -147,6 +153,9 @@ func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
 
 func (s *QuartoDetectorSuite) TestInferTypeNonProject() {
 	// Without _quarto.yml, inspect the qmd file instead.
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
 	base := util.NewPath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
@@ -229,7 +238,7 @@ func (s *QuartoDetectorSuite) TestInferWindows() {
 	if runtime.GOOS != "windows" {
 		s.T().Skip("TestInferWindows test only runs on Windows")
 	}
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewPath("\\project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -288,6 +297,9 @@ func (s *QuartoDetectorSuite) TestInferWindows() {
 }
 
 func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
 	base := util.NewPath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
