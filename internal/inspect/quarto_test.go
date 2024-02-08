@@ -252,7 +252,7 @@ func (s *QuartoDetectorSuite) TestInferWindows() {
 
 	detector := NewQuartoDetector()
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "quarto", []string{"inspect", "\\project\\project.qmd"}, mock.Anything).Return([]byte(`{
+	executor.On("RunCommand", "quarto", []string{"inspect", "\\project"}, mock.Anything).Return([]byte(`{
 		"quarto": {
 			"version": "1.3.353"
 		  },
