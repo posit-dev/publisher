@@ -215,7 +215,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		}
 		p.TargetName = p.SaveName
 	} else if p.TargetName == "" {
-		p.TargetName = string(contentID)
+		p.TargetName = p.SaveName
 	}
 	return p.writeDeploymentRecord(log)
 }
