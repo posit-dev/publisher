@@ -51,6 +51,14 @@ type quartoInspectOutput struct {
 	Files   struct {
 		Input []string `json:"input"`
 	} `json:"files"`
+	// For single quarto docs without _quarto.yml
+	Formats struct {
+		HTML struct {
+			Metadata struct {
+				Title string `json:"title"`
+			} `json:"metadata"`
+		} `json:"html"`
+	} `json:"formats"`
 }
 
 func (d *QuartoDetector) quartoInspect(path util.Path) (*quartoInspectOutput, error) {
@@ -84,16 +92,38 @@ func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
 	return false
 }
 
+func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput) string {
+	if inspectOutput.Config.Website.Title != "" {
+		return inspectOutput.Config.Website.Title
+	}
+	if inspectOutput.Formats.HTML.Metadata.Title != "" {
+		return inspectOutput.Formats.HTML.Metadata.Title
+	}
+	if inspectOutput.Config.Project.Title != "" {
+		return inspectOutput.Config.Project.Title
+	}
+	return ""
+}
+
 func (d *QuartoDetector) InferType(base util.Path) (*config.Config, error) {
 	defaultEntrypoint := base.Base() + ".qmd"
-	entrypoint, _, err := d.InferEntrypoint(base, ".qmd", defaultEntrypoint, "index.qmd")
+	entrypoint, entrypointPath, err := d.InferEntrypoint(base, ".qmd", defaultEntrypoint, "index.qmd")
 	if err != nil {
 		return nil, err
 	}
 	if entrypoint == "" {
 		return nil, nil
 	}
-	inspectOutput, err := d.quartoInspect(base)
+	isQuartoProject, err := base.Join("_quarto.yml").Exists()
+	if err != nil {
+		return nil, err
+	}
+	var inspectOutput *quartoInspectOutput
+	if isQuartoProject {
+		inspectOutput, err = d.quartoInspect(base)
+	} else {
+		inspectOutput, err = d.quartoInspect(entrypointPath)
+	}
 	if err != nil {
 		// Maybe this isn't really a quarto project, or maybe the user doesn't have quarto.
 		// We log this error and return nil so other inspectors can have a shot at it.
@@ -103,17 +133,10 @@ func (d *QuartoDetector) InferType(base util.Path) (*config.Config, error) {
 	if slices.Contains(inspectOutput.Engines, "knitr") {
 		return nil, errNoQuartoKnitrSupport
 	}
-	if len(inspectOutput.Files.Input) == 0 {
-		return nil, nil
-	}
 	cfg := config.New()
 	cfg.Type = config.ContentTypeQuarto
 	cfg.Entrypoint = entrypoint
-
-	cfg.Title = inspectOutput.Config.Website.Title
-	if cfg.Title == "" {
-		cfg.Title = inspectOutput.Config.Project.Title
-	}
+	cfg.Title = d.getTitle(inspectOutput)
 
 	cfg.Quarto = &config.Quarto{
 		Version: inspectOutput.Quarto.Version,
