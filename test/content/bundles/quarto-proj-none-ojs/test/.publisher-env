@@ -1,0 +1,5 @@
+CONTENT_TYPE=quarto
+APP_MODE=quarto-static
+ENTRYPOINT=quarto-proj-none-ojs.qmd
+TITLE=quarto-proj-none-ojs
+QUARTO_ENGINE=markdown

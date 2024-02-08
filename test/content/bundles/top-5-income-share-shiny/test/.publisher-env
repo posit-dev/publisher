@@ -1,0 +1,4 @@
+CONTENT_TYPE=python-shiny
+APP_MODE=python-shiny
+ENTRYPOINT=app.py
+TITLE=top-5-income-share-shiny

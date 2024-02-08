@@ -1,0 +1,4 @@
+CONTENT_TYPE=jupyter-notebook
+APP_MODE=jupyter-static
+ENTRYPOINT=stock-report-jupyter.ipynb
+TITLE=stock-report-jupyter

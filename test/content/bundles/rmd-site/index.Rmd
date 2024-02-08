@@ -1,0 +1,3 @@
+# R Markdown site
+
+This is the index page. It has a link to [article](article.html) and [another](another.html).

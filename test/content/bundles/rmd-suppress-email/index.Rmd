@@ -1,0 +1,29 @@
+---
+title: "email suppression"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document is testing email suppression by modifying rmarkdown output 
+metadata.
+
+```{r}
+Sys.time()
+```
+
+```{r}
+email <- Sys.getenv("EMAIL", unset = NA)
+
+if (is.na(email)) {
+  cat("no email instructions.")
+} else if (email == "true") {
+  cat("email is true.")
+  rmarkdown::output_metadata$set(rsc_email_suppress_scheduled = FALSE)
+} else {
+  cat("email is not true.")
+  rmarkdown::output_metadata$set(rsc_email_suppress_scheduled = TRUE)
+}
+```

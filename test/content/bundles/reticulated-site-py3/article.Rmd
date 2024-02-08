@@ -1,0 +1,21 @@
+# Article
+
+This is an article.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reticulate)
+```
+
+```{python}
+from itertools import chain, count, cycle, islice, repeat, starmap
+
+def join(*s):
+	return ''.join(s)
+
+def run(n: int):
+	print('\n'.join(islice(starmap(join, zip(map(str, count(1)), repeat('\t'), cycle(chain(repeat('', 2), [''.join(map(chr, [102, 105, 122, 122]))])), cycle(chain(repeat('', 4), [''.join(map(chr, [98, 117, 122, 122]))])) )), n)))
+
+run(30)
+
+```

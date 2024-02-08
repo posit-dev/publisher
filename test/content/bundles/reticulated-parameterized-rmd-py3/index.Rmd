@@ -1,0 +1,19 @@
+---
+params:
+  rows: 24
+  color: "white"
+---
+
+```{r include=FALSE}
+library(reticulate)
+```
+
+```{python include=FALSE}
+
+def output(params):
+	return "The quick %s fox jumped over the %d rows" % (params['color'], params['rows'])
+```
+
+R says: There are `r params$rows` rows and the color is `r params$color`.
+
+Python says: `r py$output(params)`

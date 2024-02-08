@@ -1,0 +1,4 @@
+CONTENT_TYPE=python-bokeh
+APP_MODE=python-bokeh
+ENTRYPOINT=app.py
+TITLE=top-5-income-share-bokeh

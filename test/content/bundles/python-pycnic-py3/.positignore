@@ -1,0 +1,2 @@
+# List any files or directories that should not be included in the deployment.
+# Wildcards are supported as in .gitignore: https://git-scm.com/docs/gitignore

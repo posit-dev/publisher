@@ -1,0 +1,5 @@
+CONTENT_TYPE=quarto-static
+APP_MODE=quarto-static
+ENTRYPOINT=index.qmd
+TITLE=quarto-website-r-py-separate-files
+QUARTO_ENGINE=markdown

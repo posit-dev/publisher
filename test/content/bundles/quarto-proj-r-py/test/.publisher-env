@@ -1,0 +1,5 @@
+CONTENT_TYPE=quarto-static
+APP_MODE=quarto-static
+ENTRYPOINT=quarto-proj-r-py.qmd
+TITLE=quarto-proj-r-py
+QUARTO_ENGINE=markdown

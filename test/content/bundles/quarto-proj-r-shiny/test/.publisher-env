@@ -1,0 +1,5 @@
+CONTENT_TYPE=quarto-static
+APP_MODE=quarto-static
+ENTRYPOINT=quarto-proj-r-shiny.qmd
+TITLE=quarto-proj-r-shiny
+QUARTO_ENGINE=markdown

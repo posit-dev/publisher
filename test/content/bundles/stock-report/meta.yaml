@@ -1,0 +1,9 @@
+description: 'This R Markdown document shows how to automate regular updates to a
+  PDF. The report code also generates a custom email, re-using the plots and putting
+  the results where stakeholders live - their inbox.'
+tags:
+- jump-start
+- rmd
+- r
+- all
+title: Automated Stock Report

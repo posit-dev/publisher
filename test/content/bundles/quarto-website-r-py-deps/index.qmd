@@ -1,0 +1,26 @@
+---
+title: "quarto-website-r-py-deps"
+---
+
+This is a Quarto website.
+
+To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+
+```{r}
+# This is an R chunk
+library(rsample)
+set.seed(8584)
+bt_resamples <- bootstraps(mtcars, times = 3)
+bt_resamples
+```
+
+```{python}
+# This is a Python chunk
+from yaml import load, Loader
+input = """
+- hello
+- world
+"""
+data = load(input, Loader=Loader)
+data
+```

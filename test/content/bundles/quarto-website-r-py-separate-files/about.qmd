@@ -1,0 +1,11 @@
+---
+title: "About"
+jupyter: python3
+---
+
+About this site
+
+```{python}
+# This is a Python chunk
+1 + 1
+```

@@ -1,0 +1,18 @@
+project:
+  type: book
+
+book:
+  title: "quarto-book-none"
+  author: "Jane Doe"
+  date: "2/9/2022"
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - summary.qmd
+    - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo

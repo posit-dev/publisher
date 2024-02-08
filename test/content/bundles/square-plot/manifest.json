@@ -1,0 +1,25 @@
+{
+	"version" : 1,
+	"locale" : "en_US",
+	"platform" : "4.3.0",
+	"metadata" : {
+		"appmode" : "static",
+		"primary_rmd" : null,
+		"primary_html" : "index.htm",
+		"content_category" : "plot",
+		"has_parameters" : false
+	},
+	"packages" : null,
+	"files" : {
+		"index.htm" : {
+			"checksum" : "c2b780e70facb5eab94e9438fcbe4929"
+		},
+		"manifest.json" : {
+			"checksum" : "214ad4a1274a0cec937eecdff6efcd8c"
+		},
+		"target.html" : {
+			"checksum" : "5fb9853ffb1ab95c219dc6667bd104d8"
+		}
+	},
+	"users" : null
+}

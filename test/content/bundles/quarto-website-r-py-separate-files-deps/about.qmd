@@ -1,0 +1,17 @@
+---
+title: "About"
+jupyter: python3
+---
+
+About this site
+
+```{python}
+# This is a Python chunk
+from yaml import load, Loader
+input = """
+- hello
+- world
+"""
+data = load(input, Loader=Loader)
+data
+```

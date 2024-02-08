@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "locale": "en_US",
+  "platform": "3.6.3",
+  "metadata": {
+    "appmode": "quarto-static",
+    "primary_rmd": "document1.qmd",
+    "primary_html": null,
+    "content_category": null,
+    "has_parameters": false
+  },
+  "quarto": {
+    "version": "0.3.114",
+    "engines": ["markdown"]
+  },
+  "packages": null,
+  "files": {
+    "_quarto.yml": {
+      "checksum": "b244b070d3794ffd14b6decfc0828578"
+    },
+    "document1.qmd": {
+      "checksum": "878fe4a673efaf37a00d5294c5b8acf8"
+    }
+  },
+  "users": null
+}

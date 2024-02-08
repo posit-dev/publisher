@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "locale": "en_US.UTF-8",
+  "metadata": {
+    "appmode": "python-bokeh",
+    "entrypoint": "sliders"
+  },
+  "python": {
+    "version": "3.11.3",
+    "package_manager": {
+      "name": "pip",
+      "version": "23.1.2",
+      "package_file": "requirements.txt"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "3eb731e80d32f3d5f8fe99fb9e8d7c22"
+    },
+    "meta.yaml": {
+      "checksum": "1956dc7bea01c31036d66d8a4098b05d"
+    },
+    "requirements.in": {
+      "checksum": "39b11d71f2b9f5d06c915aa4fb729ffd"
+    },
+    "sliders.py": {
+      "checksum": "35b35b7d7688cd91ad4c2006e588cf5b"
+    }
+  }
+}

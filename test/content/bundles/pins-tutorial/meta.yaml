@@ -1,0 +1,9 @@
+description: 'This RMarkdown document provides a follow-along example of creating
+  a pin on RStudio Connect, retrieving a pin from RStudio Connect, and publishing
+  content that uses a pin to RStudio Connect.'
+tags:
+- jump-start-no-deploy
+- pins
+- r
+- all
+title: Pins Tutorial

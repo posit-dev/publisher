@@ -1,0 +1,4 @@
+CONTENT_TYPE=python-streamlit
+APP_MODE=python-streamlit
+ENTRYPOINT=app.py
+TITLE=python-streamlit

@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "locale": "en_US.UTF-8",
+  "metadata": {
+    "appmode": "quarto-static",
+    "content_category": "site"
+  },
+  "quarto": {
+    "version": "1.3.353",
+    "engines": [
+      "jupyter"
+    ]
+  },
+  "python": {
+    "version": "3.11.3",
+    "package_manager": {
+      "name": "pip",
+      "version": "23.1.2",
+      "package_file": "requirements.txt"
+    }
+  },
+  "files": {
+    ".gitattributes": {
+      "checksum": "de3b263db65c35eb9ee6392687595a18"
+    },
+    ".gitignore": {
+      "checksum": "d25d72fa337bf72849d267c39d722aba"
+    },
+    "README.md": {
+      "checksum": "7bfb9e587aa9958718f1bd4aa4926df5"
+    },
+    "_quarto.yml": {
+      "checksum": "a3de6e630b3532aa281b30ef014b866a"
+    },
+    "about.qmd": {
+      "checksum": "774bb98825779ba5884422ea2ac0431b"
+    },
+    "index.qmd": {
+      "checksum": "41e0d6dbf9cb8a136247b32ee086d21b"
+    },
+    "meta.yaml": {
+      "checksum": "a311cdb3925305111fc3cabed1359527"
+    },
+    "quarto-website-py-deps.Rproj": {
+      "checksum": "085991e449e6a3fbe59203fdb32eeca6"
+    },
+    "requirements.in": {
+      "checksum": "93d7964ec38e9a2894a602b6c93f8cb7"
+    },
+    "requirements.txt": {
+      "checksum": "8003c5c5d87f76f477106152a40afc00"
+    },
+    "styles.css": {
+      "checksum": "e31c3cdea03dfab8a29456978017bd10"
+    }
+  }
+}

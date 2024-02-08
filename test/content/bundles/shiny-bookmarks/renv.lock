@@ -1,0 +1,21 @@
+{
+  "R": {
+    "Version": "4.3.0",
+    "Repositories": [
+      {
+        "Name": "CRAN",
+        "URL": "https://cran.rstudio.com"
+      }
+    ]
+  },
+  "Packages": {
+    "renv": {
+      "Package": "renv",
+      "Version": "0.14.0-137",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "4c888c2fa629eee55bd4ab41536ee711",
+      "Requirements": []
+    }
+  }
+}

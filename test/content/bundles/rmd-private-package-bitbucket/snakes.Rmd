@@ -1,0 +1,17 @@
+---
+title: "Snakes"
+author: "Toph Allen"
+date: "2022-06-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## The Adder
+
+```{r}
+library(adder)
+adder()
+```

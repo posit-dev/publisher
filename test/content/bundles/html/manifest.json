@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "metadata": {
+    "appmode": "static",
+    "primary_html": "index.html"
+  },
+  "files": {
+    "LICENSE.txt": {
+      "checksum": "22e9a69c0fed5c2558f94d30936ceb4d"
+    },
+    "README.txt": {
+      "checksum": "e92c3c6bdf343f1f6bc4dd19a13bfa98"
+    },
+    "assets/css/fontawesome-all.min.css": {
+      "checksum": "1d4a5860bcbe24db028f661a8fc0ab67"
+    },
+    "assets/css/images/arrow.svg": {
+      "checksum": "5dc915558154e34dc07ebbe246503cae"
+    },
+    "assets/css/main.css": {
+      "checksum": "77851dc2329c7ad8e0c228b077eeeabf"
+    },
+    "assets/css/noscript.css": {
+      "checksum": "f8c163a261f79440e14aaf030b5f3d80"
+    },
+    "assets/js/breakpoints.min.js": {
+      "checksum": "81a479eb099e3b187613943b085923b8"
+    },
+    "assets/js/browser.min.js": {
+      "checksum": "c3368a3e74d51bcb77f4d673769b7ba6"
+    },
+    "assets/js/jquery.dropotron.min.js": {
+      "checksum": "cde540724505bfbf39cbc08a2401b1a2"
+    },
+    "assets/js/jquery.min.js": {
+      "checksum": "8fb8fee4fcc3cc86ff6c724154c49c42"
+    },
+    "assets/js/jquery.scrollex.min.js": {
+      "checksum": "f89065e3d988006af9791b44561d7c90"
+    },
+    "assets/js/jquery.scrolly.min.js": {
+      "checksum": "1ed5a78bde1476875a40f6b9ff44fc14"
+    },
+    "assets/js/main.js": {
+      "checksum": "d56aa7bf1a2f5ed8174f990ff539dfb6"
+    },
+    "assets/js/util.js": {
+      "checksum": "fd2716a7b68ce7748c9676787b61db43"
+    },
+    "assets/sass/libs/_breakpoints.scss": {
+      "checksum": "4c40999ced3f664bca3728855a06c785"
+    },
+    "assets/sass/libs/_functions.scss": {
+      "checksum": "5b10d6035b023556a0ae6627d2cde60c"
+    },
+    "assets/sass/libs/_html-grid.scss": {
+      "checksum": "f3395c442448422278343cf8289a1f96"
+    },
+    "assets/sass/libs/_mixins.scss": {
+      "checksum": "2363460b82d7e72cff263ff6e42c76ec"
+    },
+    "assets/sass/libs/_vars.scss": {
+      "checksum": "a7d67bd2571de2c2913145bf2875ae18"
+    },
+    "assets/sass/libs/_vendor.scss": {
+      "checksum": "ad9bab0ab6862fcf79f0239b91146d89"
+    },
+    "assets/sass/main.scss": {
+      "checksum": "41243eee08256cb9bfcc58f2cc3c8a23"
+    },
+    "assets/sass/noscript.scss": {
+      "checksum": "5f47eb7573a45dc21b86f3a2a8b809bb"
+    },
+    "assets/webfonts/fa-brands-400.eot": {
+      "checksum": "592643a83b8541edc52063d84c468700"
+    },
+    "assets/webfonts/fa-brands-400.svg": {
+      "checksum": "1d5619cd804367cefe6da2d79289218a"
+    },
+    "assets/webfonts/fa-brands-400.ttf": {
+      "checksum": "513aa607d398efaccc559916c3431403"
+    },
+    "assets/webfonts/fa-brands-400.woff": {
+      "checksum": "1a575a4138e5f366474f0e7c5bd614a5"
+    },
+    "assets/webfonts/fa-brands-400.woff2": {
+      "checksum": "ed311c7a0ade9a75bb3ebf5a7670f31d"
+    },
+    "assets/webfonts/fa-regular-400.eot": {
+      "checksum": "b0e2db3b634d1bc3928e127458d993d8"
+    },
+    "assets/webfonts/fa-regular-400.svg": {
+      "checksum": "c5d109be8edd3de0f60eb472bd9ef691"
+    },
+    "assets/webfonts/fa-regular-400.ttf": {
+      "checksum": "766913e6c0088ab8c9f73e18b4127bc4"
+    },
+    "assets/webfonts/fa-regular-400.woff": {
+      "checksum": "d1d7e3b4c219fde0f7376c6facfd7149"
+    },
+    "assets/webfonts/fa-regular-400.woff2": {
+      "checksum": "b91d376b8d7646d671cd820950d5f7f1"
+    },
+    "assets/webfonts/fa-solid-900.eot": {
+      "checksum": "0c6bfc668a72935760178f91327aed3a"
+    },
+    "assets/webfonts/fa-solid-900.svg": {
+      "checksum": "37bc7099f6f1ba80236164f22e905837"
+    },
+    "assets/webfonts/fa-solid-900.ttf": {
+      "checksum": "b9625119ce4300f0ef890a8f3234c773"
+    },
+    "assets/webfonts/fa-solid-900.woff": {
+      "checksum": "d745348d289b149026921f197929a893"
+    },
+    "assets/webfonts/fa-solid-900.woff2": {
+      "checksum": "d824df7eb2e268626a2dd9a6a741ac4e"
+    },
+    "images/header.jpg": {
+      "checksum": "94066d9a805a0005cbebdc6f6be02050"
+    },
+    "images/pic01.jpg": {
+      "checksum": "5d07aab7ad71e3674fdf0a96ca44ef3d"
+    },
+    "images/pic02.jpg": {
+      "checksum": "d006aab15aff6282519e1e52f4942148"
+    },
+    "images/pic03.jpg": {
+      "checksum": "bdf3bff5a468cd32a8dd773823ad36e2"
+    },
+    "images/pic04.jpg": {
+      "checksum": "6f85e7afcb890460de2c2b08768580c2"
+    },
+    "images/pic05.jpg": {
+      "checksum": "6f91332e728f466889713a6a3496968d"
+    },
+    "images/pic06.jpg": {
+      "checksum": "2f097fe223c4b487606b4462d534ca6f"
+    },
+    "images/pic07.jpg": {
+      "checksum": "d899c4957eba4bc5b83b3311194e4606"
+    },
+    "images/pic08.jpg": {
+      "checksum": "536dd5b736044a85065a81bea8a0af2d"
+    },
+    "images/pic09.jpg": {
+      "checksum": "af12ea92073870a5f0420f11c9c4fd06"
+    },
+    "images/pic10.jpg": {
+      "checksum": "7a8d43f3a8851b1115d2568e31c18f43"
+    },
+    "images/pic11.jpg": {
+      "checksum": "a1346f2f878c38483a030f665eceec5f"
+    },
+    "images/pic12.jpg": {
+      "checksum": "710eec26b9abeced933c8ff82087decc"
+    },
+    "images/pic13.jpg": {
+      "checksum": "6d00320abc9b0f5cc81379524555c3c8"
+    },
+    "images/pic14.jpg": {
+      "checksum": "3914cab5c24525ab653133ec156c62b3"
+    },
+    "images/pic15.jpg": {
+      "checksum": "9d992be47a634f4bc970369d41ec4d69"
+    },
+    "index.html": {
+      "checksum": "963a732c8819f0fc7bf7bc710245527d"
+    },
+    "left-sidebar.html": {
+      "checksum": "49561d081f4e5d51ccfd68054cc2e3a1"
+    },
+    "no-sidebar.html": {
+      "checksum": "f1bb0b50ba9a41917fbcee7f4576d497"
+    },
+    "right-sidebar.html": {
+      "checksum": "0e0de3eb1e3619f7c7742148f2394d4a"
+    }
+  }
+}

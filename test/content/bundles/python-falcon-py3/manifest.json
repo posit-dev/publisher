@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "locale": "en_US.UTF-8",
+  "metadata": {
+    "appmode": "python-api",
+    "entrypoint": "app:api"
+  },
+  "python": {
+    "version": "3.11.3",
+    "package_manager": {
+      "name": "pip",
+      "version": "23.1.2",
+      "package_file": "requirements.txt"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "baf9f3494ab6f57d7d5d0e7c2de11894"
+    },
+    "app.py": {
+      "checksum": "28f3f3514dd89a915b091d1aa892762b"
+    },
+    "meta.yaml": {
+      "checksum": "38410b6eee792ed02d27ca4f1c1ee37f"
+    },
+    "requirements.in": {
+      "checksum": "647c402e16ebc379aa0eef8592ab643e"
+    }
+  }
+}

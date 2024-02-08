@@ -1,0 +1,5 @@
+'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
+type = 'unknown'
+entrypoint = 'unknown'
+validate = true
+title = 'bundles'

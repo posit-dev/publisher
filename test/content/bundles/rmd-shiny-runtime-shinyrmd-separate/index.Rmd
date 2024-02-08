@@ -1,0 +1,21 @@
+---
+title: "Old Faithful Waiting Time"
+output: flexdashboard::flex_dashboard
+runtime: shinyrmd
+---
+
+Column {.sidebar}
+-------------------------------------------------------------
+
+```{r}
+library(shiny)
+
+shiny::sliderInput("bins", "Number of bins:", min = 1, max = 50, value = 30)
+```
+
+Column
+-------------------------------------------------------------
+
+```{r}
+shiny::plotOutput("waiting")
+```

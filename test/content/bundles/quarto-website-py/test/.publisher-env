@@ -1,0 +1,5 @@
+CONTENT_TYPE=quarto
+APP_MODE=quarto-static
+ENTRYPOINT=index.qmd
+TITLE=quarto-website-py
+QUARTO_ENGINE=jupyter

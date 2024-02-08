@@ -1,0 +1,11 @@
+description: 'This R Markdown document includes parameters, making it easier for stakeholders
+  to customize the report''s assumptions and create their own version. The main document
+  serves as a standard base template, containing your core code and analysis, so you
+  don''t have to copy, paste, and republish.'
+tags:
+- jump-start
+- parameterized
+- rmd
+- r
+- all
+title: Custom Portfolio Report

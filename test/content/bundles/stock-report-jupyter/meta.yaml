@@ -1,0 +1,9 @@
+description: 'This stock report is generated using Python and Jupyter Notebook. Stock
+  prices are populated from Quandl to generate a stock performance summary intended
+  to run daily after market close.'
+tags:
+- jump-start
+- jupyter
+- python
+- all
+title: Stock Report

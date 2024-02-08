@@ -1,0 +1,4 @@
+CONTENT_TYPE=python-flask
+APP_MODE=python-api
+ENTRYPOINT=app.py
+TITLE=stock-api-flask

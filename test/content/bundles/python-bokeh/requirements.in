@@ -1,0 +1,15 @@
+bokeh<3
+contourpy
+jinja2
+markupsafe
+numpy
+packaging
+pandas
+pillow
+python-dateutil
+pytz
+pyyaml
+six
+tornado
+tzdata
+xyzservices

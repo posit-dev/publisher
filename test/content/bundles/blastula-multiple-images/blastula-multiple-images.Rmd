@@ -1,0 +1,40 @@
+---
+title: "blastula-multiple-images"
+author: "ccg"
+date: "7/20/2018"
+output: html_document
+rmd_output_metadata:
+  rsc_email_attachments:
+    - plot1.png
+    - plot2.png
+  rsc_email_subject: "Blastula Example with Multiple Images"
+---
+
+```{r}
+library(blastula)
+
+png(filename = "plot1.png")
+plot(1:10)
+dev.off()
+
+png(filename = "plot2.png")
+plot(15:10)
+dev.off()
+
+email <- compose_email(
+  body = "
+    Here is an image to look at:
+  
+    {add_image('plot1.png')}
+
+    Here is another one:
+
+    {add_image('plot2.png')}
+    
+    Cheers
+    ")
+
+# Send the HTML email to RStudio Connect
+rmarkdown::output_metadata$set(rsc_email_body_html = email$html_str)
+rmarkdown::output_metadata$set(rsc_email_images = email$images)
+```

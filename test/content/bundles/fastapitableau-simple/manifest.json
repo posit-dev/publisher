@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "locale": "en_US.UTF-8",
+  "metadata": {
+    "appmode": "python-fastapi",
+    "entrypoint": "simple"
+  },
+  "python": {
+    "version": "3.11.3",
+    "package_manager": {
+      "name": "pip",
+      "version": "23.1.2",
+      "package_file": "requirements.txt"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "e17bb914b764f0eee5d3add301d3b0af"
+    },
+    "meta.yaml": {
+      "checksum": "14e931184eca68085a423ada812e3fbd"
+    },
+    "simple.py": {
+      "checksum": "97e858ecf5a5dc7741377325ad682d20"
+    }
+  }
+}

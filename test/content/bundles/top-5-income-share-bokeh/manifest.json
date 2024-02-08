@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "locale": "en_US.UTF-8",
+  "metadata": {
+    "appmode": "python-bokeh",
+    "entrypoint": "app"
+  },
+  "python": {
+    "version": "3.11.3",
+    "package_manager": {
+      "name": "pip",
+      "version": "23.1.2",
+      "package_file": "requirements.txt"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "159520c1ef8573121a697197a552e8b7"
+    },
+    "README.md": {
+      "checksum": "8c84333f59cbca19922834666a85db5a"
+    },
+    "app.py": {
+      "checksum": "b965e780a74b524f0ab5263a214614d7"
+    },
+    "data.csv": {
+      "checksum": "8da5e3f4e5d46c024310cd04354f81bd"
+    },
+    "meta.yaml": {
+      "checksum": "7071679ca04792d17c367c91a442c4c8"
+    },
+    "requirements.in": {
+      "checksum": "fb850e872d98ab1ca268ae0d0e2fbf09"
+    },
+    "thumbnail.png": {
+      "checksum": "5c47d13050b7531e711bd8f16af68e1c"
+    }
+  }
+}

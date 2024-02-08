@@ -1,0 +1,4 @@
+CONTENT_TYPE=python-dash
+APP_MODE=python-dash
+ENTRYPOINT=app.py
+TITLE=stock-dashboard-python

@@ -1,0 +1,4 @@
+CONTENT_TYPE=python-fastapi
+APP_MODE=python-fastapi
+ENTRYPOINT=app.py
+TITLE=python-quart

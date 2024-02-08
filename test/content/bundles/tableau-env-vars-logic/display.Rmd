@@ -1,0 +1,182 @@
+---
+title: "Tableau Integration in Connect - package logic walk through"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(devtools)
+library(stringr)
+knitr::opts_chunk$set(echo = TRUE)
+sys.source("connect.R", envir = knitr::knit_global())
+minimum_server_version = "1.8.8.3"
+```
+
+### Confirm the Content Environment Variables are present...
+```{r connect-env-vars1}
+within_Connect = FALSE
+rstudio_product <- Sys.getenv("RSTUDIO_PRODUCT", NA_character_)
+cat("RSTUDIO_PRODUCT = ", rstudio_product, "\n")
+
+# CONNECT
+content_guid <- Sys.getenv("CONNECT_CONTENT_GUID", NA_character_)
+cat("CONNECT_CONTENT_GUID = ", content_guid, "\n")
+```
+
+### Confirm the other Environment Variables are present...
+```{r connect-env-vars2}
+# Applications.DefaultServerEnv
+connect_server <- Sys.getenv("CONNECT_SERVER", NA_character_)
+cat("CONNECT_SERVER = ", connect_server, "\n")
+api_key <- Sys.getenv("CONNECT_API_KEY", NA_character_)
+cat("CONNECT_API_KEY = ", api_key, "\n")
+```
+
+### Check if we are running on Connect
+```{r check-on-connect}
+within_Connect = FALSE
+if (!is.na(rstudio_product) && rstudio_product == "CONNECT") {
+  within_Connect = TRUE
+}
+if (!within_Connect) {
+  cat("WARNING: This code is not hosted by Connect\n")
+} else {
+  cat("INFO: This code is hosted by Connect\n")
+}
+```
+
+### Temporarily set the values to what we want (overriding the environment variables)
+```{r variables-override}
+if (!within_Connect) {
+  connect_server <- "https://dev-password.localtest.me"
+  api_key <- "c7achTdggWVGtr851azThcyYDwH5JRgf"
+  content_guid <- "0c77eddd-bd75-41e0-8bc7-fc7efb1a4f77"
+}
+
+cat("INTERNAL: connect_server is now:", connect_server)
+cat("INTERNAL: api_key is now:", api_key)
+cat("INTERNAL: content_guid is now:", content_guid)
+```
+### Validity
+```{r validity}
+valid_checks <- TRUE
+```
+
+### Check if we have an API key
+```{r check-api-key}
+if (is.na(api_key)) {
+  cat("ERROR: Please provide a valid API key")
+  valid_checks <- FALSE
+} else {
+  cat("VALID: An API key is present: ", api_key)
+}
+```
+
+### Check if we have the content GUID 
+```{r check-content-guid}
+if (is.na(content_guid)) {
+  cat("ERROR: The server is not providing the application GUID within the environment variable: CONNECT_CONTENT_GUID")
+  valid_checks <- FALSE
+} else {
+  cat("VALID: The CONTENT_GUID is present: ", api_key)
+}
+```
+
+### Initialize our client connection to the server
+```{r client, eval=valid_checks}
+client <- connect(server=connect_server, api_key=api_key, allow_downgrade=TRUE)
+
+if (client$url_downgraded) {
+  cat("Internal Connection to the RStudio Connect server was downgraded from 'https' to 'http'")
+}
+
+cat("Connecting to RStudio Connect server @ ", client$server)
+
+```
+
+
+
+### Retrieve the items we need from settings
+```{r content-settings, eval=valid_checks}
+settings <- client$server_settings()
+
+cat("settings$version =", settings$version)
+cat("settings$server_address =", settings$server_addres)
+cat("settings$tableau_integration_enabled =", settings$tableau_integration_enabled)
+cat("settings$tableau_integration_logging =", settings$tableau_integration_logging)
+```
+
+### Check if the server is new enough
+```{r check-server-version, eval=valid_checks}
+if (compareVersion(settings$version, minimum_server_version) < 0) {
+  cat("ERROR: Requires RStudio Connect server version >= ",
+               minimum_server_version,
+               ", current version ",
+               settings$version)
+  valid_checks <- FALSE
+}else {
+  cat("VALID: RStudio Connect server current version",
+        settings$version,
+        "is >= to required version: ",
+        minimum_server_version)
+}
+```
+
+### Check if the server is configured correctly
+```{r check-server-configuration, eval=valid_checks}
+if (is.na(settings$server_address)) {
+  cat("ERROR: Server must be configured with Server.Address")
+  valid_checks <- FALSE
+} else {
+  cat("VALID: The Server.Address has been configured: ", settings$server_address)
+}
+
+if (!settings$tableau_integration_enabled) {
+  cat("ERROR: Server must be configured with TableauIntegration.Enabled")
+  valid_checks <- FALSE
+} else {
+  cat("VALID: The TableauIntegration.Enabled setting has been configured: ", settings$tableau_integration_enabled)
+}
+```
+
+### Additional interesting settings
+```{r additional-settings, eval=valid_checks}
+cat("INFO: The TableauIntegration.Logging configuration setting is set to", settings$tableau_integration_logging)
+```
+
+
+### Retrieve the base path URL for this content
+```{r content-url, eval=valid_checks}
+content <- client$content(content_guid)
+content$content_url
+cat("content$content_url = ", content$content_url)
+```
+
+### Retrieve the Vanity URL for this content
+```{r vanity-url, eval=valid_checks}
+vanity_path = tryCatch({
+    vanity <- client$vanity(content_guid)
+    vanity$path
+  },
+  error = function(e) {
+    return(Null)
+  }
+)
+if (!is.null(vanity_path)) {
+  cat("INFO: Vanity path for this content has been set to: '", vanity_path, "'")
+} else {
+  cat("INFO: No Vanity path has been configured for this content")
+}
+```
+
+### Settings for Tableau
+```{r tableau-settings, eval=valid_checks}
+# we'll use the server address since it should represent the public address of the Connect server
+cat("Tableau base endpoint:", settings$server_address)
+subpath <- paste0("/",str_split_fixed(content$content_url, "/", 4)[4])
+cat("API endpoint not subject to change: '", subpath, "'")
+
+if (!is.null(vanity_path)) {
+  subpath <- vanity_path
+}
+cat("API endpoint with preference to vanity URL: '", subpath, "'")
+```

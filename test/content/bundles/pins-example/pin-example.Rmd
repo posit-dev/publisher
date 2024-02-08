@@ -1,0 +1,42 @@
+---
+title: "Pins Example"
+author: "Toph Allen"
+date: "3/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is a minimal document which will set a pin on the Connect instance to which it is deployed.
+
+It will fail to build unless the environment variables `CONNECT_SERVER` and `CONNECT_API_KEY` are available.
+
+```{r register_board}
+library(pins)
+library(rsconnect)
+board_register_rsconnect()
+```
+
+```{r create_data}
+data(mtcars)
+to_pin <- mtcars[c("mpg", "wt")]
+```
+
+```{r pin_data}
+pin(to_pin, name = "mt_mpg_wt", board = "rsconnect")
+```
+
+```{r get_data}
+got <- pin_get("mt_mpg_wt", board = "rsconnect")
+got
+plot(got$wt, got$wt)
+```
+
+
+
+
+
+
+

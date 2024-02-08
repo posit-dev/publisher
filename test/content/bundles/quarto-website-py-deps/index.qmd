@@ -1,0 +1,14 @@
+---
+title: "quarto-website-py-deps"
+jupyter: python3
+---
+
+This is a Quarto website.
+
+To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+
+```{python}
+import numpy as np
+a = np.arange(15).reshape(3, 5)
+a
+```

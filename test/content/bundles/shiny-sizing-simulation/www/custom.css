@@ -1,0 +1,23 @@
+.small-box .icon-large {
+  font-size: 35px;
+}
+
+.small-box {
+  margin-bottom: 10px;
+}
+
+.small-box h3 {
+  font-size: 20px;
+  margin: 0 0 5px 0;
+}
+.small-box>.inner {
+  padding: 5px;
+}
+
+.box {
+  margin-bottom: 10px;
+}
+
+.box-body {
+  padding: 5px;
+}

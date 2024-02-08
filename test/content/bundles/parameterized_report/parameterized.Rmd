@@ -1,0 +1,126 @@
+---
+title: "empty1234"
+author: "me"
+date: "March 29, 2016"
+output: html_document
+resource_files:
+- .overrides.json
+- .uses.parameters
+params:
+  truthiness: TRUE
+  exprtruthiness: !r TRUE
+  f: 1.2
+  # exprf: !r 1.4
+  g: # floating with controls
+        label: float
+        value: 2.3
+        min: 1.75
+        max: 4.0
+        step: 0.25
+  # exprg:
+  #       value: !r 2.3
+  #       min: 1.75
+  #       max: 4.0
+  #       step: 0.25
+  rows: 10
+  # exprrows: !r 10
+  cols: # integer with controls
+        value: 2
+        min: 1
+        max: 21
+        step: 1
+  # exprcols: # integer with controls
+  #       value: !r 19
+  #       min: 1
+  #       max: 21
+  #       step: 1
+  s: abracadabra
+  exprs: !r as.character("abracadabra")
+  region:
+        value: "east"
+        choices: ["east","west","north","south"]
+  expregion:
+        value: !r as.character("west")
+        choices: ["east","west","north","south"]
+  longselect:
+        value: "a"
+        choices: ["a","b","c","d","e"]
+  exprlongselect:
+        value: !r as.character("a")
+        choices: ["a","b","c","d","e"]
+  date: !r as.Date('2015-07-04') # DATE
+  time: !r as.POSIXct("2015-07-17 14:15:57 EDT")
+  today: !r Sys.Date()
+  now: !r Sys.time() # POSIXct
+  data: !r data.frame(a=1,b=1:10)
+  posixlt: !r strptime("2015-01-01", format = "%Y-%m-%d")
+  filename:
+        value: data.csv
+        input: file
+  nullcheckbox:
+        value: null
+        input: checkbox
+  nullnumeric:
+        value: null
+        input: numeric
+  nullslider:
+        value: null
+        min: 0
+        max: 100
+        input: slider
+  nulldate:
+        value: null
+        input: date
+  nulldatetime:
+        value: null
+        input: datetime
+  nulltext:
+        value: null
+        input: text
+  nullradio:
+        value: null
+        input: radio
+        choices: [ "rainbows", "unicorns" ]
+  nullselect:
+        value: null
+        input: select
+        choices: [ "rainbows", "unicorns" ]
+  nullfile:
+        value: null
+        input: file
+  # data: !r read.csv("data.csv")
+  # lines: !r readLines("data.csv")
+  list: # list value
+  - 1
+  - 2
+  - 3
+  listvalue: # alt list value
+        value: [1,2,3]
+  # direct map values are not supported; need value.
+  # mappy: { a: 1, b: 2 }
+  mappyvalue:
+        value: {k: v}
+---
+
+
+[.has.parameters](.has.parameters)
+[.overrides.json](.overrides.json)
+
+this is a parameterized R Markdown document
+
+```{r}
+# fakes out the dependency
+library(jsonlite)
+```
+
+```{r}
+head(cars, params$rows)
+```
+
+```{r}
+format(params$date, format = "%B %d %Y")
+```
+
+```{r}
+format(params$today, format = "%B %d %Y")
+```

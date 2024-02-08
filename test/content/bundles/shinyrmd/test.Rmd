@@ -1,0 +1,18 @@
+---
+title: "R Markdown with Parameters by Jon"
+author: "Aron Atkins!"
+date: "March 2, 2015"
+output: html_document
+runtime: shiny
+---
+
+```{r, echo = FALSE}
+library(shiny)
+numericInput("rows", "How many cars?", 5)
+
+renderTable({
+  head(cars, input$rows)
+})
+```
+
+some cars should be listed above.

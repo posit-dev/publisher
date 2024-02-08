@@ -1,0 +1,4 @@
+CONTENT_TYPE=python-fastapi
+APP_MODE=python-fastapi
+ENTRYPOINT=main.py
+TITLE=stock-api-fastapi

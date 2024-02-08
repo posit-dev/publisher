@@ -1,0 +1,281 @@
+---
+title: "Access to Hospital Care Dashboard"
+runtime: shiny_prerendered
+output:
+  flexdashboard::flex_dashboard:
+    logo: images/RStudio1.png
+    navbar:
+    - align: right
+      href: https://solutions.rstudio.com/tour/access_to_care/
+      title: About
+    orientation: rows
+    social:
+    - linkedin
+    - twitter
+    - menu
+    source_code: embed
+    theme: lumen
+---
+
+```{r setup, include = FALSE}
+library(flexdashboard)
+library(accesstocare)
+library(ggplot2)
+library(ggiraph)
+library(usmap)
+library(dplyr)
+library(shiny)
+library(gt)
+
+state_list <- c("All US", us_states$state_name)
+
+us_choices <- c("Above model", "Below model", "No. of Hospitals", "Population")
+state_choices <- c( "Model", "No. of Hospitals", "Population")
+```
+
+
+State Info
+======================================================================
+
+
+Row 
+-----------------------------------------------------------------------
+
+### Options
+
+
+```{r}
+selectInput(
+  inputId = "state",
+  label = "Select a State:",
+  choices = state_list,
+  selected = "All US", 
+  selectize = FALSE
+  )
+```
+
+### Population
+
+```{r}
+valueBoxOutput("population")
+```
+
+### Hospitals
+
+```{r}
+valueBoxOutput("hospitals")
+```
+
+### Counties
+
+```{r}
+valueBoxOutput("counties")
+```
+
+### Underserved Counties
+
+```{r}
+valueBoxOutput("underserved")
+```
+
+Row {data-height=1050}
+-----------------------------------------------------------------------
+
+###  Map
+
+```{r}
+actionButton(
+  inputId = "us",
+  label = "All US"
+  )
+
+radioButtons(
+  inputId = "view",
+  label = "Select a view:",
+  choices = us_choices, 
+  inline = TRUE
+  )
+```
+
+```{r}
+girafeOutput("usmap")
+```
+
+
+Model {.storyboard}
+======================================================================
+
+### There was a high degree of correlation between the county's population and the number of hospitals
+
+```{r}
+sliderInput("pop", "Population", 0, 11000000, value = 11000000, step = 1000000, width = "700px")
+```
+
+```{r, fig.width = 10}
+girafeOutput("pop_plot")
+```
+
+### Fitted a model to predict how many hospitals should be in a county
+
+```{r, fig.width = 10}
+girafeOutput("pop_plot_model")
+```
+
+```{r, context = "server"}
+
+observeEvent(input$usmap_selected, {
+  sel_map <- input$usmap_selected
+  if(any(sel_map == state_list)) {
+    updateSelectInput(session, "state", selected = sel_map)
+    updateRadioButtons(session, "view", 
+                       choices = state_choices, 
+                       selected = "Model", 
+                       inline = TRUE
+                       )
+  } else {
+    sel_county <- us_hospitals %>% 
+      filter(fips == sel_map) 
+    
+    showModal(modalDialog(
+      title = sel_county$county_name[1],
+      sel_county %>% 
+        arrange(city, facility_name) %>%
+        mutate(nbr = row_number()) %>% 
+        select(nbr, facility_name, city) %>% 
+        gt() %>% 
+        cols_label(
+          nbr = "",
+          facility_name = "Hospital Name",
+          city = "City"
+        ) %>% 
+        tab_options(table.font.size = 8),
+      easyClose = TRUE, fade = TRUE
+    ))
+  }
+})
+
+observeEvent(
+  input$us, {
+    updateSelectInput(session, "state", selected = "All US")  
+    updateRadioButtons(session, "view", choices = us_choices, inline = TRUE)  
+    }
+  )
+
+output$usmap <- renderGirafe({
+  
+  x_width <- 10
+  
+  if(input$view == "Population") vr <- "population"
+  if(input$view == "No. of Hospitals") vr <- "hospitals"
+  if(input$view == "Above model") vr <- "above"
+  if(input$view == "Below model") vr <- "below"
+  if(input$view == "Model") vr <- "model"
+    
+  if(input$state == "All US") {
+    gp <- atc_plot_us_map(vr)
+  } else {
+    
+    
+    x_width <- usmap::us_map("counties") %>% 
+      filter(full == input$state) %>% 
+      summarise(
+        max_x = max(x), min_x = min(x),
+        max_y = max(y), min_y = min(y)
+      ) %>% 
+      mutate(
+        x_size = max_x - min_x,
+        y_size = max_y - min_y,
+        xy = x_size/y_size * 10
+      ) %>% 
+      pull(xy)
+    
+    gp <- atc_plot_state_map(input$state, vr)
+  }
+  
+  girafe(
+    ggobj = gp,
+    width = x_width, 
+    height = 5,
+    options = list(
+      opts_selection(type = "single", only_shiny = FALSE),
+      opts_tooltip(opacity = 0.7)
+      )
+    )  
+})
+
+sel_state <- reactive({
+  if(input$state == "All US") {
+    us_states
+  } else {
+    us_states %>% 
+      filter(state_name == input$state) 
+  }
+})
+
+sel_county <- reactive({
+  if(input$state == "All US") {
+    us_counties
+  } else {
+    us_counties %>% 
+      filter(state_name == input$state) 
+  }
+})
+
+output$population <- renderValueBox({
+  sel_state() %>% 
+    summarise(sum(population)) %>% 
+    pull() %>%
+    format_number() %>% 
+    valueBox(icon="fa-user")
+    })
+
+output$hospitals <- renderValueBox({
+  sel_state() %>%
+    summarise(sum(hospitals)) %>%
+    pull() %>% 
+    format_number() %>% 
+    valueBox(icon="fa-ambulance",color = palette_atc$ambulance)
+  })
+
+output$counties <- renderValueBox({
+  sel_county() %>%
+    count() %>% 
+    pull() %>% 
+    format_number() %>% 
+    valueBox(icon="fa-map-marker",color = palette_atc$above)
+  })
+
+output$underserved <- renderValueBox({
+  sel_county() %>%
+    filter(pred_status == "below") %>% 
+    count() %>% 
+    pull() %>% 
+    valueBox(icon="fa-h-square", color = palette_atc$below)
+  })
+
+output$pop_plot <- renderGirafe({
+  gp <- atc_plot_hospitals(input$pop)
+  girafe(
+    ggobj = gp,
+    options = list(
+      width = 10,
+      height = 5,
+      opts_selection(type = "single", only_shiny = FALSE),
+      opts_tooltip(opacity = 0.7)
+      )
+    )  
+})
+
+output$pop_plot_model <- renderGirafe({
+  gp <- atc_plot_hospitals(show_model_results = TRUE)
+  girafe(
+    ggobj = gp,
+    options = list(
+      width = 10,
+      height = 5,
+      opts_selection(type = "single", only_shiny = FALSE),
+      opts_tooltip(opacity = 0.7)
+      )
+    )  
+})
+```

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "locale": "en_US.UTF-8",
+  "metadata": {
+    "appmode": "jupyter-voila",
+    "entrypoint": "hash.ipynb"
+  },
+  "python": {
+    "version": "3.11.3",
+    "package_manager": {
+      "name": "pip",
+      "version": "23.1.2",
+      "package_file": "requirements.txt"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "b00b84feaa0234a8cb57dacc6371623a"
+    },
+    "hash.ipynb": {
+      "checksum": "72f44e0fa678573992c7cf553ecb9a6f"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+---
+title: "Stock Update"
+output: blastula::blastula_email
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Hello Team,
+
+Here are the latest stock prices for **TSLA** as of `r Sys.Date()`:
+
+```{r}
+price_new <- prices[, c(1, 4)]
+colnames(price_new) <- c("open", "close")
+price_new$change <- price_new$close - price_new$open
+
+# include a table with the stock prices
+format_table(
+    x = as.data.frame(tail(price_new)),
+    list(
+      change = formatter("span", style = x ~ ifelse(x > 0, formattable::style(color = "green"), formattable::style(color = "red"))),
+      area(col = c(open, close)) ~ normalize_bar("lightgrey")
+    )
+  )
+```
+
+The historical trend is shown below: 
+
+```{r}
+# include a plot with the price data
+recent[, 6] %>%
+  autoplot() +
+  geom_smooth() +
+  theme_fivethirtyeight() +
+  labs(
+    title = sprintf("%s Price Adjusted", "TSLA")
+  )
+```
+
+Let me know if you have any questions.
+
+
+Best,
+
+
+Team Lead
+

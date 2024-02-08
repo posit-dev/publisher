@@ -1,0 +1,4 @@
+CONTENT_TYPE=jupyter-voila
+APP_MODE=jupyter-voila
+ENTRYPOINT=hash.ipynb
+TITLE=voila-example

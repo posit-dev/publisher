@@ -1,0 +1,13 @@
+# Deployment artifacts
+/*/rsconnect-python
+/*/rsconnect
+/*/packrat
+
+# R
+/*/.Rproj.user
+/*/.Rhistory
+/*/.RData
+/*/.Ruserdata
+
+# Quarto adds this to projects it creates
+/*/.quarto/

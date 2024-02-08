@@ -1,0 +1,31 @@
+default:
+  runtime:
+    comment: The app runtime settings that are available in RStudio Connect
+    max_processes: 3
+    min_processes: 0
+    max_connections_per_process: 20
+    load_factor: 0.5
+    idle_timeout_per_process: 5.0
+    initial_timeout: 300
+    connection_timeout: 3600
+    read_timeout: 3600
+  app:
+    comment: Describes the app startup time and response time per click
+    startup_time: 5.0
+    response_time: 2.0
+  user:
+    arrival:
+      comment: Arrival time between users (seconds)
+      mean: 15.0
+      shape: 5.0
+    number_of_requests_per_user: 10.0
+    request:
+      comment: Mean arrival time between requests for a given user (seconds)
+      mean: 10.0
+      shape: 5.0
+    idle:
+      comment: Time in seconds that connection remains live after last request
+      mean: 1800
+      sd: 600
+  system:
+    cpu: 4.0
