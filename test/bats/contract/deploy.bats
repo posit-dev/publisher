@@ -47,7 +47,7 @@ quarto_content_types=(
     deploy_assertion
 }
 
-@test "title: ${TITLE} check config file for ${CONTENT}" {
+@test "check config file for ${CONTENT}" {
     python_version="$(python --version | awk '{print $2}')"
     quarto_version="$(quarto --version)"
 
