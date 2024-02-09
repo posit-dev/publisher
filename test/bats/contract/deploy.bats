@@ -3,7 +3,7 @@
 load '../node_modules/bats-support/load'
 load '../node_modules/bats-assert/load'
 source ../content/bundles/${CONTENT}/test/.publisher-env
-CONTENT_PATH='../content/bundles/'
+CONTENT_PATH='../content/bundles'
 
 # helper funciton for deploys
 deploy_assertion() {
@@ -47,7 +47,7 @@ quarto_content_types=(
     deploy_assertion
 }
 
-@test "check config file for ${CONTENT}" {
+@test "title: ${TITLE} check config file for ${CONTENT}" {
     python_version="$(python --version | awk '{print $2}')"
     quarto_version="$(quarto --version)"
 
@@ -55,21 +55,21 @@ quarto_content_types=(
     if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
         skip "${CONTENT} is not yet supported"
     else
+        assert_line "type = '${CONTENT_TYPE}'"
+        assert_line "entrypoint = '${ENTRYPOINT}'"
+        assert_line "validate = true"
+        assert_line "title = '${TITLE}'"
         if [[ ${python_content_type[@]} =~ ${CONTENT_TYPE} ]]; then
-            assert_line "type = '${CONTENT_TYPE}'"
-            assert_line "entrypoint = '${ENTRYPOINT}'"
-            assert_line "validate = true"
-            assert_line "title = '${TITLE}'"
             assert_line "version = '${python_version}'"
             assert_line "package-file = 'requirements.txt'"
             assert_line "package-manager = 'pip'"
         elif [[ ${quarto_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
-            assert_line "type = '${CONTENT_TYPE}'"
-            assert_line "entrypoint = '${ENTRYPOINT}'"
-            assert_line "validate = true"
-            assert_line "title = '${TITLE}'"
             assert_line "version = '${quarto_version}'"
             assert_line "engines = ['${QUARTO_ENGINE}']"
+            # if python check python version
+            if [[ "py" =~ ${CONTENT_TYPE} ]]; then
+                assert_line "version = '${python_version}'"
+            fi
         fi 
     fi
 }
@@ -77,9 +77,9 @@ quarto_content_types=(
 # redeploy content from previous test
 @test "redeploy ${CONTENT}" {
 
-    run ${EXE} redeploy ci_deploy ${CONTENT_PATH}${CONTENT}
+    run ${EXE} redeploy ci_deploy ${CONTENT_PATH}/${CONTENT}
     deploy_assertion
 
     # cleanup
-    run rm -rf ${CONTENT_PATH}${CONTENT}/.posit/ ${CONTENT_PATH}${CONTENT}/.positignore
+    run rm -rf ${CONTENT_PATH}/${CONTENT}/.posit/ ${CONTENT_PATH}/${CONTENT}/.positignore
 }
