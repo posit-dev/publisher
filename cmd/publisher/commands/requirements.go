@@ -39,16 +39,14 @@ func (cmd *RequirementsCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.C
 	if err != nil {
 		return err
 	}
-	if args.Verbose >= 2 {
-		content, err := reqPath.ReadFile()
-		if err != nil {
-			return err
-		}
-		fmt.Println()
-		_, err = os.Stdout.Write(content)
-		if err != nil {
-			return err
-		}
+	fmt.Fprintf(os.Stderr, "Wrote file %s:\n", cmd.Output)
+	content, err := reqPath.ReadFile()
+	if err != nil {
+		return err
+	}
+	_, err = os.Stdout.Write(content)
+	if err != nil {
+		return err
 	}
 	return nil
 }
