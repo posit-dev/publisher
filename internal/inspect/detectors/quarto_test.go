@@ -3,6 +3,7 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
@@ -136,6 +137,66 @@ func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
 		Quarto: &config.Quarto{
 			Version: "1.3.353",
 			Engines: []string{"jupyter", "markdown"},
+		},
+	}, t)
+}
+
+func (s *QuartoDetectorSuite) TestInferWindows() {
+	if runtime.GOOS != "windows" {
+		s.T().Skip("TestInferWindows test only runs on Windows")
+	}
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	// A quarto file must exist before we try to run `quarto inspect`
+	err = base.Join("project.qmd").WriteFile(nil, 0600)
+	s.Nil(err)
+	err = base.Join("other.qmd").WriteFile(nil, 0600)
+	s.Nil(err)
+
+	detector := NewQuartoDetector()
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return([]byte(`{
+		"quarto": {
+			"version": "1.3.353"
+		  },
+		  "dir": "C:\\Users\\somebody\\work\\project",
+		  "engines": [
+			"markdown"
+		  ],
+		  "config": {
+			"project": {
+			  "title": "this is the title"
+			},
+			"editor": "visual",
+			"language": {}
+		  },
+		  "files": {
+			"input": [
+				"C:\\Users\\somebody\\work\\project\\project.qmd",
+				"C:\\Users\\somebody\\work\\project\\other.qmd"
+			],
+			"resources": [],
+			"config": [
+			  "C:\\Users\\somebody\\work\\project\\_quarto.yml"
+			],
+			"configResources": []
+		  }
+	}`), nil)
+	detector.executor = executor
+
+	t, err := detector.InferType(base)
+	s.Nil(err)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "project.qmd",
+		Title:      "this is the title",
+		Validate:   true,
+		Quarto: &config.Quarto{
+			Version: "1.3.353",
+			Engines: []string{"markdown"},
 		},
 	}, t)
 }
