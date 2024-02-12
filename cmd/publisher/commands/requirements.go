@@ -3,6 +3,7 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -15,15 +16,25 @@ type RequirementsCommand struct {
 	Path   util.Path `help:"Path to project directory containing files to publish." arg:"" default:"."`
 	Python util.Path `help:"Path to Python interpreter for this content, if it is Python-based. Default is the Python 3 on your PATH."`
 	Output string    `short:"o" help:"Name of output file." default:"requirements.txt"`
+	Force  bool      `short:"f" help:"Overwrite the output file, if it exists."`
 }
+
+var errRequirementsFileExists = errors.New("the requirements file already exists; use the -f option to overwrite it")
 
 func (cmd *RequirementsCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	absPath, err := cmd.Path.Abs()
 	if err != nil {
 		return err
 	}
-	inspector := inspect.NewPythonInspector(cmd.Python, ctx.Logger)
 	reqPath := absPath.Join(cmd.Output)
+	exists, err := reqPath.Exists()
+	if err != nil {
+		return err
+	}
+	if exists && !cmd.Force {
+		return errRequirementsFileExists
+	}
+	inspector := inspect.NewPythonInspector(cmd.Python, ctx.Logger)
 	err = inspector.CreateRequirementsFile(absPath, reqPath)
 	if err != nil {
 		return err
