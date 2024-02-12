@@ -61,9 +61,9 @@ func (s *defaultProjectImportScanner) ScanProjectImports(base util.Path) ([]Impo
 			}
 		}
 		if code != "" {
-			s.log.Info("Getting imports from file", "path", path)
 			fileImports := s.scanner.ScanImports(string(code))
 			projectImports = append(projectImports, fileImports...)
+			s.log.Info("imports from file", "path", path, "imports", fileImports)
 		}
 		return nil
 	})
