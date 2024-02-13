@@ -76,17 +76,18 @@ func (s *EntrypointSuite) TestInferEntrypointOnlyMatchingFile() {
 }
 
 func (s *EntrypointSuite) TestInferEntrypointMultipleMatchingFiles() {
+	// Multiple possible files, none of which is preferred.
 	base := util.NewPath(".", afero.NewMemMapFs())
-	err := base.Join("myapp.py").WriteFile([]byte{}, 0600)
+	err := base.Join("mylib.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
-	err = base.Join("mylib.py").WriteFile([]byte{}, 0600)
+	err = base.Join("myapp.py").WriteFile([]byte{}, 0600)
 	s.Nil(err)
 
 	h := defaultInferenceHelper{}
 	entrypoint, entrypointPath, err := h.InferEntrypoint(base, ".py", "app.py")
 	s.Nil(err)
-	s.Equal("", entrypoint)
-	s.Equal(util.Path{}, entrypointPath)
+	s.Equal("myapp.py", entrypoint)
+	s.Equal(base.Join("myapp.py"), entrypointPath)
 }
 
 func (s *EntrypointSuite) TestFileHasPythonImports() {
