@@ -6,7 +6,7 @@ import (
 	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/cli_types"
 	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/services/ui"
+	"github.com/rstudio/connect-client/internal/services/api"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -34,7 +34,7 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 
 	// Auto-initialize if needed. This will be replaced by an API call from the UI
 	// for better error handling and startup performance.
-	svc := ui.NewUIService(
+	svc := api.NewService(
 		"/",
 		cmd.Interactive,
 		cmd.OpenBrowserAt,

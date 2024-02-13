@@ -6,7 +6,10 @@
       class="space-between-y-sm"
     >
       <p>
-        Created on {{ formatDateString(deployment.createdAt) }}
+        Created
+        <relative-time :datetime="deployment.createdAt">
+          {{ formatDateString(deployment.createdAt) }}
+        </relative-time>
       </p>
       <p>An ID will be created on first deployment</p>
       <p>Never has been deployed</p>

@@ -1,10 +1,9 @@
-package inspect
+package detectors
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -15,7 +14,6 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -64,31 +62,6 @@ func notebookWithCell(cellContent string) []byte {
 		   }
 	`, string(content))
 	return []byte(fileContent)
-}
-
-func (s *NotebookDetectorSuite) TestGetNotebookFileInputs() {
-	path := util.NewPath("testdata", afero.NewOsFs()).Join("good_notebook.ipynb.txt")
-	inputs, err := getNotebookFileInputs(path)
-	s.Nil(err)
-	s.Equal("import sys\nprint(sys.executable)\nprint('Summing')\n123 + 456\n", inputs)
-}
-
-func (s *NotebookDetectorSuite) TestGetNotebookFileInputsErr() {
-	fs := utiltest.NewMockFs()
-	path := util.NewPath("testdata", fs).Join("good_notebook.ipynb.txt")
-	testError := errors.New("test error from Open")
-	fs.On("Open", mock.Anything).Return(nil, testError)
-	inputs, err := getNotebookFileInputs(path)
-	s.NotNil(err)
-	s.ErrorIs(err, testError)
-	s.Equal("", inputs)
-}
-
-func (s *NotebookDetectorSuite) TestGetNotebookInputsNoCells() {
-	path := util.NewPath("testdata", afero.NewOsFs()).Join("empty_notebook.ipynb.txt")
-	inputs, err := getNotebookFileInputs(path)
-	s.NoError(err)
-	s.Equal("", inputs)
 }
 
 func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
