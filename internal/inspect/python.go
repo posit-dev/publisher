@@ -3,91 +3,161 @@ package inspect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
+	"io/fs"
+	"strings"
+
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/executor"
+	"github.com/rstudio/connect-client/internal/inspect/dependencies/pydeps"
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type PythonAppDetector struct {
-	inferenceHelper
-	contentType config.ContentType
-	imports     []string
+type PythonInspector interface {
+	InspectPython() (*config.Python, error)
+	CreateRequirementsFile(base util.Path, dest util.Path) error
 }
 
-func NewPythonAppDetector(contentType config.ContentType, imports []string) *PythonAppDetector {
-	return &PythonAppDetector{
-		inferenceHelper: defaultInferenceHelper{},
-		contentType:     contentType,
-		imports:         imports,
+type defaultPythonInspector struct {
+	executor   executor.Executor
+	pathLooker util.PathLooker
+	scanner    pydeps.DependencyScanner
+	pythonPath util.Path
+	log        logging.Logger
+}
+
+var _ PythonInspector = &defaultPythonInspector{}
+
+const PythonRequirementsFilename = "requirements.txt"
+
+func NewPythonInspector(pythonPath util.Path, log logging.Logger) PythonInspector {
+	return &defaultPythonInspector{
+		executor:   executor.NewExecutor(),
+		pathLooker: util.NewPathLooker(),
+		scanner:    pydeps.NewDependencyScanner(log),
+		pythonPath: pythonPath,
+		log:        log,
 	}
 }
 
-func NewFlaskDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonFlask, []string{
-		"flask", // also matches flask_api, flask_openapi3, etc.
-		"flasgger",
-		"falcon", // must check for this after falcon.asgi (FastAPI)
-		"bottle",
-		"pycnic",
-	})
-}
-
-func NewFastAPIDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonFastAPI, []string{
-		"fastapi",
-		"falcon.asgi",
-		"quart",
-		"sanic",
-		"starlette",
-		"vetiver",
-	})
-}
-
-func NewDashDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonDash, []string{
-		"dash", // also matches dash_core_components, dash_bio, etc.
-	})
-}
-
-func NewStreamlitDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonStreamlit, []string{
-		"streamlit",
-	})
-}
-
-func NewBokehDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonBokeh, []string{
-		"bokeh",
-	})
-}
-
-func NewPyShinyDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonShiny, []string{
-		"shiny",
-	})
-}
-
-func (d *PythonAppDetector) InferType(path util.Path) (*config.Config, error) {
-	entrypoint, entrypointPath, err := d.InferEntrypoint(
-		path, ".py", "main.py", "app.py", "streamlit_app.py", "api.py")
-
+// InspectPython inspects the specified project directory,
+// returning a Python configuration.
+// If requirements.txt does not exist, it will be created.
+// The python version (and packages if needed) will
+// be determined by the specified pythonExecutable,
+// or by `python3` or `python` on $PATH.
+func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
+	pythonVersion, err := i.getPythonVersion()
 	if err != nil {
 		return nil, err
 	}
-	if entrypoint == "" {
-		// We didn't find a matching import
-		return nil, nil
-	}
-	matches, err := d.FileHasPythonImports(entrypointPath, d.imports)
+	return &config.Python{
+		Version:        pythonVersion,
+		PackageFile:    PythonRequirementsFilename,
+		PackageManager: "pip",
+	}, nil
+}
+
+func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
+	args := []string{"--version"}
+	_, err := i.executor.RunCommand(pythonExecutable, args, i.log)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("could not run python executable '%s': %w", pythonExecutable, err)
 	}
-	if matches {
-		cfg := config.New()
-		cfg.Entrypoint = entrypoint
-		cfg.Type = d.contentType
-		// indicate that Python inspection is needed
-		cfg.Python = &config.Python{}
-		return cfg, nil
+	return nil
+}
+
+func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
+	if i.pythonPath.Path() != "" {
+		// User-provided python executable
+		exists, err := i.pythonPath.Exists()
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return i.pythonPath.Path(), nil
+		}
+		return "", fmt.Errorf(
+			"cannot find the specified Python executable %s: %w",
+			i.pythonPath, fs.ErrNotExist)
+	} else {
+		// Use whatever is on PATH
+		path, err := i.pathLooker.LookPath("python3")
+		if err == nil {
+			// Ensure the Python is actually runnable. This is especially
+			// needed on Windows, where `python3` is (by default)
+			// an app execution alias. Also, installing Python from
+			// python.org does not disable the built-in app execution aliases.
+			err = i.validatePythonExecutable(path)
+		}
+		if err != nil {
+			path, err = i.pathLooker.LookPath("python")
+			if err == nil {
+				err = i.validatePythonExecutable(path)
+			}
+		}
+		if err != nil {
+			return "", err
+		}
+		return path, nil
 	}
-	return nil, nil
+}
+
+func (i *defaultPythonInspector) getPythonVersion() (string, error) {
+	pythonExecutable, err := i.getPythonExecutable()
+	if err != nil {
+		return "", err
+	}
+	i.log.Info("Getting Python version", "python", pythonExecutable)
+	args := []string{
+		`-E`, // ignore python-specific environment variables
+		`-c`, // execute the next argument as python code
+		`import sys; v = sys.version_info; print("%d.%d.%d" % (v[0], v[1], v[2]))`,
+	}
+	output, err := i.executor.RunCommand(pythonExecutable, args, i.log)
+	if err != nil {
+		return "", err
+	}
+	version := strings.TrimSpace(string(output))
+	i.log.Info("Detected Python", "version", version)
+	return version, nil
+}
+
+func (i *defaultPythonInspector) miniFreeze(base util.Path, pythonExecutable string, dest util.Path) error {
+	specs, err := i.scanner.ScanDependencies(base, pythonExecutable)
+	if err != nil {
+		return err
+	}
+	f, err := dest.Create()
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	for _, spec := range specs {
+		_, err = fmt.Fprintln(f, spec)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (i *defaultPythonInspector) CreateRequirementsFile(base util.Path, dest util.Path) error {
+	oldWD, err := util.Chdir(base.Path())
+	if err != nil {
+		return nil
+	}
+	defer util.Chdir(oldWD)
+
+	pythonExecutable, err := i.getPythonExecutable()
+	if err != nil {
+		return err
+	}
+	err = i.miniFreeze(base, pythonExecutable, dest)
+	if err != nil {
+		return err
+	}
+	return nil
 }
