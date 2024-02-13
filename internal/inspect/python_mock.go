@@ -30,3 +30,13 @@ func (m *MockPythonInspector) CreateRequirementsFile(base util.Path, dest util.P
 	args := m.Called(base, dest)
 	return args.Error(0)
 }
+
+func (m *MockPythonInspector) GetRequirements(base util.Path) ([]string, string, error) {
+	args := m.Called()
+	reqs := args.Get(0)
+	if reqs == nil {
+		return nil, args.String(1), args.Error(2)
+	} else {
+		return reqs.([]string), args.String(1), args.Error(2)
+	}
+}
