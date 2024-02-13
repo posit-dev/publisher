@@ -6,9 +6,8 @@ import (
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/environment"
-	"github.com/rstudio/connect-client/internal/environment/environmenttest"
 	"github.com/rstudio/connect-client/internal/inspect"
+	"github.com/rstudio/connect-client/internal/inspect/detectors"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -27,8 +26,8 @@ func TestInitializeSuite(t *testing.T) {
 
 func (s *InitializeSuite) SetupTest() {
 	// Restore default factories for each test
-	ContentDetectorFactory = inspect.NewContentTypeDetector
-	PythonInspectorFactory = environment.NewPythonInspector
+	ContentDetectorFactory = detectors.NewContentTypeDetector
+	PythonInspectorFactory = inspect.NewPythonInspector
 
 	cwd, err := util.Getwd(afero.NewMemMapFs())
 	s.NoError(err)
@@ -108,8 +107,8 @@ var expectedPyConfig = &config.Python{
 	PackageFile:    "requirements.txt",
 }
 
-func makeMockPythonInspector(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-	pyInspector := environmenttest.NewMockPythonInspector()
+func makeMockPythonInspector(util.Path, logging.Logger) inspect.PythonInspector {
+	pyInspector := inspect.NewMockPythonInspector()
 	pyInspector.On("InspectPython").Return(expectedPyConfig, nil)
 	return pyInspector
 }
@@ -184,8 +183,8 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 	cfg.Entrypoint = "app.py"
 	cfg.WriteFile(configPath)
 
-	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) environment.PythonInspector {
-		return &environmenttest.MockPythonInspector{}
+	PythonInspectorFactory = func(util.Path, logging.Logger) inspect.PythonInspector {
+		return &inspect.MockPythonInspector{}
 	}
 	err := InitIfNeeded(s.cwd, configName, log)
 	s.NoError(err)
