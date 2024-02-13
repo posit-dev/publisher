@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/r3labs/sse/v2"
-	"github.com/rstudio/connect-client/internal/events/eventstest"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
@@ -25,44 +24,26 @@ func TestSSEHandlerSuite(t *testing.T) {
 	suite.Run(t, new(SSEHandlerSuite))
 }
 
-func (s *SSEHandlerSuite) TestNewSSEHandlerWithOpts() {
+func (s *SSEHandlerSuite) TestNewSSEHandler() {
 	sseServer := sse.New()
-	h := NewSSEHandler(sseServer, &SSEHandlerOptions{
-		Level: slog.LevelDebug,
-	})
+	emitter := NewSSEEmitter(sseServer)
+	h := NewSSEHandler(emitter)
 	s.Equal(&SSEHandler{
-		server: sseServer,
-		opts: SSEHandlerOptions{
-			Level: slog.LevelDebug,
-		},
-		attrs: nil,
-	}, h)
-}
-
-func (s *SSEHandlerSuite) TestNewSSEHandlerNoOpts() {
-	sseServer := sse.New()
-	h := NewSSEHandler(sseServer, nil)
-	s.Equal(&SSEHandler{
-		server: sseServer,
-		opts: SSEHandlerOptions{
-			Level: slog.LevelInfo,
-		},
-		attrs: nil,
+		emitter: emitter,
+		attrs:   nil,
 	}, h)
 }
 
 func (s *SSEHandlerSuite) TestEnabled() {
-	h := NewSSEHandler(nil, &SSEHandlerOptions{
-		Level: slog.LevelInfo,
-	})
-	s.False(h.Enabled(context.Background(), slog.LevelDebug))
+	h := NewSSEHandler(nil)
+	s.True(h.Enabled(context.Background(), slog.LevelDebug))
 	s.True(h.Enabled(context.Background(), slog.LevelInfo))
 	s.True(h.Enabled(context.Background(), slog.LevelWarn))
 	s.True(h.Enabled(context.Background(), slog.LevelError))
 }
 
 func (s *SSEHandlerSuite) TestWithAttrs() {
-	handler := NewSSEHandler(nil, nil)
+	handler := NewSSEHandler(nil)
 	attrs := []slog.Attr{
 		{Key: "hey", Value: slog.StringValue("there")},
 		{Key: "x", Value: slog.StringValue("marks the spot")},
@@ -77,14 +58,15 @@ func (s *SSEHandlerSuite) TestWithAttrs() {
 }
 
 func (s *SSEHandlerSuite) TestWithGroup() {
-	handler := NewSSEHandler(nil, nil)
+	handler := NewSSEHandler(nil)
 	handlerWithGroup := handler.WithGroup("hi")
 	s.Equal(handler, handlerWithGroup)
 }
 
 func (s *SSEHandlerSuite) TestHandleNoAttrs() {
-	server := eventstest.NewMockSSEServer()
-	handler := NewSSEHandler(server, nil)
+	server := NewMockSSEServer()
+	emitter := NewSSEEmitter(server)
+	handler := NewSSEHandler(emitter)
 
 	t, err := time.Parse(time.RFC3339, "2023-08-30T08:22:01-04:00")
 	s.NoError(err)
@@ -97,7 +79,7 @@ func (s *SSEHandlerSuite) TestHandleNoAttrs() {
 	server.On("Publish", "messages", mock.Anything).Run(func(args mock.Arguments) {
 		sseEvent := args.Get(1).(*sse.Event)
 		s.Equal(sseEvent.Event, []byte("message"))
-		var event AgentEvent
+		var event Event
 		err := json.Unmarshal(sseEvent.Data, &event)
 		s.NoError(err)
 		s.Equal("log message", event.Data["Message"])
@@ -110,8 +92,9 @@ func (s *SSEHandlerSuite) TestHandleNoAttrs() {
 }
 
 func (s *SSEHandlerSuite) TestHandleWithAttrs() {
-	server := eventstest.NewMockSSEServer()
-	handler := NewSSEHandler(server, nil)
+	server := NewMockSSEServer()
+	emitter := NewSSEEmitter(server)
+	handler := NewSSEHandler(emitter)
 
 	t, err := time.Parse(time.RFC3339, "2023-08-30T08:22:01-04:00")
 	s.NoError(err)
@@ -124,23 +107,15 @@ func (s *SSEHandlerSuite) TestHandleWithAttrs() {
 	// Record attrs take precedence.
 	handlerWithAttrs := handler.WithAttrs([]slog.Attr{
 		{
+			// This will be overridden by the attr in the record
 			Key:   logging.LogKeyOp,
 			Value: slog.StringValue("someOperation/step"),
-		},
-		{
-			// This will be overridden by the attr in the record
-			Key:   logging.LogKeyPhase,
-			Value: slog.StringValue(string(logging.StartPhase)),
 		},
 	})
 	rec.AddAttrs(
 		slog.Attr{
-			Key:   logging.LogKeyPhase,
-			Value: slog.StringValue(string(logging.FailurePhase)),
-		},
-		slog.Attr{
-			Key:   logging.LogKeyErrCode,
-			Value: slog.StringValue(string("myErrCode")),
+			Key:   logging.LogKeyOp,
+			Value: slog.StringValue("anotherOp/step2"),
 		},
 		slog.Attr{
 			Key:   "random_number",
@@ -154,15 +129,14 @@ func (s *SSEHandlerSuite) TestHandleWithAttrs() {
 	server.On("Publish", "messages", mock.Anything).Run(func(args mock.Arguments) {
 		sseEvent := args.Get(1).(*sse.Event)
 		s.Equal(sseEvent.Event, []byte("message"))
-		var event AgentEvent
+		var event Event
 		err := json.Unmarshal(sseEvent.Data, &event)
 		s.NoError(err)
 		s.Equal("log message", event.Data["Message"])
 		s.Equal("INFO", event.Data["Level"])
-		s.Equal("someOperation/step/failure/myErrCode", event.Type)
+		s.Equal("anotherOp/step2/log", event.Type)
 		s.Equal(float64(123), event.Data["random_number"])
 	})
 	err = handlerWithAttrs.Handle(context.Background(), rec)
 	s.NoError(err)
-
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
+	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/logging/loggingtest"
 	"github.com/rstudio/connect-client/internal/project"
@@ -59,7 +60,8 @@ func (s *PublishSuite) SetupTest() {
 
 func (s *PublishSuite) TestNewFromState() {
 	stateStore := state.Empty()
-	publisher := NewFromState(stateStore)
+	publisher, err := NewFromState(stateStore, events.NewNullEmitter())
+	s.NoError(err)
 	s.Equal(stateStore, publisher.(*defaultPublisher).State)
 }
 
@@ -170,7 +172,10 @@ func (s *PublishSuite) publishWithClient(
 		Target:   target,
 		SaveName: "saveAsThis",
 	}
-	publisher := &defaultPublisher{stateStore}
+	publisher := &defaultPublisher{
+		State:   stateStore,
+		emitter: events.NewNullEmitter(),
+	}
 	err = publisher.publishWithClient(bundler, account, client, s.log)
 	if expectedErr == nil {
 		s.NoError(err)
@@ -195,7 +200,6 @@ func (s *PublishSuite) publishWithClient(
 		s.NotEqual("", record.DeployedAt)
 
 		logs := s.logBuffer.String()
-		s.Contains(logs, "save_name=saveAsThis")
 		s.Contains(logs, "content_id="+myContentID)
 
 		// Files are written after upload.
@@ -225,7 +229,7 @@ func (s *PublishSuite) TestLogAppInfo() {
 	buf := new(bytes.Buffer)
 	a := mock.Anything
 	log := loggingtest.NewMockLogger()
-	log.On("Success", "Deployment successful", a, a, a, a, a, a, a, a, a, a).Return()
+	log.On("Info", "Deployment information", a, a, a, a, a, a, a, a, a, a).Return()
 
 	logAppInfo(buf, accountURL, contentID, log, nil)
 	str := buf.String()

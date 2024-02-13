@@ -26,7 +26,7 @@ type RedeployCmd struct {
 }
 
 func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	ctx.Logger = events.NewSimpleLogger(args.Verbose, os.Stderr)
+	ctx.Logger = events.NewCLILogger(args.Verbose, os.Stderr)
 
 	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
 	if err != nil {
@@ -47,6 +47,9 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 		stateStore.Account.Name,
 		stateStore.ConfigName)
 
-	publisher := publish.NewFromState(stateStore)
+	publisher, err := publish.NewFromState(stateStore, events.NewCliEmitter(os.Stderr, ctx.Logger))
+	if err != nil {
+		return err
+	}
 	return publisher.PublishDirectory(ctx.Logger)
 }

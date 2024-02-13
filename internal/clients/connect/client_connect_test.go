@@ -5,9 +5,11 @@ package connect
 import (
 	"errors"
 	"io/fs"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/clients/http_client"
 	"github.com/rstudio/connect-client/internal/events"
@@ -32,7 +34,7 @@ func (s *ConnectClientSuite) TestNewConnectClient() {
 	timeout := 10 * time.Second
 	log := logging.New()
 
-	client, err := NewConnectClient(account, timeout, log)
+	client, err := NewConnectClient(account, timeout, events.NewNullEmitter(), log)
 	s.NoError(err)
 	s.Equal(account, client.account)
 	s.NotNil(client.client)
@@ -45,7 +47,7 @@ func (s *ConnectClientSuite) TestNewConnectClientErr() {
 	timeout := 10 * time.Second
 	log := logging.New()
 
-	client, err := NewConnectClient(account, timeout, log)
+	client, err := NewConnectClient(account, timeout, events.NewNullEmitter(), log)
 	s.ErrorIs(err, fs.ErrNotExist)
 	s.Nil(client)
 }
@@ -57,44 +59,28 @@ type taskTest struct {
 }
 
 func (s *ConnectClientSuite) TestWaitForTask() {
-	log := loggingtest.NewMockLogger()
-
-	str := mock.AnythingOfType("string")
-	anything := mock.Anything
-	log.On("Start", "Building Jupyter notebook...", logging.LogKeyOp, events.PublishRestorePythonEnvOp)
-	log.On("Start", "Launching Jupyter notebook...", logging.LogKeyOp, events.PublishRunContentOp)
-	log.On("Start", "Bundle created with R version 4.3.0, Python version 3.11.3, and Quarto version 0.9.105 is compatible with environment Local with R version 4.3.1 from /opt/R/4.3.1/bin/R, Python version 3.11.3 from /opt/python/3.11.3/bin/python3.11, and Quarto version 1.3.450 from /opt/quarto/1.3.450/bin/quarto", logging.LogKeyOp, events.PublishRestoreREnvOp)
-	log.On("Success", "Done", logging.LogKeyOp, events.PublishRestorePythonEnvOp)
-	log.On("Success", "Done", logging.LogKeyOp, events.PublishRunContentOp)
-	log.On("Success", "Done", logging.LogKeyOp, events.AgentOp)
-	log.On("Info", str, str, anything)
-
-	expectedPackages := []struct {
-		rt      packageRuntime
-		status  packageStatus
-		name    string
-		version string
-	}{
-		{pythonRuntime, installPackage, "wheel", ""},
-		{pythonRuntime, installPackage, "setuptools", ""},
-		{pythonRuntime, installPackage, "pip", ""},
-		{pythonRuntime, downloadPackage, "anyio", "3.6.2"},
-		{pythonRuntime, downloadPackage, "argon2-cffi", "21.3.0"},
-		{rRuntime, downloadAndInstallPackage, "R6", "2.5.1"},
-		{rRuntime, downloadAndInstallPackage, "Rcpp", "1.0.10"},
-	}
-	for _, pkg := range expectedPackages {
-		op := events.PublishRestorePythonEnvOp
-		if pkg.rt == rRuntime {
-			op = events.PublishRestoreREnvOp
+	var actualPackages []packageStatusEvent
+	emitter := events.NewMockEmitter()
+	emitter.On("Emit", mock.Anything).Run(func(args mock.Arguments) {
+		event := args.Get(0).(*events.Event)
+		if strings.HasSuffix(event.Type, "/status") {
+			var data packageStatusEvent
+			err := mapstructure.Decode(event.Data, &data)
+			s.NoError(err)
+			actualPackages = append(actualPackages, data)
 		}
-		log.On("Status",
-			"Package restore",
-			"runtime", pkg.rt,
-			"status", pkg.status,
-			"name", pkg.name,
-			"version", pkg.version,
-			logging.LogKeyOp, op)
+	}).Return(nil)
+	client, err := NewConnectClient(&accounts.Account{}, time.Second, emitter, logging.New())
+	s.NoError(err)
+
+	expectedPackages := []packageStatusEvent{
+		{"wheel", pythonRuntime, installPackage, ""},
+		{"setuptools", pythonRuntime, installPackage, ""},
+		{"pip", pythonRuntime, installPackage, ""},
+		{"anyio", pythonRuntime, downloadPackage, "3.6.2"},
+		{"argon2-cffi", pythonRuntime, downloadPackage, "21.3.0"},
+		{"R6", rRuntime, downloadAndInstallPackage, "2.5.1"},
+		{"Rcpp", rRuntime, downloadAndInstallPackage, "1.0.10"},
 	}
 	taskID := types.TaskID("W3YpnrwUOQJxL5DS")
 
@@ -277,10 +263,9 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 		},
 	}
 	op := events.AgentOp
-	var err error
 
 	for _, test := range tests {
-		op, err = handleTaskUpdate(&test.task, op, log)
+		op, err = client.handleTaskUpdate(&test.task, op, logging.New())
 		if test.err != nil {
 			s.ErrorIs(err, test.err)
 		} else {
@@ -288,17 +273,17 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 		}
 		s.Equal(test.nextOp, op)
 	}
-	log.AssertExpectations(s.T())
+	s.Equal(expectedPackages, actualPackages)
 }
 
 func (s *ConnectClientSuite) TestWaitForTaskErr() {
 	log := loggingtest.NewMockLogger()
 
 	str := mock.AnythingOfType("string")
-	anything := mock.Anything
+	log.On("Info", str, str, mock.Anything)
 
-	log.On("Start", "Building Jupyter notebook...", logging.LogKeyOp, events.PublishRestorePythonEnvOp)
-	log.On("Info", str, str, anything)
+	client, err := NewConnectClient(&accounts.Account{}, time.Second, events.NewNullEmitter(), log)
+	s.NoError(err)
 
 	msg := "An error occurred while building your content. (Error code: python-package-version-not-available)"
 	task := taskDTO{
@@ -316,7 +301,7 @@ func (s *ConnectClientSuite) TestWaitForTaskErr() {
 	}
 
 	op := events.Operation("")
-	op, err := handleTaskUpdate(&task, op, log)
+	op, err = client.handleTaskUpdate(&task, op, log)
 	s.Equal(&types.AgentError{
 		Code:    events.DeploymentFailedCode,
 		Err:     errors.New(msg),

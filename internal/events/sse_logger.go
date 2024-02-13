@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/logging"
 )
 
@@ -20,10 +19,11 @@ func logLevel(verbosity int) slog.Level {
 	return slog.LevelDebug
 }
 
-func NewLoggerWithSSE(verbosity int, eventServer *sse.Server) logging.Logger {
+func NewLoggerWithSSE(verbosity int, emitter *SSEEmitter) logging.Logger {
 	level := logLevel(verbosity)
 	stderrHandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
-	sseHandler := NewSSEHandler(eventServer, &SSEHandlerOptions{Level: slog.LevelDebug})
+
+	sseHandler := NewSSEHandler(emitter)
 	multiHandler := logging.NewMultiHandler(stderrHandler, sseHandler)
 	return logging.FromStdLogger(slog.New(multiHandler))
 }

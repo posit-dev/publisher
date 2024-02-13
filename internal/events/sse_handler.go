@@ -4,55 +4,33 @@ package events
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"slices"
 
-	"github.com/r3labs/sse/v2"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
 )
 
-type SSEServer interface {
-	Close()
-	CreateStream(id string) *sse.Stream
-	RemoveStream(id string)
-	StreamExists(id string) bool
-	Publish(id string, event *sse.Event)
-	TryPublish(id string, event *sse.Event) bool
-}
-
-type SSEHandlerOptions struct {
-	Level slog.Leveler
-}
-
+// SSEHandler emits an event for every log message.
 type SSEHandler struct {
-	opts   SSEHandlerOptions
-	server SSEServer
-	attrs  []slog.Attr
+	emitter *SSEEmitter
+	attrs   []slog.Attr
 }
 
 var _ slog.Handler = &SSEHandler{}
 
-func NewSSEHandler(server SSEServer, opts *SSEHandlerOptions) *SSEHandler {
-	h := &SSEHandler{
-		server: server,
+func NewSSEHandler(emitter *SSEEmitter) *SSEHandler {
+	return &SSEHandler{
+		emitter: emitter,
 	}
-	if opts != nil {
-		h.opts = *opts
-	}
-	if h.opts.Level == nil {
-		h.opts.Level = slog.LevelInfo
-	}
-	return h
 }
 
 func (h *SSEHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return level >= h.opts.Level.Level()
+	return true
 }
 
-func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
-	event := &AgentEvent{
+func (h *SSEHandler) recordToEvent(rec slog.Record) *Event {
+	event := &Event{
 		Time: rec.Time,
 		Data: make(EventData),
 	}
@@ -65,15 +43,12 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	// log.Info("a message", "op", "publish/restore")
 	// will create an SSE event with Type: "publish/restore/log".
 	op := AgentOp
-	phase := logging.LogPhase
 	errCode := types.UnknownErrorCode
 
 	handleAttr := func(attr slog.Attr) bool {
 		switch attr.Key {
 		case logging.LogKeyOp:
 			op = Operation(attr.Value.String())
-		case logging.LogKeyPhase:
-			phase = Phase(attr.Value.String())
 		case logging.LogKeyErrCode:
 			errCode = ErrorCode(attr.Value.String())
 		case "": // skip empty attrs
@@ -88,24 +63,13 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *AgentEvent {
 	}
 	// Then the ones from this specific message.
 	rec.Attrs(handleAttr)
-	event.Type = EventTypeOf(op, phase, errCode)
+	event.Type = EventTypeOf(op, LogPhase, errCode)
 	return event
 }
 
 func (h *SSEHandler) Handle(ctx context.Context, rec slog.Record) error {
 	event := h.recordToEvent(rec)
-	eventJSON, err := json.Marshal(event)
-	if err != nil {
-		return err
-	}
-
-	h.server.Publish("messages",
-		&sse.Event{
-			Data:  eventJSON,
-			Event: []byte("message"),
-		},
-	)
-	return nil
+	return h.emitter.Emit(event)
 }
 
 func (h *SSEHandler) WithAttrs(attrs []slog.Attr) slog.Handler {

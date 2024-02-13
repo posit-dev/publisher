@@ -6,22 +6,40 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/mitchellh/mapstructure"
+	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/types"
 )
 
 type EventType = string
 type EventData = types.ErrorData
 
-type AgentEvent struct {
+var NoData = struct{}{}
+
+type Event struct {
 	Time time.Time
 	Type EventType
 	Data EventData
+
+	op      Operation
+	phase   Phase
+	errCode ErrorCode
 }
 
 // We use Operation and Phase to construct the event Type.
 type Operation = types.Operation
-type Phase = logging.Phase
+
+// Phase indicates which part of an Operation we are performing
+type Phase string
+
+const (
+	StartPhase    Phase = "start"
+	ProgressPhase Phase = "progress"
+	StatusPhase   Phase = "status"
+	SuccessPhase  Phase = "success"
+	FailurePhase  Phase = "failure"
+	LogPhase      Phase = "log"
+)
 
 const (
 	AgentOp Operation = "agent"
@@ -41,8 +59,26 @@ const (
 	PublishOp                    Operation = "publish"
 )
 
+func New(op Operation, phase Phase, errCode ErrorCode, data any) *Event {
+	var eventData EventData
+	err := mapstructure.Decode(data, &eventData)
+	if err != nil {
+		if project.DevelopmentBuild() {
+			panic(err)
+		}
+	}
+	return &Event{
+		Time:    time.Now(),
+		Type:    EventTypeOf(op, phase, errCode),
+		Data:    eventData,
+		op:      op,
+		phase:   phase,
+		errCode: errCode,
+	}
+}
+
 func EventTypeOf(op Operation, phase Phase, errCode ErrorCode) EventType {
-	if phase == logging.FailurePhase && errCode != "" {
+	if phase == FailurePhase && errCode != "" {
 		return fmt.Sprintf("%s/%s/%s", op, phase, errCode)
 	} else {
 		return fmt.Sprintf("%s/%s", op, phase)

@@ -88,14 +88,12 @@ import { PropType, computed } from 'vue';
 import {
   EventStreamMessage,
   isErrorEventStreamMessage,
+  isPublishCheckCapabilitiesLog,
   isPublishCreateBundleLog,
   isPublishCreateBundleSuccess,
   isPublishCreateDeploymentStart,
   isPublishCreateNewDeploymentSuccess,
   isPublishRestorePythonEnvLog,
-  isPublishRestorePythonEnvStart,
-  isPublishRestorePythonEnvStatus,
-  isPublishRunContentLog,
   isPublishSetVanityURLLog,
   isPublishValidateDeploymentLog
 } from 'src/api/types/events';
@@ -109,35 +107,35 @@ const props = defineProps({
 const hasError = computed(() => props.messages.some(msg => isErrorEventStreamMessage(msg)));
 
 const shouldSkipMessage = (msg: EventStreamMessage): boolean => {
-  return msg.type.endsWith('/log') && msg.data.level === 'DEBUG';
+  return (msg.type.endsWith('/log') && msg.data.level === 'DEBUG') || !formatMsg(msg);
 };
 
 const formatMsg = (msg: EventStreamMessage): string => {
-  if (isPublishCreateNewDeploymentSuccess(msg)) {
-    return `${msg.data.message} ${msg.data.saveName}`;
+  if (isPublishCheckCapabilitiesLog(msg)) {
+    if (msg.data.username) {
+      return `${msg.data.message}: username ${msg.data.username}, email ${msg.data.email}`;
+    }
+  } else if (isPublishCreateNewDeploymentSuccess(msg)) {
+    return `Created new deployment as ${msg.data.saveName}`;
   } else if (isPublishCreateBundleSuccess(msg)) {
-    return `${msg.data.message} ${msg.data.filename}`;
+    return `Prepared file archive: ${msg.data.filename}`;
   } else if (isPublishCreateDeploymentStart(msg)) {
-    return `${msg.data.message}, ContentId: ${msg.data.contentId}`;
-  } else if (isPublishRestorePythonEnvStart(msg)) {
-    return `${msg.data.message}, Source: ${msg.data.source}`;
+    return `Updating existing deployment with ID ${msg.data.contentId}`;
   } else if (isPublishCreateBundleLog(msg)) {
     if (msg.data.sourceDir) {
       return `${msg.data.message} ${msg.data.sourceDir}`;
     } else if (msg.data.totalBytes) {
       return `${msg.data.message} ${msg.data.files} files, ${msg.data.totalBytes} bytes`;
+    } else if (msg.data.path) {
+      return `${msg.data.message} ${msg.data.path} (${msg.data.size} bytes)`;
     }
-    return `${msg.data.message} ${msg.data.path} (${msg.data.size} bytes)`;
   } else if (isPublishRestorePythonEnvLog(msg)) {
     return `${msg.data.message}`;
   } else if (
-    isPublishRunContentLog(msg) ||
     isPublishSetVanityURLLog(msg) ||
     isPublishValidateDeploymentLog(msg)
   ) {
     return `${msg.data.message} ${msg.data.path}`;
-  } else if (isPublishRestorePythonEnvStatus(msg)) {
-    return `${msg.data.message} ${msg.data.name} (${msg.data.version})`;
   } else if (isErrorEventStreamMessage(msg)) {
     return `${msg.data.error}`;
   }
