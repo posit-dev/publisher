@@ -2,7 +2,7 @@ alias c := clean
 alias i := install
 alias t := test
 
-export CONTENT := env_var_or_default("CONTENT", "all")
+# export CONTENT := env_var_or_default("CONTENT", "all")
 export CONTENT_REPO := env_var_or_default("CONTENT_REPO", "/work/connect-content")
 
 export _ci := env_var_or_default("CI", "false")
@@ -72,28 +72,28 @@ test-contract:
     EXE=$exe npm run accounts
 
     # pull the content from connect-content repo
-    if [[ "${CONTENT}" == "all" ]]; then
-        if [[ ${_ci} == false ]]; then
-            mkdir -p ../content/bundles/
-            cp -R ${HOME}${CONTENT_REPO}/bundles/ ../content/bundles/
-        fi
-        
-        # content_list will contain all content in
-        content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
-        # IFS=' ' read -ra my_array <<< "${content_list}"
-        for i in ${content_list}
-        do
-            # only test when we have a .publisher-env file for the content
-            if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
-                export CONTENT=${i}
-                EXE=$exe npm run deploy
-            fi
-        done
-        # rm -rf ../content/
-    else
-        cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
-        EXE=$exe npm run deploy
+    # if [[ "${CONTENT}" == "all" ]]; then
+    if [[ ${_ci} == false ]]; then
+        mkdir -p ../content/bundles/
+        cp -R ${HOME}${CONTENT_REPO}/bundles/ ../content/bundles/
     fi
+    
+    # content_list will contain all content in
+    content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
+
+    for i in ${content_list}
+    do
+        # only test when we have a .publisher-env file for the content
+        if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
+            export CONTENT=${i}
+            EXE=$exe npm run deploy
+        fi
+    done
+        # rm -rf ../content/
+    # else
+    #     cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
+    #     EXE=$exe npm run deploy
+    # fi
 
 # Executes bats local tests
 test:
@@ -108,4 +108,13 @@ test:
         exit 1
     fi
     
-    EXE=$exe npm run cli
+    content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
+
+    for i in ${content_list}
+    do
+        # only test when we have a .publisher-env file for the content
+        if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
+            export CONTENT=${i}
+            EXE=$exe npm run cli
+        fi
+    done
