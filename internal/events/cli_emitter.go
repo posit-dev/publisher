@@ -23,7 +23,7 @@ func NewCliEmitter(w io.Writer, log logging.Logger) *cliEmitter {
 var opNameMap = map[Operation]string{
 	PublishCheckCapabilitiesOp:   "Check Configuration",
 	PublishCreateNewDeploymentOp: "Create New Deployment",
-	PublishSetEnvVarsOp:          "Set environment variables",
+	PublishSetEnvVarsOp:          "Set Environment Variables",
 	PublishCreateBundleOp:        "Prepare Files",
 	PublishUploadBundleOp:        "Upload Files",
 	PublishUpdateDeploymentOp:    "Update Deployment Settings",
