@@ -3,6 +3,7 @@ package pydeps
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"regexp"
 	"slices"
 	"strings"
@@ -26,19 +27,19 @@ func NewImportScanner(log logging.Logger) *defaultImportScanner {
 	}
 }
 
-const idExpr = "[A-Za-z_.]+"
+// https://docs.python.org/3/reference/lexical_analysis.html#identifiers
+const idStart = `(\p{Lu}|\p{Ll}|\p{Lt}|\p{Lm}|\p{Lo}|\p{Nl}|_)`
+
+var idContinue = fmt.Sprintf(`(%s|\p{Mn}|\p{Mc}|\p{Nd}|\p{Pc})`, idStart)
+var identifier = fmt.Sprintf("%s(%s*)", idStart, idContinue)
+
+// https://docs.python.org/3/reference/simple_stmts.html#the-import-statement
+var module = fmt.Sprintf(`(%s\.)*%s`, identifier, identifier)
 
 var importRE = regexp.MustCompile(
-	strings.ReplaceAll(
-		`^\s*import (id(\s*,\s*id)*)`,
-		"id", idExpr,
-	))
+	fmt.Sprintf(`^\s*import (%s(\s*,\s*%s)*)`, module, module))
 
-var importFromRE = regexp.MustCompile(
-	strings.ReplaceAll(
-		`^\s*from (id) import`,
-		"id", idExpr,
-	))
+var importFromRE = regexp.MustCompile(fmt.Sprintf(`^\s*from (%s) import`, module))
 
 func importNameFromModule(module string) ImportName {
 	module = strings.TrimSpace(module)
