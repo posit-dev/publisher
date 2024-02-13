@@ -60,12 +60,6 @@ func NewBokehDetector() *PythonAppDetector {
 	})
 }
 
-func NewPyShinyDetector() *PythonAppDetector {
-	return NewPythonAppDetector(config.ContentTypePythonShiny, []string{
-		"shiny",
-	})
-}
-
 func (d *PythonAppDetector) InferType(path util.Path) (*config.Config, error) {
 	entrypoint, entrypointPath, err := d.InferEntrypoint(
 		path, ".py", "main.py", "app.py", "streamlit_app.py", "api.py")
