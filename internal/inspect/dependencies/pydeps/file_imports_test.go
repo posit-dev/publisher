@@ -48,3 +48,17 @@ func (s *FileImportsSuite) TestScanImports() {
 		"frobble",
 	}, importNames)
 }
+
+func (s *FileImportsSuite) TestScanImportsUnicode() {
+	code := `
+		import çde
+		import Щ, Σ123
+		from Θ import woo as wow
+	`
+	log := logging.New()
+	scanner := NewImportScanner(log)
+	importNames := scanner.ScanImports(code)
+	s.Equal([]ImportName{
+		"çde", "Θ", "Σ123", "Щ",
+	}, importNames)
+}
