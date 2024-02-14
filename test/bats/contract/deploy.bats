@@ -47,33 +47,6 @@ quarto_content_types=(
     deploy_assertion
 }
 
-# @test "check config file for ${CONTENT}" {
-#     python_version="$(python --version | awk '{print $2}')"
-#     quarto_version="$(quarto --version)"
-
-#     run cat ${CONTENT_PATH}/${CONTENT}/.posit/publish/default.toml
-#     if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
-#         skip "${CONTENT} is not yet supported"
-#     else
-#         assert_line "type = '${CONTENT_TYPE}'"
-#         assert_line "entrypoint = '${ENTRYPOINT}'"
-#         assert_line "validate = true"
-#         assert_line "title = '${TITLE}'"
-#         if [[ ${python_content_type[@]} =~ ${CONTENT_TYPE} ]]; then
-#             assert_line "version = '${python_version}'"
-#             assert_line "package-file = 'requirements.txt'"
-#             assert_line "package-manager = 'pip'"
-#         elif [[ ${quarto_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
-#             assert_line "version = '${quarto_version}'"
-#             assert_line "engines = ['${QUARTO_ENGINE}']"
-#             # if python check python version
-#             if [[ "py" =~ ${CONTENT_TYPE} ]]; then
-#                 assert_line "version = '${python_version}'"
-#             fi
-#         fi 
-#     fi
-# }
-
 # redeploy content from previous test
 @test "redeploy ${CONTENT}" {
 
