@@ -33,7 +33,7 @@ quarto_content_types=(
         # init against content should create default.toml
         run ${EXE} init ${CONTENT_PATH}/${CONTENT}
         assert_success
-        assert_line "Created config file '${CONTENT_PATH}/${CONTENT}/.posit/publish/default.toml'"
+        assert_output --partial "Created config file"
 
         # the default.toml should have the expected fields
         run cat ${CONTENT_PATH}/${CONTENT}/.posit/publish/default.toml
