@@ -107,6 +107,8 @@ test:
         echo "error: Missing executable $exe. Run \`just build\`." 1>&2
         exit 1
     fi
+
+    EXE=$exe npm run common
     
     content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
 
@@ -115,6 +117,6 @@ test:
         # only test when we have a .publisher-env file for the content
         if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
             export CONTENT=${i}
-            EXE=$exe npm run cli
+            EXE=$exe npm run content
         fi
     done
