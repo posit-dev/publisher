@@ -22,6 +22,29 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "posit-publisher",
+					"title": "Posit Publisher",
+					"icon": "assets/img/color.svg"
+				}
+			]
+		},
+		"views": {
+			"posit-publisher": [
+				{
+					"id": "posit-publisher-config",
+					"name": "Configurations",
+					"contextualTitle": "Configurations"
+				},
+				{
+					"id": "posit-publisher-deployments",
+					"name": "Deployments",
+					"contextualTitle": "Deployments"
+				}
+			]
+		},
     "commands": [
       {
         "command": "posit.publisher.open",
