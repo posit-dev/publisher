@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "baseUrl": "src",
+    "rootDir": "src",
+    "outDir": "dist",
+    "composite": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "strict": true,
+    "jsx": "preserve",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "lib": ["ESNext", "DOM"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [
+      "jest",
+      "node",
+      "vitest",
+      "vite/client",
+      "unplugin-icons/types/vue",
+      "@intlify/unplugin-vue-i18n/messages"
+    ]
+  },
+  "include": ["src/**/*", "src/**/*.json"],
+  "exclude": ["dist", "node_modules", "vite.config.ts"]
+}

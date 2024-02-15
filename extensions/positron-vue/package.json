@@ -1,0 +1,111 @@
+{
+  "name": "posit-publisher",
+  "displayName": "posit-publisher",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "concurrently \"tsc -p ./tsconfig.extension.json --skipLibCheck\" \"vite build --mode webViewView1 && vite build --mode webViewView2\" \"tailwindcss -i ./src/assets/css/main.css -o ./dist/output.css\"",
+    "watch": "concurrently \"tsc -w -p ./tsconfig.extension.json --skipLibCheck\" \"vite build --watch --mode webViewView1\" \"tailwindcss -i ./src/assets/css/main.css -o ./dist/output.css --watch\"",
+    "lint": "eslint \"src/**/*.{ts,vue}\"",
+    "typecheck": "vue-tsc --noEmit --skipLibCheck",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "posit-publisher-panel",
+          "title": "Posit Publisher",
+          "icon": "src/assets/img/publish.svg"
+        }
+      ]
+    },
+    "views": {
+      "posit-publisher-panel": [
+				{
+					"id": "publisherConfig",
+					"name": "Configurations",
+					"icon": "media/dep.svg",
+					"contextualTitle": "Configurations"
+				},
+        {
+          "type": "webview",
+          "id": "base-view-sidebar-1",
+          "name": "WebViewView #1",
+          "icon": "src/assets/img/default.png",
+          "contextualTitle": "WebViewView #1"
+        },
+        {
+          "type": "webview",
+          "id": "base-view-sidebar-2",
+          "name": "WebViewView #2",
+          "icon": "src/assets/img/default.png",
+          "contextualTitle": "WebViewView #2"
+        }
+      ]
+    },
+    "commands": [
+			{
+				"command": "publisherConfig.refreshEntry",
+				"title": "Refresh",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "publisherConfig.addEntry",
+				"title": "Add"
+			},
+			{
+				"command": "publisherConfig.editEntry",
+				"title": "Edit",
+				"icon": {
+					"light": "resources/light/edit.svg",
+					"dark": "resources/dark/edit.svg"
+				}
+			},
+			{
+				"command": "publisherConfig.deleteEntry",
+				"title": "Delete"
+			}
+    ]
+  },
+  "dependencies": {
+    "@intlify/unplugin-vue-i18n": "^0.8.1",
+    "@vitest/ui": "^0.26.2",
+    "vue": "^3.2.45",
+    "vue-i18n": "9"
+  },
+  "devDependencies": {
+    "@iconify-json/mdi": "^1.1.39",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/user-event": "^14.4.3",
+    "@testing-library/vue": "^6.6.1",
+    "@types/jest": "^29.2.4",
+    "@types/node": "^18.11.17",
+    "@types/vscode": "^1.86.0",
+    "@typescript-eslint/eslint-plugin": "^5.42.0",
+    "@typescript-eslint/parser": "^5.42.0",
+    "@vitejs/plugin-vue": "^2.3.3",
+    "concurrently": "^7.6.0",
+    "eslint": "^8.30.0",
+    "eslint-plugin-vue": "^9.8.0",
+    "jsdom": "^20.0.3",
+    "tailwindcss": "^3.2.4",
+    "typescript": "^4.8.4",
+    "unplugin-icons": "^0.14.15",
+    "vite": "^2.9.14",
+    "vitest": "^0.26.2",
+    "vue-tsc": "^0.40.6"
+  }
+}
