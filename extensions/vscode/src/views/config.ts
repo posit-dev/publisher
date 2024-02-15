@@ -24,10 +24,10 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | Conf
     getChildren(element?: Config): Thenable<(Config | ConfigError)[]> {
         const root = this.workspaceRoot;
         if (!root) {
-            // vscode.window.showInformationMessage('Open a folder to publish it.');
             return Promise.resolve([]);
         }
         if (element) {
+            // Config elements have no children.
             return Promise.resolve([]);
         }
         return api.configurations.getAll().then(response => {
@@ -60,13 +60,6 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | Conf
                 e.selection.at(0)?.edit();
             }
         });
-        tree.onDidCollapseElement(e => {
-            console.log(e);
-        });
-        tree.onDidChangeVisibility(e => {
-            console.log(e);
-        });
-        // subscribe
         context.subscriptions.push(tree);
     }
 }
@@ -74,8 +67,7 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | Conf
 export class ConfigNode extends vscode.TreeItem {
     constructor(
         public readonly name: string,
-        protected readonly configPath: string,
-        public readonly command?: vscode.Command
+        protected readonly configPath: string
     ) {
         super(name);
 
@@ -92,33 +84,21 @@ export class ConfigNode extends vscode.TreeItem {
 };
 
 export class Config extends ConfigNode {
-    constructor(
-        name: string,
-        configPath: string
-    ) {
+    constructor(name: string, configPath: string) {
         super(name, configPath);
 
         this.tooltip = this.configPath;
-
-        // this.description = `Publishing configuration file ${this.configPath}`;
+        this.iconPath = new vscode.ThemeIcon('gear');
+        this.contextValue = 'configuration';
     }
-
-    iconPath = new vscode.ThemeIcon('gear');
-    contextValue = 'configuration';
 }
 
 export class ConfigError extends ConfigNode {
-    constructor(
-        name: string,
-        configPath: string
-    ) {
+    constructor(name: string, configPath: string) {
         super(name, configPath);
 
         this.tooltip = this.configPath;
-
-        // this.description = `Publishing configuration file ${this.configPath}`;
+        this.iconPath = new vscode.ThemeIcon('warning');
+        this.contextValue = 'configurationError';
     }
-
-    iconPath = new vscode.ThemeIcon('warning');
-    contextValue = 'configurationError';
 }
