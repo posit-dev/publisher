@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 
 import * as ports from './ports';
 import  { Service } from './services';
+import  { ConfigNode, ConfigNodeProvider } from './views/config';
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
@@ -27,6 +28,11 @@ export async function activate(context: vscode.ExtensionContext) {
 			await service.stop();
 		})
 	);
+
+	const rootPath = (vscode.workspace.workspaceFolders && (vscode.workspace.workspaceFolders.length > 0))
+		? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined ;
+
+	new ConfigNodeProvider(rootPath).register(context);
 }
 
 // This method is called when your extension is deactivated
