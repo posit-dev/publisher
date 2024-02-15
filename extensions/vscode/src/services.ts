@@ -8,22 +8,24 @@ import { Server } from './servers';
 
 export class Service implements vscode.Disposable {
 
+	private context: vscode.ExtensionContext;
 	private panel: Panel;
 	private server: Server;
 
-	constructor(port: number) {
+	constructor(context: vscode.ExtensionContext, port: number) {
+		this.context = context;
 		this.panel = new Panel(port);
 		this.server = new Server(port);
 	}
 
-	start = async (context: vscode.ExtensionContext) => {
-		await this.server.start(context);
+	start = async () => {
+		await this.server.start(this.context);
 	};
 
-	open = async (context: vscode.ExtensionContext) => {
+	open = async () => {
 		// re-run the start sequence in case the server has stopped.
-		await this.server.start(context);
-		this.panel.show(context);
+		await this.server.start(this.context);
+		this.panel.show(this.context);
 	};
 
 	stop = async () => {

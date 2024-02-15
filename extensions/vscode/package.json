@@ -22,29 +22,6 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "posit-publisher",
-					"title": "Posit Publisher",
-					"icon": "assets/img/color.svg"
-				}
-			]
-		},
-		"views": {
-			"posit-publisher": [
-				{
-					"id": "posit-publisher-config",
-					"name": "Configurations",
-					"contextualTitle": "Configurations"
-				},
-				{
-					"id": "posit-publisher-deployments",
-					"name": "Deployments",
-					"contextualTitle": "Deployments"
-				}
-			]
-		},
     "commands": [
       {
         "command": "posit.publisher.open",
@@ -59,6 +36,18 @@
         "command": "posit.publisher.close",
         "title": "Close Publisher",
         "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.configurations.view",
+        "title": "View Configuration",
+        "category": "Posit",
+        "icon": "$(arrow-right)"
+      },
+      {
+        "command": "posit.publisher.deployments.view",
+        "title": "View Deployment",
+        "category": "Posit",
+        "icon": "$(arrow-right)"
       }
     ],
     "configuration": {
@@ -76,8 +65,43 @@
           "command": "posit.publisher.open",
           "group": "navigation"
         }
+      ],
+      "view/item/context": [
+        {
+          "command": "posit.publisher.configurations.view",
+          "group": "inline",
+          "when": "view == posit.publisher.configurations.provider"
+        },
+        {
+          "command": "posit.publisher.deployments.view",
+          "group": "inline",
+          "when": "view == posit.publisher.deployments.provider"
+        }
       ]
-    }
+    },
+		"views": {
+			"publisher": [
+				{
+					"id": "posit.publisher.configurations.provider",
+					"name": "Configurations",
+					"contextualTitle": "Publisher Configurations"
+				},
+				{
+					"id": "posit.publisher.deployments.provider",
+					"name": "Deployments",
+					"contextualTitle": "Publisher Deployments"
+				}
+			]
+		},
+    "viewsContainers": {
+			"activitybar": [
+				{
+					"id": "publisher",
+					"title": "Publisher",
+					"icon": "assets/img/color.svg"
+				}
+			]
+		}
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
