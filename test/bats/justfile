@@ -89,11 +89,10 @@ test-contract:
             EXE=$exe npm run deploy
         fi
     done
-        # rm -rf ../content/
-    # else
-    #     cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
-    #     EXE=$exe npm run deploy
-    # fi
+    else
+        cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
+        EXE=$exe npm run deploy
+    fi
 
 # Executes bats local tests
 test:
