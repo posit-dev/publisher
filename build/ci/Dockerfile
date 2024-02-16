@@ -73,7 +73,6 @@ ARG PACKAGE="quarto-${QUARTO_VERSION}-linux-amd64.tar.gz"
 
 RUN\
     curl -fsSLO https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/${PACKAGE}\
-    && mkdir /usr/local/quarto && tar xf ${PACKAGE} -C /usr/local/quarto --strip-components 1
+    && mkdir /opt/quarto && tar xf ${PACKAGE} -C /usr/local/quarto --strip-components 1
 
 ENV PATH="$PATH:/usr/local/quarto/bin"
-
