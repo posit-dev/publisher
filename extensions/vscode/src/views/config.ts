@@ -21,18 +21,18 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | Conf
         return element;
     }
 
-    getChildren(element?: Config): Thenable<(Config | ConfigError)[]> {
+    async getChildren(element?: Config): Promise<(Config | ConfigError)[]> {
         const root = this.workspaceRoot;
         if (!root) {
-            return Promise.resolve([]);
+            return [];
         }
         if (element) {
             // Config elements have no children.
-            return Promise.resolve([]);
+            return [];
         }
         return api.configurations.getAll().then(response => {
             const data = response.data;
-            return Promise.resolve(data.map(configOrError => {
+            return data.map(configOrError => {
                 const fullPath = path.join(this.workspaceRoot || "", configOrError.configurationPath);
 
                 if (isConfigurationError(configOrError)) {
@@ -41,7 +41,7 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | Conf
                     const config = configOrError as Configuration;
                     return new Config(config.configurationName, fullPath);
                 }
-            }));
+            });
         });
     }
 
