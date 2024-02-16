@@ -92,12 +92,12 @@
       "view/item/context": [
         {
           "command": "posit.publisher.configurations.edit",
-          "when": "view == posit.publisher.configurations && (viewItem == configuration || viewItem == configurationError)",
+          "when": "view == posit.publisher.configurations",
           "group": "inline@1"
         },
         {
           "command": "posit.publisher.configurations.delete",
-          "when": "view == posit.publisher.configurations && (viewItem == configuration || viewItem == configurationError)",
+          "when": "view == posit.publisher.configurations",
           "group": "inline@2"
         }
       ]
