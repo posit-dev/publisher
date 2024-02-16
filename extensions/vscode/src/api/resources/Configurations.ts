@@ -26,7 +26,7 @@ export class Configurations {
   // 500 - internal server error
   delete(name: string) {
     const encodedName = encodeURIComponent(name);
-    return this.client.delete<Configuration>(
+    return this.client.delete<void>(
       `configurations/${encodedName}`,
     );
   }}
