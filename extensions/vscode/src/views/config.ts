@@ -5,15 +5,15 @@ import api from '../api';
 import { Configuration, isConfigurationError } from "../api/types/configurations";
 import { confirmDelete } from './confirm';
 
-const viewName = 'posit.publisher.config';
-const editCommand = 'posit.publisher.config.edit';
-const deleteCommand = 'posit.publisher.config.delete';
+const viewName = 'posit.publisher.configurations';
+const editCommand = 'posit.publisher.configurations.edit';
+const deleteCommand = 'posit.publisher.configurations.delete';
 const fileStore = '.posit/publish/*.toml';
 
-export class ConfigNodeProvider implements vscode.TreeDataProvider<ConfigNode> {
+export class ConfigurationsProvider implements vscode.TreeDataProvider<ConfigurationBaseNode> {
 
-    private _onDidChangeTreeData: vscode.EventEmitter<ConfigNode | undefined | void> = new vscode.EventEmitter<ConfigNode | undefined | void>();
-    readonly onDidChangeTreeData: vscode.Event<ConfigNode | undefined | void> = this._onDidChangeTreeData.event;
+    private _onDidChangeTreeData: vscode.EventEmitter<ConfigurationBaseNode | undefined | void> = new vscode.EventEmitter<ConfigurationBaseNode | undefined | void>();
+    readonly onDidChangeTreeData: vscode.Event<ConfigurationBaseNode | undefined | void> = this._onDidChangeTreeData.event;
 
     constructor(private workspaceRoot: string | undefined) {
     }
@@ -22,11 +22,11 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<ConfigNode> {
         this._onDidChangeTreeData.fire();
     }
 
-    getTreeItem(element: ConfigNode): vscode.TreeItem {
+    getTreeItem(element: ConfigurationBaseNode): vscode.TreeItem {
         return element;
     }
 
-    async getChildren(element?: ConfigNode): Promise<ConfigNode[]> {
+    async getChildren(element?: ConfigurationBaseNode): Promise<ConfigurationBaseNode[]> {
         const root = this.workspaceRoot;
         if (!root) {
             return [];
@@ -41,10 +41,9 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<ConfigNode> {
                 const fullPath = path.join(this.workspaceRoot || "", configOrError.configurationPath);
 
                 if (isConfigurationError(configOrError)) {
-                    return new ConfigError(configOrError.configurationName, fullPath);
+                    return new ConfigErrorNode(configOrError.configurationName, fullPath);
                 } else {
-                    const config = configOrError as Configuration;
-                    return new Config(config.configurationName, fullPath);
+                    return new ConfigurationNode(configOrError.configurationName, fullPath);
                 }
             });
         });
@@ -57,7 +56,7 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<ConfigNode> {
         );
 
         context.subscriptions.push(
-            vscode.commands.registerCommand(deleteCommand, async (config: ConfigNode) => {
+            vscode.commands.registerCommand(deleteCommand, async (config: ConfigurationBaseNode) => {
                 const ok = await confirmDelete("Really delete this configuration?");
                 if (ok) {
                     await api.configurations.delete(config.name);
@@ -65,7 +64,7 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<ConfigNode> {
             })
         );
         context.subscriptions.push(
-            vscode.commands.registerCommand(editCommand, async (config: ConfigNode) => {
+            vscode.commands.registerCommand(editCommand, async (config: ConfigurationBaseNode) => {
                 const uri = vscode.Uri.file(config.filePath);
                 await vscode.commands.executeCommand('vscode.open', uri);
             })
@@ -88,7 +87,7 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<ConfigNode> {
     }
 }
 
-export class ConfigNode extends vscode.TreeItem {
+export class ConfigurationBaseNode extends vscode.TreeItem {
     constructor(
         public readonly name: string,
         public readonly filePath: string
@@ -99,7 +98,7 @@ export class ConfigNode extends vscode.TreeItem {
     }
 };
 
-export class Config extends ConfigNode {
+export class ConfigurationNode extends ConfigurationBaseNode {
     constructor(name: string, filePath: string) {
         super(name, filePath);
 
@@ -108,7 +107,7 @@ export class Config extends ConfigNode {
     }
 }
 
-export class ConfigError extends ConfigNode {
+export class ConfigErrorNode extends ConfigurationBaseNode {
     constructor(name: string, filePath: string) {
         super(name, filePath);
 

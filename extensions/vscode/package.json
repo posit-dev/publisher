@@ -34,7 +34,7 @@
     "views": {
       "posit-publisher": [
         {
-          "id": "posit.publisher.config",
+          "id": "posit.publisher.configurations",
           "name": "Configurations",
           "contextualTitle": "Configurations"
         },
@@ -61,13 +61,13 @@
         "category": "Posit"
       },
       {
-        "command": "posit.publisher.config.edit",
+        "command": "posit.publisher.configurations.edit",
         "title": "Edit",
         "category": "Posit",
         "icon": "$(edit)"
       },
       {
-        "command": "posit.publisher.config.delete",
+        "command": "posit.publisher.configurations.delete",
         "title": "Delete",
         "category": "Posit",
         "icon": "$(trash)"
@@ -91,13 +91,13 @@
       ],
       "view/item/context": [
         {
-          "command": "posit.publisher.config.edit",
-          "when": "view == posit.publisher.config && (viewItem == configuration || viewItem == configurationError)",
+          "command": "posit.publisher.configurations.edit",
+          "when": "view == posit.publisher.configurations && (viewItem == configuration || viewItem == configurationError)",
           "group": "inline@1"
         },
         {
-          "command": "posit.publisher.config.delete",
-          "when": "view == posit.publisher.config && (viewItem == configuration || viewItem == configurationError)",
+          "command": "posit.publisher.configurations.delete",
+          "when": "view == posit.publisher.configurations && (viewItem == configuration || viewItem == configurationError)",
           "group": "inline@2"
         }
       ]
