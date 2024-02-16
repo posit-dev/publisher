@@ -43,7 +43,7 @@ func shinyExpressEntrypoint(entrypoint string) string {
 	safeEntrypoint := invalidPythonIdentifierRE.ReplaceAllStringFunc(module, func(match string) string {
 		return fmt.Sprintf("_%x_", int(match[0]))
 	})
-	return "shiny.express.app:" + safeEntrypoint
+	return "shiny.express.app:" + safeEntrypoint + "_2e_py"
 }
 
 func (d *pyShinyDetector) InferType(path util.Path) (*config.Config, error) {
