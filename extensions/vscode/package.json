@@ -34,12 +34,12 @@
     "views": {
       "posit-publisher": [
         {
-          "id": "posit-publisher-config",
+          "id": "posit.publisher.config",
           "name": "Configurations",
           "contextualTitle": "Configurations"
         },
         {
-          "id": "posit-publisher-deployments",
+          "id": "posit.publisher.deployments",
           "name": "Deployments",
           "contextualTitle": "Deployments"
         }
@@ -59,6 +59,18 @@
         "command": "posit.publisher.close",
         "title": "Close Publisher",
         "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.config.edit",
+        "title": "Edit",
+        "category": "Posit",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "posit.publisher.config.delete",
+        "title": "Delete",
+        "category": "Posit",
+        "icon": "$(trash)"
       }
     ],
     "configuration": {
@@ -75,6 +87,18 @@
         {
           "command": "posit.publisher.open",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "posit.publisher.config.edit",
+          "when": "view == posit.publisher.config && (viewItem == configuration || viewItem == configurationError)",
+          "group": "inline@1"
+        },
+        {
+          "command": "posit.publisher.config.delete",
+          "when": "view == posit.publisher.config && (viewItem == configuration || viewItem == configurationError)",
+          "group": "inline@2"
         }
       ]
     }

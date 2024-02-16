@@ -1,9 +1,13 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as path from 'path';
 
-import api from "../api";
+import api from '../api';
 import { Configuration, isConfigurationError } from "../api/types/configurations";
+import { confirmDelete } from './confirm';
+
+const viewName = 'posit.publisher.config';
+const editCommand = 'posit.publisher.config.edit';
+const deleteCommand = 'posit.publisher.config.delete';
 
 export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | ConfigError> {
 
@@ -46,21 +50,40 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | Conf
     }
 
     public register(context: vscode.ExtensionContext): any {
-        const viewName = 'posit-publisher-config';
-        const options = {
-            treeDataProvider: this,
-        };
-
         vscode.window.registerTreeDataProvider(viewName, this);
-        const tree = vscode.window.createTreeView(viewName, options);
+        context.subscriptions.push(
+            vscode.window.createTreeView(viewName, { treeDataProvider: this })
+        );
 
-        tree.onDidChangeSelection(e => {
-            console.log(e);
-            if (e.selection.length > 0) {
-                e.selection.at(0)?.edit();
-            }
-        });
-        context.subscriptions.push(tree);
+        context.subscriptions.push(
+            vscode.commands.registerCommand(deleteCommand, async config => {
+                const ok = await confirmDelete("Really delete this configuration?");
+                if (ok) {
+                    await api.configurations.delete(config.name);
+                }
+            })
+        );
+        context.subscriptions.push(
+            vscode.commands.registerCommand(editCommand, async config => {
+                const uri = vscode.Uri.file(config.configPath);
+                await vscode.commands.executeCommand('vscode.open', uri);
+            })
+        );
+
+        if (this.workspaceRoot !== undefined) {
+            const watcher = vscode.workspace.createFileSystemWatcher(
+                new vscode.RelativePattern(this.workspaceRoot, ".posit/publish/*.toml"));
+            watcher.onDidCreate(_ => {
+                this.refresh();
+            });
+            watcher.onDidDelete(_ => {
+                this.refresh();
+            });
+            watcher.onDidChange(_ => {
+                this.refresh();
+            });
+            context.subscriptions.push(watcher);
+        }
     }
 }
 
@@ -73,13 +96,6 @@ export class ConfigNode extends vscode.TreeItem {
 
         this.tooltip = this.configPath;
         // this.description = `Publishing configuration file ${this.configPath}`;
-    }
-
-    edit() {
-        const openPath = vscode.Uri.file(this.configPath);
-        vscode.workspace.openTextDocument(openPath).then(doc => {
-            vscode.window.showTextDocument(doc);
-        });
     }
 };
 

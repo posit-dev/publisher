@@ -19,4 +19,14 @@ export class Configurations {
       '/configurations',
     );
   }
-}
+
+  // Returns:
+  // 204 - success (no response)
+  // 404 - not found
+  // 500 - internal server error
+  delete(name: string) {
+    const encodedName = encodeURIComponent(name);
+    return this.client.delete<Configuration>(
+      `configurations/${encodedName}`,
+    );
+  }}
