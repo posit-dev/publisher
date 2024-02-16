@@ -36,12 +36,12 @@
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
-          "contextualTitle": "Configurations"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
-          "contextualTitle": "Deployments"
+          "contextualTitle": "Publisher"
         }
       ]
     },
