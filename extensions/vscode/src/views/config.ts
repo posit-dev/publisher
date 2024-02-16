@@ -9,7 +9,8 @@ const viewName = 'posit.publisher.config';
 const editCommand = 'posit.publisher.config.edit';
 const deleteCommand = 'posit.publisher.config.delete';
 
-export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | ConfigError> {
+
+export class ConfigNodeProvider implements vscode.TreeDataProvider<ConfigNode> {
 
     private _onDidChangeTreeData: vscode.EventEmitter<Config | undefined | void> = new vscode.EventEmitter<Config | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<Config | undefined | void> = this._onDidChangeTreeData.event;
@@ -21,11 +22,11 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | Conf
         this._onDidChangeTreeData.fire();
     }
 
-    getTreeItem(element: Config): vscode.TreeItem {
+    getTreeItem(element: ConfigNode): vscode.TreeItem {
         return element;
     }
 
-    async getChildren(element?: Config): Promise<(Config | ConfigError)[]> {
+    async getChildren(element?: ConfigNode): Promise<ConfigNode[]> {
         const root = this.workspaceRoot;
         if (!root) {
             return [];
@@ -56,7 +57,7 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | Conf
         );
 
         context.subscriptions.push(
-            vscode.commands.registerCommand(deleteCommand, async config => {
+            vscode.commands.registerCommand(deleteCommand, async (config: ConfigNode) => {
                 const ok = await confirmDelete("Really delete this configuration?");
                 if (ok) {
                     await api.configurations.delete(config.name);
@@ -64,7 +65,7 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | Conf
             })
         );
         context.subscriptions.push(
-            vscode.commands.registerCommand(editCommand, async config => {
+            vscode.commands.registerCommand(editCommand, async (config: ConfigNode) => {
                 const uri = vscode.Uri.file(config.configPath);
                 await vscode.commands.executeCommand('vscode.open', uri);
             })
@@ -90,7 +91,7 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<Config | Conf
 export class ConfigNode extends vscode.TreeItem {
     constructor(
         public readonly name: string,
-        protected readonly configPath: string
+        public readonly configPath: string
     ) {
         super(name);
 
