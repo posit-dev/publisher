@@ -8,12 +8,12 @@ import { confirmDelete } from './confirm';
 const viewName = 'posit.publisher.config';
 const editCommand = 'posit.publisher.config.edit';
 const deleteCommand = 'posit.publisher.config.delete';
-
+const fileStore = '.posit/publish/*.toml';
 
 export class ConfigNodeProvider implements vscode.TreeDataProvider<ConfigNode> {
 
-    private _onDidChangeTreeData: vscode.EventEmitter<Config | undefined | void> = new vscode.EventEmitter<Config | undefined | void>();
-    readonly onDidChangeTreeData: vscode.Event<Config | undefined | void> = this._onDidChangeTreeData.event;
+    private _onDidChangeTreeData: vscode.EventEmitter<ConfigNode | undefined | void> = new vscode.EventEmitter<ConfigNode | undefined | void>();
+    readonly onDidChangeTreeData: vscode.Event<ConfigNode | undefined | void> = this._onDidChangeTreeData.event;
 
     constructor(private workspaceRoot: string | undefined) {
     }
@@ -66,14 +66,14 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<ConfigNode> {
         );
         context.subscriptions.push(
             vscode.commands.registerCommand(editCommand, async (config: ConfigNode) => {
-                const uri = vscode.Uri.file(config.configPath);
+                const uri = vscode.Uri.file(config.filePath);
                 await vscode.commands.executeCommand('vscode.open', uri);
             })
         );
 
         if (this.workspaceRoot !== undefined) {
             const watcher = vscode.workspace.createFileSystemWatcher(
-                new vscode.RelativePattern(this.workspaceRoot, ".posit/publish/*.toml"));
+                new vscode.RelativePattern(this.workspaceRoot, fileStore));
             watcher.onDidCreate(_ => {
                 this.refresh();
             });
@@ -91,30 +91,27 @@ export class ConfigNodeProvider implements vscode.TreeDataProvider<ConfigNode> {
 export class ConfigNode extends vscode.TreeItem {
     constructor(
         public readonly name: string,
-        public readonly configPath: string
+        public readonly filePath: string
     ) {
         super(name);
 
-        this.tooltip = this.configPath;
-        // this.description = `Publishing configuration file ${this.configPath}`;
+        this.tooltip = this.filePath;
     }
 };
 
 export class Config extends ConfigNode {
-    constructor(name: string, configPath: string) {
-        super(name, configPath);
+    constructor(name: string, filePath: string) {
+        super(name, filePath);
 
-        this.tooltip = this.configPath;
         this.iconPath = new vscode.ThemeIcon('gear');
         this.contextValue = 'configuration';
     }
 }
 
 export class ConfigError extends ConfigNode {
-    constructor(name: string, configPath: string) {
-        super(name, configPath);
+    constructor(name: string, filePath: string) {
+        super(name, filePath);
 
-        this.tooltip = this.configPath;
         this.iconPath = new vscode.ThemeIcon('warning');
         this.contextValue = 'configurationError';
     }
