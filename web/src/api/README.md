@@ -17,6 +17,14 @@ try {
 }
 ```
 
+If you need to set the URL and or Port for the base API endpoint you can do so
+using `setBaseUrl`. This changes the client so all requests will use the new
+base URL. This will need to be done before any requests are made.
+
+```typescript
+api.setBaseUrl('http://localhost:9000/api');
+```
+
 ## Organization
 
 ### `client.ts`
