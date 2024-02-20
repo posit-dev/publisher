@@ -88,6 +88,39 @@ func createPositignoreIfNeeded(base util.Path, log logging.Logger) error {
 	return ignorePath.WriteFile([]byte(defaultPositignoreContent), 0666)
 }
 
+func GetPossibleConfigs(base util.Path, python util.Path, log logging.Logger) ([]*config.Config, error) {
+	log.Info("Detecting deployment type and entrypoint...")
+	typeDetector := ContentDetectorFactory()
+	absPath, err := base.Abs()
+	if err != nil {
+		return nil, err
+	}
+	configs, err := typeDetector.InferAll(absPath)
+	if err != nil {
+		return nil, fmt.Errorf("error detecting content type: %w", err)
+	}
+	for _, cfg := range configs {
+		log.Info("Possible deployment type", "Entrypoint", cfg.Entrypoint, "Type", cfg.Type)
+		if cfg.Title == "" {
+			// Default title is the name of the project directory.
+			cfg.Title = base.Base()
+		}
+		needPython, err := requiresPython(cfg, base, python)
+		if err != nil {
+			return nil, err
+		}
+		if needPython {
+			inspector := PythonInspectorFactory(python, log)
+			pyConfig, err := inspector.InspectPython()
+			if err != nil {
+				return nil, err
+			}
+			cfg.Python = pyConfig
+		}
+	}
+	return configs, nil
+}
+
 func Init(base util.Path, configName string, python util.Path, log logging.Logger) (*config.Config, error) {
 	absPath, err := base.Abs()
 	if err != nil {
