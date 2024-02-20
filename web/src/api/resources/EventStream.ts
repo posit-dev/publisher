@@ -11,7 +11,7 @@ import {
   EventSubscriptionTarget,
   CallbackQueueEntry,
   EventSubscriptionTargetCallbackMap,
-} from 'src/api/types/events.ts';
+} from 'src/api/types/events';
 
 export class EventStream {
   private eventSource = <EventSource | null>null;

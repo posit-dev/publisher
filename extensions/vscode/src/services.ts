@@ -1,8 +1,5 @@
-var mutexify = require('mutexify/promise');
-
 import * as vscode from 'vscode';
 
-import { HOST } from '.';
 import { Panel } from './panels';
 import { Server } from './servers';
 
