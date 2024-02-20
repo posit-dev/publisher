@@ -105,7 +105,7 @@ export class ConfigurationsProvider implements vscode.TreeDataProvider<Configura
         );
         context.subscriptions.push(
             vscode.commands.registerCommand(deleteCommand, async (config: ConfigurationBaseNode) => {
-                const ok = await confirmDelete("Really delete this configuration?");
+                const ok = await confirmDelete(`Are you sure you want to delete the configuration '${config.name}'?`);
                 if (ok) {
                     await api.configurations.delete(config.name);
                 }
