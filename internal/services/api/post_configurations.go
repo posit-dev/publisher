@@ -9,6 +9,7 @@ import (
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/initialize"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -43,10 +44,19 @@ func PostConfigurationsHandlerFunc(base util.Path, log logging.Logger) http.Hand
 		if err != nil {
 			cfg = config.New()
 		}
-		response := configDTO{
-			Name:          b.ConfigName,
-			Path:          configPath.String(),
-			Configuration: cfg,
+		var response configDTO
+		if err != nil {
+			response = configDTO{
+				Name:  b.ConfigName,
+				Path:  configPath.String(),
+				Error: types.AsAgentError(err),
+			}
+		} else {
+			response = configDTO{
+				Name:          b.ConfigName,
+				Path:          configPath.String(),
+				Configuration: cfg,
+			}
 		}
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
