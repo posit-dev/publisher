@@ -33,6 +33,7 @@ jobs:
   # Integration Tests
   bats:
     needs: build
+    secrets: inherit
     uses: ./.github/workflows/bats.yaml
   cypress:
     needs: build

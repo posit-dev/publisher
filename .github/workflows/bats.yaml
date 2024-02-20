@@ -8,12 +8,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-latest, windows-latest, ubuntu-latest]
+        runner: [ubuntu-latest]
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: rstudio/connect-content
+          path: 'test/content'
+          sparse-checkout: bundles
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.CONNECT_PAT }}
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.4.549
       - uses: extractions/setup-just@v1
       - uses: actions/download-artifact@v3
         with:
@@ -29,9 +42,22 @@ jobs:
         runner: [ubuntu-latest]
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: rstudio/connect-content
+          path: 'test/content'
+          sparse-checkout: bundles
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.CONNECT_PAT }}
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.4.549
       - uses: ./.github/actions/setup
       - uses: actions/download-artifact@v3
         with:
