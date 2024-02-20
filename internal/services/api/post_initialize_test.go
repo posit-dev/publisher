@@ -20,14 +20,14 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type PostConfigurationsSuite struct {
+type PostInitializeSuite struct {
 	utiltest.Suite
 	log logging.Logger
 	cwd util.Path
 }
 
-func TestPostConfigurationsSuite(t *testing.T) {
-	suite.Run(t, new(PostConfigurationsSuite))
+func TestPostInitializeSuite(t *testing.T) {
+	suite.Run(t, new(PostInitializeSuite))
 }
 
 var expectedPyConfig = &config.Python{
@@ -42,12 +42,12 @@ func makeMockPythonInspector(util.Path, logging.Logger) inspect.PythonInspector 
 	return pyInspector
 }
 
-func (s *PostConfigurationsSuite) SetupSuite() {
+func (s *PostInitializeSuite) SetupSuite() {
 	s.log = logging.New()
 	initialize.PythonInspectorFactory = makeMockPythonInspector
 }
 
-func (s *PostConfigurationsSuite) SetupTest() {
+func (s *PostInitializeSuite) SetupTest() {
 	fs := afero.NewMemMapFs()
 	cwd, err := util.Getwd(fs)
 	s.Nil(err)
@@ -55,7 +55,7 @@ func (s *PostConfigurationsSuite) SetupTest() {
 	s.cwd.MkdirAll(0700)
 }
 
-func (s *PostConfigurationsSuite) createAppPy() {
+func (s *PostInitializeSuite) createAppPy() {
 	appPath := s.cwd.Join("app.py")
 	err := appPath.WriteFile([]byte(`
 		from flask import Flask
@@ -65,13 +65,13 @@ func (s *PostConfigurationsSuite) createAppPy() {
 	s.NoError(err)
 }
 
-func (s *PostConfigurationsSuite) TestPostConfigurationsDefault() {
+func (s *PostInitializeSuite) TestPostInitializeDefault() {
 	s.createAppPy()
-	h := PostConfigurationsHandlerFunc(s.cwd, s.log)
+	h := PostInitializeHandlerFunc(s.cwd, s.log)
 
 	rec := httptest.NewRecorder()
 	body := strings.NewReader("{}")
-	req, err := http.NewRequest("POST", "/api/configurations", body)
+	req, err := http.NewRequest("POST", "/api/initialize", body)
 	s.NoError(err)
 	h(rec, req)
 
@@ -91,9 +91,9 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsDefault() {
 	s.Equal(expectedPyConfig, res.Configuration.Python)
 }
 
-func (s *PostConfigurationsSuite) TestPostConfigurationsNamed() {
+func (s *PostInitializeSuite) TestPostInitializeNamed() {
 	s.createAppPy()
-	h := PostConfigurationsHandlerFunc(s.cwd, s.log)
+	h := PostInitializeHandlerFunc(s.cwd, s.log)
 
 	rec := httptest.NewRecorder()
 	body := strings.NewReader(`{"configurationName": "newConfig"}`)
@@ -117,9 +117,9 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsNamed() {
 	s.Equal(expectedPyConfig, res.Configuration.Python)
 }
 
-func (s *PostConfigurationsSuite) TestPostConfigurationsConflict() {
-	s.TestPostConfigurationsNamed()
-	h := PostConfigurationsHandlerFunc(s.cwd, s.log)
+func (s *PostInitializeSuite) TestPostInitializeConflict() {
+	s.TestPostInitializeNamed()
+	h := PostInitializeHandlerFunc(s.cwd, s.log)
 
 	rec := httptest.NewRecorder()
 	body := strings.NewReader(`{"configurationName": "newConfig"}`)
@@ -130,8 +130,8 @@ func (s *PostConfigurationsSuite) TestPostConfigurationsConflict() {
 	s.Equal(http.StatusConflict, rec.Result().StatusCode)
 }
 
-func (s *PostConfigurationsSuite) TestPostConfigurationsInspectionFails() {
-	h := PostConfigurationsHandlerFunc(s.cwd, s.log)
+func (s *PostInitializeSuite) TestPostInitializeInspectionFails() {
+	h := PostInitializeHandlerFunc(s.cwd, s.log)
 
 	rec := httptest.NewRecorder()
 	body := strings.NewReader(`{}`)
