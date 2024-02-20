@@ -11,10 +11,6 @@ jobs:
     uses: ./.github/workflows/web.yaml
   build:
     uses: ./.github/workflows/build.yaml
-  bats:
-    needs: build
-    secrets: inherit
-    uses: ./.github/workflows/bats.yaml
   contract-deps:
     secrets: inherit
     uses: ./.github/workflows/contract-deps.yaml

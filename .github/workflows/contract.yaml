@@ -47,6 +47,7 @@ jobs:
       # disable cypress contract tests until new deploy workflow
       # - run: just cy test-contract
       - run: just bats install
+      - run: just bats test
       - run: just bats test-contract
 
       # Videos are captured whether the suite fails or passes
