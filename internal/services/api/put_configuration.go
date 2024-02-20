@@ -5,6 +5,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/rstudio/connect-client/internal/config"
@@ -23,22 +24,34 @@ func PutConfigurationHandlerFunc(base util.Path, log logging.Logger) http.Handle
 		}
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
-		var cfgIn config.Config
-		err = dec.Decode(&cfgIn)
+		var configIn config.Config
+		err = dec.Decode(&configIn)
 		if err != nil {
 			BadRequest(w, req, log, err)
 			return
 		}
-		configPath := config.GetConfigPath(base, name)
-		err = cfgIn.WriteFile(configPath)
+
+		// Validate the configuration
+		tempFile, err := os.CreateTemp("", "temp*.toml")
+		if err != nil {
+			InternalError(w, req, log, err)
+			return
+		}
+		defer tempFile.Close()
+
+		tempPath := util.NewPath(tempFile.Name(), base.Fs())
+		defer tempPath.Remove()
+
+		err = configIn.WriteFile(tempPath)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
 
-		// Validate and return the configuration
-		configOut, err := config.FromFile(configPath)
 		var response configDTO
+		configPath := config.GetConfigPath(base, name)
+
+		configOut, err := config.FromFile(tempPath)
 		if err != nil {
 			response = configDTO{
 				Name:  name,
@@ -46,12 +59,19 @@ func PutConfigurationHandlerFunc(base util.Path, log logging.Logger) http.Handle
 				Error: types.AsAgentError(err),
 			}
 		} else {
+			// Write file only if it passed validation
+			err = configOut.WriteFile(configPath)
+			if err != nil {
+				InternalError(w, req, log, err)
+				return
+			}
 			response = configDTO{
 				Name:          name,
 				Path:          configPath.String(),
 				Configuration: configOut,
 			}
 		}
+
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(response)

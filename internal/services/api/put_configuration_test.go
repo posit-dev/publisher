@@ -44,9 +44,11 @@ func (s *PutConfigurationSuite) SetupTest() {
 func (s *PutConfigurationSuite) TestPutConfiguration() {
 	log := logging.New()
 
+	configName := "myConfig"
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("PUT", "/api/configurations/myConfig", nil)
+	req, err := http.NewRequest("PUT", "/api/configurations/"+configName, nil)
 	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": configName})
 
 	req.Body = io.NopCloser(strings.NewReader(`{
 		"$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
@@ -54,9 +56,15 @@ func (s *PutConfigurationSuite) TestPutConfiguration() {
 		"entrypoint": "app.py"
 	}`))
 
-	handler := PutConfigurationHandlerFunc(util.Path{}, log)
+	handler := PutConfigurationHandlerFunc(s.cwd, log)
 	handler(rec, req)
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	// Since the configuration was valid, it should have been written.
+	configPath := config.GetConfigPath(s.cwd, configName)
+	exists, err := configPath.Exists()
+	s.NoError(err)
+	s.True(exists)
 
 	var responseBody configDTO
 	err = json.NewDecoder(rec.Result().Body).Decode(&responseBody)
@@ -69,16 +77,23 @@ func (s *PutConfigurationSuite) TestPutConfiguration() {
 func (s *PutConfigurationSuite) TestPutConfigurationBadConfig() {
 	log := logging.New()
 
+	configName := "myConfig"
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("PUT", "/api/configurations/myConfig", nil)
+	req, err := http.NewRequest("PUT", "/api/configurations/"+configName, nil)
 	s.NoError(err)
-	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
+	req = mux.SetURLVars(req, map[string]string{"name": configName})
 
 	req.Body = io.NopCloser(strings.NewReader(`{"type": "this-is-not-valid"}`))
 
-	handler := PutConfigurationHandlerFunc(util.Path{}, log)
+	handler := PutConfigurationHandlerFunc(s.cwd, log)
 	handler(rec, req)
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	// Since the configuration was invalid, it should not have been written.
+	configPath := config.GetConfigPath(s.cwd, configName)
+	exists, err := configPath.Exists()
+	s.NoError(err)
+	s.False(exists)
 
 	var responseBody configDTO
 	err = json.NewDecoder(rec.Result().Body).Decode(&responseBody)
@@ -97,7 +112,7 @@ func (s *PutConfigurationSuite) TestPutConfigurationBadName() {
 
 	req.Body = io.NopCloser(strings.NewReader(`{}`))
 
-	handler := PutConfigurationHandlerFunc(util.Path{}, log)
+	handler := PutConfigurationHandlerFunc(s.cwd, log)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -112,7 +127,7 @@ func (s *PutConfigurationSuite) TestPutConfigurationBadJSON() {
 
 	req.Body = io.NopCloser(strings.NewReader(`{what}`))
 
-	handler := PutConfigurationHandlerFunc(util.Path{}, log)
+	handler := PutConfigurationHandlerFunc(s.cwd, log)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
