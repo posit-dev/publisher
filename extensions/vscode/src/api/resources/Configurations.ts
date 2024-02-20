@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from 'axios';
 
-import { Configuration, ConfigurationError } from '../types/configurations';
+import { Configuration, ConfigurationDetails, ConfigurationError } from '../types/configurations';
 
 export class Configurations {
   private client: AxiosInstance;
@@ -24,13 +24,35 @@ export class Configurations {
   // 200 - success and a Configuration, or fails and returns a ConfigurationError
   // 400 - bad request
   // 500 - internal server error
-  createNew(name: string) {
+  createNew(name: string, cfg: ConfigurationDetails) {
+    const encodedName = encodeURIComponent(name);
+    return this.client.post<Configuration | ConfigurationError>(
+      `configurations/${encodedName}`,
+      cfg
+    );
+  }
+
+  // Returns:
+  // 200 - success and a Configuration, or fails and returns a ConfigurationError
+  // 400 - bad request
+  // 500 - internal server error
+  initialize(name: string) {
     const params = {
       configurationName: name,
     };
     return this.client.post<Configuration | ConfigurationError>(
-      '/configurations',
+      '/initialize',
       params
+    );
+  }
+
+  // Returns:
+  // 200 - success and an array of Configurations
+  // 400 - bad request
+  // 500 - internal server error
+  initializeAll() {
+    return this.client.post<ConfigurationDetails[]>(
+      '/initialize-all',
     );
   }
 

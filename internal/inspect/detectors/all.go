@@ -30,6 +30,13 @@ func NewContentTypeDetector() *ContentTypeDetector {
 	}
 }
 
+func newUnknownConfig() *config.Config {
+	cfg := config.New()
+	cfg.Type = config.ContentTypeUnknown
+	cfg.Entrypoint = "unknown"
+	return cfg
+}
+
 func (t *ContentTypeDetector) InferType(path util.Path) (*config.Config, error) {
 	for _, detector := range t.detectors {
 		cfg, err := detector.InferType(path)
@@ -40,10 +47,25 @@ func (t *ContentTypeDetector) InferType(path util.Path) (*config.Config, error) 
 			return cfg, nil
 		}
 	}
-	cfg := config.New()
-	cfg.Type = config.ContentTypeUnknown
-	cfg.Entrypoint = "unknown"
-	return cfg, nil
+	return newUnknownConfig(), nil
+}
+
+func (t *ContentTypeDetector) InferAll(path util.Path) ([]*config.Config, error) {
+	var configs []*config.Config
+
+	for _, detector := range t.detectors {
+		cfg, err := detector.InferType(path)
+		if err != nil {
+			return nil, err
+		}
+		if cfg != nil {
+			configs = append(configs, cfg)
+		}
+	}
+	if configs == nil {
+		configs = append(configs, newUnknownConfig())
+	}
+	return configs, nil
 }
 
 var _ ContentTypeInferer = &ContentTypeDetector{}

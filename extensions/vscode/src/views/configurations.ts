@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import api from '../api';
-import { isConfigurationError } from "../api/types/configurations";
+import { Configuration, ConfigurationDetails, isConfigurationError } from "../api/types/configurations";
 import { alert, confirmDelete } from './confirm';
 
 const viewName = 'posit.publisher.configurations';
@@ -70,6 +70,26 @@ export class ConfigurationsProvider implements vscode.TreeDataProvider<Configura
         return defaultName;
     };
 
+    configSummary(config: ConfigurationDetails): string {
+        return `${config.type} in ${config.entrypoint}`;
+    }
+
+    async chooseConfig(configs: ConfigurationDetails[]): Promise<ConfigurationDetails | undefined> {
+        if (configs.length === 1) {
+            return configs[0];
+        }
+        const labels = configs.map(this.configSummary);
+        const labelMap = new Map<string, ConfigurationDetails>();
+        for (let i = 0; i < configs.length; i++) {
+            labelMap.set(labels[i], configs[i]);
+        }
+        const selection = await vscode.window.showQuickPick(labels);
+        if (selection === undefined) {
+            return undefined;
+        }
+        return labelMap.get(selection);
+    }
+
     public register(context: vscode.ExtensionContext): any {
         vscode.window.registerTreeDataProvider(viewName, this);
         context.subscriptions.push(
@@ -77,29 +97,33 @@ export class ConfigurationsProvider implements vscode.TreeDataProvider<Configura
         );
         context.subscriptions.push(
             vscode.commands.registerCommand(addCommand, async () => {
+                const initResp = await api.configurations.initializeAll();
+                if (initResp.status !== 200) {
+                    alert("An error occurred while inspecting the project: " + initResp.statusText);
+                    return;
+                }
+                const config = await this.chooseConfig(initResp.data);
+                if (config === undefined) {
+                    // canceled
+                    return;
+                }
                 const defaultName = await this.generateDefaultName();
                 const name = await vscode.window.showInputBox({
                     value: defaultName,
-                    prompt: "Enter configuration name",
+                    prompt: "Configuration name",
                 });
                 if (name === undefined || name === '') {
                     // canceled
                     return;
                 }
-                const resp = await api.configurations.createNew(name);
-                if (resp.status !== 200) {
-                    alert("An error occurred while inspecting the project: " + resp.statusText);
-                    return;
-                }
-                const config = resp.data;
-                if (isConfigurationError(config)) {
-                    alert("An error occurred while inspecting the project: " + config.error.msg);
+                const createResp = await api.configurations.createNew(name, config);
+                if (isConfigurationError(createResp.data)) {
+                    alert("An error occurred while saving the configuration: " + createResp.data.error.msg);
                     return;
                 }
                 if (this.workspaceRoot !== undefined) {
-                    const fullPath = path.join(this.workspaceRoot, config.configurationPath);
-                    console.log("created configuration: " + fullPath);
-                    const uri = vscode.Uri.file(fullPath);
+                    const filePath = path.join(this.workspaceRoot, createResp.data.configurationPath);
+                    const uri = vscode.Uri.file(filePath);
                     await vscode.commands.executeCommand('vscode.open', uri);
                 }
             })

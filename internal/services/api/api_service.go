@@ -76,12 +76,20 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	r.Handle(ToPath("files"), GetFileHandlerFunc(base, filesService, pathsService, log)).
 		Methods(http.MethodGet)
 
+	// POST /api/initialize
+	r.Handle(ToPath("initialize"), PostInitializeHandlerFunc(base, log)).
+		Methods(http.MethodPost)
+
+	// POST /api/initialize-all
+	r.Handle(ToPath("initialize-all"), PostInitializeAllHandlerFunc(base, log)).
+		Methods(http.MethodPost)
+
 	// GET /api/configurations
 	r.Handle(ToPath("configurations"), GetConfigurationsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
-	// POST /api/initialize
-	r.Handle(ToPath("initialize"), PostInitializeHandlerFunc(base, log)).
+	// POST /api/configurations/$NAME
+	r.Handle(ToPath("configurations", "{name}"), PostConfigurationHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
 	// DELETE /api/configurations/$NAME
