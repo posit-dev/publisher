@@ -13,7 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func PostConfigurationHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
+func PutConfigurationHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
 		err := util.ValidateFilename(name)

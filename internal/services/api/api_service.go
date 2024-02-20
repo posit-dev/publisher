@@ -84,9 +84,9 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	r.Handle(ToPath("configurations"), PostConfigurationsHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
-	// POST /api/configurations/$NAME
-	r.Handle(ToPath("configurations", "{name}"), PostConfigurationHandlerFunc(base, log)).
-		Methods(http.MethodPost)
+	// PUT /api/configurations/$NAME
+	r.Handle(ToPath("configurations", "{name}"), PutConfigurationHandlerFunc(base, log)).
+		Methods(http.MethodPut)
 
 	// GET /api/deployments
 	r.Handle(ToPath("deployments"), GetDeploymentsHandlerFunc(base, log)).

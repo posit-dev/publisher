@@ -19,21 +19,21 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type PostConfigurationSuite struct {
+type PutConfigurationSuite struct {
 	utiltest.Suite
 	log logging.Logger
 	cwd util.Path
 }
 
-func TestPostConfigurationSuite(t *testing.T) {
-	suite.Run(t, new(PostConfigurationSuite))
+func TestPutConfigurationSuite(t *testing.T) {
+	suite.Run(t, new(PutConfigurationSuite))
 }
 
-func (s *PostConfigurationSuite) SetupSuite() {
+func (s *PutConfigurationSuite) SetupSuite() {
 	s.log = logging.New()
 }
 
-func (s *PostConfigurationSuite) SetupTest() {
+func (s *PutConfigurationSuite) SetupTest() {
 	fs := afero.NewMemMapFs()
 	cwd, err := util.Getwd(fs)
 	s.Nil(err)
@@ -41,11 +41,11 @@ func (s *PostConfigurationSuite) SetupTest() {
 	s.cwd.MkdirAll(0700)
 }
 
-func (s *PostConfigurationSuite) TestPostConfiguration() {
+func (s *PutConfigurationSuite) TestPutConfiguration() {
 	log := logging.New()
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/configurations/myConfig", nil)
+	req, err := http.NewRequest("PUT", "/api/configurations/myConfig", nil)
 	s.NoError(err)
 
 	req.Body = io.NopCloser(strings.NewReader(`{
@@ -54,7 +54,7 @@ func (s *PostConfigurationSuite) TestPostConfiguration() {
 		"entrypoint": "app.py"
 	}`))
 
-	handler := PostConfigurationHandlerFunc(util.Path{}, log)
+	handler := PutConfigurationHandlerFunc(util.Path{}, log)
 	handler(rec, req)
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 
@@ -66,17 +66,17 @@ func (s *PostConfigurationSuite) TestPostConfiguration() {
 	s.Equal(config.ContentTypePythonShiny, responseBody.Configuration.Type)
 }
 
-func (s *PostConfigurationSuite) TestPostConfigurationBadConfig() {
+func (s *PutConfigurationSuite) TestPutConfigurationBadConfig() {
 	log := logging.New()
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/configurations/myConfig", nil)
+	req, err := http.NewRequest("PUT", "/api/configurations/myConfig", nil)
 	s.NoError(err)
 	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
 
 	req.Body = io.NopCloser(strings.NewReader(`{"type": "this-is-not-valid"}`))
 
-	handler := PostConfigurationHandlerFunc(util.Path{}, log)
+	handler := PutConfigurationHandlerFunc(util.Path{}, log)
 	handler(rec, req)
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 
@@ -87,32 +87,32 @@ func (s *PostConfigurationSuite) TestPostConfigurationBadConfig() {
 	s.NotNil(responseBody.Error)
 }
 
-func (s *PostConfigurationSuite) TestPostConfigurationBadName() {
+func (s *PutConfigurationSuite) TestPutConfigurationBadName() {
 	log := logging.New()
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/configurations/myConfig", nil)
+	req, err := http.NewRequest("PUT", "/api/configurations/myConfig", nil)
 	s.NoError(err)
 	req = mux.SetURLVars(req, map[string]string{"name": "a/b"})
 
 	req.Body = io.NopCloser(strings.NewReader(`{}`))
 
-	handler := PostConfigurationHandlerFunc(util.Path{}, log)
+	handler := PutConfigurationHandlerFunc(util.Path{}, log)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
 
-func (s *PostConfigurationSuite) TestPostConfigurationBadJSON() {
+func (s *PutConfigurationSuite) TestPutConfigurationBadJSON() {
 	log := logging.New()
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/api/configurations/myConfig", nil)
+	req, err := http.NewRequest("PUT", "/api/configurations/myConfig", nil)
 	s.NoError(err)
 	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
 
 	req.Body = io.NopCloser(strings.NewReader(`{what}`))
 
-	handler := PostConfigurationHandlerFunc(util.Path{}, log)
+	handler := PutConfigurationHandlerFunc(util.Path{}, log)
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
