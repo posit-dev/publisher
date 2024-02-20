@@ -21,6 +21,20 @@ export class Configurations {
   }
 
   // Returns:
+  // 200 - success and a Configuration, or fails and returns a ConfigurationError
+  // 400 - bad request
+  // 500 - internal server error
+  createNew(name: string) {
+    const params = {
+      configurationName: name,
+    };
+    return this.client.post<Configuration | ConfigurationError>(
+      '/configurations',
+      params
+    );
+  }
+
+  // Returns:
   // 204 - success (no response)
   // 404 - not found
   // 500 - internal server error

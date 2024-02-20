@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 
 import * as ports from './ports';
 import  { Service } from './services';
-import  { ConfigurationBaseNode, ConfigurationsProvider } from './views/config';
+import  { ConfigurationBaseNode, ConfigurationsProvider } from './views/configurations';
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;

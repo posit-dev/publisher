@@ -26,3 +26,9 @@ export async function confirmOK(message: string): Promise<boolean> {
 export async function confirmDelete(message: string): Promise<boolean> {
     return confirm(message, deleteItem);
 }
+
+export async function alert(message: string): Promise<void> {
+    const choice = await vscode.window.showInformationMessage(message, {
+        modal: true,
+    });
+}

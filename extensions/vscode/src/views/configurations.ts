@@ -1,11 +1,12 @@
-import * as vscode from 'vscode';
 import * as path from 'path';
+import * as vscode from 'vscode';
 
 import api from '../api';
-import { Configuration, isConfigurationError } from "../api/types/configurations";
-import { confirmDelete } from './confirm';
+import { isConfigurationError } from "../api/types/configurations";
+import { alert, confirmDelete } from './confirm';
 
 const viewName = 'posit.publisher.configurations';
+const addCommand = 'posit.publisher.configurations.add';
 const editCommand = 'posit.publisher.configurations.edit';
 const deleteCommand = 'posit.publisher.configurations.delete';
 const fileStore = '.posit/publish/*.toml';
@@ -49,17 +50,44 @@ export class ConfigurationsProvider implements vscode.TreeDataProvider<Configura
         });
     }
 
+    async generateDefaultName() {
+        const existingConfigurations = (await api.configurations.getAll()).data;
+
+        let id = 0;
+        let defaultName = '';
+        do {
+            id += 1;
+            const trialName = `Untitled-${id}`;
+
+            if (!existingConfigurations.find(
+                (config) => {
+                    return config.configurationName.toLocaleLowerCase() === trialName.toLowerCase();
+                }
+            )) {
+                defaultName = trialName;
+            }
+        } while (!defaultName);
+        return defaultName;
+    };
+
     public register(context: vscode.ExtensionContext): any {
         vscode.window.registerTreeDataProvider(viewName, this);
         context.subscriptions.push(
             vscode.window.createTreeView(viewName, { treeDataProvider: this })
         );
-
+        addCommand
         context.subscriptions.push(
-            vscode.commands.registerCommand(deleteCommand, async (config: ConfigurationBaseNode) => {
-                const ok = await confirmDelete("Really delete this configuration?");
-                if (ok) {
-                    await api.configurations.delete(config.name);
+            vscode.commands.registerCommand(addCommand, async () => {
+                const name = await this.generateDefaultName();
+                const resp = await api.configurations.createNew(name);
+                if (resp.status !== 200) {
+                    alert("An error occurred while inspecting the project: " + resp.statusText);
+                    return;
+                }
+                const config = resp.data;
+                if (isConfigurationError(config)) {
+                    alert("An error occurred while inspecting the project: " + config.error.msg);
+                    return;
                 }
             })
         );
@@ -67,6 +95,14 @@ export class ConfigurationsProvider implements vscode.TreeDataProvider<Configura
             vscode.commands.registerCommand(editCommand, async (config: ConfigurationBaseNode) => {
                 const uri = vscode.Uri.file(config.filePath);
                 await vscode.commands.executeCommand('vscode.open', uri);
+            })
+        );
+        context.subscriptions.push(
+            vscode.commands.registerCommand(deleteCommand, async (config: ConfigurationBaseNode) => {
+                const ok = await confirmDelete("Really delete this configuration?");
+                if (ok) {
+                    await api.configurations.delete(config.name);
+                }
             })
         );
 

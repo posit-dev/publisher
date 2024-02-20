@@ -61,6 +61,12 @@
         "category": "Posit"
       },
       {
+        "command": "posit.publisher.configurations.add",
+        "title": "Add",
+        "category": "Posit",
+        "icon": "$(add)"
+      },
+      {
         "command": "posit.publisher.configurations.edit",
         "title": "Edit",
         "category": "Posit",
@@ -86,6 +92,13 @@
       "editor/title": [
         {
           "command": "posit.publisher.open",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "posit.publisher.configurations.add",
+          "when": "view == posit.publisher.configurations",
           "group": "navigation"
         }
       ],
