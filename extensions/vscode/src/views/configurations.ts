@@ -89,6 +89,12 @@ export class ConfigurationsProvider implements vscode.TreeDataProvider<Configura
                     alert("An error occurred while inspecting the project: " + config.error.msg);
                     return;
                 }
+                if (this.workspaceRoot !== undefined) {
+                    const fullPath = path.join(this.workspaceRoot, config.configurationPath);
+                    console.log("created configuration: " + fullPath);
+                    const uri = vscode.Uri.file(fullPath);
+                    await vscode.commands.executeCommand('vscode.open', uri);
+                }
             })
         );
         context.subscriptions.push(
