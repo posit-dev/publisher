@@ -75,10 +75,17 @@ export class ConfigurationsProvider implements vscode.TreeDataProvider<Configura
         context.subscriptions.push(
             vscode.window.createTreeView(viewName, { treeDataProvider: this })
         );
-        addCommand
         context.subscriptions.push(
             vscode.commands.registerCommand(addCommand, async () => {
-                const name = await this.generateDefaultName();
+                const defaultName = await this.generateDefaultName();
+                const name = await vscode.window.showInputBox({
+                    value: defaultName,
+                    prompt: "Enter configuration name",
+                });
+                if (name === undefined || name === '') {
+                    // canceled
+                    return;
+                }
                 const resp = await api.configurations.createNew(name);
                 if (resp.status !== 200) {
                     alert("An error occurred while inspecting the project: " + resp.statusText);
