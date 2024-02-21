@@ -4,10 +4,7 @@ const viewName = 'posit.publisher.credentials.provider';
 
 export class CredentialsTreeDataProvider implements vscode.TreeDataProvider<CredentialsTreeItem> {
 
-  private _onDidChangeTreeData: vscode.EventEmitter<CredentialsTreeItem | undefined | void> = new vscode.EventEmitter<CredentialsTreeItem | undefined | void>();
-  readonly onDidChangeTreeData: vscode.Event<CredentialsTreeItem | undefined | void> = this._onDidChangeTreeData.event;
-
-  constructor() {}
+  constructor() { }
 
   getTreeItem(element: CredentialsTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
     return element;
@@ -22,15 +19,7 @@ export class CredentialsTreeDataProvider implements vscode.TreeDataProvider<Cred
     return [];
   }
 
-  getParent?(element: CredentialsTreeItem): vscode.ProviderResult<CredentialsTreeItem> {
-    return element;
-  }
-
-  resolveTreeItem?(_1: vscode.TreeItem, _2: CredentialsTreeItem, _3: vscode.CancellationToken): vscode.ProviderResult<CredentialsTreeItem> {
-    throw new Error('Method not implemented.');
-  }
-
-  public register(context: vscode.ExtensionContext): any {
+  public register(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
       vscode.window.createTreeView(viewName, { treeDataProvider: this })

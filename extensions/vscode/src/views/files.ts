@@ -4,10 +4,7 @@ const viewName = 'posit.publisher.files.provider';
 
 export class FilesTreeDataProvider implements vscode.TreeDataProvider<FilesTreeItem> {
 
-  private _onDidChangeTreeData: vscode.EventEmitter<FilesTreeItem | undefined | void> = new vscode.EventEmitter<FilesTreeItem | undefined | void>();
-  readonly onDidChangeTreeData: vscode.Event<FilesTreeItem | undefined | void> = this._onDidChangeTreeData.event;
-
-  constructor() {}
+  constructor() { }
 
   getTreeItem(element: FilesTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
     return element;
@@ -22,15 +19,7 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<FilesTreeI
     return [];
   }
 
-  getParent?(element: FilesTreeItem): vscode.ProviderResult<FilesTreeItem> {
-    return element;
-  }
-
-  resolveTreeItem?(_1: vscode.TreeItem, _2: FilesTreeItem, _3: vscode.CancellationToken): vscode.ProviderResult<FilesTreeItem> {
-    throw new Error('Method not implemented.');
-  }
-
-  public register(context: vscode.ExtensionContext): any {
+  public register(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
       vscode.window.createTreeView(viewName, { treeDataProvider: this })

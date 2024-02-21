@@ -22,15 +22,7 @@ export class HelpAndFeedbackTreeDataProvider implements vscode.TreeDataProvider<
     return [];
   }
 
-  getParent?(element: HelpAndFeedbackTreeItem): vscode.ProviderResult<HelpAndFeedbackTreeItem> {
-    return element;
-  }
-
-  resolveTreeItem?(_1: vscode.TreeItem, _2: HelpAndFeedbackTreeItem, _3: vscode.CancellationToken): vscode.ProviderResult<HelpAndFeedbackTreeItem> {
-    throw new Error('Method not implemented.');
-  }
-
-  public register(context: vscode.ExtensionContext): any {
+  public register(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
       vscode.window.createTreeView(viewName, { treeDataProvider: this })

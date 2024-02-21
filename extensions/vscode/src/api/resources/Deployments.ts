@@ -37,7 +37,7 @@ export class Deployments {
   // 409 - conflict
   // 500 - internal server error
   // Errors returned through event stream
-  createNew(accountName? : string, saveName?: string) {
+  createNew(accountName?: string, saveName?: string) {
     const params = {
       account: accountName,
       saveName,
@@ -53,7 +53,7 @@ export class Deployments {
   // 400 - bad request
   // 500 - internal server error
   // Errors returned through event stream
-  publish(targetName: string, accountName? : string) {
+  publish(targetName: string, accountName?: string) {
     const params = {
       account: accountName,
       config: 'default', // hardcoded for now

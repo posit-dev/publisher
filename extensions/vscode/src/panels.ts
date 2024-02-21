@@ -6,76 +6,76 @@ const DEFAULT_COLUMN = vscode.ViewColumn.Beside;
 
 export class Panel {
 
-    private readonly url: string;
+  private readonly url: string;
 
-    private column: vscode.ViewColumn = DEFAULT_COLUMN;
-    private panel?: vscode.WebviewPanel;
+  private column: vscode.ViewColumn = DEFAULT_COLUMN;
+  private panel?: vscode.WebviewPanel;
 
-    constructor(port: number) {
-        this.url = `http://${HOST}:${port}`;
+  constructor(port: number) {
+    this.url = `http://${HOST}:${port}`;
+  }
+
+  async show(context: vscode.ExtensionContext): Promise<undefined> {
+    // reveal panel if defined
+    if (this.panel !== undefined) {
+      this.panel.reveal(this.column);
+      return;
     }
 
-    async show(context: vscode.ExtensionContext): Promise<undefined> {
-        // reveal panel if defined
-        if (this.panel !== undefined) {
-            this.panel.reveal(this.column);
+    // initialize panel
+    this.panel = vscode.window.createWebviewPanel(
+      'posit.publisher',
+      'Posit Publisher',
+      this.column,
+      {
+        enableScripts: true,
+        enableForms: true,
+        retainContextWhenHidden: true,
+      }
+    );
+
+    // set html content
+    const uri = await vscode.env.asExternalUri(vscode.Uri.parse(this.url));
+    const url = uri.toString();
+    this.panel.webview.html = createHTML(url, this.panel.webview);
+
+    // listen for messages
+    this.panel.webview.onDidReceiveMessage(
+      message => {
+        switch (message.command) {
+          case 'reload-webview':
+            vscode.commands.executeCommand('workbench.action.webview.reloadWebviewAction');
             return;
         }
+      },
+      undefined,
+      context.subscriptions
+    );
 
-        // initialize panel
-        this.panel = vscode.window.createWebviewPanel(
-            'posit.publisher',
-            'Posit Publisher',
-            this.column,
-            {
-                enableScripts: true,
-                enableForms: true,
-                retainContextWhenHidden: true,
-            }
-        );
+    // register view state change
+    this.panel.onDidChangeViewState(
+      (event) => {
+        this.column = event.webviewPanel.viewColumn || DEFAULT_COLUMN;
+      },
+      null,
+      context.subscriptions
+    );
 
-        // set html content
-        const uri = await vscode.env.asExternalUri(vscode.Uri.parse(this.url));
-        const url = uri.toString();
-        this.panel.webview.html = createHTML(url, this.panel.webview);
+    // register dispose
+    this.panel.onDidDispose(
+      () => {
+        this.column = DEFAULT_COLUMN;
+        this.panel = undefined;
+      },
+      null,
+      context.subscriptions
+    );
+  }
 
-        // listen for messages
-        this.panel.webview.onDidReceiveMessage(
-            message => {
-                switch (message.command) {
-                    case 'reload-webview':
-                        vscode.commands.executeCommand('workbench.action.webview.reloadWebviewAction');
-                        return;
-                }
-            },
-            undefined,
-            context.subscriptions
-        );
-
-        // register view state change
-        this.panel.onDidChangeViewState(
-            (event) => {
-                this.column = event.webviewPanel.viewColumn || DEFAULT_COLUMN;
-            },
-            null,
-            context.subscriptions
-        );
-
-        // register dispose
-        this.panel.onDidDispose(
-            () => {
-                this.column = DEFAULT_COLUMN;
-                this.panel = undefined;
-            },
-            null,
-            context.subscriptions
-        );
-    }
-
-    dispose() {
-        // this invokes this panel.onDidDispose callback above, which resets the
-        this.panel?.dispose();
-    }
+  dispose() {
+    // this invokes this panel.onDidDispose callback above, which resets the
+    this.panel?.dispose();
+  }
 
 }
 
@@ -87,11 +87,11 @@ export class Panel {
  * @returns {string}
  */
 export const createHTML = (url: string, webview: vscode.Webview): string => {
-    const nonce = createNonce();
-    return (
-        // install https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html to enable code highlighting below
-        /*html*/
-        `
+  const nonce = createNonce();
+  return (
+    // install https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html to enable code highlighting below
+    /*html*/
+    `
         <!DOCTYPE html>
             <head>
                 <base href="${url}" />
@@ -107,7 +107,7 @@ export const createHTML = (url: string, webview: vscode.Webview): string => {
             </body>
         </html>
         `
-    );
+  );
 };
 
 /**
@@ -121,16 +121,16 @@ export const createHTML = (url: string, webview: vscode.Webview): string => {
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
  */
 export const createContentSecurityPolicyContent = (nonce: string, ...allowable: string[]): string => {
-    const directives: string[] = [
-        'connect-src',
-        'font-src',
-        'frame-src',
-        `script-src nonce-${nonce}`,
-        'style-src',
-    ];
-    const urls: string = allowable.join(" ");
-    const content: string = directives.map(_ => `${_} ${urls} https:;`).join(" ");
-    return `default-src 'none'; ${content}`;
+  const directives: string[] = [
+    'connect-src',
+    'font-src',
+    'frame-src',
+    `script-src nonce-${nonce}`,
+    'style-src',
+  ];
+  const urls: string = allowable.join(" ");
+  const content: string = directives.map(_ => `${_} ${urls} https:;`).join(" ");
+  return `default-src 'none'; ${content}`;
 };
 
 /**
@@ -139,10 +139,10 @@ export const createContentSecurityPolicyContent = (nonce: string, ...allowable: 
  * @returns {string}
  */
 const createNonce = (): string => {
-	let text = '';
-	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	for (let i = 0; i < 32; i++) {
-		text += possible.charAt(Math.floor(Math.random() * possible.length));
-	}
-	return text;
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
 };

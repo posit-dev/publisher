@@ -37,7 +37,7 @@
         "title": "Close Publisher",
         "category": "Posit"
       }
-		],
+    ],
     "configuration": {
       "title": "Posit",
       "properties": {
@@ -66,44 +66,44 @@
       ]
     },
     "views": {
-			"posit-publisher": [
+      "posit-publisher": [
         {
-					"id": "posit.publisher.project.provider",
-					"name": "Project",
-					"contextualTitle": "Publisher Project"
-				},
-				{
-					"id": "posit.publisher.deployments.provider",
-					"name": "Deployments",
-					"contextualTitle": "Publisher Deployments"
-				},
-				{
-					"id": "posit.publisher.configurations.provider",
-					"name": "Configurations",
-					"contextualTitle": "Publisher Configurations"
-				},
-				{
-					"id": "posit.publisher.files.provider",
-					"name": "Files",
-					"contextualTitle": "Files"
-				},
-				{
-					"id": "posit.publisher.dependencies.provider",
-					"name": "Dependencies",
-					"contextualTitle": "Dependencies"
-				},
-				{
-					"id": "posit.publisher.credentials.provider",
-					"name": "Credentials",
-					"contextualTitle": "Credentials"
-				},
-				{
-					"id": "posit.publisher.helpAndFeedback.provider",
-					"name": "Help And Feedback",
-					"contextualTitle": "Help And Feedback"
-				}
-			]
-		}
+          "id": "posit.publisher.project.provider",
+          "name": "Project",
+          "contextualTitle": "Publisher Project"
+        },
+        {
+          "id": "posit.publisher.deployments.provider",
+          "name": "Deployments",
+          "contextualTitle": "Publisher Deployments"
+        },
+        {
+          "id": "posit.publisher.configurations.provider",
+          "name": "Configurations",
+          "contextualTitle": "Publisher Configurations"
+        },
+        {
+          "id": "posit.publisher.files.provider",
+          "name": "Files",
+          "contextualTitle": "Files"
+        },
+        {
+          "id": "posit.publisher.dependencies.provider",
+          "name": "Dependencies",
+          "contextualTitle": "Dependencies"
+        },
+        {
+          "id": "posit.publisher.credentials.provider",
+          "name": "Credentials",
+          "contextualTitle": "Credentials"
+        },
+        {
+          "id": "posit.publisher.helpAndFeedback.provider",
+          "name": "Help And Feedback",
+          "contextualTitle": "Help And Feedback"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -120,7 +120,6 @@
     "@types/retry": "^0.12.5",
     "@types/vscode": "^1.86.0",
     "@types/wait-on": "^5.3.3",
-    "@types/vscode-webview": "^1.57.4",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
     "@vscode/test-electron": "^2.3.8",
@@ -130,12 +129,10 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@github/relative-time-element": "^4.3.1",
     "get-port": "5.1.1",
     "mutexify": "^1.4.0",
     "retry": "^0.13.1",
     "axios": "^1.6.0",
-    "camelcase-keys": "^9.0.0",
-    "decamelize-keys": "^2.0.1"
+    "camelcase-keys": "^9.0.0"
   }
 }
