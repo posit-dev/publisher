@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from 'axios';
 
-import { Deployment, DeploymentError, PreDeployment } from 'src/api/types/deployments';
+import { Deployment, DeploymentError, PreDeployment } from '../types/deployments';
 
 export class Deployments {
   private client: AxiosInstance;

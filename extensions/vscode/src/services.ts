@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { HOST } from '.';
 import { Panel } from './panels';
 import { Server } from './servers';
-import { useApi } from 'src/api';
+import { useApi } from './api';
 
 export class Service implements vscode.Disposable {
 

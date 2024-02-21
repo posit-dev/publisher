@@ -1,16 +1,22 @@
-import * as vscode from 'vscode';
+import {
+  TreeDataProvider,
+  TreeItem,
+  ProviderResult,
+  ExtensionContext,
+  window,
+} from 'vscode';
 
 const viewName = 'posit.publisher.files';
 
-export class FilesTreeDataProvider implements vscode.TreeDataProvider<FilesTreeItem> {
+export class FilesTreeDataProvider implements TreeDataProvider<FilesTreeItem> {
 
   constructor() { }
 
-  getTreeItem(element: FilesTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+  getTreeItem(element: FilesTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(element: FilesTreeItem | undefined): vscode.ProviderResult<FilesTreeItem[]> {
+  getChildren(element: FilesTreeItem | undefined): ProviderResult<FilesTreeItem[]> {
     if (element === undefined) {
       return [
         new FilesTreeItem('Dummy File'),
@@ -19,15 +25,15 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<FilesTreeI
     return [];
   }
 
-  public register(context: vscode.ExtensionContext) {
-    vscode.window.registerTreeDataProvider(viewName, this);
+  public register(context: ExtensionContext) {
+    window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
-      vscode.window.createTreeView(viewName, { treeDataProvider: this })
+      window.createTreeView(viewName, { treeDataProvider: this })
     );
   }
 }
 
-export class FilesTreeItem extends vscode.TreeItem {
+export class FilesTreeItem extends TreeItem {
 
   constructor(itemString: string) {
     super(itemString);

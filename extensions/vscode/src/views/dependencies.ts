@@ -1,16 +1,22 @@
-import * as vscode from 'vscode';
+import {
+  TreeDataProvider,
+  TreeItem,
+  ProviderResult,
+  ExtensionContext,
+  window,
+} from 'vscode';
 
 const viewName = 'posit.publisher.dependencies';
 
-export class DependenciesTreeDataProvider implements vscode.TreeDataProvider<DependenciesTreeItem> {
+export class DependenciesTreeDataProvider implements TreeDataProvider<DependenciesTreeItem> {
 
   constructor() { }
 
-  getTreeItem(element: DependenciesTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+  getTreeItem(element: DependenciesTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(element: DependenciesTreeItem | undefined): vscode.ProviderResult<DependenciesTreeItem[]> {
+  getChildren(element: DependenciesTreeItem | undefined): ProviderResult<DependenciesTreeItem[]> {
     if (element === undefined) {
       return [
         new DependenciesTreeItem('Dummy Dependencies'),
@@ -19,15 +25,15 @@ export class DependenciesTreeDataProvider implements vscode.TreeDataProvider<Dep
     return [];
   }
 
-  public register(context: vscode.ExtensionContext) {
-    vscode.window.registerTreeDataProvider(viewName, this);
+  public register(context: ExtensionContext) {
+    window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
-      vscode.window.createTreeView(viewName, { treeDataProvider: this })
+      window.createTreeView(viewName, { treeDataProvider: this })
     );
   }
 }
 
-export class DependenciesTreeItem extends vscode.TreeItem {
+export class DependenciesTreeItem extends TreeItem {
 
   constructor(itemString: string) {
     super(itemString);

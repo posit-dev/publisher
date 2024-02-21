@@ -1,16 +1,22 @@
-import * as vscode from 'vscode';
+import {
+  TreeDataProvider,
+  TreeItem,
+  ProviderResult,
+  ExtensionContext,
+  window,
+} from 'vscode';
 
 const viewName = 'posit.publisher.configurations';
 
-export class ConfigurationsTreeDataProvider implements vscode.TreeDataProvider<ConfigurationTreeItem> {
+export class ConfigurationsTreeDataProvider implements TreeDataProvider<ConfigurationTreeItem> {
 
   constructor() { }
 
-  getTreeItem(element: ConfigurationTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+  getTreeItem(element: ConfigurationTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(element: ConfigurationTreeItem | undefined): vscode.ProviderResult<ConfigurationTreeItem[]> {
+  getChildren(element: ConfigurationTreeItem | undefined): ProviderResult<ConfigurationTreeItem[]> {
     if (element === undefined) {
       return [
         new ConfigurationTreeItem('Dummy Configurations'),
@@ -19,15 +25,15 @@ export class ConfigurationsTreeDataProvider implements vscode.TreeDataProvider<C
     return [];
   }
 
-  public register(context: vscode.ExtensionContext) {
-    vscode.window.registerTreeDataProvider(viewName, this);
+  public register(context: ExtensionContext) {
+    window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
-      vscode.window.createTreeView(viewName, { treeDataProvider: this })
+      window.createTreeView(viewName, { treeDataProvider: this })
     );
   }
 }
 
-export class ConfigurationTreeItem extends vscode.TreeItem {
+export class ConfigurationTreeItem extends TreeItem {
 
   constructor(itemString: string) {
     super(itemString);

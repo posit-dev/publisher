@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from 'axios';
 
-import { Account } from 'src/api/types/accounts';
+import { Account } from '../types/accounts';
 
 export class Accounts {
   private client: AxiosInstance;

@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from 'axios';
 
-import { Configuration, ConfigurationError } from 'src/api/types/configurations';
+import { Configuration, ConfigurationError } from '../types/configurations';
 
 export class Configurations {
   private client: AxiosInstance;

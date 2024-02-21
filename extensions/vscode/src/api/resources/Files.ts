@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from 'axios';
 
-import { DeploymentFile } from 'src/api/types/files';
+import { DeploymentFile } from '../types/files';
 
 export class Files {
   private client: AxiosInstance;

@@ -1,16 +1,22 @@
-import * as vscode from 'vscode';
+import {
+  TreeDataProvider,
+  TreeItem,
+  ProviderResult,
+  ExtensionContext,
+  window,
+} from 'vscode';
 
 const viewName = 'posit.publisher.helpAndFeedback';
 
-export class HelpAndFeedbackTreeDataProvider implements vscode.TreeDataProvider<HelpAndFeedbackTreeItem> {
+export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAndFeedbackTreeItem> {
 
   constructor() { }
 
-  getTreeItem(element: HelpAndFeedbackTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+  getTreeItem(element: HelpAndFeedbackTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(element: HelpAndFeedbackTreeItem | undefined): vscode.ProviderResult<HelpAndFeedbackTreeItem[]> {
+  getChildren(element: HelpAndFeedbackTreeItem | undefined): ProviderResult<HelpAndFeedbackTreeItem[]> {
     if (element === undefined) {
       return [
         new HelpAndFeedbackTreeItem('Read Extension Documentation', 'Open Extension Documentation', 'posit.publisher.helpAndFeedback.command.openExtensionDoc'),
@@ -22,15 +28,15 @@ export class HelpAndFeedbackTreeDataProvider implements vscode.TreeDataProvider<
     return [];
   }
 
-  public register(context: vscode.ExtensionContext) {
-    vscode.window.registerTreeDataProvider(viewName, this);
+  public register(context: ExtensionContext) {
+    window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
-      vscode.window.createTreeView(viewName, { treeDataProvider: this })
+      window.createTreeView(viewName, { treeDataProvider: this })
     );
   }
 }
 
-export class HelpAndFeedbackTreeItem extends vscode.TreeItem {
+export class HelpAndFeedbackTreeItem extends TreeItem {
 
   constructor(itemString: string, commandTitle: string, command: string) {
     super(itemString);

@@ -1,16 +1,22 @@
-import * as vscode from 'vscode';
+import {
+  TreeDataProvider,
+  TreeItem,
+  ProviderResult,
+  ExtensionContext,
+  window,
+} from 'vscode';
 
 const viewName = 'posit.publisher.project';
 
-export class ProjectTreeDataProvider implements vscode.TreeDataProvider<ProjectTreeItem> {
+export class ProjectTreeDataProvider implements TreeDataProvider<ProjectTreeItem> {
 
   constructor() { }
 
-  getTreeItem(element: ProjectTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+  getTreeItem(element: ProjectTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(element: ProjectTreeItem | undefined): vscode.ProviderResult<ProjectTreeItem[]> {
+  getChildren(element: ProjectTreeItem | undefined): ProviderResult<ProjectTreeItem[]> {
     if (element === undefined) {
       return [
         new ProjectTreeItem('Dummy Project'),
@@ -19,15 +25,15 @@ export class ProjectTreeDataProvider implements vscode.TreeDataProvider<ProjectT
     return [];
   }
 
-  public register(context: vscode.ExtensionContext) {
-    vscode.window.registerTreeDataProvider(viewName, this);
+  public register(context: ExtensionContext) {
+    window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
-      vscode.window.createTreeView(viewName, { treeDataProvider: this })
+      window.createTreeView(viewName, { treeDataProvider: this })
     );
   }
 }
 
-export class ProjectTreeItem extends vscode.TreeItem {
+export class ProjectTreeItem extends TreeItem {
 
   constructor(itemString: string) {
     super(itemString);

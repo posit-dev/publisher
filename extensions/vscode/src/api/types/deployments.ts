@@ -1,9 +1,9 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { AgentError } from 'src/api/types/error';
-import { Configuration } from 'src/api/types/configurations';
-import { SchemaURL } from 'src/api/types/schema';
-import { ServerType } from 'src/api/types/accounts';
+import { AgentError } from './error';
+import { Configuration } from './configurations';
+import { SchemaURL } from './schema';
+import { ServerType } from './accounts';
 
 export enum DeploymentState {
   NEW = 'new',

@@ -1,16 +1,22 @@
-import * as vscode from 'vscode';
+import {
+  TreeDataProvider,
+  TreeItem,
+  ProviderResult,
+  ExtensionContext,
+  window,
+} from 'vscode';
 
 const viewName = 'posit.publisher.credentials';
 
-export class CredentialsTreeDataProvider implements vscode.TreeDataProvider<CredentialsTreeItem> {
+export class CredentialsTreeDataProvider implements TreeDataProvider<CredentialsTreeItem> {
 
   constructor() { }
 
-  getTreeItem(element: CredentialsTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+  getTreeItem(element: CredentialsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(element: CredentialsTreeItem | undefined): vscode.ProviderResult<CredentialsTreeItem[]> {
+  getChildren(element: CredentialsTreeItem | undefined): ProviderResult<CredentialsTreeItem[]> {
     if (element === undefined) {
       return [
         new CredentialsTreeItem('Dummy Credentials'),
@@ -19,14 +25,14 @@ export class CredentialsTreeDataProvider implements vscode.TreeDataProvider<Cred
     return [];
   }
 
-  public register(context: vscode.ExtensionContext) {
-    vscode.window.registerTreeDataProvider(viewName, this);
+  public register(context: ExtensionContext) {
+    window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
-      vscode.window.createTreeView(viewName, { treeDataProvider: this })
+      window.createTreeView(viewName, { treeDataProvider: this })
     );
   }
 }
-export class CredentialsTreeItem extends vscode.TreeItem {
+export class CredentialsTreeItem extends TreeItem {
 
   constructor(itemString: string) {
     super(itemString);
