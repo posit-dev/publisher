@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
 
-import { HOST } from '.';
-
 const DEFAULT_COLUMN = vscode.ViewColumn.Beside;
 
 export class Panel {
@@ -11,8 +9,8 @@ export class Panel {
   private column: vscode.ViewColumn = DEFAULT_COLUMN;
   private panel?: vscode.WebviewPanel;
 
-  constructor(port: number) {
-    this.url = `http://${HOST}:${port}`;
+  constructor(url: string) {
+    this.url = url;
   }
 
   async show(context: vscode.ExtensionContext): Promise<undefined> {

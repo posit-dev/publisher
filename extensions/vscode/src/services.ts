@@ -1,26 +1,33 @@
 import * as vscode from 'vscode';
 
+import { HOST } from '.';
 import { Panel } from './panels';
 import { Server } from './servers';
+import { useApi } from 'src/api';
 
 export class Service implements vscode.Disposable {
 
+  private context: vscode.ExtensionContext;
   private panel: Panel;
   private server: Server;
+  private agentURL: string;
 
-  constructor(port: number) {
-    this.panel = new Panel(port);
+  constructor(context: vscode.ExtensionContext, port: number) {
+    this.context = context;
+    this.agentURL = `http://${HOST}:${port}`;
+    this.panel = new Panel(this.agentURL);
     this.server = new Server(port);
+    useApi().setBaseUrl('http://localhost:9000/api');
   }
 
-  start = async (context: vscode.ExtensionContext) => {
-    await this.server.start(context);
+  start = async () => {
+    await this.server.start(this.context);
   };
 
-  open = async (context: vscode.ExtensionContext) => {
+  open = async () => {
     // re-run the start sequence in case the server has stopped.
-    await this.server.start(context);
-    this.panel.show(context);
+    await this.server.start(this.context);
+    this.panel.show(this.context);
   };
 
   stop = async () => {

@@ -20,12 +20,12 @@ let service: Service;
 export async function activate(context: vscode.ExtensionContext) {
 
   const port = await ports.acquire();
-  service = new Service(port);
-  await service.start(context);
+  service = new Service(context, port);
+  await service.start();
 
   context.subscriptions.push(
     vscode.commands.registerCommand('posit.publisher.open', async () => {
-      await service.open(context);
+      await service.open();
     })
   );
 
