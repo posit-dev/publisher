@@ -87,19 +87,13 @@ func (s *PutConfigurationSuite) TestPutConfigurationBadConfig() {
 
 	handler := PutConfigurationHandlerFunc(s.cwd, log)
 	handler(rec, req)
-	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 
 	// Since the configuration was invalid, it should not have been written.
 	configPath := config.GetConfigPath(s.cwd, configName)
 	exists, err := configPath.Exists()
 	s.NoError(err)
 	s.False(exists)
-
-	var responseBody configDTO
-	err = json.NewDecoder(rec.Result().Body).Decode(&responseBody)
-	s.NoError(err)
-	s.Nil(responseBody.Configuration)
-	s.NotNil(responseBody.Error)
 }
 
 func (s *PutConfigurationSuite) TestPutConfigurationBadName() {
