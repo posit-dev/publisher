@@ -12,15 +12,15 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type PostConfigurationsRequestBody struct {
+type PostInitializeRequestBody struct {
 	ConfigName string `json:"configurationName"`
 }
 
-func PostConfigurationsHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
+func PostInitializeHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
-		var b PostConfigurationsRequestBody
+		var b PostInitializeRequestBody
 		err := dec.Decode(&b)
 		if err != nil {
 			BadRequest(w, req, log, err)

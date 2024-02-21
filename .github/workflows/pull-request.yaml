@@ -24,10 +24,17 @@ jobs:
   archive:
     needs: build
     uses: ./.github/workflows/archive.yaml
+  upload:
+    needs:
+      - archive
+      - package
+    uses: ./.github/workflows/upload.yaml
+    secrets: inherit
 
   # Integration Tests
   bats:
     needs: build
+    secrets: inherit
     uses: ./.github/workflows/bats.yaml
   cypress:
     needs: build

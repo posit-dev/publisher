@@ -80,7 +80,7 @@ test-contract:
         
         # content_list will contain all content in
         content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
-        # IFS=' ' read -ra my_array <<< "${content_list}"
+
         for i in ${content_list}
         do
             # only test when we have a .publisher-env file for the content
@@ -89,9 +89,9 @@ test-contract:
                 EXE=$exe npm run deploy
             fi
         done
-        # rm -rf ../content/
     else
-        cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
+        mkdir -p ../content/bundles/
+        cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/bundles
         EXE=$exe npm run deploy
     fi
 
@@ -107,5 +107,16 @@ test:
         echo "error: Missing executable $exe. Run \`just build\`." 1>&2
         exit 1
     fi
+
+    EXE=$exe npm run common
     
-    EXE=$exe npm run cli
+    content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
+
+    for i in ${content_list}
+    do
+        # only test when we have a .publisher-env file for the content
+        if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
+            export CONTENT=${i}
+            EXE=$exe npm run content
+        fi
+    done

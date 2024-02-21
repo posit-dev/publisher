@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM ubuntu:jammy
+FROM ubuntu:jammy
 
 ARG NODEVERSION=18
 RUN \
@@ -58,3 +58,21 @@ RUN\
     && go env -w GOPATH=/usr/local/go\
     # staticcheck is required to for linting Go
     && go install honnef.co/go/tools/cmd/staticcheck@latest
+
+
+# AWS is required by this project. The build tooling uses it!
+ARG AWSARCHIVE=awscli-exe-linux-x86_64.zip
+RUN curl -L -O "https://awscli.amazonaws.com/${AWSARCHIVE}" \
+    && unzip -q "${AWSARCHIVE}" \
+    && rm "${AWSARCHIVE}"\
+    && ./aws/install\
+    && rm -r ./aws
+
+ARG QUARTO_VERSION="1.4.549"
+ARG PACKAGE="quarto-${QUARTO_VERSION}-linux-amd64.tar.gz"
+
+RUN\
+    curl -fsSLO https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/${PACKAGE}\
+    && mkdir /usr/local/quarto && tar xf ${PACKAGE} -C /usr/local/quarto --strip-components 1
+
+ENV PATH="$PATH:/usr/local/quarto/bin"

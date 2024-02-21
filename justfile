@@ -52,6 +52,8 @@ default:
     just clean
     just web
     just build
+    just package
+    just archive
 
 os:
     #!/usr/bin/env bash
@@ -277,6 +279,14 @@ test *args=("./..."): stub
 
     just _with_docker go test {{ args }} -covermode set -coverprofile=cover.out
 
+# Uploads distributions to object storage. If invoked with `env CI=true` then all architectures supported by the Go toolchain are uploaded.
+upload:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker ./scripts/upload.bash {{ _cmd }}
+
 # Executes commands in ./web/Justfile. Equivalent to `just web/dist`, but inside of Docker (i.e., just _with_docker web/dist).
 web *args:
     #!/usr/bin/env bash
@@ -323,6 +333,8 @@ _with_docker *args:
         -e GOCACHE=/work/.cache/go/cache\
         -e GOMODCACHE=/work/.cache/go/mod\
         -e MODE={{ _mode }}\
+        --env-file <(env | grep AWS_)\
+        --env-file <(env | grep GITHUB_)\
         --platform {{ _docker_platform }}\
         -v "$(pwd)":/work\
         -w /work\

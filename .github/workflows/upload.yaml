@@ -1,0 +1,27 @@
+name: Upload
+on:
+  workflow_call:
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v3
+        with:
+          name: archives
+          path: archives
+      - uses: actions/download-artifact@v3
+        with:
+          name: packages
+          path: packages
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      - run: just upload
