@@ -76,8 +76,8 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	r.Handle(ToPath("files"), GetFileHandlerFunc(base, filesService, pathsService, log)).
 		Methods(http.MethodGet)
 
-	// POST /api/initialize-all
-	r.Handle(ToPath("initialize-all"), PostInitializeAllHandlerFunc(base, log)).
+	// POST /api/inspect
+	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
 	// GET /api/configurations
