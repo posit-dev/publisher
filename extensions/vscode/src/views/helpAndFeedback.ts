@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const viewName = 'posit.publisher.helpAndFeedback.provider';
+const viewName = 'posit.publisher.helpAndFeedback';
 
 export class HelpAndFeedbackTreeDataProvider implements vscode.TreeDataProvider<HelpAndFeedbackTreeItem> {
 

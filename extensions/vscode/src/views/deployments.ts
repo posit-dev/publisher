@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const viewName = 'posit.publisher.deployments.provider';
+const viewName = 'posit.publisher.deployments';
 
 export class DeploymentsTreeDataProvider implements vscode.TreeDataProvider<DeploymentsTreeItem> {
 

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const viewName = 'posit.publisher.credentials.provider';
+const viewName = 'posit.publisher.credentials';
 
 export class CredentialsTreeDataProvider implements vscode.TreeDataProvider<CredentialsTreeItem> {
 

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const viewName = 'posit.publisher.configurations.provider';
+const viewName = 'posit.publisher.configurations';
 
 export class ConfigurationsTreeDataProvider implements vscode.TreeDataProvider<ConfigurationTreeItem> {
 

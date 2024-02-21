@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const viewName = 'posit.publisher.project.provider';
+const viewName = 'posit.publisher.project';
 
 export class ProjectTreeDataProvider implements vscode.TreeDataProvider<ProjectTreeItem> {
 

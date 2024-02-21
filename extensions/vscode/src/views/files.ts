@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const viewName = 'posit.publisher.files.provider';
+const viewName = 'posit.publisher.files';
 
 export class FilesTreeDataProvider implements vscode.TreeDataProvider<FilesTreeItem> {
 

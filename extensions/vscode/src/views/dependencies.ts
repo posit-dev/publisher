@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const viewName = 'posit.publisher.dependencies.provider';
+const viewName = 'posit.publisher.dependencies';
 
 export class DependenciesTreeDataProvider implements vscode.TreeDataProvider<DependenciesTreeItem> {
 

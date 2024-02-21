@@ -68,37 +68,37 @@
     "views": {
       "posit-publisher": [
         {
-          "id": "posit.publisher.project.provider",
+          "id": "posit.publisher.project",
           "name": "Project",
-          "contextualTitle": "Publisher Project"
+          "contextualTitle": "Project"
         },
         {
-          "id": "posit.publisher.deployments.provider",
-          "name": "Deployments",
-          "contextualTitle": "Publisher Deployments"
-        },
-        {
-          "id": "posit.publisher.configurations.provider",
-          "name": "Configurations",
-          "contextualTitle": "Publisher Configurations"
-        },
-        {
-          "id": "posit.publisher.files.provider",
+          "id": "posit.publisher.files",
           "name": "Files",
           "contextualTitle": "Files"
         },
         {
-          "id": "posit.publisher.dependencies.provider",
+          "id": "posit.publisher.dependencies",
           "name": "Dependencies",
           "contextualTitle": "Dependencies"
         },
         {
-          "id": "posit.publisher.credentials.provider",
+          "id": "posit.publisher.configurations",
+          "name": "Configurations",
+          "contextualTitle": "Configurations"
+        },
+        {
+          "id": "posit.publisher.credentials",
           "name": "Credentials",
           "contextualTitle": "Credentials"
         },
         {
-          "id": "posit.publisher.helpAndFeedback.provider",
+          "id": "posit.publisher.deployments",
+          "name": "Deployments",
+          "contextualTitle": "Deployments"
+        },
+        {
+          "id": "posit.publisher.helpAndFeedback",
           "name": "Help And Feedback",
           "contextualTitle": "Help And Feedback"
         }
