@@ -19,22 +19,28 @@ const camelCaseInterceptor = (response: AxiosResponse): AxiosResponse => {
 };
 
 class PublishingClientApi {
+  private client;
+
   accounts: Accounts;
   configurations: Configurations;
   deployments: Deployments;
   files: Files;
 
   constructor() {
-    const client = axios.create({
+    this.client = axios.create({
       baseURL: '/api',
     });
 
-    client.interceptors.response.use(camelCaseInterceptor);
+    this.client.interceptors.response.use(camelCaseInterceptor);
 
-    this.accounts = new Accounts(client);
-    this.configurations = new Configurations(client);
-    this.deployments = new Deployments(client);
-    this.files = new Files(client);
+    this.accounts = new Accounts(this.client);
+    this.configurations = new Configurations(this.client);
+    this.deployments = new Deployments(this.client);
+    this.files = new Files(this.client);
+  }
+
+  setBaseUrl(url: string) {
+    this.client.defaults.baseURL = url;
   }
 }
 
