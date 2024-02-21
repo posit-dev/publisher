@@ -99,6 +99,8 @@ func GetPossibleConfigs(base util.Path, python util.Path, log logging.Logger) ([
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
+	var pyConfig *config.Python
+
 	for _, cfg := range configs {
 		log.Info("Possible deployment type", "Entrypoint", cfg.Entrypoint, "Type", cfg.Type)
 		if cfg.Title == "" {
@@ -110,10 +112,12 @@ func GetPossibleConfigs(base util.Path, python util.Path, log logging.Logger) ([
 			return nil, err
 		}
 		if needPython {
-			inspector := PythonInspectorFactory(python, log)
-			pyConfig, err := inspector.InspectPython()
-			if err != nil {
-				return nil, err
+			if pyConfig == nil {
+				inspector := PythonInspectorFactory(python, log)
+				pyConfig, err = inspector.InspectPython()
+				if err != nil {
+					return nil, err
+				}
 			}
 			cfg.Python = pyConfig
 		}
