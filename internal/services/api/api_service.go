@@ -76,6 +76,10 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	r.Handle(ToPath("files"), GetFileHandlerFunc(base, filesService, pathsService, log)).
 		Methods(http.MethodGet)
 
+	// POST /api/inspect
+	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
+		Methods(http.MethodPost)
+
 	// GET /api/configurations
 	r.Handle(ToPath("configurations"), GetConfigurationsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
