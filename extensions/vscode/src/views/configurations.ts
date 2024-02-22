@@ -2,6 +2,7 @@ import {
   Event,
   EventEmitter,
   ExtensionContext,
+  FileSystemWatcher,
   RelativePattern,
   ThemeIcon,
   TreeDataProvider,
@@ -14,11 +15,20 @@ import {
 } from 'vscode';
 
 import api from '../api';
-import { Configuration, ConfigurationError, isConfigurationError } from "../api/types/configurations";
-import { confirmDelete } from '../dialogs';
+import {
+  Configuration,
+  ConfigurationDetails,
+  ConfigurationError,
+  isConfigurationError
+} from "../api/types/configurations";
+
+import {
+  alert,
+  confirmDelete
+} from '../dialogs';
 
 const viewName = 'posit.publisher.configurations';
-// const addCommand = viewName + '.add';
+const addCommand = viewName + '.add';
 const editCommand = viewName + '.edit';
 const deleteCommand = viewName + '.delete';
 const fileStore = '.posit/publish/*.toml';
@@ -36,11 +46,6 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
-  }
-
-  refresh(): void {
-    console.log("refreshing configurations");
-    this._onDidChangeTreeData.fire();
   }
 
   getTreeItem(element: ConfigurationTreeItem): TreeItem | Thenable<TreeItem> {
@@ -68,7 +73,6 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     window.registerTreeDataProvider(viewName, this);
     const treeView = window.createTreeView(viewName, { treeDataProvider: this });
     treeView.onDidChangeSelection(async e => {
-      console.log(e);
       if (e.selection.length > 0) {
           const item = e.selection.at(0);
           await commands.executeCommand('posit.publisher.configurations.edit', item);
@@ -76,35 +80,90 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     });
     context.subscriptions.push(treeView);
 
-    context.subscriptions.push(
-      commands.registerCommand(editCommand, async (item: ConfigurationTreeItem) => {
-        await commands.executeCommand('vscode.open', item.fileUri);
-      })
-    );
-    context.subscriptions.push(
-      commands.registerCommand(deleteCommand, async (item: ConfigurationTreeItem) => {
-        const ok = await confirmDelete(`Are you sure you want to delete the configuration '${item.config.configurationName}'?`);
-        if (ok) {
-          await api.configurations.delete(item.config.configurationName);
-        }
-      })
-    );
+    context.subscriptions.push(commands.registerCommand(addCommand, this.add));
+    context.subscriptions.push(commands.registerCommand(editCommand, this.edit));
+    context.subscriptions.push(commands.registerCommand(deleteCommand, this.delete));
     if (this.root !== undefined) {
-      console.log("creating filesystem watcher for configurations view");
-      const watcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, fileStore));
-      watcher.onDidCreate(_ => {
-        this.refresh();
-      });
-      watcher.onDidDelete(_ => {
-        this.refresh();
-      });
-      watcher.onDidChange(_ => {
-        this.refresh();
-      });
-      context.subscriptions.push(watcher);
+      context.subscriptions.push(this.createFileSystemWatcher(this.root));
     }
   }
+
+  private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
+    console.log("creating filesystem watcher for configurations view");
+    const pattern = new RelativePattern(root, fileStore);
+    const watcher = workspace.createFileSystemWatcher(pattern);
+    watcher.onDidCreate(this.refresh);
+    watcher.onDidDelete(this.refresh);
+    watcher.onDidChange(this.refresh);
+    return watcher;
+  };
+
+  private refresh = () => {
+    console.log("refreshing configurations");
+    this._onDidChangeTreeData.fire();
+  };
+
+  private add = async () => {
+    const inspectResponse = await api.configurations.inspect();
+    if (inspectResponse.status !== 200) {
+      alert("An error occurred while inspecting the project: " + inspectResponse.statusText);
+      return;
+    }
+    const config = await this.chooseConfig(inspectResponse.data);
+    if (config === undefined) {
+      // canceled
+      return;
+    }
+    const defaultName = await api.configurations.untitledConfigurationName();
+    const name = await window.showInputBox({
+      value: defaultName,
+      prompt: "Configuration name",
+    });
+    if (name === undefined || name === '') {
+      // canceled
+      return;
+    }
+    const createResponse = await api.configurations.createOrUpdate(name, config);
+    if (createResponse.status !== 200) {
+      alert("An error occurred while saving the configuration: " + createResponse.statusText);
+      return;
+    }
+    if (this.root !== undefined) {
+      const fileUri = Uri.file(createResponse.data.configurationPath);
+      await commands.executeCommand('vscode.open', fileUri);
+    }
+  };
+
+  private edit = async (config: ConfigurationTreeItem) => {
+    await commands.executeCommand('vscode.open', config.fileUri);
+  };
+
+  private delete = async (item: ConfigurationTreeItem) => {
+    const name = item.config.configurationName;
+    const ok = await confirmDelete(`Are you sure you want to delete the configuration '${name}'?`);
+    if (ok) {
+      await api.configurations.delete(name);
+    }
+  };
+
+  private chooseConfig = async (configs: ConfigurationDetails[]) => {
+    if (configs.length === 1) {
+      return configs[0];
+    }
+    const labels = configs.map(config => `${config.entrypoint} (type ${config.type})`);
+    const labelMap = new Map<string, ConfigurationDetails>();
+    for (let i = 0; i < configs.length; i++) {
+      labelMap.set(labels[i], configs[i]);
+    }
+
+    const selection = await window.showQuickPick(labels, {
+      title: "Select main file and type",
+    });
+    if (selection === undefined) {
+      return undefined;
+    }
+    return labelMap.get(selection);
+  };
 }
 
 export class ConfigurationTreeItem extends TreeItem {
