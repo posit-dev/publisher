@@ -18,13 +18,11 @@ import {
 import { getSummaryStringFromError } from '../utils/errors';
 import { formatDateString } from '../utils/date';
 
-type DeploymentMap = Record<string, Deployment | PreDeployment | DeploymentError>;
-
 const viewName = 'posit.publisher.deployments';
 
 export class DeploymentsTreeDataProvider implements TreeDataProvider<DeploymentsTreeItem> {
 
-  private deploymentMap: DeploymentMap = {};
+  private deploymentMap = new Map<string, Deployment | PreDeployment | DeploymentError>();
   private api = useApi();
 
   constructor() { }
@@ -34,9 +32,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
   }
   async getChildren(element: DeploymentsTreeItem | undefined): Promise<DeploymentsTreeItem[]> {
     if (element === undefined) {
-      if (Object.keys(this.deploymentMap).length === 0) {
-        await this.refreshDeployments();
-      }
+      await this.refreshDeployments();
       return this.convertDeploymentsToTreeList();
     }
     return [];
@@ -51,7 +47,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
 
   private async refreshDeployments() {
     try {
-      this.deploymentMap = {};
+      this.deploymentMap.clear();
 
       // API Returns:
       // 200 - success
@@ -59,9 +55,9 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       const response = (await this.api.deployments.getAll()).data;
       response.forEach((deployment) => {
         if (isDeploymentError(deployment)) {
-          this.deploymentMap[deployment.deploymentName] = deployment;
+          this.deploymentMap.set(deployment.deploymentName, deployment);
         } else {
-          this.deploymentMap[deployment.saveName] = deployment;
+          this.deploymentMap.set(deployment.saveName, deployment);
         }
       });
     } catch (error: unknown) {
@@ -71,10 +67,12 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
   };
 
   private convertDeploymentsToTreeList(): DeploymentsTreeItem[] {
-    return Object.keys(this.deploymentMap).map(key => {
-      const deployment = this.deploymentMap[key];
-      return new DeploymentsTreeItem(deployment);
-    });
+
+    const result: DeploymentsTreeItem[] = [];
+    for (let deployment of this.deploymentMap.values()) {
+      result.push(new DeploymentsTreeItem(deployment));
+    }
+    return result;
   }
 
 }
