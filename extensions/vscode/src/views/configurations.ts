@@ -15,7 +15,7 @@ import {
 
 import api from '../api';
 import { Configuration, ConfigurationError, isConfigurationError } from "../api/types/configurations";
-import { confirmDelete } from './confirm';
+import { confirmDelete } from '../dialogs';
 
 const viewName = 'posit.publisher.configurations';
 // const addCommand = viewName + '.add';
