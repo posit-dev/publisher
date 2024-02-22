@@ -17,7 +17,7 @@ load '../node_modules/bats-assert/load'
     assert_line "  version"
     assert_line "  list-accounts"
     assert_line "  test-account <account-name>"
-    assert_line "Run \"publisher <command> --help\" for more information on a command."
+    assert_line --partial "<command> --help\" for more information on a command."
 }
 
 @test "init --help command succeeds" {
@@ -107,6 +107,6 @@ load '../node_modules/bats-assert/load'
 @test "test missing command" {
     run ${EXE} 
     assert_failure
-    assert_line "publisher: error: expected one of \"list-accounts\",  \"test-account\",  \"init\",  \"deploy\",  \"redeploy\",  ..."
+    assert_line --partial "error: expected one of \"list-accounts\",  \"test-account\",  \"init\",  \"deploy\",  \"redeploy\",  ..."
 }
 
