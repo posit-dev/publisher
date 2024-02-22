@@ -5,7 +5,7 @@ import {
   window,
 } from 'vscode';
 
-import api from '../api';
+import api, { Account } from '../api';
 
 const viewName = 'posit.publisher.credentials';
 
@@ -25,7 +25,7 @@ export class CredentialsTreeDataProvider implements TreeDataProvider<Credentials
     const response = await api.accounts.getAll();
     const accounts = response.data.accounts;
     return accounts.map(account => {
-      return new CredentialsTreeItem(account.name);
+      return new CredentialsTreeItem(account);
     });
   }
 
@@ -37,11 +37,25 @@ export class CredentialsTreeDataProvider implements TreeDataProvider<Credentials
   }
 }
 export class CredentialsTreeItem extends TreeItem {
+  contextValue = 'posit.publisher.credentials.tree.item';
 
-  constructor(itemString: string) {
-    super(itemString);
+  constructor(account: Account) {
+    super(account.name);
+    this.tooltip = this.getTooltip(account);
   }
 
-  contextValue = 'posit.publisher.credentials.tree.item';
-  tooltip = 'This is a \nCredentials Tree Item';
+  getTooltip(account: Account): string {
+    let result = '';
+
+    if (account.authType === 'token-key') {
+      result += `Account: ${account.accountName}\n`;
+    } else if (account.authType === 'api-key') {
+      result += 'Account: Using API Key\n';
+    }
+
+    result += `URL: ${account.url}\n`;
+    result += `Managed by: ${account.source}`;
+
+    return result;
+  }
 }
