@@ -63,8 +63,10 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       // There can't be any configurations if we don't have a folder open.
       return [];
     }
+
     const response = await api.configurations.getAll();
-    return response.data.map(config => {
+    const configurations = response.data;
+    return configurations.map(config => {
       const fileUri = Uri.joinPath(root.uri, config.configurationPath);
       return new ConfigurationTreeItem(config, fileUri);
     });
@@ -75,16 +77,18 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     const treeView = window.createTreeView(viewName, { treeDataProvider: this });
     treeView.onDidChangeSelection(async e => {
       if (e.selection.length > 0) {
-          const item = e.selection.at(0);
-          await commands.executeCommand('posit.publisher.configurations.edit', item);
-        }
+        const item = e.selection.at(0);
+        await commands.executeCommand('posit.publisher.configurations.edit', item);
+      }
     });
-    context.subscriptions.push(treeView);
 
-    context.subscriptions.push(commands.registerCommand(refreshCommand, this.refresh));
-    context.subscriptions.push(commands.registerCommand(addCommand, this.add));
-    context.subscriptions.push(commands.registerCommand(editCommand, this.edit));
-    context.subscriptions.push(commands.registerCommand(deleteCommand, this.delete));
+    context.subscriptions.push(
+      treeView,
+      commands.registerCommand(refreshCommand, this.refresh),
+      commands.registerCommand(addCommand, this.add),
+      commands.registerCommand(editCommand, this.edit),
+      commands.registerCommand(deleteCommand, this.delete)
+    );
     if (this.root !== undefined) {
       context.subscriptions.push(this.createFileSystemWatcher(this.root));
     }
@@ -180,7 +184,7 @@ export class ConfigurationTreeItem extends TreeItem {
     this.tooltip = this.getTooltip();
   }
 
-  getTooltip(): string{
+  getTooltip(): string {
     let tooltip: string;
 
     if (isConfigurationError(this.config)) {
