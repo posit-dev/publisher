@@ -107,7 +107,7 @@ var expectedPyConfig = &config.Python{
 	PackageFile:    "requirements.txt",
 }
 
-func makeMockPythonInspector(util.Path, logging.Logger) inspect.PythonInspector {
+func makeMockPythonInspector(util.Path, util.Path, logging.Logger) inspect.PythonInspector {
 	pyInspector := inspect.NewMockPythonInspector()
 	pyInspector.On("InspectPython").Return(expectedPyConfig, nil)
 	return pyInspector
@@ -183,7 +183,7 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 	cfg.Entrypoint = "app.py"
 	cfg.WriteFile(configPath)
 
-	PythonInspectorFactory = func(util.Path, logging.Logger) inspect.PythonInspector {
+	PythonInspectorFactory = func(util.Path, util.Path, logging.Logger) inspect.PythonInspector {
 		return &inspect.MockPythonInspector{}
 	}
 	err := InitIfNeeded(s.cwd, configName, log)

@@ -40,7 +40,7 @@ func inspectProject(base util.Path, python util.Path, log logging.Logger) (*conf
 		return nil, err
 	}
 	if needPython {
-		inspector := PythonInspectorFactory(python, log)
+		inspector := PythonInspectorFactory(base, python, log)
 		pyConfig, err := inspector.InspectPython()
 		if err != nil {
 			return nil, err

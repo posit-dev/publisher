@@ -58,7 +58,7 @@ func (s *PythonSuite) SetupTest() {
 func (s *PythonSuite) TestNewPythonInspector() {
 	log := logging.New()
 	pythonPath := util.NewPath("/usr/bin/python", nil)
-	i := NewPythonInspector(pythonPath, log)
+	i := NewPythonInspector(s.cwd, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 	s.Equal(pythonPath, inspector.pythonPath)
 	s.Equal(log, inspector.log)
@@ -69,7 +69,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 	pythonPath := s.cwd.Join("bin", "python3")
 	pythonPath.Dir().MkdirAll(0777)
 	pythonPath.WriteFile(nil, 0777)
-	i := NewPythonInspector(pythonPath, log)
+	i := NewPythonInspector(s.cwd, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 
 	executor := NewMockPythonExecutor()
@@ -85,7 +85,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	pythonPath.Dir().MkdirAll(0777)
 	pythonPath.WriteFile(nil, 0777)
 	log := logging.New()
-	i := NewPythonInspector(pythonPath, log)
+	i := NewPythonInspector(s.cwd, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 
 	executor := NewMockPythonExecutor()
@@ -100,7 +100,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 
 func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	log := logging.New()
-	i := NewPythonInspector(util.Path{}, log)
+	i := NewPythonInspector(s.cwd, util.Path{}, log)
 	inspector := i.(*defaultPythonInspector)
 
 	executor := NewMockPythonExecutor()
@@ -122,7 +122,7 @@ func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
 		}
 	}
 	log := logging.New()
-	i := NewPythonInspector(util.Path{}, log)
+	i := NewPythonInspector(s.cwd, util.Path{}, log)
 	inspector := i.(*defaultPythonInspector)
 	version, err := inspector.getPythonVersion()
 	s.NoError(err)
@@ -218,7 +218,7 @@ func (s *PythonSuite) TestCreateRequirementsFileFromExecutable() {
 	pythonPath.Dir().MkdirAll(0777)
 	pythonPath.WriteFile(nil, 0777)
 	log := logging.New()
-	i := NewPythonInspector(pythonPath, log)
+	i := NewPythonInspector(s.cwd, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 
 	scanner := pydeps.NewMockDependencyScanner()
@@ -242,7 +242,7 @@ func (s *PythonSuite) TestCreateRequirementsFileFromExecutable() {
 func (s *PythonSuite) TestGetPythonRequirementsFromExecutableErr() {
 	log := logging.New()
 	pythonPath := util.NewPath("/nonexistent/python3", nil)
-	i := NewPythonInspector(pythonPath, log)
+	i := NewPythonInspector(s.cwd, pythonPath, log)
 	inspector := i.(*defaultPythonInspector)
 
 	err := inspector.CreateRequirementsFile(s.cwd, s.cwd.Join(bundles.PythonRequirementsFilename))
