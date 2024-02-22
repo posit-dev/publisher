@@ -1,10 +1,11 @@
 import {
   TreeDataProvider,
   TreeItem,
-  ProviderResult,
   ExtensionContext,
   window,
 } from 'vscode';
+
+import api from '../api';
 
 const viewName = 'posit.publisher.credentials';
 
@@ -16,13 +17,16 @@ export class CredentialsTreeDataProvider implements TreeDataProvider<Credentials
     return element;
   }
 
-  getChildren(element: CredentialsTreeItem | undefined): ProviderResult<CredentialsTreeItem[]> {
-    if (element === undefined) {
-      return [
-        new CredentialsTreeItem('Dummy Credentials'),
-      ];
+  async getChildren(element: CredentialsTreeItem | undefined): Promise<CredentialsTreeItem[]> {
+    if (element) {
+      return [];
     }
-    return [];
+
+    const response = await api.accounts.getAll();
+    const accounts = response.data.accounts;
+    return accounts.map(account => {
+      return new CredentialsTreeItem(account.name);
+    });
   }
 
   public register(context: ExtensionContext) {
