@@ -70,7 +70,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   }
 
   public register(context: ExtensionContext) {
-    window.registerTreeDataProvider(viewName, this);
+    context.subscriptions.push(window.registerTreeDataProvider(viewName, this));
     const treeView = window.createTreeView(viewName, { treeDataProvider: this });
     treeView.onDidChangeSelection(async e => {
       if (e.selection.length > 0) {
