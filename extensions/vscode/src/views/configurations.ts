@@ -14,7 +14,7 @@ import {
 } from 'vscode';
 
 import api from '../api';
-import { isConfigurationError } from "../api/types/configurations";
+import { Configuration, ConfigurationError, isConfigurationError } from "../api/types/configurations";
 import { confirmDelete } from './confirm';
 
 const viewName = 'posit.publisher.configurations';
@@ -60,7 +60,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     const response = await api.configurations.getAll();
     return response.data.map(config => {
       const fileUri = Uri.joinPath(root.uri, config.configurationPath);
-      return new ConfigurationTreeItem(config.configurationName, fileUri, isConfigurationError(config));
+      return new ConfigurationTreeItem(config, fileUri);
     });
   }
 
@@ -70,15 +70,15 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       window.createTreeView(viewName, { treeDataProvider: this })
     );
     context.subscriptions.push(
-      commands.registerCommand(editCommand, async (config: ConfigurationTreeItem) => {
-        await commands.executeCommand('vscode.open', config.fileUri);
+      commands.registerCommand(editCommand, async (item: ConfigurationTreeItem) => {
+        await commands.executeCommand('vscode.open', item.fileUri);
       })
     );
     context.subscriptions.push(
-      commands.registerCommand(deleteCommand, async (config: ConfigurationTreeItem) => {
-        const ok = await confirmDelete(`Are you sure you want to delete the configuration '${config.name}'?`);
+      commands.registerCommand(deleteCommand, async (item: ConfigurationTreeItem) => {
+        const ok = await confirmDelete(`Are you sure you want to delete the configuration '${item.config.configurationName}'?`);
         if (ok) {
-          await api.configurations.delete(config.name);
+          await api.configurations.delete(item.config.configurationName);
         }
       })
     );
@@ -101,16 +101,37 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
 }
 
 export class ConfigurationTreeItem extends TreeItem {
-  constructor(
-    public readonly name: string,
-    public readonly fileUri: Uri,
-    public readonly isError: boolean) {
+  contextValue = 'posit.publisher.configurations.tree.item';
 
-    super(name);
-    const iconName = isError ? 'warning' : 'gear';
+  constructor(
+    public readonly config: Configuration | ConfigurationError,
+    public readonly fileUri: Uri) {
+
+    super(config.configurationName);
+
+    const iconName = isConfigurationError(config) ? 'warning' : 'gear';
     this.iconPath = new ThemeIcon(iconName);
+    this.tooltip = this.getTooltip();
   }
 
-  contextValue = 'posit.publisher.configurations.tree.item';
-  tooltip = 'This is a \nConfigurations Tree Item';
+  getTooltip(): string{
+    let tooltip: string;
+
+    if (isConfigurationError(this.config)) {
+      tooltip = "This configuration file is invalid. Click to open it and resolve the underlined errors.";
+    } else {
+      const c = this.config.configuration;
+
+      tooltip = `Title: ${c.title}\nFile: ${c.entrypoint}\nType: ${c.type}`;
+      const pyVersion = c.python?.version;
+      if (pyVersion) {
+        tooltip += `\nPython: ${pyVersion}`;
+      }
+      const rVersion = c.r?.version;
+      if (rVersion) {
+        tooltip += `\R: ${rVersion}`;
+      }
+    }
+    return tooltip;
+  }
 }
