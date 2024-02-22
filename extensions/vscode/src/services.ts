@@ -14,10 +14,10 @@ export class Service implements vscode.Disposable {
 
   constructor(context: vscode.ExtensionContext, port: number) {
     this.context = context;
-    this.agentURL = `http://${HOST}:${port}`;
+    this.agentURL = `http://${HOST}:${port}/api`;
     this.panel = new Panel(this.agentURL);
     this.server = new Server(port);
-    useApi().setBaseUrl('http://localhost:9000/api');
+    useApi().setBaseUrl(this.agentURL);
   }
 
   start = async () => {

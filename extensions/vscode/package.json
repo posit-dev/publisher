@@ -129,10 +129,9 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "axios": "^1.6.0",
     "get-port": "5.1.1",
     "mutexify": "^1.4.0",
-    "retry": "^0.13.1",
-    "axios": "^1.6.0",
-    "camelcase-keys": "^9.0.0"
+    "retry": "^0.13.1"
   }
 }
