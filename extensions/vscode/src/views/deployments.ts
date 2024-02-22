@@ -10,7 +10,6 @@ import {
   Deployment,
   DeploymentError,
   isDeployment,
-  isDeploymentError,
   PreDeployment,
   isPreDeployment,
 } from '../api';
@@ -22,7 +21,6 @@ const viewName = 'posit.publisher.deployments';
 
 export class DeploymentsTreeDataProvider implements TreeDataProvider<DeploymentsTreeItem> {
 
-  private deploymentMap = new Map<string, Deployment | PreDeployment | DeploymentError>();
   private api = useApi();
 
   constructor() { }
@@ -31,11 +29,23 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     return element;
   }
   async getChildren(element: DeploymentsTreeItem | undefined): Promise<DeploymentsTreeItem[]> {
-    if (element === undefined) {
-      await this.refreshDeployments();
-      return this.convertDeploymentsToTreeList();
+    if (element) {
+      // flat organization of deployments, so no children.
+      return [];
     }
-    return [];
+    try {
+      // API Returns:
+      // 200 - success
+      // 500 - internal server error
+      const response = (await this.api.deployments.getAll());
+      return response.data.map(deployment => {
+        return new DeploymentsTreeItem(deployment);
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError('deployments::getChildren', error);
+      window.showInformationMessage(summary);
+      return [];
+    }
   }
 
   public register(context: ExtensionContext) {
@@ -44,37 +54,6 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       window.createTreeView(viewName, { treeDataProvider: this })
     );
   }
-
-  private async refreshDeployments() {
-    try {
-      this.deploymentMap.clear();
-
-      // API Returns:
-      // 200 - success
-      // 500 - internal server error
-      const response = (await this.api.deployments.getAll()).data;
-      response.forEach((deployment) => {
-        if (isDeploymentError(deployment)) {
-          this.deploymentMap.set(deployment.deploymentName, deployment);
-        } else {
-          this.deploymentMap.set(deployment.saveName, deployment);
-        }
-      });
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError('deployments::refreshDeployments', error);
-      window.showInformationMessage(summary);
-    }
-  };
-
-  private convertDeploymentsToTreeList(): DeploymentsTreeItem[] {
-
-    const result: DeploymentsTreeItem[] = [];
-    for (let deployment of this.deploymentMap.values()) {
-      result.push(new DeploymentsTreeItem(deployment));
-    }
-    return result;
-  }
-
 }
 
 export class DeploymentsTreeItem extends TreeItem {
@@ -96,25 +75,25 @@ export class DeploymentsTreeItem extends TreeItem {
     this.contextValue = 'posit.publisher.deployments.tree.item.deployment';
     this.tooltip =
       `${deployment.deploymentName}\n` +
-      `Last Deployed: ${formatDateString(deployment.deployedAt)}\n` +
-      `To: ${deployment.serverType} at ${deployment.serverUrl}\n` +
-      `GUID: ${deployment.id}`;
+      `Last Deployed on ${formatDateString(deployment.deployedAt)}\n` +
+      `Targeting ${deployment.serverType} at ${deployment.serverUrl}\n` +
+      `GUID = ${deployment.id}`;
   }
 
   private initializePreDeployment(predeployment: PreDeployment) {
     this.contextValue = 'posit.publisher.deployments.tree.item.predeployment';
     this.tooltip =
       `${predeployment.deploymentName}\n` +
-      `Created: ${formatDateString(predeployment.createdAt)}\n` +
-      `To: ${predeployment.serverType} at ${predeployment.serverUrl}\n` +
-      `Not Yet Deployed`;
+      `Created on ${formatDateString(predeployment.createdAt)}\n` +
+      `Targeting ${predeployment.serverType} at ${predeployment.serverUrl}\n` +
+      `WARNING! Not Yet Deployed`;
   }
 
   private initializeDeploymentError(deploymentError: DeploymentError) {
     this.contextValue = 'posit.publisher.deployments.tree.item.deploymentError';
     this.tooltip =
       `${deploymentError.deploymentName}\n` +
-      `ERROR: File is invalid\n` +
+      `ERROR! File is invalid\n` +
       `Details: ${deploymentError.error}`;
   }
 }
