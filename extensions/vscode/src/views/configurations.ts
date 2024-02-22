@@ -28,6 +28,7 @@ import {
 } from '../dialogs';
 
 const viewName = 'posit.publisher.configurations';
+const refreshCommand = viewName + '.refresh';
 const addCommand = viewName + '.add';
 const editCommand = viewName + '.edit';
 const deleteCommand = viewName + '.delete';
@@ -80,6 +81,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     });
     context.subscriptions.push(treeView);
 
+    context.subscriptions.push(commands.registerCommand(refreshCommand, this.refresh));
     context.subscriptions.push(commands.registerCommand(addCommand, this.add));
     context.subscriptions.push(commands.registerCommand(editCommand, this.edit));
     context.subscriptions.push(commands.registerCommand(deleteCommand, this.delete));

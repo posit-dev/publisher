@@ -38,6 +38,12 @@
         "category": "Posit"
       },
       {
+        "command": "posit.publisher.configurations.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Posit"
+      },
+      {
         "command": "posit.publisher.configurations.add",
         "title": "Add",
         "icon": "$(add)",
@@ -75,6 +81,11 @@
       "view/title": [
         {
           "command": "posit.publisher.configurations.add",
+          "when": "view == posit.publisher.configurations",
+          "group": "navigation"
+        },
+        {
+          "command": "posit.publisher.configurations.refresh",
           "when": "view == posit.publisher.configurations",
           "group": "navigation"
         }
