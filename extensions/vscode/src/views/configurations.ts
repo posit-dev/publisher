@@ -66,9 +66,16 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
 
   public register(context: ExtensionContext) {
     window.registerTreeDataProvider(viewName, this);
-    context.subscriptions.push(
-      window.createTreeView(viewName, { treeDataProvider: this })
-    );
+    const treeView = window.createTreeView(viewName, { treeDataProvider: this });
+    treeView.onDidChangeSelection(async e => {
+      console.log(e);
+      if (e.selection.length > 0) {
+          const item = e.selection.at(0);
+          await commands.executeCommand('posit.publisher.configurations.edit', item);
+        }
+    });
+    context.subscriptions.push(treeView);
+
     context.subscriptions.push(
       commands.registerCommand(editCommand, async (item: ConfigurationTreeItem) => {
         await commands.executeCommand('vscode.open', item.fileUri);
