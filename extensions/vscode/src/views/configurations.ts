@@ -89,7 +89,6 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   }
 
   private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
-    console.log("creating filesystem watcher for configurations view");
     const pattern = new RelativePattern(root, fileStore);
     const watcher = workspace.createFileSystemWatcher(pattern);
     watcher.onDidCreate(this.refresh);
@@ -99,7 +98,6 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   };
 
   private refresh = () => {
-    console.log("refreshing configurations");
     this._onDidChangeTreeData.fire();
   };
 
