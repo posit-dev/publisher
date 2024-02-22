@@ -184,6 +184,6 @@ type ConnectKubernetes struct {
 	NvidiaGPULimit                 *int64   `toml:"nvidia-gpu-limit,omitempty" json:"nvidiaGpuLimit,omitempty"`
 	ServiceAccountName             string   `toml:"service-account-name,omitempty" json:"serviceAccountName,omitempty"`
 	DefaultImageName               string   `toml:"image-name,omitempty" json:"imageName,omitempty"`
-	DefaultREnvironmentManagement  *bool    `toml:"r-environment-management,omitempty" json:"defaultREnvironmentManagement"`
-	DefaultPyEnvironmentManagement *bool    `toml:"py-environment-management,omitempty" json:"defaultPyEnvironmentManagement"`
+	DefaultREnvironmentManagement  *bool    `toml:"r-environment-management,omitempty" json:"rEnvironmentManagement"`
+	DefaultPyEnvironmentManagement *bool    `toml:"py-environment-management,omitempty" json:"pyEnvironmentManagement"`
 }
