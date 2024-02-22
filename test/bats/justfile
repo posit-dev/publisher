@@ -109,14 +109,27 @@ test:
     fi
 
     EXE=$exe npm run common
-    
-    content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
 
-    for i in ${content_list}
-    do
-        # only test when we have a .publisher-env file for the content
-        if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
-            export CONTENT=${i}
-            EXE=$exe npm run content
+    # pull the content from connect-content repo
+    if [[ "${CONTENT}" == "all" ]]; then
+        if [[ ${_ci} == false ]]; then
+            mkdir -p ../content/bundles/
+            cp -R ${HOME}${CONTENT_REPO}/bundles/ ../content/bundles/
         fi
-    done
+
+        # content_list will contain all content in
+        content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
+
+        for i in ${content_list}
+        do
+            # only test when we have a .publisher-env file for the content
+            if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
+                export CONTENT=${i}
+                EXE=$exe npm run content
+            fi
+        done
+    else
+        mkdir -p ../content/bundles/
+        cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/bundles
+        EXE=$exe npm run deploy
+    fi
