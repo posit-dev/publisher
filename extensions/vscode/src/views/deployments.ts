@@ -1,8 +1,16 @@
 import {
+  Event,
   TreeDataProvider,
   TreeItem,
   ExtensionContext,
   window,
+  WorkspaceFolder,
+  EventEmitter,
+  workspace,
+  RelativePattern,
+  ThemeIcon,
+  commands,
+  Uri,
 } from 'vscode';
 
 import {
@@ -16,30 +24,61 @@ import {
 
 import { getSummaryStringFromError } from '../utils/errors';
 import { formatDateString } from '../utils/date';
+import { confirmDelete } from '../dialogs';
 
 const viewName = 'posit.publisher.deployments';
+const refreshCommand = viewName + '.refresh';
+const editCommand = viewName + '.edit';
+const deleteCommand = viewName + '.delete';
+
+const fileStore = '.posit/publish/deployments/*.toml';
+
+type ConfigurationEventEmitter = EventEmitter<DeploymentsTreeItem | undefined | void>;
+type ConfigurationEvent = Event<DeploymentsTreeItem | undefined | void>;
 
 export class DeploymentsTreeDataProvider implements TreeDataProvider<DeploymentsTreeItem> {
+  private root: WorkspaceFolder | undefined;
+  private _onDidChangeTreeData: ConfigurationEventEmitter = new EventEmitter();
+  readonly onDidChangeTreeData: ConfigurationEvent = this._onDidChangeTreeData.event;
 
   private api = useApi();
 
-  constructor() { }
+  constructor() {
+    const workspaceFolders = workspace.workspaceFolders;
+    if (workspaceFolders !== undefined) {
+      this.root = workspaceFolders[0];
+    }
+  }
+
+  refresh(): void {
+    console.log("refreshing deployments");
+    this._onDidChangeTreeData.fire();
+  }
 
   getTreeItem(element: DeploymentsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
+
   async getChildren(element: DeploymentsTreeItem | undefined): Promise<DeploymentsTreeItem[]> {
     if (element) {
       // flat organization of deployments, so no children.
       return [];
     }
+    const root = this.root;
+    if (root === undefined) {
+      // There can't be any deployments if we don't have a folder open.
+      return [];
+    }
+
     try {
       // API Returns:
       // 200 - success
       // 500 - internal server error
       const response = (await this.api.deployments.getAll());
       return response.data.map(deployment => {
-        return new DeploymentsTreeItem(deployment);
+        const filename = deployment.deploymentPath.split('.posit/publish/deployments/')[1];
+        const fileUri = Uri.joinPath(root.uri, '.posit/publish/deployments', filename);
+        return new DeploymentsTreeItem(deployment, fileUri);
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError('deployments::getChildren', error);
@@ -49,19 +88,61 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
   }
 
   public register(context: ExtensionContext) {
-    window.registerTreeDataProvider(viewName, this);
+    const treeView = window.createTreeView(viewName, { treeDataProvider: this });
+    treeView.onDidChangeSelection(async e => {
+      console.log(e);
+      if (e.selection.length > 0) {
+        const item = e.selection.at(0);
+        await commands.executeCommand(editCommand, item);
+      }
+    });
+    context.subscriptions.push(treeView);
+
     context.subscriptions.push(
-      window.createTreeView(viewName, { treeDataProvider: this })
+      commands.registerCommand(refreshCommand, () => {
+        this.refresh();
+      })
     );
+    context.subscriptions.push(
+      commands.registerCommand(editCommand, async (item: DeploymentsTreeItem) => {
+        await commands.executeCommand('vscode.open', item.fileUri);
+      })
+    );
+    context.subscriptions.push(
+      commands.registerCommand(deleteCommand, async (item: DeploymentsTreeItem) => {
+        const ok = await confirmDelete(`Are you sure you want to delete the deployment '${item.deployment.deploymentName}'?`);
+        if (ok) {
+          await this.api.deployments.delete(item.deployment.deploymentName);
+        }
+      })
+    );
+
+
+    if (this.root !== undefined) {
+      console.log("creating filesystem watcher for deployment view");
+      const watcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, fileStore));
+      watcher.onDidCreate(_ => {
+        this.refresh();
+      });
+      watcher.onDidDelete(_ => {
+        this.refresh();
+      });
+      watcher.onDidChange(_ => {
+        this.refresh();
+      });
+      context.subscriptions.push(watcher);
+    }
   }
 }
 
 export class DeploymentsTreeItem extends TreeItem {
-  private deployment: Deployment | PreDeployment | DeploymentError;
-
-  constructor(deployment: Deployment | PreDeployment | DeploymentError) {
+  constructor(
+    public deployment: Deployment | PreDeployment | DeploymentError,
+    public readonly fileUri: Uri
+  ) {
     super(deployment.deploymentName);
-    this.deployment = deployment;
+
     if (isDeployment(this.deployment)) {
       this.initializeDeployment(this.deployment);
     } else if (isPreDeployment(this.deployment)) {
@@ -78,6 +159,7 @@ export class DeploymentsTreeItem extends TreeItem {
       `Last Deployed on ${formatDateString(deployment.deployedAt)}\n` +
       `Targeting ${deployment.serverType} at ${deployment.serverUrl}\n` +
       `GUID = ${deployment.id}`;
+    this.iconPath = new ThemeIcon('refresh');
   }
 
   private initializePreDeployment(predeployment: PreDeployment) {
@@ -87,6 +169,7 @@ export class DeploymentsTreeItem extends TreeItem {
       `Created on ${formatDateString(predeployment.createdAt)}\n` +
       `Targeting ${predeployment.serverType} at ${predeployment.serverUrl}\n` +
       `WARNING! Not Yet Deployed`;
+    this.iconPath = new ThemeIcon('cloud-upload');
   }
 
   private initializeDeploymentError(deploymentError: DeploymentError) {
@@ -94,6 +177,8 @@ export class DeploymentsTreeItem extends TreeItem {
     this.tooltip =
       `${deploymentError.deploymentName}\n` +
       `ERROR! File is invalid\n` +
-      `Details: ${deploymentError.error}`;
+      `Code: ${deploymentError.error.code}\n` +
+      `Msg: ${deploymentError.error.msg}`;
+    this.iconPath = new ThemeIcon('warning');
   }
 }

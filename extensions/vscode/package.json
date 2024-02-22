@@ -48,6 +48,24 @@
         "title": "Delete",
         "icon": "$(trash)",
         "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.edit",
+        "title": "Edit",
+        "icon": "$(edit)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.delete",
+        "title": "Delete",
+        "icon": "$(trash)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Posit"
       }
     ],
     "configuration": {
@@ -66,11 +84,22 @@
           "group": "navigation"
         }
       ],
-      "view/title": [],
+      "view/title": [
+        {
+          "command": "posit.publisher.deployments.refresh",
+          "when": "view == posit.publisher.deployments",
+          "group": "navigation"
+        }
+      ],
       "view/item/context": [
         {
           "command": "posit.publisher.configurations.delete",
           "when": "view == posit.publisher.configurations",
+          "group": "inline"
+        },
+        {
+          "command": "posit.publisher.deployments.delete",
+          "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError",
           "group": "inline"
         }
       ]
