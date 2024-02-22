@@ -36,6 +36,18 @@
         "command": "posit.publisher.close",
         "title": "Close Publisher",
         "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.configurations.edit",
+        "title": "Edit",
+        "icon": "$(edit)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.configurations.delete",
+        "title": "Delete",
+        "icon": "$(trash)",
+        "category": "Posit"
       }
     ],
     "configuration": {
@@ -54,7 +66,19 @@
           "group": "navigation"
         }
       ],
-      "view/title": []
+      "view/title": [],
+      "view/item/context": [
+        {
+          "command": "posit.publisher.configurations.edit",
+          "when": "view == posit.publisher.configurations",
+          "group": "inline@1"
+        },
+        {
+          "command": "posit.publisher.configurations.delete",
+          "when": "view == posit.publisher.configurations",
+          "group": "inline@2"
+        }
+      ]
     },
     "viewsContainers": {
       "activitybar": [
