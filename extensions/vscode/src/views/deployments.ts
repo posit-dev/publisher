@@ -52,9 +52,11 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     }
   }
 
-  public refresh = () => {
+  public refresh = (notifyUser: boolean) => {
     console.log("refreshing deployments");
-    notify('refreshing deployments...');
+    if (notifyUser) {
+      notify('refreshing deployments...');
+    }
     this._onDidChangeTreeData.fire();
   };
 
@@ -123,9 +125,9 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       console.log("creating filesystem watcher for deployment view");
       const watcher = workspace.createFileSystemWatcher(
         new RelativePattern(this.root, fileStore));
-      watcher.onDidCreate(this.refresh);
-      watcher.onDidDelete(this.refresh);
-      watcher.onDidChange(this.refresh);
+      watcher.onDidCreate(() => this.refresh(false));
+      watcher.onDidDelete(() => this.refresh(false));
+      watcher.onDidChange(() => this.refresh(false));
       context.subscriptions.push(watcher);
     }
   }

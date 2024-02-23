@@ -39,9 +39,11 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     }
   }
 
-  public refresh = () => {
-    notify('refreshing configurations...');
+  public refresh = (notifyUser: boolean) => {
     console.log("refreshing configurations");
+    if (notifyUser) {
+      notify('refreshing configurations...');
+    }
     this._onDidChangeTreeData.fire();
   };
 
@@ -96,9 +98,9 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       console.log("creating filesystem watcher for configurations view");
       const watcher = workspace.createFileSystemWatcher(
         new RelativePattern(this.root, fileStore));
-      watcher.onDidCreate(this.refresh);
-      watcher.onDidDelete(this.refresh);
-      watcher.onDidChange(this.refresh);
+      watcher.onDidCreate(() => this.refresh(false));
+      watcher.onDidDelete(() => this.refresh(false));
+      watcher.onDidChange(() => this.refresh(false));
       context.subscriptions.push(watcher);
     }
   }
