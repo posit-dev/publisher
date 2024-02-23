@@ -56,9 +56,9 @@
         "category": "Posit"
       },
       {
-        "command": "posit.publisher.deployments.delete",
-        "title": "Delete",
-        "icon": "$(trash)",
+        "command": "posit.publisher.deployments.forget",
+        "title": "Forget this deployment locally",
+        "icon": "$(close-all)",
         "category": "Posit"
       },
       {
@@ -98,7 +98,7 @@
           "group": "inline"
         },
         {
-          "command": "posit.publisher.deployments.delete",
+          "command": "posit.publisher.deployments.forget",
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError",
           "group": "inline"
         }

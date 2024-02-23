@@ -30,7 +30,7 @@ import { confirmDelete } from '../dialogs';
 const viewName = 'posit.publisher.deployments';
 const refreshCommand = viewName + '.refresh';
 const editCommand = viewName + '.edit';
-const deleteCommand = viewName + '.delete';
+const forgetCommand = viewName + '.forget';
 
 const fileStore = '.posit/publish/deployments/*.toml';
 
@@ -108,8 +108,8 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       })
     );
     context.subscriptions.push(
-      commands.registerCommand(deleteCommand, async (item: DeploymentsTreeItem) => {
-        const ok = await confirmDelete(`Are you sure you want to delete the deployment '${item.deployment.deploymentName}'?`);
+      commands.registerCommand(forgetCommand, async (item: DeploymentsTreeItem) => {
+        const ok = await confirmDelete(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
         if (ok) {
           await this.api.deployments.delete(item.deployment.deploymentName);
         }
