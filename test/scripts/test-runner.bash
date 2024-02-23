@@ -48,20 +48,6 @@ cli_tests() {
     EXE=$exe npm run "${test_case}"
 }
 
-# content helper
-get_content() {
-    # pull the content from connect-content repo
-    if [[ "${CONTENT}" == "all" ]]; then
-        if [[ ${_ci} == false ]]; then
-            mkdir -p ../content/bundles/
-            cp -R ${HOME}${CONTENT_REPO}/bundles/ ../content/bundles/
-        fi
-    else
-        cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
-        EXE=$exe npm run "${test_case}"
-    fi
-}
-
 case "${test_case}" in
     "deploy")
         setup_connect
@@ -78,30 +64,3 @@ case "${test_case}" in
         cli_tests
     ;;
 esac
-
-# pip install -r ../setup/requirements.txt
-# export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
-# export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
-
-# # pull the content from connect-content repo
-# if [[ "${CONTENT}" == "all" ]]; then
-#     if [[ ${_ci} == false ]]; then
-#         mkdir -p ../content/bundles/
-#         cp -R ${HOME}${CONTENT_REPO}/bundles/ ../content/bundles/
-#     fi
-
-# # content_list will contain all content in
-# content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
-
-# for i in ${content_list}
-# do
-#     # only test when we have a .publisher-env file for the content
-#     if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
-#         export CONTENT=${i}
-#         EXE=$exe npm run {{ args }}
-#     fi
-# done
-# else
-#     cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
-#     EXE=$exe npm run {{ args }}
-# fi
