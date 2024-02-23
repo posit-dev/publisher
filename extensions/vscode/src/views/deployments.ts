@@ -51,10 +51,10 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     }
   }
 
-  refresh(): void {
+  public refresh = () => {
     console.log("refreshing deployments");
     this._onDidChangeTreeData.fire();
-  }
+  };
 
   getTreeItem(element: DeploymentsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -90,19 +90,17 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
 
   public register(context: ExtensionContext) {
     const treeView = window.createTreeView(viewName, { treeDataProvider: this });
-    treeView.onDidChangeSelection(async e => {
+    treeView.onDidChangeSelection(e => {
       console.log(e);
       if (e.selection.length > 0) {
         const item = e.selection.at(0);
-        await commands.executeCommand(editCommand, item);
+        commands.executeCommand(editCommand, item);
       }
     });
     context.subscriptions.push(treeView);
 
     context.subscriptions.push(
-      commands.registerCommand(refreshCommand, () => {
-        this.refresh();
-      })
+      commands.registerCommand(refreshCommand, this.refresh)
     );
     context.subscriptions.push(
       commands.registerCommand(editCommand, async (item: DeploymentsTreeItem) => {
@@ -123,15 +121,9 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       console.log("creating filesystem watcher for deployment view");
       const watcher = workspace.createFileSystemWatcher(
         new RelativePattern(this.root, fileStore));
-      watcher.onDidCreate(_ => {
-        this.refresh();
-      });
-      watcher.onDidDelete(_ => {
-        this.refresh();
-      });
-      watcher.onDidChange(_ => {
-        this.refresh();
-      });
+      watcher.onDidCreate(this.refresh);
+      watcher.onDidDelete(this.refresh);
+      watcher.onDidChange(this.refresh);
       context.subscriptions.push(watcher);
     }
   }
