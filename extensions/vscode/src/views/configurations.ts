@@ -16,6 +16,7 @@ import {
 import api from '../api';
 import { Configuration, ConfigurationError, isConfigurationError } from "../api/types/configurations";
 import { confirmDelete } from '../dialogs';
+import { notify } from '../notify';
 
 const viewName = 'posit.publisher.configurations';
 // const addCommand = viewName + '.add';
@@ -38,10 +39,11 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     }
   }
 
-  refresh(): void {
+  public refresh = () => {
+    notify('refreshing configurations...');
     console.log("refreshing configurations");
     this._onDidChangeTreeData.fire();
-  }
+  };
 
   getTreeItem(element: ConfigurationTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -70,9 +72,9 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     treeView.onDidChangeSelection(async e => {
       console.log(e);
       if (e.selection.length > 0) {
-          const item = e.selection.at(0);
-          await commands.executeCommand('posit.publisher.configurations.edit', item);
-        }
+        const item = e.selection.at(0);
+        await commands.executeCommand('posit.publisher.configurations.edit', item);
+      }
     });
     context.subscriptions.push(treeView);
 
@@ -85,6 +87,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       commands.registerCommand(deleteCommand, async (item: ConfigurationTreeItem) => {
         const ok = await confirmDelete(`Are you sure you want to delete the configuration '${item.config.configurationName}'?`);
         if (ok) {
+          notify('deleting configuration...');
           await api.configurations.delete(item.config.configurationName);
         }
       })
@@ -93,15 +96,9 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       console.log("creating filesystem watcher for configurations view");
       const watcher = workspace.createFileSystemWatcher(
         new RelativePattern(this.root, fileStore));
-      watcher.onDidCreate(_ => {
-        this.refresh();
-      });
-      watcher.onDidDelete(_ => {
-        this.refresh();
-      });
-      watcher.onDidChange(_ => {
-        this.refresh();
-      });
+      watcher.onDidCreate(this.refresh);
+      watcher.onDidDelete(this.refresh);
+      watcher.onDidChange(this.refresh);
       context.subscriptions.push(watcher);
     }
   }
@@ -121,7 +118,7 @@ export class ConfigurationTreeItem extends TreeItem {
     this.tooltip = this.getTooltip();
   }
 
-  getTooltip(): string{
+  getTooltip(): string {
     let tooltip: string;
 
     if (isConfigurationError(this.config)) {

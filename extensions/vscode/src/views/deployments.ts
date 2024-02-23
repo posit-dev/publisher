@@ -26,6 +26,7 @@ import {
 import { getSummaryStringFromError } from '../utils/errors';
 import { formatDateString } from '../utils/date';
 import { confirmDelete } from '../dialogs';
+import { notify } from '../notify';
 
 const viewName = 'posit.publisher.deployments';
 const refreshCommand = viewName + '.refresh';
@@ -53,6 +54,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
 
   public refresh = () => {
     console.log("refreshing deployments");
+    notify('refreshing deployments...');
     this._onDidChangeTreeData.fire();
   };
 
@@ -111,11 +113,11 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       commands.registerCommand(forgetCommand, async (item: DeploymentsTreeItem) => {
         const ok = await confirmDelete(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
         if (ok) {
+          notify(`forgetting deployment...`);
           await this.api.deployments.delete(item.deployment.deploymentName);
         }
       })
     );
-
 
     if (this.root !== undefined) {
       console.log("creating filesystem watcher for deployment view");
