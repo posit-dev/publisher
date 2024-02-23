@@ -89,37 +89,37 @@
         {
           "id": "posit.publisher.project",
           "name": "Project",
-          "contextualTitle": "Project"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.files",
           "name": "Files",
-          "contextualTitle": "Files"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.dependencies",
           "name": "Dependencies",
-          "contextualTitle": "Dependencies"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
-          "contextualTitle": "Configurations"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
-          "contextualTitle": "Credentials"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
-          "contextualTitle": "Deployments"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
           "name": "Help And Feedback",
-          "contextualTitle": "Help And Feedback"
+          "contextualTitle": "Publisher"
         }
       ]
     }
