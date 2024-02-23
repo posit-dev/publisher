@@ -66,7 +66,7 @@ export class Configurations {
 
       if (!existingConfigurations.find(
         config => {
-          return config.configurationName.toLocaleLowerCase() === trialName.toLowerCase();
+          return config.configurationName.toLowerCase() === trialName.toLowerCase();
         }
       )) {
         defaultName = trialName;
