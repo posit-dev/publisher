@@ -6,8 +6,8 @@ import * as vscode from 'vscode';
 // import * as myExtension from '../../extension';
 
 suite('Extension Test Suite', async () => {
-	test('extension is registered', async () => {
-		const extension: vscode.Extension<any> = vscode.extensions.getExtension("posit.publisher")!;
-		assert.ok(extension !== undefined);
-	});
+  test('extension is registered', async () => {
+    const extension: vscode.Extension<any> = vscode.extensions.getExtension("posit.publisher")!;
+    assert.ok(extension !== undefined);
+  });
 });

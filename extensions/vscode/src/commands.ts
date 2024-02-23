@@ -6,23 +6,21 @@ import { HOST } from '.';
 
 const CONFIG_KEY = 'publisher.executable.path';
 
-export type Command = string;
-
-export const create = async (context: vscode.ExtensionContext, path: string, port: number, subcommand: string = "ui"): Promise<Command> => {
-    const executable = await getExecutableBinary(context);
-    return `${executable} ${subcommand} -v --listen=${HOST}:${port} ${path}`;
+export const create = async (context: vscode.ExtensionContext, path: string, port: number, subcommand: string = "ui"): Promise<[string, string[]]> => {
+  const executable = await getExecutableBinary(context);
+  return [executable, [subcommand, '-v', `--listen=${HOST}:${port}`, path]];
 };
 
 const getExecutableBinary = async (context: vscode.ExtensionContext): Promise<string> => {
-    const configuration =  vscode.workspace.getConfiguration('posit');
-    let executable: string | undefined = configuration.get<string>(CONFIG_KEY);
-    if (executable) {
-        try {
-            await fs.access(executable, fs.constants.X_OK);
-            return executable;
-        } catch {
-            vscode.window.showErrorMessage(
-                `
+  const configuration = vscode.workspace.getConfiguration('posit');
+  let executable: string | undefined = configuration.get<string>(CONFIG_KEY);
+  if (executable) {
+    try {
+      await fs.access(executable, fs.constants.X_OK);
+      return executable;
+    } catch {
+      vscode.window.showErrorMessage(
+        `
                 Error: Configuration Property Not Set Correctly
 
                 It seems that the configuration property 'posit.${CONFIG_KEY}' is not set correctly in your settings. To resolve this issue, please follow these steps:
@@ -36,9 +34,9 @@ const getExecutableBinary = async (context: vscode.ExtensionContext): Promise<st
                 Example:
                 "posit.${CONFIG_KEY}": "/usr/local/bin/publisher"
                 `,
-                { modal: true }
-            );
-        }
+        { modal: true }
+      );
     }
-    return path.join(context.extensionPath, "bin", "publisher");
+  }
+  return path.join(context.extensionPath, "bin", "publisher");
 };
