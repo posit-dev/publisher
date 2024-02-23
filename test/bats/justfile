@@ -48,88 +48,10 @@ run *args:
 
     npm run {{ args }}
 
-
-# Executes bats deploy tests
-# Content being tested lives in the connect-content githu repo
-test-contract:
+# this can run deploy or content tests
+test *args:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    exe=$(just ../../executable-path)
-    
-    pip install -r ../setup/requirements.txt
-
-    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
-    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
-    
-    if [ ! -f $exe ]; then
-        echo "error: Missing executable $exe. Run \`just build\`." 1>&2
-        exit 1
-    fi
-    
-    # run contract/accounts.bats
-    EXE=$exe npm run accounts
-
-    # pull the content from connect-content repo
-    if [[ "${CONTENT}" == "all" ]]; then
-        if [[ ${_ci} == false ]]; then
-            mkdir -p ../content/bundles/
-            cp -R ${HOME}${CONTENT_REPO}/bundles/ ../content/bundles/
-        fi
-        
-        # content_list will contain all content in
-        content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
-
-        for i in ${content_list}
-        do
-            # only test when we have a .publisher-env file for the content
-            if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
-                export CONTENT=${i}
-                EXE=$exe npm run deploy
-            fi
-        done
-    else
-        mkdir -p ../content/bundles/
-        cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/bundles
-        EXE=$exe npm run deploy
-    fi
-
-# Executes bats local tests
-test:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    exe=$(just ../../executable-path)
-
-    if [ ! -f $exe ]; then
-        echo "error: Missing executable $exe. Run \`just build\`." 1>&2
-        exit 1
-    fi
-
-    EXE=$exe npm run common
-
-    # pull the content from connect-content repo
-    if [[ "${CONTENT}" == "all" ]]; then
-        if [[ ${_ci} == false ]]; then
-            mkdir -p ../content/bundles/
-            cp -R ${HOME}${CONTENT_REPO}/bundles/ ../content/bundles/
-        fi
-
-        # content_list will contain all content in
-        content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
-
-        for i in ${content_list}
-        do
-            # only test when we have a .publisher-env file for the content
-            if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
-                export CONTENT=${i}
-                EXE=$exe npm run content
-            fi
-        done
-    else
-        mkdir -p ../content/bundles/
-        cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/bundles
-        EXE=$exe npm run deploy
-    fi
+    ../scripts/test-runner.bash {{ args }}

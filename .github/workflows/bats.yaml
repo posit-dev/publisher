@@ -34,7 +34,8 @@ jobs:
           path: bin
       - run: chmod -R +x ./bin
       - run: just bats install
-      - run: just bats test
+      - run: just bats test common
+      - run: just bats test init
   docker:
     strategy:
       fail-fast: false
@@ -66,4 +67,5 @@ jobs:
           path: bin
       - run: chmod -R +x ./bin
       - run: just bats install
-      - run: just bats test
+      - run: just bats test common
+      - run: just bats test init

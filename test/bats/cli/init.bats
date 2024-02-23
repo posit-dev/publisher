@@ -23,7 +23,6 @@ quarto_content_types=(
     "quarto" "quarto-static"
 )
 
-# bats test_tags=tag:deploy
 @test "init creates expected file for ${CONTENT}" {
     python_version="$(python --version | awk '{print $2}')"
     quarto_version="$(quarto --version)"

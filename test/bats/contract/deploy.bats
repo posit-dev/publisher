@@ -36,9 +36,9 @@ quarto_content_types=(
 )
 
 python_content_types=(
-    "python-dash" "python-flask"  "python-fastapi"  "python-shiny"
-     "python-bokeh"  "python-streamlit"  "python-flask"
-     "jupyter-voila" "jupyter-static" "jupyter-notebook"
+    "python-dash" "python-fastapi" "python-shiny"
+    "python-bokeh"  "python-streamlit" "python-flask"
+    "jupyter-voila" "jupyter-static" "jupyter-notebook"
 )
 # create requirements files
 @test "requirements create works as expected for ${CONTENT}" {

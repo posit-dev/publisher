@@ -109,4 +109,3 @@ load '../node_modules/bats-assert/load'
     assert_failure
     assert_line --partial "error: expected one of \"list-accounts\",  \"test-account\",  \"init\",  \"deploy\",  \"redeploy\",  ..."
 }
-
