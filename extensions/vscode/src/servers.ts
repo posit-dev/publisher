@@ -2,20 +2,22 @@ import * as net from 'net';
 import * as retry from 'retry';
 import * as vscode from 'vscode';
 
+import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { HOST } from '.';
 
 import * as commands from './commands';
-import { Terminal } from './terminals';
 import * as workspaces from './workspaces';
 
 export class Server implements vscode.Disposable {
 
   readonly port: number;
-  readonly terminal: Terminal;
+  readonly outputChannel: vscode.OutputChannel;
+
+  process: ChildProcessWithoutNullStreams | undefined = undefined;
 
   constructor(port: number) {
     this.port = port;
-    this.terminal = new Terminal();
+    this.outputChannel = vscode.window.createOutputChannel(`Posit Publisher`);
   }
 
   /**
@@ -33,9 +35,14 @@ export class Server implements vscode.Disposable {
       // todo - make this configurable
       const path = workspaces.path();
       // Create command to send to terminal stdin
-      const command: commands.Command = await commands.create(context, path!, this.port);
-      // Execute command on system via terminal
-      this.terminal.get().sendText(command);
+      const [command, args] = await commands.create(context, path!, this.port);
+      // Spawn child process
+      this.process = spawn(command, args);
+      // Handle error output
+      this.process.stderr.on('data', (data) => {
+        // Write stderr to output channel
+        this.outputChannel.append(data.toString());
+      });
       // Wait for server to start
       await this.isUp();
       // Dispose of status message
@@ -59,7 +66,7 @@ export class Server implements vscode.Disposable {
     // Display status message to user
     const message = vscode.window.setStatusBarMessage("Stopping Posit Publisher. Please wait...");
     // Send interrupt signal to terminal
-    this.terminal.get().sendText("\u0003");
+    this.process?.kill('SIGINT');
     // Wait for server to stop
     await this.isDown();
     // Dispose of status message
@@ -70,7 +77,7 @@ export class Server implements vscode.Disposable {
    * Disposes of the resources associated with the server.
    */
   dispose() {
-    this.terminal.dispose();
+    this.process?.kill('SIGINT');
   }
 
   /**

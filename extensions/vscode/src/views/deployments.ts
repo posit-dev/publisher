@@ -20,6 +20,7 @@ import {
   isDeployment,
   PreDeployment,
   isPreDeployment,
+  AllDeploymentTypes,
 } from '../api';
 
 import { getSummaryStringFromError } from '../utils/errors';
@@ -138,7 +139,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
 
 export class DeploymentsTreeItem extends TreeItem {
   constructor(
-    public deployment: Deployment | PreDeployment | DeploymentError,
+    public deployment: AllDeploymentTypes,
     public readonly fileUri: Uri
   ) {
     super(deployment.deploymentName);

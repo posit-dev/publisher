@@ -7,7 +7,7 @@ export function formatDateString(
   dateString: string,
   { includeTime } = { includeTime: true },
 ) {
-  const dateResult = new Date(`${dateString}`).toLocaleDateString('en-US', {
+  const dateResult = new Date(dateString).toLocaleDateString(undefined, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -30,7 +30,7 @@ export function formatTimeString(
   if (includeSeconds) {
     options.second = '2-digit';
   }
-  return new Date(`${dateString}`).toLocaleTimeString('en-US', options);
+  return new Date(`${dateString}`).toLocaleTimeString(undefined, options);
 }
 
 export function sortByDateString(a: string, b: string) {
