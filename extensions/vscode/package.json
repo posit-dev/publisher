@@ -82,6 +82,13 @@
           "title": "Posit Publisher",
           "icon": "assets/img/color/posit-publisher.svg"
         }
+      ],
+      "panel": [
+        {
+          "id": "posit-publisher-logs",
+          "title": "Posit Publisher Logs",
+          "icon": "$(output)"
+        }
       ]
     },
     "views": {
@@ -120,6 +127,13 @@
           "id": "posit.publisher.helpAndFeedback",
           "name": "Help And Feedback",
           "contextualTitle": "Help And Feedback"
+        }
+      ],
+      "posit-publisher-logs": [
+        {
+          "id": "posit.publisher.logs",
+          "name": "Logs",
+          "contextualTitle": "Logs"
         }
       ]
     }
