@@ -116,7 +116,12 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
         const ok = await confirmDelete(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
         if (ok) {
           notify(`forgetting deployment...`);
-          await this.api.deployments.delete(item.deployment.deploymentName);
+          try {
+            await this.api.deployments.delete(item.deployment.deploymentName);
+          } catch (error: unknown) {
+            const summary = getSummaryStringFromError('deployments::getChildren', error);
+            window.showInformationMessage(summary);
+          }
         }
       })
     );
