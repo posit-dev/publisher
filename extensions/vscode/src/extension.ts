@@ -11,6 +11,7 @@ import { FilesTreeDataProvider } from './views/files';
 import { DependenciesTreeDataProvider } from './views/dependencies';
 import { CredentialsTreeDataProvider } from './views/credentials';
 import { HelpAndFeedbackTreeDataProvider } from './views/helpAndFeedback';
+import { LogsTreeDataProvider } from './views/logs';
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
@@ -42,6 +43,7 @@ export async function activate(context: vscode.ExtensionContext) {
   new DependenciesTreeDataProvider().register(context);
   new CredentialsTreeDataProvider().register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
+  new LogsTreeDataProvider(port).register(context);
 }
 
 // This method is called when your extension is deactivated
