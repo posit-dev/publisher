@@ -60,6 +60,24 @@
         "title": "Delete",
         "icon": "$(trash)",
         "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.edit",
+        "title": "Edit",
+        "icon": "$(edit)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.forget",
+        "title": "Forget this deployment locally",
+        "icon": "$(close-all)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Posit"
       }
     ],
     "configuration": {
@@ -86,7 +104,11 @@
         },
         {
           "command": "posit.publisher.configurations.refresh",
-          "when": "view == posit.publisher.configurations",
+          "when": "view == posit.publisher.configurations"
+        },
+        {
+          "command": "posit.publisher.deployments.refresh",
+          "when": "view == posit.publisher.deployments",
           "group": "navigation"
         }
       ],
@@ -94,6 +116,11 @@
         {
           "command": "posit.publisher.configurations.delete",
           "when": "view == posit.publisher.configurations",
+          "group": "inline"
+        },
+        {
+          "command": "posit.publisher.deployments.forget",
+          "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError",
           "group": "inline"
         }
       ]
@@ -112,37 +139,37 @@
         {
           "id": "posit.publisher.project",
           "name": "Project",
-          "contextualTitle": "Project"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.files",
           "name": "Files",
-          "contextualTitle": "Files"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.dependencies",
           "name": "Dependencies",
-          "contextualTitle": "Dependencies"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
-          "contextualTitle": "Configurations"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
-          "contextualTitle": "Credentials"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
-          "contextualTitle": "Deployments"
+          "contextualTitle": "Publisher"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
           "name": "Help And Feedback",
-          "contextualTitle": "Help And Feedback"
+          "contextualTitle": "Publisher"
         }
       ]
     },
@@ -178,10 +205,9 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "axios": "^1.6.0",
     "get-port": "5.1.1",
     "mutexify": "^1.4.0",
-    "retry": "^0.13.1",
-    "axios": "^1.6.0",
-    "camelcase-keys": "^9.0.0"
+    "retry": "^0.13.1"
   }
 }

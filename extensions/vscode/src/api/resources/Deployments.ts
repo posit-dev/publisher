@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from 'axios';
 
-import { Deployment, DeploymentError, PreDeployment } from '../types/deployments';
+import { PreDeployment, AllDeploymentTypes } from '../types/deployments';
 
 export class Deployments {
   private client: AxiosInstance;
@@ -15,7 +15,7 @@ export class Deployments {
   // 200 - success
   // 500 - internal server error
   getAll() {
-    return this.client.get<Array<Deployment | PreDeployment | DeploymentError>>(
+    return this.client.get<Array<AllDeploymentTypes>>(
       '/deployments',
     );
   }
@@ -26,7 +26,7 @@ export class Deployments {
   // 500 - internal server error
   get(id: string) {
     const encodedId = encodeURIComponent(id);
-    return this.client.get<Deployment | PreDeployment | DeploymentError>(
+    return this.client.get<AllDeploymentTypes>(
       `deployments/${encodedId}`,
     );
   }

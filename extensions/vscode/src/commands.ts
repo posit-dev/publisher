@@ -6,11 +6,9 @@ import { HOST } from '.';
 
 const CONFIG_KEY = 'publisher.executable.path';
 
-export type Command = string;
-
-export const create = async (context: vscode.ExtensionContext, path: string, port: number, subcommand: string = "ui"): Promise<Command> => {
+export const create = async (context: vscode.ExtensionContext, path: string, port: number, subcommand: string = "ui"): Promise<[string, string[]]> => {
   const executable = await getExecutableBinary(context);
-  return `${executable} ${subcommand} -v --listen=${HOST}:${port} ${path}`;
+  return [executable, [subcommand, '-v', `--listen=${HOST}:${port}`, path]];
 };
 
 const getExecutableBinary = async (context: vscode.ExtensionContext): Promise<string> => {

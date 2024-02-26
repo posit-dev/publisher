@@ -46,8 +46,10 @@ export type Deployment = {
   deploymentError: AgentError | null,
 } & DeploymentRecord & Configuration;
 
+export type AllDeploymentTypes = Deployment | PreDeployment | DeploymentError
+
 export function isSuccessful(
-  d: Deployment | PreDeployment | DeploymentError | undefined
+  d: AllDeploymentTypes | undefined
 ): boolean | undefined {
   if (d === undefined) {
     return undefined;
@@ -59,7 +61,7 @@ export function isSuccessful(
 }
 
 export function isUnsuccessful(
-  d: Deployment | PreDeployment | DeploymentError | undefined
+  d: AllDeploymentTypes | undefined
 ): boolean | undefined {
   const result = isSuccessful(d);
   if (result === undefined) {
@@ -69,7 +71,7 @@ export function isUnsuccessful(
 }
 
 export function isDeploymentError(
-  d: Deployment | PreDeployment | DeploymentError | undefined
+  d: AllDeploymentTypes | undefined
 ): d is DeploymentError {
   return Boolean(
     d &&
@@ -78,7 +80,7 @@ export function isDeploymentError(
 }
 
 export function isPreDeployment(
-  d: Deployment | PreDeployment | DeploymentError | undefined
+  d: AllDeploymentTypes | undefined
 ): d is PreDeployment {
   return Boolean(
     d &&
@@ -87,7 +89,7 @@ export function isPreDeployment(
 }
 
 export function isSuccessfulPreDeployment(
-  d: Deployment | PreDeployment | DeploymentError | undefined
+  d: AllDeploymentTypes | undefined
 ): d is PreDeployment {
   if (isPreDeployment(d)) {
     const success = isSuccessful(d);
@@ -99,7 +101,7 @@ export function isSuccessfulPreDeployment(
 }
 
 export function isUnsuccessfulPreDeployment(
-  d: Deployment | PreDeployment | DeploymentError | undefined
+  d: AllDeploymentTypes | undefined
 ): d is PreDeployment {
   if (isPreDeployment(d)) {
     const failure = isUnsuccessful(d);
@@ -111,7 +113,7 @@ export function isUnsuccessfulPreDeployment(
 }
 
 export function isDeployment(
-  d: Deployment | PreDeployment | DeploymentError | undefined
+  d: AllDeploymentTypes | undefined
 ): d is Deployment {
   return Boolean(
     d &&
@@ -120,7 +122,7 @@ export function isDeployment(
 }
 
 export function isSuccessfulDeployment(
-  d: Deployment | PreDeployment | DeploymentError | undefined
+  d: AllDeploymentTypes | undefined
 ): d is Deployment {
   if (isDeployment(d)) {
     const success = isSuccessful(d);
@@ -132,7 +134,7 @@ export function isSuccessfulDeployment(
 }
 
 export function isUnsuccessfulDeployment(
-  d: Deployment | PreDeployment | DeploymentError | undefined
+  d: AllDeploymentTypes | undefined
 ): d is Deployment {
   if (isDeployment(d)) {
     const failure = isUnsuccessful(d);
