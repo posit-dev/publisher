@@ -64,7 +64,3 @@ quarto_content_types=(
         fi 
     fi
 }
-
-teardown() {
-    rm -rf ${CONTENT_PATH}/${CONTENT}/.posit/
-}

@@ -36,6 +36,7 @@ jobs:
         with:
           repository: rstudio/connect-content
           path: 'test/content'
+          ref: 'kg-publisher'
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
@@ -47,8 +48,10 @@ jobs:
       # disable cypress contract tests until new deploy workflow
       # - run: just cy test-contract
       - run: just bats install
-      - run: just bats test
-      - run: just bats test-contract
+      - run: just bats test common
+      - run: just bats test init
+      - run: just bats test accounts
+      - run: just bats test deploy
 
       # Videos are captured whether the suite fails or passes
       - name: Save videos

@@ -34,7 +34,8 @@ jobs:
           path: bin
       - run: chmod -R +x ./bin
       - run: just bats install
-      - run: just bats test
+      - run: just bats test common
+      - run: just bats test init
   docker:
     strategy:
       fail-fast: false
@@ -49,6 +50,7 @@ jobs:
         with:
           repository: rstudio/connect-content
           path: 'test/content'
+          ref: 'kg-publisher'
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
@@ -65,4 +67,5 @@ jobs:
           path: bin
       - run: chmod -R +x ./bin
       - run: just bats install
-      - run: just bats test
+      - run: just bats test common
+      - run: just bats test init
