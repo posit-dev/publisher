@@ -24,6 +24,7 @@ import {
 
 import { confirmDelete } from '../dialogs';
 import { getSummaryStringFromError } from '../utils/errors';
+import { untitledConfigurationName } from '../utils/untitled';
 
 const viewName = 'posit.publisher.configurations';
 const refreshCommand = viewName + '.refresh';
@@ -119,7 +120,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
         // canceled
         return;
       }
-      const defaultName = await api.configurations.untitledConfigurationName();
+      const defaultName = await untitledConfigurationName();
       const name = await window.showInputBox({
         value: defaultName,
         prompt: "Configuration name",
