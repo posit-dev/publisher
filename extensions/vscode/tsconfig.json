@@ -5,7 +5,8 @@
     "target": "ES2020",
     "outDir": "out",
     "lib": [
-      "ES2020"
+      "ES2020",
+      "DOM"
     ],
     "sourceMap": true,
     "rootDir": "src",

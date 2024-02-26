@@ -43,7 +43,7 @@ export async function activate(context: vscode.ExtensionContext) {
   new DependenciesTreeDataProvider().register(context);
   new CredentialsTreeDataProvider().register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
-  new LogsTreeDataProvider().register(context);
+  new LogsTreeDataProvider(port).register(context);
 }
 
 // This method is called when your extension is deactivated
