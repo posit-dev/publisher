@@ -22,10 +22,8 @@ import {
   isConfigurationError
 } from "../api/types/configurations";
 
-import {
-  alert,
-  confirmDelete
-} from '../dialogs';
+import { confirmDelete } from '../dialogs';
+import { getSummaryStringFromError } from '../utils/errors';
 
 const viewName = 'posit.publisher.configurations';
 const refreshCommand = viewName + '.refresh';
@@ -64,12 +62,18 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       return [];
     }
 
-    const response = await api.configurations.getAll();
-    const configurations = response.data;
-    return configurations.map(config => {
-      const fileUri = Uri.joinPath(root.uri, config.configurationPath);
-      return new ConfigurationTreeItem(config, fileUri);
-    });
+    try {
+      const response = await api.configurations.getAll();
+      const configurations = response.data;
+      return configurations.map(config => {
+        const fileUri = Uri.joinPath(root.uri, config.configurationPath);
+        return new ConfigurationTreeItem(config, fileUri);
+      });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError('configurations::getChildren', error);
+        window.showInformationMessage(summary);
+        return [];
+    }
   }
 
   public register(context: ExtensionContext) {
@@ -108,33 +112,30 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   };
 
   private add = async () => {
-    const inspectResponse = await api.configurations.inspect();
-    if (inspectResponse.status !== 200) {
-      alert("An error occurred while inspecting the project: " + inspectResponse.statusText);
-      return;
-    }
-    const config = await this.chooseConfig(inspectResponse.data);
-    if (config === undefined) {
-      // canceled
-      return;
-    }
-    const defaultName = await api.configurations.untitledConfigurationName();
-    const name = await window.showInputBox({
-      value: defaultName,
-      prompt: "Configuration name",
-    });
-    if (name === undefined || name === '') {
-      // canceled
-      return;
-    }
-    const createResponse = await api.configurations.createOrUpdate(name, config);
-    if (createResponse.status !== 200) {
-      alert("An error occurred while saving the configuration: " + createResponse.statusText);
-      return;
-    }
-    if (this.root !== undefined) {
-      const fileUri = Uri.file(createResponse.data.configurationPath);
-      await commands.executeCommand('vscode.open', fileUri);
+    try {
+      const inspectResponse = await api.configurations.inspect();
+      const config = await this.chooseConfig(inspectResponse.data);
+      if (config === undefined) {
+        // canceled
+        return;
+      }
+      const defaultName = await api.configurations.untitledConfigurationName();
+      const name = await window.showInputBox({
+        value: defaultName,
+        prompt: "Configuration name",
+      });
+      if (name === undefined || name === '') {
+        // canceled
+        return;
+      }
+      const createResponse = await api.configurations.createOrUpdate(name, config);
+      if (this.root !== undefined) {
+        const fileUri = Uri.file(createResponse.data.configurationPath);
+        await commands.executeCommand('vscode.open', fileUri);
+      }
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError('configurations::add', error);
+      window.showInformationMessage(summary);
     }
   };
 
@@ -146,7 +147,12 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     const name = item.config.configurationName;
     const ok = await confirmDelete(`Are you sure you want to delete the configuration '${name}'?`);
     if (ok) {
-      await api.configurations.delete(name);
+      try {
+        await api.configurations.delete(name);
+      }  catch (error: unknown) {
+        const summary = getSummaryStringFromError('configurations::delete', error);
+        window.showInformationMessage(summary);
+      }
     }
   };
 
