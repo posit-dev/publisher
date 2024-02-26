@@ -66,6 +66,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     try {
       const response = await api.configurations.getAll();
       const configurations = response.data;
+
       return configurations.map(config => {
         const fileUri = Uri.joinPath(root.uri, config.configurationPath);
         return new ConfigurationTreeItem(config, fileUri);
@@ -186,8 +187,9 @@ export class ConfigurationTreeItem extends TreeItem {
 
     super(config.configurationName);
 
-    const iconName = isConfigurationError(config) ? 'warning' : 'gear';
-    this.iconPath = new ThemeIcon(iconName);
+    if (isConfigurationError(config)) {
+      this.iconPath = new ThemeIcon('warning' );
+    }
     this.tooltip = this.getTooltip();
   }
 
