@@ -33,19 +33,21 @@ content_tests() {
             # only test when we have a .publisher-env file for the content
             if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
                 export CONTENT=${i}
-                EXE=$exe npm run "${test_case}"
+                export EXE=$exe 
+                just run "${test_case}"
             fi
         done
     else
         cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
-        EXE=$exe npm run "${test_case}"
+        export EXE=$exe 
+        just run "${test_case}"
     fi
 }
 
 # use this for generic tests
 cli_tests() {   
-    # run contract/accounts.bats
-    EXE=$exe npm run "${test_case}"
+    export EXE=$exe 
+    just run "${test_case}"
 }
 
 case "${test_case}" in
