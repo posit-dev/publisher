@@ -31,6 +31,7 @@ const refreshCommand = viewName + '.refresh';
 const addCommand = viewName + '.add';
 const editCommand = viewName + '.edit';
 const deleteCommand = viewName + '.delete';
+const isEmptyContext = viewName + '.isEmpty';
 const fileStore = '.posit/publish/*.toml';
 
 type ConfigurationEventEmitter = EventEmitter<ConfigurationTreeItem | undefined | void>;
@@ -66,6 +67,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     try {
       const response = await api.configurations.getAll();
       const configurations = response.data;
+      commands.executeCommand('setContext', isEmptyContext, configurations.length === 0);
 
       return configurations.map(config => {
         const fileUri = Uri.joinPath(root.uri, config.configurationPath);
@@ -74,6 +76,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       } catch (error: unknown) {
         const summary = getSummaryStringFromError('configurations::getChildren', error);
         window.showInformationMessage(summary);
+        commands.executeCommand('setContext', isEmptyContext, true);
         return [];
     }
   }
