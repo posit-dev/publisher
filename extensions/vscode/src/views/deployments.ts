@@ -25,7 +25,7 @@ import {
 
 import { getSummaryStringFromError } from '../utils/errors';
 import { formatDateString } from '../utils/date';
-import { confirmDelete } from '../dialogs';
+import { confirmForget } from '../dialogs';
 import { notify } from '../notify';
 
 const viewName = 'posit.publisher.deployments';
@@ -113,7 +113,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     );
     context.subscriptions.push(
       commands.registerCommand(forgetCommand, async (item: DeploymentsTreeItem) => {
-        const ok = await confirmDelete(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
+        const ok = await confirmForget(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
         if (ok) {
           notify(`forgetting deployment...`);
           try {
