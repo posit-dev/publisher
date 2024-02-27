@@ -28,8 +28,8 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  createOrUpdate(name: string, cfg: ConfigurationDetails) {
-    const encodedName = encodeURIComponent(name);
+  createOrUpdate(configName: string, cfg: ConfigurationDetails) {
+    const encodedName = encodeURIComponent(configName);
     return this.client.put<Configuration>(`configurations/${encodedName}`, cfg);
   }
 
@@ -37,8 +37,8 @@ export class Configurations {
   // 204 - success (no response)
   // 404 - not found
   // 500 - internal server error
-  delete(name: string) {
-    const encodedName = encodeURIComponent(name);
+  delete(configName: string) {
+    const encodedName = encodeURIComponent(configName);
     return this.client.delete(`configurations/${encodedName}`);
   }
 
@@ -48,6 +48,6 @@ export class Configurations {
   // 400 - bad request
   // 500 - internal server error
   inspect() {
-    return this.client.post<Configuration[]>('/inspect');
+    return this.client.post<ConfigurationDetails[]>('/inspect');
   }
 }

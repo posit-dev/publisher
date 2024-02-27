@@ -38,6 +38,18 @@
         "category": "Posit"
       },
       {
+        "command": "posit.publisher.configurations.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.configurations.add",
+        "title": "Add",
+        "icon": "$(add)",
+        "category": "Posit"
+      },
+      {
         "command": "posit.publisher.configurations.edit",
         "title": "Edit",
         "icon": "$(edit)",
@@ -85,6 +97,15 @@
         }
       ],
       "view/title": [
+        {
+          "command": "posit.publisher.configurations.add",
+          "when": "view == posit.publisher.configurations",
+          "group": "navigation"
+        },
+        {
+          "command": "posit.publisher.configurations.refresh",
+          "when": "view == posit.publisher.configurations"
+        },
         {
           "command": "posit.publisher.deployments.refresh",
           "when": "view == posit.publisher.deployments",
@@ -165,7 +186,14 @@
           "contextualTitle": "Logs"
         }
       ]
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "posit.publisher.configurations",
+        "contents": "To publish your content, you need a configuration file. Click Add to create one based on the files in your project.\n[Add](command:posit.publisher.configurations.add)",
+        "when": "posit.publisher.configurations.isEmpty"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
