@@ -1,0 +1,16 @@
+version: '3.2'
+
+services:
+
+  rsconnect:
+    image: rstudio/rstudio-connect-preview:dev-jammy-daily
+    restart: always
+    ports:
+      - 3939:3939
+    volumes:
+      - ./setup/rstudio-connect.gcfg:/etc/rstudio-connect/rstudio-connect.gcfg
+
+    privileged: true
+    environment:
+      RSTUDIO_CONNECT_HASTE: "enabled"
+      RSC_LICENSE: ${CONNECT_LICENSE}

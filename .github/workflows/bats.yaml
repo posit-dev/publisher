@@ -5,6 +5,8 @@ jobs:
   native:
     env:
       DOCKER: false
+      DOCKER_CONNECT: true
+      CONTENT: "stock-dashboard-python quarto-website-py-deps"
     strategy:
       fail-fast: false
       matrix:
@@ -35,6 +37,7 @@ jobs:
       - run: chmod -R +x ./bin
       - run: just bats install
       - run: just bats test common
+      - run: just bats test deploy
       - run: just bats test init
   docker:
     strategy:
