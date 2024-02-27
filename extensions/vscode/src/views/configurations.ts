@@ -24,7 +24,7 @@ import {
 
 import { confirmDelete } from '../dialogs';
 import { getSummaryStringFromError } from '../utils/errors';
-import { untitledConfigurationName } from '../utils/untitled';
+import { untitledConfigurationName } from '../utils/names';
 
 const viewName = 'posit.publisher.configurations';
 const refreshCommand = viewName + '.refresh';
