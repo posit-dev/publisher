@@ -24,6 +24,12 @@ type allSettings struct {
 	quarto      server_settings.QuartoInfo
 }
 
+const requirementsFileMissing = `
+can't find the package file (%s) in the project directory.
+Create the file, listing the packages your project depends on.
+Or scan your project dependencies using the publisher UI or
+the 'publisher requirements create' command`
+
 func checkRequirementsFile(base util.Path, requirementsFilename string) error {
 	packageFile := base.Join(requirementsFilename)
 	exists, err := packageFile.Exists()
@@ -31,7 +37,7 @@ func checkRequirementsFile(base util.Path, requirementsFilename string) error {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("can't find the package file (%s) in the project directory", requirementsFilename)
+		return fmt.Errorf(requirementsFileMissing, requirementsFilename)
 	}
 	return nil
 }
