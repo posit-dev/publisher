@@ -1,6 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/naming-convention
-import * as EventSource from 'eventsource';
 import * as vscode from 'vscode';
+
+import { EventStream, EventStreamMessage } from '../events';
 
 const viewName = 'posit.publisher.logs';
 
@@ -20,15 +20,17 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    * Creates an instance of LogsTreeDataProvider.
    * @param port The port number to listen for events.
    */
-  constructor(port: number) {
-    // Create a new EventSource instance to listen for events from the specified port
-    const es = new EventSource(`http://127.0.0.1:${port}/api/events?stream=messages`);
-    // When a new message event is received, add the event data to the events array and refresh the tree view
-    es.onmessage = (event) => {
-      this.events.push(event.data);
+  constructor(stream: EventStream) {
+    stream.on('message', (message: EventStreamMessage) => {
+      this.events.push(JSON.stringify(message));
       this.refresh();
-    };
-  }
+    });
+
+    // example of how to register a callback for a specific message type
+    stream.register('agent/log', (message: EventStreamMessage) => {
+      console.error(message);
+    });
+  };
 
   /**
    * Get the event emitter for tree data changes.
