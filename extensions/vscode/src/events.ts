@@ -16,8 +16,8 @@ export type EventStreamMessageCallback = (message: EventStreamMessage) => void;
 export class EventStream extends Readable {
   // Array to store event messages
   private messages: EventStreamMessage[] = [];
-  // Object to store event callbacks
-  private callbacks: { [type: string]: EventStreamMessageCallback[] } = {};
+  // Map to store event callbacks
+  private callbacks: Map<string, EventStreamMessageCallback[]> = new Map();
 
   /**
    * Creates a new instance of the EventStream class.
@@ -46,18 +46,18 @@ export class EventStream extends Readable {
    * @param callback The callback function to be invoked when the event occurs.
    */
   public register(type: string, callback: EventStreamMessageCallback) {
-    if (!this.callbacks[type]) {
-      this.callbacks[type] = [];
+    if (!this.callbacks.has(type)) {
+      this.callbacks.set(type, []);
     }
     // Add the callback to the callbacks array for the specified event type
-    this.callbacks[type].push(callback);
+    this.callbacks.get(type)?.push(callback);
   }
 
   private invokeCallbacks(message: EventStreamMessage) {
     const type = message.type;
-    if (this.callbacks[type]) {
+    if (this.callbacks.has(type)) {
       // Invoke all the callbacks for the specified event type with the message as the argument
-      this.callbacks[type].forEach(callback => callback(message));
+      this.callbacks.get(type)?.forEach(callback => callback(message));
     }
   }
 }
