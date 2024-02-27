@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode';
 
-import { EventStream, EventStreamMessage } from '../events';
+import { EventStream, EventStreamMessage, displayEventStreamMessage } from '../events';
 
 const viewName = 'posit.publisher.logs';
 
@@ -10,7 +10,7 @@ const viewName = 'posit.publisher.logs';
  * Tree data provider for the Logs view.
  */
 export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeItem> {
-  private events: string[] = [];
+  private events: EventStreamMessage[] = [];
 
   /**
    * Event emitter for when the tree data of the Logs view changes.
@@ -25,7 +25,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
   constructor(stream: EventStream) {
     stream.on('message', (message: EventStreamMessage) => {
       if (message.data.level !== 'DEBUG') {
-        this.events.push(JSON.stringify(message));
+        this.events.push(message);
         this.refresh();
       }
     });
@@ -89,8 +89,8 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
  * Represents a tree item for displaying logs in the tree view.
  */
 export class LogsTreeItem extends vscode.TreeItem {
-  constructor(label: string, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
-    super(label, state);
-    this.tooltip = `${this.label}`;
+  constructor(event: EventStreamMessage, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
+    super(displayEventStreamMessage(event), state);
+    this.tooltip = JSON.stringify(event);
   }
 }
