@@ -23,17 +23,17 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    * @param port The port number to listen for events.
    */
   constructor(stream: EventStream) {
-    stream.on('message', (message: EventStreamMessage) => {
-      if (message.data.level !== 'DEBUG') {
-        this.events.push(message);
+    stream.on('message', (msg: EventStreamMessage) => {
+      if (msg.data.level !== 'DEBUG' && msg.type !== 'agent/log') {
+        this.events.push(msg);
         this.refresh();
       }
     });
 
     // example of how to register a callback for a specific message type
-    stream.register('agent/log', (message: EventStreamMessage) => {
-      console.error(message);
-    });
+    // stream.register('agent/log', (message: EventStreamMessage) => {
+    //   console.error(message);
+    // });
   };
 
   /**
@@ -89,8 +89,8 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
  * Represents a tree item for displaying logs in the tree view.
  */
 export class LogsTreeItem extends vscode.TreeItem {
-  constructor(event: EventStreamMessage, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
-    super(displayEventStreamMessage(event), state);
-    this.tooltip = JSON.stringify(event);
+  constructor(msg: EventStreamMessage, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
+    super(displayEventStreamMessage(msg), state);
+    this.tooltip = JSON.stringify(msg);
   }
 }
