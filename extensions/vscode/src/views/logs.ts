@@ -30,10 +30,10 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
       }
     });
 
-    // example of how to register a callback for a specific message type
-    // stream.register('agent/log', (message: EventStreamMessage) => {
-    //   console.error(message);
-    // });
+    // Reset events when a new publish starts
+    stream.register('publish/start', (_: EventStreamMessage) => {
+      this.events = [];
+    });
   };
 
   /**
