@@ -5,7 +5,6 @@ package detectors
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
@@ -38,9 +37,8 @@ func fileHasShinyExpressImport(path util.Path) (bool, error) {
 var invalidPythonIdentifierRE = regexp.MustCompile(`(^[0-9]|[^A-Za-z0-9])`)
 
 func shinyExpressEntrypoint(entrypoint string) string {
-	module := strings.TrimSuffix(entrypoint, ".py")
 
-	safeEntrypoint := invalidPythonIdentifierRE.ReplaceAllStringFunc(module, func(match string) string {
+	safeEntrypoint := invalidPythonIdentifierRE.ReplaceAllStringFunc(entrypoint, func(match string) string {
 		return fmt.Sprintf("_%x_", int(match[0]))
 	})
 	return "shiny.express.app:" + safeEntrypoint

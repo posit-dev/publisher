@@ -56,7 +56,6 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 	if err != nil {
 		return err
 	}
-	stateStore.TargetName = cmd.SaveName
 	fmt.Printf("Deploy to server %s using account %s and configuration %s, creating deployment %s\n",
 		stateStore.Account.URL,
 		stateStore.Account.Name,

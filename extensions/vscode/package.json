@@ -4,13 +4,13 @@
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
   "version": "0.0.0",
-  "icon": "assets/img/color.png",
+  "icon": "assets/img/color/posit-publisher.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/rstudio/publishing-client/tree/main/extensions/vscode"
   },
   "engines": {
-    "vscode": "^1.83.0"
+    "vscode": "^1.86.0"
   },
   "categories": [
     "Data Science",
@@ -36,6 +36,36 @@
         "command": "posit.publisher.close",
         "title": "Close Publisher",
         "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.configurations.edit",
+        "title": "Edit",
+        "icon": "$(edit)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.configurations.delete",
+        "title": "Delete",
+        "icon": "$(trash)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.edit",
+        "title": "Edit",
+        "icon": "$(edit)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.forget",
+        "title": "Forget this deployment locally",
+        "icon": "$(close-all)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Posit"
       }
     ],
     "configuration": {
@@ -53,6 +83,87 @@
           "command": "posit.publisher.open",
           "group": "navigation"
         }
+      ],
+      "view/title": [
+        {
+          "command": "posit.publisher.deployments.refresh",
+          "when": "view == posit.publisher.deployments",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "posit.publisher.configurations.delete",
+          "when": "view == posit.publisher.configurations",
+          "group": "inline"
+        },
+        {
+          "command": "posit.publisher.deployments.forget",
+          "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError",
+          "group": "inline"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "posit-publisher",
+          "title": "Posit Publisher",
+          "icon": "assets/img/color/posit-publisher.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "posit-publisher-logs",
+          "title": "Posit Publisher Logs",
+          "icon": "$(output)"
+        }
+      ]
+    },
+    "views": {
+      "posit-publisher": [
+        {
+          "id": "posit.publisher.project",
+          "name": "Project",
+          "contextualTitle": "Publisher"
+        },
+        {
+          "id": "posit.publisher.files",
+          "name": "Files",
+          "contextualTitle": "Publisher"
+        },
+        {
+          "id": "posit.publisher.dependencies",
+          "name": "Dependencies",
+          "contextualTitle": "Publisher"
+        },
+        {
+          "id": "posit.publisher.configurations",
+          "name": "Configurations",
+          "contextualTitle": "Publisher"
+        },
+        {
+          "id": "posit.publisher.credentials",
+          "name": "Credentials",
+          "contextualTitle": "Publisher"
+        },
+        {
+          "id": "posit.publisher.deployments",
+          "name": "Deployments",
+          "contextualTitle": "Publisher"
+        },
+        {
+          "id": "posit.publisher.helpAndFeedback",
+          "name": "Help And Feedback",
+          "contextualTitle": "Publisher"
+        }
+      ],
+      "posit-publisher-logs": [
+        {
+          "id": "posit.publisher.logs",
+          "name": "Logs",
+          "contextualTitle": "Logs"
+        }
       ]
     }
   },
@@ -65,11 +176,12 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/eventsource": "^1.1.15",
     "@types/mocha": "^10.0.2",
     "@types/mutexify": "^1.2.3",
     "@types/node": "18.x",
     "@types/retry": "^0.12.5",
-    "@types/vscode": "^1.83.0",
+    "@types/vscode": "^1.86.0",
     "@types/wait-on": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
@@ -80,6 +192,8 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "axios": "^1.6.0",
+    "eventsource": "^2.0.2",
     "get-port": "5.1.1",
     "mutexify": "^1.4.0",
     "retry": "^0.13.1"

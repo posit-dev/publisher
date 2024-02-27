@@ -3,7 +3,15 @@
 import * as vscode from 'vscode';
 
 import * as ports from './ports';
-import  { Service } from './services';
+import { Service } from './services';
+import { ProjectTreeDataProvider } from './views/project';
+import { DeploymentsTreeDataProvider } from './views/deployments';
+import { ConfigurationsTreeDataProvider } from './views/configurations';
+import { FilesTreeDataProvider } from './views/files';
+import { DependenciesTreeDataProvider } from './views/dependencies';
+import { CredentialsTreeDataProvider } from './views/credentials';
+import { HelpAndFeedbackTreeDataProvider } from './views/helpAndFeedback';
+import { LogsTreeDataProvider } from './views/logs';
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
@@ -12,26 +20,35 @@ let service: Service;
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
 
-	const port = await ports.acquire();
-	service = new Service(port);
-	await service.start(context);
+  const port = await ports.acquire();
+  service = new Service(context, port);
+  await service.start();
 
-	context.subscriptions.push(
-		vscode.commands.registerCommand('posit.publisher.open', async () => {
-			await service.open(context);
-		})
-	);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('posit.publisher.open', async () => {
+      await service.open();
+    })
+  );
 
-	context.subscriptions.push(
-		vscode.commands.registerCommand('posit.publisher.close', async () => {
-			await service.stop();
-		})
-	);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('posit.publisher.close', async () => {
+      await service.stop();
+    })
+  );
+
+  new ProjectTreeDataProvider().register(context);
+  new DeploymentsTreeDataProvider().register(context);
+  new ConfigurationsTreeDataProvider().register(context);
+  new FilesTreeDataProvider().register(context);
+  new DependenciesTreeDataProvider().register(context);
+  new CredentialsTreeDataProvider().register(context);
+  new HelpAndFeedbackTreeDataProvider().register(context);
+  new LogsTreeDataProvider(port).register(context);
 }
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
-	if (service) {
-		await service.stop();
-	}
+  if (service) {
+    await service.stop();
+  }
 }

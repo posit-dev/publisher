@@ -14,6 +14,12 @@ jobs:
     needs:
       - build
     uses: ./.github/workflows/archive.yaml
+  upload:
+    needs:
+      - archive
+      - package
+    uses: ./.github/workflows/upload.yaml
+    secrets: inherit
   release:
     runs-on: ubuntu-latest
     needs:
@@ -34,8 +40,7 @@ jobs:
           path: packages
       - id: get-prerelease
         run: echo "prerelease=$(just pre-release)" >> "$GITHUB_OUTPUT"
-      - name: Release
-        uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v1
         with:
           draft: false
           prerelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}

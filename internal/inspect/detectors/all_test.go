@@ -95,3 +95,53 @@ func (s *AllSuite) TestInferTypeErr() {
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(t)
 }
+
+func (s *AllSuite) TestInferAll() {
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	htmlFilename := "myfile.html"
+	err = base.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
+	s.NoError(err)
+
+	appFilename := "myapp.py"
+	err = base.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
+	s.NoError(err)
+
+	detector := NewContentTypeDetector()
+	t, err := detector.InferAll(base)
+	s.NoError(err)
+	s.Equal([]*config.Config{
+		{
+			Schema:     schema.ConfigSchemaURL,
+			Type:       config.ContentTypePythonDash,
+			Entrypoint: appFilename,
+			Validate:   true,
+			Python:     &config.Python{},
+		},
+		{
+			Schema:     schema.ConfigSchemaURL,
+			Type:       config.ContentTypeHTML,
+			Entrypoint: "myfile.html",
+			Validate:   true,
+			Python:     nil,
+		},
+	}, t)
+}
+
+func (s *AllSuite) TestInferAllIndeterminate() {
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	err = base.Join("myfile").WriteFile([]byte("This is a text file, silly!\n"), 0600)
+	s.NoError(err)
+
+	detector := NewContentTypeDetector()
+	configs, err := detector.InferAll(base)
+	s.NoError(err)
+
+	s.Len(configs, 1)
+	s.Equal(config.ContentTypeUnknown, configs[0].Type)
+}

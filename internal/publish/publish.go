@@ -132,7 +132,7 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 		p.Target.Error = agentErr
 		writeErr := p.writeDeploymentRecord(log)
 		if writeErr != nil {
-			log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", err)
+			log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", writeErr)
 		}
 		if p.isDeployed() {
 			// Provide URL in the event, if we got far enough in the deployment.
@@ -237,12 +237,6 @@ func (p *defaultPublisher) createDeploymentRecord(
 
 	// Save current deployment information for this target
 	if p.SaveName != "" {
-		if p.TargetName != "" {
-			err := deployment.RenameDeployment(p.Dir, p.TargetName, p.SaveName)
-			if err != nil {
-				return err
-			}
-		}
 		p.TargetName = p.SaveName
 	}
 	return p.writeDeploymentRecord(log)

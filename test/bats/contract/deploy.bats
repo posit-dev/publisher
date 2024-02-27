@@ -3,7 +3,7 @@
 load '../node_modules/bats-support/load'
 load '../node_modules/bats-assert/load'
 source ../content/bundles/${CONTENT}/test/.publisher-env
-CONTENT_PATH='../content/bundles/'
+CONTENT_PATH='../content/bundles'
 
 # helper funciton for deploys
 deploy_assertion() {
@@ -19,7 +19,7 @@ deploy_assertion() {
         run curl --silent --show-error -L --max-redirs 0 --fail \
             -X GET \
             -H "Authorization: Key ${CONNECT_API_KEY}" "${CONNECT_SERVER}/__api__/v1/content/${GUID}"
-        assert_output --partial "\"app_mode\":\"${CONTENT_TYPE}\""
+        assert_output --partial "\"app_mode\":\"${APP_MODE}\""
     fi
 }
 
@@ -31,7 +31,41 @@ quarto_r_content=(
     "quarto-website-r-py-deps"
     )
 
-# deploy content with the env account
+quarto_content_types=(
+    "quarto" "quarto-static"
+)
+
+python_content_types=(
+    "python-dash" "python-fastapi" "python-shiny"
+    "python-bokeh"  "python-streamlit" "python-flask"
+    "jupyter-voila" "jupyter-static" "jupyter-notebook"
+)
+# create requirements files
+@test "requirements create works as expected for ${CONTENT}" {
+    if [[ ${python_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
+        mv ${CONTENT_PATH}/${CONTENT}/requirements.txt ${CONTENT_PATH}/${CONTENT}/temp.txt
+        run ${EXE} requirements create ${CONTENT_PATH}/${CONTENT}/
+        assert_success
+        assert_line "Wrote file requirements.txt:"
+    else
+        skip
+    fi
+}
+
+# verify requirements file has expected content
+@test "requirements show works as expected for ${CONTENT}" {
+    if [[ ${python_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
+        run ${EXE} requirements show ${CONTENT_PATH}/${CONTENT}/
+        assert_success
+                
+        run diff <(grep -o '^[^=]*' ${CONTENT_PATH}/${CONTENT}/test/requirements.in) <(grep -o '^[^=]*' ${CONTENT_PATH}/${CONTENT}/requirements.txt)
+        assert_success
+    else
+        skip
+    fi
+}
+
+# deploy content with the env account using requirements files
 @test "deploy ${CONTENT}" {
 
     run ${EXE} deploy ${CONTENT_PATH}/${CONTENT} -n ci_deploy
@@ -41,9 +75,9 @@ quarto_r_content=(
 # redeploy content from previous test
 @test "redeploy ${CONTENT}" {
 
-    run ${EXE} redeploy ci_deploy ${CONTENT_PATH}${CONTENT}
+    run ${EXE} redeploy ci_deploy ${CONTENT_PATH}/${CONTENT}
     deploy_assertion
 
     # cleanup
-    run rm -rf ${CONTENT_PATH}${CONTENT}/.posit/ ${CONTENT_PATH}${CONTENT}/.positignore
+    rm -rf ${CONTENT_PATH}/${CONTENT}/.posit/ ${CONTENT_PATH}/${CONTENT}/.positignore
 }

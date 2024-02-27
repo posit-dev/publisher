@@ -65,6 +65,21 @@ func toTomlValidationError(e *jsonschema.ValidationError) *tomlValidationError {
 	}
 }
 
+func (v *Validator[T]) ValidateContent(data any) error {
+	err := v.schema.Validate(data)
+	if err != nil {
+		validationErr, ok := err.(*jsonschema.ValidationError)
+		if ok {
+			// Return all causes in the Data field of a single error.
+			e := toTomlValidationError(validationErr)
+			return types.NewAgentError(tomlValidationErrorCode, e, nil)
+		} else {
+			return err
+		}
+	}
+	return nil
+}
+
 func (v *Validator[T]) ValidateTOMLFile(path util.Path) error {
 	// First, try to read the TOML into the object.
 	// This will return nicer errors from the toml package
@@ -82,18 +97,7 @@ func (v *Validator[T]) ValidateTOMLFile(path util.Path) error {
 	if err != nil {
 		return err
 	}
-	err = v.schema.Validate(anyContent)
-	if err != nil {
-		validationErr, ok := err.(*jsonschema.ValidationError)
-		if ok {
-			// Return all causes in the Data field of a single error.
-			e := toTomlValidationError(validationErr)
-			return types.NewAgentError(tomlValidationErrorCode, e, nil)
-		} else {
-			return err
-		}
-	}
-	return nil
+	return v.ValidateContent(anyContent)
 }
 
 func loadSchema(url string) (io.ReadCloser, error) {

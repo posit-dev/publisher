@@ -59,7 +59,7 @@ func (s *PyShinySuite) TestInferTypeShinyExpress() {
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonShiny,
-		Entrypoint: "shiny.express.app:app",
+		Entrypoint: "shiny.express.app:app_2e_py",
 		Validate:   true,
 		Python:     &config.Python{},
 	}, t)

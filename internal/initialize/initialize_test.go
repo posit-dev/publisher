@@ -192,3 +192,24 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 	s.NoError(err)
 	s.Equal(cfg, newConfig)
 }
+
+func (s *InitializeSuite) TestGetPossibleConfigs() {
+	log := logging.New()
+	s.createAppPy()
+
+	err := s.cwd.Join("index.html").WriteFile([]byte(`<html></html>`), 0666)
+	s.NoError(err)
+
+	PythonInspectorFactory = makeMockPythonInspector
+	configs, err := GetPossibleConfigs(s.cwd, util.Path{}, log)
+	s.NoError(err)
+
+	s.Len(configs, 2)
+	s.Equal(config.ContentTypePythonFlask, configs[0].Type)
+	s.Equal("app.py", configs[0].Entrypoint)
+	s.Equal(expectedPyConfig, configs[0].Python)
+
+	s.Equal(config.ContentTypeHTML, configs[1].Type)
+	s.Equal("index.html", configs[1].Entrypoint)
+	s.Nil(configs[1].Python)
+}
