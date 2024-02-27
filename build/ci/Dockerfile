@@ -55,7 +55,6 @@ RUN\
     && echo "$GOCHECKSUM $GOARCHIVE" | sha256sum -c -\
     && tar -C /usr/local -xzf $GOARCHIVE\
     && rm $GOARCHIVE\
-    && go env -w GOPATH=/usr/local/go\
     # staticcheck is required to for linting Go
     && go install honnef.co/go/tools/cmd/staticcheck@latest
 
