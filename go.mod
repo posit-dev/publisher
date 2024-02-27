@@ -4,8 +4,6 @@ go 1.22
 
 toolchain go1.22.0
 
-toolchain go1.22.0
-
 require (
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/alecthomas/kong v0.8.1

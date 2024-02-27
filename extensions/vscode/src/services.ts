@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import * as vscode from 'vscode';
 
 import { HOST } from '.';

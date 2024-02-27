@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import * as assert from 'assert';
 
 import { createContentSecurityPolicyContent } from '../../panels';
