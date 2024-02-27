@@ -37,7 +37,6 @@ jobs:
           name: bin
           path: bin
       - uses: mxschmitt/action-tmate@v3
-        if: ${{ failure() }}
         with:
           limit-access-to-actor: true
       - run: chmod -R +x ./bin
@@ -77,4 +76,3 @@ jobs:
       - run: just bats install
       - run: just bats test common
       - run: just bats test init
-
