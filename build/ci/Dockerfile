@@ -49,7 +49,10 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash 
 ARG GOVERSION=1.22.0
 ARG GOCHECKSUM=f6c8a87aa03b92c4b0bf3d558e28ea03006eb29db78917daec5cfb6ec1046265
 ARG GOARCHIVE=go$GOVERSION.linux-amd64.tar.gz
-ENV PATH="$PATH:/usr/local/go/bin"
+# The following is required for Go.
+# /usr/local/go/bin is added to the path so that the Go binary is available to the root user.
+# /root/go/bin is added to the path so that the Go tools are available to the root user.
+ENV PATH="$PATH:/usr/local/go/bin:/root/go/bin"
 RUN\
     curl -L -O https://go.dev/dl/$GOARCHIVE\
     && echo "$GOCHECKSUM $GOARCHIVE" | sha256sum -c -\
