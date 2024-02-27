@@ -6,7 +6,8 @@ import * as EventSource from 'eventsource';
 import { Readable } from 'stream';
 
 export type EventStreamMessage = {
-  'type': string;
+  type: string;
+  data: Record<string, string>;
 };
 
 export type EventStreamMessageCallback = (message: EventStreamMessage) => void;

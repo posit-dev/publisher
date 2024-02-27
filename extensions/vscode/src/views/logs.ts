@@ -24,8 +24,10 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    */
   constructor(stream: EventStream) {
     stream.on('message', (message: EventStreamMessage) => {
-      this.events.push(JSON.stringify(message));
-      this.refresh();
+      if (message.data.level !== 'DEBUG') {
+        this.events.push(JSON.stringify(message));
+        this.refresh();
+      }
     });
 
     // example of how to register a callback for a specific message type
