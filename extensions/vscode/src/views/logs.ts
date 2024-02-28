@@ -60,7 +60,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
     this.stages = new Map([
       ['publish/checkCapabilities', createLogStage('Check Capabilities')],
       ['publish/createBundle', createLogStage('Create Bundle')],
-      // ['publish/uploadBundle', createLogStage()],
+      ['publish/uploadBundle', createLogStage('Upload Bundle')],
       // ['publish/createDeployment', createLogStage()],
       // ['publish/setEnvVars', createLogStage()],
       // ['publish/deployBundle', createLogStage()],
@@ -77,6 +77,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
 
     this.registerCheckCapabilitiesEvents(stream);
     this.registerCreateBundleEvents(stream);
+    this.registerUploadBundleEvents(stream);
   }
 
   registerCheckCapabilitiesEvents(stream: EventStream) {
@@ -140,6 +141,40 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
 
     stream.register('publish/createBundle/failure', (_: EventStreamMessage) => {
       const stage = this.stages.get('publish/createBundle');
+      if (stage) {
+        stage.status = LogStageStatus.failed;
+      }
+      this.refresh();
+    });
+  }
+
+  registerUploadBundleEvents(stream: EventStream) {
+    stream.register('publish/uploadBundle/start', (_: EventStreamMessage) => {
+      const stage = this.stages.get('publish/uploadBundle');
+      if (stage) {
+        stage.status = LogStageStatus.inProgress;
+      }
+      this.refresh();
+    });
+
+    stream.register('publish/uploadBundle/log', (msg: EventStreamMessage) => {
+      const stage = this.stages.get('publish/uploadBundle');
+      if (stage && msg.data.level !== 'DEBUG') {
+        stage.events.push(msg);
+      }
+      this.refresh();
+    });
+
+    stream.register('publish/uploadBundle/success', (_: EventStreamMessage) => {
+      const stage = this.stages.get('publish/uploadBundle');
+      if (stage) {
+        stage.status = LogStageStatus.completed;
+      }
+      this.refresh();
+    });
+
+    stream.register('publish/uploadBundle/failure', (_: EventStreamMessage) => {
+      const stage = this.stages.get('publish/uploadBundle');
       if (stage) {
         stage.status = LogStageStatus.failed;
       }
