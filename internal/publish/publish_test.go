@@ -149,7 +149,7 @@ func (s *PublishSuite) publishWithClient(
 		client.On("CreateDeployment", mock.Anything, mock.Anything).Return(myContentID, createErr)
 	}
 	client.On("TestAuthentication", mock.Anything).Return(&connect.User{}, authErr)
-	client.On("CheckCapabilities", mock.Anything, mock.Anything).Return(capErr)
+	client.On("CheckCapabilities", s.cwd, mock.Anything, mock.Anything).Return(capErr)
 	client.On("UpdateDeployment", myContentID, mock.Anything, mock.Anything).Return(createErr)
 	client.On("SetEnvVars", myContentID, mock.Anything, mock.Anything).Return(envVarErr)
 	client.On("UploadBundle", myContentID, mock.Anything, mock.Anything).Return(myBundleID, uploadErr)

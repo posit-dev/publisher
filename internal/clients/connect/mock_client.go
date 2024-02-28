@@ -8,6 +8,7 @@ import (
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -66,7 +67,7 @@ func (m *MockClient) ValidateDeployment(id types.ContentID, log logging.Logger) 
 	return args.Error(0)
 }
 
-func (m *MockClient) CheckCapabilities(cfg *config.Config, log logging.Logger) error {
-	args := m.Called(cfg, log)
+func (m *MockClient) CheckCapabilities(base util.Path, cfg *config.Config, log logging.Logger) error {
+	args := m.Called(base, cfg, log)
 	return args.Error(0)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 // Simplified user structure common to all servers
@@ -28,5 +29,5 @@ type APIClient interface {
 	DeployBundle(types.ContentID, types.BundleID, logging.Logger) (types.TaskID, error)
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
 	ValidateDeployment(types.ContentID, logging.Logger) error
-	CheckCapabilities(*config.Config, logging.Logger) error
+	CheckCapabilities(util.Path, *config.Config, logging.Logger) error
 }
