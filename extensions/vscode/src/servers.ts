@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import * as net from 'net';
 import * as retry from 'retry';
 import * as vscode from 'vscode';

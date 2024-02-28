@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import * as vscode from 'vscode';
 
 import { EventStream, EventStreamMessage } from '../events';
