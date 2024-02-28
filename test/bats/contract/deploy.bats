@@ -77,7 +77,7 @@ python_content_types=(
 # deploy content with the env account using requirements files
 @test "deploy ${CONTENT}" {
 
-    run ${EXE} deploy ${CONTENT_PATH}/${CONTENT} -n ci_deploy -v
+    run ${EXE} deploy ${CONTENT_PATH}/${CONTENT} -n ci_deploy
     deploy_assertion
 }
 
