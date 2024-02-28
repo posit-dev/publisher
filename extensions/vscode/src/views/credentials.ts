@@ -8,7 +8,7 @@ import {
 } from 'vscode';
 
 import api, { Account } from '../api';
-import { getSummaryStringFromError } from 'src/utils/errors';
+import { getSummaryStringFromError } from '../utils/errors';
 
 const viewName = 'posit.publisher.credentials';
 
