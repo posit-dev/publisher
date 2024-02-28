@@ -20,7 +20,8 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
 
   /**
    * Creates an instance of LogsTreeDataProvider.
-   * @param port The port number to listen for events.
+   * @constructor
+   * @param {EventStream} stream - The event stream to listen to.
    */
   constructor(stream: EventStream) {
     stream.on('message', (message: EventStreamMessage) => {
