@@ -36,7 +36,8 @@ describe('Landing', () => {
 //   cy.get('div[data-automation="config-card"]')
 //     .find('h3[class="card-title truncate"]')
 //     .contains("default");
-
+// });
+  
   cy.get('div[data-automation="config-card"]')
     .find('p')
     .should('contain', '.posit')
@@ -50,4 +51,3 @@ it('files are displayed', () => {
     .and('contain', 'requirements.txt')
     .and('contain', 'simple.py');
   });
-});
