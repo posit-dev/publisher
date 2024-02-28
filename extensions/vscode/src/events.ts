@@ -18,30 +18,49 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     if (msg.data.username) {
       return `${msg.data.message}: username ${msg.data.username}, email ${msg.data.email}`;
     }
-  } else if (msg.type === 'publish/createNewDeployment/success') {
+  }
+
+  if (msg.type === 'publish/createNewDeployment/success') {
     return `Created new deployment as ${msg.data.saveName}`;
-  } else if (msg.type === 'publish/createBundle/success') {
+  }
+
+  if (msg.type === 'publish/createBundle/success') {
     return `Prepared file archive: ${msg.data.filename}`;
-  } else if (msg.type === 'publish/createDeployment/start') {
+  }
+
+  if (msg.type === 'publish/createDeployment/start') {
     return `Updating existing deployment with ID ${msg.data.contentId}`;
-  } else if (msg.type === 'publish/createBundle/log') {
+  }
+
+  if (msg.type === 'publish/createBundle/log') {
     if (msg.data.sourceDir) {
       return `${msg.data.message} ${msg.data.sourceDir}`;
-    } else if (msg.data.totalBytes) {
+    }
+
+    if (msg.data.totalBytes) {
       return `${msg.data.message} ${msg.data.files} files, ${msg.data.totalBytes} bytes`;
-    } else if (msg.data.path) {
+    }
+
+    if (msg.data.path) {
       return `${msg.data.message} ${msg.data.path} (${msg.data.size} bytes)`;
     }
-  } else if (msg.type === 'publish/restorePythonEnv/log') {
+  }
+
+  if (msg.type === 'publish/restorePythonEnv/log') {
     return `${msg.data.message}`;
-  } else if (
+  }
+
+  if (
     msg.type === 'publish/setVanityURL/log' ||
     msg.type === 'publish/validateDeployment/log'
   ) {
     return `${msg.data.message} ${msg.data.path}`;
-  } else if (msg.error !== undefined) {
+  }
+
+  if (msg.error !== undefined) {
     return `${msg.data.error}`;
   }
+
   return msg.data.message;
 }
 
