@@ -138,7 +138,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
 
     const result: LogsTreeStageItem[] = [];
     this.stages.forEach((stage: LogStage) => {
-      result.push(new LogsTreeStageItem(stage, vscode.TreeItemCollapsibleState.Collapsed));
+      result.push(new LogsTreeStageItem(stage));
     });
     return result;
   }
@@ -162,8 +162,13 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
 export class LogsTreeStageItem extends vscode.TreeItem {
   events: EventStreamMessage[] = [];
 
-  constructor(stage: LogStage, state: vscode.TreeItemCollapsibleState) {
-    super('Check Capabilities', state);
+  constructor(stage: LogStage) {
+    const collapsibleState = stage.events.length > 0 ?
+      vscode.TreeItemCollapsibleState.Collapsed :
+      vscode.TreeItemCollapsibleState.None;
+
+    super(stage.label, collapsibleState);
+
     this.events = stage.events;
     this.setIcon(stage.status);
   }
