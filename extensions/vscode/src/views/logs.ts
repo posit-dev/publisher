@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode';
 
-import { EventStream, EventStreamMessage } from '../events';
+import { EventStream, EventStreamMessage, displayEventStreamMessage } from '../events';
 
 const viewName = 'posit.publisher.logs';
 
@@ -10,7 +10,7 @@ const viewName = 'posit.publisher.logs';
  * Tree data provider for the Logs view.
  */
 export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeItem> {
-  private events: string[] = [];
+  private events: EventStreamMessage[] = [];
 
   /**
    * Event emitter for when the tree data of the Logs view changes.
@@ -24,15 +24,17 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    * @param {EventStream} stream - The event stream to listen to.
    */
   constructor(stream: EventStream) {
-    stream.on('message', (message: EventStreamMessage) => {
-      this.events.push(JSON.stringify(message));
-      this.refresh();
+    stream.on('message', (msg: EventStreamMessage) => {
+      if (msg.data.level !== 'DEBUG' && msg.type !== 'agent/log') {
+        this.events.push(msg);
+        this.refresh();
+      }
     });
 
     // example of how to register a callback for a specific message type
-    stream.register('agent/log', (message: EventStreamMessage) => {
-      console.error(message);
-    });
+    // stream.register('agent/log', (message: EventStreamMessage) => {
+    //   console.error(message);
+    // });
   };
 
   /**
@@ -88,8 +90,8 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
  * Represents a tree item for displaying logs in the tree view.
  */
 export class LogsTreeItem extends vscode.TreeItem {
-  constructor(label: string, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
-    super(label, state);
-    this.tooltip = `${this.label}`;
+  constructor(msg: EventStreamMessage, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
+    super(displayEventStreamMessage(msg), state);
+    this.tooltip = JSON.stringify(msg);
   }
 }
