@@ -1,13 +1,68 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import * as EventSource from 'eventsource';
 import { Readable } from 'stream';
 
 export type EventStreamMessage = {
-  'type': string;
+  type: string;
+  data: Record<string, string>;
+  error?: string;
 };
 
 export type EventStreamMessageCallback = (message: EventStreamMessage) => void;
+
+export function displayEventStreamMessage(msg: EventStreamMessage): string {
+  if (msg.type === 'publish/checkCapabilities/log') {
+    if (msg.data.username) {
+      return `${msg.data.message}: username ${msg.data.username}, email ${msg.data.email}`;
+    }
+  }
+
+  if (msg.type === 'publish/createNewDeployment/success') {
+    return `Created new deployment as ${msg.data.saveName}`;
+  }
+
+  if (msg.type === 'publish/createBundle/success') {
+    return `Prepared file archive: ${msg.data.filename}`;
+  }
+
+  if (msg.type === 'publish/createDeployment/start') {
+    return `Updating existing deployment with ID ${msg.data.contentId}`;
+  }
+
+  if (msg.type === 'publish/createBundle/log') {
+    if (msg.data.sourceDir) {
+      return `${msg.data.message} ${msg.data.sourceDir}`;
+    }
+
+    if (msg.data.totalBytes) {
+      return `${msg.data.message} ${msg.data.files} files, ${msg.data.totalBytes} bytes`;
+    }
+
+    if (msg.data.path) {
+      return `${msg.data.message} ${msg.data.path} (${msg.data.size} bytes)`;
+    }
+  }
+
+  if (msg.type === 'publish/restorePythonEnv/log') {
+    return `${msg.data.message}`;
+  }
+
+  if (
+    msg.type === 'publish/setVanityURL/log' ||
+    msg.type === 'publish/validateDeployment/log'
+  ) {
+    return `${msg.data.message} ${msg.data.path}`;
+  }
+
+  if (msg.error !== undefined) {
+    return `${msg.data.error}`;
+  }
+
+  return msg.data.message;
+}
 
 /**
  * Represents a stream of events.

@@ -34,7 +34,7 @@ func (cmd *CreateRequirementsCommand) Run(args *cli_types.CommonArgs, ctx *cli_t
 	if exists && !cmd.Force {
 		return errRequirementsFileExists
 	}
-	inspector := inspect.NewPythonInspector(cmd.Python, ctx.Logger)
+	inspector := inspect.NewPythonInspector(absPath, cmd.Python, ctx.Logger)
 	err = inspector.CreateRequirementsFile(absPath, reqPath)
 	if err != nil {
 		return err

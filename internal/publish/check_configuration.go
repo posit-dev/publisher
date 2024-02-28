@@ -25,7 +25,7 @@ func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logg
 	}
 	log.Info("Publishing with credentials", "username", user.Username, "email", user.Email)
 
-	err = client.CheckCapabilities(p.Config, log)
+	err = client.CheckCapabilities(p.Dir, p.Config, log)
 	if err != nil {
 		return types.OperationError(op, err)
 	}
