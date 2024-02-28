@@ -19,8 +19,9 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
   private _onDidChangeTreeData: vscode.EventEmitter<LogsTreeItem | undefined> = new vscode.EventEmitter<LogsTreeItem | undefined>();
 
   /**
-   * Creates an instance of LogsTreeDataProvider.
-   * @param port The port number to listen for events.
+   * Represents a Logs instance.
+   * @constructor
+   * @param {EventStream} stream - The event stream to listen to.
    */
   constructor(stream: EventStream) {
     stream.on('message', (message: EventStreamMessage) => {
