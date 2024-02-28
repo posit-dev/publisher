@@ -11,6 +11,7 @@ import (
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type allSettings struct {
@@ -23,20 +24,52 @@ type allSettings struct {
 	quarto      server_settings.QuartoInfo
 }
 
-func (c *ConnectClient) CheckCapabilities(cfg *config.Config, log logging.Logger) error {
+const requirementsFileMissing = `
+can't find the package file (%s) in the project directory.
+Create the file, listing the packages your project depends on.
+Or scan your project dependencies using the publisher UI or
+the 'publisher requirements create' command`
+
+func checkRequirementsFile(base util.Path, requirementsFilename string) error {
+	packageFile := base.Join(requirementsFilename)
+	exists, err := packageFile.Exists()
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf(requirementsFileMissing, requirementsFilename)
+	}
+	return nil
+}
+
+func (c *ConnectClient) CheckCapabilities(base util.Path, cfg *config.Config, log logging.Logger) error {
+	if cfg.Python != nil {
+		err := checkRequirementsFile(base, cfg.Python.PackageFile)
+		if err != nil {
+			return err
+		}
+	}
+	settings, err := c.getSettings(cfg, log)
+	if err != nil {
+		return err
+	}
+	return settings.checkConfig(cfg)
+}
+
+func (c *ConnectClient) getSettings(cfg *config.Config, log logging.Logger) (*allSettings, error) {
 	settings := &allSettings{}
 
 	err := c.client.Get("/__api__/v1/user", &settings.user, log)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = c.client.Get("/__api__/server_settings", &settings.general, log)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = c.client.Get("/__api__/server_settings/applications", &settings.application, log)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	schedulerPath := ""
@@ -48,21 +81,21 @@ func (c *ConnectClient) CheckCapabilities(cfg *config.Config, log logging.Logger
 	}
 	err = c.client.Get("/__api__/server_settings/scheduler"+schedulerPath, &settings.scheduler, log)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = c.client.Get("/__api__/v1/server_settings/python", &settings.python, log)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = c.client.Get("/__api__/v1/server_settings/r", &settings.r, log)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = c.client.Get("/__api__/v1/server_settings/quarto", &settings.quarto, log)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return settings.checkConfig(cfg)
+	return settings, nil
 }
 
 var (

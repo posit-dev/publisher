@@ -24,6 +24,7 @@ type defaultPythonInspector struct {
 	executor   executor.Executor
 	pathLooker util.PathLooker
 	scanner    pydeps.DependencyScanner
+	base       util.Path
 	pythonPath util.Path
 	log        logging.Logger
 }
@@ -32,11 +33,12 @@ var _ PythonInspector = &defaultPythonInspector{}
 
 const PythonRequirementsFilename = "requirements.txt"
 
-func NewPythonInspector(pythonPath util.Path, log logging.Logger) PythonInspector {
+func NewPythonInspector(base util.Path, pythonPath util.Path, log logging.Logger) PythonInspector {
 	return &defaultPythonInspector{
 		executor:   executor.NewExecutor(),
 		pathLooker: util.NewPathLooker(),
 		scanner:    pydeps.NewDependencyScanner(log),
+		base:       base,
 		pythonPath: pythonPath,
 		log:        log,
 	}
@@ -50,6 +52,10 @@ func NewPythonInspector(pythonPath util.Path, log logging.Logger) PythonInspecto
 // or by `python3` or `python` on $PATH.
 func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 	pythonVersion, err := i.getPythonVersion()
+	if err != nil {
+		return nil, err
+	}
+	err = i.warnIfNoRequirementsFile()
 	if err != nil {
 		return nil, err
 	}
@@ -123,6 +129,20 @@ func (i *defaultPythonInspector) getPythonVersion() (string, error) {
 	version := strings.TrimSpace(string(output))
 	i.log.Info("Detected Python", "version", version)
 	return version, nil
+}
+
+func (i *defaultPythonInspector) warnIfNoRequirementsFile() error {
+	requirementsFilename := i.base.Join("requirements.txt")
+	exists, err := requirementsFilename.Exists()
+	if err != nil {
+		return err
+	}
+	if exists {
+		i.log.Info("Using Python packages", "source", requirementsFilename)
+	} else {
+		i.log.Warn("can't find requirements.txt; run `publisher requirements create` to create it.")
+	}
+	return nil
 }
 
 func (i *defaultPythonInspector) GetRequirements(base util.Path) ([]string, string, error) {

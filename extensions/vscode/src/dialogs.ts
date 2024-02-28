@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import { MessageItem, l10n, window } from 'vscode';
 
 const okItem: MessageItem = {

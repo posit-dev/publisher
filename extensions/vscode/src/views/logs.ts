@@ -1,6 +1,8 @@
-// eslint-disable-next-line @typescript-eslint/naming-convention
-import * as EventSource from 'eventsource';
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import * as vscode from 'vscode';
+
+import { EventStream, EventStreamMessage, displayEventStreamMessage } from '../events';
 
 const viewName = 'posit.publisher.logs';
 
@@ -8,7 +10,7 @@ const viewName = 'posit.publisher.logs';
  * Tree data provider for the Logs view.
  */
 export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeItem> {
-  private events: string[] = [];
+  private events: EventStreamMessage[] = [];
 
   /**
    * Event emitter for when the tree data of the Logs view changes.
@@ -18,17 +20,22 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
 
   /**
    * Creates an instance of LogsTreeDataProvider.
-   * @param port The port number to listen for events.
+   * @constructor
+   * @param {EventStream} stream - The event stream to listen to.
    */
-  constructor(port: number) {
-    // Create a new EventSource instance to listen for events from the specified port
-    const es = new EventSource(`http://127.0.0.1:${port}/api/events?stream=messages`);
-    // When a new message event is received, add the event data to the events array and refresh the tree view
-    es.onmessage = (event) => {
-      this.events.push(event.data);
-      this.refresh();
-    };
-  }
+  constructor(stream: EventStream) {
+    stream.on('message', (msg: EventStreamMessage) => {
+      if (msg.data.level !== 'DEBUG' && msg.type !== 'agent/log') {
+        this.events.push(msg);
+        this.refresh();
+      }
+    });
+
+    // Reset events when a new publish starts
+    stream.register('publish/start', (_: EventStreamMessage) => {
+      this.events = [];
+    });
+  };
 
   /**
    * Get the event emitter for tree data changes.
@@ -83,8 +90,8 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
  * Represents a tree item for displaying logs in the tree view.
  */
 export class LogsTreeItem extends vscode.TreeItem {
-  constructor(label: string, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
-    super(label, state);
-    this.tooltip = `${this.label}`;
+  constructor(msg: EventStreamMessage, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
+    super(displayEventStreamMessage(msg), state);
+    this.tooltip = JSON.stringify(msg);
   }
 }
