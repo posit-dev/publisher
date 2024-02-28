@@ -26,11 +26,13 @@ import {
 import { getSummaryStringFromError } from '../utils/errors';
 import { formatDateString } from '../utils/date';
 import { confirmDelete } from '../dialogs';
+import { addDeployment } from '../multiStepInputs/addDeployment';
 
 const viewName = 'posit.publisher.deployments';
 const refreshCommand = viewName + '.refresh';
 const editCommand = viewName + '.edit';
 const forgetCommand = viewName + '.forget';
+const addCommand = viewName + '.add';
 
 const fileStore = '.posit/publish/deployments/*.toml';
 
@@ -75,8 +77,9 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       // API Returns:
       // 200 - success
       // 500 - internal server error
-      const response = (await this.api.deployments.getAll());
-      return response.data.map(deployment => {
+      const response = await this.api.deployments.getAll();
+      const deployments = response.data;
+      return deployments.map(deployment => {
         const filename = deployment.deploymentPath.split('.posit/publish/deployments/')[1];
         const fileUri = Uri.joinPath(root.uri, '.posit/publish/deployments', filename);
         return new DeploymentsTreeItem(deployment, fileUri);
@@ -100,13 +103,21 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     context.subscriptions.push(treeView);
 
     context.subscriptions.push(
+      commands.registerCommand(addCommand, () => {
+        addDeployment();
+      })
+    );
+
+    context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh)
     );
+
     context.subscriptions.push(
       commands.registerCommand(editCommand, async (item: DeploymentsTreeItem) => {
         await commands.executeCommand('vscode.open', item.fileUri);
       })
     );
+
     context.subscriptions.push(
       commands.registerCommand(forgetCommand, async (item: DeploymentsTreeItem) => {
         const ok = await confirmDelete(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
@@ -115,7 +126,6 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
         }
       })
     );
-
 
     if (this.root !== undefined) {
       console.log("creating filesystem watcher for deployment view");

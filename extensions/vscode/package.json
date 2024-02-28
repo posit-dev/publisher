@@ -78,6 +78,12 @@
         "title": "Refresh",
         "icon": "$(refresh)",
         "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.add",
+        "title": "New",
+        "icon": "$(add)",
+        "category": "Posit"
       }
     ],
     "configuration": {
@@ -107,9 +113,14 @@
           "when": "view == posit.publisher.configurations"
         },
         {
+          "command": "posit.publisher.deployments.add",
+          "when": "view == posit.publisher.deployments",
+          "group": "navigation@1"
+        },
+        {
           "command": "posit.publisher.deployments.refresh",
           "when": "view == posit.publisher.deployments",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [

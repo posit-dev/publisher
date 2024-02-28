@@ -1,26 +1,34 @@
-import * as vscode from 'vscode';
+import { MessageItem, l10n, window } from 'vscode';
 
-const okItem: vscode.MessageItem = {
-  title: vscode.l10n.t("OK"),
+const okItem: MessageItem = {
+  title: l10n.t("OK"),
 };
 
-const deleteItem: vscode.MessageItem = {
-  title: vscode.l10n.t("Delete"),
+const deleteItem: MessageItem = {
+  title: l10n.t("Delete"),
 };
 
-const forgetItem: vscode.MessageItem = {
-  title: vscode.l10n.t("Forget"),
+const forgetItem: MessageItem = {
+  title: l10n.t("Forget"),
 };
 
-async function confirm(message: string, yesItem: vscode.MessageItem): Promise<boolean> {
-  const choice = await vscode.window.showInformationMessage(message, {
+const yesItem: MessageItem = {
+  title: l10n.t('Yes'),
+}
+
+async function confirm(message: string, affirmativeItem: MessageItem): Promise<boolean> {
+  const choice = await window.showInformationMessage(message, {
     modal: true,
-  }, yesItem);
+  }, affirmativeItem);
   return choice === yesItem;
 }
 
 export async function confirmOK(message: string): Promise<boolean> {
   return confirm(message, okItem);
+}
+
+export async function confirmYes(message: string): Promise<boolean> {
+  return confirm(message, yesItem);
 }
 
 export async function confirmDelete(message: string): Promise<boolean> {
@@ -31,8 +39,9 @@ export async function confirmForget(message: string): Promise<boolean> {
   return confirm(message, forgetItem);
 }
 
+
 export async function alert(message: string): Promise<void> {
-  await vscode.window.showInformationMessage(message, {
+  await window.showInformationMessage(message, {
     modal: true,
   });
 }
