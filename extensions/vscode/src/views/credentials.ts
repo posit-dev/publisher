@@ -8,6 +8,7 @@ import {
 } from 'vscode';
 
 import api, { Account } from '../api';
+import { getSummaryStringFromError } from 'src/utils/errors';
 
 const viewName = 'posit.publisher.credentials';
 
@@ -24,11 +25,17 @@ export class CredentialsTreeDataProvider implements TreeDataProvider<Credentials
       return [];
     }
 
-    const response = await api.accounts.getAll();
-    const accounts = response.data.accounts;
-    return accounts.map(account => {
-      return new CredentialsTreeItem(account);
-    });
+    try {
+      const response = await api.accounts.getAll();
+      const accounts = response.data.accounts;
+      return accounts.map(account => {
+        return new CredentialsTreeItem(account);
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError('credentials::getChildren', error);
+      window.showInformationMessage(summary);
+      return [];
+    }
   }
 
   public register(context: ExtensionContext) {
