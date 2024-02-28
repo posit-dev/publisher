@@ -59,6 +59,13 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
   private resetStages() {
     this.stages = new Map([
       ['publish/checkCapabilities', createLogStage('Check Capabilities')],
+      ['publish/createBundle', createLogStage('Create Bundle')],
+      // ['publish/uploadBundle', createLogStage()],
+      // ['publish/createDeployment', createLogStage()],
+      // ['publish/setEnvVars', createLogStage()],
+      // ['publish/deployBundle', createLogStage()],
+      // ['publish/restorePythonEnv', createLogStage()],
+      // ['publish/runContent', createLogStage()],
     ]);
   }
 
@@ -68,6 +75,11 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
       this.resetStages();
     });
 
+    this.registerCheckCapabilitiesEvents(stream);
+    this.registerCreateBundleEvents(stream);
+  }
+
+  registerCheckCapabilitiesEvents(stream: EventStream) {
     stream.register('publish/checkCapabilities/start', (_: EventStreamMessage) => {
       const stage = this.stages.get('publish/checkCapabilities');
       if (stage) {
@@ -94,6 +106,40 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
 
     stream.register('publish/checkCapabilities/failure', (_: EventStreamMessage) => {
       const stage = this.stages.get('publish/checkCapabilities');
+      if (stage) {
+        stage.status = LogStageStatus.failed;
+      }
+      this.refresh();
+    });
+  }
+
+  registerCreateBundleEvents(stream: EventStream) {
+    stream.register('publish/createBundle/start', (_: EventStreamMessage) => {
+      const stage = this.stages.get('publish/createBundle');
+      if (stage) {
+        stage.status = LogStageStatus.inProgress;
+      }
+      this.refresh();
+    });
+
+    stream.register('publish/createBundle/log', (msg: EventStreamMessage) => {
+      const stage = this.stages.get('publish/createBundle');
+      if (stage && msg.data.level !== 'DEBUG') {
+        stage.events.push(msg);
+      }
+      this.refresh();
+    });
+
+    stream.register('publish/createBundle/success', (_: EventStreamMessage) => {
+      const stage = this.stages.get('publish/createBundle');
+      if (stage) {
+        stage.status = LogStageStatus.completed;
+      }
+      this.refresh();
+    });
+
+    stream.register('publish/createBundle/failure', (_: EventStreamMessage) => {
+      const stage = this.stages.get('publish/createBundle');
       if (stage) {
         stage.status = LogStageStatus.failed;
       }
