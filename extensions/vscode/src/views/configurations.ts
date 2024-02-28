@@ -22,14 +22,16 @@ import {
   isConfigurationError
 } from "../api/types/configurations";
 
-import { confirmDelete } from '../dialogs';
+import { confirmDelete, confirmReplace } from '../dialogs';
 import { getSummaryStringFromError } from '../utils/errors';
+import { ensureSuffix, fileExists } from '../utils/files';
 import { untitledConfigurationName } from '../utils/names';
 
 const viewName = 'posit.publisher.configurations';
 const refreshCommand = viewName + '.refresh';
 const addCommand = viewName + '.add';
 const editCommand = viewName + '.edit';
+const renameCommand = viewName + '.rename';
 const deleteCommand = viewName + '.delete';
 const isEmptyContext = viewName + '.isEmpty';
 const fileStore = '.posit/publish/*.toml';
@@ -87,7 +89,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     treeView.onDidChangeSelection(async e => {
       if (e.selection.length > 0) {
         const item = e.selection.at(0);
-        await commands.executeCommand('posit.publisher.configurations.edit', item);
+        await commands.executeCommand(editCommand, item);
       }
     });
 
@@ -96,6 +98,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       commands.registerCommand(refreshCommand, this.refresh),
       commands.registerCommand(addCommand, this.add),
       commands.registerCommand(editCommand, this.edit),
+      commands.registerCommand(renameCommand, this.rename),
       commands.registerCommand(deleteCommand, this.delete)
     );
     if (this.root !== undefined) {
@@ -146,6 +149,27 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
 
   private edit = async (config: ConfigurationTreeItem) => {
     await commands.executeCommand('vscode.open', config.fileUri);
+  };
+
+  private rename = async (item: ConfigurationTreeItem) => {
+    const oldName = item.config.configurationName;
+    const newName = await window.showInputBox({
+      value: oldName,
+      prompt: "New configuration name",
+    });
+    if (newName === undefined || newName === '' || newName === oldName) {
+      // canceled
+      return;
+    }
+    const relativePath = "../" + ensureSuffix(".toml", newName);
+    const newUri = Uri.joinPath(item.fileUri, relativePath);
+    if (await fileExists(newUri)) {
+      const ok = await confirmReplace(`Are you sure you want to replace the configuration '${newName}'?`);
+      if (!ok) {
+        return;
+      }
+    }
+    workspace.fs.rename(item.fileUri, newUri, {overwrite: true});
   };
 
   private delete = async (item: ConfigurationTreeItem) => {
