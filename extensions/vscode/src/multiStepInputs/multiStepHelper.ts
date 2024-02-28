@@ -10,6 +10,12 @@ class InputFlowAction {
   static resume = new InputFlowAction();
 }
 
+export function isQuickPickItem(
+  d: QuickPickItem | string
+): d is QuickPickItem {
+  return typeof d !== 'string';
+}
+
 export interface MultiStepState {
   title: string;
   step: number;

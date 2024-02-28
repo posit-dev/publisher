@@ -84,6 +84,15 @@
         "title": "New",
         "icon": "$(add)",
         "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.deploy",
+        "title": "Deploy",
+        "icon": {
+          "light": "./assets/img/light/posit-publisher.svg",
+          "dark": "./assets/img/dark/posit-publisher.svg"
+        },
+        "category": "Posit"
       }
     ],
     "configuration": {
@@ -130,9 +139,14 @@
           "group": "inline"
         },
         {
+          "command": "posit.publisher.deployments.deploy",
+          "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment",
+          "group": "inline@1"
+        },
+        {
           "command": "posit.publisher.deployments.forget",
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError",
-          "group": "inline"
+          "group": "inline@2"
         }
       ]
     },

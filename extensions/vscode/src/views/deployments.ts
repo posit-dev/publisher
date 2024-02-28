@@ -21,18 +21,21 @@ import {
   PreDeployment,
   isPreDeployment,
   AllDeploymentTypes,
+  isDeploymentError,
 } from '../api';
 
 import { getSummaryStringFromError } from '../utils/errors';
 import { formatDateString } from '../utils/date';
-import { confirmDelete } from '../dialogs';
+import { confirmForget } from '../dialogs';
 import { addDeployment } from '../multiStepInputs/addDeployment';
+import { publishDeployment } from '../multiStepInputs/publishDeployment';
 
 const viewName = 'posit.publisher.deployments';
 const refreshCommand = viewName + '.refresh';
 const editCommand = viewName + '.edit';
 const forgetCommand = viewName + '.forget';
 const addCommand = viewName + '.add';
+const deployCommand = viewName + '.deploy';
 
 const fileStore = '.posit/publish/deployments/*.toml';
 
@@ -119,8 +122,16 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     );
 
     context.subscriptions.push(
+      commands.registerCommand(deployCommand, async (item: DeploymentsTreeItem) => {
+        if (!isDeploymentError(item.deployment)) {
+          publishDeployment(item.deployment);
+        }
+      })
+    );
+
+    context.subscriptions.push(
       commands.registerCommand(forgetCommand, async (item: DeploymentsTreeItem) => {
-        const ok = await confirmDelete(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
+        const ok = await confirmForget(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
         if (ok) {
           await this.api.deployments.delete(item.deployment.deploymentName);
         }

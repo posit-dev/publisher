@@ -1,19 +1,20 @@
-import { MultiStepInput, MultiStepState } from './multiStepHelper';
+import { MultiStepInput, MultiStepState, isQuickPickItem } from './multiStepHelper';
 
 import { QuickPickItem, ThemeIcon, window } from 'vscode';
 
 import { AccountAuthType, useApi } from '../api';
 import { getSummaryStringFromError } from '../utils/errors';
+import { uniqueDeploymentName, untitledDeploymentName } from '../utils/names';
 
 // Was offering parameter (context: ExtensionContext)
 export async function addDeployment() {
   const api = useApi();
 
-  const title = 'Create Deployment';
+  const title = 'Deploy Your Project to a New Location';
 
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];
-  // let deploymentNames: string[] = [];
+  let deploymentNames: string[] = [];
 
   try {
     const response = await api.accounts.getAll();
@@ -50,33 +51,25 @@ export async function addDeployment() {
     return;
   }
 
-  // try {
-  //   const response = await api.deployments.getAll();
-  //   const deploymentList = response.data;
-  //   deploymentNames = deploymentList.map(deployment =>
-  //     deployment.deploymentPath.split('.posit/publish/deployments/')[1]
-  //   );
-  // } catch (error: unknown) {
-  //   const summary = getSummaryStringFromError('addDeployment, deployments.getAll', error);
-  //   window.showInformationMessage(
-  //     `Unable to continue due to deployment error. ${summary}`
-  //   );
-  //   return;
-  // }
+  try {
+    const response = await api.deployments.getAll();
+    const deploymentList = response.data;
+    deploymentNames = deploymentList.map(deployment =>
+      deployment.deploymentPath.split('.posit/publish/deployments/')[1].slice(0, -5)
+    );
+  } catch (error: unknown) {
+    const summary = getSummaryStringFromError('addDeployment, deployments.getAll', error);
+    window.showInformationMessage(
+      `Unable to continue due to deployment error. ${summary}`
+    );
+    return;
+  }
 
   // Name the deployment
   // Select the credential to use, if there is more than one
   // Prompt to deploy
   // Select the config file to use, if there are more than one
   // result in calling publish API
-
-  // const resourceGroups: QuickPickItem[] = ['vscode-data-function', 'vscode-appservice-microservices', 'vscode-appservice-monitor', 'vscode-appservice-preview', 'vscode-appservice-prod']
-  //   .map(label => ({
-  //     label,
-  //     iconPath: new ThemeIcon('globe'),
-  //     description: 'smaller stuff',
-  //     detail: 'this is a bigger description',
-  //   }));
 
   async function collectInputs() {
     const state = {} as Partial<MultiStepState>;
@@ -103,9 +96,16 @@ export async function addDeployment() {
       title,
       step: 1,
       totalSteps: 4,
-      value: typeof state.data.deploymentName === 'string' ? state.data.deploymentName : '',
+      value: typeof state.data.deploymentName === 'string' && state.data.deploymentName.length
+        ? state.data.deploymentName
+        : untitledDeploymentName(deploymentNames),
       prompt: 'Choose a unique name for the deployment',
-      validate: () => Promise.resolve(undefined),
+      validate: (value) => {
+        if (value.length < 3 || !uniqueDeploymentName(value, deploymentNames)) {
+          return Promise.resolve('Must be unique and have a length greater than 3');
+        }
+        return Promise.resolve(undefined);
+      },
       shouldResume: () => Promise.resolve(false),
     });
     return (input: MultiStepInput) => pickCredentials(input, state);
@@ -118,7 +118,7 @@ export async function addDeployment() {
         credentialName: <QuickPickItem>{},
         promptToDeploy: '',
         configFile: <QuickPickItem>{},
-      }
+      };
     }
     const pick = await input.showQuickPick({
       title,
@@ -176,7 +176,7 @@ export async function addDeployment() {
         credentialName: <QuickPickItem>{},
         promptToDeploy: '',
         configFile: <QuickPickItem>{},
-      }
+      };
     }
     const pick = await input.showQuickPick({
       title,
@@ -192,23 +192,57 @@ export async function addDeployment() {
   }
 
   const state = await collectInputs();
+  // Need to determine what we get back when the user
+  // hits escape
   if (
-    typeof state.data.promptToDeploy !== 'string' &&
-    typeof state.data.credentialName !== 'string' &&
-    typeof state.data.configFile !== 'string'
+    !isQuickPickItem(state.data.deploymentName) && state.data.deploymentName.length > 0 &&
+    isQuickPickItem(state.data.credentialName) &&
+    isQuickPickItem(state.data.promptToDeploy)
   ) {
-    if (state.data.promptToDeploy.label === 'No') {
-      window.showInformationMessage(
-        `Ready to create pre-deployment file ${state.data.deploymentName} only`
-      );
-    } else {
-      window.showInformationMessage(
-        `Ready to deploy the deployment file ${state.data.deploymentName}, using credentials ${state.data.credentialName.label}
-        and config file: ${state.data.configFile.label}`
-      );
+    // we might have enough to at least create the predeployment
+    if (state.data.deploymentName.length > 0) {
+      // we can!
+      try {
+        await api.deployments.createNew(
+          state.data.credentialName.label,
+          state.data.deploymentName,
+        );
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError('addDeployment, createNew', error);
+        window.showInformationMessage(
+          `Failed to create pre-deployment. ${summary}`
+        );
+        return;
+      }
+      if (isQuickPickItem(state.data.configFile)) {
+        // we may be able to deploy
+        if (state.data.promptToDeploy.label === 'Yes') {
+          // we can!
+          try {
+            const response = await api.deployments.publish(
+              state.data.deploymentName,
+              state.data.credentialName.label,
+              state.data.configFile.label,
+            );
+            window.showInformationMessage(
+              `deploy the deployment file ${state.data.deploymentName}, using credentials ${state.data.credentialName.label}
+              and config file: ${state.data.configFile.label}. LocalID = ${response.data.localId}`
+            );
+          } catch (error: unknown) {
+            const summary = getSummaryStringFromError('addDeployment, deploy', error);
+            window.showInformationMessage(
+              `Failed to deploy . ${summary}`
+            );
+            return;
+          }
+        } else {
+          // no, they didn't want us to.
+          window.showInformationMessage(
+            `Skipping deployment`
+          );
+        }
+      }
     }
-  } else {
-    window.showInformationMessage(`something didn't work!`);
   }
 }
 

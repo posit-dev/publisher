@@ -14,13 +14,13 @@ const forgetItem: MessageItem = {
 
 const yesItem: MessageItem = {
   title: l10n.t('Yes'),
-}
+};
 
 async function confirm(message: string, affirmativeItem: MessageItem): Promise<boolean> {
   const choice = await window.showInformationMessage(message, {
     modal: true,
   }, affirmativeItem);
-  return choice === yesItem;
+  return choice === affirmativeItem;
 }
 
 export async function confirmOK(message: string): Promise<boolean> {
