@@ -31,6 +31,7 @@ const viewName = 'posit.publisher.configurations';
 const refreshCommand = viewName + '.refresh';
 const addCommand = viewName + '.add';
 const editCommand = viewName + '.edit';
+const cloneCommand = viewName + '.clone';
 const renameCommand = viewName + '.rename';
 const deleteCommand = viewName + '.delete';
 const isEmptyContext = viewName + '.isEmpty';
@@ -99,6 +100,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       commands.registerCommand(addCommand, this.add),
       commands.registerCommand(editCommand, this.edit),
       commands.registerCommand(renameCommand, this.rename),
+      commands.registerCommand(cloneCommand, this.clone),
       commands.registerCommand(deleteCommand, this.delete)
     );
     if (this.root !== undefined) {
@@ -152,25 +154,44 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   };
 
   private rename = async (item: ConfigurationTreeItem) => {
-    const oldName = item.config.configurationName;
-    const newName = await window.showInputBox({
-      value: oldName,
-      prompt: "New configuration name",
-    });
-    if (newName === undefined || newName === '' || newName === oldName) {
-      // canceled
+    const defaultName = item.config.configurationName;
+    const newUri = await this.promptForNewName(item.fileUri, defaultName);
+    if (newUri === undefined) {
       return;
-    }
-    const relativePath = "../" + ensureSuffix(".toml", newName);
-    const newUri = Uri.joinPath(item.fileUri, relativePath);
-    if (await fileExists(newUri)) {
-      const ok = await confirmReplace(`Are you sure you want to replace the configuration '${newName}'?`);
-      if (!ok) {
-        return;
-      }
     }
     workspace.fs.rename(item.fileUri, newUri, {overwrite: true});
   };
+
+  private clone = async (item: ConfigurationTreeItem) => {
+    const defaultName = await untitledConfigurationName();
+    const newUri = await this.promptForNewName(item.fileUri, defaultName);
+    if (newUri === undefined) {
+      return;
+    }
+    workspace.fs.copy(item.fileUri, newUri, {overwrite: true});
+  };
+
+  private async promptForNewName(oldUri: Uri, defaultName: string): Promise<Uri | undefined> {
+    const newName = await window.showInputBox({
+      value: defaultName,
+      prompt: "New configuration name",
+    });
+    if (newName === undefined || newName === '') {
+      // canceled
+      return undefined;
+    }
+
+    const relativePath = "../" + ensureSuffix(".toml", newName);
+    const newUri = Uri.joinPath(oldUri, relativePath);
+
+    if (await fileExists(newUri)) {
+      const ok = await confirmReplace(`Are you sure you want to replace the configuration '${newName}'?`);
+      if (!ok) {
+        return undefined;
+      }
+    }
+    return newUri;
+  }
 
   private delete = async (item: ConfigurationTreeItem) => {
     const name = item.config.configurationName;
