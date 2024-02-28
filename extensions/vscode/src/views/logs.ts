@@ -12,8 +12,21 @@ enum LogStageStatus {
 }
 
 type LogStage = {
+  label: string,
   status: LogStageStatus,
   events: EventStreamMessage[]
+};
+
+const createLogStage = (
+  label: string,
+  status: LogStageStatus = LogStageStatus.notStarted,
+  events: EventStreamMessage[] = [],
+): LogStage => {
+  return {
+    label,
+    status,
+    events,
+  };
 };
 
 const viewName = 'posit.publisher.logs';
@@ -45,7 +58,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
 
   private resetStages() {
     this.stages = new Map([
-      ['publish/checkCapabilities', { status: LogStageStatus.notStarted, events: [] }]
+      ['publish/checkCapabilities', createLogStage('Check Capabilities')],
     ]);
   }
 
