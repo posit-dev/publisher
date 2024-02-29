@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';

@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
@@ -12,6 +14,7 @@ import { DependenciesTreeDataProvider } from './views/dependencies';
 import { CredentialsTreeDataProvider } from './views/credentials';
 import { HelpAndFeedbackTreeDataProvider } from './views/helpAndFeedback';
 import { LogsTreeDataProvider } from './views/logs';
+import { EventStream } from './events';
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
@@ -36,6 +39,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  const stream = new EventStream(port);
   new ProjectTreeDataProvider().register(context);
   new DeploymentsTreeDataProvider().register(context);
   new ConfigurationsTreeDataProvider().register(context);
@@ -43,7 +47,7 @@ export async function activate(context: vscode.ExtensionContext) {
   new DependenciesTreeDataProvider().register(context);
   new CredentialsTreeDataProvider().register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
-  new LogsTreeDataProvider(port).register(context);
+  new LogsTreeDataProvider(stream).register(context);
 }
 
 // This method is called when your extension is deactivated

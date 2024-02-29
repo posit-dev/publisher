@@ -28,7 +28,7 @@ func NewPostRequirementsInspectHandler(base util.Path, log logging.Logger) *Post
 	return &PostRequirementsInspectHandler{
 		base:      base,
 		log:       log,
-		inspector: inspect.NewPythonInspector(util.Path{}, log),
+		inspector: inspect.NewPythonInspector(base, util.Path{}, log),
 	}
 }
 
