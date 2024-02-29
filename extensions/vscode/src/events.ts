@@ -99,6 +99,7 @@ export class EventStream extends Readable {
    * Registers a callback function for a specific event type.
    * @param type The event type to register the callback for.
    * @param callback The callback function to be invoked when the event occurs.
+   * @returns An object with an `unregister` method that can be used to remove the callback.
    */
   public register(type: string, callback: EventStreamMessageCallback): { unregister: () => void } {
     if (!this.callbacks.has(type)) {
