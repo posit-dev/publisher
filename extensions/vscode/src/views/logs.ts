@@ -308,6 +308,10 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
       if (stage) {
         stage.status = LogStageStatus.completed;
       }
+      const wrappingUpStage = this.stages.get('publish/success');
+      if (wrappingUpStage) {
+        wrappingUpStage.status = LogStageStatus.inProgress;
+      }
       this.refresh();
     });
     stream.register('publish/runContent/failure', (_: EventStreamMessage) => {
