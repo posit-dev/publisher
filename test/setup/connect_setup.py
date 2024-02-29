@@ -57,6 +57,7 @@ def get_ip(box_name):
 # check if fuzzbucket is up and taking requests
 def connect_ready(box_name, max_attempts, interval):
     connect_box=get_ip(box_name)
+    time.sleep(30)
     update_config="fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo sed -i 's/CONNECT_IP/" + connect_box + "/g' /etc/rstudio-connect/rstudio-connect.gcfg"
     restart_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo systemctl restart rstudio-connect"
     attempts = 0
