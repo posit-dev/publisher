@@ -1,7 +1,3 @@
-// -------------------------------------------------------
-// Helper code that wraps the API for the multi-step case.
-// -------------------------------------------------------
-
 import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons } from 'vscode';
 
 class InputFlowAction {

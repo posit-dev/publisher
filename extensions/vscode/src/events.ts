@@ -13,6 +13,8 @@ export type EventStreamMessage = {
 
 export type EventStreamMessageCallback = (message: EventStreamMessage) => void;
 
+export type UnregisterCallback = { unregister: () => void };
+
 export function displayEventStreamMessage(msg: EventStreamMessage): string {
   if (msg.type === 'publish/checkCapabilities/log') {
     if (msg.data.username) {
@@ -61,7 +63,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     return `${msg.data.error}`;
   }
 
-  return msg.data.message;
+  return msg.data.message ? msg.data.message : msg.type;
 }
 
 /**
@@ -101,7 +103,7 @@ export class EventStream extends Readable {
    * @param callback The callback function to be invoked when the event occurs.
    * @returns An object with an `unregister` method that can be used to remove the callback.
    */
-  public register(type: string, callback: EventStreamMessageCallback): { unregister: () => void } {
+  public register(type: string, callback: EventStreamMessageCallback): UnregisterCallback {
     if (!this.callbacks.has(type)) {
       this.callbacks.set(type, []);
     }

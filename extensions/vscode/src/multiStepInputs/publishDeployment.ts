@@ -7,7 +7,6 @@ import { getSummaryStringFromError } from '../utils/errors';
 import { initiatePublishing } from '../views/publishProgress';
 import { EventStream } from '../events';
 
-// Was offering parameter (context: ExtensionContext)
 export async function publishDeployment(deployment: PreDeployment | Deployment, stream: EventStream) {
   const api = useApi();
 

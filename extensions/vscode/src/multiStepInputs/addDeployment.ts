@@ -8,7 +8,6 @@ import { uniqueDeploymentName, untitledDeploymentName } from '../utils/names';
 import { initiatePublishing } from '../views/publishProgress';
 import { EventStream } from '../events';
 
-// was passing in context: ExtensionContext
 export async function addDeployment(stream: EventStream) {
   const api = useApi();
 
