@@ -31,6 +31,7 @@ import { formatDateString } from '../utils/date';
 import { confirmForget } from '../dialogs';
 import { addDeployment } from '../multiStepInputs/addDeployment';
 import { publishDeployment } from '../multiStepInputs/publishDeployment';
+import { EventStream } from '../events';
 
 const viewName = 'posit.publisher.deployments';
 const refreshCommand = viewName + '.refresh';
@@ -38,6 +39,7 @@ const editCommand = viewName + '.edit';
 const forgetCommand = viewName + '.forget';
 const addCommand = viewName + '.add';
 const deployCommand = viewName + '.deploy';
+const isEmptyContext = viewName + '.isEmpty';
 
 const fileStore = '.posit/publish/deployments/*.toml';
 
@@ -51,7 +53,9 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
 
   private api = useApi();
 
-  constructor() {
+  constructor(
+    private stream: EventStream
+  ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -84,6 +88,8 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       // 500 - internal server error
       const response = await this.api.deployments.getAll();
       const deployments = response.data;
+      commands.executeCommand('setContext', isEmptyContext, deployments.length === 0);
+
       return deployments.map(deployment => {
         const filename = deployment.deploymentPath.split('.posit/publish/deployments/')[1];
         const fileUri = Uri.joinPath(root.uri, '.posit/publish/deployments', filename);
@@ -109,7 +115,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
 
     context.subscriptions.push(
       commands.registerCommand(addCommand, () => {
-        addDeployment();
+        addDeployment(this.stream);
       })
     );
 
@@ -126,7 +132,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     context.subscriptions.push(
       commands.registerCommand(deployCommand, async (item: DeploymentsTreeItem) => {
         if (!isDeploymentError(item.deployment)) {
-          publishDeployment(item.deployment);
+          publishDeployment(item.deployment, this.stream);
         }
       })
     );
@@ -198,3 +204,4 @@ export class DeploymentsTreeItem extends TreeItem {
     this.iconPath = new ThemeIcon('warning');
   }
 }
+

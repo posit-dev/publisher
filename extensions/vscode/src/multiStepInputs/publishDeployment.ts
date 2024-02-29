@@ -4,9 +4,11 @@ import { QuickPickItem, ThemeIcon, window } from 'vscode';
 
 import { AccountAuthType, PreDeployment, Deployment, useApi } from '../api';
 import { getSummaryStringFromError } from '../utils/errors';
+import { initiatePublishing } from '../views/publishProgress';
+import { EventStream } from '../events';
 
 // Was offering parameter (context: ExtensionContext)
-export async function publishDeployment(deployment: PreDeployment | Deployment) {
+export async function publishDeployment(deployment: PreDeployment | Deployment, stream: EventStream) {
   const api = useApi();
 
   const title = 'Deploy Your Project';
@@ -132,10 +134,7 @@ export async function publishDeployment(deployment: PreDeployment | Deployment) 
         state.data.credentialName.label,
         state.data.configFile.label,
       );
-      window.showInformationMessage(
-        `deploy the deployment file ${state.data.deploymentName}, using credentials ${state.data.credentialName.label}
-        and config file: ${state.data.configFile.label}. LocalID = ${response.data.localId}`
-      );
+      initiatePublishing(response.data.localId, stream);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError('publishDeployment, deploy', error);
       window.showInformationMessage(

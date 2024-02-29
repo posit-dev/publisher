@@ -5,9 +5,11 @@ import { QuickPickItem, ThemeIcon, window } from 'vscode';
 import { AccountAuthType, useApi } from '../api';
 import { getSummaryStringFromError } from '../utils/errors';
 import { uniqueDeploymentName, untitledDeploymentName } from '../utils/names';
+import { initiatePublishing } from '../views/publishProgress';
+import { EventStream } from '../events';
 
-// Was offering parameter (context: ExtensionContext)
-export async function addDeployment() {
+// was passing in context: ExtensionContext
+export async function addDeployment(stream: EventStream) {
   const api = useApi();
 
   const title = 'Deploy Your Project to a New Location';
@@ -224,10 +226,7 @@ export async function addDeployment() {
               state.data.credentialName.label,
               state.data.configFile.label,
             );
-            window.showInformationMessage(
-              `deploy the deployment file ${state.data.deploymentName}, using credentials ${state.data.credentialName.label}
-              and config file: ${state.data.configFile.label}. LocalID = ${response.data.localId}`
-            );
+            initiatePublishing(response.data.localId, stream);
           } catch (error: unknown) {
             const summary = getSummaryStringFromError('addDeployment, deploy', error);
             window.showInformationMessage(

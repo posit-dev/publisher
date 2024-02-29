@@ -217,6 +217,11 @@
         "view": "posit.publisher.configurations",
         "contents": "To publish your content, you need a configuration file. Click Add to create one based on the files in your project.\n[Add](command:posit.publisher.configurations.add)",
         "when": "posit.publisher.configurations.isEmpty"
+      },
+      {
+        "view": "posit.publisher.deployments",
+        "contents": "To publish your content, you need to create a deployment. Click Add to create one and optionally publish your project using it.\n[Add](command:posit.publisher.deployments.add)",
+        "when": "posit.publisher.deployments.isEmpty"
       }
     ]
   },
