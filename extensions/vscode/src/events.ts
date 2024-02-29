@@ -57,6 +57,10 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     return `${msg.data.message} ${msg.data.path}`;
   }
 
+  if (msg.type === 'publish/success') {
+    return `Successfully deployed at ${msg.data.dashboardUrl}`;
+  }
+
   if (msg.error !== undefined) {
     return `${msg.data.error}`;
   }

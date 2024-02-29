@@ -65,6 +65,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
       ['publish/deployBundle', createLogStage('Deploy Bundle')],
       ['publish/restorePythonEnv', createLogStage('Restore Python Environment')],
       ['publish/runContent', createLogStage('Run Content')],
+      ['publish/success', createLogStage('Wrapping up Deployment')]
     ]);
   }
 
@@ -81,6 +82,15 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
     this.registerDeployBundleEvents(stream);
     this.registerRestorePythonEnvEvents(stream);
     this.registerRunContentEvents(stream);
+
+    stream.register('publish/success', (msg: EventStreamMessage) => {
+      const stage = this.stages.get('publish/success');
+      if (stage) {
+        stage.status = LogStageStatus.completed;
+        stage.events.push(msg);
+      }
+      this.refresh();
+    });
   }
 
   registerCheckCapabilitiesEvents(stream: EventStream) {
