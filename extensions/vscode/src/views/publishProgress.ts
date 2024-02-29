@@ -1,5 +1,5 @@
 import { window, ProgressLocation } from 'vscode';
-import { EventStream, EventStreamMessage, displayEventStreamMessage } from '../events';
+import { EventStream, EventStreamMessage } from '../events';
 
 export function initiatePublishing(localID: string, stream: EventStream) {
   window.withProgress({
