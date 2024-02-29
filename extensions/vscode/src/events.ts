@@ -100,12 +100,22 @@ export class EventStream extends Readable {
    * @param type The event type to register the callback for.
    * @param callback The callback function to be invoked when the event occurs.
    */
-  public register(type: string, callback: EventStreamMessageCallback) {
+  public register(type: string, callback: EventStreamMessageCallback): { unregister: () => void } {
     if (!this.callbacks.has(type)) {
       this.callbacks.set(type, []);
     }
     // Add the callback to the callbacks array for the specified event type
     this.callbacks.get(type)?.push(callback);
+
+    return {
+      unregister: () => {
+        // Remove the callback from the callbacks array for the specified event type
+        this.callbacks.set(
+          type,
+          this.callbacks.get(type)?.filter(cb => cb !== callback) || []
+        );
+      }
+    };
   }
 
   private invokeCallbacks(message: EventStreamMessage) {
