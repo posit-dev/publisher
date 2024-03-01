@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import { window, ProgressLocation } from 'vscode';
 import { EventStream, EventStreamMessage, UnregisterCallback } from '../events';
 

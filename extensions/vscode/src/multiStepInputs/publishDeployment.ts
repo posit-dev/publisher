@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import { MultiStepInput, MultiStepState, isQuickPickItem } from './multiStepHelper';
 
 import { QuickPickItem, ThemeIcon, window } from 'vscode';
