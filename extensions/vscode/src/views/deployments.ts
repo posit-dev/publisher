@@ -97,6 +97,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError('deployments::getChildren', error);
+      commands.executeCommand('setContext', isEmptyContext, true);
       window.showInformationMessage(summary);
       return [];
     }
