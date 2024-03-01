@@ -1,5 +1,5 @@
 import { window, ProgressLocation } from 'vscode';
-import { EventStream, EventStreamMessage, UnregisterCallback, displayEventStreamMessage } from '../events';
+import { EventStream, EventStreamMessage, UnregisterCallback } from '../events';
 
 export function initiatePublishing(localID: string, stream: EventStream) {
   window.withProgress({
@@ -13,7 +13,7 @@ export function initiatePublishing(localID: string, stream: EventStream) {
 
     const unregister = () => {
       registrations.forEach(cb => cb.unregister());
-    }
+    };
 
     const promise = new Promise<void>((resolve, reject) => {
       resolveCB = resolve;

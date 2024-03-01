@@ -10,7 +10,9 @@ import { EventStream } from '../events';
 export async function publishDeployment(deployment: PreDeployment | Deployment, stream: EventStream) {
   const api = useApi();
 
-  const title = 'Deploy Your Project';
+  // ***************************************************************
+  // API Calls and results
+  // ***************************************************************
 
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];
@@ -18,6 +20,7 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
   try {
     const response = await api.accounts.getAll();
     const accounts = response.data.accounts;
+    // account list is filtered to match the deployment being published
     accountListItems = accounts
       .filter(account => (account.url === deployment.serverUrl))
       .map(account => ({
@@ -58,88 +61,138 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
     return;
   }
 
+  // ***************************************************************
+  // Order of all steps
+  // ***************************************************************
+
   // Select the credential to use, if there is more than one
   // Select the config file to use, if there are more than one
   // result in calling publish API
 
+  // ***************************************************************
+  // Method which kicks off the multi-step.
+  // Initialize the state data
+  // Display the first input panel
+  // ***************************************************************
   async function collectInputs() {
-    const state = {} as Partial<MultiStepState>;
-    state.data = {
-      deploymentName: '',
-      credentialName: <QuickPickItem>{},
-      promptToDeploy: '',
-      configFile: <QuickPickItem>{},
+    const state: MultiStepState = {
+      title: 'Deploy Your Project',
+      step: -1,
+      lastStep: 0,
+      totalSteps: -1,
+      data: {
+        // each attribute is initialized to the opposite of what is expected
+        // to be returned when it has not been cancelled to assist type guards
+        credentialName: '', // eventual type is QuickPickItem
+        configFile: '', // eventual type is QuickPickItem
+      },
     };
+
+    // determin number of total steps, as each step
+    // will suppress its choice if there is only one option
+    let totalSteps = 2;
+    if (accountListItems.length === 1) {
+      totalSteps -= 1;
+    }
+    if (configFileListItems.length === 1) {
+      totalSteps -= 1;
+    }
+    state.totalSteps = totalSteps;
+
     await MultiStepInput.run(input => pickCredentials(input, state));
     return state as MultiStepState;
   }
 
-  async function pickCredentials(input: MultiStepInput, state: Partial<MultiStepState>) {
-    if (state.data === undefined) {
-      state.data = {
-        deploymentName: '',
-        credentialName: <QuickPickItem>{},
-        promptToDeploy: '',
-        configFile: <QuickPickItem>{},
-      };
+  // ***************************************************************
+  // Step #1:
+  // Select the credentials to be used
+  // ***************************************************************
+  async function pickCredentials(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    // skip if we only have one choice.
+    if (accountListItems.length > 1) {
+      const thisStepNumber = state.lastStep + 1;
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        placeholder: 'Select the credential you want to use to deploy',
+        items: accountListItems,
+        activeItem: typeof state.data.credentialName !== 'string' ? state.data.credentialName : undefined,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+      });
+      state.data.credentialName = pick;
+      state.lastStep = thisStepNumber;
+    } else {
+      state.data.credentialName = accountListItems[0];
     }
-    const pick = await input.showQuickPick({
-      title,
-      step: 1,
-      totalSteps: 2,
-      placeholder: 'Select the credential you want to use to deploy',
-      items: accountListItems,
-      activeItem: typeof state.data.credentialName !== 'string' ? state.data.credentialName : undefined,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-    });
-    state.data.credentialName = pick;
     return (input: MultiStepInput) => inputConfigFileSelection(input, state);
   }
 
-  async function inputConfigFileSelection(input: MultiStepInput, state: Partial<MultiStepState>) {
-    if (state.data === undefined) {
-      state.data = {
-        deploymentName: '',
-        credentialName: <QuickPickItem>{},
-        promptToDeploy: '',
-        configFile: <QuickPickItem>{},
-      };
+  // ***************************************************************
+  // Step #2:
+  // Select the config to be used w/ the deployment
+  // ***************************************************************
+  async function inputConfigFileSelection(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    // skip if we only have one choice.
+    if (configFileListItems.length > 1) {
+      const thisStepNumber = state.lastStep + 1;
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        placeholder: 'Select the config file you wish to deploy with',
+        items: configFileListItems,
+        activeItem: typeof state.data.configFile !== 'string' ? state.data.configFile : undefined,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+      });
+      state.data.configFile = pick;
+      state.lastStep = thisStepNumber;
+    } else {
+      state.data.configFile = configFileListItems[0];
     }
-    const pick = await input.showQuickPick({
-      title,
-      step: 2,
-      totalSteps: 2,
-      placeholder: 'Select the config file you wish to deploy with',
-      items: configFileListItems,
-      activeItem: typeof state.data.configFile !== 'string' ? state.data.configFile : undefined,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-    });
-    state.data.configFile = pick;
+    // last step, we don't return anything
   }
 
+  // ***************************************************************
+  // Kick off the input collection
+  // and await until it completes.
+  // This is a promise which returns the state data used to 
+  // collect the info.
+  // ***************************************************************
+
   const state = await collectInputs();
-  // Need to determine what we get back when the user
-  // hits escape
-  if (
-    isQuickPickItem(state.data.credentialName) &&
-    isQuickPickItem(state.data.configFile)
-  ) {
-    // deploy!
-    try {
-      const response = await api.deployments.publish(
-        deployment.saveName,
-        state.data.credentialName.label,
-        state.data.configFile.label,
-      );
-      initiatePublishing(response.data.localId, stream);
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError('publishDeployment, deploy', error);
-      window.showInformationMessage(
-        `Failed to deploy . ${summary}`
-      );
-      return;
-    }
+
+  // make sure user has not hit escape or moved away from the window
+  // before completing the steps. This also serves as a type guard on
+  // our state data vars, which can be either QuickPickItems or strings
+  if (!isQuickPickItem(state.data.credentialName)) {
+    return;
+  }
+  if (!isQuickPickItem(state.data.configFile)) {
+    return;
+  }
+
+  // deploy!
+  try {
+    const response = await api.deployments.publish(
+      deployment.saveName,
+      state.data.credentialName.label,
+      state.data.configFile.label,
+    );
+    initiatePublishing(response.data.localId, stream);
+  } catch (error: unknown) {
+    const summary = getSummaryStringFromError('publishDeployment, deploy', error);
+    window.showInformationMessage(
+      `Failed to deploy . ${summary}`
+    );
+    return;
   }
 }

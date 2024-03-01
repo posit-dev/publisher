@@ -15,6 +15,7 @@ export function isQuickPickItem(
 export interface MultiStepState {
   title: string;
   step: number;
+  lastStep: number,
   totalSteps: number;
   data: Record<string, QuickPickItem | string>,
 }

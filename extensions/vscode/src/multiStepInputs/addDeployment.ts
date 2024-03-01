@@ -11,7 +11,9 @@ import { EventStream } from '../events';
 export async function addDeployment(stream: EventStream) {
   const api = useApi();
 
-  const title = 'Deploy Your Project to a New Location';
+  // ***************************************************************
+  // API Calls and results
+  // ***************************************************************
 
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];
@@ -20,14 +22,15 @@ export async function addDeployment(stream: EventStream) {
   try {
     const response = await api.accounts.getAll();
     const accounts = response.data.accounts;
-    accountListItems = accounts.map(account => ({
-      iconPath: new ThemeIcon('account'),
-      label: account.name,
-      description: account.source,
-      detail: account.authType === AccountAuthType.API_KEY
-        ? 'Using API Key'
-        : `Using Token Auth for ${account.accountName}`,
-    }));
+    accountListItems = accounts
+      .map(account => ({
+        iconPath: new ThemeIcon('account'),
+        label: account.name,
+        description: account.source,
+        detail: account.authType === AccountAuthType.API_KEY
+          ? 'Using API Key'
+          : `Using Token Auth for ${account.accountName}`,
+      }));
   } catch (error: unknown) {
     const summary = getSummaryStringFromError('addDeployment, accounts.getAll', error);
     window.showInformationMessage(
@@ -66,37 +69,69 @@ export async function addDeployment(stream: EventStream) {
     return;
   }
 
+  // ***************************************************************
+  // Order of all steps
+  // ***************************************************************
+
   // Name the deployment
   // Select the credential to use, if there is more than one
   // Prompt to deploy
   // Select the config file to use, if there are more than one
   // result in calling publish API
 
+  // ***************************************************************
+  // Method which kicks off the multi-step.
+  // Initialize the state data
+  // Display the first input panel
+  // ***************************************************************
   async function collectInputs() {
-    const state = {} as Partial<MultiStepState>;
-    state.data = {
-      deploymentName: '',
-      credentialName: <QuickPickItem>{},
-      promptToDeploy: '',
-      configFile: <QuickPickItem>{},
+    const state: MultiStepState = {
+      title: 'Deploy Your Project to a New Location',
+      step: -1,
+      lastStep: 0,
+      totalSteps: -1,
+      data: {
+        // each attribute is initialized to the opposite of what is expected
+        // to be returned when it has not been cancelled to assist type guards
+        deploymentName: <QuickPickItem>{}, // eventual type is string
+        credentialName: '', // eventual type is QuickPickItem
+        promptToDeploy: '', /// eventual type is QuickPickItem
+        configFile: '', // eventual type is QuickPickItem
+      },
     };
+    // determin number of total steps, as each step
+    // will suppress its choice if there is only one option
+    let totalSteps = 4;
+    if (accountListItems.length === 1) {
+      totalSteps -= 1;
+    }
+    if (configFileListItems.length === 1) {
+      totalSteps -= 1;
+    }
+    state.totalSteps = totalSteps;
+
+    // start the progression through the steps
+
     await MultiStepInput.run(input => inputDeploymentName(input, state));
     return state as MultiStepState;
   }
 
-  async function inputDeploymentName(input: MultiStepInput, state: Partial<MultiStepState>) {
-    if (state.data === undefined) {
-      state.data = {
-        deploymentName: '',
-        credentialName: <QuickPickItem>{},
-        promptToDeploy: '',
-        configFile: <QuickPickItem>{},
-      };
-    }
+
+
+  // ***************************************************************
+  // Step #1:
+  // Name the deployment
+  // ***************************************************************
+  async function inputDeploymentName(
+    input: MultiStepInput,
+    state: MultiStepState
+  ) {
+    state.step = state.lastStep + 1;
+
     state.data.deploymentName = await input.showInputBox({
-      title,
-      step: 1,
-      totalSteps: 4,
+      title: state.title,
+      step: state.step,
+      totalSteps: state.totalSteps,
       value: typeof state.data.deploymentName === 'string' && state.data.deploymentName.length
         ? state.data.deploymentName
         : untitledDeploymentName(deploymentNames),
@@ -112,42 +147,48 @@ export async function addDeployment(stream: EventStream) {
     return (input: MultiStepInput) => pickCredentials(input, state);
   }
 
-  async function pickCredentials(input: MultiStepInput, state: Partial<MultiStepState>) {
-    if (state.data === undefined) {
-      state.data = {
-        deploymentName: '',
-        credentialName: <QuickPickItem>{},
-        promptToDeploy: '',
-        configFile: <QuickPickItem>{},
-      };
+  // ***************************************************************
+  // Step #2:
+  // Select the credentials to be used
+  // ***************************************************************
+  async function pickCredentials(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    // skip if we only have one choice.
+    if (accountListItems.length > 1) {
+      const thisStepNumber = state.lastStep + 1;
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        placeholder: 'Select the credential you want to use to deploy',
+        items: accountListItems,
+        activeItem: typeof state.data.credentialName !== 'string' ? state.data.credentialName : undefined,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+      });
+      state.data.credentialName = pick;
+      state.lastStep = thisStepNumber;
+    } else {
+      state.data.credentialName = accountListItems[0];
     }
-    const pick = await input.showQuickPick({
-      title,
-      step: 2,
-      totalSteps: 4,
-      placeholder: 'Select the credential you want to use to deploy',
-      items: accountListItems,
-      activeItem: typeof state.data.credentialName !== 'string' ? state.data.credentialName : undefined,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-    });
-    state.data.credentialName = pick;
     return (input: MultiStepInput) => promptToDeploy(input, state);
   }
 
-  async function promptToDeploy(input: MultiStepInput, state: Partial<MultiStepState>) {
-    if (state.data === undefined) {
-      state.data = {
-        deploymentName: '',
-        credentialName: <QuickPickItem>{},
-        promptToDeploy: '',
-        configFile: <QuickPickItem>{},
-      };
-    }
+  // ***************************************************************
+  // Step #3:
+  // Does the user want to continue through into deploying the project?
+  // ***************************************************************
+  async function promptToDeploy(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    const thisStepNumber = state.lastStep + 1;
     const pick = await input.showQuickPick({
-      title,
-      step: 3,
-      totalSteps: 4,
+      title: state.title,
+      step: thisStepNumber,
+      totalSteps: state.totalSteps,
       placeholder: 'Do you wish to initiate the deployment at this time?',
       items: [
         {
@@ -164,83 +205,99 @@ export async function addDeployment(stream: EventStream) {
       shouldResume: () => Promise.resolve(false),
     });
     state.data.promptToDeploy = pick;
+    state.lastStep = thisStepNumber;
     if (state.data.promptToDeploy.label === 'Yes') {
       return (input: MultiStepInput) => inputConfigFileSelection(input, state);
     }
     return undefined;
   }
 
-  async function inputConfigFileSelection(input: MultiStepInput, state: Partial<MultiStepState>) {
-    if (state.data === undefined) {
-      state.data = {
-        deploymentName: '',
-        credentialName: <QuickPickItem>{},
-        promptToDeploy: '',
-        configFile: <QuickPickItem>{},
-      };
+  // ***************************************************************
+  // Step #4:
+  // Select the config to be used w/ the deployment
+  // ***************************************************************
+  async function inputConfigFileSelection(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    // skip if we only have one choice.
+    if (configFileListItems.length > 1) {
+      const thisStepNumber = state.lastStep + 1;
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        placeholder: 'Select the config file you wish to deploy with',
+        items: configFileListItems,
+        activeItem: typeof state.data.configFile !== 'string' ? state.data.configFile : undefined,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+      });
+      state.data.configFile = pick;
+      state.lastStep = thisStepNumber;
+    } else {
+      state.data.configFile = configFileListItems[0];
     }
-    const pick = await input.showQuickPick({
-      title,
-      step: 4,
-      totalSteps: 4,
-      placeholder: 'Select the config file you wish to deploy with',
-      items: configFileListItems,
-      activeItem: typeof state.data.configFile !== 'string' ? state.data.configFile : undefined,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-    });
-    state.data.configFile = pick;
   }
 
+  // ***************************************************************
+  // Kick off the input collection
+  // and await until it completes.
+  // This is a promise which returns the state data used to 
+  // collect the info.
+  // ***************************************************************
   const state = await collectInputs();
-  // Need to determine what we get back when the user
-  // hits escape
+
+  // make sure user has not hit escape or moved away from the window
+  // before completing the steps. This also serves as a type guard on
+  // our state data vars, which can be either QuickPickItems or strings
+  if (isQuickPickItem(state.data.deploymentName) || state.data.deploymentName.length === 0) {
+    return;
+  }
+  if (!isQuickPickItem(state.data.credentialName)) {
+    return;
+  }
+  if (!isQuickPickItem(state.data.promptToDeploy)) {
+    return;
+  }
+
+  // Create the Predeployment File
+  try {
+    await api.deployments.createNew(
+      state.data.credentialName.label,
+      state.data.deploymentName,
+    );
+  } catch (error: unknown) {
+    const summary = getSummaryStringFromError('addDeployment, createNew', error);
+    window.showInformationMessage(
+      `Failed to create pre-deployment. ${summary}`
+    );
+    return;
+  }
+  // Should we deploy and did we get an answer for the config file?
   if (
-    !isQuickPickItem(state.data.deploymentName) && state.data.deploymentName.length > 0 &&
-    isQuickPickItem(state.data.credentialName) &&
-    isQuickPickItem(state.data.promptToDeploy)
+    state.data.promptToDeploy.label === 'Yes' &&
+    isQuickPickItem(state.data.configFile)
   ) {
-    // we might have enough to at least create the predeployment
-    if (state.data.deploymentName.length > 0) {
-      // we can!
-      try {
-        await api.deployments.createNew(
-          state.data.credentialName.label,
-          state.data.deploymentName,
-        );
-      } catch (error: unknown) {
-        const summary = getSummaryStringFromError('addDeployment, createNew', error);
-        window.showInformationMessage(
-          `Failed to create pre-deployment. ${summary}`
-        );
-        return;
-      }
-      if (isQuickPickItem(state.data.configFile)) {
-        // we may be able to deploy
-        if (state.data.promptToDeploy.label === 'Yes') {
-          // we can!
-          try {
-            const response = await api.deployments.publish(
-              state.data.deploymentName,
-              state.data.credentialName.label,
-              state.data.configFile.label,
-            );
-            initiatePublishing(response.data.localId, stream);
-          } catch (error: unknown) {
-            const summary = getSummaryStringFromError('addDeployment, deploy', error);
-            window.showInformationMessage(
-              `Failed to deploy . ${summary}`
-            );
-            return;
-          }
-        } else {
-          // no, they didn't want us to.
-          window.showInformationMessage(
-            `Skipping deployment`
-          );
-        }
-      }
+    try {
+      const response = await api.deployments.publish(
+        state.data.deploymentName,
+        state.data.credentialName.label,
+        state.data.configFile.label,
+      );
+      initiatePublishing(response.data.localId, stream);
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError('addDeployment, deploy', error);
+      window.showInformationMessage(
+        `Failed to deploy . ${summary}`
+      );
+      return;
     }
+  } else {
+    // no, they didn't want us to.
+    window.showInformationMessage(
+      `Skipping deployment of this project`
+    );
   }
 }
 
