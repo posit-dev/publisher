@@ -5,15 +5,6 @@ load '../node_modules/bats-assert/load'
 source ../content/bundles/${CONTENT}/test/.publisher-env
 CONTENT_PATH='../content/bundles'
 
-# Wait until Connect is alive.
-# setup_file() {
-#     timeout 100 bash -c \
-#     'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${CONNECT_SERVER}/__ping__)" != "200" ]]; \
-#         do sleep 1; \
-#         echo "retry"; \
-#         done'
-# }
-
 # helper funciton for deploys
 deploy_assertion() {
     if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
