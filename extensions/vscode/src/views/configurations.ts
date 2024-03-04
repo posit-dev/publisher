@@ -72,7 +72,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       commands.executeCommand('setContext', isEmptyContext, configurations.length === 0);
 
       return configurations.map(config => {
-        const fileUri = Uri.joinPath(root.uri, config.configurationPath);
+        const fileUri = Uri.file(config.configurationPath);
         return new ConfigurationTreeItem(config, fileUri);
       });
       } catch (error: unknown) {
