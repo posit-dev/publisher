@@ -38,6 +38,16 @@
         "category": "Posit"
       },
       {
+        "command": "posit.publisher.initialize",
+        "title": "Initialize Project",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.skipInitialization",
+        "title": "Skip Initializing the Project",
+        "category": "Posit"
+      },
+      {
         "command": "posit.publisher.configurations.refresh",
         "title": "Refresh",
         "icon": "$(refresh)",
@@ -193,38 +203,45 @@
       "posit-publisher": [
         {
           "id": "posit.publisher.project",
-          "name": "Project",
-          "contextualTitle": "Publisher"
+          "name": "Welcome!",
+          "contextualTitle": "Publisher",
+          "when": "posit.publisher.initialized === 'not-initialized'"
         },
         {
           "id": "posit.publisher.files",
           "name": "Files",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "posit.publisher.initialized === 'initialized'"
         },
         {
           "id": "posit.publisher.dependencies",
           "name": "Dependencies",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "posit.publisher.initialized === 'initialized'"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "posit.publisher.initialized === 'initialized'"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "posit.publisher.initialized === 'initialized'"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "posit.publisher.initialized === 'initialized'"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
           "name": "Help And Feedback",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "posit.publisher.initialized === 'initialized'"
         }
       ],
       "posit-publisher-logs": [
@@ -236,6 +253,11 @@
       ]
     },
     "viewsWelcome": [
+      {
+        "view": "posit.publisher.project",
+        "contents": "To publish your project, you'll need to initialize your project.\nClick Initialize to ready this project for deployment.\n[Initialize](command:posit.publisher.initialize)\nIf you'd like to initialize your project yourself, click Skip below.\n[Skip](command:posit.skipInitialization)\nFor further information, you should visit the Posit [website](https://posit.co). It contains a wealth of information.",
+        "when": "posit.publisher.initialized === 'not-initialized'"
+      },
       {
         "view": "posit.publisher.configurations",
         "contents": "To publish your content, you need a configuration file. Click Add to create one based on the files in your project.\n[Add](command:posit.publisher.configurations.add)",

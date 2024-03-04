@@ -20,9 +20,7 @@ export class ProjectTreeDataProvider implements TreeDataProvider<ProjectTreeItem
 
   getChildren(element: ProjectTreeItem | undefined): ProviderResult<ProjectTreeItem[]> {
     if (element === undefined) {
-      return [
-        new ProjectTreeItem('Dummy Project'),
-      ];
+      return [];
     }
     return [];
   }
