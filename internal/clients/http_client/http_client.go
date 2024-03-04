@@ -82,7 +82,7 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			return nil, types.NewAgentError(events.OperationTimedOutCode, err, nil)
 		}
-		return nil, err
+		return nil, types.NewAgentError(events.ConnectionFailedCode, err, nil)
 	}
 	defer resp.Body.Close()
 
