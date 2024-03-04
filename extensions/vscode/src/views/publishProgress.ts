@@ -2,6 +2,7 @@
 
 import { window, ProgressLocation } from 'vscode';
 import { EventStream, EventStreamMessage, UnregisterCallback } from '../events';
+import { eventTypeToString } from '../api';
 
 export function initiatePublishing(localID: string, stream: EventStream) {
   window.withProgress({
@@ -34,8 +35,12 @@ export function initiatePublishing(localID: string, stream: EventStream) {
     let progressCount = 0;
     const handleProgressMessages = (msg: EventStreamMessage) => {
       if (localID === msg.data.localId) {
-        progress.report({ increment: progressCount++, message: `Step: ${msg.type}` });
-        console.log(msg.type);
+        const progressStr = eventTypeToString(msg.type);
+        progress.report({
+          increment: progressCount++,
+          message: progressStr,
+        });
+        console.log(progressStr);
       }
     };
 

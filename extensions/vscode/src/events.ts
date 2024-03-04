@@ -88,6 +88,10 @@ export class EventStream extends Readable {
     eventSource.addEventListener('message', (event) => {
       // Parse the event data and convert keys to camel case
       const message = convertKeysToCamelCase(JSON.parse(event.data));
+
+      // DEBUG
+      // console.log(JSON.stringify(message));
+
       // Add the message to the messages array
       this.messages.push(message);
       // Emit a 'message' event with the message as the payload
