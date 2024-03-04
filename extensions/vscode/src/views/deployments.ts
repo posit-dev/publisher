@@ -79,8 +79,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       // 500 - internal server error
       const response = (await this.api.deployments.getAll());
       return response.data.map(deployment => {
-        const filename = deployment.deploymentPath.split('.posit/publish/deployments/')[1];
-        const fileUri = Uri.joinPath(root.uri, '.posit/publish/deployments', filename);
+        const fileUri = Uri.file(deployment.deploymentPath);
         return new DeploymentsTreeItem(deployment, fileUri);
       });
     } catch (error: unknown) {
