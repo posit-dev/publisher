@@ -17,6 +17,8 @@ type LogStage = {
   events: EventStreamMessage[]
 };
 
+type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
+
 const createLogStage = (
   label: string,
   status: LogStageStatus = LogStageStatus.notStarted,
@@ -34,14 +36,14 @@ const viewName = 'posit.publisher.logs';
 /**
  * Tree data provider for the Logs view.
  */
-export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeStageItem | LogsTreeItem> {
+export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeItem> {
   private stages!: Map<string, LogStage>;
 
   /**
    * Event emitter for when the tree data of the Logs view changes.
    * @private
    */
-  private _onDidChangeTreeData: vscode.EventEmitter<LogsTreeStageItem | LogsTreeItem | undefined> = new vscode.EventEmitter<LogsTreeStageItem | LogsTreeItem | undefined>();
+  private _onDidChangeTreeData: vscode.EventEmitter<LogsTreeItem | undefined> = new vscode.EventEmitter<LogsTreeItem | undefined>();
 
   /**
    * Creates an instance of LogsTreeDataProvider.
@@ -326,7 +328,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
   /**
    * Get the event emitter for tree data changes.
    */
-  get onDidChangeTreeData(): vscode.Event<LogsTreeStageItem | LogsTreeItem | undefined> {
+  get onDidChangeTreeData(): vscode.Event<LogsTreeItem | undefined> {
     return this._onDidChangeTreeData.event;
   }
 
@@ -342,7 +344,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
    * @param element The element for which to get the tree item.
    * @returns The tree item representing the element.
    */
-  getTreeItem(element: LogsTreeStageItem | LogsTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+  getTreeItem(element: LogsTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
     return element;
   }
 
@@ -351,10 +353,10 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeSta
    * @param _ The parent element.
    * @returns The child elements of the parent element.
    */
-  getChildren(element?: LogsTreeStageItem | LogsTreeItem): vscode.ProviderResult<Array<LogsTreeStageItem | LogsTreeItem>> {
+  getChildren(element?: LogsTreeItem): vscode.ProviderResult<LogsTreeItem[]> {
     // Map the events array to LogsTreeItem instances and return them as children
     if (element instanceof LogsTreeStageItem) {
-      const result = element.events.map(e => new LogsTreeItem(e));
+      const result = element.events.map(e => new LogsTreeLogItem(e));
       return result;
     }
 
@@ -416,7 +418,7 @@ export class LogsTreeStageItem extends vscode.TreeItem {
 /**
  * Represents a tree item for displaying logs in the tree view.
  */
-export class LogsTreeItem extends vscode.TreeItem {
+export class LogsTreeLogItem extends vscode.TreeItem {
   constructor(
     msg: EventStreamMessage,
     state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None
