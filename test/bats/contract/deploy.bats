@@ -23,18 +23,6 @@ deploy_assertion() {
     fi
 }
 
-noreq_assertion() {
-    if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
-        assert_output --partial "error detecting content type: quarto with knitr engine is not yet supported."
-    else
-        assert_failure
-        assert_output --partial "\
-can't find the package file (requirements.txt) in the project directory.
-Create the file, listing the packages your project depends on.
-Or scan your project dependencies using the publisher UI or
-the 'publisher requirements create' command."
-    fi
-}
 
 # temporary unsupported quarto types
 quarto_r_content=(
@@ -97,7 +85,16 @@ python_content_types=(
 
 # verify error for missing requirements file
 @test "deploy no requirements file" {
-    rm -rf ${CONTENT_PATH}/${CONTENT}/requirements.txt
-    run ${EXE} deploy ${CONTENT_PATH}/${CONTENT}
-    noreq_assertion
+    if [[ ${python_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
+        rm -rf ${CONTENT_PATH}/${CONTENT}/requirements.txt
+        run ${EXE} deploy ${CONTENT_PATH}/${CONTENT}
+        assert_failure
+        assert_output --partial "\
+can't find the package file (requirements.txt) in the project directory.
+Create the file, listing the packages your project depends on.
+Or scan your project dependencies using the publisher UI or
+the 'publisher requirements create' command."
+    else 
+        skip
+    fi
 }
