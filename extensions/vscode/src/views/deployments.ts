@@ -91,8 +91,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       commands.executeCommand('setContext', isEmptyContext, deployments.length === 0);
 
       return deployments.map(deployment => {
-        const filename = deployment.deploymentPath.split('.posit/publish/deployments/')[1];
-        const fileUri = Uri.joinPath(root.uri, '.posit/publish/deployments', filename);
+        const fileUri = Uri.file(deployment.deploymentPath);
         return new DeploymentsTreeItem(deployment, fileUri);
       });
     } catch (error: unknown) {
