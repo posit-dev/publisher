@@ -6,7 +6,7 @@ import { QuickPickItem, ThemeIcon, window } from 'vscode';
 
 import { AccountAuthType, PreDeployment, Deployment, useApi } from '../api';
 import { getSummaryStringFromError } from '../utils/errors';
-import { initiateDeployment } from '../views/deployProgress';
+import { deployProject } from '../views/deployProgress';
 import { EventStream } from '../events';
 
 export async function publishDeployment(deployment: PreDeployment | Deployment, stream: EventStream) {
@@ -102,7 +102,7 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
     state.totalSteps = totalSteps;
 
     await MultiStepInput.run(input => pickCredentials(input, state));
-    return state as MultiStepState;
+    return state;
   }
 
   // ***************************************************************
@@ -189,7 +189,7 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
       state.data.credentialName.label,
       state.data.configFile.label,
     );
-    initiateDeployment(response.data.localId, stream);
+    deployProject(response.data.localId, stream);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError('publishDeployment, deploy', error);
     window.showInformationMessage(

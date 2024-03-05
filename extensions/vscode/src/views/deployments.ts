@@ -30,7 +30,7 @@ import { getSummaryStringFromError } from '../utils/errors';
 import { formatDateString } from '../utils/date';
 import { confirmForget } from '../dialogs';
 import { addDeployment } from '../multiStepInputs/addDeployment';
-import { publishDeployment } from '../multiStepInputs/publishDeployment';
+import { publishDeployment } from '../multiStepInputs/deployProject';
 import { EventStream } from '../events';
 
 const viewName = 'posit.publisher.deployments';

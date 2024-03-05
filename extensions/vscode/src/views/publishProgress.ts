@@ -4,7 +4,7 @@ import { window, ProgressLocation } from 'vscode';
 import { EventStream, EventStreamMessage, UnregisterCallback } from '../events';
 import { eventTypeToString } from '../api';
 
-export function initiateDeployment(localID: string, stream: EventStream) {
+export function deployProject(localID: string, stream: EventStream) {
   window.withProgress({
     location: ProgressLocation.Notification,
     title: `Deploying your project...`,

@@ -17,9 +17,9 @@ export function isQuickPickItem(
 export interface MultiStepState {
   title: string;
   step: number;
-  lastStep: number,
+  lastStep: number;
   totalSteps: number;
-  data: Record<string, QuickPickItem | string>,
+  data: Record<string, QuickPickItem | string>
 }
 
 type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
