@@ -78,6 +78,21 @@
         "title": "Refresh",
         "icon": "$(refresh)",
         "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.add",
+        "title": "New",
+        "icon": "$(add)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.deployments.deploy",
+        "title": "Deploy",
+        "icon": {
+          "light": "./assets/img/light/posit-publisher.svg",
+          "dark": "./assets/img/dark/posit-publisher.svg"
+        },
+        "category": "Posit"
       }
     ],
     "configuration": {
@@ -107,9 +122,14 @@
           "when": "view == posit.publisher.configurations"
         },
         {
+          "command": "posit.publisher.deployments.add",
+          "when": "view == posit.publisher.deployments",
+          "group": "navigation@1"
+        },
+        {
           "command": "posit.publisher.deployments.refresh",
           "when": "view == posit.publisher.deployments",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -119,9 +139,14 @@
           "group": "inline"
         },
         {
+          "command": "posit.publisher.deployments.deploy",
+          "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment",
+          "group": "inline@1"
+        },
+        {
           "command": "posit.publisher.deployments.forget",
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError",
-          "group": "inline"
+          "group": "inline@2"
         }
       ]
     },
@@ -192,6 +217,11 @@
         "view": "posit.publisher.configurations",
         "contents": "To publish your content, you need a configuration file. Click Add to create one based on the files in your project.\n[Add](command:posit.publisher.configurations.add)",
         "when": "posit.publisher.configurations.isEmpty"
+      },
+      {
+        "view": "posit.publisher.deployments",
+        "contents": "To publish your content, you need to create a deployment. Click Add to create one and optionally publish your project using it.\n[Add](command:posit.publisher.deployments.add)",
+        "when": "posit.publisher.deployments.isEmpty"
       }
     ]
   },

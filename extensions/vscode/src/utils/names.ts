@@ -26,3 +26,30 @@ export async function untitledConfigurationName(): Promise<string> {
   } while (!defaultName);
   return defaultName;
 }
+
+export function untitledDeploymentName(existingDeploymentNames: string[]): string {
+
+  if (existingDeploymentNames.length === 0) {
+    return "Untitled-1";
+  }
+
+  let id = 0;
+  let defaultName = '';
+  do {
+    id += 1;
+    const trialName = `Untitled-${id}`;
+
+    if (uniqueDeploymentName(trialName, existingDeploymentNames)) {
+      defaultName = trialName;
+    }
+  } while (!defaultName);
+  return defaultName;
+}
+
+export function uniqueDeploymentName(nameToTest: string, existingNames: string[]) {
+  return !existingNames.find(
+    existingName => {
+      return existingName.toLowerCase() === nameToTest.toLowerCase();
+    }
+  );
+}

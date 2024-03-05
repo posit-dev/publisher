@@ -11,7 +11,9 @@ export type EventStreamMessage = {
   error?: string;
 };
 
-export type EventStreamMessageCallback = (message: EventStreamMessage) => void;
+export type EventStreamRegistration = (message: EventStreamMessage) => void;
+
+export type UnregisterCallback = { unregister: () => void };
 
 export function displayEventStreamMessage(msg: EventStreamMessage): string {
   if (msg.type === 'publish/checkCapabilities/log') {
@@ -61,7 +63,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     return `${msg.data.error}`;
   }
 
-  return msg.data.message;
+  return msg.data.message || msg.type;
 }
 
 /**
@@ -72,7 +74,7 @@ export class EventStream extends Readable {
   // Array to store event messages
   private messages: EventStreamMessage[] = [];
   // Map to store event callbacks
-  private callbacks: Map<string, EventStreamMessageCallback[]> = new Map();
+  private callbacks: Map<string, EventStreamRegistration[]> = new Map();
 
   /**
    * Creates a new instance of the EventStream class.
@@ -86,6 +88,10 @@ export class EventStream extends Readable {
     eventSource.addEventListener('message', (event) => {
       // Parse the event data and convert keys to camel case
       const message = convertKeysToCamelCase(JSON.parse(event.data));
+
+      // DEBUG
+      // console.log(JSON.stringify(message));
+
       // Add the message to the messages array
       this.messages.push(message);
       // Emit a 'message' event with the message as the payload
@@ -101,7 +107,7 @@ export class EventStream extends Readable {
    * @param callback The callback function to be invoked when the event occurs.
    * @returns An object with an `unregister` method that can be used to remove the callback.
    */
-  public register(type: string, callback: EventStreamMessageCallback): { unregister: () => void } {
+  public register(type: string, callback: EventStreamRegistration): UnregisterCallback {
     if (!this.callbacks.has(type)) {
       this.callbacks.set(type, []);
     }
