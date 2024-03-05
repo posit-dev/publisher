@@ -5,14 +5,24 @@ import {
   TreeItem,
   ExtensionContext,
   window,
+  EventEmitter,
+  Event,
+  commands,
 } from 'vscode';
 
 import api, { Account } from '../api';
 import { getSummaryStringFromError } from '../utils/errors';
 
 const viewName = 'posit.publisher.credentials';
+const refreshCommand = viewName + '.refresh';
+
+type CredentialEventEmitter = EventEmitter<CredentialsTreeItem | undefined | void>;
+type CredentialEvent = Event<CredentialsTreeItem | undefined | void>;
 
 export class CredentialsTreeDataProvider implements TreeDataProvider<CredentialsTreeItem> {
+
+  private _onDidChangeTreeData: CredentialEventEmitter = new EventEmitter();
+  readonly onDidChangeTreeData: CredentialEvent = this._onDidChangeTreeData.event;
 
   constructor() { }
 
@@ -38,10 +48,20 @@ export class CredentialsTreeDataProvider implements TreeDataProvider<Credentials
     }
   }
 
+  public refresh = () => {
+    console.log("refreshing deployments");
+    this._onDidChangeTreeData.fire();
+  };
+
   public register(context: ExtensionContext) {
     window.registerTreeDataProvider(viewName, this);
+
     context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this })
+    );
+
+    context.subscriptions.push(
+      commands.registerCommand(refreshCommand, this.refresh)
     );
   }
 }

@@ -62,6 +62,12 @@
         "category": "Posit"
       },
       {
+        "command": "posit.publisher.credentials.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Posit"
+      },
+      {
         "command": "posit.publisher.deployments.edit",
         "title": "Edit",
         "icon": "$(edit)",
@@ -130,6 +136,11 @@
           "command": "posit.publisher.deployments.refresh",
           "when": "view == posit.publisher.deployments",
           "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.credentials.refresh",
+          "when": "view == posit.publisher.credentials",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
