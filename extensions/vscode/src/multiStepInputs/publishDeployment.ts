@@ -6,7 +6,7 @@ import { QuickPickItem, ThemeIcon, window } from 'vscode';
 
 import { AccountAuthType, PreDeployment, Deployment, useApi } from '../api';
 import { getSummaryStringFromError } from '../utils/errors';
-import { initiatePublishing } from '../views/publishProgress';
+import { initiatePublishing } from '../views/deployProgress';
 import { EventStream } from '../events';
 
 export async function publishDeployment(deployment: PreDeployment | Deployment, stream: EventStream) {
