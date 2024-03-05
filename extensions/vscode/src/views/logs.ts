@@ -17,7 +17,7 @@ type LogStage = {
   events: EventStreamMessage[]
 };
 
-type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
+type LogsTreeItem = vscode.TreeItem | LogsTreeStageItem | LogsTreeLogItem;
 
 const createLogStage = (
   label: string,
@@ -38,6 +38,7 @@ const viewName = 'posit.publisher.logs';
  */
 export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeItem> {
   private stages!: Map<string, LogStage>;
+  private successEvents : EventStreamMessage[] = [];
 
   /**
    * Event emitter for when the tree data of the Logs view changes.
@@ -67,8 +68,8 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
       ['publish/deployBundle', createLogStage('Deploy Bundle')],
       ['publish/restorePythonEnv', createLogStage('Restore Python Environment')],
       ['publish/runContent', createLogStage('Run Content')],
-      ['publish/success', createLogStage('Wrapping up Deployment')]
     ]);
+    this.successEvents = [];
   }
 
   private registerEvents(stream: EventStream) {
@@ -86,11 +87,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
     this.registerRunContentEvents(stream);
 
     stream.register('publish/success', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/success');
-      if (stage) {
-        stage.status = LogStageStatus.completed;
-        stage.events.push(msg);
-      }
+      this.successEvents.push(msg);
       this.refresh();
     });
   }
@@ -310,10 +307,6 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
       if (stage) {
         stage.status = LogStageStatus.completed;
       }
-      const wrappingUpStage = this.stages.get('publish/success');
-      if (wrappingUpStage) {
-        wrappingUpStage.status = LogStageStatus.inProgress;
-      }
       this.refresh();
     });
     stream.register('publish/runContent/failure', (_: EventStreamMessage) => {
@@ -353,17 +346,28 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    * @param _ The parent element.
    * @returns The child elements of the parent element.
    */
-  getChildren(element?: LogsTreeItem): vscode.ProviderResult<LogsTreeItem[]> {
+  getChildren(element?: LogsTreeItem): vscode.ProviderResult<Array<LogsTreeItem>> {
+    if (element === undefined) {
+      return [new vscode.TreeItem('Publish', vscode.TreeItemCollapsibleState.Expanded)];
+    }
+
     // Map the events array to LogsTreeItem instances and return them as children
     if (element instanceof LogsTreeStageItem) {
       const result = element.events.map(e => new LogsTreeLogItem(e));
       return result;
     }
 
-    const result: LogsTreeStageItem[] = [];
+    const result: LogsTreeItem[] = [];
     this.stages.forEach((stage: LogStage) => {
       result.push(new LogsTreeStageItem(stage));
     });
+
+    if (this.successEvents.length > 0) {
+      result.push(
+        ...this.successEvents.map(event => new LogsTreeLogItem(event, vscode.TreeItemCollapsibleState.None))
+      );
+    };
+
     return result;
   }
 
