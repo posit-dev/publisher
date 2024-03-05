@@ -93,12 +93,12 @@ export async function addDeployment(stream: EventStream) {
       lastStep: 0,
       totalSteps: -1,
       data: {
-        // each attribute is initialized to the opposite of what is expected
+        // each attribute is initialized to undefined
         // to be returned when it has not been cancelled to assist type guards
-        deploymentName: <QuickPickItem>{}, // eventual type is string
-        credentialName: '', // eventual type is QuickPickItem
-        promptToDeploy: '', /// eventual type is QuickPickItem
-        configFile: '', // eventual type is QuickPickItem
+        deploymentName: undefined, // eventual type is string
+        credentialName: undefined, // eventual type is QuickPickItem
+        promptToDeploy: undefined, /// eventual type is QuickPickItem
+        configFile: undefined, // eventual type is QuickPickItem
       },
     };
     // determin number of total steps, as each step
@@ -130,7 +130,7 @@ export async function addDeployment(stream: EventStream) {
   ) {
     state.step = state.lastStep + 1;
 
-    state.data.deploymentName = await input.showInputBox({
+    const deploymentName = await input.showInputBox({
       title: state.title,
       step: state.step,
       totalSteps: state.totalSteps,
@@ -146,6 +146,8 @@ export async function addDeployment(stream: EventStream) {
       },
       shouldResume: () => Promise.resolve(false),
     });
+
+    state.data.deploymentName = deploymentName;
     return (input: MultiStepInput) => pickCredentials(input, state);
   }
 
@@ -252,14 +254,16 @@ export async function addDeployment(stream: EventStream) {
 
   // make sure user has not hit escape or moved away from the window
   // before completing the steps. This also serves as a type guard on
-  // our state data vars, which can be either QuickPickItems or strings
-  if (isQuickPickItem(state.data.deploymentName) || state.data.deploymentName.length === 0) {
-    return;
-  }
-  if (!isQuickPickItem(state.data.credentialName)) {
-    return;
-  }
-  if (!isQuickPickItem(state.data.promptToDeploy)) {
+  // our state data vars down to the actual type desired
+  if (
+    state.data.deploymentName === undefined ||
+    state.data.credentialName === undefined ||
+    state.data.promptToDeploy === undefined ||
+    // have to add type guards here to eliminate the variability
+    typeof (state.data.deploymentName) !== 'string' ||
+    !isQuickPickItem(state.data.credentialName) ||
+    !isQuickPickItem(state.data.promptToDeploy)
+  ) {
     return;
   }
 
@@ -279,6 +283,7 @@ export async function addDeployment(stream: EventStream) {
   // Should we deploy and did we get an answer for the config file?
   if (
     state.data.promptToDeploy.label === 'Yes' &&
+    state.data.configFile !== undefined &&
     isQuickPickItem(state.data.configFile)
   ) {
     try {

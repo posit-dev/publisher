@@ -83,10 +83,10 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
       lastStep: 0,
       totalSteps: -1,
       data: {
-        // each attribute is initialized to the opposite of what is expected
-        // to be returned when it has not been cancelled to assist type guards
-        credentialName: '', // eventual type is QuickPickItem
-        configFile: '', // eventual type is QuickPickItem
+        // each attribute is initialized to undefined
+        // to be returned when it has not been cancelled
+        credentialName: undefined, // eventual type is QuickPickItem
+        configFile: undefined, // eventual type is QuickPickItem
       },
     };
 
@@ -174,11 +174,14 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
 
   // make sure user has not hit escape or moved away from the window
   // before completing the steps. This also serves as a type guard on
-  // our state data vars, which can be either QuickPickItems or strings
-  if (!isQuickPickItem(state.data.credentialName)) {
-    return;
-  }
-  if (!isQuickPickItem(state.data.configFile)) {
+  // our state data vars down to the actual type desired
+  if (
+    state.data.credentialName === undefined ||
+    state.data.configFile === undefined ||
+    // have to add type guards here to eliminate the variability
+    !isQuickPickItem(state.data.credentialName) ||
+    !isQuickPickItem(state.data.configFile)
+  ) {
     return;
   }
 

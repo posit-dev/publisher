@@ -19,7 +19,7 @@ export interface MultiStepState {
   step: number;
   lastStep: number;
   totalSteps: number;
-  data: Record<string, QuickPickItem | string>
+  data: Record<string, QuickPickItem | string | undefined>
 }
 
 type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
