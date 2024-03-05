@@ -13,6 +13,7 @@ enum LogStageStatus {
 
 type LogStage = {
   label: string,
+  collapseState?: vscode.TreeItemCollapsibleState,
   status: LogStageStatus,
   events: EventStreamMessage[]
 };
@@ -21,11 +22,13 @@ type LogsTreeItem = vscode.TreeItem | LogsTreeStageItem | LogsTreeLogItem;
 
 const createLogStage = (
   label: string,
+  collapseState?: vscode.TreeItemCollapsibleState,
   status: LogStageStatus = LogStageStatus.notStarted,
   events: EventStreamMessage[] = [],
 ): LogStage => {
   return {
     label,
+    collapseState,
     status,
     events,
   };
@@ -391,9 +394,12 @@ export class LogsTreeStageItem extends vscode.TreeItem {
   events: EventStreamMessage[] = [];
 
   constructor(stage: LogStage) {
-    const collapsibleState = stage.events.length > 0 ?
-      vscode.TreeItemCollapsibleState.Collapsed :
-      vscode.TreeItemCollapsibleState.None;
+    let collapsibleState = stage.collapseState;
+    if (collapsibleState === undefined) {
+      collapsibleState = stage.events.length || stage.stages.size ?
+        vscode.TreeItemCollapsibleState.Collapsed :
+        vscode.TreeItemCollapsibleState.None;
+    }
 
     super(stage.label, collapsibleState);
 
