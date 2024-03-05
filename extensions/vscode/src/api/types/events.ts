@@ -122,25 +122,13 @@ export interface EventSubscriptionTargetCallbackMap {
 export const eventTypeToString = (eventTypeStr: string): string => {
   const eventVerbToString: Record<string, string> = {
     'publish/checkCapabilities': 'Check Capabilities',
-    'publish/checkCapabilities/start': 'Check Capabilities - starting...',
-    'publish/checkCapabilities/success': 'Check Capabilities - completing...',
     'publish/createBundle': 'Create Bundle',
-    'publish/createBundle/start': 'Create Bundle - starting...',
     'publish/uploadBundle': 'Upload Bundle',
     'publish/createDeployment': 'Create Deployment',
     'publish/deployBundle': 'Deploy Bundle',
     'publish/restorePythonEnv': 'Restore Python Environment',
     'publish/runContent': 'Run Content',
     'publish/success': 'Wrapping up Deployment',
-  };
-
-  const eventActionToString: Record<string, string> = {
-    'start': 'starting...',
-    'success': 'completed successfully...',
-    'failure': 'error detected...',
-    'log': 'in progress...',
-    'status': 'in progress...',
-    'progress': 'in progress...',
   };
 
   // we do not provide strings for wildcards
@@ -162,29 +150,8 @@ export const eventTypeToString = (eventTypeStr: string): string => {
     return eventTypeStr;
   }
 
-  const suffix = eventActionToString[parts[2]];
-  if (suffix) {
-    return `${base} - ${suffix}`;
-  }
   return base;
 }
-
-export const eventNameToDisplay: Record<string, string> = {
-  'publish/checkCapabilities': 'Check Capabilities',
-  'publish/checkCapabilities/start': 'Check Capabilities - starting...',
-  'publish/checkCapabilities/success': 'Check Capabilities - completing...',
-  'publish/createBundle': 'Create Bundle',
-  'publish/createBundle/start': 'Create Bundle - starting...',
-  'publish/uploadBundle': 'Upload Bundle',
-  'publish/createDeployment': 'Create Deployment',
-  'publish/deployBundle': 'Deploy Bundle',
-  'publish/restorePythonEnv': 'Restore Python Environment',
-  'publish/runContent': 'Run Content',
-  'publish/success': 'Wrapping up Deployment',
-};
-
-
-
 
 export function getLocalId(arg: EventStreamMessage) {
   return arg.data.localId;

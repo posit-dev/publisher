@@ -9,12 +9,12 @@ export function initiatePublishing(localID: string, stream: EventStream) {
     location: ProgressLocation.Notification,
     title: `Deploying your project...`,
     cancellable: false
-  }, (progress, token) => {
+  }, (progress) => {
     let resolveCB: (reason?: any) => void;
     let rejectCB: (reason?: any) => void;
     const registrations: UnregisterCallback[] = [];
 
-    const unregister = () => {
+    const unregiserAll = () => {
       registrations.forEach(cb => cb.unregister());
     };
 
@@ -268,7 +268,7 @@ export function initiatePublishing(localID: string, stream: EventStream) {
     registrations.push(
       stream.register('publish/success', (msg: EventStreamMessage) => {
         if (localID === msg.data.localId) {
-          unregister();
+          unregiserAll();
           progress.report({ increment: 100, message: "Deployment was successful" });
           resolveCB('Success!');
         }
@@ -278,16 +278,12 @@ export function initiatePublishing(localID: string, stream: EventStream) {
     registrations.push(
       stream.register('publish/failure', (msg: EventStreamMessage) => {
         if (localID === msg.data.localId) {
-          unregister();
+          unregiserAll();
           progress.report({ increment: 100, message: "Deployment process encountered an error " });
           rejectCB('Error Encountered!');
         }
       })
     );
-
-    token.onCancellationRequested(() => {
-      console.log("User canceled the long running operation");
-    });
 
     return promise;
   });
