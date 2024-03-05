@@ -119,6 +119,40 @@ export interface EventSubscriptionTargetCallbackMap {
   'publish/failure': OnPublishFailureCallback
 }
 
+export const eventTypeToString = (eventTypeStr: string): string => {
+  const eventVerbToString: Record<string, string> = {
+    'publish/checkCapabilities': 'Check Capabilities',
+    'publish/createBundle': 'Create Bundle',
+    'publish/uploadBundle': 'Upload Bundle',
+    'publish/createDeployment': 'Create Deployment',
+    'publish/deployBundle': 'Deploy Bundle',
+    'publish/restorePythonEnv': 'Restore Python Environment',
+    'publish/runContent': 'Run Content',
+    'publish/success': 'Wrapping up Deployment',
+  };
+
+  // we do not provide strings for wildcards
+  if (eventTypeStr.includes('*')) {
+    return eventTypeStr;
+  }
+
+  // not in the format we're expecting
+  const parts = eventTypeStr.split('/');
+  if (parts.length !== 3) {
+    return eventTypeStr;
+  }
+
+  const verb = `${parts[0]}/${parts[1]}`;
+  const base = eventVerbToString[verb];
+
+  // we don't know about this event
+  if (base === undefined) {
+    return eventTypeStr;
+  }
+
+  return base;
+}
+
 export function getLocalId(arg: EventStreamMessage) {
   return arg.data.localId;
 }

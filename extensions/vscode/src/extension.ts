@@ -41,7 +41,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const stream = new EventStream(port);
   new ProjectTreeDataProvider().register(context);
-  new DeploymentsTreeDataProvider().register(context);
+  new DeploymentsTreeDataProvider(stream).register(context);
   new ConfigurationsTreeDataProvider().register(context);
   new FilesTreeDataProvider().register(context);
   new DependenciesTreeDataProvider().register(context);

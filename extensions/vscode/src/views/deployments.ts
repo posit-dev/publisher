@@ -23,16 +23,23 @@ import {
   PreDeployment,
   isPreDeployment,
   AllDeploymentTypes,
+  isDeploymentError,
 } from '../api';
 
 import { getSummaryStringFromError } from '../utils/errors';
 import { formatDateString } from '../utils/date';
-import { confirmDelete } from '../dialogs';
+import { confirmForget } from '../dialogs';
+import { addDeployment } from '../multiStepInputs/addDeployment';
+import { publishDeployment } from '../multiStepInputs/deployProject';
+import { EventStream } from '../events';
 
 const viewName = 'posit.publisher.deployments';
 const refreshCommand = viewName + '.refresh';
 const editCommand = viewName + '.edit';
 const forgetCommand = viewName + '.forget';
+const addCommand = viewName + '.add';
+const deployCommand = viewName + '.deploy';
+const isEmptyContext = viewName + '.isEmpty';
 
 const fileStore = '.posit/publish/deployments/*.toml';
 
@@ -46,7 +53,9 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
 
   private api = useApi();
 
-  constructor() {
+  constructor(
+    private stream: EventStream
+  ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -77,13 +86,17 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       // API Returns:
       // 200 - success
       // 500 - internal server error
-      const response = (await this.api.deployments.getAll());
-      return response.data.map(deployment => {
+      const response = await this.api.deployments.getAll();
+      const deployments = response.data;
+      commands.executeCommand('setContext', isEmptyContext, deployments.length === 0);
+
+      return deployments.map(deployment => {
         const fileUri = Uri.file(deployment.deploymentPath);
         return new DeploymentsTreeItem(deployment, fileUri);
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError('deployments::getChildren', error);
+      commands.executeCommand('setContext', isEmptyContext, true);
       window.showInformationMessage(summary);
       return [];
     }
@@ -101,22 +114,37 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     context.subscriptions.push(treeView);
 
     context.subscriptions.push(
+      commands.registerCommand(addCommand, () => {
+        addDeployment(this.stream);
+      })
+    );
+
+    context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh)
     );
+
     context.subscriptions.push(
       commands.registerCommand(editCommand, async (item: DeploymentsTreeItem) => {
         await commands.executeCommand('vscode.open', item.fileUri);
       })
     );
+
+    context.subscriptions.push(
+      commands.registerCommand(deployCommand, async (item: DeploymentsTreeItem) => {
+        if (!isDeploymentError(item.deployment)) {
+          publishDeployment(item.deployment, this.stream);
+        }
+      })
+    );
+
     context.subscriptions.push(
       commands.registerCommand(forgetCommand, async (item: DeploymentsTreeItem) => {
-        const ok = await confirmDelete(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
+        const ok = await confirmForget(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
         if (ok) {
           await this.api.deployments.delete(item.deployment.deploymentName);
         }
       })
     );
-
 
     if (this.root !== undefined) {
       console.log("creating filesystem watcher for deployment view");
@@ -176,3 +204,4 @@ export class DeploymentsTreeItem extends TreeItem {
     this.iconPath = new ThemeIcon('warning');
   }
 }
+
