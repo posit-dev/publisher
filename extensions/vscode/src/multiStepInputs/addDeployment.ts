@@ -7,7 +7,7 @@ import { QuickPickItem, ThemeIcon, window } from 'vscode';
 import { AccountAuthType, useApi } from '../api';
 import { getSummaryStringFromError } from '../utils/errors';
 import { uniqueDeploymentName, untitledDeploymentName } from '../utils/names';
-import { initiatePublishing } from '../views/deployProgress';
+import { initiateDeployment } from '../views/deployProgress';
 import { EventStream } from '../events';
 
 export async function addDeployment(stream: EventStream) {
@@ -287,7 +287,7 @@ export async function addDeployment(stream: EventStream) {
         state.data.credentialName.label,
         state.data.configFile.label,
       );
-      initiatePublishing(response.data.localId, stream);
+      initiateDeployment(response.data.localId, stream);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError('addDeployment, deploy', error);
       window.showInformationMessage(
