@@ -5,6 +5,8 @@ import {
   EventEmitter,
   ExtensionContext,
   FileSystemWatcher,
+  InputBoxValidationMessage,
+  InputBoxValidationSeverity,
   RelativePattern,
   ThemeIcon,
   TreeDataProvider,
@@ -26,7 +28,7 @@ import {
 
 import { confirmDelete, confirmReplace } from '../dialogs';
 import { getSummaryStringFromError } from '../utils/errors';
-import { ensureSuffix, fileExists } from '../utils/files';
+import { ensureSuffix, fileExists, isValidFilename } from '../utils/files';
 import { untitledConfigurationName } from '../utils/names';
 
 const viewName = 'posit.publisher.configurations';
@@ -177,6 +179,16 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     const newName = await window.showInputBox({
       value: defaultName,
       prompt: "New configuration name",
+      validateInput: filename => {
+        if (isValidFilename(filename)) {
+          return undefined;
+        } else {
+          return {
+            message: `invalid name: cannot be '.' or contain '..' or any of these characters: /:*?"<>|`,
+            severity: InputBoxValidationSeverity.Error,
+          }
+        }
+      }
     });
     if (newName === undefined || newName === '') {
       // canceled
