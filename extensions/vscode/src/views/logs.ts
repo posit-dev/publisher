@@ -43,9 +43,8 @@ const viewName = 'posit.publisher.logs';
  * Tree data provider for the Logs view.
  */
 export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeItem> {
-  private outsideStage!: LogStage;
   private stages!: Map<string, LogStage>;
-  private successEvents : EventStreamMessage[] = [];
+  private publishingStage!: LogStage;
 
   /**
    * Event emitter for when the tree data of the Logs view changes.
@@ -59,7 +58,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    * @param {EventStream} stream - The event stream to listen to.
    */
   constructor(stream: EventStream) {
-    // Initialize the stages map
+    // Initialize the stages map and the outer, publishing stage
     this.resetStages();
 
     // Register all of the events this view cares about
@@ -67,8 +66,6 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
   };
 
   private resetStages() {
-    this.outsideStage = createLogStage('Publishing', vscode.TreeItemCollapsibleState.Expanded);
-
     this.stages = new Map([
       ['publish/checkCapabilities', createLogStage('Check Capabilities')],
       ['publish/createBundle', createLogStage('Create Bundle')],
@@ -78,16 +75,20 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
       ['publish/restorePythonEnv', createLogStage('Restore Python Environment')],
       ['publish/runContent', createLogStage('Run Content')],
     ]);
-    this.outsideStage.stages = Array.from(this.stages.values());
-    this.successEvents = [];
-    this.outsideStage.events = this.successEvents;
+
+    this.publishingStage = createLogStage(
+      'Publishing',
+      vscode.TreeItemCollapsibleState.Expanded,
+      LogStageStatus.notStarted,
+      Array.from(this.stages.values())
+    );
   }
 
   private registerEvents(stream: EventStream) {
     // Reset events when a new publish starts
     stream.register('publish/start', (_: EventStreamMessage) => {
       this.resetStages();
-      this.outsideStage.status = LogStageStatus.inProgress;
+      this.publishingStage.status = LogStageStatus.inProgress;
       this.refresh();
     });
 
@@ -100,8 +101,8 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
     this.registerRunContentEvents(stream);
 
     stream.register('publish/success', (msg: EventStreamMessage) => {
-      this.outsideStage.status = LogStageStatus.completed;
-      this.successEvents.push(msg);
+      this.publishingStage.status = LogStageStatus.completed;
+      this.publishingStage.events.push(msg);
       this.refresh();
     });
   }
@@ -362,7 +363,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    */
   getChildren(element?: LogsTreeItem): vscode.ProviderResult<Array<LogsTreeItem>> {
     if (element === undefined) {
-      return [new LogsTreeStageItem(this.outsideStage)];
+      return [new LogsTreeStageItem(this.publishingStage)];
     }
 
     // Map the events array to LogsTreeItem instances and return them as children
@@ -375,18 +376,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
       return result;
     }
 
-    const result: LogsTreeItem[] = [];
-    this.stages.forEach((stage: LogStage) => {
-      result.push(new LogsTreeStageItem(stage));
-    });
-
-    if (this.successEvents.length > 0) {
-      result.push(
-        ...this.successEvents.map(event => new LogsTreeLogItem(event, vscode.TreeItemCollapsibleState.None))
-      );
-    };
-
-    return result;
+    return [];
   }
 
   /**
