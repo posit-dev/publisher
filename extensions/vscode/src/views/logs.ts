@@ -86,8 +86,9 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
 
   private registerEvents(stream: EventStream) {
     // Reset events when a new publish starts
-    stream.register('publish/start', (_: EventStreamMessage) => {
+    stream.register('publish/start', (msg: EventStreamMessage) => {
       this.resetStages();
+      this.publishingStage.label = `Publishing to ${msg.data.server}`;
       this.publishingStage.status = LogStageStatus.inProgress;
       this.refresh();
     });
