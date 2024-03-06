@@ -26,12 +26,22 @@ func (m *MockPythonInspector) InspectPython() (*config.Python, error) {
 	}
 }
 
-func (m *MockPythonInspector) CreateRequirementsFile(base util.Path, dest util.Path) error {
-	args := m.Called(base, dest)
+func (m *MockPythonInspector) ReadRequirementsFile(path util.Path) ([]string, error) {
+	args := m.Called(path)
+	reqs := args.Get(0)
+	if reqs == nil {
+		return nil, args.Error(1)
+	} else {
+		return reqs.([]string), args.Error(1)
+	}
+}
+
+func (m *MockPythonInspector) WriteRequirementsFile(base util.Path, reqs []string) error {
+	args := m.Called(base, reqs)
 	return args.Error(0)
 }
 
-func (m *MockPythonInspector) GetRequirements(base util.Path) ([]string, string, error) {
+func (m *MockPythonInspector) ScanRequirements(base util.Path) ([]string, string, error) {
 	args := m.Called()
 	reqs := args.Get(0)
 	if reqs == nil {

@@ -4,6 +4,8 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/inspect"
@@ -12,31 +14,34 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type PostRequirementsInspectResponse struct {
+type requirementsDTO struct {
 	Requirements []string          `json:"requirements"`
-	Python       string            `json:"python"`
 	Error        *types.AgentError `json:"error,omitempty"`
 }
 
-type PostRequirementsInspectHandler struct {
+type GetRequirementsHandler struct {
 	base      util.Path
 	log       logging.Logger
 	inspector inspect.PythonInspector
 }
 
-func NewPostRequirementsInspectHandler(base util.Path, log logging.Logger) *PostRequirementsInspectHandler {
-	return &PostRequirementsInspectHandler{
+func NewGetRequirementsHandler(base util.Path, log logging.Logger) *GetRequirementsHandler {
+	return &GetRequirementsHandler{
 		base:      base,
 		log:       log,
 		inspector: inspect.NewPythonInspector(base, util.Path{}, log),
 	}
 }
 
-func (h *PostRequirementsInspectHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	reqs, python, err := h.inspector.GetRequirements(h.base)
-	response := PostRequirementsInspectResponse{
+func (h *GetRequirementsHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	path := h.base.Join(inspect.PythonRequirementsFilename)
+	reqs, err := h.inspector.ReadRequirementsFile(path)
+	if err != nil && errors.Is(err, fs.ErrNotExist) {
+		NotFound(w, h.log, err)
+		return
+	}
+	response := requirementsDTO{
 		Requirements: reqs,
-		Python:       python,
 		Error:        types.AsAgentError(err),
 	}
 	w.Header().Set("content-type", "application/json")
