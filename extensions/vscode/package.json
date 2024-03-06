@@ -194,7 +194,8 @@
         {
           "id": "posit.publisher.project",
           "name": "Project",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState == empty"
         },
         {
           "id": "posit.publisher.files",
