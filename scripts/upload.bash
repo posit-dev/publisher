@@ -52,7 +52,7 @@ do
     arch=${platform/*\/} # retain the part after the slash
     archive=$(./scripts/get-archive-path.bash "$name" "$version" "$os" "$arch" )
     echo "Archive: $archive" 1>&2
-    if [ -f "$archive" ];
+    if ! [ -f "$archive" ];
     then
       echo "Not Found. Skipping..." 1>&2
     else
@@ -68,7 +68,7 @@ do
 
     extension=$(./scripts/get-vscode-extension-path.bash "$name" "$version" "$os" "$arch")
     echo "VSCode Extension: $extension"
-    if [ -f "$extension" ];
+    if ! [ -f "$extension" ];
     then
       echo "Not Found. Skipping..." 1>&2
     else
