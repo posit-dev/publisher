@@ -62,6 +62,18 @@
         "category": "Posit"
       },
       {
+        "command": "posit.publisher.configurations.rename",
+        "title": "Rename",
+        "icon": "$(symbol-key)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.configurations.clone",
+        "title": "Clone",
+        "icon": "$(files)",
+        "category": "Posit"
+      },
+      {
         "command": "posit.publisher.deployments.edit",
         "title": "Edit",
         "icon": "$(edit)",
@@ -119,7 +131,8 @@
         },
         {
           "command": "posit.publisher.configurations.refresh",
-          "when": "view == posit.publisher.configurations"
+          "when": "view == posit.publisher.configurations",
+          "group": "navigation"
         },
         {
           "command": "posit.publisher.deployments.add",
@@ -134,9 +147,19 @@
       ],
       "view/item/context": [
         {
+          "command": "posit.publisher.configurations.clone",
+          "when": "view == posit.publisher.configurations",
+          "group": "inline@1"
+        },
+        {
+          "command": "posit.publisher.configurations.rename",
+          "when": "view == posit.publisher.configurations",
+          "group": "inline@2"
+        },
+        {
           "command": "posit.publisher.configurations.delete",
           "when": "view == posit.publisher.configurations",
-          "group": "inline"
+          "group": "inline@3"
         },
         {
           "command": "posit.publisher.deployments.deploy",

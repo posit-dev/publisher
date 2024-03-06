@@ -5,6 +5,7 @@ import {
   EventEmitter,
   ExtensionContext,
   FileSystemWatcher,
+  InputBoxValidationSeverity,
   RelativePattern,
   ThemeIcon,
   TreeDataProvider,
@@ -24,14 +25,17 @@ import {
   isConfigurationError
 } from "../api/types/configurations";
 
-import { confirmDelete } from '../dialogs';
+import { confirmDelete, confirmReplace } from '../dialogs';
 import { getSummaryStringFromError } from '../utils/errors';
+import { ensureSuffix, fileExists, isValidFilename } from '../utils/files';
 import { untitledConfigurationName } from '../utils/names';
 
 const viewName = 'posit.publisher.configurations';
 const refreshCommand = viewName + '.refresh';
 const addCommand = viewName + '.add';
 const editCommand = viewName + '.edit';
+const cloneCommand = viewName + '.clone';
+const renameCommand = viewName + '.rename';
 const deleteCommand = viewName + '.delete';
 const isEmptyContext = viewName + '.isEmpty';
 const fileStore = '.posit/publish/*.toml';
@@ -89,7 +93,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     treeView.onDidChangeSelection(async e => {
       if (e.selection.length > 0) {
         const item = e.selection.at(0);
-        await commands.executeCommand('posit.publisher.configurations.edit', item);
+        await commands.executeCommand(editCommand, item);
       }
     });
 
@@ -98,6 +102,8 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       commands.registerCommand(refreshCommand, this.refresh),
       commands.registerCommand(addCommand, this.add),
       commands.registerCommand(editCommand, this.edit),
+      commands.registerCommand(renameCommand, this.rename),
+      commands.registerCommand(cloneCommand, this.clone),
       commands.registerCommand(deleteCommand, this.delete)
     );
     if (this.root !== undefined) {
@@ -149,6 +155,56 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   private edit = async (config: ConfigurationTreeItem) => {
     await commands.executeCommand('vscode.open', config.fileUri);
   };
+
+  private rename = async (item: ConfigurationTreeItem) => {
+    const defaultName = item.config.configurationName;
+    const newUri = await this.promptForNewName(item.fileUri, defaultName);
+    if (newUri === undefined) {
+      return;
+    }
+    workspace.fs.rename(item.fileUri, newUri, {overwrite: true});
+  };
+
+  private clone = async (item: ConfigurationTreeItem) => {
+    const defaultName = await untitledConfigurationName();
+    const newUri = await this.promptForNewName(item.fileUri, defaultName);
+    if (newUri === undefined) {
+      return;
+    }
+    workspace.fs.copy(item.fileUri, newUri, {overwrite: true});
+  };
+
+  private async promptForNewName(oldUri: Uri, defaultName: string): Promise<Uri | undefined> {
+    const newName = await window.showInputBox({
+      value: defaultName,
+      prompt: "New configuration name",
+      validateInput: filename => {
+        if (isValidFilename(filename)) {
+          return undefined;
+        } else {
+          return {
+            message: `invalid name: cannot be '.' or contain '..' or any of these characters: /:*?"<>|`,
+            severity: InputBoxValidationSeverity.Error,
+          };
+        }
+      }
+    });
+    if (newName === undefined || newName === '') {
+      // canceled
+      return undefined;
+    }
+
+    const relativePath = "../" + ensureSuffix(".toml", newName);
+    const newUri = Uri.joinPath(oldUri, relativePath);
+
+    if (await fileExists(newUri)) {
+      const ok = await confirmReplace(`Are you sure you want to replace the configuration '${newName}'?`);
+      if (!ok) {
+        return undefined;
+      }
+    }
+    return newUri;
+  }
 
   private delete = async (item: ConfigurationTreeItem) => {
     const name = item.config.configurationName;
