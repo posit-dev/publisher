@@ -6,7 +6,7 @@ then
 fi
 
 cmd=${1-}
-if [ -z "$cmd" ]; then
+if [[ -z "$cmd" ]]; then
   echo "usage: $0 <cmd>"
   exit 1
 fi
