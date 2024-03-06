@@ -4,6 +4,7 @@ alias t := test
 
 export CONTENT := env_var_or_default("CONTENT", "all")
 export CONTENT_REPO := env_var_or_default("CONTENT_REPO", "/work/connect-content")
+export DOCKER_CONNECT := env_var_or_default("DOCKER_CONNECT", "false")
 
 export _ci := env_var_or_default("CI", "false")
 

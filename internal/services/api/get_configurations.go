@@ -27,25 +27,19 @@ func readConfigFiles(base util.Path) ([]configDTO, error) {
 	}
 	response := make([]configDTO, 0, len(paths))
 	for _, path := range paths {
-		relPath, err := path.Rel(base)
-		if err != nil {
-			// This error should never happen. But, if it does,
-			// still return as much data as we can.
-			relPath = path
-		}
 		name := strings.TrimSuffix(path.Base(), ".toml")
 		cfg, err := config.FromFile(path)
 
 		if err != nil {
 			response = append(response, configDTO{
 				Name:  name,
-				Path:  relPath.String(),
+				Path:  path.String(),
 				Error: types.AsAgentError(err),
 			})
 		} else {
 			response = append(response, configDTO{
 				Name:          name,
-				Path:          relPath.String(),
+				Path:          path.String(),
 				Configuration: cfg,
 			})
 		}

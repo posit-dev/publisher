@@ -23,6 +23,7 @@ deploy_assertion() {
     fi
 }
 
+
 # temporary unsupported quarto types
 quarto_r_content=(
     "quarto-proj-r-shiny" "quarto-proj-r" "quarto-proj-r-py" 
@@ -80,4 +81,20 @@ python_content_types=(
 
     # cleanup
     rm -rf ${CONTENT_PATH}/${CONTENT}/.posit/ ${CONTENT_PATH}/${CONTENT}/.positignore
+}
+
+# verify error for missing requirements file
+@test "deploy no requirements file" {
+    if [[ ${python_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
+        rm -rf ${CONTENT_PATH}/${CONTENT}/requirements.txt
+        run ${EXE} deploy ${CONTENT_PATH}/${CONTENT}
+        assert_failure
+        assert_output --partial "\
+can't find the package file (requirements.txt) in the project directory.
+Create the file, listing the packages your project depends on.
+Or scan your project dependencies using the publisher UI or
+the 'publisher requirements create' command."
+    else 
+        skip
+    fi
 }

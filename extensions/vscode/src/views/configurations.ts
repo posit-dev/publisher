@@ -5,7 +5,6 @@ import {
   EventEmitter,
   ExtensionContext,
   FileSystemWatcher,
-  InputBoxValidationMessage,
   InputBoxValidationSeverity,
   RelativePattern,
   ThemeIcon,
@@ -77,14 +76,14 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       commands.executeCommand('setContext', isEmptyContext, configurations.length === 0);
 
       return configurations.map(config => {
-        const fileUri = Uri.joinPath(root.uri, config.configurationPath);
+        const fileUri = Uri.file(config.configurationPath);
         return new ConfigurationTreeItem(config, fileUri);
       });
-      } catch (error: unknown) {
-        const summary = getSummaryStringFromError('configurations::getChildren', error);
-        window.showInformationMessage(summary);
-        commands.executeCommand('setContext', isEmptyContext, true);
-        return [];
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError('configurations::getChildren', error);
+      window.showInformationMessage(summary);
+      commands.executeCommand('setContext', isEmptyContext, true);
+      return [];
     }
   }
 
@@ -186,7 +185,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
           return {
             message: `invalid name: cannot be '.' or contain '..' or any of these characters: /:*?"<>|`,
             severity: InputBoxValidationSeverity.Error,
-          }
+          };
         }
       }
     });
@@ -213,7 +212,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     if (ok) {
       try {
         await api.configurations.delete(name);
-      }  catch (error: unknown) {
+      } catch (error: unknown) {
         const summary = getSummaryStringFromError('configurations::delete', error);
         window.showInformationMessage(summary);
       }
@@ -250,7 +249,7 @@ export class ConfigurationTreeItem extends TreeItem {
     super(config.configurationName);
 
     if (isConfigurationError(config)) {
-      this.iconPath = new ThemeIcon('warning' );
+      this.iconPath = new ThemeIcon('warning');
     }
     this.tooltip = this.getTooltip();
   }

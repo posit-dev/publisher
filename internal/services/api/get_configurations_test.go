@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/config"
@@ -63,7 +62,7 @@ func (s *GetConfigurationsSuite) TestGetConfigurations() {
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 1)
 
-	s.Equal(filepath.Join(".posit", "publish", "default.toml"), res[0].Path)
+	s.Equal(s.cwd.Join(".posit", "publish", "default.toml").String(), res[0].Path)
 	s.Equal("default", res[0].Name)
 	s.Nil(res[0].Error)
 	s.Equal(cfg, res[0].Configuration)
@@ -97,13 +96,13 @@ func (s *GetConfigurationsSuite) TestGetConfigurationsError() {
 	s.NoError(dec.Decode(&res))
 	s.Len(res, 2)
 
-	s.Equal(filepath.Join(".posit", "publish", "default.toml"), res[0].Path)
+	s.Equal(s.cwd.Join(".posit", "publish", "default.toml").String(), res[0].Path)
 	s.Equal("default", res[0].Name)
 	s.Nil(res[0].Error)
 	s.Equal(cfg, res[0].Configuration)
 
 	var nilConfiguration *config.Config
-	s.Equal(filepath.Join(".posit", "publish", "other.toml"), res[1].Path)
+	s.Equal(s.cwd.Join(".posit", "publish", "other.toml").String(), res[1].Path)
 	s.Equal("other", res[1].Name)
 	s.NotNil(res[1].Error)
 	s.Equal(nilConfiguration, res[1].Configuration)

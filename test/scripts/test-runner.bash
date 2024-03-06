@@ -13,35 +13,41 @@ fi
 # use this if you need Connect
 setup_connect() {
     pip install -r ../setup/requirements.txt
-    export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
-    export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+    if [[ "${DOCKER_CONNECT}" = true ]]; then
+        docker-compose -f ../docker-compose.yml up -d
+        export CONNECT_SERVER="http://localhost:3939"
+        export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+        # wait until Connect is available
+        timeout 100 bash -c \
+        'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${CONNECT_SERVER}/__ping__)" != "200" ]]; \
+            do sleep 1; \
+            echo "retry"; \
+        done'
+    else
+        export CONNECT_SERVER="$(python ../setup/connect_setup.py)"
+        export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
+    fi
 }
 
 # use this if you need content
 content_tests() {
+    if [[ ${_ci} == false ]]; then
+        mkdir -p ../content/bundles/
+        cp -R "${HOME}${CONTENT_REPO}/bundles/" ../content/bundles
+    fi
     # pull the content from connect-content repo
     if [[ "${CONTENT}" == "all" ]]; then
-        if [[ ${_ci} == false ]]; then
-            mkdir -p ../content/bundles/
-            cp -R ${HOME}${CONTENT_REPO}/bundles/ ../content/bundles/
-        fi
-
-        # content_list will contain all content in
-        content_list=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
-        for i in ${content_list}
-        do
-            # only test when we have a .publisher-env file for the content
-            if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
-                export CONTENT=${i}
-                export EXE=$exe 
-                just run "${test_case}"
-            fi
-        done
-    else
-        cp -R "${HOME}${CONTENT_REPO}/bundles/${CONTENT}" ../content/
-        export EXE=$exe 
-        just run "${test_case}"
+        CONTENT=$(find "../content/bundles" -maxdepth 1 -type d -exec basename {} \;)
     fi
+    for i in ${CONTENT}
+    do
+        # only test when we have a .publisher-env file for the content
+        if [[ -f ../content/bundles/${i}/test/.publisher-env ]]; then
+            export CONTENT=${i}
+            export EXE=$exe 
+            just run "${test_case}"
+        fi
+    done
 }
 
 # use this for generic tests

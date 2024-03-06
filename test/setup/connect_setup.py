@@ -10,7 +10,7 @@ import os
 alias = "ubuntu22-publishing-client-2024.02"
 box_name = "connect-publishing-client"
 list_command = "fuzzbucket-client -j list"
-create_command = "fuzzbucket-client create -c -S 20 -t m5.2xlarge " + alias + " -n " + box_name
+create_command = "fuzzbucket-client create -c -S 20 " + alias + " -n " + box_name
 remove_command = "fuzzbucket-client rm " + box_name
 ssh_options = "-i fuzzbucket-ssh-key"
 
@@ -57,8 +57,7 @@ def get_ip(box_name):
 # check if fuzzbucket is up and taking requests
 def connect_ready(box_name, max_attempts, interval):
     connect_box=get_ip(box_name)
-    update_config="fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo sed -i 's/CONNECT_IP/" + connect_box + "/g' /etc/rstudio-connect/rstudio-connect.gcfg"
-    restart_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo systemctl restart rstudio-connect"
+
     attempts = 0
     while attempts < max_attempts:
         try:
@@ -66,6 +65,8 @@ def connect_ready(box_name, max_attempts, interval):
             response = requests.get("http://"+connect_box+":3939/__ping__")
             if response.status_code == 200:
                 if connect_version != get_current_connect_version(get_ip(box_name), api_key):
+                    update_config="fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo sed -i 's/CONNECT_IP/" + connect_box + "/g' /etc/rstudio-connect/rstudio-connect.gcfg"
+                    restart_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo systemctl restart rstudio-connect"
                     logging.info("Installing Connect on " + connect_box)
                     subprocess.check_output(install_connect, shell=True, text=True)
                     subprocess.check_output(update_config, shell=True, text=True)

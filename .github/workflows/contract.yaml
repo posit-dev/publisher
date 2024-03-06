@@ -36,7 +36,6 @@ jobs:
         with:
           repository: rstudio/connect-content
           path: 'test/content'
-          ref: 'kg-publisher'
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
