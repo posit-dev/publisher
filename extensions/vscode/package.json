@@ -112,6 +112,12 @@
         "category": "Posit"
       },
       {
+        "command": "posit.publisher.requirements.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Posit"
+      },
+      {
         "command": "posit.publisher.requirements.scan",
         "title": "Scan",
         "icon": "$(arrow-circle-down)",
@@ -138,12 +144,12 @@
         {
           "command": "posit.publisher.configurations.add",
           "when": "view == posit.publisher.configurations",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "posit.publisher.configurations.refresh",
           "when": "view == posit.publisher.configurations",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "posit.publisher.deployments.add",
@@ -161,9 +167,14 @@
           "group": "navigation@1"
         },
         {
-          "command": "posit.publisher.requirements.scan",
+          "command": "posit.publisher.requirements.refresh",
           "when": "view == posit.publisher.requirements",
           "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.requirements.scan",
+          "when": "view == posit.publisher.requirements",
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [

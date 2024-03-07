@@ -24,6 +24,7 @@ import { fileExists } from '../utils/files';
 
 const viewName = 'posit.publisher.requirements';
 const editCommand = viewName + '.edit';
+const refreshCommand = viewName + '.refresh';
 const scanCommand = viewName + '.scan';
 const contextIsEmpty = viewName + '.isEmpty';
 const fileStore = 'requirements.txt';
@@ -91,6 +92,7 @@ export class RequirementsTreeDataProvider implements TreeDataProvider<Requiremen
     if (this.root !== undefined) {
       context.subscriptions.push(
         commands.registerCommand(editCommand, this.edit),
+        commands.registerCommand(refreshCommand, this.refresh),
         commands.registerCommand(scanCommand, this.scan),
         this.createFileSystemWatcher(this.root)
       );
