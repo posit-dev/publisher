@@ -49,7 +49,6 @@ export class CredentialsTreeDataProvider implements TreeDataProvider<Credentials
   }
 
   public refresh = () => {
-    console.log("refreshing deployments");
     this._onDidChangeTreeData.fire();
   };
 
