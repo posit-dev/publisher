@@ -8,3 +8,7 @@ export type AgentError = {
     [key: string]: unknown
   };
 }
+
+export type ErrorResponse = {
+  error: AgentError;
+};

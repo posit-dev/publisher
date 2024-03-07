@@ -103,7 +103,18 @@
         "icon": {
           "light": "./assets/img/light/posit-publisher.svg",
           "dark": "./assets/img/dark/posit-publisher.svg"
-        },
+        }
+      },
+      {
+        "command": "posit.publisher.requirements.edit",
+        "title": "Edit",
+        "icon": "$(edit)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.requirements.scan",
+        "title": "Scan",
+        "icon": "$(arrow-circle-down)",
         "category": "Posit"
       }
     ],
@@ -142,6 +153,16 @@
         {
           "command": "posit.publisher.deployments.refresh",
           "when": "view == posit.publisher.deployments",
+          "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.requirements.edit",
+          "when": "view == posit.publisher.requirements",
+          "group": "navigation@1"
+        },
+        {
+          "command": "posit.publisher.requirements.scan",
+          "when": "view == posit.publisher.requirements",
           "group": "navigation@2"
         }
       ],
@@ -202,8 +223,8 @@
           "contextualTitle": "Publisher"
         },
         {
-          "id": "posit.publisher.dependencies",
-          "name": "Dependencies",
+          "id": "posit.publisher.requirements",
+          "name": "Requirements",
           "contextualTitle": "Publisher"
         },
         {
@@ -245,6 +266,11 @@
         "view": "posit.publisher.deployments",
         "contents": "To publish your content, you need to create a deployment. Click Add to create one and optionally publish your project using it.\n[Add](command:posit.publisher.deployments.add)",
         "when": "posit.publisher.deployments.isEmpty"
+      },
+      {
+        "view": "posit.publisher.requirements",
+        "contents": "To publish Python content, you need a requirements.txt file listing any package dependencies. Click Scan to create one based on the files in your project.\n[Scan](command:posit.publisher.requirements.scan)",
+        "when": "posit.publisher.requirements.isEmpty == empty"
       }
     ]
   },

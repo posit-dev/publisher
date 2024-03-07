@@ -10,7 +10,7 @@ import { ProjectTreeDataProvider } from './views/project';
 import { DeploymentsTreeDataProvider } from './views/deployments';
 import { ConfigurationsTreeDataProvider } from './views/configurations';
 import { FilesTreeDataProvider } from './views/files';
-import { DependenciesTreeDataProvider } from './views/dependencies';
+import { RequirementsTreeDataProvider } from './views/requirements';
 import { CredentialsTreeDataProvider } from './views/credentials';
 import { HelpAndFeedbackTreeDataProvider } from './views/helpAndFeedback';
 import { LogsTreeDataProvider } from './views/logs';
@@ -44,7 +44,7 @@ export async function activate(context: vscode.ExtensionContext) {
   new DeploymentsTreeDataProvider(stream).register(context);
   new ConfigurationsTreeDataProvider().register(context);
   new FilesTreeDataProvider().register(context);
-  new DependenciesTreeDataProvider().register(context);
+  new RequirementsTreeDataProvider().register(context);
   new CredentialsTreeDataProvider().register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
   new LogsTreeDataProvider(stream).register(context);
