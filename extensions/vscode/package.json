@@ -10,7 +10,7 @@
     "url": "https://github.com/rstudio/publishing-client/tree/main/extensions/vscode"
   },
   "engines": {
-    "vscode": "^1.86.0"
+    "vscode": "^1.87.0"
   },
   "categories": [
     "Data Science",
@@ -262,7 +262,7 @@
     "@types/mutexify": "^1.2.3",
     "@types/node": "18.x",
     "@types/retry": "^0.12.5",
-    "@types/vscode": "^1.86.0",
+    "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
