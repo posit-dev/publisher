@@ -14,6 +14,10 @@ const forgetItem: MessageItem = {
   title: l10n.t("Forget"),
 };
 
+const replaceItem: MessageItem = {
+  title: l10n.t("Replace"),
+};
+
 const yesItem: MessageItem = {
   title: l10n.t('Yes'),
 };
@@ -41,6 +45,9 @@ export async function confirmForget(message: string): Promise<boolean> {
   return confirm(message, forgetItem);
 }
 
+export async function confirmReplace(message: string): Promise<boolean> {
+  return confirm(message, replaceItem);
+}
 
 export async function alert(message: string): Promise<void> {
   await window.showInformationMessage(message, {

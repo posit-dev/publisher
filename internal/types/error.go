@@ -44,7 +44,6 @@ func NewAgentError(code ErrorCode, err error, details any) *AgentError {
 	msg := ""
 	if err != nil {
 		msg = err.Error()
-		mapstructure.Decode(err, &data)
 	}
 	if details != nil {
 		detailMap := make(ErrorData)

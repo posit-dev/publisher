@@ -127,6 +127,8 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 	dashboardURL := ""
 	directURL := ""
 
+	var data events.EventData
+
 	// Record the error in the deployment record
 	if p.Target != nil {
 		p.Target.Error = agentErr
@@ -139,14 +141,14 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 			dashboardURL = getDashboardURL(p.Account.URL, p.Target.ID)
 			directURL = getDirectURL(p.Account.URL, p.Target.ID)
 			agentErr.Data["dashboard_url"] = dashboardURL
+
+			mapstructure.Decode(publishFailureData{
+				DashboardURL: dashboardURL,
+				DirectURL:    directURL,
+			}, &data)
 		}
 	}
 
-	var data events.EventData
-	mapstructure.Decode(publishFailureData{
-		DashboardURL: dashboardURL,
-		DirectURL:    directURL,
-	}, &data)
 	maps.Copy(data, agentErr.GetData())
 
 	// Fail the phase
