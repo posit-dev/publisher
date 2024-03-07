@@ -195,50 +195,51 @@
           "id": "posit.publisher.project",
           "name": "Project",
           "contextualTitle": "Publisher",
-          "when": "workbenchState == empty"
+          "when": "workbenchState == empty || workbenchState == workspace"
         },
         {
           "id": "posit.publisher.files",
           "name": "Files",
           "contextualTitle": "Publisher",
-          "when": "workbenchState != empty"
+          "when": "workbenchState == folder"
         },
         {
           "id": "posit.publisher.dependencies",
           "name": "Dependencies",
           "contextualTitle": "Publisher",
-          "when": "workbenchState != empty"
+          "when": "workbenchState == folder"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
           "contextualTitle": "Publisher",
-          "when": "workbenchState != empty"
+          "when": "workbenchState == folder"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
           "contextualTitle": "Publisher",
-          "when": "workbenchState != empty"
+          "when": "workbenchState == folder"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
           "contextualTitle": "Publisher",
-          "when": "workbenchState != empty"
+          "when": "workbenchState == folder"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
           "name": "Help And Feedback",
           "contextualTitle": "Publisher",
-          "when": "workbenchState != empty"
+          "when": "workbenchState == folder"
         }
       ],
       "posit-publisher-logs": [
         {
           "id": "posit.publisher.logs",
           "name": "Logs",
-          "contextualTitle": "Logs"
+          "contextualTitle": "Logs",
+          "when": "workbenchState == folder"
         }
       ]
     },
@@ -257,6 +258,11 @@
         "view": "posit.publisher.project",
         "contents": "In order to deploy using Posit Publisher, you can open a folder initialized as a Posit project or initialize a new project.\n[Open Folder](command:vscode.openFolder)",
         "when": "workbenchState == empty"
+      },
+      {
+        "view": "posit.publisher.project",
+        "contents": "Posit Publisher currently only supports single folder workspaces, open a folder initialized as a Posit project or initialize a new project.\n[Open Folder](command:vscode.openFolder)",
+        "when": "workbenchState == workspace"
       }
     ]
   },
