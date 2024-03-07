@@ -255,7 +255,7 @@
       },
       {
         "view": "posit.publisher.project",
-        "contents": "FOOBAR",
+        "contents": "In order to deploy using Posit Publisher, you can open a folder initialized as a Posit project or initialize a new project.\n[Open Folder](command:vscode.openFolder)",
         "when": "workbenchState == empty"
       }
     ]
