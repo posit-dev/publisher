@@ -194,37 +194,44 @@
         {
           "id": "posit.publisher.project",
           "name": "Project",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState == empty"
         },
         {
           "id": "posit.publisher.files",
           "name": "Files",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState != empty"
         },
         {
           "id": "posit.publisher.dependencies",
           "name": "Dependencies",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState != empty"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState != empty"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState != empty"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState != empty"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
           "name": "Help And Feedback",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState != empty"
         }
       ],
       "posit-publisher-logs": [
@@ -245,6 +252,11 @@
         "view": "posit.publisher.deployments",
         "contents": "To publish your content, you need to create a deployment. Click Add to create one and optionally publish your project using it.\n[Add](command:posit.publisher.deployments.add)",
         "when": "posit.publisher.deployments.isEmpty"
+      },
+      {
+        "view": "posit.publisher.project",
+        "contents": "In order to deploy using Posit Publisher, you can open a folder initialized as a Posit project or initialize a new project.\n[Open Folder](command:vscode.openFolder)",
+        "when": "workbenchState == empty"
       }
     ]
   },
