@@ -26,7 +26,6 @@ type Deployment struct {
 	ID            types.ContentID     `toml:"id" json:"id"`
 	ConfigName    string              `toml:"configuration-name" json:"configurationName"`
 	DeployedAt    string              `toml:"deployed-at" json:"deployedAt"`
-	SaveName      string              `toml:"-" json:"saveName"`
 	BundleID      types.BundleID      `toml:"bundle-id" json:"bundleId"`
 	BundleURL     string              `toml:"bundle-url" json:"bundleUrl"`
 	DashboardURL  string              `toml:"dashboard-url" json:"dashboardUrl"`
@@ -98,7 +97,6 @@ func FromFile(path util.Path) (*Deployment, error) {
 	if err != nil {
 		return nil, err
 	}
-	d.SaveName = SaveNameFromPath(path)
 	return d, nil
 }
 
@@ -129,6 +127,5 @@ func (d *Deployment) WriteFile(path util.Path) error {
 	if err != nil {
 		return err
 	}
-	d.SaveName = SaveNameFromPath(path)
 	return nil
 }

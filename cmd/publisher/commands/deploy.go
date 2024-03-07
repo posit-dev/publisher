@@ -28,9 +28,10 @@ type DeployCmd struct {
 
 func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
 	ctx.Logger = events.NewCLILogger(args.Verbose, os.Stderr)
+	var err error
 
 	if cmd.SaveName != "" {
-		err := util.ValidateFilename(cmd.SaveName)
+		err = util.ValidateFilename(cmd.SaveName)
 		if err != nil {
 			return err
 		}
@@ -41,16 +42,15 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 		if exists {
 			return fmt.Errorf("there is already a deployment named '%s'; did you mean to use the 'redeploy' command?", cmd.SaveName)
 		}
-	}
-	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
-	if err != nil {
-		return err
-	}
-	if cmd.SaveName == "" {
+	} else {
 		cmd.SaveName, err = deployment.UntitledDeploymentName(cmd.Path)
 		if err != nil {
 			return err
 		}
+	}
+	err = initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
+	if err != nil {
+		return err
 	}
 	stateStore, err := state.New(cmd.Path, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts)
 	if err != nil {
