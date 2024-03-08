@@ -15,9 +15,8 @@ import {
   workspace,
 } from 'vscode';
 
-import { AxiosError } from 'axios';
+import { isAxiosError } from 'axios';
 import api from '../api';
-import { isRequirementsError } from '../api/types/requirements';
 import { confirmUpdate } from '../dialogs';
 import { getSummaryStringFromError } from '../utils/errors';
 import { fileExists } from '../utils/files';
@@ -61,14 +60,10 @@ export class RequirementsTreeDataProvider implements TreeDataProvider<Requiremen
     }
     try {
       const response = await api.requirements.getAll();
-      if (isRequirementsError(response.data)) {
-        throw(response.data.error);
-      }
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(line => new RequirementsTreeItem(line));
-
     } catch(error: unknown) {
-      if (error instanceof AxiosError && error.response?.status === 404) {
+      if (isAxiosError(error) && error.status === 404) {
         // No requirements file; show the welcome view.
         await this.setContextIsEmpty(true);
         return [];
