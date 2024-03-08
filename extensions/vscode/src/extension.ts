@@ -22,6 +22,29 @@ let service: Service;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+  if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length) {
+    const folder = vscode.workspace.workspaceFolders[0];
+    const publishDir = vscode.Uri.joinPath(folder.uri, '.posit/publish');
+
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(folder, '.posit/publish'),
+      false,
+      true,
+      false
+    );
+    watcher.onDidCreate(() => vscode.commands.executeCommand('setContext', 'posit.publisher.active', true));
+    watcher.onDidDelete(() => vscode.commands.executeCommand('setContext', 'posit.publisher.active', false));
+    context.subscriptions.push(watcher);
+
+    try {
+      await vscode.workspace.fs.stat(publishDir);
+      vscode.commands.executeCommand('setContext', 'posit.publisher.active', true);
+    } catch {
+      vscode.commands.executeCommand('setContext', 'posit.publisher.active', false);
+    }
+  } else {
+    vscode.commands.executeCommand('setContext', 'posit.publisher.active', false);
+  }
 
   const port = await ports.acquire();
   service = new Service(context, port);
