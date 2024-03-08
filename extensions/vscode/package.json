@@ -280,7 +280,7 @@
       },
       {
         "view": "posit.publisher.requirements",
-        "contents": "To publish Python content, you need a requirements.txt file listing any package dependencies. Click Scan to create one based on the files in your project.\n[Scan](command:posit.publisher.requirements.scan)",
+        "contents": "To deploy Python content, you need a requirements.txt file listing any package dependencies. Click Scan to create one based on the files in your project.\n[Scan](command:posit.publisher.requirements.scan)",
         "when": "posit.publisher.requirements.isEmpty == empty"
       }
     ]
