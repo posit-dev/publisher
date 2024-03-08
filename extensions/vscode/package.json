@@ -24,20 +24,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "posit.publisher.open",
-        "title": "Open Publisher",
-        "category": "Posit",
-        "icon": {
-          "light": "assets/img/light.svg",
-          "dark": "assets/img/dark.svg"
-        }
-      },
-      {
-        "command": "posit.publisher.close",
-        "title": "Close Publisher",
-        "category": "Posit"
-      },
-      {
         "command": "posit.publisher.configurations.refresh",
         "title": "Refresh",
         "icon": "$(refresh)",
@@ -117,12 +103,6 @@
       }
     },
     "menus": {
-      "editor/title": [
-        {
-          "command": "posit.publisher.open",
-          "group": "navigation"
-        }
-      ],
       "view/title": [
         {
           "command": "posit.publisher.configurations.add",
