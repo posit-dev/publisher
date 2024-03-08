@@ -27,61 +27,61 @@
         "command": "posit.publisher.configurations.refresh",
         "title": "Refresh Configurations",
         "icon": "$(refresh)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.configurations.add",
         "title": "New Configuration",
         "icon": "$(add)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.configurations.edit",
         "title": "Edit",
         "icon": "$(edit)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.configurations.delete",
         "title": "Delete",
         "icon": "$(trash)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.configurations.rename",
         "title": "Rename",
         "icon": "$(symbol-key)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.configurations.clone",
         "title": "Clone",
         "icon": "$(files)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.edit",
         "title": "Edit",
         "icon": "$(edit)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.forget",
         "title": "Forget this deployment locally",
         "icon": "$(close-all)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.refresh",
         "title": "Refresh Deployments",
         "icon": "$(refresh)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.add",
         "title": "New Deployment",
         "icon": "$(add)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.deploy",
@@ -90,7 +90,7 @@
           "light": "./assets/img/light/posit-publisher.svg",
           "dark": "./assets/img/dark/posit-publisher.svg"
         },
-        "category": "Posit"
+        "category": "Posit Publisher"
       }
     ],
     "configuration": {
