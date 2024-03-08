@@ -16,6 +16,9 @@ import { HelpAndFeedbackTreeDataProvider } from './views/helpAndFeedback';
 import { LogsTreeDataProvider } from './views/logs';
 import { EventStream } from './events';
 
+const MISSING_CONTEXT = 'posit.publish.missing';
+
+
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
@@ -32,18 +35,21 @@ export async function activate(context: vscode.ExtensionContext) {
       true,
       false
     );
-    watcher.onDidCreate(() => vscode.commands.executeCommand('setContext', 'posit.publisher.active', true));
-    watcher.onDidDelete(() => vscode.commands.executeCommand('setContext', 'posit.publisher.active', false));
+    watcher.onDidCreate(() => {
+      vscode.commands.executeCommand('setContext', MISSING_CONTEXT, false);
+    });
+    watcher.onDidDelete(() => {
+      vscode.commands.executeCommand('setContext', MISSING_CONTEXT, true);
+    });
     context.subscriptions.push(watcher);
 
     try {
       await vscode.workspace.fs.stat(publishDir);
-      vscode.commands.executeCommand('setContext', 'posit.publisher.active', true);
     } catch {
-      vscode.commands.executeCommand('setContext', 'posit.publish.missing', true);
+      vscode.commands.executeCommand('setContext', MISSING_CONTEXT, true);
     }
   } else {
-    vscode.commands.executeCommand('setContext', 'posit.publish.missing', true);
+    vscode.commands.executeCommand('setContext', MISSING_CONTEXT, true);
   }
 
   const port = await ports.acquire();
