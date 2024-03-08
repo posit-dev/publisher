@@ -11,18 +11,18 @@ import (
 
 type File struct {
 	// public fields
-	Id               string           `json:"id"`                // a logical (non-universally-unique) identifier
-	FileType         fileType         `json:"file_type"`         // the file type
-	Base             string           `json:"base"`              // the base name
-	Exclusion        *gitignore.Match `json:"exclusion"`         // object describing the reason for exclusion, null if not excluded
-	Files            []*File          `json:"files"`             // an array of objects of the same type for each file within the directory.
-	IsDir            bool             `json:"is_dir"`            // true if the file is a directory
-	IsEntrypoint     bool             `json:"is_entrypoint"`     // true if the file is an entrypoint
-	IsRegular        bool             `json:"is_file"`           // true if the file is a regular file
-	ModifiedDatetime string           `json:"modified_datetime"` // the last modified datetime
-	Rel              string           `json:"rel"`               // the relative path to the project root, which is used as the identifier
-	Size             int64            `json:"size"`              // nullable; length in bytes for regular files; system-dependent
-	Abs              string           `json:"abs"`               // the absolute path
+	Id               string           `json:"id"`               // a logical (non-universally-unique) identifier
+	FileType         fileType         `json:"fileType"`         // the file type
+	Base             string           `json:"base"`             // the base name
+	Exclusion        *gitignore.Match `json:"exclusion"`        // object describing the reason for exclusion, null if not excluded
+	Files            []*File          `json:"files"`            // an array of objects of the same type for each file within the directory.
+	IsDir            bool             `json:"isDir"`            // true if the file is a directory
+	IsEntrypoint     bool             `json:"isEntrypoint"`     // true if the file is an entrypoint
+	IsRegular        bool             `json:"isFile"`           // true if the file is a regular file
+	ModifiedDatetime string           `json:"modifiedDatetime"` // the last modified datetime
+	Rel              string           `json:"rel"`              // the relative path to the project root, which is used as the identifier
+	Size             int64            `json:"size"`             // nullable; length in bytes for regular files; system-dependent
+	Abs              string           `json:"abs"`              // the absolute path
 }
 
 func CreateFile(root util.Path, path util.Path, exclusion *gitignore.Match) (*File, error) {

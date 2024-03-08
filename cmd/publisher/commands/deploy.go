@@ -35,7 +35,7 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 	ctx.Logger = events.NewCLILogger(args.Verbose, os.Stderr)
 
 	if cmd.SaveName != "" {
-		err := util.ValidateFilename(cmd.SaveName)
+		err = util.ValidateFilename(cmd.SaveName)
 		if err != nil {
 			return err
 		}
@@ -46,16 +46,15 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 		if exists {
 			return fmt.Errorf("there is already a deployment named '%s'; did you mean to use the 'redeploy' command?", cmd.SaveName)
 		}
-	}
-	err = initialize.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger)
-	if err != nil {
-		return err
-	}
-	if cmd.SaveName == "" {
+	} else {
 		cmd.SaveName, err = deployment.UntitledDeploymentName(absPath)
 		if err != nil {
 			return err
 		}
+	}
+	err = initialize.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger)
+	if err != nil {
+		return err
 	}
 	stateStore, err := state.New(absPath, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts)
 	if err != nil {

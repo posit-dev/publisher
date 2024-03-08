@@ -69,7 +69,7 @@ func New(op Operation, phase Phase, errCode ErrorCode, data any) *Event {
 	}
 	return &Event{
 		Time:    time.Now(),
-		Type:    EventTypeOf(op, phase, errCode),
+		Type:    EventTypeOf(op, phase),
 		Data:    eventData,
 		op:      op,
 		phase:   phase,
@@ -77,10 +77,6 @@ func New(op Operation, phase Phase, errCode ErrorCode, data any) *Event {
 	}
 }
 
-func EventTypeOf(op Operation, phase Phase, errCode ErrorCode) EventType {
-	if phase == FailurePhase && errCode != "" {
-		return fmt.Sprintf("%s/%s/%s", op, phase, errCode)
-	} else {
-		return fmt.Sprintf("%s/%s", op, phase)
-	}
+func EventTypeOf(op Operation, phase Phase) EventType {
+	return fmt.Sprintf("%s/%s", op, phase)
 }

@@ -4,6 +4,7 @@ package deployment
 
 import (
 	"io/fs"
+	"strings"
 	"testing"
 	"time"
 
@@ -97,15 +98,20 @@ func (s *DeploymentSuite) TestFromFileErr() {
 }
 
 func (s *DeploymentSuite) TestWriteFile() {
-	configFile := GetDeploymentPath(s.cwd, "myTargetName")
-	deployment := New()
-	err := deployment.WriteFile(configFile)
+	deploymentFile := GetDeploymentPath(s.cwd, "myTargetName")
+	d := New()
+	err := d.WriteFile(deploymentFile)
 	s.NoError(err)
+
+	content, err := deploymentFile.ReadFile()
+	s.NoError(err)
+	firstLine := strings.Split(string(content), "\n")[0]
+	s.Equal(autogenHeader, firstLine+"\n")
 }
 
 func (s *DeploymentSuite) TestWriteFileErr() {
-	configFile := GetDeploymentPath(s.cwd, "myTargetName")
-	readonlyFile := util.NewPath(configFile.Path(), afero.NewReadOnlyFs(configFile.Fs()))
+	deploymentFile := GetDeploymentPath(s.cwd, "myTargetName")
+	readonlyFile := util.NewPath(deploymentFile.Path(), afero.NewReadOnlyFs(deploymentFile.Fs()))
 	deployment := New()
 	err := deployment.WriteFile(readonlyFile)
 	s.NotNil(err)
