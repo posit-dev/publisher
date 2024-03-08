@@ -118,7 +118,7 @@ export class RequirementsTreeDataProvider implements TreeDataProvider<Requiremen
     }
 
     if (await fileExists(this.fileUri)) {
-      const ok = await confirmUpdate('Are you sure you want to update your existing requirements.txt file?');
+      const ok = await confirmUpdate('Are you sure you want to overwrite your existing requirements.txt file?');
       if (!ok) {
         return;
       }
