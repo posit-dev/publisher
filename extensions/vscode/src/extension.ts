@@ -16,8 +16,13 @@ import { HelpAndFeedbackTreeDataProvider } from './views/helpAndFeedback';
 import { LogsTreeDataProvider } from './views/logs';
 import { EventStream } from './events';
 
+const STATE_CONTEXT = 'posit.publish.state';
 const MISSING_CONTEXT = 'posit.publish.missing';
 
+enum PositPublishState {
+  initialized = 'initialized',
+  uninitialized = 'uninitialized',
+}
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
@@ -25,6 +30,12 @@ let service: Service;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+  vscode.commands.executeCommand(
+    'setContext',
+    STATE_CONTEXT,
+    PositPublishState.uninitialized
+  );
+
   if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length) {
     const folder = vscode.workspace.workspaceFolders[0];
     const publishDir = vscode.Uri.joinPath(folder.uri, '.posit/publish');
@@ -77,6 +88,12 @@ export async function activate(context: vscode.ExtensionContext) {
   new CredentialsTreeDataProvider().register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
   new LogsTreeDataProvider(stream).register(context);
+
+  vscode.commands.executeCommand(
+    'setContext',
+    STATE_CONTEXT,
+    PositPublishState.initialized
+  );
 }
 
 // This method is called when your extension is deactivated
