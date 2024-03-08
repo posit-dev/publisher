@@ -227,39 +227,46 @@
         {
           "id": "posit.publisher.files",
           "name": "Files",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "icon": "$(symbol-file)"
         },
         {
           "id": "posit.publisher.requirements",
           "name": "Requirements",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "icon": "$(package)"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "icon": "$(gear)"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "icon": "$(key)"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "icon": "$(cloud-upload)"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
           "name": "Help And Feedback",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "icon": "$(info)"
         }
       ],
       "posit-publisher-logs": [
         {
           "id": "posit.publisher.logs",
           "name": "Logs",
-          "contextualTitle": "Logs"
+          "contextualTitle": "Logs",
+          "icon": "$(output)"
         }
       ]
     },
