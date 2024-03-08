@@ -62,3 +62,14 @@ func (s *GetRequirementsSuite) TestGetRequirements() {
 		"pandas",
 	}, res.Requirements)
 }
+
+func (s *GetRequirementsSuite) TestGetRequirementsNotFound() {
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/requirements", nil)
+	s.NoError(err)
+
+	h := NewGetRequirementsHandler(s.cwd, s.log)
+	h.ServeHTTP(rec, req)
+
+	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+}
