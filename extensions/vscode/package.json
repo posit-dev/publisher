@@ -25,13 +25,13 @@
     "commands": [
       {
         "command": "posit.publisher.configurations.refresh",
-        "title": "Refresh",
+        "title": "Refresh Configurations",
         "icon": "$(refresh)",
         "category": "Posit"
       },
       {
         "command": "posit.publisher.configurations.add",
-        "title": "Add",
+        "title": "New Configuration",
         "icon": "$(add)",
         "category": "Posit"
       },
@@ -73,13 +73,13 @@
       },
       {
         "command": "posit.publisher.deployments.refresh",
-        "title": "Refresh",
+        "title": "Refresh Deployments",
         "icon": "$(refresh)",
         "category": "Posit"
       },
       {
         "command": "posit.publisher.deployments.add",
-        "title": "New",
+        "title": "New Deployment",
         "icon": "$(add)",
         "category": "Posit"
       },
