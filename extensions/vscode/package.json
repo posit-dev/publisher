@@ -267,7 +267,12 @@
       {
         "view": "posit.publisher.project",
         "contents": "Before deploying using Posit Publisher, you need to initialize your project.\n[Initialize Project](command:posit.publisher.initalize)",
-        "when": "workbenchState == folder && !posit.publisher.active"
+        "when": "workbenchState == folder && posit.publish.missing"
+      },
+      {
+        "view": "posit.publisher.project",
+        "contents": "Scanning folder for a Posit project...",
+        "when": "workbenchState == folder && !posit.publish.missing"
       }
     ]
   },

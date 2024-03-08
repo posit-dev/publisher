@@ -40,10 +40,10 @@ export async function activate(context: vscode.ExtensionContext) {
       await vscode.workspace.fs.stat(publishDir);
       vscode.commands.executeCommand('setContext', 'posit.publisher.active', true);
     } catch {
-      vscode.commands.executeCommand('setContext', 'posit.publisher.active', false);
+      vscode.commands.executeCommand('setContext', 'posit.publish.missing', true);
     }
   } else {
-    vscode.commands.executeCommand('setContext', 'posit.publisher.active', false);
+    vscode.commands.executeCommand('setContext', 'posit.publish.missing', true);
   }
 
   const port = await ports.acquire();
