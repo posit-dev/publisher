@@ -37,7 +37,7 @@ func (s *PostRequirementsSuite) TestNewPostRequirementsHandler() {
 func (s *PostRequirementsSuite) TestServeHTTP() {
 	rec := httptest.NewRecorder()
 	body := strings.NewReader(`{"saveName":""}`)
-	req, err := http.NewRequest("POST", "/api/requirements/inspect", body)
+	req, err := http.NewRequest("POST", "/api/requirements", body)
 	s.NoError(err)
 
 	base := util.NewPath("/project", nil)
@@ -57,7 +57,7 @@ func (s *PostRequirementsSuite) TestServeHTTP() {
 func (s *PostRequirementsSuite) TestServeHTTPErr() {
 	rec := httptest.NewRecorder()
 	body := strings.NewReader(`{"saveName":""}`)
-	req, err := http.NewRequest("POST", "/api/requirements/inspect", body)
+	req, err := http.NewRequest("POST", "/api/requirements", body)
 	s.NoError(err)
 
 	base := util.NewPath("/project", nil)
