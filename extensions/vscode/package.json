@@ -120,7 +120,7 @@
       {
         "command": "posit.publisher.requirements.scan",
         "title": "Scan",
-        "icon": "$(arrow-circle-down)",
+        "icon": "$(eye)",
         "category": "Posit"
       }
     ],
@@ -180,28 +180,24 @@
       "view/item/context": [
         {
           "command": "posit.publisher.configurations.clone",
-          "when": "view == posit.publisher.configurations",
-          "group": "inline@1"
+          "when": "view == posit.publisher.configurations"
         },
         {
           "command": "posit.publisher.configurations.rename",
-          "when": "view == posit.publisher.configurations",
-          "group": "inline@2"
+          "when": "view == posit.publisher.configurations"
         },
         {
           "command": "posit.publisher.configurations.delete",
-          "when": "view == posit.publisher.configurations",
-          "group": "inline@3"
+          "when": "view == posit.publisher.configurations"
         },
         {
           "command": "posit.publisher.deployments.deploy",
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment",
-          "group": "inline@1"
+          "group": "inline"
         },
         {
           "command": "posit.publisher.deployments.forget",
-          "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError",
-          "group": "inline@2"
+          "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError"
         }
       ]
     },

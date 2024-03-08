@@ -6,6 +6,7 @@ import {
   ExtensionContext,
   FileSystemWatcher,
   RelativePattern,
+  ThemeIcon,
   TreeDataProvider,
   TreeItem,
   Uri,
@@ -139,7 +140,14 @@ export class RequirementsTreeItem extends TreeItem {
 
   constructor(itemString: string) {
     super(itemString);
+
+    if (itemString.startsWith('-')) {
+      this.iconPath = new ThemeIcon('gear');
+    } else {
+      this.iconPath = new ThemeIcon('package');
+    }
   }
 
   contextValue = 'posit.publisher.dependencies.tree.item';
+  tooltip = '';
 }

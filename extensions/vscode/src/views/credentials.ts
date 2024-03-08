@@ -5,6 +5,7 @@ import {
   TreeItem,
   ExtensionContext,
   window,
+  ThemeIcon,
 } from 'vscode';
 
 import api, { Account } from '../api';
@@ -51,6 +52,7 @@ export class CredentialsTreeItem extends TreeItem {
   constructor(account: Account) {
     super(account.name);
     this.tooltip = this.getTooltip(account);
+    this.iconPath = new ThemeIcon('key');
   }
 
   getTooltip(account: Account): string {
