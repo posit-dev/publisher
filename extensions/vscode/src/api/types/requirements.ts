@@ -2,10 +2,8 @@
 
 import { ErrorResponse } from 'src/api/types/error';
 
-export type RequirementsSpecifier = string;
-
 export type Requirements = {
-  requirements: RequirementsSpecifier[];
+  requirements: string[];
 };
 
 export type RequirementsResponse = Requirements | ErrorResponse;
