@@ -30,18 +30,13 @@ func NewProjectImportScanner(log logging.Logger) *defaultProjectImportScanner {
 }
 
 func (s *defaultProjectImportScanner) ScanProjectImports(base util.Path) ([]ImportName, error) {
-	absPath, err := base.Abs()
-	if err != nil {
-		return nil, err
-	}
-
-	ignore, err := gitignore.NewExcludingWalker(absPath)
+	ignore, err := gitignore.NewExcludingWalker(base)
 	if err != nil {
 		return nil, err
 	}
 	var projectImports []ImportName
 
-	err = ignore.Walk(absPath, func(path util.Path, info fs.FileInfo, err error) error {
+	err = ignore.Walk(base, func(path util.Path, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
