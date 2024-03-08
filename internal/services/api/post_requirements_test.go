@@ -41,12 +41,36 @@ func (s *PostRequirementsSuite) TestServeHTTP() {
 	s.NoError(err)
 
 	base := util.NewPath("/project", nil)
+	destPath := base.Join("requirements.txt")
+
 	log := logging.New()
 	h := NewPostRequirementsHandler(base, log)
 
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
-	i.On("WriteRequirementsFile", mock.Anything, mock.Anything).Return(nil)
+	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
+	h.inspector = i
+
+	h.ServeHTTP(rec, req)
+
+	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
+}
+
+func (s *PostRequirementsSuite) TestServeHTTPWithSaveName() {
+	rec := httptest.NewRecorder()
+	body := strings.NewReader(`{"saveName":"my_requirements.txt"}`)
+	req, err := http.NewRequest("POST", "/api/requirements", body)
+	s.NoError(err)
+
+	base := util.NewPath("/project", nil)
+	destPath := base.Join("my_requirements.txt")
+
+	log := logging.New()
+	h := NewPostRequirementsHandler(base, log)
+
+	i := inspect.NewMockPythonInspector()
+	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
+	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
 	h.inspector = i
 
 	h.ServeHTTP(rec, req)
