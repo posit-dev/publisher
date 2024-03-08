@@ -38,10 +38,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
   if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length) {
     const folder = vscode.workspace.workspaceFolders[0];
-    const publishDir = vscode.Uri.joinPath(folder.uri, '.posit/publish');
 
     const watcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(folder, '.posit/publish'),
+      new vscode.RelativePattern(folder, '{.posit,.posit/publish}'),
       false,
       true,
       false
@@ -55,7 +54,11 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(watcher);
 
     try {
-      await vscode.workspace.fs.stat(publishDir);
+      await Promise.all([
+        vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, '.posit')),
+        vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, '.posit/publish'))
+      ]);
+      
     } catch {
       vscode.commands.executeCommand('setContext', MISSING_CONTEXT, true);
     }
