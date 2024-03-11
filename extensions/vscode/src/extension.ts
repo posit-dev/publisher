@@ -27,18 +27,6 @@ export async function activate(context: vscode.ExtensionContext) {
   service = new Service(context, port);
   await service.start();
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand('posit.publisher.open', async () => {
-      await service.open();
-    })
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('posit.publisher.close', async () => {
-      await service.stop();
-    })
-  );
-
   const stream = new EventStream(port);
   new ProjectTreeDataProvider().register(context);
   new DeploymentsTreeDataProvider(stream).register(context);

@@ -10,7 +10,7 @@
     "url": "https://github.com/rstudio/publishing-client/tree/main/extensions/vscode"
   },
   "engines": {
-    "vscode": "^1.86.0"
+    "vscode": "^1.87.0"
   },
   "categories": [
     "Data Science",
@@ -24,78 +24,70 @@
   "contributes": {
     "commands": [
       {
-        "command": "posit.publisher.open",
-        "title": "Open Publisher",
-        "category": "Posit",
-        "icon": {
-          "light": "assets/img/light.svg",
-          "dark": "assets/img/dark.svg"
-        }
-      },
-      {
-        "command": "posit.publisher.close",
-        "title": "Close Publisher",
-        "category": "Posit"
-      },
-      {
         "command": "posit.publisher.configurations.refresh",
-        "title": "Refresh",
+        "title": "Refresh Configurations",
         "icon": "$(refresh)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.configurations.add",
-        "title": "Add",
+        "title": "New Configuration",
         "icon": "$(add)",
-        "category": "Posit"
-      },
-      {
-        "command": "posit.publisher.configurations.edit",
-        "title": "Edit",
-        "icon": "$(edit)",
-        "category": "Posit"
-      },
-      {
-        "command": "posit.publisher.configurations.delete",
-        "title": "Delete",
-        "icon": "$(trash)",
-        "category": "Posit"
-      },
-      {
-        "command": "posit.publisher.configurations.rename",
-        "title": "Rename",
-        "icon": "$(symbol-key)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.configurations.clone",
         "title": "Clone",
         "icon": "$(files)",
-        "category": "Posit"
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.configurations.edit",
+        "title": "Edit",
+        "icon": "$(edit)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.configurations.rename",
+        "title": "Rename",
+        "icon": "$(symbol-key)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.configurations.delete",
+        "title": "Delete",
+        "icon": "$(trash)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.credentials.refresh",
+        "title": "Refresh Credentials",
+        "icon": "$(refresh)",
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.edit",
         "title": "Edit",
         "icon": "$(edit)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.forget",
         "title": "Forget this deployment locally",
         "icon": "$(close-all)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.refresh",
-        "title": "Refresh",
+        "title": "Refresh Deployments",
         "icon": "$(refresh)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.add",
-        "title": "New",
+        "title": "New Deployment",
         "icon": "$(add)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.deploy",
@@ -103,25 +95,26 @@
         "icon": {
           "light": "./assets/img/light/posit-publisher.svg",
           "dark": "./assets/img/dark/posit-publisher.svg"
-        }
+        },
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.requirements.edit",
-        "title": "Edit",
+        "title": "Edit Requirements File",
         "icon": "$(edit)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.requirements.refresh",
-        "title": "Refresh",
+        "title": "Refresh Requirements",
         "icon": "$(refresh)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.requirements.scan",
-        "title": "Scan",
+        "title": "Scan Requirements",
         "icon": "$(arrow-circle-down)",
-        "category": "Posit"
+        "category": "Posit Publisher"
       }
     ],
     "configuration": {
@@ -134,12 +127,6 @@
       }
     },
     "menus": {
-      "editor/title": [
-        {
-          "command": "posit.publisher.open",
-          "group": "navigation"
-        }
-      ],
       "view/title": [
         {
           "command": "posit.publisher.configurations.add",
@@ -175,6 +162,11 @@
           "command": "posit.publisher.requirements.scan",
           "when": "view == posit.publisher.requirements",
           "group": "navigation@3"
+        },
+        {
+          "command": "posit.publisher.credentials.refresh",
+          "when": "view == posit.publisher.credentials",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -203,6 +195,36 @@
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError",
           "group": "inline@2"
         }
+      ],
+      "commandPalette": [
+        {
+          "command": "posit.publisher.configurations.clone",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.configurations.edit",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.configurations.rename",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.configurations.delete",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.deployments.edit",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.deployments.deploy",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.deployments.forget",
+          "when": "false"
+        }
       ]
     },
     "viewsContainers": {
@@ -226,44 +248,52 @@
         {
           "id": "posit.publisher.project",
           "name": "Project",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState == empty || workbenchState == workspace"
         },
         {
           "id": "posit.publisher.files",
           "name": "Files",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState == folder"
         },
         {
           "id": "posit.publisher.requirements",
           "name": "Requirements",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState == folder"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState == folder"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState == folder"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState == folder"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
           "name": "Help And Feedback",
-          "contextualTitle": "Publisher"
+          "contextualTitle": "Publisher",
+          "when": "workbenchState == folder"
         }
       ],
       "posit-publisher-logs": [
         {
           "id": "posit.publisher.logs",
           "name": "Logs",
-          "contextualTitle": "Logs"
+          "contextualTitle": "Logs",
+          "when": "workbenchState == folder"
         }
       ]
     },
@@ -282,6 +312,16 @@
         "view": "posit.publisher.requirements",
         "contents": "To deploy Python content, you need a requirements.txt file listing any package dependencies. Click Scan to create one based on the files in your project.\n[Scan](command:posit.publisher.requirements.scan)",
         "when": "posit.publisher.requirements.isEmpty == empty"
+      },
+      {
+        "view": "posit.publisher.project",
+        "contents": "In order to deploy using Posit Publisher, you can open a folder initialized as a Posit project or initialize a new project.\n[Open Folder](command:vscode.openFolder)",
+        "when": "workbenchState == empty"
+      },
+      {
+        "view": "posit.publisher.project",
+        "contents": "Posit Publisher currently only supports single folder workspaces, open a folder initialized as a Posit project or initialize a new project.\n[Open Folder](command:vscode.openFolder)",
+        "when": "workbenchState == workspace"
       }
     ]
   },
@@ -299,7 +339,7 @@
     "@types/mutexify": "^1.2.3",
     "@types/node": "18.x",
     "@types/retry": "^0.12.5",
-    "@types/vscode": "^1.86.0",
+    "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",

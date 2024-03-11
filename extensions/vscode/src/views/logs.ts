@@ -1,8 +1,22 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import * as vscode from 'vscode';
+import {
+  Event,
+  EventEmitter,
+  ExtensionContext,
+  ProviderResult,
+  ThemeIcon,
+  TreeDataProvider,
+  TreeItem,
+  TreeItemCollapsibleState,
+  window
+} from "vscode";
 
-import { EventStream, EventStreamMessage, displayEventStreamMessage } from '../events';
+import {
+  EventStream,
+  EventStreamMessage,
+  displayEventStreamMessage,
+} from "../events";
 
 enum LogStageStatus {
   notStarted,
@@ -13,7 +27,7 @@ enum LogStageStatus {
 
 type LogStage = {
   label: string,
-  collapseState?: vscode.TreeItemCollapsibleState,
+  collapseState?: TreeItemCollapsibleState,
   status: LogStageStatus,
   stages: LogStage[],
   events: EventStreamMessage[]
@@ -23,7 +37,7 @@ type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
 
 const createLogStage = (
   label: string,
-  collapseState?: vscode.TreeItemCollapsibleState,
+  collapseState?: TreeItemCollapsibleState,
   status: LogStageStatus = LogStageStatus.notStarted,
   stages: LogStage[] = [],
   events: EventStreamMessage[] = [],
@@ -42,7 +56,7 @@ const viewName = 'posit.publisher.logs';
 /**
  * Tree data provider for the Logs view.
  */
-export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeItem> {
+export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   private stages!: Map<string, LogStage>;
   private publishingStage!: LogStage;
 
@@ -50,7 +64,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    * Event emitter for when the tree data of the Logs view changes.
    * @private
    */
-  private _onDidChangeTreeData: vscode.EventEmitter<LogsTreeItem | undefined> = new vscode.EventEmitter<LogsTreeItem | undefined>();
+  private _onDidChangeTreeData: EventEmitter<LogsTreeItem | undefined> = new EventEmitter<LogsTreeItem | undefined>();
 
   /**
    * Creates an instance of LogsTreeDataProvider.
@@ -78,7 +92,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
 
     this.publishingStage = createLogStage(
       'Publishing',
-      vscode.TreeItemCollapsibleState.Expanded,
+      TreeItemCollapsibleState.Expanded,
       LogStageStatus.notStarted,
       Array.from(this.stages.values())
     );
@@ -337,7 +351,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
   /**
    * Get the event emitter for tree data changes.
    */
-  get onDidChangeTreeData(): vscode.Event<LogsTreeItem | undefined> {
+  get onDidChangeTreeData(): Event<LogsTreeItem | undefined> {
     return this._onDidChangeTreeData.event;
   }
 
@@ -353,7 +367,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    * @param element The element for which to get the tree item.
    * @returns The tree item representing the element.
    */
-  getTreeItem(element: LogsTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+  getTreeItem(element: LogsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
@@ -362,7 +376,7 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    * @param _ The parent element.
    * @returns The child elements of the parent element.
    */
-  getChildren(element?: LogsTreeItem): vscode.ProviderResult<Array<LogsTreeItem>> {
+  getChildren(element?: LogsTreeItem): ProviderResult<Array<LogsTreeItem>> {
     if (element === undefined) {
       return [new LogsTreeStageItem(this.publishingStage)];
     }
@@ -384,19 +398,19 @@ export class LogsTreeDataProvider implements vscode.TreeDataProvider<LogsTreeIte
    * Register the tree view in the extension context.
    * @param context The extension context.
    */
-  public register(context: vscode.ExtensionContext) {
+  public register(context: ExtensionContext) {
     // Register the tree data provider
-    vscode.window.registerTreeDataProvider(viewName, this);
+    window.registerTreeDataProvider(viewName, this);
     // Create a tree view with the specified view name and options
     context.subscriptions.push(
-      vscode.window.createTreeView(viewName, {
+      window.createTreeView(viewName, {
         treeDataProvider: this
       })
     );
   }
 }
 
-export class LogsTreeStageItem extends vscode.TreeItem {
+export class LogsTreeStageItem extends TreeItem {
   stages: LogStage[] = [];
   events: EventStreamMessage[] = [];
 
@@ -404,8 +418,8 @@ export class LogsTreeStageItem extends vscode.TreeItem {
     let collapsibleState = stage.collapseState;
     if (collapsibleState === undefined) {
       collapsibleState = stage.events.length || stage.stages.length ?
-        vscode.TreeItemCollapsibleState.Collapsed :
-        vscode.TreeItemCollapsibleState.None;
+        TreeItemCollapsibleState.Collapsed :
+        TreeItemCollapsibleState.None;
     }
 
     super(stage.label, collapsibleState);
@@ -418,16 +432,16 @@ export class LogsTreeStageItem extends vscode.TreeItem {
   setIcon(status: LogStageStatus) {
     switch (status) {
       case LogStageStatus.notStarted:
-        this.iconPath = new vscode.ThemeIcon('circle-outline');
+        this.iconPath = new ThemeIcon('circle-outline');
         break;
       case LogStageStatus.inProgress:
-        this.iconPath = new vscode.ThemeIcon('loading~spin');
+        this.iconPath = new ThemeIcon('loading~spin');
         break;
       case LogStageStatus.completed:
-        this.iconPath = new vscode.ThemeIcon('check');
+        this.iconPath = new ThemeIcon('check');
         break;
       case LogStageStatus.failed:
-        this.iconPath = new vscode.ThemeIcon('error');
+        this.iconPath = new ThemeIcon('error');
         break;
     }
   }
@@ -436,10 +450,10 @@ export class LogsTreeStageItem extends vscode.TreeItem {
 /**
  * Represents a tree item for displaying logs in the tree view.
  */
-export class LogsTreeLogItem extends vscode.TreeItem {
+export class LogsTreeLogItem extends TreeItem {
   constructor(
     msg: EventStreamMessage,
-    state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None
+    state: TreeItemCollapsibleState = TreeItemCollapsibleState.None
   ) {
     super(displayEventStreamMessage(msg), state);
     this.tooltip = JSON.stringify(msg);

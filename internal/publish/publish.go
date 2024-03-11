@@ -199,12 +199,18 @@ func (p *defaultPublisher) publish(
 }
 
 func (p *defaultPublisher) writeDeploymentRecord(log logging.Logger) error {
-	recordPath := deployment.GetDeploymentPath(p.Dir, p.TargetName)
+	if p.SaveName == "" {
+		// Redeployment
+		p.SaveName = p.TargetName
+	} else {
+		// Initial deployment
+		p.TargetName = p.SaveName
+	}
+	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
 	return p.Target.WriteFile(recordPath)
 }
 
 func (p *defaultPublisher) createDeploymentRecord(
-	bundler bundles.Bundler,
 	contentID types.ContentID,
 	account *accounts.Account,
 	log logging.Logger) error {
@@ -238,9 +244,6 @@ func (p *defaultPublisher) createDeploymentRecord(
 	}
 
 	// Save current deployment information for this target
-	if p.SaveName != "" {
-		p.TargetName = p.SaveName
-	}
 	return p.writeDeploymentRecord(log)
 }
 
@@ -265,7 +268,7 @@ func (p *defaultPublisher) publishWithClient(
 			return err
 		}
 	}
-	err = p.createDeploymentRecord(bundler, contentID, account, log)
+	err = p.createDeploymentRecord(contentID, account, log)
 	if err != nil {
 		return types.OperationError(events.PublishCreateNewDeploymentOp, err)
 	}

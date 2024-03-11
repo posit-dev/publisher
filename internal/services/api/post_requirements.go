@@ -4,6 +4,8 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/inspect"
@@ -43,7 +45,7 @@ func (h *PostRequirementsHandler) ServeHTTP(w http.ResponseWriter, req *http.Req
 	dec.DisallowUnknownFields()
 	var b PostRequirementsRequest
 	err := dec.Decode(&b)
-	if err != nil {
+	if err != nil && !errors.Is(err, io.EOF) {
 		BadRequest(w, req, h.log, err)
 		return
 	}

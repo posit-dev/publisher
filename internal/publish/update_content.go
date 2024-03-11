@@ -39,17 +39,15 @@ func (p *defaultPublisher) updateContent(
 	connectContent := connect.ConnectContentFromConfig(p.Config)
 	err := client.UpdateDeployment(contentID, connectContent, log)
 	if err != nil {
-		return types.OperationError(op, err)
-	}
-	if err != nil {
 		httpErr, ok := err.(*http_client.HTTPError)
 		if ok && httpErr.Status == http.StatusNotFound {
 			details := DeploymentNotFoundErrorDetails{
 				ContentID: contentID,
 			}
 			return types.NewAgentError(events.DeploymentNotFoundCode, err, details)
+		} else {
+			return types.OperationError(op, err)
 		}
-		return err
 	}
 
 	log.Info("Done updating settings")
