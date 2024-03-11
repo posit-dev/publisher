@@ -105,6 +105,24 @@
           "dark": "./assets/img/dark/posit-publisher.svg"
         },
         "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.files.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.files.editPositIgnore",
+        "title": "Edit Posit Ignore file (.positignore)",
+        "icon": "$(gear)",
+        "category": "Posit"
+      },
+      {
+        "command": "posit.publisher.files.addExclusion",
+        "title": "Exclude this file",
+        "icon": "$(exclude)",
+        "category": "Posit"
       }
     ],
     "configuration": {
@@ -143,6 +161,16 @@
           "command": "posit.publisher.deployments.refresh",
           "when": "view == posit.publisher.deployments",
           "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.files.editPositIgnore",
+          "when": "view == posit.publisher.files",
+          "group": "navigation@1"
+        },
+        {
+          "command": "posit.publisher.files.refresh",
+          "when": "view == posit.publisher.files",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -170,6 +198,11 @@
           "command": "posit.publisher.deployments.forget",
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError",
           "group": "inline@2"
+        },
+        {
+          "command": "posit.publisher.files.addExclusion",
+          "when": "viewItem == posit.publisher.files.tree || viewItem == posit.publisher.files.isIncludedFile",
+          "group": "inline@1"
         }
       ]
     },
@@ -198,7 +231,7 @@
         },
         {
           "id": "posit.publisher.files",
-          "name": "Files",
+          "name": "Deployment Files",
           "contextualTitle": "Publisher"
         },
         {

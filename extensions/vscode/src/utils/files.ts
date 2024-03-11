@@ -1,6 +1,13 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Uri, workspace } from 'vscode';
+import {
+  Position,
+  Uri,
+  WorkspaceEdit,
+  workspace,
+  window,
+  commands,
+} from 'vscode';
 
 export async function fileExists(fileUri: Uri): Promise<boolean> {
   try {
@@ -34,4 +41,149 @@ export function isValidFilename(filename: string): boolean {
     }
   }
   return true;
+}
+
+export async function viewFileInPreview(
+  uri: Uri,
+  moveCursorToEnd = true,
+) {
+  const doc = await workspace.openTextDocument(uri);
+  if (moveCursorToEnd) {
+    await commands.executeCommand('cursorMove', {
+      to: 'down',
+      by: 'line',
+      value: doc.lineCount - 1,
+    });
+  }
+  await window.showTextDocument(doc, { preview: true });
+}
+
+
+export async function openNewOrExistingFileInPreview(
+  filePath: string,
+  newFileContents: string,
+  appendedContents?: string,
+) {
+  let fileExist = true;
+  const existingUri = Uri.parse(filePath);
+  const newUri = Uri.file(filePath).with({ scheme: 'untitled' });
+
+  try {
+    await workspace.fs.stat(existingUri);
+  } catch {
+    fileExist = false;
+  }
+
+  const doc = await workspace.openTextDocument(fileExist ? existingUri : newUri);
+  const wsedit = new WorkspaceEdit();
+  if (!fileExist) {
+    // insert our template
+    wsedit.insert(
+      newUri,
+      new Position(0, 0),
+      newFileContents,
+    );
+  }
+  // append contents
+  if (appendedContents) {
+    const lastLine = doc.lineAt(doc.lineCount - 1);
+    wsedit.insert(
+      fileExist ? existingUri : newUri,
+      new Position(lastLine.lineNumber, 0),
+      appendedContents,
+    );
+  }
+  await workspace.applyEdit(wsedit);
+  viewFileInPreview(fileExist ? existingUri : newUri);
+
+  await window.showTextDocument(doc, { preview: true });
+  await commands.executeCommand('cursorMove', {
+    to: 'down',
+    by: 'line',
+    value: doc.lineCount - 1,
+  });
+}
+
+export async function updateNewOrExistingFile(
+  filePath: string,
+  newFileContents: string,
+  appendedContents?: string,
+  openEditor = false,
+) {
+  let fileExist = true;
+  const uri = Uri.parse(filePath);
+
+  try {
+    await workspace.fs.stat(uri);
+    await workspace.openTextDocument(uri);
+  } catch {
+    fileExist = false;
+  }
+
+  let fileContents: Uint8Array;
+  if (fileExist) {
+    fileContents = await workspace.fs.readFile(uri);
+  } else {
+    fileContents = new TextEncoder().encode(newFileContents);
+  }
+  if (appendedContents) {
+    const extra = new TextEncoder().encode(appendedContents);
+    const newContents = new Uint8Array(fileContents.length + extra.length);
+    newContents.set(fileContents);
+    newContents.set(extra, fileContents.length);
+    fileContents = newContents;
+  }
+
+  try {
+    await workspace.fs.writeFile(uri, fileContents);
+  } catch (e) {
+    console.log(e);
+  }
+
+  if (openEditor) {
+    viewFileInPreview(uri);
+  }
+}
+
+// Path Sorting was inspired by: 
+// https://github.com/hughsk/path-sort
+// Very old, but MIT license
+//
+export function pathSort(paths: string[], sep: string = '/'): string[] {
+  return paths.map(function (el: string) {
+    return el.split(sep);
+  }).sort(pathSorter).map(function (el: string[]) {
+    return el.join(sep);
+  });
+}
+
+export function pathSorter(a: string[], b: string[]): number {
+  var l = Math.max(a.length, b.length);
+  for (var i = 0; i < l; i += 1) {
+    if (!(i in a)) {
+      return -1;
+    }
+    if (!(i in b)) {
+      return +1;
+    }
+    if (a[i].toUpperCase() > b[i].toUpperCase()) {
+      return +1;
+    }
+    if (a[i].toUpperCase() < b[i].toUpperCase()) {
+      return -1;
+    }
+    if (a.length < b.length) {
+      return -1;
+    }
+    if (a.length > b.length) {
+      return +1;
+    }
+  }
+  return 0;
+}
+
+export function standalonePathSorter(sep: string = '/') {
+  return function pathsort(a: string, b: string) {
+    return pathSorter(a.split(sep), b.split(sep));
+  };
 }
