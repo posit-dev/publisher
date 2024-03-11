@@ -38,6 +38,7 @@ type fullDeploymentDTO struct {
 	deploymentLocation
 	deployment.Deployment
 	ConfigPath string `json:"configurationPath,omitempty"`
+	SaveName   string `json:"saveName"`
 }
 
 type deploymentErrorDTO struct {
@@ -79,6 +80,7 @@ func deploymentAsDTO(d *deployment.Deployment, err error, base util.Path, path u
 			},
 			Deployment: *d,
 			ConfigPath: getConfigPath(base, d.ConfigName).String(),
+			SaveName:   saveName, // TODO: remove this duplicate (remove frontend references first)
 		}
 	} else {
 		return preDeploymentDTO{
