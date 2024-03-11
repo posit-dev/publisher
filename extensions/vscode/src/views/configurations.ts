@@ -90,12 +90,6 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   public register(context: ExtensionContext) {
     context.subscriptions.push(window.registerTreeDataProvider(viewName, this));
     const treeView = window.createTreeView(viewName, { treeDataProvider: this });
-    treeView.onDidChangeSelection(async e => {
-      if (e.selection.length > 0) {
-        const item = e.selection.at(0);
-        await commands.executeCommand(editCommand, item);
-      }
-    });
 
     context.subscriptions.push(
       treeView,
@@ -258,6 +252,11 @@ export class ConfigurationTreeItem extends TreeItem {
       this.iconPath = new ThemeIcon('gear');
     }
     this.tooltip = this.getTooltip();
+    this.command = {
+      title: 'Open',
+      command: 'vscode.open',
+      arguments: [this.fileUri]
+    };
   }
 
   getTooltip(): string {

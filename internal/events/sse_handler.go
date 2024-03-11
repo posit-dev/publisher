@@ -8,7 +8,6 @@ import (
 	"slices"
 
 	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/types"
 )
 
 // SSEHandler emits an event for every log message.
@@ -43,14 +42,11 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *Event {
 	// log.Info("a message", "op", "publish/restore")
 	// will create an SSE event with Type: "publish/restore/log".
 	op := AgentOp
-	errCode := types.UnknownErrorCode
 
 	handleAttr := func(attr slog.Attr) bool {
 		switch attr.Key {
 		case logging.LogKeyOp:
 			op = Operation(attr.Value.String())
-		case logging.LogKeyErrCode:
-			errCode = ErrorCode(attr.Value.String())
 		case "": // skip empty attrs
 		default:
 			event.Data[attr.Key] = attr.Value.Any()
@@ -63,7 +59,7 @@ func (h *SSEHandler) recordToEvent(rec slog.Record) *Event {
 	}
 	// Then the ones from this specific message.
 	rec.Attrs(handleAttr)
-	event.Type = EventTypeOf(op, LogPhase, errCode)
+	event.Type = EventTypeOf(op, LogPhase)
 	return event
 }
 

@@ -90,6 +90,20 @@ func (s *PostDeploymentsSuite) TestPostDeploymentsBadRequest() {
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
 
+func (s *PostDeploymentsSuite) TestPostDeploymentsEmptySaveName() {
+	h := PostDeploymentsHandlerFunc(s.cwd, logging.New(), nil)
+
+	rec := httptest.NewRecorder()
+	body := strings.NewReader(`{
+		"saveName": "",
+	}`)
+	req, err := http.NewRequest("POST", "/api/deployments", body)
+	s.NoError(err)
+	h(rec, req)
+
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+}
+
 func (s *PostDeploymentsSuite) TestPostDeploymentsAccountNotFound() {
 	lister := &accounts.MockAccountList{}
 	acctErr := fmt.Errorf("cannot get account named 'myAccount': %w", accounts.ErrAccountNotFound)

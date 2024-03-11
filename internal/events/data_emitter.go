@@ -18,6 +18,9 @@ func NewDataEmitter(data EventData, emitter Emitter) *dataEmitter {
 
 func (e *dataEmitter) Emit(event *Event) error {
 	// Add our data to every emitted event.
+	if event.Data == nil {
+		event.Data = make(EventData)
+	}
 	maps.Copy(event.Data, e.data)
 	return e.emitter.Emit(event)
 }

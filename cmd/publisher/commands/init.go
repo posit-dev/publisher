@@ -43,14 +43,19 @@ func formatValidTypes() string {
 }
 
 func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
-	if cmd.ConfigName == "" {
-		cmd.ConfigName = config.DefaultConfigName
-	}
-	cfg, err := initialize.Init(cmd.Path, cmd.ConfigName, cmd.Python, ctx.Logger)
+	absPath, err := cmd.Path.Abs()
 	if err != nil {
 		return err
 	}
-	configPath := config.GetConfigPath(cmd.Path, cmd.ConfigName)
+
+	if cmd.ConfigName == "" {
+		cmd.ConfigName = config.DefaultConfigName
+	}
+	cfg, err := initialize.Init(absPath, cmd.ConfigName, cmd.Python, ctx.Logger)
+	if err != nil {
+		return err
+	}
+	configPath := config.GetConfigPath(absPath, cmd.ConfigName)
 	if cfg.Type == config.ContentTypeUnknown {
 		fmt.Printf(contentTypeDetectionFailed, configPath, formatValidTypes())
 		return nil
