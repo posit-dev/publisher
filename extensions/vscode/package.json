@@ -106,7 +106,7 @@
       },
       {
         "command": "posit.publisher.files.editPositIgnore",
-        "title": "Edit Posit Ignore file (.positignore)",
+        "title": "Create/Edit Posit Ignore file (.positignore)",
         "icon": "$(gear)",
         "category": "Posit Publisher"
       },
