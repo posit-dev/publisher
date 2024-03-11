@@ -163,14 +163,23 @@ func (s *PublishSuite) publishWithClient(
 	cfg.Environment = map[string]string{
 		"FOO": "BAR",
 	}
+	saveName := ""
+	targetName := ""
+
+	if target != nil {
+		targetName = "targetToLoad"
+	} else {
+		saveName = "saveAsThis"
+	}
 	stateStore := &state.State{
 		Dir: s.cwd,
 		Account: &accounts.Account{
 			URL: "https://connect.example.com",
 		},
-		Config:   cfg,
-		Target:   target,
-		SaveName: "saveAsThis",
+		Config:     cfg,
+		Target:     target,
+		TargetName: targetName,
+		SaveName:   saveName,
 	}
 	publisher := &defaultPublisher{
 		State:   stateStore,
@@ -192,7 +201,7 @@ func (s *PublishSuite) publishWithClient(
 		}
 	}
 	if authErr == nil && capErr == nil && createErr == nil {
-		recordPath := deployment.GetDeploymentPath(stateStore.Dir, "saveAsThis")
+		recordPath := deployment.GetDeploymentPath(stateStore.Dir, stateStore.SaveName)
 		record, err := deployment.FromFile(recordPath)
 		s.NoError(err)
 		s.Equal(myContentID, record.ID)
@@ -208,6 +217,11 @@ func (s *PublishSuite) publishWithClient(
 			s.Contains(record.Files, "requirements.txt")
 		}
 	}
+	// Ensure we have not created a bad deployment record (#1112)
+	badPath := deployment.GetDeploymentPath(stateStore.Dir, "")
+	exists, err := badPath.Exists()
+	s.NoError(err)
+	s.False(exists)
 }
 
 func (s *PublishSuite) TestGetDashboardURL() {
