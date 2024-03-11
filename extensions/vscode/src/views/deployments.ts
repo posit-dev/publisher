@@ -104,13 +104,6 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
 
   public register(context: ExtensionContext) {
     const treeView = window.createTreeView(viewName, { treeDataProvider: this });
-    treeView.onDidChangeSelection(e => {
-      console.log(e);
-      if (e.selection.length > 0) {
-        const item = e.selection.at(0);
-        commands.executeCommand(editCommand, item);
-      }
-    });
     context.subscriptions.push(treeView);
 
     context.subscriptions.push(
@@ -172,6 +165,11 @@ export class DeploymentsTreeItem extends TreeItem {
     } else {
       this.initializeDeploymentError(this.deployment);
     }
+    this.command = {
+      title: 'Open',
+      command: 'vscode.open',
+      arguments: [this.fileUri]
+    };
   }
 
   private initializeDeployment(deployment: Deployment) {
