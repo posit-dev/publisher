@@ -43,13 +43,13 @@ const isEmptyContext = viewName + '.isEmpty';
 
 const fileStore = '.posit/publish/deployments/*.toml';
 
-type ConfigurationEventEmitter = EventEmitter<DeploymentsTreeItem | undefined | void>;
-type ConfigurationEvent = Event<DeploymentsTreeItem | undefined | void>;
+type DeploymentsEventEmitter = EventEmitter<DeploymentsTreeItem | undefined | void>;
+type DeploymentsEvent = Event<DeploymentsTreeItem | undefined | void>;
 
 export class DeploymentsTreeDataProvider implements TreeDataProvider<DeploymentsTreeItem> {
   private root: WorkspaceFolder | undefined;
-  private _onDidChangeTreeData: ConfigurationEventEmitter = new EventEmitter();
-  readonly onDidChangeTreeData: ConfigurationEvent = this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData: DeploymentsEventEmitter = new EventEmitter();
+  readonly onDidChangeTreeData: DeploymentsEvent = this._onDidChangeTreeData.event;
 
   private api = useApi();
 
