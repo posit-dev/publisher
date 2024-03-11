@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/executor"
 	"github.com/rstudio/connect-client/internal/inspect/dependencies/pydeps"
 	"github.com/rstudio/connect-client/internal/logging"
@@ -213,7 +212,7 @@ func (s *PythonSuite) TestGetPythonExecutableNoRunnablePython() {
 	s.Equal("", executable)
 }
 
-func (s *PythonSuite) TestCreateRequirementsFileFromExecutable() {
+func (s *PythonSuite) TestScanRequirements() {
 	pythonPath := s.cwd.Join("bin", "python3")
 	pythonPath.Dir().MkdirAll(0777)
 	pythonPath.WriteFile(nil, 0777)
@@ -229,23 +228,12 @@ func (s *PythonSuite) TestCreateRequirementsFileFromExecutable() {
 	scanner.On("ScanDependencies", s.cwd, pythonPath.String()).Return(specs, nil)
 	inspector.scanner = scanner
 
-	err := inspector.CreateRequirementsFile(s.cwd, s.cwd.Join(bundles.PythonRequirementsFilename))
+	reqs, python, err := inspector.ScanRequirements(s.cwd)
 	s.NoError(err)
-
-	reqPath := s.cwd.Join("requirements.txt")
-	requirements, err := reqPath.ReadFile()
-	s.NoError(err)
-	s.Equal([]byte("numpy==1.26.1\npandas\n"), requirements)
+	s.Equal([]string{
+		"numpy==1.26.1",
+		"pandas",
+	}, reqs)
+	s.Equal(pythonPath.Path(), python)
 	scanner.AssertExpectations(s.T())
-}
-
-func (s *PythonSuite) TestGetPythonRequirementsFromExecutableErr() {
-	log := logging.New()
-	pythonPath := util.NewPath("/nonexistent/python3", nil)
-	i := NewPythonInspector(s.cwd, pythonPath, log)
-	inspector := i.(*defaultPythonInspector)
-
-	err := inspector.CreateRequirementsFile(s.cwd, s.cwd.Join(bundles.PythonRequirementsFilename))
-	s.NotNil(err)
-	s.ErrorIs(err, os.ErrNotExist)
 }

@@ -26,8 +26,8 @@ deploy_assertion() {
 
 # temporary unsupported quarto types
 quarto_r_content=(
-    "quarto-proj-r-shiny" "quarto-proj-r" "quarto-proj-r-py" 
-    "quarty-website-r" "quarto-website-r-py" 
+    "quarto-proj-r-shiny" "quarto-proj-r" "quarto-proj-r-py"
+    "quarty-website-r" "quarto-website-r-py"
     "quarto-website-r-py-separate-files-deps" "quarto-website-r-deps"
     "quarto-website-r-py-deps"
     )
@@ -58,8 +58,8 @@ python_content_types=(
     if [[ ${python_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
         run ${EXE} requirements show ${CONTENT_PATH}/${CONTENT}/
         assert_success
-                
-        run diff <(grep -o '^[^=]*' ${CONTENT_PATH}/${CONTENT}/test/requirements.in) <(grep -o '^[^=]*' ${CONTENT_PATH}/${CONTENT}/requirements.txt)
+
+        run diff <(grep -o '^[^=]*' ${CONTENT_PATH}/${CONTENT}/test/requirements.in | grep -v '^#') <(grep -o '^[^=]*' ${CONTENT_PATH}/${CONTENT}/requirements.txt | grep -v '^#')
         assert_success
     else
         skip
@@ -94,7 +94,7 @@ can't find the package file (requirements.txt) in the project directory.
 Create the file, listing the packages your project depends on.
 Or scan your project dependencies using the publisher UI or
 the 'publisher requirements create' command."
-    else 
+    else
         skip
     fi
 }

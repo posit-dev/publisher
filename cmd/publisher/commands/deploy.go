@@ -27,15 +27,19 @@ type DeployCmd struct {
 }
 
 func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+	absPath, err := cmd.Path.Abs()
+	if err != nil {
+		return err
+	}
+
 	ctx.Logger = events.NewCLILogger(args.Verbose, os.Stderr)
-	var err error
 
 	if cmd.SaveName != "" {
 		err = util.ValidateFilename(cmd.SaveName)
 		if err != nil {
 			return err
 		}
-		exists, err := deployment.GetDeploymentPath(cmd.Path, cmd.SaveName).Exists()
+		exists, err := deployment.GetDeploymentPath(absPath, cmd.SaveName).Exists()
 		if err != nil {
 			return err
 		}
@@ -43,16 +47,16 @@ func (cmd *DeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext)
 			return fmt.Errorf("there is already a deployment named '%s'; did you mean to use the 'redeploy' command?", cmd.SaveName)
 		}
 	} else {
-		cmd.SaveName, err = deployment.UntitledDeploymentName(cmd.Path)
+		cmd.SaveName, err = deployment.UntitledDeploymentName(absPath)
 		if err != nil {
 			return err
 		}
 	}
-	err = initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
+	err = initialize.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger)
 	if err != nil {
 		return err
 	}
-	stateStore, err := state.New(cmd.Path, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts)
+	stateStore, err := state.New(absPath, cmd.AccountName, cmd.ConfigName, "", cmd.SaveName, ctx.Accounts)
 	if err != nil {
 		return err
 	}

@@ -26,9 +26,13 @@ type RedeployCmd struct {
 }
 
 func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) error {
+	absPath, err := cmd.Path.Abs()
+	if err != nil {
+		return err
+	}
 	ctx.Logger = events.NewCLILogger(args.Verbose, os.Stderr)
 
-	err := initialize.InitIfNeeded(cmd.Path, cmd.ConfigName, ctx.Logger)
+	err = initialize.InitIfNeeded(absPath, cmd.ConfigName, ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -37,7 +41,7 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if err != nil {
 		return fmt.Errorf("invalid deployment name '%s': %w", cmd.TargetName, err)
 	}
-	stateStore, err := state.New(cmd.Path, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts)
+	stateStore, err := state.New(absPath, "", cmd.ConfigName, cmd.TargetName, "", ctx.Accounts)
 	if err != nil {
 		return err
 	}
