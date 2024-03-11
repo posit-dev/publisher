@@ -37,7 +37,7 @@ const editCommand = viewName + '.edit';
 const cloneCommand = viewName + '.clone';
 const renameCommand = viewName + '.rename';
 const deleteCommand = viewName + '.delete';
-const isEmptyContext = viewName + '.isEmpty';
+const contextIsEmpty = viewName + '.isEmpty';
 const fileStore = '.posit/publish/*.toml';
 
 type ConfigurationEventEmitter = EventEmitter<ConfigurationTreeItem | undefined | void>;
@@ -60,7 +60,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   }
 
   async getChildren(element: ConfigurationTreeItem | undefined): Promise<ConfigurationTreeItem[]> {
-    if (element) {
+    if (element !== undefined) {
       // Config elements have no children.
       return [];
     }
@@ -73,7 +73,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     try {
       const response = await api.configurations.getAll();
       const configurations = response.data;
-      commands.executeCommand('setContext', isEmptyContext, configurations.length === 0);
+      await this.setContextIsEmpty(configurations.length === 0);
 
       return configurations.map(config => {
         const fileUri = Uri.file(config.configurationPath);
@@ -82,7 +82,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     } catch (error: unknown) {
       const summary = getSummaryStringFromError('configurations::getChildren', error);
       window.showInformationMessage(summary);
-      commands.executeCommand('setContext', isEmptyContext, true);
+      await this.setContextIsEmpty(true);
       return [];
     }
   }
@@ -90,12 +90,6 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   public register(context: ExtensionContext) {
     context.subscriptions.push(window.registerTreeDataProvider(viewName, this));
     const treeView = window.createTreeView(viewName, { treeDataProvider: this });
-    treeView.onDidChangeSelection(async e => {
-      if (e.selection.length > 0) {
-        const item = e.selection.at(0);
-        await commands.executeCommand(editCommand, item);
-      }
-    });
 
     context.subscriptions.push(
       treeView,
@@ -109,6 +103,10 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     if (this.root !== undefined) {
       context.subscriptions.push(this.createFileSystemWatcher(this.root));
     }
+  }
+
+  private async setContextIsEmpty(isEmpty: boolean): Promise<void> {
+    await commands.executeCommand('setContext', contextIsEmpty, isEmpty ? "empty" : "notEmpty");
   }
 
   private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
@@ -162,7 +160,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     if (newUri === undefined) {
       return;
     }
-    workspace.fs.rename(item.fileUri, newUri, {overwrite: true});
+    workspace.fs.rename(item.fileUri, newUri, { overwrite: true });
   };
 
   private clone = async (item: ConfigurationTreeItem) => {
@@ -171,7 +169,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     if (newUri === undefined) {
       return;
     }
-    workspace.fs.copy(item.fileUri, newUri, {overwrite: true});
+    workspace.fs.copy(item.fileUri, newUri, { overwrite: true });
   };
 
   private async promptForNewName(oldUri: Uri, defaultName: string): Promise<Uri | undefined> {
@@ -252,6 +250,11 @@ export class ConfigurationTreeItem extends TreeItem {
       this.iconPath = new ThemeIcon('warning');
     }
     this.tooltip = this.getTooltip();
+    this.command = {
+      title: 'Open',
+      command: 'vscode.open',
+      arguments: [this.fileUri]
+    };
   }
 
   getTooltip(): string {

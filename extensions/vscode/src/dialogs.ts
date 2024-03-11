@@ -14,6 +14,10 @@ const forgetItem: MessageItem = {
   title: l10n.t("Forget"),
 };
 
+const updateItem: MessageItem = {
+  title: l10n.t("Update"),
+};
+
 const replaceItem: MessageItem = {
   title: l10n.t("Replace"),
 };
@@ -47,6 +51,10 @@ export async function confirmForget(message: string): Promise<boolean> {
 
 export async function confirmReplace(message: string): Promise<boolean> {
   return confirm(message, replaceItem);
+}
+
+export async function confirmUpdate(message: string): Promise<boolean> {
+  return confirm(message, updateItem);
 }
 
 export async function alert(message: string): Promise<void> {

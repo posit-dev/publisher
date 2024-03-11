@@ -116,8 +116,12 @@ func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.
 	r.Handle(ToPath("deployments", "{name}"), DeleteDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodDelete)
 
-	// POST /api/requirements/inspect
-	r.Handle(ToPath("requirements", "inspect"), NewPostRequirementsInspectHandler(base, log)).
+	// GET /api/requirements
+	r.Handle(ToPath("requirements"), NewGetRequirementsHandler(base, log)).
+		Methods(http.MethodGet)
+
+	// POST /api/requirements
+	r.Handle(ToPath("requirements"), NewPostRequirementsHandler(base, log)).
 		Methods(http.MethodPost)
 
 	// GET /<anything>

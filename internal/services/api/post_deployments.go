@@ -32,6 +32,11 @@ func PostDeploymentsHandlerFunc(
 			BadRequest(w, req, log, err)
 			return
 		}
+		err = util.ValidateFilename(b.SaveName)
+		if err != nil {
+			BadRequest(w, req, log, err)
+			return
+		}
 
 		acct, err := accountList.GetAccountByName(b.AccountName)
 		if err != nil {

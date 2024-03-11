@@ -172,8 +172,7 @@ func (s *StateSuite) TestLoadTarget() {
 			"app.py",
 			"requirements.txt",
 		},
-		ID:       "1234567890ABCDEF",
-		SaveName: "myTarget",
+		ID: "1234567890ABCDEF",
 		Configuration: &config.Config{
 			Schema:      "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 			Type:        "python-dash",
@@ -369,13 +368,12 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	}
 	acct2 := accounts.Account{
 		Name: "acct2",
-		URL:  "https://another.server.example.com",
+		URL:  "https://saved.server.example.com",
 	}
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct1, acct2}, nil)
 	accts.On("GetAccountByName", "acct1").Return(&acct1, nil)
 	accts.On("GetAccountByName", "acct2").Return(&acct2, nil)
 	accts.On("GetAccountByServerURL", "https://saved.server.example.com").Return(&acct1, nil)
-	accts.On("GetAccountByServerURL", "https://another.server.example.com").Return(&acct2, nil)
 
 	configPath := config.GetConfigPath(s.cwd, "savedConfigName")
 	cfg := config.New()
@@ -401,7 +399,6 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	s.Equal("myTargetName", state.TargetName)
 	s.Equal(&acct2, state.Account)
 	s.Equal(cfg, state.Config)
-	d.SaveName = "mySaveName"
 	s.Equal(d, state.Target)
 }
 

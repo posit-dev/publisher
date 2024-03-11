@@ -116,11 +116,6 @@ func New(path util.Path, accountName, configName, targetName string, saveName st
 			}
 			accountName = account.Name
 		}
-		if saveName != "" {
-			target.SaveName = saveName
-		} else {
-			target.SaveName = targetName
-		}
 	} else {
 		target = deployment.New()
 	}
@@ -131,13 +126,14 @@ func New(path util.Path, accountName, configName, targetName string, saveName st
 		return nil, err
 	}
 
+	target.ServerURL = account.URL
+
 	if configName == "" {
 		configName = config.DefaultConfigName
 	}
 	cfg, err = loadConfig(path, configName)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			// TODO: automatically run `init` when there is no configuration file
 			return nil, fmt.Errorf("couldn't load configuration '%s' from '%s'; run 'publish init' to create an initial configuration file", configName, path)
 		} else {
 			return nil, err

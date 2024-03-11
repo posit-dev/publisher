@@ -6,6 +6,7 @@ import { Accounts } from './resources/Accounts';
 import { Deployments } from './resources/Deployments';
 import { Configurations } from './resources/Configurations';
 import { Files } from './resources/Files';
+import { Requirements } from './resources/Requirements';
 
 class PublishingClientApi {
   private client;
@@ -14,6 +15,7 @@ class PublishingClientApi {
   configurations: Configurations;
   deployments: Deployments;
   files: Files;
+  requirements: Requirements;
 
   constructor() {
     this.client = axios.create({
@@ -24,6 +26,7 @@ class PublishingClientApi {
     this.configurations = new Configurations(this.client);
     this.deployments = new Deployments(this.client);
     this.files = new Files(this.client);
+    this.requirements = new Requirements(this.client);
   }
 
   setBaseUrl(url: string) {

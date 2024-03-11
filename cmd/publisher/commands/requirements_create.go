@@ -35,7 +35,11 @@ func (cmd *CreateRequirementsCommand) Run(args *cli_types.CommonArgs, ctx *cli_t
 		return errRequirementsFileExists
 	}
 	inspector := inspect.NewPythonInspector(absPath, cmd.Python, ctx.Logger)
-	err = inspector.CreateRequirementsFile(absPath, reqPath)
+	reqs, _, err := inspector.ScanRequirements(absPath)
+	if err != nil {
+		return err
+	}
+	err = inspector.WriteRequirementsFile(reqPath, reqs)
 	if err != nil {
 		return err
 	}

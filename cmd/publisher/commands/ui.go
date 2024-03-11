@@ -32,6 +32,11 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 	log := events.NewLoggerWithSSE(args.Verbose, emitter)
 	ctx.Logger.Info("created SSE logger")
 
+	absPath, err := cmd.Path.Abs()
+	if err != nil {
+		return err
+	}
+
 	// Auto-initialize if needed. This will be replaced by an API call from the UI
 	// for better error handling and startup performance.
 	svc := api.NewService(
@@ -43,7 +48,7 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 		cmd.AccessLog,
 		cmd.TLSKeyFile,
 		cmd.TLSCertFile,
-		cmd.Path,
+		absPath,
 		ctx.Accounts,
 		log,
 		eventServer,

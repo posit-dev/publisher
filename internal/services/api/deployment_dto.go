@@ -38,6 +38,7 @@ type fullDeploymentDTO struct {
 	deploymentLocation
 	deployment.Deployment
 	ConfigPath string `json:"configurationPath,omitempty"`
+	SaveName   string `json:"saveName"`
 }
 
 type deploymentErrorDTO struct {
@@ -60,11 +61,12 @@ func getConfigPath(base util.Path, configName string) util.Path {
 }
 
 func deploymentAsDTO(d *deployment.Deployment, err error, base util.Path, path util.Path) any {
+	saveName := deployment.SaveNameFromPath(path)
 	if err != nil {
 		return &deploymentErrorDTO{
 			deploymentLocation: deploymentLocation{
 				State: deploymentStateError,
-				Name:  deployment.SaveNameFromPath(path),
+				Name:  saveName,
 				Path:  path.String(),
 			},
 			Error: types.AsAgentError(err),
@@ -73,23 +75,24 @@ func deploymentAsDTO(d *deployment.Deployment, err error, base util.Path, path u
 		return &fullDeploymentDTO{
 			deploymentLocation: deploymentLocation{
 				State: deploymentStateDeployed,
-				Name:  deployment.SaveNameFromPath(path),
+				Name:  saveName,
 				Path:  path.String(),
 			},
 			Deployment: *d,
 			ConfigPath: getConfigPath(base, d.ConfigName).String(),
+			SaveName:   saveName, // TODO: remove this duplicate (remove frontend references first)
 		}
 	} else {
 		return preDeploymentDTO{
 			deploymentLocation: deploymentLocation{
 				State: deploymentStateNew,
-				Name:  deployment.SaveNameFromPath(path),
+				Name:  saveName,
 				Path:  path.String(),
 			},
 			Schema:     d.Schema,
 			ServerType: d.ServerType,
 			ServerURL:  d.ServerURL,
-			SaveName:   d.SaveName,
+			SaveName:   saveName, // TODO: remove this duplicate (remove frontend references first)
 			CreatedAt:  d.CreatedAt,
 			Error:      d.Error,
 		}

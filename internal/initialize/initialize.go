@@ -91,11 +91,7 @@ func createPositignoreIfNeeded(base util.Path, log logging.Logger) error {
 func GetPossibleConfigs(base util.Path, python util.Path, log logging.Logger) ([]*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory()
-	absPath, err := base.Abs()
-	if err != nil {
-		return nil, err
-	}
-	configs, err := typeDetector.InferAll(absPath)
+	configs, err := typeDetector.InferAll(base)
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
@@ -113,7 +109,7 @@ func GetPossibleConfigs(base util.Path, python util.Path, log logging.Logger) ([
 		}
 		if needPython {
 			if pyConfig == nil {
-				inspector := PythonInspectorFactory(absPath, python, log)
+				inspector := PythonInspectorFactory(base, python, log)
 				pyConfig, err = inspector.InspectPython()
 				if err != nil {
 					return nil, err
@@ -126,14 +122,10 @@ func GetPossibleConfigs(base util.Path, python util.Path, log logging.Logger) ([
 }
 
 func Init(base util.Path, configName string, python util.Path, log logging.Logger) (*config.Config, error) {
-	absPath, err := base.Abs()
-	if err != nil {
-		return nil, err
-	}
 	if configName == "" {
 		configName = config.DefaultConfigName
 	}
-	cfg, err := inspectProject(absPath, python, log)
+	cfg, err := inspectProject(base, python, log)
 	if err != nil {
 		return nil, err
 	}
