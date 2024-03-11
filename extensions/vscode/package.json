@@ -36,9 +36,21 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.configurations.clone",
+        "title": "Clone",
+        "icon": "$(files)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.configurations.edit",
         "title": "Edit",
         "icon": "$(edit)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.configurations.rename",
+        "title": "Rename",
+        "icon": "$(symbol-key)",
         "category": "Posit Publisher"
       },
       {
@@ -49,20 +61,8 @@
       },
       {
         "command": "posit.publisher.credentials.refresh",
-        "title": "Refresh",
+        "title": "Refresh Credentials",
         "icon": "$(refresh)",
-        "category": "Posit"
-      },
-      {
-        "command": "posit.publisher.configurations.rename",
-        "title": "Rename",
-        "icon": "$(symbol-key)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.clone",
-        "title": "Clone",
-        "icon": "$(files)",
         "category": "Posit Publisher"
       },
       {
@@ -97,6 +97,24 @@
           "dark": "./assets/img/dark/posit-publisher.svg"
         },
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.requirements.edit",
+        "title": "Edit Requirements File",
+        "icon": "$(edit)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.requirements.refresh",
+        "title": "Refresh Requirements",
+        "icon": "$(refresh)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.requirements.scan",
+        "title": "Scan Requirements",
+        "icon": "$(arrow-circle-down)",
+        "category": "Posit Publisher"
       }
     ],
     "configuration": {
@@ -113,12 +131,12 @@
         {
           "command": "posit.publisher.configurations.add",
           "when": "view == posit.publisher.configurations",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "posit.publisher.configurations.refresh",
           "when": "view == posit.publisher.configurations",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "posit.publisher.deployments.add",
@@ -129,6 +147,21 @@
           "command": "posit.publisher.deployments.refresh",
           "when": "view == posit.publisher.deployments",
           "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.requirements.edit",
+          "when": "view == posit.publisher.requirements",
+          "group": "navigation@1"
+        },
+        {
+          "command": "posit.publisher.requirements.refresh",
+          "when": "view == posit.publisher.requirements",
+          "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.requirements.scan",
+          "when": "view == posit.publisher.requirements",
+          "group": "navigation@3"
         },
         {
           "command": "posit.publisher.credentials.refresh",
@@ -225,8 +258,8 @@
           "when": "workbenchState == folder"
         },
         {
-          "id": "posit.publisher.dependencies",
-          "name": "Dependencies",
+          "id": "posit.publisher.requirements",
+          "name": "Requirements",
           "contextualTitle": "Publisher",
           "when": "workbenchState == folder"
         },
@@ -268,12 +301,17 @@
       {
         "view": "posit.publisher.configurations",
         "contents": "To publish your content, you need a configuration file. Click Add to create one based on the files in your project.\n[Add](command:posit.publisher.configurations.add)",
-        "when": "posit.publisher.configurations.isEmpty"
+        "when": "posit.publisher.configurations.isEmpty == empty"
       },
       {
         "view": "posit.publisher.deployments",
         "contents": "To publish your content, you need to create a deployment. Click Add to create one and optionally publish your project using it.\n[Add](command:posit.publisher.deployments.add)",
         "when": "posit.publisher.deployments.isEmpty"
+      },
+      {
+        "view": "posit.publisher.requirements",
+        "contents": "To deploy Python content, you need a requirements.txt file listing any package dependencies. Click Scan to create one based on the files in your project.\n[Scan](command:posit.publisher.requirements.scan)",
+        "when": "posit.publisher.requirements.isEmpty == empty"
       },
       {
         "view": "posit.publisher.project",
