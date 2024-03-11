@@ -27,14 +27,31 @@ enum PositPublishState {
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
+async function isMissingPublishDirs(folder: vscode.WorkspaceFolder): Promise<boolean> {
+  try {
+    const stats = await Promise.all([
+      vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, '.posit')),
+      vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, '.posit/publish'))
+    ]);
+
+    return !stats.every(stat => stat.type === vscode.FileType.Directory);
+  } catch {
+    return true;
+  }
+}
+
+function setMissingContext(context: boolean) {
+  vscode.commands.executeCommand('setContext', MISSING_CONTEXT, context);
+}
+
+function setStateContext(context: PositPublishState) {
+  vscode.commands.executeCommand('setContext', STATE_CONTEXT, context);
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
-  vscode.commands.executeCommand(
-    'setContext',
-    STATE_CONTEXT,
-    PositPublishState.uninitialized
-  );
+  setStateContext(PositPublishState.uninitialized);
 
   if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length) {
     const folder = vscode.workspace.workspaceFolders[0];
@@ -45,25 +62,17 @@ export async function activate(context: vscode.ExtensionContext) {
       true,
       false
     );
-    watcher.onDidCreate(() => {
-      vscode.commands.executeCommand('setContext', MISSING_CONTEXT, false);
+    watcher.onDidCreate(async () => {
+      setMissingContext(await isMissingPublishDirs(folder));
     });
     watcher.onDidDelete(() => {
-      vscode.commands.executeCommand('setContext', MISSING_CONTEXT, true);
+      setMissingContext(true);
     });
     context.subscriptions.push(watcher);
 
-    try {
-      await Promise.all([
-        vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, '.posit')),
-        vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, '.posit/publish'))
-      ]);
-      
-    } catch {
-      vscode.commands.executeCommand('setContext', MISSING_CONTEXT, true);
-    }
+    setMissingContext(await isMissingPublishDirs(folder));
   } else {
-    vscode.commands.executeCommand('setContext', MISSING_CONTEXT, true);
+    setMissingContext(true);
   }
 
   const port = await ports.acquire();
@@ -92,11 +101,7 @@ export async function activate(context: vscode.ExtensionContext) {
   new HelpAndFeedbackTreeDataProvider().register(context);
   new LogsTreeDataProvider(stream).register(context);
 
-  vscode.commands.executeCommand(
-    'setContext',
-    STATE_CONTEXT,
-    PositPublishState.initialized
-  );
+  setStateContext(PositPublishState.initialized);
 }
 
 // This method is called when your extension is deactivated
