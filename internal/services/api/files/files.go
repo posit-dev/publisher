@@ -84,7 +84,12 @@ func (f *File) insert(root util.Path, path util.Path, ignore gitignore.IgnoreLis
 		}
 
 		// otherwise, create it
-		exclusion, err := ignore.Match(path.Path())
+		relPath, err := path.Rel(root)
+		if err != nil {
+			return nil, err
+		}
+
+		exclusion, err := ignore.Match(relPath.Path())
 		if err != nil {
 			return nil, err
 		}

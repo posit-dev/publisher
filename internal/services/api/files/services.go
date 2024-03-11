@@ -28,6 +28,12 @@ type filesService struct {
 }
 
 func (s filesService) GetFile(p util.Path, ignore gitignore.IgnoreList) (*File, error) {
+	oldWD, err := util.Chdir(p.Path())
+	if err != nil {
+		return nil, err
+	}
+	defer util.Chdir(oldWD)
+
 	p = p.Clean()
 	m, err := ignore.Match(p.String())
 	if err != nil {
