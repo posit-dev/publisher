@@ -189,7 +189,7 @@
         },
         {
           "command": "posit.publisher.deployments.forget",
-          "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment || viewItem == posit.publisher.deployments.tree.item.deploymentError"
+          "when": "view == posit.publisher.deployments"
         }
       ],
       "commandPalette": [
