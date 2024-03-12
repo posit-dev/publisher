@@ -1,13 +1,14 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import {
+  Event,
+  EventEmitter,
+  ExtensionContext,
+  ThemeIcon,
   TreeDataProvider,
   TreeItem,
-  ExtensionContext,
-  window,
-  EventEmitter,
-  Event,
   commands,
+  window,
 } from 'vscode';
 
 import api, { Account } from '../api';
@@ -70,6 +71,7 @@ export class CredentialsTreeItem extends TreeItem {
   constructor(account: Account) {
     super(account.name);
     this.tooltip = this.getTooltip(account);
+    this.iconPath = new ThemeIcon('key');
   }
 
   getTooltip(account: Account): string {
