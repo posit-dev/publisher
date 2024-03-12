@@ -23,16 +23,10 @@ import {
   pathSorter,
 } from '../utils/files';
 
-enum FileItemTreeMode {
-  includedTitle,
-  excludedTitle,
-  includedFile,
-  excludedFile,
-}
+import * as os from 'os';
 
 const viewName = 'posit.publisher.files';
 const refreshCommand = viewName + '.refresh';
-const editCommand = viewName + '.edit';
 const editPositIgnoreCommand = viewName + '.editPositIgnore';
 const addExclusionCommand = viewName + '.addExclusion';
 
@@ -49,17 +43,20 @@ const positIgnoreFileTemplate =
   `# Controls which files will be uploaded to the server within\n` +
   `# the bundle during the next deployment.\n` +
   `#\n` +
-  `# Syntax of exclusions conforms with Git Ignore File syntax.` +
+  `# Syntax of exclusions conforms with Git Ignore File syntax.\n` +
   `#\n` +
   `# NOTE: This file currenly only supports POSITIVE exclusion rules\n` +
   `# and does not support NEGATIVE inclusion rules.\n` +
   `#\n` +
   `\n`;
 
-type FilesEventEmitter = EventEmitter<FilesTreeItem | undefined | void>;
-type FilesEvent = Event<FilesTreeItem | undefined | void>;
+let includedFiles: FileEntries[] = [];
+let excludedFiles: FileEntries[] = [];
 
-export class FilesTreeDataProvider implements TreeDataProvider<FilesTreeItem> {
+type FilesEventEmitter = EventEmitter<TreeEntries | undefined | void>;
+type FilesEvent = Event<TreeEntries | undefined | void>;
+
+export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   private root: Uri;
   private _onDidChangeTreeData: FilesEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: FilesEvent = this._onDidChangeTreeData.event;
@@ -78,11 +75,11 @@ export class FilesTreeDataProvider implements TreeDataProvider<FilesTreeItem> {
     this._onDidChangeTreeData.fire();
   };
 
-  getTreeItem(element: FilesTreeItem): TreeItem | Thenable<TreeItem> {
+  getTreeItem(element: FileEntries): FileEntries | Thenable<TreeItem> {
     return element;
   }
 
-  async getChildren(element: FilesTreeItem | undefined): Promise<FilesTreeItem[]> {
+  async getChildren(element: TreeEntries | undefined): Promise<TreeEntries[]> {
     if (element === undefined) {
       // first call. 
       try {
@@ -98,16 +95,10 @@ export class FilesTreeDataProvider implements TreeDataProvider<FilesTreeItem> {
 
         // we have a fixed top hiearchy
         return [
-          new FilesTreeItem(
-            FileItemTreeMode.includedTitle,
-            this.root,
-            undefined,
+          new IncludedFilesSection(
             `Included Files`,
           ),
-          new FilesTreeItem(
-            FileItemTreeMode.excludedTitle,
-            this.root,
-            undefined,
+          new ExcludedFilesSection(
             `Excluded Files`,
           ),
         ];
@@ -118,9 +109,9 @@ export class FilesTreeDataProvider implements TreeDataProvider<FilesTreeItem> {
         return [];
       }
     }
-    if (element.type === FileItemTreeMode.includedTitle) {
+    if (element instanceof IncludedFilesSection) {
       return includedFiles;
-    } else if (element.type === FileItemTreeMode.excludedTitle) {
+    } else if (element instanceof ExcludedFilesSection) {
       return excludedFiles;
     }
     // should be flat below the actual files
@@ -128,27 +119,14 @@ export class FilesTreeDataProvider implements TreeDataProvider<FilesTreeItem> {
   }
 
   public register(context: ExtensionContext) {
-    const treeView = window.createTreeView(
+    window.createTreeView(
       viewName,
       {
         treeDataProvider: this,
       },
     );
-    treeView.onDidChangeSelection(e => {
-      if (e.selection.length > 0) {
-        const item = e.selection.at(0);
-        commands.executeCommand(editCommand, item);
-      }
-    });
     context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh)
-    );
-    context.subscriptions.push(
-      commands.registerCommand(editCommand, async (item: FilesTreeItem) => {
-        if (item.fileUri) {
-          await commands.executeCommand('vscode.open', item.fileUri);
-        }
-      })
     );
     context.subscriptions.push(
       commands.registerCommand(editPositIgnoreCommand, async () => {
@@ -163,7 +141,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<FilesTreeItem> {
       })
     );
     context.subscriptions.push(
-      commands.registerCommand(addExclusionCommand, async (item: FilesTreeItem) => {
+      commands.registerCommand(addExclusionCommand, async (item: FileTreeItem) => {
         if (this.root !== undefined) {
           updateNewOrExistingFile(
             path.join(this.root.fsPath, '.positignore'),
@@ -187,14 +165,10 @@ export class FilesTreeDataProvider implements TreeDataProvider<FilesTreeItem> {
   }
 }
 
-let includedFiles: FilesTreeItem[] = [];
-let excludedFiles: FilesTreeItem[] = [];
-
-const pathToFilesTreeItemMap = new Map<string, FilesTreeItem>();
-
-function sortFilesTreeItemByPath(a: FilesTreeItem, b: FilesTreeItem) {
-  if (a.abs && b.abs) {
-    return pathSorter(a.abs.split('/'), b.abs.split('/'));
+function sortFilesTreeItemByPath(a: FileTreeItem, b: FileTreeItem) {
+  const sep: string = (os.platform() === 'win32') ? '\\' : '/';
+  if (a.fileUri.fsPath && b.fileUri.fsPath) {
+    return pathSorter(a.fileUri.fsPath.split(sep), b.fileUri.fsPath.split(sep));
   }
   return 0;
 };
@@ -207,33 +181,31 @@ const sortFileTrees = () => {
 const resetFileTrees = () => {
   includedFiles = [];
   excludedFiles = [];
-  pathToFilesTreeItemMap.clear();
 };
 
 const buildFileTrees = (
   file: DeploymentFile,
   root: Uri,
+  // Workaround for API shortcoming which does not populate exclusions down through
+  // subdirectories. Once API has been updated for that, we can remove the override
+  // (although it will continue to function correctly as written)
   exclusionOverride?: ExclusionMatch | null,
 ) => {
   if (file.isFile) {
     if (file.exclusion || exclusionOverride) {
-      const f = new FilesTreeItem(
-        FileItemTreeMode.excludedFile,
+      const f = new ExcludedFile(
         root,
         {
           ...file,
           exclusion: file.exclusion || exclusionOverride || null,
         }
       );
-      pathToFilesTreeItemMap.set(f.getUri().toString(), f);
       excludedFiles.push(f);
     } else {
-      const f = new FilesTreeItem(
-        FileItemTreeMode.includedFile,
+      const f = new IncludedFile(
         root,
         file,
       );
-      pathToFilesTreeItemMap.set(f.getUri().toString(), f);
       includedFiles.push(f);
     }
   } else {
@@ -250,92 +222,112 @@ const buildFileTrees = (
   });
 };
 
-export class FilesTreeItem extends TreeItem {
-  public abs?: string;
-  public fileUri?: Uri;
-  public exclusion?: ExclusionMatch | null;
+export type TreeEntries =
+  IncludedFilesSection |
+  ExcludedFilesSection |
+  FileEntries
+  ;
+export type FileEntries =
+  IncludedFile |
+  ExcludedFile
+  ;
+
+export class IncludedFilesSection extends TreeItem {
+  constructor(
+    label: string,
+  ) {
+    super(label);
+
+    this.contextValue = isIncludedTitle;
+    this.resourceUri = Uri.parse(`positPublisherFiles://includedTitle`);
+    this.collapsibleState = TreeItemCollapsibleState.Expanded;
+    this.tooltip =
+      `Files listed within this tree node will be uploaded during the next deployment.`;
+    this.iconPath = new ThemeIcon('list-unordered');
+  }
+}
+export class ExcludedFilesSection extends TreeItem {
+  constructor(
+    label: string,
+  ) {
+    super(label);
+
+    this.contextValue = isExcludedTitle;
+    this.resourceUri = Uri.parse(`positPublisherFiles://excludedTitle`);
+    this.collapsibleState = TreeItemCollapsibleState.Expanded;
+    this.tooltip =
+      `Files listed within this tree node will not be uploaded during the next deployment.`;
+    this.iconPath = new ThemeIcon('list-unordered');
+  }
+}
+
+export class FileTreeItem extends TreeItem {
+  public fileUri: Uri;
+  public exclusion: ExclusionMatch | null;
 
   constructor(
-    public type: FileItemTreeMode,
-    public root: Uri,
-    public deploymentFile?: DeploymentFile,
-    public labelOverride?: string,
+    root: Uri,
+    deploymentFile: DeploymentFile,
+  ) {
+    super(deploymentFile.base);
+
+    this.id = deploymentFile.id;
+    this.label = deploymentFile.base;
+    this.fileUri = Uri.file(path.join(root.fsPath, deploymentFile.id));
+    this.collapsibleState = TreeItemCollapsibleState.None;
+    this.exclusion = deploymentFile.exclusion;
+    this.command = {
+      title: 'Open',
+      command: 'vscode.open',
+      arguments: [this.fileUri]
+    };
+    this.description = path.dirname(deploymentFile.id);
+    if (this.description === '.') {
+      this.description = undefined;
+    }
+
+    this.iconPath = new ThemeIcon('debug-stackframe-dot');
+  }
+}
+
+export class IncludedFile extends FileTreeItem {
+  constructor(
+    root: Uri,
+    deploymentFile: DeploymentFile,
   ) {
     super(
-      labelOverride
-        ? labelOverride
-        : deploymentFile ? deploymentFile.base : 'Unknown'
+      root,
+      deploymentFile,
     );
-    if (
-      deploymentFile &&
-      (type === FileItemTreeMode.includedFile || type === FileItemTreeMode.excludedFile)
-    ) {
-      this.id = deploymentFile.id;
-      this.label = deploymentFile.base;
-      this.contextValue = deploymentFile.exclusion ? isExcludedFile : isIncludedFile;
-      this.resourceUri = this.calculateUri(type);
-      this.fileUri = Uri.file(path.join(this.root.fsPath, deploymentFile.id));
-      this.collapsibleState = TreeItemCollapsibleState.None;
-      this.exclusion = deploymentFile.exclusion;
+    this.contextValue = isIncludedFile;
+    this.resourceUri = Uri.parse(`positPublisherFilesIncluded://${this.id}`);
+    this.tooltip =
+      `This file will be included in the next deployment.\n${this.fileUri.fsPath}`;
+  }
+}
+export class ExcludedFile extends FileTreeItem {
+  constructor(
+    root: Uri,
+    deploymentFile: DeploymentFile,
+  ) {
+    super(
+      root,
+      deploymentFile,
+    );
 
-      this.description = path.dirname(deploymentFile.id);
-      if (this.description === '.') {
-        this.description = undefined;
-      }
-
-      this.abs = deploymentFile.abs;
-      this.iconPath = new ThemeIcon('debug-stackframe-dot');
-      const fullPath = Uri.file(path.join(this.root.fsPath, deploymentFile.id));
-
-      if (type === FileItemTreeMode.includedFile) {
-        this.tooltip =
-          `This file will be included in the next deployment.\n${fullPath}`;
+    this.contextValue = isExcludedFile;
+    this.resourceUri = Uri.parse(`positPublisherFilesExcluded://${this.id}`);
+    this.tooltip =
+      `This file will be excluded in the next deployment.\n${this.fileUri.fsPath}\n\n`;
+    if (this.exclusion) {
+      if (this.exclusion.source === 'built-in') {
+        this.tooltip +=
+          `This is a built-in exclusion for the pattern: '${this.exclusion?.pattern}'`;
       } else {
-        this.tooltip =
-          `This file will be excluded in the next deployment.\n${fullPath}\n\n`;
-        if (this.exclusion) {
-          if (this.exclusion.source === 'built-in') {
-            this.tooltip +=
-              `This is a built-in exclusion for the pattern: '${this.exclusion?.pattern}'`;
-          } else {
-            this.tooltip +=
-              `The project's .positignore file is excluding it\nwith the pattern '${this.exclusion?.pattern}' on line #${this.exclusion?.line}`;
-          }
-        }
+        this.tooltip +=
+          `The project's .positignore file is excluding it\nwith the pattern '${this.exclusion?.pattern}' on line #${this.exclusion?.line}`;
       }
-
-    } else if (type === FileItemTreeMode.includedTitle) {
-      this.contextValue = isIncludedTitle;
-      this.resourceUri = this.calculateUri(type);
-      this.collapsibleState = TreeItemCollapsibleState.Expanded;
-      this.tooltip =
-        `Files listed within this tree node will be uploaded during the next deployment.`;
-      this.iconPath = new ThemeIcon('list-unordered');
-
-    } else if (type === FileItemTreeMode.excludedTitle) {
-      this.contextValue = isExcludedTitle;
-      this.resourceUri = this.calculateUri(type);
-      this.collapsibleState = TreeItemCollapsibleState.Expanded;
-      this.tooltip =
-        `Files listed within this tree node will not be uploaded during the next deployment.`;
-      this.iconPath = new ThemeIcon('list-unordered');
     }
   }
-
-  public getUri = () => {
-    return this.calculateUri(this.type);
-  };
-
-  private calculateUri = (type: FileItemTreeMode) => {
-    switch (type) {
-      case FileItemTreeMode.includedTitle:
-        return Uri.parse(`positPublisherFiles://includedTitle`);
-      case FileItemTreeMode.excludedTitle:
-        return Uri.parse(`positPublisherFiles://excludedTitle`);
-      case FileItemTreeMode.includedFile:
-        return Uri.parse(`positPublisherFilesIncluded://${this.id}`);
-      case FileItemTreeMode.excludedFile:
-        return Uri.parse(`positPublisherFilesExcluded://${this.id}`);
-    }
-  };
 }
+

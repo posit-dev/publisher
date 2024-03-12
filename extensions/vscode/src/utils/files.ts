@@ -134,11 +134,7 @@ export async function updateNewOrExistingFile(
     fileContents = newContents;
   }
 
-  try {
-    await workspace.fs.writeFile(uri, fileContents);
-  } catch (e) {
-    console.log(e);
-  }
+  await workspace.fs.writeFile(uri, fileContents);
 
   if (openEditor) {
     viewFileInPreview(uri);
@@ -149,10 +145,16 @@ export async function updateNewOrExistingFile(
 // https://github.com/hughsk/path-sort
 // Very old, but MIT license
 //
-export function pathSort(paths: string[], sep: string = '/'): string[] {
-  return paths.map(function (el: string) {
+// Suggest this method to determine the separator to pass in
+// Not performing it here, because we might be displaying paths from a source
+// which is not the same platform that the client is running on.
+//   import * as os from 'os'
+//   const sep: string = (os.platform() === 'win32') ? '\\' : '/';
+
+export function pathSort(paths: string[], sep: string): string[] {
+  return paths.map((el: string) => {
     return el.split(sep);
-  }).sort(pathSorter).map(function (el: string[]) {
+  }).sort(pathSorter).map((el: string[]) => {
     return el.join(sep);
   });
 }
@@ -182,8 +184,9 @@ export function pathSorter(a: string[], b: string[]): number {
   return 0;
 }
 
-export function standalonePathSorter(sep: string = '/') {
-  return function pathsort(a: string, b: string) {
+// Sort factory function to sort two paths
+export function standalonePathSorter(sep: string) {
+  return (a: string, b: string) => {
     return pathSorter(a.split(sep), b.split(sep));
   };
 }

@@ -100,7 +100,7 @@
       },
       {
         "command": "posit.publisher.files.refresh",
-        "title": "Refresh",
+        "title": "Refresh Deployment Files",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
@@ -256,6 +256,10 @@
         },
         {
           "command": "posit.publisher.deployments.forget",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.files.addExclusion",
           "when": "false"
         }
       ]
