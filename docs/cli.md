@@ -1,4 +1,4 @@
-## Publisher CLI
+## Publisher CLI Reference
 
 ### `list-accounts`
 
@@ -83,16 +83,15 @@ publisher redeploy ${NAME} ${DIRECTORY}
 
 `DIRECTORY` is optional, and defaults to the current directory.
 
-## `publisher ui`
+### requirements show
 
-To launch the Posit Publisher UI in a browser, run the following command:
-```
-publisher ui ${DIRECTORY}
-```
-This returns an address you can visit or, if you include the `-i` flag, launches
-an interactive browser session.
+This command scans the files in your directory looking for library imports, then uses the packages metadata from your local Python installation to produce a list of package dependencies on standard output. This is generally a subset of your installed packages and is much smaller than the output from `pip freeze`.
 
-## help
+### requirements create
+
+This command produces a list of Python dependencies (see `requirements show`) and writes it to `requirements.txt`. If the file exists, the `-f` flag will force overwriting it.
+
+### help
 
 Each `publisher` CLI command supports a `-h` option, which will show the help
 for that command.
