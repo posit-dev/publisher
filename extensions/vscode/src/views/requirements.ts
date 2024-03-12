@@ -64,7 +64,7 @@ export class RequirementsTreeDataProvider implements TreeDataProvider<Requiremen
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(line => new RequirementsTreeItem(line));
     } catch(error: unknown) {
-      if (isAxiosError(error) && error.status === 404) {
+      if (isAxiosError(error) && error.response?.status === 404) {
         // No requirements file; show the welcome view.
         await this.setContextIsEmpty(true);
         return [];
