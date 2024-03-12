@@ -142,6 +142,7 @@ export class RequirementsTreeItem extends TreeItem {
     super(itemString);
 
     if (itemString.startsWith('-')) {
+      // Looks like a pip configuration parameter, e.g. --index-url
       this.iconPath = new ThemeIcon('gear');
     } else {
       this.iconPath = new ThemeIcon('package');
