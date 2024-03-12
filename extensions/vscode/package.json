@@ -333,7 +333,7 @@
       },
       {
         "view": "posit.publisher.project",
-        "contents": "Before deploying using Posit Publisher, you need to initialize your project.\n[Initialize Project](command:posit.publisher.initalize)",
+        "contents": "Before deploying using Posit Publisher, you need to initialize your project by creating a deployment configuration.\n[Initialize Project](command:posit.publisher.configurations.add)",
         "when": "workbenchState == folder && posit.publish.missing && posit.publish.state == 'initialized'"
       }
     ]
