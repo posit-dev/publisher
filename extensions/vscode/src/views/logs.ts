@@ -120,6 +120,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.publishingStage.events.push(msg);
       this.refresh();
     });
+    
+    stream.register('publish/failure', (_: EventStreamMessage) => {
+      this.publishingStage.status = LogStageStatus.failed;
+      this.refresh();
+    });
   }
 
   registerCheckCapabilitiesEvents(stream: EventStream) {
