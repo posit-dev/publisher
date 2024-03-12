@@ -248,6 +248,8 @@ export class ConfigurationTreeItem extends TreeItem {
 
     if (isConfigurationError(config)) {
       this.iconPath = new ThemeIcon('warning');
+    } else {
+      this.iconPath = new ThemeIcon('gear');
     }
     this.tooltip = this.getTooltip();
     this.command = {

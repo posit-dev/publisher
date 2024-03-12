@@ -179,7 +179,12 @@ export class DeploymentsTreeItem extends TreeItem {
       `Last Deployed on ${formatDateString(deployment.deployedAt)}\n` +
       `Targeting ${deployment.serverType} at ${deployment.serverUrl}\n` +
       `GUID = ${deployment.id}`;
-    this.iconPath = new ThemeIcon('refresh');
+
+    if (deployment.deploymentError) {
+      this.iconPath = new ThemeIcon('warning');
+    } else {
+      this.iconPath = new ThemeIcon('cloud-upload');
+    }
   }
 
   private initializePreDeployment(predeployment: PreDeployment) {
@@ -189,7 +194,7 @@ export class DeploymentsTreeItem extends TreeItem {
       `Created on ${formatDateString(predeployment.createdAt)}\n` +
       `Targeting ${predeployment.serverType} at ${predeployment.serverUrl}\n` +
       `WARNING! Not Yet Deployed`;
-    this.iconPath = new ThemeIcon('cloud-upload');
+    this.iconPath = new ThemeIcon('ellipsis');
   }
 
   private initializeDeploymentError(deploymentError: DeploymentError) {
@@ -202,4 +207,3 @@ export class DeploymentsTreeItem extends TreeItem {
     this.iconPath = new ThemeIcon('warning');
   }
 }
-

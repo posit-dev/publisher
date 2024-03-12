@@ -6,6 +6,7 @@ import {
   ExtensionContext,
   FileSystemWatcher,
   RelativePattern,
+  ThemeIcon,
   TreeDataProvider,
   TreeItem,
   Uri,
@@ -63,7 +64,7 @@ export class RequirementsTreeDataProvider implements TreeDataProvider<Requiremen
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(line => new RequirementsTreeItem(line));
     } catch(error: unknown) {
-      if (isAxiosError(error) && error.status === 404) {
+      if (isAxiosError(error) && error.response?.status === 404) {
         // No requirements file; show the welcome view.
         await this.setContextIsEmpty(true);
         return [];
@@ -139,7 +140,15 @@ export class RequirementsTreeItem extends TreeItem {
 
   constructor(itemString: string) {
     super(itemString);
+
+    if (itemString.startsWith('-')) {
+      // Looks like a pip configuration parameter, e.g. --index-url
+      this.iconPath = new ThemeIcon('gear');
+    } else {
+      this.iconPath = new ThemeIcon('package');
+    }
   }
 
   contextValue = 'posit.publisher.dependencies.tree.item';
+  tooltip = '';
 }
