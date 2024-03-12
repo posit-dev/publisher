@@ -11,7 +11,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func GetNotebookFileInputs(path util.Path) (string, error) {
+func GetNotebookFileInputs(path util.AbsolutePath) (string, error) {
 	f, err := path.Open()
 	if err != nil {
 		return "", err

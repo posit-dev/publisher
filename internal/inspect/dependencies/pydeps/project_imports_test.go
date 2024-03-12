@@ -30,7 +30,9 @@ func (s *ProjectDepsSuite) TestScanProjectImports() {
 	log := logging.New()
 	scanner := NewProjectImportScanner(log)
 
-	path := util.NewPath("testdata", nil)
+	path, err := util.NewPath("testdata", nil).Abs()
+	s.NoError(err)
+
 	importNames, err := scanner.ScanProjectImports(path)
 	s.NoError(err)
 	s.Equal([]ImportName{

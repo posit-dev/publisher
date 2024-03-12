@@ -20,7 +20,7 @@ import (
 
 type DeploymentSuite struct {
 	utiltest.Suite
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestDeploymentSuite(t *testing.T) {
@@ -111,7 +111,8 @@ func (s *DeploymentSuite) TestWriteFile() {
 
 func (s *DeploymentSuite) TestWriteFileErr() {
 	deploymentFile := GetDeploymentPath(s.cwd, "myTargetName")
-	readonlyFile := util.NewPath(deploymentFile.Path(), afero.NewReadOnlyFs(deploymentFile.Fs()))
+	readonlyFs := afero.NewReadOnlyFs(deploymentFile.Fs())
+	readonlyFile := deploymentFile.WithFs(readonlyFs)
 	deployment := New()
 	err := deployment.WriteFile(readonlyFile)
 	s.NotNil(err)

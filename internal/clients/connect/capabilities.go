@@ -30,7 +30,7 @@ Create the file, listing the packages your project depends on.
 Or scan your project dependencies using the publisher UI or
 the 'publisher requirements create' command`
 
-func checkRequirementsFile(base util.Path, requirementsFilename string) error {
+func checkRequirementsFile(base util.AbsolutePath, requirementsFilename string) error {
 	packageFile := base.Join(requirementsFilename)
 	exists, err := packageFile.Exists()
 	if err != nil {
@@ -42,7 +42,7 @@ func checkRequirementsFile(base util.Path, requirementsFilename string) error {
 	return nil
 }
 
-func (c *ConnectClient) CheckCapabilities(base util.Path, cfg *config.Config, log logging.Logger) error {
+func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, log logging.Logger) error {
 	if cfg.Python != nil {
 		err := checkRequirementsFile(base, cfg.Python.PackageFile)
 		if err != nil {

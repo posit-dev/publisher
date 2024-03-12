@@ -46,20 +46,20 @@ func New() *Deployment {
 	}
 }
 
-func GetDeploymentsPath(base util.Path) util.Path {
+func GetDeploymentsPath(base util.AbsolutePath) util.AbsolutePath {
 	return base.Join(".posit", "publish", "deployments")
 }
 
-func GetDeploymentPath(base util.Path, name string) util.Path {
+func GetDeploymentPath(base util.AbsolutePath, name string) util.AbsolutePath {
 	return GetDeploymentsPath(base).Join(name + ".toml")
 }
 
-func ListDeploymentFiles(base util.Path) ([]util.Path, error) {
+func ListDeploymentFiles(base util.AbsolutePath) ([]util.AbsolutePath, error) {
 	dir := GetDeploymentsPath(base)
 	return dir.Glob("*.toml")
 }
 
-func UntitledDeploymentName(base util.Path) (string, error) {
+func UntitledDeploymentName(base util.AbsolutePath) (string, error) {
 	for i := 1; ; i++ {
 		name := fmt.Sprintf("Untitled-%d", i)
 		exists, err := GetDeploymentPath(base, name).Exists()
@@ -72,21 +72,21 @@ func UntitledDeploymentName(base util.Path) (string, error) {
 	}
 }
 
-func SaveNameFromPath(path util.Path) string {
+func SaveNameFromPath(path util.AbsolutePath) string {
 	return strings.TrimSuffix(path.Base(), ".toml")
 }
 
-func RenameDeployment(base util.Path, oldName, newName string) error {
+func RenameDeployment(base util.AbsolutePath, oldName, newName string) error {
 	err := util.ValidateFilename(newName)
 	if err != nil {
 		return err
 	}
 	oldPath := GetDeploymentPath(base, oldName)
 	newPath := GetDeploymentPath(base, newName)
-	return oldPath.Rename(newPath)
+	return oldPath.Rename(newPath.Path)
 }
 
-func FromFile(path util.Path) (*Deployment, error) {
+func FromFile(path util.AbsolutePath) (*Deployment, error) {
 	err := ValidateFile(path)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func FromFile(path util.Path) (*Deployment, error) {
 	return d, nil
 }
 
-func ValidateFile(path util.Path) error {
+func ValidateFile(path util.AbsolutePath) error {
 	validator, err := schema.NewValidator[Deployment](schema.DeploymentSchemaURL)
 	if err != nil {
 		return err
@@ -119,7 +119,7 @@ func (d *Deployment) Write(w io.Writer) error {
 	return enc.Encode(d)
 }
 
-func (d *Deployment) WriteFile(path util.Path) error {
+func (d *Deployment) WriteFile(path util.AbsolutePath) error {
 	err := path.Dir().MkdirAll(0777)
 	if err != nil {
 		return err

@@ -9,11 +9,11 @@ import (
 )
 
 type IgnoreList interface {
-	Append(path util.Path) error
+	Append(path util.AbsolutePath) error
 	AppendGlobs(patterns []string, source MatchSource) error
 	AppendGit() error
 	Match(path string) (*Match, error)
-	Walk(root util.Path, fn util.WalkFunc) error
+	Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error
 }
 
 // Ensure that the gitignore object meets the interface
@@ -23,7 +23,7 @@ type MockGitIgnoreList struct {
 	mock.Mock
 }
 
-func (m *MockGitIgnoreList) Append(path util.Path) error {
+func (m *MockGitIgnoreList) Append(path util.AbsolutePath) error {
 	args := m.Called(path)
 	return args.Error(0)
 }
@@ -43,7 +43,7 @@ func (m *MockGitIgnoreList) Match(path string) (*Match, error) {
 	return args.Get(0).(*Match), args.Error(1)
 }
 
-func (m *MockGitIgnoreList) Walk(root util.Path, fn util.WalkFunc) error {
+func (m *MockGitIgnoreList) Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
 	args := m.Called(root, fn)
 	return args.Error(0)
 }

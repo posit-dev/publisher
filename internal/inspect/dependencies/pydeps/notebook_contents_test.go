@@ -21,7 +21,9 @@ func TestNotebookContentsSuite(t *testing.T) {
 }
 
 func (s *NotebookContentsSuite) TestGetNotebookFileInputs() {
-	path := util.NewPath("testdata", nil).Join("good_notebook.ipynb")
+	path, err := util.NewPath("testdata", nil).Join("good_notebook.ipynb").Abs()
+	s.NoError(err)
+
 	inputs, err := GetNotebookFileInputs(path)
 	s.Nil(err)
 	s.Equal("import sys\nprint(sys.executable)\nprint('Summing')\n123 + 456\n", inputs)
@@ -29,7 +31,9 @@ func (s *NotebookContentsSuite) TestGetNotebookFileInputs() {
 
 func (s *NotebookContentsSuite) TestGetNotebookFileInputsErr() {
 	fs := utiltest.NewMockFs()
-	path := util.NewPath("testdata", fs).Join("good_notebook.ipynb")
+	path, err := util.NewPath("testdata", fs).Join("good_notebook.ipynb").Abs()
+	s.NoError(err)
+
 	testError := errors.New("test error from Open")
 	fs.On("Open", mock.Anything).Return(nil, testError)
 	inputs, err := GetNotebookFileInputs(path)
@@ -39,7 +43,9 @@ func (s *NotebookContentsSuite) TestGetNotebookFileInputsErr() {
 }
 
 func (s *NotebookContentsSuite) TestGetNotebookInputsNoCells() {
-	path := util.NewPath("testdata", nil).Join("empty_notebook.ipynb")
+	path, err := util.NewPath("testdata", nil).Join("empty_notebook.ipynb").Abs()
+	s.NoError(err)
+
 	inputs, err := GetNotebookFileInputs(path)
 	s.NoError(err)
 	s.Equal("", inputs)

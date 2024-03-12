@@ -17,7 +17,7 @@ func NewStaticHTMLDetector() *StaticHTMLDetector {
 	}
 }
 
-func (d *StaticHTMLDetector) InferType(path util.Path) (*config.Config, error) {
+func (d *StaticHTMLDetector) InferType(path util.AbsolutePath) (*config.Config, error) {
 	entrypoint, _, err := d.InferEntrypoint(path, ".html", "index.html")
 	if err != nil {
 		return nil, err

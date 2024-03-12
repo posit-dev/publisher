@@ -125,7 +125,7 @@ func (m *defaultPackageMapper) GetPackageMap(pythonExecutable string) (PackageMa
 	slices.Reverse(libDirs)
 
 	for _, libDir := range libDirs {
-		if libDir.HasSuffix(".zip") || libDir.Path() == "" {
+		if libDir.HasSuffix(".zip") || libDir.String() == "" {
 			continue
 		}
 		dirMapping, err := m.getMappingForLibDir(libDir)

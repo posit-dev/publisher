@@ -133,7 +133,7 @@ type BundlerSuite struct {
 	utiltest.Suite
 
 	fs  afero.Fs
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestBundlerSuite(t *testing.T) {
@@ -144,7 +144,7 @@ func (s *BundlerSuite) SetupSuite() {
 	// Our testdata/bundle_dir needs to contain a non-regular
 	// file, but you can't check a fifo into git of course.
 	tarPath := s.cwd.Join("testdata", "symlink_test", "fifo.tar")
-	cmd := exec.Command("tar", "xvf", tarPath.Path())
+	cmd := exec.Command("tar", "xvf", tarPath.String())
 	err := cmd.Run()
 	s.Nil(err)
 }
@@ -276,35 +276,6 @@ func (s *BundlerSuite) TestCreateBundleWithPositignoreInSubdirectory() {
 	}, s.getTarFileNames(dest))
 }
 
-func (s *BundlerSuite) TestCreateBundleWithPositignoreInSubdirectoryRelativePath() {
-	s.makeFile("testfile")
-	s.makeFile(filepath.Join("subdir", "testfile"))
-	err := s.cwd.Join("subdir", ".positignore").WriteFile([]byte(`testfile`), 0666)
-	s.NoError(err)
-
-	dest := new(bytes.Buffer)
-	log := logging.New()
-
-	path := util.NewPath(".", s.cwd.Fs())
-	bundler, err := NewBundler(path, NewManifest(), nil, log)
-	s.Nil(err)
-	manifest, err := bundler.CreateBundle(dest)
-	s.Nil(err)
-	s.NotNil(manifest)
-	s.Len(manifest.Files, 2)
-	// Manifest filenames are always Posix paths, not Windows paths
-	s.Equal([]string{
-		"subdir/.positignore",
-		"testfile",
-	}, manifest.GetFilenames())
-	s.Equal([]string{
-		"manifest.json",
-		"subdir/",
-		"subdir/.positignore",
-		"testfile",
-	}, s.getTarFileNames(dest))
-}
-
 func (s *BundlerSuite) TestCreateBundleAutoDetect() {
 	s.makeFileWithContents("app.py", []byte("import flask"))
 	dest := new(bytes.Buffer)
@@ -344,7 +315,7 @@ func (s *BundlerSuite) TestCreateBundlePythonPackages() {
 }
 
 func (s *BundlerSuite) TestCreateBundleMissingDirectory() {
-	path := util.NewPath("/nonexistent", s.fs)
+	path := util.NewAbsolutePath("/nonexistent", s.fs)
 	log := logging.New()
 	bundler, err := NewBundler(path, NewManifest(), nil, log)
 	s.NotNil(err)
@@ -475,7 +446,7 @@ func (s *BundlerSuite) TestNewBundleFromDirectorySymlinks() {
 	// afero's MemFs doesn't have symlink support, so we
 	// are using a fixture directory under ./testdata.
 	fs := afero.NewOsFs()
-	dirPath := util.NewPath(s.cwd.Path(), fs).Join("testdata", "symlink_test", "bundle_dir")
+	dirPath := s.cwd.Join("testdata", "symlink_test", "bundle_dir").WithFs(fs)
 	dest := new(bytes.Buffer)
 	log := logging.New()
 
@@ -503,7 +474,7 @@ func (s *BundlerSuite) TestNewBundleFromDirectoryMissingSymlinkTarget() {
 	// afero's MemFs doesn't have symlink support, so we
 	// are using a fixture directory under ./testdata.
 	fs := afero.NewOsFs()
-	dirPath := util.NewPath(s.cwd.Path(), fs).Join("testdata", "symlink_test", "link_target_missing")
+	dirPath := s.cwd.Join("testdata", "symlink_test", "link_target_missing").WithFs(fs)
 	dest := new(bytes.Buffer)
 	log := logging.New()
 

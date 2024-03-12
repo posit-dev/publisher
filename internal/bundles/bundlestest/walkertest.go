@@ -15,7 +15,7 @@ func NewMockWalker() *MockWalker {
 	return &MockWalker{}
 }
 
-func (m *MockWalker) Walk(path util.Path, fn util.WalkFunc) error {
+func (m *MockWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
 	args := m.Called(path, fn)
 	return args.Error(0)
 }

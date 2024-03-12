@@ -60,7 +60,7 @@ func NewBokehDetector() *PythonAppDetector {
 	})
 }
 
-func (d *PythonAppDetector) InferType(path util.Path) (*config.Config, error) {
+func (d *PythonAppDetector) InferType(path util.AbsolutePath) (*config.Config, error) {
 	entrypoint, entrypointPath, err := d.InferEntrypoint(
 		path, ".py", "main.py", "app.py", "streamlit_app.py", "api.py")
 

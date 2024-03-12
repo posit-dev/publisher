@@ -15,7 +15,7 @@ import (
 
 type ConfigSuite struct {
 	utiltest.Suite
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestConfigSuite(t *testing.T) {
@@ -92,7 +92,8 @@ func (s *ConfigSuite) TestWriteFile() {
 
 func (s *ConfigSuite) TestWriteFileErr() {
 	configFile := GetConfigPath(s.cwd, "myConfig")
-	readonlyFile := util.NewPath(configFile.Path(), afero.NewReadOnlyFs(configFile.Fs()))
+	readonlyFs := afero.NewReadOnlyFs(configFile.Fs())
+	readonlyFile := configFile.WithFs(readonlyFs)
 	cfg := New()
 	err := cfg.WriteFile(readonlyFile)
 	s.NotNil(err)

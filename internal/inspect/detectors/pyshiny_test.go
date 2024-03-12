@@ -22,7 +22,7 @@ func TestPyShinySuite(t *testing.T) {
 }
 
 func (s *PyShinySuite) TestInferType() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -44,7 +44,7 @@ func (s *PyShinySuite) TestInferType() {
 }
 
 func (s *PyShinySuite) TestInferTypeShinyExpress() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 

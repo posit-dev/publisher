@@ -18,12 +18,12 @@ type PostRequirementsRequest struct {
 }
 
 type PostRequirementsHandler struct {
-	base      util.Path
+	base      util.AbsolutePath
 	log       logging.Logger
 	inspector inspect.PythonInspector
 }
 
-func NewPostRequirementsHandler(base util.Path, log logging.Logger) *PostRequirementsHandler {
+func NewPostRequirementsHandler(base util.AbsolutePath, log logging.Logger) *PostRequirementsHandler {
 	return &PostRequirementsHandler{
 		base:      base,
 		log:       log,

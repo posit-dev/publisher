@@ -46,21 +46,14 @@ type deploymentErrorDTO struct {
 	Error *types.AgentError `json:"error,omitempty"`
 }
 
-func getConfigPath(base util.Path, configName string) util.Path {
+func getConfigPath(base util.AbsolutePath, configName string) util.AbsolutePath {
 	if configName == "" {
-		return util.Path{}
+		return util.AbsolutePath{}
 	}
-	configPath := config.GetConfigPath(base, configName)
-	relConfigPath, err := configPath.Rel(base)
-	if err != nil {
-		// This error should never happen. But, if it does,
-		// still return as much data as we can.
-		return configPath
-	}
-	return relConfigPath
+	return config.GetConfigPath(base, configName)
 }
 
-func deploymentAsDTO(d *deployment.Deployment, err error, base util.Path, path util.Path) any {
+func deploymentAsDTO(d *deployment.Deployment, err error, base util.AbsolutePath, path util.AbsolutePath) any {
 	saveName := deployment.SaveNameFromPath(path)
 	if err != nil {
 		return &deploymentErrorDTO{

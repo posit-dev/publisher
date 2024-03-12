@@ -31,7 +31,7 @@ func NewService(
 	accessLog bool,
 	tlsKeyFile string,
 	tlsCertFile string,
-	dir util.Path,
+	dir util.AbsolutePath,
 	lister accounts.AccountList,
 	log logging.Logger,
 	eventServer *sse.Server,
@@ -52,7 +52,7 @@ func NewService(
 	)
 }
 
-func RouterHandlerFunc(base util.Path, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server, emitter events.Emitter) http.HandlerFunc {
+func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log logging.Logger, eventServer *sse.Server, emitter events.Emitter) http.HandlerFunc {
 	filesService := files.CreateFilesService(base, log)
 	pathsService := paths.CreatePathsService(base, log)
 

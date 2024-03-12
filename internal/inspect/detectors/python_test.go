@@ -24,7 +24,7 @@ func TestPythonSuite(t *testing.T) {
 }
 
 func (s *PythonSuite) TestInferTypePreferredFilename() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -46,7 +46,7 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 }
 
 func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -71,7 +71,7 @@ func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
 }
 
 func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -93,7 +93,7 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 }
 
 func (s *PythonSuite) TestInferTypeNotFlask() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -111,11 +111,13 @@ func (s *PythonSuite) TestInferTypeNotFlask() {
 func (s *PythonSuite) TestInferTypeEntrypointErr() {
 	inferrer := &MockInferenceHelper{}
 	testError := errors.New("test error from InferEntrypoint")
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything).Return("", util.Path{}, testError)
+	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything).Return("", util.AbsolutePath{}, testError)
 
 	detector := NewFlaskDetector()
 	detector.inferenceHelper = inferrer
-	base := util.NewPath(".", utiltest.NewMockFs())
+	base, err := util.Getwd(utiltest.NewMockFs())
+	s.NoError(err)
+
 	t, err := detector.InferType(base)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
@@ -126,14 +128,18 @@ func (s *PythonSuite) TestInferTypeEntrypointErr() {
 func (s *PythonSuite) TestInferTypeHasImportsErr() {
 	inferrer := &MockInferenceHelper{}
 	entrypoint := "app.py"
-	entrypointPath := util.NewPath(entrypoint, nil)
+	entrypointPath, err := util.NewPath(entrypoint, nil).Abs()
+	s.NoError(err)
+
 	inferrer.On("InferEntrypoint", mock.Anything, ".py", mock.Anything).Return(entrypoint, entrypointPath, nil)
 	testError := errors.New("test error from FileHasPythonImports")
 	inferrer.On("FileHasPythonImports", mock.Anything, mock.Anything).Return(false, testError)
 
 	detector := NewFlaskDetector()
 	detector.inferenceHelper = inferrer
-	base := util.NewPath(".", utiltest.NewMockFs())
+	base, err := util.Getwd(utiltest.NewMockFs())
+	s.NoError(err)
+
 	t, err := detector.InferType(base)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)

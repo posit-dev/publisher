@@ -25,13 +25,7 @@ type File struct {
 	Abs              string           `json:"abs"`              // the absolute path
 }
 
-func CreateFile(root util.Path, path util.Path, exclusion *gitignore.Match) (*File, error) {
-
-	abs, err := path.Abs()
-	if err != nil {
-		return nil, err
-	}
-
+func CreateFile(root util.AbsolutePath, path util.AbsolutePath, exclusion *gitignore.Match) (*File, error) {
 	rel, err := path.Rel(root)
 	if err != nil {
 		return nil, err
@@ -48,9 +42,9 @@ func CreateFile(root util.Path, path util.Path, exclusion *gitignore.Match) (*Fi
 	}
 
 	return &File{
-		Id:               rel.Path(),
+		Id:               rel.String(),
 		FileType:         filetype,
-		Rel:              rel.Path(),
+		Rel:              rel.String(),
 		Base:             path.Base(),
 		Size:             info.Size(),
 		ModifiedDatetime: info.ModTime().Format(time.RFC3339),
@@ -58,26 +52,25 @@ func CreateFile(root util.Path, path util.Path, exclusion *gitignore.Match) (*Fi
 		IsRegular:        info.Mode().IsRegular(),
 		Exclusion:        exclusion,
 		Files:            make([]*File, 0),
-		Abs:              abs.Path(),
+		Abs:              path.String(),
 	}, nil
 }
 
-func (f *File) insert(root util.Path, path util.Path, ignore gitignore.IgnoreList) (*File, error) {
+func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, ignore gitignore.IgnoreList) (*File, error) {
 
-	// if the path (absolute form) is the same as the file's absolute path
-	pabs, _ := path.Abs()
-	if f.Abs == pabs.String() {
+	// if the path is the same as the file's absolute path
+	if f.Abs == path.String() {
 		// do nothing since this already exists
 		return f, nil
 	}
 
 	// if the path's parent working directory (absolute path) is the same as the file's absolute path
-	pabsdir := pabs.Dir()
-	if f.Abs == pabsdir.String() {
+	pathdir := path.Dir()
+	if f.Abs == pathdir.String() {
 		// then iterate through the children files to determine if the file has already been created
 		for _, child := range f.Files {
 			// if the child's working directory (absolute path) is the same as the file's absolute path
-			if child.Abs == pabs.String() {
+			if child.Abs == path.String() {
 				// then we found it
 				return child, nil
 			}
@@ -89,7 +82,7 @@ func (f *File) insert(root util.Path, path util.Path, ignore gitignore.IgnoreLis
 			return nil, err
 		}
 
-		exclusion, err := ignore.Match(relPath.Path())
+		exclusion, err := ignore.Match(relPath.String())
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +98,7 @@ func (f *File) insert(root util.Path, path util.Path, ignore gitignore.IgnoreLis
 	}
 
 	// otherwise, create the parent file
-	parent, err := f.insert(root, pabsdir, ignore)
+	parent, err := f.insert(root, pathdir, ignore)
 	if err != nil {
 		return nil, err
 	}

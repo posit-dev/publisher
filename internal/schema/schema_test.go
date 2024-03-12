@@ -13,7 +13,7 @@ import (
 
 type SchemaSuite struct {
 	utiltest.Suite
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestSchemaSuite(t *testing.T) {
@@ -33,7 +33,8 @@ type genericContent map[string]any
 func (s *SchemaSuite) TestValidateConfig() {
 	validator, err := NewValidator[genericContent](ConfigSchemaURL)
 	s.NoError(err)
-	path := util.NewPath(".", nil).Join("schemas", "deploy.toml")
+	path, err := util.NewPath(".", nil).Join("schemas", "deploy.toml").Abs()
+	s.NoError(err)
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
@@ -41,7 +42,8 @@ func (s *SchemaSuite) TestValidateConfig() {
 func (s *SchemaSuite) TestValidateDeployment() {
 	validator, err := NewValidator[genericContent](DeploymentSchemaURL)
 	s.NoError(err)
-	path := util.NewPath(".", nil).Join("schemas", "record.toml")
+	path, err := util.NewPath(".", nil).Join("schemas", "record.toml").Abs()
+	s.NoError(err)
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
@@ -50,7 +52,8 @@ func (s *SchemaSuite) TestValidateDraftConfig() {
 	const draftConfigSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
 	validator, err := NewValidator[genericContent](draftConfigSchemaURL)
 	s.NoError(err)
-	path := util.NewPath(".", nil).Join("schemas", "draft", "deploy.toml")
+	path, err := util.NewPath(".", nil).Join("schemas", "draft", "deploy.toml").Abs()
+	s.NoError(err)
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
@@ -59,7 +62,8 @@ func (s *SchemaSuite) TestValidateDraftDeployment() {
 	const draftDeploymentSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json"
 	validator, err := NewValidator[genericContent](draftDeploymentSchemaURL)
 	s.NoError(err)
-	path := util.NewPath(".", nil).Join("schemas", "draft", "record.toml")
+	path, err := util.NewPath(".", nil).Join("schemas", "draft", "record.toml").Abs()
+	s.NoError(err)
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
