@@ -2,6 +2,8 @@
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
+import { Disposable } from 'vscode';
+
 import * as EventSource from 'eventsource';
 import { Readable } from 'stream';
 
@@ -74,7 +76,8 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
  * Represents a stream of events.
  * Extends the Readable stream class.
  */
-export class EventStream extends Readable {
+export class EventStream extends Readable implements Disposable {
+  private eventSource: EventSource;
   // Array to store event messages
   private messages: EventStreamMessage[] = [];
   // Map to store event callbacks
@@ -87,9 +90,9 @@ export class EventStream extends Readable {
   constructor(port: number) {
     super();
     // Create a new EventSource instance to connect to the event stream
-    const eventSource = new EventSource(`http://127.0.0.1:${port}/api/events?stream=messages`);
+    this.eventSource = new EventSource(`http://127.0.0.1:${port}/api/events?stream=messages`);
     // Listen for 'message' events from the EventSource
-    eventSource.addEventListener('message', (event) => {
+    this.eventSource.addEventListener('message', (event) => {
       // Parse the event data and convert keys to camel case
       const message = convertKeysToCamelCase(JSON.parse(event.data));
 
@@ -103,6 +106,12 @@ export class EventStream extends Readable {
       // Invoke the registered callbacks for the message type
       this.invokeCallbacks(message);
     });
+  }
+
+  dispose() {
+    // Destroy this Reader so it cannot be used after disposed
+    this.destroy();
+    this.eventSource.close();
   }
 
   /**
