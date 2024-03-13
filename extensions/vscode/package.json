@@ -227,6 +227,14 @@
       ],
       "commandPalette": [
         {
+          "command": "posit.publisher.configurations.refresh",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.configurations.add",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
           "command": "posit.publisher.configurations.clone",
           "when": "false"
         },
@@ -243,11 +251,11 @@
           "when": "false"
         },
         {
-          "command": "posit.publisher.deployments.edit",
-          "when": "false"
+          "command": "posit.publisher.credentials.refresh",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.deployments.deploy",
+          "command": "posit.publisher.deployments.edit",
           "when": "false"
         },
         {
@@ -255,8 +263,36 @@
           "when": "false"
         },
         {
+          "command": "posit.publisher.deployments.refresh",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.deployments.add",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.deployments.deploy",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.files.refresh",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.files.editPositIgnore",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
           "command": "posit.publisher.files.addExclusion",
           "when": "false"
+        },
+        {
+          "command": "posit.publisher.requirements.refresh",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.requirements.scan",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         }
       ]
     },
