@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -181,10 +182,14 @@ func (s *PublishSuite) publishWithClient(
 		TargetName: targetName,
 		SaveName:   saveName,
 	}
+
+	emitter := events.NewCapturingEmitter()
+
 	publisher := &defaultPublisher{
 		State:   stateStore,
-		emitter: events.NewNullEmitter(),
+		emitter: emitter,
 	}
+
 	err = publisher.publishWithClient(bundler, account, client, s.log)
 	if expectedErr == nil {
 		s.NoError(err)
@@ -222,6 +227,64 @@ func (s *PublishSuite) publishWithClient(
 	exists, err := badPath.Exists()
 	s.NoError(err)
 	s.False(exists)
+}
+
+func (s *PublishSuite) TestEmitErrorEventsNoTarget() {
+	expectedErr := errors.New("test error")
+	log := logging.New()
+
+	emitter := events.NewCapturingEmitter()
+	publisher := &defaultPublisher{
+		State:   &state.State{},
+		emitter: emitter,
+	}
+
+	publisher.emitErrorEvents(expectedErr, log)
+
+	// We should emit a phase failure event and a publishing failure event.
+	s.Len(emitter.Events, 2)
+	for _, event := range emitter.Events {
+		s.True(strings.HasSuffix(event.Type, "/failure"))
+		s.Equal(expectedErr.Error(), event.Data["message"])
+	}
+	s.Equal("publish/failure", emitter.Events[1].Type)
+}
+
+func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
+	expectedErr := errors.New("test error")
+	log := logging.New()
+
+	base := util.NewPath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	const targetID types.ContentID = "abc123"
+
+	emitter := events.NewCapturingEmitter()
+	publisher := &defaultPublisher{
+		State: &state.State{
+			Dir: base,
+			Account: &accounts.Account{
+				URL: "connect.example.com",
+			},
+			Target: &deployment.Deployment{
+				ID: targetID,
+			},
+		},
+		emitter: emitter,
+	}
+
+	publisher.emitErrorEvents(expectedErr, log)
+
+	// We should emit a phase failure event and a publishing failure event.
+	s.Len(emitter.Events, 2)
+	for _, event := range emitter.Events {
+		s.True(strings.HasSuffix(event.Type, "/failure"))
+		s.Equal(expectedErr.Error(), event.Data["message"])
+		s.Equal(getDashboardURL("connect.example.com", targetID), event.Data["dashboardUrl"])
+		s.Equal(getDirectURL("connect.example.com", targetID), event.Data["url"])
+	}
+	s.Equal("publish/failure", emitter.Events[1].Type)
 }
 
 func (s *PublishSuite) TestGetDashboardURL() {
