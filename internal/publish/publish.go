@@ -47,6 +47,10 @@ type publishSuccessData struct {
 }
 
 type publishFailureData struct {
+	Message string `mapstructure:"message"`
+}
+
+type publishDeployedFailureData struct {
 	DashboardURL string `mapstructure:"dashboardUrl"`
 	DirectURL    string `mapstructure:"url"`
 }
@@ -129,6 +133,10 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 
 	var data events.EventData
 
+	mapstructure.Decode(publishFailureData{
+		Message: agentErr.Error(),
+	}, &data)
+
 	// Record the error in the deployment record
 	if p.Target != nil {
 		p.Target.Error = agentErr
@@ -140,9 +148,8 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 			// Provide URL in the event, if we got far enough in the deployment.
 			dashboardURL = getDashboardURL(p.Account.URL, p.Target.ID)
 			directURL = getDirectURL(p.Account.URL, p.Target.ID)
-			agentErr.Data["dashboard_url"] = dashboardURL
 
-			mapstructure.Decode(publishFailureData{
+			mapstructure.Decode(publishDeployedFailureData{
 				DashboardURL: dashboardURL,
 				DirectURL:    directURL,
 			}, &data)
