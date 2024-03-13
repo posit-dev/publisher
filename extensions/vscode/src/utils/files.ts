@@ -30,7 +30,7 @@ export function isValidFilename(filename: string): boolean {
   if (filename === "." || filename.includes("..")) {
     return false;
   }
-  const forbidden = '/:\*?"<>|';
+  const forbidden = '/:*?"<>|\'\\';
   for (let c of filename) {
     if (forbidden.includes(c)) {
       return false;
