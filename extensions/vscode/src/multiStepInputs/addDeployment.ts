@@ -60,9 +60,7 @@ export async function addDeployment(stream: EventStream) {
   try {
     const response = await api.deployments.getAll();
     const deploymentList = response.data;
-    deploymentNames = deploymentList.map(deployment =>
-      deployment.deploymentPath.split('.posit/publish/deployments/')[1].slice(0, -5)
-    );
+    deploymentNames = deploymentList.map(deployment => deployment.deploymentName);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError('addDeployment, deployments.getAll', error);
     window.showInformationMessage(
