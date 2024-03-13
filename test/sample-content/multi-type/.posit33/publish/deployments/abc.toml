@@ -1,0 +1,40 @@
+'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json'
+server-type = 'connect'
+server-url = 'https://connect.localtest.me/rsc/dev-password'
+client-version = '1.0.alpha2-212-gf9b6d109'
+created-at = '2024-03-05T11:57:35-08:00'
+id = '55803622-2fb1-4769-8c5a-787200c08b3f'
+configuration-name = 'python-prod'
+deployed-at = '2024-03-05T12:02:55-08:00'
+bundle-id = '833'
+bundle-url = 'https://connect.localtest.me/rsc/dev-password/__api__/v1/content/55803622-2fb1-4769-8c5a-787200c08b3f/bundles/833/download'
+dashboard-url = 'https://connect.localtest.me/rsc/dev-password/connect/#/apps/55803622-2fb1-4769-8c5a-787200c08b3f'
+direct-url = 'https://connect.localtest.me/rsc/dev-password/content/55803622-2fb1-4769-8c5a-787200c08b3f'
+files = [
+  '.posit/publish/deployments/Untitled-1.toml',
+  '.posit/publish/deployments/Untitled-2.toml',
+  '.posit/publish/deployments/abc.toml',
+  '.posit/publish/deployments/my-deployment.toml',
+  '.posit/publish/deployments/one with multiple configurations.toml',
+  '.posit/publish/python-prod.toml',
+  '.posit/publish/quarto.toml',
+  '_quarto.yml',
+  'meta.yaml',
+  'quarto-proj-none.Rproj',
+  'quarto-proj-none.qmd',
+  'requirements.in',
+  'requirements.txt',
+  'simple.py'
+]
+
+[configuration]
+'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
+type = 'python-fastapi'
+entrypoint = 'simple.py'
+validate = true
+title = 'This is a great title'
+
+[configuration.python]
+version = '3.11.3'
+package-file = 'requirements.txt'
+package-manager = 'pip'

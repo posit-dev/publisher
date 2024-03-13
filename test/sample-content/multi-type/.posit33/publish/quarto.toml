@@ -1,0 +1,14 @@
+'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
+type = 'quarto'
+entrypoint = 'quarto-proj-none.qmd'
+validate = true
+title = 'quarto-proj-none'
+
+[python]
+version = '3.11.3'
+package-file = 'requirements.txt'
+package-manager = 'pip'
+
+[quarto]
+version = '1.3.450'
+engines = ['markdown']

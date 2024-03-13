@@ -1,0 +1,16 @@
+#
+# Posit Publishing Ignore File (.positignore)
+#
+# Controls which files will be uploaded to the server within
+# the bundle during the next deployment.
+#
+# Syntax of exclusions conforms with Git Ignore File syntax.#
+# NOTE: This file currenly only supports POSITIVE exclusion rules
+# and does not support NEGATIVE inclusion rules.
+#
+
+quarto-proj-none.qmd
+useful/another.txt
+requirements.in
+data/dataset2.csv
+meta.yaml
