@@ -2,14 +2,13 @@
 
 import { MultiStepInput, MultiStepState, isQuickPickItem } from './multiStepHelper';
 
-import { InputBoxValidationSeverity, QuickPickItem, ThemeIcon, window } from 'vscode';
+import { QuickPickItem, ThemeIcon, window } from 'vscode';
 
 import { AccountAuthType, useApi } from '../api';
 import { getSummaryStringFromError } from '../utils/errors';
 import { uniqueDeploymentName, untitledDeploymentName } from '../utils/names';
 import { deployProject } from '../views/deployProgress';
 import { EventStream } from '../events';
-import { isValidFilename } from '../utils/files';
 
 export async function addDeployment(stream: EventStream) {
   const api = useApi();
@@ -140,14 +139,8 @@ export async function addDeployment(stream: EventStream) {
         : untitledDeploymentName(deploymentNames),
       prompt: 'Choose a unique name for the deployment',
       validate: (value) => {
-        if (value.length < 3 ||
-          !uniqueDeploymentName(value, deploymentNames) ||
-          !isValidFilename(value)
-        ) {
-          return Promise.resolve({
-            message: `Must be unique, have a length greater than 3 characters, and cannot contain two subsquential periods or any of these characters: /:*?"<>|'\\`,
-            severity: InputBoxValidationSeverity.Error,
-          });
+        if (value.length < 3 || !uniqueDeploymentName(value, deploymentNames)) {
+          return Promise.resolve('Must be unique and have a length greater than 3');
         }
         return Promise.resolve(undefined);
       },
