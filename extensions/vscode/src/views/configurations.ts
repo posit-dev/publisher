@@ -181,7 +181,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
           return undefined;
         } else {
           return {
-            message: `invalid name: cannot be '.' or contain '..' or any of these characters: /:*?"<>|`,
+            message: `invalid name: cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
             severity: InputBoxValidationSeverity.Error,
           };
         }

@@ -145,7 +145,7 @@ export async function addDeployment(stream: EventStream) {
           !isValidFilename(value)
         ) {
           return Promise.resolve({
-            message: `Must be unique, have a length greater than 3 characters, and cannot contain two subsquential periods or any of these characters: /:*?"<>|'\\`,
+            message: `Invalid Name: Value must be unique across other deployment names for this project, be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
