@@ -158,10 +158,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.refresh();
     });
 
-    stream.register('publish/checkCapabilities/failure', (_: EventStreamMessage) => {
+    stream.register('publish/checkCapabilities/failure', (msg: EventStreamMessage) => {
       const stage = this.stages.get('publish/checkCapabilities');
       if (stage) {
         stage.status = LogStageStatus.failed;
+        stage.events.push(msg);
       }
       this.refresh();
     });
@@ -192,10 +193,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.refresh();
     });
 
-    stream.register('publish/createBundle/failure', (_: EventStreamMessage) => {
+    stream.register('publish/createBundle/failure', (msg: EventStreamMessage) => {
       const stage = this.stages.get('publish/createBundle');
       if (stage) {
         stage.status = LogStageStatus.failed;
+        stage.events.push(msg);
       }
       this.refresh();
     });
@@ -226,10 +228,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.refresh();
     });
 
-    stream.register('publish/uploadBundle/failure', (_: EventStreamMessage) => {
+    stream.register('publish/uploadBundle/failure', (msg: EventStreamMessage) => {
       const stage = this.stages.get('publish/uploadBundle');
       if (stage) {
         stage.status = LogStageStatus.failed;
+        stage.events.push(msg);
       }
       this.refresh();
     });
@@ -257,10 +260,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       }
       this.refresh();
     });
-    stream.register('publish/createDeployment/failure', (_: EventStreamMessage) => {
+    stream.register('publish/createDeployment/failure', (msg: EventStreamMessage) => {
       const stage = this.stages.get('publish/createDeployment');
       if (stage) {
         stage.status = LogStageStatus.failed;
+        stage.events.push(msg);
       }
       this.refresh();
     });
@@ -288,10 +292,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       }
       this.refresh();
     });
-    stream.register('publish/deployBundle/failure', (_: EventStreamMessage) => {
+    stream.register('publish/deployBundle/failure', (msg: EventStreamMessage) => {
       const stage = this.stages.get('publish/deployBundle');
       if (stage) {
         stage.status = LogStageStatus.failed;
+        stage.events.push(msg);
       }
       this.refresh();
     });
@@ -319,10 +324,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       }
       this.refresh();
     });
-    stream.register('publish/restorePythonEnv/failure', (_: EventStreamMessage) => {
+    stream.register('publish/restorePythonEnv/failure', (msg: EventStreamMessage) => {
       const stage = this.stages.get('publish/restorePythonEnv');
       if (stage) {
         stage.status = LogStageStatus.failed;
+        stage.events.push(msg);
       }
       this.refresh();
     });
@@ -350,10 +356,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       }
       this.refresh();
     });
-    stream.register('publish/runContent/failure', (_: EventStreamMessage) => {
+    stream.register('publish/runContent/failure', (msg: EventStreamMessage) => {
       const stage = this.stages.get('publish/runContent');
       if (stage) {
         stage.status = LogStageStatus.failed;
+        stage.events.push(msg);
       }
       this.refresh();
     });
