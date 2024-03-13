@@ -140,9 +140,9 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     );
 
     if (this.root !== undefined) {
-      console.log("creating filesystem watcher for deployment view");
       const watcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, fileStore));
+        new RelativePattern(this.root, fileStore)
+      );
       watcher.onDidCreate(this.refresh);
       watcher.onDidDelete(this.refresh);
       watcher.onDidChange(this.refresh);
