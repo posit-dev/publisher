@@ -7,11 +7,11 @@ VSCode or Positron.
 
 Download and install the VSCode extension.
 
-- For Arm MacOS: [publisher-1.0.alpha2-darwin-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha2/publisher-1.0.alpha2-darwin-arm64.vsix)
-- For Intel MacOS: [publisher-1.0.alpha2-darwin-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha2/publisher-1.0.alpha2-darwin-amd64.vsix)
-- For Windows: [publisher-1.0.alpha2-windows-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha2/publisher-1.0.alpha2-windows-amd64.vsix)
-- For Arm Linux: [publisher-1.0.alpha2-linux-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha2/publisher-1.0.alpha2-linux-arm64.vsix)
-- For Intel Linux: [publisher-1.0.alpha2-linux-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha2/publisher-1.0.alpha2-linux-amd64.vsix)
+- For Arm MacOS: [publisher-1.0.alpha3-darwin-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha3/publisher-1.0.alpha3-darwin-arm64.vsix)
+- For Intel MacOS: [publisher-1.0.alpha3-darwin-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha3/publisher-1.0.alpha3-darwin-amd64.vsix)
+- For Windows: [publisher-1.0.alpha3-windows-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha3/publisher-1.0.alpha3-windows-amd64.vsix)
+- For Arm Linux: [publisher-1.0.alpha3-linux-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha3/publisher-1.0.alpha3-linux-arm64.vsix)
+- For Intel Linux: [publisher-1.0.alpha3-linux-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha3/publisher-1.0.alpha3-linux-amd64.vsix)
 
 To learn how to install a `.vsix` file, see the [Install from a
 VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
@@ -19,7 +19,7 @@ guide from Visual Studio Code.
 
 ## Optional: Install the CLI
 
-If you want to try deploying from the command line, or use the UI in a browser,
+If you want to try deploying from the command line,
 install the `publisher` CLI.
 
 ### Script installation
