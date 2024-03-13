@@ -81,7 +81,6 @@ export class RequirementsTreeDataProvider implements TreeDataProvider<Requiremen
   }
 
   public register(context: ExtensionContext) {
-    window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this })
     );
