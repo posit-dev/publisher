@@ -108,14 +108,6 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.refresh();
     });
 
-    this.registerCheckCapabilitiesEvents(stream);
-    this.registerCreateBundleEvents(stream);
-    this.registerUploadBundleEvents(stream);
-    this.registerCreateDeploymentEvents(stream);
-    this.registerDeployBundleEvents(stream);
-    this.registerRestorePythonEnvEvents(stream);
-    this.registerRunContentEvents(stream);
-
     stream.register('publish/success', (msg: EventStreamMessage) => {
       this.publishingStage.status = LogStageStatus.completed;
       this.publishingStage.events.push(msg);
@@ -133,238 +125,40 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       });
       this.refresh();
     });
-  }
 
-  registerCheckCapabilitiesEvents(stream: EventStream) {
-    stream.register('publish/checkCapabilities/start', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/checkCapabilities');
-      if (stage) {
-        stage.status = LogStageStatus.inProgress;
-      }
-      this.refresh();
-    });
+    Array.from(this.stages.keys()).forEach((stageName) => {
+      stream.register(`${stageName}/start`, (_: EventStreamMessage) => {
+        const stage = this.stages.get(stageName);
+        if (stage) {
+          stage.status = LogStageStatus.inProgress;
+        }
+        this.refresh();
+      });
 
-    stream.register('publish/checkCapabilities/log', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/checkCapabilities');
-      if (stage && msg.data.level !== 'DEBUG') {
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
+      stream.register(`${stageName}/log`, (msg: EventStreamMessage) => {
+        const stage = this.stages.get(stageName);
+        if (stage && msg.data.level !== 'DEBUG') {
+          stage.events.push(msg);
+        }
+        this.refresh();
+      });
 
-    stream.register('publish/checkCapabilities/success', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/checkCapabilities');
-      if (stage) {
-        stage.status = LogStageStatus.completed;
-      }
-      this.refresh();
-    });
+      stream.register(`${stageName}/success`, (_: EventStreamMessage) => {
+        const stage = this.stages.get(stageName);
+        if (stage) {
+          stage.status = LogStageStatus.completed;
+        }
+        this.refresh();
+      });
 
-    stream.register('publish/checkCapabilities/failure', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/checkCapabilities');
-      if (stage) {
-        stage.status = LogStageStatus.failed;
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-  }
-
-  registerCreateBundleEvents(stream: EventStream) {
-    stream.register('publish/createBundle/start', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/createBundle');
-      if (stage) {
-        stage.status = LogStageStatus.inProgress;
-      }
-      this.refresh();
-    });
-
-    stream.register('publish/createBundle/log', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/createBundle');
-      if (stage && msg.data.level !== 'DEBUG') {
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-
-    stream.register('publish/createBundle/success', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/createBundle');
-      if (stage) {
-        stage.status = LogStageStatus.completed;
-      }
-      this.refresh();
-    });
-
-    stream.register('publish/createBundle/failure', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/createBundle');
-      if (stage) {
-        stage.status = LogStageStatus.failed;
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-  }
-
-  registerUploadBundleEvents(stream: EventStream) {
-    stream.register('publish/uploadBundle/start', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/uploadBundle');
-      if (stage) {
-        stage.status = LogStageStatus.inProgress;
-      }
-      this.refresh();
-    });
-
-    stream.register('publish/uploadBundle/log', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/uploadBundle');
-      if (stage && msg.data.level !== 'DEBUG') {
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-
-    stream.register('publish/uploadBundle/success', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/uploadBundle');
-      if (stage) {
-        stage.status = LogStageStatus.completed;
-      }
-      this.refresh();
-    });
-
-    stream.register('publish/uploadBundle/failure', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/uploadBundle');
-      if (stage) {
-        stage.status = LogStageStatus.failed;
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-  }
-
-  registerCreateDeploymentEvents(stream: EventStream) {
-    stream.register('publish/createDeployment/start', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/createDeployment');
-      if (stage) {
-        stage.status = LogStageStatus.inProgress;
-      }
-      this.refresh();
-    });
-    stream.register('publish/createDeployment/log', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/createDeployment');
-      if (stage && msg.data.level !== 'DEBUG') {
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-    stream.register('publish/createDeployment/success', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/createDeployment');
-      if (stage) {
-        stage.status = LogStageStatus.completed;
-      }
-      this.refresh();
-    });
-    stream.register('publish/createDeployment/failure', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/createDeployment');
-      if (stage) {
-        stage.status = LogStageStatus.failed;
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-  }
-
-  registerDeployBundleEvents(stream: EventStream) {
-    stream.register('publish/deployBundle/start', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/deployBundle');
-      if (stage) {
-        stage.status = LogStageStatus.inProgress;
-      }
-      this.refresh();
-    });
-    stream.register('publish/deployBundle/log', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/deployBundle');
-      if (stage && msg.data.level !== 'DEBUG') {
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-    stream.register('publish/deployBundle/success', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/deployBundle');
-      if (stage) {
-        stage.status = LogStageStatus.completed;
-      }
-      this.refresh();
-    });
-    stream.register('publish/deployBundle/failure', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/deployBundle');
-      if (stage) {
-        stage.status = LogStageStatus.failed;
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-  }
-
-  registerRestorePythonEnvEvents(stream: EventStream) {
-    stream.register('publish/restorePythonEnv/start', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/restorePythonEnv');
-      if (stage) {
-        stage.status = LogStageStatus.inProgress;
-      }
-      this.refresh();
-    });
-    stream.register('publish/restorePythonEnv/log', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/restorePythonEnv');
-      if (stage && msg.data.level !== 'DEBUG') {
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-    stream.register('publish/restorePythonEnv/success', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/restorePythonEnv');
-      if (stage) {
-        stage.status = LogStageStatus.completed;
-      }
-      this.refresh();
-    });
-    stream.register('publish/restorePythonEnv/failure', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/restorePythonEnv');
-      if (stage) {
-        stage.status = LogStageStatus.failed;
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-  }
-
-  registerRunContentEvents(stream: EventStream) {
-    stream.register('publish/runContent/start', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/runContent');
-      if (stage) {
-        stage.status = LogStageStatus.inProgress;
-      }
-      this.refresh();
-    });
-    stream.register('publish/runContent/log', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/runContent');
-      if (stage && msg.data.level !== 'DEBUG') {
-        stage.events.push(msg);
-      }
-      this.refresh();
-    });
-    stream.register('publish/runContent/success', (_: EventStreamMessage) => {
-      const stage = this.stages.get('publish/runContent');
-      if (stage) {
-        stage.status = LogStageStatus.completed;
-      }
-      this.refresh();
-    });
-    stream.register('publish/runContent/failure', (msg: EventStreamMessage) => {
-      const stage = this.stages.get('publish/runContent');
-      if (stage) {
-        stage.status = LogStageStatus.failed;
-        stage.events.push(msg);
-      }
-      this.refresh();
+      stream.register(`${stageName}/failure`, (msg: EventStreamMessage) => {
+        const stage = this.stages.get(stageName);
+        if (stage) {
+          stage.status = LogStageStatus.failed;
+          stage.events.push(msg);
+        }
+        this.refresh();
+      });
     });
   }
 
