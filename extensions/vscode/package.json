@@ -115,6 +115,26 @@
         "title": "Scan Requirements",
         "icon": "$(eye)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.helpAndFeedback.openExtensionDoc",
+        "title": "Open Extension Documentation",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.helpAndFeedback.gettingStarted",
+        "title": "Getting Started Documentation",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.helpAndFeedback.featureOverview",
+        "title": "Display Feature Overview",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.helpAndFeedback.openFeedback",
+        "title": "Provide Feedback",
+        "category": "Posit Publisher"
       }
     ],
     "configuration": {
