@@ -128,6 +128,8 @@ export const eventTypeToString = (eventTypeStr: string): string => {
     'publish/deployBundle': 'Deploy Bundle',
     'publish/restorePythonEnv': 'Restore Python Environment',
     'publish/runContent': 'Run Content',
+    'publish/setVanityURL': 'Set Vanity URL',
+    'publish/validateDeployment': 'Validate Deployment',
     'publish/success': 'Wrapping up Deployment',
   };
 
