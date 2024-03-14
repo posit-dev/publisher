@@ -88,7 +88,6 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   }
 
   public register(context: ExtensionContext) {
-    context.subscriptions.push(window.registerTreeDataProvider(viewName, this));
     const treeView = window.createTreeView(viewName, { treeDataProvider: this });
 
     context.subscriptions.push(

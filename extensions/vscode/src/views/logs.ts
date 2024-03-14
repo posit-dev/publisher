@@ -410,8 +410,6 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
    * @param context The extension context.
    */
   public register(context: ExtensionContext) {
-    // Register the tree data provider
-    window.registerTreeDataProvider(viewName, this);
     // Create a tree view with the specified view name and options
     context.subscriptions.push(
       window.createTreeView(viewName, {

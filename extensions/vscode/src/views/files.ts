@@ -119,12 +119,13 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   }
 
   public register(context: ExtensionContext) {
-    window.createTreeView(
+    const treeView = window.createTreeView(
       viewName,
       {
         treeDataProvider: this,
       },
     );
+    context.subscriptions.push(treeView);
     context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh)
     );

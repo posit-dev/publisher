@@ -23,7 +23,6 @@ export class ProjectTreeDataProvider implements TreeDataProvider<ProjectTreeItem
   }
 
   public register(context: ExtensionContext) {
-    window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this })
     );
