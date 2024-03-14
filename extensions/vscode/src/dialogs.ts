@@ -14,8 +14,8 @@ const forgetItem: MessageItem = {
   title: l10n.t("Forget"),
 };
 
-const updateItem: MessageItem = {
-  title: l10n.t("Update"),
+const overwriteItem: MessageItem = {
+  title: l10n.t("Overwrite"),
 };
 
 const replaceItem: MessageItem = {
@@ -53,8 +53,8 @@ export async function confirmReplace(message: string): Promise<boolean> {
   return confirm(message, replaceItem);
 }
 
-export async function confirmUpdate(message: string): Promise<boolean> {
-  return confirm(message, updateItem);
+export async function confirmOverwrite(message: string): Promise<boolean> {
+  return confirm(message, overwriteItem);
 }
 
 export async function alert(message: string): Promise<void> {
