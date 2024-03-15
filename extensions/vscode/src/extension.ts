@@ -13,6 +13,7 @@ import { FilesTreeDataProvider } from './views/files';
 import { RequirementsTreeDataProvider } from './views/requirements';
 import { CredentialsTreeDataProvider } from './views/credentials';
 import { HelpAndFeedbackTreeDataProvider } from './views/helpAndFeedback';
+import { ContextSelectorViewProvider } from './webviews/contextSelector/provider';
 import { LogsTreeDataProvider } from './views/logs';
 import { EventStream } from './events';
 
@@ -89,6 +90,7 @@ export async function activate(context: vscode.ExtensionContext) {
   new RequirementsTreeDataProvider().register(context);
   new CredentialsTreeDataProvider().register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
+  new ContextSelectorViewProvider(context.extensionUri).register(context);
   new LogsTreeDataProvider(stream).register(context);
 
   setStateContext(PositPublishState.initialized);

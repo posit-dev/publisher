@@ -321,6 +321,11 @@
           "when": "workbenchState == empty || workbenchState == workspace || posit.publish.missing || posit.publish.state == 'uninitialized'"
         },
         {
+          "id": "posit.publisher.contextSelector",
+          "type": "webview",
+          "name": "Deployment Selector"
+        },
+        {
           "id": "posit.publisher.files",
           "name": "Deployment Files",
           "contextualTitle": "Publisher",
@@ -412,9 +417,10 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run package",
+    "compile": "node ./esbuild.js",
+    "package": "NODE_ENV=production node ./esbuild.js",
+    "watch": "node ./esbuild.js --watch",
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
@@ -426,10 +432,13 @@
     "@types/node": "18.x",
     "@types/retry": "^0.12.5",
     "@types/vscode": "^1.87.0",
+    "@types/vscode-webview": "^1.57.5",
     "@types/wait-on": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
     "@vscode/test-electron": "^2.3.8",
+    "esbuild": "^0.16.10",
+    "esbuild-plugin-copy": "^2.0.1",
     "eslint": "^8.50.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
@@ -440,6 +449,8 @@
     "eventsource": "^2.0.2",
     "get-port": "5.1.1",
     "mutexify": "^1.4.0",
-    "retry": "^0.13.1"
+    "retry": "^0.13.1",
+    "@vscode/webview-ui-toolkit": "^1.2.2",
+    "weather-js": "^2.0.0"
   }
 }

@@ -15,6 +15,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true
+    "noImplicitReturns": true,
+    "esModuleInterop": true,
   },
+  "exclude": [
+    "node_modules",
+    ".vscode-test",
+    "src/webviews/"
+  ]
 }

@@ -4,7 +4,7 @@
 
 import { Disposable } from 'vscode';
 
-import * as EventSource from 'eventsource';
+import EventSource from 'eventsource';
 import { Readable } from 'stream';
 
 export type EventStreamMessage = {
