@@ -85,7 +85,7 @@ publisher redeploy ${NAME} ${DIRECTORY}
 
 ### requirements show
 
-This command scans the files in your directory looking for library imports, then uses the packages metadata from your local Python installation to produce a list of package dependencies on standard output. This is generally a subset of your installed packages and is much smaller than the output from `pip freeze`.
+This command scans the files in your directory looking for library imports, then uses the package metadata from your local Python installation to produce a list of package dependencies on standard output. This is generally a subset of your installed packages and is much smaller than the output from `pip freeze`.
 
 ### requirements create
 
