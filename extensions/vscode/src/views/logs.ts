@@ -89,6 +89,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ['publish/deployBundle', createLogStage('Deploy Bundle')],
       ['publish/restorePythonEnv', createLogStage('Restore Python Environment')],
       ['publish/runContent', createLogStage('Run Content')],
+      ['publish/validateDeployment', createLogStage('Validate Deployment')],
     ]);
 
     this.publishingStage = createLogStage(

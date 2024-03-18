@@ -54,10 +54,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     return `${msg.data.message}`;
   }
 
-  if (
-    msg.type === 'publish/setVanityURL/log' ||
-    msg.type === 'publish/validateDeployment/log'
-  ) {
+  if ( msg.type === 'publish/setVanityURL/log') {
     return `${msg.data.message} ${msg.data.path}`;
   }
 
