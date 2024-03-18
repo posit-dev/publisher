@@ -133,6 +133,12 @@
         "title": "Scan Requirements",
         "icon": "$(eye)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.selector.refresh",
+        "title": "Refresh Deployment Selector",
+        "icon": "$(refresh)",
+        "category": "Posit Publisher"
       }
     ],
     "configuration": {
@@ -194,6 +200,11 @@
         {
           "command": "posit.publisher.credentials.refresh",
           "when": "view == posit.publisher.credentials",
+          "group": "navigation"
+        },
+        {
+          "command": "posit.publisher.selector.refresh",
+          "when": "view == posit.publisher.selector",
           "group": "navigation"
         }
       ],
@@ -293,6 +304,10 @@
         {
           "command": "posit.publisher.requirements.scan",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.selector.refresh",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         }
       ]
     },
@@ -319,6 +334,14 @@
           "name": "Project",
           "contextualTitle": "Publisher",
           "when": "workbenchState == empty || workbenchState == workspace || posit.publish.missing || posit.publish.state == 'uninitialized'"
+        },
+        {
+          "id": "posit.publisher.selector",
+          "type": "webview",
+          "name": "Deployment Selector",
+          "contextualTitle": "Publisher",
+          "icon": "$(symbol-file)",
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
           "id": "posit.publisher.files",

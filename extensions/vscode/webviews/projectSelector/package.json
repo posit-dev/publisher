@@ -1,0 +1,28 @@
+{
+  "name": "hello-world",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "vite",
+    "build": "vue-tsc --noEmit && vite build --outDir ../../out/webviews/projectSelector",
+    "preview": "vite preview --port 5050",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@vscode/webview-ui-toolkit": "^1.4.0",
+    "vue": "^3.4.21",
+    "axios": "^1.6.0",
+    "eventsource": "^2.0.2",
+    "get-port": "5.1.1"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.2",
+    "@types/node": "^20.11.28",
+    "@types/vscode-webview": "^1.57.5",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/tsconfig": "^0.5.1",
+    "typescript": "~5.4.2",
+    "vite": "^5.1.6",
+    "vue-tsc": "^2.0.6"
+  }
+}
