@@ -1,12 +1,5 @@
 # VSCode Extension
 
-## Quick Start
-
-Install the extension.
-[https://cdn.posit.co/publisher/releases/tags/v0.0.alpha3/publisher-0.0.alpha3.vsix](https://cdn.posit.co/publisher/releases/tags/v0.0.alpha3/publisher-0.0.alpha3.vsix).
-
-To learn how to install a `.vsix` file, see the [*Install from a VSIX*](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix) guide from Visual Studio Code.
-
 ## Tutorial
 
 ### Opening the UI
