@@ -118,12 +118,12 @@
       },
       {
         "command": "posit.publisher.helpAndFeedback.openExtensionDoc",
-        "title": "Open Extension Documentation",
+        "title": "Open Documentation",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.helpAndFeedback.gettingStarted",
-        "title": "Getting Started Documentation",
+        "title": "Open Getting Started Documentation",
         "category": "Posit Publisher"
       },
       {

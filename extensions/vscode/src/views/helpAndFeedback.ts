@@ -35,16 +35,16 @@ export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAnd
         ),
         new HelpAndFeedbackTreeItem(
           'Get Started with Posit Publisher',
-          'Open Get Started Documentation',
+          'Open Getting Started Documentation',
           openGettingStartedCommand,
         ),
         new HelpAndFeedbackTreeItem(
           'Feature Overview',
-          'Open Featue Overview',
+          'Open Feature Overview',
           openFeatureOverviewCommand,
         ),
         new HelpAndFeedbackTreeItem(
-          'Report Feedback',
+          'Provide Feedback',
           'Open Feedback Slack Channel',
           openFeedbackCommand,
         ),
@@ -67,7 +67,7 @@ export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAnd
 
     context.subscriptions.push(
       commands.registerCommand(openGettingStartedCommand, () => {
-        env.openExternal(Uri.parse('https://github.com/posit-dev/publisher/blob/mm-alpha3-docs/docs/vscode.md#tutorial'));
+        env.openExternal(Uri.parse('https://github.com/posit-dev/publisher/blob/mm-alpha3-docs/docs/vscode.md'));
       })
     );
 
