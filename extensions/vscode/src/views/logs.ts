@@ -123,6 +123,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           stage.status = LogStageStatus.neverStarted;
         }
       });
+
+      window.showErrorMessage(`Publish failed. ${msg.data.message}`);
       this.refresh();
     });
 
