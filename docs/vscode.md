@@ -77,7 +77,10 @@ Clicking the deploy icon next to a deployment will deploy a new version of the c
 
 ### Credentials
 
-In the current release, *Posit Publisher* acquires credentials from the RStudio IDE/rsconnect package and rsconnect-python. These are shown in the Credentials view. To add or remove account credentials, use rsconnect or [rsconnect-python](https://docs.posit.co/rsconnect-python/#remembering-server-information).
+In the current release, *Posit Publisher* acquires credentials from the RStudio IDE/rsconnect package and rsconnect-python. Additionally, if the environment variables `CONNECT_SERVER` and `CONNECT_API_KEY` are set,
+an additional credential named `env` will be created.
+
+These are shown in the Credentials view. To add or remove account credentials, use rsconnect or [rsconnect-python](https://docs.posit.co/rsconnect-python/#remembering-server-information).
 
 ![](https://cdn.posit.co/publisher/assets/img/credentials.png)
 
