@@ -135,18 +135,8 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.helpAndFeedback.openExtensionDoc",
-        "title": "Open Documentation",
-        "category": "Posit Publisher"
-      },
-      {
         "command": "posit.publisher.helpAndFeedback.gettingStarted",
         "title": "Open Getting Started Documentation",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.helpAndFeedback.featureOverview",
-        "title": "Display Feature Overview",
         "category": "Posit Publisher"
       },
       {

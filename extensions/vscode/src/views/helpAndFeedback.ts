@@ -12,9 +12,7 @@ import {
 } from 'vscode';
 
 const viewName = 'posit.publisher.helpAndFeedback';
-const openExtensionDocCommand = viewName + '.openExtensionDoc';
 const openGettingStartedCommand = viewName + '.gettingStarted';
-const openFeatureOverviewCommand = viewName + '.featureOverview';
 const openFeedbackCommand = viewName + 'openFeedback';
 
 export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAndFeedbackTreeItem> {
@@ -29,19 +27,9 @@ export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAnd
     if (element === undefined) {
       return [
         new HelpAndFeedbackTreeItem(
-          'Read Extension Documentation',
-          'Open Extension Documentation',
-          openExtensionDocCommand,
-        ),
-        new HelpAndFeedbackTreeItem(
           'Get Started with Posit Publisher',
           'Open Getting Started Documentation',
           openGettingStartedCommand,
-        ),
-        new HelpAndFeedbackTreeItem(
-          'Feature Overview',
-          'Open Feature Overview',
-          openFeatureOverviewCommand,
         ),
         new HelpAndFeedbackTreeItem(
           'Provide Feedback',
@@ -59,22 +47,11 @@ export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAnd
     );
 
     context.subscriptions.push(
-      commands.registerCommand(openExtensionDocCommand, () => {
-        env.openExternal(Uri.parse('https://github.com/posit-dev/publisher/blob/806ee91f2ffe881ff43d6d8b472ad48b481c11ec/docs/vscode.md'));
-      })
-    );
-
-    context.subscriptions.push(
       commands.registerCommand(openGettingStartedCommand, () => {
-        env.openExternal(Uri.parse('https://github.com/posit-dev/publisher/blob/mm-alpha3-docs/docs/vscode.md'));
+        env.openExternal(Uri.parse('https://github.com/posit-dev/publisher/blob/e72828f3585497649b8b55470a665f7fa890a21f/docs/vscode.md'));
       })
     );
 
-    context.subscriptions.push(
-      commands.registerCommand(openFeatureOverviewCommand, () => {
-        env.openExternal(Uri.parse('https://github.com/posit-dev/publisher/wiki/Feature-Overview'));
-      })
-    );
     context.subscriptions.push(
       commands.registerCommand(openFeedbackCommand, () => {
         env.openExternal(Uri.parse('https://positpbc.slack.com/channels/publisher-feedback'));
