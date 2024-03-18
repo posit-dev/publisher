@@ -16,6 +16,7 @@ import (
 type ServicesSuite struct {
 	utiltest.Suite
 	log logging.Logger
+	cwd util.Path
 }
 
 func TestServicesSuite(t *testing.T) {
@@ -26,6 +27,16 @@ func (s *ServicesSuite) SetupSuite() {
 	s.log = logging.New()
 }
 
+func (s *ServicesSuite) SetupTest() {
+	// Create the current directory in a virtual FS
+	// since the endpoint wants to cd into it.
+	fs := afero.NewMemMapFs()
+	cwd, err := util.Getwd(fs)
+	s.Nil(err)
+	s.cwd = cwd
+	s.cwd.MkdirAll(0700)
+}
+
 func (s *ServicesSuite) TestCreateFilesService() {
 	afs := afero.NewMemMapFs()
 	base := util.NewPath("", afs)
@@ -34,8 +45,7 @@ func (s *ServicesSuite) TestCreateFilesService() {
 }
 
 func (s *ServicesSuite) TestGetFile() {
-	afs := afero.NewMemMapFs()
-	base := util.NewPath("", afs)
+	base := s.cwd
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
 	ignore, err := gitignore.NewIgnoreList(base)
@@ -47,7 +57,9 @@ func (s *ServicesSuite) TestGetFile() {
 
 func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 	afs := afero.NewOsFs()
-	base := util.NewPath("../../../../test/sample-content/fastapi-simple", afs)
+	base, err := util.NewPath("../../../../test/sample-content/fastapi-simple", afs).Abs()
+	s.NoError(err)
+
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
 	ignore, err := gitignore.NewIgnoreList(base)
@@ -59,7 +71,8 @@ func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 
 func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
 	afs := afero.NewOsFs()
-	base := util.NewPath("../../../../test/sample-content/fastapi-simple/", afs)
+	base, err := util.NewPath("../../../../test/sample-content/fastapi-simple/", afs).Abs()
+	s.NoError(err)
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
 	ignore, err := gitignore.NewIgnoreList(base)
@@ -70,11 +83,9 @@ func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
 }
 
 func (s *ServicesSuite) TestGetFileWithPositIgnore() {
-	afs := afero.NewMemMapFs()
-	base, err := util.Getwd(afs)
-	s.NoError(err)
+	base := s.cwd
 
-	err = base.Join(".positignore").WriteFile([]byte("ignore*\n"), 0666)
+	err := base.Join(".positignore").WriteFile([]byte("ignore*\n"), 0666)
 	s.NoError(err)
 	err = base.Join("ignoreme").WriteFile([]byte{}, 0666)
 	s.NoError(err)
@@ -128,11 +139,9 @@ func (s *ServicesSuite) TestGetFileWithPositIgnore() {
 }
 
 func (s *ServicesSuite) TestGetFileWithChangingPositIgnore() {
-	afs := afero.NewMemMapFs()
-	base, err := util.Getwd(afs)
-	s.NoError(err)
+	base := s.cwd
 
-	err = base.Join(".positignore").WriteFile([]byte("ignore*\n"), 0666)
+	err := base.Join(".positignore").WriteFile([]byte("ignore*\n"), 0666)
 	s.NoError(err)
 	err = base.Join("ignoreme").WriteFile([]byte{}, 0666)
 	s.NoError(err)
@@ -220,5 +229,4 @@ func (s *ServicesSuite) TestGetFileWithChangingPositIgnore() {
 	f = sd.Files[1]
 	s.Equal("includeme", f.Base)
 	s.Nil(f.Exclusion)
-
 }

@@ -18,7 +18,7 @@ import {
 
 import { isAxiosError } from 'axios';
 import api from '../api';
-import { confirmUpdate } from '../dialogs';
+import { confirmOverwrite } from '../dialogs';
 import { getSummaryStringFromError } from '../utils/errors';
 import { fileExists } from '../utils/files';
 
@@ -63,8 +63,8 @@ export class RequirementsTreeDataProvider implements TreeDataProvider<Requiremen
       const response = await api.requirements.getAll();
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(line => new RequirementsTreeItem(line));
-    } catch(error: unknown) {
-      if (isAxiosError(error) && error.status === 404) {
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response?.status === 404) {
         // No requirements file; show the welcome view.
         await this.setContextIsEmpty(true);
         return [];
@@ -76,12 +76,11 @@ export class RequirementsTreeDataProvider implements TreeDataProvider<Requiremen
     }
   }
 
-  private async setContextIsEmpty(isEmpty: boolean): Promise<void>{
+  private async setContextIsEmpty(isEmpty: boolean): Promise<void> {
     await commands.executeCommand('setContext', contextIsEmpty, isEmpty ? "empty" : "notEmpty");
   }
 
   public register(context: ExtensionContext) {
-    window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this })
     );
@@ -114,7 +113,7 @@ export class RequirementsTreeDataProvider implements TreeDataProvider<Requiremen
     }
 
     if (await fileExists(this.fileUri)) {
-      const ok = await confirmUpdate('Are you sure you want to overwrite your existing requirements.txt file?');
+      const ok = await confirmOverwrite('Are you sure you want to overwrite your existing requirements.txt file?');
       if (!ok) {
         return;
       }
@@ -123,7 +122,7 @@ export class RequirementsTreeDataProvider implements TreeDataProvider<Requiremen
     try {
       await api.requirements.create("requirements.txt");
       await this.edit();
-    } catch(error: unknown) {
+    } catch (error: unknown) {
       const summary = getSummaryStringFromError('dependencies::scan', error);
       window.showInformationMessage(summary);
     }

@@ -54,7 +54,6 @@ export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAnd
   }
 
   public register(context: ExtensionContext) {
-    window.registerTreeDataProvider(viewName, this);
     context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this })
     );

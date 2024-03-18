@@ -54,8 +54,6 @@ export class CredentialsTreeDataProvider implements TreeDataProvider<Credentials
   };
 
   public register(context: ExtensionContext) {
-    window.registerTreeDataProvider(viewName, this);
-
     context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this })
     );

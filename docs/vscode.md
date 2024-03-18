@@ -1,25 +1,18 @@
 # VSCode Extension
 
-## Quick Start
-
-Install the extension.
-[https://cdn.posit.co/publisher/releases/tags/v0.0.alpha3/publisher-0.0.alpha3.vsix](https://cdn.posit.co/publisher/releases/tags/v0.0.alpha3/publisher-0.0.alpha3.vsix).
-
-To learn how to install a `.vsix` file, see the [*Install from a VSIX*](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix) guide from Visual Studio Code.
-
 ## Tutorial
 
 ### Opening the UI
 
 In VSCode, open the folder containing the project you want to deploy. In this version of *Posit Publisher*, the project must be in the top level directory.
 
-Open the *Posit Publisher* UI by clicking the icon in the left activity bar.
+Open the *Posit Publisher* UI by clicking the icon in the activity bar.
 
 ![](https://cdn.posit.co/publisher/assets/img/icon.png)
 
 ### Configuration Files
 
-To publish content, your project must have a publishing configuration file. If you don't have one yet, the UI will show the option to create one.
+To deploy content, your project must have a publishing configuration file. If you don't have one yet, the UI will show the option to create one.
 
 ![](https://cdn.posit.co/publisher/assets/img/initialize-project.png)
 
@@ -27,7 +20,7 @@ Click the `Initialize Project` button to create a configuration file based on th
 
 ![](https://cdn.posit.co/publisher/assets/img/choose-configuration.png)
 
-The configuration name will appear in the Configurations panel on the left. You can click to open it, or right click for additional options.
+The configuration's name will appear in the Configurations view. You can click to open it, or right click for additional options.
 
 ![](https://cdn.posit.co/publisher/assets/img/configurations.png)
 
@@ -35,43 +28,47 @@ The new configuration file will also be opened so you can review and make any ne
 
 ![](https://cdn.posit.co/publisher/assets/img/configuration-file-with-tooltip.png)
 
-You can have multiple configuration files for different deployments; for example, staging and production. Use the `+` button in the Configurations panel to add a new configuration.
+You can have multiple configuration files for different deployments; for example, staging and production. Use the `+` button in the Configurations view to add a new configuration.
 
 ### Python Requirements
 
-The Requirements panel shows the contents of the `requirements.txt` file in your project directory. It's required when deploying a Python project.
+The Requirements view shows the contents of the `requirements.txt` file in your project directory. It's required when deploying a Python project.
 
 ![](https://cdn.posit.co/publisher/assets/img/requirements.png)
 
 If you don't have a `requirements.txt` file yet, you'll see a message prompting you to Scan. Clicking Scan will scan your project code for imports and attempt to map those to package names and versions using the package metadata from your local Python installation. After scanning, verify the contents of the generated `requirements.txt` file and make any changes needed.
 
-If you already have a `requirements.txt` file, you can use the eye icon in the Requirements panel to scan your code again.
+If you already have a `requirements.txt` file, you can use the eye icon in the Requirements view to scan your code again.
 
 ### Deployments
 
-Once you have configuration and requirements files, you are ready to deploy. Click the `Add` button in the Deployments panel to create a new deployment.
+Once you have configuration and requirements files, you are ready to deploy. Click the `Add` button in the Deployments view to create a new deployment.
 
 ![](https://cdn.posit.co/publisher/assets/img/add-deployment.png)
 
 You'll be prompted for several pieces of information:
-* A name for the deployment, which will appear in the Deployments panel.
+* A name for the deployment, which will appear in the Deployments view.
 * A credential to use during deployment, if you have more than one credential defined.
 * A Yes/No choice asking whether you want to deploy now, or wait until later. For now, click Yes.
 * A choice of which configuration to use, if you answered Yes to deploy now and have more than one configuration defined.
 
 If you open the bottom panel in VSCode and click Posit Publisher Logs, you'll see the deployment logs:
+
 ![](https://cdn.posit.co/publisher/assets/img/deployment-logs.png)
 
 
-Deployments appear in the Deployment panel. The icon indicates whether the content has been successfully deployed.
+Deployments appear in the Deployment view. The icon indicates whether the content has been successfully deployed.
 
 Not deployed yet:
+
 ![](https://cdn.posit.co/publisher/assets/img/add-deployment.png)
 
 Deployed:
+
 ![](https://cdn.posit.co/publisher/assets/img/deployment.png)
 
 Error:
+
 ![](https://cdn.posit.co/publisher/assets/img/deployment-error.png)
 
 Clicking the deploy icon next to a deployment will deploy a new version of the content, using your current project and configuration files.
@@ -80,13 +77,16 @@ Clicking the deploy icon next to a deployment will deploy a new version of the c
 
 ### Credentials
 
-In the current release, *Posit Publisher* acquires credentials from the RStudio IDE/rsconnect package and rsconnect-python. These are shown in the Credentials panel. To add or remove account credentials, use rsconnect or rsconnect-python.
+In the current release, *Posit Publisher* acquires credentials from the RStudio IDE/rsconnect package and rsconnect-python. Additionally, if the environment variables `CONNECT_SERVER` and `CONNECT_API_KEY` are set,
+an additional credential named `env` will be created.
+
+These are shown in the Credentials view. To add or remove account credentials, use rsconnect or [rsconnect-python](https://docs.posit.co/rsconnect-python/#remembering-server-information).
 
 ![](https://cdn.posit.co/publisher/assets/img/credentials.png)
 
 ### Files and Exclusions
 
-The Deployment Files panel shows a list of the files in your project directory, divided into two lists:
+The Deployment Files view shows a list of the files in your project directory, divided into two lists:
 * Included Files shows the files that will be included in your deployment and sent to the server as part of the uploaded content. You can exclude a file by clicking the icon to the right of the filename.
 * Excluded Files shows the files in your project that will not be included in the deployment. The tooltip on an excluded file will indicate the reason it was excluded.
 
@@ -96,7 +96,7 @@ Note: the extension UI does not currently support re-including an excluded file 
 
 ### Help and Feedback
 
-This panel contains links to this documentation and other resources.
+This view contains links to this documentation and other resources.
 
 ## Extension Configuration
 

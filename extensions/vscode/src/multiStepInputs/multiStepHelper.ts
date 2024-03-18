@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons } from 'vscode';
+import { QuickPickItem, window, Disposable, QuickInputButton, QuickInput, QuickInputButtons, InputBoxValidationMessage } from 'vscode';
 
 class InputFlowAction {
   static back = new InputFlowAction();
@@ -42,7 +42,7 @@ interface InputBoxParameters {
   totalSteps: number;
   value: string;
   prompt: string;
-  validate: (value: string) => Promise<string | undefined>;
+  validate: (value: string) => Promise<string | InputBoxValidationMessage | undefined>;
   buttons?: QuickInputButton[];
   ignoreFocusOut?: boolean;
   placeholder?: string;

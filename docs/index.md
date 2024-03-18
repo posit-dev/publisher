@@ -1,11 +1,11 @@
 # Posit Publisher
 
-Posit Publisher lets you publish projects to Connect. This version only supports
+Posit Publisher lets you deploy projects to Connect. This version only supports
 Python projects, and Quarto projects using Python. Support for R projects is
 planned for a later release.
 
 Key concepts:
-* Publisher provides a binary with a CLI and am API server. There is also a VSCode
+* Publisher provides a binary with a CLI and an API server. There is also a VSCode
   extension that presents a UI within the VSCode left activity panel.
 * Deployment options are set via a configuration file in `.posit/publish/`.
 * Records of where you have deployed are kept in `.posit/publish/deployments`.
@@ -16,9 +16,9 @@ Key concepts:
 
 Supported features:
 
-* Publish projects to Connect
+* Deploy projects to Connect
 * UI available via VSCode extension
-* Publish using CLI
+* Deploy using CLI
 * Configuration-file based workflow
 * Configuration schema enables editing with the [Even Better TOML
   VSCode](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
@@ -27,7 +27,7 @@ Supported features:
 * Python content: APIs, applications, and notebooks
 * Automatic detection of client Python and Quarto version
 * Automatic creation of a minimal requirements.txt file if needed, by scanning imports and mapping them to package names/versions installed in the local Python library path.
-* Publish Quarto documents (using the `jupyter` and `markdown` engines only)
+* Deploy Quarto documents (using the `jupyter` and `markdown` engines only)
 * Collaborate via git, or by downloading a source bundle from Connect
 * Uses existing publishing accounts from `rsconnect` and `rsconnect-python`
 * Pre-flight checking of settings before deploying to Connect
@@ -35,7 +35,7 @@ Supported features:
 
 What's not supported yet but is on our to-do list:
 
-* Publish to servers other than Connect (shinyapps.io, Cloud, etc)
+* Deploy to servers other than Connect (shinyapps.io, Cloud, etc)
 * Manage the list of accounts and provide an import function for existing
   accounts
 * R content such as Shiny, R Markdown, and Quarto (with the `knitr` engine)
@@ -47,7 +47,7 @@ What's not supported yet but is on our to-do list:
 * Option to export a `manifest.json` for compatibility with prior tool
 * Schedule reports
 * Streamlined `update deployment` command in VSCode command palette
-* Support VSCode windows with multiple workspaces, or publish from a
+* Support VSCode windows with multiple workspaces, or deploy from a
   subdirectory of the workspace
 * Better error handling
 
@@ -56,6 +56,6 @@ What's not supported yet but is on our to-do list:
 See the [Installation](installation.md) page.
 
 ## Getting Started
-There are two ways to publish content.
+There are two ways to deploy content.
 * [publisher cli](cli.md)
-* [Publish Assistant in Positron + VSCode](vscode.md)
+* [Posit Publisher extension in Positron + VSCode](vscode.md)

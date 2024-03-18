@@ -12,10 +12,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Fixed
-- Don't include the full path in the `entrypoint` for Quarto projects (#960)
 
 ### Removed
 
+## [1.0.alpha3]
+
+Move the extension from an Editor webview to a using native VSCode views,
+navigable via the Activity Bar.
+Move functionality that was previously in an Editor webview to views in the
+VSCode Primary Sidebar.
+Deployment Records and Configurations can now be created, opened, and in the
+case of Configurations edited directly via the Extension's views.
+
+### Added
+- Include links to documentation and feedback channel (#1140)
+- Add comments to deployment records indicating they should not editted by users (#1092)
+- Deployment staged logs view in the bottom VSCode panel
+- Ability to select a Configuration when deploying
+
+### Changed
+- Use relative paths for the configuration `entrypoint` for Quarto projects (#960)
+
+### Fixed
+- Fix being unable to ignore subdirectories in `.positignore` (#1117)
+- Improve error serialization with errors from Connect or networking (#1074)
+- Fixed cases where an unnamed `.toml` deployment record was created (#1076, #1113)
+
+### Removed
+- Stand-alone webview opened via an Editor button on files
 
 ## [1.0.alpha2]
 

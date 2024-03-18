@@ -2,13 +2,14 @@
 
 import { MultiStepInput, MultiStepState, isQuickPickItem } from './multiStepHelper';
 
-import { QuickPickItem, ThemeIcon, window } from 'vscode';
+import { InputBoxValidationSeverity, QuickPickItem, ThemeIcon, window } from 'vscode';
 
 import { AccountAuthType, useApi } from '../api';
 import { getSummaryStringFromError } from '../utils/errors';
 import { uniqueDeploymentName, untitledDeploymentName } from '../utils/names';
 import { deployProject } from '../views/deployProgress';
 import { EventStream } from '../events';
+import { isValidFilename } from '../utils/files';
 
 export async function addDeployment(stream: EventStream) {
   const api = useApi();
@@ -60,9 +61,7 @@ export async function addDeployment(stream: EventStream) {
   try {
     const response = await api.deployments.getAll();
     const deploymentList = response.data;
-    deploymentNames = deploymentList.map(deployment =>
-      deployment.deploymentPath.split('.posit/publish/deployments/')[1].slice(0, -5)
-    );
+    deploymentNames = deploymentList.map(deployment => deployment.deploymentName);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError('addDeployment, deployments.getAll', error);
     window.showInformationMessage(
@@ -139,8 +138,14 @@ export async function addDeployment(stream: EventStream) {
         : untitledDeploymentName(deploymentNames),
       prompt: 'Choose a unique name for the deployment',
       validate: (value) => {
-        if (value.length < 3 || !uniqueDeploymentName(value, deploymentNames)) {
-          return Promise.resolve('Must be unique and have a length greater than 3');
+        if (value.length < 3 ||
+          !uniqueDeploymentName(value, deploymentNames) ||
+          !isValidFilename(value)
+        ) {
+          return Promise.resolve({
+            message: `Invalid Name: Value must be unique across other deployment names for this project, be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
+            severity: InputBoxValidationSeverity.Error,
+          });
         }
         return Promise.resolve(undefined);
       },
@@ -307,5 +312,3 @@ export async function addDeployment(stream: EventStream) {
     );
   }
 }
-
-
