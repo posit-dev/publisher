@@ -19,7 +19,7 @@ Open the *Posit Publisher* UI by clicking the icon in the activity bar.
 
 ### Configuration Files
 
-To publish content, your project must have a publishing configuration file. If you don't have one yet, the UI will show the option to create one.
+To deploy content, your project must have a publishing configuration file. If you don't have one yet, the UI will show the option to create one.
 
 ![](https://cdn.posit.co/publisher/assets/img/initialize-project.png)
 
