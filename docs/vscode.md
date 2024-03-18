@@ -13,7 +13,7 @@ To learn how to install a `.vsix` file, see the [*Install from a VSIX*](https://
 
 In VSCode, open the folder containing the project you want to deploy. In this version of *Posit Publisher*, the project must be in the top level directory.
 
-Open the *Posit Publisher* UI by clicking the icon in the left activity bar.
+Open the *Posit Publisher* UI by clicking the icon in the activity bar.
 
 ![](https://cdn.posit.co/publisher/assets/img/icon.png)
 
@@ -27,7 +27,7 @@ Click the `Initialize Project` button to create a configuration file based on th
 
 ![](https://cdn.posit.co/publisher/assets/img/choose-configuration.png)
 
-The configuration name will appear in the Configurations panel on the left. You can click to open it, or right click for additional options.
+The configuration's name will appear in the Configurations view. You can click to open it, or right click for additional options.
 
 ![](https://cdn.posit.co/publisher/assets/img/configurations.png)
 
@@ -60,18 +60,22 @@ You'll be prompted for several pieces of information:
 * A choice of which configuration to use, if you answered Yes to deploy now and have more than one configuration defined.
 
 If you open the bottom panel in VSCode and click Posit Publisher Logs, you'll see the deployment logs:
+
 ![](https://cdn.posit.co/publisher/assets/img/deployment-logs.png)
 
 
 Deployments appear in the Deployment panel. The icon indicates whether the content has been successfully deployed.
 
 Not deployed yet:
+
 ![](https://cdn.posit.co/publisher/assets/img/add-deployment.png)
 
 Deployed:
+
 ![](https://cdn.posit.co/publisher/assets/img/deployment.png)
 
 Error:
+
 ![](https://cdn.posit.co/publisher/assets/img/deployment-error.png)
 
 Clicking the deploy icon next to a deployment will deploy a new version of the content, using your current project and configuration files.
@@ -80,7 +84,7 @@ Clicking the deploy icon next to a deployment will deploy a new version of the c
 
 ### Credentials
 
-In the current release, *Posit Publisher* acquires credentials from the RStudio IDE/rsconnect package and rsconnect-python. These are shown in the Credentials panel. To add or remove account credentials, use rsconnect or rsconnect-python.
+In the current release, *Posit Publisher* acquires credentials from the RStudio IDE/rsconnect package and rsconnect-python. These are shown in the Credentials panel. To add or remove account credentials, use rsconnect or [rsconnect-python](https://docs.posit.co/rsconnect-python/#remembering-server-information).
 
 ![](https://cdn.posit.co/publisher/assets/img/credentials.png)
 

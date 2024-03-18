@@ -5,7 +5,7 @@ Python projects, and Quarto projects using Python. Support for R projects is
 planned for a later release.
 
 Key concepts:
-* Publisher provides a binary with a CLI and am API server. There is also a VSCode
+* Publisher provides a binary with a CLI and an API server. There is also a VSCode
   extension that presents a UI within the VSCode left activity panel.
 * Deployment options are set via a configuration file in `.posit/publish/`.
 * Records of where you have deployed are kept in `.posit/publish/deployments`.
