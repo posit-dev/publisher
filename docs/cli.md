@@ -17,8 +17,7 @@ publisher init ${DIRECTORY}
 
 The `init` command inspects the files in the specified project directory, or the
 current directory if omitted. It creates an initial configuration file for you
-in `.posit/publish/default.toml`. In the future we will support multiple
-configuration files. For now, only `default`.
+in `.posit/publish/default.toml`, or under another name specified with the `-c` option.
 
 The client auto-detects the type of content in `DIRECTORY`.
 
@@ -29,17 +28,14 @@ must be named `app.py`, `api.py`, `main.py`, or  `streamlit_app.py`.
 For Quarto projects, `publisher` looks for a .qmd file with the same name as the
 project directory, or for a single .qmd file to be the entrypoint.
 
-Note: If the content type or entrypoint cannot be detected, the publisher sends
+Note: If the content type or entrypoint cannot be detected, the publisher displays
 an error instructing you to manually update the default.toml file created.
 
-Initialization also records the Python version and packages in use. You can
-specify which Python interpreter to query with the `--python` option. You can
-also provide a package list in `requirements.txt`. If you don't, one will be
-created for you with `python -m pip freeze`; however, this is not recommended.
-
-Currently, the UI/VSCode extension automatically runs `init` if there is no
-configuration file. You can run `init` again if you need to, but note that it
-will overwrite the default configuration file.
+Initialization records the Python version in use. You can
+specify which Python interpreter to query with the `--python` option.
+Before you can deploy, you also need to provide a `requirements.txt` file.
+You can create the file manually or use the `requirements create`
+command below.
 
 ### `deploy`
 
