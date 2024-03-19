@@ -5,6 +5,7 @@ package inspect
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"slices"
 	"strings"
 
@@ -92,6 +93,7 @@ func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
 			i.pythonPath, fs.ErrNotExist)
 	} else {
 		// Use whatever is on PATH
+		i.log.Info("Looking for Python on PATH", "PATH", os.Getenv("PATH"))
 		path, err := i.pathLooker.LookPath("python3")
 		if err == nil {
 			// Ensure the Python is actually runnable. This is especially
