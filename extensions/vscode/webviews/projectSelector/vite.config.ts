@@ -16,7 +16,7 @@ export default defineConfig({
   //   }
   // },
   build: {
-    outDir: "out",
+    outDir: "../../out/webviews/projectSelector",
     rollupOptions: {
       output: {
         entryFileNames: `[name].js`,
