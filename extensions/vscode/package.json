@@ -458,6 +458,7 @@
     "@typescript-eslint/parser": "^6.7.3",
     "@vscode/test-electron": "^2.3.8",
     "eslint": "^8.50.0",
+    "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
     "prettier": "3.2.5",
