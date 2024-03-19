@@ -54,6 +54,15 @@ func NewPythonInspector(base util.Path, pythonPath util.Path, log logging.Logger
 // be determined by the specified pythonExecutable,
 // or by `python3` or `python` on $PATH.
 func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
+	// Change into the project dir because the user might have
+	// .python-version there or in a parent directory, which will
+	// determine which Python version is run by pyenv.
+	oldWD, err := util.Chdir(i.base.String())
+	if err != nil {
+		return nil, err
+	}
+	defer util.Chdir(oldWD)
+
 	pythonVersion, err := i.getPythonVersion()
 	if err != nil {
 		return nil, err
