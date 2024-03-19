@@ -1,7 +1,0 @@
-{
-  "ServerApp": {
-    "jpserver_extensions": {
-      "connect_jupyterlab": true
-    }
-  }
-}
