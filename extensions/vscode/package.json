@@ -436,11 +436,13 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "npm run compile-extension && npm run compile-webview",
+    "compile-extension": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "compile-webview": "npm run --prefix webviews/projectSelector build"
   },
   "devDependencies": {
     "@types/eventsource": "^1.1.15",
