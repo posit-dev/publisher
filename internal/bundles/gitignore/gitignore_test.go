@@ -92,3 +92,45 @@ func (s *GitIgnoreSuite) TestMatch() {
 	s.Equal("", m.FilePath)
 	s.Equal(0, m.Line)
 }
+
+func (s *GitIgnoreSuite) TestMatchWindows() {
+	err := s.cwd.Join(".git").MkdirAll(0700)
+	s.NoError(err)
+
+	ignoreFilePath := s.cwd.Join(".positignore")
+	err = ignoreFilePath.WriteFile([]byte(".Rhistory\nignoreme\n"), 0600)
+	s.NoError(err)
+
+	ign, err := From(ignoreFilePath)
+	s.NoError(err)
+
+	ignoredir := s.cwd.Join("ignoredir")
+	err = ignoredir.MkdirAll(0700)
+	s.NoError(err)
+	err = ign.AppendGlobs([]string{"ignoredir/"}, MatchSourceBuiltIn)
+	s.NoError(err)
+
+	m, err := ign.Match("ignoredir\\")
+	s.NoError(err)
+	s.NotNil(m)
+	s.Equal(MatchSourceBuiltIn, m.Source)
+	s.Equal("ignoredir/", m.Pattern)
+	s.Equal("", m.FilePath)
+	s.Equal(0, m.Line)
+
+	m, err = ign.Match("ignoredir\\somefile")
+	s.NoError(err)
+	s.NotNil(m)
+	s.Equal(MatchSourceBuiltIn, m.Source)
+	s.Equal("ignoredir/", m.Pattern)
+	s.Equal("", m.FilePath)
+	s.Equal(0, m.Line)
+
+	m, err = ign.Match("ignoredir\\ignoreme")
+	s.NoError(err)
+	s.NotNil(m)
+	s.Equal(MatchSourceFile, m.Source)
+	s.Equal("ignoreme", m.Pattern)
+	s.Equal(".positignore", m.FilePath)
+	s.Equal(2, m.Line)
+}

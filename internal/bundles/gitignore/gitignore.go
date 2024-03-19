@@ -50,7 +50,8 @@ type GitIgnoreList struct {
 }
 
 func toSplit(path string) []string {
-	return strings.Split(filepath.ToSlash(path), "/")
+	slashPath := strings.ReplaceAll(path, "\\", "/")
+	return strings.Split(slashPath, "/")
 }
 
 func fromSplit(path []string) string {
@@ -270,20 +271,28 @@ func isPrefix(abspath, dir []string) bool {
 }
 
 func (ign *GitIgnoreList) match(path string, info os.FileInfo) *Match {
-	ss := make([]string, 0, 4)
+	splitPath := toSplit(path)
+	matchingPaths := make([]string, 0, 4)
+
+	// Parent directory paths are also potential matches
+	for i := range splitPath[1:] {
+		matchingPaths = append(matchingPaths, strings.Join(splitPath[0:i+1], "/")+"/")
+	}
+	path = fromSplit(splitPath)
+
 	base := filepath.Base(path)
-	ss = append(ss, path)
+	matchingPaths = append(matchingPaths, path)
 	if base != path {
-		ss = append(ss, base)
+		matchingPaths = append(matchingPaths, base)
 	} else {
-		ss = append(ss, "./"+path)
+		matchingPaths = append(matchingPaths, "./"+path)
 	}
 	if info != nil && info.IsDir() {
-		ss = append(ss, path+"/")
+		matchingPaths = append(matchingPaths, path+"/")
 		if base != path {
-			ss = append(ss, base+"/")
+			matchingPaths = append(matchingPaths, base+"/")
 		} else {
-			ss = append(ss, "./"+path+"/")
+			matchingPaths = append(matchingPaths, "./"+path+"/")
 		}
 	}
 
@@ -295,7 +304,7 @@ func (ign *GitIgnoreList) match(path string, info os.FileInfo) *Match {
 	for _, f := range ign.files {
 		if isPrefix(f.abspath, dir) || len(f.abspath) == 0 {
 			for _, match := range f.matches {
-				for _, s := range ss {
+				for _, s := range matchingPaths {
 					if match.glob.Match(s) {
 						return match
 					}
