@@ -89,6 +89,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ['publish/deployBundle', createLogStage('Deploy Bundle')],
       ['publish/restorePythonEnv', createLogStage('Restore Python Environment')],
       ['publish/runContent', createLogStage('Run Content')],
+      ['publish/validateDeployment', createLogStage('Validate Deployment')],
     ]);
 
     this.publishingStage = createLogStage(
@@ -123,6 +124,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           stage.status = LogStageStatus.neverStarted;
         }
       });
+
+      window.showErrorMessage(`Publish failed. ${msg.data.message}`);
       this.refresh();
     });
 

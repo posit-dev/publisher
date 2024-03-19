@@ -139,6 +139,16 @@
         "title": "Refresh Deployment Selector",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.helpAndFeedback.gettingStarted",
+        "title": "Open Getting Started Documentation",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.helpAndFeedback.openFeedback",
+        "title": "Provide Feedback",
+        "category": "Posit Publisher"
       }
     ],
     "configuration": {
