@@ -159,10 +159,13 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
      * rendered within the webview panel
      */
   private _getWebviewContent(webview: Webview, extensionUri: Uri) {
-    // The CSS file from the Vue build output
+    // The CSS files from the Vue build output
     const stylesUri = getUri(webview, extensionUri, ["out", "webviews", "projectSelector", "index.css"]);
+    // const codiconsUri = webview.asWebviewUri(Uri.joinPath(extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
     // The JS file from the Vue build output
     const scriptUri = getUri(webview, extensionUri, ["out", "webviews", "projectSelector", "index.js"]);
+    // The codicon css (and related tff file) are needing to be loaded for icons
+    const codiconsUri = getUri(webview, extensionUri, ["out", "webviews", "projectSelector", "codicon.css"]);
 
     const nonce = getNonce();
 
@@ -179,6 +182,7 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
                     style-src vscode-resource: 'self' 'unsafe-inline';
                     img-src 'self' vscode-resource: data:"/>
           <link rel="stylesheet" type="text/css" href="${stylesUri}">
+          <link rel="stylesheet" type="text/css" href="${codiconsUri}">
           <title>Hello World</title>
         </head>
         <body>
