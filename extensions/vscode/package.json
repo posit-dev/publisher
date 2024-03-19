@@ -149,6 +149,12 @@
         "command": "posit.publisher.helpAndFeedback.openFeedback",
         "title": "Provide Feedback",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.logs.visit",
+        "title": "View this deployment in Connect",
+        "icon": "$(link-external)",
+        "category": "Posit Publisher"
       }
     ],
     "configuration": {
