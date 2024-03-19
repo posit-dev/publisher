@@ -279,7 +279,7 @@ export class LogsTreeStageItem extends TreeItem {
  */
 export class LogsTreeLogItem extends TreeItem {
   constructor(
-    public msg: EventStreamMessage,
+    msg: EventStreamMessage,
     state: TreeItemCollapsibleState = TreeItemCollapsibleState.None
   ) {
     super(displayEventStreamMessage(msg), state);
@@ -289,7 +289,7 @@ export class LogsTreeLogItem extends TreeItem {
       this.command = {
         title: 'Visit',
         command: visitCommand,
-        arguments: [this.msg.data.dashboardUrl]
+        arguments: [msg.data.dashboardUrl]
       };
     }
   }
