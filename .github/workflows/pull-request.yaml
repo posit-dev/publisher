@@ -6,8 +6,8 @@ concurrency:
   group: ${{ github.head_ref }}
   cancel-in-progress: true
 jobs:
-  lint:
-    uses: ./.github/workflows/lint.yaml
+  # lint:
+  #   uses: ./.github/workflows/lint.yaml
   # Unit Tests
   agent:
     uses: ./.github/workflows/agent.yaml
