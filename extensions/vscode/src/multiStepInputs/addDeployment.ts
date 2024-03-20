@@ -1,15 +1,24 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { MultiStepInput, MultiStepState, isQuickPickItem } from './multiStepHelper';
+import {
+  MultiStepInput,
+  MultiStepState,
+  isQuickPickItem,
+} from "./multiStepHelper";
 
-import { InputBoxValidationSeverity, QuickPickItem, ThemeIcon, window } from 'vscode';
+import {
+  InputBoxValidationSeverity,
+  QuickPickItem,
+  ThemeIcon,
+  window,
+} from "vscode";
 
-import { AccountAuthType, useApi } from '../api';
-import { getSummaryStringFromError } from '../utils/errors';
-import { uniqueDeploymentName, untitledDeploymentName } from '../utils/names';
-import { deployProject } from '../views/deployProgress';
-import { EventStream } from '../events';
-import { isValidFilename } from '../utils/files';
+import { AccountAuthType, useApi } from "../api";
+import { getSummaryStringFromError } from "../utils/errors";
+import { uniqueDeploymentName, untitledDeploymentName } from "../utils/names";
+import { deployProject } from "../views/deployProgress";
+import { EventStream } from "../events";
+import { isValidFilename } from "../utils/files";
 
 export async function addDeployment(stream: EventStream) {
   const api = useApi();
@@ -25,19 +34,22 @@ export async function addDeployment(stream: EventStream) {
   try {
     const response = await api.accounts.getAll();
     const accounts = response.data.accounts;
-    accountListItems = accounts
-      .map(account => ({
-        iconPath: new ThemeIcon('account'),
-        label: account.name,
-        description: account.source,
-        detail: account.authType === AccountAuthType.API_KEY
-          ? 'Using API Key'
+    accountListItems = accounts.map((account) => ({
+      iconPath: new ThemeIcon("account"),
+      label: account.name,
+      description: account.source,
+      detail:
+        account.authType === AccountAuthType.API_KEY
+          ? "Using API Key"
           : `Using Token Auth for ${account.accountName}`,
-      }));
+    }));
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError('addDeployment, accounts.getAll', error);
+    const summary = getSummaryStringFromError(
+      "addDeployment, accounts.getAll",
+      error,
+    );
     window.showInformationMessage(
-      `Unable to continue with no credentials. ${summary}`
+      `Unable to continue with no credentials. ${summary}`,
     );
     return;
   }
@@ -45,15 +57,18 @@ export async function addDeployment(stream: EventStream) {
   try {
     const response = await api.configurations.getAll();
     const configurations = response.data;
-    configFileListItems = configurations.map(configuration => ({
-      iconPath: new ThemeIcon('file-code'),
+    configFileListItems = configurations.map((configuration) => ({
+      iconPath: new ThemeIcon("file-code"),
       label: configuration.configurationName,
       detail: configuration.configurationPath,
     }));
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError('addDeployment, configurations.getAll', error);
+    const summary = getSummaryStringFromError(
+      "addDeployment, configurations.getAll",
+      error,
+    );
     window.showInformationMessage(
-      `Unable to continue with no configurations. ${summary}`
+      `Unable to continue with no configurations. ${summary}`,
     );
     return;
   }
@@ -61,11 +76,16 @@ export async function addDeployment(stream: EventStream) {
   try {
     const response = await api.deployments.getAll();
     const deploymentList = response.data;
-    deploymentNames = deploymentList.map(deployment => deployment.deploymentName);
+    deploymentNames = deploymentList.map(
+      (deployment) => deployment.deploymentName,
+    );
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError('addDeployment, deployments.getAll', error);
+    const summary = getSummaryStringFromError(
+      "addDeployment, deployments.getAll",
+      error,
+    );
     window.showInformationMessage(
-      `Unable to continue due to deployment error. ${summary}`
+      `Unable to continue due to deployment error. ${summary}`,
     );
     return;
   }
@@ -87,7 +107,7 @@ export async function addDeployment(stream: EventStream) {
   // ***************************************************************
   async function collectInputs() {
     const state: MultiStepState = {
-      title: 'Deploy Your Project to a New Location',
+      title: "Deploy Your Project to a New Location",
       step: -1,
       lastStep: 0,
       totalSteps: -1,
@@ -113,11 +133,9 @@ export async function addDeployment(stream: EventStream) {
 
     // start the progression through the steps
 
-    await MultiStepInput.run(input => inputDeploymentName(input, state));
+    await MultiStepInput.run((input) => inputDeploymentName(input, state));
     return state as MultiStepState;
   }
-
-
 
   // ***************************************************************
   // Step #1:
@@ -125,7 +143,7 @@ export async function addDeployment(stream: EventStream) {
   // ***************************************************************
   async function inputDeploymentName(
     input: MultiStepInput,
-    state: MultiStepState
+    state: MultiStepState,
   ) {
     state.step = state.lastStep + 1;
 
@@ -133,12 +151,15 @@ export async function addDeployment(stream: EventStream) {
       title: state.title,
       step: state.step,
       totalSteps: state.totalSteps,
-      value: typeof state.data.deploymentName === 'string' && state.data.deploymentName.length
-        ? state.data.deploymentName
-        : untitledDeploymentName(deploymentNames),
-      prompt: 'Choose a unique name for the deployment',
+      value:
+        typeof state.data.deploymentName === "string" &&
+        state.data.deploymentName.length
+          ? state.data.deploymentName
+          : untitledDeploymentName(deploymentNames),
+      prompt: "Choose a unique name for the deployment",
       validate: (value) => {
-        if (value.length < 3 ||
+        if (
+          value.length < 3 ||
           !uniqueDeploymentName(value, deploymentNames) ||
           !isValidFilename(value)
         ) {
@@ -160,10 +181,7 @@ export async function addDeployment(stream: EventStream) {
   // Step #2:
   // Select the credentials to be used
   // ***************************************************************
-  async function pickCredentials(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
+  async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     // skip if we only have one choice.
     if (accountListItems.length > 1) {
       const thisStepNumber = state.lastStep + 1;
@@ -171,9 +189,12 @@ export async function addDeployment(stream: EventStream) {
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: 'Select the credential you want to use to deploy',
+        placeholder: "Select the credential you want to use to deploy",
         items: accountListItems,
-        activeItem: typeof state.data.credentialName !== 'string' ? state.data.credentialName : undefined,
+        activeItem:
+          typeof state.data.credentialName !== "string"
+            ? state.data.credentialName
+            : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
       });
@@ -189,33 +210,33 @@ export async function addDeployment(stream: EventStream) {
   // Step #3:
   // Does the user want to continue through into deploying the project?
   // ***************************************************************
-  async function promptToDeploy(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
+  async function promptToDeploy(input: MultiStepInput, state: MultiStepState) {
     const thisStepNumber = state.lastStep + 1;
     const pick = await input.showQuickPick({
       title: state.title,
       step: thisStepNumber,
       totalSteps: state.totalSteps,
-      placeholder: 'Do you wish to initiate the deployment at this time?',
+      placeholder: "Do you wish to initiate the deployment at this time?",
       items: [
         {
-          label: 'Yes',
-          description: 'Proceed with deployment'
+          label: "Yes",
+          description: "Proceed with deployment",
         },
         {
-          label: 'No',
-          description: 'Just save my deployment for use at a later time',
-        }
+          label: "No",
+          description: "Just save my deployment for use at a later time",
+        },
       ],
-      activeItem: typeof state.data.promptToDeploy !== 'string' ? state.data.promptToDeploy : undefined,
+      activeItem:
+        typeof state.data.promptToDeploy !== "string"
+          ? state.data.promptToDeploy
+          : undefined,
       buttons: [],
       shouldResume: () => Promise.resolve(false),
     });
     state.data.promptToDeploy = pick;
     state.lastStep = thisStepNumber;
-    if (state.data.promptToDeploy.label === 'Yes') {
+    if (state.data.promptToDeploy.label === "Yes") {
       return (input: MultiStepInput) => inputConfigFileSelection(input, state);
     }
     return undefined;
@@ -236,9 +257,12 @@ export async function addDeployment(stream: EventStream) {
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: 'Select the config file you wish to deploy with',
+        placeholder: "Select the config file you wish to deploy with",
         items: configFileListItems,
-        activeItem: typeof state.data.configFile !== 'string' ? state.data.configFile : undefined,
+        activeItem:
+          typeof state.data.configFile !== "string"
+            ? state.data.configFile
+            : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
       });
@@ -252,7 +276,7 @@ export async function addDeployment(stream: EventStream) {
   // ***************************************************************
   // Kick off the input collection
   // and await until it completes.
-  // This is a promise which returns the state data used to 
+  // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
   const state = await collectInputs();
@@ -265,7 +289,7 @@ export async function addDeployment(stream: EventStream) {
     state.data.credentialName === undefined ||
     state.data.promptToDeploy === undefined ||
     // have to add type guards here to eliminate the variability
-    typeof (state.data.deploymentName) !== 'string' ||
+    typeof state.data.deploymentName !== "string" ||
     !isQuickPickItem(state.data.credentialName) ||
     !isQuickPickItem(state.data.promptToDeploy)
   ) {
@@ -279,15 +303,18 @@ export async function addDeployment(stream: EventStream) {
       state.data.deploymentName,
     );
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError('addDeployment, createNew', error);
+    const summary = getSummaryStringFromError(
+      "addDeployment, createNew",
+      error,
+    );
     window.showInformationMessage(
-      `Failed to create pre-deployment. ${summary}`
+      `Failed to create pre-deployment. ${summary}`,
     );
     return;
   }
   // Should we deploy and did we get an answer for the config file?
   if (
-    state.data.promptToDeploy.label === 'Yes' &&
+    state.data.promptToDeploy.label === "Yes" &&
     state.data.configFile !== undefined &&
     isQuickPickItem(state.data.configFile)
   ) {
@@ -299,16 +326,12 @@ export async function addDeployment(stream: EventStream) {
       );
       deployProject(response.data.localId, stream);
     } catch (error: unknown) {
-      const summary = getSummaryStringFromError('addDeployment, deploy', error);
-      window.showInformationMessage(
-        `Failed to deploy . ${summary}`
-      );
+      const summary = getSummaryStringFromError("addDeployment, deploy", error);
+      window.showInformationMessage(`Failed to deploy . ${summary}`);
       return;
     }
   } else {
     // no, they didn't want us to.
-    window.showInformationMessage(
-      `Skipping deployment of this project`
-    );
+    window.showInformationMessage(`Skipping deployment of this project`);
   }
 }

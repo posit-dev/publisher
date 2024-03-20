@@ -1,20 +1,27 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as vscode from 'vscode';
+import * as fs from "fs/promises";
+import * as path from "path";
+import * as vscode from "vscode";
 
-import { HOST } from '.';
+import { HOST } from ".";
 
-const CONFIG_KEY = 'publisher.executable.path';
+const CONFIG_KEY = "publisher.executable.path";
 
-export const create = async (context: vscode.ExtensionContext, path: string, port: number, subcommand: string = "ui"): Promise<[string, string[]]> => {
+export const create = async (
+  context: vscode.ExtensionContext,
+  path: string,
+  port: number,
+  subcommand: string = "ui",
+): Promise<[string, string[]]> => {
   const executable = await getExecutableBinary(context);
-  return [executable, [subcommand, '-v', `--listen=${HOST}:${port}`, path]];
+  return [executable, [subcommand, "-v", `--listen=${HOST}:${port}`, path]];
 };
 
-const getExecutableBinary = async (context: vscode.ExtensionContext): Promise<string> => {
-  const configuration = vscode.workspace.getConfiguration('posit');
+const getExecutableBinary = async (
+  context: vscode.ExtensionContext,
+): Promise<string> => {
+  const configuration = vscode.workspace.getConfiguration("posit");
   let executable: string | undefined = configuration.get<string>(CONFIG_KEY);
   if (executable) {
     try {
@@ -36,7 +43,7 @@ const getExecutableBinary = async (context: vscode.ExtensionContext): Promise<st
                 Example:
                 "posit.${CONFIG_KEY}": "/usr/local/bin/publisher"
                 `,
-        { modal: true }
+        { modal: true },
       );
     }
   }

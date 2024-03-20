@@ -1,17 +1,16 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import * as net from 'net';
-import * as retry from 'retry';
-import * as vscode from 'vscode';
+import * as net from "net";
+import * as retry from "retry";
+import * as vscode from "vscode";
 
-import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
-import { HOST } from '.';
+import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
+import { HOST } from ".";
 
-import * as commands from './commands';
-import * as workspaces from './workspaces';
+import * as commands from "./commands";
+import * as workspaces from "./workspaces";
 
 export class Server implements vscode.Disposable {
-
   readonly port: number;
   readonly outputChannel: vscode.OutputChannel;
 
@@ -33,7 +32,9 @@ export class Server implements vscode.Disposable {
     // Check if the server is stopped
     if (await this.isDown()) {
       // Display status message to user
-      const message = vscode.window.setStatusBarMessage("Starting Posit Publisher. Please wait...");
+      const message = vscode.window.setStatusBarMessage(
+        "Starting Posit Publisher. Please wait...",
+      );
       // todo - make this configurable
       const path = workspaces.path();
       // Create command to send to terminal stdin
@@ -41,7 +42,7 @@ export class Server implements vscode.Disposable {
       // Spawn child process
       this.process = spawn(command, args);
       // Handle error output
-      this.process.stderr.on('data', (data) => {
+      this.process.stderr.on("data", (data) => {
         // Write stderr to output channel
         this.outputChannel.append(data.toString());
       });
@@ -66,9 +67,11 @@ export class Server implements vscode.Disposable {
       return;
     }
     // Display status message to user
-    const message = vscode.window.setStatusBarMessage("Stopping Posit Publisher. Please wait...");
+    const message = vscode.window.setStatusBarMessage(
+      "Stopping Posit Publisher. Please wait...",
+    );
     // Send interrupt signal to terminal
-    this.process?.kill('SIGINT');
+    this.process?.kill("SIGINT");
     // Wait for server to stop
     await this.isDown();
     // Dispose of status message
@@ -79,7 +82,7 @@ export class Server implements vscode.Disposable {
    * Disposes of the resources associated with the server.
    */
   dispose() {
-    this.process?.kill('SIGINT');
+    this.process?.kill("SIGINT");
   }
 
   /**
@@ -165,7 +168,7 @@ export class Server implements vscode.Disposable {
       socket.setTimeout(timeout);
 
       // Event handler for successful connection
-      socket.on('connect', () => {
+      socket.on("connect", () => {
         // Close the socket
         socket.end();
         // Resolve the Promise indicating successful connection
@@ -173,7 +176,7 @@ export class Server implements vscode.Disposable {
       });
 
       // Event handler for connection timeout
-      socket.on('timeout', () => {
+      socket.on("timeout", () => {
         // Destroy the socket
         socket.end();
         // Resolve the Promise indicating connection timeout
@@ -181,7 +184,7 @@ export class Server implements vscode.Disposable {
       });
 
       // Event handler for connection error
-      socket.on('error', (error) => {
+      socket.on("error", (error) => {
         // Destroy the socket
         socket.destroy();
         // Reject the Promise with the encountered error
@@ -189,11 +192,11 @@ export class Server implements vscode.Disposable {
       });
 
       // Event handler for socket close
-      socket.on('close', (error) => {
+      socket.on("close", (error) => {
         // Check if the close event had an error
         if (error) {
           // Reject the Promise with an error indicating connection closure with error
-          reject(new Error('Connection closed with error'));
+          reject(new Error("Connection closed with error"));
         } else {
           // Resolve the Promise indicating successful closure without error
           resolve(true);
@@ -204,5 +207,4 @@ export class Server implements vscode.Disposable {
       socket.connect(this.port, HOST);
     });
   }
-
 }
