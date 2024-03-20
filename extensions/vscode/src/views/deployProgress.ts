@@ -1,8 +1,8 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { window, ProgressLocation } from 'vscode';
-import { EventStream, EventStreamMessage, UnregisterCallback } from '../events';
+import { ProgressLocation, Uri, env, window } from 'vscode';
 import { eventTypeToString } from '../api';
+import { EventStream, EventStreamMessage, UnregisterCallback } from '../events';
 
 export function deployProject(localID: string, stream: EventStream) {
   window.withProgress({
@@ -266,11 +266,18 @@ export function deployProject(localID: string, stream: EventStream) {
     );
 
     registrations.push(
-      stream.register('publish/success', (msg: EventStreamMessage) => {
+      stream.register('publish/success', async (msg: EventStreamMessage) => {
         if (localID === msg.data.localId) {
           unregiserAll();
           progress.report({ increment: 100, message: "Deployment was successful" });
           resolveCB('Success!');
+
+          let visitOption = "Visit";
+          const selection = await window.showInformationMessage("Deployment was successful", visitOption);
+          if (selection === visitOption) {
+            const uri = Uri.parse(msg.data.dashboardUrl, true);
+            await env.openExternal(uri);
+          }
         }
       })
     );
