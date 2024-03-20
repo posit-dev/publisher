@@ -262,11 +262,24 @@ export class ConfigurationTreeItem extends TreeItem {
     let tooltip: string;
 
     if (isConfigurationError(this.config)) {
-      tooltip = "This configuration file is invalid. Click to open it and resolve the underlined errors.";
+      tooltip =
+        `Configuration file: ${this.config.configurationPath}\n` +
+        `\n` +
+        `Error: This configuration file is invalid.\n` +
+        `Click to open it and resolve the underlined errors.\n` +
+        `\n` +
+        `Warning: This configuration will not be available for deployment operations\n` +
+        `until the issue is resolved.`;
     } else {
       const c = this.config.configuration;
 
-      tooltip = `Title: ${c.title}\nFile: ${c.entrypoint}\nType: ${c.type}`;
+      tooltip =
+        `Configuration file: ${this.config.configurationPath}\n` +
+        `\n` +
+        `Title: ${c.title}\n` +
+        `Entrypoint File: ${c.entrypoint}\n` +
+        `Content Type: ${c.type}`;
+
       const pyVersion = c.python?.version;
       if (pyVersion) {
         tooltip += `\nPython: ${pyVersion}`;

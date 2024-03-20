@@ -246,7 +246,7 @@
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment",
           "group": "inline"
         },
-          {
+        {
           "command": "posit.publisher.files.addExclusion",
           "when": "viewItem == posit.publisher.files.isIncludedFile",
           "group": "inline"
