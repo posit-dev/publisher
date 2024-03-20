@@ -11,6 +11,7 @@
     "lint": "eslint --ext .js,.ts,.vue,.cjs .",
     "fix": "eslint --ext .js,.ts,.vue,.cjs . --fix",
     "format": "prettier . --write",
+    "check-format": "prettier . --check",
     "test": "vitest run",
     "watch": "vitest"
   },
