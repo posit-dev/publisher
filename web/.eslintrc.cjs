@@ -17,7 +17,10 @@ module.exports = {
 
     // Includes vue3-essential and vue3-strongly-recommended
     // https://eslint.vuejs.org/user-guide/#bundle-configurations
-    'plugin:vue/vue3-recommended'
+    'plugin:vue/vue3-recommended',
+
+    // Avoid conflicts with the Prettier formatting
+    'prettier'
   ],
 
   overrides: [
