@@ -30,6 +30,7 @@ import { getSummaryStringFromError } from '../utils/errors';
 import { formatDateString } from '../utils/date';
 import { confirmForget } from '../dialogs';
 import { addDeployment } from '../multiStepInputs/addDeployment';
+import { createNewDeploymentFile } from '../multiStepInputs/createNewDeploymentFile';
 import { publishDeployment } from '../multiStepInputs/deployProject';
 import { EventStream } from '../events';
 
@@ -38,6 +39,7 @@ const refreshCommand = viewName + '.refresh';
 const editCommand = viewName + '.edit';
 const forgetCommand = viewName + '.forget';
 const addCommand = viewName + '.add';
+const createNewCommand = viewName + '.createNew';
 const deployCommand = viewName + '.deploy';
 const isEmptyContext = viewName + '.isEmpty';
 
@@ -109,6 +111,12 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     context.subscriptions.push(
       commands.registerCommand(addCommand, () => {
         addDeployment(this.stream);
+      })
+    );
+
+    context.subscriptions.push(
+      commands.registerCommand(createNewCommand, async () => {
+        return await createNewDeploymentFile();
       })
     );
 

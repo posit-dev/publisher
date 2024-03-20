@@ -93,7 +93,9 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
     context.subscriptions.push(
       treeView,
       commands.registerCommand(refreshCommand, this.refresh),
-      commands.registerCommand(addCommand, this.add),
+      commands.registerCommand(addCommand, async () => {
+        return await this.add();
+      }),
       commands.registerCommand(editCommand, this.edit),
       commands.registerCommand(renameCommand, this.rename),
       commands.registerCommand(cloneCommand, this.clone),
@@ -122,6 +124,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
   };
 
   private add = async () => {
+    let configName: string | undefined;
     try {
       const inspectResponse = await api.configurations.inspect();
       const config = await this.chooseConfig(inspectResponse.data);
@@ -130,15 +133,15 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
         return;
       }
       const defaultName = await untitledConfigurationName();
-      const name = await window.showInputBox({
+      configName = await window.showInputBox({
         value: defaultName,
         prompt: "Configuration name",
       });
-      if (name === undefined || name === '') {
+      if (configName === undefined || configName === '') {
         // canceled
         return;
       }
-      const createResponse = await api.configurations.createOrUpdate(name, config);
+      const createResponse = await api.configurations.createOrUpdate(configName, config);
       if (this.root !== undefined) {
         const fileUri = Uri.file(createResponse.data.configurationPath);
         await commands.executeCommand('vscode.open', fileUri);
@@ -147,6 +150,7 @@ export class ConfigurationsTreeDataProvider implements TreeDataProvider<Configur
       const summary = getSummaryStringFromError('configurations::add', error);
       window.showInformationMessage(summary);
     }
+    return configName;
   };
 
   private edit = async (config: ConfigurationTreeItem) => {

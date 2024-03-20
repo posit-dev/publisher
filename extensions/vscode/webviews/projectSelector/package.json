@@ -1,10 +1,10 @@
 {
-  "name": "hello-world",
+  "name": "project-selector-web-view-view",
   "version": "0.0.1",
   "private": true,
   "scripts": {
     "start": "vite",
-    "build": "vue-tsc --noEmit && vite build --outDir ../../out/webviews/projectSelector && npm run copy-codicons",
+    "build": "rm -rd ../../out/webviews/projectSelector && vue-tsc --noEmit && vite build --outDir ../../out/webviews/projectSelector && npm run copy-codicons",
     "preview": "vite preview --port 5050",
     "typecheck": "vue-tsc --noEmit",
     "copy-codicons": "cp node_modules/@vscode/codicons/dist/codicon.css node_modules/@vscode/codicons/dist/codicon.ttf ../../out/webviews/projectSelector"

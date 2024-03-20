@@ -125,6 +125,27 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
     }
   }
 
+  private _updateDeploymentFileSelection(name: string) {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "update_deployment_selection",
+        payload: JSON.stringify({
+          name,
+        }),
+      });
+    }
+  }
+
+  private _updateConfigFileSelection(name: string) {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "update_config_selection",
+        payload: JSON.stringify({
+          name,
+        }),
+      });
+    }
+  }
 
   public resolveWebviewView(
     webviewView: WebviewView,
@@ -232,6 +253,18 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
             await this._refreshData();
             this._refreshWebViewViewData();
             return;
+          case "newDeployment":
+            const newFile: string = await commands.executeCommand('posit.publisher.deployments.createNew');
+            if (newFile) {
+              this._updateDeploymentFileSelection(newFile);
+            }
+            break;
+          case "newConfiguration":
+            const newConfig: string = await commands.executeCommand('posit.publisher.configurations.add');
+            if (newConfig) {
+              this._updateConfigFileSelection(newConfig);
+            }
+            break;
         }
       },
       undefined,

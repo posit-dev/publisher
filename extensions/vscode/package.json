@@ -90,6 +90,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.deployments.createNew",
+        "title": "Create New Deployment File",
+        "icon": "$(add)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.deployments.deploy",
         "title": "Deploy",
         "icon": {

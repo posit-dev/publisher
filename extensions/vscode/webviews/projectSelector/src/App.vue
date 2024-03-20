@@ -2,19 +2,33 @@
   <main>
     <h1>Deploy Your Project</h1>
 
-    <label for="deployment-selector">Deployment:</label>
-    <vscode-dropdown id="deployment-selector" v-model="selectedDeployment" class="dropdowns">
-      <vscode-option v-for="deployment in deploymentList" :key="deployment">{{
-        deployment
-      }}</vscode-option>
-    </vscode-dropdown>
+    <div class="section">
+      <div class="label-and-icons">
+        <label for="deployment-selector">Deployment:</label>
+        <vscode-button appearance="icon" class="action-icons">
+          <span slot="start" class="codicon codicon-add" @click="onAddDeployment"></span>
+        </vscode-button>
+      </div>
+      <vscode-dropdown id="deployment-selector" v-model="selectedDeployment" class="dropdowns">
+        <vscode-option v-for="deployment in deploymentList" :key="deployment" :selected="deployment === selectedDeployment">
+          {{ deployment }}
+        </vscode-option>
+      </vscode-dropdown>
+    </div>
 
-    <label for="config-selector">Configuration:</label>
-    <vscode-dropdown id="config-selector" v-model="selectedConfig" class="dropdowns">
-      <vscode-option v-for="config in configList" :key="config">{{
-        config
-      }}</vscode-option>
-    </vscode-dropdown>
+    <div class="section">
+      <div class="label-and-icons">
+        <label for="config-selector">Configuration:</label>
+        <vscode-button appearance="icon" class="action-icons">
+          <span slot="start" class="codicon codicon-add" @click="onAddConfiguration"></span>
+        </vscode-button>
+      </div>    
+      <vscode-dropdown id="config-selector" v-model="selectedConfig" class="dropdowns">
+        <vscode-option v-for="config in configList" :key="config">{{
+          config
+        }}</vscode-option>
+      </vscode-dropdown>
+    </div>
 
     <label for="credentials-selector">Credentials:</label>
     <vscode-dropdown id="credentials-selector" v-model="selectedCredential" class="dropdowns">
@@ -79,39 +93,71 @@ const vsCodeApi = acquireVsCodeApi();
 
 const handleMessageFromProvider = (event: any) => {
   const command = event.data.command;
-  if (command === 'refresh_data') {
-    console.log(event.data.payload);
-    const payload = JSON.parse(event.data.payload);
+  switch (command) {
+    case 'refresh_data': {
+      const payload = JSON.parse(event.data.payload);
 
-    deploymentList.value = payload.deployments;
-    if (!selectedDeployment.value) {
-      selectedDeployment.value = deploymentList.value[0];
-    }
-    if (deploymentList.value.length === 0) {
-      selectedDeployment.value = '';
-    }
+      deploymentList.value = payload.deployments;
+      if (!selectedDeployment.value) {
+        selectedDeployment.value = deploymentList.value[0];
+      }
+      if (deploymentList.value.length === 0) {
+        selectedDeployment.value = '';
+      }
 
-    configList.value = payload.configurations;
-    if (!selectedConfig.value) {
-      selectedConfig.value = configList.value[0];
-    }
-    if (configList.value.length === 0) {
-      selectedConfig.value = '';
-    }
+      configList.value = payload.configurations;
+      if (!selectedConfig.value) {
+        selectedConfig.value = configList.value[0];
+      }
+      if (configList.value.length === 0) {
+        selectedConfig.value = '';
+      }
 
-    credentialList.value = payload.credentials
-    if (!selectedCredential.value) {
-      selectedCredential.value = credentialList.value[0];
+      credentialList.value = payload.credentials
+      if (!selectedCredential.value) {
+        selectedCredential.value = credentialList.value[0];
+      }
+      if (credentialList.value.length === 0) {
+        selectedCredential.value = '';
+      }
+      break;
     }
-    if (credentialList.value.length === 0) {
-      selectedCredential.value = '';
+    case 'publish_start': {
+      publishingInProgress.value = true;
+      break;
     }
-  } else if (command === 'publish_start') {
-    publishingInProgress.value = true;
-  } else if (command === 'publish_finish') {
-    publishingInProgress.value = false;
-  } else {
-    console.log(`unexpected command: ${command}`);
+    case 'publish_finish': {
+      publishingInProgress.value = false;
+      break;
+    }
+    case 'update_deployment_selection': {
+      const payload = JSON.parse(event.data.payload);
+      // Not sure why we can't set this value immediately, even ahead
+      // of the refresh which is coming, but what I've found is that you
+      // have to wait long enough for the list to render before setting it,
+      // otherwise the selector will select the first value in the list.
+      // (I've even tried holding off on setting the value until the next refresh
+      // comes in, which has the new value included).
+      setTimeout(() => {
+        selectedDeployment.value = payload.name;
+      }, 1000);
+      break;
+    }
+    case 'update_config_selection': {
+      const payload = JSON.parse(event.data.payload);
+      // Not sure why we can't set this value immediately, even ahead
+      // of the refresh which is coming, but what I've found is that you
+      // have to wait long enough for the list to render before setting it,
+      // otherwise the selector will select the first value in the list.
+      // (I've even tried holding off on setting the value until the next refresh
+      // comes in, which has the new value included).
+      setTimeout(() => {
+        selectedConfig.value = payload.name;
+      }, 1000);
+      break;
+    }
+    default:
+      console.log(`unexpected command: ${command}`);
   }
 };
 
@@ -125,6 +171,18 @@ const handleDeployClick = () => {
     }),
   });
 };
+
+const onAddDeployment = () => {
+  vsCodeApi.postMessage({
+    command: "newDeployment",
+  });
+}
+
+const onAddConfiguration = () => {
+  vsCodeApi.postMessage({
+    command: "newConfiguration",
+  });
+}
 
 const disableDeployment = computed(() => {
   console.log(`selectedDeployment: ${selectedDeployment.value}: ${!Boolean(selectedDeployment.value)}`);
@@ -156,7 +214,7 @@ onBeforeUnmount(() => {
 
 </script>
 
-<style>
+<style lang="scss">
 main {
   display: flex;
   flex-direction: column;
@@ -171,5 +229,20 @@ main {
 .dropdowns {
   width: 100%;
   margin: 0.5rem 0 1rem 0;
+}
+.label-and-icons {
+  display: flex;
+  justify-content: space-between;
+  align-content: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  min-width: 100%;
+  align-items: center;
+}
+.action-icons {
+  width: 20px;
+}
+.section {
+  min-width: 100%;
 }
 </style>
