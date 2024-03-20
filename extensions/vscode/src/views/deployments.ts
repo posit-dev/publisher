@@ -2,42 +2,44 @@
 
 import {
   Event,
-  TreeDataProvider,
-  TreeItem,
-  ExtensionContext,
-  window,
-  WorkspaceFolder,
   EventEmitter,
-  workspace,
+  ExtensionContext,
   RelativePattern,
   ThemeIcon,
-  commands,
+  TreeDataProvider,
+  TreeItem,
   Uri,
+  WorkspaceFolder,
+  commands,
+  env,
+  window,
+  workspace,
 } from 'vscode';
 
 import {
-  useApi,
+  AllDeploymentTypes,
   Deployment,
   DeploymentError,
-  isDeployment,
   PreDeployment,
-  isPreDeployment,
-  AllDeploymentTypes,
+  isDeployment,
   isDeploymentError,
+  isPreDeployment,
+  useApi,
 } from '../api';
 
-import { getSummaryStringFromError } from '../utils/errors';
-import { formatDateString } from '../utils/date';
 import { confirmForget } from '../dialogs';
+import { EventStream } from '../events';
 import { addDeployment } from '../multiStepInputs/addDeployment';
 import { createNewDeploymentFile } from '../multiStepInputs/createNewDeploymentFile';
 import { publishDeployment } from '../multiStepInputs/deployProject';
-import { EventStream } from '../events';
+import { formatDateString } from '../utils/date';
+import { getSummaryStringFromError } from '../utils/errors';
 
 const viewName = 'posit.publisher.deployments';
 const refreshCommand = viewName + '.refresh';
 const editCommand = viewName + '.edit';
 const forgetCommand = viewName + '.forget';
+const visitCommand = viewName + '.visit';
 const addCommand = viewName + '.add';
 const createNewCommand = viewName + '.createNew';
 const deployCommand = viewName + '.deploy';
@@ -144,8 +146,16 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
         if (ok) {
           await this.api.deployments.delete(item.deployment.deploymentName);
         }
+      }),
+      commands.registerCommand(visitCommand, async (item: DeploymentsTreeItem) => {
+        // This command is only registered for Deployments
+        if (isDeployment(item.deployment)) {
+          const uri = Uri.parse(item.deployment.dashboardUrl, true);
+          await env.openExternal(uri);
+        }
       })
     );
+
 
     if (this.root !== undefined) {
       const watcher = workspace.createFileSystemWatcher(

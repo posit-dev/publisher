@@ -9,6 +9,9 @@ import {
   TreeDataProvider,
   TreeItem,
   TreeItemCollapsibleState,
+  Uri,
+  commands,
+  env,
   window
 } from "vscode";
 
@@ -53,6 +56,7 @@ const createLogStage = (
 };
 
 const viewName = 'posit.publisher.logs';
+const visitCommand = viewName + ".visit";
 
 /**
  * Tree data provider for the Logs view.
@@ -114,11 +118,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.publishingStage.events.push(msg);
       this.refresh();
     });
-    
+
     stream.register('publish/failure', (msg: EventStreamMessage) => {
       this.publishingStage.status = LogStageStatus.failed;
       this.publishingStage.events.push(msg);
-    
+
       this.stages.forEach((stage) => {
         if (stage.status === LogStageStatus.notStarted) {
           stage.status = LogStageStatus.neverStarted;
@@ -220,6 +224,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     context.subscriptions.push(
       window.createTreeView(viewName, {
         treeDataProvider: this
+      }),
+      commands.registerCommand(visitCommand, async (dashboardUrl: string) => {
+        // This command is only attached to messages with a dashboardUrl field.
+        const uri = Uri.parse(dashboardUrl, true);
+        await env.openExternal(uri);
       })
     );
   }
@@ -275,5 +284,13 @@ export class LogsTreeLogItem extends TreeItem {
   ) {
     super(displayEventStreamMessage(msg), state);
     this.tooltip = JSON.stringify(msg);
+
+    if (msg.data.dashboardUrl !== undefined) {
+      this.command = {
+        title: 'Visit',
+        command: visitCommand,
+        arguments: [msg.data.dashboardUrl]
+      };
+    }
   }
 }

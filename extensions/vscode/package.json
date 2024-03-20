@@ -78,6 +78,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.deployments.visit",
+        "title": "View this deployment in Connect",
+        "icon": "$(link-external)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.deployments.refresh",
         "title": "Refresh Deployments",
         "icon": "$(refresh)",
@@ -154,6 +160,12 @@
       {
         "command": "posit.publisher.helpAndFeedback.openFeedback",
         "title": "Provide Feedback",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.logs.visit",
+        "title": "View this deployment in Connect",
+        "icon": "$(link-external)",
         "category": "Posit Publisher"
       }
     ],
@@ -247,6 +259,11 @@
           "when": "view == posit.publisher.deployments"
         },
         {
+          "command": "posit.publisher.deployments.visit",
+          "when": "viewItem == posit.publisher.deployments.tree.item.deployment",
+          "group": "inline"
+        },
+          {
           "command": "posit.publisher.files.addExclusion",
           "when": "viewItem == posit.publisher.files.isIncludedFile",
           "group": "inline"
