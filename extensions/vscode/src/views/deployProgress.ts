@@ -26,21 +26,15 @@ export function deployProject(localID: string, stream: EventStream) {
     registrations.push(
       stream.register('publish/start', (msg: EventStreamMessage) => {
         if (localID === msg.data.localId) {
-          progress.report({ increment: 0 });
           progress.report({ message: "Starting to Deploy..." });
         }
       })
     );
 
-    let progressCount = 0;
     const handleProgressMessages = (msg: EventStreamMessage) => {
       if (localID === msg.data.localId) {
         const progressStr = eventTypeToString(msg.type);
-        if (progressCount < 90) {
-          progressCount += 1;
-        }
         progress.report({
-          increment: progressCount,
           message: progressStr,
         });
         console.log(progressStr);
@@ -272,7 +266,9 @@ export function deployProject(localID: string, stream: EventStream) {
       stream.register('publish/success', async (msg: EventStreamMessage) => {
         if (localID === msg.data.localId) {
           unregiserAll();
-          progress.report({ increment: 100, message: "Deployment was successful" });
+          progress.report({
+            message: "Deployment was successful",
+          });
           resolveCB('Success!');
 
           let visitOption = "Visit";
@@ -289,7 +285,9 @@ export function deployProject(localID: string, stream: EventStream) {
       stream.register('publish/failure', (msg: EventStreamMessage) => {
         if (localID === msg.data.localId) {
           unregiserAll();
-          progress.report({ increment: 100, message: "Deployment process encountered an error " });
+          progress.report({
+            message: "Deployment process encountered an error",
+          });
           rejectCB('Error Encountered!');
         }
       })
