@@ -36,8 +36,11 @@ export function deployProject(localID: string, stream: EventStream) {
     const handleProgressMessages = (msg: EventStreamMessage) => {
       if (localID === msg.data.localId) {
         const progressStr = eventTypeToString(msg.type);
+        if (progressCount < 90) {
+          progressCount += 1;
+        }
         progress.report({
-          increment: progressCount++,
+          increment: progressCount,
           message: progressStr,
         });
         console.log(progressStr);
