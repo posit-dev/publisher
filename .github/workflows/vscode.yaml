@@ -30,6 +30,7 @@ jobs:
           key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
       - run: just vscode configure
       - run: just vscode lint
+      - run: just vscode check-format
       - run: just vscode test
       - uses: actions/cache/save@v3
         if: steps.cache.outputs.cache-hit != 'true'
@@ -53,6 +54,7 @@ jobs:
           key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
       - run: just vscode configure
       - run: just vscode lint
+      - run: just vscode check-format
       - run: just vscode test
       - uses: actions/cache/save@v3
         if: steps.cache.outputs.cache-hit != 'true'
