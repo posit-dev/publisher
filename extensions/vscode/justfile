@@ -98,17 +98,9 @@ install os="$(just ../../os)" arch="$(just ../../arch)" editor="code":
 
 # Performs static code analysis with ESLint
 lint:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
     npm run lint
 
 format:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
     npm run format
 
 check-format:
