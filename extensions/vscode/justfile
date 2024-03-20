@@ -104,10 +104,6 @@ format:
     npm run format
 
 check-format:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
     npm run check-format
 
 # Packages the extension.
