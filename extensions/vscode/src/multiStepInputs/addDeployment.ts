@@ -13,7 +13,7 @@ import {
   window,
 } from "vscode";
 
-import { AccountAuthType, useApi } from "../api";
+import { AccountAuthType, useApi, isConfigurationError } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import { uniqueDeploymentName, untitledDeploymentName } from "../utils/names";
 import { deployProject } from "../views/deployProgress";
@@ -53,15 +53,34 @@ export async function addDeployment(stream: EventStream) {
     );
     return;
   }
+  if (accountListItems.length === 0) {
+    window.showInformationMessage(
+      `Unable to continue with no credentials.\n` +
+        `Establish account credentials using rsconnect (R package) or\n` +
+        `rsconnect-python (Python package) and then retry operation.`,
+    );
+    return;
+  }
 
   try {
     const response = await api.configurations.getAll();
     const configurations = response.data;
-    configFileListItems = configurations.map((configuration) => ({
-      iconPath: new ThemeIcon("file-code"),
-      label: configuration.configurationName,
-      detail: configuration.configurationPath,
-    }));
+    configFileListItems = [];
+
+    configurations.forEach((configuration) => {
+      if (!isConfigurationError(configuration)) {
+        configFileListItems.push({
+          iconPath: new ThemeIcon("file-code"),
+          label: configuration.configurationName,
+          detail: configuration.configurationPath,
+        });
+      }
+    });
+    configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
+      var x = a.label.toLowerCase();
+      var y = b.label.toLowerCase();
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
       "addDeployment, configurations.getAll",
@@ -72,10 +91,20 @@ export async function addDeployment(stream: EventStream) {
     );
     return;
   }
+  if (configFileListItems.length === 0) {
+    window.showInformationMessage(
+      `Unable to continue with no configuration files.\n` +
+        `Expand the configuration section and follow the instructions there\n` +
+        `to create a configuration file. After updating any applicable values\n` +
+        `retry the operation.`,
+    );
+    return;
+  }
 
   try {
     const response = await api.deployments.getAll();
     const deploymentList = response.data;
+    // Note.. we want all of the deployment filenames regardless if they are valid or not.
     deploymentNames = deploymentList.map(
       (deployment) => deployment.deploymentName,
     );

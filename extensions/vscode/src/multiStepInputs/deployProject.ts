@@ -8,7 +8,13 @@ import {
 
 import { QuickPickItem, ThemeIcon, window } from "vscode";
 
-import { AccountAuthType, PreDeployment, Deployment, useApi } from "../api";
+import {
+  AccountAuthType,
+  PreDeployment,
+  Deployment,
+  useApi,
+  isConfigurationError,
+} from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import { deployProject } from "../views/deployProgress";
 import { EventStream } from "../events";
@@ -53,7 +59,11 @@ export async function publishDeployment(
   }
   if (accountListItems.length === 0) {
     window.showInformationMessage(
-      `Unable to continue with no maching credentials for deployment URL: ${deployment.serverUrl}`,
+      `Unable to continue with no matching credentials for\n` +
+        `deployment URL: ${deployment.serverUrl}\n` +
+        `\n` +
+        `Establish account credentials using rsconnect (R package) or\n` +
+        `rsconnect-python (Python package) and then retry operation.`,
     );
     return;
   }
@@ -61,18 +71,38 @@ export async function publishDeployment(
   try {
     const response = await api.configurations.getAll();
     const configurations = response.data;
-    configFileListItems = configurations.map((configuration) => ({
-      iconPath: new ThemeIcon("file-code"),
-      label: configuration.configurationName,
-      detail: configuration.configurationPath,
-    }));
+    configFileListItems = [];
+
+    configurations.forEach((configuration) => {
+      if (!isConfigurationError(configuration)) {
+        configFileListItems.push({
+          iconPath: new ThemeIcon("file-code"),
+          label: configuration.configurationName,
+          detail: configuration.configurationPath,
+        });
+      }
+    });
+    configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
+      var x = a.label.toLowerCase();
+      var y = b.label.toLowerCase();
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "publishDeployment, configurations.getAll",
+      "addDeployment, configurations.getAll",
       error,
     );
     window.showInformationMessage(
       `Unable to continue with no configurations. ${summary}`,
+    );
+    return;
+  }
+  if (configFileListItems.length === 0) {
+    window.showInformationMessage(
+      `Unable to continue with no configuration files.\n` +
+        `Expand the configuration section and follow the instructions there\n` +
+        `to create a configuration file. After updating any applicable values\n` +
+        `retry the operation.`,
     );
     return;
   }

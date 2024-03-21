@@ -211,36 +211,53 @@ export class DeploymentsTreeItem extends TreeItem {
 
   private initializeDeployment(deployment: Deployment) {
     this.contextValue = "posit.publisher.deployments.tree.item.deployment";
-    this.tooltip =
-      `${deployment.deploymentName}\n` +
-      `Last Deployed on ${formatDateString(deployment.deployedAt)}\n` +
-      `Targeting ${deployment.serverType} at ${deployment.serverUrl}\n` +
-      `GUID = ${deployment.id}`;
-
-    if (deployment.deploymentError) {
-      this.iconPath = new ThemeIcon("warning");
-    } else {
+    if (!deployment.deploymentError) {
+      this.tooltip =
+        `Deployment file: ${deployment.deploymentPath}\n` +
+        `\n` +
+        `Last Deployed on ${formatDateString(deployment.deployedAt)}\n` +
+        `Targeting ${deployment.serverType} at ${deployment.serverUrl}\n` +
+        `GUID = ${deployment.id}`;
       this.iconPath = new ThemeIcon("cloud-upload");
+    } else {
+      this.tooltip =
+        `Deployment file: ${deployment.deploymentPath}\n` +
+        `\n` +
+        `Last deployment failed on ${formatDateString(deployment.deployedAt)}\n` +
+        `Targeting ${deployment.serverType} at ${deployment.serverUrl}`;
+      // deployment id may not yet be assigned...
+      if (deployment.id) {
+        this.tooltip += `\n` + `GUID = ${deployment.id}`;
+      }
+      this.tooltip += "\n" + `\n` + `Error: ${deployment.deploymentError.msg}`;
+      this.iconPath = new ThemeIcon("run-errors");
     }
   }
 
   private initializePreDeployment(predeployment: PreDeployment) {
     this.contextValue = "posit.publisher.deployments.tree.item.predeployment";
     this.tooltip =
-      `${predeployment.deploymentName}\n` +
+      `Deployment file: ${predeployment.deploymentPath}\n` +
+      `\n` +
       `Created on ${formatDateString(predeployment.createdAt)}\n` +
       `Targeting ${predeployment.serverType} at ${predeployment.serverUrl}\n` +
-      `WARNING! Not Yet Deployed`;
+      `\n` +
+      `Warning! Not yet deployed to the server`;
     this.iconPath = new ThemeIcon("ellipsis");
   }
 
   private initializeDeploymentError(deploymentError: DeploymentError) {
     this.contextValue = "posit.publisher.deployments.tree.item.deploymentError";
     this.tooltip =
-      `${deploymentError.deploymentName}\n` +
+      `Deployment file: ${deploymentError.deploymentPath}\n` +
+      `\n` +
       `ERROR! File is invalid\n` +
       `Code: ${deploymentError.error.code}\n` +
-      `Msg: ${deploymentError.error.msg}`;
+      `Msg: ${deploymentError.error.msg}\n` +
+      `\n` +
+      `Warning: This deployment cannot be deployed\n` +
+      `until the issue is resolved.`;
+
     this.iconPath = new ThemeIcon("warning");
   }
 }
