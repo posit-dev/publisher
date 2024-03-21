@@ -3,21 +3,11 @@
 <template>
   <div class="space-between-y-sm">
     <div class="flex items-center">
-      <q-icon
-        name="error"
-        size="1rem"
-      />
-      <div class="q-ml-sm text-left text-bold">
-        Invalid Deployment File
-      </div>
+      <q-icon name="error" size="1rem" />
+      <div class="q-ml-sm text-left text-bold">Invalid Deployment File</div>
     </div>
-    <p class="text-bold">
-      Errors found:
-    </p>
-    <ul
-      v-if="deployment.error?.code"
-      class="text-caption"
-    >
+    <p class="text-bold">Errors found:</p>
+    <ul v-if="deployment.error?.code" class="text-caption">
       <li>
         {{ deployment.error?.code }}
         {{ deployment.error?.operation }}
@@ -27,10 +17,7 @@
       </li>
       <li>
         <ul>
-          <li
-            v-for="(value, name, index) in scrubbedErrorData"
-            :key="index"
-          >
+          <li v-for="(value, name, index) in scrubbedErrorData" :key="index">
             {{ name }}: {{ value }}
           </li>
         </ul>
@@ -40,9 +27,9 @@
 </template>
 
 <script setup lang="ts">
-import { DeploymentError } from 'src/api';
-import { PropType, computed } from 'vue';
-import { scrubErrorData } from 'src/utils/errors';
+import { DeploymentError } from "src/api";
+import { PropType, computed } from "vue";
+import { scrubErrorData } from "src/utils/errors";
 
 const props = defineProps({
   deployment: {
@@ -54,5 +41,4 @@ const props = defineProps({
 const scrubbedErrorData = computed(() => {
   return scrubErrorData(props.deployment.error?.data);
 });
-
 </script>

@@ -10,18 +10,15 @@
   >
     <slot />
   </span>
-  <RouterLink
-    v-else
-    v-bind="props"
-  >
+  <RouterLink v-else v-bind="props">
     <slot />
   </RouterLink>
 </template>
 
 <script setup lang="ts">
-import { RouterLink, RouterLinkProps, useRouter } from 'vue-router';
+import { RouterLink, RouterLinkProps, useRouter } from "vue-router";
 
-import { vscode } from 'src/vscode';
+import { vscode } from "src/vscode";
 
 const router = useRouter();
 

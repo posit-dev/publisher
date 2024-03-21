@@ -4,7 +4,9 @@
   <DeploymentHeader
     v-if="deployment && !isDeploymentError(deployment) && defaultConfig"
     :deployment="deployment"
-    :config-error="isConfigurationError(defaultConfig) ? defaultConfig : undefined"
+    :config-error="
+      isConfigurationError(defaultConfig) ? defaultConfig : undefined
+    "
     :preferred-account="props.preferredAccount"
   />
   <DeploymentSection
@@ -19,34 +21,30 @@
     />
   </DeploymentSection>
 
-  <DeploymentSection
-    v-if="deployment"
-    title="Files"
-    :subtitles="fileSubTitles"
-  >
+  <DeploymentSection v-if="deployment" title="Files" :subtitles="fileSubTitles">
     <FileTree />
   </DeploymentSection>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useDeploymentStore } from 'src/stores/deployments';
+import { ref, computed } from "vue";
+import { useDeploymentStore } from "src/stores/deployments";
 
 import {
   Configuration,
   ConfigurationError,
   isConfigurationError,
   useApi,
-  isDeployment
-} from 'src/api';
-import { isDeploymentError } from 'src/api/types/deployments';
+  isDeployment,
+} from "src/api";
+import { isDeploymentError } from "src/api/types/deployments";
 
-import ConfigSettings from 'src/components/config/ConfigSettings.vue';
-import FileTree from 'src/components/FileTree.vue';
-import DeploymentHeader from './DeploymentHeader.vue';
-import DeploymentSection from 'src/components/DeploymentSection.vue';
-import { provide } from 'vue';
-import { deploymentKey } from 'src/utils/provide';
+import ConfigSettings from "src/components/config/ConfigSettings.vue";
+import FileTree from "src/components/FileTree.vue";
+import DeploymentHeader from "./DeploymentHeader.vue";
+import DeploymentSection from "src/components/DeploymentSection.vue";
+import { provide } from "vue";
+import { deploymentKey } from "src/utils/provide";
 
 const api = useApi();
 const deployments = useDeploymentStore();
@@ -82,7 +80,7 @@ const fileSubTitles = computed(() => {
 });
 
 const defaultConfig = computed(() => {
-  return configurations.value.find((c) => c.configurationName === 'default');
+  return configurations.value.find((c) => c.configurationName === "default");
 });
 
 async function getConfigurations() {

@@ -1,8 +1,12 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { AxiosInstance } from 'axios';
+import { AxiosInstance } from "axios";
 
-import { Deployment, DeploymentError, PreDeployment } from 'src/api/types/deployments';
+import {
+  Deployment,
+  DeploymentError,
+  PreDeployment,
+} from "src/api/types/deployments";
 
 export class Deployments {
   private client: AxiosInstance;
@@ -16,7 +20,7 @@ export class Deployments {
   // 500 - internal server error
   getAll() {
     return this.client.get<Array<Deployment | PreDeployment | DeploymentError>>(
-      '/deployments',
+      "/deployments",
     );
   }
 
@@ -37,15 +41,12 @@ export class Deployments {
   // 409 - conflict
   // 500 - internal server error
   // Errors returned through event stream
-  createNew(accountName? : string, saveName?: string) {
+  createNew(accountName?: string, saveName?: string) {
     const params = {
       account: accountName,
       saveName,
     };
-    return this.client.post<PreDeployment>(
-      '/deployments',
-      params,
-    );
+    return this.client.post<PreDeployment>("/deployments", params);
   }
 
   // Returns:
@@ -53,10 +54,10 @@ export class Deployments {
   // 400 - bad request
   // 500 - internal server error
   // Errors returned through event stream
-  publish(targetName: string, accountName? : string) {
+  publish(targetName: string, accountName?: string) {
     const params = {
       account: accountName,
-      config: 'default', // hardcoded for now
+      config: "default", // hardcoded for now
     };
     const encodedTarget = encodeURIComponent(targetName);
     return this.client.post<{ localId: string }>(
@@ -71,8 +72,6 @@ export class Deployments {
   // 500 - internal server error
   delete(saveName: string) {
     const encodedSaveName = encodeURIComponent(saveName);
-    return this.client.delete(
-      `deployments/${encodedSaveName}`
-    );
+    return this.client.delete(`deployments/${encodedSaveName}`);
   }
 }

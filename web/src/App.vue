@@ -2,9 +2,7 @@
 
 <template>
   <div id="app">
-    <q-layout
-      view="hHh lpR fFf"
-    >
+    <q-layout view="hHh lpR fFf">
       <AppHeader />
 
       <q-page-container>
@@ -17,10 +15,10 @@
 </template>
 
 <script setup lang="ts">
-import AppHeader from 'src/components/AppHeader.vue';
-import { onBeforeUnmount } from 'vue';
-import { useEventStore } from 'src/stores/events';
-import { useDeploymentStore } from 'src/stores/deployments';
+import AppHeader from "src/components/AppHeader.vue";
+import { onBeforeUnmount } from "vue";
+import { useEventStore } from "src/stores/events";
+import { useDeploymentStore } from "src/stores/deployments";
 
 const eventStore = useEventStore();
 
@@ -31,7 +29,6 @@ onBeforeUnmount(() => {
 
 // Let's start population of the deployments as quickly as possible
 useDeploymentStore();
-
 </script>
 
 <style lang="scss">

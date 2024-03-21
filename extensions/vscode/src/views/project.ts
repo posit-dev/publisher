@@ -6,35 +6,37 @@ import {
   ProviderResult,
   ExtensionContext,
   window,
-} from 'vscode';
+} from "vscode";
 
-const viewName = 'posit.publisher.project';
+const viewName = "posit.publisher.project";
 
-export class ProjectTreeDataProvider implements TreeDataProvider<ProjectTreeItem> {
-
-  constructor() { }
+export class ProjectTreeDataProvider
+  implements TreeDataProvider<ProjectTreeItem>
+{
+  constructor() {}
 
   getTreeItem(element: ProjectTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(_: ProjectTreeItem | undefined): ProviderResult<ProjectTreeItem[]> {
+  getChildren(
+    _: ProjectTreeItem | undefined,
+  ): ProviderResult<ProjectTreeItem[]> {
     return [];
   }
 
   public register(context: ExtensionContext) {
     context.subscriptions.push(
-      window.createTreeView(viewName, { treeDataProvider: this })
+      window.createTreeView(viewName, { treeDataProvider: this }),
     );
   }
 }
 
 export class ProjectTreeItem extends TreeItem {
-
   constructor(itemString: string) {
     super(itemString);
   }
 
-  contextValue = 'posit.publisher.project.tree.item';
-  tooltip = 'This is a \nProject Tree Item';
+  contextValue = "posit.publisher.project.tree.item";
+  tooltip = "This is a \nProject Tree Item";
 }

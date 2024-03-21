@@ -1,7 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { DeploymentFile, ExclusionMatch } from '../api/types/files';
-import { useApi } from '../api';
+import { DeploymentFile, ExclusionMatch } from "../api/types/files";
+import { useApi } from "../api";
 import {
   TreeDataProvider,
   TreeItem,
@@ -15,26 +15,23 @@ import {
   commands,
   ThemeIcon,
   RelativePattern,
-} from 'vscode';
-import { getSummaryStringFromError } from '../utils/errors';
-import * as path from 'path';
-import {
-  updateNewOrExistingFile,
-  pathSorter,
-} from '../utils/files';
+} from "vscode";
+import { getSummaryStringFromError } from "../utils/errors";
+import * as path from "path";
+import { updateNewOrExistingFile, pathSorter } from "../utils/files";
 
-import * as os from 'os';
+import * as os from "os";
 
-const viewName = 'posit.publisher.files';
-const refreshCommand = viewName + '.refresh';
-const editPositIgnoreCommand = viewName + '.editPositIgnore';
-const addExclusionCommand = viewName + '.addExclusion';
+const viewName = "posit.publisher.files";
+const refreshCommand = viewName + ".refresh";
+const editPositIgnoreCommand = viewName + ".editPositIgnore";
+const addExclusionCommand = viewName + ".addExclusion";
 
-const isIncludedTitle = viewName + '.isIncludedTitle';
-const isExcludedTitle = viewName + '.isExcludedTitle';
-const isIncludedFile = viewName + '.isIncludedFile';
-const isExcludedFile = viewName + '.isExcludedFile';
-const isEmptyContext = viewName + '.isEmpty';
+const isIncludedTitle = viewName + ".isIncludedTitle";
+const isExcludedTitle = viewName + ".isExcludedTitle";
+const isIncludedFile = viewName + ".isIncludedFile";
+const isExcludedFile = viewName + ".isExcludedFile";
+const isEmptyContext = viewName + ".isEmpty";
 
 const positIgnoreFileTemplate =
   `#\n` +
@@ -65,7 +62,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
 
   constructor() {
     const workspaceFolders = workspace.workspaceFolders;
-    this.root = Uri.parse('positPublisherFiles://unknown');
+    this.root = Uri.parse("positPublisherFiles://unknown");
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0].uri;
     }
@@ -81,30 +78,26 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
 
   async getChildren(element: TreeEntries | undefined): Promise<TreeEntries[]> {
     if (element === undefined) {
-      // first call. 
+      // first call.
       try {
         const response = await this.api.files.get();
         const file = response.data;
 
-        commands.executeCommand('setContext', isEmptyContext, Boolean(file));
+        commands.executeCommand("setContext", isEmptyContext, Boolean(file));
 
         resetFileTrees();
         // skipping the top level
-        file.files.forEach(f => buildFileTrees(f, this.root));
+        file.files.forEach((f) => buildFileTrees(f, this.root));
         sortFileTrees();
 
         // we have a fixed top hiearchy
         return [
-          new IncludedFilesSection(
-            `Included Files`,
-          ),
-          new ExcludedFilesSection(
-            `Excluded Files`,
-          ),
+          new IncludedFilesSection(`Included Files`),
+          new ExcludedFilesSection(`Excluded Files`),
         ];
       } catch (error: unknown) {
-        const summary = getSummaryStringFromError('files::getChildren', error);
-        commands.executeCommand('setContext', isEmptyContext, true);
+        const summary = getSummaryStringFromError("files::getChildren", error);
+        commands.executeCommand("setContext", isEmptyContext, true);
         window.showInformationMessage(summary);
         return [];
       }
@@ -119,44 +112,44 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   }
 
   public register(context: ExtensionContext) {
-    const treeView = window.createTreeView(
-      viewName,
-      {
-        treeDataProvider: this,
-      },
-    );
+    const treeView = window.createTreeView(viewName, {
+      treeDataProvider: this,
+    });
     context.subscriptions.push(treeView);
     context.subscriptions.push(
-      commands.registerCommand(refreshCommand, this.refresh)
+      commands.registerCommand(refreshCommand, this.refresh),
     );
     context.subscriptions.push(
       commands.registerCommand(editPositIgnoreCommand, async () => {
         if (this.root !== undefined) {
           updateNewOrExistingFile(
-            path.join(this.root.fsPath, '.positignore'),
+            path.join(this.root.fsPath, ".positignore"),
             positIgnoreFileTemplate,
             undefined, // No suffix
             true, // open file preview after update
           );
         }
-      })
+      }),
     );
     context.subscriptions.push(
-      commands.registerCommand(addExclusionCommand, async (item: FileTreeItem) => {
-        if (this.root !== undefined) {
-          updateNewOrExistingFile(
-            path.join(this.root.fsPath, '.positignore'),
-            positIgnoreFileTemplate,
-            `${item.id}\n`,
-            true, // open file preview after update
-          );
-        }
-      })
+      commands.registerCommand(
+        addExclusionCommand,
+        async (item: FileTreeItem) => {
+          if (this.root !== undefined) {
+            updateNewOrExistingFile(
+              path.join(this.root.fsPath, ".positignore"),
+              positIgnoreFileTemplate,
+              `${item.id}\n`,
+              true, // open file preview after update
+            );
+          }
+        },
+      ),
     );
 
     if (this.root !== undefined) {
       const watcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, '**')
+        new RelativePattern(this.root, "**"),
       );
       watcher.onDidCreate(this.refresh);
       watcher.onDidDelete(this.refresh);
@@ -167,12 +160,12 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
 }
 
 function sortFilesTreeItemByPath(a: FileTreeItem, b: FileTreeItem) {
-  const sep: string = (os.platform() === 'win32') ? '\\' : '/';
+  const sep: string = os.platform() === "win32" ? "\\" : "/";
   if (a.fileUri.fsPath && b.fileUri.fsPath) {
     return pathSorter(a.fileUri.fsPath.split(sep), b.fileUri.fsPath.split(sep));
   }
   return 0;
-};
+}
 
 const sortFileTrees = () => {
   includedFiles.sort(sortFilesTreeItemByPath);
@@ -194,71 +187,55 @@ const buildFileTrees = (
 ) => {
   if (file.isFile) {
     if (file.exclusion || exclusionOverride) {
-      const f = new ExcludedFile(
-        root,
-        {
-          ...file,
-          exclusion: file.exclusion || exclusionOverride || null,
-        }
-      );
+      const f = new ExcludedFile(root, {
+        ...file,
+        exclusion: file.exclusion || exclusionOverride || null,
+      });
       excludedFiles.push(f);
     } else {
-      const f = new IncludedFile(
-        root,
-        file,
-      );
+      const f = new IncludedFile(root, file);
       includedFiles.push(f);
     }
   } else {
     // We're not showing our .posit subdirectory, but it will be included
-    // in the deployment bundle unless they explicitly exclude it in the 
+    // in the deployment bundle unless they explicitly exclude it in the
     // .positignore.
-    if (file.id === '.posit') {
+    if (file.id === ".posit") {
       return;
     }
   }
 
-  file.files.forEach(d => {
+  file.files.forEach((d) => {
     buildFileTrees(d, root, file.exclusion || exclusionOverride);
   });
 };
 
 export type TreeEntries =
-  IncludedFilesSection |
-  ExcludedFilesSection |
-  FileEntries
-  ;
-export type FileEntries =
-  IncludedFile |
-  ExcludedFile
-  ;
+  | IncludedFilesSection
+  | ExcludedFilesSection
+  | FileEntries;
+export type FileEntries = IncludedFile | ExcludedFile;
 
 export class IncludedFilesSection extends TreeItem {
-  constructor(
-    label: string,
-  ) {
+  constructor(label: string) {
     super(label);
 
     this.contextValue = isIncludedTitle;
     this.resourceUri = Uri.parse(`positPublisherFiles://includedTitle`);
     this.collapsibleState = TreeItemCollapsibleState.Expanded;
-    this.tooltip =
-      `Files listed within this tree node will be uploaded during the next deployment.`;
-    this.iconPath = new ThemeIcon('list-unordered');
+    this.tooltip = `Files listed within this tree node will be uploaded during the next deployment.`;
+    this.iconPath = new ThemeIcon("list-unordered");
   }
 }
 export class ExcludedFilesSection extends TreeItem {
-  constructor(
-    label: string,
-  ) {
+  constructor(label: string) {
     super(label);
 
     this.contextValue = isExcludedTitle;
     this.resourceUri = Uri.parse(`positPublisherFiles://excludedTitle`);
     this.collapsibleState = TreeItemCollapsibleState.Expanded;
-    this.tooltip =
-      `Files listed within this tree node will not be uploaded during the next deployment.`;
-    this.iconPath = new ThemeIcon('list-unordered');
+    this.tooltip = `Files listed within this tree node will not be uploaded during the next deployment.`;
+    this.iconPath = new ThemeIcon("list-unordered");
   }
 }
 
@@ -266,10 +243,7 @@ export class FileTreeItem extends TreeItem {
   public fileUri: Uri;
   public exclusion: ExclusionMatch | null;
 
-  constructor(
-    root: Uri,
-    deploymentFile: DeploymentFile,
-  ) {
+  constructor(root: Uri, deploymentFile: DeploymentFile) {
     super(deploymentFile.base);
 
     this.id = deploymentFile.id;
@@ -278,57 +252,40 @@ export class FileTreeItem extends TreeItem {
     this.collapsibleState = TreeItemCollapsibleState.None;
     this.exclusion = deploymentFile.exclusion;
     this.command = {
-      title: 'Open',
-      command: 'vscode.open',
-      arguments: [this.fileUri]
+      title: "Open",
+      command: "vscode.open",
+      arguments: [this.fileUri],
     };
     this.description = path.dirname(deploymentFile.id);
-    if (this.description === '.') {
+    if (this.description === ".") {
       this.description = undefined;
     }
 
-    this.iconPath = new ThemeIcon('debug-stackframe-dot');
+    this.iconPath = new ThemeIcon("debug-stackframe-dot");
   }
 }
 
 export class IncludedFile extends FileTreeItem {
-  constructor(
-    root: Uri,
-    deploymentFile: DeploymentFile,
-  ) {
-    super(
-      root,
-      deploymentFile,
-    );
+  constructor(root: Uri, deploymentFile: DeploymentFile) {
+    super(root, deploymentFile);
     this.contextValue = isIncludedFile;
     this.resourceUri = Uri.parse(`positPublisherFilesIncluded://${this.id}`);
-    this.tooltip =
-      `This file will be included in the next deployment.\n${this.fileUri.fsPath}`;
+    this.tooltip = `This file will be included in the next deployment.\n${this.fileUri.fsPath}`;
   }
 }
 export class ExcludedFile extends FileTreeItem {
-  constructor(
-    root: Uri,
-    deploymentFile: DeploymentFile,
-  ) {
-    super(
-      root,
-      deploymentFile,
-    );
+  constructor(root: Uri, deploymentFile: DeploymentFile) {
+    super(root, deploymentFile);
 
     this.contextValue = isExcludedFile;
     this.resourceUri = Uri.parse(`positPublisherFilesExcluded://${this.id}`);
-    this.tooltip =
-      `This file will be excluded in the next deployment.\n${this.fileUri.fsPath}\n\n`;
+    this.tooltip = `This file will be excluded in the next deployment.\n${this.fileUri.fsPath}\n\n`;
     if (this.exclusion) {
-      if (this.exclusion.source === 'built-in') {
-        this.tooltip +=
-          `This is a built-in exclusion for the pattern: '${this.exclusion?.pattern}'`;
+      if (this.exclusion.source === "built-in") {
+        this.tooltip += `This is a built-in exclusion for the pattern: '${this.exclusion?.pattern}'`;
       } else {
-        this.tooltip +=
-          `The project's .positignore file is excluding it\nwith the pattern '${this.exclusion?.pattern}' on line #${this.exclusion?.line}`;
+        this.tooltip += `The project's .positignore file is excluding it\nwith the pattern '${this.exclusion?.pattern}' on line #${this.exclusion?.line}`;
       }
     }
   }
 }
-
