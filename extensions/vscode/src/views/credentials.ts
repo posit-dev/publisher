@@ -16,6 +16,7 @@ import { getSummaryStringFromError } from "../utils/errors";
 
 const viewName = "posit.publisher.credentials";
 const refreshCommand = viewName + ".refresh";
+const contextIsEmpty = viewName + ".isEmpty";
 
 type CredentialEventEmitter = EventEmitter<
   CredentialsTreeItem | undefined | void
@@ -29,7 +30,7 @@ export class CredentialsTreeDataProvider
   readonly onDidChangeTreeData: CredentialEvent =
     this._onDidChangeTreeData.event;
 
-  constructor() {}
+  constructor() { }
 
   getTreeItem(element: CredentialsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -43,11 +44,17 @@ export class CredentialsTreeDataProvider
     }
 
     try {
+      await this.setContextIsEmpty(true);
       const response = await api.accounts.getAll();
       const accounts = response.data.accounts;
-      return accounts.map((account) => {
+      if (!accounts) {
+        return [];
+      }
+      const result = accounts.map((account) => {
         return new CredentialsTreeItem(account);
       });
+      await this.setContextIsEmpty(result.length === 0);
+      return result;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "credentials::getChildren",
@@ -69,6 +76,14 @@ export class CredentialsTreeDataProvider
 
     context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
+    );
+  }
+
+  private async setContextIsEmpty(isEmpty: boolean): Promise<void> {
+    await commands.executeCommand(
+      "setContext",
+      contextIsEmpty,
+      isEmpty ? "empty" : "notEmpty",
     );
   }
 }
