@@ -11,8 +11,6 @@ jobs:
     uses: ./.github/workflows/agent.yaml
   web:
     uses: ./.github/workflows/web.yaml
-  jupyterlab:
-    uses: ./.github/workflows/jupyterlab.yaml
   vscode:
     uses: ./.github/workflows/vscode.yaml
 
