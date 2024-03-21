@@ -1,10 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ConfigSection
-    v-if="kubernetes"
-    title="Connect Kubernetes"
-  >
+  <ConfigSection v-if="kubernetes" title="Connect Kubernetes">
     <ConfigSetting
       v-if="kubernetes.imageName !== undefined"
       label="Image Name"
@@ -64,11 +61,11 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType } from "vue";
 
-import { ConnectKubernetes } from 'src/api';
-import ConfigSection from 'src/components/config/ConfigSection.vue';
-import ConfigSetting from 'src/components/config/ConfigSetting.vue';
+import { ConnectKubernetes } from "src/api";
+import ConfigSection from "src/components/config/ConfigSection.vue";
+import ConfigSetting from "src/components/config/ConfigSetting.vue";
 
 defineProps({
   kubernetes: {
@@ -80,6 +77,6 @@ defineProps({
     type: Object as PropType<ConnectKubernetes>,
     default: undefined,
     required: false,
-  }
+  },
 });
 </script>

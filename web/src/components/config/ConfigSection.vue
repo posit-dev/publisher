@@ -5,10 +5,7 @@
     <h3 class="config-section-title q-mt-md">
       {{ title }}
     </h3>
-    <p
-      v-if="subtitle"
-      class="q-mt-xs"
-    >
+    <p v-if="subtitle" class="q-mt-xs">
       {{ subtitle }}
     </p>
     <dl class="q-mt-sm q-pt-sm space-between-y-sm">
@@ -33,25 +30,25 @@ defineProps({
 
 <style scoped lang="scss">
 .config-section-title {
-    font-size: 1rem;
-    font-weight: 500;
-    line-height: 1.5;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 dl {
-    border: 1px solid;
-    border-radius: 8px;
-    padding: 16px;
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 16px;
 }
 
 .body--light {
-    dl {
-        border-color: $grey-4;
-    }
+  dl {
+    border-color: $grey-4;
+  }
 }
 .body--dark {
-    dl {
-        border-color: $grey-8;
-    }
+  dl {
+    border-color: $grey-8;
+  }
 }
 </style>

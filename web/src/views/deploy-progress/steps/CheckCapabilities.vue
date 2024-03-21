@@ -15,35 +15,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from "vue";
 
-import DeployStep from 'src/views/deploy-progress/DeployStep.vue';
+import DeployStep from "src/views/deploy-progress/DeployStep.vue";
 
-import { watch } from 'vue';
-import { useEventStore } from 'src/stores/events';
+import { watch } from "vue";
+import { useEventStore } from "src/stores/events";
 
 const eventStore = useEventStore();
 
 defineProps({
   name: { type: [String, Number], required: true },
 });
-const emit = defineEmits(['start', 'done']);
+const emit = defineEmits(["start", "done"]);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.checkCapabilities.allMsgs);
+const messages = ref(
+  eventStore.currentPublishStatus.status.steps.checkCapabilities.allMsgs,
+);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.checkCapabilities.completion,
+  () =>
+    eventStore.currentPublishStatus.status.steps.checkCapabilities.completion,
   (value) => {
-    if (value === 'inProgress') {
-      emit('start');
-    } else if (value === 'success') {
+    if (value === "inProgress") {
+      emit("start");
+    } else if (value === "success") {
       done.value = true;
-      emit('done');
+      emit("done");
     }
   },
   {
     immediate: true,
-  }
+  },
 );
 </script>

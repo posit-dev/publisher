@@ -8,42 +8,43 @@
     :done="done"
     :messages="messages"
   >
-    <template #summary>
-      Creating a new deployment file.
-    </template>
+    <template #summary> Creating a new deployment file. </template>
   </DeployStep>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from "vue";
 
-import DeployStep from 'src/views/deploy-progress/DeployStep.vue';
+import DeployStep from "src/views/deploy-progress/DeployStep.vue";
 
-import { watch } from 'vue';
-import { useEventStore } from 'src/stores/events';
+import { watch } from "vue";
+import { useEventStore } from "src/stores/events";
 
 const eventStore = useEventStore();
 
 defineProps({
   name: { type: [String, Number], required: true },
 });
-const emit = defineEmits(['start', 'done']);
+const emit = defineEmits(["start", "done"]);
 
 const done = ref(false);
-const messages = ref(eventStore.currentPublishStatus.status.steps.createNewDeployment.allMsgs);
+const messages = ref(
+  eventStore.currentPublishStatus.status.steps.createNewDeployment.allMsgs,
+);
 
 watch(
-  () => eventStore.currentPublishStatus.status.steps.createNewDeployment.completion,
+  () =>
+    eventStore.currentPublishStatus.status.steps.createNewDeployment.completion,
   (value) => {
-    if (value === 'inProgress') {
-      emit('start');
-    } else if (value === 'success') {
+    if (value === "inProgress") {
+      emit("start");
+    } else if (value === "success") {
       done.value = true;
-      emit('done');
+      emit("done");
     }
   },
   {
     immediate: true,
-  }
+  },
 );
 </script>

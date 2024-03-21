@@ -1,18 +1,9 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <q-tree
-    v-model:expanded="expanded"
-    :nodes="files"
-    :node-key="NODE_KEY"
-    dense
-  >
+  <q-tree v-model:expanded="expanded" :nodes="files" :node-key="NODE_KEY" dense>
     <template #default-header="{ node }">
-      <q-icon
-        v-if="node.icon"
-        class="q-mr-sm"
-        :name="node.icon"
-      />
+      <q-icon v-if="node.icon" class="q-mr-sm" :name="node.icon" />
       <div :class="{ 'excluded-file': node.exclusion }">
         {{ node.label }}
         <q-tooltip
@@ -30,17 +21,19 @@
 </template>
 
 <script setup lang="ts">
-import { QTreeNode } from 'quasar';
-import { ref } from 'vue';
+import { QTreeNode } from "quasar";
+import { ref } from "vue";
 
-import { useApi } from 'src/api';
-import { DeploymentFile, ExclusionMatch, ExclusionMatchSource } from 'src/api/types/files';
+import { useApi } from "src/api";
 import {
-  newFatalErrorRouteLocation,
-} from 'src/utils/errors';
-import { useRouter } from 'vue-router';
+  DeploymentFile,
+  ExclusionMatch,
+  ExclusionMatchSource,
+} from "src/api/types/files";
+import { newFatalErrorRouteLocation } from "src/utils/errors";
+import { useRouter } from "vue-router";
 
-const NODE_KEY = 'key';
+const NODE_KEY = "key";
 
 const api = useApi();
 const router = useRouter();
@@ -49,11 +42,11 @@ const files = ref<QTreeNode[]>([]);
 const expanded = ref<string[]>([]);
 
 function fileToTreeNode(file: DeploymentFile) {
-  const node: QTreeNode & Pick<DeploymentFile, 'exclusion'> = {
+  const node: QTreeNode & Pick<DeploymentFile, "exclusion"> = {
     [NODE_KEY]: file.id,
     label: file.base,
     children: file.files.map(fileToTreeNode),
-    icon: file.isDir ? 'folder' : undefined,
+    icon: file.isDir ? "folder" : undefined,
     exclusion: file.exclusion,
   };
 
@@ -78,14 +71,14 @@ async function getFiles() {
   } catch (error: unknown) {
     // handle all erros via the fatal error page, even 403's.
     // not much of a correction action for the user.
-    router.push(newFatalErrorRouteLocation(error, 'FileTree: getFiles()'));
+    router.push(newFatalErrorRouteLocation(error, "FileTree: getFiles()"));
   }
 }
 
 function exclusionDisplay(match: ExclusionMatch): string {
   switch (match.source) {
     case ExclusionMatchSource.BUILT_IN:
-      return 'Automatically ignored by Posit Publisher';
+      return "Automatically ignored by Posit Publisher";
     case ExclusionMatchSource.FILE:
       return `Ignored by "${match.filePath}" on line ${match.line} with pattern "${match.pattern}"`;
   }

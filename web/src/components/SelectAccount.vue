@@ -17,12 +17,8 @@
           <q-item-label>
             {{ scope.opt.label }}
           </q-item-label>
-          <q-item-label caption>
-            from: {{ scope.opt.source }}
-          </q-item-label>
-          <q-item-label caption>
-            using: {{ scope.opt.authType }}
-          </q-item-label>
+          <q-item-label caption> from: {{ scope.opt.source }} </q-item-label>
+          <q-item-label caption> using: {{ scope.opt.authType }} </q-item-label>
         </q-item-section>
       </q-item>
     </template>
@@ -30,12 +26,11 @@
 </template>
 
 <script setup lang="ts">
+import { PropType, computed, ref, watch } from "vue";
 
-import { PropType, computed, ref, watch } from 'vue';
+import { Account } from "src/api";
 
-import { Account } from 'src/api';
-
-const emit = defineEmits(['change']);
+const emit = defineEmits(["change"]);
 const props = defineProps({
   url: { type: String, required: true },
   preferredAccount: { type: String, required: false, default: undefined },
@@ -43,10 +38,10 @@ const props = defineProps({
 });
 
 type AccountSelection = Account & {
-  label: string,
-  value: string,
-  icon: string,
-}
+  label: string;
+  value: string;
+  icon: string;
+};
 
 const selectedAccount = ref<AccountSelection | undefined>(undefined);
 
@@ -58,7 +53,7 @@ const options = computed(() => {
       ...account,
       label: account.name,
       value: account.name,
-      icon: 'key',
+      icon: "key",
     });
   });
   return newOptions;
@@ -72,7 +67,9 @@ watch(
       // pick a default.
       // if there is a preferred, use it
       if (props.preferredAccount) {
-        const account = options.value.find((option) => option.label === props.preferredAccount);
+        const account = options.value.find(
+          (option) => option.label === props.preferredAccount,
+        );
         if (account) {
           selectedAccount.value = account;
           return;
@@ -86,14 +83,10 @@ watch(
       }
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
-watch(
-  selectedAccount,
-  () => {
-    emit('change', selectedAccount.value);
-  }
-);
-
+watch(selectedAccount, () => {
+  emit("change", selectedAccount.value);
+});
 </script>

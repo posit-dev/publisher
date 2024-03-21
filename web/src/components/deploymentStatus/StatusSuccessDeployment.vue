@@ -1,9 +1,7 @@
 <!-- Copyright (C) 2024 by Posit Software, PBC. -->
 
 <template>
-  <div
-    class="space-between-y-sm"
-  >
+  <div class="space-between-y-sm">
     <p>{{ deployment.id }}</p>
     <p>
       Deployed
@@ -24,9 +22,9 @@
 </template>
 
 <script setup lang="ts">
-import { Deployment } from 'src/api';
-import { PropType } from 'vue';
-import { formatDateString } from 'src/utils/date';
+import { Deployment } from "src/api";
+import { PropType } from "vue";
+import { formatDateString } from "src/utils/date";
 
 defineProps({
   deployment: {
@@ -34,5 +32,4 @@ defineProps({
     required: true,
   },
 });
-
 </script>
