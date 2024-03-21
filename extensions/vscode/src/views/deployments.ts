@@ -224,10 +224,12 @@ export class DeploymentsTreeItem extends TreeItem {
         `Deployment file: ${deployment.deploymentPath}\n` +
         `\n` +
         `Last deployment failed on ${formatDateString(deployment.deployedAt)}\n` +
-        `Targeting ${deployment.serverType} at ${deployment.serverUrl}\n` +
-        `GUID = ${deployment.id}\n` +
-        `\n` +
-        `Error: ${deployment.deploymentError.msg}`;
+        `Targeting ${deployment.serverType} at ${deployment.serverUrl}`;
+      // deployment id may not yet be assigned...
+      if (deployment.id) {
+        this.tooltip += `\n` + `GUID = ${deployment.id}`;
+      }
+      this.tooltip += "\n" + `\n` + `Error: ${deployment.deploymentError.msg}`;
       this.iconPath = new ThemeIcon("run-errors");
     }
   }
@@ -240,7 +242,7 @@ export class DeploymentsTreeItem extends TreeItem {
       `Created on ${formatDateString(predeployment.createdAt)}\n` +
       `Targeting ${predeployment.serverType} at ${predeployment.serverUrl}\n` +
       `\n` +
-      `Warning! This deployment has not yet been deployed.`;
+      `Warning! Not yet deployed to the server`;
     this.iconPath = new ThemeIcon("ellipsis");
   }
 

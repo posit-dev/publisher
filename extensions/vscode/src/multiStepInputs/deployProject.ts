@@ -59,7 +59,7 @@ export async function publishDeployment(
   }
   if (accountListItems.length === 0) {
     window.showInformationMessage(
-      `Unable to continue with no maching credentials for\n` +
+      `Unable to continue with no matching credentials for\n` +
         `deployment URL: ${deployment.serverUrl}\n` +
         `\n` +
         `Establish account credentials using rsconnect (R package) or\n` +
