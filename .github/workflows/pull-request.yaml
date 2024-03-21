@@ -9,7 +9,6 @@ jobs:
   # Linting and formatting
   lint:
     uses: ./.github/workflows/lint.yaml
-
   # Unit Tests
   agent:
     uses: ./.github/workflows/agent.yaml

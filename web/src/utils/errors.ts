@@ -98,8 +98,11 @@ export const scrubErrorData = (data: Record<string, unknown> | undefined) => {
   const {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-shadow
     file,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars,
     method,
+    // eslint-disable-next-line @typescript-eslint/no-shadow, @typescript-eslint/no-unused-vars,
     status,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars,
     url,
     ...remainingData
   } = data;
