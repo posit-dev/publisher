@@ -2,50 +2,54 @@
 
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-import * as ports from './ports';
-import { Service } from './services';
-import { ProjectTreeDataProvider } from './views/project';
-import { DeploymentsTreeDataProvider } from './views/deployments';
-import { ConfigurationsTreeDataProvider } from './views/configurations';
-import { FilesTreeDataProvider } from './views/files';
-import { RequirementsTreeDataProvider } from './views/requirements';
-import { CredentialsTreeDataProvider } from './views/credentials';
-import { HelpAndFeedbackTreeDataProvider } from './views/helpAndFeedback';
-import { LogsTreeDataProvider } from './views/logs';
-import { EventStream } from './events';
+import * as ports from "./ports";
+import { Service } from "./services";
+import { ProjectTreeDataProvider } from "./views/project";
+import { DeploymentsTreeDataProvider } from "./views/deployments";
+import { ConfigurationsTreeDataProvider } from "./views/configurations";
+import { FilesTreeDataProvider } from "./views/files";
+import { RequirementsTreeDataProvider } from "./views/requirements";
+import { CredentialsTreeDataProvider } from "./views/credentials";
+import { HelpAndFeedbackTreeDataProvider } from "./views/helpAndFeedback";
+import { LogsTreeDataProvider } from "./views/logs";
+import { EventStream } from "./events";
 
-const STATE_CONTEXT = 'posit.publish.state';
-const MISSING_CONTEXT = 'posit.publish.missing';
+const STATE_CONTEXT = "posit.publish.state";
+const MISSING_CONTEXT = "posit.publish.missing";
 
 enum PositPublishState {
-  initialized = 'initialized',
-  uninitialized = 'uninitialized',
+  initialized = "initialized",
+  uninitialized = "uninitialized",
 }
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
-async function isMissingPublishDirs(folder: vscode.WorkspaceFolder): Promise<boolean> {
+async function isMissingPublishDirs(
+  folder: vscode.WorkspaceFolder,
+): Promise<boolean> {
   try {
     const stats = await Promise.all([
-      vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, '.posit')),
-      vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, '.posit/publish'))
+      vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, ".posit")),
+      vscode.workspace.fs.stat(
+        vscode.Uri.joinPath(folder.uri, ".posit/publish"),
+      ),
     ]);
 
-    return !stats.every(stat => stat.type === vscode.FileType.Directory);
+    return !stats.every((stat) => stat.type === vscode.FileType.Directory);
   } catch {
     return true;
   }
 }
 
 function setMissingContext(context: boolean) {
-  vscode.commands.executeCommand('setContext', MISSING_CONTEXT, context);
+  vscode.commands.executeCommand("setContext", MISSING_CONTEXT, context);
 }
 
 function setStateContext(context: PositPublishState) {
-  vscode.commands.executeCommand('setContext', STATE_CONTEXT, context);
+  vscode.commands.executeCommand("setContext", STATE_CONTEXT, context);
 }
 
 // This method is called when your extension is activated
@@ -53,14 +57,17 @@ function setStateContext(context: PositPublishState) {
 export async function activate(context: vscode.ExtensionContext) {
   setStateContext(PositPublishState.uninitialized);
 
-  if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length) {
+  if (
+    vscode.workspace.workspaceFolders &&
+    vscode.workspace.workspaceFolders.length
+  ) {
     const folder = vscode.workspace.workspaceFolders[0];
 
     const watcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(folder, '{.posit,.posit/publish}'),
+      new vscode.RelativePattern(folder, "{.posit,.posit/publish}"),
       false,
       true,
-      false
+      false,
     );
     watcher.onDidCreate(async () => {
       setMissingContext(await isMissingPublishDirs(folder));

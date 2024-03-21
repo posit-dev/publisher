@@ -1,11 +1,10 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 const DEFAULT_COLUMN = vscode.ViewColumn.Beside;
 
 export class Panel {
-
   private readonly url: string;
 
   private column: vscode.ViewColumn = DEFAULT_COLUMN;
@@ -24,14 +23,14 @@ export class Panel {
 
     // initialize panel
     this.panel = vscode.window.createWebviewPanel(
-      'posit.publisher',
-      'Posit Publisher',
+      "posit.publisher",
+      "Posit Publisher",
       this.column,
       {
         enableScripts: true,
         enableForms: true,
         retainContextWhenHidden: true,
-      }
+      },
     );
 
     // set html content
@@ -41,15 +40,17 @@ export class Panel {
 
     // listen for messages
     this.panel.webview.onDidReceiveMessage(
-      message => {
+      (message) => {
         switch (message.command) {
-          case 'reload-webview':
-            vscode.commands.executeCommand('workbench.action.webview.reloadWebviewAction');
+          case "reload-webview":
+            vscode.commands.executeCommand(
+              "workbench.action.webview.reloadWebviewAction",
+            );
             return;
         }
       },
       undefined,
-      context.subscriptions
+      context.subscriptions,
     );
 
     // register view state change
@@ -58,7 +59,7 @@ export class Panel {
         this.column = event.webviewPanel.viewColumn || DEFAULT_COLUMN;
       },
       null,
-      context.subscriptions
+      context.subscriptions,
     );
 
     // register dispose
@@ -68,7 +69,7 @@ export class Panel {
         this.panel = undefined;
       },
       null,
-      context.subscriptions
+      context.subscriptions,
     );
   }
 
@@ -76,9 +77,7 @@ export class Panel {
     // this invokes this panel.onDidDispose callback above, which resets the
     this.panel?.dispose();
   }
-
 }
-
 
 /**
  *
@@ -120,16 +119,21 @@ export const createHTML = (url: string, webview: vscode.Webview): string => {
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
  */
-export const createContentSecurityPolicyContent = (nonce: string, ...allowable: string[]): string => {
+export const createContentSecurityPolicyContent = (
+  nonce: string,
+  ...allowable: string[]
+): string => {
   const directives: string[] = [
-    'connect-src',
-    'font-src',
-    'frame-src',
+    "connect-src",
+    "font-src",
+    "frame-src",
     `script-src nonce-${nonce}`,
-    'style-src',
+    "style-src",
   ];
   const urls: string = allowable.join(" ");
-  const content: string = directives.map(_ => `${_} ${urls} https:;`).join(" ");
+  const content: string = directives
+    .map((_) => `${_} ${urls} https:;`)
+    .join(" ");
   return `default-src 'none'; ${content}`;
 };
 
@@ -139,8 +143,9 @@ export const createContentSecurityPolicyContent = (nonce: string, ...allowable: 
  * @returns {string}
  */
 const createNonce = (): string => {
-  let text = '';
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let text = "";
+  const possible =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   for (let i = 0; i < 32; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
   }

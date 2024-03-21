@@ -9,31 +9,34 @@ import {
   Uri,
   commands,
   env,
-} from 'vscode';
+} from "vscode";
 
-const viewName = 'posit.publisher.helpAndFeedback';
-const openGettingStartedCommand = viewName + '.gettingStarted';
-const openFeedbackCommand = viewName + 'openFeedback';
+const viewName = "posit.publisher.helpAndFeedback";
+const openGettingStartedCommand = viewName + ".gettingStarted";
+const openFeedbackCommand = viewName + "openFeedback";
 
-export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAndFeedbackTreeItem> {
-
-  constructor() { }
+export class HelpAndFeedbackTreeDataProvider
+  implements TreeDataProvider<HelpAndFeedbackTreeItem>
+{
+  constructor() {}
 
   getTreeItem(element: HelpAndFeedbackTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(element: HelpAndFeedbackTreeItem | undefined): ProviderResult<HelpAndFeedbackTreeItem[]> {
+  getChildren(
+    element: HelpAndFeedbackTreeItem | undefined,
+  ): ProviderResult<HelpAndFeedbackTreeItem[]> {
     if (element === undefined) {
       return [
         new HelpAndFeedbackTreeItem(
-          'Get Started with Posit Publisher',
-          'Open Getting Started Documentation',
+          "Get Started with Posit Publisher",
+          "Open Getting Started Documentation",
           openGettingStartedCommand,
         ),
         new HelpAndFeedbackTreeItem(
-          'Provide Feedback',
-          'Open Feedback Slack Channel',
+          "Provide Feedback",
+          "Open Feedback Slack Channel",
           openFeedbackCommand,
         ),
       ];
@@ -43,25 +46,30 @@ export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAnd
 
   public register(context: ExtensionContext) {
     context.subscriptions.push(
-      window.createTreeView(viewName, { treeDataProvider: this })
+      window.createTreeView(viewName, { treeDataProvider: this }),
     );
 
     context.subscriptions.push(
       commands.registerCommand(openGettingStartedCommand, () => {
-        env.openExternal(Uri.parse('https://github.com/posit-dev/publisher/blob/e72828f3585497649b8b55470a665f7fa890a21f/docs/vscode.md'));
-      })
+        env.openExternal(
+          Uri.parse(
+            "https://github.com/posit-dev/publisher/blob/e72828f3585497649b8b55470a665f7fa890a21f/docs/vscode.md",
+          ),
+        );
+      }),
     );
 
     context.subscriptions.push(
       commands.registerCommand(openFeedbackCommand, () => {
-        env.openExternal(Uri.parse('https://positpbc.slack.com/channels/publisher-feedback'));
-      })
+        env.openExternal(
+          Uri.parse("https://positpbc.slack.com/channels/publisher-feedback"),
+        );
+      }),
     );
   }
 }
 
 export class HelpAndFeedbackTreeItem extends TreeItem {
-
   constructor(itemString: string, commandTitle: string, command: string) {
     super(itemString);
     this.command = {

@@ -1,12 +1,20 @@
 :root {
-  --posit-light-blue-1: #D1DBE5;
-  --posit-light-blue-2: #A2B8CB;
-  --posit-light-blue-3: #7494B1;
+  --posit-light-blue-1: #d1dbe5;
+  --posit-light-blue-2: #a2b8cb;
+  --posit-light-blue-3: #7494b1;
   --posit-blue: #447099;
   --posit-dark-blue-1: #305775;
 }
 
-h1, h2, h3, h4, h5, h6, p, dd, dl {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+dd,
+dl {
   margin: 0;
 }
 
@@ -78,8 +86,13 @@ body.body--dark .text-low-contrast {
 
 .focus-shadow:focus,
 .focus-shadow:focus-within {
-  --focus-shadow: 0 0 0 4px rgba(var(--focus-shadow-color), var(--focus-shadow-color-opacity));
-  --border-shadow: 0 0 1px 1px rgba(var(--focus-shadow-border-color), var(--focus-shadow-border-color-opacity));
+  --focus-shadow: 0 0 0 4px
+    rgba(var(--focus-shadow-color), var(--focus-shadow-color-opacity));
+  --border-shadow: 0 0 1px 1px
+    rgba(
+      var(--focus-shadow-border-color),
+      var(--focus-shadow-border-color-opacity)
+    );
   box-shadow: var(--focus-shadow), var(--border-shadow);
 }
 

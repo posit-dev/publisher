@@ -2,10 +2,10 @@
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import { Disposable } from 'vscode';
+import { Disposable } from "vscode";
 
-import * as EventSource from 'eventsource';
-import { Readable } from 'stream';
+import * as EventSource from "eventsource";
+import { Readable } from "stream";
 
 export type EventStreamMessage = {
   type: string;
@@ -18,25 +18,25 @@ export type EventStreamRegistration = (message: EventStreamMessage) => void;
 export type UnregisterCallback = { unregister: () => void };
 
 export function displayEventStreamMessage(msg: EventStreamMessage): string {
-  if (msg.type === 'publish/checkCapabilities/log') {
+  if (msg.type === "publish/checkCapabilities/log") {
     if (msg.data.username) {
       return `${msg.data.message}: username ${msg.data.username}, email ${msg.data.email}`;
     }
   }
 
-  if (msg.type === 'publish/createNewDeployment/success') {
+  if (msg.type === "publish/createNewDeployment/success") {
     return `Created new deployment as ${msg.data.saveName}`;
   }
 
-  if (msg.type === 'publish/createBundle/success') {
+  if (msg.type === "publish/createBundle/success") {
     return `Prepared file archive: ${msg.data.filename}`;
   }
 
-  if (msg.type === 'publish/createDeployment/start') {
+  if (msg.type === "publish/createDeployment/start") {
     return `Updating existing deployment with ID ${msg.data.contentId}`;
   }
 
-  if (msg.type === 'publish/createBundle/log') {
+  if (msg.type === "publish/createBundle/log") {
     if (msg.data.sourceDir) {
       return `${msg.data.message} ${msg.data.sourceDir}`;
     }
@@ -50,15 +50,15 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     }
   }
 
-  if (msg.type === 'publish/restorePythonEnv/log') {
+  if (msg.type === "publish/restorePythonEnv/log") {
     return `${msg.data.message}`;
   }
 
-  if ( msg.type === 'publish/setVanityURL/log') {
+  if (msg.type === "publish/setVanityURL/log") {
     return `${msg.data.message} ${msg.data.path}`;
   }
 
-  if (msg.type === 'publish/success') {
+  if (msg.type === "publish/success") {
     return `Successfully deployed at ${msg.data.dashboardUrl}`;
   }
 
@@ -87,9 +87,11 @@ export class EventStream extends Readable implements Disposable {
   constructor(port: number) {
     super();
     // Create a new EventSource instance to connect to the event stream
-    this.eventSource = new EventSource(`http://127.0.0.1:${port}/api/events?stream=messages`);
+    this.eventSource = new EventSource(
+      `http://127.0.0.1:${port}/api/events?stream=messages`,
+    );
     // Listen for 'message' events from the EventSource
-    this.eventSource.addEventListener('message', (event) => {
+    this.eventSource.addEventListener("message", (event) => {
       // Parse the event data and convert keys to camel case
       const message = convertKeysToCamelCase(JSON.parse(event.data));
 
@@ -99,7 +101,7 @@ export class EventStream extends Readable implements Disposable {
       // Add the message to the messages array
       this.messages.push(message);
       // Emit a 'message' event with the message as the payload
-      this.emit('message', message);
+      this.emit("message", message);
       // Invoke the registered callbacks for the message type
       this.invokeCallbacks(message);
     });
@@ -117,7 +119,10 @@ export class EventStream extends Readable implements Disposable {
    * @param callback The callback function to be invoked when the event occurs.
    * @returns An object with an `unregister` method that can be used to remove the callback.
    */
-  public register(type: string, callback: EventStreamRegistration): UnregisterCallback {
+  public register(
+    type: string,
+    callback: EventStreamRegistration,
+  ): UnregisterCallback {
     if (!this.callbacks.has(type)) {
       this.callbacks.set(type, []);
     }
@@ -129,9 +134,9 @@ export class EventStream extends Readable implements Disposable {
         // Remove the callback from the callbacks array for the specified event type
         this.callbacks.set(
           type,
-          this.callbacks.get(type)?.filter(cb => cb !== callback) || []
+          this.callbacks.get(type)?.filter((cb) => cb !== callback) || [],
         );
-      }
+      },
     };
   }
 
@@ -139,7 +144,7 @@ export class EventStream extends Readable implements Disposable {
     const type = message.type;
     if (this.callbacks.has(type)) {
       // Invoke all the callbacks for the specified event type with the message as the argument
-      this.callbacks.get(type)?.forEach(callback => callback(message));
+      this.callbacks.get(type)?.forEach((callback) => callback(message));
     }
   }
 }
@@ -150,13 +155,13 @@ export class EventStream extends Readable implements Disposable {
  * @returns The object with camel case keys.
  */
 const convertKeysToCamelCase = (object: any): any => {
-  if (typeof object !== 'object' || object === null) {
+  if (typeof object !== "object" || object === null) {
     return object;
   }
 
   if (Array.isArray(object)) {
     // Recursively convert keys for each item in the array
-    return object.map(item => convertKeysToCamelCase(item));
+    return object.map((item) => convertKeysToCamelCase(item));
   }
 
   const newObject: any = {};

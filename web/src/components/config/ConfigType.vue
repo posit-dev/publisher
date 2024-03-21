@@ -10,10 +10,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType } from "vue";
 
-import { ContentType } from 'src/api';
-import ConfigSetting from 'src/components/config/ConfigSetting.vue';
+import { ContentType } from "src/api";
+import ConfigSetting from "src/components/config/ConfigSetting.vue";
 
 defineProps({
   type: {
@@ -28,4 +28,3 @@ defineProps({
   },
 });
 </script>
-

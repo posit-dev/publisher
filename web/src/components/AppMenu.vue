@@ -33,18 +33,12 @@
           </q-item>
           <q-separator />
           <template v-if="!vscode">
-            <q-item
-              clickable
-              data-automation="dark-mode-submenu"
-            >
+            <q-item clickable data-automation="dark-mode-submenu">
               <q-item-section>Set Dark Mode</q-item-section>
               <q-item-section side>
                 <q-icon name="keyboard_arrow_right" />
               </q-item-section>
-              <q-menu
-                anchor="top end"
-                self="top start"
-              >
+              <q-menu anchor="top end" self="top start">
                 <q-list>
                   <q-item
                     v-close-popup
@@ -88,10 +82,10 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar';
-import { vscode } from 'src/vscode';
-import { router } from 'src/router';
-import { computed } from 'vue';
+import { useQuasar } from "quasar";
+import { vscode } from "src/vscode";
+import { router } from "src/router";
+import { computed } from "vue";
 
 const $q = useQuasar();
 
@@ -99,30 +93,29 @@ const version = __VERSION__;
 
 const onClickProject = () => {
   if (vscode) {
-    return router.push({ name: 'project' });
+    return router.push({ name: "project" });
   }
   return undefined;
 };
 
 const toProject = computed(() => {
   if (!vscode) {
-    return { name: 'project' };
+    return { name: "project" };
   }
   return undefined;
 });
 
 const onClickAgentLog = () => {
   if (vscode) {
-    return router.push({ name: 'agentLog' });
+    return router.push({ name: "agentLog" });
   }
   return undefined;
 };
 
 const toAgentLog = computed(() => {
   if (!vscode) {
-    return { name: 'agentLog' };
+    return { name: "agentLog" };
   }
   return undefined;
 });
-
 </script>

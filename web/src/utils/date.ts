@@ -7,10 +7,10 @@ export function formatDateString(
   dateString: string,
   { includeTime } = { includeTime: true },
 ) {
-  const dateResult = new Date(`${dateString}`).toLocaleDateString('en-US', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
+  const dateResult = new Date(`${dateString}`).toLocaleDateString("en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
   if (!includeTime) {
     return dateResult;
@@ -24,13 +24,13 @@ export function formatTimeString(
   { includeSeconds } = { includeSeconds: false },
 ) {
   const options: Intl.DateTimeFormatOptions = {
-    hour: '2-digit',
-    minute: '2-digit',
+    hour: "2-digit",
+    minute: "2-digit",
   };
   if (includeSeconds) {
-    options.second = '2-digit';
+    options.second = "2-digit";
   }
-  return new Date(`${dateString}`).toLocaleTimeString('en-US', options);
+  return new Date(`${dateString}`).toLocaleTimeString("en-US", options);
 }
 
 export function sortByDateString(a: string, b: string) {

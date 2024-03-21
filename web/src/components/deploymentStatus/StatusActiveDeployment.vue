@@ -1,38 +1,21 @@
 <!-- Copyright (C) 2024 by Posit Software, PBC. -->
 
 <template>
-  <div
-    v-if="compact"
-    class="flex items-center"
-  >
-    <q-spinner
-      color="primary"
-      size="1rem"
-    />
+  <div v-if="compact" class="flex items-center">
+    <q-spinner color="primary" size="1rem" />
     <div class="q-ml-sm text-left">
       {{ events.summaryOfCurrentPublishingProcess.operation }} :
       {{ events.summaryOfCurrentPublishingProcess.stepStatus }}
     </div>
   </div>
-  <div
-    v-else
-    class="space-between-y-sm"
-  >
+  <div v-else class="space-between-y-sm">
     <p v-if="isDeployment(deployment)">
       {{ deployment.id }}
     </p>
-    <div
-      v-if="showProgress"
-      class="flex items-center"
-    >
-      <q-spinner-grid
-        color="primary"
-        size="2rem"
-      />
+    <div v-if="showProgress" class="flex items-center">
+      <q-spinner-grid color="primary" size="2rem" />
       <div class="q-ml-md space-between-y-sm">
-        <div class="text-bold">
-          Deploying project...
-        </div>
+        <div class="text-bold">Deploying project...</div>
         <div>
           {{ events.summaryOfCurrentPublishingProcess.operation }}
         </div>
@@ -45,10 +28,10 @@
 </template>
 
 <script setup lang="ts">
-import { Deployment, PreDeployment } from 'src/api';
-import { PropType, computed } from 'vue';
-import { useEventStore } from 'src/stores/events';
-import { isDeployment } from 'src/api/types/deployments';
+import { Deployment, PreDeployment } from "src/api";
+import { PropType, computed } from "vue";
+import { useEventStore } from "src/stores/events";
+import { isDeployment } from "src/api/types/deployments";
 
 const events = useEventStore();
 
@@ -65,6 +48,8 @@ const props = defineProps({
 });
 
 const showProgress = computed(() => {
-  return events.doesPublishStatusApplyToDeployment(props.deployment.deploymentName);
+  return events.doesPublishStatusApplyToDeployment(
+    props.deployment.deploymentName,
+  );
 });
 </script>

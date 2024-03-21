@@ -5,10 +5,7 @@
     <q-toolbar class="publisher-layout">
       <AppMenu />
       <q-toolbar-title>
-        <PLink
-          class="posit-logo-link text-white"
-          :to="{ name: 'root' }"
-        >
+        <PLink class="posit-logo-link text-white" :to="{ name: 'root' }">
           <WhitePositLogo
             width="70px"
             height="30px"
@@ -23,9 +20,9 @@
 </template>
 
 <script setup lang="ts">
-import AppMenu from 'src/components/AppMenu.vue';
-import PLink from 'src/components/PLink.vue';
-import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
+import AppMenu from "src/components/AppMenu.vue";
+import PLink from "src/components/PLink.vue";
+import WhitePositLogo from "src/components/icons/WhitePositLogo.vue";
 </script>
 
 <style scoped lang="scss">
@@ -45,5 +42,4 @@ import WhitePositLogo from 'src/components/icons/WhitePositLogo.vue';
     vertical-align: middle;
   }
 }
-
 </style>

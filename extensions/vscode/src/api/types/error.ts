@@ -5,6 +5,6 @@ export type AgentError = {
   msg: string;
   operation: string;
   data: {
-    [key: string]: unknown
+    [key: string]: unknown;
   };
-}
+};
