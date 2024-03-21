@@ -1,5 +1,0 @@
-{
-  "packageManager": "python",
-  "packageName": "connect_jupyterlab",
-  "uninstallInstructions": "Use your Python package manager (pip, conda, etc.) to uninstall the package connect_jupyterlab"
-}
