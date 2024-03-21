@@ -5,12 +5,8 @@
     "ecmaVersion": 6,
     "sourceType": "module"
   },
-  "plugins": [
-    "@typescript-eslint"
-  ],
-  "extends": [
-    "prettier"
-  ],
+  "plugins": ["@typescript-eslint"],
+  "extends": ["prettier"],
   "rules": {
     "@typescript-eslint/naming-convention": "warn",
     "@typescript-eslint/semi": "warn",
@@ -19,10 +15,5 @@
     "no-throw-literal": "warn",
     "semi": "off"
   },
-  "ignorePatterns": [
-    "out",
-    "dist",
-    "**/*.d.ts",
-    "api"
-  ]
+  "ignorePatterns": ["out", "dist", "**/*.d.ts", "api"]
 }

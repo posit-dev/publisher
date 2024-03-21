@@ -1,14 +1,13 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-import { HOST } from '.';
-import { Panel } from './panels';
-import { Server } from './servers';
-import { useApi } from './api';
+import { HOST } from ".";
+import { Panel } from "./panels";
+import { Server } from "./servers";
+import { useApi } from "./api";
 
 export class Service implements vscode.Disposable {
-
   private context: vscode.ExtensionContext;
   private panel: Panel;
   private server: Server;
@@ -42,5 +41,4 @@ export class Service implements vscode.Disposable {
     this.panel.dispose();
     this.server.dispose();
   }
-
 }
