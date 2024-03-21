@@ -76,7 +76,11 @@ export async function addDeployment(stream: EventStream) {
         });
       }
     });
-    configFileListItems.sort();
+    configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
+      var x = a.label.toLowerCase();
+      var y = b.label.toLowerCase();
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
       "addDeployment, configurations.getAll",
