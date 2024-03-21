@@ -1,10 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ConfigSection
-    v-if="r"
-    title="R"
-  >
+  <ConfigSection v-if="r" title="R">
     <ConfigSetting
       label="Version"
       :value="r.version"
@@ -26,11 +23,11 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType } from "vue";
 
-import { RConfig } from 'src/api';
-import ConfigSection from 'src/components/config/ConfigSection.vue';
-import ConfigSetting from 'src/components/config/ConfigSetting.vue';
+import { RConfig } from "src/api";
+import ConfigSection from "src/components/config/ConfigSection.vue";
+import ConfigSetting from "src/components/config/ConfigSetting.vue";
 
 defineProps({
   r: {
@@ -42,7 +39,6 @@ defineProps({
     type: Object as PropType<RConfig>,
     default: undefined,
     required: false,
-  }
+  },
 });
 </script>
-

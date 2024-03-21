@@ -4,17 +4,12 @@
   <div class="publisher-layout q-pt-md q-pb-xl">
     <q-breadcrumbs>
       <q-breadcrumbs-el>
-        <PLink :to="{ name: 'project' }">
-          Project
-        </PLink>
+        <PLink :to="{ name: 'project' }"> Project </PLink>
       </q-breadcrumbs-el>
       <q-breadcrumbs-el label="New Deployment" />
     </q-breadcrumbs>
 
-    <q-form
-      class="q-gutter-md"
-      @submit.prevent="navigateToDeploymentPage"
-    >
+    <q-form class="q-gutter-md" @submit.prevent="navigateToDeploymentPage">
       <div class="q-pa-sm">
         <q-list>
           <AccountRadio
@@ -56,20 +51,20 @@
 </template>
 
 <script setup lang="ts">
-import { Account, useApi } from 'src/api';
-import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { isDeploymentError } from 'src/api/types/deployments';
+import { Account, useApi } from "src/api";
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
+import { isDeploymentError } from "src/api/types/deployments";
 
-import AccountRadio from 'src/views/add-new-deployment/AccountRadio.vue';
-import { newFatalErrorRouteLocation } from 'src/utils/errors';
-import PButton from 'src/components/PButton.vue';
-import PLink from 'src/components/PLink.vue';
-import { useDeploymentStore } from 'src/stores/deployments';
+import AccountRadio from "src/views/add-new-deployment/AccountRadio.vue";
+import { newFatalErrorRouteLocation } from "src/utils/errors";
+import PButton from "src/components/PButton.vue";
+import PLink from "src/components/PLink.vue";
+import { useDeploymentStore } from "src/stores/deployments";
 
 const accounts = ref<Account[]>([]);
-const selectedAccountName = ref<string>('');
-const deploymentName = ref<string>('');
+const selectedAccountName = ref<string>("");
+const deploymentName = ref<string>("");
 const navigationInProgress = ref<boolean>(false);
 
 const api = useApi();
@@ -87,27 +82,30 @@ async function getAccounts() {
       selectedAccountName.value = accounts.value[0].name;
     }
   } catch (error: unknown) {
-    router.push(newFatalErrorRouteLocation(error, 'AddNewDeployment::getAccounts()'));
+    router.push(
+      newFatalErrorRouteLocation(error, "AddNewDeployment::getAccounts()"),
+    );
   }
 }
 
 const deploymentNameError = computed(() => {
   if (!deploymentName.value) {
-    return 'A unique deployment name must be provided.';
+    return "A unique deployment name must be provided.";
   }
   if (
-    deployments.sortedDeployments.find(
-      (deployment) => {
-        if (isDeploymentError(deployment)) {
-          return (
-            deployment.deploymentName.toLocaleLowerCase() === deploymentName.value.toLowerCase()
-          );
-        }
-        return deployment.saveName.toLowerCase() === deploymentName.value.toLowerCase();
+    deployments.sortedDeployments.find((deployment) => {
+      if (isDeploymentError(deployment)) {
+        return (
+          deployment.deploymentName.toLocaleLowerCase() ===
+          deploymentName.value.toLowerCase()
+        );
       }
-    )
+      return (
+        deployment.saveName.toLowerCase() === deploymentName.value.toLowerCase()
+      );
+    })
   ) {
-    return 'Deployment name already in use. Please supply a unique name.';
+    return "Deployment name already in use. Please supply a unique name.";
   }
   return undefined;
 });
@@ -115,12 +113,12 @@ const deploymentNameError = computed(() => {
 const disableToDeploymentPage = computed(() => {
   return Boolean(
     !selectedAccountName.value ||
-    deploymentNameError.value ||
-    navigationInProgress.value
+      deploymentNameError.value ||
+      navigationInProgress.value,
   );
 });
 
-const navigateToDeploymentPage = async() => {
+const navigateToDeploymentPage = async () => {
   navigationInProgress.value = true;
   let responseName = deploymentName.value;
 
@@ -132,53 +130,65 @@ const navigateToDeploymentPage = async() => {
     );
     responseName = response.data.deploymentName;
   } catch (error: unknown) {
-    router.push(newFatalErrorRouteLocation(error, 'navigateToDeploymentPage::createNew()'));
+    router.push(
+      newFatalErrorRouteLocation(
+        error,
+        "navigateToDeploymentPage::createNew()",
+      ),
+    );
   }
 
   // refresh the deployment store to include the new pre-deployment page
   try {
     await deployments.refreshDeployment(responseName);
   } catch (error: unknown) {
-    router.push(newFatalErrorRouteLocation(error, 'navigateToDeploymentPage::refreshDeployment()'));
+    router.push(
+      newFatalErrorRouteLocation(
+        error,
+        "navigateToDeploymentPage::refreshDeployment()",
+      ),
+    );
   }
 
   // navigate to the deployment page
   router.push({
-    name: 'deployments',
+    name: "deployments",
     params: {
       name: responseName,
     },
     query: {
       preferredAccount: selectedAccountName.value,
-    }
+    },
   });
 };
 
 const generateDefaultName = () => {
   let id = 0;
-  let defaultName = '';
+  let defaultName = "";
   do {
     id += 1;
     const trialName = `Untitled-${id}`;
 
-    if (!deployments.sortedDeployments.find(
-      (deployment) => {
+    if (
+      !deployments.sortedDeployments.find((deployment) => {
         if (isDeploymentError(deployment)) {
-          return deployment.deploymentName.toLocaleLowerCase() === trialName.toLowerCase();
+          return (
+            deployment.deploymentName.toLocaleLowerCase() ===
+            trialName.toLowerCase()
+          );
         }
         return deployment.saveName.toLowerCase() === trialName.toLowerCase();
-      }
-    )) {
+      })
+    ) {
       defaultName = trialName;
     }
   } while (!defaultName);
   return defaultName;
 };
 
-const init = async() => {
+const init = async () => {
   getAccounts();
   deploymentName.value = generateDefaultName();
 };
 init();
-
 </script>

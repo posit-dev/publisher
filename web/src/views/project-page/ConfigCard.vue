@@ -7,14 +7,18 @@
     :title-tooltip="isConfigurationError(config) ? config.error.msg : undefined"
   >
     <p>{{ config.configurationPath }}</p>
-  </pcard>
+  </PCard>
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType } from "vue";
 
-import { Configuration, ConfigurationError, isConfigurationError } from 'src/api';
-import PCard from 'src/components/PCard.vue';
+import {
+  Configuration,
+  ConfigurationError,
+  isConfigurationError,
+} from "src/api";
+import PCard from "src/components/PCard.vue";
 
 defineProps({
   config: {

@@ -12,30 +12,21 @@
       :key="i"
       class="text-caption q-ma-sm"
     >
-      <div
-        v-for="(line, j) in msg"
-        :key="j"
-        class="text-caption q-ma-sm"
-      >
+      <div v-for="(line, j) in msg" :key="j" class="text-caption q-ma-sm">
         {{ line }}
       </div>
     </div>
     <template #action>
-      <q-btn
-        flat
-        color="white"
-        label="Dismiss"
-        @click="emit('dismiss')"
-      />
+      <q-btn flat color="white" label="Dismiss" @click="emit('dismiss')" />
     </template>
   </q-banner>
 </template>
 
 <script setup lang="ts">
-import { PropType, computed } from 'vue';
-import { ErrorMessages } from 'src/utils/errors';
+import { PropType, computed } from "vue";
+import { ErrorMessages } from "src/utils/errors";
 
-const emit = defineEmits(['dismiss']);
+const emit = defineEmits(["dismiss"]);
 const props = defineProps({
   // error messages are
   errorMessages: { type: Object as PropType<ErrorMessages>, required: true },
@@ -44,5 +35,4 @@ const props = defineProps({
 const hasErrorMessages = computed(() => {
   return props.errorMessages.length;
 });
-
 </script>

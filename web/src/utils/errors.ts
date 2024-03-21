@@ -1,38 +1,37 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import axios from 'axios';
-import { RouteLocationRaw } from 'vue-router';
+import axios from "axios";
+import { RouteLocationRaw } from "vue-router";
 
 export type ErrorMessage = string[];
 export type ErrorMessages = ErrorMessage[];
 
-export const getStatusFromError = (error: unknown) : (number | undefined) => {
+export const getStatusFromError = (error: unknown): number | undefined => {
   if (axios.isAxiosError(error)) {
     return error.status;
   }
   return undefined;
 };
 
-export const getCodeStringFromError = (error: unknown) : (string | undefined) => {
+export const getCodeStringFromError = (error: unknown): string | undefined => {
   if (axios.isAxiosError(error)) {
     return error.code;
   }
   return undefined;
 };
 
-export const getMessageFromError = (error: unknown) : string => {
+export const getMessageFromError = (error: unknown): string => {
   if (axios.isAxiosError(error) || error instanceof Error) {
     return error.message;
   }
   return String(error);
 };
 
-export const buildErrorBannerMessage = (errorMsg: string, resolveMsg: string) => {
-  return [
-    'An error has been detected:',
-    errorMsg,
-    resolveMsg,
-  ];
+export const buildErrorBannerMessage = (
+  errorMsg: string,
+  resolveMsg: string,
+) => {
+  return ["An error has been detected:", errorMsg, resolveMsg];
 };
 
 export const getAPIURLFromError = (error: unknown) => {
@@ -63,27 +62,32 @@ export const getSummaryFromError = (error: unknown) => {
   return undefined;
 };
 
-export const checkForResponseWithStatus = (error: unknown, statusValue: number) => {
+export const checkForResponseWithStatus = (
+  error: unknown,
+  statusValue: number,
+) => {
   const errorStatus = getStatusFromError(error);
   return errorStatus === statusValue;
 };
 
-export const newFatalErrorRouteLocation =
-  (error: unknown, locationHint: string): RouteLocationRaw => {
-    const info = getSummaryFromError(error);
-    return {
-      name: 'fatalError',
-      query: {
-        location: locationHint,
-        stat: info?.status,
-        code: info?.code,
-        msg: info?.msg,
-        baseURL: info?.baseURL,
-        method: info?.method,
-        url: info?.url,
-      },
-    };
+export const newFatalErrorRouteLocation = (
+  error: unknown,
+  locationHint: string,
+): RouteLocationRaw => {
+  const info = getSummaryFromError(error);
+  return {
+    name: "fatalError",
+    query: {
+      location: locationHint,
+      stat: info?.status,
+      code: info?.code,
+      msg: info?.msg,
+      baseURL: info?.baseURL,
+      method: info?.method,
+      url: info?.url,
+    },
   };
+};
 
 export const scrubErrorData = (data: Record<string, unknown> | undefined) => {
   if (!data) {
@@ -93,7 +97,10 @@ export const scrubErrorData = (data: Record<string, unknown> | undefined) => {
   // in this unknown list of attributes
   const {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-shadow
-    file, method, status, url,
+    file,
+    method,
+    status,
+    url,
     ...remainingData
   } = data;
 

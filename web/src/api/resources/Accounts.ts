@@ -1,8 +1,8 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { AxiosInstance } from 'axios';
+import { AxiosInstance } from "axios";
 
-import { Account } from 'src/api/types/accounts';
+import { Account } from "src/api/types/accounts";
 
 export class Accounts {
   private client: AxiosInstance;
@@ -15,9 +15,7 @@ export class Accounts {
   // 200 - success
   // 500 - internal server error
   getAll() {
-    return this.client.get<{ accounts: Account[] }>(
-      '/accounts',
-    );
+    return this.client.get<{ accounts: Account[] }>("/accounts");
   }
 
   // Returns:
@@ -26,8 +24,6 @@ export class Accounts {
   // 500 - internal server error
   get(accountName: string) {
     const encodedAccountName = encodeURIComponent(accountName);
-    return this.client.get<Account>(
-      `/accounts/${encodedAccountName}`,
-    );
+    return this.client.get<Account>(`/accounts/${encodedAccountName}`);
   }
 }

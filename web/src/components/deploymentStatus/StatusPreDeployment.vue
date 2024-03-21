@@ -2,9 +2,7 @@
 
 <template>
   <div>
-    <div
-      class="space-between-y-sm"
-    >
+    <div class="space-between-y-sm">
       <p>
         Created
         <relative-time :datetime="deployment.createdAt">
@@ -18,9 +16,9 @@
 </template>
 
 <script setup lang="ts">
-import { PreDeployment } from 'src/api';
-import { formatDateString } from 'src/utils/date';
-import { PropType } from 'vue';
+import { PreDeployment } from "src/api";
+import { formatDateString } from "src/utils/date";
+import { PropType } from "vue";
 
 defineProps({
   deployment: {
@@ -28,5 +26,4 @@ defineProps({
     required: true,
   },
 });
-
 </script>
