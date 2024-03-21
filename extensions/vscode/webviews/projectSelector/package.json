@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "vite",
-    "build": "rm -rd ../../out/webviews/projectSelector && vue-tsc --noEmit && vite build --outDir ../../out/webviews/projectSelector && npm run copy-codicons",
+    "build": "rm -rd ../../out/webviews/projectSelector | true && vue-tsc --noEmit && vite build --outDir ../../out/webviews/projectSelector && npm run copy-codicons",
     "preview": "vite preview --port 5050",
     "typecheck": "vue-tsc --noEmit",
     "copy-codicons": "cp node_modules/@vscode/codicons/dist/codicon.css node_modules/@vscode/codicons/dist/codicon.ttf ../../out/webviews/projectSelector"
