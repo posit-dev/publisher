@@ -14,15 +14,21 @@ import (
 
 type NotebookContentsSuite struct {
 	utiltest.Suite
+	cwd util.AbsolutePath
 }
 
 func TestNotebookContentsSuite(t *testing.T) {
 	suite.Run(t, new(NotebookContentsSuite))
 }
 
-func (s *NotebookContentsSuite) TestGetNotebookFileInputs() {
-	path, err := util.NewPath("testdata", nil).Join("good_notebook.ipynb").Abs()
+func (s *NotebookContentsSuite) SetupTest() {
+	cwd, err := util.Getwd(nil)
 	s.NoError(err)
+	s.cwd = cwd
+}
+
+func (s *NotebookContentsSuite) TestGetNotebookFileInputs() {
+	path := s.cwd.Join("testdata", "good_notebook.ipynb")
 
 	inputs, err := GetNotebookFileInputs(path)
 	s.Nil(err)
@@ -30,12 +36,11 @@ func (s *NotebookContentsSuite) TestGetNotebookFileInputs() {
 }
 
 func (s *NotebookContentsSuite) TestGetNotebookFileInputsErr() {
-	fs := utiltest.NewMockFs()
-	path, err := util.NewPath("testdata", fs).Join("good_notebook.ipynb").Abs()
-	s.NoError(err)
+	afs := utiltest.NewMockFs()
+	path := s.cwd.Join("testdata", "good_notebook.ipynb").WithFs(afs)
 
 	testError := errors.New("test error from Open")
-	fs.On("Open", mock.Anything).Return(nil, testError)
+	afs.On("Open", mock.Anything).Return(nil, testError)
 	inputs, err := GetNotebookFileInputs(path)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
@@ -43,8 +48,7 @@ func (s *NotebookContentsSuite) TestGetNotebookFileInputsErr() {
 }
 
 func (s *NotebookContentsSuite) TestGetNotebookInputsNoCells() {
-	path, err := util.NewPath("testdata", nil).Join("empty_notebook.ipynb").Abs()
-	s.NoError(err)
+	path := s.cwd.Join("testdata", "empty_notebook.ipynb")
 
 	inputs, err := GetNotebookFileInputs(path)
 	s.NoError(err)

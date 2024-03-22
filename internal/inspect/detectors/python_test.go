@@ -126,10 +126,12 @@ func (s *PythonSuite) TestInferTypeEntrypointErr() {
 }
 
 func (s *PythonSuite) TestInferTypeHasImportsErr() {
+	base, err := util.Getwd(utiltest.NewMockFs())
+	s.NoError(err)
+
 	inferrer := &MockInferenceHelper{}
 	entrypoint := "app.py"
-	entrypointPath, err := util.NewPath(entrypoint, nil).Abs()
-	s.NoError(err)
+	entrypointPath := base.Join(entrypoint)
 
 	inferrer.On("InferEntrypoint", mock.Anything, ".py", mock.Anything).Return(entrypoint, entrypointPath, nil)
 	testError := errors.New("test error from FileHasPythonImports")
@@ -137,8 +139,6 @@ func (s *PythonSuite) TestInferTypeHasImportsErr() {
 
 	detector := NewFlaskDetector()
 	detector.inferenceHelper = inferrer
-	base, err := util.Getwd(utiltest.NewMockFs())
-	s.NoError(err)
 
 	t, err := detector.InferType(base)
 	s.NotNil(err)

@@ -19,8 +19,9 @@ func TestQMDContentsSuite(t *testing.T) {
 }
 
 func (s *QMDContentsSuite) TestGetQuartoFilePythonCode() {
-	path, err := util.NewPath("testdata", nil).Join("test.qmd").Abs()
+	cwd, err := util.Getwd(nil)
 	s.NoError(err)
+	path := cwd.Join("testdata", "test.qmd")
 
 	inputs, err := GetQuartoFilePythonCode(path)
 	s.Nil(err)

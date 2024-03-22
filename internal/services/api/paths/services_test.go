@@ -149,7 +149,7 @@ func (s *ServicesSuite) TestPathsService_isTrusted() {
 		fpath, err := util.Getwd(afs)
 		s.NoError(err)
 
-		tpath, err := util.NewPath(t.path, afs).Abs()
+		tpath, err := util.NewRelativePath(t.path, afs).Abs()
 		s.NoError(err)
 
 		ps := pathsService{fpath, s.log}
