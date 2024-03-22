@@ -1,4 +1,6 @@
-package newignore
+package gitignore
+
+// Copyright (C) 2023 by Posit Software, PBC.
 
 import (
 	"fmt"
@@ -31,7 +33,7 @@ func NewBuiltinIgnoreFile(builtins []string) (*IgnoreFile, error) {
 	patterns := []*Pattern{}
 
 	for lineNum, builtin := range builtins {
-		pattern, err := patternFromString(builtin, filePath, lineNum)
+		pattern, err := patternFromString(builtin, filePath, lineNum+1)
 		if err != nil {
 			return nil, err
 		}
@@ -137,7 +139,7 @@ func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum in
 	} else {
 		// Otherwise the pattern may also match at any level below the
 		// .gitignore level.
-		rawRegex = path.Join(`.*/`, rawRegex)
+		rawRegex = ignoreFilePath.Dir().ToSlash() + `((/.*/)|/)` + rawRegex
 	}
 
 	rawRegex = "^" + rawRegex + "$"

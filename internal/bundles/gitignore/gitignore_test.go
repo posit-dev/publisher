@@ -34,13 +34,6 @@ func (s *GitIgnoreSuite) SetupTest() {
 	cwd.MkdirAll(0700)
 }
 
-func (s *GitIgnoreSuite) TestNew() {
-	ign := New(s.cwd)
-	s.NotNil(ign.files)
-	s.NotNil(ign.cwd)
-	s.NotNil(ign.fs)
-}
-
 func (s *GitIgnoreSuite) TestMatch() {
 	err := s.cwd.Join(".git").MkdirAll(0700)
 	s.NoError(err)
@@ -49,46 +42,38 @@ func (s *GitIgnoreSuite) TestMatch() {
 	err = ignoreFilePath.WriteFile([]byte(".Rhistory\nignoreme\n"), 0600)
 	s.NoError(err)
 
-	ign, err := From(ignoreFilePath)
-	s.NoError(err)
-
-	err = ign.AppendGlobs([]string{"*.bak"}, MatchSourceBuiltIn)
+	ign := NewIgnoreList([]string{"*.bak", "ignoredir/"})
+	err = ign.AddFile(ignoreFilePath)
 	s.NoError(err)
 
 	// Match returns nil if no match
-	m, err := ign.Match("app.py")
-	s.NoError(err)
+	m := ign.Match(s.cwd.Join("app.py"))
 	s.Nil(m)
 
 	// File matches include file info
-	m, err = ign.Match(".Rhistory")
-	s.NoError(err)
+	m = ign.Match(s.cwd.Join(".Rhistory"))
 	s.NotNil(m)
 	s.Equal(MatchSourceFile, m.Source)
 	s.Equal(".Rhistory", m.Pattern)
-	s.Equal(".positignore", m.FilePath)
+	s.Equal(ignoreFilePath, m.FilePath)
 	s.Equal(1, m.Line)
 
 	// Non-file matches don't include file info
-	m, err = ign.Match("app.py.bak")
-	s.NoError(err)
+	m = ign.Match(s.cwd.Join("app.py.bak"))
 	s.NotNil(m)
 	s.Equal(MatchSourceBuiltIn, m.Source)
 	s.Equal("*.bak", m.Pattern)
-	s.Equal("", m.FilePath)
-	s.Equal(0, m.Line)
+	s.Equal("", m.FilePath.String())
+	s.Equal(1, m.Line)
 
 	ignoredir := s.cwd.Join("ignoredir")
 	err = ignoredir.MkdirAll(0700)
 	s.NoError(err)
-	err = ign.AppendGlobs([]string{"ignoredir/"}, MatchSourceBuiltIn)
-	s.NoError(err)
 
-	m, err = ign.Match(ignoredir.String())
-	s.NoError(err)
+	m = ign.Match(ignoredir)
 	s.NotNil(m)
 	s.Equal(MatchSourceBuiltIn, m.Source)
 	s.Equal("ignoredir/", m.Pattern)
-	s.Equal("", m.FilePath)
-	s.Equal(0, m.Line)
+	s.Equal("", m.FilePath.String())
+	s.Equal(2, m.Line)
 }

@@ -1,4 +1,4 @@
-package newignore
+package gitignore
 
 import (
 	"os"
