@@ -15,7 +15,7 @@ type MockFilesService struct {
 	files.FilesService
 }
 
-func (m *MockFilesService) GetFile(p util.Path, ignore gitignore.IgnoreList) (*files.File, error) {
+func (m *MockFilesService) GetFile(p util.AbsolutePath, ignore gitignore.IgnoreList) (*files.File, error) {
 	args := m.Called(p, ignore)
 	return args.Get(0).(*files.File), args.Error(1)
 }
@@ -25,7 +25,7 @@ type MockPathsService struct {
 	paths.PathsService
 }
 
-func (m *MockPathsService) IsSafe(p util.Path) (bool, error) {
+func (m *MockPathsService) IsSafe(p util.AbsolutePath) (bool, error) {
 	args := m.Called(p)
 	return args.Bool(0), args.Error(1)
 }

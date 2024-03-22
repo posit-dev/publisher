@@ -1,11 +1,14 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { defineStore } from 'pinia';
-import { useApi } from 'src/api';
-import { computed, ref } from 'vue';
-import { router } from 'src/router';
-import { getStatusFromError, newFatalErrorRouteLocation } from 'src/utils/errors';
-import { sortByDateString } from 'src/utils/date';
+import { defineStore } from "pinia";
+import { useApi } from "src/api";
+import { computed, ref } from "vue";
+import { router } from "src/router";
+import {
+  getStatusFromError,
+  newFatalErrorRouteLocation,
+} from "src/utils/errors";
+import { sortByDateString } from "src/utils/date";
 
 import {
   Deployment,
@@ -13,11 +16,14 @@ import {
   isDeployment,
   isDeploymentError,
   PreDeployment,
-} from 'src/api/types/deployments';
+} from "src/api/types/deployments";
 
-export const useDeploymentStore = defineStore('deployment', () => {
+export const useDeploymentStore = defineStore("deployment", () => {
   // key is deployment saveName
-  type DeploymentMap = Record<string, Deployment | PreDeployment | DeploymentError>;
+  type DeploymentMap = Record<
+    string,
+    Deployment | PreDeployment | DeploymentError
+  >;
 
   const deploymentMap = ref<DeploymentMap>({});
 
@@ -33,15 +39,17 @@ export const useDeploymentStore = defineStore('deployment', () => {
         return d;
       }
 
-      router.push(newFatalErrorRouteLocation(
-        new Error('Invalid Value for Deployment Object'),
-        'deployments::getDeploymentRef::computed()',
-      ));
+      router.push(
+        newFatalErrorRouteLocation(
+          new Error("Invalid Value for Deployment Object"),
+          "deployments::getDeploymentRef::computed()",
+        ),
+      );
       return undefined;
     });
   };
 
-  const refreshDeployments = async() => {
+  const refreshDeployments = async () => {
     try {
       const newDeploymentMap: DeploymentMap = {};
 
@@ -58,13 +66,17 @@ export const useDeploymentStore = defineStore('deployment', () => {
       });
       deploymentMap.value = newDeploymentMap;
     } catch (error: unknown) {
-      router.push(newFatalErrorRouteLocation(error, 'deployments::getDeployments()'));
+      router.push(
+        newFatalErrorRouteLocation(error, "deployments::getDeployments()"),
+      );
     }
   };
 
-  const hasDeployments = computed(() => Object.keys(deploymentMap.value).length > 0);
+  const hasDeployments = computed(
+    () => Object.keys(deploymentMap.value).length > 0,
+  );
 
-  const refreshDeployment = async(deploymentName: string) => {
+  const refreshDeployment = async (deploymentName: string) => {
     try {
       // API Returns:
       // 200 - success
@@ -84,7 +96,12 @@ export const useDeploymentStore = defineStore('deployment', () => {
         return;
       }
       // For this page, we send all errors to the fatal error page, including 404
-      router.push(newFatalErrorRouteLocation(error, `deployments::getDeployment(${name})`));
+      router.push(
+        newFatalErrorRouteLocation(
+          error,
+          `deployments::getDeployment(${name})`,
+        ),
+      );
     }
   };
 
@@ -92,18 +109,18 @@ export const useDeploymentStore = defineStore('deployment', () => {
     const result: Array<Deployment | PreDeployment | DeploymentError> = [];
     const deploymentErrors: Array<DeploymentError> = [];
     const deployments: Array<Deployment | PreDeployment> = [];
-    Object.keys(deploymentMap.value).forEach(
-      deploymentName => {
-        const deployment = deploymentMap.value[deploymentName];
-        if (isDeploymentError(deployment)) {
-          deploymentErrors.push(deployment);
-        } else {
-          deployments.push(deployment);
-        }
+    Object.keys(deploymentMap.value).forEach((deploymentName) => {
+      const deployment = deploymentMap.value[deploymentName];
+      if (isDeploymentError(deployment)) {
+        deploymentErrors.push(deployment);
+      } else {
+        deployments.push(deployment);
       }
-    );
+    });
     deploymentErrors.sort((a, b) => {
-      return a.deploymentName.localeCompare(b.deploymentName, undefined, { sensitivity: 'base' });
+      return a.deploymentName.localeCompare(b.deploymentName, undefined, {
+        sensitivity: "base",
+      });
     });
     deployments.sort((a, b) => {
       const aDate = isDeployment(a) ? a.deployedAt : a.createdAt;
@@ -116,7 +133,7 @@ export const useDeploymentStore = defineStore('deployment', () => {
 
   const initializing = ref(true);
 
-  const init = async() => {
+  const init = async () => {
     await refreshDeployments();
     initializing.value = false;
   };
@@ -129,6 +146,6 @@ export const useDeploymentStore = defineStore('deployment', () => {
     hasDeployments,
     deploymentMap,
     getDeploymentRef,
-    initializing
+    initializing,
   };
 });

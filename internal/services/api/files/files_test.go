@@ -27,10 +27,13 @@ func (s *FilesSuite) SetupSuite() {
 
 func (s *FilesSuite) TestCreateFile() {
 	afs := afero.NewMemMapFs()
-	pathname := "."
-	path := util.NewPath(pathname, afs)
-	file, err := CreateFile(path, path, nil)
-	s.NotNil(file)
+	path, err := util.Getwd(afs)
 	s.NoError(err)
-	s.Equal(file.Rel, pathname)
+	err = path.MkdirAll(0777)
+	s.NoError(err)
+
+	file, err := CreateFile(path, path, nil)
+	s.NoError(err)
+	s.NotNil(file)
+	s.Equal(file.Rel, ".")
 }

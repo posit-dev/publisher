@@ -14,9 +14,23 @@ import (
 	"github.com/spf13/afero"
 )
 
+// Setting assertPathType will panic if paths that must be
+// absolute or relative are not. To hunt down bugs or
+// unnecessary calls to Abs/Rel, set this to true
+// and run `just test`.
+const assertPathType = false
+
 type Path struct {
 	path string
 	fs   afero.Fs
+}
+
+type RelativePath struct {
+	Path
+}
+
+type AbsolutePath struct {
+	Path
 }
 
 var osFs = afero.NewOsFs()
@@ -31,6 +45,29 @@ func NewPath(path string, fs afero.Fs) Path {
 	}
 }
 
+func NewAbsolutePath(path string, fs afero.Fs) AbsolutePath {
+	if !filepath.IsAbs(path) {
+		if assertPathType {
+			panic("NewAbsolutePath: path is not absolute: " + path)
+		}
+		// We shouldn't get here, but if we do, convert this
+		// into an absolute path.
+		path, _ = filepath.Abs(path)
+	}
+	return AbsolutePath{
+		Path: NewPath(path, fs),
+	}
+}
+
+func NewRelativePath(path string, fs afero.Fs) RelativePath {
+	if assertPathType && filepath.IsAbs(path) {
+		panic("NewRelativePath: path is not relative: " + path)
+	}
+	return RelativePath{
+		Path: NewPath(path, fs),
+	}
+}
+
 func (p *Path) UnmarshalText(data []byte) error {
 	p.path = string(data)
 	p.fs = osFs
@@ -38,10 +75,6 @@ func (p *Path) UnmarshalText(data []byte) error {
 }
 
 func (p Path) String() string {
-	return p.path
-}
-
-func (p Path) Path() string {
 	return p.path
 }
 
@@ -57,16 +90,45 @@ func (p *Path) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &p.path)
 }
 
-func (p Path) WithPath(path string) Path {
+func (p Path) withPath(path string) Path {
 	return NewPath(path, p.fs)
 }
 
-func (p Path) Abs() (Path, error) {
+func (p AbsolutePath) withPath(path string) AbsolutePath {
+	return NewAbsolutePath(path, p.fs)
+}
+
+func (p RelativePath) withPath(path string) RelativePath {
+	return NewRelativePath(path, p.fs)
+}
+
+func (p Path) WithFs(fs afero.Fs) Path {
+	return NewPath(p.path, fs)
+}
+
+func (p AbsolutePath) WithFs(fs afero.Fs) AbsolutePath {
+	return NewAbsolutePath(p.path, fs)
+}
+
+func (p RelativePath) WithFs(fs afero.Fs) RelativePath {
+	return NewRelativePath(p.path, fs)
+}
+
+func (p Path) Abs() (AbsolutePath, error) {
 	absPath, err := filepath.Abs(p.path)
 	if err != nil {
-		return Path{}, err
+		return AbsolutePath{}, err
 	}
-	return p.WithPath(absPath), nil
+	return AbsolutePath{
+		Path: NewPath(absPath, p.fs),
+	}, nil
+}
+
+func (p AbsolutePath) Abs() (AbsolutePath, error) {
+	if assertPathType {
+		panic("AbsolutePath.Abs called")
+	}
+	return p.Path.Abs()
 }
 
 func (p Path) Base() string {
@@ -74,11 +136,27 @@ func (p Path) Base() string {
 }
 
 func (p Path) Clean() Path {
-	return p.WithPath(filepath.Clean(p.path))
+	return p.withPath(filepath.Clean(p.path))
+}
+
+func (p AbsolutePath) Clean() AbsolutePath {
+	return p.withPath(filepath.Clean(p.path))
+}
+
+func (p RelativePath) Clean() RelativePath {
+	return p.withPath(filepath.Clean(p.path))
 }
 
 func (p Path) Dir() Path {
-	return p.WithPath(filepath.Dir(p.path))
+	return p.withPath(filepath.Dir(p.path))
+}
+
+func (p AbsolutePath) Dir() AbsolutePath {
+	return p.withPath(filepath.Dir(p.path))
+}
+
+func (p RelativePath) Dir() RelativePath {
+	return p.withPath(filepath.Dir(p.path))
 }
 
 func (p Path) Ext() string {
@@ -93,30 +171,60 @@ func PathFromEnvironment(envVar string, fs afero.Fs) Path {
 	return NewPath(os.Getenv(envVar), fs)
 }
 
-func Getwd(fs afero.Fs) (Path, error) {
+func Getwd(fs afero.Fs) (AbsolutePath, error) {
+	// os.Getwd returns an absolute path
 	wd, err := os.Getwd()
 	if err != nil {
-		return Path{}, err
+		return AbsolutePath{}, err
 	}
-	return NewPath(wd, fs), nil
+	return AbsolutePath{
+		Path: NewPath(wd, fs),
+	}, nil
 }
 
-func UserHomeDir(fs afero.Fs) (Path, error) {
+func UserHomeDir(fs afero.Fs) (AbsolutePath, error) {
+	// os.UserHomeDir returns an absolute path
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return Path{}, err
+		return AbsolutePath{}, err
 	}
-	return NewPath(home, fs), nil
+	return AbsolutePath{
+		Path: NewPath(home, fs),
+	}, nil
 }
 
 func (p Path) Glob(pattern string) ([]Path, error) {
-	matches, err := afero.Glob(p.fs, p.Join(pattern).Path())
+	matches, err := afero.Glob(p.fs, p.Join(pattern).String())
 	if err != nil {
 		return nil, err
 	}
 	paths := make([]Path, len(matches))
 	for i, match := range matches {
 		paths[i] = NewPath(match, p.fs)
+	}
+	return paths, nil
+}
+
+func (p AbsolutePath) Glob(pattern string) ([]AbsolutePath, error) {
+	matches, err := afero.Glob(p.fs, p.Join(pattern).String())
+	if err != nil {
+		return nil, err
+	}
+	paths := make([]AbsolutePath, len(matches))
+	for i, match := range matches {
+		paths[i] = NewAbsolutePath(match, p.fs)
+	}
+	return paths, nil
+}
+
+func (p RelativePath) Glob(pattern string) ([]RelativePath, error) {
+	matches, err := afero.Glob(p.fs, p.Join(pattern).String())
+	if err != nil {
+		return nil, err
+	}
+	paths := make([]RelativePath, len(matches))
+	for i, match := range matches {
+		paths[i] = NewRelativePath(match, p.fs)
 	}
 	return paths, nil
 }
@@ -136,21 +244,56 @@ func (p Path) Join(other ...string) Path {
 		p.fs)
 }
 
+func (p AbsolutePath) Join(other ...string) AbsolutePath {
+	return AbsolutePath{
+		Path: p.Path.Join(other...),
+	}
+}
+
+func (p RelativePath) Join(other ...string) RelativePath {
+	return RelativePath{
+		Path: p.Path.Join(other...),
+	}
+}
+
 func (p Path) Match(pattern string) (matched bool, err error) {
 	return filepath.Match(pattern, p.path)
 }
 
-func (p Path) Rel(basepath Path) (Path, error) {
+func (p Path) Rel(basepath AbsolutePath) (RelativePath, error) {
 	relPath, err := filepath.Rel(basepath.path, p.path)
 	if err != nil {
-		return Path{}, err
+		return RelativePath{}, err
 	}
-	return p.WithPath(relPath), nil
+	return RelativePath{
+		Path: NewPath(relPath, p.fs),
+	}, nil
+}
+
+func (p RelativePath) Rel(basepath AbsolutePath) (RelativePath, error) {
+	if assertPathType {
+		panic("RelativePath.Rel called")
+	}
+	return p.Path.Rel(basepath)
 }
 
 func (p Path) Split() (Path, string) {
 	dir, file := filepath.Split(p.path)
 	return NewPath(dir, p.fs), file
+}
+
+func (p AbsolutePath) Split() (AbsolutePath, string) {
+	dir, file := p.Path.Split()
+	return AbsolutePath{
+		Path: dir,
+	}, file
+}
+
+func (p RelativePath) Split() (RelativePath, string) {
+	dir, file := p.Path.Split()
+	return RelativePath{
+		Path: dir,
+	}, file
 }
 
 func (p Path) SplitList() []string {
@@ -170,6 +313,24 @@ type WalkFunc func(path Path, info fs.FileInfo, err error) error
 func (p Path) Walk(fn WalkFunc) error {
 	return afero.Walk(p.fs, p.path, func(path string, info fs.FileInfo, err error) error {
 		return fn(NewPath(path, p.fs), info, err)
+	})
+}
+
+type AbsoluteWalkFunc func(path AbsolutePath, info fs.FileInfo, err error) error
+
+func (p AbsolutePath) Walk(fn AbsoluteWalkFunc) error {
+	return afero.Walk(p.fs, p.path, func(path string, info fs.FileInfo, err error) error {
+		// When provided with an absolute path, Walk gives us absolute paths.
+		return fn(NewAbsolutePath(path, p.fs), info, err)
+	})
+}
+
+type RelativeWalkFunc func(path RelativePath, info fs.FileInfo, err error) error
+
+func (p RelativePath) Walk(fn RelativeWalkFunc) error {
+	return afero.Walk(p.fs, p.path, func(path string, info fs.FileInfo, err error) error {
+		// When provided with a relative path, Walk gives us relative paths.
+		return fn(NewRelativePath(path, p.fs), info, err)
 	})
 }
 
@@ -303,11 +464,11 @@ func (p Path) ReadlinkIfPossible() (Path, error) {
 }
 
 type Walker interface {
-	Walk(root Path, fn WalkFunc) error
+	Walk(root AbsolutePath, fn AbsoluteWalkFunc) error
 }
 
 type FSWalker struct{}
 
-func (w FSWalker) Walk(root Path, fn WalkFunc) error {
+func (w FSWalker) Walk(root AbsolutePath, fn AbsoluteWalkFunc) error {
 	return root.Walk(fn)
 }

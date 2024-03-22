@@ -37,9 +37,7 @@
       />
     </g>
     <g>
-      <path
-        d="M91.9,17.7h-1.1v-6.2h-1.7v-1h4.6v1h-1.7V17.7z"
-      />
+      <path d="M91.9,17.7h-1.1v-6.2h-1.7v-1h4.6v1h-1.7V17.7z" />
       <path
         d="M97.4,17.7l-1.8-5.8h0c0,0.2,0,0.4,0,0.6s0,0.4,0,0.6c0,0.2,0,0.4,0,0.6v4.1h-1v-7.1h1.6l1.7,5.6h0l1.8-5.6h1.6v7.1h-1.1
         v-4.1c0-0.2,0-0.4,0-0.6c0-0.2,0-0.4,0-0.6s0-0.4,0-0.6h0l-1.9,5.8H97.4z"
@@ -49,10 +47,8 @@
 </template>
 
 <script setup lang="ts">
-
 defineProps({
   height: { type: String, required: true },
   width: { type: String, required: true },
 });
-
 </script>

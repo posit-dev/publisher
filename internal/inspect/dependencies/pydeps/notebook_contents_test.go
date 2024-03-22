@@ -14,24 +14,33 @@ import (
 
 type NotebookContentsSuite struct {
 	utiltest.Suite
+	cwd util.AbsolutePath
 }
 
 func TestNotebookContentsSuite(t *testing.T) {
 	suite.Run(t, new(NotebookContentsSuite))
 }
 
+func (s *NotebookContentsSuite) SetupTest() {
+	cwd, err := util.Getwd(nil)
+	s.NoError(err)
+	s.cwd = cwd
+}
+
 func (s *NotebookContentsSuite) TestGetNotebookFileInputs() {
-	path := util.NewPath("testdata", nil).Join("good_notebook.ipynb")
+	path := s.cwd.Join("testdata", "good_notebook.ipynb")
+
 	inputs, err := GetNotebookFileInputs(path)
 	s.Nil(err)
 	s.Equal("import sys\nprint(sys.executable)\nprint('Summing')\n123 + 456\n", inputs)
 }
 
 func (s *NotebookContentsSuite) TestGetNotebookFileInputsErr() {
-	fs := utiltest.NewMockFs()
-	path := util.NewPath("testdata", fs).Join("good_notebook.ipynb")
+	afs := utiltest.NewMockFs()
+	path := s.cwd.Join("testdata", "good_notebook.ipynb").WithFs(afs)
+
 	testError := errors.New("test error from Open")
-	fs.On("Open", mock.Anything).Return(nil, testError)
+	afs.On("Open", mock.Anything).Return(nil, testError)
 	inputs, err := GetNotebookFileInputs(path)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
@@ -39,7 +48,8 @@ func (s *NotebookContentsSuite) TestGetNotebookFileInputsErr() {
 }
 
 func (s *NotebookContentsSuite) TestGetNotebookInputsNoCells() {
-	path := util.NewPath("testdata", nil).Join("empty_notebook.ipynb")
+	path := s.cwd.Join("testdata", "empty_notebook.ipynb")
+
 	inputs, err := GetNotebookFileInputs(path)
 	s.NoError(err)
 	s.Equal("", inputs)

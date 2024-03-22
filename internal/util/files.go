@@ -42,7 +42,7 @@ var pythonBinPaths = []string{
 	"Scripts/python3.exe",
 }
 
-func IsPythonEnvironmentDir(path Path) bool {
+func IsPythonEnvironmentDir(path AbsolutePath) bool {
 	for _, binary := range pythonBinPaths {
 		exists, err := path.Join(binary).Exists()
 		if err == nil && exists {

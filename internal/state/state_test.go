@@ -21,7 +21,7 @@ type StateSuite struct {
 	utiltest.Suite
 
 	fs  afero.Fs
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func (s *StateSuite) SetupTest() {

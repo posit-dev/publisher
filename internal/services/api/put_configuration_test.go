@@ -22,7 +22,7 @@ import (
 type PutConfigurationSuite struct {
 	utiltest.Suite
 	log logging.Logger
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestPutConfigurationSuite(t *testing.T) {

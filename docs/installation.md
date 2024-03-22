@@ -56,6 +56,14 @@ The script explains what it does and then pauses before it does it.
     1. `sudo install -o root -g wheel -m 0755 ./bin/publisher /usr/local/bin`.
        Replace `/usr/local/bin` with your preferred installation directory.
        Otherwise, you may need to allow access manually after first invocation.
+       
+## Optional: Install Quarto
+
+If you plan on deploying Quarto content having Quarto installed will allow
+Posit Publisher to correctly detect Quarto application types for easier
+deploying.
+
+[Quarto - Get Started](https://quarto.org/docs/get-started/)
 
 ## Verification
 

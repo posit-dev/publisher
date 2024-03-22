@@ -29,7 +29,7 @@ var stateFactory = state.New
 var publisherFactory = publish.NewFromState
 
 func PostDeploymentHandlerFunc(
-	base util.Path,
+	base util.AbsolutePath,
 	log logging.Logger,
 	accountList accounts.AccountList,
 	emitter events.Emitter) http.HandlerFunc {

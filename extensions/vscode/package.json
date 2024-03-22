@@ -78,6 +78,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.deployments.visit",
+        "title": "View this deployment in Connect",
+        "icon": "$(link-external)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.deployments.refresh",
         "title": "Refresh Deployments",
         "icon": "$(refresh)",
@@ -132,6 +138,22 @@
         "command": "posit.publisher.requirements.scan",
         "title": "Scan Requirements",
         "icon": "$(eye)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.helpAndFeedback.gettingStarted",
+        "title": "Open Getting Started Documentation",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.helpAndFeedback.openFeedback",
+        "title": "Provide Feedback",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.logs.visit",
+        "title": "View this deployment in Connect",
+        "icon": "$(link-external)",
         "category": "Posit Publisher"
       }
     ],
@@ -218,6 +240,11 @@
         {
           "command": "posit.publisher.deployments.forget",
           "when": "view == posit.publisher.deployments"
+        },
+        {
+          "command": "posit.publisher.deployments.visit",
+          "when": "viewItem == posit.publisher.deployments.tree.item.deployment",
+          "group": "inline"
         },
         {
           "command": "posit.publisher.files.addExclusion",
@@ -417,6 +444,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts",
+    "format": "prettier . --write",
+    "check-format": "prettier . --check",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
@@ -431,8 +460,10 @@
     "@typescript-eslint/parser": "^6.7.3",
     "@vscode/test-electron": "^2.3.8",
     "eslint": "^8.50.0",
+    "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
+    "prettier": "3.2.5",
     "typescript": "^5.2.2"
   },
   "dependencies": {

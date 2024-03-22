@@ -26,7 +26,7 @@ func TestPostRequirementsSuite(t *testing.T) {
 }
 
 func (s *PostRequirementsSuite) TestNewPostRequirementsHandler() {
-	base := util.NewPath("/project", nil)
+	base := util.NewAbsolutePath("/project", nil)
 	log := logging.New()
 	h := NewPostRequirementsHandler(base, log)
 	s.Equal(base, h.base)
@@ -40,7 +40,7 @@ func (s *PostRequirementsSuite) TestServeHTTP() {
 	req, err := http.NewRequest("POST", "/api/requirements", body)
 	s.NoError(err)
 
-	base := util.NewPath("/project", nil)
+	base := util.NewAbsolutePath("/project", nil)
 	destPath := base.Join("requirements.txt")
 
 	log := logging.New()
@@ -62,7 +62,7 @@ func (s *PostRequirementsSuite) TestServeHTTPEmptyBody() {
 	req, err := http.NewRequest("POST", "/api/requirements", body)
 	s.NoError(err)
 
-	base := util.NewPath("/project", nil)
+	base := util.NewAbsolutePath("/project", nil)
 	destPath := base.Join("requirements.txt")
 
 	log := logging.New()
@@ -84,7 +84,7 @@ func (s *PostRequirementsSuite) TestServeHTTPWithSaveName() {
 	req, err := http.NewRequest("POST", "/api/requirements", body)
 	s.NoError(err)
 
-	base := util.NewPath("/project", nil)
+	base := util.NewAbsolutePath("/project", nil)
 	destPath := base.Join("my_requirements.txt")
 
 	log := logging.New()
@@ -106,7 +106,7 @@ func (s *PostRequirementsSuite) TestServeHTTPErr() {
 	req, err := http.NewRequest("POST", "/api/requirements", body)
 	s.NoError(err)
 
-	base := util.NewPath("/project", nil)
+	base := util.NewAbsolutePath("/project", nil)
 	log := logging.New()
 	h := NewPostRequirementsHandler(base, log)
 

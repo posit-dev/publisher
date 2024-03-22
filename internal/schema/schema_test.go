@@ -13,7 +13,7 @@ import (
 
 type SchemaSuite struct {
 	utiltest.Suite
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestSchemaSuite(t *testing.T) {
@@ -21,11 +21,9 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaSuite) SetupTest() {
-	cwd, err := util.Getwd(afero.NewMemMapFs())
+	cwd, err := util.Getwd(nil)
 	s.NoError(err)
 	s.cwd = cwd
-	err = cwd.MkdirAll(0700)
-	s.NoError(err)
 }
 
 type genericContent map[string]any
@@ -33,7 +31,7 @@ type genericContent map[string]any
 func (s *SchemaSuite) TestValidateConfig() {
 	validator, err := NewValidator[genericContent](ConfigSchemaURL)
 	s.NoError(err)
-	path := util.NewPath(".", nil).Join("schemas", "deploy.toml")
+	path := s.cwd.Join("schemas", "deploy.toml")
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
@@ -41,7 +39,7 @@ func (s *SchemaSuite) TestValidateConfig() {
 func (s *SchemaSuite) TestValidateDeployment() {
 	validator, err := NewValidator[genericContent](DeploymentSchemaURL)
 	s.NoError(err)
-	path := util.NewPath(".", nil).Join("schemas", "record.toml")
+	path := s.cwd.Join("schemas", "record.toml")
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
@@ -50,7 +48,7 @@ func (s *SchemaSuite) TestValidateDraftConfig() {
 	const draftConfigSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
 	validator, err := NewValidator[genericContent](draftConfigSchemaURL)
 	s.NoError(err)
-	path := util.NewPath(".", nil).Join("schemas", "draft", "deploy.toml")
+	path := s.cwd.Join("schemas", "draft", "deploy.toml")
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
@@ -59,15 +57,20 @@ func (s *SchemaSuite) TestValidateDraftDeployment() {
 	const draftDeploymentSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json"
 	validator, err := NewValidator[genericContent](draftDeploymentSchemaURL)
 	s.NoError(err)
-	path := util.NewPath(".", nil).Join("schemas", "draft", "record.toml")
+	path := s.cwd.Join("schemas", "draft", "record.toml")
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
 
 func (s *SchemaSuite) TestValidationError() {
+	cwd, err := util.Getwd(afero.NewMemMapFs())
+	s.NoError(err)
+	err = cwd.MkdirAll(0700)
+	s.NoError(err)
+
 	badTOML := []byte("bad-attr = 1\n")
-	path := s.cwd.Join("test.toml")
-	err := path.WriteFile(badTOML, 0600)
+	path := cwd.Join("test.toml")
+	err = path.WriteFile(badTOML, 0600)
 	s.NoError(err)
 
 	validator, err := NewValidator[genericContent](ConfigSchemaURL)

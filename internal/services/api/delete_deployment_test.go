@@ -21,7 +21,7 @@ import (
 type DeleteDeploymentSuite struct {
 	utiltest.Suite
 	log logging.Logger
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestDeleteDeploymentSuite(t *testing.T) {
@@ -40,7 +40,7 @@ func (s *DeleteDeploymentSuite) SetupTest() {
 	s.cwd.MkdirAll(0700)
 }
 
-func createSampleDeployment(root util.Path, name string) (*deployment.Deployment, error) {
+func createSampleDeployment(root util.AbsolutePath, name string) (*deployment.Deployment, error) {
 	path := deployment.GetDeploymentPath(root, name)
 	d := deployment.New()
 	d.ID = "12345678"
@@ -53,13 +53,13 @@ func createSampleDeployment(root util.Path, name string) (*deployment.Deployment
 	return d, d.WriteFile(path)
 }
 
-func (s *DeleteDeploymentSuite) fileExists(path util.Path) {
+func (s *DeleteDeploymentSuite) fileExists(path util.AbsolutePath) {
 	exists, err := path.Exists()
 	s.NoError(err)
 	s.True(exists)
 }
 
-func (s *DeleteDeploymentSuite) fileDoesNotExist(path util.Path) {
+func (s *DeleteDeploymentSuite) fileDoesNotExist(path util.AbsolutePath) {
 	exists, err := path.Exists()
 	s.NoError(err)
 	s.False(exists)

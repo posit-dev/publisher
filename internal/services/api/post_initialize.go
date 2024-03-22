@@ -16,7 +16,7 @@ type PostInitializeRequestBody struct {
 	ConfigName string `json:"configurationName"`
 }
 
-func PostInitializeHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
+func PostInitializeHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()

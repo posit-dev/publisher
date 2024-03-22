@@ -7,11 +7,7 @@
         <h2 class="text-h6">
           {{ title }}
         </h2>
-        <p
-          v-for="(subtitle, index) in subtitles"
-          :key="index"
-          class="q-mt-xs"
-        >
+        <p v-for="(subtitle, index) in subtitles" :key="index" class="q-mt-xs">
           {{ subtitle }}
         </p>
       </div>
@@ -21,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType } from "vue";
 
 defineProps({
   title: {
@@ -31,7 +27,7 @@ defineProps({
   subtitles: {
     type: Object as PropType<string[]>,
     required: false,
-    default: undefined
+    default: undefined,
   },
 });
 </script>

@@ -44,7 +44,7 @@ type ignoreFile struct {
 
 type GitIgnoreList struct {
 	files []ignoreFile
-	base  util.Path
+	base  util.AbsolutePath
 	cwd   []string
 	fs    afero.Fs
 }
@@ -59,25 +59,21 @@ func fromSplit(path []string) string {
 }
 
 // New creates a new ignore list.
-func New(cwd util.Path) GitIgnoreList {
+func New(cwd util.AbsolutePath) GitIgnoreList {
 	files := make([]ignoreFile, 1, 4)
-	absPath, err := cwd.Abs()
-	if err != nil {
-		absPath = cwd
-	}
-	files[0].abspath = toSplit(absPath.Path())
+	files[0].abspath = toSplit(cwd.String())
 
 	return GitIgnoreList{
 		files: files,
 		base:  cwd,
-		cwd:   toSplit(absPath.Path()),
-		fs:    absPath.Fs(),
+		cwd:   toSplit(cwd.String()),
+		fs:    cwd.Fs(),
 	}
 }
 
 // From creates a new ignore list and populates the first entry with the
 // contents of the specified file.
-func From(path util.Path) (GitIgnoreList, error) {
+func From(path util.AbsolutePath) (GitIgnoreList, error) {
 	ign := New(path.Dir())
 	err := ign.append(path, nil)
 	return ign, err
@@ -160,7 +156,7 @@ func toRelpath(s string, dir, cwd []string) string {
 	return fromSplit(ss)
 }
 
-func (ign *GitIgnoreList) append(path util.Path, dir []string) error {
+func (ign *GitIgnoreList) append(path util.AbsolutePath, dir []string) error {
 	f, err := path.Open()
 	if err != nil {
 		return err
@@ -171,11 +167,8 @@ func (ign *GitIgnoreList) append(path util.Path, dir []string) error {
 	if dir != nil {
 		ignf = &ign.files[0]
 	} else {
-		absDir, err := path.Dir().Abs()
-		if err != nil {
-			return err
-		}
-		d := absDir.Path()
+		absDir := path.Dir()
+		d := absDir.String()
 		if d != fromSplit(ign.cwd) {
 			dir = toSplit(d)
 			ignf = &ignoreFile{
@@ -205,7 +198,7 @@ func (ign *GitIgnoreList) append(path util.Path, dir []string) error {
 			Source:   MatchSourceFile,
 			Pattern:  s,
 			glob:     g,
-			FilePath: relPath.Path(),
+			FilePath: relPath.String(),
 			Line:     line,
 		}
 		ignf.matches = append(ignf.matches, match)
@@ -216,7 +209,7 @@ func (ign *GitIgnoreList) append(path util.Path, dir []string) error {
 
 // Append appends the globs in the specified file to the ignore list. Files are
 // expected to have the same format as .gitignore files.
-func (ign *GitIgnoreList) Append(path util.Path) error {
+func (ign *GitIgnoreList) Append(path util.AbsolutePath) error {
 	return ign.append(path, nil)
 }
 
@@ -231,7 +224,8 @@ func (ign *GitIgnoreList) AppendGit() error {
 	}
 	// Add all .gitignore files, from this directory
 	// up to the git root.
-	dir := util.NewPath(fromSplit(ign.cwd), ign.fs)
+	// We know this path is absolute because ign.cwd is absolute.
+	dir := util.NewAbsolutePath(fromSplit(ign.cwd), ign.fs)
 	for dir.Base() != "" && dir.Base() != "/" && dir.Base() != "." {
 		ignorePath := dir.Join(".gitignore")
 		exists, err := ignorePath.Exists()
@@ -330,17 +324,13 @@ func (ign *GitIgnoreList) Match(path string) (*Match, error) {
 // Walk walks the file tree with the specified root and calls fn on each file
 // or directory. Files and directories that match any of the globs in the
 // ignore list are skipped.
-func (ign *GitIgnoreList) Walk(root util.Path, fn util.WalkFunc) error {
-	abs, err := root.Abs()
-	if err != nil {
-		return err
-	}
-	return abs.Walk(
-		func(path util.Path, info os.FileInfo, err error) error {
+func (ign *GitIgnoreList) Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
+	return root.Walk(
+		func(path util.AbsolutePath, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			relPath := toRelpath("", toSplit(path.Path()), ign.cwd)
+			relPath := toRelpath("", toSplit(path.String()), ign.cwd)
 			if ign.match(relPath, info) != nil {
 				if info.IsDir() {
 					return filepath.SkipDir

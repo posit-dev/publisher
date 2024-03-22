@@ -4,26 +4,19 @@
   <div class="publisher-layout q-pt-md q-pb-xl space-between-y-sm">
     <q-breadcrumbs>
       <q-breadcrumbs-el>
-        <PLink :to="{ name: 'project' }">
-          Project
-        </PLink>
+        <PLink :to="{ name: 'project' }"> Project </PLink>
       </q-breadcrumbs-el>
       <q-breadcrumbs-el>
-        <PLink :to="{ name: 'deployments', params: { name: name }}">
+        <PLink :to="{ name: 'deployments', params: { name: name } }">
           Deploy
         </PLink>
       </q-breadcrumbs-el>
-      <q-breadcrumbs-el
-        label="Progress"
-      />
+      <q-breadcrumbs-el label="Progress" />
     </q-breadcrumbs>
     <template v-if="showDeployInProgress">
       <div class="flex justify-between q-mt-md row-gap-lg column-gap-xl">
         <div class="space-between-y-sm">
-          <h1
-            v-if="name"
-            class="text-h6"
-          >
+          <h1 v-if="name" class="text-h6">
             {{ name }}
           </h1>
           <p>
@@ -37,32 +30,27 @@
       <DeployStepper class="q-mt-xl" />
     </template>
     <template v-else>
-      <h1
-        v-if="name"
-        class="text-h6"
-      >
+      <h1 v-if="name" class="text-h6">
         {{ name }}
       </h1>
       <p>Deployment Logs can be viewed on the Posit Connect server.</p>
       <p>
-        <a
-          :href="connectLogLink"
-          target="_blank"
-          rel="noopener noreferrer"
-        >View deployment logs on Connect</a>
+        <a :href="connectLogLink" target="_blank" rel="noopener noreferrer"
+          >View deployment logs on Connect</a
+        >
       </p>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useEventStore } from 'src/stores/events';
+import { computed } from "vue";
+import { useEventStore } from "src/stores/events";
 
-import DeployStepper from 'src/views/deploy-progress/DeployStepper.vue';
-import PLink from 'src/components/PLink.vue';
-import { useDeploymentStore } from 'src/stores/deployments';
-import { isDeployment, isDeploymentError } from 'src/api';
+import DeployStepper from "src/views/deploy-progress/DeployStepper.vue";
+import PLink from "src/components/PLink.vue";
+import { useDeploymentStore } from "src/stores/deployments";
+import { isDeployment, isDeploymentError } from "src/api";
 
 const eventStore = useEventStore();
 const deployments = useDeploymentStore();
@@ -102,11 +90,12 @@ const showDeployInProgress = computed(() => {
     return false;
   }
   if (deployment) {
-    return eventStore.doesPublishStatusApplyToDeployment(deployment.value.deploymentName);
+    return eventStore.doesPublishStatusApplyToDeployment(
+      deployment.value.deploymentName,
+    );
   }
   return false;
 });
-
 </script>
 
 <style scoped lang="scss">

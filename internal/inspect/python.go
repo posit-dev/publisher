@@ -5,6 +5,7 @@ package inspect
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"slices"
 	"strings"
 
@@ -17,16 +18,16 @@ import (
 
 type PythonInspector interface {
 	InspectPython() (*config.Python, error)
-	ReadRequirementsFile(path util.Path) ([]string, error)
-	WriteRequirementsFile(dest util.Path, reqs []string) error
-	ScanRequirements(base util.Path) ([]string, string, error)
+	ReadRequirementsFile(path util.AbsolutePath) ([]string, error)
+	WriteRequirementsFile(dest util.AbsolutePath, reqs []string) error
+	ScanRequirements(base util.AbsolutePath) ([]string, string, error)
 }
 
 type defaultPythonInspector struct {
 	executor   executor.Executor
 	pathLooker util.PathLooker
 	scanner    pydeps.DependencyScanner
-	base       util.Path
+	base       util.AbsolutePath
 	pythonPath util.Path
 	log        logging.Logger
 }
@@ -35,7 +36,7 @@ var _ PythonInspector = &defaultPythonInspector{}
 
 const PythonRequirementsFilename = "requirements.txt"
 
-func NewPythonInspector(base util.Path, pythonPath util.Path, log logging.Logger) PythonInspector {
+func NewPythonInspector(base util.AbsolutePath, pythonPath util.Path, log logging.Logger) PythonInspector {
 	return &defaultPythonInspector{
 		executor:   executor.NewExecutor(),
 		pathLooker: util.NewPathLooker(),
@@ -53,6 +54,15 @@ func NewPythonInspector(base util.Path, pythonPath util.Path, log logging.Logger
 // be determined by the specified pythonExecutable,
 // or by `python3` or `python` on $PATH.
 func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
+	// Change into the project dir because the user might have
+	// .python-version there or in a parent directory, which will
+	// determine which Python version is run by pyenv.
+	oldWD, err := util.Chdir(i.base.String())
+	if err != nil {
+		return nil, err
+	}
+	defer util.Chdir(oldWD)
+
 	pythonVersion, err := i.getPythonVersion()
 	if err != nil {
 		return nil, err
@@ -78,20 +88,21 @@ func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable strin
 }
 
 func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
-	if i.pythonPath.Path() != "" {
+	if i.pythonPath.String() != "" {
 		// User-provided python executable
 		exists, err := i.pythonPath.Exists()
 		if err != nil {
 			return "", err
 		}
 		if exists {
-			return i.pythonPath.Path(), nil
+			return i.pythonPath.String(), nil
 		}
 		return "", fmt.Errorf(
 			"cannot find the specified Python executable %s: %w",
 			i.pythonPath, fs.ErrNotExist)
 	} else {
 		// Use whatever is on PATH
+		i.log.Info("Looking for Python on PATH", "PATH", os.Getenv("PATH"))
 		path, err := i.pathLooker.LookPath("python3")
 		if err == nil {
 			// Ensure the Python is actually runnable. This is especially
@@ -147,7 +158,7 @@ func (i *defaultPythonInspector) warnIfNoRequirementsFile() error {
 	return nil
 }
 
-func (i *defaultPythonInspector) ReadRequirementsFile(path util.Path) ([]string, error) {
+func (i *defaultPythonInspector) ReadRequirementsFile(path util.AbsolutePath) ([]string, error) {
 	content, err := path.ReadFile()
 	if err != nil {
 		return nil, err
@@ -159,8 +170,8 @@ func (i *defaultPythonInspector) ReadRequirementsFile(path util.Path) ([]string,
 	return lines, nil
 }
 
-func (i *defaultPythonInspector) ScanRequirements(base util.Path) ([]string, string, error) {
-	oldWD, err := util.Chdir(base.Path())
+func (i *defaultPythonInspector) ScanRequirements(base util.AbsolutePath) ([]string, string, error) {
+	oldWD, err := util.Chdir(base.String())
 	if err != nil {
 		return nil, "", err
 	}
@@ -181,7 +192,7 @@ func (i *defaultPythonInspector) ScanRequirements(base util.Path) ([]string, str
 	return reqs, pythonExecutable, nil
 }
 
-func (i *defaultPythonInspector) WriteRequirementsFile(dest util.Path, reqs []string) error {
+func (i *defaultPythonInspector) WriteRequirementsFile(dest util.AbsolutePath, reqs []string) error {
 	pythonExecutable, err := i.getPythonExecutable()
 	if err != nil {
 		return err

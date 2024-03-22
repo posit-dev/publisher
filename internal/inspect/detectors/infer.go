@@ -15,11 +15,11 @@ import (
 // (nil, nil), i.e. failing inference is not an error.
 // If there's an error during inferences, it returns (nil, err).
 type ContentTypeInferer interface {
-	InferType(path util.Path) (*config.Config, error)
+	InferType(path util.AbsolutePath) (*config.Config, error)
 }
 
 type inferenceHelper interface {
-	InferEntrypoint(path util.Path, suffix string, preferredFilenames ...string) (string, util.Path, error)
+	InferEntrypoint(path util.AbsolutePath, suffix string, preferredFilenames ...string) (string, util.AbsolutePath, error)
 	HasPythonImports(r io.Reader, packages []string) (bool, error)
-	FileHasPythonImports(path util.Path, packages []string) (bool, error)
+	FileHasPythonImports(path util.AbsolutePath, packages []string) (bool, error)
 }

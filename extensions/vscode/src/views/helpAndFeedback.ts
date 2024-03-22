@@ -6,25 +6,39 @@ import {
   ProviderResult,
   ExtensionContext,
   window,
-} from 'vscode';
+  Uri,
+  commands,
+  env,
+} from "vscode";
 
-const viewName = 'posit.publisher.helpAndFeedback';
+const viewName = "posit.publisher.helpAndFeedback";
+const openGettingStartedCommand = viewName + ".gettingStarted";
+const openFeedbackCommand = viewName + "openFeedback";
 
-export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAndFeedbackTreeItem> {
-
-  constructor() { }
+export class HelpAndFeedbackTreeDataProvider
+  implements TreeDataProvider<HelpAndFeedbackTreeItem>
+{
+  constructor() {}
 
   getTreeItem(element: HelpAndFeedbackTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(element: HelpAndFeedbackTreeItem | undefined): ProviderResult<HelpAndFeedbackTreeItem[]> {
+  getChildren(
+    element: HelpAndFeedbackTreeItem | undefined,
+  ): ProviderResult<HelpAndFeedbackTreeItem[]> {
     if (element === undefined) {
       return [
-        new HelpAndFeedbackTreeItem('Read Extension Documentation', 'Open Extension Documentation', 'posit.publisher.helpAndFeedback.command.openExtensionDoc'),
-        new HelpAndFeedbackTreeItem('Get Started with Posit Publisher', 'Open Get Started Documentation', 'posit.publisher.helpAndFeedback.command.openGetStartedDoc'),
-        new HelpAndFeedbackTreeItem('Review Issues', 'Open Posit Publisher Issues', 'posit.publisher.helpAndFeedback.command.openIssues'),
-        new HelpAndFeedbackTreeItem('Report Issue', 'Report a Posit Publisher Issue', 'posit.publisher.helpAndFeedback.command.openNewIssue'),
+        new HelpAndFeedbackTreeItem(
+          "Get Started with Posit Publisher",
+          "Open Getting Started Documentation",
+          openGettingStartedCommand,
+        ),
+        new HelpAndFeedbackTreeItem(
+          "Provide Feedback",
+          "Open Feedback Slack Channel",
+          openFeedbackCommand,
+        ),
       ];
     }
     return [];
@@ -32,13 +46,30 @@ export class HelpAndFeedbackTreeDataProvider implements TreeDataProvider<HelpAnd
 
   public register(context: ExtensionContext) {
     context.subscriptions.push(
-      window.createTreeView(viewName, { treeDataProvider: this })
+      window.createTreeView(viewName, { treeDataProvider: this }),
+    );
+
+    context.subscriptions.push(
+      commands.registerCommand(openGettingStartedCommand, () => {
+        env.openExternal(
+          Uri.parse(
+            "https://github.com/posit-dev/publisher/blob/e72828f3585497649b8b55470a665f7fa890a21f/docs/vscode.md",
+          ),
+        );
+      }),
+    );
+
+    context.subscriptions.push(
+      commands.registerCommand(openFeedbackCommand, () => {
+        env.openExternal(
+          Uri.parse("https://positpbc.slack.com/channels/publisher-feedback"),
+        );
+      }),
     );
   }
 }
 
 export class HelpAndFeedbackTreeItem extends TreeItem {
-
   constructor(itemString: string, commandTitle: string, command: string) {
     super(itemString);
     this.command = {
@@ -46,7 +77,4 @@ export class HelpAndFeedbackTreeItem extends TreeItem {
       command,
     };
   }
-
-  contextValue = 'posit.publisher.helpAndFeedback.tree.item';
-  tooltip = 'This is a \nHelpAndFeedback Tree Item';
 }
