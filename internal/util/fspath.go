@@ -90,15 +90,15 @@ func (p *Path) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &p.path)
 }
 
-func (p Path) WithPath(path string) Path {
+func (p Path) withPath(path string) Path {
 	return NewPath(path, p.fs)
 }
 
-func (p AbsolutePath) WithPath(path string) AbsolutePath {
+func (p AbsolutePath) withPath(path string) AbsolutePath {
 	return NewAbsolutePath(path, p.fs)
 }
 
-func (p RelativePath) WithPath(path string) RelativePath {
+func (p RelativePath) withPath(path string) RelativePath {
 	return NewRelativePath(path, p.fs)
 }
 
@@ -136,27 +136,27 @@ func (p Path) Base() string {
 }
 
 func (p Path) Clean() Path {
-	return p.WithPath(filepath.Clean(p.path))
+	return p.withPath(filepath.Clean(p.path))
 }
 
 func (p AbsolutePath) Clean() AbsolutePath {
-	return p.WithPath(filepath.Clean(p.path))
+	return p.withPath(filepath.Clean(p.path))
 }
 
 func (p RelativePath) Clean() RelativePath {
-	return p.WithPath(filepath.Clean(p.path))
+	return p.withPath(filepath.Clean(p.path))
 }
 
 func (p Path) Dir() Path {
-	return p.WithPath(filepath.Dir(p.path))
+	return p.withPath(filepath.Dir(p.path))
 }
 
 func (p AbsolutePath) Dir() AbsolutePath {
-	return p.WithPath(filepath.Dir(p.path))
+	return p.withPath(filepath.Dir(p.path))
 }
 
 func (p RelativePath) Dir() RelativePath {
-	return p.WithPath(filepath.Dir(p.path))
+	return p.withPath(filepath.Dir(p.path))
 }
 
 func (p Path) Ext() string {
