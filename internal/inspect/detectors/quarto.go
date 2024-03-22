@@ -61,7 +61,7 @@ type quartoInspectOutput struct {
 	} `json:"formats"`
 }
 
-func (d *QuartoDetector) quartoInspect(path util.Path) (*quartoInspectOutput, error) {
+func (d *QuartoDetector) quartoInspect(path util.AbsolutePath) (*quartoInspectOutput, error) {
 	args := []string{"inspect", path.String()}
 	out, err := d.executor.RunCommand("quarto", args, d.log)
 	if err != nil {
@@ -105,7 +105,7 @@ func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput) string {
 	return ""
 }
 
-func (d *QuartoDetector) InferType(base util.Path) (*config.Config, error) {
+func (d *QuartoDetector) InferType(base util.AbsolutePath) (*config.Config, error) {
 	defaultEntrypoint := base.Base() + ".qmd"
 	entrypoint, entrypointPath, err := d.InferEntrypoint(base, ".qmd", defaultEntrypoint, "index.qmd")
 	if err != nil {

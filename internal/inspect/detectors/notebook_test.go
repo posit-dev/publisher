@@ -65,7 +65,7 @@ func notebookWithCell(cellContent string) []byte {
 }
 
 func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -86,7 +86,7 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -108,7 +108,7 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeNonNotebook() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -124,7 +124,7 @@ func (s *NotebookDetectorSuite) TestInferTypeNonNotebook() {
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeFsErr() {
-	base := util.NewPath("/nonexistent", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
 	detector := NewNotebookDetector()
 	t, err := detector.InferType(base)
 	s.NotNil(err)
@@ -133,7 +133,7 @@ func (s *NotebookDetectorSuite) TestInferTypeFsErr() {
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeBadNotebook() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 

@@ -13,7 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func DeleteDeploymentHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
+func DeleteDeploymentHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
 		path := deployment.GetDeploymentPath(base, name)

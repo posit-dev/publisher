@@ -19,7 +19,7 @@ type PostDeploymentsRequestBody struct {
 }
 
 func PostDeploymentsHandlerFunc(
-	base util.Path,
+	base util.AbsolutePath,
 	log logging.Logger,
 	accountList accounts.AccountList) http.HandlerFunc {
 

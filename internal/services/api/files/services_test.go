@@ -16,7 +16,7 @@ import (
 type ServicesSuite struct {
 	utiltest.Suite
 	log logging.Logger
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestServicesSuite(t *testing.T) {
@@ -39,7 +39,9 @@ func (s *ServicesSuite) SetupTest() {
 
 func (s *ServicesSuite) TestCreateFilesService() {
 	afs := afero.NewMemMapFs()
-	base := util.NewPath("", afs)
+	base, err := util.Getwd(afs)
+	s.NoError(err)
+
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
 }
@@ -57,8 +59,7 @@ func (s *ServicesSuite) TestGetFile() {
 
 func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 	afs := afero.NewOsFs()
-	base, err := util.NewPath("../../../../test/sample-content/fastapi-simple", afs).Abs()
-	s.NoError(err)
+	base := s.cwd.Join("..", "..", "..", "..", "test", "sample-content", "fastapi-simple").WithFs(afs)
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
@@ -71,8 +72,8 @@ func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 
 func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
 	afs := afero.NewOsFs()
-	base, err := util.NewPath("../../../../test/sample-content/fastapi-simple/", afs).Abs()
-	s.NoError(err)
+	base := s.cwd.Join("..", "..", "..", "..", "test", "sample-content", "fastapi-simple").WithFs(afs)
+
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
 	ignore, err := gitignore.NewIgnoreList(base)

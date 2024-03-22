@@ -32,7 +32,7 @@ var voilaImportNames = []string{
 	"ipywebrtc",
 }
 
-func (d *NotebookDetector) InferType(path util.Path) (*config.Config, error) {
+func (d *NotebookDetector) InferType(path util.AbsolutePath) (*config.Config, error) {
 	entrypoint, entrypointPath, err := d.InferEntrypoint(path, ".ipynb", "index.ipynb")
 	if err != nil {
 		return nil, err

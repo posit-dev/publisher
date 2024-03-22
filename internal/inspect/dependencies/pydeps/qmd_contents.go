@@ -8,7 +8,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func GetQuartoFilePythonCode(path util.Path) (string, error) {
+func GetQuartoFilePythonCode(path util.AbsolutePath) (string, error) {
 	content, err := path.ReadFile()
 	if err != nil {
 		return "", err

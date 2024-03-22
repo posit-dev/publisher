@@ -19,7 +19,7 @@ import (
 type GetRequirementsSuite struct {
 	utiltest.Suite
 	log logging.Logger
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestGetRequirementsSuite(t *testing.T) {

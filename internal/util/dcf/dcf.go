@@ -19,8 +19,8 @@ type Decoder interface {
 }
 
 type FileReader interface {
-	ReadFile(path util.Path) (Records, error)
-	ReadFiles(path util.Path, pattern string) (Records, error)
+	ReadFile(path util.AbsolutePath) (Records, error)
+	ReadFiles(path util.AbsolutePath, pattern string) (Records, error)
 }
 
 type decoder struct{}
@@ -48,7 +48,7 @@ const whitespace = " \t"
 // ReadFiles reads all of the .dcf files in the given directory,
 // returning a single list of records containing the records
 // from all of the files.
-func (r *fileReader) ReadFiles(path util.Path, pattern string) (Records, error) {
+func (r *fileReader) ReadFiles(path util.AbsolutePath, pattern string) (Records, error) {
 	paths, err := path.Glob(pattern)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (r *fileReader) ReadFiles(path util.Path, pattern string) (Records, error) 
 	return records, nil
 }
 
-func (r *fileReader) ReadFile(path util.Path) (Records, error) {
+func (r *fileReader) ReadFile(path util.AbsolutePath) (Records, error) {
 	f, err := path.Open()
 	if err != nil {
 		return nil, err

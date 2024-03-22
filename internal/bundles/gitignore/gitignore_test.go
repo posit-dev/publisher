@@ -15,7 +15,7 @@ type GitIgnoreSuite struct {
 	utiltest.Suite
 
 	fs  afero.Fs
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestGitIgnoreSuite(t *testing.T) {
@@ -84,7 +84,7 @@ func (s *GitIgnoreSuite) TestMatch() {
 	err = ign.AppendGlobs([]string{"ignoredir/"}, MatchSourceBuiltIn)
 	s.NoError(err)
 
-	m, err = ign.Match(ignoredir.Path())
+	m, err = ign.Match(ignoredir.String())
 	s.NoError(err)
 	s.NotNil(m)
 	s.Equal(MatchSourceBuiltIn, m.Source)

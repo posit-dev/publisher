@@ -35,7 +35,7 @@ func (s *DCFSuite) TestReadFile() {
 	decoder.On("Decode", mock.Anything).Return(expectedRecords, nil)
 	r.decoder = decoder
 
-	path := util.NewPath("nonexistent.dcf", fs)
+	path := util.NewAbsolutePath("/nonexistent.dcf", fs)
 	records, err := r.ReadFile(path)
 	s.Nil(err)
 	s.Equal(records, expectedRecords)
@@ -46,8 +46,7 @@ func (s *DCFSuite) TestReadFileNonexistent() {
 	fs.On("Open", mock.Anything).Return(nil, os.ErrNotExist)
 
 	r := NewFileReader()
-	path :=
-		util.NewPath("nonexistent.dcf", fs)
+	path := util.NewAbsolutePath("/nonexistent.dcf", fs)
 	data, err := r.ReadFile(path)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(data)
@@ -55,16 +54,22 @@ func (s *DCFSuite) TestReadFileNonexistent() {
 
 func (s *DCFSuite) TestReadFiles() {
 	fs := afero.NewMemMapFs()
-	afero.WriteFile(fs, "a.dcf", []byte(`a: 1`), 0600)
-	afero.WriteFile(fs, "b.dcf", []byte(`b: 2`), 0600)
-	afero.WriteFile(fs, "c.txt", []byte(`c: 3`), 0600)
+	path, err := util.Getwd(fs)
+	s.NoError(err)
+
+	err = path.Join("a.dcf").WriteFile([]byte(`a: 1`), 0600)
+	s.NoError(err)
+	err = path.Join("b.dcf").WriteFile([]byte(`b: 2`), 0600)
+	s.NoError(err)
+	err = path.Join("c.txt").WriteFile([]byte(`c: 3`), 0600)
+	s.NoError(err)
 
 	expectedRecords := Records{
 		{"a": "1"},
 		{"b": "2"},
 	}
 	r := NewFileReader()
-	path := util.NewPath(".", fs)
+
 	records, err := r.ReadFiles(path, "*.dcf")
 	s.Nil(err)
 	s.Equal(expectedRecords, records)
@@ -72,10 +77,14 @@ func (s *DCFSuite) TestReadFiles() {
 
 func (s *DCFSuite) TestReadFilesErr() {
 	fs := afero.NewMemMapFs()
-	afero.WriteFile(fs, "a.dcf", []byte(`abc`), 0600)
+	path, err := util.Getwd(fs)
+	s.NoError(err)
+
+	err = path.Join("a.dcf").WriteFile([]byte(`abc`), 0600)
+	s.NoError(err)
 
 	r := NewFileReader()
-	path := util.NewPath(".", fs)
+
 	records, err := r.ReadFiles(path, "*.dcf")
 	s.NotNil(err)
 	s.Nil(records)

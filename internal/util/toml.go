@@ -41,7 +41,7 @@ var substitutions = map[string]string{
 	"incomplete number": "unquoted string or incomplete number",
 }
 
-func decodeErrFromTOMLErr(e *toml.DecodeError, path Path) *DecodeError {
+func decodeErrFromTOMLErr(e *toml.DecodeError, path AbsolutePath) *DecodeError {
 	line, col := e.Position()
 	msg := e.Error()
 	for old, new := range substitutions {
@@ -59,7 +59,7 @@ func decodeErrFromTOMLErr(e *toml.DecodeError, path Path) *DecodeError {
 const invalidTOMLCode types.ErrorCode = "invalidTOML"
 const unknownTOMLKeyCode types.ErrorCode = "unknownTOMLKey"
 
-func ReadTOMLFile(path Path, dest any) error {
+func ReadTOMLFile(path AbsolutePath, dest any) error {
 	f, err := path.Open()
 	if err != nil {
 		return err
