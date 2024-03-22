@@ -238,7 +238,7 @@ func (s *QuartoDetectorSuite) TestInferWindows() {
 	if runtime.GOOS != "windows" {
 		s.T().Skip("TestInferWindows test only runs on Windows")
 	}
-	base := util.NewAbsolutePath("\\project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("C:\\project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -252,7 +252,7 @@ func (s *QuartoDetectorSuite) TestInferWindows() {
 
 	detector := NewQuartoDetector()
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "quarto", []string{"inspect", "\\project"}, mock.Anything).Return([]byte(`{
+	executor.On("RunCommand", "quarto", []string{"inspect", base.String()}, mock.Anything).Return([]byte(`{
 		"quarto": {
 			"version": "1.3.353"
 		  },
