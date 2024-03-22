@@ -34,21 +34,18 @@ export async function publishDeployment(
 
   try {
     const response = await api.accounts.getAll();
-    const accounts = response.data.accounts;
-    if (accounts) {
-      // account list is filtered to match the deployment being published
-      accountListItems = accounts
-        .filter((account) => account.url === deployment.serverUrl)
-        .map((account) => ({
-          iconPath: new ThemeIcon("account"),
-          label: account.name,
-          description: account.source,
-          detail:
-            account.authType === AccountAuthType.API_KEY
-              ? "Using API Key"
-              : `Using Token Auth for ${account.accountName}`,
-        }));
-    }
+    // account list is filtered to match the deployment being published
+    accountListItems = response.data
+      .filter((account) => account.url === deployment.serverUrl)
+      .map((account) => ({
+        iconPath: new ThemeIcon("account"),
+        label: account.name,
+        description: account.source,
+        detail:
+          account.authType === AccountAuthType.API_KEY
+            ? "Using API Key"
+            : `Using Token Auth for ${account.accountName}`,
+      }));
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
       "publishDeployment, accounts.getAll",
@@ -62,10 +59,10 @@ export async function publishDeployment(
   if (accountListItems.length === 0) {
     window.showInformationMessage(
       `Unable to continue with no matching credentials for\n` +
-        `deployment URL: ${deployment.serverUrl}\n` +
-        `\n` +
-        `Establish account credentials using rsconnect (R package) or\n` +
-        `rsconnect-python (Python package) and then retry operation.`,
+      `deployment URL: ${deployment.serverUrl}\n` +
+      `\n` +
+      `Establish account credentials using rsconnect (R package) or\n` +
+      `rsconnect-python (Python package) and then retry operation.`,
     );
     return;
   }
@@ -102,9 +99,9 @@ export async function publishDeployment(
   if (configFileListItems.length === 0) {
     window.showInformationMessage(
       `Unable to continue with no configuration files.\n` +
-        `Expand the configuration section and follow the instructions there\n` +
-        `to create a configuration file. After updating any applicable values\n` +
-        `retry the operation.`,
+      `Expand the configuration section and follow the instructions there\n` +
+      `to create a configuration file. After updating any applicable values\n` +
+      `retry the operation.`,
     );
     return;
   }

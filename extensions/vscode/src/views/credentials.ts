@@ -30,7 +30,7 @@ export class CredentialsTreeDataProvider
   readonly onDidChangeTreeData: CredentialEvent =
     this._onDidChangeTreeData.event;
 
-  constructor() {}
+  constructor() { }
 
   getTreeItem(element: CredentialsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -44,16 +44,12 @@ export class CredentialsTreeDataProvider
     }
 
     try {
-      let result: CredentialsTreeItem[] = [];
       await this.setContextIsEmpty(true);
       const response = await api.accounts.getAll();
-      const accounts = response.data.accounts;
-      if (accounts) {
-        result = accounts.map((account) => {
-          return new CredentialsTreeItem(account);
-        });
-        await this.setContextIsEmpty(result.length === 0);
-      }
+      const result = response.data.map((account) => {
+        return new CredentialsTreeItem(account);
+      });
+      await this.setContextIsEmpty(result.length === 0);
       return result;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
