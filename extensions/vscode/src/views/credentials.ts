@@ -44,7 +44,6 @@ export class CredentialsTreeDataProvider
     }
 
     try {
-      await this.setContextIsEmpty(true);
       const response = await api.accounts.getAll();
       const result = response.data.map((account) => {
         return new CredentialsTreeItem(account);
@@ -57,6 +56,7 @@ export class CredentialsTreeDataProvider
         error,
       );
       window.showInformationMessage(summary);
+      await this.setContextIsEmpty(true);
       return [];
     }
   }
