@@ -50,12 +50,11 @@ func (s *GetAccountsSuite) TestGetAccounts() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
 
-	res := getAccountsResponse{}
+	accts := getAccountsResponse{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
-	s.NoError(dec.Decode(&res))
+	s.NoError(dec.Decode(&accts))
 
-	accts := res.Accounts
 	s.Len(accts, 2)
 	s.Equal("myAccount", accts[0].Name)
 	s.Equal(string(accounts.ServerTypeConnect), accts[0].Type)
@@ -90,12 +89,11 @@ func (s *GetAccountsSuite) TestGetAccountsNoAccounts() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
 
-	res := getAccountsResponse{}
+	accts := getAccountsResponse{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
-	s.NoError(dec.Decode(&res))
+	s.NoError(dec.Decode(&accts))
 
-	accts := res.Accounts
 	s.NotNil(accts)
 	s.Len(accts, 0)
 }
