@@ -55,8 +55,8 @@ export async function addDeployment(stream: EventStream) {
   if (accountListItems.length === 0) {
     window.showInformationMessage(
       `Unable to continue with no credentials.\n` +
-      `Establish account credentials using rsconnect (R package) or\n` +
-      `rsconnect-python (Python package) and then retry operation.`,
+        `Establish account credentials using rsconnect (R package) or\n` +
+        `rsconnect-python (Python package) and then retry operation.`,
     );
     return;
   }
@@ -93,9 +93,9 @@ export async function addDeployment(stream: EventStream) {
   if (configFileListItems.length === 0) {
     window.showInformationMessage(
       `Unable to continue with no configuration files.\n` +
-      `Expand the configuration section and follow the instructions there\n` +
-      `to create a configuration file. After updating any applicable values\n` +
-      `retry the operation.`,
+        `Expand the configuration section and follow the instructions there\n` +
+        `to create a configuration file. After updating any applicable values\n` +
+        `retry the operation.`,
     );
     return;
   }
@@ -181,7 +181,7 @@ export async function addDeployment(stream: EventStream) {
       totalSteps: state.totalSteps,
       value:
         typeof state.data.deploymentName === "string" &&
-          state.data.deploymentName.length
+        state.data.deploymentName.length
           ? state.data.deploymentName
           : untitledDeploymentName(deploymentNames),
       prompt: "Choose a unique name for the deployment",

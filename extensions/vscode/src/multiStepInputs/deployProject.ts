@@ -59,10 +59,10 @@ export async function publishDeployment(
   if (accountListItems.length === 0) {
     window.showInformationMessage(
       `Unable to continue with no matching credentials for\n` +
-      `deployment URL: ${deployment.serverUrl}\n` +
-      `\n` +
-      `Establish account credentials using rsconnect (R package) or\n` +
-      `rsconnect-python (Python package) and then retry operation.`,
+        `deployment URL: ${deployment.serverUrl}\n` +
+        `\n` +
+        `Establish account credentials using rsconnect (R package) or\n` +
+        `rsconnect-python (Python package) and then retry operation.`,
     );
     return;
   }
@@ -99,9 +99,9 @@ export async function publishDeployment(
   if (configFileListItems.length === 0) {
     window.showInformationMessage(
       `Unable to continue with no configuration files.\n` +
-      `Expand the configuration section and follow the instructions there\n` +
-      `to create a configuration file. After updating any applicable values\n` +
-      `retry the operation.`,
+        `Expand the configuration section and follow the instructions there\n` +
+        `to create a configuration file. After updating any applicable values\n` +
+        `retry the operation.`,
     );
     return;
   }
