@@ -30,7 +30,7 @@ export class CredentialsTreeDataProvider
   readonly onDidChangeTreeData: CredentialEvent =
     this._onDidChangeTreeData.event;
 
-  constructor() { }
+  constructor() {}
 
   getTreeItem(element: CredentialsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
