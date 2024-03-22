@@ -34,15 +34,17 @@ export async function addDeployment(stream: EventStream) {
   try {
     const response = await api.accounts.getAll();
     const accounts = response.data.accounts;
-    accountListItems = accounts.map((account) => ({
-      iconPath: new ThemeIcon("account"),
-      label: account.name,
-      description: account.source,
-      detail:
-        account.authType === AccountAuthType.API_KEY
-          ? "Using API Key"
-          : `Using Token Auth for ${account.accountName}`,
-    }));
+    if (accounts) {
+      accountListItems = accounts.map((account) => ({
+        iconPath: new ThemeIcon("account"),
+        label: account.name,
+        description: account.source,
+        detail:
+          account.authType === AccountAuthType.API_KEY
+            ? "Using API Key"
+            : `Using Token Auth for ${account.accountName}`,
+      }));
+    }
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
       "addDeployment, accounts.getAll",
