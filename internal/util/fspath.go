@@ -46,8 +46,13 @@ func NewPath(path string, fs afero.Fs) Path {
 }
 
 func NewAbsolutePath(path string, fs afero.Fs) AbsolutePath {
-	if assertPathType && !filepath.IsAbs(path) {
-		panic("NewAbsolutePath: path is not absolute: " + path)
+	if !filepath.IsAbs(path) {
+		if assertPathType {
+			panic("NewAbsolutePath: path is not absolute: " + path)
+		}
+		// We shouldn't get here, but if we do, convert this
+		// into an absolute path.
+		path, _ = filepath.Abs(path)
 	}
 	return AbsolutePath{
 		Path: NewPath(path, fs),
