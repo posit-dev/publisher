@@ -168,34 +168,52 @@ DOWNLOAD=("curl")
 MKTMP=("mktemp" "-d")
 TAR=("tar")
 
-# Release type
-VERSION_TYPE=${1-alpha}
+
+case $# in
+  2)
+    VERSION_TYPE=${1-release}
+    VERSION=${2-latest}
+    ;;
+  1)
+    ARG=$1
+    case $ARG in
+      release|nightly)
+        VERSION_TYPE=$ARG
+        VERSION=latest
+        ;;
+      *)
+        VERSION_TYPE=release
+        VERSION=$ARG
+        ;;
+    esac
+    ;;
+  0)
+    VERSION_TYPE=release
+    VERSION=latest
+    ;;
+esac
+
+# ensure that our version type is right, otherwise show usage
 case $VERSION_TYPE in
-  alpha|nightly)
+  release|nightly)
     ;;
   *) 
-   echo "usage: $0 [alpha(default)|nightly] <version specifier>"
-   exit 1 ;;
+   echo "usage: $0 [release(default)|nightly] <version specifier>"
+   exit 1 
+   ;;
 esac
 
 # version override, swap out latest with the latest and greatest
-VERSION=${2-latest}
-case $VERSION_TYPE in
-  alpha)
-      if [ $VERSION == "latest" ]; then
-        VERSION="1.0.alpha2"
-      fi
-      ;;
-  nightly)
-      ;;
-esac
+if [[ $VERSION_TYPE == "release" && $VERSION == "latest" ]]; then
+  VERSION="1.0.alpha4"
+fi
 
 # Variables
 NAME="publisher"
 PREFIX="/usr/local/bin"
 TMPDIR=$(execute "${MKTMP[@]}")
 case $VERSION_TYPE in
-  alpha)
+  release)
     URL="https://cdn.posit.co/publisher/releases/tags" ;;
   nightly)
     URL="https://cdn.posit.co/publisher/releases/nightly" ;;
@@ -238,7 +256,7 @@ wait_for_user
 info "Downloading and installing Posit Publisher..."
 if [[ $VERSION_TYPE == "nightly" && $VERSION == "latest" ]]
 then
-  # Try the last 10 nights, there should be one since then
+  # Try today and the last 10 dates, there should be one since then
   for i in {0..10}
   do
     if [[ "${OS}" == "darwin" ]]
@@ -250,7 +268,10 @@ then
 
     URL_TO_TRY="${URL}/v${DAY}/${NAME}-${DAY}-${OS}-${ARCH}.tar.gz"
     OUTPATH="${TMPDIR}/${NAME}-${DAY}-${OS}-${ARCH}.tar.gz"
-    
+
+    # Set the version to day so that the untar later works.
+    VERSION=$DAY
+
     # Try each date, stopping on the first one that works
     info "Trying ${URL_TO_TRY}"
     if "${DOWNLOAD[@]}" "--fail-with-body" "-o" "$OUTPATH" "$URL_TO_TRY" > /dev/null 2>&1
@@ -258,7 +279,6 @@ then
       break
     fi
   done
-  exit 1
 else
   info "Trying ${URL}/v${VERSION}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz"
   execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" "${URL}/v${VERSION}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" > /dev/null 2>&1

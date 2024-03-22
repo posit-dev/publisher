@@ -34,7 +34,6 @@ ref=${ref#"refs/"}
 if [ $release_type == "nightly" ]; then
   object_path="s3://posit-publisher/$name/releases/nightly"
 else 
-  # This is effectively release_type == "nightly"
   object_path="s3://posit-publisher/$name/releases/$ref"
 fi  
 echo "Object Path: $object_path" 1>&2
