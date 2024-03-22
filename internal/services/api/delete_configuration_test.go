@@ -19,7 +19,7 @@ import (
 type DeleteConfigurationSuite struct {
 	utiltest.Suite
 	log logging.Logger
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestDeleteConfigurationSuite(t *testing.T) {
@@ -38,7 +38,7 @@ func (s *DeleteConfigurationSuite) SetupTest() {
 	s.cwd.MkdirAll(0700)
 }
 
-func createSampleConfiguration(root util.Path, name string) (*config.Config, error) {
+func createSampleConfiguration(root util.AbsolutePath, name string) (*config.Config, error) {
 	path := config.GetConfigPath(root, name)
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
@@ -46,13 +46,13 @@ func createSampleConfiguration(root util.Path, name string) (*config.Config, err
 	return cfg, cfg.WriteFile(path)
 }
 
-func (s *DeleteConfigurationSuite) fileExists(path util.Path) {
+func (s *DeleteConfigurationSuite) fileExists(path util.AbsolutePath) {
 	exists, err := path.Exists()
 	s.NoError(err)
 	s.True(exists)
 }
 
-func (s *DeleteConfigurationSuite) fileDoesNotExist(path util.Path) {
+func (s *DeleteConfigurationSuite) fileDoesNotExist(path util.AbsolutePath) {
 	exists, err := path.Exists()
 	s.NoError(err)
 	s.False(exists)

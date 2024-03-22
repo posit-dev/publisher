@@ -67,7 +67,7 @@ func (m *MockClient) ValidateDeployment(id types.ContentID, log logging.Logger) 
 	return args.Error(0)
 }
 
-func (m *MockClient) CheckCapabilities(base util.Path, cfg *config.Config, log logging.Logger) error {
+func (m *MockClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Config, log logging.Logger) error {
 	args := m.Called(base, cfg, log)
 	return args.Error(0)
 }

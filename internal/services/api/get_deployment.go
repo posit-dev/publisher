@@ -14,7 +14,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func GetDeploymentHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
+func GetDeploymentHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
 		path := deployment.GetDeploymentPath(base, name)

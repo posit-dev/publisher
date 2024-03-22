@@ -27,9 +27,9 @@ type MockInferenceHelper struct {
 	mock.Mock
 }
 
-func (m *MockInferenceHelper) InferEntrypoint(path util.Path, suffix string, preferredFilenames ...string) (string, util.Path, error) {
+func (m *MockInferenceHelper) InferEntrypoint(path util.AbsolutePath, suffix string, preferredFilenames ...string) (string, util.AbsolutePath, error) {
 	args := m.Called(path, suffix, preferredFilenames)
-	return args.String(0), args.Get(1).(util.Path), args.Error(2)
+	return args.String(0), args.Get(1).(util.AbsolutePath), args.Error(2)
 }
 
 func (m *MockInferenceHelper) HasPythonImports(r io.Reader, packages []string) (bool, error) {
@@ -37,7 +37,7 @@ func (m *MockInferenceHelper) HasPythonImports(r io.Reader, packages []string) (
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockInferenceHelper) FileHasPythonImports(path util.Path, packages []string) (bool, error) {
+func (m *MockInferenceHelper) FileHasPythonImports(path util.AbsolutePath, packages []string) (bool, error) {
 	args := m.Called(path, packages)
 	return args.Bool(0), args.Error(1)
 }

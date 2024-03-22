@@ -13,11 +13,11 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func GetFileHandlerFunc(base util.Path, filesService files.FilesService, pathsService paths.PathsService, log logging.Logger) http.HandlerFunc {
+func GetFileHandlerFunc(base util.AbsolutePath, filesService files.FilesService, pathsService paths.PathsService, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var p util.Path
+		var p util.AbsolutePath
 		if q := r.URL.Query(); q.Has("pathname") {
-			p = util.NewPath(q.Get("pathname"), base.Fs())
+			p = base.Join(q.Get("pathname"))
 		} else {
 			p = base
 		}

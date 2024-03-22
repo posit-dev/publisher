@@ -7,7 +7,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -24,7 +23,7 @@ import (
 type GetDeploymentSuite struct {
 	utiltest.Suite
 	log logging.Logger
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestGetDeploymentSuite(t *testing.T) {
@@ -67,7 +66,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	s.Equal(deploymentStateDeployed, res.State)
 	s.Equal(*d, res.Deployment)
 	s.Equal("myTargetName", res.Name)
-	s.Equal(filepath.Join(".posit", "publish", "myConfig.toml"), res.ConfigPath)
+	s.Equal(s.cwd.Join(".posit", "publish", "myConfig.toml").String(), res.ConfigPath)
 	s.Equal(types.ContentID("12345678"), res.Deployment.ID)
 }
 

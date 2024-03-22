@@ -19,7 +19,7 @@ import (
 type GetConfigurationsSuite struct {
 	utiltest.Suite
 	log logging.Logger
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestGetConfigurationsSuite(t *testing.T) {

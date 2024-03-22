@@ -32,7 +32,7 @@ type PublishSuite struct {
 	log       logging.Logger
 	logBuffer *bytes.Buffer
 	fs        afero.Fs
-	cwd       util.Path
+	cwd       util.AbsolutePath
 }
 
 func TestPublishSuite(t *testing.T) {
@@ -254,7 +254,7 @@ func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
 	expectedErr := errors.New("test error")
 	log := logging.New()
 
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 

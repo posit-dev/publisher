@@ -21,7 +21,7 @@ import (
 
 type PythonSuite struct {
 	utiltest.Suite
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestPythonSuite(t *testing.T) {
@@ -68,7 +68,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 	pythonPath := s.cwd.Join("bin", "python3")
 	pythonPath.Dir().MkdirAll(0777)
 	pythonPath.WriteFile(nil, 0777)
-	i := NewPythonInspector(s.cwd, pythonPath, log)
+	i := NewPythonInspector(s.cwd, pythonPath.Path, log)
 	inspector := i.(*defaultPythonInspector)
 
 	executor := NewMockPythonExecutor()
@@ -84,7 +84,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	pythonPath.Dir().MkdirAll(0777)
 	pythonPath.WriteFile(nil, 0777)
 	log := logging.New()
-	i := NewPythonInspector(s.cwd, pythonPath, log)
+	i := NewPythonInspector(s.cwd, pythonPath.Path, log)
 	inspector := i.(*defaultPythonInspector)
 
 	executor := NewMockPythonExecutor()
@@ -217,7 +217,7 @@ func (s *PythonSuite) TestScanRequirements() {
 	pythonPath.Dir().MkdirAll(0777)
 	pythonPath.WriteFile(nil, 0777)
 	log := logging.New()
-	i := NewPythonInspector(s.cwd, pythonPath, log)
+	i := NewPythonInspector(s.cwd, pythonPath.Path, log)
 	inspector := i.(*defaultPythonInspector)
 
 	scanner := pydeps.NewMockDependencyScanner()
@@ -234,6 +234,6 @@ func (s *PythonSuite) TestScanRequirements() {
 		"numpy==1.26.1",
 		"pandas",
 	}, reqs)
-	s.Equal(pythonPath.Path(), python)
+	s.Equal(pythonPath.String(), python)
 	scanner.AssertExpectations(s.T())
 }

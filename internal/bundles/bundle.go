@@ -29,8 +29,8 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(path util.Path, manifest *Manifest, pythonRequirements []byte, log logging.Logger) (*bundler, error) {
-	var dir util.Path
+func NewBundler(path util.AbsolutePath, manifest *Manifest, pythonRequirements []byte, log logging.Logger) (*bundler, error) {
+	var dir util.AbsolutePath
 	var filename string
 	isDir, err := path.IsDir()
 	if err != nil {
@@ -43,11 +43,7 @@ func NewBundler(path util.Path, manifest *Manifest, pythonRequirements []byte, l
 		dir = path.Dir()
 		filename = path.Base()
 	}
-	absDir, err := dir.Abs()
-	if err != nil {
-		return nil, err
-	}
-	excluder, err := gitignore.NewExcludingWalker(absDir)
+	excluder, err := gitignore.NewExcludingWalker(dir)
 	if err != nil {
 		return nil, fmt.Errorf("error loading ignore list: %w", err)
 	}
@@ -56,7 +52,7 @@ func NewBundler(path util.Path, manifest *Manifest, pythonRequirements []byte, l
 
 	return &bundler{
 		manifest:           manifest,
-		baseDir:            absDir,
+		baseDir:            dir,
 		filename:           filename,
 		walker:             symlinkWalker,
 		pythonRequirements: pythonRequirements,
@@ -64,27 +60,12 @@ func NewBundler(path util.Path, manifest *Manifest, pythonRequirements []byte, l
 	}, nil
 }
 
-func NewBundlerForManifest(dir util.Path, manifest *Manifest, log logging.Logger) (*bundler, error) {
-	absDir, err := dir.Abs()
-	if err != nil {
-		return nil, err
-	}
-	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
-	return &bundler{
-		manifest: manifest,
-		baseDir:  absDir,
-		filename: "",
-		walker:   newManifestWalker(absDir, manifest),
-		log:      log,
-	}, nil
-}
-
 type bundler struct {
-	baseDir            util.Path   // Directory being bundled
-	filename           string      // Primary file being deployed
-	walker             util.Walker // Ignore patterns from CLI and ignore files
-	pythonRequirements []byte      // Pacakges to write to requirements.txt if not already present
-	manifest           *Manifest   // Manifest describing the bundle, if provided
+	baseDir            util.AbsolutePath // Directory being bundled
+	filename           string            // Primary file being deployed
+	walker             util.Walker       // Ignore patterns from CLI and ignore files
+	pythonRequirements []byte            // Pacakges to write to requirements.txt if not already present
+	manifest           *Manifest         // Manifest describing the bundle, if provided
 	log                logging.Logger
 }
 
@@ -125,7 +106,7 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 		defer bundle.archive.Close()
 	}
 
-	oldWD, err := util.Chdir(b.baseDir.Path())
+	oldWD, err := util.Chdir(b.baseDir.String())
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +193,7 @@ func writeFileContentsToTar(r io.Reader, archive io.Writer) ([]byte, error) {
 	return md5sum, nil
 }
 
-func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
+func (b *bundle) walkFunc(path util.AbsolutePath, info fs.FileInfo, err error) error {
 	if err != nil {
 		// Stop walking the tree on errors.
 		return err
@@ -256,7 +237,7 @@ func (b *bundle) walkFunc(path util.Path, info fs.FileInfo, err error) error {
 	return nil
 }
 
-func (b *bundle) addDirectory(dir util.Path) error {
+func (b *bundle) addDirectory(dir util.AbsolutePath) error {
 	err := b.walker.Walk(dir, b.walkFunc)
 	if err != nil {
 		return err
@@ -291,47 +272,4 @@ func (b *bundle) addManifest() error {
 		return err
 	}
 	return b.addFile(ManifestFilename, manifestJSON)
-}
-
-type manifestWalker struct {
-	baseDir  util.Path
-	manifest *Manifest
-}
-
-func newManifestWalker(baseDir util.Path, manifest *Manifest) *manifestWalker {
-	return &manifestWalker{
-		baseDir:  baseDir,
-		manifest: manifest,
-	}
-}
-
-// Walk is an implementation of the Walker interface that traverses
-// only the files listed in the manifest Files section.
-// Walk Chdir's into the provided base directory since
-// manifest file paths are relative.
-func (w *manifestWalker) Walk(root util.Path, fn util.WalkFunc) error {
-	oldWD, err := util.Chdir(w.baseDir.Path())
-	if err != nil {
-		return err
-	}
-	defer util.Chdir(oldWD)
-
-	// Copy file map since it may be (is) modified during traversal.
-	files := make(ManifestFileMap, len(w.manifest.Files))
-	for k, v := range w.manifest.Files {
-		files[k] = v
-	}
-	for manifestPath := range files {
-		path := util.NewPath(manifestPath, root.Fs())
-		absPath, err := path.Abs()
-		var fileInfo fs.FileInfo
-		if err == nil {
-			fileInfo, err = absPath.Stat()
-		}
-		err = fn(absPath, fileInfo, err)
-		if err != nil {
-			return fmt.Errorf("error adding file '%s' to the bundle: %w", path, err)
-		}
-	}
-	return nil
 }

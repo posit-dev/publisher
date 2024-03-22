@@ -17,7 +17,7 @@ type WalkerSuite struct {
 	utiltest.Suite
 
 	fs  afero.Fs
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestWalkerSuite(t *testing.T) {
@@ -54,7 +54,7 @@ func (s *WalkerSuite) TestNewWalkerBadIgnoreFile() {
 	s.NoError(err)
 	s.NotNil(w)
 
-	err = w.Walk(s.cwd, func(util.Path, fs.FileInfo, error) error {
+	err = w.Walk(s.cwd, func(util.AbsolutePath, fs.FileInfo, error) error {
 		return nil
 	})
 	s.NotNil(err)
@@ -69,7 +69,7 @@ func (s *WalkerSuite) TestWalkErrorLoadingPositIgnore() {
 	s.NoError(err)
 	s.NotNil(w)
 
-	err = w.Walk(s.cwd, func(path util.Path, info fs.FileInfo, err error) error {
+	err = w.Walk(s.cwd, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		return nil
 	})
 	s.ErrorContains(err, "error loading ignore file")
@@ -116,8 +116,8 @@ func (s *WalkerSuite) TestWalk() {
 	s.NoError(err)
 	s.NotNil(w)
 
-	seen := []util.Path{}
-	err = w.Walk(baseDir, func(path util.Path, info fs.FileInfo, err error) error {
+	seen := []util.RelativePath{}
+	err = w.Walk(baseDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		s.NoError(err)
 		relPath, err := path.Rel(s.cwd)
 		s.NoError(err)
@@ -125,8 +125,8 @@ func (s *WalkerSuite) TestWalk() {
 		return nil
 	})
 	s.NoError(err)
-	dirPath := util.NewPath("test", s.fs).Join("dir")
-	s.Equal([]util.Path{
+	dirPath := util.NewRelativePath("test", s.fs).Join("dir")
+	s.Equal([]util.RelativePath{
 		dirPath,
 		dirPath.Join(".positignore"),
 		dirPath.Join("included"),

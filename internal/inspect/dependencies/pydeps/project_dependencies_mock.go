@@ -15,7 +15,7 @@ func NewMockDependencyScanner() *MockDependencyScanner {
 	return &MockDependencyScanner{}
 }
 
-func (m *MockDependencyScanner) ScanDependencies(base util.Path, pythonExecutable string) ([]*PackageSpec, error) {
+func (m *MockDependencyScanner) ScanDependencies(base util.AbsolutePath, pythonExecutable string) ([]*PackageSpec, error) {
 	args := m.Called(base, pythonExecutable)
 	specs := args.Get(0)
 	if specs == nil {

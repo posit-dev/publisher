@@ -38,7 +38,7 @@ func (m *MockDecoder) Decode(r io.Reader) (Records, error) {
 	}
 }
 
-func (m *MockFileReader) ReadFile(path util.Path) (Records, error) {
+func (m *MockFileReader) ReadFile(path util.AbsolutePath) (Records, error) {
 	args := m.Called(path)
 	records := args.Get(0)
 	if records == nil {
@@ -48,7 +48,7 @@ func (m *MockFileReader) ReadFile(path util.Path) (Records, error) {
 	}
 }
 
-func (m *MockFileReader) ReadFiles(path util.Path, pattern string) (Records, error) {
+func (m *MockFileReader) ReadFiles(path util.AbsolutePath, pattern string) (Records, error) {
 	args := m.Called(path, pattern)
 	records := args.Get(0)
 	if records == nil {

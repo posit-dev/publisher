@@ -29,5 +29,5 @@ type APIClient interface {
 	DeployBundle(types.ContentID, types.BundleID, logging.Logger) (types.TaskID, error)
 	WaitForTask(taskID types.TaskID, log logging.Logger) error
 	ValidateDeployment(types.ContentID, logging.Logger) error
-	CheckCapabilities(util.Path, *config.Config, logging.Logger) error
+	CheckCapabilities(util.AbsolutePath, *config.Config, logging.Logger) error
 }

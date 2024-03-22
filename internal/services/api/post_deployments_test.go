@@ -22,7 +22,7 @@ import (
 
 type PostDeploymentsSuite struct {
 	utiltest.Suite
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestPostDeploymentsSuite(t *testing.T) {

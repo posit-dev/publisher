@@ -11,7 +11,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func PostInspectHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
+func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		cfg, err := initialize.GetPossibleConfigs(base, util.Path{}, log)
 		if err != nil {

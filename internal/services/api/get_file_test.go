@@ -39,7 +39,9 @@ func (s *GetFileHandlerFuncSuite) TestGetFileHandlerFunc() {
 	paths.On("IsSafe", mock.Anything).Return(nil, nil)
 
 	afs := afero.NewMemMapFs()
-	base := util.NewPath("", afs)
+	base, err := util.Getwd(afs)
+	s.NoError(err)
+
 	h := GetFileHandlerFunc(base, files, paths, s.log)
 	s.NotNil(h)
 }
@@ -47,8 +49,10 @@ func (s *GetFileHandlerFuncSuite) TestGetFileHandlerFunc() {
 func (s *GetFileHandlerFuncSuite) TestHandlerFunc() {
 
 	afs := afero.NewMemMapFs()
-	base := util.NewPath("", afs)
-	src := &files.File{Rel: base.String()}
+	base, err := util.Getwd(afs)
+	s.NoError(err)
+
+	src := &files.File{Rel: "."}
 
 	filesService := new(MockFilesService)
 	filesService.On("GetFile", mock.Anything, mock.Anything).Return(src, nil)
@@ -78,7 +82,8 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFunc() {
 
 func (s *GetFileHandlerFuncSuite) TestHandlerFuncUsingPathname() {
 	afs := afero.NewMemMapFs()
-	base := util.NewPath("", afs)
+	base, err := util.Getwd(afs)
+	s.NoError(err)
 
 	pathname := "pathname"
 	src := &files.File{Rel: pathname}
@@ -111,7 +116,8 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFuncUsingPathname() {
 
 func (s *GetFileHandlerFuncSuite) TestHandlerFuncIsSafeReturnsError() {
 	afs := afero.NewMemMapFs()
-	base := util.NewPath("", afs)
+	base, err := util.Getwd(afs)
+	s.NoError(err)
 
 	filesService := new(MockFilesService)
 
@@ -132,7 +138,8 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFuncIsSafeReturnsError() {
 
 func (s *GetFileHandlerFuncSuite) TestHandlerFuncIsSafeReturnsFalse() {
 	afs := afero.NewMemMapFs()
-	base := util.NewPath("", afs)
+	base, err := util.Getwd(afs)
+	s.NoError(err)
 
 	filesService := new(MockFilesService)
 
@@ -153,7 +160,9 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFuncIsSafeReturnsFalse() {
 
 func (s *GetFileHandlerFuncSuite) TestHandlerFuncGetFileReturnsError() {
 	afs := afero.NewMemMapFs()
-	base := util.NewPath("", afs)
+	base, err := util.Getwd(afs)
+	s.NoError(err)
+
 	src := &files.File{Rel: base.String()}
 
 	filesService := new(MockFilesService)
