@@ -50,7 +50,9 @@ func GetAccountsHandlerFunc(lister accounts.AccountList, log logging.Logger) htt
 			InternalError(w, req, log, err)
 			return
 		}
-		data := &getAccountsResponse{}
+		data := &getAccountsResponse{
+			Accounts: []*getAccountResponse{},
+		}
 		for _, acct := range accounts {
 			data.Accounts = append(data.Accounts, toGetAccountResponse(&acct))
 		}

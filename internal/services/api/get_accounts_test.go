@@ -76,3 +76,26 @@ func (s *GetAccountsSuite) TestGetAccountsError() {
 
 	s.Equal(http.StatusInternalServerError, rec.Result().StatusCode)
 }
+
+func (s *GetAccountsSuite) TestGetAccountsNoAccounts() {
+	lister := &accounts.MockAccountList{}
+	lister.On("GetAccountsByServerType", accounts.ServerTypeConnect).Return(nil, nil)
+	h := GetAccountsHandlerFunc(lister, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/accounts", nil)
+	s.NoError(err)
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := getAccountsResponse{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+
+	accts := res.Accounts
+	s.NotNil(accts)
+	s.Len(accts, 0)
+}
