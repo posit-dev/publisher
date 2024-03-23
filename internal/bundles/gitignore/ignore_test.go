@@ -178,6 +178,12 @@ var dirTestCases = []testCase{
 	{"dir", "dir/subdir/app.py", true},
 	{"dir", "subdir/dir/", true},
 	{"dir", "subdir/dir/app.py", true},
+
+	// From the gitignore docs: exclude everything except directory foo/bar
+	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/a", true},
+	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/foo", true},
+	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/foo/a", true},
+	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/foo/bar", false},
 }
 
 var invertedTestCases = []testCase{
