@@ -19,15 +19,14 @@ type defaultIgnoreList struct {
 	files []*IgnoreFile
 }
 
-func NewIgnoreList(builtins []string) *defaultIgnoreList {
+func NewIgnoreList(builtins []string) (*defaultIgnoreList, error) {
 	f, err := NewBuiltinIgnoreFile(builtins)
 	if err != nil {
-		panic("builtin patterns must compile successfully")
+		return nil, err
 	}
-
 	return &defaultIgnoreList{
 		files: []*IgnoreFile{f},
-	}
+	}, nil
 }
 
 func (l *defaultIgnoreList) AddFile(path util.AbsolutePath) error {

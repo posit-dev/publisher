@@ -88,7 +88,10 @@ func (i *excludingWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc)
 // specified ignore list. Python environment directories are also excluded,
 // and .positignore files are processed as they are encountered.
 func NewExcludingWalker(dir util.AbsolutePath) util.Walker {
-	gitIgnore := NewIgnoreList(StandardIgnores)
+	gitIgnore, err := NewIgnoreList(StandardIgnores)
+	if err != nil {
+		panic("built-in ignore list must compile successfully")
+	}
 	return &excludingWalker{
 		ignoreList: gitIgnore,
 	}

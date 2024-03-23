@@ -34,6 +34,19 @@ func (s *GitIgnoreSuite) SetupTest() {
 	cwd.MkdirAll(0700)
 }
 
+func (s *GitIgnoreSuite) TestNew() {
+	ign, err := NewIgnoreList([]string{"*.bak"})
+	s.NoError(err)
+	s.NotNil(ign)
+	s.NotNil(ign.files)
+}
+
+func (s *GitIgnoreSuite) TestNewError() {
+	ign, err := NewIgnoreList([]string{"[A-"})
+	s.NotNil(err)
+	s.Nil(ign)
+}
+
 func (s *GitIgnoreSuite) TestMatch() {
 	err := s.cwd.Join(".git").MkdirAll(0700)
 	s.NoError(err)
@@ -42,7 +55,9 @@ func (s *GitIgnoreSuite) TestMatch() {
 	err = ignoreFilePath.WriteFile([]byte(".Rhistory\nignoreme\n"), 0600)
 	s.NoError(err)
 
-	ign := NewIgnoreList([]string{"*.bak", "ignoredir/"})
+	ign, err := NewIgnoreList([]string{"*.bak", "ignoredir/"})
+	s.NoError(err)
+
 	err = ign.AddFile(ignoreFilePath)
 	s.NoError(err)
 

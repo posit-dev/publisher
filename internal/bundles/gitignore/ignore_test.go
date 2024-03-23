@@ -46,10 +46,11 @@ func (s *NewIgnoreSuite) TestInverted() {
 
 func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
 	for _, test := range cases {
-		ign := NewIgnoreList([]string{})
-		ignorePath := s.cwd.Join(".positignore")
+		ign, err := NewIgnoreList(nil)
+		s.NoError(err)
 
-		err := ignorePath.WriteFile([]byte(test.pattern), 0600)
+		ignorePath := s.cwd.Join(".positignore")
+		err = ignorePath.WriteFile([]byte(test.pattern), 0600)
 		s.NoError(err)
 
 		err = ign.AddFile(ignorePath)
