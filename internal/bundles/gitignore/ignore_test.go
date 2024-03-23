@@ -3,6 +3,7 @@ package gitignore
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -54,7 +55,7 @@ func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
 		err = ign.AddFile(ignorePath)
 		s.NoError(err)
 
-		absPath := s.cwd.Join(test.path)
+		absPath := s.cwd.Join(filepath.FromSlash(test.path))
 
 		if strings.HasSuffix(test.path, "/") {
 			// If a directory path, create it
