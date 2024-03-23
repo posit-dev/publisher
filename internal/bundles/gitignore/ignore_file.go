@@ -120,7 +120,7 @@ func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum in
 	rawRegex = strings.ReplaceAll(rawRegex, "*", "([^/]*)")
 
 	// Part 2 of "/**/" handling: insert the actual regex that matches /**/.
-	rawRegex = strings.ReplaceAll(rawRegex, placeholder, `((/.*/)|/)`)
+	rawRegex = strings.ReplaceAll(rawRegex, placeholder, `/((.*/)|)`)
 
 	// The character "?" matches any one character except "/".
 	rawRegex = strings.ReplaceAll(rawRegex, "?", "[^/]")
@@ -189,10 +189,15 @@ func readIgnoreFile(ignoreFilePath util.AbsolutePath) ([]*Pattern, error) {
 }
 
 func (f *IgnoreFile) Match(filePath string) *Pattern {
+	var match *Pattern
+
 	for _, pattern := range f.patterns {
 		if pattern.re.MatchString(filePath) {
-			return pattern
+			match = pattern
 		}
 	}
-	return nil
+	if match == nil || match.Inverted {
+		return nil
+	}
+	return match
 }

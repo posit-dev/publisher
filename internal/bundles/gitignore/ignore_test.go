@@ -31,6 +31,51 @@ type testCase struct {
 	matches bool
 }
 
+func (s *NewIgnoreSuite) TestFiles() {
+	s.runTestCases(fileTestCases)
+}
+
+func (s *NewIgnoreSuite) TestDirectories() {
+	s.runTestCases(dirTestCases)
+}
+
+func (s *NewIgnoreSuite) TestInverted() {
+	s.runTestCases(invertedTestCases)
+}
+
+func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
+	for _, test := range cases {
+		ign := NewIgnoreList([]string{})
+		ignorePath := s.cwd.Join(".positignore")
+
+		err := ignorePath.WriteFile([]byte(test.pattern), 0600)
+		s.NoError(err)
+
+		err = ign.AddFile(ignorePath)
+		s.NoError(err)
+
+		absPath := s.cwd.Join(test.path)
+
+		if strings.HasSuffix(test.path, "/") {
+			// If a directory path, create it
+			err = absPath.MkdirAll(0777)
+			s.NoError(err)
+		} else {
+			// If a file path, create the parent directory
+			err = absPath.Dir().MkdirAll(0777)
+			s.NoError(err)
+		}
+
+		m := ign.Match(absPath)
+
+		if test.matches {
+			s.NotNil(m, "pattern %s should have matched path %s", test.pattern, test.path)
+		} else {
+			s.Nil(m, "pattern %s should not have matched path %s", test.pattern, test.path)
+		}
+	}
+}
+
 var fileTestCases = []testCase{
 	{"app.py", "app.py", true},
 	{"app.py", "dir/app.py", true},
@@ -102,28 +147,6 @@ var fileTestCases = []testCase{
 	{"**/dir/*.py", "dir/app.json", false},
 }
 
-func (s *NewIgnoreSuite) TestMatch() {
-	for _, test := range fileTestCases {
-		ign := NewIgnoreList([]string{})
-		ignorePath := s.cwd.Join(".positignore")
-
-		err := ignorePath.WriteFile([]byte(test.pattern), 0600)
-		s.NoError(err)
-
-		err = ign.AddFile(ignorePath)
-		s.NoError(err)
-
-		absPath := s.cwd.Join(test.path)
-		m := ign.Match(absPath)
-
-		if test.matches {
-			s.NotNil(m, "pattern %s should have matched path %s", test.pattern, test.path)
-		} else {
-			s.Nil(m, "pattern %s should not have matched path %s", test.pattern, test.path)
-		}
-	}
-}
-
 var dirTestCases = []testCase{
 	{"dir/", "dir", false},
 	{"dir/", "dir/", true},
@@ -155,35 +178,19 @@ var dirTestCases = []testCase{
 	{"dir", "subdir/dir/app.py", true},
 }
 
-func (s *NewIgnoreSuite) TestMatchDir() {
-	for _, test := range dirTestCases {
-		ign := NewIgnoreList([]string{})
-		ignorePath := s.cwd.Join(".positignore")
-
-		err := ignorePath.WriteFile([]byte(test.pattern), 0600)
-		s.NoError(err)
-
-		err = ign.AddFile(ignorePath)
-		s.NoError(err)
-
-		absPath := s.cwd.Join(test.path)
-
-		if strings.HasSuffix(test.path, "/") {
-			// If a directory path, create it
-			err = absPath.MkdirAll(0777)
-			s.NoError(err)
-		} else {
-			// If a file path, create the parent directory
-			err = absPath.Dir().MkdirAll(0777)
-			s.NoError(err)
-		}
-
-		m := ign.Match(absPath)
-
-		if test.matches {
-			s.NotNil(m, "pattern %s should have matched path %s", test.pattern, test.path)
-		} else {
-			s.Nil(m, "pattern %s should not have matched path %s", test.pattern, test.path)
-		}
-	}
+var invertedTestCases = []testCase{
+	{"app.py\n!app.py", "app.py", false},
+	{"!app.py\napp.py", "app.py", true},
+	{"*.py\n!app.py", "app.py", false},
+	{"!*.py\napp.py", "app.py", true},
+	{"app.py\n!*.py", "app.py", false},
+	{"!app.py\n*.py", "app.py", true},
+	{"**/a/b\n!b", "/subdir/a/b", false},
+	{"**/a/b\n!/a", "/subdir/a/b", true},
+	{"**/a/b\n!/**/a", "/subdir/a/b", false},
+	{"app.py\n!app.py\napp.py", "app.py", true},
+	{"app.py\napp.py\n!app.py", "app.py", false},
+	{"!app.py\n!app.py\n*.py", "app.py", true},
+	{"!app.py\n!*.py\n*.py", "app.py", true},
+	{"!app.py\n!*.py\napp.py", "app.py", true},
 }
