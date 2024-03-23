@@ -46,6 +46,42 @@ func NewBuiltinIgnoreFile(builtins []string) (*IgnoreFile, error) {
 	}, nil
 }
 
+func (f *IgnoreFile) Match(filePath string) *Pattern {
+	var match *Pattern
+
+	for _, pattern := range f.patterns {
+		if pattern.re.MatchString(filePath) {
+			match = pattern
+		}
+	}
+	if match == nil || match.Inverted {
+		return nil
+	}
+	return match
+}
+
+func readIgnoreFile(ignoreFilePath util.AbsolutePath) ([]*Pattern, error) {
+	content, err := ignoreFilePath.ReadFile()
+	if err != nil {
+		return nil, err
+	}
+	var patterns []*Pattern
+
+	lines := strings.Split(string(content), "\n")
+	for lineNum, line := range lines {
+		pattern, err := patternFromString(line, ignoreFilePath, lineNum+1)
+		if err != nil {
+			return nil, err
+		}
+
+		if pattern == nil {
+			continue
+		}
+		patterns = append(patterns, pattern)
+	}
+	return patterns, nil
+}
+
 func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum int) (*Pattern, error) {
 	inverted := false
 
@@ -164,40 +200,4 @@ func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum in
 		Inverted: inverted,
 		re:       regex,
 	}, nil
-}
-
-func readIgnoreFile(ignoreFilePath util.AbsolutePath) ([]*Pattern, error) {
-	content, err := ignoreFilePath.ReadFile()
-	if err != nil {
-		return nil, err
-	}
-	var patterns []*Pattern
-
-	lines := strings.Split(string(content), "\n")
-	for lineNum, line := range lines {
-		pattern, err := patternFromString(line, ignoreFilePath, lineNum+1)
-		if err != nil {
-			return nil, err
-		}
-
-		if pattern == nil {
-			continue
-		}
-		patterns = append(patterns, pattern)
-	}
-	return patterns, nil
-}
-
-func (f *IgnoreFile) Match(filePath string) *Pattern {
-	var match *Pattern
-
-	for _, pattern := range f.patterns {
-		if pattern.re.MatchString(filePath) {
-			match = pattern
-		}
-	}
-	if match == nil || match.Inverted {
-		return nil
-	}
-	return match
 }
