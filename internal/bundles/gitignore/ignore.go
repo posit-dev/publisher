@@ -39,7 +39,7 @@ func (l *defaultIgnoreList) AddFile(path util.AbsolutePath) error {
 }
 
 func (l *defaultIgnoreList) Match(filePath util.AbsolutePath) *Pattern {
-	var pattern *Pattern
+	var match *Pattern
 
 	pathString := filePath.ToSlash()
 	isDir, err := filePath.IsDir()
@@ -48,16 +48,16 @@ func (l *defaultIgnoreList) Match(filePath util.AbsolutePath) *Pattern {
 	}
 
 	for _, ignoreFile := range l.files {
-		filePattern := ignoreFile.Match(pathString)
-		if filePattern != nil {
-			pattern = filePattern
+		fileMatch := ignoreFile.Match(pathString)
+		if fileMatch != nil {
+			match = fileMatch
 		}
 	}
-	if pattern == nil || pattern.Inverted {
+	if match == nil || match.Inverted {
 		// No match, or the match is inverted so the file should not be ignored.
 		return nil
 	}
-	return pattern
+	return match
 }
 
 func (l *defaultIgnoreList) Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error {

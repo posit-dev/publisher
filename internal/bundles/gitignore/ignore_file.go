@@ -50,7 +50,7 @@ func (f *IgnoreFile) Match(filePath string) *Pattern {
 	var match *Pattern
 
 	for _, pattern := range f.patterns {
-		if pattern.re.MatchString(filePath) {
+		if pattern.regex.MatchString(filePath) {
 			match = pattern
 		}
 	}
@@ -198,6 +198,6 @@ func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum in
 		Line:     lineNum,
 		Pattern:  line,
 		Inverted: inverted,
-		re:       regex,
+		regex:    regex,
 	}, nil
 }
