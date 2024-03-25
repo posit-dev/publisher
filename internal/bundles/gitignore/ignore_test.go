@@ -4,6 +4,7 @@ package gitignore
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -23,7 +24,11 @@ func TestNewIgnoreSuite(t *testing.T) {
 }
 
 func (s *NewIgnoreSuite) SetupTest() {
-	s.cwd = util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	path := "/project"
+	if runtime.GOOS == "windows" {
+		path = `C:\project`
+	}
+	s.cwd = util.NewAbsolutePath(path, afero.NewMemMapFs())
 }
 
 type testCase struct {
@@ -49,10 +54,21 @@ func (s *NewIgnoreSuite) TestSpecialLines() {
 }
 
 func (s *NewIgnoreSuite) TestSpecialChars() {
+	if runtime.GOOS == "windows" {
+		s.T().SkipNow()
+	}
 	// Don't name your direrctories like this!
 	// But we'll handle it if you do.
 	s.cwd = util.NewAbsolutePath(`/.\|+{}()<>^$:[]?*`, afero.NewMemMapFs())
 	s.runTestCases(specialCharTestCases)
+}
+
+func (s *NewIgnoreSuite) TestSpecialCharsWindows() {
+	if runtime.GOOS != "windows" {
+		s.T().SkipNow()
+	}
+	s.cwd = util.NewAbsolutePath(`/.\|+{}()<>^$:[]?*`, afero.NewMemMapFs())
+	s.runTestCases(windowsSpecialCharTestCases)
 }
 
 func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
@@ -230,4 +246,13 @@ var specialCharTestCases = []testCase{
 	{"abc.\\|+{}()<>^$:def", "abcX\\|+{}()<>^$:def", false},
 	{"abc.\\|+{}()<>^$:def", "abc.\\||||||{}()<>^$:def", false},
 	{"abc.\\|+{}()<>^$:def*", "abc.\\|+{}()<>^$:defghi", true},
+}
+
+var windowsSpecialCharTestCases = []testCase{
+	// No backslashes in path names
+	{"untitled-1 (copy *)", "untitled-1 (copy 1)", true},
+	{"abc.|+{}()<>^$:def", "abc.|+{}()<>^$:def", true},
+	{"abc.|+{}()<>^$:def", "abcX|+{}()<>^$:def", false},
+	{"abc.|+{}()<>^$:def", "abc.||||||{}()<>^$:def", false},
+	{"abc.|+{}()<>^$:def*", "abc.|+{}()<>^$:defghi", true},
 }

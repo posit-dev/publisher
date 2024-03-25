@@ -84,7 +84,9 @@ func readIgnoreFile(ignoreFilePath util.AbsolutePath) ([]*Pattern, error) {
 
 func escapeRegexCharsInPath(s string) string {
 	// Escape all regexp-syntax characters that might appear in
-	// the project directory path.
+	// the project directory path. Note this happens after
+	// conversion to Posix format (ToSlash), so \ is included
+	// as it is a valid char in Posix paths.
 	// https://pkg.go.dev/regexp/syntax
 	var out strings.Builder
 	specials := `.\|+{}()<>^$:[]?*`
