@@ -3,7 +3,6 @@ package gitignore
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"path"
 	"regexp"
 	"strings"
@@ -88,16 +87,7 @@ func escapeRegexCharsInPath(s string) string {
 	// conversion to Posix format (ToSlash), so \ is included
 	// as it is a valid char in Posix paths.
 	// https://pkg.go.dev/regexp/syntax
-	var out strings.Builder
-	specials := `.\|+{}()<>^$:[]?*`
-
-	for _, c := range s {
-		if strings.ContainsRune(specials, c) {
-			out.WriteRune('\\')
-		}
-		out.WriteRune(c)
-	}
-	return out.String()
+	return escapeRegexChars(s, `.\|+{}()<>^$:[]?*`)
 }
 
 func escapeRegexCharsInPattern(s string) string {
@@ -222,7 +212,8 @@ func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum in
 
 	rawRegex = "^" + rawRegex + "$"
 
-	fmt.Printf("pattern %s is regex %s\n", line, rawRegex)
+	// If tests fail, uncomment this line to get detailed output
+	// fmt.Printf("pattern %s is regex %s\n", line, rawRegex)
 
 	regex, err := regexp.Compile(rawRegex)
 	if err != nil {
