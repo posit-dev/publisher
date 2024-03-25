@@ -168,12 +168,56 @@ DOWNLOAD=("curl")
 MKTMP=("mktemp" "-d")
 TAR=("tar")
 
+
+case $# in
+  2)
+    VERSION_TYPE=${1-release}
+    VERSION=${2-latest}
+    ;;
+  1)
+    ARG=$1
+    case $ARG in
+      release|nightly)
+        VERSION_TYPE=$ARG
+        VERSION=latest
+        ;;
+      *)
+        VERSION_TYPE=release
+        VERSION=$ARG
+        ;;
+    esac
+    ;;
+  0)
+    VERSION_TYPE=release
+    VERSION=latest
+    ;;
+esac
+
+# ensure that our version type is right, otherwise show usage
+case $VERSION_TYPE in
+  release|nightly)
+    ;;
+  *) 
+   echo "usage: $0 [release(default)|nightly] <version specifier>"
+   exit 1 
+   ;;
+esac
+
+# version override, swap out latest with the latest and greatest
+if [[ $VERSION_TYPE == "release" && $VERSION == "latest" ]]; then
+  VERSION="1.0.alpha4"
+fi
+
 # Variables
 NAME="publisher"
 PREFIX="/usr/local/bin"
-VERSION="1.0.alpha2"
-URL="https://cdn.posit.co/publisher/releases/tags/v${VERSION}"
 TMPDIR=$(execute "${MKTMP[@]}")
+case $VERSION_TYPE in
+  release)
+    URL="https://cdn.posit.co/publisher/releases/tags" ;;
+  nightly)
+    URL="https://cdn.posit.co/publisher/releases/nightly" ;;
+esac
 
 
 # OS specific settings
@@ -210,7 +254,35 @@ echo "${PREFIX}/${NAME}"
 echo
 wait_for_user
 info "Downloading and installing Posit Publisher..."
-execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" "${URL}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" > /dev/null 2>&1
+if [[ $VERSION_TYPE == "nightly" && $VERSION == "latest" ]]
+then
+  # Try today and the last 10 dates, there should be one since then
+  for i in {0..10}
+  do
+    if [[ "${OS}" == "darwin" ]]
+    then
+      DAY=$(date -j -v -"$i"d -I)
+    else
+      DAY=$(date --date="$i day ago" -I) 
+    fi
+
+    URL_TO_TRY="${URL}/v${DAY}/${NAME}-${DAY}-${OS}-${ARCH}.tar.gz"
+    OUTPATH="${TMPDIR}/${NAME}-${DAY}-${OS}-${ARCH}.tar.gz"
+
+    # Set the version to day so that the untar later works.
+    VERSION=$DAY
+
+    # Try each date, stopping on the first one that works
+    info "Trying ${URL_TO_TRY}"
+    if "${DOWNLOAD[@]}" "--fail-with-body" "-o" "$OUTPATH" "$URL_TO_TRY" > /dev/null 2>&1
+    then
+      break
+    fi
+  done
+else
+  info "Trying ${URL}/v${VERSION}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz"
+  execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" "${URL}/v${VERSION}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" > /dev/null 2>&1
+fi
 execute "${TAR[@]}" "-C" "${TMPDIR}" "-xf" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz"
 execute_sudo "${INSTALL[@]}" "${TMPDIR}/${NAME}/bin/${NAME}" "${PREFIX}"
 info "Installation successful!"
@@ -220,6 +292,6 @@ cat <<EOS
   Run ${tty_bold}publisher --help${tty_reset} to get started.
 
   An extension for VSCode is available for download at
-  ${URL}/${NAME}-${VERSION}-${OS}-${ARCH}.vsix
+  ${URL}/v${VERSION}/${NAME}-${VERSION}-${OS}-${ARCH}.vsix
 
 EOS
