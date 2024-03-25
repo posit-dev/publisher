@@ -82,6 +82,42 @@ func readIgnoreFile(ignoreFilePath util.AbsolutePath) ([]*Pattern, error) {
 	return patterns, nil
 }
 
+func escapeRegexCharsInPath(s string) string {
+	// Escape all regexp-syntax characters that might appear in
+	// the project directory path.
+	// https://pkg.go.dev/regexp/syntax
+	var out strings.Builder
+	specials := `.\|+{}()<>^$:[]?*`
+
+	for _, c := range s {
+		if strings.ContainsRune(specials, c) {
+			out.WriteRune('\\')
+		}
+		out.WriteRune(c)
+	}
+	return out.String()
+}
+
+func escapeRegexCharsInPattern(s string) string {
+	// Escape all regexp-syntax characters that are not special to gitignore,
+	// so they match literally in the resulting regex.
+	// (Note that * ? [ ] are gitignore syntax and should not be escaped).
+	// https://pkg.go.dev/regexp/syntax
+	return escapeRegexChars(s, `.\|+{}()<>^$:`)
+}
+
+func escapeRegexChars(s string, specials string) string {
+	var out strings.Builder
+
+	for _, c := range s {
+		if strings.ContainsRune(specials, c) {
+			out.WriteRune('\\')
+		}
+		out.WriteRune(c)
+	}
+	return out.String()
+}
+
 func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum int) (*Pattern, error) {
 	inverted := false
 
@@ -109,6 +145,8 @@ func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum in
 		// Put a backslash ("\") in front of the first "!" for patterns that begin with a literal "!"
 		rawRegex = line[1:]
 	}
+
+	rawRegex = escapeRegexCharsInPattern(rawRegex)
 
 	// If there is a separator at the beginning or middle (or both) of the
 	// pattern, then the pattern is relative to the directory level of the
@@ -167,15 +205,17 @@ func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum in
 	// Put the prefix and suffix back on (now that * substitution is done)
 	rawRegex = prefix + rawRegex + suffix
 
+	dirPath := escapeRegexCharsInPath(ignoreFilePath.Dir().ToSlash())
+
 	if isRooted {
 		// If there is a separator at the beginning or middle (or both) of the
 		// pattern, then the pattern is relative to the directory level of the
 		// particular .gitignore file itself.
-		rawRegex = path.Join(ignoreFilePath.Dir().ToSlash(), rawRegex)
+		rawRegex = path.Join(dirPath, rawRegex)
 	} else {
 		// Otherwise the pattern may also match at any level below the
 		// .gitignore level.
-		rawRegex = ignoreFilePath.Dir().ToSlash() + `((/.*/)|/)` + rawRegex
+		rawRegex = dirPath + `((/.*/)|/)` + rawRegex
 	}
 
 	rawRegex = "^" + rawRegex + "$"

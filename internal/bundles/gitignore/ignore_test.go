@@ -44,6 +44,17 @@ func (s *NewIgnoreSuite) TestInverted() {
 	s.runTestCases(invertedTestCases)
 }
 
+func (s *NewIgnoreSuite) TestSpecialLines() {
+	s.runTestCases(specialLineTestCases)
+}
+
+func (s *NewIgnoreSuite) TestSpecialChars() {
+	// Don't name your direrctories like this!
+	// But we'll handle it if you do.
+	s.cwd = util.NewAbsolutePath(`/.\|+{}()<>^$:[]?*`, afero.NewMemMapFs())
+	s.runTestCases(specialCharTestCases)
+}
+
 func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
 	for _, test := range cases {
 		ign, err := NewIgnoreList(nil)
@@ -201,4 +212,22 @@ var invertedTestCases = []testCase{
 	{"!app.py\n!app.py\n*.py", "app.py", true},
 	{"!app.py\n!*.py\n*.py", "app.py", true},
 	{"!app.py\n!*.py\napp.py", "app.py", true},
+}
+
+var specialLineTestCases = []testCase{
+	{"", "", false},
+	{"#abc", "#abc", false},
+	{"\\#abc", "#abc", true},
+	{"abc\n!abc", "abc", false},
+	{"abc\n\\!abc", "abc", true},
+	{"!abc\n!abc", "!abc", false},
+	{"!abc\n\\!abc", "!abc", true},
+}
+
+var specialCharTestCases = []testCase{
+	{"untitled-1 (copy *)", "untitled-1 (copy 1)", true},
+	{"abc.\\|+{}()<>^$:def", "abc.\\|+{}()<>^$:def", true},
+	{"abc.\\|+{}()<>^$:def", "abcX\\|+{}()<>^$:def", false},
+	{"abc.\\|+{}()<>^$:def", "abc.\\||||||{}()<>^$:def", false},
+	{"abc.\\|+{}()<>^$:def*", "abc.\\|+{}()<>^$:defghi", true},
 }
