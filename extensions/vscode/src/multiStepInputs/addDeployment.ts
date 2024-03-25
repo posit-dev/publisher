@@ -33,8 +33,7 @@ export async function addDeployment(stream: EventStream) {
 
   try {
     const response = await api.accounts.getAll();
-    const accounts = response.data.accounts;
-    accountListItems = accounts.map((account) => ({
+    accountListItems = response.data.map((account) => ({
       iconPath: new ThemeIcon("account"),
       label: account.name,
       description: account.source,

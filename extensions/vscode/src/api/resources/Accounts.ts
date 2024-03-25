@@ -15,7 +15,7 @@ export class Accounts {
   // 200 - success
   // 500 - internal server error
   getAll() {
-    return this.client.get<{ accounts: Account[] }>("/accounts");
+    return this.client.get<Array<Account>>("/accounts");
   }
 
   // Returns:

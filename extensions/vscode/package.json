@@ -417,6 +417,11 @@
         "when": "posit.publisher.requirements.isEmpty == empty"
       },
       {
+        "view": "posit.publisher.credentials",
+        "contents": "Posit Publisher currently uses credentials managed by the following utilities:\n- [RSConnect](https://github.com/rstudio/rsconnect) (R Package)\n- [RSConnect-Python](https://github.com/rstudio/rsconnect-python) (Python utility).\n\nUse one of these utilities to define a credential to your server, then return and click the refresh button\n[Refresh](command:posit.publisher.credentials.refresh)",
+        "when": "posit.publisher.credentials.isEmpty == empty"
+      },
+      {
         "view": "posit.publisher.project",
         "contents": "In order to deploy using Posit Publisher, you can open a folder initialized as a Posit project or initialize a new project.\n[Open Folder](command:vscode.openFolder)",
         "when": "workbenchState == empty"

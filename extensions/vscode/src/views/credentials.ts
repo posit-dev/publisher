@@ -16,6 +16,7 @@ import { getSummaryStringFromError } from "../utils/errors";
 
 const viewName = "posit.publisher.credentials";
 const refreshCommand = viewName + ".refresh";
+const contextIsEmpty = viewName + ".isEmpty";
 
 type CredentialEventEmitter = EventEmitter<
   CredentialsTreeItem | undefined | void
@@ -44,16 +45,18 @@ export class CredentialsTreeDataProvider
 
     try {
       const response = await api.accounts.getAll();
-      const accounts = response.data.accounts;
-      return accounts.map((account) => {
+      const result = response.data.map((account) => {
         return new CredentialsTreeItem(account);
       });
+      await this.setContextIsEmpty(result.length === 0);
+      return result;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "credentials::getChildren",
         error,
       );
       window.showInformationMessage(summary);
+      await this.setContextIsEmpty(true);
       return [];
     }
   }
@@ -69,6 +72,14 @@ export class CredentialsTreeDataProvider
 
     context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
+    );
+  }
+
+  private async setContextIsEmpty(isEmpty: boolean): Promise<void> {
+    await commands.executeCommand(
+      "setContext",
+      contextIsEmpty,
+      isEmpty ? "empty" : "notEmpty",
     );
   }
 }

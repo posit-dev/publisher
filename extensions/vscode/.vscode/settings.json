@@ -12,5 +12,7 @@
   "svg.preview.background": "editor",
   "editor.tabSize": 2,
   "editor.formatOnSave": true,
-  "editor.detectIndentation": false
+  "editor.detectIndentation": false,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnPaste": true
 }
