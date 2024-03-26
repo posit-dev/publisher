@@ -209,6 +209,20 @@ lint: stub
     just _with_docker go vet -all ./...
     just _with_docker ./scripts/fmt-check.bash
 
+format:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run format
+
+check-format:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run check-format
+
 name:
     #!/usr/bin/env bash
     set -eou pipefail
