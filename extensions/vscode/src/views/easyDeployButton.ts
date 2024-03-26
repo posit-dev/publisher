@@ -13,10 +13,10 @@ import { EventStream } from '../events';
 const deploymentFiles = '.posit/publish/deployments/*.toml';
 const configFiles = '.posit/publish/*.toml';
 
-const viewName = 'posit.publisher.selector';
+const viewName = 'posit.publisher.easyDeployButton';
 const refreshCommand = viewName + '.refresh';
 
-export class DeploySelectorViewProvider implements WebviewViewProvider {
+export class EasyDeployButtonViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
   private api = useApi();
   private _deployments: string[] = [];
@@ -158,7 +158,7 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
       // Enable JavaScript in the webview
       enableScripts: true,
       // Restrict the webview to only load resources from the `out` directory
-      localResourceRoots: [Uri.joinPath(this._extensionUri, "out", "webviews", "projectSelector")],
+      localResourceRoots: [Uri.joinPath(this._extensionUri, "out", "webviews", "easyDeployButton")],
     };
 
     // Set the HTML content that will fill the webview view
@@ -181,12 +181,12 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
      */
   private _getWebviewContent(webview: Webview, extensionUri: Uri) {
     // The CSS files from the Vue build output
-    const stylesUri = getUri(webview, extensionUri, ["out", "webviews", "projectSelector", "index.css"]);
+    const stylesUri = getUri(webview, extensionUri, ["out", "webviews", "easyDeployButton", "index.css"]);
     // const codiconsUri = webview.asWebviewUri(Uri.joinPath(extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
     // The JS file from the Vue build output
-    const scriptUri = getUri(webview, extensionUri, ["out", "webviews", "projectSelector", "index.js"]);
+    const scriptUri = getUri(webview, extensionUri, ["out", "webviews", "easyDeployButton", "index.js"]);
     // The codicon css (and related tff file) are needing to be loaded for icons
-    const codiconsUri = getUri(webview, extensionUri, ["out", "webviews", "projectSelector", "codicon.css"]);
+    const codiconsUri = getUri(webview, extensionUri, ["out", "webviews", "easyDeployButton", "codicon.css"]);
 
     const nonce = getNonce();
 

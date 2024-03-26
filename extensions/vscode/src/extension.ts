@@ -15,7 +15,8 @@ import { CredentialsTreeDataProvider } from './views/credentials';
 import { HelpAndFeedbackTreeDataProvider } from './views/helpAndFeedback';
 import { LogsTreeDataProvider } from './views/logs';
 import { EventStream } from './events';
-import { DeploySelectorViewProvider } from "./views/deploySelector";
+import { ProjectSelectorViewProvider } from "./views/projectSelector";
+import { EasyDeployButtonViewProvider } from "./views/easyDeployButton";
 
 const STATE_CONTEXT = 'posit.publish.state';
 const MISSING_CONTEXT = 'posit.publish.missing';
@@ -91,7 +92,8 @@ export async function activate(context: vscode.ExtensionContext) {
   new CredentialsTreeDataProvider().register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
   new LogsTreeDataProvider(stream).register(context);
-  new DeploySelectorViewProvider(context.extensionUri, stream).register(context);
+  new ProjectSelectorViewProvider(context.extensionUri, stream).register(context);
+  new EasyDeployButtonViewProvider(context.extensionUri, stream).register(context);
 
   setStateContext(PositPublishState.initialized);
 }

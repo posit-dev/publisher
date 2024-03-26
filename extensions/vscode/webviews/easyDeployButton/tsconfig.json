@@ -1,0 +1,20 @@
+{
+  "extends": [
+    "@tsconfig/node20/tsconfig.json",
+    "@vue/tsconfig/tsconfig.json"
+  ],
+  "include": [
+    "env.d.ts",
+    "src/**/*",
+    "src/**/*.vue"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "verbatimModuleSyntax": false,
+  },
+}

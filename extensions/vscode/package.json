@@ -377,6 +377,14 @@
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
+          "id": "posit.publisher.easyDeployButton",
+          "type": "webview",
+          "name": "Easy Deployment Button",
+          "contextualTitle": "Publisher",
+          "icon": "$(symbol-file)",
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
           "id": "posit.publisher.files",
           "name": "Deployment Files",
           "contextualTitle": "Publisher",
@@ -469,13 +477,14 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "npm run compile-extension && npm run compile-webview",
+    "compile": "npm run compile-extension && npm run compile-project-selector && npm run compile-easy-deploy-button",
     "compile-extension": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "compile-webview": "npm run --prefix webviews/projectSelector build"
+    "compile-project-selector": "npm run --prefix webviews/projectSelector build",
+    "compile-easy-deploy-button": "npm run --prefix webviews/easyDeployButton build"
   },
   "devDependencies": {
     "@types/eventsource": "^1.1.15",
