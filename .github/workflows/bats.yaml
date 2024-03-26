@@ -32,7 +32,7 @@ jobs:
         with:
           version: 1.4.549
       - uses: extractions/setup-just@v2
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: bin
           path: bin
@@ -67,7 +67,7 @@ jobs:
         with:
           version: 1.4.549
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: bin
           path: bin
