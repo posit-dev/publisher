@@ -19,4 +19,4 @@ jobs:
         id: upload
         with:
           name: packages
-          path: packages/**/*
+          path: dist/**/*

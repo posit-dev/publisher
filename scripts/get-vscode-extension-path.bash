@@ -17,4 +17,4 @@ arch=$4
 
 name=$(basename "$cmd")
 
-echo "$(pwd)/packages/$name-$version-$os-$arch.vsix"
+echo "$(pwd)/dist/$name-$version-$os-$arch.vsix"

@@ -37,7 +37,7 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: packages
-          path: packages
+          path: dist
       - id: get-prerelease
         run: echo "prerelease=$(just pre-release)" >> "$GITHUB_OUTPUT"
       - uses: softprops/action-gh-release@v1
@@ -46,4 +46,4 @@ jobs:
           prerelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}
           files: |
             archives/**/*
-            packages/**/*
+            dist/**/*

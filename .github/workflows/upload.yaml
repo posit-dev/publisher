@@ -25,7 +25,7 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: packages
-          path: packages
+          path: dist
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: us-east-1
