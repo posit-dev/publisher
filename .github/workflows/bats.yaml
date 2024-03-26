@@ -15,7 +15,7 @@ jobs:
         runner: [ubuntu-latest]
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
       - run: just bats test common
       - run: just bats test deploy
       - run: just bats test init
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
   docker:
     strategy:
