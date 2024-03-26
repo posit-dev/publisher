@@ -8,8 +8,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+        runs-on: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +29,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: cypress-videos
+          name: ${{ matrix.runs-on }}-cypress-videos
           path: test/cy/cypress/videos
           if-no-files-found: ignore
           retention-days: 1
@@ -39,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: cypress-screenshots
+          name: ${{ matrix.runs-on }}-cypress-screenshots
           path: test/cy/cypress/screenshots
           if-no-files-found: ignore
           retention-days: 1

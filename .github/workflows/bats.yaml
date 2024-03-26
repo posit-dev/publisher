@@ -12,8 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest]
-    runs-on: ${{ matrix.runner }}
+        runs-on: [ubuntu-latest]
+    runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,8 +47,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest]
-    runs-on: ${{ matrix.runner }}
+        runs-on: [ubuntu-latest]
+    runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v4
         with:
