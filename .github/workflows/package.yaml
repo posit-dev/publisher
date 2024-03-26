@@ -15,7 +15,7 @@ jobs:
           path: bin
       - run: chmod -R +x ./bin
       - run: just package
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         id: upload
         with:
           name: packages
