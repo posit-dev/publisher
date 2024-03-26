@@ -3,9 +3,11 @@
   "private": true,
   "scripts": {
     "format": "prettier . --write",
-    "check-format": "prettier . --check"
+    "check-format": "prettier . --check",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.0.11",
     "prettier": "3.2.5"
   }
 }
