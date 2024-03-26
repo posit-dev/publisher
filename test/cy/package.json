@@ -3,6 +3,8 @@
   "scripts": {
     "lint": "eslint --ext .js,.ts,.cjs .",
     "fix": "eslint --ext .js,.ts,.cjs . --fix",
+    "format": "prettier . --write",
+    "check-format": "prettier . --check",
     "init": "just ../../run init ./test/sample-content/fastapi-simple",
     "start": "just ../../run ui --listen 127.0.0.1:9000 ./test/sample-content/fastapi-simple",
     "test": "start-server-and-test --expect 200 start http-get://127.0.0.1:9000 run",
