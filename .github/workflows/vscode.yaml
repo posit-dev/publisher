@@ -23,14 +23,14 @@ jobs:
       - id: get-date
         run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
         shell: bash
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v4
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
           key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
       - run: just vscode configure
       - run: just vscode test
-      - uses: actions/cache/save@v3
+      - uses: actions/cache/save@v4
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
@@ -45,14 +45,14 @@ jobs:
       - id: get-date
         run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
         shell: bash
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v4
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
           key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
       - run: just vscode configure
       - run: just vscode test
-      - uses: actions/cache/save@v3
+      - uses: actions/cache/save@v4
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
