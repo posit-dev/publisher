@@ -449,8 +449,6 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts",
-    "format": "prettier . --write",
-    "check-format": "prettier . --check",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
@@ -468,7 +466,6 @@
     "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
-    "prettier": "3.2.5",
     "typescript": "^5.2.2"
   },
   "dependencies": {

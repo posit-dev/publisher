@@ -114,20 +114,6 @@ lint:
 
     npm run lint
 
-format:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    npm run format
-
-check-format:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    npm run check-format
-
 # Packages the extension.
 package os="$(just ../../os)" arch="$(just ../../arch)":
     #!/usr/bin/env bash
