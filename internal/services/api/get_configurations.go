@@ -20,7 +20,7 @@ type configDTO struct {
 	Error         *types.AgentError `json:"error,omitempty"`
 }
 
-func readConfigFiles(base util.Path) ([]configDTO, error) {
+func readConfigFiles(base util.AbsolutePath) ([]configDTO, error) {
 	paths, err := config.ListConfigFiles(base)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func readConfigFiles(base util.Path) ([]configDTO, error) {
 	return response, nil
 }
 
-func GetConfigurationsHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
+func GetConfigurationsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		response, err := readConfigFiles(base)
 		if err != nil {

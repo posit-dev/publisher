@@ -28,19 +28,19 @@ func NewSymlinkWalker(walker Walker, log logging.Logger) *symlinkWalker {
 
 // Walk implements the Walker interface. It walks the underlying
 // file structure of the provided walker, following symlinks.
-func (w *symlinkWalker) Walk(path Path, fn WalkFunc) error {
+func (w *symlinkWalker) Walk(path AbsolutePath, fn AbsoluteWalkFunc) error {
 	return w.walker.Walk(path, w.visit(fn))
 }
 
-func (w *symlinkWalker) visit(fn WalkFunc) WalkFunc {
-	return func(path Path, info fs.FileInfo, err error) error {
+func (w *symlinkWalker) visit(fn AbsoluteWalkFunc) AbsoluteWalkFunc {
+	return func(path AbsolutePath, info fs.FileInfo, err error) error {
 		if err != nil {
 			// Stop walking the tree on errors.
 			return err
 		}
 		if info.Mode().Type()&os.ModeSymlink != 0 {
 			w.log.Info("Following symlink", "path", path)
-			linkTarget, err := filepath.EvalSymlinks(path.Path())
+			linkTarget, err := filepath.EvalSymlinks(path.String())
 			targetPath := NewPath(linkTarget, path.Fs())
 			if err != nil {
 				return fmt.Errorf("error following symlink %s: %w", path, err)

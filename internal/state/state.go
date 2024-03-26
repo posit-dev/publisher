@@ -14,7 +14,7 @@ import (
 )
 
 type State struct {
-	Dir         util.Path
+	Dir         util.AbsolutePath
 	AccountName string
 	ConfigName  string
 	TargetName  string
@@ -25,7 +25,7 @@ type State struct {
 	LocalID     LocalDeploymentID
 }
 
-func loadConfig(path util.Path, configName string) (*config.Config, error) {
+func loadConfig(path util.AbsolutePath, configName string) (*config.Config, error) {
 	configPath := config.GetConfigPath(path, configName)
 	cfg, err := config.FromFile(configPath)
 	if err != nil {
@@ -37,7 +37,7 @@ func loadConfig(path util.Path, configName string) (*config.Config, error) {
 	return cfg, nil
 }
 
-func loadTarget(path util.Path, targetName string) (*deployment.Deployment, error) {
+func loadTarget(path util.AbsolutePath, targetName string) (*deployment.Deployment, error) {
 	configPath := deployment.GetDeploymentPath(path, targetName)
 	target, err := deployment.FromFile(configPath)
 	if err != nil {
@@ -93,7 +93,7 @@ func Empty() *State {
 	}
 }
 
-func New(path util.Path, accountName, configName, targetName string, saveName string, accountList accounts.AccountList) (*State, error) {
+func New(path util.AbsolutePath, accountName, configName, targetName string, saveName string, accountList accounts.AccountList) (*State, error) {
 	var target *deployment.Deployment
 	var account *accounts.Account
 	var cfg *config.Config

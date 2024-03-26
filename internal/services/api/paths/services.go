@@ -11,19 +11,19 @@ import (
 )
 
 type PathsService interface {
-	IsSafe(p util.Path) (bool, error)
+	IsSafe(p util.AbsolutePath) (bool, error)
 }
 
-func CreatePathsService(base util.Path, log logging.Logger) PathsService {
+func CreatePathsService(base util.AbsolutePath, log logging.Logger) PathsService {
 	return pathsService{base, log}
 }
 
 type pathsService struct {
-	base util.Path
+	base util.AbsolutePath
 	log  logging.Logger
 }
 
-func (s pathsService) IsSafe(p util.Path) (bool, error) {
+func (s pathsService) IsSafe(p util.AbsolutePath) (bool, error) {
 	symlink, err := s.isSymlink(p)
 	if err != nil {
 		return false, err
@@ -45,7 +45,7 @@ func (s pathsService) IsSafe(p util.Path) (bool, error) {
 	return true, nil
 }
 
-func (s pathsService) isSymlink(p util.Path) (bool, error) {
+func (s pathsService) isSymlink(p util.AbsolutePath) (bool, error) {
 	l, ok, err := p.LstatIfPossible()
 	if err != nil {
 		// if an error occurs and lstat is called, check if the error op is lstat
@@ -63,21 +63,11 @@ func (s pathsService) isSymlink(p util.Path) (bool, error) {
 
 }
 
-func (s pathsService) isTrusted(p util.Path) (bool, error) {
+func (s pathsService) isTrusted(p util.AbsolutePath) (bool, error) {
 	_, err := p.Rel(s.base)
 	if err != nil {
 		return false, err
 	}
 
-	absbase, err := s.base.Abs()
-	if err != nil {
-		return false, err
-	}
-
-	abspath, err := p.Abs()
-	if err != nil {
-		return false, err
-	}
-
-	return strings.HasPrefix(abspath.String(), absbase.String()), nil
+	return strings.HasPrefix(p.String(), s.base.String()), nil
 }

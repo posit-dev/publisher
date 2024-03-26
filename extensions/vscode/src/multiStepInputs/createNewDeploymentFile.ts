@@ -1,13 +1,22 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { MultiStepInput, MultiStepState, isQuickPickItem } from './multiStepHelper';
+import {
+  MultiStepInput,
+  MultiStepState,
+  isQuickPickItem,
+} from "./multiStepHelper";
 
-import { InputBoxValidationSeverity, QuickPickItem, ThemeIcon, window } from 'vscode';
+import {
+  InputBoxValidationSeverity,
+  QuickPickItem,
+  ThemeIcon,
+  window,
+} from "vscode";
 
-import { AccountAuthType, useApi } from '../api';
-import { getSummaryStringFromError } from '../utils/errors';
-import { uniqueDeploymentName, untitledDeploymentName } from '../utils/names';
-import { isValidFilename } from '../utils/files';
+import { AccountAuthType, useApi } from "../api";
+import { getSummaryStringFromError } from "../utils/errors";
+import { uniqueDeploymentName, untitledDeploymentName } from "../utils/names";
+import { isValidFilename } from "../utils/files";
 
 export async function createNewDeploymentFile() {
   const api = useApi();
@@ -21,20 +30,22 @@ export async function createNewDeploymentFile() {
 
   try {
     const response = await api.accounts.getAll();
-    const accounts = response.data.accounts;
-    accountListItems = accounts
-      .map(account => ({
-        iconPath: new ThemeIcon('account'),
-        label: account.name,
-        description: account.source,
-        detail: account.authType === AccountAuthType.API_KEY
-          ? 'Using API Key'
+    accountListItems = response.data.map((account) => ({
+      iconPath: new ThemeIcon("account"),
+      label: account.name,
+      description: account.source,
+      detail:
+        account.authType === AccountAuthType.API_KEY
+          ? "Using API Key"
           : `Using Token Auth for ${account.accountName}`,
-      }));
+    }));
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError('createNewDeploymentFile, accounts.getAll', error);
+    const summary = getSummaryStringFromError(
+      "createNewDeploymentFile, accounts.getAll",
+      error,
+    );
     window.showInformationMessage(
-      `Unable to continue with no credentials. ${summary}`
+      `Unable to continue with no credentials. ${summary}`,
     );
     return;
   }
@@ -42,11 +53,16 @@ export async function createNewDeploymentFile() {
   try {
     const response = await api.deployments.getAll();
     const deploymentList = response.data;
-    deploymentNames = deploymentList.map(deployment => deployment.deploymentName);
+    deploymentNames = deploymentList.map(
+      (deployment) => deployment.deploymentName,
+    );
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError('createNewDeploymentFile, deployments.getAll', error);
+    const summary = getSummaryStringFromError(
+      "createNewDeploymentFile, deployments.getAll",
+      error,
+    );
     window.showInformationMessage(
-      `Unable to continue due to deployment error. ${summary}`
+      `Unable to continue due to deployment error. ${summary}`,
     );
     return;
   }
@@ -65,7 +81,7 @@ export async function createNewDeploymentFile() {
   // ***************************************************************
   async function collectInputs() {
     const state: MultiStepState = {
-      title: 'Create a Deployment File for your Project',
+      title: "Create a Deployment File for your Project",
       step: -1,
       lastStep: 0,
       totalSteps: -1,
@@ -88,7 +104,7 @@ export async function createNewDeploymentFile() {
 
     // start the progression through the steps
 
-    await MultiStepInput.run(input => inputDeploymentName(input, state));
+    await MultiStepInput.run((input) => inputDeploymentName(input, state));
     return state as MultiStepState;
   }
 
@@ -98,7 +114,7 @@ export async function createNewDeploymentFile() {
   // ***************************************************************
   async function inputDeploymentName(
     input: MultiStepInput,
-    state: MultiStepState
+    state: MultiStepState,
   ) {
     state.step = state.lastStep + 1;
 
@@ -106,12 +122,15 @@ export async function createNewDeploymentFile() {
       title: state.title,
       step: state.step,
       totalSteps: state.totalSteps,
-      value: typeof state.data.deploymentName === 'string' && state.data.deploymentName.length
-        ? state.data.deploymentName
-        : untitledDeploymentName(deploymentNames),
-      prompt: 'Choose a unique name for the deployment',
+      value:
+        typeof state.data.deploymentName === "string" &&
+        state.data.deploymentName.length
+          ? state.data.deploymentName
+          : untitledDeploymentName(deploymentNames),
+      prompt: "Choose a unique name for the deployment",
       validate: (value) => {
-        if (value.length < 3 ||
+        if (
+          value.length < 3 ||
           !uniqueDeploymentName(value, deploymentNames) ||
           !isValidFilename(value)
         ) {
@@ -133,10 +152,7 @@ export async function createNewDeploymentFile() {
   // Step #2:
   // Select the credentials to be used
   // ***************************************************************
-  async function pickCredentials(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
+  async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     // skip if we only have one choice.
     if (accountListItems.length > 1) {
       const thisStepNumber = state.lastStep + 1;
@@ -144,9 +160,12 @@ export async function createNewDeploymentFile() {
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: 'Select the credential you want to use to deploy',
+        placeholder: "Select the credential you want to use to deploy",
         items: accountListItems,
-        activeItem: typeof state.data.credentialName !== 'string' ? state.data.credentialName : undefined,
+        activeItem:
+          typeof state.data.credentialName !== "string"
+            ? state.data.credentialName
+            : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
       });
@@ -160,7 +179,7 @@ export async function createNewDeploymentFile() {
   // ***************************************************************
   // Kick off the input collection
   // and await until it completes.
-  // This is a promise which returns the state data used to 
+  // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
   const state = await collectInputs();
@@ -172,7 +191,7 @@ export async function createNewDeploymentFile() {
     state.data.deploymentName === undefined ||
     state.data.credentialName === undefined ||
     // have to add type guards here to eliminate the variability
-    typeof (state.data.deploymentName) !== 'string' ||
+    typeof state.data.deploymentName !== "string" ||
     !isQuickPickItem(state.data.credentialName)
   ) {
     return;
@@ -185,9 +204,12 @@ export async function createNewDeploymentFile() {
       state.data.deploymentName,
     );
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError('addDeployment, createNew', error);
+    const summary = getSummaryStringFromError(
+      "addDeployment, createNew",
+      error,
+    );
     window.showInformationMessage(
-      `Failed to create pre-deployment. ${summary}`
+      `Failed to create pre-deployment. ${summary}`,
     );
     return;
   }

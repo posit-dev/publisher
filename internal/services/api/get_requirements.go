@@ -18,12 +18,12 @@ type requirementsDTO struct {
 }
 
 type GetRequirementsHandler struct {
-	base      util.Path
+	base      util.AbsolutePath
 	log       logging.Logger
 	inspector inspect.PythonInspector
 }
 
-func NewGetRequirementsHandler(base util.Path, log logging.Logger) *GetRequirementsHandler {
+func NewGetRequirementsHandler(base util.AbsolutePath, log logging.Logger) *GetRequirementsHandler {
 	return &GetRequirementsHandler{
 		base:      base,
 		log:       log,

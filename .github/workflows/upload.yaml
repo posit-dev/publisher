@@ -1,6 +1,12 @@
 name: Upload
 on:
   workflow_call:
+    inputs: 
+      nightly: 
+        description: 'Is this a nightly upload?'
+        required: false
+        default: false
+        type: boolean
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read  # This is required for actions/checkout
@@ -25,3 +31,6 @@ jobs:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       - run: just upload
+        if: ${{ !github.event.inputs.nightly }}
+      - run: just upload nightly
+        if: ${{ github.event.inputs.nightly }}

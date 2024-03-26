@@ -5,14 +5,15 @@
     class="diff text-weight-medium"
     :class="diffType === 'inserted' ? 'diff-inserted' : 'diff-removed'"
   >
-    <span class="diff-marker">{{ marker }}</span>{{ value }}
+    <span class="diff-marker">{{ marker }}</span
+    >{{ value }}
   </span>
 </template>
 
 <script setup lang="ts">
-import { PropType, computed } from 'vue';
+import { PropType, computed } from "vue";
 
-export type DiffType = 'inserted' | 'removed';
+export type DiffType = "inserted" | "removed";
 
 const props = defineProps({
   diffType: {
@@ -21,12 +22,12 @@ const props = defineProps({
   },
   value: {
     type: [String, Boolean, Number],
-    required: true
-  }
+    required: true,
+  },
 });
 
 const marker = computed(() => {
-  return props.diffType === 'inserted' ? '+' : '-';
+  return props.diffType === "inserted" ? "+" : "-";
 });
 </script>
 

@@ -1,10 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ConfigSection
-    v-if="quarto"
-    title="Quarto"
-  >
+  <ConfigSection v-if="quarto" title="Quarto">
     <ConfigSetting
       label="Version"
       :value="quarto.version"
@@ -21,11 +18,11 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType } from "vue";
 
-import { QuartoConfig } from 'src/api';
-import ConfigSection from 'src/components/config/ConfigSection.vue';
-import ConfigSetting from 'src/components/config/ConfigSetting.vue';
+import { QuartoConfig } from "src/api";
+import ConfigSection from "src/components/config/ConfigSection.vue";
+import ConfigSetting from "src/components/config/ConfigSetting.vue";
 
 defineProps({
   quarto: {
@@ -37,7 +34,6 @@ defineProps({
     type: Object as PropType<QuartoConfig>,
     default: undefined,
     required: false,
-  }
+  },
 });
 </script>
-

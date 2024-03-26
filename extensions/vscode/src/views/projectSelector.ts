@@ -1,20 +1,30 @@
-import { Disposable, Webview, window, Uri, WebviewViewProvider, WebviewView, WebviewViewResolveContext, CancellationToken, ExtensionContext, workspace, WorkspaceFolder, RelativePattern, commands } from "vscode";
+import {
+  Disposable,
+  Webview,
+  window,
+  Uri,
+  WebviewViewProvider,
+  WebviewView,
+  WebviewViewResolveContext,
+  CancellationToken,
+  ExtensionContext,
+  workspace,
+  WorkspaceFolder,
+  RelativePattern,
+  commands,
+} from "vscode";
 import { getUri } from "../utils/getUri";
 import { getNonce } from "../utils/getNonce";
-import {
-  useApi,
-  isConfigurationError,
-  isDeploymentError,
-} from '../api';
+import { useApi, isConfigurationError, isDeploymentError } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
-import { deployProject } from './deployProgress';
-import { EventStream } from '../events';
+import { deployProject } from "./deployProgress";
+import { EventStream } from "../events";
 
-const deploymentFiles = '.posit/publish/deployments/*.toml';
-const configFiles = '.posit/publish/*.toml';
+const deploymentFiles = ".posit/publish/deployments/*.toml";
+const configFiles = ".posit/publish/*.toml";
 
-const viewName = 'posit.publisher.selector';
-const refreshCommand = viewName + '.refresh';
+const viewName = "posit.publisher.selector";
+const refreshCommand = viewName + ".refresh";
 
 export class ProjectSelectorViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
@@ -33,13 +43,13 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
-    stream.register('publish/start', () => {
+    stream.register("publish/start", () => {
       this._onPublishStart();
     });
-    stream.register('publish/success', () => {
+    stream.register("publish/success", () => {
       this._onPublishFinish();
     });
-    stream.register('publish/failure', () => {
+    stream.register("publish/failure", () => {
       this._onPublishFinish();
     });
   }
@@ -50,7 +60,7 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
         command: "publish_start",
       });
     } else {
-      console.log('_onPublishStart: oops! No _webViewView defined!');
+      console.log("_onPublishStart: oops! No _webViewView defined!");
     }
   }
 
@@ -60,7 +70,7 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
         command: "publish_finish",
       });
     } else {
-      console.log('_onPublishFinish: oops! No _webViewView defined!');
+      console.log("_onPublishFinish: oops! No _webViewView defined!");
     }
   }
 
@@ -77,23 +87,28 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
       const response = await this.api.deployments.getAll();
       const deployments = response.data;
       this._deployments = [];
-      deployments.forEach(deployment => {
+      deployments.forEach((deployment) => {
         if (!isDeploymentError(deployment)) {
           this._deployments.push(deployment.deploymentName);
         }
       });
     } catch (error: unknown) {
-      const summary = getSummaryStringFromError('_refreshData::deployments.getAll', error);
+      const summary = getSummaryStringFromError(
+        "_refreshData::deployments.getAll",
+        error,
+      );
       window.showInformationMessage(summary);
     }
 
     try {
       const response = await this.api.accounts.getAll();
-      const accounts = response.data.accounts;
       this._credentials = [];
-      accounts.forEach(account => this._credentials.push(account.name));
+      response.data.forEach((account) => this._credentials.push(account.name));
     } catch (error: unknown) {
-      const summary = getSummaryStringFromError('_refreshData::accounts.getAll', error);
+      const summary = getSummaryStringFromError(
+        "_refreshData::accounts.getAll",
+        error,
+      );
       window.showInformationMessage(summary);
     }
 
@@ -101,13 +116,16 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
       const response = await this.api.configurations.getAll();
       const configurations = response.data;
       this._configs = [];
-      configurations.forEach(config => {
+      configurations.forEach((config) => {
         if (!isConfigurationError(config)) {
           this._configs.push(config.configurationName);
         }
       });
     } catch (error: unknown) {
-      const summary = getSummaryStringFromError('configurations::getChildren', error);
+      const summary = getSummaryStringFromError(
+        "configurations::getChildren",
+        error,
+      );
       window.showInformationMessage(summary);
     }
   }
@@ -150,7 +168,7 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
   public resolveWebviewView(
     webviewView: WebviewView,
     _: WebviewViewResolveContext,
-    _token: CancellationToken
+    _token: CancellationToken,
   ) {
     this._webviewView = webviewView;
     // Allow scripts in the webview
@@ -158,35 +176,55 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
       // Enable JavaScript in the webview
       enableScripts: true,
       // Restrict the webview to only load resources from the `out` directory
-      localResourceRoots: [Uri.joinPath(this._extensionUri, "out", "webviews", "projectSelector")],
+      localResourceRoots: [
+        Uri.joinPath(this._extensionUri, "out", "webviews", "projectSelector"),
+      ],
     };
 
     // Set the HTML content that will fill the webview view
-    webviewView.webview.html = this._getWebviewContent(webviewView.webview, this._extensionUri);
+    webviewView.webview.html = this._getWebviewContent(
+      webviewView.webview,
+      this._extensionUri,
+    );
 
     // Sets up an event listener to listen for messages passed from the webview view context
     // and executes code based on the message that is recieved
     this._setWebviewMessageListener();
   }
   /**
-     * Defines and returns the HTML that should be rendered within the webview panel.
-     *
-     * @remarks This is also the place where references to the Vue webview build files
-     * are created and inserted into the webview HTML.
-     *
-     * @param webview A reference to the extension webview
-     * @param extensionUri The URI of the directory containing the extension
-     * @returns A template string literal containing the HTML that should be
-     * rendered within the webview panel
-     */
+   * Defines and returns the HTML that should be rendered within the webview panel.
+   *
+   * @remarks This is also the place where references to the Vue webview build files
+   * are created and inserted into the webview HTML.
+   *
+   * @param webview A reference to the extension webview
+   * @param extensionUri The URI of the directory containing the extension
+   * @returns A template string literal containing the HTML that should be
+   * rendered within the webview panel
+   */
   private _getWebviewContent(webview: Webview, extensionUri: Uri) {
     // The CSS files from the Vue build output
-    const stylesUri = getUri(webview, extensionUri, ["out", "webviews", "projectSelector", "index.css"]);
+    const stylesUri = getUri(webview, extensionUri, [
+      "out",
+      "webviews",
+      "projectSelector",
+      "index.css",
+    ]);
     // const codiconsUri = webview.asWebviewUri(Uri.joinPath(extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
     // The JS file from the Vue build output
-    const scriptUri = getUri(webview, extensionUri, ["out", "webviews", "projectSelector", "index.js"]);
+    const scriptUri = getUri(webview, extensionUri, [
+      "out",
+      "webviews",
+      "projectSelector",
+      "index.js",
+    ]);
     // The codicon css (and related tff file) are needing to be loaded for icons
-    const codiconsUri = getUri(webview, extensionUri, ["out", "webviews", "projectSelector", "codicon.css"]);
+    const codiconsUri = getUri(webview, extensionUri, [
+      "out",
+      "webviews",
+      "projectSelector",
+      "codicon.css",
+    ]);
 
     const nonce = getNonce();
 
@@ -239,10 +277,11 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
               );
               deployProject(response.data.localId, this.stream);
             } catch (error: unknown) {
-              const summary = getSummaryStringFromError('publishDeployment, deploy', error);
-              window.showInformationMessage(
-                `Failed to deploy . ${summary}`
+              const summary = getSummaryStringFromError(
+                "publishDeployment, deploy",
+                error,
               );
+              window.showInformationMessage(`Failed to deploy . ${summary}`);
               return;
             }
             return;
@@ -254,13 +293,17 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
             this._refreshWebViewViewData();
             return;
           case "newDeployment":
-            const newFile: string = await commands.executeCommand('posit.publisher.deployments.createNew');
+            const newFile: string = await commands.executeCommand(
+              "posit.publisher.deployments.createNew",
+            );
             if (newFile) {
               this._updateDeploymentFileSelection(newFile);
             }
             break;
           case "newConfiguration":
-            const newConfig: string = await commands.executeCommand('posit.publisher.configurations.add');
+            const newConfig: string = await commands.executeCommand(
+              "posit.publisher.configurations.add",
+            );
             if (newConfig) {
               this._updateConfigFileSelection(newConfig);
             }
@@ -268,7 +311,7 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
         }
       },
       undefined,
-      this._disposables
+      this._disposables,
     );
   }
 
@@ -286,26 +329,20 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
   }
 
   public register(context: ExtensionContext) {
-    const provider = window.registerWebviewViewProvider(
-      viewName,
-      this,
-      {
-        webviewOptions: {
-          retainContextWhenHidden: true,
-        }
-      }
-    );
-    context.subscriptions.push(
-      provider,
-    );
+    const provider = window.registerWebviewViewProvider(viewName, this, {
+      webviewOptions: {
+        retainContextWhenHidden: true,
+      },
+    });
+    context.subscriptions.push(provider);
 
     context.subscriptions.push(
-      commands.registerCommand(refreshCommand, this.refresh)
+      commands.registerCommand(refreshCommand, this.refresh),
     );
 
     if (this.root !== undefined) {
       const configFileWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, configFiles)
+        new RelativePattern(this.root, configFiles),
       );
       configFileWatcher.onDidCreate(this.refresh);
       configFileWatcher.onDidDelete(this.refresh);
@@ -313,7 +350,7 @@ export class ProjectSelectorViewProvider implements WebviewViewProvider {
       context.subscriptions.push(configFileWatcher);
 
       const deploymentFileWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, deploymentFiles)
+        new RelativePattern(this.root, deploymentFiles),
       );
       deploymentFileWatcher.onDidCreate(this.refresh);
       deploymentFileWatcher.onDidDelete(this.refresh);

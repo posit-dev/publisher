@@ -23,7 +23,7 @@ func TestAllSuite(t *testing.T) {
 }
 
 func (s *AllSuite) TestInferTypeDirectory() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -48,7 +48,7 @@ func (s *AllSuite) TestInferTypeDirectory() {
 }
 
 func (s *AllSuite) TestInferTypeDirectoryPriority() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -73,7 +73,7 @@ func (s *AllSuite) TestInferTypeDirectoryPriority() {
 }
 
 func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -89,7 +89,7 @@ func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
 func (s *AllSuite) TestInferTypeErr() {
 	fs := afero.NewMemMapFs()
 	detector := NewContentTypeDetector()
-	base := util.NewPath("/foo", fs)
+	base := util.NewAbsolutePath("/foo", fs)
 	t, err := detector.InferType(base)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
@@ -97,7 +97,7 @@ func (s *AllSuite) TestInferTypeErr() {
 }
 
 func (s *AllSuite) TestInferAll() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -131,7 +131,7 @@ func (s *AllSuite) TestInferAll() {
 }
 
 func (s *AllSuite) TestInferAllIndeterminate() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 

@@ -51,7 +51,7 @@ const IgnoreFilename = ".positignore"
 
 // LoadPositIgnoreIfPresent loads the .positignore file in the specified directory,
 // if it exists, adding the exclusion rules to the specified ignore list.
-func LoadPositIgnoreIfPresent(dir util.Path, ignoreList IgnoreList) error {
+func LoadPositIgnoreIfPresent(dir util.AbsolutePath, ignoreList IgnoreList) error {
 	ignorePath := dir.Join(IgnoreFilename)
 	err := ignoreList.Append(ignorePath)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -65,8 +65,8 @@ func LoadPositIgnoreIfPresent(dir util.Path, ignoreList IgnoreList) error {
 
 // Walk traverses the directory at `path`, calling the specified function
 // for every file and directory that does not match the exclusion list.
-func (i *excludingWalker) Walk(path util.Path, fn util.WalkFunc) error {
-	return i.ignoreList.Walk(path, func(path util.Path, info fs.FileInfo, err error) error {
+func (i *excludingWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
+	return i.ignoreList.Walk(path, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			// Ignore Python environment directories. We check for these
 			// separately because they aren't expressible as gitignore patterns.
@@ -87,7 +87,7 @@ func (i *excludingWalker) Walk(path util.Path, fn util.WalkFunc) error {
 // Exclusions are sourced from the built-in exclusions, gitignore, and the
 // specified ignore list. Python environment directories are also excluded,
 // and .positignore files are processed as they are encountered.
-func NewExcludingWalker(dir util.Path) (util.Walker, error) {
+func NewExcludingWalker(dir util.AbsolutePath) (util.Walker, error) {
 	gitIgnore, err := NewIgnoreList(dir)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func NewExcludingWalker(dir util.Path) (util.Walker, error) {
 
 // NewIgnoreList returns an IgnoreList populated with the built-in
 // exclusions, gitignore contents, and the provided ignore list.
-func NewIgnoreList(dir util.Path) (IgnoreList, error) {
+func NewIgnoreList(dir util.AbsolutePath) (IgnoreList, error) {
 	gitIgnore := New(dir)
 	err := gitIgnore.AppendGlobs(standardIgnores, MatchSourceBuiltIn)
 	if err != nil {

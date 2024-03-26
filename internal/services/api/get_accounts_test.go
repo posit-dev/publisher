@@ -50,12 +50,11 @@ func (s *GetAccountsSuite) TestGetAccounts() {
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
 
-	res := getAccountsResponse{}
+	accts := getAccountsResponse{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
-	s.NoError(dec.Decode(&res))
+	s.NoError(dec.Decode(&accts))
 
-	accts := res.Accounts
 	s.Len(accts, 2)
 	s.Equal("myAccount", accts[0].Name)
 	s.Equal(string(accounts.ServerTypeConnect), accts[0].Type)
@@ -75,4 +74,26 @@ func (s *GetAccountsSuite) TestGetAccountsError() {
 	h(rec, req)
 
 	s.Equal(http.StatusInternalServerError, rec.Result().StatusCode)
+}
+
+func (s *GetAccountsSuite) TestGetAccountsNoAccounts() {
+	lister := &accounts.MockAccountList{}
+	lister.On("GetAccountsByServerType", accounts.ServerTypeConnect).Return(nil, nil)
+	h := GetAccountsHandlerFunc(lister, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/accounts", nil)
+	s.NoError(err)
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	accts := getAccountsResponse{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&accts))
+
+	s.NotNil(accts)
+	s.Len(accts, 0)
 }

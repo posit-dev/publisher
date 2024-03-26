@@ -9,42 +9,54 @@ import {
   TreeItem,
   commands,
   window,
-} from 'vscode';
+} from "vscode";
 
-import api, { Account } from '../api';
-import { getSummaryStringFromError } from '../utils/errors';
+import api, { Account } from "../api";
+import { getSummaryStringFromError } from "../utils/errors";
 
-const viewName = 'posit.publisher.credentials';
-const refreshCommand = viewName + '.refresh';
+const viewName = "posit.publisher.credentials";
+const refreshCommand = viewName + ".refresh";
+const contextIsEmpty = viewName + ".isEmpty";
 
-type CredentialEventEmitter = EventEmitter<CredentialsTreeItem | undefined | void>;
+type CredentialEventEmitter = EventEmitter<
+  CredentialsTreeItem | undefined | void
+>;
 type CredentialEvent = Event<CredentialsTreeItem | undefined | void>;
 
-export class CredentialsTreeDataProvider implements TreeDataProvider<CredentialsTreeItem> {
-
+export class CredentialsTreeDataProvider
+  implements TreeDataProvider<CredentialsTreeItem>
+{
   private _onDidChangeTreeData: CredentialEventEmitter = new EventEmitter();
-  readonly onDidChangeTreeData: CredentialEvent = this._onDidChangeTreeData.event;
+  readonly onDidChangeTreeData: CredentialEvent =
+    this._onDidChangeTreeData.event;
 
-  constructor() { }
+  constructor() {}
 
   getTreeItem(element: CredentialsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  async getChildren(element: CredentialsTreeItem | undefined): Promise<CredentialsTreeItem[]> {
+  async getChildren(
+    element: CredentialsTreeItem | undefined,
+  ): Promise<CredentialsTreeItem[]> {
     if (element) {
       return [];
     }
 
     try {
       const response = await api.accounts.getAll();
-      const accounts = response.data.accounts;
-      return accounts.map(account => {
+      const result = response.data.map((account) => {
         return new CredentialsTreeItem(account);
       });
+      await this.setContextIsEmpty(result.length === 0);
+      return result;
     } catch (error: unknown) {
-      const summary = getSummaryStringFromError('credentials::getChildren', error);
+      const summary = getSummaryStringFromError(
+        "credentials::getChildren",
+        error,
+      );
       window.showInformationMessage(summary);
+      await this.setContextIsEmpty(true);
       return [];
     }
   }
@@ -55,30 +67,38 @@ export class CredentialsTreeDataProvider implements TreeDataProvider<Credentials
 
   public register(context: ExtensionContext) {
     context.subscriptions.push(
-      window.createTreeView(viewName, { treeDataProvider: this })
+      window.createTreeView(viewName, { treeDataProvider: this }),
     );
 
     context.subscriptions.push(
-      commands.registerCommand(refreshCommand, this.refresh)
+      commands.registerCommand(refreshCommand, this.refresh),
+    );
+  }
+
+  private async setContextIsEmpty(isEmpty: boolean): Promise<void> {
+    await commands.executeCommand(
+      "setContext",
+      contextIsEmpty,
+      isEmpty ? "empty" : "notEmpty",
     );
   }
 }
 export class CredentialsTreeItem extends TreeItem {
-  contextValue = 'posit.publisher.credentials.tree.item';
+  contextValue = "posit.publisher.credentials.tree.item";
 
   constructor(account: Account) {
     super(account.name);
     this.tooltip = this.getTooltip(account);
-    this.iconPath = new ThemeIcon('key');
+    this.iconPath = new ThemeIcon("key");
   }
 
   getTooltip(account: Account): string {
-    let result = '';
+    let result = "";
 
-    if (account.authType === 'token-key') {
+    if (account.authType === "token-key") {
       result += `Account: ${account.accountName}\n`;
-    } else if (account.authType === 'api-key') {
-      result += 'Account: Using API Key\n';
+    } else if (account.authType === "api-key") {
+      result += "Account: Using API Key\n";
     }
 
     result += `URL: ${account.url}\n`;

@@ -33,45 +33,46 @@ func newRSConnectProvider(fs afero.Fs, log logging.Logger) *rsconnectProvider {
 
 // configDir returns the directory where the rsconnect
 // R package stores its configuration.
-func (p *rsconnectProvider) configDir() (util.Path, error) {
+func (p *rsconnectProvider) configDir() (util.AbsolutePath, error) {
 	// https://github.com/rstudio/rsconnect/blob/main/R/config.R
 	baseDir := util.PathFromEnvironment("R_USER_CONFIG_DIR", p.fs)
-	if baseDir.Path() != "" {
+	if baseDir.String() != "" {
 		p.log.Debug("rsconnect: using R_USER_CONFIG_DIR", "path", baseDir)
 	} else {
 		baseDir = util.PathFromEnvironment("XDG_CONFIG_HOME", p.fs)
-		if baseDir.Path() != "" {
+		if baseDir.String() != "" {
 			p.log.Debug("rsconnect: using XDG_CONFIG_HOME", "path", baseDir)
 		}
 	}
-	if baseDir.Path() == "" {
+	if baseDir.String() == "" {
 		switch p.goos {
 		case "windows":
 			baseDir = util.PathFromEnvironment("APPDATA", p.fs).Join("R", "config")
 		case "darwin":
 			home, err := util.UserHomeDir(p.fs)
 			if err != nil {
-				return util.Path{}, err
+				return util.AbsolutePath{}, err
 			}
-			baseDir = home.Join("Library", "Preferences", "org.R-project.R")
+			baseDir = home.Join("Library", "Preferences", "org.R-project.R").Path
 		default:
 			home, err := util.UserHomeDir(p.fs)
 			if err != nil {
-				return util.Path{}, err
+				return util.AbsolutePath{}, err
 			}
-			baseDir = home.Join(".config")
+			baseDir = home.Join(".config").Path
 		}
 	}
-	return baseDir.Join("R", "rsconnect"), nil
+	return baseDir.Join("R", "rsconnect").Abs()
 }
 
-func (p *rsconnectProvider) oldConfigDir() (util.Path, error) {
+func (p *rsconnectProvider) oldConfigDir() (util.AbsolutePath, error) {
 	home, err := util.UserHomeDir(p.fs)
 	if err != nil {
-		return util.Path{}, err
+		return util.AbsolutePath{}, err
 	}
 	configDir := util.PathFromEnvironment("R_USER_CONFIG_DIR", p.fs)
-	if configDir.Path() != "" {
+
+	if configDir.String() != "" {
 		p.log.Debug("rsconnect: using R_USER_CONFIG_DIR", "path", configDir)
 		configDir = configDir.Join("rsconnect")
 	} else {
@@ -79,23 +80,19 @@ func (p *rsconnectProvider) oldConfigDir() (util.Path, error) {
 		case "windows":
 			configDir = util.PathFromEnvironment("APPDATA", p.fs)
 		case "darwin":
-			configDir = home.Join("Library", "Application Support")
+			configDir = home.Join("Library", "Application Support").Path
 		default:
 			configDir = util.PathFromEnvironment("XDG_CONFIG_HOME", p.fs)
-			if configDir.Path() != "" {
+			if configDir.String() != "" {
 				p.log.Debug("rsconnect: using XDG_CONFIG_HOME", "path", configDir)
 			} else {
-				configDir = home.Join(".config")
+				configDir = home.Join(".config").Path
 			}
 		}
 		configDir = configDir.Join("R", "rsconnect")
 	}
 	p.log.Debug("rsconnect: candidate old config directory", "path", configDir)
-	configDir, err = configDir.Abs()
-	if err != nil {
-		return util.Path{}, err
-	}
-	return configDir, nil
+	return configDir.Abs()
 }
 
 // makeServerNameMap constructs a server name-to-url map
@@ -190,7 +187,7 @@ func (p *rsconnectProvider) Load() ([]Account, error) {
 
 // Load loads the list of accounts stored by
 // rsconnect, by reading its servers and account DCF files.
-func (p *rsconnectProvider) loadFromConfigDir(configDir util.Path) ([]Account, error) {
+func (p *rsconnectProvider) loadFromConfigDir(configDir util.AbsolutePath) ([]Account, error) {
 	p.log.Info("Loading rsconnect accounts", "path", configDir)
 	rscServers, err := p.dcfReader.ReadFiles(configDir.Join("servers"), "*.dcf")
 	if err != nil {

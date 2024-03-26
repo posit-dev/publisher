@@ -80,7 +80,7 @@ func (v *Validator[T]) ValidateContent(data any) error {
 	return nil
 }
 
-func (v *Validator[T]) ValidateTOMLFile(path util.Path) error {
+func (v *Validator[T]) ValidateTOMLFile(path util.AbsolutePath) error {
 	// First, try to read the TOML into the object.
 	// This will return nicer errors from the toml package
 	// for things like fields that cannot be mapped.

@@ -1,11 +1,11 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import axios from 'axios';
+import axios from "axios";
 
-import { Accounts } from 'src/api/resources/Accounts';
-import { Deployments } from 'src/api/resources/Deployments';
-import { Configurations } from 'src/api/resources/Configurations';
-import { Files } from 'src/api/resources/Files';
+import { Accounts } from "src/api/resources/Accounts";
+import { Deployments } from "src/api/resources/Deployments";
+import { Configurations } from "src/api/resources/Configurations";
+import { Files } from "src/api/resources/Files";
 
 class PublishingClientApi {
   private client;
@@ -17,7 +17,7 @@ class PublishingClientApi {
 
   constructor() {
     this.client = axios.create({
-      baseURL: '/api',
+      baseURL: "/api",
     });
 
     this.accounts = new Accounts(this.client);

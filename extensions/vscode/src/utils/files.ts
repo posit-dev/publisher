@@ -7,7 +7,7 @@ import {
   workspace,
   window,
   commands,
-} from 'vscode';
+} from "vscode";
 
 export async function fileExists(fileUri: Uri): Promise<boolean> {
   try {
@@ -30,7 +30,7 @@ export function isValidFilename(filename: string): boolean {
   if (filename === "." || filename.includes("..")) {
     return false;
   }
-  const forbidden = '/:*?"<>|\'\\';
+  const forbidden = "/:*?\"<>|'\\";
   for (let c of filename) {
     if (forbidden.includes(c)) {
       return false;
@@ -43,21 +43,17 @@ export function isValidFilename(filename: string): boolean {
   return true;
 }
 
-export async function viewFileInPreview(
-  uri: Uri,
-  moveCursorToEnd = true,
-) {
+export async function viewFileInPreview(uri: Uri, moveCursorToEnd = true) {
   const doc = await workspace.openTextDocument(uri);
   if (moveCursorToEnd) {
-    await commands.executeCommand('cursorMove', {
-      to: 'down',
-      by: 'line',
+    await commands.executeCommand("cursorMove", {
+      to: "down",
+      by: "line",
       value: doc.lineCount - 1,
     });
   }
   await window.showTextDocument(doc, { preview: true });
 }
-
 
 export async function openNewOrExistingFileInPreview(
   filePath: string,
@@ -66,7 +62,7 @@ export async function openNewOrExistingFileInPreview(
 ) {
   let fileExist = true;
   const existingUri = Uri.parse(filePath);
-  const newUri = Uri.file(filePath).with({ scheme: 'untitled' });
+  const newUri = Uri.file(filePath).with({ scheme: "untitled" });
 
   try {
     await workspace.fs.stat(existingUri);
@@ -74,15 +70,13 @@ export async function openNewOrExistingFileInPreview(
     fileExist = false;
   }
 
-  const doc = await workspace.openTextDocument(fileExist ? existingUri : newUri);
+  const doc = await workspace.openTextDocument(
+    fileExist ? existingUri : newUri,
+  );
   const wsedit = new WorkspaceEdit();
   if (!fileExist) {
     // insert our template
-    wsedit.insert(
-      newUri,
-      new Position(0, 0),
-      newFileContents,
-    );
+    wsedit.insert(newUri, new Position(0, 0), newFileContents);
   }
   // append contents
   if (appendedContents) {
@@ -97,9 +91,9 @@ export async function openNewOrExistingFileInPreview(
   viewFileInPreview(fileExist ? existingUri : newUri);
 
   await window.showTextDocument(doc, { preview: true });
-  await commands.executeCommand('cursorMove', {
-    to: 'down',
-    by: 'line',
+  await commands.executeCommand("cursorMove", {
+    to: "down",
+    by: "line",
     value: doc.lineCount - 1,
   });
 }
@@ -141,7 +135,7 @@ export async function updateNewOrExistingFile(
   }
 }
 
-// Path Sorting was inspired by: 
+// Path Sorting was inspired by:
 // https://github.com/hughsk/path-sort
 // Very old, but MIT license
 //
@@ -152,11 +146,14 @@ export async function updateNewOrExistingFile(
 //   const sep: string = (os.platform() === 'win32') ? '\\' : '/';
 
 export function pathSort(paths: string[], sep: string): string[] {
-  return paths.map((el: string) => {
-    return el.split(sep);
-  }).sort(pathSorter).map((el: string[]) => {
-    return el.join(sep);
-  });
+  return paths
+    .map((el: string) => {
+      return el.split(sep);
+    })
+    .sort(pathSorter)
+    .map((el: string[]) => {
+      return el.join(sep);
+    });
 }
 
 export function pathSorter(a: string[], b: string[]): number {

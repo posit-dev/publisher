@@ -1,15 +1,28 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { MultiStepInput, MultiStepState, isQuickPickItem } from './multiStepHelper';
+import {
+  MultiStepInput,
+  MultiStepState,
+  isQuickPickItem,
+} from "./multiStepHelper";
 
-import { QuickPickItem, ThemeIcon, window } from 'vscode';
+import { QuickPickItem, ThemeIcon, window } from "vscode";
 
-import { AccountAuthType, PreDeployment, Deployment, useApi } from '../api';
-import { getSummaryStringFromError } from '../utils/errors';
-import { deployProject } from '../views/deployProgress';
-import { EventStream } from '../events';
+import {
+  AccountAuthType,
+  PreDeployment,
+  Deployment,
+  useApi,
+  isConfigurationError,
+} from "../api";
+import { getSummaryStringFromError } from "../utils/errors";
+import { deployProject } from "../views/deployProgress";
+import { EventStream } from "../events";
 
-export async function publishDeployment(deployment: PreDeployment | Deployment, stream: EventStream) {
+export async function publishDeployment(
+  deployment: PreDeployment | Deployment,
+  stream: EventStream,
+) {
   const api = useApi();
 
   // ***************************************************************
@@ -21,28 +34,35 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
 
   try {
     const response = await api.accounts.getAll();
-    const accounts = response.data.accounts;
     // account list is filtered to match the deployment being published
-    accountListItems = accounts
-      .filter(account => (account.url === deployment.serverUrl))
-      .map(account => ({
-        iconPath: new ThemeIcon('account'),
+    accountListItems = response.data
+      .filter((account) => account.url === deployment.serverUrl)
+      .map((account) => ({
+        iconPath: new ThemeIcon("account"),
         label: account.name,
         description: account.source,
-        detail: account.authType === AccountAuthType.API_KEY
-          ? 'Using API Key'
-          : `Using Token Auth for ${account.accountName}`,
+        detail:
+          account.authType === AccountAuthType.API_KEY
+            ? "Using API Key"
+            : `Using Token Auth for ${account.accountName}`,
       }));
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError('publishDeployment, accounts.getAll', error);
+    const summary = getSummaryStringFromError(
+      "publishDeployment, accounts.getAll",
+      error,
+    );
     window.showInformationMessage(
-      `Unable to continue with no credentials. ${summary}`
+      `Unable to continue with no credentials. ${summary}`,
     );
     return;
   }
   if (accountListItems.length === 0) {
     window.showInformationMessage(
-      `Unable to continue with no maching credentials for deployment URL: ${deployment.serverUrl}`
+      `Unable to continue with no matching credentials for\n` +
+        `deployment URL: ${deployment.serverUrl}\n` +
+        `\n` +
+        `Establish account credentials using rsconnect (R package) or\n` +
+        `rsconnect-python (Python package) and then retry operation.`,
     );
     return;
   }
@@ -50,15 +70,38 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
   try {
     const response = await api.configurations.getAll();
     const configurations = response.data;
-    configFileListItems = configurations.map(configuration => ({
-      iconPath: new ThemeIcon('file-code'),
-      label: configuration.configurationName,
-      detail: configuration.configurationPath,
-    }));
+    configFileListItems = [];
+
+    configurations.forEach((configuration) => {
+      if (!isConfigurationError(configuration)) {
+        configFileListItems.push({
+          iconPath: new ThemeIcon("file-code"),
+          label: configuration.configurationName,
+          detail: configuration.configurationPath,
+        });
+      }
+    });
+    configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
+      var x = a.label.toLowerCase();
+      var y = b.label.toLowerCase();
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError('publishDeployment, configurations.getAll', error);
+    const summary = getSummaryStringFromError(
+      "addDeployment, configurations.getAll",
+      error,
+    );
     window.showInformationMessage(
-      `Unable to continue with no configurations. ${summary}`
+      `Unable to continue with no configurations. ${summary}`,
+    );
+    return;
+  }
+  if (configFileListItems.length === 0) {
+    window.showInformationMessage(
+      `Unable to continue with no configuration files.\n` +
+        `Expand the configuration section and follow the instructions there\n` +
+        `to create a configuration file. After updating any applicable values\n` +
+        `retry the operation.`,
     );
     return;
   }
@@ -78,7 +121,7 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
   // ***************************************************************
   async function collectInputs() {
     const state: MultiStepState = {
-      title: 'Deploy Your Project',
+      title: "Deploy Your Project",
       step: -1,
       lastStep: 0,
       totalSteps: -1,
@@ -101,7 +144,7 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
     }
     state.totalSteps = totalSteps;
 
-    await MultiStepInput.run(input => pickCredentials(input, state));
+    await MultiStepInput.run((input) => pickCredentials(input, state));
     return state;
   }
 
@@ -109,10 +152,7 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
   // Step #1:
   // Select the credentials to be used
   // ***************************************************************
-  async function pickCredentials(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
+  async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     // skip if we only have one choice.
     if (accountListItems.length > 1) {
       const thisStepNumber = state.lastStep + 1;
@@ -120,9 +160,12 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: 'Select the credential you want to use to deploy',
+        placeholder: "Select the credential you want to use to deploy",
         items: accountListItems,
-        activeItem: typeof state.data.credentialName !== 'string' ? state.data.credentialName : undefined,
+        activeItem:
+          typeof state.data.credentialName !== "string"
+            ? state.data.credentialName
+            : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
       });
@@ -149,9 +192,12 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: 'Select the config file you wish to deploy with',
+        placeholder: "Select the config file you wish to deploy with",
         items: configFileListItems,
-        activeItem: typeof state.data.configFile !== 'string' ? state.data.configFile : undefined,
+        activeItem:
+          typeof state.data.configFile !== "string"
+            ? state.data.configFile
+            : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
       });
@@ -166,7 +212,7 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
   // ***************************************************************
   // Kick off the input collection
   // and await until it completes.
-  // This is a promise which returns the state data used to 
+  // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
 
@@ -194,10 +240,11 @@ export async function publishDeployment(deployment: PreDeployment | Deployment, 
     );
     deployProject(response.data.localId, stream);
   } catch (error: unknown) {
-    const summary = getSummaryStringFromError('publishDeployment, deploy', error);
-    window.showInformationMessage(
-      `Failed to deploy . ${summary}`
+    const summary = getSummaryStringFromError(
+      "publishDeployment, deploy",
+      error,
     );
+    window.showInformationMessage(`Failed to deploy . ${summary}`);
     return;
   }
 }

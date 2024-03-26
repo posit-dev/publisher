@@ -1,12 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <h3
-    v-if="connect"
-    class="connect-title q-mt-md"
-  >
-    Connect
-  </h3>
+  <h3 v-if="connect" class="connect-title q-mt-md">Connect</h3>
 
   <ConfigConnectAccess
     :access="connect?.access"
@@ -25,13 +20,13 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType } from "vue";
 
-import { ConnectConfig } from 'src/api';
+import { ConnectConfig } from "src/api";
 
-import ConfigConnectAccess from './ConfigConnectAccess.vue';
-import ConfigConnectKubernetes from './ConfigConnectKubernetes.vue';
-import ConfigConnectRuntime from './ConfigConnectRuntime.vue';
+import ConfigConnectAccess from "./ConfigConnectAccess.vue";
+import ConfigConnectKubernetes from "./ConfigConnectKubernetes.vue";
+import ConfigConnectRuntime from "./ConfigConnectRuntime.vue";
 
 defineProps({
   connect: {
@@ -43,7 +38,7 @@ defineProps({
     type: Object as PropType<ConnectConfig>,
     default: undefined,
     required: false,
-  }
+  },
 });
 </script>
 

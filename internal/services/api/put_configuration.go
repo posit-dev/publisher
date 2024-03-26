@@ -44,7 +44,7 @@ func camelToKebabMap(m map[string]any) {
 	}
 }
 
-func PutConfigurationHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
+func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
 		err := util.ValidateFilename(name)

@@ -12,22 +12,12 @@
     error-icon="warning"
     error-color="red"
   >
-    <div
-      class="text-bold q-pa-sm"
-    >
+    <div class="text-bold q-pa-sm">
       <slot name="summary" />
     </div>
-    <q-list
-      dense
-      class="logClass"
-    >
-      <template
-        v-for="(msg, index) in messages"
-      >
-        <q-item
-          v-if="!shouldSkipMessage(msg)"
-          :key="index"
-        >
+    <q-list dense class="logClass">
+      <template v-for="(msg, index) in messages">
+        <q-item v-if="!shouldSkipMessage(msg)" :key="index">
           <q-item-section>
             <!-- {{ JSON.stringify(msg) }} -->
             <template v-if="isErrorEventStreamMessage(msg)">
@@ -43,15 +33,13 @@
                   <span class="text-weight-medium">
                     {{ nameValue.name }}:
                   </span>
-                  <span>
-                    {{ nameValue.value }}<br>
-                  </span>
+                  <span> {{ nameValue.value }}<br /> </span>
                 </li>
               </ul>
             </template>
             <template v-else>
               <template v-if="msg.type.endsWith('/start')">
-                <span class="text-weight-medium  text-caption">
+                <span class="text-weight-medium text-caption">
                   {{ formatMsg(msg) }}
                 </span>
               </template>
@@ -84,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, computed } from 'vue';
+import { PropType, computed } from "vue";
 import {
   EventStreamMessage,
   isErrorEventStreamMessage,
@@ -95,19 +83,27 @@ import {
   isPublishCreateNewDeploymentSuccess,
   isPublishRestorePythonEnvLog,
   isPublishSetVanityURLLog,
-  isPublishValidateDeploymentLog
-} from 'src/api/types/events';
+  isPublishValidateDeploymentLog,
+} from "src/api/types/events";
 
 const props = defineProps({
   name: { type: [String, Number], required: true },
   icon: { type: String, required: true },
-  messages: { type: Array as PropType<EventStreamMessage[]>, required: false, default: () => [] },
+  messages: {
+    type: Array as PropType<EventStreamMessage[]>,
+    required: false,
+    default: () => [],
+  },
 });
 
-const hasError = computed(() => props.messages.some(msg => isErrorEventStreamMessage(msg)));
+const hasError = computed(() =>
+  props.messages.some((msg) => isErrorEventStreamMessage(msg)),
+);
 
 const shouldSkipMessage = (msg: EventStreamMessage): boolean => {
-  return (msg.type.endsWith('/log') && msg.data.level === 'DEBUG') || !formatMsg(msg);
+  return (
+    (msg.type.endsWith("/log") && msg.data.level === "DEBUG") || !formatMsg(msg)
+  );
 };
 
 const formatMsg = (msg: EventStreamMessage): string => {
@@ -143,30 +139,30 @@ const formatMsg = (msg: EventStreamMessage): string => {
 };
 
 type NameValue = {
-  name: string,
-  value: string,
+  name: string;
+  value: string;
 };
 
 const splitErrorLog = (msg: EventStreamMessage) => {
-//   {
-//     "time": "2023-12-19T14:53:23.611707-08:00",
-//     "type": "publish/uploadBundle/failure",
-//     "data": {
-//         "level": "ERROR",
-//         "message": "unexpected response from the server",
-//         "method": "POST",
-//         "status": 403,
-//         "url": "https://connect.localtest.me/rsc/dev-password/__api__/v1/content/20b5a116-a8f8-4213-b4c4-9eef29bc308c/bundles",
-//         "code": 21,
-//         "error": "You don't have permission to change this item.",
-//         "localId": "0EM40IJmUrzfM277",
-//         "payload": null
-//     },
-//     "error": "permissionErr"
-// }
+  //   {
+  //     "time": "2023-12-19T14:53:23.611707-08:00",
+  //     "type": "publish/uploadBundle/failure",
+  //     "data": {
+  //         "level": "ERROR",
+  //         "message": "unexpected response from the server",
+  //         "method": "POST",
+  //         "status": 403,
+  //         "url": "https://connect.localtest.me/rsc/dev-password/__api__/v1/content/20b5a116-a8f8-4213-b4c4-9eef29bc308c/bundles",
+  //         "code": 21,
+  //         "error": "You don't have permission to change this item.",
+  //         "localId": "0EM40IJmUrzfM277",
+  //         "payload": null
+  //     },
+  //     "error": "permissionErr"
+  // }
   const nameValues: NameValue[] = [];
   for (const [key, value] of Object.entries(msg)) {
-    if (key !== 'data' && value) {
+    if (key !== "data" && value) {
       nameValues.push({
         name: key,
         value: value,
@@ -183,5 +179,4 @@ const splitErrorLog = (msg: EventStreamMessage) => {
   }
   return nameValues;
 };
-
 </script>

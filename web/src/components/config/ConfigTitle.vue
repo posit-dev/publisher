@@ -10,8 +10,7 @@
 </template>
 
 <script setup lang="ts">
-
-import ConfigSetting from 'src/components/config/ConfigSetting.vue';
+import ConfigSetting from "src/components/config/ConfigSetting.vue";
 
 defineProps({
   title: {
@@ -26,4 +25,3 @@ defineProps({
   },
 });
 </script>
-

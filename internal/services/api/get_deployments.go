@@ -11,7 +11,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func readLatestDeploymentFiles(base util.Path) ([]any, error) {
+func readLatestDeploymentFiles(base util.AbsolutePath) ([]any, error) {
 	paths, err := deployment.ListDeploymentFiles(base)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func readLatestDeploymentFiles(base util.Path) ([]any, error) {
 	return response, nil
 }
 
-func GetDeploymentsHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
+func GetDeploymentsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		response, err := readLatestDeploymentFiles(base)
 		if err != nil {
