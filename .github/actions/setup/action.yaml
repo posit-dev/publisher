@@ -4,7 +4,7 @@ runs:
   using: "composite"
   steps:
     - uses: crazy-max/ghaction-github-runtime@v3
-    - uses: extractions/setup-just@v1
+    - uses: extractions/setup-just@v2
     - uses: docker/setup-qemu-action@v3
     - uses: docker/setup-buildx-action@v3
     - uses: actions/cache@v3

@@ -27,7 +27,7 @@ jobs:
         with:
           version: 1.4.549
 
-      - uses: extractions/setup-just@v1
+      - uses: extractions/setup-just@v2
       - uses: actions/download-artifact@v3
         with:
           name: bin
