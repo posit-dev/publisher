@@ -1,8 +1,12 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ProgressLocation, Uri, env, window } from "vscode";
+import { ProgressLocation, Uri, commands, env, window } from "vscode";
 import { eventTypeToString } from "../api";
 import { EventStream, EventStreamMessage, UnregisterCallback } from "../events";
+
+const showPublisherLogsCommand =
+  "workbench.action.output.show.extension-output-posit.publisher-#1-Posit Publisher";
+const showDeploymentLogsCommand = "posit.publisher.logs.focus";
 
 export function deployProject(localID: string, stream: EventStream) {
   window.withProgress(
@@ -416,13 +420,29 @@ export function deployProject(localID: string, stream: EventStream) {
       );
 
       registrations.push(
-        stream.register("publish/failure", (msg: EventStreamMessage) => {
+        stream.register("publish/failure", async (msg: EventStreamMessage) => {
           if (localID === msg.data.localId) {
             unregiserAll();
             progress.report({
               message: "Deployment process encountered an error",
             });
             rejectCB("Error Encountered!");
+
+            let deploymentLogsOption = "Deployment Logs";
+            let debugLogsOption = "Debug Logs";
+            const selection = await window.showInformationMessage(
+              "Deployment process encountered an error",
+              deploymentLogsOption,
+              debugLogsOption,
+            );
+            switch (selection) {
+              case deploymentLogsOption:
+                await commands.executeCommand(showDeploymentLogsCommand);
+                break;
+              case debugLogsOption:
+                await commands.executeCommand(showPublisherLogsCommand);
+                break;
+            }
           }
         }),
       );
