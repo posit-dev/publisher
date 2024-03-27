@@ -6,7 +6,7 @@ on:
       nightly: 
         description: 'Is this a nightly upload?'
         required: false
-        default: false
+        default: true
         type: boolean
 permissions:
   id-token: write # This is required for requesting the JWT
