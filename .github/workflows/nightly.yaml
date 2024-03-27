@@ -33,7 +33,7 @@ jobs:
       - archive
       - package
     uses: ./.github/workflows/upload.yaml
-    with: 
+    with:
       nightly: true
     secrets: inherit
 
