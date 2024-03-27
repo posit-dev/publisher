@@ -4,6 +4,7 @@ package config
 
 import (
 	"io/fs"
+	"strings"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/schema"
@@ -88,6 +89,24 @@ func (s *ConfigSuite) TestWriteFile() {
 	cfg := New()
 	err := cfg.WriteFile(configFile)
 	s.NoError(err)
+}
+
+func (s *ConfigSuite) TestWriteFileEmptyEntrypoing() {
+	configFile := GetConfigPath(s.cwd, "myConfig")
+	cfg := New()
+	cfg.Type = ContentTypeHTML
+	cfg.Entrypoint = ""
+	err := cfg.WriteFile(configFile)
+	s.NoError(err)
+
+	// Ensure it validates
+	_, err = FromFile(configFile)
+	s.NoError(err)
+
+	contents, err := configFile.ReadFile()
+	s.NoError(err)
+	lines := strings.Split(string(contents), "\n")
+	s.Contains(lines, "entrypoint = ''")
 }
 
 func (s *ConfigSuite) TestWriteFileErr() {
