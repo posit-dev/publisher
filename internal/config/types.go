@@ -85,7 +85,7 @@ func (t ContentType) IsAppContent() bool {
 type Config struct {
 	Schema        string      `toml:"$schema" json:"$schema"`
 	Type          ContentType `toml:"type" json:"type"`
-	Entrypoint    string      `toml:"entrypoint,omitempty" json:"entrypoint,omitempty"`
+	Entrypoint    string      `toml:"entrypoint" json:"entrypoint,omitempty"`
 	Validate      bool        `toml:"validate" json:"validate"`
 	Title         string      `toml:"title,omitempty" json:"title,omitempty"`
 	Description   string      `toml:"description,multiline,omitempty" json:"description,omitempty"`
