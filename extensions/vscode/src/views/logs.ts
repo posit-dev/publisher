@@ -57,6 +57,7 @@ const createLogStage = (
 
 const viewName = "posit.publisher.logs";
 const visitCommand = viewName + ".visit";
+const showDeploymentLogsCommand = "posit.publisher.logs.focus";
 
 /**
  * Tree data provider for the Logs view.
@@ -123,7 +124,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.refresh();
     });
 
-    stream.register("publish/failure", (msg: EventStreamMessage) => {
+    stream.register("publish/failure", async (msg: EventStreamMessage) => {
       this.publishingStage.status = LogStageStatus.failed;
       this.publishingStage.events.push(msg);
 
@@ -133,7 +134,14 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         }
       });
 
-      window.showErrorMessage(`Publish failed. ${msg.data.message}`);
+      let showLogsOption = "Show Logs";
+      const selection = await window.showErrorMessage(
+        `Publish failed. ${msg.data.message}`,
+        showLogsOption,
+      );
+      if (selection === showLogsOption) {
+        await commands.executeCommand(showDeploymentLogsCommand);
+      }
       this.refresh();
     });
 
