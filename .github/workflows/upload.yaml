@@ -24,7 +24,7 @@ jobs:
           path: archives
       - uses: actions/download-artifact@v3
         with:
-          name: packages
+          name: dist
           path: dist
       - uses: aws-actions/configure-aws-credentials@v4
         with:

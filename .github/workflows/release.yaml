@@ -36,7 +36,7 @@ jobs:
           path: archives
       - uses: actions/download-artifact@v3
         with:
-          name: packages
+          name: dist
           path: dist
       - id: get-prerelease
         run: echo "prerelease=$(just pre-release)" >> "$GITHUB_OUTPUT"
