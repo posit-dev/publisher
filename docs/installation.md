@@ -36,26 +36,6 @@ The script explains what it does and then pauses before it does it.
 ```console
 /bin/bash -c "$(curl -fsSL https://cdn.posit.co/publisher/install.bash)"
 ```
-
-### Manual installation
-
-1. Go to [GitHub
-   releases](https://github.com/rstudio/publishing-client/releases).
-1. Select the Posit Publisher version for installation.
-1. Download the asset for your operating system and architecture. See below for
-   additional information on operating systems and architectures.
-1. Once downloaded, extract the archive file (e.g., unzip or untar).
-1. Install the executable in a location available on your `PATH` (e.g.,
-   `/usr/local/bin`).
-    1. To view locations on your PATH, invoke `/bin/bash -c "echo $PATH"` from
-       your terminal or shell prompt.
-    1. In most cases, the correct installation location is `/usr/local/bin` on
-       macOS and Linux operating systems.
-    1. Use the following command to install and set the correct permissions on
-       Linux or macOS:
-    1. `sudo install -o root -g wheel -m 0755 ./bin/publisher /usr/local/bin`.
-       Replace `/usr/local/bin` with your preferred installation directory.
-       Otherwise, you may need to allow access manually after first invocation.
        
 ## Optional: Install Quarto
 
