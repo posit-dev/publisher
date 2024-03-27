@@ -1,17 +1,16 @@
 ---
 name: Issue Template
 about: An issue template.
-title: ''
-labels: ''
-assignees: ''
-
+title: ""
+labels: ""
+assignees: ""
 ---
 
 Description for the issue.
 
 ### Related Issues
 
-- 
+-
 
 ```[tasklist]
 ### Acceptance Criteria

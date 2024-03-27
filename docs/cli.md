@@ -23,7 +23,7 @@ The client auto-detects the type of content in `DIRECTORY`.
 
 For Python apps, `publisher` looks for a single Python source file in the
 directory to be the entrypoint. If there are multiple python files, one of them
-must be named `app.py`, `api.py`, `main.py`, or  `streamlit_app.py`.
+must be named `app.py`, `api.py`, `main.py`, or `streamlit_app.py`.
 
 For Quarto projects, `publisher` looks for a .qmd file with the same name as the
 project directory, or for a single .qmd file to be the entrypoint.
@@ -59,7 +59,6 @@ Creating a deployment publishes the contents of `DIRECTORY` to Connect, and
 creates a record of the deployment in `.posit/publish/deployments/${NAME}.toml`
 ([schema](https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json)).
 `DIRECTORY` is optional, and defaults to the current directory.
-
 
 It is OK to rename deployment files as long as they live in
 `.posit/publish/deployments` and have a `.toml` suffix. Deleting a deployment

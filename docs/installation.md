@@ -47,16 +47,16 @@ The script explains what it does and then pauses before it does it.
 1. Once downloaded, extract the archive file (e.g., unzip or untar).
 1. Install the executable in a location available on your `PATH` (e.g.,
    `/usr/local/bin`).
-    1. To view locations on your PATH, invoke `/bin/bash -c "echo $PATH"` from
-       your terminal or shell prompt.
-    1. In most cases, the correct installation location is `/usr/local/bin` on
-       macOS and Linux operating systems.
-    1. Use the following command to install and set the correct permissions on
-       Linux or macOS:
-    1. `sudo install -o root -g wheel -m 0755 ./bin/publisher /usr/local/bin`.
-       Replace `/usr/local/bin` with your preferred installation directory.
-       Otherwise, you may need to allow access manually after first invocation.
-       
+   1. To view locations on your PATH, invoke `/bin/bash -c "echo $PATH"` from
+      your terminal or shell prompt.
+   1. In most cases, the correct installation location is `/usr/local/bin` on
+      macOS and Linux operating systems.
+   1. Use the following command to install and set the correct permissions on
+      Linux or macOS:
+   1. `sudo install -o root -g wheel -m 0755 ./bin/publisher /usr/local/bin`.
+      Replace `/usr/local/bin` with your preferred installation directory.
+      Otherwise, you may need to allow access manually after first invocation.
+
 ## Optional: Install Quarto
 
 If you plan on deploying Quarto content having Quarto installed will allow
@@ -114,6 +114,7 @@ publisher
 The following operating systems are supported.
 
 ### macOS
+
 - macOS 12 (Monterey)
 - macOS 13 (Ventura)
 - macOS 14 (Sonoma)

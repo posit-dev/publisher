@@ -4,11 +4,7 @@
   "type": "object",
   "additionalProperties": false,
   "description": "Posit Publishing Configuration",
-  "required": [
-    "$schema",
-    "type",
-    "entrypoint"
-  ],
+  "required": ["$schema", "type", "entrypoint"],
   "properties": {
     "$schema": {
       "type": "string",
@@ -41,40 +37,29 @@
         "rmd-shiny",
         "rmd"
       ],
-      "examples": [
-        "quarto"
-      ]
+      "examples": ["quarto"]
     },
     "entrypoint": {
       "type": "string",
       "description": "Name of the primary file containing the content. For Python flask, dash, fastapi, and python-shiny projects, this specifies the object within the file in module:object format. See the documentation at https://docs.posit.co/connect/user/publishing-cli-apps/#publishing-rsconnect-python-entrypoint.",
-      "examples": [
-        "app.py",
-        "report.qmd"
-      ]
+      "examples": ["app.py", "report.qmd"]
     },
     "title": {
       "type": "string",
       "pattern": "^[^\t\n\f\r]{3,1000}$|",
       "description": "Title for this content. If specified, it must be a single line containing between 3 and 1000 characters.",
-      "examples": [
-        "Quarterly Sales Report"
-      ]
+      "examples": ["Quarterly Sales Report"]
     },
     "description": {
       "type": "string",
       "pattern": "^[^\t\f\r]*$",
       "description": "Description for this content. It may span multiple lines and be up to 4000 characters.",
-      "examples": [
-        "This is the quarterly sales report, broken down by region."
-      ]
+      "examples": ["This is the quarterly sales report, broken down by region."]
     },
     "thumbnail": {
       "type": "string",
       "description": "Path to thumbnail preview image for this content.",
-      "examples": [
-        "images/thumbnail.jpg"
-      ]
+      "examples": ["images/thumbnail.jpg"]
     },
     "validate": {
       "type": "boolean",
@@ -86,51 +71,32 @@
       "description": "List of tags to apply to this deployment. When publishing to Connect, tags must be pre-defined by an administrator.",
       "items": {
         "type": "string",
-        "examples": [
-          "sales",
-          "quarterly",
-          "regional"
-        ]
+        "examples": ["sales", "quarterly", "regional"]
       }
     },
     "python": {
       "type": "object",
       "additionalProperties": false,
       "description": "Python language and dependencies.",
-      "required": [
-        "version"
-      ],
+      "required": ["version"],
       "properties": {
         "version": {
           "type": "string",
           "description": "Python version. The server must have a matching Python major/minor version in order to run the content.",
-          "examples": [
-            "3.11.3",
-            "3.11"
-          ]
+          "examples": ["3.11.3", "3.11"]
         },
         "package-file": {
           "type": "string",
           "description": "File containing package dependencies. The file must exist and be listed under 'files'. The default is 'requirements.txt'.",
           "default": "requirements.txt",
-          "examples": [
-            "requirements.txt"
-          ]
+          "examples": ["requirements.txt"]
         },
         "package-manager": {
           "type": "string",
           "default": "pip",
-          "enum": [
-            "pip",
-            "conda",
-            "pipenv",
-            "poetry",
-            "none"
-          ],
+          "enum": ["pip", "conda", "pipenv", "poetry", "none"],
           "description": "Package manager that will install the dependencies. If package-manager is none, dependencies are assumed to be pre-installed on the server. The default is 'pip'.",
-          "examples": [
-            "pip"
-          ]
+          "examples": ["pip"]
         }
       }
     },
@@ -138,36 +104,25 @@
       "type": "object",
       "additionalProperties": false,
       "description": "R language and dependencies.",
-      "required": [
-        "version"
-      ],
+      "required": ["version"],
       "properties": {
         "version": {
           "type": "string",
           "description": "R version. The server will use the nearest R version to run the content.",
-          "examples": [
-            "4.3.1"
-          ]
+          "examples": ["4.3.1"]
         },
         "package-file": {
           "type": "string",
           "default": "renv.lock",
           "description": "File containing package dependencies. The file must exist and be listed under 'files'.",
-          "examples": [
-            "renv.lock"
-          ]
+          "examples": ["renv.lock"]
         },
         "package-manager": {
           "type": "string",
           "default": "renv",
-          "enum": [
-            "renv",
-            "none"
-          ],
+          "enum": ["renv", "none"],
           "description": "Package manager that will install the dependencies. If package-manager is none, dependencies will be assumed to be pre-installed on the server.",
-          "examples": [
-            "renv"
-          ]
+          "examples": ["renv"]
         }
       }
     },
@@ -175,32 +130,20 @@
       "type": "object",
       "additionalProperties": false,
       "description": "Quarto version required to run the content.",
-      "required": [
-        "version"
-      ],
+      "required": ["version"],
       "properties": {
         "version": {
           "type": "string",
           "description": "Quarto version. The server must have a similar Quarto version in order to run the content.",
-          "examples": [
-            "1.4"
-          ]
+          "examples": ["1.4"]
         },
         "engines": {
           "type": "array",
           "description": "List of Quarto engines required for this content.",
           "items": {
             "type": "string",
-            "enum": [
-              "knitr",
-              "jupyter",
-              "markdown"
-            ],
-            "examples": [
-              "knitr",
-              "jupyter",
-              "markdown"
-            ]
+            "enum": ["knitr", "jupyter", "markdown"],
+            "examples": ["knitr", "jupyter", "markdown"]
           }
         }
       }
@@ -208,9 +151,7 @@
     "environment": {
       "type": "object",
       "additionalProperties": {
-        "type": [
-          "string"
-        ]
+        "type": ["string"]
       },
       "description": "Environment variable/value map. All values must be strings. Secrets such as API keys or tokens should not be stored here.",
       "examples": [
@@ -222,14 +163,10 @@
     "secrets": {
       "type": "array",
       "items": {
-        "type": [
-          "string"
-        ]
+        "type": ["string"]
       },
       "description": "Names of secrets that should be injected as environment variables.",
-      "examples": [
-        "API_KEY"
-      ]
+      "examples": ["API_KEY"]
     },
     "schedules": {
       "type": "array",
@@ -237,25 +174,17 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "start",
-          "recurrence"
-        ],
+        "required": ["start", "recurrence"],
         "properties": {
           "start": {
             "type": "string",
             "description": "Time for the first run of the content.",
-            "examples": [
-              "2023-10-25T08:00:00Z"
-            ]
+            "examples": ["2023-10-25T08:00:00Z"]
           },
           "recurrence": {
             "type": "string",
             "description": "Recurrence scheme for the content, in cron or iCalendar RRULE format.",
-            "examples": [
-              "FREQ=MONTHLY;INTERVAL=3",
-              "0 2 * * *"
-            ]
+            "examples": ["FREQ=MONTHLY;INTERVAL=3", "0 2 * * *"]
           }
         }
       }
@@ -269,14 +198,8 @@
           "type": "string",
           "default": "acl",
           "description": "Type of access control. 'public' make the deployment public (no login required), with no login required. 'all-users' allows all logged-in users to access the content. 'acl' (the default) allows only specific users and groups to access the content.",
-          "enum": [
-            "public",
-            "all-users",
-            "acl"
-          ],
-          "examples": [
-            "all-users"
-          ]
+          "enum": ["public", "all-users", "acl"],
+          "examples": ["all-users"]
         },
         "users": {
           "type": "array",
@@ -284,39 +207,28 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "anyOf": [
-              { "required": ["id"] },
-              { "required": ["guid"] }
-            ],
+            "anyOf": [{ "required": ["id"] }, { "required": ["guid"] }],
             "properties": {
               "id": {
                 "type": "string",
                 "description": "Unique ID from the authentication provider that identifies this user. This may be a username, LDAP CN/DN, email address, etc. depending on the provider.",
-                "examples": [
-                  "jqpublic"
-                ]
+                "examples": ["jqpublic"]
               },
               "guid": {
                 "type": "string",
                 "description": "Unique identifier assigned by Connect. When deploying to the same server, this will determine the user who is granted access. When deploying to a different server, the provider-id will be used to look up the user.",
-                "examples": [
-                  "cd2e7cef-a195-512e-b76d-554f4f5a239c"
-                ]
+                "examples": ["cd2e7cef-a195-512e-b76d-554f4f5a239c"]
               },
               "name": {
                 "type": "string",
                 "description": "User's name. This field is informational only.",
-                "examples": [
-                  "John Q. Public"
-                ]
+                "examples": ["John Q. Public"]
               },
               "permissions": {
                 "type": "string",
                 "description": "Permission level assigned to this user.",
                 "enum": ["viewer", "editor", "owner"],
-                "examples": [
-                  "viewer"
-                ]
+                "examples": ["viewer"]
               }
             }
           }
@@ -327,40 +239,29 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "anyOf": [
-              { "required": ["id"] },
-              { "required": ["guid"] }
-            ],
+            "anyOf": [{ "required": ["id"] }, { "required": ["guid"] }],
             "properties": {
               "id": {
                 "type": "string",
                 "description": "Unique ID from the authentication provider that identifies this group. For groups created by Connect, this will be the group name. This may be a group name, LDAP CN/DN, etc. depending on the provider.",
-                "examples": [
-                  "Data Science Team"
-                ]
+                "examples": ["Data Science Team"]
               },
               "guid": {
                 "type": "string",
                 "description": "Unique identifier assigned by Connect. When deploying to the same server, this will determine the user who is granted access. When deploying to a different server, the provider-id will be used to look up the user.",
-                "examples": [
-                  "8b4fde3e-f995-4894-bc02-ae47538262ff"
-                ]
+                "examples": ["8b4fde3e-f995-4894-bc02-ae47538262ff"]
               },
               "name": {
                 "type": "string",
                 "description": "Group name. This field is informational only.",
-                "examples": [
-                  "Data Science Team"
-                ]
+                "examples": ["Data Science Team"]
               },
               "permissions": {
                 "type": "string",
                 "default": "viewer",
                 "description": "Permission level assigned to this group.",
                 "enum": ["viewer", "editor", "owner"],
-                "examples": [
-                  "editor"
-                ]
+                "examples": ["editor"]
               }
             }
           }
@@ -376,9 +277,7 @@
           "run-as": {
             "type": "string",
             "description": "The system username under which the content should be run. Must be an existing user in the allowed group. You must be an administrator to set this value.",
-            "examples": [
-              "rstudio-connect"
-            ]
+            "examples": ["rstudio-connect"]
           },
           "run-as-current-user": {
             "type": "boolean",
@@ -396,69 +295,53 @@
               "minimum": 0,
               "maximum": 2592000,
               "description": "Maximum number of seconds allowed without data sent or received across a client connection. A value of `0` means connections will never time-out (not recommended).",
-              "examples": [
-                5
-              ]
+              "examples": [5]
             },
             "read-timeout": {
               "type": "integer",
               "minimum": 0,
               "maximum": 2592000,
               "description": "Maximum number of seconds allowed without data received from a client connection. A value of `0` means a lack of client (browser) interaction never causes the connection to close.",
-              "examples": [
-                30
-              ]
+              "examples": [30]
             },
             "init-timeout": {
               "type": "integer",
               "minimum": 0,
               "maximum": 2592000,
               "description": "The maximum number of seconds allowed for an interactive application to start. Posit Connect must be able to connect to a newly launched application before this threshold has elapsed.",
-              "examples": [
-                60
-              ]
+              "examples": [60]
             },
             "idle-timeout": {
               "type": "integer",
               "minimum": 0,
               "maximum": 2592000,
               "description": "The maximum number of seconds a worker process for an interactive application to remain alive after it goes idle (no active connections).",
-              "examples": [
-                120
-              ]
+              "examples": [120]
             },
             "max-processes": {
               "type": "integer",
               "minimum": 1,
               "description": "Specifies the total number of concurrent processes allowed for a single interactive application.",
-              "examples": [
-                5
-              ]
+              "examples": [5]
             },
             "min-processes": {
               "type": "integer",
               "minimum": 0,
               "description": "Specifies the minimum number of concurrent processes allowed for a single interactive application.",
-              "examples": [
-                1
-              ]
+              "examples": [1]
             },
             "max-connections": {
               "type": "integer",
               "minimum": 1,
               "description": "Specifies the maximum number of client connections allowed to an individual process. Incoming connections which will exceed this limit are routed to a new process or rejected.",
-              "examples": [
-                50
-              ]
+              "examples": [50]
             },
             "load-factor": {
               "type": "number",
               "minimum": 0,
               "maximum": 1,
               "description": "Controls how aggressively new processes are spawned. The valid range is between 0.0 and 1.0.",
-              "examples": [
-                0.5
-              ]
+              "examples": [0.5]
             }
           }
         },
@@ -471,79 +354,59 @@
               "type": "integer",
               "minimum": 0,
               "description": "The number of AMD GPUs that will be allocated by Kubernetes to run this content.",
-              "examples": [
-                0
-              ]
+              "examples": [0]
             },
             "cpu-limit": {
               "type": "number",
               "minimum": 0,
               "description": "The maximum amount of compute power this content will be allowed to consume when executing or rendering, expressed in CPU Units, where 1.0 unit is equivalent to 1 physical or virtual core. Fractional values are allowed. If the process tries to use more CPU than allowed, it will be throttled.",
-              "examples": [
-                1
-              ]
+              "examples": [1]
             },
             "cpu-request": {
               "type": "number",
               "minimum": 0,
               "description": "The minimum amount of compute power this content needs when executing virtual core. Fractional values are allowed.",
-              "examples": [
-                0.5
-              ]
+              "examples": [0.5]
             },
             "image-name": {
               "type": "string",
               "pattern": "^[^\t\n\b\f\r ]*$",
               "description": "Name of the target container image.",
-              "examples": [
-                "posit/connect-runtime-python3.11-r4.3"
-              ]
+              "examples": ["posit/connect-runtime-python3.11-r4.3"]
             },
             "memory-limit": {
               "type": "integer",
               "minimum": 0,
               "description": "The maximum amount of RAM this content will be allowed to consume when executing or rendering, expressed in bytes. If the process tries to use more memory than allowed, it will be terminated",
-              "examples": [
-                "100000000"
-              ]
+              "examples": ["100000000"]
             },
             "memory-request": {
               "type": "integer",
               "minimum": 0,
               "description": "The minimum amount of RAM this content needs when executing or rendering, expressed in bytes.",
-              "examples": [
-                "20000000"
-              ]
+              "examples": ["20000000"]
             },
             "nvidia-gpu-limit": {
               "type": "integer",
               "minimum": 0,
               "description": "The number of NVIDIA GPUs that will be allocated by Kubernetes to run this content.",
-              "examples": [
-                0
-              ]
+              "examples": [0]
             },
             "service-account-name": {
               "type": "string",
               "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
               "description": "The name of the Kubernetes service account that is used to run this content. It must adhere to Kubernetes service account naming rules. You must be an administrator to set this value.",
-              "examples": [
-                "posit-connect-content"
-              ]
+              "examples": ["posit-connect-content"]
             },
             "r-environment-management": {
               "type": "boolean",
               "description": "Enables or disables R environment management. When false, Posit Connect will not install R packages and instead assume that all required packages are present in the container image.",
-              "examples": [
-                true
-              ]
+              "examples": [true]
             },
             "py-environment-management": {
               "type": "boolean",
               "description": "Enables or disables Python environment management. When false, Posit Connect will not install Python packages and instead assume that all required packages are present in the container image.",
-              "examples": [
-                true
-              ]
+              "examples": [true]
             }
           }
         }
@@ -567,56 +430,36 @@
             ]
           }
         },
-        "required": [
-          "type"
-        ]
+        "required": ["type"]
       },
       "then": {
-        "required": [
-          "python"
-        ]
+        "required": ["python"]
       }
     },
     {
       "if": {
         "properties": {
           "type": {
-            "enum": [
-              "r-plumber",
-              "r-shiny",
-              "rmd-shiny",
-              "rmd"
-            ]
+            "enum": ["r-plumber", "r-shiny", "rmd-shiny", "rmd"]
           }
         },
-        "required": [
-          "type"
-        ]
+        "required": ["type"]
       },
       "then": {
-        "required": [
-          "r"
-        ]
+        "required": ["r"]
       }
     },
     {
       "if": {
         "properties": {
           "type": {
-            "enum": [
-              "quarto-shiny",
-              "quarto"
-            ]
+            "enum": ["quarto-shiny", "quarto"]
           }
         },
-        "required": [
-          "type"
-        ]
+        "required": ["type"]
       },
       "then": {
-        "required": [
-          "quarto"
-        ]
+        "required": ["quarto"]
       }
     }
   ]
