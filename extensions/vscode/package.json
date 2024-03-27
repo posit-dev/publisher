@@ -550,6 +550,7 @@
   },
   "dependencies": {
     "@hypersphere/omnibus": "0.1.6",
+    "@publishing-client/api": "^1.0.0",
     "@vscode/codicons": "^0.0.35",
     "axios": "^1.6.0",
     "eventsource": "^2.0.2",
