@@ -33,7 +33,6 @@ func NewContentTypeDetector() *ContentTypeDetector {
 func newUnknownConfig() *config.Config {
 	cfg := config.New()
 	cfg.Type = config.ContentTypeUnknown
-	cfg.Entrypoint = "unknown"
 	return cfg
 }
 
