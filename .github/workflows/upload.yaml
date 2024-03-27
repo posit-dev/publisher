@@ -33,4 +33,4 @@ jobs:
       - run: just upload
         if: ${{ github.event.inputs.nightly == false }}
       - run: just upload nightly
-        if: ${{ github.event.inputs.nightly == true }}
+        if: ${{ github.event.inputs.nightly == 'true' }}
