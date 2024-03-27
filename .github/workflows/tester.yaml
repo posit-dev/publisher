@@ -16,6 +16,4 @@ jobs:
       - archive
       - package
     uses: ./.github/workflows/upload.yaml
-    with: 
-      nightly: false
     secrets: inherit
