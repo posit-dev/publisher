@@ -35,10 +35,7 @@ func (s filesService) GetFile(p util.AbsolutePath, ignore gitignore.IgnoreList) 
 	defer util.Chdir(oldWD)
 
 	p = p.Clean()
-	m, err := ignore.Match(p.String())
-	if err != nil {
-		return nil, err
-	}
+	m := ignore.Match(p)
 
 	file, err := CreateFile(s.root, p, m)
 	if err != nil {

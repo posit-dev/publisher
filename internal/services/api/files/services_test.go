@@ -50,8 +50,9 @@ func (s *ServicesSuite) TestGetFile() {
 	base := s.cwd
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := gitignore.NewIgnoreList(base)
+	ignore, err := gitignore.NewIgnoreList(nil)
 	s.NoError(err)
+
 	file, err := service.GetFile(base, ignore)
 	s.NoError(err)
 	s.NotNil(file)
@@ -63,8 +64,9 @@ func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := gitignore.NewIgnoreList(base)
+	ignore, err := gitignore.NewIgnoreList(nil)
 	s.NoError(err)
+
 	file, err := service.GetFile(base, ignore)
 	s.NoError(err)
 	s.NotNil(file)
@@ -76,8 +78,9 @@ func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := gitignore.NewIgnoreList(base)
+	ignore, err := gitignore.NewIgnoreList(nil)
 	s.NoError(err)
+
 	file, err := service.GetFile(base, ignore)
 	s.NoError(err)
 	s.NotNil(file)
@@ -103,8 +106,9 @@ func (s *ServicesSuite) TestGetFileWithPositIgnore() {
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := gitignore.NewIgnoreList(base)
+	ignore, err := gitignore.NewIgnoreList(nil)
 	s.NoError(err)
+
 	file, err := service.GetFile(base, ignore)
 	s.NoError(err)
 	s.NotNil(file)
@@ -159,8 +163,9 @@ func (s *ServicesSuite) TestGetFileWithChangingPositIgnore() {
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := gitignore.NewIgnoreList(base)
+	ignore, err := gitignore.NewIgnoreList(nil)
 	s.NoError(err)
+
 	file, err := service.GetFile(base, ignore)
 	s.Nil(err)
 	s.NotNil(file)
@@ -198,8 +203,9 @@ func (s *ServicesSuite) TestGetFileWithChangingPositIgnore() {
 	err = base.Join(".positignore").WriteFile([]byte{}, 0666)
 	s.NoError(err)
 
-	ignore, err = gitignore.NewIgnoreList(base)
+	ignore, err = gitignore.NewIgnoreList(nil)
 	s.NoError(err)
+
 	file, err = service.GetFile(base, ignore)
 	s.Nil(err)
 	s.NotNil(file)

@@ -7,9 +7,7 @@ toolchain go1.22.0
 require (
 	github.com/PuerkitoBio/purell v1.2.1
 	github.com/alecthomas/kong v0.8.1
-	github.com/gobwas/glob v0.2.3
 	github.com/gorilla/mux v1.8.1
-	github.com/iriri/minimal/gitignore v0.3.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pelletier/go-toml/v2 v2.1.1
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c

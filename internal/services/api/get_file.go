@@ -35,9 +35,8 @@ func GetFileHandlerFunc(base util.AbsolutePath, filesService files.FilesService,
 			w.Write([]byte(http.StatusText(http.StatusForbidden)))
 			return
 		}
-		ignore, err := gitignore.NewIgnoreList(base)
+		ignore, err := gitignore.NewIgnoreList(gitignore.StandardIgnores)
 		if err != nil {
-			log.Warn("failed to initialize ignore list")
 			InternalError(w, r, log, err)
 			return
 		}

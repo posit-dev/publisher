@@ -11,7 +11,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-var standardIgnores = []string{
+var StandardIgnores = []string{
 	// From rsconnect-python
 	".Rproj.user/",
 	".git/",
@@ -53,7 +53,7 @@ const IgnoreFilename = ".positignore"
 // if it exists, adding the exclusion rules to the specified ignore list.
 func LoadPositIgnoreIfPresent(dir util.AbsolutePath, ignoreList IgnoreList) error {
 	ignorePath := dir.Join(IgnoreFilename)
-	err := ignoreList.Append(ignorePath)
+	err := ignoreList.AddFile(ignorePath)
 	if errors.Is(err, fs.ErrNotExist) {
 		err = nil
 	}
@@ -87,23 +87,12 @@ func (i *excludingWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc)
 // Exclusions are sourced from the built-in exclusions, gitignore, and the
 // specified ignore list. Python environment directories are also excluded,
 // and .positignore files are processed as they are encountered.
-func NewExcludingWalker(dir util.AbsolutePath) (util.Walker, error) {
-	gitIgnore, err := NewIgnoreList(dir)
+func NewExcludingWalker(dir util.AbsolutePath) util.Walker {
+	gitIgnore, err := NewIgnoreList(StandardIgnores)
 	if err != nil {
-		return nil, err
+		panic("built-in ignore list must compile successfully")
 	}
 	return &excludingWalker{
 		ignoreList: gitIgnore,
-	}, nil
-}
-
-// NewIgnoreList returns an IgnoreList populated with the built-in
-// exclusions, gitignore contents, and the provided ignore list.
-func NewIgnoreList(dir util.AbsolutePath) (IgnoreList, error) {
-	gitIgnore := New(dir)
-	err := gitIgnore.AppendGlobs(standardIgnores, MatchSourceBuiltIn)
-	if err != nil {
-		return nil, err
 	}
-	return &gitIgnore, nil
 }
