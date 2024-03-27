@@ -2,5 +2,11 @@
   "name": "@publishing-client/api",
   "version": "1.0.0",
   "private": true,
-  "description": "A library to enable convenient access to the Publisher Client API and its response types."
+  "description": "A library to enable convenient access to the Publisher Client API and its response types.",
+  "dependencies": {
+    "axios": "^1.6.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
 }
