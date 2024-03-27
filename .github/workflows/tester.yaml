@@ -1,0 +1,21 @@
+name: Nightly
+on:
+  push
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yaml
+  package:
+    needs: build
+    uses: ./.github/workflows/package.yaml
+  archive:
+    needs: build
+    uses: ./.github/workflows/archive.yaml
+  upload:
+    needs:
+      - archive
+      - package
+    uses: ./.github/workflows/upload.yaml
+    with: 
+      nightly: false
+    secrets: inherit
