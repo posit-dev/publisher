@@ -2,6 +2,9 @@
   "name": "publishing-client",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "format": "prettier . --write",
     "check-format": "prettier . --check",
