@@ -128,11 +128,11 @@ python_content_types=(
         skip
     else
         run cat ${FULL_PATH}/.posit/publish/deployments/ci_deploy.toml
-            refute_output --partial "ignoreme.txt"
-            refute_output --partial "wildcard.wild"
-            refute_output --partial "tempdir/subdir.txt"
-            refute_output --partial "tempdir/wildcard.wild"
-            refute_output --partial "tempdir/subdir/subdirdbl.wild"
+            refute_output --partial "${IGNORE_ROOT_FILE}"
+            refute_output --partial "${IGNORE_WILDCARD}"
+            refute_output --partial "${IGNORE_SUBDIR_FILE}"
+            refute_output --partial "${IGNORE_SUBDIR_WILDCARD}"
+            refute_output --partial "${IGNORE_SUBDIR_DBL_WILDCARD}"
 
     fi
 }
