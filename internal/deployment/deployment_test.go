@@ -43,6 +43,10 @@ func (s *DeploymentSuite) createDeploymentFile(name string) *Deployment {
 	d.DeployedAt = time.Now().UTC().Format(time.RFC3339)
 	d.Configuration.Type = config.ContentTypePythonDash
 	d.Configuration.Entrypoint = "app.py"
+	d.Configuration.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+	}
 	err := d.WriteFile(path)
 	s.NoError(err)
 	return d

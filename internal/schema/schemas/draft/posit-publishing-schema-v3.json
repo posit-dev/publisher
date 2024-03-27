@@ -549,5 +549,75 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": [
+              "jupyter-notebook",
+              "jupyter-voila",
+              "python-bokeh",
+              "python-dash",
+              "python-fastapi",
+              "python-flask",
+              "python-shiny",
+              "python-streamlit"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "required": [
+          "python"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": [
+              "r-plumber",
+              "r-shiny",
+              "rmd-shiny",
+              "rmd"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "required": [
+          "r"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": [
+              "quarto-shiny",
+              "quarto"
+            ]
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "required": [
+          "quarto"
+        ]
+      }
+    }
+  ]
 }

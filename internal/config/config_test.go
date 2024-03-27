@@ -35,6 +35,10 @@ func (s *ConfigSuite) createConfigFile(name string) {
 	cfg := New()
 	cfg.Type = "python-dash"
 	cfg.Entrypoint = "app.py"
+	cfg.Python = &Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+	}
 	err := cfg.WriteFile(configFile)
 	s.NoError(err)
 }
