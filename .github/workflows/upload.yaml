@@ -1,12 +1,11 @@
 name: Upload
 on:
-  push:
   workflow_call:
     inputs: 
       nightly: 
         description: 'Is this a nightly upload?'
         required: false
-        default: true
+        default: false
         type: boolean
 permissions:
   id-token: write # This is required for requesting the JWT
@@ -19,11 +18,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: echo "not-nightly"
-        if: ${{ github.event.inputs.nightly == false }}
-      - run: echo "nightly"
-        if: ${{ github.event.inputs.nightly == true }}
-
       - uses: actions/download-artifact@v3
         with:
           name: archives
