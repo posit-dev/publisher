@@ -257,17 +257,26 @@ func (s *StateSuite) TestNewLocalID() {
 	s.NotEqual(id, id2)
 }
 
+func (s *StateSuite) makeConfiguration(name string) *config.Config {
+	path := config.GetConfigPath(s.cwd, name)
+	cfg := config.New()
+	cfg.Type = config.ContentTypePythonDash
+	cfg.Entrypoint = "app.py"
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+	}
+	err := cfg.WriteFile(path)
+	s.NoError(err)
+	return cfg
+}
+
 func (s *StateSuite) TestNew() {
 	accts := &accounts.MockAccountList{}
 	acct := accounts.Account{}
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
-	configPath := config.GetConfigPath(s.cwd, "default")
-	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
-	cfg.Entrypoint = "app.py"
-	err := cfg.WriteFile(configPath)
-	s.NoError(err)
+	cfg := s.makeConfiguration("default")
 
 	state, err := New(s.cwd, "", "", "", "", accts)
 	s.NoError(err)
@@ -287,12 +296,7 @@ func (s *StateSuite) TestNewNonDefaultConfig() {
 	accts.On("GetAllAccounts").Return([]accounts.Account{acct}, nil)
 
 	configName := "staging"
-	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
-	cfg.Entrypoint = "app.py"
-	err := cfg.WriteFile(configPath)
-	s.NoError(err)
+	cfg := s.makeConfiguration(configName)
 
 	state, err := New(s.cwd, "", configName, "", "", accts)
 	s.NoError(err)
@@ -333,12 +337,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	accts.On("GetAccountByServerURL", "https://saved.server.example.com").Return(&acct1, nil)
 	accts.On("GetAccountByServerURL", "https://another.server.example.com").Return(&acct2, nil)
 
-	configPath := config.GetConfigPath(s.cwd, "savedConfigName")
-	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
-	cfg.Entrypoint = "app.py"
-	err := cfg.WriteFile(configPath)
-	s.NoError(err)
+	cfg := s.makeConfiguration("savedConfigName")
 
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
@@ -346,7 +345,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	d.Configuration = cfg
-	err = d.WriteFile(targetPath)
+	err := d.WriteFile(targetPath)
 	s.NoError(err)
 
 	state, err := New(s.cwd, "", "", "myTargetName", "", accts)
@@ -375,12 +374,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	accts.On("GetAccountByName", "acct2").Return(&acct2, nil)
 	accts.On("GetAccountByServerURL", "https://saved.server.example.com").Return(&acct1, nil)
 
-	configPath := config.GetConfigPath(s.cwd, "savedConfigName")
-	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
-	cfg.Entrypoint = "app.py"
-	err := cfg.WriteFile(configPath)
-	s.NoError(err)
+	cfg := s.makeConfiguration("savedConfigName")
 
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
@@ -388,7 +382,7 @@ func (s *StateSuite) TestNewWithTargetAndAccount() {
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	d.Configuration = cfg
-	err = d.WriteFile(targetPath)
+	err := d.WriteFile(targetPath)
 	s.NoError(err)
 
 	state, err := New(s.cwd, "acct2", "", "myTargetName", "mySaveName", accts)

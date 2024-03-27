@@ -181,6 +181,10 @@ func (s *InitializeSuite) TestInitIfNeededWhenNotNeeded() {
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+	}
 	cfg.WriteFile(configPath)
 
 	PythonInspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector {
