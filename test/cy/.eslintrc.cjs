@@ -1,7 +1,7 @@
 module.exports = {
-    extends: ['plugin:cypress/recommended'],
-    plugins: ['cypress'],
-    env: {
-      'cypress/globals': true,
-    }
-  };
+  extends: ["plugin:cypress/recommended", "prettier"],
+  plugins: ["cypress"],
+  env: {
+    "cypress/globals": true,
+  },
+};
