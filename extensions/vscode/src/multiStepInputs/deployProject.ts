@@ -16,7 +16,7 @@ import {
   useApi,
   isConfigurationError,
   Configuration,
-} from "src/api";
+} from "@publishing-client/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { deployProject } from "src/views/deployProgress";
 import { EventStream } from "src/events";

@@ -25,7 +25,7 @@ import {
   isDeploymentError,
   isPreDeployment,
   useApi,
-} from "src/api";
+} from "@publishing-client/api";
 
 import { confirmForget } from "src/dialogs";
 import { EventStream } from "src/events";
