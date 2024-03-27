@@ -31,6 +31,6 @@ jobs:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       - run: just upload
-        if: ${{ github.inputs.nightly }}
+        if: ${{ inputs.nightly }}
       - run: just upload nightly
-        if: ${{ github.inputs.nightly }}
+        if: ${{ inputs.nightly }}
