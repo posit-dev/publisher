@@ -57,3 +57,30 @@ jobs:
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
           key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
+    
+  webdriverio:
+    env:
+      DOCKER: false
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install
+        run: |
+            cd extensions/vscode
+            npm install
+      - name: Test
+        run: |
+            cd extensions/vscode
+            npm run wdio        
+      - uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: logs
+          path: logs
