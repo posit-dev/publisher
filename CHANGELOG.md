@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [1.0.alpha4]
+
+### Added
+- Provide a Visit button in the deployment success notification window (#1173)
+- Make the URL in the success log message clickable (#1171)
+- Add a Visit button to each deployment in the Deployments list (#1170)
+
 ## [1.0.alpha3]
 
 Move the extension from an Editor webview to a using native VSCode views,
