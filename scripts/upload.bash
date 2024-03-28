@@ -73,7 +73,7 @@ do
     else
       if [ $release_type == "nightly" ]; 
       then
-        object="$object_path/v$$today/$(basename $(./scripts/get-vscode-extension-path.bash "$name" "$today" "$os" "$arch"))"
+        object="$object_path/v$today/$(basename $(./scripts/get-vscode-extension-path.bash "$name" "$today" "$os" "$arch"))"
       else
         object="$object_path/$(basename "$extension")"
       fi 
