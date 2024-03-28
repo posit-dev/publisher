@@ -60,7 +60,10 @@ export class DeploymentsTreeDataProvider
 
   private api = useApi();
 
-  constructor(private stream: EventStream) {
+  constructor(
+    private stream: EventStream,
+    private apiReady: Promise<boolean>,
+  ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -93,6 +96,7 @@ export class DeploymentsTreeDataProvider
       // API Returns:
       // 200 - success
       // 500 - internal server error
+      await this.apiReady;
       const response = await this.api.deployments.getAll();
       const deployments = response.data;
       commands.executeCommand(

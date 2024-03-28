@@ -84,21 +84,23 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   const port = await ports.acquire();
-  service = new Service(context, port);
-  await service.start();
-
   const stream = new EventStream(port);
   context.subscriptions.push(stream);
 
+  service = new Service(context, port);
+  const apiReady = service.isUp();
+
   new ProjectTreeDataProvider().register(context);
-  new DeploymentsTreeDataProvider(stream).register(context);
-  new ConfigurationsTreeDataProvider().register(context);
-  new FilesTreeDataProvider().register(context);
-  new RequirementsTreeDataProvider().register(context);
-  new CredentialsTreeDataProvider().register(context);
+  new DeploymentsTreeDataProvider(stream, apiReady).register(context);
+  new ConfigurationsTreeDataProvider(apiReady).register(context);
+  new FilesTreeDataProvider(apiReady).register(context);
+  new RequirementsTreeDataProvider(apiReady).register(context);
+  new CredentialsTreeDataProvider(apiReady).register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
   new LogsTreeDataProvider(stream).register(context);
   new HomeViewProvider(context.extensionUri).register(context);
+
+  await service.start();
 
   setStateContext(PositPublishState.initialized);
 }
