@@ -42,7 +42,7 @@ If you already have a `requirements.txt` file, you can use the eye icon in the R
 
 ### Deployments
 
-Once you have configuration and requirements files, you are ready to deploy. Click the `Add` button in the Deployments view to create a new deployment.
+Once you have configuration and requirements files, you are ready to deploy. Click the `New Deployment` button in the Deployments view to create a new deployment.
 
 ![](https://cdn.posit.co/publisher/assets/img/add-deployment.png)
 
