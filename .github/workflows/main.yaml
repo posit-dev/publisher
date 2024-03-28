@@ -19,12 +19,8 @@ jobs:
   package:
     needs: build
     uses: ./.github/workflows/package.yaml
-  archive:
-    needs: build
-    uses: ./.github/workflows/archive.yaml
   upload:
     needs:
-      - archive
       - package
     uses: ./.github/workflows/upload.yaml
     secrets: inherit

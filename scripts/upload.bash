@@ -49,22 +49,6 @@ do
     echo "Release: $platform" 1>&2
     os=${platform/\/*}   # retain the part before the slash
     arch=${platform/*\/} # retain the part after the slash
-    archive=$(./scripts/get-archive-path.bash "$name" "$version" "$os" "$arch" )
-    echo "Archive: $archive" 1>&2
-    if ! [ -f "$archive" ];
-    then
-      echo "Not Found. Skipping..." 1>&2
-    else
-      if [ $release_type == "nightly" ]; 
-      then
-        object="$object_path/v$today/$(basename $(./scripts/get-archive-path.bash "$name" "$today" "$os" "$arch" ))"
-      else
-        object="$object_path/$(basename "$archive")"
-      fi 
-      echo "Object: $object" 1>&2
-      aws s3 cp "$archive" "$object" > /dev/null 2>&1
-    fi
-
     extension=$(./scripts/get-vscode-extension-path.bash "$name" "$version" "$os" "$arch")
     echo "VSCode Extension: $extension"
     if ! [ -f "$extension" ];
