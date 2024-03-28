@@ -60,7 +60,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
 
   private api = useApi();
 
-  constructor() {
+  constructor(private apiReady: Promise<boolean>) {
     const workspaceFolders = workspace.workspaceFolders;
     this.root = Uri.parse("positPublisherFiles://unknown");
     if (workspaceFolders !== undefined) {
@@ -80,6 +80,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     if (element === undefined) {
       // first call.
       try {
+        await this.apiReady;
         const response = await this.api.files.get();
         const file = response.data;
 

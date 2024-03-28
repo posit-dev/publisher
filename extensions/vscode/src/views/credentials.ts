@@ -30,7 +30,7 @@ export class CredentialsTreeDataProvider
   readonly onDidChangeTreeData: CredentialEvent =
     this._onDidChangeTreeData.event;
 
-  constructor() {}
+  constructor(private apiReady: Promise<boolean>) {}
 
   getTreeItem(element: CredentialsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -44,6 +44,7 @@ export class CredentialsTreeDataProvider
     }
 
     try {
+      await this.apiReady;
       const response = await api.accounts.getAll();
       const result = response.data.map((account) => {
         return new CredentialsTreeItem(account);
