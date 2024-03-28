@@ -102,6 +102,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
   await service.start();
 
+  await service.start();
+
   setStateContext(PositPublishState.initialized);
 }
 
