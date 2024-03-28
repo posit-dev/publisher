@@ -54,9 +54,9 @@ func NewDefaultHTTPClient(account *accounts.Account, timeout time.Duration, log 
 }
 
 type HTTPError struct {
-	URL    string
-	Method string
-	Status int
+	URL    string `mapstructure:"url"`
+	Method string `mapstructure:"method"`
+	Status int    `mapstructure:"status"`
 }
 
 func NewHTTPError(url, method string, status int) *HTTPError {
@@ -107,10 +107,18 @@ func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyT
 		case http.StatusForbidden:
 			errCode = events.PermissionsCode
 		}
-		err = types.NewAgentError(
-			errCode,
-			NewHTTPError(apiURL, method, resp.StatusCode),
-			errDetails)
+		httpErr := NewHTTPError(apiURL, method, resp.StatusCode)
+		if errDetails == nil {
+			err = types.NewAgentError(
+				errCode,
+				httpErr,
+				httpErr) // the error object contains its own details
+		} else {
+			err = types.NewAgentError(
+				errCode,
+				httpErr,
+				errDetails)
+		}
 		return nil, err
 	}
 }
