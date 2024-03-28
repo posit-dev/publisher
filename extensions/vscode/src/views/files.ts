@@ -42,9 +42,6 @@ const positIgnoreFileTemplate =
   `#\n` +
   `# Syntax of exclusions conforms with Git Ignore File syntax.\n` +
   `#\n` +
-  `# NOTE: This file currenly only supports POSITIVE exclusion rules\n` +
-  `# and does not support NEGATIVE inclusion rules.\n` +
-  `#\n` +
   `\n`;
 
 let includedFiles: FileEntries[] = [];
