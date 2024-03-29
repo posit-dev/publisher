@@ -124,8 +124,8 @@ export async function addDeployment(stream: EventStream) {
 
   // Name the deployment
   // Select the credential to use, if there is more than one
-  // Prompt to deploy
   // Select the config file to use, if there are more than one
+  // Prompt to deploy
   // result in calling publish API
 
   // ***************************************************************
@@ -173,11 +173,10 @@ export async function addDeployment(stream: EventStream) {
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    state.step = state.lastStep + 1;
-
+    const thisStepNumber = state.lastStep + 1;
     const deploymentName = await input.showInputBox({
       title: state.title,
-      step: state.step,
+      step: thisStepNumber,
       totalSteps: state.totalSteps,
       value:
         typeof state.data.deploymentName === "string" &&
@@ -202,6 +201,7 @@ export async function addDeployment(stream: EventStream) {
     });
 
     state.data.deploymentName = deploymentName;
+    state.lastStep = thisStepNumber;
     return (input: MultiStepInput) => pickCredentials(input, state);
   }
 
@@ -231,11 +231,43 @@ export async function addDeployment(stream: EventStream) {
     } else {
       state.data.credentialName = accountListItems[0];
     }
-    return (input: MultiStepInput) => promptToDeploy(input, state);
+    return (input: MultiStepInput) => inputConfigFileSelection(input, state);
   }
 
   // ***************************************************************
   // Step #3:
+  // Select the config to be used w/ the deployment
+  // ***************************************************************
+  async function inputConfigFileSelection(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    // skip if we only have one choice.
+    if (configFileListItems.length > 1) {
+      const thisStepNumber = state.lastStep + 1;
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        placeholder: "Select the config file you wish to deploy with",
+        items: configFileListItems,
+        activeItem:
+          typeof state.data.configFile !== "string"
+            ? state.data.configFile
+            : undefined,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+      });
+      state.data.configFile = pick;
+      state.lastStep = thisStepNumber;
+    } else {
+      state.data.configFile = configFileListItems[0];
+    }
+    return (input: MultiStepInput) => promptToDeploy(input, state);
+  }
+
+  // ***************************************************************
+  // Step #4:
   // Does the user want to continue through into deploying the project?
   // ***************************************************************
   async function promptToDeploy(input: MultiStepInput, state: MultiStepState) {
@@ -264,41 +296,6 @@ export async function addDeployment(stream: EventStream) {
     });
     state.data.promptToDeploy = pick;
     state.lastStep = thisStepNumber;
-    if (state.data.promptToDeploy.label === "Yes") {
-      return (input: MultiStepInput) => inputConfigFileSelection(input, state);
-    }
-    return undefined;
-  }
-
-  // ***************************************************************
-  // Step #4:
-  // Select the config to be used w/ the deployment
-  // ***************************************************************
-  async function inputConfigFileSelection(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    // skip if we only have one choice.
-    if (configFileListItems.length > 1) {
-      const thisStepNumber = state.lastStep + 1;
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: thisStepNumber,
-        totalSteps: state.totalSteps,
-        placeholder: "Select the config file you wish to deploy with",
-        items: configFileListItems,
-        activeItem:
-          typeof state.data.configFile !== "string"
-            ? state.data.configFile
-            : undefined,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-      });
-      state.data.configFile = pick;
-      state.lastStep = thisStepNumber;
-    } else {
-      state.data.configFile = configFileListItems[0];
-    }
   }
 
   // ***************************************************************
@@ -315,10 +312,12 @@ export async function addDeployment(stream: EventStream) {
   if (
     state.data.deploymentName === undefined ||
     state.data.credentialName === undefined ||
+    state.data.configFile === undefined ||
     state.data.promptToDeploy === undefined ||
     // have to add type guards here to eliminate the variability
     typeof state.data.deploymentName !== "string" ||
     !isQuickPickItem(state.data.credentialName) ||
+    !isQuickPickItem(state.data.configFile) ||
     !isQuickPickItem(state.data.promptToDeploy)
   ) {
     return;
@@ -340,12 +339,8 @@ export async function addDeployment(stream: EventStream) {
     );
     return;
   }
-  // Should we deploy and did we get an answer for the config file?
-  if (
-    state.data.promptToDeploy.label === "Yes" &&
-    state.data.configFile !== undefined &&
-    isQuickPickItem(state.data.configFile)
-  ) {
+  // Should we deploy?
+  if (state.data.promptToDeploy.label === "Yes") {
     try {
       const response = await api.deployments.publish(
         state.data.deploymentName,
