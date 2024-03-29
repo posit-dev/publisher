@@ -106,7 +106,9 @@ export class ConfigurationsTreeDataProvider
     context.subscriptions.push(
       treeView,
       commands.registerCommand(refreshCommand, this.refresh),
-      commands.registerCommand(addCommand, this.add),
+      commands.registerCommand(addCommand, async () => {
+        return await this.add();
+      }),
       commands.registerCommand(editCommand, this.edit),
       commands.registerCommand(renameCommand, this.rename),
       commands.registerCommand(cloneCommand, this.clone),
@@ -139,6 +141,7 @@ export class ConfigurationsTreeDataProvider
   };
 
   private add = async () => {
+    let configName: string | undefined;
     try {
       const inspectResponse = await api.configurations.inspect();
       const config = await this.chooseConfig(inspectResponse.data);
@@ -147,16 +150,16 @@ export class ConfigurationsTreeDataProvider
         return;
       }
       const defaultName = await untitledConfigurationName();
-      const name = await window.showInputBox({
+      configName = await window.showInputBox({
         value: defaultName,
         prompt: "Configuration name",
       });
-      if (name === undefined || name === "") {
+      if (configName === undefined || configName === "") {
         // canceled
         return;
       }
       const createResponse = await api.configurations.createOrUpdate(
-        name,
+        configName,
         config,
       );
       if (this.root !== undefined) {
@@ -167,6 +170,7 @@ export class ConfigurationsTreeDataProvider
       const summary = getSummaryStringFromError("configurations::add", error);
       window.showInformationMessage(summary);
     }
+    return configName;
   };
 
   private edit = async (config: ConfigurationTreeItem) => {

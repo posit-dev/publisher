@@ -10,22 +10,303 @@ import {
   WebviewViewResolveContext,
   CancellationToken,
   ExtensionContext,
+  workspace,
+  WorkspaceFolder,
+  RelativePattern,
+  commands,
+  env,
 } from "vscode";
 import { getUri } from "../utils/getUri";
 import { getNonce } from "../utils/getNonce";
+import {
+  useApi,
+  isConfigurationError,
+  isDeploymentError,
+  EventStreamMessage,
+  Configuration,
+  Deployment,
+  PreDeployment,
+} from "../api";
+import { getSummaryStringFromError } from "../utils/errors";
+import { deployProject } from "./deployProgress";
+import { EventStream } from "../events";
+
+const deploymentFiles = ".posit/publish/deployments/*.toml";
+const configFiles = ".posit/publish/*.toml";
 
 const viewName = "posit.publisher.homeView";
+const refreshCommand = viewName + ".refresh";
+const contextIsSelectorExpanded = viewName + ".expanded";
+const showBasicModeCommand = viewName + ".showBasicMode";
+const showAdvancedModeCommand = viewName + ".showAdvancedMode";
+
+const contextActiveMode = viewName + ".deploymentActiveMode";
+const contextActiveModeAdvanced = "advanced-mode";
+const contextActiveModeBasic = "basic-mode";
 
 export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
+  private api = useApi();
+  private _deployments: (Deployment | PreDeployment)[] = [];
+  private _credentials: string[] = [];
+  private _configs: Configuration[] = [];
+  private root: WorkspaceFolder | undefined;
+  private _webviewView?: WebviewView;
 
-  constructor(private readonly _extensionUri: Uri) {}
+  constructor(
+    private readonly _extensionUri: Uri,
+    private readonly stream: EventStream,
+  ) {
+    const workspaceFolders = workspace.workspaceFolders;
+    if (workspaceFolders !== undefined) {
+      this.root = workspaceFolders[0];
+    }
+    stream.register("publish/start", () => {
+      this._onPublishStart();
+    });
+    stream.register("publish/success", (msg: EventStreamMessage) => {
+      this._onPublishSuccess(msg);
+    });
+    stream.register("publish/failure", (msg: EventStreamMessage) => {
+      this._onPublishFailure(msg);
+    });
+    commands.executeCommand("setContext", contextIsSelectorExpanded, false);
+
+    commands.registerCommand(showBasicModeCommand, () => {
+      commands.executeCommand(
+        "setContext",
+        contextActiveMode,
+        contextActiveModeBasic,
+      );
+    });
+
+    commands.registerCommand(showAdvancedModeCommand, () => {
+      commands.executeCommand(
+        "setContext",
+        contextActiveMode,
+        contextActiveModeAdvanced,
+      );
+    });
+  }
+
+  /**
+   * Sets up an event listener to listen for messages passed from the webview context and
+   * executes code based on the message that is recieved.
+   *
+   * @param webview A reference to the extension webview
+   * @param context A reference to the extension context
+   */
+  private _setWebviewMessageListener() {
+    if (!this._webviewView) {
+      return;
+    }
+    this._webviewView.webview.onDidReceiveMessage(
+      async (message: any) => {
+        const command = message.command;
+        switch (command) {
+          case "deploy":
+            const payload = JSON.parse(message.payload);
+            try {
+              const response = await this.api.deployments.publish(
+                payload.deployment,
+                payload.credential,
+                payload.configuration,
+              );
+              deployProject(response.data.localId, this.stream);
+            } catch (error: unknown) {
+              const summary = getSummaryStringFromError(
+                "homeView, deploy",
+                error,
+              );
+              window.showInformationMessage(`Failed to deploy . ${summary}`);
+              return;
+            }
+            return;
+          // Add more switch case statements here as more webview message commands
+          // are created within the webview context (i.e. inside media/main.js)
+          case "initializing":
+            // send back the data needed.
+            await this._refreshData();
+            this._refreshWebViewViewData();
+            return;
+          case "newDeployment":
+            const newFile: string = await commands.executeCommand(
+              "posit.publisher.deployments.createNew",
+            );
+            if (newFile) {
+              this._updateDeploymentFileSelection(newFile);
+            }
+            break;
+          case "editConfiguration":
+            const config = this._configs.find(
+              (config) => config.configurationName === message.payload,
+            );
+            if (config) {
+              await commands.executeCommand(
+                "vscode.open",
+                Uri.file(config.configurationPath),
+              );
+            }
+            break;
+
+          case "newConfiguration":
+            const newConfig: string = await commands.executeCommand(
+              "posit.publisher.configurations.add",
+            );
+            if (newConfig) {
+              this._updateConfigFileSelection(newConfig);
+            }
+            break;
+          case "expanded":
+            commands.executeCommand(
+              "setContext",
+              contextIsSelectorExpanded,
+              true,
+            );
+            break;
+          case "collapsed":
+            commands.executeCommand(
+              "setContext",
+              contextIsSelectorExpanded,
+              false,
+            );
+            break;
+          case "navigate":
+            env.openExternal(Uri.parse(message.payload));
+            break;
+        }
+      },
+      undefined,
+      this._disposables,
+    );
+  }
+
+  private _onPublishStart() {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "publish_start",
+      });
+    } else {
+      console.log("_onPublishStart: oops! No _webViewView defined!");
+    }
+  }
+
+  private _onPublishSuccess(msg: EventStreamMessage) {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "publish_finish_success",
+        payload: msg,
+      });
+    } else {
+      console.log("_onPublishSuccess: oops! No _webViewView defined!");
+    }
+  }
+
+  private _onPublishFailure(msg: EventStreamMessage) {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "publish_finish_failure",
+        payload: msg,
+      });
+    } else {
+      console.log("_onPublishFailure: oops! No _webViewView defined!");
+    }
+  }
+
+  private async _refreshData() {
+    try {
+      // API Returns:
+      // 200 - success
+      // 500 - internal server error
+      const response = await this.api.deployments.getAll();
+      const deployments = response.data;
+      this._deployments = [];
+      deployments.forEach((deployment) => {
+        if (!isDeploymentError(deployment)) {
+          this._deployments.push(deployment);
+        }
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "_refreshData::deployments.getAll",
+        error,
+      );
+      window.showInformationMessage(summary);
+    }
+
+    try {
+      const response = await this.api.accounts.getAll();
+      this._credentials = [];
+      response.data.forEach((account) => this._credentials.push(account.name));
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "_refreshData::accounts.getAll",
+        error,
+      );
+      window.showInformationMessage(summary);
+    }
+
+    try {
+      const response = await this.api.configurations.getAll();
+      const configurations = response.data;
+      this._configs = [];
+      configurations.forEach((config) => {
+        if (!isConfigurationError(config)) {
+          this._configs.push(config);
+        }
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "configurations::getChildren",
+        error,
+      );
+      window.showInformationMessage(summary);
+    }
+  }
+
+  private _refreshWebViewViewData() {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "refresh_data",
+        payload: JSON.stringify({
+          deployments: this._deployments,
+          configurations: this._configs.map(
+            (config) => config.configurationName,
+          ),
+          credentials: this._credentials,
+        }),
+      });
+    }
+  }
+
+  private _updateDeploymentFileSelection(name: string) {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "update_deployment_selection",
+        payload: JSON.stringify({
+          name,
+        }),
+      });
+    }
+  }
+
+  private _updateConfigFileSelection(name: string) {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "update_config_selection",
+        payload: JSON.stringify({
+          name,
+        }),
+      });
+    }
+  }
 
   public resolveWebviewView(
     webviewView: WebviewView,
     _: WebviewViewResolveContext,
     _token: CancellationToken,
   ) {
+    this._webviewView = webviewView;
     // Allow scripts in the webview
     webviewView.webview.options = {
       // Enable JavaScript in the webview
@@ -41,6 +322,10 @@ export class HomeViewProvider implements WebviewViewProvider {
       webviewView.webview,
       this._extensionUri,
     );
+
+    // Sets up an event listener to listen for messages passed from the webview view context
+    // and executes code based on the message that is recieved
+    this._setWebviewMessageListener();
   }
   /**
    * Defines and returns the HTML that should be rendered within the webview panel.
@@ -105,6 +390,11 @@ export class HomeViewProvider implements WebviewViewProvider {
     `;
   }
 
+  public refresh = async (_: Uri) => {
+    await this._refreshData();
+    this._refreshWebViewViewData();
+  };
+
   /**
    * Cleans up and disposes of webview resources when view is disposed
    */
@@ -125,5 +415,27 @@ export class HomeViewProvider implements WebviewViewProvider {
       },
     });
     context.subscriptions.push(provider);
+
+    context.subscriptions.push(
+      commands.registerCommand(refreshCommand, this.refresh),
+    );
+
+    if (this.root !== undefined) {
+      const configFileWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, configFiles),
+      );
+      configFileWatcher.onDidCreate(this.refresh);
+      configFileWatcher.onDidDelete(this.refresh);
+      configFileWatcher.onDidChange(this.refresh);
+      context.subscriptions.push(configFileWatcher);
+
+      const deploymentFileWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, deploymentFiles),
+      );
+      deploymentFileWatcher.onDidCreate(this.refresh);
+      deploymentFileWatcher.onDidDelete(this.refresh);
+      deploymentFileWatcher.onDidChange(this.refresh);
+      context.subscriptions.push(deploymentFileWatcher);
+    }
   }
 }
