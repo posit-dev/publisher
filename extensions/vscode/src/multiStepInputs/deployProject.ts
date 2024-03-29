@@ -139,7 +139,10 @@ export async function publishDeployment(
     if (accountListItems.length === 1) {
       totalSteps -= 1;
     }
-    if (configFileListItems.length === 1) {
+    // We are not always guaranteed that we have a configuration name in a pre-deployment file
+    // this could occur until the API is updated to store one when creating, but also can occur
+    // if the user has edited the deployment file.
+    if (configFileListItems.length === 1 || deployment.configurationName) {
       totalSteps -= 1;
     }
     state.totalSteps = totalSteps;
@@ -185,8 +188,8 @@ export async function publishDeployment(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    // skip if we only have one choice.
-    if (configFileListItems.length > 1) {
+    // skip if we only have one choice or an already decided one
+    if (configFileListItems.length > 1 || deployment.configurationName) {
       const thisStepNumber = state.lastStep + 1;
       const pick = await input.showQuickPick({
         title: state.title,
@@ -204,7 +207,11 @@ export async function publishDeployment(
       state.data.configFile = pick;
       state.lastStep = thisStepNumber;
     } else {
-      state.data.configFile = configFileListItems[0];
+      if (deployment.configurationName) {
+        state.data.configFile = deployment.configurationName;
+      } else {
+        state.data.configFile = configFileListItems[0];
+      }
     }
     // last step, we don't return anything
   }
@@ -225,18 +232,21 @@ export async function publishDeployment(
     state.data.credentialName === undefined ||
     state.data.configFile === undefined ||
     // have to add type guards here to eliminate the variability
-    !isQuickPickItem(state.data.credentialName) ||
-    !isQuickPickItem(state.data.configFile)
+    !isQuickPickItem(state.data.credentialName)
+    // Note that state.data.configFile can either be a string or QuickPickItem!
   ) {
     return;
   }
+  const credentialName = isQuickPickItem(state.data.configFile)
+    ? state.data.configFile.label
+    : state.data.configFile;
 
   // deploy!
   try {
     const response = await api.deployments.publish(
       deployment.saveName,
       state.data.credentialName.label,
-      state.data.configFile.label,
+      credentialName,
     );
     deployProject(response.data.localId, stream);
   } catch (error: unknown) {
