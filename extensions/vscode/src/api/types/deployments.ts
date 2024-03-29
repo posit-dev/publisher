@@ -27,6 +27,7 @@ type DeploymentRecord = {
   serverUrl: string;
   saveName: string;
   createdAt: string;
+  configurationName: string;
 } & DeploymentLocation;
 
 export type PreDeployment = {
@@ -48,6 +49,7 @@ export type Deployment = {
   Configuration;
 
 export type AllDeploymentTypes = Deployment | PreDeployment | DeploymentError;
+export type NonDeploymentErrorTypes = Deployment | PreDeployment;
 
 export function isSuccessful(
   d: AllDeploymentTypes | undefined,

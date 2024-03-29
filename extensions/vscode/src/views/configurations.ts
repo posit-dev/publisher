@@ -153,11 +153,14 @@ export class ConfigurationsTreeDataProvider
         value: defaultName,
         prompt: "Configuration name",
       });
-      if (configName === undefined || configName === '') {
+      if (configName === undefined || configName === "") {
         // canceled
         return;
       }
-      const createResponse = await api.configurations.createOrUpdate(configName, config);
+      const createResponse = await api.configurations.createOrUpdate(
+        configName,
+        config,
+      );
       if (this.root !== undefined) {
         const fileUri = Uri.file(createResponse.data.configurationPath);
         await commands.executeCommand("vscode.open", fileUri);

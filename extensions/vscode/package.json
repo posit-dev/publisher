@@ -147,8 +147,8 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.selector.refresh",
-        "title": "Refresh Deployment Selector",
+        "command": "posit.publisher.deploySelector.refresh",
+        "title": "Refresh View",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
@@ -166,6 +166,18 @@
         "command": "posit.publisher.logs.visit",
         "title": "View this deployment in Connect",
         "icon": "$(link-external)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.deploySelector.showDeploymentView",
+        "title": "View as targeted deployment",
+        "icon": "$(target)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.deploySelector.showProjectFilesView",
+        "title": "View as project files",
+        "icon": "$(list-tree)",
         "category": "Posit Publisher"
       }
     ],
@@ -231,9 +243,19 @@
           "group": "navigation"
         },
         {
-          "command": "posit.publisher.selector.refresh",
-          "when": "view == posit.publisher.selector",
-          "group": "navigation"
+          "command": "posit.publisher.deploySelector.showDeploymentView",
+          "when": "view == posit.publisher.deploySelector",
+          "group": "navigation@1"
+        },
+        {
+          "command": "posit.publisher.deploySelector.showProjectFilesView",
+          "when": "view == posit.publisher.deploySelector",
+          "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.deploySelector.refresh",
+          "when": "view == posit.publisher.deploySelector && posit.publisher.deploySelector.expanded",
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [
@@ -339,7 +361,7 @@
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.selector.refresh",
+          "command": "posit.publisher.deploySelector.refresh",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         }
       ]
@@ -369,17 +391,9 @@
           "when": "workbenchState == empty || workbenchState == workspace || posit.publish.missing || posit.publish.state == 'uninitialized'"
         },
         {
-          "id": "posit.publisher.selector",
+          "id": "posit.publisher.deploySelector",
           "type": "webview",
-          "name": "Deployment Selector",
-          "contextualTitle": "Publisher",
-          "icon": "$(symbol-file)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
-        },
-        {
-          "id": "posit.publisher.easyDeployButton",
-          "type": "webview",
-          "name": "Easy Deployment Button",
+          "name": "Home",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
@@ -389,35 +403,35 @@
           "name": "Deployment Files",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.deploySelector.isDeploymentViewAcive"
         },
         {
           "id": "posit.publisher.requirements",
           "name": "Requirements",
           "contextualTitle": "Publisher",
           "icon": "$(package)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.deploySelector.isDeploymentViewAcive"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
           "contextualTitle": "Publisher",
           "icon": "$(gear)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && !posit.publisher.deploySelector.isDeploymentViewAcive"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
           "contextualTitle": "Publisher",
           "icon": "$(key)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && !posit.publisher.deploySelector.isDeploymentViewAcive"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
           "contextualTitle": "Publisher",
           "icon": "$(cloud-upload)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && !posit.publisher.deploySelector.isDeploymentViewAcive"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
@@ -482,13 +496,12 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "npm run compile-extension && npm run compile-project-selector && npm run compile-easy-deploy-button",
+    "compile": "npm run compile-extension && npm run compile-deploy-selector",
     "compile-extension": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts",
-    "compile-project-selector": "npm run --prefix webviews/projectSelector build",
-    "compile-easy-deploy-button": "npm run --prefix webviews/easyDeployButton build",
+    "compile-deploy-selector": "npm run --prefix webviews/deploySelector compile",
     "format": "prettier . --write",
     "check-format": "prettier . --check",
     "test": "node ./out/test/runTest.js"

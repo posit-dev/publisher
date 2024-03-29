@@ -12,26 +12,38 @@ import {
   WorkspaceFolder,
   RelativePattern,
   commands,
+  env,
 } from "vscode";
 import { getUri } from "../utils/getUri";
 import { getNonce } from "../utils/getNonce";
-import { useApi, isConfigurationError, isDeploymentError } from "../api";
+import {
+  useApi,
+  isConfigurationError,
+  isDeploymentError,
+  EventStreamMessage,
+  Configuration,
+  NonDeploymentErrorTypes,
+} from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
-import { deployProject } from "../views/deployProgress";
+import { deployProject } from "./deployProgress";
 import { EventStream } from "../events";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
 
-const viewName = "posit.publisher.easyDeployButton";
+const viewName = "posit.publisher.deploySelector";
 const refreshCommand = viewName + ".refresh";
+const contextIsSelectorExpanded = viewName + ".expanded";
+const showDeploymentViewCommand = viewName + ".showDeploymentView";
+const showProjectFilesViewCommand = viewName + ".showProjectFilesView";
+const contextIsDeploymentViewActive = viewName + ".isDeploymentViewAcive";
 
-export class EasyDeployButtonViewProvider implements WebviewViewProvider {
+export class DeploySelectorViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
   private api = useApi();
-  private _deployments: string[] = [];
+  private _deployments: NonDeploymentErrorTypes[] = [];
   private _credentials: string[] = [];
-  private _configs: string[] = [];
+  private _configs: Configuration[] = [];
   private root: WorkspaceFolder | undefined;
   private _webviewView?: WebviewView;
 
@@ -46,12 +58,123 @@ export class EasyDeployButtonViewProvider implements WebviewViewProvider {
     stream.register("publish/start", () => {
       this._onPublishStart();
     });
-    stream.register("publish/success", () => {
-      this._onPublishFinish();
+    stream.register("publish/success", (msg: EventStreamMessage) => {
+      this._onPublishSuccess(msg);
     });
-    stream.register("publish/failure", () => {
-      this._onPublishFinish();
+    stream.register("publish/failure", (msg: EventStreamMessage) => {
+      this._onPublishFailure(msg);
     });
+    commands.executeCommand("setContext", contextIsSelectorExpanded, false);
+
+    commands.executeCommand("setContext", contextIsDeploymentViewActive, true);
+
+    commands.registerCommand(showDeploymentViewCommand, () => {
+      commands.executeCommand(
+        "setContext",
+        contextIsDeploymentViewActive,
+        true,
+      );
+    });
+
+    commands.registerCommand(showProjectFilesViewCommand, () => {
+      commands.executeCommand(
+        "setContext",
+        contextIsDeploymentViewActive,
+        false,
+      );
+    });
+  }
+
+  /**
+   * Sets up an event listener to listen for messages passed from the webview context and
+   * executes code based on the message that is recieved.
+   *
+   * @param webview A reference to the extension webview
+   * @param context A reference to the extension context
+   */
+  private _setWebviewMessageListener() {
+    if (!this._webviewView) {
+      return;
+    }
+    this._webviewView.webview.onDidReceiveMessage(
+      async (message: any) => {
+        const command = message.command;
+        switch (command) {
+          case "deploy":
+            const payload = JSON.parse(message.payload);
+            try {
+              const response = await this.api.deployments.publish(
+                payload.deployment,
+                payload.credential,
+                payload.configuration,
+              );
+              deployProject(response.data.localId, this.stream);
+            } catch (error: unknown) {
+              const summary = getSummaryStringFromError(
+                "deploySelector, deploy",
+                error,
+              );
+              window.showInformationMessage(`Failed to deploy . ${summary}`);
+              return;
+            }
+            return;
+          // Add more switch case statements here as more webview message commands
+          // are created within the webview context (i.e. inside media/main.js)
+          case "initializing":
+            // send back the data needed.
+            await this._refreshData();
+            this._refreshWebViewViewData();
+            return;
+          case "newDeployment":
+            const newFile: string = await commands.executeCommand(
+              "posit.publisher.deployments.createNew",
+            );
+            if (newFile) {
+              this._updateDeploymentFileSelection(newFile);
+            }
+            break;
+          case "editConfiguration":
+            const config = this._configs.find(
+              (config) => config.configurationName === message.payload,
+            );
+            if (config) {
+              await commands.executeCommand(
+                "vscode.open",
+                Uri.file(config.configurationPath),
+              );
+            }
+            break;
+
+          case "newConfiguration":
+            const newConfig: string = await commands.executeCommand(
+              "posit.publisher.configurations.add",
+            );
+            if (newConfig) {
+              this._updateConfigFileSelection(newConfig);
+            }
+            break;
+          case "expanded":
+            commands.executeCommand(
+              "setContext",
+              contextIsSelectorExpanded,
+              true,
+            );
+            break;
+          case "collapsed":
+            commands.executeCommand(
+              "setContext",
+              contextIsSelectorExpanded,
+              false,
+            );
+            break;
+          case "navigate":
+            env.openExternal(Uri.parse(message.payload));
+            break;
+        }
+      },
+      undefined,
+      this._disposables,
+    );
   }
 
   private _onPublishStart() {
@@ -64,20 +187,27 @@ export class EasyDeployButtonViewProvider implements WebviewViewProvider {
     }
   }
 
-  private _onPublishFinish() {
+  private _onPublishSuccess(msg: EventStreamMessage) {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
-        command: "publish_finish",
+        command: "publish_finish_success",
+        payload: msg,
       });
     } else {
-      console.log("_onPublishFinish: oops! No _webViewView defined!");
+      console.log("_onPublishSuccess: oops! No _webViewView defined!");
     }
   }
 
-  public refresh = async (_: Uri) => {
-    await this._refreshData();
-    this._refreshWebViewViewData();
-  };
+  private _onPublishFailure(msg: EventStreamMessage) {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "publish_finish_failure",
+        payload: msg,
+      });
+    } else {
+      console.log("_onPublishFailure: oops! No _webViewView defined!");
+    }
+  }
 
   private async _refreshData() {
     try {
@@ -89,7 +219,7 @@ export class EasyDeployButtonViewProvider implements WebviewViewProvider {
       this._deployments = [];
       deployments.forEach((deployment) => {
         if (!isDeploymentError(deployment)) {
-          this._deployments.push(deployment.deploymentName);
+          this._deployments.push(deployment);
         }
       });
     } catch (error: unknown) {
@@ -118,7 +248,7 @@ export class EasyDeployButtonViewProvider implements WebviewViewProvider {
       this._configs = [];
       configurations.forEach((config) => {
         if (!isConfigurationError(config)) {
-          this._configs.push(config.configurationName);
+          this._configs.push(config);
         }
       });
     } catch (error: unknown) {
@@ -136,7 +266,9 @@ export class EasyDeployButtonViewProvider implements WebviewViewProvider {
         command: "refresh_data",
         payload: JSON.stringify({
           deployments: this._deployments,
-          configurations: this._configs,
+          configurations: this._configs.map(
+            (config) => config.configurationName,
+          ),
           credentials: this._credentials,
         }),
       });
@@ -177,7 +309,7 @@ export class EasyDeployButtonViewProvider implements WebviewViewProvider {
       enableScripts: true,
       // Restrict the webview to only load resources from the `out` directory
       localResourceRoots: [
-        Uri.joinPath(this._extensionUri, "out", "webviews", "easyDeployButton"),
+        Uri.joinPath(this._extensionUri, "out", "webviews", "deploySelector"),
       ],
     };
 
@@ -207,7 +339,7 @@ export class EasyDeployButtonViewProvider implements WebviewViewProvider {
     const stylesUri = getUri(webview, extensionUri, [
       "out",
       "webviews",
-      "easyDeployButton",
+      "deploySelector",
       "index.css",
     ]);
     // const codiconsUri = webview.asWebviewUri(Uri.joinPath(extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
@@ -215,14 +347,14 @@ export class EasyDeployButtonViewProvider implements WebviewViewProvider {
     const scriptUri = getUri(webview, extensionUri, [
       "out",
       "webviews",
-      "easyDeployButton",
+      "deploySelector",
       "index.js",
     ]);
     // The codicon css (and related tff file) are needing to be loaded for icons
     const codiconsUri = getUri(webview, extensionUri, [
       "out",
       "webviews",
-      "easyDeployButton",
+      "deploySelector",
       "codicon.css",
     ]);
 
@@ -252,68 +384,10 @@ export class EasyDeployButtonViewProvider implements WebviewViewProvider {
     `;
   }
 
-  /**
-   * Sets up an event listener to listen for messages passed from the webview context and
-   * executes code based on the message that is recieved.
-   *
-   * @param webview A reference to the extension webview
-   * @param context A reference to the extension context
-   */
-  private _setWebviewMessageListener() {
-    if (!this._webviewView) {
-      return;
-    }
-    this._webviewView.webview.onDidReceiveMessage(
-      async (message: any) => {
-        const command = message.command;
-        switch (command) {
-          case "deploy":
-            const payload = JSON.parse(message.payload);
-            try {
-              const response = await this.api.deployments.publish(
-                payload.deployment,
-                payload.credential,
-                payload.configuration,
-              );
-              deployProject(response.data.localId, this.stream);
-            } catch (error: unknown) {
-              const summary = getSummaryStringFromError(
-                "publishDeployment, deploy",
-                error,
-              );
-              window.showInformationMessage(`Failed to deploy . ${summary}`);
-              return;
-            }
-            return;
-          // Add more switch case statements here as more webview message commands
-          // are created within the webview context (i.e. inside media/main.js)
-          case "initializing":
-            // send back the data needed.
-            await this._refreshData();
-            this._refreshWebViewViewData();
-            return;
-          case "newDeployment":
-            const newFile: string = await commands.executeCommand(
-              "posit.publisher.deployments.createNew",
-            );
-            if (newFile) {
-              this._updateDeploymentFileSelection(newFile);
-            }
-            break;
-          case "newConfiguration":
-            const newConfig: string = await commands.executeCommand(
-              "posit.publisher.configurations.add",
-            );
-            if (newConfig) {
-              this._updateConfigFileSelection(newConfig);
-            }
-            break;
-        }
-      },
-      undefined,
-      this._disposables,
-    );
-  }
+  public refresh = async (_: Uri) => {
+    await this._refreshData();
+    this._refreshWebViewViewData();
+  };
 
   /**
    * Cleans up and disposes of webview resources when view is disposed

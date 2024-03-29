@@ -3,11 +3,11 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "vite",
-    "build": "rm -rd ../../out/webviews/projectSelector | true && vue-tsc --noEmit && vite build --outDir ../../out/webviews/projectSelector && npm run copy-codicons",
-    "preview": "vite preview --port 5050",
-    "typecheck": "vue-tsc --noEmit",
-    "copy-codicons": "cp node_modules/@vscode/codicons/dist/codicon.css node_modules/@vscode/codicons/dist/codicon.ttf ../../out/webviews/projectSelector"
+    "compile": "npm run clean-dist && npm run type-check && npm run vite-build && npm run copy-codicons",
+    "clean-dist": "rm -rd ../../out/webviews/deploySelector | true",
+    "type-check": "vue-tsc --noEmit",
+    "vite-build": "vite build --outDir ../../out/webviews/deploySelector",
+    "copy-codicons": "cp node_modules/@vscode/codicons/dist/codicon.css node_modules/@vscode/codicons/dist/codicon.ttf ../../out/webviews/deploySelector"
   },
   "dependencies": {
     "vue": "^3.4.21",

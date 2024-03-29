@@ -4,19 +4,18 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 
-import * as ports from './ports';
-import { Service } from './services';
-import { ProjectTreeDataProvider } from './views/project';
-import { DeploymentsTreeDataProvider } from './views/deployments';
-import { ConfigurationsTreeDataProvider } from './views/configurations';
-import { FilesTreeDataProvider } from './views/files';
-import { RequirementsTreeDataProvider } from './views/requirements';
-import { CredentialsTreeDataProvider } from './views/credentials';
-import { HelpAndFeedbackTreeDataProvider } from './views/helpAndFeedback';
-import { LogsTreeDataProvider } from './views/logs';
-import { EventStream } from './events';
-import { ProjectSelectorViewProvider } from "./views/projectSelector";
-import { EasyDeployButtonViewProvider } from "./views/easyDeployButton";
+import * as ports from "./ports";
+import { Service } from "./services";
+import { ProjectTreeDataProvider } from "./views/project";
+import { DeploymentsTreeDataProvider } from "./views/deployments";
+import { ConfigurationsTreeDataProvider } from "./views/configurations";
+import { FilesTreeDataProvider } from "./views/files";
+import { RequirementsTreeDataProvider } from "./views/requirements";
+import { CredentialsTreeDataProvider } from "./views/credentials";
+import { HelpAndFeedbackTreeDataProvider } from "./views/helpAndFeedback";
+import { LogsTreeDataProvider } from "./views/logs";
+import { EventStream } from "./events";
+import { DeploySelectorViewProvider } from "./views/deploySelector";
 
 const STATE_CONTEXT = "posit.publish.state";
 const MISSING_CONTEXT = "posit.publish.missing";
@@ -99,8 +98,9 @@ export async function activate(context: vscode.ExtensionContext) {
   new CredentialsTreeDataProvider().register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
   new LogsTreeDataProvider(stream).register(context);
-  new ProjectSelectorViewProvider(context.extensionUri, stream).register(context);
-  new EasyDeployButtonViewProvider(context.extensionUri, stream).register(context);
+  new DeploySelectorViewProvider(context.extensionUri, stream).register(
+    context,
+  );
 
   setStateContext(PositPublishState.initialized);
 }

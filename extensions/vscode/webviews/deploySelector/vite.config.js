@@ -7,7 +7,9 @@ const pluginVue = require("@vitejs/plugin-vue");
 exports.default = (0, vite.defineConfig)({
   plugins: [
     (0, pluginVue.default)({
-      template: { compilerOptions: { isCustomElement: (tag) => tag.includes("vscode-") } },
+      template: {
+        compilerOptions: { isCustomElement: (tag) => tag.includes("vscode-") },
+      },
     }),
   ],
   // resolve: {
@@ -16,7 +18,7 @@ exports.default = (0, vite.defineConfig)({
   //   }
   // },
   build: {
-    outDir: "../../out/webviews/projectSelector",
+    outDir: "../../out/webviews/deploySelector",
     rollupOptions: {
       output: {
         entryFileNames: `[name].js`,
@@ -24,7 +26,7 @@ exports.default = (0, vite.defineConfig)({
         assetFileNames: `[name].[ext]`,
       },
     },
-    sourcemap: 'inline',
+    sourcemap: "inline",
   },
 });
 //# sourceMappingURL=vite.config.js.map
