@@ -3,13 +3,8 @@
 <template>
   <div class="flex items-center justify-between">
     <div class="col">
-      <h2 class="text-h6">
-        Deployments
-      </h2>
-      <p
-        v-if="deployments.hasDeployments"
-        class="q-mt-xs"
-      >
+      <h2 class="text-h6">Deployments</h2>
+      <p v-if="deployments.hasDeployments" class="q-mt-xs">
         Your project has been deployed to:
       </p>
     </div>
@@ -21,10 +16,7 @@
       New Deployment
     </PButton>
   </div>
-  <div
-    v-if="deployments.hasDeployments"
-    class="card-grid"
-  >
+  <div v-if="deployments.hasDeployments" class="card-grid">
     <div
       v-for="deployment in deployments.sortedDeployments"
       :key="deployment.deploymentName"
@@ -38,33 +30,27 @@
       data-automation="add-new-deployment"
     >
       <div class="flex column items-center">
-        <q-icon
-          name="add"
-          size="2rem"
-        />
+        <q-icon name="add" size="2rem" />
         <h3 class="text-body1 text-weight-medium q-mt-sm">
           Add a New Deployment
         </h3>
         <p class="q-mt-xs text-low-contrast">
           This project hasn't been deployed yet.
         </p>
-        <p class="text-low-contrast">
-          Get started by adding a new deployment.
-        </p>
+        <p class="text-low-contrast">Get started by adding a new deployment.</p>
       </div>
     </PCard>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useDeploymentStore } from 'src/stores/deployments';
+import { useDeploymentStore } from "src/stores/deployments";
 
-import DeploymentCard from './DeploymentCard.vue';
-import PButton from 'src/components/PButton.vue';
-import PCard from 'src/components/PCard.vue';
+import DeploymentCard from "./DeploymentCard.vue";
+import PButton from "src/components/PButton.vue";
+import PCard from "src/components/PCard.vue";
 
 const deployments = useDeploymentStore();
-
 </script>
 
 <style scoped lang="scss">

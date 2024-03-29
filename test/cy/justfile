@@ -46,6 +46,20 @@ lint:
 
     npm run lint
 
+format:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run format
+
+check-format:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run check-format
+
 # Install dependencies
 install:
     #!/usr/bin/env bash

@@ -1,0 +1,26 @@
+name: Lint
+on: [workflow_call]
+env:
+  DOCKER: false
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: extractions/setup-just@v2
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+    - run: just vscode deps
+    - run: just vscode lint
+    - run: just vscode check-format
+
+    - run: just web install
+    - run: just web lint
+    - run: just web check-format
+
+    - run: just test/cy install
+    - run: just test/cy lint
+    - run: just test/cy check-format

@@ -10,42 +10,39 @@
     @click="vscode ? router.push(to) : undefined"
     @keyup.enter="vscode ? router.push(to) : undefined"
   >
-    <template
-      v-for="(_, slot) of $slots"
-      #[slot]="scope"
-    >
-      <slot
-        v-if="slot"
-        :name="slot"
-        v-bind="scope"
-      />
+    <template v-for="(_, slot) of $slots" #[slot]="scope">
+      <slot v-if="slot" :name="slot" v-bind="scope" />
     </template>
   </QBtn>
 </template>
 
 <script setup lang="ts">
-import { QBtn, QBtnProps, useQuasar } from 'quasar';
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { QBtn, QBtnProps, useQuasar } from "quasar";
+import { computed } from "vue";
+import { useRouter } from "vue-router";
 
-import { vscode } from 'src/vscode';
+import { vscode } from "src/vscode";
 
-type Hierarchy = 'primary' | 'secondary';
-type QBtnPassthroughProps = Omit<QBtnProps, 'color' | 'textColor' | 'noCaps' | 'unelevated'>;
+type Hierarchy = "primary" | "secondary";
+type QBtnPassthroughProps = Omit<
+  QBtnProps,
+  "color" | "textColor" | "noCaps" | "unelevated"
+>;
 
 const router = useRouter();
 
 const $q = useQuasar();
-const props = defineProps<{
-  hierarchy: Hierarchy;
-} & QBtnPassthroughProps
+const props = defineProps<
+  {
+    hierarchy: Hierarchy;
+  } & QBtnPassthroughProps
 >();
 
 const colors = computed(() => {
-  if (props.hierarchy === 'primary') {
+  if (props.hierarchy === "primary") {
     return {
-      color: $q.dark.isActive ? 'grey-1' : 'grey-10',
-      'text-color': $q.dark.isActive ? 'black' : 'white'
+      color: $q.dark.isActive ? "grey-1" : "grey-10",
+      "text-color": $q.dark.isActive ? "black" : "white",
     };
   }
   return undefined;
@@ -57,4 +54,3 @@ const qBtnPassthroughProps = computed(() => {
   return rest;
 });
 </script>
-

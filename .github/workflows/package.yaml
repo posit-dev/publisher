@@ -5,18 +5,18 @@ jobs:
   vscode:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
       - run: just package
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         id: upload
         with:
-          name: packages
-          path: packages/**/*
+          name: dist
+          path: dist/**/*

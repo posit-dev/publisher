@@ -14,7 +14,7 @@ import (
 )
 
 type ProjectImportScanner interface {
-	ScanProjectImports(base util.Path) ([]ImportName, error)
+	ScanProjectImports(base util.AbsolutePath) ([]ImportName, error)
 }
 
 type defaultProjectImportScanner struct {
@@ -29,14 +29,11 @@ func NewProjectImportScanner(log logging.Logger) *defaultProjectImportScanner {
 	}
 }
 
-func (s *defaultProjectImportScanner) ScanProjectImports(base util.Path) ([]ImportName, error) {
-	ignore, err := gitignore.NewExcludingWalker(base)
-	if err != nil {
-		return nil, err
-	}
+func (s *defaultProjectImportScanner) ScanProjectImports(base util.AbsolutePath) ([]ImportName, error) {
+	ignore := gitignore.NewExcludingWalker(base)
 	var projectImports []ImportName
 
-	err = ignore.Walk(base, func(path util.Path, info fs.FileInfo, err error) error {
+	err := ignore.Walk(base, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

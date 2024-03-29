@@ -57,15 +57,25 @@ clean:
     rm -rf node_modules
     rm -rf out
 
-configure os="$(just ../../os)" arch="$(just ../../arch)":
+# Install dependencies
+deps:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
+
     if [ {{ _ci }} = "true" ]; then
         npm ci --no-audit --no-fund | sed 's/^/debug: /'
     else
         npm install --no-audit --no-fund | sed 's/^/debug: /'
     fi
+
+
+configure os="$(just ../../os)" arch="$(just ../../arch)":
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just deps
 
     echo "info: checking for compatible binary executable..." 1>&2
     binary_executable=$(just ../../executable-path {{ os }} {{ arch }})
@@ -104,6 +114,20 @@ lint:
 
     npm run lint
 
+format:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run format
+
+check-format:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run check-format
+
 # Packages the extension.
 package os="$(just ../../os)" arch="$(just ../../arch)":
     #!/usr/bin/env bash
@@ -135,7 +159,7 @@ package-path:
     set -eou pipefail
     {{ _with_debug }}
 
-    echo $(readlink -f ../../)/packages
+    echo $(readlink -f ../../)/dist
 
 package-target-platform os="$(just ../../os)" arch="$(just ../../arch)":
     #!/usr/bin/env bash

@@ -1,12 +1,12 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { AxiosInstance } from 'axios';
+import { AxiosInstance } from "axios";
 
 import {
   Configuration,
   ConfigurationDetails,
   ConfigurationError,
-} from '../types/configurations';
+} from "../types/configurations";
 
 export class Configurations {
   private client: AxiosInstance;
@@ -20,7 +20,7 @@ export class Configurations {
   // 500 - internal server error
   getAll() {
     return this.client.get<Array<Configuration | ConfigurationError>>(
-      '/configurations',
+      "/configurations",
     );
   }
 
@@ -48,6 +48,6 @@ export class Configurations {
   // 400 - bad request
   // 500 - internal server error
   inspect() {
-    return this.client.post<ConfigurationDetails[]>('/inspect');
+    return this.client.post<ConfigurationDetails[]>("/inspect");
   }
 }

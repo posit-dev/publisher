@@ -15,18 +15,17 @@ const DefaultConfigName = "default"
 
 func New() *Config {
 	return &Config{
-		Schema:     schema.ConfigSchemaURL,
-		Type:       ContentTypeUnknown,
-		Entrypoint: "unknown",
-		Validate:   true,
+		Schema:   schema.ConfigSchemaURL,
+		Type:     ContentTypeUnknown,
+		Validate: true,
 	}
 }
 
-func GetConfigDir(base util.Path) util.Path {
+func GetConfigDir(base util.AbsolutePath) util.AbsolutePath {
 	return base.Join(".posit", "publish")
 }
 
-func GetConfigPath(base util.Path, configName string) util.Path {
+func GetConfigPath(base util.AbsolutePath, configName string) util.AbsolutePath {
 	if configName == "" {
 		configName = DefaultConfigName
 	}
@@ -36,12 +35,12 @@ func GetConfigPath(base util.Path, configName string) util.Path {
 	return GetConfigDir(base).Join(configName)
 }
 
-func ListConfigFiles(base util.Path) ([]util.Path, error) {
+func ListConfigFiles(base util.AbsolutePath) ([]util.AbsolutePath, error) {
 	dir := GetConfigDir(base)
 	return dir.Glob("*.toml")
 }
 
-func FromFile(path util.Path) (*Config, error) {
+func FromFile(path util.AbsolutePath) (*Config, error) {
 	err := ValidateFile(path)
 	if err != nil {
 		return nil, err
@@ -54,7 +53,7 @@ func FromFile(path util.Path) (*Config, error) {
 	return cfg, nil
 }
 
-func ValidateFile(path util.Path) error {
+func ValidateFile(path util.AbsolutePath) error {
 	validator, err := schema.NewValidator[Config](schema.ConfigSchemaURL)
 	if err != nil {
 		return err
@@ -67,7 +66,7 @@ func (cfg *Config) Write(w io.Writer) error {
 	return enc.Encode(cfg)
 }
 
-func (cfg *Config) WriteFile(path util.Path) error {
+func (cfg *Config) WriteFile(path util.AbsolutePath) error {
 	err := path.Dir().MkdirAll(0777)
 	if err != nil {
 		return err

@@ -24,7 +24,7 @@ func TestStaticHTMLDetectorSuite(t *testing.T) {
 }
 
 func (s *StaticHTMLDetectorSuite) TestInferTypePreferredFilename() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -45,7 +45,7 @@ func (s *StaticHTMLDetectorSuite) TestInferTypePreferredFilename() {
 }
 
 func (s *StaticHTMLDetectorSuite) TestInferTypeOnlyHTMLFile() {
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -68,10 +68,10 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeOnlyHTMLFile() {
 func (s *StaticHTMLDetectorSuite) TestInferTypeEntrypointHTMLErr() {
 	inferrer := &MockInferenceHelper{}
 	testError := errors.New("test error from InferEntrypoint")
-	inferrer.On("InferEntrypoint", mock.Anything, ".html", mock.Anything).Return("", util.Path{}, testError)
+	inferrer.On("InferEntrypoint", mock.Anything, ".html", mock.Anything).Return("", util.AbsolutePath{}, testError)
 
 	detector := StaticHTMLDetector{inferrer}
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
@@ -84,11 +84,11 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeEntrypointHTMLErr() {
 func (s *StaticHTMLDetectorSuite) TestInferTypeEntrypointHTMErr() {
 	inferrer := &MockInferenceHelper{}
 	testError := errors.New("test error from InferEntrypoint")
-	inferrer.On("InferEntrypoint", mock.Anything, ".html", mock.Anything).Return("", util.Path{}, nil)
-	inferrer.On("InferEntrypoint", mock.Anything, ".htm", mock.Anything).Return("", util.Path{}, testError)
+	inferrer.On("InferEntrypoint", mock.Anything, ".html", mock.Anything).Return("", util.AbsolutePath{}, nil)
+	inferrer.On("InferEntrypoint", mock.Anything, ".htm", mock.Anything).Return("", util.AbsolutePath{}, testError)
 
 	detector := StaticHTMLDetector{inferrer}
-	base := util.NewPath("/project", afero.NewMemMapFs())
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	t, err := detector.InferType(base)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)

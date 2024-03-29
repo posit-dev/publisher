@@ -29,14 +29,12 @@
       v-if="isDeploymentError(deployment)"
       :deployment="deployment"
     />
-    <DeploymentLogLink
-      :deployment="deployment"
-    />
+    <DeploymentLogLink :deployment="deployment" />
   </template>
 </template>
 
 <script setup lang="ts">
-import { useEventStore } from 'src/stores/events';
+import { useEventStore } from "src/stores/events";
 import {
   Deployment,
   DeploymentError,
@@ -47,16 +45,16 @@ import {
   isSuccessfulDeployment,
   isUnsuccessfulDeployment,
   isDeploymentError,
-} from 'src/api';
+} from "src/api";
 
-import StatusActiveDeployment from './StatusActiveDeployment.vue';
-import StatusErrorDeployment from './StatusErrorDeployment.vue';
-import StatusSuccessDeployment from './StatusSuccessDeployment.vue';
-import StatusErrorPreDeployment from './StatusErrorPreDeployment.vue';
-import StatusDeploymentFileError from './StatusDeploymentFileError.vue';
-import StatusPreDeployment from './StatusPreDeployment.vue';
-import DeploymentLogLink from '../DeploymentLogLink.vue';
-import { PropType } from 'vue';
+import StatusActiveDeployment from "./StatusActiveDeployment.vue";
+import StatusErrorDeployment from "./StatusErrorDeployment.vue";
+import StatusSuccessDeployment from "./StatusSuccessDeployment.vue";
+import StatusErrorPreDeployment from "./StatusErrorPreDeployment.vue";
+import StatusDeploymentFileError from "./StatusDeploymentFileError.vue";
+import StatusPreDeployment from "./StatusPreDeployment.vue";
+import DeploymentLogLink from "../DeploymentLogLink.vue";
+import { PropType } from "vue";
 
 const events = useEventStore();
 
@@ -82,5 +80,4 @@ const isActive = (
     events.isPublishActiveForDeployment(d.deploymentName)
   );
 };
-
 </script>

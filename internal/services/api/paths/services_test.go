@@ -28,18 +28,23 @@ func (s *ServicesSuite) SetupSuite() {
 
 func (s *ServicesSuite) TestCreatePathsService() {
 	afs := afero.NewMemMapFs()
-	base := util.NewPath("", afs)
+	base, err := util.Getwd(afs)
+	s.NoError(err)
 	service := CreatePathsService(base, s.log)
 	s.NotNil(service)
 }
 
 func (s *ServicesSuite) TestPathsService_IsSafe() {
 	afs := afero.NewMemMapFs()
-	base := util.NewPath("", afs)
+	base, err := util.Getwd(afs)
+	s.NoError(err)
+	err = base.MkdirAll(0777)
+	s.NoError(err)
+
 	service := CreatePathsService(base, s.log)
 	ok, err := service.IsSafe(base)
-	s.True(ok)
 	s.Nil(err)
+	s.True(ok)
 }
 
 func (s *ServicesSuite) TestPathsService_isSymlink_True() {
@@ -65,8 +70,8 @@ func (s *ServicesSuite) TestPathsService_isSymlink_True() {
 
 	afs := afero.NewOsFs()
 
-	fpath := util.NewPath(f.Name(), afs)
-	lpath := util.NewPath(l.Name(), afs)
+	fpath := util.NewAbsolutePath(f.Name(), afs)
+	lpath := util.NewAbsolutePath(l.Name(), afs)
 
 	ps := pathsService{fpath, s.log}
 	ok, err := ps.isSymlink(lpath)
@@ -84,8 +89,8 @@ func (s *ServicesSuite) TestPathsService_isSymlink_False_FileFound() {
 
 	afs := afero.NewOsFs()
 
-	fpath := util.NewPath(f.Name(), afs)
-	lpath := util.NewPath(f.Name(), afs)
+	fpath := util.NewAbsolutePath(f.Name(), afs)
+	lpath := util.NewAbsolutePath(f.Name(), afs)
 
 	ps := pathsService{fpath, s.log}
 	ok, err := ps.isSymlink(lpath)
@@ -103,8 +108,8 @@ func (s *ServicesSuite) TestPathsService_isSymlink_False_FileMissing() {
 
 	afs := afero.NewOsFs()
 
-	fpath := util.NewPath(f.Name(), afs)
-	lpath := util.NewPath("Not Found", afs)
+	fpath := util.NewAbsolutePath(f.Name(), afs)
+	lpath := util.NewAbsolutePath("/Not Found", afs)
 
 	ps := pathsService{fpath, s.log}
 	ok, err := ps.isSymlink(lpath)
@@ -141,8 +146,11 @@ func (s *ServicesSuite) TestPathsService_isTrusted() {
 	for _, t := range isTrustedTests {
 		afs := afero.NewMemMapFs()
 
-		fpath := util.NewPath("", afs)
-		tpath := util.NewPath(t.path, afs)
+		fpath, err := util.Getwd(afs)
+		s.NoError(err)
+
+		tpath, err := util.NewRelativePath(t.path, afs).Abs()
+		s.NoError(err)
 
 		ps := pathsService{fpath, s.log}
 		res, _ := ps.isTrusted(tpath)

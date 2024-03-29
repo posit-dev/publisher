@@ -8,7 +8,7 @@ import (
 )
 
 type DependencyScanner interface {
-	ScanDependencies(base util.Path, pythonExecutable string) ([]*PackageSpec, error)
+	ScanDependencies(base util.AbsolutePath, pythonExecutable string) ([]*PackageSpec, error)
 }
 
 type defaultDependencyScanner struct {
@@ -25,7 +25,7 @@ func NewDependencyScanner(log logging.Logger) *defaultDependencyScanner {
 	}
 }
 
-func (s *defaultDependencyScanner) ScanDependencies(base util.Path, pythonExecutable string) ([]*PackageSpec, error) {
+func (s *defaultDependencyScanner) ScanDependencies(base util.AbsolutePath, pythonExecutable string) ([]*PackageSpec, error) {
 	importNames, err := s.scanner.ScanProjectImports(base)
 	if err != nil {
 		return nil, err

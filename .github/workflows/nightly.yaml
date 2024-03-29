@@ -22,9 +22,21 @@ jobs:
     needs: nightly
     secrets: inherit
     uses: ./.github/workflows/cleanup.yaml
+  package:
+    needs: build
+    uses: ./.github/workflows/package.yaml
+  archive:
+    needs: build
+    uses: ./.github/workflows/archive.yaml
+  upload:
+    needs:
+      - archive
+      - package
+    uses: ./.github/workflows/upload.yaml
+    with: 
+      nightly: true
+    secrets: inherit
 
   # Extensions
-  jupyterlab:
-    uses: ./.github/workflows/jupyterlab.yaml
   vscode:
     uses: ./.github/workflows/vscode.yaml

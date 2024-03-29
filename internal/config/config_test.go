@@ -4,6 +4,7 @@ package config
 
 import (
 	"io/fs"
+	"strings"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/schema"
@@ -15,7 +16,7 @@ import (
 
 type ConfigSuite struct {
 	utiltest.Suite
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestConfigSuite(t *testing.T) {
@@ -35,6 +36,10 @@ func (s *ConfigSuite) createConfigFile(name string) {
 	cfg := New()
 	cfg.Type = "python-dash"
 	cfg.Entrypoint = "app.py"
+	cfg.Python = &Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+	}
 	err := cfg.WriteFile(configFile)
 	s.NoError(err)
 }
@@ -90,9 +95,28 @@ func (s *ConfigSuite) TestWriteFile() {
 	s.NoError(err)
 }
 
+func (s *ConfigSuite) TestWriteFileEmptyEntrypoing() {
+	configFile := GetConfigPath(s.cwd, "myConfig")
+	cfg := New()
+	cfg.Type = ContentTypeHTML
+	cfg.Entrypoint = ""
+	err := cfg.WriteFile(configFile)
+	s.NoError(err)
+
+	// Ensure it validates
+	_, err = FromFile(configFile)
+	s.NoError(err)
+
+	contents, err := configFile.ReadFile()
+	s.NoError(err)
+	lines := strings.Split(string(contents), "\n")
+	s.Contains(lines, "entrypoint = ''")
+}
+
 func (s *ConfigSuite) TestWriteFileErr() {
 	configFile := GetConfigPath(s.cwd, "myConfig")
-	readonlyFile := util.NewPath(configFile.Path(), afero.NewReadOnlyFs(configFile.Fs()))
+	readonlyFs := afero.NewReadOnlyFs(configFile.Fs())
+	readonlyFile := configFile.WithFs(readonlyFs)
 	cfg := New()
 	err := cfg.WriteFile(readonlyFile)
 	s.NotNil(err)

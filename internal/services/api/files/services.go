@@ -12,10 +12,10 @@ import (
 )
 
 type FilesService interface {
-	GetFile(path util.Path, ignore gitignore.IgnoreList) (*File, error)
+	GetFile(path util.AbsolutePath, ignore gitignore.IgnoreList) (*File, error)
 }
 
-func CreateFilesService(base util.Path, log logging.Logger) FilesService {
+func CreateFilesService(base util.AbsolutePath, log logging.Logger) FilesService {
 	return filesService{
 		root: base,
 		log:  log,
@@ -23,22 +23,19 @@ func CreateFilesService(base util.Path, log logging.Logger) FilesService {
 }
 
 type filesService struct {
-	root util.Path
+	root util.AbsolutePath
 	log  logging.Logger
 }
 
-func (s filesService) GetFile(p util.Path, ignore gitignore.IgnoreList) (*File, error) {
-	oldWD, err := util.Chdir(p.Path())
+func (s filesService) GetFile(p util.AbsolutePath, ignore gitignore.IgnoreList) (*File, error) {
+	oldWD, err := util.Chdir(p.String())
 	if err != nil {
 		return nil, err
 	}
 	defer util.Chdir(oldWD)
 
 	p = p.Clean()
-	m, err := ignore.Match(p.String())
-	if err != nil {
-		return nil, err
-	}
+	m := ignore.Match(p)
 
 	file, err := CreateFile(s.root, p, m)
 	if err != nil {
@@ -46,7 +43,7 @@ func (s filesService) GetFile(p util.Path, ignore gitignore.IgnoreList) (*File, 
 	}
 
 	walker := util.NewSymlinkWalker(util.FSWalker{}, s.log)
-	err = walker.Walk(p, func(path util.Path, info fs.FileInfo, err error) error {
+	err = walker.Walk(p, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			// Ignore Python environment directories. We check for these
 			// separately because they aren't expressible as gitignore patterns.

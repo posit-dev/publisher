@@ -1,7 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { AxiosInstance } from 'axios';
-import { RequirementsResponse } from '../types/requirements';
+import { AxiosInstance } from "axios";
+import { RequirementsResponse } from "../types/requirements";
 
 export class Requirements {
   private client: AxiosInstance;
@@ -15,9 +15,7 @@ export class Requirements {
   // 404 - no requirements file found
   // 500 - internal server error
   getAll() {
-    return this.client.get<RequirementsResponse>(
-      'requirements',
-    );
+    return this.client.get<RequirementsResponse>("requirements");
   }
 
   // Returns:
@@ -25,9 +23,6 @@ export class Requirements {
   // 400 - bad request
   // 500 - internal server error
   create(saveName: string | undefined) {
-    return this.client.post<void>(
-      'requirements',
-      { saveName }
-    );
+    return this.client.post<void>("requirements", { saveName });
   }
 }

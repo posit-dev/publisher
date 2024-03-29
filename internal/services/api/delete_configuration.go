@@ -13,7 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func DeleteConfigurationHandlerFunc(base util.Path, log logging.Logger) http.HandlerFunc {
+func DeleteConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
 		path := config.GetConfigPath(base, name)

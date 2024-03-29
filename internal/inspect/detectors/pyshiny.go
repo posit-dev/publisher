@@ -26,7 +26,7 @@ func hasShinyExpressImport(content string) bool {
 	return shinyExpressImportRE.MatchString(content)
 }
 
-func fileHasShinyExpressImport(path util.Path) (bool, error) {
+func fileHasShinyExpressImport(path util.AbsolutePath) (bool, error) {
 	content, err := path.ReadFile()
 	if err != nil {
 		return false, err
@@ -44,7 +44,7 @@ func shinyExpressEntrypoint(entrypoint string) string {
 	return "shiny.express.app:" + safeEntrypoint
 }
 
-func (d *pyShinyDetector) InferType(path util.Path) (*config.Config, error) {
+func (d *pyShinyDetector) InferType(path util.AbsolutePath) (*config.Config, error) {
 	entrypoint, entrypointPath, err := d.InferEntrypoint(path, ".py", "main.py", "app.py")
 	if err != nil {
 		return nil, err

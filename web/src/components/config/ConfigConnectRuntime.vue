@@ -1,10 +1,7 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <ConfigSection
-    v-if="runtime"
-    title="Connect Runtime"
-  >
+  <ConfigSection v-if="runtime" title="Connect Runtime">
     <ConfigSetting
       v-if="runtime.connectionTimeout !== undefined"
       label="Connection Timeout"
@@ -64,11 +61,11 @@
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType } from "vue";
 
-import { ConnectRuntime } from 'src/api';
-import ConfigSection from 'src/components/config/ConfigSection.vue';
-import ConfigSetting from 'src/components/config/ConfigSetting.vue';
+import { ConnectRuntime } from "src/api";
+import ConfigSection from "src/components/config/ConfigSection.vue";
+import ConfigSetting from "src/components/config/ConfigSetting.vue";
 
 defineProps({
   runtime: {
@@ -80,7 +77,6 @@ defineProps({
     type: Object as PropType<ConnectRuntime>,
     default: undefined,
     required: false,
-  }
+  },
 });
 </script>
-

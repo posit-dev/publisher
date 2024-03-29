@@ -3,7 +3,6 @@ package util
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -14,7 +13,7 @@ import (
 
 type TOMLSuite struct {
 	utiltest.Suite
-	testdata Path
+	testdata AbsolutePath
 }
 
 func TestTOMLSuite(t *testing.T) {
@@ -24,7 +23,8 @@ func TestTOMLSuite(t *testing.T) {
 func (s *TOMLSuite) SetupTest() {
 	_, filename, _, ok := runtime.Caller(0)
 	s.True(ok)
-	s.testdata = NewPath(filepath.Dir(filename), nil).Join("testdata", "toml")
+	dir := NewAbsolutePath(filename, nil).Dir()
+	s.testdata = dir.Join("testdata", "toml")
 }
 
 func (s *TOMLSuite) TestReadTOMLFile() {

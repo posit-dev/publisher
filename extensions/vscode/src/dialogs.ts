@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { MessageItem, l10n, window } from 'vscode';
+import { MessageItem, l10n, window } from "vscode";
 
 const okItem: MessageItem = {
   title: l10n.t("OK"),
@@ -23,13 +23,20 @@ const replaceItem: MessageItem = {
 };
 
 const yesItem: MessageItem = {
-  title: l10n.t('Yes'),
+  title: l10n.t("Yes"),
 };
 
-async function confirm(message: string, affirmativeItem: MessageItem): Promise<boolean> {
-  const choice = await window.showInformationMessage(message, {
-    modal: true,
-  }, affirmativeItem);
+async function confirm(
+  message: string,
+  affirmativeItem: MessageItem,
+): Promise<boolean> {
+  const choice = await window.showInformationMessage(
+    message,
+    {
+      modal: true,
+    },
+    affirmativeItem,
+  );
   return choice === affirmativeItem;
 }
 

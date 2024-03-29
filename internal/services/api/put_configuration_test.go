@@ -22,7 +22,7 @@ import (
 type PutConfigurationSuite struct {
 	utiltest.Suite
 	log logging.Logger
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestPutConfigurationSuite(t *testing.T) {
@@ -53,7 +53,11 @@ func (s *PutConfigurationSuite) TestPutConfiguration() {
 	req.Body = io.NopCloser(strings.NewReader(`{
 		"$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
 		"type": "python-shiny",
-		"entrypoint": "app.py"
+		"entrypoint": "app.py",
+		"python": {
+			"version": "3.4.5",
+			"packageManager": "pip"
+		}
 	}`))
 
 	handler := PutConfigurationHandlerFunc(s.cwd, log)

@@ -4,30 +4,19 @@
   <div class="config-setting">
     <dt class="config-label text-weight-medium space-between-x-sm">
       <span>{{ label }}</span>
-      <span
-        v-if="showDiff"
-        class="text-low-contrast text-weight-regular"
-      >
+      <span v-if="showDiff" class="text-low-contrast text-weight-regular">
         Changed since last deploy
       </span>
     </dt>
     <dd class="config-value">
-      <div
-        v-if="value !== undefined"
-        class="flex gap-sm"
-      >
-        <template
-          v-if="showDiff"
-        >
+      <div v-if="value !== undefined" class="flex gap-sm">
+        <template v-if="showDiff">
           <DiffTag
             v-if="previousValue !== undefined"
             diff-type="removed"
             :value="previousValue"
           />
-          <DiffTag
-            diff-type="inserted"
-            :value="value"
-          />
+          <DiffTag diff-type="inserted" :value="value" />
         </template>
         <span v-else>{{ value }}</span>
       </div>
@@ -37,11 +26,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject } from 'vue';
+import { computed, inject } from "vue";
 
-import { isPreDeployment } from 'src/api';
-import DiffTag from 'src/components/DiffTag.vue';
-import { deploymentKey } from 'src/utils/provide';
+import { isPreDeployment } from "src/api";
+import DiffTag from "src/components/DiffTag.vue";
+import { deploymentKey } from "src/utils/provide";
 
 const props = defineProps({
   label: {

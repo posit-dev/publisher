@@ -25,7 +25,7 @@ import (
 
 type PostDeploymentHandlerFuncSuite struct {
 	utiltest.Suite
-	cwd util.Path
+	cwd util.AbsolutePath
 }
 
 func TestPostDeploymentHandlerFuncSuite(t *testing.T) {
@@ -73,7 +73,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		return publisher, nil
 	}
 	stateFactory = func(
-		path util.Path,
+		path util.AbsolutePath,
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList) (*state.State, error) {
 		s.Equal("myTargetName", targetName)
@@ -82,7 +82,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		s.Equal("", saveName)
 		return state.Empty(), nil
 	}
-	handler := PostDeploymentHandlerFunc(util.Path{}, log, lister, events.NewNullEmitter())
+	handler := PostDeploymentHandlerFunc(util.AbsolutePath{}, log, lister, events.NewNullEmitter())
 	handler(rec, req)
 
 	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
@@ -97,7 +97,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncBadJSON() 
 
 	req.Body = io.NopCloser(strings.NewReader(`{"random": "123"}`))
 
-	handler := PostDeploymentHandlerFunc(util.Path{}, log, nil, events.NewNullEmitter())
+	handler := PostDeploymentHandlerFunc(util.AbsolutePath{}, log, nil, events.NewNullEmitter())
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -110,13 +110,13 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 	req.Body = io.NopCloser(strings.NewReader("{}"))
 
 	stateFactory = func(
-		path util.Path,
+		path util.AbsolutePath,
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return nil, errors.New("test error from state factory")
 	}
 
-	handler := PostDeploymentHandlerFunc(util.Path{}, log, nil, events.NewNullEmitter())
+	handler := PostDeploymentHandlerFunc(util.AbsolutePath{}, log, nil, events.NewNullEmitter())
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -131,7 +131,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 	req.Body = io.NopCloser(strings.NewReader(`{"account": "local", "config": "default"}`))
 
 	stateFactory = func(
-		path util.Path,
+		path util.AbsolutePath,
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList) (*state.State, error) {
 		return state.Empty(), nil
@@ -144,7 +144,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 		return publisher, nil
 	}
 
-	handler := PostDeploymentHandlerFunc(util.Path{}, log, lister, events.NewNullEmitter())
+	handler := PostDeploymentHandlerFunc(util.AbsolutePath{}, log, lister, events.NewNullEmitter())
 	handler(rec, req)
 
 	// Handler returns 202 Accepted even if publishing errs,

@@ -1,4 +1,4 @@
-#  API Wrapper Library
+# API Wrapper Library
 
 A library to enable convenient access to the Publisher Client API and its
 response types.
@@ -6,7 +6,7 @@ response types.
 ## Usage
 
 ```typescript
-import { useApi } from 'src/api';
+import { useApi } from "src/api";
 
 const api = useApi();
 
@@ -22,7 +22,7 @@ using `setBaseUrl`. This changes the client so all requests will use the new
 base URL. This will need to be done before any requests are made.
 
 ```typescript
-api.setBaseUrl('http://localhost:9000/api');
+api.setBaseUrl("http://localhost:9000/api");
 ```
 
 ## Organization

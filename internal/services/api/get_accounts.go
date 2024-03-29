@@ -23,9 +23,7 @@ type getAccountResponse struct {
 	AccountName string `json:"accountName"` // For shinyapps.io and Posit Cloud servers
 }
 
-type getAccountsResponse struct {
-	Accounts []*getAccountResponse `json:"accounts"`
-}
+type getAccountsResponse []*getAccountResponse
 
 // toGetAccountResponse converts an internal Account object
 // to the DTO type we return from the API.
@@ -50,9 +48,9 @@ func GetAccountsHandlerFunc(lister accounts.AccountList, log logging.Logger) htt
 			InternalError(w, req, log, err)
 			return
 		}
-		data := &getAccountsResponse{}
+		data := getAccountsResponse{}
 		for _, acct := range accounts {
-			data.Accounts = append(data.Accounts, toGetAccountResponse(&acct))
+			data = append(data, toGetAccountResponse(&acct))
 		}
 
 		w.Header().Set("content-type", "application/json")

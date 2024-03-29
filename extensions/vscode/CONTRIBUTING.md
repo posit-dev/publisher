@@ -59,9 +59,9 @@ When testing, utilize the sample projects in `../../test/sample-content`. Open t
 
 ### Packaging
 
-This project uses [`@vscode/vsce`](https://github.com/microsoft/vscode-vsce) to build packages.
+This project uses [`@vscode/vsce`](https://github.com/microsoft/vscode-vsce) to build extension packages.
 
-Run the following command to build a new package. The package is output to the `../../packages` directory.
+Run the following command to build a new package. The package is output to the `../../dist` directory.
 
 ```console
 just package

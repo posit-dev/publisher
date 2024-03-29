@@ -7,11 +7,11 @@ VSCode or Positron.
 
 Download and install the VSCode extension.
 
-- For Arm MacOS: [publisher-1.0.alpha3-darwin-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha3/publisher-1.0.alpha3-darwin-arm64.vsix)
-- For Intel MacOS: [publisher-1.0.alpha3-darwin-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha3/publisher-1.0.alpha3-darwin-amd64.vsix)
-- For Windows: [publisher-1.0.alpha3-windows-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha3/publisher-1.0.alpha3-windows-amd64.vsix)
-- For Arm Linux: [publisher-1.0.alpha3-linux-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha3/publisher-1.0.alpha3-linux-arm64.vsix)
-- For Intel Linux: [publisher-1.0.alpha3-linux-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha3/publisher-1.0.alpha3-linux-amd64.vsix)
+- For Arm MacOS: [publisher-1.0.alpha4-darwin-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha4/publisher-1.0.alpha4-darwin-arm64.vsix)
+- For Intel MacOS: [publisher-1.0.alpha4-darwin-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha4/publisher-1.0.alpha4-darwin-amd64.vsix)
+- For Windows: [publisher-1.0.alpha4-windows-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha4/publisher-1.0.alpha4-windows-amd64.vsix)
+- For Arm Linux: [publisher-1.0.alpha4-linux-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha4/publisher-1.0.alpha4-linux-arm64.vsix)
+- For Intel Linux: [publisher-1.0.alpha4-linux-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha4/publisher-1.0.alpha4-linux-amd64.vsix)
 
 To learn how to install a `.vsix` file, see the [Install from a
 VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
@@ -56,6 +56,14 @@ The script explains what it does and then pauses before it does it.
     1. `sudo install -o root -g wheel -m 0755 ./bin/publisher /usr/local/bin`.
        Replace `/usr/local/bin` with your preferred installation directory.
        Otherwise, you may need to allow access manually after first invocation.
+       
+## Optional: Install Quarto
+
+If you plan on deploying Quarto content having Quarto installed will allow
+Posit Publisher to correctly detect Quarto application types for easier
+deploying.
+
+[Quarto - Get Started](https://quarto.org/docs/get-started/)
 
 ## Verification
 

@@ -17,7 +17,7 @@ import (
 var ContentDetectorFactory = detectors.NewContentTypeDetector
 var PythonInspectorFactory = inspect.NewPythonInspector
 
-func inspectProject(base util.Path, python util.Path, log logging.Logger) (*config.Config, error) {
+func inspectProject(base util.AbsolutePath, python util.Path, log logging.Logger) (*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory()
 
@@ -50,8 +50,8 @@ func inspectProject(base util.Path, python util.Path, log logging.Logger) (*conf
 	return cfg, nil
 }
 
-func requiresPython(cfg *config.Config, base util.Path, python util.Path) (bool, error) {
-	if python.Path() != "" {
+func requiresPython(cfg *config.Config, base util.AbsolutePath, python util.Path) (bool, error) {
+	if python.String() != "" {
 		// If user provided Python on the command line,
 		// then configure Python for the project.
 		return true, nil
@@ -75,7 +75,7 @@ const defaultPositignoreContent = `# List any files or directories that should n
 # Wildcards are supported as in .gitignore: https://git-scm.com/docs/gitignore
 `
 
-func createPositignoreIfNeeded(base util.Path, log logging.Logger) error {
+func createPositignoreIfNeeded(base util.AbsolutePath, log logging.Logger) error {
 	ignorePath := base.Join(gitignore.IgnoreFilename)
 	exists, err := ignorePath.Exists()
 	if err != nil {
@@ -88,7 +88,7 @@ func createPositignoreIfNeeded(base util.Path, log logging.Logger) error {
 	return ignorePath.WriteFile([]byte(defaultPositignoreContent), 0666)
 }
 
-func GetPossibleConfigs(base util.Path, python util.Path, log logging.Logger) ([]*config.Config, error) {
+func GetPossibleConfigs(base util.AbsolutePath, python util.Path, log logging.Logger) ([]*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory()
 	configs, err := typeDetector.InferAll(base)
@@ -121,7 +121,7 @@ func GetPossibleConfigs(base util.Path, python util.Path, log logging.Logger) ([
 	return configs, nil
 }
 
-func Init(base util.Path, configName string, python util.Path, log logging.Logger) (*config.Config, error) {
+func Init(base util.AbsolutePath, configName string, python util.Path, log logging.Logger) (*config.Config, error) {
 	if configName == "" {
 		configName = config.DefaultConfigName
 	}
@@ -142,7 +142,7 @@ func Init(base util.Path, configName string, python util.Path, log logging.Logge
 }
 
 // InitIfNeeded runs an auto-initialize if the specified config file does not exist.
-func InitIfNeeded(path util.Path, configName string, log logging.Logger) error {
+func InitIfNeeded(path util.AbsolutePath, configName string, log logging.Logger) error {
 	configPath := config.GetConfigPath(path, configName)
 	exists, err := configPath.Exists()
 	if err != nil {

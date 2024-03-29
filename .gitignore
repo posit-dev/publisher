@@ -4,7 +4,7 @@ cover.out
 archives/
 bin/
 certs/
-packages/
+dist/
 
 .DS_Store
 

@@ -1,23 +1,12 @@
 <!-- Copyright (C) 2023 by Posit Software, PBC. -->
 
 <template>
-  <div
-    class="p-card"
-    :class="{ hoverable: to }"
-  >
+  <div class="p-card" :class="{ hoverable: to }">
     <section class="card-header flex justify-between">
       <div class="flex items-center no-wrap">
-        <q-icon
-          v-if="icon"
-          :name="icon"
-          size="20px"
-          class="q-mr-sm"
-        />
+        <q-icon v-if="icon" :name="icon" size="20px" class="q-mr-sm" />
 
-        <h3
-          v-if="title"
-          class="card-title truncate"
-        >
+        <h3 v-if="title" class="card-title truncate">
           {{ title }}
         </h3>
 
@@ -33,37 +22,28 @@
         </q-tooltip>
       </div>
 
-      <q-btn
-        v-if="$slots.menu"
-        padding="xs"
-        flat
-        icon="more_vert"
-      >
+      <q-btn v-if="$slots.menu" padding="xs" flat icon="more_vert">
         <slot name="menu" />
       </q-btn>
     </section>
 
     <slot />
 
-    <PLink
-      v-if="to"
-      class="link-fill"
-      :to="to"
-    />
+    <PLink v-if="to" class="link-fill" :to="to" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { PropType } from 'vue';
-import { RouteLocationRaw } from 'vue-router';
+import { PropType } from "vue";
+import { RouteLocationRaw } from "vue-router";
 
-import PLink from 'src/components/PLink.vue';
+import PLink from "src/components/PLink.vue";
 
 defineProps({
   to: {
     type: Object as PropType<RouteLocationRaw>,
     default: undefined,
-    required: false
+    required: false,
   },
   title: {
     type: String,
@@ -73,42 +53,42 @@ defineProps({
   icon: {
     type: String,
     default: undefined,
-    required: false
+    required: false,
   },
   titleTooltip: {
     type: String,
     default: undefined,
-    required: false
-  }
+    required: false,
+  },
 });
 </script>
 
 <style scoped lang="scss">
 .p-card {
-    position: relative;
-    border-radius: 8px;
-    border: 1px solid;
-    padding: 24px;
+  position: relative;
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 24px;
 
-    .link-fill {
-      text-decoration: none;
-      display: block;
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-    }
+  .link-fill {
+    text-decoration: none;
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
 
-    .card-header {
-      &:not(:empty) {
-        margin-bottom: 12px;
-      }
+  .card-header {
+    &:not(:empty) {
+      margin-bottom: 12px;
     }
+  }
 
-    .card-title {
-      font-size: 16px;
-      font-weight: 500;
-      line-height: 1.5;
-    }
+  .card-title {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.5;
+  }
 }
 
 .body--light {
@@ -141,4 +121,3 @@ defineProps({
   z-index: 2;
 }
 </style>
-

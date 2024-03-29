@@ -115,7 +115,7 @@ clean:
 
     rm -rf ./archives
     rm -rf ./bin
-    rm -rf ./packages
+    rm -rf ./dist
 
 # Prints shell commands to configure executable on path. Configure your shell via: eval "$(just configure)"
 configure:
@@ -198,15 +198,6 @@ install:
         fi
     fi
 
-
-jupyterlab *args:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just _with_docker just extensions/jupyterlab/connect_jupyterlab/{{ args }}
-
-
 # staticcheck, vet, and format check
 lint: stub
     #!/usr/bin/env bash
@@ -280,12 +271,12 @@ test *args=("./..."): stub
     just _with_docker go test {{ args }} -covermode set -coverprofile=cover.out
 
 # Uploads distributions to object storage. If invoked with `env CI=true` then all architectures supported by the Go toolchain are uploaded.
-upload:
+upload *args:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
 
-    just _with_docker ./scripts/upload.bash {{ _cmd }}
+    just _with_docker ./scripts/upload.bash {{ _cmd }} {{ args }}
 
 # Executes commands in ./web/Justfile. Equivalent to `just web/dist`, but inside of Docker (i.e., just _with_docker web/dist).
 web *args:

@@ -14,7 +14,7 @@ import {
   env,
   window,
   workspace,
-} from 'vscode';
+} from "vscode";
 
 import {
   AllDeploymentTypes,
@@ -25,39 +25,42 @@ import {
   isDeploymentError,
   isPreDeployment,
   useApi,
-} from '../api';
+} from "../api";
 
-import { confirmForget } from '../dialogs';
-import { EventStream } from '../events';
-import { addDeployment } from '../multiStepInputs/addDeployment';
-import { publishDeployment } from '../multiStepInputs/deployProject';
-import { formatDateString } from '../utils/date';
-import { getSummaryStringFromError } from '../utils/errors';
+import { confirmForget } from "../dialogs";
+import { EventStream } from "../events";
+import { addDeployment } from "../multiStepInputs/addDeployment";
+import { publishDeployment } from "../multiStepInputs/deployProject";
+import { formatDateString } from "../utils/date";
+import { getSummaryStringFromError } from "../utils/errors";
 
-const viewName = 'posit.publisher.deployments';
-const refreshCommand = viewName + '.refresh';
-const editCommand = viewName + '.edit';
-const forgetCommand = viewName + '.forget';
-const visitCommand = viewName + '.visit';
-const addCommand = viewName + '.add';
-const deployCommand = viewName + '.deploy';
-const isEmptyContext = viewName + '.isEmpty';
+const viewName = "posit.publisher.deployments";
+const refreshCommand = viewName + ".refresh";
+const editCommand = viewName + ".edit";
+const forgetCommand = viewName + ".forget";
+const visitCommand = viewName + ".visit";
+const addCommand = viewName + ".add";
+const deployCommand = viewName + ".deploy";
+const isEmptyContext = viewName + ".isEmpty";
 
-const fileStore = '.posit/publish/deployments/*.toml';
+const fileStore = ".posit/publish/deployments/*.toml";
 
-type DeploymentsEventEmitter = EventEmitter<DeploymentsTreeItem | undefined | void>;
+type DeploymentsEventEmitter = EventEmitter<
+  DeploymentsTreeItem | undefined | void
+>;
 type DeploymentsEvent = Event<DeploymentsTreeItem | undefined | void>;
 
-export class DeploymentsTreeDataProvider implements TreeDataProvider<DeploymentsTreeItem> {
+export class DeploymentsTreeDataProvider
+  implements TreeDataProvider<DeploymentsTreeItem>
+{
   private root: WorkspaceFolder | undefined;
   private _onDidChangeTreeData: DeploymentsEventEmitter = new EventEmitter();
-  readonly onDidChangeTreeData: DeploymentsEvent = this._onDidChangeTreeData.event;
+  readonly onDidChangeTreeData: DeploymentsEvent =
+    this._onDidChangeTreeData.event;
 
   private api = useApi();
 
-  constructor(
-    private stream: EventStream
-  ) {
+  constructor(private stream: EventStream) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -73,7 +76,9 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
     return element;
   }
 
-  async getChildren(element: DeploymentsTreeItem | undefined): Promise<DeploymentsTreeItem[]> {
+  async getChildren(
+    element: DeploymentsTreeItem | undefined,
+  ): Promise<DeploymentsTreeItem[]> {
     if (element) {
       // flat organization of deployments, so no children.
       return [];
@@ -90,68 +95,90 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
       // 500 - internal server error
       const response = await this.api.deployments.getAll();
       const deployments = response.data;
-      commands.executeCommand('setContext', isEmptyContext, deployments.length === 0);
+      commands.executeCommand(
+        "setContext",
+        isEmptyContext,
+        deployments.length === 0,
+      );
 
-      return deployments.map(deployment => {
+      return deployments.map((deployment) => {
         const fileUri = Uri.file(deployment.deploymentPath);
         return new DeploymentsTreeItem(deployment, fileUri);
       });
     } catch (error: unknown) {
-      const summary = getSummaryStringFromError('deployments::getChildren', error);
-      commands.executeCommand('setContext', isEmptyContext, true);
+      const summary = getSummaryStringFromError(
+        "deployments::getChildren",
+        error,
+      );
+      commands.executeCommand("setContext", isEmptyContext, true);
       window.showInformationMessage(summary);
       return [];
     }
   }
 
   public register(context: ExtensionContext) {
-    const treeView = window.createTreeView(viewName, { treeDataProvider: this });
+    const treeView = window.createTreeView(viewName, {
+      treeDataProvider: this,
+    });
     context.subscriptions.push(treeView);
 
     context.subscriptions.push(
       commands.registerCommand(addCommand, () => {
         addDeployment(this.stream);
-      })
-    );
-
-    context.subscriptions.push(
-      commands.registerCommand(refreshCommand, this.refresh)
-    );
-
-    context.subscriptions.push(
-      commands.registerCommand(editCommand, async (item: DeploymentsTreeItem) => {
-        await commands.executeCommand('vscode.open', item.fileUri);
-      })
-    );
-
-    context.subscriptions.push(
-      commands.registerCommand(deployCommand, async (item: DeploymentsTreeItem) => {
-        if (!isDeploymentError(item.deployment)) {
-          publishDeployment(item.deployment, this.stream);
-        }
-      })
-    );
-
-    context.subscriptions.push(
-      commands.registerCommand(forgetCommand, async (item: DeploymentsTreeItem) => {
-        const ok = await confirmForget(`Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`);
-        if (ok) {
-          await this.api.deployments.delete(item.deployment.deploymentName);
-        }
       }),
-      commands.registerCommand(visitCommand, async (item: DeploymentsTreeItem) => {
-        // This command is only registered for Deployments
-        if (isDeployment(item.deployment)) {
-          const uri = Uri.parse(item.deployment.dashboardUrl, true);
-          await env.openExternal(uri);
-        }
-      })
     );
 
+    context.subscriptions.push(
+      commands.registerCommand(refreshCommand, this.refresh),
+    );
+
+    context.subscriptions.push(
+      commands.registerCommand(
+        editCommand,
+        async (item: DeploymentsTreeItem) => {
+          await commands.executeCommand("vscode.open", item.fileUri);
+        },
+      ),
+    );
+
+    context.subscriptions.push(
+      commands.registerCommand(
+        deployCommand,
+        async (item: DeploymentsTreeItem) => {
+          if (!isDeploymentError(item.deployment)) {
+            publishDeployment(item.deployment, this.stream);
+          }
+        },
+      ),
+    );
+
+    context.subscriptions.push(
+      commands.registerCommand(
+        forgetCommand,
+        async (item: DeploymentsTreeItem) => {
+          const ok = await confirmForget(
+            `Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`,
+          );
+          if (ok) {
+            await this.api.deployments.delete(item.deployment.deploymentName);
+          }
+        },
+      ),
+      commands.registerCommand(
+        visitCommand,
+        async (item: DeploymentsTreeItem) => {
+          // This command is only registered for Deployments
+          if (isDeployment(item.deployment)) {
+            const uri = Uri.parse(item.deployment.dashboardUrl, true);
+            await env.openExternal(uri);
+          }
+        },
+      ),
+    );
 
     if (this.root !== undefined) {
       const watcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, fileStore)
+        new RelativePattern(this.root, fileStore),
       );
       watcher.onDidCreate(this.refresh);
       watcher.onDidDelete(this.refresh);
@@ -164,7 +191,7 @@ export class DeploymentsTreeDataProvider implements TreeDataProvider<Deployments
 export class DeploymentsTreeItem extends TreeItem {
   constructor(
     public deployment: AllDeploymentTypes,
-    public readonly fileUri: Uri
+    public readonly fileUri: Uri,
   ) {
     super(deployment.deploymentName);
 
@@ -176,44 +203,61 @@ export class DeploymentsTreeItem extends TreeItem {
       this.initializeDeploymentError(this.deployment);
     }
     this.command = {
-      title: 'Open',
-      command: 'vscode.open',
-      arguments: [this.fileUri]
+      title: "Open",
+      command: "vscode.open",
+      arguments: [this.fileUri],
     };
   }
 
   private initializeDeployment(deployment: Deployment) {
-    this.contextValue = 'posit.publisher.deployments.tree.item.deployment';
-    this.tooltip =
-      `${deployment.deploymentName}\n` +
-      `Last Deployed on ${formatDateString(deployment.deployedAt)}\n` +
-      `Targeting ${deployment.serverType} at ${deployment.serverUrl}\n` +
-      `GUID = ${deployment.id}`;
-
-    if (deployment.deploymentError) {
-      this.iconPath = new ThemeIcon('warning');
+    this.contextValue = "posit.publisher.deployments.tree.item.deployment";
+    if (!deployment.deploymentError) {
+      this.tooltip =
+        `Deployment file: ${deployment.deploymentPath}\n` +
+        `\n` +
+        `Last Deployed on ${formatDateString(deployment.deployedAt)}\n` +
+        `Targeting ${deployment.serverType} at ${deployment.serverUrl}\n` +
+        `GUID = ${deployment.id}`;
+      this.iconPath = new ThemeIcon("cloud-upload");
     } else {
-      this.iconPath = new ThemeIcon('cloud-upload');
+      this.tooltip =
+        `Deployment file: ${deployment.deploymentPath}\n` +
+        `\n` +
+        `Last deployment failed on ${formatDateString(deployment.deployedAt)}\n` +
+        `Targeting ${deployment.serverType} at ${deployment.serverUrl}`;
+      // deployment id may not yet be assigned...
+      if (deployment.id) {
+        this.tooltip += `\n` + `GUID = ${deployment.id}`;
+      }
+      this.tooltip += "\n" + `\n` + `Error: ${deployment.deploymentError.msg}`;
+      this.iconPath = new ThemeIcon("run-errors");
     }
   }
 
   private initializePreDeployment(predeployment: PreDeployment) {
-    this.contextValue = 'posit.publisher.deployments.tree.item.predeployment';
+    this.contextValue = "posit.publisher.deployments.tree.item.predeployment";
     this.tooltip =
-      `${predeployment.deploymentName}\n` +
+      `Deployment file: ${predeployment.deploymentPath}\n` +
+      `\n` +
       `Created on ${formatDateString(predeployment.createdAt)}\n` +
       `Targeting ${predeployment.serverType} at ${predeployment.serverUrl}\n` +
-      `WARNING! Not Yet Deployed`;
-    this.iconPath = new ThemeIcon('ellipsis');
+      `\n` +
+      `Warning! Not yet deployed to the server`;
+    this.iconPath = new ThemeIcon("ellipsis");
   }
 
   private initializeDeploymentError(deploymentError: DeploymentError) {
-    this.contextValue = 'posit.publisher.deployments.tree.item.deploymentError';
+    this.contextValue = "posit.publisher.deployments.tree.item.deploymentError";
     this.tooltip =
-      `${deploymentError.deploymentName}\n` +
+      `Deployment file: ${deploymentError.deploymentPath}\n` +
+      `\n` +
       `ERROR! File is invalid\n` +
       `Code: ${deploymentError.error.code}\n` +
-      `Msg: ${deploymentError.error.msg}`;
-    this.iconPath = new ThemeIcon('warning');
+      `Msg: ${deploymentError.error.msg}\n` +
+      `\n` +
+      `Warning: This deployment cannot be deployed\n` +
+      `until the issue is resolved.`;
+
+    this.iconPath = new ThemeIcon("warning");
   }
 }
