@@ -147,7 +147,7 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.deploySelector.refresh",
+        "command": "posit.publisher.homeView.refresh",
         "title": "Refresh View",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
@@ -169,14 +169,14 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.deploySelector.showDeploymentView",
-        "title": "View as targeted deployment",
+        "command": "posit.publisher.homeView.showBasicMode",
+        "title": "Basic Mode",
         "icon": "$(target)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.deploySelector.showProjectFilesView",
-        "title": "View as project files",
+        "command": "posit.publisher.homeView.showAdvancedView",
+        "title": "Advanced Mode",
         "icon": "$(list-tree)",
         "category": "Posit Publisher"
       }
@@ -243,18 +243,18 @@
           "group": "navigation"
         },
         {
-          "command": "posit.publisher.deploySelector.showDeploymentView",
-          "when": "view == posit.publisher.deploySelector",
+          "command": "posit.publisher.homeView.showBasicMode",
+          "when": "view == posit.publisher.homeView",
           "group": "navigation@1"
         },
         {
-          "command": "posit.publisher.deploySelector.showProjectFilesView",
-          "when": "view == posit.publisher.deploySelector",
+          "command": "posit.publisher.homeView.showAdvancedView",
+          "when": "view == posit.publisher.homeView",
           "group": "navigation@2"
         },
         {
-          "command": "posit.publisher.deploySelector.refresh",
-          "when": "view == posit.publisher.deploySelector && posit.publisher.deploySelector.expanded",
+          "command": "posit.publisher.homeView.refresh",
+          "when": "view == posit.publisher.homeView && posit.publisher.homeView.expanded",
           "group": "navigation@3"
         }
       ],
@@ -361,7 +361,7 @@
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.deploySelector.refresh",
+          "command": "posit.publisher.homeView.refresh",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         }
       ]
@@ -391,7 +391,7 @@
           "when": "workbenchState == empty || workbenchState == workspace || posit.publish.missing || posit.publish.state == 'uninitialized'"
         },
         {
-          "id": "posit.publisher.deploySelector",
+          "id": "posit.publisher.homeView",
           "type": "webview",
           "name": "Home",
           "contextualTitle": "Publisher",
@@ -403,35 +403,35 @@
           "name": "Deployment Files",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.deploySelector.isDeploymentViewAcive"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
         },
         {
           "id": "posit.publisher.requirements",
           "name": "Requirements",
           "contextualTitle": "Publisher",
           "icon": "$(package)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.deploySelector.isDeploymentViewAcive"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
           "contextualTitle": "Publisher",
           "icon": "$(gear)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && !posit.publisher.deploySelector.isDeploymentViewAcive"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
           "contextualTitle": "Publisher",
           "icon": "$(key)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && !posit.publisher.deploySelector.isDeploymentViewAcive"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
           "contextualTitle": "Publisher",
           "icon": "$(cloud-upload)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && !posit.publisher.deploySelector.isDeploymentViewAcive"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
@@ -501,7 +501,7 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts",
-    "compile-deploy-selector": "npm run --prefix webviews/deploySelector compile",
+    "compile-deploy-selector": "npm run --prefix webviews/homeView compile",
     "format": "prettier . --write",
     "check-format": "prettier . --check",
     "test": "node ./out/test/runTest.js"

@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "compile": "npm run clean-dist && npm run type-check && npm run vite-build && npm run copy-codicons",
-    "clean-dist": "rm -rd ../../out/webviews/deploySelector | true",
+    "clean-dist": "rm -rd ../../out/webviews/homeView | true",
     "type-check": "vue-tsc --noEmit",
-    "vite-build": "vite build --outDir ../../out/webviews/deploySelector",
-    "copy-codicons": "cp node_modules/@vscode/codicons/dist/codicon.css node_modules/@vscode/codicons/dist/codicon.ttf ../../out/webviews/deploySelector"
+    "vite-build": "vite build --outDir ../../out/webviews/homeView",
+    "copy-codicons": "cp node_modules/@vscode/codicons/dist/codicon.css node_modules/@vscode/codicons/dist/codicon.ttf ../../out/webviews/homeView"
   },
   "dependencies": {
     "vue": "^3.4.21",

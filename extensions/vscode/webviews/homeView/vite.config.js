@@ -18,7 +18,7 @@ exports.default = (0, vite.defineConfig)({
   //   }
   // },
   build: {
-    outDir: "../../out/webviews/deploySelector",
+    outDir: "../../out/webviews/homeView",
     rollupOptions: {
       output: {
         entryFileNames: `[name].js`,

@@ -31,12 +31,15 @@ import { EventStream } from "../events";
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
 
-const viewName = "posit.publisher.deploySelector";
+const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
 const contextIsSelectorExpanded = viewName + ".expanded";
-const showDeploymentViewCommand = viewName + ".showDeploymentView";
-const showProjectFilesViewCommand = viewName + ".showProjectFilesView";
-const contextIsDeploymentViewActive = viewName + ".isDeploymentViewAcive";
+const showDeploymentViewCommand = viewName + ".showBasicMode";
+const showAdvancedViewCommand = viewName + ".showAdvancedView";
+
+const contextActiveMode = viewName + ".deploymentActiveMode";
+const contextActiveModeAdvanced = "advanced-mode";
+const contextActiveModeBasic = "basic-mode";
 
 export class DeploySelectorViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
@@ -66,21 +69,19 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
     });
     commands.executeCommand("setContext", contextIsSelectorExpanded, false);
 
-    commands.executeCommand("setContext", contextIsDeploymentViewActive, true);
-
     commands.registerCommand(showDeploymentViewCommand, () => {
       commands.executeCommand(
         "setContext",
-        contextIsDeploymentViewActive,
-        true,
+        contextActiveMode,
+        contextActiveModeBasic,
       );
     });
 
-    commands.registerCommand(showProjectFilesViewCommand, () => {
+    commands.registerCommand(showAdvancedViewCommand, () => {
       commands.executeCommand(
         "setContext",
-        contextIsDeploymentViewActive,
-        false,
+        contextActiveMode,
+        contextActiveModeAdvanced,
       );
     });
   }
@@ -111,7 +112,7 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
               deployProject(response.data.localId, this.stream);
             } catch (error: unknown) {
               const summary = getSummaryStringFromError(
-                "deploySelector, deploy",
+                "homeView, deploy",
                 error,
               );
               window.showInformationMessage(`Failed to deploy . ${summary}`);
@@ -309,7 +310,7 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
       enableScripts: true,
       // Restrict the webview to only load resources from the `out` directory
       localResourceRoots: [
-        Uri.joinPath(this._extensionUri, "out", "webviews", "deploySelector"),
+        Uri.joinPath(this._extensionUri, "out", "webviews", "homeView"),
       ],
     };
 
@@ -339,7 +340,7 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
     const stylesUri = getUri(webview, extensionUri, [
       "out",
       "webviews",
-      "deploySelector",
+      "homeView",
       "index.css",
     ]);
     // const codiconsUri = webview.asWebviewUri(Uri.joinPath(extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
@@ -347,14 +348,14 @@ export class DeploySelectorViewProvider implements WebviewViewProvider {
     const scriptUri = getUri(webview, extensionUri, [
       "out",
       "webviews",
-      "deploySelector",
+      "homeView",
       "index.js",
     ]);
     // The codicon css (and related tff file) are needing to be loaded for icons
     const codiconsUri = getUri(webview, extensionUri, [
       "out",
       "webviews",
-      "deploySelector",
+      "homeView",
       "codicon.css",
     ]);
 
