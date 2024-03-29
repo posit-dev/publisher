@@ -15,11 +15,9 @@ import {
   window,
 } from "vscode";
 
-import {
-  EventStream,
-  EventStreamMessage,
-  displayEventStreamMessage,
-} from "../events";
+import { EventStream, displayEventStreamMessage } from "../events";
+
+import { EventStreamMessage } from "../api";
 
 enum LogStageStatus {
   notStarted,
