@@ -172,7 +172,8 @@ import {
   vsCodeDivider,
 } from "@vscode/webview-ui-toolkit";
 import {
-  NonDeploymentErrorTypes,
+  Deployment,
+  PreDeployment,
   isPreDeployment,
   isDeployment,
 } from "../../../src/api/types/deployments";
@@ -193,14 +194,14 @@ provideVSCodeDesignSystem().register(
 // in order to access addEventListener
 declare var window: any;
 
-let deployments = ref<NonDeploymentErrorTypes[]>([]);
+let deployments = ref<(Deployment | PreDeployment)[]>([]);
 let deploymentList = ref<string[]>([]);
 let configList = ref<string[]>([]);
 let credentialList = ref<string[]>([]);
 let publishingInProgress = ref(false);
 
 const selectedDeploymentName = ref<string>();
-const selectedDeployment = ref<NonDeploymentErrorTypes | undefined>(undefined);
+const selectedDeployment = ref<Deployment | PreDeployment | undefined>(undefined);
 const selectedConfig = ref<string>();
 const selectedCredential = ref<string>();
 const lastDeploymentSuccessful = ref<boolean | undefined>(undefined);

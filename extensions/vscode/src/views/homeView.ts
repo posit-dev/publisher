@@ -24,7 +24,8 @@ import {
   isDeploymentError,
   EventStreamMessage,
   Configuration,
-  NonDeploymentErrorTypes,
+  Deployment,
+  PreDeployment,
 } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import { deployProject } from "./deployProgress";
@@ -46,7 +47,7 @@ const contextActiveModeBasic = "basic-mode";
 export class DeploySelectorViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
   private api = useApi();
-  private _deployments: NonDeploymentErrorTypes[] = [];
+  private _deployments: (Deployment | PreDeployment)[] = [];
   private _credentials: string[] = [];
   private _configs: Configuration[] = [];
   private root: WorkspaceFolder | undefined;
