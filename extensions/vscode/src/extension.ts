@@ -13,6 +13,7 @@ import { FilesTreeDataProvider } from "./views/files";
 import { RequirementsTreeDataProvider } from "./views/requirements";
 import { CredentialsTreeDataProvider } from "./views/credentials";
 import { HelpAndFeedbackTreeDataProvider } from "./views/helpAndFeedback";
+import { HomeViewProvider } from "./views/homeView";
 import { LogsTreeDataProvider } from "./views/logs";
 import { EventStream } from "./events";
 
@@ -97,6 +98,7 @@ export async function activate(context: vscode.ExtensionContext) {
   new CredentialsTreeDataProvider().register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
   new LogsTreeDataProvider(stream).register(context);
+  new HomeViewProvider(context.extensionUri).register(context);
 
   setStateContext(PositPublishState.initialized);
 }
