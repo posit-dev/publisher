@@ -1,8 +1,8 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-import { AgentError } from "src/api/types/error";
-import { ConnectConfig } from "src/api/types/connect";
-import { SchemaURL } from "src/api/types/schema";
+import { AgentError } from "./error";
+import { ConnectConfig } from "./connect";
+import { SchemaURL } from "./schema";
 
 export type ConfigurationLocation = {
   configurationName: string;
