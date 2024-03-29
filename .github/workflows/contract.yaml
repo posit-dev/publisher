@@ -12,14 +12,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+        runs-on: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
       - name: quarto
@@ -27,8 +27,8 @@ jobs:
         with:
           version: 1.4.549
 
-      - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
+      - uses: extractions/setup-just@v2
+      - uses: actions/download-artifact@v4
         with:
           name: bin
           path: bin
@@ -54,20 +54,20 @@ jobs:
 
       # Videos are captured whether the suite fails or passes
       - name: Save videos
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: cypress-videos
+          name: ${{ matrix.runs-on }}-cypress-videos
           path: test/cy/cypress/videos
           if-no-files-found: ignore
           retention-days: 1
 
       # Screenshots are only captured on failure
       - name: Save screenshots
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: cypress-screenshots
+          name: ${{ matrix.runs-on}}-cypress-screenshots
           path: test/cy/cypress/screenshots
           if-no-files-found: ignore
           retention-days: 1

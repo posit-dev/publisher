@@ -12,10 +12,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest]
-    runs-on: ${{ matrix.runner }}
+        runs-on: [ubuntu-latest]
+    runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: actions/checkout@v4
@@ -25,14 +25,14 @@ jobs:
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.9
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: 1.4.549
-      - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
+      - uses: extractions/setup-just@v2
+      - uses: actions/download-artifact@v4
         with:
           name: bin
           path: bin
@@ -41,14 +41,14 @@ jobs:
       - run: just bats test common
       - run: just bats test deploy
       - run: just bats test init
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
   docker:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest]
-    runs-on: ${{ matrix.runner }}
+        runs-on: [ubuntu-latest]
+    runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,14 +60,14 @@ jobs:
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.9
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: 1.4.549
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: bin
           path: bin

@@ -20,3 +20,7 @@ jobs:
     - run: just web install
     - run: just web lint
     - run: just web check-format
+
+    - run: just test/cy install
+    - run: just test/cy lint
+    - run: just test/cy check-format

@@ -26,18 +26,18 @@ jobs:
       - archive
       - package
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: extractions/setup-just@v1
-      - uses: actions/download-artifact@v3
+      - uses: extractions/setup-just@v2
+      - uses: actions/download-artifact@v4
         with:
           name: archives
           path: archives
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: packages
-          path: packages
+          name: dist
+          path: dist
       - id: get-prerelease
         run: echo "prerelease=$(just pre-release)" >> "$GITHUB_OUTPUT"
       - uses: softprops/action-gh-release@v1
@@ -46,4 +46,4 @@ jobs:
           prerelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}
           files: |
             archives/**/*
-            packages/**/*
+            dist/**/*

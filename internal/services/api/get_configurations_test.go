@@ -38,13 +38,22 @@ func (s *GetConfigurationsSuite) SetupTest() {
 	s.cwd.MkdirAll(0700)
 }
 
-func (s *GetConfigurationsSuite) TestGetConfigurations() {
-	path := config.GetConfigPath(s.cwd, "default")
+func (s *GetConfigurationsSuite) makeConfiguration(name string) *config.Config {
+	path := config.GetConfigPath(s.cwd, name)
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+	}
 	err := cfg.WriteFile(path)
 	s.NoError(err)
+	return cfg
+}
+
+func (s *GetConfigurationsSuite) TestGetConfigurations() {
+	cfg := s.makeConfiguration("default")
 
 	h := GetConfigurationsHandlerFunc(s.cwd, s.log)
 
@@ -69,15 +78,10 @@ func (s *GetConfigurationsSuite) TestGetConfigurations() {
 }
 
 func (s *GetConfigurationsSuite) TestGetConfigurationsError() {
-	path := config.GetConfigPath(s.cwd, "default")
-	cfg := config.New()
-	cfg.Type = config.ContentTypePythonDash
-	cfg.Entrypoint = "app.py"
-	err := cfg.WriteFile(path)
-	s.NoError(err)
+	cfg := s.makeConfiguration("default")
 
 	path2 := config.GetConfigPath(s.cwd, "other")
-	err = path2.WriteFile([]byte(`foo = 1`), 0666)
+	err := path2.WriteFile([]byte(`foo = 1`), 0666)
 	s.NoError(err)
 
 	h := GetConfigurationsHandlerFunc(s.cwd, s.log)

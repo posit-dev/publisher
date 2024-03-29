@@ -49,6 +49,10 @@ func createSampleDeployment(root util.AbsolutePath, name string) (*deployment.De
 	cfg := config.New()
 	cfg.Type = config.ContentTypePythonDash
 	cfg.Entrypoint = "app.py"
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+	}
 	d.Configuration = cfg
 	return d, d.WriteFile(path)
 }

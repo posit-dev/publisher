@@ -115,7 +115,7 @@ clean:
 
     rm -rf ./archives
     rm -rf ./bin
-    rm -rf ./packages
+    rm -rf ./dist
 
 # Prints shell commands to configure executable on path. Configure your shell via: eval "$(just configure)"
 configure:

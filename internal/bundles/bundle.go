@@ -43,10 +43,7 @@ func NewBundler(path util.AbsolutePath, manifest *Manifest, pythonRequirements [
 		dir = path.Dir()
 		filename = path.Base()
 	}
-	excluder, err := gitignore.NewExcludingWalker(dir)
-	if err != nil {
-		return nil, fmt.Errorf("error loading ignore list: %w", err)
-	}
+	excluder := gitignore.NewExcludingWalker(dir)
 	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
 	symlinkWalker := util.NewSymlinkWalker(excluder, log)
 

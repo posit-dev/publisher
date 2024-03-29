@@ -14,23 +14,23 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: archives
           path: archives
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: packages
-          path: packages
+          name: dist
+          path: dist
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       - run: just upload
-        if: ${{ !github.event.inputs.nightly }}
+        if: ${{ inputs.nightly == false }}
       - run: just upload nightly
-        if: ${{ github.event.inputs.nightly }}
+        if: ${{ inputs.nightly == true }}

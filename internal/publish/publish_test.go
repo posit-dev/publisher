@@ -164,6 +164,10 @@ func (s *PublishSuite) publishWithClient(
 	cfg.Environment = map[string]string{
 		"FOO": "BAR",
 	}
+	cfg.Python = &config.Python{
+		Version:        "3.4.5",
+		PackageManager: "pip",
+	}
 	saveName := ""
 	targetName := ""
 
