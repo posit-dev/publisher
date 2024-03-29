@@ -1,0 +1,6 @@
+node_modules
+.vscode/*
+main.js
+main.js.map
+vite.config.js
+vite.config.js.map
