@@ -396,7 +396,7 @@
           "name": "Home",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
         },
         {
           "id": "posit.publisher.files",
