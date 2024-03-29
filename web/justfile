@@ -83,20 +83,6 @@ lint:
 
     npm run lint
 
-format:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    npm run format
-
-check-format:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    npm run check-format
-
 # Launch a local web server instance in production mode.
 preview:
     #!/usr/bin/env bash

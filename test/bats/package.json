@@ -4,7 +4,7 @@
     "deploy": "bats -r -T -t ./contract/deploy.bats",
     "accounts": "bats -r -T -t ./contract/accounts.bats",
     "common": "bats -r -T -t ./cli/common.bats",
-    "init":"bats -r -T -t ./cli/init.bats"
+    "init": "bats -r -T -t ./cli/init.bats"
   },
   "devDependencies": {
     "bats": "^1.10.0",

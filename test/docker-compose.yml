@@ -1,7 +1,6 @@
-version: '3.2'
+version: "3.2"
 
 services:
-
   rsconnect:
     image: rstudio/rstudio-connect-preview:dev-jammy-daily
     restart: always

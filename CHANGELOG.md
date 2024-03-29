@@ -25,25 +25,30 @@ Deployment Records and Configurations can now be created, opened, and in the
 case of Configurations edited directly via the Extension's views.
 
 ### Added
+
 - Include links to documentation and feedback channel (#1140)
 - Add comments to deployment records indicating they should not editted by users (#1092)
 - Deployment staged logs view in the bottom VSCode panel
 - Ability to select a Configuration when deploying
 
 ### Changed
+
 - Use relative paths for the configuration `entrypoint` for Quarto projects (#960)
 
 ### Fixed
+
 - Fix being unable to ignore subdirectories in `.positignore` (#1117)
 - Improve error serialization with errors from Connect or networking (#1074)
 - Fixed cases where an unnamed `.toml` deployment record was created (#1076, #1113)
 
 ### Removed
+
 - Stand-alone webview opened via an Editor button on files
 
 ## [1.0.alpha2]
 
 ### Added
+
 - VSCode extension package includes the publisher binary (#737)
 - `publisher init` recognizes Quarto projects (jupyter and markdown engines only) (#814)
 - `publisher init` recognizes Bottle and Pycnic apps as WSGI/Flask variants (#794)
@@ -53,12 +58,14 @@ case of Configurations edited directly via the Extension's views.
 - Deployment history includes the URLs where the deployed content can be accessed (#742), error information if the deployment failed (#747), and the date/time the deployment was created (#639, #836, #839)
 
 ### Changed
+
 - Require the user to choose an account, if they have more than one (#636)
 - Use CONNECT_SERVER and CONNECT_API_KEY environment variables if they are defined and no account is selected (#722)
 - Deployment names in the UI are now case-insensitive (#808)
 - Record new deployments immediately, instead of waiting until Deploy is clicked (#773, #775, #776, #777)
 
 ### Fixed
+
 - Improve UI navigation, especially when going back or viewing progress/logs (#788, #824)
 - Enable copy/paste in the VSCode publisher window (#612)
 - Enable command palette in the VSCode publisher window (#633)
@@ -66,6 +73,7 @@ case of Configurations edited directly via the Extension's views.
 - Improve messages for TOML parsing/validation errors (#631)
 
 ### Removed
+
 - Light/dark mode selection menu when running in VSCode (#804)
 
 ## [1.0.alpha1]

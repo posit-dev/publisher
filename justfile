@@ -198,6 +198,17 @@ install:
         fi
     fi
 
+npm-install:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    if [ {{ _ci }} = "true" ]; then
+        npm ci --no-audit --no-fund
+    else
+        npm install --no-audit --no-fund
+    fi
+
 # staticcheck, vet, and format check
 lint: stub
     #!/usr/bin/env bash
@@ -208,6 +219,20 @@ lint: stub
     just _with_docker staticcheck ./...
     just _with_docker go vet -all ./...
     just _with_docker ./scripts/fmt-check.bash
+
+format:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run format
+
+check-format:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run check-format
 
 name:
     #!/usr/bin/env bash
