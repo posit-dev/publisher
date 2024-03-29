@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 /**
  * A helper function that returns a unique alphanumeric identifier called a nonce.
  *
