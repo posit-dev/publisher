@@ -360,6 +360,7 @@
           "name": "Deployment Files",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
+          "visibility": "collapsed",
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
@@ -367,6 +368,7 @@
           "name": "Requirements",
           "contextualTitle": "Publisher",
           "icon": "$(package)",
+          "visibility": "collapsed",
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
@@ -374,6 +376,7 @@
           "name": "Configurations",
           "contextualTitle": "Publisher",
           "icon": "$(gear)",
+          "visibility": "collapsed",
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
@@ -381,6 +384,7 @@
           "name": "Credentials",
           "contextualTitle": "Publisher",
           "icon": "$(key)",
+          "visibility": "collapsed",
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
@@ -388,6 +392,7 @@
           "name": "Deployments",
           "contextualTitle": "Publisher",
           "icon": "$(cloud-upload)",
+          "visibility": "collapsed",
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
@@ -395,6 +400,7 @@
           "name": "Help And Feedback",
           "contextualTitle": "Publisher",
           "icon": "$(info)",
+          "visibility": "collapsed",
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
         }
       ],
