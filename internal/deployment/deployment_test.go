@@ -109,8 +109,20 @@ func (s *DeploymentSuite) TestWriteFile() {
 
 	content, err := deploymentFile.ReadFile()
 	s.NoError(err)
-	firstLine := strings.Split(string(content), "\n")[0]
+	stringContent := string(content)
+	firstLine := strings.Split(stringContent, "\n")[0]
 	s.Equal(autogenHeader, firstLine+"\n")
+
+	// This is a pre-deployment, so should not contain certain fields.
+	s.NotContains(stringContent, "id")
+	s.NotContains(stringContent, "deployed-at")
+	s.NotContains(stringContent, "bundle-id")
+	s.NotContains(stringContent, "bundle-url")
+	s.NotContains(stringContent, "dashboard-url")
+	s.NotContains(stringContent, "direct-url")
+	s.NotContains(stringContent, "deployment-error")
+	s.NotContains(stringContent, "files")
+	s.NotContains(stringContent, "[configuration")
 }
 
 func (s *DeploymentSuite) TestWriteFileErr() {
