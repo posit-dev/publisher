@@ -78,7 +78,7 @@ func getBodyParams(req *http.Request) map[string]string {
 			strings.HasSuffix(k, "Password") {
 			bodyParams[k] = "[redacted]"
 		} else {
-			bodyParams[k] = fmt.Sprintf("%s", v)
+			bodyParams[k] = fmt.Sprintf("%v", v)
 		}
 	}
 	return bodyParams
