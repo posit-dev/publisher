@@ -1,11 +1,24 @@
 .vscode/**
 .vscode-test/**
 src/**
-.gitignore
 .yarnrc
-**/tsconfig.json
-**/.eslintrc.json
-**/*.map
-**/*.ts
+**/_.map
+\*\*/_.ts
 CONTRIBUTING.md
 vsc-extension-quickstart.md
+
+# Ignore all webview files except the build directories
+
+webviews/homeView/src/**
+webviews/homeView/index.html
+webviews/homeView/package.json
+webviews/homeView/package-lock.json
+webviews/homeView/README.md
+webviews/homeView/node_modules/**
+
+# Ignore configuration files
+
+**/.gitignore
+**/.eslintrc.json
+**/tsconfig\*.json
+**/vite.config.json
