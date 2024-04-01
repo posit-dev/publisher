@@ -73,13 +73,13 @@
       },
       {
         "command": "posit.publisher.deployments.forget",
-        "title": "Forget this deployment locally",
+        "title": "Forget Deployment Locally",
         "icon": "$(close-all)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.deployments.visit",
-        "title": "View this deployment in Connect",
+        "title": "View Deployment in Connect",
         "icon": "$(link-external)",
         "category": "Posit Publisher"
       },
@@ -152,7 +152,7 @@
       },
       {
         "command": "posit.publisher.logs.visit",
-        "title": "View this deployment in Connect",
+        "title": "View Deployment in Connect",
         "icon": "$(link-external)",
         "category": "Posit Publisher"
       }
@@ -409,12 +409,12 @@
     "viewsWelcome": [
       {
         "view": "posit.publisher.configurations",
-        "contents": "To publish your content, you need a configuration file. Click Add to create one based on the files in your project.\n[Add](command:posit.publisher.configurations.add)",
+        "contents": "To publish your content, you need a configuration file. Click the button below to create one based on the files in your project.\n[New Configuration](command:posit.publisher.configurations.add)",
         "when": "posit.publisher.configurations.isEmpty == empty"
       },
       {
         "view": "posit.publisher.deployments",
-        "contents": "To publish your content, you need to create a deployment. Click Add to create one and optionally publish your project using it.\n[Add](command:posit.publisher.deployments.add)",
+        "contents": "To publish your content, you need to create a deployment. Click the button below to create one and optionally publish your project using it.\n[New Deployment](command:posit.publisher.deployments.add)",
         "when": "posit.publisher.deployments.isEmpty"
       },
       {
