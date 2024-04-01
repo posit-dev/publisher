@@ -53,7 +53,7 @@ export class ConfigurationsTreeDataProvider
   readonly onDidChangeTreeData: ConfigurationEvent =
     this._onDidChangeTreeData.event;
 
-  constructor() {
+  constructor(private apiReady: Promise<boolean>) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -78,6 +78,7 @@ export class ConfigurationsTreeDataProvider
     }
 
     try {
+      await this.apiReady;
       const response = await api.configurations.getAll();
       const configurations = response.data;
       await this.setContextIsEmpty(configurations.length === 0);
