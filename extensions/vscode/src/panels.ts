@@ -2,6 +2,8 @@
 
 import * as vscode from "vscode";
 
+import { getNonce } from "./utils/getNonce";
+
 const DEFAULT_COLUMN = vscode.ViewColumn.Beside;
 
 export class Panel {
@@ -86,7 +88,7 @@ export class Panel {
  * @returns {string}
  */
 export const createHTML = (url: string, webview: vscode.Webview): string => {
-  const nonce = createNonce();
+  const nonce = getNonce();
   return (
     // install https://marketplace.visualstudio.com/items?itemName=Tobermory.es6-string-html to enable code highlighting below
     /*html*/
@@ -135,19 +137,4 @@ export const createContentSecurityPolicyContent = (
     .map((_) => `${_} ${urls} https:;`)
     .join(" ");
   return `default-src 'none'; ${content}`;
-};
-
-/**
- * Creates a unique nonce value.
- *
- * @returns {string}
- */
-const createNonce = (): string => {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
 };

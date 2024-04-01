@@ -14,5 +14,5 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true
   },
-  "exclude": ["webviews"]
+  "exclude": ["node_modules", "webviews"]
 }

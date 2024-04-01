@@ -16,8 +16,8 @@
     "get-port": "5.1.1"
   },
   "devDependencies": {
-    "@tsconfig/node20": "^20.1.2",
-    "@types/node": "^20.11.28",
+    "@tsconfig/node18": "^18.2.4",
+    "@types/node": "^18.11.9",
     "@types/vscode-webview": "^1.57.5",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vscode/codicons": "^0.0.35",
