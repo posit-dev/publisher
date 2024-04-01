@@ -27,12 +27,13 @@ type DeploymentRecord = {
   serverUrl: string;
   saveName: string;
   createdAt: string;
-  configurationName: string;
 } & DeploymentLocation;
 
 export type PreDeployment = {
   state: DeploymentState.NEW;
   error: AgentError | null;
+  configurationName: string | undefined;
+  configurationPath: string | undefined;
 } & DeploymentRecord;
 
 export type Deployment = {
@@ -45,6 +46,8 @@ export type Deployment = {
   deployedAt: string;
   state: DeploymentState.DEPLOYED;
   deploymentError: AgentError | null;
+  configurationName: string;
+  configurationPath: string;
 } & DeploymentRecord &
   Configuration;
 
