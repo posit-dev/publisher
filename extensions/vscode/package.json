@@ -348,6 +348,14 @@
           "when": "workbenchState == empty || workbenchState == workspace || posit.publish.missing || posit.publish.state == 'uninitialized'"
         },
         {
+          "id": "posit.publisher.homeView",
+          "type": "webview",
+          "name": "Home",
+          "contextualTitle": "Publisher",
+          "icon": "$(symbol-file)",
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
           "id": "posit.publisher.files",
           "name": "Deployment Files",
           "contextualTitle": "Publisher",
@@ -451,7 +459,9 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "npm run compile-extension && npm run compile-home-view",
+    "compile-extension": "tsc -p ./",
+    "compile-home-view": "npm run --prefix webviews/homeView compile",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts",

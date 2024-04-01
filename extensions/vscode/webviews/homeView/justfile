@@ -1,0 +1,32 @@
+alias c := clean
+
+_ci := env_var_or_default("CI", "false")
+
+_debug := env_var_or_default("DEBUG", "false")
+
+_with_debug := if _debug == "true" {
+        "set -x pipefail"
+    } else {
+        ""
+    }
+
+# Deletes ephemeral project files (i.e., cleans the project).
+clean:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    rm -rf node_modules
+    
+
+# Install dependencies
+deps:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    if [ {{ _ci }} = "true" ]; then
+        npm ci --no-audit --no-fund | sed 's/^/debug: /'
+    else
+        npm install --no-audit --no-fund | sed 's/^/debug: /'
+    fi
