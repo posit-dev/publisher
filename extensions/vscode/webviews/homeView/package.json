@@ -2,6 +2,7 @@
   "name": "project-selector-web-view-view",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "scripts": {
     "compile": "npm run clean-dist && npm run type-check && npm run vite-build && npm run copy-codicons",
     "clean-dist": "rm -rd ../../out/webviews/homeView | true",
