@@ -25,6 +25,10 @@ export class Service implements vscode.Disposable {
     await this.server.start(this.context);
   };
 
+  isUp = () => {
+    return this.server.isUp();
+  };
+
   open = async () => {
     // re-run the start sequence in case the server has stopped.
     await this.server.start(this.context);
