@@ -1,5 +1,6 @@
 // import { fileURLToPath, URL } from 'url'
 
+import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 
@@ -12,6 +13,11 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      src: fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
   build: {
     outDir: "../../out/webviews/homeView",
     rollupOptions: {
