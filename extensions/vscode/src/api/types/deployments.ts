@@ -27,12 +27,21 @@ type DeploymentRecord = {
   serverUrl: string;
   saveName: string;
   createdAt: string;
+<<<<<<< HEAD
   configurationName: string;
   deploymentError: AgentError | null;
+=======
+>>>>>>> 8b9c68a9 (frontend API deployment type includes configurationName and configurationPath)
 } & DeploymentLocation;
 
 export type PreDeployment = {
   state: DeploymentState.NEW;
+<<<<<<< HEAD
+=======
+  error: AgentError | null;
+  configurationName: string | undefined;
+  configurationPath: string | undefined;
+>>>>>>> 8b9c68a9 (frontend API deployment type includes configurationName and configurationPath)
 } & DeploymentRecord;
 
 export type Deployment = {
@@ -44,6 +53,12 @@ export type Deployment = {
   files: string[];
   deployedAt: string;
   state: DeploymentState.DEPLOYED;
+<<<<<<< HEAD
+=======
+  deploymentError: AgentError | null;
+  configurationName: string;
+  configurationPath: string;
+>>>>>>> 8b9c68a9 (frontend API deployment type includes configurationName and configurationPath)
 } & DeploymentRecord &
   Configuration;
 
