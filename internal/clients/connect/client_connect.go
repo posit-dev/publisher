@@ -427,7 +427,7 @@ func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log loggin
 		if ok {
 			if httpErr.Status >= 500 {
 				// Validation failed - the content is not up and running
-				return err
+				return fmt.Errorf("couldn't access the deployed content: status code %d", httpErr.Status)
 			} else {
 				// Other HTTP codes are acceptable, for example
 				// if the content doesn't implement GET /,

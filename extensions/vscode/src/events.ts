@@ -53,10 +53,29 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     return `${msg.data.message} ${msg.data.path}`;
   }
 
+  if (msg.type === "publish/validateDeployment/log") {
+    if (msg.data.url) {
+      if (msg.data.method) {
+        return `${msg.data.message}: status ${msg.data.status} on ${msg.data.url}`;
+      }
+      return `${msg.data.message} ${msg.data.url}`;
+    }
+  }
+
+  if (msg.type === "publish/validateDeployment/failure") {
+    return `${msg.data.message}: status ${msg.data.status} on ${msg.data.url}`;
+  }
+
   if (msg.type === "publish/success") {
     return `Successfully deployed at ${msg.data.dashboardUrl}`;
   }
 
+  if (msg.type === "publish/failure") {
+    if (msg.data.dashboardUrl) {
+      return `Deployment failed: ${msg.data.dashboardUrl}`;
+    }
+    return "Deployment failed";
+  }
   if (msg.error !== undefined) {
     return `${msg.data.error}`;
   }
