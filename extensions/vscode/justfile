@@ -65,8 +65,10 @@ deps:
 
     if [ {{ _ci }} = "true" ]; then
         npm ci --no-audit --no-fund | sed 's/^/debug: /'
+        npm -prefix ./webviews/homeView ci --no-audit --no-fund | sed 's/^/debug: /'
     else
         npm install --no-audit --no-fund | sed 's/^/debug: /'
+        npm -prefix ./webviews/homeView install --no-audit --no-fund | sed 's/^/debug: /'
     fi
 
 
