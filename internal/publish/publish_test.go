@@ -66,11 +66,11 @@ func (s *PublishSuite) TestNewFromState() {
 	s.Equal(stateStore, publisher.(*defaultPublisher).State)
 }
 
-func (s *PublishSuite) TestPublishWithClient() {
+func (s *PublishSuite) TestPublishWithClientNewSuccess() {
 	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
-func (s *PublishSuite) TestPublishWithClientUpdate() {
+func (s *PublishSuite) TestPublishWithClientNewUpdate() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	// Make CreatedAt earlier so it will differ from DeployedAt.
@@ -78,51 +78,96 @@ func (s *PublishSuite) TestPublishWithClientUpdate() {
 	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
-func (s *PublishSuite) TestPublishWithClientFailAuth() {
+func (s *PublishSuite) TestPublishWithClientNewFailAuth() {
 	authErr := errors.New("error from TestAuthentication")
 	s.publishWithClient(nil, authErr, nil, nil, nil, nil, nil, nil, nil, authErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientFailCapabilities() {
+func (s *PublishSuite) TestPublishWithClientNewFailCapabilities() {
 	capErr := errors.New("error from CheckCapabilities")
 	s.publishWithClient(nil, nil, capErr, nil, nil, nil, nil, nil, nil, capErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientFailCreate() {
+func (s *PublishSuite) TestPublishWithClientNewFailCreate() {
 	createErr := errors.New("error from Create")
 	s.publishWithClient(nil, nil, nil, createErr, nil, nil, nil, nil, nil, createErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientFailUpdate() {
-	target := deployment.New()
-	target.ID = "myContentID"
-	// Make CreatedAt earlier so it will differ from DeployedAt.
-	target.CreatedAt = time.Now().Add(-time.Hour).Format(time.RFC3339)
-	updateErr := errors.New("error from Update")
-	s.publishWithClient(target, nil, nil, updateErr, nil, nil, nil, nil, nil, updateErr)
-}
-
-func (s *PublishSuite) TestPublishWithClientFailEnvVars() {
+func (s *PublishSuite) TestPublishWithClientNewFailEnvVars() {
 	envVarErr := errors.New("error from SetEnvVars")
 	s.publishWithClient(nil, nil, nil, nil, envVarErr, nil, nil, nil, nil, envVarErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientFailUpload() {
+func (s *PublishSuite) TestPublishWithClientNewFailUpload() {
 	uploadErr := errors.New("error from Upload")
 	s.publishWithClient(nil, nil, nil, nil, nil, uploadErr, nil, nil, nil, uploadErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientFailDeploy() {
+func (s *PublishSuite) TestPublishWithClientNewFailDeploy() {
 	deployErr := errors.New("error from Deploy")
 	s.publishWithClient(nil, nil, nil, nil, nil, nil, deployErr, nil, nil, deployErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientFailWaitForTask() {
+func (s *PublishSuite) TestPublishWithClientNewFailWaitForTask() {
 	waitErr := errors.New("error from WaitForTask")
 	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, waitErr, nil, waitErr)
 }
 
-func (s *PublishSuite) TestPublishWithClientFailValidation() {
+func (s *PublishSuite) TestPublishWithClientNewFailValidation() {
+	validateErr := errors.New("error from ValidateDeployment")
+	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil, validateErr, validateErr)
+}
+
+func (s *PublishSuite) TestPublishWithClientRedeployFailAuth() {
+	target := deployment.New()
+	target.ID = "myContentID"
+	authErr := errors.New("error from TestAuthentication")
+	s.publishWithClient(target, authErr, nil, nil, nil, nil, nil, nil, nil, authErr)
+}
+
+func (s *PublishSuite) TestPublishWithClientRedeployFailCapabilities() {
+	target := deployment.New()
+	target.ID = "myContentID"
+	capErr := errors.New("error from CheckCapabilities")
+	s.publishWithClient(target, nil, capErr, nil, nil, nil, nil, nil, nil, capErr)
+}
+
+func (s *PublishSuite) TestPublishWithClientRedeployFailUpdate() {
+	target := deployment.New()
+	target.ID = "myContentID"
+	updateErr := errors.New("error from Update")
+	s.publishWithClient(target, nil, nil, updateErr, nil, nil, nil, nil, nil, updateErr)
+}
+
+func (s *PublishSuite) TestPublishWithClientRedeployFailEnvVars() {
+	target := deployment.New()
+	target.ID = "myContentID"
+	envVarErr := errors.New("error from SetEnvVars")
+	s.publishWithClient(target, nil, nil, nil, envVarErr, nil, nil, nil, nil, envVarErr)
+}
+
+func (s *PublishSuite) TestPublishWithClientRedeployFailUpload() {
+	target := deployment.New()
+	target.ID = "myContentID"
+	uploadErr := errors.New("error from Upload")
+	s.publishWithClient(target, nil, nil, nil, nil, uploadErr, nil, nil, nil, uploadErr)
+}
+
+func (s *PublishSuite) TestPublishWithClientRedeployFailDeploy() {
+	target := deployment.New()
+	target.ID = "myContentID"
+	deployErr := errors.New("error from Deploy")
+	s.publishWithClient(target, nil, nil, nil, nil, nil, deployErr, nil, nil, deployErr)
+}
+
+func (s *PublishSuite) TestPublishWithClientRedeployFailWaitForTask() {
+	target := deployment.New()
+	target.ID = "myContentID"
+	waitErr := errors.New("error from WaitForTask")
+	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, waitErr, nil, waitErr)
+}
+
+func (s *PublishSuite) TestPublishWithClientRedeployFailValidation() {
 	validateErr := errors.New("error from ValidateDeployment")
 	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil, validateErr, validateErr)
 }
@@ -170,11 +215,17 @@ func (s *PublishSuite) publishWithClient(
 	}
 	saveName := ""
 	targetName := ""
+	recordName := "" // name we will find the deployment record under
 
 	if target != nil {
 		targetName = "targetToLoad"
+		recordName = targetName
+
+		// Make CreatedAt earlier so it will differ from DeployedAt.
+		target.CreatedAt = time.Now().Add(-time.Hour).Format(time.RFC3339)
 	} else {
 		saveName = "saveAsThis"
+		recordName = saveName
 	}
 	stateStore := &state.State{
 		Dir: s.cwd,
@@ -200,6 +251,8 @@ func (s *PublishSuite) publishWithClient(
 	} else {
 		s.NotNil(err)
 		s.Equal(expectedErr.Error(), err.Error())
+
+		publisher.emitErrorEvents(err, s.log)
 	}
 	if stateStore.Target != nil {
 		if target != nil {
@@ -209,21 +262,24 @@ func (s *PublishSuite) publishWithClient(
 			s.Equal(stateStore.Target.CreatedAt, stateStore.Target.DeployedAt)
 		}
 	}
-	if authErr == nil && capErr == nil && createErr == nil {
-		recordPath := deployment.GetDeploymentPath(stateStore.Dir, stateStore.SaveName)
+	couldCreateDeployment := (authErr == nil && capErr == nil && createErr == nil)
+	if (stateStore.Target != nil) || couldCreateDeployment {
+		// Either a pre-existing deployment record, or we got far enough to create one
+		recordPath := deployment.GetDeploymentPath(stateStore.Dir, recordName)
 		record, err := deployment.FromFile(recordPath)
 		s.NoError(err)
 		s.Equal(myContentID, record.ID)
 		s.Equal(project.Version, record.ClientVersion)
 		s.NotEqual("", record.DeployedAt)
 
-		logs := s.logBuffer.String()
-		s.Contains(logs, "content_id="+myContentID)
-
-		// Files are written after upload.
-		if uploadErr == nil {
-			s.Contains(record.Files, "app.py")
-			s.Contains(record.Files, "requirements.txt")
+		if couldCreateDeployment {
+			logs := s.logBuffer.String()
+			s.Contains(logs, "content_id="+myContentID)
+			// Files are written after upload.
+			if uploadErr == nil {
+				s.Contains(record.Files, "app.py")
+				s.Contains(record.Files, "requirements.txt")
+			}
 		}
 	}
 	// Ensure we have not created a bad deployment record (#1112)
