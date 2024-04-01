@@ -58,7 +58,6 @@ load '../node_modules/bats-assert/load'
     assert_line "  -v, --verbose=INT             Enable verbose logging. Use -vv or --verbose=2"
     assert_line "  -i, --interactive             Launch a browser to show the UI."
     assert_line "      --listen=HOST[:PORT]      Network address to listen on."
-    assert_line "      --access-log              Log all HTTP requests."
     assert_line "      --tls-key-file=STRING     Path to TLS private key file for the UI server."
     assert_line "      --tls-cert-file=STRING    Path to TLS certificate chain file for the UI"
 }
@@ -105,7 +104,7 @@ load '../node_modules/bats-assert/load'
 }
 
 @test "test missing command" {
-    run ${EXE} 
+    run ${EXE}
     assert_failure
     assert_line --partial "error: expected one of \"list-accounts\",  \"test-account\",  \"init\",  \"deploy\",  \"redeploy\",  ..."
 }
