@@ -503,8 +503,6 @@
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts",
     "compile-deploy-selector": "npm run --prefix webviews/homeView compile",
-    "format": "prettier . --write",
-    "check-format": "prettier . --check",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
