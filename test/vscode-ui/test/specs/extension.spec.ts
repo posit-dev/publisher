@@ -24,7 +24,9 @@ describe("VS Code Extension UI Test", () => {
     await extension.click();
     sleep(10000);
     // initialize project via button
-    const init = await browser.$("a.monaco-button");
+    const init = await browser
+      .$(".monaco-pane-view")
+      .$("a.monaco-button");
     await expect(init).toHaveText("Initialize Project");
     await init.click();
 
