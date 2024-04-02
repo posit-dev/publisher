@@ -106,8 +106,12 @@ func LogRequest(msg string, log logging.Logger, next http.HandlerFunc) http.Hand
 		if correlationId != "" {
 			fieldLogger = fieldLogger.WithArgs("X-Correlation-Id", correlationId)
 		}
-		for k, v := range bodyParams {
-			fieldLogger = fieldLogger.WithArgs(k, v)
+		if bodyParams != nil {
+			fieldLogger = logging.FromStdLogger(fieldLogger.WithGroup("req"))
+
+			for k, v := range bodyParams {
+				fieldLogger = fieldLogger.WithArgs(k, v)
+			}
 		}
 		fieldLogger.Info(msg)
 	}
