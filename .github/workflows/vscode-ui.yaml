@@ -42,6 +42,7 @@ jobs:
           name: bin
           path: bin
       - run: just vscode configure
+      - run: just vscode test
       - run: just vscode-ui install
       - run: just vscode-ui test
       - uses: actions/cache/save@v4
@@ -89,6 +90,7 @@ jobs:
           path: bin
       - run: chmod -R +x ./bin
       - run: just vscode configure
+      - run: just vscode test
       - run: just vscode-ui install
       - run: just vscode-ui test
 
