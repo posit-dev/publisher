@@ -26,6 +26,7 @@ import {
   Configuration,
   Deployment,
   PreDeployment,
+  Account,
 } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import { deployProject } from "./deployProgress";
@@ -48,7 +49,7 @@ export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
   private api = useApi();
   private _deployments: (Deployment | PreDeployment)[] = [];
-  private _credentials: string[] = [];
+  private _credentials: Account[] = [];
   private _configs: Configuration[] = [];
   private root: WorkspaceFolder | undefined;
   private _webviewView?: WebviewView;
@@ -236,8 +237,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     try {
       const response = await this.api.accounts.getAll();
-      this._credentials = [];
-      response.data.forEach((account) => this._credentials.push(account.name));
+      this._credentials = response.data;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "_refreshData::accounts.getAll",

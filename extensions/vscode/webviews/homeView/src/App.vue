@@ -166,6 +166,7 @@ import {
   isDeployment,
 } from "../../../src/api/types/deployments";
 import { formatDateString } from "../../../../../web/src/utils/date";
+import { Account } from "../../../src/api/types/accounts";
 
 // In order to use the Webview UI Toolkit web components they
 // must be registered with the browser (i.e. webview) using the
@@ -185,6 +186,7 @@ declare var window: any;
 let deployments = ref<(Deployment | PreDeployment)[]>([]);
 let deploymentList = ref<string[]>([]);
 let configList = ref<string[]>([]);
+let accounts = ref<Account[]>([]);
 let credentialList = ref<string[]>([]);
 let publishingInProgress = ref(false);
 
@@ -240,6 +242,7 @@ const disableDeployment = computed(() => {
 
 watch(selectedDeploymentName, () => {
   updateSelectedDevelopment();
+  filterCredentialsToDeployment();
 });
 
 onBeforeMount(() => {
@@ -261,6 +264,25 @@ const updateSelectedDevelopment = () => {
   selectedDeployment.value = deployments.value.find(
     (deployment) => deployment.saveName === selectedDeploymentName.value,
   );
+};
+
+const filterCredentialsToDeployment = () => {
+  credentialList.value = accounts.value
+    .filter((account) => {
+      return (
+        account.url.toLowerCase() ===
+        selectedDeployment.value?.serverUrl.toLocaleLowerCase()
+      );
+    })
+    .map((account) => account.name);
+
+  if (credentialList.value.length === 0) {
+    selectedCredential.value = "";
+  } else if (!selectedCredential.value) {
+    selectedCredential.value = credentialList.value[0];
+  } else if (!credentialList.value.includes(selectedCredential.value)) {
+    selectedCredential.value = credentialList.value[0];
+  }
 };
 
 const onClickDeploy = () => {
@@ -339,13 +361,8 @@ const onMessageFromProvider = (event: any) => {
         selectedConfig.value = "";
       }
 
-      credentialList.value = payload.credentials;
-      if (!selectedCredential.value) {
-        selectedCredential.value = credentialList.value[0];
-      }
-      if (credentialList.value.length === 0) {
-        selectedCredential.value = "";
-      }
+      accounts.value = payload.credentials;
+      filterCredentialsToDeployment();
       break;
     }
     case "publish_start": {

@@ -148,7 +148,7 @@
       },
       {
         "command": "posit.publisher.homeView.refresh",
-        "title": "Refresh View",
+        "title": "Refresh Home View",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
@@ -170,13 +170,13 @@
       },
       {
         "command": "posit.publisher.homeView.showBasicMode",
-        "title": "Basic Mode",
+        "title": "Show Basic Mode",
         "icon": "$(target)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.homeView.showAdvancedMode",
-        "title": "Advanced Mode",
+        "title": "Show Advanced Mode",
         "icon": "$(list-tree)",
         "category": "Posit Publisher"
       }
@@ -522,7 +522,6 @@
     "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
-    "prettier": "3.2.5",
     "typescript": "^5.2.2"
   },
   "dependencies": {
