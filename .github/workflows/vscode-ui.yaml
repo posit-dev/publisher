@@ -55,6 +55,7 @@ jobs:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
+      - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui test
@@ -114,6 +115,7 @@ jobs:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
+      - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui test

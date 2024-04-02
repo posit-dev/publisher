@@ -319,7 +319,10 @@ export const config: Options.Testrunner = {
     // }
     afterTest: function(test: any, { passed }: any) {
         if (!passed) {
-            browser.saveScreenshot(`./errorShots/${test.error}.png`);
+            const date = Date.now()
+            const dateString = date.toString().replace(/:/g, "-");
+
+            browser.saveScreenshot(`./errorShots/${dateString}.png`);
         }
     }
 }
