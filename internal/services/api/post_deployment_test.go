@@ -12,6 +12,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/publish"
@@ -80,7 +82,11 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		s.Equal("local", accountName)
 		s.Equal("default", configName)
 		s.Equal("", saveName)
-		return state.Empty(), nil
+
+		st := state.Empty()
+		st.Account = &accounts.Account{}
+		st.Target = deployment.New()
+		return st, nil
 	}
 	handler := PostDeploymentHandlerFunc(util.AbsolutePath{}, log, lister, events.NewNullEmitter())
 	handler(rec, req)
@@ -121,6 +127,47 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
 
+func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncWrongServer() {
+	log := logging.New()
+
+	deploymentName := "myDeployment"
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/deployments/"+deploymentName, nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": deploymentName})
+
+	originalAcct := &accounts.Account{
+		URL: "https://connect.example.com",
+	}
+	newAcct := &accounts.Account{
+		URL: "https://some.other.server.com",
+	}
+
+	d := deployment.New()
+	d.ServerURL = originalAcct.URL
+	err = d.WriteFile(deployment.GetDeploymentPath(s.cwd, deploymentName))
+	s.NoError(err)
+
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	err = cfg.WriteFile(config.GetConfigPath(s.cwd, "default"))
+	s.NoError(err)
+
+	lister := &accounts.MockAccountList{}
+	lister.On("GetAccountByName", "newAcct").Return(newAcct, nil)
+
+	req.Body = io.NopCloser(strings.NewReader(
+		`{
+			"account": "newAcct",
+			"config": "default"
+		}`))
+
+	handler := PostDeploymentHandlerFunc(s.cwd, log, lister, events.NewNullEmitter())
+	handler(rec, req)
+
+	s.Equal(http.StatusConflict, rec.Result().StatusCode)
+}
+
 func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr() {
 	log := logging.New()
 	rec := httptest.NewRecorder()
@@ -134,7 +181,11 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 		path util.AbsolutePath,
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList) (*state.State, error) {
-		return state.Empty(), nil
+
+		st := state.Empty()
+		st.Account = &accounts.Account{}
+		st.Target = deployment.New()
+		return st, nil
 	}
 
 	testErr := errors.New("test error from PublishDirectory")
