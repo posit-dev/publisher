@@ -106,9 +106,7 @@ export class ConfigurationsTreeDataProvider
     context.subscriptions.push(
       treeView,
       commands.registerCommand(refreshCommand, this.refresh),
-      commands.registerCommand(addCommand, async () => {
-        return await this.add();
-      }),
+      commands.registerCommand(addCommand, this.add),
       commands.registerCommand(editCommand, this.edit),
       commands.registerCommand(renameCommand, this.rename),
       commands.registerCommand(cloneCommand, this.clone),

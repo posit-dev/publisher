@@ -90,8 +90,6 @@ export async function createNewDeploymentFile() {
         // to be returned when it has not been cancelled to assist type guards
         deploymentName: undefined, // eventual type is string
         credentialName: undefined, // eventual type is QuickPickItem
-        promptToDeploy: undefined, /// eventual type is QuickPickItem
-        configFile: undefined, // eventual type is QuickPickItem
       },
     };
     // determin number of total steps, as each step
@@ -103,9 +101,8 @@ export async function createNewDeploymentFile() {
     state.totalSteps = totalSteps;
 
     // start the progression through the steps
-
     await MultiStepInput.run((input) => inputDeploymentName(input, state));
-    return state as MultiStepState;
+    return state;
   }
 
   // ***************************************************************

@@ -129,15 +129,11 @@ export class DeploymentsTreeDataProvider
     context.subscriptions.push(treeView);
 
     context.subscriptions.push(
-      commands.registerCommand(addCommand, () => {
-        addDeployment(this.stream);
-      }),
+      commands.registerCommand(addCommand, () => addDeployment(this.stream)),
     );
 
     context.subscriptions.push(
-      commands.registerCommand(createNewCommand, async () => {
-        return await createNewDeploymentFile();
-      }),
+      commands.registerCommand(createNewCommand, createNewDeploymentFile),
     );
 
     context.subscriptions.push(
