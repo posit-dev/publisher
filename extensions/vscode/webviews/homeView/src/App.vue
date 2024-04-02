@@ -127,11 +127,9 @@
         </div>
         <div class="last-deployment-details">
           Targeting Posit Connect server at
-          <a
-            href=""
-            onclick="onNavigateToServer(selectedDeployment.serverUrl)"
-            >{{ selectedDeployment.serverUrl }}</a
-          >
+          <a href="" @click="navigateToUrl(selectedDeployment.serverUrl)">{{
+            selectedDeployment.serverUrl
+          }}</a>
         </div>
         <div
           v-if="!isPreDeployment(selectedDeployment)"
@@ -139,7 +137,7 @@
         >
           <vscode-button
             appearance="secondary"
-            @click="onClickDashboardUrl(selectedDeployment.dashboardUrl)"
+            @click="navigateToUrl(selectedDeployment.dashboardUrl)"
             class="dashboard-button"
             >View Content
           </vscode-button>
@@ -315,7 +313,7 @@ const onClickDeployExpand = () => {
   }
 };
 
-const onClickDashboardUrl = (url: string) => {
+const navigateToUrl = (url: string) => {
   vsCodeApi.postMessage({
     command: "navigate",
     payload: url,
