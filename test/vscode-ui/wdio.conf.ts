@@ -70,7 +70,7 @@ export const config: Options.Testrunner = {
         browserVersion: 'stable', // also possible: "insiders" or a specific version e.g. "1.80.0"
         'wdio:vscodeOptions': {
             // points to directory where extension package.json is located
-            extensionPath: path.resolve(__dirname, '../../extensions/vscode/'),
+            extensionPath: path.resolve(__dirname, '../../extensions/vscode/.vscode-test/'),
             workspacePath: path.resolve(__dirname, '../sample-content/fastapi-simple/'),
             // optional VS Code settings
             userSettings: {
