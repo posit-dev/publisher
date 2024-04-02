@@ -302,6 +302,13 @@ vscode *args:
 
     just _with_docker just extensions/vscode/{{ args }}
 
+vscode-ui *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just test/vscode-ui/{{ args }}
+
 [private]
 _with_docker *args:
     #!/usr/bin/env bash
