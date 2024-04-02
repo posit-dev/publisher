@@ -19,47 +19,34 @@ describe("VS Code Extension UI Test", () => {
   it("should add a configuration when the button is clicked", async () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
-    // const workbench = await (browser as any).getWorkbench();
 
-    // await workbench.executeCommand()
-    // open publisher
-    // await workbench.executeCommand("workbench.openView.extension.posit.publisher");
-    // const extensionButton = await browser.$('aaria-label="Posit Publisher"');
-    // await extensionButton.click(aria-label="Posit Publisher");
-    
     const extension = await browser.$('aria/Posit Publisher');
     await expect(extension).toExist();
 
     await extension.click();
+
     // initialize project via button
     const init = await browser.$("a.monaco-button");
     await expect(init).toHaveText("Initialize Project");
     await init.click();
+
     // name configuration and save
-    // await sleep(1000);
-    // await sleep(100000);
     const actionbar = await browser.$("#quickInput_message");
-    // const text = await actionbar.getText();
+    
     await expect(actionbar).toHaveText("Configuration name (Press 'Enter' to confirm or 'Escape' to cancel)");
     await browser.keys("blue");
     await browser.keys([Key.Enter]);
-    // await sleep(10000);
-    // console.log(fs.readdirSync('../sample-content/fastapi-simple'));
-    // const config = await browser.$("aria/Configurations Section");
-    // const defaultTextElement = await browser.$$('.monaco-highlighted-label')[2];
+
     const defaultTextElement = await browser.$('.monaco-pane-view').$$('.split-view-view')[2].$('.pane-body');
 
-
-    
-    // $$('div')[1].nextElement().$$('img')[2].getAttribute('src')
     await expect(defaultTextElement).toHaveText("blue");
    
     // confirm config file is created
-    // const configFile = path.join(
-    //   __dirname,
-    //   "../sample-content/fastapi-simple/.posit/publish/blue.toml",
-    // );
-    // expect(fs.existsSync(configFile)).toBeTruthy();
+    const configFile = path.join(
+      __dirname,
+      "../../../sample-content/fastapi-simple/.posit/publish/blue.toml",
+    );
+    expect(fs.existsSync(configFile)).toBeTruthy();
 
     // cleanup
     after(async () => {

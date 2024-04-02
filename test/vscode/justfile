@@ -1,0 +1,58 @@
+alias c := clean
+alias i := install
+alias t := test
+
+export CONTENT := env_var_or_default("CONTENT", "all")
+export CONTENT_REPO := env_var_or_default("CONTENT_REPO", "/work/connect-content")
+export DOCKER_CONNECT := env_var_or_default("DOCKER_CONNECT", "false")
+
+export _ci := env_var_or_default("CI", "false")
+
+_debug := env_var_or_default("DEBUG", "false")
+
+_with_debug := if _debug == "true" {
+        "set -x pipefail"
+    } else {
+        ""
+    }
+
+default:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just install
+    just test
+
+# Deletes ephemeral project files (i.e., cleans the project).
+clean:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    rm -rf node_modules
+
+
+# Install dependencies
+install:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm install
+
+# Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just bats run test`)
+run *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run {{ args }}
+
+# this can run deploy or content tests
+test:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    npm run wdio

@@ -41,3 +41,7 @@ jobs:
   cypress:
     needs: build
     uses: ./.github/workflows/ui.yaml
+  vscode-ui:
+    needs: build
+    secrets: inherit
+    uses: ./.github/workflows/vscode-ui.yaml
