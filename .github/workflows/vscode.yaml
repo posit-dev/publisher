@@ -56,4 +56,4 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
+          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
