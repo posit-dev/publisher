@@ -76,6 +76,6 @@ func (s *LogRequestSuite) TestLogRequestJson() {
 	s.Contains(message, "req_size=31 ")
 	s.Contains(message, "resp_size=0 ")
 	s.Contains(message, "client_addr=")
-	s.Contains(message, "hi=there")
-	s.Contains(message, "what=huh?")
+	s.Contains(message, "req.hi=there")
+	s.Contains(message, "req.what=huh?")
 }
