@@ -55,10 +55,15 @@ jobs:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
-      - run: just package
       - run: just vscode configure
+      - run: just vscode test
       - run: just vscode-ui install
       - run: just vscode-ui test
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
@@ -115,10 +120,15 @@ jobs:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
-      - run: just package
       - run: just vscode configure
+      - run: just vscode test
       - run: just vscode-ui install
       - run: just vscode-ui test
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
