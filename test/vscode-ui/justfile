@@ -55,8 +55,10 @@ test:
     set -eou pipefail
     {{ _with_debug }}
     if [ {{ os() }} == "linux" ]; then
+        code --install-extension
         xvfb-run -a npm run wdio
     else
+        code --install-extension
         npm run wdio
     fi
 

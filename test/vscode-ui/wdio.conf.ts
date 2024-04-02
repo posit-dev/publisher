@@ -317,9 +317,9 @@ export const config: Options.Testrunner = {
     */
     // afterAssertion: function(params) {
     // }
-    afterTest: function(test: any, context: any, { passed }: any) {
+    afterTest: function(test: any, { passed }: any) {
         if (!passed) {
-            context.browser.saveScreenshot(`./errorShots/${test.fullTitle}.png`);
+            browser.saveScreenshot(`./errorShots/${test.error}.png`);
         }
     }
 }
