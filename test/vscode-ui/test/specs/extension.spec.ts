@@ -5,22 +5,20 @@ import * as fs from "fs";
 import * as path from "path";
 
 // import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import { sleep } from "wdio-vscode-service";
 
-
-
 describe("VS Code Extension UI Test", () => {
-    // it("should install the extension", () => {
+  // it("should install the extension", () => {
 
-    // });
+  // });
 
   it("should add a configuration when the button is clicked", async () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
 
-    const extension = await browser.$('aria/Posit Publisher');
+    const extension = await browser.$("aria/Posit Publisher");
     await expect(extension).toExist();
 
     await extension.click();
@@ -32,19 +30,24 @@ describe("VS Code Extension UI Test", () => {
 
     // name configuration and save
     const actionbar = await browser.$("#quickInput_message");
-    
-    await expect(actionbar).toHaveText("Configuration name (Press 'Enter' to confirm or 'Escape' to cancel)");
+
+    await expect(actionbar).toHaveText(
+      "Configuration name (Press 'Enter' to confirm or 'Escape' to cancel)"
+    );
     await browser.keys("blue");
     await browser.keys([Key.Enter]);
 
-    const defaultTextElement = await browser.$('.monaco-pane-view').$$('.split-view-view')[2].$('.pane-body');
+    const defaultTextElement = await browser
+      .$(".monaco-pane-view")
+      .$$(".split-view-view")[2]
+      .$(".pane-body");
 
     await expect(defaultTextElement).toHaveText("blue");
-   
+
     // confirm config file is created
     const configFile = path.join(
       __dirname,
-      "../../../sample-content/fastapi-simple/.posit/publish/blue.toml",
+      "../../../sample-content/fastapi-simple/.posit/publish/blue.toml"
     );
     expect(fs.existsSync(configFile)).toBeTruthy();
 
@@ -52,7 +55,7 @@ describe("VS Code Extension UI Test", () => {
     after(async () => {
       const parentDir = path.resolve(
         __dirname,
-        "../../../sample-content/fastapi-simple",
+        "../../../sample-content/fastapi-simple"
       );
       const positDir = path.join(parentDir, ".posit");
 
