@@ -117,19 +117,7 @@
           {{ formatDateString(selectedDeployment.deployedAt) }}
         </div>
         <div
-          v-if="isPreDeployment(selectedDeployment) && selectedDeployment.error"
-          class="last-deployment-details last-deployment-error"
-        >
-          <span class="codicon codicon-error error-icon flex-1"></span>
-          <span class="error-message">
-            Error: {{ selectedDeployment.error.msg }}
-          </span>
-        </div>
-        <div
-          v-if="
-            !isPreDeployment(selectedDeployment) &&
-            selectedDeployment.deploymentError
-          "
+          v-if="selectedDeployment.deploymentError"
           class="last-deployment-details last-deployment-error"
         >
           <span class="codicon codicon-error error-icon flex-1"></span>
@@ -217,14 +205,11 @@ const lastStatusDescription = computed(() => {
   if (!selectedDeployment.value) {
     return undefined;
   }
-  if (isPreDeployment(selectedDeployment.value)) {
-    if (selectedDeployment.value.error) {
-      return "Last Deployment Failed";
-    }
-    return "Not Yet Deployed";
-  }
   if (selectedDeployment.value.deploymentError) {
     return "Last Deployment Failed";
+  }
+  if (isPreDeployment(selectedDeployment.value)) {
+    return "Not Yet Deployed";
   }
   return "Last Deployment Successful";
 });
