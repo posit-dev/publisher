@@ -266,6 +266,11 @@ const updateSelectedDevelopment = () => {
   );
 };
 
+// TODO: We need to show an error when you have no credentials which can get to
+// the deployment URL
+// OR
+// Should we filter deployment list to just include what you can access. Maybe disable others?
+
 const filterCredentialsToDeployment = () => {
   credentialList.value = accounts.value
     .filter((account) => {
@@ -277,6 +282,7 @@ const filterCredentialsToDeployment = () => {
     .map((account) => account.name);
 
   if (credentialList.value.length === 0) {
+    // TODO: Show ERROR HERE!!!!
     selectedCredential.value = "";
   } else if (!selectedCredential.value) {
     selectedCredential.value = credentialList.value[0];
@@ -345,11 +351,14 @@ const onMessageFromProvider = (event: any) => {
       deploymentList.value = deployments.value.map(
         (deployment) => deployment.saveName,
       );
+      if (selectedDeploymentName.value) {
+        if (!deploymentList.value.includes(selectedDeploymentName.value)) {
+          selectedDeploymentName.value = "";
+        }
+      }
+
       if (!selectedDeploymentName.value) {
         selectedDeploymentName.value = deploymentList.value[0];
-      }
-      if (deploymentList.value.length === 0) {
-        selectedDeploymentName.value = "";
       }
       updateSelectedDevelopment();
 
@@ -363,6 +372,7 @@ const onMessageFromProvider = (event: any) => {
 
       accounts.value = payload.credentials;
       filterCredentialsToDeployment();
+
       break;
     }
     case "publish_start": {
