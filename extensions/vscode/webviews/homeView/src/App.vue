@@ -161,7 +161,6 @@ import {
   Deployment,
   PreDeployment,
   isPreDeployment,
-  isDeployment,
 } from "../../../src/api/types/deployments";
 import { formatDateString } from "../../../../../web/src/utils/date";
 import { Account } from "../../../src/api/types/accounts";
@@ -176,10 +175,6 @@ provideVSCodeDesignSystem().register(
   vsCodeProgressRing(),
   vsCodeDivider(),
 );
-
-// need access to the global window variable
-// in order to access addEventListener
-declare var window: any;
 
 let deployments = ref<(Deployment | PreDeployment)[]>([]);
 let deploymentList = ref<string[]>([]);
