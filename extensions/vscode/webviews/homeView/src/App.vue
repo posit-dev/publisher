@@ -28,13 +28,12 @@
       </div>
     </div>
 
-    <div v-if="showDetails" class="full-width">
-      <div class="section">
+    <div v-if="showDetails">
+      <div>
         <div class="label-and-icons">
           <label for="deployment-selector">Deployment:</label>
           <vscode-button appearance="icon" class="action-icons">
             <span
-              slot="start"
               class="codicon codicon-add"
               @click="onClickAddDeployment"
             ></span>
@@ -55,20 +54,18 @@
         </vscode-dropdown>
       </div>
 
-      <div class="section">
+      <div>
         <div class="label-and-icons">
           <label for="config-selector">Configuration:</label>
           <div class="action-icons-container">
             <vscode-button appearance="icon" class="action-icons">
               <span
-                slot="start"
                 class="codicon codicon-edit"
                 @click="onClickEditConfiguration"
               ></span>
             </vscode-button>
             <vscode-button appearance="icon" class="action-icons">
               <span
-                slot="start"
                 class="codicon codicon-add"
                 @click="onClickAddConfiguration"
               ></span>
@@ -97,11 +94,8 @@
         }}</vscode-option>
       </vscode-dropdown>
     </div>
-    <div
-      v-if="selectedDeployment && selectedDeployment.serverType"
-      class="full-width"
-    >
-      <vscode-divider class="full-width" />
+    <div v-if="selectedDeployment && selectedDeployment.serverType">
+      <vscode-divider />
       <div v-if="publishingInProgress" class="progress-container">
         <vscode-progress-ring class="progress-ring" />
         Deployment in Progress...
@@ -120,7 +114,7 @@
           v-if="selectedDeployment.deploymentError"
           class="last-deployment-details last-deployment-error"
         >
-          <span class="codicon codicon-error error-icon flex-1"></span>
+          <span class="codicon codicon-error error-icon"></span>
           <span class="error-message">
             Error: {{ selectedDeployment.deploymentError.msg }}
           </span>
@@ -417,40 +411,21 @@ const onMessageFromProvider = (event: any) => {
 </script>
 
 <style lang="scss" scoped>
-main {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: flex-start;
-  height: 100%;
-}
-
 .roomy {
   margin: 0.5rem 0;
-  min-width: 100%;
 }
 
 .dropdowns {
-  width: 100%;
+  display: block;
   margin: 0.5rem 0 1rem 0;
 }
 
 .label-and-icons {
   display: flex;
   justify-content: space-between;
-  align-content: center;
   flex-direction: row;
   flex-wrap: nowrap;
-  min-width: 100%;
   align-items: center;
-}
-
-.action-icons {
-  width: 20px;
-}
-
-.section {
-  min-width: 100%;
 }
 
 .deployment-summary {
@@ -463,7 +438,6 @@ main {
 
 .last-deployment-details {
   margin-top: 10px;
-  width: 100%;
 }
 
 .last-deployment-error {
@@ -488,19 +462,6 @@ main {
   min-width: 100%;
 }
 
-.full-width {
-  width: 100%;
-  min-width: 100%;
-}
-
-.action-icons-container {
-  display: flex;
-  justify-content: flex-end;
-  align-content: center;
-  flex-direction: row;
-  flex-wrap: nowrap;
-}
-
 .progress-container {
   display: flex;
   flex-direction: row;
@@ -510,10 +471,6 @@ main {
 
 .progress-ring {
   margin-right: 10px;
-}
-
-.flex-1 {
-  flex: 1;
 }
 
 .dashboard-button {
