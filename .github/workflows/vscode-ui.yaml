@@ -32,8 +32,6 @@ jobs:
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
           key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
-      - run: just vscode configure
-      - run: just vscode test
       - uses: actions/cache/save@v4
         if: steps.cache.outputs.cache-hit != 'true'
         with:
@@ -57,9 +55,10 @@ jobs:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
+      - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui test
-      
+
       - name: Save screenshots
         uses: actions/upload-artifact@v4
         if: failure()
@@ -91,8 +90,6 @@ jobs:
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
           key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
-      - run: just vscode configure
-      - run: just vscode test
       - uses: actions/cache/save@v4
         if: steps.cache.outputs.cache-hit != 'true'
         with:
@@ -117,6 +114,7 @@ jobs:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
+      - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui test
 
