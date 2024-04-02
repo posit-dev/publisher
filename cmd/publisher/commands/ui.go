@@ -16,7 +16,6 @@ type UICmd struct {
 	OpenBrowserAt string    `help:"Network address to use when launching the browser." placeholder:"HOST[:PORT]" hidden:""`
 	Theme         string    `help:"UI theme, 'light' or 'dark'." hidden:""`
 	Listen        string    `help:"Network address to listen on." placeholder:"HOST[:PORT]" default:"localhost:0"`
-	AccessLog     bool      `help:"Log all HTTP requests."`
 	TLSKeyFile    string    `help:"Path to TLS private key file for the UI server."`
 	TLSCertFile   string    `help:"Path to TLS certificate chain file for the UI server."`
 }
@@ -45,7 +44,7 @@ func (cmd *UICmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContext) err
 		cmd.OpenBrowserAt,
 		cmd.Theme,
 		cmd.Listen,
-		cmd.AccessLog,
+		true,
 		cmd.TLSKeyFile,
 		cmd.TLSCertFile,
 		absPath,
