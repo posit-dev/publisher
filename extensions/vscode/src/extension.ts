@@ -104,7 +104,7 @@ export async function activate(context: vscode.ExtensionContext) {
   new CredentialsTreeDataProvider(apiReady).register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
   new LogsTreeDataProvider(stream).register(context);
-  new HomeViewProvider(context.extensionUri, stream).register(context);
+  new HomeViewProvider(context.extensionUri, stream, context).register(context);
 
   await service.start();
 

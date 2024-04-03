@@ -150,6 +150,18 @@ import {
 import { formatDateString } from "../../../../../web/src/utils/date";
 import { Account } from "../../../src/api/types/accounts";
 
+type RefreshDataPayload = {
+  deployments: (Deployment | PreDeployment)[];
+  configurations: string[];
+  credentials: Account[];
+  deploymentButtonExpanded?: boolean;
+  currentSelectionState?: {
+    deploymentName: string;
+    configurationName: string;
+    credentialName: string;
+  };
+};
+
 let deployments = ref<(Deployment | PreDeployment)[]>([]);
 let deploymentList = ref<string[]>([]);
 let configList = ref<string[]>([]);
@@ -198,9 +210,15 @@ const disableDeployment = computed(() => {
 });
 
 watch(selectedDeploymentName, () => {
-  updateSelectedDevelopment();
-  filterCredentialsToDeployment();
+  updateSelectedDevelopmentObject();
+  adjustSelectedCredentialName();
+  updateParentViewSelectionState();
 });
+
+watch(
+  [selectedConfig, selectedCredential],
+  () => updateParentViewSelectionState,
+);
 
 onBeforeMount(() => {
   // Register for our messages from the provider
@@ -217,10 +235,30 @@ onBeforeUnmount(() => {
   window.removeEventListener("message", onMessageFromProvider);
 });
 
-const updateSelectedDevelopment = () => {
+const adjustSelectedDeploymentName = () => {
+  if (selectedDeploymentName.value) {
+    if (!deploymentList.value.includes(selectedDeploymentName.value)) {
+      selectedDeploymentName.value = "";
+    }
+  }
+  if (!selectedDeploymentName.value) {
+    selectedDeploymentName.value = deploymentList.value[0];
+  }
+};
+
+const updateSelectedDevelopmentObject = () => {
   selectedDeployment.value = deployments.value.find(
     (deployment) => deployment.saveName === selectedDeploymentName.value,
   );
+};
+
+const adjustSelectedConfigurationName = () => {
+  if (!selectedConfig.value) {
+    selectedConfig.value = configList.value[0];
+  }
+  if (configList.value.length === 0) {
+    selectedConfig.value = "";
+  }
 };
 
 // TODO: We need to show an error when you have no credentials which can get to
@@ -228,7 +266,7 @@ const updateSelectedDevelopment = () => {
 // OR
 // Should we filter deployment list to just include what you can access. Maybe disable others?
 
-const filterCredentialsToDeployment = () => {
+const adjustSelectedCredentialName = () => {
   credentialList.value = accounts.value
     .filter((account) => {
       return (
@@ -261,15 +299,10 @@ const onClickDeploy = () => {
 
 const onClickDeployExpand = () => {
   showDetails.value = !showDetails.value;
-  if (showDetails.value) {
-    vsCodeApi.postMessage({
-      command: "expanded",
-    });
-  } else {
-    vsCodeApi.postMessage({
-      command: "collapsed",
-    });
-  }
+  vsCodeApi.postMessage({
+    command: "updateDeploymentButtonExpanded",
+    payload: JSON.stringify(showDetails.value),
+  });
 };
 
 const navigateToUrl = (url: string) => {
@@ -298,38 +331,54 @@ const onClickEditConfiguration = () => {
   });
 };
 
+const updateParentViewSelectionState = () => {
+  vsCodeApi.postMessage({
+    command: "updateSelectionState",
+    payload: JSON.stringify({
+      deploymentName: selectedDeploymentName.value,
+      configurationName: selectedConfig.value,
+      credentialName: selectedCredential.value,
+    }),
+  });
+};
+
 const onMessageFromProvider = (event: any) => {
   const command = event.data.command;
   switch (command) {
     case "refresh_data": {
-      const payload = JSON.parse(event.data.payload);
+      const payload: RefreshDataPayload = JSON.parse(event.data.payload);
+
+      if (payload.deploymentButtonExpanded) {
+        showDetails.value = payload.deploymentButtonExpanded;
+      }
 
       deployments.value = payload.deployments;
       deploymentList.value = deployments.value.map(
         (deployment) => deployment.saveName,
       );
-      if (selectedDeploymentName.value) {
-        if (!deploymentList.value.includes(selectedDeploymentName.value)) {
-          selectedDeploymentName.value = "";
-        }
+      // We don't always receive an update for the selection state
+      if (payload.currentSelectionState) {
+        selectedDeploymentName.value =
+          payload.currentSelectionState.deploymentName;
       }
-
-      if (!selectedDeploymentName.value) {
-        selectedDeploymentName.value = deploymentList.value[0];
-      }
-      updateSelectedDevelopment();
+      adjustSelectedDeploymentName();
+      updateSelectedDevelopmentObject();
 
       configList.value = payload.configurations;
-      if (!selectedConfig.value) {
-        selectedConfig.value = configList.value[0];
+      if (payload.currentSelectionState) {
+        selectedConfig.value = payload.currentSelectionState.configurationName;
       }
-      if (configList.value.length === 0) {
-        selectedConfig.value = "";
-      }
+      adjustSelectedConfigurationName();
 
       accounts.value = payload.credentials;
-      filterCredentialsToDeployment();
-
+      if (payload.currentSelectionState) {
+        selectedCredential.value = payload.currentSelectionState.credentialName;
+      }
+      adjustSelectedCredentialName();
+      break;
+    }
+    case "initialize_selection_state": {
+      const payload = JSON.parse(event.data.payload);
       break;
     }
     case "publish_start": {
@@ -350,6 +399,7 @@ const onMessageFromProvider = (event: any) => {
     }
     case "update_deployment_selection": {
       const payload = JSON.parse(event.data.payload);
+
       // Not sure why we can't set this value immediately, even ahead
       // of the refresh which is coming, but what I've found is that you
       // have to wait long enough for the list to render before setting it,

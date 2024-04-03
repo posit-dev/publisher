@@ -40,10 +40,18 @@ const refreshCommand = viewName + ".refresh";
 const contextIsSelectorExpanded = viewName + ".expanded";
 const showBasicModeCommand = viewName + ".showBasicMode";
 const showAdvancedModeCommand = viewName + ".showAdvancedMode";
+const lastHomeViewSelectionState = viewName + ".lastHomeViewSelectionState";
+const lastHomeViewExpansionState = viewName + ".lastHomeViewExpansionState";
 
 const contextActiveMode = viewName + ".deploymentActiveMode";
 const contextActiveModeAdvanced = "advanced-mode";
 const contextActiveModeBasic = "basic-mode";
+
+type HomeViewSelectionState = {
+  deploymentName: string;
+  configurationName: string;
+  credentialName: string;
+};
 
 export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
@@ -57,11 +65,13 @@ export class HomeViewProvider implements WebviewViewProvider {
   constructor(
     private readonly _extensionUri: Uri,
     private readonly stream: EventStream,
+    private readonly extension: ExtensionContext,
   ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
+
     stream.register("publish/start", () => {
       this._onPublishStart();
     });
@@ -123,12 +133,9 @@ export class HomeViewProvider implements WebviewViewProvider {
               return;
             }
             return;
-          // Add more switch case statements here as more webview message commands
-          // are created within the webview context (i.e. inside media/main.js)
           case "initializing":
-            // send back the data needed.
             await this._refreshData();
-            this._refreshWebViewViewData();
+            this._refreshWebViewViewData(true);
             return;
           case "newDeployment":
             const newFile: string = await commands.executeCommand(
@@ -149,7 +156,6 @@ export class HomeViewProvider implements WebviewViewProvider {
               );
             }
             break;
-
           case "newConfiguration":
             const newConfig: string = await commands.executeCommand(
               "posit.publisher.configurations.add",
@@ -174,6 +180,19 @@ export class HomeViewProvider implements WebviewViewProvider {
             break;
           case "navigate":
             env.openExternal(Uri.parse(message.payload));
+            break;
+          case "updateDeploymentButtonExpanded":
+            const expanded: boolean = JSON.parse(message.payload);
+            commands.executeCommand(
+              "setContext",
+              contextIsSelectorExpanded,
+              expanded,
+            );
+            this._updateExpansionState(expanded);
+            break;
+          case "updateSelectionState":
+            const state: HomeViewSelectionState = JSON.parse(message.payload);
+            this._updateSelectionState(state);
             break;
         }
       },
@@ -212,6 +231,40 @@ export class HomeViewProvider implements WebviewViewProvider {
     } else {
       console.log("_onPublishFailure: oops! No _webViewView defined!");
     }
+  }
+
+  private _retrieveSelectionState(): HomeViewSelectionState {
+    const result = this.extension.workspaceState.get<HomeViewSelectionState>(
+      lastHomeViewSelectionState,
+      {
+        deploymentName: "",
+        configurationName: "",
+        credentialName: "",
+      },
+    );
+    return result;
+  }
+
+  private _retrieveExpansionState(): boolean {
+    const result = this.extension.workspaceState.get<boolean>(
+      lastHomeViewExpansionState,
+      false,
+    );
+    return result;
+  }
+
+  private _updateSelectionState(state: HomeViewSelectionState) {
+    return this.extension.workspaceState.update(
+      lastHomeViewSelectionState,
+      state,
+    );
+  }
+
+  private _updateExpansionState(expanded: boolean) {
+    return this.extension.workspaceState.update(
+      lastHomeViewExpansionState,
+      expanded,
+    );
   }
 
   private async _refreshData() {
@@ -264,7 +317,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
-  private _refreshWebViewViewData() {
+  private _refreshWebViewViewData(includeState = false) {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
         command: "refresh_data",
@@ -274,6 +327,12 @@ export class HomeViewProvider implements WebviewViewProvider {
             (config) => config.configurationName,
           ),
           credentials: this._credentials,
+          deploymentButtonExpanded: includeState
+            ? this._retrieveExpansionState()
+            : undefined,
+          currentSelectionState: includeState
+            ? this._retrieveSelectionState()
+            : undefined,
         }),
       });
     }
