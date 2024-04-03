@@ -353,6 +353,10 @@
           "when": "false"
         },
         {
+          "command": "posit.publisher.deployments.createNew",
+          "when": "false"
+        },
+        {
           "command": "posit.publisher.requirements.refresh",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         },
