@@ -547,6 +547,8 @@
     "vscode:prepublish": "npm run compile",
     "compile": "npm run compile-extension && npm run compile-deploy-selector",
     "compile-extension": "tsc -p ./",
+    "compile-home-view": "npm run --prefix webviews/homeView compile",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts --max-warnings 0",
