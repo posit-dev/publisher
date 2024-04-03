@@ -28,6 +28,7 @@ jobs:
       #   with:
       #     path: ./extensions/vscode/.vscode-test/vscode-*
       #     key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+      - run: just
       - run: just vscode configure
       - run: just vscode test
       # - uses: actions/cache/save@v4
@@ -50,6 +51,7 @@ jobs:
       #   with:
       #     path: ./extensions/vscode/.vscode-test/vscode-*
       #     key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+      - run: just
       - run: just vscode configure
       - run: just vscode test
       # - uses: actions/cache/save@v4
