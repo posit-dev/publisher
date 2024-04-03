@@ -23,31 +23,37 @@ describe("VS Code Extension UI Test", () => {
     await extension.click();
 
     // initialize project via button
-    const init = await browser
-      .$("a.monaco-button");
-    await expect(init).toHaveText("Initialize Project");
+    const init = await browser.$("aria/Configurations Section");
+    await expect(init).toHaveText("CONFIGURATIONS");
     await init.click();
+
+    const newConfig = await browser.$(".monaco-button");
+
+    await expect(newConfig).toHaveText("New Configuration");
+    await newConfig.click();
 
     // name configuration and save
     const actionbar = await browser.$("#quickInput_message");
 
     await expect(actionbar).toHaveText(
-      "Configuration name (Press 'Enter' to confirm or 'Escape' to cancel)"
+      "Configuration name (Press 'Enter' to confirm or 'Escape' to cancel)",
     );
     await browser.keys("blue");
     await browser.keys([Key.Enter]);
 
     const defaultTextElement = await browser
       .$(".monaco-pane-view")
-      .$$(".split-view-view")[2]
+      .$$(".split-view-view")[3]
+      .$(".pane")
       .$(".pane-body");
+    // .$(".pane-body");
 
     await expect(defaultTextElement).toHaveText("blue");
 
     // confirm config file is created
     const configFile = path.join(
       __dirname,
-      "../../../sample-content/fastapi-simple/.posit/publish/blue.toml"
+      "../../../sample-content/fastapi-simple/.posit/publish/blue.toml",
     );
     expect(fs.existsSync(configFile)).toBeTruthy();
 
@@ -55,7 +61,7 @@ describe("VS Code Extension UI Test", () => {
     after(async () => {
       const parentDir = path.resolve(
         __dirname,
-        "../../../sample-content/fastapi-simple"
+        "../../../sample-content/fastapi-simple",
       );
       const positDir = path.join(parentDir, ".posit");
 
