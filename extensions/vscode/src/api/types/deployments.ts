@@ -27,11 +27,12 @@ type DeploymentRecord = {
   serverUrl: string;
   saveName: string;
   createdAt: string;
+  configurationName: string;
+  deploymentError: AgentError | null;
 } & DeploymentLocation;
 
 export type PreDeployment = {
   state: DeploymentState.NEW;
-  error: AgentError | null;
   configurationName: string | undefined;
   configurationPath: string | undefined;
 } & DeploymentRecord;
@@ -45,7 +46,6 @@ export type Deployment = {
   files: string[];
   deployedAt: string;
   state: DeploymentState.DEPLOYED;
-  deploymentError: AgentError | null;
   configurationName: string;
   configurationPath: string;
 } & DeploymentRecord &
@@ -59,10 +59,10 @@ export function isSuccessful(
   if (d === undefined) {
     return undefined;
   }
-  if (isDeployment(d)) {
-    return Boolean(!d.deploymentError);
+  if (isDeploymentError(d)) {
+    return false;
   }
-  return Boolean(!d.error);
+  return Boolean(!d.deploymentError);
 }
 
 export function isUnsuccessful(

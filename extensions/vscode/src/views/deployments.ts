@@ -30,6 +30,7 @@ import {
 import { confirmForget } from "../dialogs";
 import { EventStream } from "../events";
 import { addDeployment } from "../multiStepInputs/addDeployment";
+import { createNewDeploymentFile } from "../multiStepInputs/createNewDeploymentFile";
 import { publishDeployment } from "../multiStepInputs/deployProject";
 import { formatDateString } from "../utils/date";
 import { getSummaryStringFromError } from "../utils/errors";
@@ -40,6 +41,7 @@ const editCommand = viewName + ".edit";
 const forgetCommand = viewName + ".forget";
 const visitCommand = viewName + ".visit";
 const addCommand = viewName + ".add";
+const createNewCommand = viewName + ".createNew";
 const deployCommand = viewName + ".deploy";
 const isEmptyContext = viewName + ".isEmpty";
 
@@ -127,22 +129,15 @@ export class DeploymentsTreeDataProvider
     context.subscriptions.push(treeView);
 
     context.subscriptions.push(
-      commands.registerCommand(addCommand, () => {
-        addDeployment(this.stream);
-      }),
+      commands.registerCommand(addCommand, () => addDeployment(this.stream)),
+    );
+
+    context.subscriptions.push(
+      commands.registerCommand(createNewCommand, createNewDeploymentFile),
     );
 
     context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
-    );
-
-    context.subscriptions.push(
-      commands.registerCommand(
-        editCommand,
-        async (item: DeploymentsTreeItem) => {
-          await commands.executeCommand("vscode.open", item.fileUri);
-        },
-      ),
     );
 
     context.subscriptions.push(
@@ -168,6 +163,18 @@ export class DeploymentsTreeDataProvider
           }
         },
       ),
+    );
+
+    context.subscriptions.push(
+      commands.registerCommand(
+        editCommand,
+        async (item: DeploymentsTreeItem) => {
+          await commands.executeCommand("vscode.open", item.fileUri);
+        },
+      ),
+    );
+
+    context.subscriptions.push(
       commands.registerCommand(
         visitCommand,
         async (item: DeploymentsTreeItem) => {

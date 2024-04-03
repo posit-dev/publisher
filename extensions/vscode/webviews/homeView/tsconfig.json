@@ -1,0 +1,15 @@
+{
+  "extends": [
+    "@tsconfig/node18/tsconfig.json",
+    "@vue/tsconfig/tsconfig.dom.json"
+  ],
+  "include": ["src/**/*", "src/**/*.vue"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["./src/*"]
+    },
+    "verbatimModuleSyntax": false,
+    "types": ["@types/vscode-webview"]
+  }
+}

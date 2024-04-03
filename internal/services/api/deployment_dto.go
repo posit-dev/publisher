@@ -31,9 +31,9 @@ type preDeploymentDTO struct {
 	ServerURL  string              `json:"serverUrl"`
 	SaveName   string              `json:"saveName"`
 	CreatedAt  string              `json:"createdAt"`
-	Error      *types.AgentError   `json:"error,omitempty"`
 	ConfigName string              `json:"configurationName,omitempty"`
 	ConfigPath string              `json:"configurationPath,omitempty"`
+	Error      *types.AgentError   `json:"deploymentError,omitempty"`
 }
 
 type fullDeploymentDTO struct {

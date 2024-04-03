@@ -15,6 +15,8 @@ import { CredentialsTreeDataProvider } from "./views/credentials";
 import { HelpAndFeedbackTreeDataProvider } from "./views/helpAndFeedback";
 import { LogsTreeDataProvider } from "./views/logs";
 import { EventStream } from "./events";
+import { HomeViewProvider } from "./views/homeView";
+import { commands } from "vscode";
 
 const STATE_CONTEXT = "posit.publish.state";
 const MISSING_CONTEXT = "posit.publish.missing";
@@ -77,7 +79,12 @@ export async function activate(context: vscode.ExtensionContext) {
     });
     context.subscriptions.push(watcher);
 
-    setMissingContext(await isMissingPublishDirs(folder));
+    // set our initial mode
+    commands.executeCommand(
+      "setContext",
+      "posit.publisher.homeView.deploymentActiveMode",
+      "basic-mode",
+    );
   } else {
     setMissingContext(true);
   }
@@ -97,6 +104,7 @@ export async function activate(context: vscode.ExtensionContext) {
   new CredentialsTreeDataProvider(apiReady).register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
   new LogsTreeDataProvider(stream).register(context);
+  new HomeViewProvider(context.extensionUri, stream).register(context);
 
   await service.start();
 

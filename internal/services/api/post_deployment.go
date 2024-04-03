@@ -53,11 +53,17 @@ func PostDeploymentHandlerFunc(
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				NotFound(w, log, err)
+			} else if errors.Is(err, state.ErrServerURLMismatch) {
+				// Redeployments must go to the same server
+				w.WriteHeader(http.StatusConflict)
+				w.Write([]byte(err.Error()))
+				return
 			} else {
 				BadRequest(w, req, log, err)
 			}
 			return
 		}
+
 		response := PostDeploymentsReponse{
 			LocalID: localID,
 		}
