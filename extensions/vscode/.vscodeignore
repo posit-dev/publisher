@@ -1,6 +1,9 @@
 .vscode/**
 .vscode-test/**
 src/**
+node_modules
+out/
+scripts/
 .yarnrc
 **/_.map
 \*\*/_.ts
@@ -19,6 +22,7 @@ webviews/homeView/node_modules/**
 # Ignore configuration files
 
 **/.gitignore
+**/justfile
 **/.eslintrc.json
-**/tsconfig\*.json
-**/vite.config.json
+**/tsconfig*.json
+**/vite.config.ts
