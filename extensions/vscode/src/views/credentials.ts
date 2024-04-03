@@ -30,7 +30,10 @@ export class CredentialsTreeDataProvider
   readonly onDidChangeTreeData: CredentialEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(private apiReady: Promise<boolean>) {}
+  constructor(
+    private context: ExtensionContext,
+    private apiReady: Promise<boolean>,
+  ) {}
 
   getTreeItem(element: CredentialsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -66,12 +69,12 @@ export class CredentialsTreeDataProvider
     this._onDidChangeTreeData.fire();
   };
 
-  public register(context: ExtensionContext) {
-    context.subscriptions.push(
+  public register() {
+    this.context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this }),
     );
 
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
     );
   }

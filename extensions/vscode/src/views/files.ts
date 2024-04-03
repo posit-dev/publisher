@@ -1,24 +1,25 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { DeploymentFile, ExclusionMatch } from "../api/types/files";
-import { useApi } from "../api";
+import * as path from "path";
 import {
+  Event,
+  EventEmitter,
+  ExtensionContext,
+  FileSystemWatcher,
+  RelativePattern,
+  ThemeIcon,
   TreeDataProvider,
   TreeItem,
-  ExtensionContext,
-  window,
-  EventEmitter,
-  Event,
-  workspace,
   TreeItemCollapsibleState,
   Uri,
   commands,
-  ThemeIcon,
-  RelativePattern,
+  window,
+  workspace,
 } from "vscode";
+import { useApi } from "../api";
+import { DeploymentFile, ExclusionMatch } from "../api/types/files";
 import { getSummaryStringFromError } from "../utils/errors";
-import * as path from "path";
-import { updateNewOrExistingFile, pathSorter } from "../utils/files";
+import { pathSorter, updateNewOrExistingFile } from "../utils/files";
 
 import * as os from "os";
 
@@ -52,12 +53,17 @@ type FilesEvent = Event<TreeEntries | undefined | void>;
 
 export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   private root: Uri;
+  private fileSystemWatcher: FileSystemWatcher | undefined;
+
   private _onDidChangeTreeData: FilesEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: FilesEvent = this._onDidChangeTreeData.event;
 
   private api = useApi();
 
-  constructor(private apiReady: Promise<boolean>) {
+  constructor(
+    private context: ExtensionContext,
+    private apiReady: Promise<boolean>,
+  ) {
     const workspaceFolders = workspace.workspaceFolders;
     this.root = Uri.parse("positPublisherFiles://unknown");
     if (workspaceFolders !== undefined) {
@@ -74,6 +80,10 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   }
 
   async getChildren(element: TreeEntries | undefined): Promise<TreeEntries[]> {
+    if (this.fileSystemWatcher === undefined) {
+      this.fileSystemWatcher = this.createFileSystemWatcher(this.root);
+    }
+
     if (element === undefined) {
       // first call.
       try {
@@ -109,15 +119,15 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     return [];
   }
 
-  public register(context: ExtensionContext) {
+  public register() {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
-    context.subscriptions.push(treeView);
-    context.subscriptions.push(
+    this.context.subscriptions.push(treeView);
+    this.context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
     );
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(editPositIgnoreCommand, async () => {
         if (this.root !== undefined) {
           updateNewOrExistingFile(
@@ -129,7 +139,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
         }
       }),
     );
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         addExclusionCommand,
         async (item: FileTreeItem) => {
@@ -144,16 +154,17 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
         },
       ),
     );
+  }
 
-    if (this.root !== undefined) {
-      const watcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, "**"),
-      );
-      watcher.onDidCreate(this.refresh);
-      watcher.onDidDelete(this.refresh);
-      watcher.onDidChange(this.refresh);
-      context.subscriptions.push(watcher);
-    }
+  private createFileSystemWatcher(root: Uri): FileSystemWatcher {
+    const watcher = workspace.createFileSystemWatcher(
+      new RelativePattern(root, "**"),
+    );
+    watcher.onDidCreate(this.refresh);
+    watcher.onDidDelete(this.refresh);
+    watcher.onDidChange(this.refresh);
+    this.context.subscriptions.push(watcher);
+    return watcher;
   }
 }
 

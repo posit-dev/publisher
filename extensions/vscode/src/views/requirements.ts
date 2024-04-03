@@ -38,12 +38,16 @@ export class RequirementsTreeDataProvider
   implements TreeDataProvider<RequirementsTreeItem>
 {
   private root: WorkspaceFolder | undefined;
+  private fileSystemWatcher: FileSystemWatcher | undefined;
   private fileUri: Uri | undefined;
   private _onDidChangeTreeData: RequirementsEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: RequirementsEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(private apiReady: Promise<boolean>) {
+  constructor(
+    private context: ExtensionContext,
+    private apiReady: Promise<boolean>,
+  ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -66,6 +70,10 @@ export class RequirementsTreeDataProvider
       // No workspace directory is available to read the data from.
       return [];
     }
+    if (this.fileSystemWatcher === undefined) {
+      this.fileSystemWatcher = this.createFileSystemWatcher(this.root);
+    }
+
     try {
       await this.apiReady;
       const response = await api.requirements.getAll();
@@ -97,12 +105,12 @@ export class RequirementsTreeDataProvider
     );
   }
 
-  public register(context: ExtensionContext) {
-    context.subscriptions.push(
+  public register() {
+    this.context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this }),
     );
     if (this.root !== undefined) {
-      context.subscriptions.push(
+      this.context.subscriptions.push(
         commands.registerCommand(editCommand, this.edit),
         commands.registerCommand(refreshCommand, this.refresh),
         commands.registerCommand(scanCommand, this.scan),
@@ -117,6 +125,7 @@ export class RequirementsTreeDataProvider
     watcher.onDidCreate(this.refresh);
     watcher.onDidDelete(this.refresh);
     watcher.onDidChange(this.refresh);
+    this.context.subscriptions.push(watcher);
     return watcher;
   }
 

@@ -49,11 +49,16 @@ export class ConfigurationsTreeDataProvider
   implements TreeDataProvider<ConfigurationTreeItem>
 {
   private root: WorkspaceFolder | undefined;
+  private fileSystemWatcher: FileSystemWatcher | undefined;
+
   private _onDidChangeTreeData: ConfigurationEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: ConfigurationEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(private apiReady: Promise<boolean>) {
+  constructor(
+    private context: ExtensionContext,
+    private apiReady: Promise<boolean>,
+  ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -76,7 +81,9 @@ export class ConfigurationsTreeDataProvider
       // There can't be any configurations if we don't have a folder open.
       return [];
     }
-
+    if (this.fileSystemWatcher === undefined) {
+      this.fileSystemWatcher = this.createFileSystemWatcher(root);
+    }
     try {
       await this.apiReady;
       const response = await api.configurations.getAll();
@@ -98,12 +105,12 @@ export class ConfigurationsTreeDataProvider
     }
   }
 
-  public register(context: ExtensionContext) {
+  public register() {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
 
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       treeView,
       commands.registerCommand(refreshCommand, this.refresh),
       commands.registerCommand(addCommand, this.add),
@@ -112,9 +119,6 @@ export class ConfigurationsTreeDataProvider
       commands.registerCommand(cloneCommand, this.clone),
       commands.registerCommand(deleteCommand, this.delete),
     );
-    if (this.root !== undefined) {
-      context.subscriptions.push(this.createFileSystemWatcher(this.root));
-    }
   }
 
   private async setContextIsEmpty(isEmpty: boolean): Promise<void> {
@@ -131,6 +135,7 @@ export class ConfigurationsTreeDataProvider
     watcher.onDidCreate(this.refresh);
     watcher.onDidDelete(this.refresh);
     watcher.onDidChange(this.refresh);
+    this.context.subscriptions.push(watcher);
     return watcher;
   }
 

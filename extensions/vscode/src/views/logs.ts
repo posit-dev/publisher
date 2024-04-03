@@ -76,7 +76,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
    * @constructor
    * @param {EventStream} stream - The event stream to listen to.
    */
-  constructor(stream: EventStream) {
+  constructor(
+    private context: ExtensionContext,
+    stream: EventStream,
+  ) {
     // Initialize the stages map and the outer, publishing stage
     this.resetStages();
 
@@ -229,9 +232,9 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
    * Register the tree view in the extension context.
    * @param context The extension context.
    */
-  public register(context: ExtensionContext) {
+  public register() {
     // Create a tree view with the specified view name and options
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       window.createTreeView(viewName, {
         treeDataProvider: this,
       }),

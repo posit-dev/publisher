@@ -1,36 +1,37 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import {
-  Disposable,
-  Webview,
-  window,
-  Uri,
-  WebviewViewProvider,
-  WebviewView,
-  WebviewViewResolveContext,
   CancellationToken,
+  Disposable,
   ExtensionContext,
-  workspace,
-  WorkspaceFolder,
+  FileSystemWatcher,
   RelativePattern,
+  Uri,
+  Webview,
+  WebviewView,
+  WebviewViewProvider,
+  WebviewViewResolveContext,
+  WorkspaceFolder,
   commands,
   env,
+  window,
+  workspace,
 } from "vscode";
-import { getUri } from "../utils/getUri";
-import { getNonce } from "../utils/getNonce";
 import {
-  useApi,
-  isConfigurationError,
-  isDeploymentError,
-  EventStreamMessage,
+  Account,
   Configuration,
   Deployment,
+  EventStreamMessage,
   PreDeployment,
-  Account,
+  isConfigurationError,
+  isDeploymentError,
+  useApi,
 } from "../api";
-import { getSummaryStringFromError } from "../utils/errors";
-import { deployProject } from "./deployProgress";
 import { EventStream } from "../events";
+import { getSummaryStringFromError } from "../utils/errors";
+import { getNonce } from "../utils/getNonce";
+import { getUri } from "../utils/getUri";
+import { deployProject } from "./deployProgress";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
@@ -53,9 +54,11 @@ export class HomeViewProvider implements WebviewViewProvider {
   private _configs: Configuration[] = [];
   private root: WorkspaceFolder | undefined;
   private _webviewView?: WebviewView;
+  private configFileWatcher: FileSystemWatcher | undefined;
+  private deploymentFileWatcher: FileSystemWatcher | undefined;
 
   constructor(
-    private readonly _extensionUri: Uri,
+    private context: ExtensionContext,
     private readonly stream: EventStream,
   ) {
     const workspaceFolders = workspace.workspaceFolders;
@@ -215,6 +218,17 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _refreshData() {
+    if (this.root !== undefined) {
+      if (this.configFileWatcher === undefined) {
+        this.configFileWatcher = this.createConfigFileWatcher(this.root);
+      }
+      if (this.deploymentFileWatcher === undefined) {
+        this.deploymentFileWatcher = this.createDeploymentFileWatcher(
+          this.root,
+        );
+      }
+    }
+
     try {
       // API Returns:
       // 200 - success
@@ -313,14 +327,14 @@ export class HomeViewProvider implements WebviewViewProvider {
       enableScripts: true,
       // Restrict the webview to only load resources from the `out` directory
       localResourceRoots: [
-        Uri.joinPath(this._extensionUri, "out", "webviews", "homeView"),
+        Uri.joinPath(this.context.extensionUri, "out", "webviews", "homeView"),
       ],
     };
 
     // Set the HTML content that will fill the webview view
     webviewView.webview.html = this._getWebviewContent(
       webviewView.webview,
-      this._extensionUri,
+      this.context.extensionUri,
     );
 
     // Sets up an event listener to listen for messages passed from the webview view context
@@ -408,34 +422,40 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
-  public register(context: ExtensionContext) {
+  public register() {
     const provider = window.registerWebviewViewProvider(viewName, this, {
       webviewOptions: {
         retainContextWhenHidden: true,
       },
     });
-    context.subscriptions.push(provider);
+    this.context.subscriptions.push(provider);
 
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
     );
+  }
 
-    if (this.root !== undefined) {
-      const configFileWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, configFiles),
-      );
-      configFileWatcher.onDidCreate(this.refresh);
-      configFileWatcher.onDidDelete(this.refresh);
-      configFileWatcher.onDidChange(this.refresh);
-      context.subscriptions.push(configFileWatcher);
+  private createConfigFileWatcher(root: WorkspaceFolder): FileSystemWatcher {
+    const configFileWatcher = workspace.createFileSystemWatcher(
+      new RelativePattern(root, configFiles),
+    );
+    configFileWatcher.onDidCreate(this.refresh);
+    configFileWatcher.onDidDelete(this.refresh);
+    configFileWatcher.onDidChange(this.refresh);
+    this.context.subscriptions.push(configFileWatcher);
+    return configFileWatcher;
+  }
 
-      const deploymentFileWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, deploymentFiles),
-      );
-      deploymentFileWatcher.onDidCreate(this.refresh);
-      deploymentFileWatcher.onDidDelete(this.refresh);
-      deploymentFileWatcher.onDidChange(this.refresh);
-      context.subscriptions.push(deploymentFileWatcher);
-    }
+  private createDeploymentFileWatcher(
+    root: WorkspaceFolder,
+  ): FileSystemWatcher {
+    const deploymentFileWatcher = workspace.createFileSystemWatcher(
+      new RelativePattern(root, deploymentFiles),
+    );
+    deploymentFileWatcher.onDidCreate(this.refresh);
+    deploymentFileWatcher.onDidDelete(this.refresh);
+    deploymentFileWatcher.onDidChange(this.refresh);
+    this.context.subscriptions.push(deploymentFileWatcher);
+    return deploymentFileWatcher;
   }
 }

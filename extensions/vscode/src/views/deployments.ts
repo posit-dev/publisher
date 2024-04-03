@@ -4,6 +4,7 @@ import {
   Event,
   EventEmitter,
   ExtensionContext,
+  FileSystemWatcher,
   RelativePattern,
   ThemeIcon,
   TreeDataProvider,
@@ -56,6 +57,8 @@ export class DeploymentsTreeDataProvider
   implements TreeDataProvider<DeploymentsTreeItem>
 {
   private root: WorkspaceFolder | undefined;
+  private fileSystemWatcher: FileSystemWatcher | undefined;
+
   private _onDidChangeTreeData: DeploymentsEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: DeploymentsEvent =
     this._onDidChangeTreeData.event;
@@ -63,6 +66,7 @@ export class DeploymentsTreeDataProvider
   private api = useApi();
 
   constructor(
+    private context: ExtensionContext,
     private stream: EventStream,
     private apiReady: Promise<boolean>,
   ) {
@@ -93,6 +97,9 @@ export class DeploymentsTreeDataProvider
       // There can't be any deployments if we don't have a folder open.
       return [];
     }
+    if (this.fileSystemWatcher === undefined) {
+      this.fileSystemWatcher = this.createFileSystemWatcher(root);
+    }
 
     try {
       // API Returns:
@@ -122,25 +129,25 @@ export class DeploymentsTreeDataProvider
     }
   }
 
-  public register(context: ExtensionContext) {
+  public register() {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
-    context.subscriptions.push(treeView);
+    this.context.subscriptions.push(treeView);
 
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(addCommand, () => addDeployment(this.stream)),
     );
 
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(createNewCommand, createNewDeploymentFile),
     );
 
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
     );
 
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         deployCommand,
         async (item: DeploymentsTreeItem) => {
@@ -151,7 +158,7 @@ export class DeploymentsTreeDataProvider
       ),
     );
 
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         forgetCommand,
         async (item: DeploymentsTreeItem) => {
@@ -165,7 +172,7 @@ export class DeploymentsTreeDataProvider
       ),
     );
 
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         editCommand,
         async (item: DeploymentsTreeItem) => {
@@ -174,7 +181,7 @@ export class DeploymentsTreeDataProvider
       ),
     );
 
-    context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         visitCommand,
         async (item: DeploymentsTreeItem) => {
@@ -186,16 +193,17 @@ export class DeploymentsTreeDataProvider
         },
       ),
     );
+  }
 
-    if (this.root !== undefined) {
-      const watcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, fileStore),
-      );
-      watcher.onDidCreate(this.refresh);
-      watcher.onDidDelete(this.refresh);
-      watcher.onDidChange(this.refresh);
-      context.subscriptions.push(watcher);
-    }
+  private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
+    const watcher = workspace.createFileSystemWatcher(
+      new RelativePattern(root, fileStore),
+    );
+    watcher.onDidCreate(this.refresh);
+    watcher.onDidDelete(this.refresh);
+    watcher.onDidChange(this.refresh);
+    this.context.subscriptions.push(watcher);
+    return watcher;
   }
 }
 
