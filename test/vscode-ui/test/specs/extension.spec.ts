@@ -17,24 +17,35 @@ describe("VS Code Extension UI Test", () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
 
+    // open posit extension
     const extension = await browser.$("aria/Posit Publisher");
     await expect(extension).toExist();
-
     await extension.click();
 
     // initialize project via button
-    const init = await browser.$("aria/Configurations Section");
-    await expect(init).toHaveText("CONFIGURATIONS");
-    await init.click();
+    // const init = await browser
+    // .$(".welcome-view-content")
+    // .$("a.monaco-button");
+    // await expect(init).toHaveText("Initialize Project");
+    // await init.click();
 
+    // click advanced mode
+    const advancedMode = await browser.$("aria/Show Advanced Mode");
+    await expect(advancedMode).toExist();
+    await advancedMode.click();
+
+    // check configuration project via button
+    // const config = await browser.$("aria/Configurations Section");
+    // await expect(config).toHaveText("CONFIGURATIONS");
+    // await config.click();
+
+    // click new configuration button
     const newConfig = await browser.$(".monaco-button");
-
     await expect(newConfig).toHaveText("New Configuration");
     await newConfig.click();
 
     // name configuration and save
     const actionbar = await browser.$("#quickInput_message");
-
     await expect(actionbar).toHaveText(
       "Configuration name (Press 'Enter' to confirm or 'Escape' to cancel)",
     );
@@ -43,7 +54,7 @@ describe("VS Code Extension UI Test", () => {
 
     const defaultTextElement = await browser
       .$(".monaco-pane-view")
-      .$$(".split-view-view")[3]
+      .$$(".split-view-view")[1]
       .$(".pane")
       .$(".pane-body");
     // .$(".pane-body");
