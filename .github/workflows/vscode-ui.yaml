@@ -68,7 +68,6 @@ jobs:
           path: test/vscode-ui/errorShots
           if-no-files-found: ignore
           retention-days: 1
-
   docker:
     strategy:
       fail-fast: false
