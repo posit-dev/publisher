@@ -16,7 +16,6 @@
           Deploy Your Project
         </vscode-button>
         <vscode-button
-          :disabled="disableDeployment"
           @click="onClickDeployExpand"
           style="
             border-top-left-radius: unset;
@@ -100,7 +99,7 @@
         <vscode-progress-ring class="progress-ring" />
         Deployment in Progress...
       </div>
-      <div v-if="!publishingInProgress">
+      <div v-else>
         <h4 class="deployment-summary">
           {{ lastStatusDescription }}
         </h4>
@@ -144,31 +143,12 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, onBeforeUnmount, ref, watch } from "vue";
 import {
-  provideVSCodeDesignSystem,
-  vsCodeButton,
-  vsCodeDropdown,
-  vsCodeOption,
-  vsCodeProgressRing,
-  vsCodeDivider,
-} from "@vscode/webview-ui-toolkit";
-import {
   Deployment,
   PreDeployment,
   isPreDeployment,
 } from "../../../src/api/types/deployments";
 import { formatDateString } from "../../../../../web/src/utils/date";
 import { Account } from "../../../src/api/types/accounts";
-
-// In order to use the Webview UI Toolkit web components they
-// must be registered with the browser (i.e. webview) using the
-// syntax below.
-provideVSCodeDesignSystem().register(
-  vsCodeButton(),
-  vsCodeDropdown(),
-  vsCodeOption(),
-  vsCodeProgressRing(),
-  vsCodeDivider(),
-);
 
 let deployments = ref<(Deployment | PreDeployment)[]>([]);
 let deploymentList = ref<string[]>([]);
@@ -183,7 +163,6 @@ const selectedDeployment = ref<Deployment | PreDeployment | undefined>(
 );
 const selectedConfig = ref<string>();
 const selectedCredential = ref<string>();
-const lastDeploymentSuccessful = ref<boolean | undefined>(undefined);
 const lastDeploymentResult = ref<string>();
 const lastDeploymentMsg = ref<string>();
 const showDetails = ref(false);
@@ -210,15 +189,6 @@ const buttonIconClass = computed(() => {
 });
 
 const disableDeployment = computed(() => {
-  console.log(
-    `selectedDeploymentName: ${selectedDeploymentName.value}: ${!Boolean(selectedDeploymentName.value)}`,
-  );
-  console.log(
-    `selectedConfig: ${selectedConfig.value}: ${!Boolean(selectedConfig.value)}`,
-  );
-  console.log(
-    `selectedCredential: ${selectedCredential.value}: ${!Boolean(selectedCredential.value)}`,
-  );
   const result =
     !Boolean(selectedDeploymentName.value) ||
     !Boolean(selectedConfig.value) ||
