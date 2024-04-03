@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/accounts"
@@ -72,7 +73,8 @@ func PostDeploymentsHandlerFunc(
 				return
 			}
 			if !exists {
-				w.WriteHeader(http.StatusNotFound)
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				w.Write([]byte(fmt.Sprintf("configuration %s not found", b.ConfigName)))
 				return
 			}
 		}

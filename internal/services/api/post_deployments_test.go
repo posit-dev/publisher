@@ -150,7 +150,7 @@ func (s *PostDeploymentsSuite) TestPostDeploymentsNonexistentConfig() {
 	s.NoError(err)
 	h(rec, req)
 
-	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+	s.Equal(http.StatusUnprocessableEntity, rec.Result().StatusCode)
 }
 
 func (s *PostDeploymentsSuite) TestPostDeploymentsBadRequest() {
