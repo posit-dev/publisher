@@ -27,14 +27,14 @@ jobs:
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
       - run: just vscode configure
       - run: just vscode test
       - uses: actions/cache/save@v4
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -49,11 +49,11 @@ jobs:
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
       - run: just vscode configure
       - run: just vscode test
       - uses: actions/cache/save@v4
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}

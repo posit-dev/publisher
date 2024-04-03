@@ -22,7 +22,7 @@ describe("VS Code Extension UI Test", () => {
     await expect(extension).toExist();
 
     await extension.click();
-    sleep(10000);
+
     // initialize project via button
     const init = await browser
       .$(".monaco-pane-view")

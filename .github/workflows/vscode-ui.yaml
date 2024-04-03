@@ -24,6 +24,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18.x
+      - id: get-date
+        run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+        shell: bash
+      - uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
       - uses: actions/checkout@v4
         with:
           repository: rstudio/connect-content
@@ -41,11 +54,11 @@ jobs:
         with:
           name: bin
           path: bin
+      - run: chmod -R +x ./bin
+      - run: just package
       - run: just vscode configure
-      - run: just vscode test
       - run: just vscode-ui install
       - run: just vscode-ui test
-      - uses: actions/cache/save@v4
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
@@ -70,6 +83,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18.x
+      - id: get-date
+        run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+        shell: bash
+      - uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
       - uses: actions/checkout@v4
         with:
           repository: rstudio/connect-content
@@ -89,8 +115,8 @@ jobs:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
+      - run: just package
       - run: just vscode configure
-      - run: just vscode test
       - run: just vscode-ui install
       - run: just vscode-ui test
 
