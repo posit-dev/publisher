@@ -32,7 +32,7 @@ type preDeploymentDTO struct {
 	SaveName   string              `json:"saveName"`
 	CreatedAt  string              `json:"createdAt"`
 	Error      *types.AgentError   `json:"error,omitempty"`
-	ConfigName string              `json:"configName,omitempty"`
+	ConfigName string              `json:"configurationName,omitempty"`
 	ConfigPath string              `json:"configurationPath,omitempty"`
 }
 
