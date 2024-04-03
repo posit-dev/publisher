@@ -544,15 +544,10 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "compile": "npm run compile-extension && npm run compile-home-view",
-    "compile-extension": "tsc -p ./",
-    "compile-home-view": "npm run --prefix webviews/homeView compile",
+    "vscode:prepublish": "npm run --prefix webviews/homeView compile && npm run esbuild-base -- --minify",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile",
     "lint": "eslint src --ext ts --max-warnings 0",
     "test": "node ./out/test/runTest.js"
   },
