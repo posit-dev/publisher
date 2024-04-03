@@ -93,7 +93,7 @@ func Empty() *State {
 	}
 }
 
-var ErrServerURLMismatch = errors.New("the account provided is for a different server; it must match the one previously used for this deployment")
+var ErrServerURLMismatch = errors.New("the account provided is for a different server; it must match the server for this deployment")
 
 func New(path util.AbsolutePath, accountName, configName, targetName string, saveName string, accountList accounts.AccountList) (*State, error) {
 	var target *deployment.Deployment
