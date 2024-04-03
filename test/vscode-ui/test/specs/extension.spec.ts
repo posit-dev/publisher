@@ -7,7 +7,6 @@ import * as path from "path";
 // import { execSync } from 'child_process';
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { sleep } from "wdio-vscode-service";
 
 describe("VS Code Extension UI Test", () => {
   // it("should install the extension", () => {
@@ -25,7 +24,6 @@ describe("VS Code Extension UI Test", () => {
 
     // initialize project via button
     const init = await browser
-      .$(".monaco-pane-view")
       .$("a.monaco-button");
     await expect(init).toHaveText("Initialize Project");
     await init.click();

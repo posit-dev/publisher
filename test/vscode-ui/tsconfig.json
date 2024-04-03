@@ -9,7 +9,9 @@
       "@wdio/globals/types",
       "expect-webdriverio",
       "@wdio/mocha-framework",
-      "wdio-vscode-service"
+      "wdio-vscode-service",
+      "jest",
+      "mocha"
     ],
     "skipLibCheck": true,
     "noEmit": true,
