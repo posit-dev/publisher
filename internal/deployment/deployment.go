@@ -18,21 +18,24 @@ import (
 )
 
 type Deployment struct {
+	// Predeployment and full deployment fields
 	Schema        string              `toml:"$schema" json:"$schema"`
 	ServerType    accounts.ServerType `toml:"server-type" json:"serverType"`
 	ServerURL     string              `toml:"server-url" json:"serverUrl"`
 	ClientVersion string              `toml:"client-version" json:"-"`
 	CreatedAt     string              `toml:"created-at" json:"createdAt"`
-	ID            types.ContentID     `toml:"id" json:"id"`
 	ConfigName    string              `toml:"configuration-name" json:"configurationName"`
-	DeployedAt    string              `toml:"deployed-at" json:"deployedAt"`
-	BundleID      types.BundleID      `toml:"bundle-id" json:"bundleId"`
-	BundleURL     string              `toml:"bundle-url" json:"bundleUrl"`
-	DashboardURL  string              `toml:"dashboard-url" json:"dashboardUrl"`
-	DirectURL     string              `toml:"direct-url" json:"directUrl"`
-	Error         *types.AgentError   `toml:"deployment-error" json:"deploymentError"`
-	Files         []string            `toml:"files,multiline,omitempty" json:"files"`
-	Configuration *config.Config      `toml:"configuration" json:"configuration"`
+
+	// Full deployment fields
+	ID            types.ContentID   `toml:"id,omitempty" json:"id"`
+	DeployedAt    string            `toml:"deployed-at,omitempty" json:"deployedAt"`
+	BundleID      types.BundleID    `toml:"bundle-id,omitempty" json:"bundleId"`
+	BundleURL     string            `toml:"bundle-url,omitempty" json:"bundleUrl"`
+	DashboardURL  string            `toml:"dashboard-url,omitempty" json:"dashboardUrl"`
+	DirectURL     string            `toml:"direct-url,omitempty" json:"directUrl"`
+	Error         *types.AgentError `toml:"deployment-error,omitempty" json:"deploymentError"`
+	Files         []string          `toml:"files,multiline,omitempty" json:"files"`
+	Configuration *config.Config    `toml:"configuration,omitempty" json:"configuration"`
 }
 
 func New() *Deployment {

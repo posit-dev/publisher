@@ -4,9 +4,9 @@
 
 ### Opening the UI
 
-In VSCode, open the folder containing the project you want to deploy. In this version of *Posit Publisher*, the project must be in the top level directory.
+In VSCode, open the folder containing the project you want to deploy. In this version of _Posit Publisher_, the project must be in the top level directory.
 
-Open the *Posit Publisher* UI by clicking the icon in the activity bar.
+Open the _Posit Publisher_ UI by clicking the icon in the activity bar.
 
 ![](https://cdn.posit.co/publisher/assets/img/icon.png)
 
@@ -42,20 +42,20 @@ If you already have a `requirements.txt` file, you can use the eye icon in the R
 
 ### Deployments
 
-Once you have configuration and requirements files, you are ready to deploy. Click the `Add` button in the Deployments view to create a new deployment.
+Once you have configuration and requirements files, you are ready to deploy. Click the `New Deployment` button in the Deployments view to create a new deployment.
 
 ![](https://cdn.posit.co/publisher/assets/img/add-deployment.png)
 
 You'll be prompted for several pieces of information:
-* A name for the deployment, which will appear in the Deployments view.
-* A credential to use during deployment, if you have more than one credential defined.
-* A Yes/No choice asking whether you want to deploy now, or wait until later. For now, click Yes.
-* A choice of which configuration to use, if you answered Yes to deploy now and have more than one configuration defined.
+
+- A name for the deployment, which will appear in the Deployments view.
+- A credential to use during deployment, if you have more than one credential defined.
+- A Yes/No choice asking whether you want to deploy now, or wait until later. For now, click Yes.
+- A choice of which configuration to use, if you answered Yes to deploy now and have more than one configuration defined.
 
 If you open the bottom panel in VSCode and click Posit Publisher Logs, you'll see the deployment logs:
 
 ![](https://cdn.posit.co/publisher/assets/img/deployment-logs.png)
-
 
 Deployments appear in the Deployment view. The icon indicates whether the content has been successfully deployed.
 
@@ -77,7 +77,7 @@ Clicking the deploy icon next to a deployment will deploy a new version of the c
 
 ### Credentials
 
-In the current release, *Posit Publisher* acquires credentials from the RStudio IDE/rsconnect package and rsconnect-python. Additionally, if the environment variables `CONNECT_SERVER` and `CONNECT_API_KEY` are set,
+In the current release, _Posit Publisher_ acquires credentials from the RStudio IDE/rsconnect package and rsconnect-python. Additionally, if the environment variables `CONNECT_SERVER` and `CONNECT_API_KEY` are set,
 an additional credential named `env` will be created.
 
 These are shown in the Credentials view. To add or remove account credentials, use rsconnect or [rsconnect-python](https://docs.posit.co/rsconnect-python/#remembering-server-information).
@@ -87,8 +87,9 @@ These are shown in the Credentials view. To add or remove account credentials, u
 ### Files and Exclusions
 
 The Deployment Files view shows a list of the files in your project directory, divided into two lists:
-* Included Files shows the files that will be included in your deployment and sent to the server as part of the uploaded content. You can exclude a file by clicking the icon to the right of the filename.
-* Excluded Files shows the files in your project that will not be included in the deployment. The tooltip on an excluded file will indicate the reason it was excluded.
+
+- Included Files shows the files that will be included in your deployment and sent to the server as part of the uploaded content. You can exclude a file by clicking the icon to the right of the filename.
+- Excluded Files shows the files in your project that will not be included in the deployment. The tooltip on an excluded file will indicate the reason it was excluded.
 
 Exclusions are managed through a `.positignore` file in the root directory of your project. It is in the same format as a [`.gitignore` file](https://git-scm.com/docs/gitignore); however, negated patterns are not yet supported.
 
@@ -102,6 +103,6 @@ This view contains links to this documentation and other resources.
 
 ### `posit.publisher.executable.path`
 
-By default, the extension uses the bundled Posit Publisher binary executable. To override this behavior, configure the `posit.publisher.executable.path` property in your *User* or *Workspace* settings.
+By default, the extension uses the bundled Posit Publisher binary executable. To override this behavior, configure the `posit.publisher.executable.path` property in your _User_ or _Workspace_ settings.
 
 ![](https://cdn.posit.co/publisher/assets/img/settings.png)

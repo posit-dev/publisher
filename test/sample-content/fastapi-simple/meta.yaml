@@ -1,7 +1,7 @@
 tags:
-- api
-- fastapi
-- python
-- dev-env
-- small-dev-env
-- all
+  - api
+  - fastapi
+  - python
+  - dev-env
+  - small-dev-env
+  - all

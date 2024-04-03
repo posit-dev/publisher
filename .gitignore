@@ -6,6 +6,8 @@ bin/
 certs/
 dist/
 
+node_modules
+
 .DS_Store
 
 # Visual Studio Code

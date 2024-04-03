@@ -13,5 +13,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true
-  }
+  },
+  "exclude": ["node_modules", "webviews"]
 }

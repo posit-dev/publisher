@@ -92,7 +92,7 @@ export class Server implements vscode.Disposable {
    * @returns {Promise<boolean>} A Promise that resolves to `true` if the server is up, and rejects if all attempts fail.
    * @throws {Error} Will throw an error if the connection check encounters an error or reaches the maximum number of retries.
    */
-  private async isUp(): Promise<boolean> {
+  async isUp(): Promise<boolean> {
     const operation = retry.operation();
     return new Promise(async (resolve, reject) => {
       // Attempt the operation with exponential backoff
@@ -122,7 +122,7 @@ export class Server implements vscode.Disposable {
    * @returns {Promise<boolean>} A Promise that resolves to `true` if the server is down, and rejects if all attempts fail.
    * @throws {Error} Will throw an error if the connection check encounters an error (excluding ECONNREFUSED) or reaches the maximum number of retries.
    */
-  private async isDown(): Promise<boolean> {
+  async isDown(): Promise<boolean> {
     const operation = retry.operation();
     return new Promise(async (resolve, reject) => {
       // Attempt the operation with exponential backoff

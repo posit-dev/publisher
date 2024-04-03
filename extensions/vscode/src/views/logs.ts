@@ -15,11 +15,9 @@ import {
   window,
 } from "vscode";
 
-import {
-  EventStream,
-  EventStreamMessage,
-  displayEventStreamMessage,
-} from "../events";
+import { EventStream, displayEventStreamMessage } from "../events";
+
+import { EventStreamMessage } from "../api";
 
 enum LogStageStatus {
   notStarted,
@@ -136,7 +134,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
       let showLogsOption = "Show Logs";
       const selection = await window.showErrorMessage(
-        `Publish failed. ${msg.data.message}`,
+        `Deployment failed: ${msg.data.message}`,
         showLogsOption,
       );
       if (selection === showLogsOption) {

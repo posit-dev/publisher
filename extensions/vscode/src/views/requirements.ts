@@ -43,7 +43,7 @@ export class RequirementsTreeDataProvider
   readonly onDidChangeTreeData: RequirementsEvent =
     this._onDidChangeTreeData.event;
 
-  constructor() {
+  constructor(private apiReady: Promise<boolean>) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -67,6 +67,7 @@ export class RequirementsTreeDataProvider
       return [];
     }
     try {
+      await this.apiReady;
       const response = await api.requirements.getAll();
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(

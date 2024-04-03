@@ -213,6 +213,10 @@ func (p *defaultPublisher) writeDeploymentRecord(log logging.Logger) error {
 		// Initial deployment
 		p.TargetName = p.SaveName
 	}
+
+	now := time.Now().Format(time.RFC3339)
+	p.Target.DeployedAt = now
+
 	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
 	return p.Target.WriteFile(recordPath)
 }
@@ -227,10 +231,12 @@ func (p *defaultPublisher) createDeploymentRecord(
 	// bundle upload.
 	cfg := *p.Config
 
-	now := time.Now().Format(time.RFC3339)
-	created := now
+	created := ""
+
 	if p.Target != nil {
 		created = p.Target.CreatedAt
+	} else {
+		created = time.Now().Format(time.RFC3339)
 	}
 
 	p.Target = &deployment.Deployment{
@@ -243,7 +249,6 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ConfigName:    p.ConfigName,
 		Files:         nil,
 		Configuration: &cfg,
-		DeployedAt:    now,
 		BundleID:      "",
 		DashboardURL:  getDashboardURL(p.Account.URL, contentID),
 		DirectURL:     getDirectURL(p.Account.URL, contentID),
@@ -268,6 +273,7 @@ func (p *defaultPublisher) publishWithClient(
 	var contentID types.ContentID
 	if p.isDeployed() {
 		contentID = p.Target.ID
+		log.Info("Updating deployment", "content_id", contentID)
 	} else {
 		// Create a new deployment; we will update it with details later.
 		contentID, err = p.createDeployment(client, log)

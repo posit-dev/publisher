@@ -1,4 +1,4 @@
 description: A simple Quarto project.
 tags:
-- quarto
-- python
+  - quarto
+  - python

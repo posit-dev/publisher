@@ -56,6 +56,8 @@ clean:
     rm -rf dist
     rm -rf node_modules
     rm -rf out
+    just ./webviews/homeView/clean
+    
 
 # Install dependencies
 deps:
@@ -65,9 +67,12 @@ deps:
 
     if [ {{ _ci }} = "true" ]; then
         npm ci --no-audit --no-fund | sed 's/^/debug: /'
+        npm --prefix ./webviews/homeView ci --no-audit --no-fund | sed 's/^/debug: /'
     else
         npm install --no-audit --no-fund | sed 's/^/debug: /'
+        npm --prefix ./webviews/homeView install --no-audit --no-fund | sed 's/^/debug: /'
     fi
+    just ./webviews/homeView/deps
 
 
 configure os="$(just ../../os)" arch="$(just ../../arch)":
@@ -113,20 +118,6 @@ lint:
     {{ _with_debug }}
 
     npm run lint
-
-format:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    npm run format
-
-check-format:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    npm run check-format
 
 # Packages the extension.
 package os="$(just ../../os)" arch="$(just ../../arch)":

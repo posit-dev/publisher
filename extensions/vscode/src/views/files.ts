@@ -42,9 +42,6 @@ const positIgnoreFileTemplate =
   `#\n` +
   `# Syntax of exclusions conforms with Git Ignore File syntax.\n` +
   `#\n` +
-  `# NOTE: This file currenly only supports POSITIVE exclusion rules\n` +
-  `# and does not support NEGATIVE inclusion rules.\n` +
-  `#\n` +
   `\n`;
 
 let includedFiles: FileEntries[] = [];
@@ -60,7 +57,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
 
   private api = useApi();
 
-  constructor() {
+  constructor(private apiReady: Promise<boolean>) {
     const workspaceFolders = workspace.workspaceFolders;
     this.root = Uri.parse("positPublisherFiles://unknown");
     if (workspaceFolders !== undefined) {
@@ -80,6 +77,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     if (element === undefined) {
       // first call.
       try {
+        await this.apiReady;
         const response = await this.api.files.get();
         const file = response.data;
 

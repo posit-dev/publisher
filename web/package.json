@@ -10,8 +10,6 @@
     "preview": "vite preview",
     "lint": "eslint --ext .js,.ts,.vue,.cjs .",
     "fix": "eslint --ext .js,.ts,.vue,.cjs . --fix",
-    "format": "prettier . --write",
-    "check-format": "prettier . --check",
     "test": "vitest run",
     "watch": "vitest"
   },
@@ -39,7 +37,6 @@
     "eslint-plugin-cypress": "^2.14.0",
     "eslint-plugin-vue": "^9.17.0",
     "jsdom": "^24.0.0",
-    "prettier": "3.2.5",
     "sass": "^1.66.1",
     "typescript": "^5.0.2",
     "vite": "^5.0.12",

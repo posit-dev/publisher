@@ -25,7 +25,6 @@
     - [Pre-Releases](#pre-releases)
     - [Release Lifecycle](#release-lifecycle)
 
-
 The get this project up and running on your local machine, execute the following Just commands:
 
 ```console
@@ -74,7 +73,7 @@ just run
 
 ## Testing
 
-This project follows the guidance written by *Ham Vocke* in the *[The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html).* Please read the article for a detailed overview of different test types and how they are utilized.
+This project follows the guidance written by _Ham Vocke_ in the _[The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)._ Please read the article for a detailed overview of different test types and how they are utilized.
 
 ### Unit Tests
 
@@ -122,13 +121,12 @@ Execute `just -l` for a list of available commands and documentation.
 
 When executing commands the following variables are accepted to change behavior.
 
-| Variable | Default | Type | Description                                                                                              |
-|----------|---------|------|----------------------------------------------------------------------------------------------------------|
-| CI       | false   | bool | Enable CI mode.   When set to true, multi-platform builds are enabled.                                   |
-| DEBUG    | false   | bool | Enable DEBUG mode.   When set to true, `set +x` is enabled for all Justfile targets.                     |
-| DOCKER   | false   | bool | Enable DOCKER mode.  When set to true, all Justfile targets are executed in Docker.                      |
-| MODE     | dev     | enum | When set to `dev`, development is enabled. All other values disable development mode.                    |
-
+| Variable | Default | Type | Description                                                                           |
+| -------- | ------- | ---- | ------------------------------------------------------------------------------------- |
+| CI       | false   | bool | Enable CI mode. When set to true, multi-platform builds are enabled.                  |
+| DEBUG    | false   | bool | Enable DEBUG mode. When set to true, `set +x` is enabled for all Justfile targets.    |
+| DOCKER   | false   | bool | Enable DOCKER mode. When set to true, all Justfile targets are executed in Docker.    |
+| MODE     | dev     | enum | When set to `dev`, development is enabled. All other values disable development mode. |
 
 #### Behavior in GitHub Actions
 
@@ -137,7 +135,7 @@ When running in GitHub Actions, the env variable `CI` is set to `true` by GitHub
 This mode can be reproduced on your local machine by setting `CI=true`.
 
 | Variable | Default |
-|----------|---------|
+| -------- | ------- |
 | DOCKER   | true    |
 | MODE     | prod    |
 
@@ -154,7 +152,6 @@ Execute `eval "$(just configure)"` to configure the executable on your current `
 To start a release create a semver compatible tag.
 
 _For this example, we will use the tag `v0.0.dev0`. This tag already exists, so you will not be able run the following commands verbatim._
-
 
 **Step 1**
 
@@ -208,7 +205,6 @@ An alpha pre-release. Created to support internal user testing. `N` starts at **
 An beta pre-release. Created to support closed external user testing. `N` starts at **1** and increments by 1 (`X.Y.beta1`, `X.Y.beta2`, ..., `X.Y.betaN`).
 
 *https://peps.python.org/pep-0440/#pre-releases*
-
 
 **`X.Y.rcN`**
 
