@@ -367,28 +367,17 @@ const onMessageFromProvider = (event: any) => {
     }
     case "update_deployment_selection": {
       const payload = JSON.parse(event.data.payload);
-      // Not sure why we can't set this value immediately, even ahead
-      // of the refresh which is coming, but what I've found is that you
-      // have to wait long enough for the list to render before setting it,
-      // otherwise the selector will select the first value in the list.
-      // (I've even tried holding off on setting the value until the next refresh
-      // comes in, which has the new value included).
-      setTimeout(() => {
-        selectedDeploymentName.value = payload.name;
-      }, 1000);
+      if (payload.name && !deploymentList.value.includes(payload.name)) {
+        deploymentList.value.push(payload.name);
+      }
+      selectedDeploymentName.value = payload.name;
       break;
     }
     case "update_config_selection": {
       const payload = JSON.parse(event.data.payload);
-      // Not sure why we can't set this value immediately, even ahead
-      // of the refresh which is coming, but what I've found is that you
-      // have to wait long enough for the list to render before setting it,
-      // otherwise the selector will select the first value in the list.
-      // (I've even tried holding off on setting the value until the next refresh
-      // comes in, which has the new value included).
-      setTimeout(() => {
-        selectedConfig.value = payload.name;
-      }, 1000);
+      if (payload.name && !configList.value.includes(payload.name)) {
+        configList.value.push(payload.name);
+      }
       break;
     }
     default:
