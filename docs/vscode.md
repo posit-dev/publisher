@@ -10,99 +10,201 @@ Open the _Posit Publisher_ UI by clicking the icon in the activity bar.
 
 ![](https://cdn.posit.co/publisher/assets/img/icon.png)
 
-### Configuration Files
+### Initialization
 
-To deploy content, your project must have a publishing configuration file. If you don't have one yet, the UI will show the option to create one.
+To deploy your project it must be setup with two things - a deployment and configuration.
+
+A deployment describes where your project is going to be deployed.
+
+A configuration describes how it will be deployed.
+
+If the project isn't setup yet the extension will prompt you to initialize your
+project.
 
 ![](https://cdn.posit.co/publisher/assets/img/initialize-project.png)
 
-Click the `Initialize Project` button to create a configuration file based on the contents of your project files. You'll be prompted to name the configuration, and if there is more than one possible configuration detected, you'll be prompted to choose which one to use.
+Click the `Initialize Project` button and you will be lead through creating your
+first deployment and configuration.
+
+If more than one project type is detected by the extension, you will be prompted
+to choose which one to use for your initial configuration.
 
 ![](https://cdn.posit.co/publisher/assets/img/choose-configuration.png)
 
-The configuration's name will appear in the Configurations view. You can click to open it, or right click for additional options.
-
-![](https://cdn.posit.co/publisher/assets/img/configurations.png)
-
-The new configuration file will also be opened so you can review and make any necessary changes. If you have the Even Better TOML extension installed, VSCode will show tooltips for the fields. It will also validate the structure and contents of the configuration file using the provided schema.
+The new configuration file will also be opened so you can review and make any necessary changes. If you have the [Even Better TOML extension](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml) installed, VSCode will show tooltips for the fields. It will also validate the structure and contents of the configuration file using the provided schema.
 
 ![](https://cdn.posit.co/publisher/assets/img/configuration-file-with-tooltip.png)
 
-You can have multiple configuration files for different deployments; for example, staging and production. Use the `+` button in the Configurations view to add a new configuration.
+> [!TIP]
+> You can have multiple configuration files for different deployments; for
+> example, staging and production.
+>
+> Configurations can be created either in the Home view or the Configuration view
+> by pressing the `+` buttons.
 
-### Python Requirements
+### Home
 
-The Requirements view shows the contents of the `requirements.txt` file in your project directory. It's required when deploying a Python project.
+From here you will be taken to the Home view.
+
+![](https://cdn.posit.co/publisher/assets/img/home-view.png)
+
+The Home view shows information about your currently selected deployment. After
+initialization you will only have one.
+
+The `>` button next to `Deploy Your Project` can be pressed to expand the view
+to show selections for deployment, configuration, and credentials. In addition,
+the buttons `+` can be used to create new ones, and in the case of
+configurations edit your selection.
+
+![](https://cdn.posit.co/publisher/assets/img/home-view-expanded.png)
+
+### Basic and Advanced Mode
+
+The buttons to the top-right of the Home view allow you to switch between Basic
+and Advanced modes which will change the visible views.
+
+By default you will be seeing the Basic mode with the views:
+
+- Home
+- Deployment Files
+- Requirements
+- Help and Feedback
+
+Clicking the "Show Advanced Mode" button will show the views:
+
+- Home
+- Deployments
+- Configurations
+- Credentials
+- Help and Feedback
+
+### Setting up Requirements
+
+Finally to be ready to deploy you will need to set up the requirements for your
+Python project. If you don't already have a `requirements.txt` you can open
+the Requirements view and click the `Scan` button to generate one.
+
+![](https://cdn.posit.co/publisher/assets/img/requirements-view-init.png)
+
+### Ready to Deploy
+
+You are all set to Deploy!
+
+Click the `Deploy Your Project` button in the Home view to start the deployment
+process. :tada:
+
+---
+
+### Other Views and Features
+
+### Deployment Files
+
+The Deployment Files view shows a list of the files in your project directory,
+divided into two lists:
+
+- Included Files shows the files that will be included in your deployment and
+  sent to the server as part of the uploaded content. You can exclude a file by
+  clicking the icon to the right of the filename.
+- Excluded Files shows the files in your project that will not be included in
+  the deployment. The tooltip on an excluded file will indicate the reason it
+  was excluded.
+
+Exclusions are managed through a `.positignore` file in the root directory of
+your project. It is in the same format as a [`.gitignore` file](https://git-scm.com/docs/gitignore);
+however, negated patterns are not yet supported.
+
+![](https://cdn.posit.co/publisher/assets/img/deployment-files-view.png)
+
+> [!NOTE]
+> Note: the extension UI does not currently support re-including an excluded file
+> (removing the exclusion from .positignore) since it might be the result of a
+> wildcard or directory name match. Click the Edit button to open `.positignore`
+> and edit or remove the pattern.
+
+### Requirements
+
+The Requirements view shows the contents of the `requirements.txt` file in your
+project directory. It's required when deploying a Python project.
 
 ![](https://cdn.posit.co/publisher/assets/img/requirements.png)
 
-If you don't have a `requirements.txt` file yet, you'll see a message prompting you to Scan. Clicking Scan will scan your project code for imports and attempt to map those to package names and versions using the package metadata from your local Python installation. After scanning, verify the contents of the generated `requirements.txt` file and make any changes needed.
+If you don't have a `requirements.txt` file yet, you'll see a message prompting
+you to Scan. Clicking Scan will scan your project code for imports and attempt
+to map those to package names and versions using the package metadata from your
+local Python installation. After scanning, verify the contents of the generated
+`requirements.txt` file and make any changes needed.
 
-If you already have a `requirements.txt` file, you can use the eye icon in the Requirements view to scan your code again.
+If you already have a `requirements.txt` file, you can use the eye icon in the
+Requirements view to scan your code again.
 
 ### Deployments
 
-Once you have configuration and requirements files, you are ready to deploy. Click the `New Deployment` button in the Deployments view to create a new deployment.
-
-![](https://cdn.posit.co/publisher/assets/img/add-deployment.png)
-
-You'll be prompted for several pieces of information:
-
-- A name for the deployment, which will appear in the Deployments view.
-- A credential to use during deployment, if you have more than one credential defined.
-- A Yes/No choice asking whether you want to deploy now, or wait until later. For now, click Yes.
-- A choice of which configuration to use, if you answered Yes to deploy now and have more than one configuration defined.
-
-If you open the bottom panel in VSCode and click Posit Publisher Logs, you'll see the deployment logs:
-
-![](https://cdn.posit.co/publisher/assets/img/deployment-logs.png)
-
-Deployments appear in the Deployment view. The icon indicates whether the content has been successfully deployed.
+Deployments for the project appear in the Deployment view. The icon indicates
+whether the content has been successfully deployed.
 
 Not deployed yet:
 
-![](https://cdn.posit.co/publisher/assets/img/add-deployment.png)
+![](https://cdn.posit.co/publisher/assets/img/pre-deployment.png)
 
 Deployed:
 
 ![](https://cdn.posit.co/publisher/assets/img/deployment.png)
 
-Error:
+Failure Publishing:
+
+![](https://cdn.posit.co/publisher/assets/img/deployment-publish-error.png)
+
+Error parsing Deployment:
 
 ![](https://cdn.posit.co/publisher/assets/img/deployment-error.png)
 
-Clicking the deploy icon next to a deployment will deploy a new version of the content, using your current project and configuration files.
+Click the deploy icon next to a deployment will prompt you for your credential,
+what configuration you want to use - if you have more than one.
 
-## More Features
+### Configurations
+
+Lists the configurations in your project.
+
+Clicking a configuration will open the configuration file in the editor.
+Additionally you can right click on a configuration for more operations.
+
+![](https://cdn.posit.co/publisher/assets/img/configurations.png)
 
 ### Credentials
 
-In the current release, _Posit Publisher_ acquires credentials from the RStudio IDE/rsconnect package and rsconnect-python. Additionally, if the environment variables `CONNECT_SERVER` and `CONNECT_API_KEY` are set,
-an additional credential named `env` will be created.
+In the current release, _Posit Publisher_ acquires credentials from the RStudio
+IDE/rsconnect package and rsconnect-python. Additionally, if the environment
+variables `CONNECT_SERVER` and `CONNECT_API_KEY` are set, an additional
+credential named `env` will be created.
 
-These are shown in the Credentials view. To add or remove account credentials, use rsconnect or [rsconnect-python](https://docs.posit.co/rsconnect-python/#remembering-server-information).
+These are shown in the Credentials view. To add or remove account credentials,
+use rsconnect or
+[rsconnect-python](https://docs.posit.co/rsconnect-python/#remembering-server-information).
 
 ![](https://cdn.posit.co/publisher/assets/img/credentials.png)
 
-### Files and Exclusions
-
-The Deployment Files view shows a list of the files in your project directory, divided into two lists:
-
-- Included Files shows the files that will be included in your deployment and sent to the server as part of the uploaded content. You can exclude a file by clicking the icon to the right of the filename.
-- Excluded Files shows the files in your project that will not be included in the deployment. The tooltip on an excluded file will indicate the reason it was excluded.
-
-Exclusions are managed through a `.positignore` file in the root directory of your project. It is in the same format as a [`.gitignore` file](https://git-scm.com/docs/gitignore); however, negated patterns are not yet supported.
-
-Note: the extension UI does not currently support re-including an excluded file (removing the exclusion from .positignore) since it might be the result of a wildcard or directory name match. Click the Edit button to open `.positignore` and edit or remove the pattern.
-
 ### Help and Feedback
 
-This view contains links to this documentation and other resources.
+Contains links to this documentation and other resources.
+
+### Posit Publisher Logs
+
+The Posit Publisher logs are available in the VSCode bottom panel.
+
+![](https://cdn.posit.co/publisher/assets/img/deployment-logs.png)
+
+There are a few ways to easily get to them:
+
+- Run `Posit Publisher Logs: Focus on Logs View` from the command palette.
+- Click the `Show Logs` button in the error notification that appears on a
+  deployment failure.
 
 ## Extension Configuration
 
 ### `posit.publisher.executable.path`
 
-By default, the extension uses the bundled Posit Publisher binary executable. To override this behavior, configure the `posit.publisher.executable.path` property in your _User_ or _Workspace_ settings.
+By default, the extension uses the bundled Posit Publisher binary executable. To
+override this behavior, configure the `posit.publisher.executable.path` property
+in your _User_ or _Workspace_ settings.
 
 ![](https://cdn.posit.co/publisher/assets/img/settings.png)
