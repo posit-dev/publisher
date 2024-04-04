@@ -3,9 +3,11 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/rstudio/connect-client/internal/accounts"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
@@ -15,6 +17,7 @@ import (
 
 type PostDeploymentsRequestBody struct {
 	AccountName string `json:"account"`
+	ConfigName  string `json:"config"`
 	SaveName    string `json:"saveName"`
 }
 
@@ -49,6 +52,7 @@ func PostDeploymentsHandlerFunc(
 			}
 		}
 
+		// Deployment must not exist
 		path := deployment.GetDeploymentPath(base, b.SaveName)
 		exists, err := path.Exists()
 		if err != nil {
@@ -60,9 +64,25 @@ func PostDeploymentsHandlerFunc(
 			return
 		}
 
+		if b.ConfigName != "" {
+			// Config must exist
+			configPath := config.GetConfigPath(base, b.ConfigName)
+			exists, err = configPath.Exists()
+			if err != nil {
+				InternalError(w, req, log, err)
+				return
+			}
+			if !exists {
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				w.Write([]byte(fmt.Sprintf("configuration %s not found", b.ConfigName)))
+				return
+			}
+		}
+
 		d := deployment.New()
 		d.ServerURL = acct.URL
 		d.ServerType = acct.ServerType
+		d.ConfigName = b.ConfigName
 
 		err = d.WriteFile(path)
 		if err != nil {

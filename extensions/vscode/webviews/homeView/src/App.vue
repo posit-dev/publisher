@@ -21,6 +21,11 @@
             border-top-left-radius: unset;
             border-bottom-left-radius: unset;
           "
+          :aria-label="
+            showDetails
+              ? 'Collapse Deployment Selection Details'
+              : 'Expand Deployment Selection Details'
+          "
         >
           <span :class="buttonIconClass"></span>
         </vscode-button>
@@ -31,7 +36,11 @@
       <div>
         <div class="label-and-icons">
           <label for="deployment-selector">Deployment:</label>
-          <vscode-button appearance="icon" class="action-icons">
+          <vscode-button
+            appearance="icon"
+            class="action-icons"
+            aria-label="Add Deployment"
+          >
             <span
               class="codicon codicon-add"
               @click="onClickAddDeployment"
@@ -57,13 +66,21 @@
         <div class="label-and-icons">
           <label for="config-selector">Configuration:</label>
           <div class="action-icons-container">
-            <vscode-button appearance="icon" class="action-icons">
+            <vscode-button
+              appearance="icon"
+              class="action-icons"
+              aria-label="Edit Selected Configuration"
+            >
               <span
                 class="codicon codicon-edit"
                 @click="onClickEditConfiguration"
               ></span>
             </vscode-button>
-            <vscode-button appearance="icon" class="action-icons">
+            <vscode-button
+              appearance="icon"
+              class="action-icons"
+              aria-label="Add Configuration"
+            >
               <span
                 class="codicon codicon-add"
                 @click="onClickAddConfiguration"

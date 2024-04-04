@@ -93,6 +93,8 @@ func Empty() *State {
 	}
 }
 
+var ErrServerURLMismatch = errors.New("the account provided is for a different server; it must match the server for this deployment")
+
 func New(path util.AbsolutePath, accountName, configName, targetName string, saveName string, accountList accounts.AccountList) (*State, error) {
 	var target *deployment.Deployment
 	var account *accounts.Account
@@ -126,7 +128,9 @@ func New(path util.AbsolutePath, accountName, configName, targetName string, sav
 		return nil, err
 	}
 
-	target.ServerURL = account.URL
+	if target.ServerURL != "" && target.ServerURL != account.URL {
+		return nil, ErrServerURLMismatch
+	}
 
 	if configName == "" {
 		configName = config.DefaultConfigName

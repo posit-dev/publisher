@@ -353,8 +353,5 @@ export async function addDeployment(stream: EventStream) {
       window.showInformationMessage(`Failed to deploy . ${summary}`);
       return;
     }
-  } else {
-    // no, they didn't want us to.
-    window.showInformationMessage(`Skipping deployment of this project`);
   }
 }

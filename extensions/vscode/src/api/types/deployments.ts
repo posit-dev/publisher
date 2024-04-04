@@ -1,7 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import { AgentError } from "./error";
-import { Configuration } from "./configurations";
+import { Configuration, ConfigurationLocation } from "./configurations";
 import { SchemaURL } from "./schema";
 import { ServerType } from "./accounts";
 
@@ -35,6 +35,8 @@ export type PreDeployment = {
   state: DeploymentState.NEW;
 } & DeploymentRecord;
 
+export type PreDeploymentWithConfig = PreDeployment & ConfigurationLocation;
+
 export type Deployment = {
   id: string;
   bundleId: string;
@@ -47,7 +49,11 @@ export type Deployment = {
 } & DeploymentRecord &
   Configuration;
 
-export type AllDeploymentTypes = Deployment | PreDeployment | DeploymentError;
+export type AllDeploymentTypes =
+  | Deployment
+  | PreDeployment
+  | PreDeploymentWithConfig
+  | DeploymentError;
 
 export function isSuccessful(
   d: AllDeploymentTypes | undefined,
@@ -81,6 +87,16 @@ export function isPreDeployment(
   d: AllDeploymentTypes | undefined,
 ): d is PreDeployment {
   return Boolean(d && d.state === DeploymentState.NEW);
+}
+
+export function isPreDeploymentWithConfig(
+  d: AllDeploymentTypes | undefined,
+): d is PreDeploymentWithConfig {
+  return Boolean(
+    d &&
+      d.state === DeploymentState.NEW &&
+      (d as PreDeploymentWithConfig).configurationName !== undefined,
+  );
 }
 
 export function isSuccessfulPreDeployment(

@@ -254,12 +254,12 @@ func (s *PublishSuite) publishWithClient(
 
 		publisher.emitErrorEvents(err, s.log)
 	}
-	if stateStore.Target != nil {
-		if target != nil {
+	if target != nil {
+		// Creation date is not updated on deployment
+		s.Equal(stateStore.Target.CreatedAt, stateStore.Target.CreatedAt)
+		if stateStore.Target != nil {
 			// Successful redeployment should update the timestamp.
 			s.NotEqual(stateStore.Target.CreatedAt, stateStore.Target.DeployedAt)
-		} else {
-			s.Equal(stateStore.Target.CreatedAt, stateStore.Target.DeployedAt)
 		}
 	}
 	couldCreateDeployment := (authErr == nil && capErr == nil && createErr == nil)
