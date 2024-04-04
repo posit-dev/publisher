@@ -216,6 +216,13 @@ const disableDeployment = computed(() => {
 
 watch(selectedDeploymentName, () => {
   updateSelectedDevelopment();
+  if (selectedDeployment.value?.configurationName) {
+    selectedConfig.value = selectedDeployment.value.configurationName;
+  } else if (configList.value.length) {
+    selectedConfig.value = configList.value[0];
+  } else {
+    selectedConfig.value = undefined;
+  }
   filterCredentialsToDeployment();
 });
 
@@ -327,7 +334,7 @@ const onMessageFromProvider = (event: any) => {
       );
       if (selectedDeploymentName.value) {
         if (!deploymentList.value.includes(selectedDeploymentName.value)) {
-          selectedDeploymentName.value = "";
+          selectedDeploymentName.value = undefined;
         }
       }
 
@@ -338,10 +345,15 @@ const onMessageFromProvider = (event: any) => {
 
       configList.value = payload.configurations;
       if (!selectedConfig.value) {
-        selectedConfig.value = configList.value[0];
-      }
-      if (configList.value.length === 0) {
-        selectedConfig.value = "";
+        if (selectedDeployment.value?.configurationName) {
+          selectedConfig.value = selectedDeployment.value.configurationName;
+        } else {
+          selectedConfig.value = configList.value.length
+            ? configList.value[0]
+            : undefined;
+        }
+      } else if (configList.value.length === 0) {
+        selectedConfig.value = undefined;
       }
 
       accounts.value = payload.credentials;
