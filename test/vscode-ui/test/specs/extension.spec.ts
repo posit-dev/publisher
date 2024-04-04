@@ -39,6 +39,15 @@ describe("VS Code Extension UI Test", () => {
     // await expect(config).toHaveText("CONFIGURATIONS");
     // await config.click();
 
+    // scroll to see configuration button
+    const element = await browser
+      .$(".monaco-pane-view")
+      .$$(".split-view-view")[1]
+      .$(".pane")
+      .$(".pane-body")
+      .$(".monaco-button");
+    await element.scrollIntoView();
+
     // click new configuration button
     const newConfig = await browser.$(".monaco-button");
     await expect(newConfig).toHaveText("New Configuration");
