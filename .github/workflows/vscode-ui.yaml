@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
       - uses: extractions/setup-just@v2
       - uses: actions/setup-node@v4
         with:
@@ -31,7 +31,12 @@ jobs:
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
+          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
       - uses: actions/checkout@v4
         with:
           repository: rstudio/connect-content
@@ -60,6 +65,66 @@ jobs:
         if: failure()
         with:
           name: ${{ matrix.runs-on}}-webdriver-screenshots
+          path: test/vscode-ui/errorShots
+          if-no-files-found: ignore
+          retention-days: 1
+  docker:
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubuntu-latest]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: extractions/setup-just@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+      - id: get-date
+        run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+        shell: bash
+      - uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+
+      - uses: actions/checkout@v4
+        with:
+          repository: rstudio/connect-content
+          path: "test/content"
+          sparse-checkout: bundles
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.CONNECT_PAT }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.4.549
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v4
+        with:
+          name: bin
+          path: bin
+      - run: chmod -R +x ./bin
+      - run: just package
+      - run: just vscode configure
+      - run: just vscode-ui install
+      - run: just vscode-ui test
+
+      - name: Save screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: docker-webdriver-screenshots
           path: test/vscode-ui/errorShots
           if-no-files-found: ignore
           retention-days: 1
