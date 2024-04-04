@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
       - uses: extractions/setup-just@v2
       - uses: actions/setup-node@v4
         with:
@@ -55,7 +55,6 @@ jobs:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
-      - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui test
@@ -77,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
       - uses: extractions/setup-just@v2
       - uses: actions/setup-node@v4
         with:
@@ -115,7 +114,6 @@ jobs:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
-      - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui test
