@@ -2,3 +2,4 @@ vendor
 
 # VSCode Extension
 extensions/vscode/out
+test/vscode-ui/.wdio-vscode-service
