@@ -31,11 +31,11 @@ jobs:
       - run: just
       - run: just vscode configure
       - run: just vscode test
-      - uses: actions/cache/save@v4
-        if: steps.cache.outputs.cache-hit != 'true'
-        with:
-          path: ./extensions/vscode/.vscode-test/vscode-*
-          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+      # - uses: actions/cache/save@v4
+      # if: steps.cache.outputs.cache-hit != 'true'
+      # with:
+      #   path: ./extensions/vscode/.vscode-test/vscode-*
+      #   key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -54,8 +54,8 @@ jobs:
       - run: just
       - run: just vscode configure
       - run: just vscode test
-      - uses: actions/cache/save@v4
-        if: steps.cache.outputs.cache-hit != 'true'
-        with:
-          path: ./extensions/vscode/.vscode-test/vscode-*
-          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+      # - uses: actions/cache/save@v4
+      #   if: steps.cache.outputs.cache-hit != 'true'
+      #   with:
+      #     path: ./extensions/vscode/.vscode-test/vscode-*
+      #     key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
