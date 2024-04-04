@@ -291,4 +291,41 @@ vscode *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    just extensions/vscode/{{ args }}
+    just _with_docker just extensions/vscode/{{ args }}
+
+vscode-ui *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    just _with_docker just test/vscode-ui/{{ args }}
+
+[private]
+_with_docker *args:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    if ! {{ _docker }}; then
+        {{ args }}
+        exit 0
+    fi
+
+    if ! docker image inspect $(just tag) &>/dev/null; then
+        just image
+    fi
+
+    docker run --rm {{ _interactive }}\
+        -e CI={{ _ci }}\
+        -e DEBUG={{ _debug }}\
+        -e DOCKER=false\
+        -e GOCACHE=/work/.cache/go/cache\
+        -e GOMODCACHE=/work/.cache/go/mod\
+        -e MODE={{ _mode }}\
+        --env-file <(env | grep AWS_)\
+        --env-file <(env | grep GITHUB_)\
+        --platform {{ _docker_platform }}\
+        -v "$(pwd)":/work\
+        -w /work\
+        $(just tag)\
+        /bin/bash -c  '{{ args }}'
