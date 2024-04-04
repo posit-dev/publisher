@@ -31,12 +31,7 @@ jobs:
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
-      - uses: actions/cache/save@v4
-        if: steps.cache.outputs.cache-hit != 'true'
-        with:
-          path: ./extensions/vscode/.vscode-test/vscode-*
-          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
       - uses: actions/checkout@v4
         with:
           repository: rstudio/connect-content
@@ -88,7 +83,7 @@ jobs:
         id: cache
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
-          key: ${{ matrix.runs-on }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
       - uses: actions/cache/save@v4
         if: steps.cache.outputs.cache-hit != 'true'
         with:
