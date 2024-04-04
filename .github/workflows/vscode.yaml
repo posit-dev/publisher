@@ -20,9 +20,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18.x
-      - id: get-date
-        run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
-        shell: bash
+      # - id: get-date
+      #   run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+      #   shell: bash
       # - uses: actions/cache/restore@v4
       #   id: cache
       #   with:
@@ -31,11 +31,11 @@ jobs:
       - run: just
       - run: just vscode configure
       - run: just vscode test
-      # - uses: actions/cache/save@v4
-      #   if: steps.cache.outputs.cache-hit != 'true'
-      #   with:
-      #     path: ./extensions/vscode/.vscode-test/vscode-*
-      #     key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -43,9 +43,9 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - id: get-date
-        run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
-        shell: bash
+      # - id: get-date
+      #   run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+      #   shell: bash
       # - uses: actions/cache/restore@v4
       #   id: cache
       #   with:
@@ -54,8 +54,8 @@ jobs:
       - run: just
       - run: just vscode configure
       - run: just vscode test
-      # - uses: actions/cache/save@v4
-      #   if: steps.cache.outputs.cache-hit != 'true'
-      #   with:
-      #     path: ./extensions/vscode/.vscode-test/vscode-*
-      #     key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: ./extensions/vscode/.vscode-test/vscode-*
+          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ github.run_id }}
