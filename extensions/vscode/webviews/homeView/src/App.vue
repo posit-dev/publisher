@@ -49,19 +49,20 @@
         </div>
         <vscode-dropdown
           id="deployment-selector"
-          v-model="selectedDeploymentName"
+          v-model="selectedDeployment"
           class="dropdowns"
         >
           <vscode-option
-            v-for="deployment in deploymentList"
-            :key="deployment"
-            :selected="deployment === selectedDeploymentName"
+            v-for="deployment in deployments"
+            :key="deployment.deploymentName"
+            :selected="deployment === selectedDeployment"
+            :value="deployment"
+            :label="deployment.deploymentName"
           >
-            {{ deployment }}
+            {{ deployment.deploymentName }}
           </vscode-option>
         </vscode-dropdown>
       </div>
-
       <div>
         <div class="label-and-icons">
           <label for="config-selector">Configuration:</label>
@@ -93,23 +94,36 @@
           v-model="selectedConfig"
           class="dropdowns"
         >
-          <vscode-option v-for="config in configList" :key="config">{{
-            config
-          }}</vscode-option>
+          <vscode-option
+            v-for="config in configs"
+            :key="config.configurationName"
+            :value="config"
+            :selected="config === selectedConfig"
+            :label="config.configurationName"
+          >
+            {{ config.configurationName }}
+          </vscode-option>
         </vscode-dropdown>
       </div>
 
       <label for="credentials-selector">Credentials:</label>
       <vscode-dropdown
         id="credentials-selector"
-        v-model="selectedCredential"
+        v-model="selectedAccount"
         class="dropdowns"
       >
-        <vscode-option v-for="credential in credentialList" :key="credential">{{
-          credential
-        }}</vscode-option>
+        <vscode-option
+          v-for="account in filteredAccounts"
+          :key="account.source + account.name"
+          :value="account"
+          :selected="account === selectedAccount"
+          :label="account.name"
+        >
+          {{ account.name }}
+        </vscode-option>
       </vscode-dropdown>
     </div>
+
     <div v-if="selectedDeployment && selectedDeployment.serverType">
       <vscode-divider />
       <div v-if="publishingInProgress" class="progress-container">
@@ -166,22 +180,21 @@ import {
 } from "../../../src/api/types/deployments";
 import { formatDateString } from "../../../../../web/src/utils/date";
 import { Account } from "../../../src/api/types/accounts";
+import { Configuration } from "../../../src/api/types/configurations";
 
 let deployments = ref<(Deployment | PreDeployment)[]>([]);
-let deploymentList = ref<string[]>([]);
-let configList = ref<string[]>([]);
+let configs = ref<Configuration[]>([]);
 let accounts = ref<Account[]>([]);
-let credentialList = ref<string[]>([]);
+let filteredAccounts = ref<Account[]>([]);
 let publishingInProgress = ref(false);
 
-const selectedDeploymentName = ref<string>();
-const selectedDeployment = ref<Deployment | PreDeployment | undefined>(
-  undefined,
-);
-const selectedConfig = ref<string>();
-const selectedCredential = ref<string>();
+const selectedDeployment = ref<Deployment | PreDeployment | undefined>();
+const selectedConfig = ref<Configuration>();
+const selectedAccount = ref<Account>();
+
 const lastDeploymentResult = ref<string>();
 const lastDeploymentMsg = ref<string>();
+
 const showDetails = ref(false);
 
 const vsCodeApi = acquireVsCodeApi();
@@ -207,17 +220,13 @@ const buttonIconClass = computed(() => {
 
 const disableDeployment = computed(() => {
   const result =
-    !Boolean(selectedDeploymentName.value) ||
+    !Boolean(selectedDeployment.value) ||
     !Boolean(selectedConfig.value) ||
-    !Boolean(selectedCredential.value);
-  console.log(`disableDeployment: ${result}`);
+    !Boolean(selectedAccount.value);
   return result;
 });
 
-watch(selectedDeploymentName, () => {
-  updateSelectedDevelopment();
-  filterCredentialsToDeployment();
-});
+watch(selectedDeployment, () => filterCredentialsToDeployment());
 
 onBeforeMount(() => {
   // Register for our messages from the provider
@@ -234,10 +243,43 @@ onBeforeUnmount(() => {
   window.removeEventListener("message", onMessageFromProvider);
 });
 
-const updateSelectedDevelopment = () => {
-  selectedDeployment.value = deployments.value.find(
-    (deployment) => deployment.saveName === selectedDeploymentName.value,
-  );
+const updateSelectedDeploymentByObject = (
+  preDeployment: PreDeployment,
+): void => {
+  deployments.value.push(preDeployment);
+  selectedDeployment.value = preDeployment;
+};
+
+const updateSelectedDeploymentByName = (deploymentName?: string): void => {
+  let selectedDeploymentTarget: Deployment | PreDeployment | undefined =
+    undefined;
+  if (deploymentName) {
+    selectedDeploymentTarget = deployments.value.find(
+      (deployment) => deployment.deploymentName === deploymentName,
+    );
+  }
+  if (!selectedDeploymentTarget && deployments.value.length) {
+    selectedDeploymentTarget = deployments.value[0];
+  }
+  selectedDeployment.value = selectedDeploymentTarget;
+};
+
+const updateSelectedConfigurationByObject = (config: Configuration): void => {
+  configs.value.push(config);
+  selectedConfig.value = config;
+};
+
+const updateSelectedConfigurationByName = (configurationName?: string) => {
+  let selectedConfigTarget: Configuration | undefined = undefined;
+  if (selectedConfig.value) {
+    selectedConfigTarget = configs.value.find(
+      (config) => config.configurationName === configurationName,
+    );
+  }
+  if (!selectedConfigTarget && configs.value.length) {
+    selectedConfigTarget = configs.value[0];
+  }
+  selectedConfig.value = selectedConfigTarget;
 };
 
 // TODO: We need to show an error when you have no credentials which can get to
@@ -245,23 +287,28 @@ const updateSelectedDevelopment = () => {
 // OR
 // Should we filter deployment list to just include what you can access. Maybe disable others?
 
-const filterCredentialsToDeployment = () => {
-  credentialList.value = accounts.value
-    .filter((account) => {
-      return (
-        account.url.toLowerCase() ===
-        selectedDeployment.value?.serverUrl.toLocaleLowerCase()
-      );
-    })
-    .map((account) => account.name);
+const filterCredentialsToDeployment = (credentialName?: string) => {
+  filteredAccounts.value = accounts.value.filter((account) => {
+    return (
+      account.url.toLowerCase() ===
+      selectedDeployment.value?.serverUrl.toLocaleLowerCase()
+    );
+  });
 
-  if (credentialList.value.length === 0) {
+  if (filteredAccounts.value.length === 0) {
     // TODO: Show ERROR HERE!!!!
-    selectedCredential.value = "";
-  } else if (!selectedCredential.value) {
-    selectedCredential.value = credentialList.value[0];
-  } else if (!credentialList.value.includes(selectedCredential.value)) {
-    selectedCredential.value = credentialList.value[0];
+    selectedAccount.value = undefined;
+  } else if (!selectedAccount.value) {
+    selectedAccount.value = filteredAccounts.value[0];
+  } else {
+    let targetAccount: Account | undefined = filteredAccounts.value.find(
+      (account) => account.name,
+    );
+    if (targetAccount) {
+      selectedAccount.value = targetAccount;
+    } else {
+      selectedAccount.value = filteredAccounts.value[0];
+    }
   }
 };
 
@@ -269,9 +316,9 @@ const onClickDeploy = () => {
   vsCodeApi.postMessage({
     command: "deploy",
     payload: JSON.stringify({
-      deployment: selectedDeploymentName.value,
+      deployment: selectedDeployment.value,
       configuration: selectedConfig.value,
-      credential: selectedCredential.value,
+      credential: selectedAccount.value,
     }),
   });
 };
@@ -322,30 +369,15 @@ const onMessageFromProvider = (event: any) => {
       const payload = JSON.parse(event.data.payload);
 
       deployments.value = payload.deployments;
-      deploymentList.value = deployments.value.map(
-        (deployment) => deployment.saveName,
+      updateSelectedDeploymentByName(selectedDeployment.value?.deploymentName);
+
+      configs.value = payload.configurations;
+      updateSelectedConfigurationByName(
+        selectedConfig.value?.configurationName,
       );
-      if (selectedDeploymentName.value) {
-        if (!deploymentList.value.includes(selectedDeploymentName.value)) {
-          selectedDeploymentName.value = "";
-        }
-      }
-
-      if (!selectedDeploymentName.value) {
-        selectedDeploymentName.value = deploymentList.value[0];
-      }
-      updateSelectedDevelopment();
-
-      configList.value = payload.configurations;
-      if (!selectedConfig.value) {
-        selectedConfig.value = configList.value[0];
-      }
-      if (configList.value.length === 0) {
-        selectedConfig.value = "";
-      }
 
       accounts.value = payload.credentials;
-      filterCredentialsToDeployment();
+      filterCredentialsToDeployment(selectedAccount.value?.name);
 
       break;
     }
@@ -367,17 +399,14 @@ const onMessageFromProvider = (event: any) => {
     }
     case "update_deployment_selection": {
       const payload = JSON.parse(event.data.payload);
-      if (payload.name && !deploymentList.value.includes(payload.name)) {
-        deploymentList.value.push(payload.name);
+      if (payload.preDeployment) {
+        updateSelectedDeploymentByObject(payload.preDeployment);
       }
-      selectedDeploymentName.value = payload.name;
       break;
     }
     case "update_config_selection": {
       const payload = JSON.parse(event.data.payload);
-      if (payload.name && !configList.value.includes(payload.name)) {
-        configList.value.push(payload.name);
-      }
+      updateSelectedConfigurationByObject(payload.config);
       break;
     }
     default:
