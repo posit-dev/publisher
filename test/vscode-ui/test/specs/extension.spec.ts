@@ -23,11 +23,17 @@ describe("VS Code Extension UI Test", () => {
     await extension.click();
 
     // initialize project via button
-    // const init = await browser
-    // .$(".welcome-view-content")
-    // .$("a.monaco-button");
-    // await expect(init).toHaveText("Initialize Project");
-    // await init.click();
+    const init = await browser.$(".welcome-view-content").$("a.monaco-button");
+    await expect(init).toHaveText("Initialize Project");
+    await init.click();
+
+    // name configuration and save
+    const actionbar = await browser.$("#quickInput_message");
+    await expect(actionbar).toHaveText(
+      "Configuration name (Press 'Enter' to confirm or 'Escape' to cancel)",
+    );
+    await browser.keys("blue");
+    await browser.keys([Key.Enter]);
 
     // click advanced mode
     const advancedMode = await browser.$("aria/Show Advanced Mode");
@@ -40,34 +46,24 @@ describe("VS Code Extension UI Test", () => {
     // await config.click();
 
     // scroll to see configuration button
-    const element = await browser
-      .$(".monaco-pane-view")
-      .$$(".split-view-view")[1]
-      .$(".pane")
-      .$(".pane-body")
-      .$(".monaco-button");
-    await element.scrollIntoView();
+    // const element = await browser
+    //   .$(".monaco-pane-view")
+    //   .$$(".split-view-view")[1]
+    //   .$(".pane")
+    //   .$(".pane-body")
+    //   .$(".monaco-button");
+    // await element.scrollIntoView();
 
-    // click new configuration button
-    const newConfig = await browser.$(".monaco-button");
-    await expect(newConfig).toHaveText("New Configuration");
-    await newConfig.click();
-
-    // name configuration and save
-    const actionbar = await browser.$("#quickInput_message");
-    await expect(actionbar).toHaveText(
-      "Configuration name (Press 'Enter' to confirm or 'Escape' to cancel)",
-    );
-    await browser.keys("blue");
-    await browser.keys([Key.Enter]);
+    // // click new configuration button
+    // const newConfig = await browser.$(".monaco-button");
+    // await expect(newConfig).toHaveText("New Configuration");
+    // await newConfig.click();
 
     const defaultTextElement = await browser
       .$(".monaco-pane-view")
       .$$(".split-view-view")[1]
       .$(".pane")
       .$(".pane-body");
-    // .$(".pane-body");
-
     await expect(defaultTextElement).toHaveText("blue");
 
     // confirm config file is created
