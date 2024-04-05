@@ -215,9 +215,8 @@ watch(selectedDeploymentName, () => {
   updateParentViewSelectionState();
 });
 
-watch(
-  [selectedConfig, selectedCredential],
-  () => updateParentViewSelectionState,
+watch([selectedConfig, selectedCredential], () =>
+  updateParentViewSelectionState(),
 );
 
 onBeforeMount(() => {
