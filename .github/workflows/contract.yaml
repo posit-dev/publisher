@@ -50,6 +50,11 @@ jobs:
       - run: just bats test init
       - run: just bats test accounts
       - run: just bats test deploy
+      # vscode ui tests
+      - run: just package
+      - run: just vscode configure
+      - run: just vscode-ui install
+      - run: just vscode-ui test
 
       # Videos are captured whether the suite fails or passes
       - name: Save videos
