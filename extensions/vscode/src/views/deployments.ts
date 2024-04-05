@@ -29,10 +29,7 @@ import {
 
 import { confirmForget } from "../dialogs";
 import { EventStream } from "../events";
-import {
-  newDeployment,
-  newDeploymentFile,
-} from "../multiStepInputs/newDeployment";
+import { newDeployment } from "../multiStepInputs/newDeployment";
 import { publishDeployment } from "../multiStepInputs/deployProject";
 import { formatDateString } from "../utils/date";
 import { getSummaryStringFromError } from "../utils/errors";
@@ -42,7 +39,7 @@ const refreshCommand = viewName + ".refresh";
 const editCommand = viewName + ".edit";
 const forgetCommand = viewName + ".forget";
 const visitCommand = viewName + ".visit";
-const initiateNewDeploymentCommand = viewName + ".initiateNewDeployment";
+const AddDeploymentCommand = viewName + ".addDeployment";
 const createNewDeploymentFileCommand = viewName + ".createNewDeploymentFile";
 const deployCommand = viewName + ".deploy";
 const isEmptyContext = viewName + ".isEmpty";
@@ -131,7 +128,7 @@ export class DeploymentsTreeDataProvider
     context.subscriptions.push(treeView);
 
     context.subscriptions.push(
-      commands.registerCommand(initiateNewDeploymentCommand, () => {
+      commands.registerCommand(AddDeploymentCommand, () => {
         return newDeployment(
           "Deploy Your Project to a New Location",
           true,
@@ -142,7 +139,7 @@ export class DeploymentsTreeDataProvider
 
     context.subscriptions.push(
       commands.registerCommand(createNewDeploymentFileCommand, () => {
-        return newDeploymentFile("Create a Deployment File for your Project");
+        return newDeployment("Create a Deployment File for your Project");
       }),
     );
 

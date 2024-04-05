@@ -33,7 +33,7 @@ export class Deployments {
   // 409 - conflict
   // 500 - internal server error
   // Errors returned through event stream
-  createNew(accountName: string, configName: string, saveName: string) {
+  createNew(accountName?: string, configName?: string, saveName?: string) {
     const params = {
       account: accountName,
       config: configName,
