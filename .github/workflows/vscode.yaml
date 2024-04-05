@@ -5,8 +5,6 @@ env:
   VSCODE_VERSION: stable
 jobs:
   native:
-    env:
-      DOCKER: false
     strategy:
       fail-fast: false
       matrix:
@@ -35,25 +33,3 @@ jobs:
         with:
           path: ./extensions/vscode/.vscode-test/vscode-*
           key: ${{ matrix.runner }}-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup
-      - id: get-date
-        run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
-        shell: bash
-      - uses: actions/cache/restore@v4
-        id: cache
-        with:
-          path: ./extensions/vscode/.vscode-test/vscode-*
-          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}
-      - run: just vscode configure
-      - run: just vscode test
-      - uses: actions/cache/save@v4
-        if: steps.cache.outputs.cache-hit != 'true'
-        with:
-          path: ./extensions/vscode/.vscode-test/vscode-*
-          key: docker-vscode-${{ env.VSCODE_VERSION }}-${{ steps.get-date.outputs.date }}

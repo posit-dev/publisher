@@ -3,8 +3,6 @@ on:
   workflow_call:
 jobs:
   native:
-    env:
-      DOCKER: false
     strategy:
       fail-fast: false
       matrix:
@@ -18,17 +16,4 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: just test
-  docker:
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [ubuntu-latest]
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup
-      - run: just lint
       - run: just test

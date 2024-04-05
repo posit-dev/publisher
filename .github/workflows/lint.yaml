@@ -1,7 +1,5 @@
 name: Lint
 on: [workflow_call]
-env:
-  DOCKER: false
 jobs:
   lint:
     runs-on: ubuntu-latest

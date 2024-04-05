@@ -7,7 +7,6 @@
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
       - [Option 1 - Native](#option-1---native)
-      - [Option 2 - Docker](#option-2---docker)
     - [Installing](#installing)
     - [Execution](#execution)
   - [Testing](#testing)
@@ -40,18 +39,11 @@ These instructions will give you a copy of the project up and running on your lo
 
 #### Option 1 - Native
 
-Utilizing your machines native software will result in a faster development iteration cycle, but requires more setup. The project defaults to native tooling in most environments. If you wish to use native tooling, but do not see the correct behavior, set the environment variable `DOCKER=false`.
+Utilizing your machines native software will result in a faster development iteration cycle, but requires more setup. The project defaults to native tooling in most environments.
 
 - [Go](https://go.dev/dl/)
 - [Just](https://just.systems/man/en/chapter_4.html)
 - [Node.js](https://nodejs.org/en/download/)
-
-#### Option 2 - Docker
-
-All build tooling is Docker compliant. In order to get started using Docker, set the environment variable `DOCKER=true` in your shell.
-
-- [Docker](https://docs.docker.com/get-docker/)
-- [Just](https://just.systems/man/en/chapter_4.html)
 
 ### Installing
 
@@ -125,7 +117,6 @@ When executing commands the following variables are accepted to change behavior.
 | -------- | ------- | ---- | ------------------------------------------------------------------------------------- |
 | CI       | false   | bool | Enable CI mode. When set to true, multi-platform builds are enabled.                  |
 | DEBUG    | false   | bool | Enable DEBUG mode. When set to true, `set +x` is enabled for all Justfile targets.    |
-| DOCKER   | false   | bool | Enable DOCKER mode. When set to true, all Justfile targets are executed in Docker.    |
 | MODE     | dev     | enum | When set to `dev`, development is enabled. All other values disable development mode. |
 
 #### Behavior in GitHub Actions
@@ -136,7 +127,6 @@ This mode can be reproduced on your local machine by setting `CI=true`.
 
 | Variable | Default |
 | -------- | ------- |
-| DOCKER   | true    |
 | MODE     | prod    |
 
 ### Extension Development
