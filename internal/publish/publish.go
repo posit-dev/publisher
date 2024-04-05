@@ -216,6 +216,8 @@ func (p *defaultPublisher) writeDeploymentRecord(log logging.Logger) error {
 
 	now := time.Now().Format(time.RFC3339)
 	p.Target.DeployedAt = now
+	p.Target.ConfigName = p.ConfigName
+	p.Target.Configuration = p.Config
 
 	recordPath := deployment.GetDeploymentPath(p.Dir, p.SaveName)
 	return p.Target.WriteFile(recordPath)
