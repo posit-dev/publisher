@@ -24,6 +24,12 @@
   "contributes": {
     "commands": [
       {
+        "command": "posit.publisher.init-project",
+        "title": "Initialize Project",
+        "icon": "${star)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.configurations.refresh",
         "title": "Refresh Configurations",
         "icon": "$(refresh)",
@@ -293,6 +299,10 @@
       ],
       "commandPalette": [
         {
+          "command": "posit.publisher.init-project",
+          "when": "workbenchState == folder && posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
           "command": "posit.publisher.configurations.refresh",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         },
@@ -494,7 +504,7 @@
       },
       {
         "view": "posit.publisher.project",
-        "contents": "Before deploying using Posit Publisher, you need to initialize your project by creating a deployment configuration.\n[Initialize Project](command:posit.publisher.configurations.add)",
+        "contents": "Before deploying using Posit Publisher, you need to initialize your project by creating a deployment configuration and a project configuration.\n[Initialize Project](command:posit.publisher.init-project)",
         "when": "workbenchState == folder && posit.publish.missing && posit.publish.state == 'initialized'"
       }
     ]

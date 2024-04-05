@@ -17,9 +17,11 @@ import { LogsTreeDataProvider } from "./views/logs";
 import { EventStream } from "./events";
 import { HomeViewProvider } from "./views/homeView";
 import { commands } from "vscode";
+import { initWorkspace } from "./multiStepInputs/initWorkspace";
 
 const STATE_CONTEXT = "posit.publish.state";
 const MISSING_CONTEXT = "posit.publish.missing";
+const initProjectCommand = "posit.publisher.init-project";
 
 enum PositPublishState {
   initialized = "initialized",
@@ -111,6 +113,10 @@ export async function activate(context: vscode.ExtensionContext) {
   await service.start();
 
   setStateContext(PositPublishState.initialized);
+
+  context.subscriptions.push(
+    commands.registerCommand(initProjectCommand, () => initWorkspace()),
+  );
 }
 
 // This method is called when your extension is deactivated

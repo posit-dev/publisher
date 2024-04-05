@@ -69,9 +69,7 @@ export async function initWorkspace() {
   try {
     const inspectResponse = await api.configurations.inspect();
     configs = inspectResponse.data;
-    entryPointLabels = configs.map(
-      (config) => `${config.entrypoint} (type ${config.type})`,
-    );
+    entryPointLabels = configs.map((config) => `${config.entrypoint}`);
     configs.forEach((config) => {
       if (config.entrypoint) {
         entryPointListItems.push({
@@ -288,7 +286,7 @@ export async function initWorkspace() {
     state.data.configFileName === undefined ||
     // have to add type guards here to eliminate the variability
     typeof state.data.deploymentName !== "string" ||
-    typeof state.data.credentialName !== "string" ||
+    !isQuickPickItem(state.data.credentialName) ||
     !isQuickPickItem(state.data.entryPoint) ||
     typeof state.data.configFileName !== "string"
   ) {
@@ -321,7 +319,7 @@ export async function initWorkspace() {
   // Create the Predeployment File
   try {
     await api.deployments.createNew(
-      state.data.credentialName,
+      state.data.credentialName.label,
       state.data.configFileName,
       state.data.deploymentName,
     );
