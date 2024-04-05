@@ -20,15 +20,22 @@ import { deployProject } from "../views/deployProgress";
 import { EventStream } from "../events";
 import { isValidFilename } from "../utils/files";
 
-export function newDeploymentFile(title: string) {
-  return newDeployment(title, false, undefined);
-}
-
+export async function newDeployment(title: string): Promise<string | undefined>;
 export async function newDeployment(
   title: string,
-  allowPublish: boolean,
-  stream: EventStream | undefined,
-) {
+  allowPublish: true,
+  stream: EventStream,
+): Promise<string | undefined>;
+export async function newDeployment(
+  title: string,
+  allowPublish: false,
+  stream?: undefined,
+): Promise<string | undefined>;
+export async function newDeployment(
+  title: string,
+  allowPublish?: boolean,
+  stream?: EventStream,
+): Promise<string | undefined> {
   const api = useApi();
 
   // ***************************************************************
