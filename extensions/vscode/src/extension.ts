@@ -21,11 +21,18 @@ import { initWorkspace } from "./multiStepInputs/initWorkspace";
 
 const STATE_CONTEXT = "posit.publish.state";
 const MISSING_CONTEXT = "posit.publish.missing";
-const initProjectCommand = "posit.publisher.init-project";
 
 enum PositPublishState {
   initialized = "initialized",
   uninitialized = "uninitialized",
+}
+
+const INITIALIZING_CONTEXT = "posit.publish.initialization.inProgress";
+const INIT_PROJECT_COMMAND = "posit.publisher.init-project";
+
+enum InitializationInProgress {
+  true = "true",
+  false = "false",
 }
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
@@ -56,10 +63,15 @@ function setStateContext(context: PositPublishState) {
   vscode.commands.executeCommand("setContext", STATE_CONTEXT, context);
 }
 
+function setInitializationInProgressContext(context: InitializationInProgress) {
+  vscode.commands.executeCommand("setContext", INITIALIZING_CONTEXT, context);
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
   setStateContext(PositPublishState.uninitialized);
+  setInitializationInProgressContext(InitializationInProgress.false);
 
   if (
     vscode.workspace.workspaceFolders &&
@@ -115,7 +127,11 @@ export async function activate(context: vscode.ExtensionContext) {
   setStateContext(PositPublishState.initialized);
 
   context.subscriptions.push(
-    commands.registerCommand(initProjectCommand, () => initWorkspace()),
+    commands.registerCommand(INIT_PROJECT_COMMAND, async () => {
+      setInitializationInProgressContext(InitializationInProgress.true);
+      await initWorkspace();
+      setInitializationInProgressContext(InitializationInProgress.false);
+    }),
   );
 }
 
