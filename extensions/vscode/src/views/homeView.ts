@@ -132,7 +132,7 @@ export class HomeViewProvider implements WebviewViewProvider {
             return;
           case "newDeployment":
             const newFile: string = await commands.executeCommand(
-              "posit.publisher.deployments.createNew",
+              "posit.publisher.deployments.createNewDeploymentFile",
             );
             if (newFile) {
               this._updateDeploymentFileSelection(newFile);
