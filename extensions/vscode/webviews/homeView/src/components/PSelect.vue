@@ -11,42 +11,30 @@
   </vscode-dropdown>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { computed, ref } from "vue";
 
-export type hasToKey = {
-  toKey: () => string;
-};
-
-export type SelectOption = string | hasToKey;
-
-const selectOptionToKey = (o: SelectOption): string => {
-  switch (typeof o) {
-    case "string":
-      return o;
-    case "object":
-      return o.toKey();
-  }
-};
-
-const model = defineModel<SelectOption>({ required: true });
+const model = defineModel<T>();
 
 const props = defineProps<{
-  options: SelectOption[];
+  options: T[];
+  getKey: (o: T) => string;
 }>();
 
-const _selection = ref<string>(selectOptionToKey(model.value));
+const _selection = ref<string | undefined>(
+  model.value !== undefined ? props.getKey(model.value) : undefined,
+);
 
 const onInnerSelectionChange = (event: Event) => {
   const el = event.target as HTMLSelectElement;
   _selection.value = el.value;
 
-  model.value =
-    props.options.find((option) => selectOptionToKey(option) === el.value) ||
-    "";
+  model.value = props.options.find(
+    (option) => props.getKey(option) === el.value,
+  );
 };
 
 const stringifiedOptions = computed((): string[] => {
-  return props.options.map((option) => selectOptionToKey(option));
+  return props.options.map((option) => props.getKey(option));
 });
 </script>
