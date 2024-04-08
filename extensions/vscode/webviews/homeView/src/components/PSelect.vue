@@ -4,6 +4,7 @@
       v-for="option in stringifiedOptions"
       :key="option"
       :selected="option === _selection"
+      :disabled="disabledSet.has(option)"
       :value="option"
     >
       {{ option }}
@@ -19,6 +20,7 @@ const model = defineModel<T>();
 const props = defineProps<{
   options: T[];
   getKey: (o: T) => string;
+  disabled?: T[];
 }>();
 
 const _selection = ref<string | undefined>(
@@ -35,6 +37,13 @@ const onInnerSelectionChange = (event: Event) => {
 };
 
 const stringifiedOptions = computed((): string[] => {
-  return props.options.map((option) => props.getKey(option));
+  return props.options.map((o) => props.getKey(o));
+});
+
+const disabledSet = computed((): Set<string> => {
+  if (props.disabled) {
+    return new Set(props.disabled.map((o) => props.getKey(o)));
+  }
+  return new Set();
 });
 </script>
