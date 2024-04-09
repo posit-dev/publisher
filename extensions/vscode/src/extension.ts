@@ -18,7 +18,7 @@ import { LogsTreeDataProvider } from "./views/logs";
 import { EventStream } from "./events";
 import { HomeViewProvider } from "./views/homeView";
 import { commands, window } from "vscode";
-import { initWorkspace } from "./multiStepInputs/initWorkspace";
+import { initWorkspaceWithFixedNames } from "./multiStepInputs/initWorkspace";
 import { getSummaryStringFromError } from "./utils/errors";
 
 const STATE_CONTEXT = "posit.publish.state";
@@ -64,23 +64,22 @@ async function isMissingPublishDirs(
   }
 }
 
-function checkForCredentials(apiReady: Promise<boolean>) {
-  apiReady
-    .then(() => api.accounts.getAll())
-    .then((response) => {
-      if (response.data.length) {
-        setCredentialCheckContext(PositPublishCredentialCheck.succeeded);
-      } else {
-        setCredentialCheckContext(PositPublishCredentialCheck.failed);
-      }
-    })
-    .catch((error: unknown) => {
-      const summary = getSummaryStringFromError(
-        "extension::checkForCredentials",
-        error,
-      );
-      window.showInformationMessage(summary);
-    });
+async function checkForCredentials(apiReady: Promise<boolean>) {
+  await apiReady;
+  try {
+    const response = await api.accounts.getAll();
+    if (response.data.length) {
+      setCredentialCheckContext(PositPublishCredentialCheck.succeeded);
+    } else {
+      setCredentialCheckContext(PositPublishCredentialCheck.failed);
+    }
+  } catch (error: unknown) {
+    const summary = getSummaryStringFromError(
+      "extension::checkForCredentials",
+      error,
+    );
+    window.showInformationMessage(summary);
+  }
 }
 
 function setMissingContext(context: boolean) {
@@ -161,7 +160,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     commands.registerCommand(INIT_PROJECT_COMMAND, async () => {
       setInitializationInProgressContext(InitializationInProgress.true);
-      await initWorkspace();
+      await initWorkspaceWithFixedNames();
       setInitializationInProgressContext(InitializationInProgress.false);
     }),
   );

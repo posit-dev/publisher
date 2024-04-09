@@ -23,7 +23,14 @@ import {
 } from "../utils/names";
 import { isValidFilename } from "../utils/files";
 
-export async function initWorkspace() {
+export async function initWorkspaceWithFixedNames() {
+  await initWorkspace("Untitled-1", "default");
+}
+
+export async function initWorkspace(
+  fixedDeploymentName?: string,
+  fixedConfigurationName?: string,
+) {
   const api = useApi();
 
   // ***************************************************************
@@ -104,10 +111,10 @@ export async function initWorkspace() {
   // NOTE: This multi-stepper is used for multiple commands
   // ***************************************************************
 
-  // Name the deployment
+  // Name the deployment - if a fixedDeploymentName has not been supplied
   // Select the credential to use, if there is more than one
   // Select the entrypoint if needed
-  // Name the config file to use
+  // Name the config file to use - if a fixedConfigurationName has not been supplied
   // Return the name of the config file, so it can be opened.
 
   // ***************************************************************
@@ -135,6 +142,12 @@ export async function initWorkspace() {
     if (configs.length === 1) {
       totalSteps -= 1;
     }
+    if (fixedDeploymentName) {
+      totalSteps -= 1;
+    }
+    if (fixedConfigurationName) {
+      totalSteps -= 1;
+    }
     state.totalSteps = totalSteps;
 
     // start the progression through the steps
@@ -151,31 +164,35 @@ export async function initWorkspace() {
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    const thisStepNumber = state.lastStep + 1;
-    const deploymentName = await input.showInputBox({
-      title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
-      value:
-        typeof state.data.deploymentName === "string" &&
-        state.data.deploymentName.length
-          ? state.data.deploymentName
-          : untitledDeploymentName([]),
-      prompt: "Choose a unique name for the deployment",
-      validate: (value) => {
-        if (value.length < 3 || !isValidFilename(value)) {
-          return Promise.resolve({
-            message: `Invalid Name: Value must be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      shouldResume: () => Promise.resolve(false),
-    });
+    if (!fixedDeploymentName) {
+      const thisStepNumber = state.lastStep + 1;
+      const deploymentName = await input.showInputBox({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        value:
+          typeof state.data.deploymentName === "string" &&
+          state.data.deploymentName.length
+            ? state.data.deploymentName
+            : untitledDeploymentName([]),
+        prompt: "Choose a unique name for the deployment",
+        validate: (value) => {
+          if (value.length < 3 || !isValidFilename(value)) {
+            return Promise.resolve({
+              message: `Invalid Name: Value must be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          return Promise.resolve(undefined);
+        },
+        shouldResume: () => Promise.resolve(false),
+      });
 
-    state.data.deploymentName = deploymentName;
-    state.lastStep = thisStepNumber;
+      state.data.deploymentName = deploymentName;
+      state.lastStep = thisStepNumber;
+    } else {
+      state.data.deploymentName = fixedDeploymentName;
+    }
     return (input: MultiStepInput) => pickCredentials(input, state);
   }
 
@@ -245,27 +262,31 @@ export async function initWorkspace() {
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    const thisStepNumber = state.lastStep + 1;
-    const configFileName = await input.showInputBox({
-      title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
-      value: await untitledConfigurationName(),
-      prompt: "Choose a unique name for the configuration",
-      validate: (value) => {
-        if (value.length < 3 || !isValidFilename(value)) {
-          return Promise.resolve({
-            message: `Invalid Name: Value must be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      shouldResume: () => Promise.resolve(false),
-    });
+    if (!fixedConfigurationName) {
+      const thisStepNumber = state.lastStep + 1;
+      const configFileName = await input.showInputBox({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        value: await untitledConfigurationName(),
+        prompt: "Choose a unique name for the configuration",
+        validate: (value) => {
+          if (value.length < 3 || !isValidFilename(value)) {
+            return Promise.resolve({
+              message: `Invalid Name: Value must be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          return Promise.resolve(undefined);
+        },
+        shouldResume: () => Promise.resolve(false),
+      });
 
-    state.data.configFileName = configFileName;
-    state.lastStep = thisStepNumber;
+      state.data.configFileName = configFileName;
+      state.lastStep = thisStepNumber;
+    } else {
+      state.data.configFileName = fixedConfigurationName;
+    }
   }
 
   // ***************************************************************
