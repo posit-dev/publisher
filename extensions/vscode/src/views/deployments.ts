@@ -30,8 +30,7 @@ import {
 
 import { confirmForget } from "../dialogs";
 import { EventStream } from "../events";
-import { addDeployment } from "../multiStepInputs/addDeployment";
-import { createNewDeploymentFile } from "../multiStepInputs/createNewDeploymentFile";
+import { newDeployment } from "../multiStepInputs/newDeployment";
 import { publishDeployment } from "../multiStepInputs/deployProject";
 import { formatDateString } from "../utils/date";
 import { getSummaryStringFromError } from "../utils/errors";
@@ -41,8 +40,8 @@ const refreshCommand = viewName + ".refresh";
 const editCommand = viewName + ".edit";
 const forgetCommand = viewName + ".forget";
 const visitCommand = viewName + ".visit";
-const addCommand = viewName + ".add";
-const createNewCommand = viewName + ".createNew";
+const AddDeploymentCommand = viewName + ".addDeployment";
+const createNewDeploymentFileCommand = viewName + ".createNewDeploymentFile";
 const deployCommand = viewName + ".deploy";
 const isEmptyContext = viewName + ".isEmpty";
 
@@ -136,11 +135,19 @@ export class DeploymentsTreeDataProvider
     this.context.subscriptions.push(treeView);
 
     this.context.subscriptions.push(
-      commands.registerCommand(addCommand, () => addDeployment(this.stream)),
+      commands.registerCommand(AddDeploymentCommand, () => {
+        return newDeployment(
+          "Deploy Your Project to a New Location",
+          true,
+          this.stream,
+        );
+      }),
     );
 
     this.context.subscriptions.push(
-      commands.registerCommand(createNewCommand, createNewDeploymentFile),
+      commands.registerCommand(createNewDeploymentFileCommand, () => {
+        return newDeployment("Create a Deployment File for your Project");
+      }),
     );
 
     this.context.subscriptions.push(

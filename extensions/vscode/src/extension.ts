@@ -84,7 +84,9 @@ export async function activate(context: vscode.ExtensionContext) {
     });
     context.subscriptions.push(watcher);
 
-    // set our initial mode
+    setMissingContext(await isMissingPublishDirs(folder));
+
+    // set our initial mode for the home view
     commands.executeCommand(
       "setContext",
       "posit.publisher.homeView.deploymentActiveMode",
