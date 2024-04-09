@@ -47,21 +47,12 @@
             ></span>
           </vscode-button>
         </div>
-        <vscode-dropdown
-          id="deployment-selector"
+        <PSelect
           v-model="selectedDeployment"
+          :options="deployments"
+          :get-key="(d) => d.saveName"
           class="dropdowns"
-        >
-          <vscode-option
-            v-for="deployment in deployments"
-            :key="deployment.deploymentName"
-            :selected="deployment === selectedDeployment"
-            :value="deployment"
-            :label="deployment.deploymentName"
-          >
-            {{ deployment.deploymentName }}
-          </vscode-option>
-        </vscode-dropdown>
+        />
       </div>
       <div>
         <div class="label-and-icons">
@@ -89,39 +80,21 @@
             </vscode-button>
           </div>
         </div>
-        <vscode-dropdown
-          id="config-selector"
+        <PSelect
           v-model="selectedConfig"
+          :options="configs"
+          :get-key="(c: Configuration) => c.configurationName"
           class="dropdowns"
-        >
-          <vscode-option
-            v-for="config in configs"
-            :key="config.configurationName"
-            :value="config"
-            :selected="config === selectedConfig"
-            :label="config.configurationName"
-          >
-            {{ config.configurationName }}
-          </vscode-option>
-        </vscode-dropdown>
+        />
       </div>
 
       <label for="credentials-selector">Credentials:</label>
-      <vscode-dropdown
-        id="credentials-selector"
+      <PSelect
         v-model="selectedAccount"
+        :options="filteredAccounts"
+        :get-key="(a: Account) => a.name"
         class="dropdowns"
-      >
-        <vscode-option
-          v-for="account in filteredAccounts"
-          :key="account.source + account.name"
-          :value="account"
-          :selected="account === selectedAccount"
-          :label="account.name"
-        >
-          {{ account.name }}
-        </vscode-option>
-      </vscode-dropdown>
+      />
     </div>
 
     <div v-if="selectedDeployment && selectedDeployment.serverType">
@@ -173,6 +146,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeMount, onBeforeUnmount, ref, watch } from "vue";
+import PSelect from "./components/PSelect.vue";
 import {
   Deployment,
   PreDeployment,
@@ -188,7 +162,7 @@ let accounts = ref<Account[]>([]);
 let filteredAccounts = ref<Account[]>([]);
 let publishingInProgress = ref(false);
 
-const selectedDeployment = ref<Deployment | PreDeployment | undefined>();
+const selectedDeployment = ref<Deployment | PreDeployment>();
 const selectedConfig = ref<Configuration>();
 const selectedAccount = ref<Account>();
 
@@ -226,7 +200,9 @@ const disableDeployment = computed(() => {
   return result;
 });
 
-watch(selectedDeployment, () => filterCredentialsToDeployment());
+watch(selectedDeployment, () => {
+  filterCredentialsToDeployment(selectedAccount.value);
+});
 
 onBeforeMount(() => {
   // Register for our messages from the provider
@@ -287,11 +263,11 @@ const updateSelectedConfigurationByName = (configurationName?: string) => {
 // OR
 // Should we filter deployment list to just include what you can access. Maybe disable others?
 
-const filterCredentialsToDeployment = (credentialName?: string) => {
+const filterCredentialsToDeployment = (credentialName?: Account) => {
   filteredAccounts.value = accounts.value.filter((account) => {
     return (
       account.url.toLowerCase() ===
-      selectedDeployment.value?.serverUrl.toLocaleLowerCase()
+      selectedDeployment.value?.serverUrl.toLowerCase()
     );
   });
 
@@ -300,9 +276,14 @@ const filterCredentialsToDeployment = (credentialName?: string) => {
     selectedAccount.value = undefined;
   } else if (!selectedAccount.value) {
     selectedAccount.value = filteredAccounts.value[0];
-  } else {
+  } else if (selectedAccount.value) {
     let targetAccount: Account | undefined = filteredAccounts.value.find(
-      (account) => account.name,
+      (account) => {
+        if (selectedAccount.value) {
+          return account.name === selectedAccount.value.name;
+        }
+        return false;
+      },
     );
     if (targetAccount) {
       selectedAccount.value = targetAccount;
@@ -377,7 +358,7 @@ const onMessageFromProvider = (event: any) => {
       );
 
       accounts.value = payload.credentials;
-      filterCredentialsToDeployment(selectedAccount.value?.name);
+      filterCredentialsToDeployment(selectedAccount.value);
 
       break;
     }
