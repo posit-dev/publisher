@@ -233,6 +233,7 @@ func (s *PublishSuite) publishWithClient(
 			URL: "https://connect.example.com",
 		},
 		Config:     cfg,
+		ConfigName: "myConfig",
 		Target:     target,
 		TargetName: targetName,
 		SaveName:   saveName,
@@ -268,9 +269,12 @@ func (s *PublishSuite) publishWithClient(
 		recordPath := deployment.GetDeploymentPath(stateStore.Dir, recordName)
 		record, err := deployment.FromFile(recordPath)
 		s.NoError(err)
+
 		s.Equal(myContentID, record.ID)
 		s.Equal(project.Version, record.ClientVersion)
 		s.NotEqual("", record.DeployedAt)
+		s.Equal("myConfig", record.ConfigName)
+		s.NotNil(record.Configuration)
 
 		if couldCreateDeployment {
 			logs := s.logBuffer.String()
