@@ -12,14 +12,25 @@ Open the _Posit Publisher_ UI by clicking the icon in the activity bar.
 
 ### Initialization
 
-To deploy your project it must be setup with two things - a deployment and configuration.
+To deploy your project it must be setup with three things:
+
+- a credential
+- a deployment
+- a configuration
+
+A credential is a way to authenticate with the server you will deploy to.
 
 A deployment describes where your project is going to be deployed.
 
 A configuration describes how it will be deployed.
 
-If the project isn't setup yet the extension will prompt you to initialize your
-project.
+If you don't have a credential already setup you'll be prompted to set one up.
+See the [Credentials](#credentials) section for more information.
+
+![](https://cdn.posit.co/publisher/assets/img/init-credentials.png)
+
+If the project hasn't been initailzed as a Posit Publisher project yet the
+extension will prompt you to initailize it.
 
 ![](https://cdn.posit.co/publisher/assets/img/initialize-project.png)
 
