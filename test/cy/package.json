@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "lint": "eslint --ext .js,.ts,.cjs .",
+    "lint": "eslint --ext .js,.ts,.cjs --max-warnings 0 .",
     "fix": "eslint --ext .js,.ts,.cjs . --fix",
     "init": "just ../../run init ./test/sample-content/fastapi-simple",
     "start": "just ../../run ui --listen 127.0.0.1:9000 ./test/sample-content/fastapi-simple",

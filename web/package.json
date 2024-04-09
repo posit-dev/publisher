@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint --ext .js,.ts,.vue,.cjs .",
+    "lint": "eslint --ext .js,.ts,.vue,.cjs --max-warnings 0 .",
     "fix": "eslint --ext .js,.ts,.vue,.cjs . --fix",
     "test": "vitest run",
     "watch": "vitest"
