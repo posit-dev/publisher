@@ -24,6 +24,18 @@
   "contributes": {
     "commands": [
       {
+        "command": "posit.publisher.init-project",
+        "title": "Initialize Project",
+        "icon": "${star)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.init-project.refresh",
+        "title": "Refresh Project Initialization",
+        "icon": "${refresh)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.configurations.refresh",
         "title": "Refresh Configurations",
         "icon": "$(refresh)",
@@ -293,6 +305,10 @@
       ],
       "commandPalette": [
         {
+          "command": "posit.publisher.init-project",
+          "when": "workbenchState == folder && posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
           "command": "posit.publisher.configurations.refresh",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         },
@@ -367,6 +383,10 @@
         {
           "command": "posit.publisher.homeView.refresh",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.init-project.refresh",
+          "when": "false"
         }
       ]
     },
@@ -400,42 +420,42 @@
           "name": "Home",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
           "id": "posit.publisher.files",
           "name": "Deployment Files",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
         },
         {
           "id": "posit.publisher.requirements",
           "name": "Requirements",
           "contextualTitle": "Publisher",
           "icon": "$(package)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
           "contextualTitle": "Publisher",
           "icon": "$(gear)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
           "contextualTitle": "Publisher",
           "icon": "$(key)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
           "contextualTitle": "Publisher",
           "icon": "$(cloud-upload)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
@@ -443,7 +463,7 @@
           "contextualTitle": "Publisher",
           "icon": "$(info)",
           "visibility": "collapsed",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         }
       ],
       "posit-publisher-logs": [
@@ -452,7 +472,7 @@
           "name": "Logs",
           "contextualTitle": "Logs",
           "icon": "$(output)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         }
       ]
     },
@@ -479,23 +499,38 @@
       },
       {
         "view": "posit.publisher.project",
+        "contents": "Checking for pre-requisites...",
+        "when": "posit.publish.initialization.credentialCheck == 'inProgress'"
+      },
+      {
+        "view": "posit.publisher.project",
+        "contents": "Use of Posit Publisher requires that you create at least one account credential using [RSConnect](https://github.com/rstudio/rsconnect) (R Package) or [RSConnect-Python](https://github.com/rstudio/rsconnect-python) (Python utility).\n\nUse one of these utilities to define a credential to your server, then return and click the refresh button\n[Refresh](command:posit.publisher.init-project.refresh)",
+        "when": "posit.publish.initialization.credentialCheck == 'failed'"
+      },
+      {
+        "view": "posit.publisher.project",
         "contents": "In order to deploy using Posit Publisher, you can open a folder initialized as a Posit project or initialize a new project.\n[Open Folder](command:vscode.openFolder)",
-        "when": "workbenchState == empty"
+        "when": "workbenchState == empty && posit.publish.initialization.credentialCheck == 'succeeded'"
       },
       {
         "view": "posit.publisher.project",
         "contents": "Posit Publisher currently only supports single folder workspaces, open a folder initialized as a Posit project or initialize a new project.\n[Open Folder](command:vscode.openFolder)",
-        "when": "workbenchState == workspace"
+        "when": "workbenchState == workspace && posit.publish.initialization.credentialCheck == 'succeeded'"
       },
       {
         "view": "posit.publisher.project",
         "contents": "Scanning folder for a Posit project...",
-        "when": "workbenchState == folder && posit.publish.state == 'uninitialized'"
+        "when": "workbenchState == folder && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publish.state == 'uninitialized'"
       },
       {
         "view": "posit.publisher.project",
-        "contents": "Before deploying using Posit Publisher, you need to initialize your project by creating a deployment configuration.\n[Initialize Project](command:posit.publisher.configurations.add)",
-        "when": "workbenchState == folder && posit.publish.missing && posit.publish.state == 'initialized'"
+        "contents": "Initialization of the Posit Publishing VSCode Extension is required for this project.\nThis initialization involves adding a Posit Publisher subdirectory within your workspace folder and creating two files within it.\n Click the Initialize Project button below to create:\n- a new subdirectory called .posit/publish\n- a default deployment file (Untitled-1.toml)\n- a default configuration file (default.toml)\n[Initialize Project](command:posit.publisher.init-project)",
+        "when": "workbenchState == folder && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.inProgress === 'false'"
+      },
+      {
+        "view": "posit.publisher.project",
+        "contents": "Project Initialization in progress...\n\nPlease answer the prompts at the top of the VSCode window.",
+        "when": "workbenchState == folder && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.inProgress === 'true'"
       }
     ]
   },
