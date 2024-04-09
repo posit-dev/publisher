@@ -159,7 +159,6 @@ import { Configuration } from "../../../src/api/types/configurations";
 let deployments = ref<(Deployment | PreDeployment)[]>([]);
 let configs = ref<Configuration[]>([]);
 let accounts = ref<Account[]>([]);
-let filteredAccounts = ref<Account[]>([]);
 let publishingInProgress = ref(false);
 
 const selectedDeployment = ref<Deployment | PreDeployment>();
@@ -199,9 +198,8 @@ const disableDeployment = computed(() => {
     !Boolean(selectedAccount.value);
   return result;
 });
-
 watch(selectedDeployment, () => {
-  filterCredentialsToDeployment(selectedAccount.value);
+  filterCredentialsToDeployment();
 });
 
 onBeforeMount(() => {
@@ -258,19 +256,21 @@ const updateSelectedConfigurationByName = (configurationName?: string) => {
   selectedConfig.value = selectedConfigTarget;
 };
 
-// TODO: We need to show an error when you have no credentials which can get to
-// the deployment URL
-// OR
-// Should we filter deployment list to just include what you can access. Maybe disable others?
-
-const filterCredentialsToDeployment = (credentialName?: Account) => {
-  filteredAccounts.value = accounts.value.filter((account) => {
+const filteredAccounts = computed(() => {
+  return accounts.value.filter((account) => {
     return (
       account.url.toLowerCase() ===
       selectedDeployment.value?.serverUrl.toLowerCase()
     );
   });
+});
 
+// TODO: We need to show an error when you have no credentials which can get to
+// the deployment URL
+// OR
+// Should we filter deployment list to just include what you can access. Maybe disable others?
+
+const filterCredentialsToDeployment = () => {
   if (filteredAccounts.value.length === 0) {
     // TODO: Show ERROR HERE!!!!
     selectedAccount.value = undefined;
@@ -358,8 +358,6 @@ const onMessageFromProvider = (event: any) => {
       );
 
       accounts.value = payload.credentials;
-      filterCredentialsToDeployment(selectedAccount.value);
-
       break;
     }
     case "publish_start": {
