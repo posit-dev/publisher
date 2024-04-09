@@ -13,29 +13,36 @@ import {
   window,
 } from "vscode";
 
-import { AccountAuthType, useApi, isConfigurationError } from "../api";
+import {
+  AccountAuthType,
+  useApi,
+  isConfigurationError,
+  PreDeployment,
+} from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import { uniqueDeploymentName, untitledDeploymentName } from "../utils/names";
 import { deployProject } from "../views/deployProgress";
 import { EventStream } from "../events";
 import { isValidFilename } from "../utils/files";
 
-export async function newDeployment(title: string): Promise<string | undefined>;
+export async function newDeployment(
+  title: string,
+): Promise<PreDeployment | undefined>;
 export async function newDeployment(
   title: string,
   allowPublish: true,
   stream: EventStream,
-): Promise<string | undefined>;
+): Promise<PreDeployment | undefined>;
 export async function newDeployment(
   title: string,
   allowPublish: false,
   stream?: undefined,
-): Promise<string | undefined>;
+): Promise<PreDeployment | undefined>;
 export async function newDeployment(
   title: string,
   allowPublish?: boolean,
   stream?: EventStream,
-): Promise<string | undefined> {
+): Promise<PreDeployment | undefined> {
   const api = useApi();
 
   // ***************************************************************
@@ -353,12 +360,14 @@ export async function newDeployment(
     }
   }
   // Create the Predeployment File
+  let newPreDeployment: PreDeployment | undefined = undefined;
   try {
-    await api.deployments.createNew(
+    const result = await api.deployments.createNew(
       state.data.credentialName.label,
       state.data.configFile.label,
       state.data.deploymentName,
     );
+    newPreDeployment = result.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
       "newDeployment, createNew",
@@ -390,5 +399,5 @@ export async function newDeployment(
       return;
     }
   }
-  return state.data.deploymentName;
+  return newPreDeployment;
 }

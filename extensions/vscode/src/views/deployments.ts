@@ -39,7 +39,7 @@ const refreshCommand = viewName + ".refresh";
 const editCommand = viewName + ".edit";
 const forgetCommand = viewName + ".forget";
 const visitCommand = viewName + ".visit";
-const AddDeploymentCommand = viewName + ".addDeployment";
+const addDeploymentCommand = viewName + ".addDeployment";
 const createNewDeploymentFileCommand = viewName + ".createNewDeploymentFile";
 const deployCommand = viewName + ".deploy";
 const isEmptyContext = viewName + ".isEmpty";
@@ -128,7 +128,7 @@ export class DeploymentsTreeDataProvider
     context.subscriptions.push(treeView);
 
     context.subscriptions.push(
-      commands.registerCommand(AddDeploymentCommand, () => {
+      commands.registerCommand(addDeploymentCommand, () => {
         return newDeployment(
           "Deploy Your Project to a New Location",
           true,
