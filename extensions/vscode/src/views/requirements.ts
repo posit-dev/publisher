@@ -120,6 +120,7 @@ export class RequirementsTreeDataProvider
   }
 
   private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
+    console.log(`requirements: Creating watcher for ${root.uri} ${fileStore}`);
     const pattern = new RelativePattern(root, fileStore);
     const watcher = workspace.createFileSystemWatcher(pattern);
     watcher.onDidCreate(this.refresh);
@@ -130,6 +131,7 @@ export class RequirementsTreeDataProvider
   }
 
   private refresh = () => {
+    console.log("refreshing requirements");
     this._onDidChangeTreeData.fire();
   };
 

@@ -130,6 +130,9 @@ export class ConfigurationsTreeDataProvider
   }
 
   private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
+    console.log(
+      `configurations: Creating watcher for ${root.uri} ${fileStore}`,
+    );
     const pattern = new RelativePattern(root, fileStore);
     const watcher = workspace.createFileSystemWatcher(pattern);
     watcher.onDidCreate(this.refresh);
@@ -140,6 +143,7 @@ export class ConfigurationsTreeDataProvider
   }
 
   private refresh = () => {
+    console.log("refreshing configurations");
     this._onDidChangeTreeData.fire();
   };
 

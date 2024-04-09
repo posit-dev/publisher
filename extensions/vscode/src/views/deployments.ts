@@ -196,6 +196,7 @@ export class DeploymentsTreeDataProvider
   }
 
   private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
+    console.log(`deployments: Creating watcher for ${root.uri} ${fileStore}`);
     const watcher = workspace.createFileSystemWatcher(
       new RelativePattern(root, fileStore),
     );

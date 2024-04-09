@@ -72,6 +72,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   }
 
   public refresh = () => {
+    console.log("refreshing files");
     this._onDidChangeTreeData.fire();
   };
 
@@ -157,6 +158,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   }
 
   private createFileSystemWatcher(root: Uri): FileSystemWatcher {
+    console.log(`files: Creating watcher for ${root}`);
     const watcher = workspace.createFileSystemWatcher(
       new RelativePattern(root, "**"),
     );

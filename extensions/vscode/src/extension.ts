@@ -65,6 +65,9 @@ export async function activate(context: vscode.ExtensionContext) {
   ) {
     const folder = vscode.workspace.workspaceFolders[0];
 
+    console.log(
+      `publisher: Creating watcher for ${folder.uri} .posit,.posit/publish`,
+    );
     const watcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(folder, "{.posit,.posit/publish}"),
       false,
@@ -72,9 +75,11 @@ export async function activate(context: vscode.ExtensionContext) {
       false,
     );
     watcher.onDidCreate(async () => {
+      console.log("publisher: FS create event");
       setMissingContext(await isMissingPublishDirs(folder));
     });
     watcher.onDidDelete(() => {
+      console.log("publisher: FS delete event");
       setMissingContext(true);
     });
     context.subscriptions.push(watcher);

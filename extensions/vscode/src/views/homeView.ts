@@ -405,6 +405,7 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   public refresh = async (_: Uri) => {
+    console.log("refreshing files");
     await this._refreshData();
     this._refreshWebViewViewData();
   };
@@ -436,6 +437,7 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private createConfigFileWatcher(root: WorkspaceFolder): FileSystemWatcher {
+    console.log(`home: Creating watcher for ${root.uri} ${configFiles}`);
     const configFileWatcher = workspace.createFileSystemWatcher(
       new RelativePattern(root, configFiles),
     );
@@ -449,6 +451,7 @@ export class HomeViewProvider implements WebviewViewProvider {
   private createDeploymentFileWatcher(
     root: WorkspaceFolder,
   ): FileSystemWatcher {
+    console.log(`home: Creating watcher for ${root.uri} ${deploymentFiles}`);
     const deploymentFileWatcher = workspace.createFileSystemWatcher(
       new RelativePattern(root, deploymentFiles),
     );
