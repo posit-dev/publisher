@@ -216,39 +216,27 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private async _refreshData() {
     try {
-      // API Returns:
-      // 200 - success
-      // 500 - internal server error
-      const response = await this.api.deployments.getAll();
-      const deployments = response.data;
+      const [deploymentsResponse, credentialsResponse, configurationsResponse] =
+        await Promise.all([
+          this.api.deployments.getAll(),
+          this.api.accounts.getAll(),
+          this.api.configurations.getAll(),
+        ]);
+
+      // deployments
+      const deployments = deploymentsResponse.data;
       this._deployments = [];
       deployments.forEach((deployment) => {
         if (!isDeploymentError(deployment)) {
           this._deployments.push(deployment);
         }
       });
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "_refreshData::deployments.getAll",
-        error,
-      );
-      window.showInformationMessage(summary);
-    }
 
-    try {
-      const response = await this.api.accounts.getAll();
-      this._credentials = response.data;
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "_refreshData::accounts.getAll",
-        error,
-      );
-      window.showInformationMessage(summary);
-    }
+      // credentials
+      this._credentials = credentialsResponse.data;
 
-    try {
-      const response = await this.api.configurations.getAll();
-      const configurations = response.data;
+      // configurations
+      const configurations = configurationsResponse.data;
       this._configs = [];
       configurations.forEach((config) => {
         if (!isConfigurationError(config)) {
@@ -257,7 +245,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "configurations::getChildren",
+        "HomeViewProvider::_refreshData",
         error,
       );
       window.showInformationMessage(summary);
