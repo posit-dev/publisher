@@ -199,9 +199,19 @@ const disableDeployment = computed(() => {
     !Boolean(selectedAccount.value);
   return result;
 });
+
 watch(selectedDeployment, () => {
-  filterCredentialsToDeployment();
+  updateCredentialsAndConfigurationForDeployment();
 });
+
+const updateCredentialsAndConfigurationForDeployment = () => {
+  filterCredentialsToDeployment();
+  if (selectedDeployment.value?.configurationName) {
+    updateSelectedConfigurationByName(
+      selectedDeployment.value.configurationName,
+    );
+  }
+};
 
 onBeforeMount(() => {
   // Register for our messages from the provider
@@ -225,7 +235,8 @@ const updateSelectedDeploymentByObject = (
   selectedDeployment.value = preDeployment;
 };
 
-const updateSelectedDeploymentByName = (deploymentName?: string): void => {
+const updateSelectedDeploymentByName = (deploymentName?: string): boolean => {
+  const previousSelectedDeployment = selectedDeployment.value;
   let selectedDeploymentTarget: Deployment | PreDeployment | undefined =
     undefined;
   if (deploymentName) {
@@ -237,6 +248,7 @@ const updateSelectedDeploymentByName = (deploymentName?: string): void => {
     selectedDeploymentTarget = deployments.value[0];
   }
   selectedDeployment.value = selectedDeploymentTarget;
+  return previousSelectedDeployment === selectedDeployment.value;
 };
 
 const updateSelectedConfigurationByObject = (config: Configuration): void => {
@@ -349,16 +361,18 @@ const onMessageFromProvider = (event: any) => {
   switch (command) {
     case "refresh_data": {
       const payload = JSON.parse(event.data.payload);
-
-      deployments.value = payload.deployments;
-      updateSelectedDeploymentByName(selectedDeployment.value?.deploymentName);
-
       configs.value = payload.configurations;
-      updateSelectedConfigurationByName(
-        selectedConfig.value?.configurationName,
-      );
-
       accounts.value = payload.credentials;
+      deployments.value = payload.deployments;
+
+      if (
+        !updateSelectedDeploymentByName(
+          selectedDeployment.value?.deploymentName,
+        )
+      ) {
+        // Always cause the re-calculation even if selected deployment didn't change
+        updateCredentialsAndConfigurationForDeployment();
+      }
       break;
     }
     case "publish_start": {
