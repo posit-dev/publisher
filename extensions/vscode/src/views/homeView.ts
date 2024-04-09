@@ -132,6 +132,21 @@ export class HomeViewProvider implements WebviewViewProvider {
             // send back the data needed.
             await this._refreshData();
             this._refreshWebViewViewData();
+
+            // and watch for future changes
+            if (this.root !== undefined) {
+              if (this.configFileWatcher === undefined) {
+                this.configFileWatcher = this.createConfigFileWatcher(
+                  this.root,
+                );
+              }
+              if (this.deploymentFileWatcher === undefined) {
+                this.deploymentFileWatcher = this.createDeploymentFileWatcher(
+                  this.root,
+                );
+              }
+            }
+
             return;
           case "newDeployment":
             const newFile: string = await commands.executeCommand(
@@ -218,17 +233,6 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _refreshData() {
-    if (this.root !== undefined) {
-      if (this.configFileWatcher === undefined) {
-        this.configFileWatcher = this.createConfigFileWatcher(this.root);
-      }
-      if (this.deploymentFileWatcher === undefined) {
-        this.deploymentFileWatcher = this.createDeploymentFileWatcher(
-          this.root,
-        );
-      }
-    }
-
     try {
       // API Returns:
       // 200 - success
