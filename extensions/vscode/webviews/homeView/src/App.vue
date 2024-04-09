@@ -65,8 +65,9 @@
       <div>
         <div class="label-and-icons">
           <label for="config-selector">Configuration:</label>
-          <div class="action-icons-container">
+          <div>
             <vscode-button
+              v-if="selectedConfig"
               appearance="icon"
               class="action-icons"
               aria-label="Edit Selected Configuration"
