@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts" generic="T">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 
 const model = defineModel<T>();
 
@@ -23,13 +23,12 @@ const props = defineProps<{
   disabled?: T[];
 }>();
 
-const _selection = ref<string | undefined>(
-  model.value !== undefined ? props.getKey(model.value) : undefined,
-);
+const _selection = computed<string | undefined>(() => {
+  return model.value !== undefined ? props.getKey(model.value) : undefined;
+});
 
 const onInnerSelectionChange = (event: Event) => {
   const el = event.target as HTMLSelectElement;
-  _selection.value = el.value;
 
   model.value = props.options.find(
     (option) => props.getKey(option) === el.value,
