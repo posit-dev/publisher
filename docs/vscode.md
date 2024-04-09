@@ -42,7 +42,12 @@ to choose which one to use for your initial configuration.
 
 ![](https://cdn.posit.co/publisher/assets/img/choose-configuration.png)
 
-The new configuration file will also be opened so you can review and make any necessary changes. If you have the [Even Better TOML extension](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml) installed, VSCode will show tooltips for the fields. It will also validate the structure and contents of the configuration file using the provided schema.
+The new configuration file will also be opened so you can review and make any necessary changes.
+
+> [!TIP]
+> If you have the [Even Better TOML extension](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
+> installed, VSCode will show tooltips for the fields. It will also validate the
+> structure and contents of the configuration file using the provided schema.
 
 ![](https://cdn.posit.co/publisher/assets/img/configuration-file-with-tooltip.png)
 
