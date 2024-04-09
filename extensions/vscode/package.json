@@ -505,7 +505,7 @@
     "compile-extension": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint src --ext ts --max-warnings 0",
     "compile-deploy-selector": "npm run --prefix webviews/homeView compile",
     "test": "node ./out/test/runTest.js"
   },
