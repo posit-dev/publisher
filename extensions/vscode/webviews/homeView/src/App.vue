@@ -310,9 +310,9 @@ const onClickDeploy = () => {
   vsCodeApi.postMessage({
     command: "deploy",
     payload: JSON.stringify({
-      deployment: selectedDeployment.value,
-      configuration: selectedConfig.value,
-      credential: selectedAccount.value,
+      deployment: selectedDeployment.value?.saveName,
+      configuration: selectedConfig.value?.configurationName,
+      credential: selectedAccount.value?.name,
     }),
   });
 };
