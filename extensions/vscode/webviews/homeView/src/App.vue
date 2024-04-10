@@ -359,12 +359,9 @@ const onClickEditConfiguration = () => {
 const onMessageFromProvider = (event: any) => {
   const command = event.data.command;
   switch (command) {
-    case "refresh_data": {
+    case "refresh_deployment_data": {
       const payload = JSON.parse(event.data.payload);
-      configs.value = payload.configurations;
-      accounts.value = payload.credentials;
       deployments.value = payload.deployments;
-
       if (
         !updateSelectedDeploymentByName(
           selectedDeployment.value?.deploymentName,
@@ -373,6 +370,16 @@ const onMessageFromProvider = (event: any) => {
         // Always cause the re-calculation even if selected deployment didn't change
         updateCredentialsAndConfigurationForDeployment();
       }
+      break;
+    }
+    case "refresh_config_data": {
+      const payload = JSON.parse(event.data.payload);
+      configs.value = payload.configurations;
+      break;
+    }
+    case "refresh_credential_data": {
+      const payload = JSON.parse(event.data.payload);
+      accounts.value = payload.credentials;
       break;
     }
     case "publish_start": {
