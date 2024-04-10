@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add new Home view with a simplified deployment UI (#1250)
+- Add new Home view with a simplified deploy UI (#1250)
 - Add new Initialize Project step to prepare the project for deployment (#1270)
 - Show a help message in the Credentials panel if there are no credentials defined (#1186)
 - Provide a `Show Logs` button in the deployment failure notification window (#1202)
