@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: rstudio/connect-content
-          path: 'test/content'
+          path: "test/content"
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}

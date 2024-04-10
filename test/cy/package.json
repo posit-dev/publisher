@@ -1,10 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "lint": "eslint --ext .js,.ts,.cjs .",
+    "lint": "eslint --ext .js,.ts,.cjs --max-warnings 0 .",
     "fix": "eslint --ext .js,.ts,.cjs . --fix",
-    "format": "prettier . --write",
-    "check-format": "prettier . --check",
     "init": "just ../../run init ./test/sample-content/fastapi-simple",
     "start": "just ../../run ui --listen 127.0.0.1:9000 ./test/sample-content/fastapi-simple",
     "test": "start-server-and-test --expect 200 start http-get://127.0.0.1:9000 run",
@@ -22,7 +20,6 @@
     "eslint": "^8.51.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-cypress": "^2.15.1",
-    "prettier": "3.2.5",
     "start-server-and-test": "^2.0.3"
   }
 }

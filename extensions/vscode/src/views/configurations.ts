@@ -53,7 +53,7 @@ export class ConfigurationsTreeDataProvider
   readonly onDidChangeTreeData: ConfigurationEvent =
     this._onDidChangeTreeData.event;
 
-  constructor() {
+  constructor(private apiReady: Promise<boolean>) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -78,6 +78,7 @@ export class ConfigurationsTreeDataProvider
     }
 
     try {
+      await this.apiReady;
       const response = await api.configurations.getAll();
       const configurations = response.data;
       await this.setContextIsEmpty(configurations.length === 0);
@@ -138,6 +139,7 @@ export class ConfigurationsTreeDataProvider
   };
 
   private add = async () => {
+    let configName: string | undefined;
     try {
       const inspectResponse = await api.configurations.inspect();
       const config = await this.chooseConfig(inspectResponse.data);
@@ -146,26 +148,28 @@ export class ConfigurationsTreeDataProvider
         return;
       }
       const defaultName = await untitledConfigurationName();
-      const name = await window.showInputBox({
+      configName = await window.showInputBox({
         value: defaultName,
         prompt: "Configuration name",
       });
-      if (name === undefined || name === "") {
+      if (configName === undefined || configName === "") {
         // canceled
         return;
       }
       const createResponse = await api.configurations.createOrUpdate(
-        name,
+        configName,
         config,
       );
       if (this.root !== undefined) {
         const fileUri = Uri.file(createResponse.data.configurationPath);
         await commands.executeCommand("vscode.open", fileUri);
       }
+      return createResponse.data;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("configurations::add", error);
       window.showInformationMessage(summary);
     }
+    return undefined;
   };
 
   private edit = async (config: ConfigurationTreeItem) => {

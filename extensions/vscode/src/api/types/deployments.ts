@@ -1,7 +1,7 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import { AgentError } from "./error";
-import { Configuration } from "./configurations";
+import { Configuration, ConfigurationLocation } from "./configurations";
 import { SchemaURL } from "./schema";
 import { ServerType } from "./accounts";
 
@@ -27,12 +27,15 @@ type DeploymentRecord = {
   serverUrl: string;
   saveName: string;
   createdAt: string;
+  configurationName: string;
+  deploymentError: AgentError | null;
 } & DeploymentLocation;
 
 export type PreDeployment = {
   state: DeploymentState.NEW;
-  error: AgentError | null;
 } & DeploymentRecord;
+
+export type PreDeploymentWithConfig = PreDeployment & ConfigurationLocation;
 
 export type Deployment = {
   id: string;
@@ -43,11 +46,14 @@ export type Deployment = {
   files: string[];
   deployedAt: string;
   state: DeploymentState.DEPLOYED;
-  deploymentError: AgentError | null;
 } & DeploymentRecord &
   Configuration;
 
-export type AllDeploymentTypes = Deployment | PreDeployment | DeploymentError;
+export type AllDeploymentTypes =
+  | Deployment
+  | PreDeployment
+  | PreDeploymentWithConfig
+  | DeploymentError;
 
 export function isSuccessful(
   d: AllDeploymentTypes | undefined,
@@ -55,10 +61,10 @@ export function isSuccessful(
   if (d === undefined) {
     return undefined;
   }
-  if (isDeployment(d)) {
-    return Boolean(!d.deploymentError);
+  if (isDeploymentError(d)) {
+    return false;
   }
-  return Boolean(!d.error);
+  return Boolean(!d.deploymentError);
 }
 
 export function isUnsuccessful(
@@ -81,6 +87,16 @@ export function isPreDeployment(
   d: AllDeploymentTypes | undefined,
 ): d is PreDeployment {
   return Boolean(d && d.state === DeploymentState.NEW);
+}
+
+export function isPreDeploymentWithConfig(
+  d: AllDeploymentTypes | undefined,
+): d is PreDeploymentWithConfig {
+  return Boolean(
+    d &&
+      d.state === DeploymentState.NEW &&
+      (d as PreDeploymentWithConfig).configurationName !== undefined,
+  );
 }
 
 export function isSuccessfulPreDeployment(

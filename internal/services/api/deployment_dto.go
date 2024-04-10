@@ -31,13 +31,15 @@ type preDeploymentDTO struct {
 	ServerURL  string              `json:"serverUrl"`
 	SaveName   string              `json:"saveName"`
 	CreatedAt  string              `json:"createdAt"`
-	Error      *types.AgentError   `json:"error,omitempty"`
+	ConfigName string              `json:"configurationName,omitempty"`
+	ConfigPath string              `json:"configurationPath,omitempty"`
+	Error      *types.AgentError   `json:"deploymentError,omitempty"`
 }
 
 type fullDeploymentDTO struct {
 	deploymentLocation
 	deployment.Deployment
-	ConfigPath string `json:"configurationPath,omitempty"`
+	ConfigPath string `json:"configurationPath"`
 	SaveName   string `json:"saveName"`
 }
 
@@ -55,6 +57,8 @@ func getConfigPath(base util.AbsolutePath, configName string) util.AbsolutePath 
 
 func deploymentAsDTO(d *deployment.Deployment, err error, base util.AbsolutePath, path util.AbsolutePath) any {
 	saveName := deployment.SaveNameFromPath(path)
+	configPath := ""
+
 	if err != nil {
 		return &deploymentErrorDTO{
 			deploymentLocation: deploymentLocation{
@@ -65,6 +69,9 @@ func deploymentAsDTO(d *deployment.Deployment, err error, base util.AbsolutePath
 			Error: types.AsAgentError(err),
 		}
 	} else if d.ID != "" {
+		if d.ConfigName != "" {
+			configPath = getConfigPath(base, d.ConfigName).String()
+		}
 		return &fullDeploymentDTO{
 			deploymentLocation: deploymentLocation{
 				State: deploymentStateDeployed,
@@ -72,10 +79,13 @@ func deploymentAsDTO(d *deployment.Deployment, err error, base util.AbsolutePath
 				Path:  path.String(),
 			},
 			Deployment: *d,
-			ConfigPath: getConfigPath(base, d.ConfigName).String(),
+			ConfigPath: configPath,
 			SaveName:   saveName, // TODO: remove this duplicate (remove frontend references first)
 		}
 	} else {
+		if d.ConfigName != "" {
+			configPath = getConfigPath(base, d.ConfigName).String()
+		}
 		return preDeploymentDTO{
 			deploymentLocation: deploymentLocation{
 				State: deploymentStateNew,
@@ -87,6 +97,8 @@ func deploymentAsDTO(d *deployment.Deployment, err error, base util.AbsolutePath
 			ServerURL:  d.ServerURL,
 			SaveName:   saveName, // TODO: remove this duplicate (remove frontend references first)
 			CreatedAt:  d.CreatedAt,
+			ConfigName: d.ConfigName,
+			ConfigPath: configPath,
 			Error:      d.Error,
 		}
 	}
