@@ -47,26 +47,19 @@
             ></span>
           </vscode-button>
         </div>
-        <vscode-dropdown
-          id="deployment-selector"
-          v-model="selectedDeploymentName"
+        <PSelect
+          v-model="selectedDeployment"
+          :options="deployments"
+          :get-key="(d) => d.saveName"
           class="dropdowns"
-        >
-          <vscode-option
-            v-for="deployment in deploymentList"
-            :key="deployment"
-            :selected="deployment === selectedDeploymentName"
-          >
-            {{ deployment }}
-          </vscode-option>
-        </vscode-dropdown>
+        />
       </div>
-
       <div>
         <div class="label-and-icons">
           <label for="config-selector">Configuration:</label>
-          <div class="action-icons-container">
+          <div>
             <vscode-button
+              v-if="selectedConfig"
               appearance="icon"
               class="action-icons"
               aria-label="Edit Selected Configuration"
@@ -88,28 +81,23 @@
             </vscode-button>
           </div>
         </div>
-        <vscode-dropdown
-          id="config-selector"
+        <PSelect
           v-model="selectedConfig"
+          :options="configs"
+          :get-key="(c: Configuration) => c.configurationName"
           class="dropdowns"
-        >
-          <vscode-option v-for="config in configList" :key="config">{{
-            config
-          }}</vscode-option>
-        </vscode-dropdown>
+        />
       </div>
 
       <label for="credentials-selector">Credentials:</label>
-      <vscode-dropdown
-        id="credentials-selector"
-        v-model="selectedCredential"
+      <PSelect
+        v-model="selectedAccount"
+        :options="filteredAccounts"
+        :get-key="(a: Account) => a.name"
         class="dropdowns"
-      >
-        <vscode-option v-for="credential in credentialList" :key="credential">{{
-          credential
-        }}</vscode-option>
-      </vscode-dropdown>
+      />
     </div>
+
     <div v-if="selectedDeployment && selectedDeployment.serverType">
       <vscode-divider />
       <div v-if="publishingInProgress" class="progress-container">
@@ -159,6 +147,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeMount, onBeforeUnmount, ref, watch } from "vue";
+import PSelect from "./components/PSelect.vue";
 import {
   Deployment,
   PreDeployment,
@@ -166,22 +155,20 @@ import {
 } from "../../../src/api/types/deployments";
 import { formatDateString } from "../../../../../web/src/utils/date";
 import { Account } from "../../../src/api/types/accounts";
+import { Configuration } from "../../../src/api/types/configurations";
 
 let deployments = ref<(Deployment | PreDeployment)[]>([]);
-let deploymentList = ref<string[]>([]);
-let configList = ref<string[]>([]);
+let configs = ref<Configuration[]>([]);
 let accounts = ref<Account[]>([]);
-let credentialList = ref<string[]>([]);
 let publishingInProgress = ref(false);
 
-const selectedDeploymentName = ref<string>();
-const selectedDeployment = ref<Deployment | PreDeployment | undefined>(
-  undefined,
-);
-const selectedConfig = ref<string>();
-const selectedCredential = ref<string>();
+const selectedDeployment = ref<Deployment | PreDeployment>();
+const selectedConfig = ref<Configuration>();
+const selectedAccount = ref<Account>();
+
 const lastDeploymentResult = ref<string>();
 const lastDeploymentMsg = ref<string>();
+
 const showDetails = ref(false);
 
 const vsCodeApi = acquireVsCodeApi();
@@ -207,17 +194,24 @@ const buttonIconClass = computed(() => {
 
 const disableDeployment = computed(() => {
   const result =
-    !Boolean(selectedDeploymentName.value) ||
+    !Boolean(selectedDeployment.value) ||
     !Boolean(selectedConfig.value) ||
-    !Boolean(selectedCredential.value);
-  console.log(`disableDeployment: ${result}`);
+    !Boolean(selectedAccount.value);
   return result;
 });
 
-watch(selectedDeploymentName, () => {
-  updateSelectedDevelopment();
-  filterCredentialsToDeployment();
+watch(selectedDeployment, () => {
+  updateCredentialsAndConfigurationForDeployment();
 });
+
+const updateCredentialsAndConfigurationForDeployment = () => {
+  filterCredentialsToDeployment();
+  if (selectedDeployment.value?.configurationName) {
+    updateSelectedConfigurationByName(
+      selectedDeployment.value.configurationName,
+    );
+  }
+};
 
 onBeforeMount(() => {
   // Register for our messages from the provider
@@ -234,11 +228,55 @@ onBeforeUnmount(() => {
   window.removeEventListener("message", onMessageFromProvider);
 });
 
-const updateSelectedDevelopment = () => {
-  selectedDeployment.value = deployments.value.find(
-    (deployment) => deployment.saveName === selectedDeploymentName.value,
-  );
+const updateSelectedDeploymentByObject = (
+  preDeployment: PreDeployment,
+): void => {
+  deployments.value.push(preDeployment);
+  selectedDeployment.value = preDeployment;
 };
+
+const updateSelectedDeploymentByName = (deploymentName?: string): boolean => {
+  const previousSelectedDeployment = selectedDeployment.value;
+  let selectedDeploymentTarget: Deployment | PreDeployment | undefined =
+    undefined;
+  if (deploymentName) {
+    selectedDeploymentTarget = deployments.value.find(
+      (deployment) => deployment.deploymentName === deploymentName,
+    );
+  }
+  if (!selectedDeploymentTarget && deployments.value.length) {
+    selectedDeploymentTarget = deployments.value[0];
+  }
+  selectedDeployment.value = selectedDeploymentTarget;
+  return previousSelectedDeployment === selectedDeployment.value;
+};
+
+const updateSelectedConfigurationByObject = (config: Configuration): void => {
+  configs.value.push(config);
+  selectedConfig.value = config;
+};
+
+const updateSelectedConfigurationByName = (configurationName?: string) => {
+  let selectedConfigTarget: Configuration | undefined = undefined;
+  if (selectedConfig.value) {
+    selectedConfigTarget = configs.value.find(
+      (config) => config.configurationName === configurationName,
+    );
+  }
+  if (!selectedConfigTarget && configs.value.length) {
+    selectedConfigTarget = configs.value[0];
+  }
+  selectedConfig.value = selectedConfigTarget;
+};
+
+const filteredAccounts = computed(() => {
+  return accounts.value.filter((account) => {
+    return (
+      account.url.toLowerCase() ===
+      selectedDeployment.value?.serverUrl.toLowerCase()
+    );
+  });
+});
 
 // TODO: We need to show an error when you have no credentials which can get to
 // the deployment URL
@@ -246,22 +284,25 @@ const updateSelectedDevelopment = () => {
 // Should we filter deployment list to just include what you can access. Maybe disable others?
 
 const filterCredentialsToDeployment = () => {
-  credentialList.value = accounts.value
-    .filter((account) => {
-      return (
-        account.url.toLowerCase() ===
-        selectedDeployment.value?.serverUrl.toLocaleLowerCase()
-      );
-    })
-    .map((account) => account.name);
-
-  if (credentialList.value.length === 0) {
+  if (filteredAccounts.value.length === 0) {
     // TODO: Show ERROR HERE!!!!
-    selectedCredential.value = "";
-  } else if (!selectedCredential.value) {
-    selectedCredential.value = credentialList.value[0];
-  } else if (!credentialList.value.includes(selectedCredential.value)) {
-    selectedCredential.value = credentialList.value[0];
+    selectedAccount.value = undefined;
+  } else if (!selectedAccount.value) {
+    selectedAccount.value = filteredAccounts.value[0];
+  } else if (selectedAccount.value) {
+    let targetAccount: Account | undefined = filteredAccounts.value.find(
+      (account) => {
+        if (selectedAccount.value) {
+          return account.name === selectedAccount.value.name;
+        }
+        return false;
+      },
+    );
+    if (targetAccount) {
+      selectedAccount.value = targetAccount;
+    } else {
+      selectedAccount.value = filteredAccounts.value[0];
+    }
   }
 };
 
@@ -269,9 +310,9 @@ const onClickDeploy = () => {
   vsCodeApi.postMessage({
     command: "deploy",
     payload: JSON.stringify({
-      deployment: selectedDeploymentName.value,
+      deployment: selectedDeployment.value,
       configuration: selectedConfig.value,
-      credential: selectedCredential.value,
+      credential: selectedAccount.value,
     }),
   });
 };
@@ -320,33 +361,18 @@ const onMessageFromProvider = (event: any) => {
   switch (command) {
     case "refresh_data": {
       const payload = JSON.parse(event.data.payload);
-
-      deployments.value = payload.deployments;
-      deploymentList.value = deployments.value.map(
-        (deployment) => deployment.saveName,
-      );
-      if (selectedDeploymentName.value) {
-        if (!deploymentList.value.includes(selectedDeploymentName.value)) {
-          selectedDeploymentName.value = "";
-        }
-      }
-
-      if (!selectedDeploymentName.value) {
-        selectedDeploymentName.value = deploymentList.value[0];
-      }
-      updateSelectedDevelopment();
-
-      configList.value = payload.configurations;
-      if (!selectedConfig.value) {
-        selectedConfig.value = configList.value[0];
-      }
-      if (configList.value.length === 0) {
-        selectedConfig.value = "";
-      }
-
+      configs.value = payload.configurations;
       accounts.value = payload.credentials;
-      filterCredentialsToDeployment();
+      deployments.value = payload.deployments;
 
+      if (
+        !updateSelectedDeploymentByName(
+          selectedDeployment.value?.deploymentName,
+        )
+      ) {
+        // Always cause the re-calculation even if selected deployment didn't change
+        updateCredentialsAndConfigurationForDeployment();
+      }
       break;
     }
     case "publish_start": {
@@ -367,28 +393,14 @@ const onMessageFromProvider = (event: any) => {
     }
     case "update_deployment_selection": {
       const payload = JSON.parse(event.data.payload);
-      // Not sure why we can't set this value immediately, even ahead
-      // of the refresh which is coming, but what I've found is that you
-      // have to wait long enough for the list to render before setting it,
-      // otherwise the selector will select the first value in the list.
-      // (I've even tried holding off on setting the value until the next refresh
-      // comes in, which has the new value included).
-      setTimeout(() => {
-        selectedDeploymentName.value = payload.name;
-      }, 1000);
+      if (payload.preDeployment) {
+        updateSelectedDeploymentByObject(payload.preDeployment);
+      }
       break;
     }
     case "update_config_selection": {
       const payload = JSON.parse(event.data.payload);
-      // Not sure why we can't set this value immediately, even ahead
-      // of the refresh which is coming, but what I've found is that you
-      // have to wait long enough for the list to render before setting it,
-      // otherwise the selector will select the first value in the list.
-      // (I've even tried holding off on setting the value until the next refresh
-      // comes in, which has the new value included).
-      setTimeout(() => {
-        selectedConfig.value = payload.name;
-      }, 1000);
+      updateSelectedConfigurationByObject(payload.config);
       break;
     }
     default:

@@ -173,11 +173,12 @@ export class ConfigurationsTreeDataProvider
         const fileUri = Uri.file(createResponse.data.configurationPath);
         await commands.executeCommand("vscode.open", fileUri);
       }
+      return createResponse.data;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("configurations::add", error);
       window.showInformationMessage(summary);
     }
-    return configName;
+    return undefined;
   };
 
   private edit = async (config: ConfigurationTreeItem) => {

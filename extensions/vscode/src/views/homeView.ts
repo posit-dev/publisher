@@ -149,11 +149,11 @@ export class HomeViewProvider implements WebviewViewProvider {
 
             return;
           case "newDeployment":
-            const newFile: string = await commands.executeCommand(
+            const preDeployment: PreDeployment = await commands.executeCommand(
               "posit.publisher.deployments.createNewDeploymentFile",
             );
-            if (newFile) {
-              this._updateDeploymentFileSelection(newFile);
+            if (preDeployment) {
+              this._updateDeploymentFileSelection(preDeployment);
             }
             break;
           case "editConfiguration":
@@ -169,7 +169,7 @@ export class HomeViewProvider implements WebviewViewProvider {
             break;
 
           case "newConfiguration":
-            const newConfig: string = await commands.executeCommand(
+            const newConfig: Configuration = await commands.executeCommand(
               "posit.publisher.configurations.add",
             );
             if (newConfig) {
@@ -288,32 +288,30 @@ export class HomeViewProvider implements WebviewViewProvider {
         command: "refresh_data",
         payload: JSON.stringify({
           deployments: this._deployments,
-          configurations: this._configs.map(
-            (config) => config.configurationName,
-          ),
+          configurations: this._configs,
           credentials: this._credentials,
         }),
       });
     }
   }
 
-  private _updateDeploymentFileSelection(name: string) {
+  private _updateDeploymentFileSelection(preDeployment: PreDeployment) {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
         command: "update_deployment_selection",
         payload: JSON.stringify({
-          name,
+          preDeployment,
         }),
       });
     }
   }
 
-  private _updateConfigFileSelection(name: string) {
+  private _updateConfigFileSelection(config: Configuration) {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
         command: "update_config_selection",
         payload: JSON.stringify({
-          name,
+          config,
         }),
       });
     }
