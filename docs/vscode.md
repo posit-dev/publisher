@@ -12,7 +12,7 @@ Open the _Posit Publisher_ UI by clicking the icon in the activity bar.
 
 ### Initialization
 
-To deploy your project it must be setup with three things:
+To deploy, the following must be created:
 
 - a credential
 - a deployment
@@ -24,21 +24,18 @@ A deployment describes where your project is going to be deployed.
 
 A configuration describes how it will be deployed.
 
-If you don't have a credential already setup you'll be prompted to set one up.
+If you don't already have a credential, you'll be prompted to set one up.
 See the [Credentials](#credentials) section for more information.
 
 ![](https://cdn.posit.co/publisher/assets/img/init-credentials.png)
 
-If the project hasn't been initailzed as a Posit Publisher project yet the
-extension will prompt you to initailize it.
+If the project hasn't been initailzed as a Posit Publisher project yet, the extension will prompt you to initialize it.
 
 ![](https://cdn.posit.co/publisher/assets/img/initialize-project.png)
 
-Click the `Initialize Project` button and you will be lead through creating your
-first deployment and configuration.
+Click the `Initialize `Project button, and you will be led through the creation and configuration of your first deployment.
 
-If more than one project type is detected by the extension, you will be prompted
-to choose which one to use for your initial configuration.
+If the extension detects more than one project type, you will be prompted to choose which one to use for your initial configuration.
 
 ![](https://cdn.posit.co/publisher/assets/img/choose-configuration.png)
 
@@ -64,29 +61,24 @@ From here you will be taken to the Home view.
 
 ![](https://cdn.posit.co/publisher/assets/img/home-view.png)
 
-The Home view shows information about your currently selected deployment. After
-initialization you will only have one.
+The Home view shows information about your currently selected deployment. After initialization, you will only have one.
 
-The `>` button next to `Deploy Your Project` can be pressed to expand the view
-to show selections for deployment, configuration, and credentials. In addition,
-the buttons `+` can be used to create new ones, and in the case of
-configurations edit your selection.
+The `>` button next to `Deploy Your Project` can be pressed to expand the view to show deployment, configuration, and credentials selections. In addition, the buttons `+` can be used to create new ones and edit your selection in the case of configurations.
 
 ![](https://cdn.posit.co/publisher/assets/img/home-view-expanded.png)
 
 ### Basic and Advanced Mode
 
-The buttons to the top-right of the Home view allow you to switch between Basic
-and Advanced modes which will change the visible views.
+The buttons at the top-right of the Home view allow you to switch between Basic and Advanced modes, which will change the visible views.
 
-By default you will be seeing the Basic mode with the views:
+By default, you will be seeing the Basic mode with the views
 
 - Home
 - Deployment Files
 - Requirements
 - Help and Feedback
 
-Clicking the "Show Advanced Mode" button will show the views:
+Clicking the "Show Advanced Mode" button will show the views
 
 - Home
 - Deployments
@@ -96,8 +88,7 @@ Clicking the "Show Advanced Mode" button will show the views:
 
 ### Setting up Requirements
 
-Finally to be ready to deploy you will need to set up the requirements for your
-Python project. If you don't already have a `requirements.txt` you can open
+Finally, to be ready to deploy, you must set up the requirements for your Python project. If you don't already have a `requirements.txt` you can open
 the Requirements view and click the `Scan` button to generate one.
 
 ![](https://cdn.posit.co/publisher/assets/img/requirements-view-init.png)
@@ -118,9 +109,10 @@ process. :tada:
 The Deployment Files view shows a list of the files in your project directory,
 divided into two lists:
 
-- Included Files shows the files that will be included in your deployment and
-  sent to the server as part of the uploaded content. You can exclude a file by
-  clicking the icon to the right of the filename.
+Included Files show the files that will be included in your deployment and
+sent to the server as part of the uploaded content. You can exclude a file by
+clicking the icon to the right of the filename.
+
 - Excluded Files shows the files in your project that will not be included in
   the deployment. The tooltip on an excluded file will indicate the reason it
   was excluded.
@@ -144,14 +136,9 @@ project directory. It's required when deploying a Python project.
 
 ![](https://cdn.posit.co/publisher/assets/img/requirements.png)
 
-If you don't have a `requirements.txt` file yet, you'll see a message prompting
-you to Scan. Clicking Scan will scan your project code for imports and attempt
-to map those to package names and versions using the package metadata from your
-local Python installation. After scanning, verify the contents of the generated
-`requirements.txt` file and make any changes needed.
+If you don't have a `requirements.txt` file yet, you'll see a message prompting you to scan it. Clicking Scan will scan your project code for imports and attempt to map those to package names and versions using the package metadata from your local Python installation. After scanning, verify the contents of the generated `requirements.txt` file and make any changes needed.
 
-If you already have a `requirements.txt` file, you can use the eye icon in the
-Requirements view to scan your code again.
+If you already have a `requirements.txt` file, you can scan your code again using the eye icon in the Requirements view.
 
 ### Deployments
 
@@ -174,15 +161,14 @@ Error parsing Deployment:
 
 ![](https://cdn.posit.co/publisher/assets/img/deployment-error.png)
 
-Click the deploy icon next to a deployment will prompt you for your credential,
-what configuration you want to use - if you have more than one.
+Click the deploy icon next to a deployment, which will prompt you for your credentials and the configuration you want to use - if you have more than one.
 
 ### Configurations
 
 Lists the configurations in your project.
 
 Clicking a configuration will open the configuration file in the editor.
-Additionally you can right click on a configuration for more operations.
+Additionally, you can right-click on a configuration for more operations.
 
 ![](https://cdn.posit.co/publisher/assets/img/configurations.png)
 
