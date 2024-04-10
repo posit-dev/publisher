@@ -228,13 +228,11 @@ export class HomeViewProvider implements WebviewViewProvider {
       const response = await api.deployments.getAll();
       const deployments = response.data;
       this._deployments = [];
-      if (deployments) {
-        deployments.forEach((deployment) => {
-          if (!isDeploymentError(deployment)) {
-            this._deployments.push(deployment);
-          }
-        });
-      }
+      deployments.forEach((deployment) => {
+        if (!isDeploymentError(deployment)) {
+          this._deployments.push(deployment);
+        }
+      });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "_refreshDeploymentData::deployments.getAll",
@@ -252,13 +250,11 @@ export class HomeViewProvider implements WebviewViewProvider {
       const response = await api.configurations.getAll();
       const configurations = response.data;
       this._configs = [];
-      if (configurations) {
-        configurations.forEach((config) => {
-          if (!isConfigurationError(config)) {
-            this._configs.push(config);
-          }
-        });
-      }
+      configurations.forEach((config) => {
+        if (!isConfigurationError(config)) {
+          this._configs.push(config);
+        }
+      });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "_refreshConfigurationData::configurations.getAll",

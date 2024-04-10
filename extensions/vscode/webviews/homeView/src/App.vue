@@ -256,7 +256,10 @@ const updateSelectedConfigurationByObject = (config: Configuration): void => {
   selectedConfig.value = config;
 };
 
-const updateSelectedConfigurationByName = (configurationName?: string) => {
+const updateSelectedConfigurationByName = (
+  configurationName?: string,
+): boolean => {
+  const previousSelectedConfig = selectedConfig.value;
   let selectedConfigTarget: Configuration | undefined = undefined;
   if (selectedConfig.value) {
     selectedConfigTarget = configs.value.find(
@@ -267,6 +270,22 @@ const updateSelectedConfigurationByName = (configurationName?: string) => {
     selectedConfigTarget = configs.value[0];
   }
   selectedConfig.value = selectedConfigTarget;
+  return previousSelectedConfig === selectedConfig.value;
+};
+
+const updateSelectedCredentialByName = (credentialName?: string): boolean => {
+  const previousSelectedAccount = selectedAccount.value;
+  let selectedCredentialTarget: Account | undefined = undefined;
+  if (selectedAccount.value) {
+    selectedCredentialTarget = accounts.value.find(
+      (account) => account.name === credentialName,
+    );
+  }
+  if (!selectedCredentialTarget && accounts.value.length) {
+    selectedCredentialTarget = accounts.value[0];
+  }
+  selectedAccount.value = selectedCredentialTarget;
+  return previousSelectedAccount === selectedAccount.value;
 };
 
 const filteredAccounts = computed(() => {
@@ -375,11 +394,15 @@ const onMessageFromProvider = (event: any) => {
     case "refresh_config_data": {
       const payload = JSON.parse(event.data.payload);
       configs.value = payload.configurations;
+      updateSelectedConfigurationByName(
+        selectedConfig.value?.configurationName,
+      );
       break;
     }
     case "refresh_credential_data": {
       const payload = JSON.parse(event.data.payload);
       accounts.value = payload.credentials;
+      updateSelectedCredentialByName(selectedAccount.value?.name);
       break;
     }
     case "publish_start": {
