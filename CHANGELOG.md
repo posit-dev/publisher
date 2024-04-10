@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - UI text changes based on user feedback (#1230)
 
 ### Removed
+
 - Removed the `Skipping deployment of this project` message if you choose not to deploy (#1268)
 
 ## [1.0.alpha4]
