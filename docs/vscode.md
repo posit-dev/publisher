@@ -109,17 +109,15 @@ process. :tada:
 The Deployment Files view shows a list of the files in your project directory,
 divided into two lists:
 
-Included Files show the files that will be included in your deployment and
-sent to the server as part of the uploaded content. You can exclude a file by
-clicking the icon to the right of the filename.
-
+- Included Files show the files that will be included in your deployment and
+  sent to the server as part of the uploaded content. You can exclude a file by
+  clicking the icon to the right of the filename.
 - Excluded Files shows the files in your project that will not be included in
   the deployment. The tooltip on an excluded file will indicate the reason it
   was excluded.
 
 Exclusions are managed through a `.positignore` file in the root directory of
-your project. It is in the same format as a [`.gitignore` file](https://git-scm.com/docs/gitignore);
-however, negated patterns are not yet supported.
+your project. It is in the same format as a [`.gitignore` file](https://git-scm.com/docs/gitignore)
 
 ![](https://cdn.posit.co/publisher/assets/img/deployment-files-view.png)
 
@@ -168,7 +166,11 @@ Click the deploy icon next to a deployment, which will prompt you for your crede
 Lists the configurations in your project.
 
 Clicking a configuration will open the configuration file in the editor.
-Additionally, you can right-click on a configuration for more operations.
+Additionally, you can right-click on a configuration for more operations
+
+- Clone
+- Rename
+- Delete
 
 ![](https://cdn.posit.co/publisher/assets/img/configurations.png)
 
