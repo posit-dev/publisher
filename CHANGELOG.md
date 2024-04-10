@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Newly created deployment files (that haven't been deployed yet) no longer include extra fields that are not valid (#1244)
 - .positignore paths now match correctly on Windows (#1161)
 - Configuration file validation now enforces the presence of the `python` and `quarto` sections for content types that require them (#1159)
-- The deployment processs now prevents the section of invalid configuration files (#1135)
+- The deployment process now prevents the section of invalid configuration files (#1135)
 - Improved compatibility with `pyenv` projects that use `.python-version` by always ensuring that the current directory is set before inspecting the Python environment (#1080)
 - The `deployed-at`, `configuration-name`, and `configuration` fields in deployment files updates even if a deployment fails early in the process (#1254, #1308)
 - Redeploying a content item with a credential from a different server results fails with a message, instead of invalidating the deployment file (#1263)
