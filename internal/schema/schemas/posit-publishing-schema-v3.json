@@ -61,6 +61,14 @@
       "description": "Access the content after deploying, to validate that it is live. Defaults to true.",
       "default": true
     },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": ["string"]
+      },
+      "description": "Project-relative paths of the files to be included in the deployment. Wildcards are accepted, using .gitignore syntax.",
+      "examples": ["app.py", "model/*.csv", "!model/excludeme.csv"]
+    },
     "python": {
       "type": "object",
       "additionalProperties": false,
