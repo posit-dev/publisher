@@ -58,7 +58,7 @@ install:
         ./node_modules/.bin/cypress install
     fi
 
-# Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just cy run test`)
+# Executes commands via `npm`. Equivalent to `npm run`.
 run *args:
     #!/usr/bin/env bash
     set -eou pipefail

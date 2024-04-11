@@ -57,7 +57,7 @@ clean:
     rm -rf node_modules
     rm -rf out
     just ./webviews/homeView/clean
-    
+
 
 # Install dependencies
 deps:
@@ -190,7 +190,7 @@ package-target-platform os="$(just ../../os)" arch="$(just ../../arch)":
 
     echo "$target_os-$target_arch"
 
-# Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just vscode run test`)
+# Executes commands via `npm`. Equivalent to `npm run`.
 run *args:
     #!/usr/bin/env bash
     set -eou pipefail
