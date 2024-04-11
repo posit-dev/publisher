@@ -79,6 +79,7 @@ func (s *QuartoDetectorSuite) TestInferType() {
 		Entrypoint: "project.qmd",
 		Title:      "this is the title",
 		Validate:   true,
+		Files:      []string{"/**"},
 		Quarto: &config.Quarto{
 			Version: "1.3.353",
 			Engines: []string{"markdown"},
@@ -143,6 +144,7 @@ func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
 		Entrypoint: "project.qmd",
 		Title:      "this is the title",
 		Validate:   true,
+		Files:      []string{"/**"},
 		Python:     &config.Python{},
 		Quarto: &config.Quarto{
 			Version: "1.3.353",
@@ -227,6 +229,7 @@ func (s *QuartoDetectorSuite) TestInferTypeNonProject() {
 		Entrypoint: "project.qmd",
 		Title:      "quarto-doc-none-test-title",
 		Validate:   true,
+		Files:      []string{"/**"},
 		Quarto: &config.Quarto{
 			Version: "1.3.353",
 			Engines: []string{"markdown"},
@@ -289,6 +292,7 @@ func (s *QuartoDetectorSuite) TestInferWindows() {
 		Entrypoint: "project.qmd",
 		Title:      "this is the title",
 		Validate:   true,
+		Files:      []string{"/**"},
 		Quarto: &config.Quarto{
 			Version: "1.3.353",
 			Engines: []string{"markdown"},
@@ -378,6 +382,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Entrypoint: "index.qmd",
 		Title:      "website",
 		Validate:   true,
+		Files:      []string{"/**"},
 		Quarto: &config.Quarto{
 			Version: "1.3.353",
 			Engines: []string{"markdown"},
