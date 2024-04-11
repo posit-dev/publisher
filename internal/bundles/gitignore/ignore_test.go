@@ -59,7 +59,7 @@ func (s *NewIgnoreSuite) TestSpecialChars() {
 	}
 	// Don't name your direrctories like this!
 	// But we'll handle it if you do.
-	s.cwd = util.NewAbsolutePath(`/.\|+{}()<>^$:[]?*`, afero.NewMemMapFs())
+	s.cwd = util.NewAbsolutePath(`/.+\|{}()<>^$:[]?*`, afero.NewMemMapFs())
 	s.runTestCases(specialCharTestCases)
 }
 
@@ -67,7 +67,7 @@ func (s *NewIgnoreSuite) TestSpecialCharsWindows() {
 	if runtime.GOOS != "windows" {
 		s.T().SkipNow()
 	}
-	s.cwd = util.NewAbsolutePath(`C:\.\|+{}()<>^$:[]?*`, afero.NewMemMapFs())
+	s.cwd = util.NewAbsolutePath(`C:\.+\|{}()<>^$:[]?*`, afero.NewMemMapFs())
 	s.runTestCases(windowsSpecialCharTestCases)
 }
 
