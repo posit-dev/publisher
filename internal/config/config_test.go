@@ -72,7 +72,7 @@ func (s *ConfigSuite) TestFromFile() {
 func (s *ConfigSuite) TestFromExampleFile() {
 	realDir, err := util.Getwd(nil)
 	s.NoError(err)
-	path := realDir.Join("..", "schema", "schemas", "deploy.toml")
+	path := realDir.Join("..", "schema", "schemas", "config.toml")
 	cfg, err := FromFile(path)
 	s.NoError(err)
 	s.NotNil(cfg)
