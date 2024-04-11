@@ -16,24 +16,41 @@ class PublishingClientApi {
   deployments: Deployments;
   files: Files;
   requirements: Requirements;
+  apiServiceIsUp: Promise<boolean>;
 
-  constructor() {
+  constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
     this.client = axios.create({
-      baseURL: "/api",
+      baseURL: apiBaseUrl,
     });
+    this.apiServiceIsUp = apiServiceIsUp;
 
-    this.accounts = new Accounts(this.client);
-    this.configurations = new Configurations(this.client);
-    this.deployments = new Deployments(this.client);
-    this.files = new Files(this.client);
-    this.requirements = new Requirements(this.client);
+    this.accounts = new Accounts(this.client, this.apiServiceIsUp);
+    this.configurations = new Configurations(this.client, this.apiServiceIsUp);
+    this.deployments = new Deployments(this.client, this.apiServiceIsUp);
+    this.files = new Files(this.client, this.apiServiceIsUp);
+    this.requirements = new Requirements(this.client, this.apiServiceIsUp);
   }
 
   setBaseUrl(url: string) {
     this.client.defaults.baseURL = url;
   }
+
+  setServiceState(p: Promise<boolean>) {
+    this.apiServiceIsUp = p;
+  }
 }
 
-export const api = new PublishingClientApi();
+let api: PublishingClientApi | undefined = undefined;
 
-export const useApi = () => api;
+export const useApi = (
+  apiBaseUrl?: string,
+  apiServiceIsUp?: Promise<boolean>,
+) => {
+  if (!api) {
+    if (!apiServiceIsUp || !apiBaseUrl) {
+      throw new Error("PublishingClientApi missing required parameters");
+    }
+    api = new PublishingClientApi(apiBaseUrl, apiServiceIsUp);
+  }
+  return api;
+};

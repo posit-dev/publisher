@@ -15,7 +15,7 @@ export class Service implements vscode.Disposable {
     this.context = context;
     this.agentURL = `http://${HOST}:${port}/api`;
     this.server = new Server(port);
-    useApi().setBaseUrl(this.agentURL);
+    useApi(this.agentURL, this.isUp());
   }
 
   start = async () => {

@@ -6,15 +6,18 @@ import { PreDeployment, AllDeploymentTypes } from "../types/deployments";
 
 export class Deployments {
   private client: AxiosInstance;
+  private apiServiceIsUp: Promise<boolean>;
 
-  constructor(client: AxiosInstance) {
+  constructor(client: AxiosInstance, apiServiceIsUp: Promise<boolean>) {
     this.client = client;
+    this.apiServiceIsUp = apiServiceIsUp;
   }
 
   // Returns:
   // 200 - success
   // 500 - internal server error
-  getAll() {
+  async getAll() {
+    await this.apiServiceIsUp;
     return this.client.get<Array<AllDeploymentTypes>>("/deployments");
   }
 
@@ -22,7 +25,8 @@ export class Deployments {
   // 200 - success
   // 404 - not found
   // 500 - internal server error
-  get(id: string) {
+  async get(id: string) {
+    await this.apiServiceIsUp;
     const encodedId = encodeURIComponent(id);
     return this.client.get<AllDeploymentTypes>(`deployments/${encodedId}`);
   }
@@ -33,7 +37,12 @@ export class Deployments {
   // 409 - conflict
   // 500 - internal server error
   // Errors returned through event stream
-  createNew(accountName?: string, configName?: string, saveName?: string) {
+  async createNew(
+    accountName?: string,
+    configName?: string,
+    saveName?: string,
+  ) {
+    await this.apiServiceIsUp;
     const params = {
       account: accountName,
       config: configName,

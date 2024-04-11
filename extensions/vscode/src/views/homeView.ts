@@ -56,7 +56,6 @@ export class HomeViewProvider implements WebviewViewProvider {
   constructor(
     private readonly _extensionUri: Uri,
     private readonly stream: EventStream,
-    private apiReady: Promise<boolean>,
   ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
@@ -101,8 +100,6 @@ export class HomeViewProvider implements WebviewViewProvider {
     if (!this._webviewView) {
       return;
     }
-    await this.apiReady;
-    const api = useApi();
     this._webviewView.webview.onDidReceiveMessage(
       async (message: any) => {
         const command = message.command;
@@ -110,7 +107,7 @@ export class HomeViewProvider implements WebviewViewProvider {
           case "deploy":
             const payload = JSON.parse(message.payload);
             try {
-              const response = await api.deployments.publish(
+              const response = await useApi().deployments.publish(
                 payload.deployment,
                 payload.credential,
                 payload.configuration,
@@ -219,13 +216,11 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _refreshDeploymentData() {
-    await this.apiReady;
-    const api = useApi();
     try {
       // API Returns:
       // 200 - success
       // 500 - internal server error
-      const response = await api.deployments.getAll();
+      const response = await useApi().deployments.getAll();
       const deployments = response.data;
       this._deployments = [];
       deployments.forEach((deployment) => {
@@ -244,10 +239,8 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _refreshConfigurationData() {
-    await this.apiReady;
-    const api = useApi();
     try {
-      const response = await api.configurations.getAll();
+      const response = await useApi().configurations.getAll();
       const configurations = response.data;
       this._configs = [];
       configurations.forEach((config) => {
@@ -266,10 +259,8 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _refreshCredentialData() {
-    await this.apiReady;
-    const api = useApi();
     try {
-      const response = await api.accounts.getAll();
+      const response = await useApi().accounts.getAll();
       this._credentials = response.data;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(

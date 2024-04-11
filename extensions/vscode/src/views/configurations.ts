@@ -17,7 +17,7 @@ import {
   workspace,
 } from "vscode";
 
-import api from "../api";
+import { useApi } from "../api";
 import {
   Configuration,
   ConfigurationDetails,
@@ -53,7 +53,7 @@ export class ConfigurationsTreeDataProvider
   readonly onDidChangeTreeData: ConfigurationEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(private apiReady: Promise<boolean>) {
+  constructor() {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -78,8 +78,7 @@ export class ConfigurationsTreeDataProvider
     }
 
     try {
-      await this.apiReady;
-      const response = await api.configurations.getAll();
+      const response = await useApi().configurations.getAll();
       const configurations = response.data;
       await this.setContextIsEmpty(configurations.length === 0);
 
@@ -141,7 +140,7 @@ export class ConfigurationsTreeDataProvider
   private add = async () => {
     let configName: string | undefined;
     try {
-      const inspectResponse = await api.configurations.inspect();
+      const inspectResponse = await useApi().configurations.inspect();
       const config = await this.chooseConfig(inspectResponse.data);
       if (config === undefined) {
         // canceled
@@ -156,7 +155,7 @@ export class ConfigurationsTreeDataProvider
         // canceled
         return;
       }
-      const createResponse = await api.configurations.createOrUpdate(
+      const createResponse = await useApi().configurations.createOrUpdate(
         configName,
         config,
       );
@@ -238,7 +237,7 @@ export class ConfigurationsTreeDataProvider
     );
     if (ok) {
       try {
-        await api.configurations.delete(name);
+        await useApi().configurations.delete(name);
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
           "configurations::delete",

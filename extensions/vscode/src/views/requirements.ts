@@ -17,7 +17,7 @@ import {
 } from "vscode";
 
 import { isAxiosError } from "axios";
-import api from "../api";
+import { useApi } from "../api";
 import { confirmOverwrite } from "../dialogs";
 import { getSummaryStringFromError } from "../utils/errors";
 import { fileExists } from "../utils/files";
@@ -43,7 +43,7 @@ export class RequirementsTreeDataProvider
   readonly onDidChangeTreeData: RequirementsEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(private apiReady: Promise<boolean>) {
+  constructor() {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -67,8 +67,7 @@ export class RequirementsTreeDataProvider
       return [];
     }
     try {
-      await this.apiReady;
-      const response = await api.requirements.getAll();
+      const response = await useApi().requirements.getAll();
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(
         (line) => new RequirementsTreeItem(line),
@@ -139,7 +138,7 @@ export class RequirementsTreeDataProvider
     }
 
     try {
-      await api.requirements.create("requirements.txt");
+      await useApi().requirements.create("requirements.txt");
       await this.edit();
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("dependencies::scan", error);

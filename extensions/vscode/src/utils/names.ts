@@ -1,9 +1,9 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import api from "../api";
+import { useApi } from "../api";
 
 export async function untitledConfigurationName(): Promise<string> {
-  const existingConfigurations = (await api.configurations.getAll()).data;
+  const existingConfigurations = (await useApi().configurations.getAll()).data;
 
   if (existingConfigurations.length === 0) {
     return "default";

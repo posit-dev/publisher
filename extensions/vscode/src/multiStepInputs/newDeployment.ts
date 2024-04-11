@@ -43,8 +43,6 @@ export async function newDeployment(
   allowPublish?: boolean,
   stream?: EventStream,
 ): Promise<PreDeployment | undefined> {
-  const api = useApi();
-
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
@@ -54,7 +52,7 @@ export async function newDeployment(
   let deploymentNames: string[] = [];
 
   try {
-    const response = await api.accounts.getAll();
+    const response = await useApi().accounts.getAll();
     accountListItems = response.data.map((account) => ({
       iconPath: new ThemeIcon("account"),
       label: account.name,
@@ -84,7 +82,7 @@ export async function newDeployment(
   }
 
   try {
-    const response = await api.configurations.getAll();
+    const response = await useApi().configurations.getAll();
     const configurations = response.data;
     configFileListItems = [];
 
@@ -123,7 +121,7 @@ export async function newDeployment(
   }
 
   try {
-    const response = await api.deployments.getAll();
+    const response = await useApi().deployments.getAll();
     const deploymentList = response.data;
     // Note.. we want all of the deployment filenames regardless if they are valid or not.
     deploymentNames = deploymentList.map(
@@ -362,7 +360,7 @@ export async function newDeployment(
   // Create the Predeployment File
   let newPreDeployment: PreDeployment | undefined = undefined;
   try {
-    const result = await api.deployments.createNew(
+    const result = await useApi().deployments.createNew(
       state.data.credentialName.label,
       state.data.configFile.label,
       state.data.deploymentName,
@@ -387,7 +385,7 @@ export async function newDeployment(
     state.data.promptToDeploy.label === "Yes"
   ) {
     try {
-      const response = await api.deployments.publish(
+      const response = await useApi().deployments.publish(
         state.data.deploymentName,
         state.data.credentialName.label,
         state.data.configFile.label,

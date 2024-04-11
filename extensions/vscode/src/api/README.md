@@ -11,7 +11,7 @@ import { useApi } from "src/api";
 const api = useApi();
 
 try {
-  const response = await api.accounts.getAll();
+  const response = await useApi().accounts.getAll();
 } catch (err) {
   // handle the error
 }
@@ -22,7 +22,7 @@ using `setBaseUrl`. This changes the client so all requests will use the new
 base URL. This will need to be done before any requests are made.
 
 ```typescript
-api.setBaseUrl("http://localhost:9000/api");
+useApi().setBaseUrl("http://localhost:9000/api");
 ```
 
 ## Organization
@@ -39,7 +39,7 @@ Each class in the `resources` folder has methods related to its endpoint. Each
 method has a one-to-one relationship with the API endpoint on the server side.
 
 Example: `/api/accounts` maps to the `resources/Accounts.ts` module and `GET
-api/accounts` maps to the `api.accounts.getAll()` method.
+api/accounts` maps to the `useApi().accounts.getAll()` method.
 
 ### `/types`
 
@@ -69,7 +69,7 @@ to reduce boilerplate and ensure that we do not lose potentially-needed data.
 
 ```typescript
 try {
-  const { data } = await api.accounts.getAll();
+  const { data } = await useApi().accounts.getAll();
 } catch (err) {
   // handle the error
 }
