@@ -1,5 +1,9 @@
 <template>
-  <vscode-dropdown :value="_selection" @change="onInnerSelectionChange">
+  <vscode-dropdown
+    :key="renderKey"
+    :value="_selection"
+    @change="onInnerSelectionChange"
+  >
     <vscode-option
       v-for="option in stringifiedOptions"
       :key="option"
@@ -13,7 +17,7 @@
 </template>
 
 <script setup lang="ts" generic="T">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 
 const model = defineModel<T>();
 
@@ -22,6 +26,16 @@ const props = defineProps<{
   getKey: (o: T) => string;
   disabled?: T[];
 }>();
+
+const renderKey = ref(0);
+
+const forceRerender = () => {
+  renderKey.value += 1;
+};
+
+// Force a re-render when props change to avoid showing incorrect selection
+// https://github.com/microsoft/fast/issues/5773
+watch(props, forceRerender);
 
 const _selection = computed<string | undefined>(() => {
   return model.value !== undefined ? props.getKey(model.value) : undefined;
