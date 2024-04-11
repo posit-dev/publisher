@@ -47,7 +47,6 @@ const contextActiveModeBasic = "basic-mode";
 
 export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
-  private api = useApi();
   private _deployments: (Deployment | PreDeployment)[] = [];
   private _credentials: Account[] = [];
   private _configs: Configuration[] = [];
@@ -57,6 +56,7 @@ export class HomeViewProvider implements WebviewViewProvider {
   constructor(
     private readonly _extensionUri: Uri,
     private readonly stream: EventStream,
+    private apiReady: Promise<boolean>,
   ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
@@ -97,10 +97,12 @@ export class HomeViewProvider implements WebviewViewProvider {
    * @param webview A reference to the extension webview
    * @param context A reference to the extension context
    */
-  private _setWebviewMessageListener() {
+  private async _setWebviewMessageListener() {
     if (!this._webviewView) {
       return;
     }
+    await this.apiReady;
+    const api = useApi();
     this._webviewView.webview.onDidReceiveMessage(
       async (message: any) => {
         const command = message.command;
@@ -108,7 +110,7 @@ export class HomeViewProvider implements WebviewViewProvider {
           case "deploy":
             const payload = JSON.parse(message.payload);
             try {
-              const response = await this.api.deployments.publish(
+              const response = await api.deployments.publish(
                 payload.deployment,
                 payload.credential,
                 payload.configuration,
@@ -127,15 +129,14 @@ export class HomeViewProvider implements WebviewViewProvider {
           // are created within the webview context (i.e. inside media/main.js)
           case "initializing":
             // send back the data needed.
-            await this._refreshData();
-            this._refreshWebViewViewData();
+            await this.refreshAll();
             return;
           case "newDeployment":
-            const newFile: string = await commands.executeCommand(
-              "posit.publisher.deployments.createNew",
+            const preDeployment: PreDeployment = await commands.executeCommand(
+              "posit.publisher.deployments.createNewDeploymentFile",
             );
-            if (newFile) {
-              this._updateDeploymentFileSelection(newFile);
+            if (preDeployment) {
+              this._updateDeploymentFileSelection(preDeployment);
             }
             break;
           case "editConfiguration":
@@ -151,7 +152,7 @@ export class HomeViewProvider implements WebviewViewProvider {
             break;
 
           case "newConfiguration":
-            const newConfig: string = await commands.executeCommand(
+            const newConfig: Configuration = await commands.executeCommand(
               "posit.publisher.configurations.add",
             );
             if (newConfig) {
@@ -188,6 +189,9 @@ export class HomeViewProvider implements WebviewViewProvider {
         command: "publish_start",
       });
     } else {
+      window.showErrorMessage(
+        "_onPublishStart: oops! No _webViewView defined!",
+      );
       console.log("_onPublishStart: oops! No _webViewView defined!");
     }
   }
@@ -214,12 +218,14 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
-  private async _refreshData() {
+  private async _refreshDeploymentData() {
+    await this.apiReady;
+    const api = useApi();
     try {
       // API Returns:
       // 200 - success
       // 500 - internal server error
-      const response = await this.api.deployments.getAll();
+      const response = await api.deployments.getAll();
       const deployments = response.data;
       this._deployments = [];
       deployments.forEach((deployment) => {
@@ -229,25 +235,19 @@ export class HomeViewProvider implements WebviewViewProvider {
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "_refreshData::deployments.getAll",
+        "_refreshDeploymentData::deployments.getAll",
         error,
       );
       window.showInformationMessage(summary);
+      throw error;
     }
+  }
 
+  private async _refreshConfigurationData() {
+    await this.apiReady;
+    const api = useApi();
     try {
-      const response = await this.api.accounts.getAll();
-      this._credentials = response.data;
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "_refreshData::accounts.getAll",
-        error,
-      );
-      window.showInformationMessage(summary);
-    }
-
-    try {
-      const response = await this.api.configurations.getAll();
+      const response = await api.configurations.getAll();
       const configurations = response.data;
       this._configs = [];
       configurations.forEach((config) => {
@@ -257,45 +257,80 @@ export class HomeViewProvider implements WebviewViewProvider {
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "configurations::getChildren",
+        "_refreshConfigurationData::configurations.getAll",
         error,
       );
       window.showInformationMessage(summary);
+      throw error;
     }
   }
 
-  private _refreshWebViewViewData() {
+  private async _refreshCredentialData() {
+    await this.apiReady;
+    const api = useApi();
+    try {
+      const response = await api.accounts.getAll();
+      this._credentials = response.data;
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "_refreshCredentialData::accounts.getAll",
+        error,
+      );
+      window.showInformationMessage(summary);
+      throw error;
+    }
+  }
+
+  private _updateWebViewViewDeployments() {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
-        command: "refresh_data",
+        command: "refresh_deployment_data",
         payload: JSON.stringify({
           deployments: this._deployments,
-          configurations: this._configs.map(
-            (config) => config.configurationName,
-          ),
+        }),
+      });
+    }
+  }
+
+  private _updateWebViewViewConfigurations() {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "refresh_config_data",
+        payload: JSON.stringify({
+          configurations: this._configs,
+        }),
+      });
+    }
+  }
+
+  private _updateWebViewViewCredentials() {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "refresh_credential_data",
+        payload: JSON.stringify({
           credentials: this._credentials,
         }),
       });
     }
   }
 
-  private _updateDeploymentFileSelection(name: string) {
+  private _updateDeploymentFileSelection(preDeployment: PreDeployment) {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
         command: "update_deployment_selection",
         payload: JSON.stringify({
-          name,
+          preDeployment,
         }),
       });
     }
   }
 
-  private _updateConfigFileSelection(name: string) {
+  private _updateConfigFileSelection(config: Configuration) {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
         command: "update_config_selection",
         payload: JSON.stringify({
-          name,
+          config,
         }),
       });
     }
@@ -390,9 +425,35 @@ export class HomeViewProvider implements WebviewViewProvider {
     `;
   }
 
-  public refresh = async (_: Uri) => {
-    await this._refreshData();
-    this._refreshWebViewViewData();
+  public refreshAll = async () => {
+    try {
+      await Promise.all([
+        this._refreshDeploymentData(),
+        this._refreshConfigurationData(),
+        this._refreshCredentialData(),
+      ]);
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "refreshAll::Promise.all",
+        error,
+      );
+      window.showInformationMessage(summary);
+      return;
+    }
+
+    this._updateWebViewViewCredentials();
+    this._updateWebViewViewConfigurations();
+    this._updateWebViewViewDeployments();
+  };
+
+  public refreshDeployments = async () => {
+    await this._refreshDeploymentData();
+    this._updateWebViewViewDeployments();
+  };
+
+  public refreshConfigurations = async () => {
+    await this._refreshConfigurationData();
+    this._updateWebViewViewConfigurations();
   };
 
   /**
@@ -417,24 +478,24 @@ export class HomeViewProvider implements WebviewViewProvider {
     context.subscriptions.push(provider);
 
     context.subscriptions.push(
-      commands.registerCommand(refreshCommand, this.refresh),
+      commands.registerCommand(refreshCommand, this.refreshAll),
     );
 
     if (this.root !== undefined) {
       const configFileWatcher = workspace.createFileSystemWatcher(
         new RelativePattern(this.root, configFiles),
       );
-      configFileWatcher.onDidCreate(this.refresh);
-      configFileWatcher.onDidDelete(this.refresh);
-      configFileWatcher.onDidChange(this.refresh);
+      configFileWatcher.onDidCreate(this.refreshConfigurations);
+      configFileWatcher.onDidDelete(this.refreshConfigurations);
+      configFileWatcher.onDidChange(this.refreshConfigurations);
       context.subscriptions.push(configFileWatcher);
 
       const deploymentFileWatcher = workspace.createFileSystemWatcher(
         new RelativePattern(this.root, deploymentFiles),
       );
-      deploymentFileWatcher.onDidCreate(this.refresh);
-      deploymentFileWatcher.onDidDelete(this.refresh);
-      deploymentFileWatcher.onDidChange(this.refresh);
+      deploymentFileWatcher.onDidCreate(this.refreshDeployments);
+      deploymentFileWatcher.onDidDelete(this.refreshDeployments);
+      deploymentFileWatcher.onDidChange(this.refreshDeployments);
       context.subscriptions.push(deploymentFileWatcher);
     }
   }

@@ -13,14 +13,36 @@ import {
   window,
 } from "vscode";
 
-import { AccountAuthType, useApi, isConfigurationError } from "../api";
+import {
+  AccountAuthType,
+  useApi,
+  isConfigurationError,
+  PreDeployment,
+} from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import { uniqueDeploymentName, untitledDeploymentName } from "../utils/names";
 import { deployProject } from "../views/deployProgress";
 import { EventStream } from "../events";
 import { isValidFilename } from "../utils/files";
 
-export async function addDeployment(stream: EventStream) {
+export async function newDeployment(
+  title: string,
+): Promise<PreDeployment | undefined>;
+export async function newDeployment(
+  title: string,
+  allowPublish: true,
+  stream: EventStream,
+): Promise<PreDeployment | undefined>;
+export async function newDeployment(
+  title: string,
+  allowPublish: false,
+  stream?: undefined,
+): Promise<PreDeployment | undefined>;
+export async function newDeployment(
+  title: string,
+  allowPublish?: boolean,
+  stream?: EventStream,
+): Promise<PreDeployment | undefined> {
   const api = useApi();
 
   // ***************************************************************
@@ -44,7 +66,7 @@ export async function addDeployment(stream: EventStream) {
     }));
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "addDeployment, accounts.getAll",
+      "newDeployment, accounts.getAll",
       error,
     );
     window.showInformationMessage(
@@ -82,7 +104,7 @@ export async function addDeployment(stream: EventStream) {
     });
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "addDeployment, configurations.getAll",
+      "newDeployment, configurations.getAll",
       error,
     );
     window.showInformationMessage(
@@ -109,7 +131,7 @@ export async function addDeployment(stream: EventStream) {
     );
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "addDeployment, deployments.getAll",
+      "newDeployment, deployments.getAll",
       error,
     );
     window.showInformationMessage(
@@ -120,13 +142,15 @@ export async function addDeployment(stream: EventStream) {
 
   // ***************************************************************
   // Order of all steps
+  // NOTE: This multi-stepper is used for multiple commands
   // ***************************************************************
 
   // Name the deployment
   // Select the credential to use, if there is more than one
-  // Prompt to deploy
   // Select the config file to use, if there are more than one
-  // result in calling publish API
+  // IF parameter 'allowPublish' is true, prompt to deploy
+  // IF prompt to deploy was Yes, then call publish API
+  // return name of deployment file
 
   // ***************************************************************
   // Method which kicks off the multi-step.
@@ -135,7 +159,7 @@ export async function addDeployment(stream: EventStream) {
   // ***************************************************************
   async function collectInputs() {
     const state: MultiStepState = {
-      title: "Deploy Your Project to a New Location",
+      title,
       step: -1,
       lastStep: 0,
       totalSteps: -1,
@@ -144,8 +168,8 @@ export async function addDeployment(stream: EventStream) {
         // to be returned when it has not been cancelled to assist type guards
         deploymentName: undefined, // eventual type is string
         credentialName: undefined, // eventual type is QuickPickItem
-        promptToDeploy: undefined, /// eventual type is QuickPickItem
         configFile: undefined, // eventual type is QuickPickItem
+        promptToDeploy: undefined, /// eventual type is QuickPickItem
       },
     };
     // determin number of total steps, as each step
@@ -157,6 +181,10 @@ export async function addDeployment(stream: EventStream) {
     if (configFileListItems.length === 1) {
       totalSteps -= 1;
     }
+    if (!promptToDeploy) {
+      totalSteps -= 1;
+    }
+
     state.totalSteps = totalSteps;
 
     // start the progression through the steps
@@ -173,11 +201,10 @@ export async function addDeployment(stream: EventStream) {
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    state.step = state.lastStep + 1;
-
+    const thisStepNumber = state.lastStep + 1;
     const deploymentName = await input.showInputBox({
       title: state.title,
-      step: state.step,
+      step: thisStepNumber,
       totalSteps: state.totalSteps,
       value:
         typeof state.data.deploymentName === "string" &&
@@ -202,6 +229,7 @@ export async function addDeployment(stream: EventStream) {
     });
 
     state.data.deploymentName = deploymentName;
+    state.lastStep = thisStepNumber;
     return (input: MultiStepInput) => pickCredentials(input, state);
   }
 
@@ -231,47 +259,11 @@ export async function addDeployment(stream: EventStream) {
     } else {
       state.data.credentialName = accountListItems[0];
     }
-    return (input: MultiStepInput) => promptToDeploy(input, state);
+    return (input: MultiStepInput) => inputConfigFileSelection(input, state);
   }
 
   // ***************************************************************
   // Step #3:
-  // Does the user want to continue through into deploying the project?
-  // ***************************************************************
-  async function promptToDeploy(input: MultiStepInput, state: MultiStepState) {
-    const thisStepNumber = state.lastStep + 1;
-    const pick = await input.showQuickPick({
-      title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
-      placeholder: "Do you wish to initiate the deployment at this time?",
-      items: [
-        {
-          label: "Yes",
-          description: "Proceed with deployment",
-        },
-        {
-          label: "No",
-          description: "Just save my deployment for use at a later time",
-        },
-      ],
-      activeItem:
-        typeof state.data.promptToDeploy !== "string"
-          ? state.data.promptToDeploy
-          : undefined,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-    });
-    state.data.promptToDeploy = pick;
-    state.lastStep = thisStepNumber;
-    if (state.data.promptToDeploy.label === "Yes") {
-      return (input: MultiStepInput) => inputConfigFileSelection(input, state);
-    }
-    return undefined;
-  }
-
-  // ***************************************************************
-  // Step #4:
   // Select the config to be used w/ the deployment
   // ***************************************************************
   async function inputConfigFileSelection(
@@ -299,6 +291,41 @@ export async function addDeployment(stream: EventStream) {
     } else {
       state.data.configFile = configFileListItems[0];
     }
+    return (input: MultiStepInput) => promptToDeploy(input, state);
+  }
+
+  // ***************************************************************
+  // Step #4:
+  // Does the user want to continue through into deploying the project?
+  // ***************************************************************
+  async function promptToDeploy(input: MultiStepInput, state: MultiStepState) {
+    if (allowPublish) {
+      const thisStepNumber = state.lastStep + 1;
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: thisStepNumber,
+        totalSteps: state.totalSteps,
+        placeholder: "Do you wish to initiate the deployment at this time?",
+        items: [
+          {
+            label: "Yes",
+            description: "Proceed with deployment",
+          },
+          {
+            label: "No",
+            description: "Just save my deployment for use at a later time",
+          },
+        ],
+        activeItem:
+          typeof state.data.promptToDeploy !== "string"
+            ? state.data.promptToDeploy
+            : undefined,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+      });
+      state.data.promptToDeploy = pick;
+      state.lastStep = thisStepNumber;
+    }
   }
 
   // ***************************************************************
@@ -315,24 +342,35 @@ export async function addDeployment(stream: EventStream) {
   if (
     state.data.deploymentName === undefined ||
     state.data.credentialName === undefined ||
-    state.data.promptToDeploy === undefined ||
+    state.data.configFile === undefined ||
     // have to add type guards here to eliminate the variability
     typeof state.data.deploymentName !== "string" ||
     !isQuickPickItem(state.data.credentialName) ||
-    !isQuickPickItem(state.data.promptToDeploy)
+    !isQuickPickItem(state.data.configFile)
   ) {
     return;
   }
-
+  // additional checks if we are allowing publishing
+  if (allowPublish) {
+    if (
+      state.data.promptToDeploy === undefined ||
+      !isQuickPickItem(state.data.promptToDeploy)
+    ) {
+      return;
+    }
+  }
   // Create the Predeployment File
+  let newPreDeployment: PreDeployment | undefined = undefined;
   try {
-    await api.deployments.createNew(
+    const result = await api.deployments.createNew(
       state.data.credentialName.label,
+      state.data.configFile.label,
       state.data.deploymentName,
     );
+    newPreDeployment = result.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "addDeployment, createNew",
+      "newDeployment, createNew",
       error,
     );
     window.showInformationMessage(
@@ -340,11 +378,13 @@ export async function addDeployment(stream: EventStream) {
     );
     return;
   }
-  // Should we deploy and did we get an answer for the config file?
+  // Should we deploy?
   if (
-    state.data.promptToDeploy.label === "Yes" &&
-    state.data.configFile !== undefined &&
-    isQuickPickItem(state.data.configFile)
+    allowPublish &&
+    stream &&
+    state.data.promptToDeploy &&
+    isQuickPickItem(state.data.promptToDeploy) &&
+    state.data.promptToDeploy.label === "Yes"
   ) {
     try {
       const response = await api.deployments.publish(
@@ -354,9 +394,10 @@ export async function addDeployment(stream: EventStream) {
       );
       deployProject(response.data.localId, stream);
     } catch (error: unknown) {
-      const summary = getSummaryStringFromError("addDeployment, deploy", error);
+      const summary = getSummaryStringFromError("newDeployment, deploy", error);
       window.showInformationMessage(`Failed to deploy . ${summary}`);
       return;
     }
   }
+  return newPreDeployment;
 }

@@ -5,6 +5,7 @@
 import * as vscode from "vscode";
 
 import * as ports from "./ports";
+import api from "./api";
 import { Service } from "./services";
 import { ProjectTreeDataProvider } from "./views/project";
 import { DeploymentsTreeDataProvider } from "./views/deployments";
@@ -16,7 +17,9 @@ import { HelpAndFeedbackTreeDataProvider } from "./views/helpAndFeedback";
 import { LogsTreeDataProvider } from "./views/logs";
 import { EventStream } from "./events";
 import { HomeViewProvider } from "./views/homeView";
-import { commands } from "vscode";
+import { commands, window } from "vscode";
+import { initWorkspaceWithFixedNames } from "./multiStepInputs/initWorkspace";
+import { getSummaryStringFromError } from "./utils/errors";
 
 const STATE_CONTEXT = "posit.publish.state";
 const MISSING_CONTEXT = "posit.publish.missing";
@@ -24,6 +27,21 @@ const MISSING_CONTEXT = "posit.publish.missing";
 enum PositPublishState {
   initialized = "initialized",
   uninitialized = "uninitialized",
+}
+
+const INITIALIZING_CONTEXT = "posit.publish.initialization.inProgress";
+const INIT_PROJECT_COMMAND = "posit.publisher.init-project";
+enum InitializationInProgress {
+  true = "true",
+  false = "false",
+}
+
+const CREDENTIAL_CHECK = "posit.publish.initialization.credentialCheck";
+const REFRESH_INIT_PROJECT_COMMAND = "posit.publisher.init-project.refresh";
+enum PositPublishCredentialCheck {
+  inProgress = "inProgress",
+  failed = "failed",
+  succeeded = "succeeded",
 }
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
@@ -46,6 +64,24 @@ async function isMissingPublishDirs(
   }
 }
 
+async function checkForCredentials(apiReady: Promise<boolean>) {
+  await apiReady;
+  try {
+    const response = await api.accounts.getAll();
+    if (response.data.length) {
+      setCredentialCheckContext(PositPublishCredentialCheck.succeeded);
+    } else {
+      setCredentialCheckContext(PositPublishCredentialCheck.failed);
+    }
+  } catch (error: unknown) {
+    const summary = getSummaryStringFromError(
+      "extension::checkForCredentials",
+      error,
+    );
+    window.showInformationMessage(summary);
+  }
+}
+
 function setMissingContext(context: boolean) {
   vscode.commands.executeCommand("setContext", MISSING_CONTEXT, context);
 }
@@ -54,10 +90,20 @@ function setStateContext(context: PositPublishState) {
   vscode.commands.executeCommand("setContext", STATE_CONTEXT, context);
 }
 
+function setInitializationInProgressContext(context: InitializationInProgress) {
+  vscode.commands.executeCommand("setContext", INITIALIZING_CONTEXT, context);
+}
+
+function setCredentialCheckContext(context: PositPublishCredentialCheck) {
+  vscode.commands.executeCommand("setContext", CREDENTIAL_CHECK, context);
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
   setStateContext(PositPublishState.uninitialized);
+  setCredentialCheckContext(PositPublishCredentialCheck.inProgress);
+  setInitializationInProgressContext(InitializationInProgress.false);
 
   if (
     vscode.workspace.workspaceFolders &&
@@ -97,6 +143,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   service = new Service(context, port);
   const apiReady = service.isUp();
+  checkForCredentials(apiReady);
 
   new ProjectTreeDataProvider().register(context);
   new DeploymentsTreeDataProvider(stream, apiReady).register(context);
@@ -106,9 +153,25 @@ export async function activate(context: vscode.ExtensionContext) {
   new CredentialsTreeDataProvider(apiReady).register(context);
   new HelpAndFeedbackTreeDataProvider().register(context);
   new LogsTreeDataProvider(stream).register(context);
-  new HomeViewProvider(context.extensionUri, stream).register(context);
+  new HomeViewProvider(context.extensionUri, stream, apiReady).register(
+    context,
+  );
 
   await service.start();
+
+  context.subscriptions.push(
+    commands.registerCommand(INIT_PROJECT_COMMAND, async () => {
+      setInitializationInProgressContext(InitializationInProgress.true);
+      await initWorkspaceWithFixedNames();
+      setInitializationInProgressContext(InitializationInProgress.false);
+    }),
+  );
+
+  context.subscriptions.push(
+    commands.registerCommand(REFRESH_INIT_PROJECT_COMMAND, () =>
+      checkForCredentials(apiReady),
+    ),
+  );
 
   setStateContext(PositPublishState.initialized);
 }
