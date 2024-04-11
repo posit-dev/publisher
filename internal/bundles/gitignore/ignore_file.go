@@ -3,7 +3,6 @@ package gitignore
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"path"
 	"regexp"
 	"strings"
@@ -216,7 +215,7 @@ func patternFromString(line string, base util.AbsolutePath, ignoreFilePath util.
 	rawRegex = "^" + rawRegex + "$"
 
 	// If tests fail, uncomment this line to get detailed output
-	fmt.Printf("pattern %s is regex %s\n", line, rawRegex)
+	// fmt.Printf("pattern %s is regex %s\n", line, rawRegex)
 
 	regex, err := regexp.Compile(rawRegex)
 	if err != nil {
