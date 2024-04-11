@@ -15,6 +15,11 @@ direct-url = 'https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40
 type = "quarto"
 entrypoint = "report.qmd"
 validate = true
+files = [
+    "*.py",
+    "*.qmd",
+    "requirements.txt",
+]
 title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
 
