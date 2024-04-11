@@ -53,7 +53,7 @@ export class ConfigurationsTreeDataProvider
   readonly onDidChangeTreeData: ConfigurationEvent =
     this._onDidChangeTreeData.event;
 
-  constructor() {
+  constructor(private readonly _context: ExtensionContext) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -97,12 +97,12 @@ export class ConfigurationsTreeDataProvider
     }
   }
 
-  public register(context: ExtensionContext) {
+  public register() {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       treeView,
       commands.registerCommand(refreshCommand, this.refresh),
       commands.registerCommand(addCommand, this.add),
@@ -112,7 +112,7 @@ export class ConfigurationsTreeDataProvider
       commands.registerCommand(deleteCommand, this.delete),
     );
     if (this.root !== undefined) {
-      context.subscriptions.push(this.createFileSystemWatcher(this.root));
+      this._context.subscriptions.push(this.createFileSystemWatcher(this.root));
     }
   }
 

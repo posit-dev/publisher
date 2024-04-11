@@ -143,15 +143,15 @@ export async function activate(context: vscode.ExtensionContext) {
   service = new Service(context, port);
   checkForCredentials();
 
-  new ProjectTreeDataProvider().register(context);
-  new DeploymentsTreeDataProvider(stream).register(context);
-  new ConfigurationsTreeDataProvider().register(context);
-  new FilesTreeDataProvider().register(context);
-  new RequirementsTreeDataProvider().register(context);
-  new CredentialsTreeDataProvider().register(context);
-  new HelpAndFeedbackTreeDataProvider().register(context);
-  new LogsTreeDataProvider(stream).register(context);
-  new HomeViewProvider(context.extensionUri, stream).register(context);
+  new ProjectTreeDataProvider(context).register();
+  new DeploymentsTreeDataProvider(context, stream).register();
+  new ConfigurationsTreeDataProvider(context).register();
+  new FilesTreeDataProvider(context).register();
+  new RequirementsTreeDataProvider(context).register();
+  new CredentialsTreeDataProvider(context).register();
+  new HelpAndFeedbackTreeDataProvider(context).register();
+  new LogsTreeDataProvider(context, stream).register();
+  new HomeViewProvider(context, stream).register();
 
   await service.start();
 

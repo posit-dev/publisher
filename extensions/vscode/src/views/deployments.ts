@@ -59,7 +59,10 @@ export class DeploymentsTreeDataProvider
   readonly onDidChangeTreeData: DeploymentsEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(private stream: EventStream) {
+  constructor(
+    private readonly _context: ExtensionContext,
+    private readonly _stream: EventStream,
+  ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -115,44 +118,44 @@ export class DeploymentsTreeDataProvider
     }
   }
 
-  public register(context: ExtensionContext) {
+  public register() {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
-    context.subscriptions.push(treeView);
+    this._context.subscriptions.push(treeView);
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(addDeploymentCommand, () => {
         return newDeployment(
           "Deploy Your Project to a New Location",
           true,
-          this.stream,
+          this._stream,
         );
       }),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(createNewDeploymentFileCommand, () => {
         return newDeployment("Create a Deployment File for your Project");
       }),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(
         deployCommand,
         async (item: DeploymentsTreeItem) => {
           if (!isDeploymentError(item.deployment)) {
-            publishDeployment(item.deployment, this.stream);
+            publishDeployment(item.deployment, this._stream);
           }
         },
       ),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(
         forgetCommand,
         async (item: DeploymentsTreeItem) => {
@@ -166,7 +169,7 @@ export class DeploymentsTreeDataProvider
       ),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(
         editCommand,
         async (item: DeploymentsTreeItem) => {
@@ -175,7 +178,7 @@ export class DeploymentsTreeDataProvider
       ),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(
         visitCommand,
         async (item: DeploymentsTreeItem) => {
@@ -195,7 +198,7 @@ export class DeploymentsTreeDataProvider
       watcher.onDidCreate(this.refresh);
       watcher.onDidDelete(this.refresh);
       watcher.onDidChange(this.refresh);
-      context.subscriptions.push(watcher);
+      this._context.subscriptions.push(watcher);
     }
   }
 }

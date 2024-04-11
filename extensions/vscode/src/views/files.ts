@@ -55,7 +55,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   private _onDidChangeTreeData: FilesEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: FilesEvent = this._onDidChangeTreeData.event;
 
-  constructor() {
+  constructor(private readonly _context: ExtensionContext) {
     const workspaceFolders = workspace.workspaceFolders;
     this.root = Uri.parse("positPublisherFiles://unknown");
     if (workspaceFolders !== undefined) {
@@ -106,15 +106,15 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     return [];
   }
 
-  public register(context: ExtensionContext) {
+  public register() {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
-    context.subscriptions.push(treeView);
-    context.subscriptions.push(
+    this._context.subscriptions.push(treeView);
+    this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
     );
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(editPositIgnoreCommand, async () => {
         if (this.root !== undefined) {
           updateNewOrExistingFile(
@@ -126,7 +126,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
         }
       }),
     );
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(
         addExclusionCommand,
         async (item: FileTreeItem) => {
@@ -149,7 +149,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
       watcher.onDidCreate(this.refresh);
       watcher.onDidDelete(this.refresh);
       watcher.onDidChange(this.refresh);
-      context.subscriptions.push(watcher);
+      this._context.subscriptions.push(watcher);
     }
   }
 }

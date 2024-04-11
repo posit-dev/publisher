@@ -13,7 +13,7 @@ const viewName = "posit.publisher.project";
 export class ProjectTreeDataProvider
   implements TreeDataProvider<ProjectTreeItem>
 {
-  constructor() {}
+  constructor(private readonly _context: ExtensionContext) {}
 
   getTreeItem(element: ProjectTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -25,8 +25,8 @@ export class ProjectTreeDataProvider
     return [];
   }
 
-  public register(context: ExtensionContext) {
-    context.subscriptions.push(
+  public register() {
+    this._context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this }),
     );
   }

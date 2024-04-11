@@ -52,49 +52,22 @@ export class HomeViewProvider implements WebviewViewProvider {
   private _configs: Configuration[] = [];
   private root: WorkspaceFolder | undefined;
   private _webviewView?: WebviewView;
+  private _extensionUri: Uri;
 
   constructor(
-    private readonly _extensionUri: Uri,
-    private readonly stream: EventStream,
+    private readonly _context: ExtensionContext,
+    private readonly _stream: EventStream,
   ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
-    stream.register("publish/start", () => {
-      this._onPublishStart();
-    });
-    stream.register("publish/success", (msg: EventStreamMessage) => {
-      this._onPublishSuccess(msg);
-    });
-    stream.register("publish/failure", (msg: EventStreamMessage) => {
-      this._onPublishFailure(msg);
-    });
-    commands.executeCommand("setContext", contextIsSelectorExpanded, false);
-
-    commands.registerCommand(showBasicModeCommand, () => {
-      commands.executeCommand(
-        "setContext",
-        contextActiveMode,
-        contextActiveModeBasic,
-      );
-    });
-
-    commands.registerCommand(showAdvancedModeCommand, () => {
-      commands.executeCommand(
-        "setContext",
-        contextActiveMode,
-        contextActiveModeAdvanced,
-      );
-    });
+    this._extensionUri = this._context.extensionUri;
   }
 
   /**
-   * Sets up an event listener to listen for messages passed from the webview context and
-   * executes code based on the message that is recieved.
-   *
-   * @param webview A reference to the extension webview
-   * @param context A reference to the extension context
+   * Sets up an event listener to listen for messages passed from the webview this._context and
+   * executes code based on the message that is received.
    */
   private async _setWebviewMessageListener() {
     if (!this._webviewView) {
@@ -112,7 +85,7 @@ export class HomeViewProvider implements WebviewViewProvider {
                 payload.credential,
                 payload.configuration,
               );
-              deployProject(response.data.localId, this.stream);
+              deployProject(response.data.localId, this._stream);
             } catch (error: unknown) {
               const summary = getSummaryStringFromError(
                 "homeView, deploy",
@@ -123,7 +96,7 @@ export class HomeViewProvider implements WebviewViewProvider {
             }
             return;
           // Add more switch case statements here as more webview message commands
-          // are created within the webview context (i.e. inside media/main.js)
+          // are created within the webview this._context (i.e. inside media/main.js)
           case "initializing":
             // send back the data needed.
             await this.refreshAll();
@@ -349,7 +322,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       this._extensionUri,
     );
 
-    // Sets up an event listener to listen for messages passed from the webview view context
+    // Sets up an event listener to listen for messages passed from the webview view this._context
     // and executes code based on the message that is recieved
     this._setWebviewMessageListener();
   }
@@ -460,15 +433,47 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
-  public register(context: ExtensionContext) {
-    const provider = window.registerWebviewViewProvider(viewName, this, {
-      webviewOptions: {
-        retainContextWhenHidden: true,
-      },
+  public register() {
+    this._stream.register("publish/start", () => {
+      this._onPublishStart();
     });
-    context.subscriptions.push(provider);
+    this._stream.register("publish/success", (msg: EventStreamMessage) => {
+      this._onPublishSuccess(msg);
+    });
+    this._stream.register("publish/failure", (msg: EventStreamMessage) => {
+      this._onPublishFailure(msg);
+    });
+    commands.executeCommand("setContext", contextIsSelectorExpanded, false);
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
+      commands.registerCommand(showBasicModeCommand, () => {
+        commands.executeCommand(
+          "setContext",
+          contextActiveMode,
+          contextActiveModeBasic,
+        );
+      }),
+    );
+
+    this._context.subscriptions.push(
+      commands.registerCommand(showAdvancedModeCommand, () => {
+        commands.executeCommand(
+          "setContext",
+          contextActiveMode,
+          contextActiveModeAdvanced,
+        );
+      }),
+    );
+
+    this._context.subscriptions.push(
+      window.registerWebviewViewProvider(viewName, this, {
+        webviewOptions: {
+          retainContextWhenHidden: true,
+        },
+      }),
+    );
+
+    this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refreshAll),
     );
 
@@ -479,7 +484,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       configFileWatcher.onDidCreate(this.refreshConfigurations);
       configFileWatcher.onDidDelete(this.refreshConfigurations);
       configFileWatcher.onDidChange(this.refreshConfigurations);
-      context.subscriptions.push(configFileWatcher);
+      this._context.subscriptions.push(configFileWatcher);
 
       const deploymentFileWatcher = workspace.createFileSystemWatcher(
         new RelativePattern(this.root, deploymentFiles),
@@ -487,7 +492,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       deploymentFileWatcher.onDidCreate(this.refreshDeployments);
       deploymentFileWatcher.onDidDelete(this.refreshDeployments);
       deploymentFileWatcher.onDidChange(this.refreshDeployments);
-      context.subscriptions.push(deploymentFileWatcher);
+      this._context.subscriptions.push(deploymentFileWatcher);
     }
   }
 }
