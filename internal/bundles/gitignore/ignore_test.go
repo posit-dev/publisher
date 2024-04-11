@@ -91,9 +91,9 @@ func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
 		m := ign.Match(absPath)
 
 		if test.matches {
-			s.NotNil(m, "pattern %s should have matched path %s", test.pattern, test.path)
+			s.NotNil(m, "pattern %s should have matched path %s (%s)", test.pattern, test.path, absPath)
 		} else {
-			s.Nil(m, "pattern %s should not have matched path %s", test.pattern, test.path)
+			s.Nil(m, "pattern %s should not have matched path %s (%s)", test.pattern, test.path, absPath)
 		}
 	}
 }

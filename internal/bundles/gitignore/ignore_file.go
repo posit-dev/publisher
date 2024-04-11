@@ -90,7 +90,7 @@ func escapeRegexCharsInPath(s string) string {
 	// conversion to Posix format (ToSlash), so \ is included
 	// as it is a valid char in Posix paths.
 	// https://pkg.go.dev/regexp/syntax
-	return escapeRegexChars(s, `.\|+{}()<>^$:[]?*`)
+	return escapeRegexChars(s, `.\|+{}()<>^$[]?*`)
 }
 
 func escapeRegexCharsInPattern(s string) string {
@@ -98,7 +98,7 @@ func escapeRegexCharsInPattern(s string) string {
 	// so they match literally in the resulting regex.
 	// (Note that * ? [ ] are gitignore syntax and should not be escaped).
 	// https://pkg.go.dev/regexp/syntax
-	return escapeRegexChars(s, `.\|+{}()<>^$:`)
+	return escapeRegexChars(s, `.\|+{}()<>^$`)
 }
 
 func escapeRegexChars(s string, specials string) string {
