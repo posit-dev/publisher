@@ -50,11 +50,6 @@ func (s filesService) GetFile(p util.AbsolutePath, ignore gitignore.IgnoreList) 
 			if util.IsPythonEnvironmentDir(path) {
 				return filepath.SkipDir
 			}
-			// Load .positignore from every directory where it exists
-			err = gitignore.LoadPositIgnoreIfPresent(path, ignore)
-			if err != nil {
-				return err
-			}
 		}
 		if err != nil {
 			return err

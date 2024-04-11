@@ -73,14 +73,7 @@ func (s *NewIgnoreSuite) TestSpecialCharsWindows() {
 
 func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
 	for _, test := range cases {
-		ign, err := NewIgnoreList(nil)
-		s.NoError(err)
-
-		ignorePath := s.cwd.Join(".positignore")
-		err = ignorePath.WriteFile([]byte(test.pattern), 0600)
-		s.NoError(err)
-
-		err = ign.AddFile(ignorePath)
+		ign, err := NewIgnoreList(s.cwd, strings.Split(test.pattern, "\n"))
 		s.NoError(err)
 
 		absPath := s.cwd.Join(filepath.FromSlash(test.path))

@@ -23,7 +23,6 @@ Supported features:
 - Configuration schema enables editing with the [Even Better TOML
   VSCode](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
   extension
-- Exclude files from deployment with `.positignore` files (like `.gitignore`)
 - Python content: APIs, applications, and notebooks
 - Automatic detection of client Python and Quarto version
 - Automatic creation of a minimal requirements.txt file if needed, by scanning imports and mapping them to package names/versions installed in the local Python library path.
