@@ -11,27 +11,27 @@ import (
 
 var StandardExclusions = []string{
 	// From rsconnect-python
-	".Rproj.user/",
-	".git/",
-	".svn/",
-	"__pycache__/",
-	"packrat/",
-	"rsconnect-python/",
-	"rsconnect/",
+	"!.Rproj.user/",
+	"!.git/",
+	"!.svn/",
+	"!__pycache__/",
+	"!packrat/",
+	"!rsconnect-python/",
+	"!rsconnect/",
 
 	// From rsconnect
-	".DS_Store",
-	".Rhistory",
-	".quarto/",
+	"!.DS_Store",
+	"!.Rhistory",
+	"!.quarto/",
 	// Less precise than rsconnect, which checks for a
 	// matching Rmd filename in the same directory.
-	"*_cache/",
+	"!*_cache/",
 
 	// Other
-	".ipynb_checkpoints/",
+	"!.ipynb_checkpoints/",
 
 	// Exclude existing manifest.json; we will create one.
-	"manifest.json",
+	"!manifest.json",
 }
 
 // matchingWalker is a Walker that excludes files and directories
@@ -46,20 +46,27 @@ type matchingWalker struct {
 // for every file and directory that matches the match list.
 func (i *matchingWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
 	return i.matchList.Walk(path, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
-		if info.IsDir() {
-			// Ignore Python environment directories. We check for these
-			// separately because they aren't expressible as gitignore patterns.
-			if util.IsPythonEnvironmentDir(path) {
+		m := i.matchList.Match(path)
+		if m == nil || m.Inverted {
+			if info.IsDir() {
 				return filepath.SkipDir
+			} else {
+				return nil
 			}
+		}
+
+		// Ignore Python environment directories. We check for these
+		// separately because they aren't expressible as gitignore patterns.
+		if info.IsDir() && util.IsPythonEnvironmentDir(path) {
+			return filepath.SkipDir
 		}
 		return fn(path, info, err)
 	})
 }
 
-// NewMatchingWalker returns a Walker that skips excluded files and directories.
-// Exclusions are sourced from the built-in exclusions and the
-// specified match list. Python environment directories are also excluded.
+// NewMatchingWalker returns a Walker that only iterates over matching files and directories.
+// All files are included, except exclusions sourced from the built-in exclusion list
+// and Python environment directories.
 func NewMatchingWalker(dir util.AbsolutePath) util.Walker {
 	patterns := append([]string{"/**"}, StandardExclusions...)
 	matchList, err := NewMatchList(dir, patterns)

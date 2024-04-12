@@ -36,7 +36,7 @@ func (s *WalkerSuite) SetupTest() {
 	cwd.MkdirAll(0700)
 }
 
-func (s *WalkerSuite) TestNewExcludingWalker() {
+func (s *WalkerSuite) TestNewMatchingWalker() {
 	w := NewMatchingWalker(s.cwd)
 	s.NotNil(w)
 }
@@ -55,8 +55,13 @@ func (s *WalkerSuite) TestWalk() {
 	includedDir := baseDir.Join("included")
 	err = includedDir.MkdirAll(0777)
 	s.NoError(err)
+
 	includedFile := includedDir.Join("includeme")
 	err = includedFile.WriteFile([]byte("this is an included file"), 0600)
+	s.NoError(err)
+
+	// This will be excluded by default
+	err = baseDir.Join("manifest.json").WriteFile(nil, 0777)
 	s.NoError(err)
 
 	w := NewMatchingWalker(s.cwd)

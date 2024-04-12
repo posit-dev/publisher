@@ -43,9 +43,9 @@ func NewBundler(path util.AbsolutePath, manifest *Manifest, pythonRequirements [
 		dir = path.Dir()
 		filename = path.Base()
 	}
-	excluder := matcher.NewMatchingWalker(dir)
+	matcher := matcher.NewMatchingWalker(dir)
 	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
-	symlinkWalker := util.NewSymlinkWalker(excluder, log)
+	symlinkWalker := util.NewSymlinkWalker(matcher, log)
 
 	return &bundler{
 		manifest:           manifest,
