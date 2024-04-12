@@ -29,7 +29,7 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(path util.AbsolutePath, manifest *Manifest, log logging.Logger) (*bundler, error) {
+func NewBundler(path util.AbsolutePath, manifest *Manifest, filePatterns []string, log logging.Logger) (*bundler, error) {
 	var dir util.AbsolutePath
 	var filename string
 	isDir, err := path.IsDir()
@@ -44,7 +44,7 @@ func NewBundler(path util.AbsolutePath, manifest *Manifest, log logging.Logger) 
 		filename = path.Base()
 	}
 	// TODO: pass cfg.Files to NewMatchingWalker
-	matcher, err := matcher.NewMatchingWalker([]string{"/**"}, dir)
+	matcher, err := matcher.NewMatchingWalker(filePatterns, dir)
 	if err != nil {
 		return nil, err
 	}
