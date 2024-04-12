@@ -25,7 +25,7 @@ type File struct {
 	Abs              string           `json:"abs"`              // the absolute path
 }
 
-func CreateFile(root util.AbsolutePath, path util.AbsolutePath, exclusion *matcher.Pattern) (*File, error) {
+func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.Pattern) (*File, error) {
 	rel, err := path.Rel(root)
 	if err != nil {
 		return nil, err
@@ -50,13 +50,13 @@ func CreateFile(root util.AbsolutePath, path util.AbsolutePath, exclusion *match
 		ModifiedDatetime: info.ModTime().Format(time.RFC3339),
 		IsDir:            info.Mode().IsDir(),
 		IsRegular:        info.Mode().IsRegular(),
-		Exclusion:        exclusion,
+		Exclusion:        match,
 		Files:            make([]*File, 0),
 		Abs:              path.String(),
 	}, nil
 }
 
-func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, ignore matcher.IgnoreList) (*File, error) {
+func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList matcher.MatchList) (*File, error) {
 
 	// if the path is the same as the file's absolute path
 	if f.Abs == path.String() {
@@ -77,9 +77,9 @@ func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, ignore mat
 		}
 
 		// otherwise, create it
-		exclusion := ignore.Match(path)
+		match := matchList.Match(path)
 
-		child, err := CreateFile(root, path, exclusion)
+		child, err := CreateFile(root, path, match)
 		if err != nil {
 			return nil, err
 		}
@@ -90,11 +90,11 @@ func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, ignore mat
 	}
 
 	// otherwise, create the parent file
-	parent, err := f.insert(root, pathdir, ignore)
+	parent, err := f.insert(root, pathdir, matchList)
 	if err != nil {
 		return nil, err
 	}
 
 	// then insert this into the parent
-	return parent.insert(root, path, ignore)
+	return parent.insert(root, path, matchList)
 }

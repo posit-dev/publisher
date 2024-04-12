@@ -15,8 +15,8 @@ type MockFilesService struct {
 	files.FilesService
 }
 
-func (m *MockFilesService) GetFile(p util.AbsolutePath, ignore matcher.IgnoreList) (*files.File, error) {
-	args := m.Called(p, ignore)
+func (m *MockFilesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) (*files.File, error) {
+	args := m.Called(p, matchList)
 	return args.Get(0).(*files.File), args.Error(1)
 }
 

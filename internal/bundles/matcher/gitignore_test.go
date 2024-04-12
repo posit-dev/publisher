@@ -11,69 +11,60 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type GitIgnoreSuite struct {
+type MatchListSuite struct {
 	utiltest.Suite
 
 	fs  afero.Fs
 	cwd util.AbsolutePath
 }
 
-func TestGitIgnoreSuite(t *testing.T) {
-	suite.Run(t, new(GitIgnoreSuite))
+func TestMatchListSuite(t *testing.T) {
+	suite.Run(t, new(MatchListSuite))
 }
 
-func (s *GitIgnoreSuite) SetupTest() {
+func (s *MatchListSuite) SetupTest() {
 	s.fs = afero.NewMemMapFs()
 	cwd, err := util.Getwd(s.fs)
 	s.NoError(err)
 	s.cwd = cwd
-
-	// Create a virtual version of the cwd because the
-	// matcher.IgnoreList uses relative paths internally
-	// and expects to be able to call Abs on them.
 	cwd.MkdirAll(0700)
 }
 
-func (s *GitIgnoreSuite) TestNew() {
-	ign, err := NewIgnoreList(s.cwd, []string{"*.bak"})
+func (s *MatchListSuite) TestNew() {
+	matchList, err := NewMatchList(s.cwd, []string{"*.bak"})
 	s.NoError(err)
-	s.NotNil(ign)
-	s.NotNil(ign.files)
+	s.NotNil(matchList)
+	s.NotNil(matchList.files)
 }
 
-func (s *GitIgnoreSuite) TestNewError() {
-	ign, err := NewIgnoreList(s.cwd, []string{"[A-"})
+func (s *MatchListSuite) TestNewError() {
+	matchList, err := NewMatchList(s.cwd, []string{"[A-"})
 	s.NotNil(err)
-	s.Nil(ign)
+	s.Nil(matchList)
 }
 
-func (s *GitIgnoreSuite) TestMatch() {
+func (s *MatchListSuite) TestMatch() {
 	err := s.cwd.Join(".git").MkdirAll(0700)
 	s.NoError(err)
 
-	ign, err := NewIgnoreList(s.cwd, []string{"*.bak", "ignoredir/"})
+	matchList, err := NewMatchList(s.cwd, []string{"/**", "!*.bak", "!ignoredir/"})
 	s.NoError(err)
 
-	// Match returns nil if no match
-	m := ign.Match(s.cwd.Join("app.py"))
-	s.Nil(m)
-
-	// Non-file matches don't include file info
-	m = ign.Match(s.cwd.Join("app.py.bak"))
+	m := matchList.Match(s.cwd.Join("app.py"))
 	s.NotNil(m)
 	s.Equal(MatchSourceBuiltIn, m.Source)
-	s.Equal("*.bak", m.Pattern)
+	s.Equal("/**", m.Pattern)
 	s.Equal("", m.FilePath.String())
 	s.Equal(1, m.Line)
+
+	// Non-file matches don't include file info
+	m = matchList.Match(s.cwd.Join("app.py.bak"))
+	s.Nil(m)
 
 	ignoredir := s.cwd.Join("ignoredir")
 	err = ignoredir.MkdirAll(0700)
 	s.NoError(err)
 
-	m = ign.Match(ignoredir)
-	s.NotNil(m)
-	s.Equal(MatchSourceBuiltIn, m.Source)
-	s.Equal("ignoredir/", m.Pattern)
-	s.Equal("", m.FilePath.String())
-	s.Equal(2, m.Line)
+	m = matchList.Match(ignoredir)
+	s.Nil(m)
 }

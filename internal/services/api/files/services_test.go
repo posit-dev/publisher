@@ -50,10 +50,10 @@ func (s *ServicesSuite) TestGetFile() {
 	base := s.cwd
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := matcher.NewIgnoreList(base, nil)
+	matchList, err := matcher.NewMatchList(base, nil)
 	s.NoError(err)
 
-	file, err := service.GetFile(base, ignore)
+	file, err := service.GetFile(base, matchList)
 	s.NoError(err)
 	s.NotNil(file)
 }
@@ -64,10 +64,10 @@ func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := matcher.NewIgnoreList(base, nil)
+	matchList, err := matcher.NewMatchList(base, nil)
 	s.NoError(err)
 
-	file, err := service.GetFile(base, ignore)
+	file, err := service.GetFile(base, matchList)
 	s.NoError(err)
 	s.NotNil(file)
 }
@@ -78,10 +78,10 @@ func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := matcher.NewIgnoreList(base, nil)
+	matchList, err := matcher.NewMatchList(base, nil)
 	s.NoError(err)
 
-	file, err := service.GetFile(base, ignore)
+	file, err := service.GetFile(base, matchList)
 	s.NoError(err)
 	s.NotNil(file)
 }

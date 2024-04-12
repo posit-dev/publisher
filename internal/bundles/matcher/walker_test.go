@@ -31,13 +31,13 @@ func (s *WalkerSuite) SetupTest() {
 
 	// Create a virtual version of the cwd so NewWalker
 	// can Chdir there. This is needed because the
-	// matcher.IgnoreList uses relative paths internally
+	// matcher.MatchList uses relative paths internally
 	// and expects to be able to call Abs on them.
 	cwd.MkdirAll(0700)
 }
 
 func (s *WalkerSuite) TestNewExcludingWalker() {
-	w := NewExcludingWalker(s.cwd)
+	w := NewMatchingWalker(s.cwd)
 	s.NotNil(w)
 }
 
@@ -59,7 +59,7 @@ func (s *WalkerSuite) TestWalk() {
 	err = includedFile.WriteFile([]byte("this is an included file"), 0600)
 	s.NoError(err)
 
-	w := NewExcludingWalker(s.cwd)
+	w := NewMatchingWalker(s.cwd)
 	s.NotNil(w)
 
 	seen := []util.RelativePath{}

@@ -43,7 +43,7 @@ func NewBundler(path util.AbsolutePath, manifest *Manifest, pythonRequirements [
 		dir = path.Dir()
 		filename = path.Base()
 	}
-	excluder := matcher.NewExcludingWalker(dir)
+	excluder := matcher.NewMatchingWalker(dir)
 	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
 	symlinkWalker := util.NewSymlinkWalker(excluder, log)
 
@@ -60,7 +60,7 @@ func NewBundler(path util.AbsolutePath, manifest *Manifest, pythonRequirements [
 type bundler struct {
 	baseDir            util.AbsolutePath // Directory being bundled
 	filename           string            // Primary file being deployed
-	walker             util.Walker       // Ignore patterns from CLI and ignore files
+	walker             util.Walker       // Only walks files matching patterns from the configuration
 	pythonRequirements []byte            // Pacakges to write to requirements.txt if not already present
 	manifest           *Manifest         // Manifest describing the bundle, if provided
 	log                logging.Logger

@@ -9,28 +9,28 @@ import (
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
-type IgnoreList interface {
+type MatchList interface {
 	AddFile(path util.AbsolutePath) error
 	Match(path util.AbsolutePath) *Pattern
 	Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error
 }
 
-type defaultIgnoreList struct {
-	files []*IgnoreFile
+type defaultMatchList struct {
+	files []*MatchFile
 }
 
-func NewIgnoreList(base util.AbsolutePath, builtins []string) (*defaultIgnoreList, error) {
-	f, err := NewBuiltinIgnoreFile(base, builtins)
+func NewMatchList(base util.AbsolutePath, builtins []string) (*defaultMatchList, error) {
+	f, err := NewBuiltinMatchFile(base, builtins)
 	if err != nil {
 		return nil, err
 	}
-	return &defaultIgnoreList{
-		files: []*IgnoreFile{f},
+	return &defaultMatchList{
+		files: []*MatchFile{f},
 	}, nil
 }
 
-func (l *defaultIgnoreList) AddFile(path util.AbsolutePath) error {
-	newFile, err := NewIgnoreFile(path)
+func (l *defaultMatchList) AddFile(path util.AbsolutePath) error {
+	newFile, err := NewMatchFile(path)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (l *defaultIgnoreList) AddFile(path util.AbsolutePath) error {
 	return nil
 }
 
-func (l *defaultIgnoreList) Match(filePath util.AbsolutePath) *Pattern {
+func (l *defaultMatchList) Match(filePath util.AbsolutePath) *Pattern {
 	var match *Pattern
 
 	pathString := filePath.ToSlash()
@@ -47,8 +47,8 @@ func (l *defaultIgnoreList) Match(filePath util.AbsolutePath) *Pattern {
 		pathString += "/"
 	}
 
-	for _, ignoreFile := range l.files {
-		fileMatch := ignoreFile.Match(pathString)
+	for _, f := range l.files {
+		fileMatch := f.Match(pathString)
 		if fileMatch != nil {
 			match = fileMatch
 		}
@@ -60,13 +60,13 @@ func (l *defaultIgnoreList) Match(filePath util.AbsolutePath) *Pattern {
 	return match
 }
 
-func (l *defaultIgnoreList) Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
+func (l *defaultMatchList) Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
 	return root.Walk(
 		func(path util.AbsolutePath, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			if l.Match(path) != nil {
+			if l.Match(path) == nil {
 				if info.IsDir() {
 					return filepath.SkipDir
 				}

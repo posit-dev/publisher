@@ -35,13 +35,13 @@ func GetFileHandlerFunc(base util.AbsolutePath, filesService files.FilesService,
 			w.Write([]byte(http.StatusText(http.StatusForbidden)))
 			return
 		}
-		ignore, err := matcher.NewIgnoreList(base, matcher.StandardIgnores)
+		matchList, err := matcher.NewMatchList(base, matcher.StandardExclusions)
 		if err != nil {
 			InternalError(w, r, log, err)
 			return
 		}
 
-		file, err := filesService.GetFile(p, ignore)
+		file, err := filesService.GetFile(p, matchList)
 		if err != nil {
 			InternalError(w, r, log, err)
 			return
