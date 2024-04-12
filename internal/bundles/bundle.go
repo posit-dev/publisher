@@ -43,7 +43,12 @@ func NewBundler(path util.AbsolutePath, manifest *Manifest, pythonRequirements [
 		dir = path.Dir()
 		filename = path.Base()
 	}
-	matcher := matcher.NewMatchingWalker(dir)
+	// TODO: pass cfg.Files to NewMatchingWalker
+	matcher, err := matcher.NewMatchingWalker([]string{"/**"}, dir)
+	if err != nil {
+		return nil, err
+	}
+
 	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
 	symlinkWalker := util.NewSymlinkWalker(matcher, log)
 

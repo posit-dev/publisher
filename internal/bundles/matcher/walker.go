@@ -67,13 +67,13 @@ func (i *matchingWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc) 
 // NewMatchingWalker returns a Walker that only iterates over matching files and directories.
 // All files are included, except exclusions sourced from the built-in exclusion list
 // and Python environment directories.
-func NewMatchingWalker(dir util.AbsolutePath) util.Walker {
-	patterns := append([]string{"/**"}, StandardExclusions...)
+func NewMatchingWalker(configuredMatches []string, dir util.AbsolutePath) (util.Walker, error) {
+	patterns := append(configuredMatches, StandardExclusions...)
 	matchList, err := NewMatchList(dir, patterns)
 	if err != nil {
-		panic("built-in exclusion list must compile successfully")
+		return nil, err
 	}
 	return &matchingWalker{
 		matchList: matchList,
-	}
+	}, nil
 }

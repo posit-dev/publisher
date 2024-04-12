@@ -37,7 +37,8 @@ func (s *WalkerSuite) SetupTest() {
 }
 
 func (s *WalkerSuite) TestNewMatchingWalker() {
-	w := NewMatchingWalker(s.cwd)
+	w, err := NewMatchingWalker(nil, s.cwd)
+	s.NoError(err)
 	s.NotNil(w)
 }
 
@@ -64,22 +65,23 @@ func (s *WalkerSuite) TestWalk() {
 	err = baseDir.Join("manifest.json").WriteFile(nil, 0777)
 	s.NoError(err)
 
-	w := NewMatchingWalker(s.cwd)
+	w, err := NewMatchingWalker([]string{"/**"}, s.cwd)
+	s.NoError(err)
 	s.NotNil(w)
 
-	seen := []util.RelativePath{}
+	seen := []string{}
 	err = w.Walk(baseDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		s.NoError(err)
 		relPath, err := path.Rel(s.cwd)
 		s.NoError(err)
-		seen = append(seen, relPath)
+		seen = append(seen, relPath.String())
 		return nil
 	})
 	s.NoError(err)
 	dirPath := util.NewRelativePath("test", s.fs).Join("dir")
-	s.Equal([]util.RelativePath{
-		dirPath,
-		dirPath.Join("included"),
-		dirPath.Join("included", "includeme"),
+	s.Equal([]string{
+		dirPath.String(),
+		dirPath.Join("included").String(),
+		dirPath.Join("included", "includeme").String(),
 	}, seen)
 }
