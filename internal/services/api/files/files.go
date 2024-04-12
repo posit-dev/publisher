@@ -5,27 +5,27 @@ package files
 import (
 	"time"
 
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/bundles/matcher"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type File struct {
 	// public fields
-	Id               string             `json:"id"`               // a logical (non-universally-unique) identifier
-	FileType         fileType           `json:"fileType"`         // the file type
-	Base             string             `json:"base"`             // the base name
-	Exclusion        *gitignore.Pattern `json:"exclusion"`        // object describing the reason for exclusion, null if not excluded
-	Files            []*File            `json:"files"`            // an array of objects of the same type for each file within the directory.
-	IsDir            bool               `json:"isDir"`            // true if the file is a directory
-	IsEntrypoint     bool               `json:"isEntrypoint"`     // true if the file is an entrypoint
-	IsRegular        bool               `json:"isFile"`           // true if the file is a regular file
-	ModifiedDatetime string             `json:"modifiedDatetime"` // the last modified datetime
-	Rel              string             `json:"rel"`              // the relative path to the project root, which is used as the identifier
-	Size             int64              `json:"size"`             // nullable; length in bytes for regular files; system-dependent
-	Abs              string             `json:"abs"`              // the absolute path
+	Id               string           `json:"id"`               // a logical (non-universally-unique) identifier
+	FileType         fileType         `json:"fileType"`         // the file type
+	Base             string           `json:"base"`             // the base name
+	Exclusion        *matcher.Pattern `json:"exclusion"`        // object describing the reason for exclusion, null if not excluded
+	Files            []*File          `json:"files"`            // an array of objects of the same type for each file within the directory.
+	IsDir            bool             `json:"isDir"`            // true if the file is a directory
+	IsEntrypoint     bool             `json:"isEntrypoint"`     // true if the file is an entrypoint
+	IsRegular        bool             `json:"isFile"`           // true if the file is a regular file
+	ModifiedDatetime string           `json:"modifiedDatetime"` // the last modified datetime
+	Rel              string           `json:"rel"`              // the relative path to the project root, which is used as the identifier
+	Size             int64            `json:"size"`             // nullable; length in bytes for regular files; system-dependent
+	Abs              string           `json:"abs"`              // the absolute path
 }
 
-func CreateFile(root util.AbsolutePath, path util.AbsolutePath, exclusion *gitignore.Pattern) (*File, error) {
+func CreateFile(root util.AbsolutePath, path util.AbsolutePath, exclusion *matcher.Pattern) (*File, error) {
 	rel, err := path.Rel(root)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func CreateFile(root util.AbsolutePath, path util.AbsolutePath, exclusion *gitig
 	}, nil
 }
 
-func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, ignore gitignore.IgnoreList) (*File, error) {
+func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, ignore matcher.IgnoreList) (*File, error) {
 
 	// if the path is the same as the file's absolute path
 	if f.Abs == path.String() {

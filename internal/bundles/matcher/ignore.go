@@ -1,4 +1,4 @@
-package gitignore
+package matcher
 
 import (
 	"os"

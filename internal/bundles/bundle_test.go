@@ -156,7 +156,7 @@ func (s *BundlerSuite) SetupTest() {
 	s.cwd = cwd
 	// Create a virtual version of the cwd so NewBundleFrom*
 	// can Chdir there. This is needed because the
-	// gitignore.IgnoreList uses relative paths internally
+	// matcher.IgnoreList uses relative paths internally
 	// and expects to be able to call Abs on them.
 	s.cwd.MkdirAll(0700)
 }

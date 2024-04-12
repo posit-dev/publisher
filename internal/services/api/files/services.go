@@ -6,13 +6,13 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/bundles/matcher"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type FilesService interface {
-	GetFile(path util.AbsolutePath, ignore gitignore.IgnoreList) (*File, error)
+	GetFile(path util.AbsolutePath, ignore matcher.IgnoreList) (*File, error)
 }
 
 func CreateFilesService(base util.AbsolutePath, log logging.Logger) FilesService {
@@ -27,7 +27,7 @@ type filesService struct {
 	log  logging.Logger
 }
 
-func (s filesService) GetFile(p util.AbsolutePath, ignore gitignore.IgnoreList) (*File, error) {
+func (s filesService) GetFile(p util.AbsolutePath, ignore matcher.IgnoreList) (*File, error) {
 	oldWD, err := util.Chdir(p.String())
 	if err != nil {
 		return nil, err

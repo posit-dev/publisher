@@ -12,7 +12,7 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/bundles/matcher"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
@@ -43,7 +43,7 @@ func NewBundler(path util.AbsolutePath, manifest *Manifest, pythonRequirements [
 		dir = path.Dir()
 		filename = path.Base()
 	}
-	excluder := gitignore.NewExcludingWalker(dir)
+	excluder := matcher.NewExcludingWalker(dir)
 	log = log.WithArgs(logging.LogKeyOp, events.PublishCreateBundleOp)
 	symlinkWalker := util.NewSymlinkWalker(excluder, log)
 

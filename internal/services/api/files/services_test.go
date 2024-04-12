@@ -5,7 +5,7 @@ package files
 import (
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/bundles/matcher"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -50,7 +50,7 @@ func (s *ServicesSuite) TestGetFile() {
 	base := s.cwd
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := gitignore.NewIgnoreList(base, nil)
+	ignore, err := matcher.NewIgnoreList(base, nil)
 	s.NoError(err)
 
 	file, err := service.GetFile(base, ignore)
@@ -64,7 +64,7 @@ func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := gitignore.NewIgnoreList(base, nil)
+	ignore, err := matcher.NewIgnoreList(base, nil)
 	s.NoError(err)
 
 	file, err := service.GetFile(base, ignore)
@@ -78,7 +78,7 @@ func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
 
 	service := CreateFilesService(base, s.log)
 	s.NotNil(service)
-	ignore, err := gitignore.NewIgnoreList(base, nil)
+	ignore, err := matcher.NewIgnoreList(base, nil)
 	s.NoError(err)
 
 	file, err := service.GetFile(base, ignore)

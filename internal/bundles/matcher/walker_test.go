@@ -1,4 +1,4 @@
-package gitignore
+package matcher
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -31,7 +31,7 @@ func (s *WalkerSuite) SetupTest() {
 
 	// Create a virtual version of the cwd so NewWalker
 	// can Chdir there. This is needed because the
-	// gitignore.IgnoreList uses relative paths internally
+	// matcher.IgnoreList uses relative paths internally
 	// and expects to be able to call Abs on them.
 	cwd.MkdirAll(0700)
 }

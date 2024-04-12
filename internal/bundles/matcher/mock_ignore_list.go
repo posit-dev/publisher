@@ -1,6 +1,6 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-package gitignore
+package matcher
 
 import (
 	"github.com/rstudio/connect-client/internal/util"
