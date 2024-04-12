@@ -14,7 +14,7 @@ export class Requirements {
   // 200 - success
   // 404 - no requirements file found
   // 500 - internal server error
-  async getAll() {
+  getAll() {
     return this.client.get<RequirementsResponse>("requirements");
   }
 
@@ -22,7 +22,7 @@ export class Requirements {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  async create(saveName: string | undefined) {
+  create(saveName: string | undefined) {
     return this.client.post<void>("requirements", { saveName });
   }
 }

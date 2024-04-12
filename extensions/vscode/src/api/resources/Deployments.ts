@@ -14,7 +14,7 @@ export class Deployments {
   // Returns:
   // 200 - success
   // 500 - internal server error
-  async getAll() {
+  getAll() {
     return this.client.get<Array<AllDeploymentTypes>>("/deployments");
   }
 
@@ -22,7 +22,7 @@ export class Deployments {
   // 200 - success
   // 404 - not found
   // 500 - internal server error
-  async get(id: string) {
+  get(id: string) {
     const encodedId = encodeURIComponent(id);
     return this.client.get<AllDeploymentTypes>(`deployments/${encodedId}`);
   }
@@ -33,11 +33,7 @@ export class Deployments {
   // 409 - conflict
   // 500 - internal server error
   // Errors returned through event stream
-  async createNew(
-    accountName?: string,
-    configName?: string,
-    saveName?: string,
-  ) {
+  createNew(accountName?: string, configName?: string, saveName?: string) {
     const params = {
       account: accountName,
       config: configName,

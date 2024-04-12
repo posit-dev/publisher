@@ -15,7 +15,7 @@ export class Files {
   // 200 - success
   // 403 - pathname is not safe - forbidden
   // 500 - internal server error
-  async get() {
+  get() {
     return this.client.get<DeploymentFile>("/files");
   }
 }

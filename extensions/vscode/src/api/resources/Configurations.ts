@@ -18,7 +18,7 @@ export class Configurations {
   // Returns:
   // 200 - success
   // 500 - internal server error
-  async getAll() {
+  getAll() {
     return this.client.get<Array<Configuration | ConfigurationError>>(
       "/configurations",
     );
@@ -28,7 +28,7 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  async createOrUpdate(configName: string, cfg: ConfigurationDetails) {
+  createOrUpdate(configName: string, cfg: ConfigurationDetails) {
     const encodedName = encodeURIComponent(configName);
     return this.client.put<Configuration>(`configurations/${encodedName}`, cfg);
   }
@@ -37,7 +37,7 @@ export class Configurations {
   // 204 - success (no response)
   // 404 - not found
   // 500 - internal server error
-  async delete(configName: string) {
+  delete(configName: string) {
     const encodedName = encodeURIComponent(configName);
     return this.client.delete(`configurations/${encodedName}`);
   }
@@ -47,7 +47,7 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  async inspect() {
+  inspect() {
     return this.client.post<ConfigurationDetails[]>("/inspect");
   }
 }

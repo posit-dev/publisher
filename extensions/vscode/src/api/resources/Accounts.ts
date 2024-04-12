@@ -14,7 +14,7 @@ export class Accounts {
   // Returns:
   // 200 - success
   // 500 - internal server error
-  async getAll() {
+  getAll() {
     return this.client.get<Array<Account>>("/accounts");
   }
 
@@ -22,7 +22,7 @@ export class Accounts {
   // 200 - success
   // 404 - account not found
   // 500 - internal server error
-  async get(accountName: string) {
+  get(accountName: string) {
     const encodedAccountName = encodeURIComponent(accountName);
     return this.client.get<Account>(`/accounts/${encodedAccountName}`);
   }
