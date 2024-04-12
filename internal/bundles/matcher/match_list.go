@@ -53,10 +53,6 @@ func (l *defaultMatchList) Match(filePath util.AbsolutePath) *Pattern {
 			match = fileMatch
 		}
 	}
-	if match == nil || match.Inverted {
-		// No match, or the match is inverted so the file should not be ignored.
-		return nil
-	}
 	return match
 }
 
@@ -66,7 +62,8 @@ func (l *defaultMatchList) Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc
 			if err != nil {
 				return err
 			}
-			if l.Match(path) == nil {
+			m := l.Match(path)
+			if m == nil || m.Inverted {
 				if info.IsDir() {
 					return filepath.SkipDir
 				}

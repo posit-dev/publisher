@@ -32,9 +32,10 @@ func (s *MatchSuite) SetupTest() {
 }
 
 type testCase struct {
-	pattern string
-	path    string
-	matches bool
+	pattern  string
+	path     string
+	matches  bool
+	inverted bool
 }
 
 func (s *MatchSuite) TestFiles() {
@@ -92,6 +93,12 @@ func (s *MatchSuite) runTestCases(cases []testCase) {
 
 		if test.matches {
 			s.NotNil(m, "pattern %s should have matched path %s (%s)", test.pattern, test.path, absPath)
+
+			if test.inverted {
+				s.True(m.Inverted, "pattern match should have been inverted: %s with %s (%s)", test.pattern, test.path, absPath)
+			} else {
+				s.False(m.Inverted, "pattern match should not have been inverted: %s with %s (%s)", test.pattern, test.path, absPath)
+			}
 		} else {
 			s.Nil(m, "pattern %s should not have matched path %s (%s)", test.pattern, test.path, absPath)
 		}
@@ -99,153 +106,153 @@ func (s *MatchSuite) runTestCases(cases []testCase) {
 }
 
 var fileTestCases = []testCase{
-	{"app.py", "app.py", true},
-	{"app.py", "dir/app.py", true},
-	{"app.py", "dir/subdir/app.py", true},
-	{"app.py", "foo.py", false},
+	{"app.py", "app.py", true, false},
+	{"app.py", "dir/app.py", true, false},
+	{"app.py", "dir/subdir/app.py", true, false},
+	{"app.py", "foo.py", false, false},
 
-	{"/app.py", "app.py", true},
-	{"/app.py", "dir/app.py", false},
-	{"/app.py", "dir/subdir/app.py", false},
+	{"/app.py", "app.py", true, false},
+	{"/app.py", "dir/app.py", false, false},
+	{"/app.py", "dir/subdir/app.py", false, false},
 
-	{"*.py", "app.py", true},
-	{"*.py", "dir/app.py", true},
-	{"*.py", "dir/subdir/app.py", true},
-	{"*.py", "foo.py", true},
-	{"*.py", "app.json", false},
+	{"*.py", "app.py", true, false},
+	{"*.py", "dir/app.py", true, false},
+	{"*.py", "dir/subdir/app.py", true, false},
+	{"*.py", "foo.py", true, false},
+	{"*.py", "app.json", false, false},
 
-	{"dir/app.py", "dir/app.py", true},
-	{"dir/app.py", "app.py", false},
-	{"dir/app.py", "dir/subdir/app.py", false},
-	{"dir/app.py", "subdir/dir/app.py", false},
-	{"dir/app.py", "dir/foo.py", false},
-	{"dir/app.py", "dir/app.json", false},
+	{"dir/app.py", "dir/app.py", true, false},
+	{"dir/app.py", "app.py", false, false},
+	{"dir/app.py", "dir/subdir/app.py", false, false},
+	{"dir/app.py", "subdir/dir/app.py", false, false},
+	{"dir/app.py", "dir/foo.py", false, false},
+	{"dir/app.py", "dir/app.json", false, false},
 
-	{"dir/*.py", "dir/app.py", true},
-	{"dir/*.py", "app.py", false},
-	{"dir/*.py", "dir/subdir/app.py", false},
-	{"dir/*.py", "subdir/dir/app.py", false},
-	{"dir/*.py", "dir/foo.py", true},
-	{"dir/*.py", "dir/app.json", false},
+	{"dir/*.py", "dir/app.py", true, false},
+	{"dir/*.py", "app.py", false, false},
+	{"dir/*.py", "dir/subdir/app.py", false, false},
+	{"dir/*.py", "subdir/dir/app.py", false, false},
+	{"dir/*.py", "dir/foo.py", true, false},
+	{"dir/*.py", "dir/app.json", false, false},
 
-	{"**/app.py", "dir/app.py", true},
-	{"**/app.py", "app.py", true},
-	{"**/app.py", "dir/subdir/app.py", true},
-	{"**/app.py", "subdir/dir/app.py", true},
-	{"**/app.py", "dir/foo.py", false},
-	{"**/app.py", "dir/app.json", false},
+	{"**/app.py", "dir/app.py", true, false},
+	{"**/app.py", "app.py", true, false},
+	{"**/app.py", "dir/subdir/app.py", true, false},
+	{"**/app.py", "subdir/dir/app.py", true, false},
+	{"**/app.py", "dir/foo.py", false, false},
+	{"**/app.py", "dir/app.json", false, false},
 
-	{"**/*.py", "dir/app.py", true},
-	{"**/*.py", "app.py", true},
-	{"**/*.py", "dir/subdir/app.py", true},
-	{"**/*.py", "subdir/dir/app.py", true},
-	{"**/*.py", "dir/foo.py", true},
-	{"**/*.py", "dir/app.json", false},
+	{"**/*.py", "dir/app.py", true, false},
+	{"**/*.py", "app.py", true, false},
+	{"**/*.py", "dir/subdir/app.py", true, false},
+	{"**/*.py", "subdir/dir/app.py", true, false},
+	{"**/*.py", "dir/foo.py", true, false},
+	{"**/*.py", "dir/app.json", false, false},
 
-	{"dir/**/app.py", "dir/app.py", true},
-	{"dir/**/app.py", "app.py", false},
-	{"dir/**/app.py", "dir/subdir/app.py", true},
-	{"dir/**/app.py", "subdir/dir/app.py", false},
-	{"dir/**/app.py", "dir/foo.py", false},
-	{"dir/**/app.py", "dir/app.json", false},
+	{"dir/**/app.py", "dir/app.py", true, false},
+	{"dir/**/app.py", "app.py", false, false},
+	{"dir/**/app.py", "dir/subdir/app.py", true, false},
+	{"dir/**/app.py", "subdir/dir/app.py", false, false},
+	{"dir/**/app.py", "dir/foo.py", false, false},
+	{"dir/**/app.py", "dir/app.json", false, false},
 
-	{"dir/**/*.py", "dir/app.py", true},
-	{"dir/**/*.py", "app.py", false},
-	{"dir/**/*.py", "dir/subdir/app.py", true},
-	{"dir/**/*.py", "subdir/dir/app.py", false},
-	{"dir/**/*.py", "dir/app.json", false},
+	{"dir/**/*.py", "dir/app.py", true, false},
+	{"dir/**/*.py", "app.py", false, false},
+	{"dir/**/*.py", "dir/subdir/app.py", true, false},
+	{"dir/**/*.py", "subdir/dir/app.py", false, false},
+	{"dir/**/*.py", "dir/app.json", false, false},
 
-	{"**/dir/app.py", "dir/app.py", true},
-	{"**/dir/app.py", "app.py", false},
-	{"**/dir/app.py", "dir/subdir/app.py", false},
-	{"**/dir/app.py", "subdir/dir/app.py", true},
-	{"**/dir/app.py", "dir/foo.py", false},
-	{"**/dir/app.py", "dir/app.json", false},
+	{"**/dir/app.py", "dir/app.py", true, false},
+	{"**/dir/app.py", "app.py", false, false},
+	{"**/dir/app.py", "dir/subdir/app.py", false, false},
+	{"**/dir/app.py", "subdir/dir/app.py", true, false},
+	{"**/dir/app.py", "dir/foo.py", false, false},
+	{"**/dir/app.py", "dir/app.json", false, false},
 
-	{"**/dir/*.py", "dir/app.py", true},
-	{"**/dir/*.py", "app.py", false},
-	{"**/dir/*.py", "dir/subdir/app.py", false},
-	{"**/dir/*.py", "subdir/dir/app.py", true},
-	{"**/dir/*.py", "dir/app.json", false},
+	{"**/dir/*.py", "dir/app.py", true, false},
+	{"**/dir/*.py", "app.py", false, false},
+	{"**/dir/*.py", "dir/subdir/app.py", false, false},
+	{"**/dir/*.py", "subdir/dir/app.py", true, false},
+	{"**/dir/*.py", "dir/app.json", false, false},
 }
 
 var dirTestCases = []testCase{
-	{"dir/", "dir", false},
-	{"dir/", "dir/", true},
-	{"dir/", "dir/app.py", true},
-	{"dir/", "dir/subdir/", true},
-	{"dir/", "dir/subdir/app.py", true},
-	{"dir/", "subdir/dir/", true},
-	{"dir/", "subdir/dir/app.py", true},
+	{"dir/", "dir", false, false},
+	{"dir/", "dir/", true, false},
+	{"dir/", "dir/app.py", true, false},
+	{"dir/", "dir/subdir/", true, false},
+	{"dir/", "dir/subdir/app.py", true, false},
+	{"dir/", "subdir/dir/", true, false},
+	{"dir/", "subdir/dir/app.py", true, false},
 
-	{"dir/", "foo/", false},
-	{"dir/", "foo/app.py", false},
-	{"dir/", "foo/subdir/", false},
-	{"dir/", "foo/subdir/app.py", false},
-	{"dir/", "subdir/foo/", false},
-	{"dir/", "subdir/foo/app.py", false},
+	{"dir/", "foo/", false, false},
+	{"dir/", "foo/app.py", false, false},
+	{"dir/", "foo/subdir/", false, false},
+	{"dir/", "foo/subdir/app.py", false, false},
+	{"dir/", "subdir/foo/", false, false},
+	{"dir/", "subdir/foo/app.py", false, false},
 
-	{"/dir/", "dir/", true},
-	{"/dir/", "dir/app.py", true},
-	{"/dir/", "dir/subdir/", true},
-	{"/dir/", "dir/subdir/app.py", true},
-	{"/dir/", "subdir/dir/", false},
-	{"/dir/", "subdir/dir/app.py", false},
+	{"/dir/", "dir/", true, false},
+	{"/dir/", "dir/app.py", true, false},
+	{"/dir/", "dir/subdir/", true, false},
+	{"/dir/", "dir/subdir/app.py", true, false},
+	{"/dir/", "subdir/dir/", false, false},
+	{"/dir/", "subdir/dir/app.py", false, false},
 
-	{"dir", "dir/", true},
-	{"dir", "dir/app.py", true},
-	{"dir", "dir/subdir/", true},
-	{"dir", "dir/subdir/app.py", true},
-	{"dir", "subdir/dir/", true},
-	{"dir", "subdir/dir/app.py", true},
+	{"dir", "dir/", true, false},
+	{"dir", "dir/app.py", true, false},
+	{"dir", "dir/subdir/", true, false},
+	{"dir", "dir/subdir/app.py", true, false},
+	{"dir", "subdir/dir/", true, false},
+	{"dir", "subdir/dir/app.py", true, false},
 
 	// From the gitignore docs: exclude everything except directory foo/bar
-	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/a", true},
-	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/foo", true},
-	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/foo/a", true},
-	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/foo/bar", false},
+	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/a", true, false},
+	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/foo", true, false},
+	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/foo/a", true, false},
+	{"/*\n!/foo\n/foo/*\n!/foo/bar", "/foo/bar", true, true},
 }
 
 var invertedTestCases = []testCase{
-	{"app.py\n!app.py", "app.py", false},
-	{"!app.py\napp.py", "app.py", true},
-	{"*.py\n!app.py", "app.py", false},
-	{"!*.py\napp.py", "app.py", true},
-	{"app.py\n!*.py", "app.py", false},
-	{"!app.py\n*.py", "app.py", true},
-	{"**/a/b\n!b", "/subdir/a/b", false},
-	{"**/a/b\n!/a", "/subdir/a/b", true},
-	{"**/a/b\n!/**/a", "/subdir/a/b", false},
-	{"app.py\n!app.py\napp.py", "app.py", true},
-	{"app.py\napp.py\n!app.py", "app.py", false},
-	{"!app.py\n!app.py\n*.py", "app.py", true},
-	{"!app.py\n!*.py\n*.py", "app.py", true},
-	{"!app.py\n!*.py\napp.py", "app.py", true},
+	{"app.py\n!app.py", "app.py", true, true},
+	{"!app.py\napp.py", "app.py", true, false},
+	{"*.py\n!app.py", "app.py", true, true},
+	{"!*.py\napp.py", "app.py", true, false},
+	{"app.py\n!*.py", "app.py", true, true},
+	{"!app.py\n*.py", "app.py", true, false},
+	{"**/a/b\n!b", "/subdir/a/b", true, true},
+	{"**/a/b\n!/a", "/subdir/a/b", true, false},
+	{"**/a/b\n!/**/a", "/subdir/a/b", true, true},
+	{"app.py\n!app.py\napp.py", "app.py", true, false},
+	{"app.py\napp.py\n!app.py", "app.py", true, true},
+	{"!app.py\n!app.py\n*.py", "app.py", true, false},
+	{"!app.py\n!*.py\n*.py", "app.py", true, false},
+	{"!app.py\n!*.py\napp.py", "app.py", true, false},
 }
 
 var specialLineTestCases = []testCase{
-	{"", "", false},
-	{"#abc", "#abc", false},
-	{"\\#abc", "#abc", true},
-	{"abc\n!abc", "abc", false},
-	{"abc\n\\!abc", "abc", true},
-	{"!abc\n!abc", "!abc", false},
-	{"!abc\n\\!abc", "!abc", true},
+	{"", "", false, false},
+	{"#abc", "#abc", false, false},
+	{"\\#abc", "#abc", true, false},
+	{"abc\n!abc", "abc", true, true},
+	{"abc\n\\!abc", "abc", true, false},
+	{"!abc\n!abc", "!abc", false, false},
+	{"!abc\n\\!abc", "!abc", true, false},
 }
 
 var specialCharTestCases = []testCase{
-	{"untitled-1 (copy *)", "untitled-1 (copy 1)", true},
-	{"abc.\\|+{}()<>^$:def", "abc.\\|+{}()<>^$:def", true},
-	{"abc.\\|+{}()<>^$:def", "abcX\\|+{}()<>^$:def", false},
-	{"abc.\\|+{}()<>^$:def", "abc.\\||||||{}()<>^$:def", false},
-	{"abc.\\|+{}()<>^$:def*", "abc.\\|+{}()<>^$:defghi", true},
+	{"untitled-1 (copy *)", "untitled-1 (copy 1)", true, false},
+	{"abc.\\|+{}()<>^$:def", "abc.\\|+{}()<>^$:def", true, false},
+	{"abc.\\|+{}()<>^$:def", "abcX\\|+{}()<>^$:def", false, false},
+	{"abc.\\|+{}()<>^$:def", "abc.\\||||||{}()<>^$:def", false, false},
+	{"abc.\\|+{}()<>^$:def*", "abc.\\|+{}()<>^$:defghi", true, false},
 }
 
 var windowsSpecialCharTestCases = []testCase{
 	// No backslashes in path names
-	{"untitled-1 (copy *)", "untitled-1 (copy 1)", true},
-	{"abc.|+{}()<>^$:def", "abc.|+{}()<>^$:def", true},
-	{"abc.|+{}()<>^$:def", "abcX|+{}()<>^$:def", false},
-	{"abc.|+{}()<>^$:def", "abc.||||||{}()<>^$:def", false},
-	{"abc.|+{}()<>^$:def*", "abc.|+{}()<>^$:defghi", true},
+	{"untitled-1 (copy *)", "untitled-1 (copy 1)", true, false},
+	{"abc.|+{}()<>^$:def", "abc.|+{}()<>^$:def", true, false},
+	{"abc.|+{}()<>^$:def", "abcX|+{}()<>^$:def", false, false},
+	{"abc.|+{}()<>^$:def", "abc.||||||{}()<>^$:def", false, false},
+	{"abc.|+{}()<>^$:def*", "abc.|+{}()<>^$:defghi", true, false},
 }

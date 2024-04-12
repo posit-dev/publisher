@@ -56,15 +56,26 @@ func (s *MatchListSuite) TestMatch() {
 	s.Equal("/**", m.Pattern)
 	s.Equal("", m.FilePath.String())
 	s.Equal(1, m.Line)
+	s.Equal(false, m.Inverted)
 
 	// Non-file matches don't include file info
 	m = matchList.Match(s.cwd.Join("app.py.bak"))
-	s.Nil(m)
+	s.NotNil(m)
+	s.Equal(MatchSourceBuiltIn, m.Source)
+	s.Equal("!*.bak", m.Pattern)
+	s.Equal("", m.FilePath.String())
+	s.Equal(2, m.Line)
+	s.Equal(true, m.Inverted)
 
 	ignoredir := s.cwd.Join("ignoredir")
 	err = ignoredir.MkdirAll(0700)
 	s.NoError(err)
 
 	m = matchList.Match(ignoredir)
-	s.Nil(m)
+	s.NotNil(m)
+	s.Equal(MatchSourceBuiltIn, m.Source)
+	s.Equal("!ignoredir/", m.Pattern)
+	s.Equal("", m.FilePath.String())
+	s.Equal(3, m.Line)
+	s.Equal(true, m.Inverted)
 }

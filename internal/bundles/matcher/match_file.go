@@ -56,9 +56,6 @@ func (f *MatchFile) Match(filePath string) *Pattern {
 			match = pattern
 		}
 	}
-	if match == nil || match.Inverted {
-		return nil
-	}
 	return match
 }
 
