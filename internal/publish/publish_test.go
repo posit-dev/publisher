@@ -177,7 +177,7 @@ func (s *PublishSuite) publishWithClient(
 	authErr, capErr, createErr, envVarErr, uploadErr, deployErr, waitErr, validateErr,
 	expectedErr error) {
 
-	bundler, err := bundles.NewBundler(s.cwd, bundles.NewManifest(), nil, s.log)
+	bundler, err := bundles.NewBundler(s.cwd, bundles.NewManifest(), s.log)
 	s.NoError(err)
 
 	account := &accounts.Account{

@@ -112,7 +112,7 @@ func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log l
 func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 	log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir)
 	manifest := bundles.NewManifestFromConfig(p.Config)
-	bundler, err := bundles.NewBundler(p.Dir, manifest, nil, log)
+	bundler, err := bundles.NewBundler(p.Dir, manifest, log)
 	if err != nil {
 		return err
 	}

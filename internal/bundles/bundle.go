@@ -29,7 +29,7 @@ type Bundler interface {
 // such as the entrypoint, Python version, R package dependencies, etc.
 // The bundler will fill in the `files` section and include the manifest.json
 // in the bundler.
-func NewBundler(path util.AbsolutePath, manifest *Manifest, pythonRequirements []byte, log logging.Logger) (*bundler, error) {
+func NewBundler(path util.AbsolutePath, manifest *Manifest, log logging.Logger) (*bundler, error) {
 	var dir util.AbsolutePath
 	var filename string
 	isDir, err := path.IsDir()
@@ -53,22 +53,20 @@ func NewBundler(path util.AbsolutePath, manifest *Manifest, pythonRequirements [
 	symlinkWalker := util.NewSymlinkWalker(matcher, log)
 
 	return &bundler{
-		manifest:           manifest,
-		baseDir:            dir,
-		filename:           filename,
-		walker:             symlinkWalker,
-		pythonRequirements: pythonRequirements,
-		log:                log,
+		manifest: manifest,
+		baseDir:  dir,
+		filename: filename,
+		walker:   symlinkWalker,
+		log:      log,
 	}, nil
 }
 
 type bundler struct {
-	baseDir            util.AbsolutePath // Directory being bundled
-	filename           string            // Primary file being deployed
-	walker             util.Walker       // Only walks files matching patterns from the configuration
-	pythonRequirements []byte            // Pacakges to write to requirements.txt if not already present
-	manifest           *Manifest         // Manifest describing the bundle, if provided
-	log                logging.Logger
+	baseDir  util.AbsolutePath // Directory being bundled
+	filename string            // Primary file being deployed
+	walker   util.Walker       // Only walks files matching patterns from the configuration
+	manifest *Manifest         // Manifest describing the bundle, if provided
+	log      logging.Logger
 }
 
 type bundle struct {
@@ -134,17 +132,6 @@ func (b *bundler) makeBundle(dest io.Writer) (*Manifest, error) {
 		}
 	}
 	if dest != nil {
-		if bundle.pythonRequirements != nil {
-			// If there isn't a requirements.txt file in the directory,
-			// bundle the package list as requirements.txt.
-			_, haveRequirementsTxt := bundle.manifest.Files[PythonRequirementsFilename]
-			if !haveRequirementsTxt {
-				err = bundle.addFile(PythonRequirementsFilename, bundle.pythonRequirements)
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
 		err = bundle.addManifest()
 		if err != nil {
 			return nil, err
