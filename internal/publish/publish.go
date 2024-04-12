@@ -112,7 +112,12 @@ func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log l
 func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 	log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir)
 	manifest := bundles.NewManifestFromConfig(p.Config)
-	bundler, err := bundles.NewBundler(p.Dir, manifest, []string{"/**"}, log)
+	filePatterns := p.Config.Files
+	if len(filePatterns) == 0 {
+		log.Info("No file patterns specified; using default pattern '/**'")
+		filePatterns = []string{"/**"}
+	}
+	bundler, err := bundles.NewBundler(p.Dir, manifest, filePatterns, log)
 	if err != nil {
 		return err
 	}
