@@ -10,18 +10,15 @@ import {
 
 export class Configurations {
   private client: AxiosInstance;
-  private apiServiceIsUp: Promise<boolean>;
 
-  constructor(client: AxiosInstance, apiServiceIsUp: Promise<boolean>) {
+  constructor(client: AxiosInstance) {
     this.client = client;
-    this.apiServiceIsUp = apiServiceIsUp;
   }
 
   // Returns:
   // 200 - success
   // 500 - internal server error
-  async getAll() {
-    await this.apiServiceIsUp;
+  getAll() {
     return this.client.get<Array<Configuration | ConfigurationError>>(
       "/configurations",
     );
@@ -31,8 +28,7 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  async createOrUpdate(configName: string, cfg: ConfigurationDetails) {
-    await this.apiServiceIsUp;
+  createOrUpdate(configName: string, cfg: ConfigurationDetails) {
     const encodedName = encodeURIComponent(configName);
     return this.client.put<Configuration>(`configurations/${encodedName}`, cfg);
   }
@@ -41,8 +37,7 @@ export class Configurations {
   // 204 - success (no response)
   // 404 - not found
   // 500 - internal server error
-  async delete(configName: string) {
-    await this.apiServiceIsUp;
+  delete(configName: string) {
     const encodedName = encodeURIComponent(configName);
     return this.client.delete(`configurations/${encodedName}`);
   }
@@ -52,8 +47,7 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  async inspect() {
-    await this.apiServiceIsUp;
+  inspect() {
     return this.client.post<ConfigurationDetails[]>("/inspect");
   }
 }

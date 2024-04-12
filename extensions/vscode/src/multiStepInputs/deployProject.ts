@@ -26,12 +26,13 @@ export async function publishDeployment(
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
+  const api = await useApi();
 
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];
 
   try {
-    const response = await useApi().accounts.getAll();
+    const response = await api.accounts.getAll();
     // account list is filtered to match the deployment being published
     accountListItems = response.data
       .filter((account) => account.url === deployment.serverUrl)
@@ -66,7 +67,7 @@ export async function publishDeployment(
   }
 
   try {
-    const response = await useApi().configurations.getAll();
+    const response = await api.configurations.getAll();
     const configurations = response.data;
     configFileListItems = [];
 
@@ -241,7 +242,7 @@ export async function publishDeployment(
 
   // deploy!
   try {
-    const response = await useApi().deployments.publish(
+    const response = await api.deployments.publish(
       deployment.saveName,
       state.data.credentialName.label,
       credentialName,

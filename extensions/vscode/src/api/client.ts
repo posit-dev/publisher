@@ -24,11 +24,11 @@ class PublishingClientApi {
     });
     this.apiServiceIsUp = apiServiceIsUp;
 
-    this.accounts = new Accounts(this.client, this.apiServiceIsUp);
-    this.configurations = new Configurations(this.client, this.apiServiceIsUp);
-    this.deployments = new Deployments(this.client, this.apiServiceIsUp);
-    this.files = new Files(this.client, this.apiServiceIsUp);
-    this.requirements = new Requirements(this.client, this.apiServiceIsUp);
+    this.accounts = new Accounts(this.client);
+    this.configurations = new Configurations(this.client);
+    this.deployments = new Deployments(this.client);
+    this.files = new Files(this.client);
+    this.requirements = new Requirements(this.client);
   }
 
   setBaseUrl(url: string) {
@@ -42,7 +42,7 @@ class PublishingClientApi {
 
 let api: PublishingClientApi | undefined = undefined;
 
-export const useApi = (
+export const useApi = async (
   apiBaseUrl?: string,
   apiServiceIsUp?: Promise<boolean>,
 ) => {
@@ -52,5 +52,8 @@ export const useApi = (
     }
     api = new PublishingClientApi(apiBaseUrl, apiServiceIsUp);
   }
+  // wait until the service providing the API is available and ready
+  await api.apiServiceIsUp;
+
   return api;
 };

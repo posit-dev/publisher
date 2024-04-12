@@ -5,19 +5,16 @@ import { RequirementsResponse } from "../types/requirements";
 
 export class Requirements {
   private client: AxiosInstance;
-  private apiServiceIsUp: Promise<boolean>;
 
-  constructor(client: AxiosInstance, apiServiceIsUp: Promise<boolean>) {
+  constructor(client: AxiosInstance) {
     this.client = client;
-    this.apiServiceIsUp = apiServiceIsUp;
   }
 
   // Returns:
   // 200 - success
   // 404 - no requirements file found
   // 500 - internal server error
-  async getAll() {
-    await this.apiServiceIsUp;
+  getAll() {
     return this.client.get<RequirementsResponse>("requirements");
   }
 
@@ -25,8 +22,7 @@ export class Requirements {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  async create(saveName: string | undefined) {
-    await this.apiServiceIsUp;
+  create(saveName: string | undefined) {
     return this.client.post<void>("requirements", { saveName });
   }
 }

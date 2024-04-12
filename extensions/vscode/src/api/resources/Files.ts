@@ -6,19 +6,16 @@ import { DeploymentFile } from "../types/files";
 
 export class Files {
   private client: AxiosInstance;
-  private apiServiceIsUp: Promise<boolean>;
 
-  constructor(client: AxiosInstance, apiServiceIsUp: Promise<boolean>) {
+  constructor(client: AxiosInstance) {
     this.client = client;
-    this.apiServiceIsUp = apiServiceIsUp;
   }
 
   // Returns:
   // 200 - success
   // 403 - pathname is not safe - forbidden
   // 500 - internal server error
-  async get() {
-    await this.apiServiceIsUp;
+  get() {
     return this.client.get<DeploymentFile>("/files");
   }
 }

@@ -75,7 +75,8 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     if (element === undefined) {
       // first call.
       try {
-        const response = await useApi().files.get();
+        const api = await useApi();
+        const response = await api.files.get();
         const file = response.data;
 
         commands.executeCommand("setContext", isEmptyContext, Boolean(file));

@@ -66,7 +66,8 @@ async function isMissingPublishDirs(
 
 async function checkForCredentials() {
   try {
-    const response = await useApi().accounts.getAll();
+    const api = await useApi();
+    const response = await api.accounts.getAll();
     if (response.data.length) {
       setCredentialCheckContext(PositPublishCredentialCheck.succeeded);
     } else {

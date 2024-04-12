@@ -3,7 +3,8 @@
 import { useApi } from "../api";
 
 export async function untitledConfigurationName(): Promise<string> {
-  const existingConfigurations = (await useApi().configurations.getAll()).data;
+  const api = await useApi();
+  const existingConfigurations = (await api.configurations.getAll()).data;
 
   if (existingConfigurations.length === 0) {
     return "default";

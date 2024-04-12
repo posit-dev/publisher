@@ -6,18 +6,15 @@ import { Account } from "../types/accounts";
 
 export class Accounts {
   private client: AxiosInstance;
-  private apiServiceIsUp: Promise<boolean>;
 
-  constructor(client: AxiosInstance, apiServiceIsUp: Promise<boolean>) {
+  constructor(client: AxiosInstance) {
     this.client = client;
-    this.apiServiceIsUp = apiServiceIsUp;
   }
 
   // Returns:
   // 200 - success
   // 500 - internal server error
-  async getAll() {
-    await this.apiServiceIsUp;
+  getAll() {
     return this.client.get<Array<Account>>("/accounts");
   }
 
@@ -25,8 +22,7 @@ export class Accounts {
   // 200 - success
   // 404 - account not found
   // 500 - internal server error
-  async get(accountName: string) {
-    await this.apiServiceIsUp;
+  get(accountName: string) {
     const encodedAccountName = encodeURIComponent(accountName);
     return this.client.get<Account>(`/accounts/${encodedAccountName}`);
   }

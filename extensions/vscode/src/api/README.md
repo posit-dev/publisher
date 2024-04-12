@@ -11,7 +11,7 @@ import { useApi } from "src/api";
 const api = useApi();
 
 try {
-  const response = await useApi().accounts.getAll();
+  const response = await api.accounts.getAll();
 } catch (err) {
   // handle the error
 }
@@ -22,7 +22,8 @@ using `setBaseUrl`. This changes the client so all requests will use the new
 base URL. This will need to be done before any requests are made.
 
 ```typescript
-useApi().setBaseUrl("http://localhost:9000/api");
+const api = await useApi();
+await api.setBaseUrl("http://localhost:9000/api");
 ```
 
 ## Organization
@@ -51,15 +52,16 @@ getting cluttered.
 ### Limited Exports
 
 Rather than exporting the `AxiosInstance` or the `PublishingClientApi` class a
-constant is exported to prevent more than one client from being created and any
+singleton factory is exported to prevent more than one client from being created and any
 non-resource-method usage of this library.
 
-We can use the exported `api` constant to access an instance of
-`PublishingClientApi`.
-
-Or we can use the `useApi()` function which follows some of the syntax seen in
+We use the `useApi()` function which follows some of the syntax seen in
 the [Composition API](https://vuejs.org/api/sfc-script-setup.html#useslots-useattrs)
 and other Vue 3 libraries such as [Pinia](https://pinia.vuejs.org/).
+
+This factory will wait to return the api class until the backend service responsible for responding
+to the API request is available. Therefore, it is required to await on the response of the useApi()
+before being able to call the API. The examples contained herein implement this pattern of usage.
 
 ### Return All Available Data
 
@@ -69,7 +71,8 @@ to reduce boilerplate and ensure that we do not lose potentially-needed data.
 
 ```typescript
 try {
-  const { data } = await useApi().accounts.getAll();
+  const api = await useApi();
+  const { data } = await api.accounts.getAll();
 } catch (err) {
   // handle the error
 }

@@ -46,13 +46,14 @@ export async function newDeployment(
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
+  const api = await useApi();
 
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];
   let deploymentNames: string[] = [];
 
   try {
-    const response = await useApi().accounts.getAll();
+    const response = await api.accounts.getAll();
     accountListItems = response.data.map((account) => ({
       iconPath: new ThemeIcon("account"),
       label: account.name,
@@ -82,7 +83,7 @@ export async function newDeployment(
   }
 
   try {
-    const response = await useApi().configurations.getAll();
+    const response = await api.configurations.getAll();
     const configurations = response.data;
     configFileListItems = [];
 
@@ -121,7 +122,7 @@ export async function newDeployment(
   }
 
   try {
-    const response = await useApi().deployments.getAll();
+    const response = await api.deployments.getAll();
     const deploymentList = response.data;
     // Note.. we want all of the deployment filenames regardless if they are valid or not.
     deploymentNames = deploymentList.map(
@@ -360,7 +361,7 @@ export async function newDeployment(
   // Create the Predeployment File
   let newPreDeployment: PreDeployment | undefined = undefined;
   try {
-    const result = await useApi().deployments.createNew(
+    const result = await api.deployments.createNew(
       state.data.credentialName.label,
       state.data.configFile.label,
       state.data.deploymentName,
@@ -385,7 +386,7 @@ export async function newDeployment(
     state.data.promptToDeploy.label === "Yes"
   ) {
     try {
-      const response = await useApi().deployments.publish(
+      const response = await api.deployments.publish(
         state.data.deploymentName,
         state.data.credentialName.label,
         state.data.configFile.label,
