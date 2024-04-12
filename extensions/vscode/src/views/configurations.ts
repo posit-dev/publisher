@@ -78,7 +78,8 @@ export class ConfigurationsTreeDataProvider
     }
 
     try {
-      const response = await useApi().configurations.getAll();
+      const api = await useApi();
+      const response = await api.configurations.getAll();
       const configurations = response.data;
       await this.setContextIsEmpty(configurations.length === 0);
 
@@ -140,7 +141,8 @@ export class ConfigurationsTreeDataProvider
   private add = async () => {
     let configName: string | undefined;
     try {
-      const inspectResponse = await useApi().configurations.inspect();
+      const api = await useApi();
+      const inspectResponse = await api.configurations.inspect();
       const config = await this.chooseConfig(inspectResponse.data);
       if (config === undefined) {
         // canceled
@@ -155,7 +157,7 @@ export class ConfigurationsTreeDataProvider
         // canceled
         return;
       }
-      const createResponse = await useApi().configurations.createOrUpdate(
+      const createResponse = await api.configurations.createOrUpdate(
         configName,
         config,
       );
@@ -237,7 +239,8 @@ export class ConfigurationsTreeDataProvider
     );
     if (ok) {
       try {
-        await useApi().configurations.delete(name);
+        const api = await useApi();
+        await api.configurations.delete(name);
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
           "configurations::delete",

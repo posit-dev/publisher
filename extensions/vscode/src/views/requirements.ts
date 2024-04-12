@@ -67,7 +67,8 @@ export class RequirementsTreeDataProvider
       return [];
     }
     try {
-      const response = await useApi().requirements.getAll();
+      const api = await useApi();
+      const response = await api.requirements.getAll();
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(
         (line) => new RequirementsTreeItem(line),
@@ -138,7 +139,8 @@ export class RequirementsTreeDataProvider
     }
 
     try {
-      await useApi().requirements.create("requirements.txt");
+      const api = await useApi();
+      await api.requirements.create("requirements.txt");
       await this.edit();
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("dependencies::scan", error);

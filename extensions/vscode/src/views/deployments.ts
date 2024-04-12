@@ -92,7 +92,8 @@ export class DeploymentsTreeDataProvider
       // API Returns:
       // 200 - success
       // 500 - internal server error
-      const response = await useApi().deployments.getAll();
+      const api = await useApi();
+      const response = await api.deployments.getAll();
       const deployments = response.data;
       commands.executeCommand(
         "setContext",
@@ -160,7 +161,8 @@ export class DeploymentsTreeDataProvider
             `Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`,
           );
           if (ok) {
-            await useApi().deployments.delete(item.deployment.deploymentName);
+            const api = await useApi();
+            await api.deployments.delete(item.deployment.deploymentName);
           }
         },
       ),

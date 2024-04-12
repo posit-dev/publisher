@@ -107,7 +107,8 @@ export class HomeViewProvider implements WebviewViewProvider {
           case "deploy":
             const payload = JSON.parse(message.payload);
             try {
-              const response = await useApi().deployments.publish(
+              const api = await useApi();
+              const response = await api.deployments.publish(
                 payload.deployment,
                 payload.credential,
                 payload.configuration,
@@ -220,7 +221,8 @@ export class HomeViewProvider implements WebviewViewProvider {
       // API Returns:
       // 200 - success
       // 500 - internal server error
-      const response = await useApi().deployments.getAll();
+      const api = await useApi();
+      const response = await api.deployments.getAll();
       const deployments = response.data;
       this._deployments = [];
       deployments.forEach((deployment) => {
@@ -240,7 +242,8 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private async _refreshConfigurationData() {
     try {
-      const response = await useApi().configurations.getAll();
+      const api = await useApi();
+      const response = await api.configurations.getAll();
       const configurations = response.data;
       this._configs = [];
       configurations.forEach((config) => {
@@ -260,7 +263,8 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private async _refreshCredentialData() {
     try {
-      const response = await useApi().accounts.getAll();
+      const api = await useApi();
+      const response = await api.accounts.getAll();
       this._credentials = response.data;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(

@@ -44,7 +44,8 @@ export class CredentialsTreeDataProvider
     }
 
     try {
-      const response = await useApi().accounts.getAll();
+      const api = await useApi();
+      const response = await api.accounts.getAll();
       const result = response.data.map((account) => {
         return new CredentialsTreeItem(account);
       });

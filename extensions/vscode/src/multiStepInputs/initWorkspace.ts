@@ -34,11 +34,12 @@ export async function initWorkspace(
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
+  const api = await useApi();
 
   let accountListItems: QuickPickItem[] = [];
 
   try {
-    const response = await useApi().accounts.getAll();
+    const response = await api.accounts.getAll();
     accountListItems = response.data.map((account) => ({
       iconPath: new ThemeIcon("account"),
       label: account.name,
@@ -72,7 +73,7 @@ export async function initWorkspace(
   const entryPointLabelMap = new Map<string, ConfigurationDetails>();
   let configs: ConfigurationDetails[] = [];
   try {
-    const inspectResponse = await useApi().configurations.inspect();
+    const inspectResponse = await api.configurations.inspect();
     configs = inspectResponse.data;
     entryPointLabels = configs.map((config) => `${config.entrypoint}`);
     configs.forEach((config) => {
@@ -320,7 +321,7 @@ export async function initWorkspace(
       );
       return;
     }
-    const createResponse = await useApi().configurations.createOrUpdate(
+    const createResponse = await api.configurations.createOrUpdate(
       state.data.configFileName,
       selectedConfig,
     );
@@ -337,7 +338,7 @@ export async function initWorkspace(
 
   // Create the Predeployment File
   try {
-    await useApi().deployments.createNew(
+    await api.deployments.createNew(
       state.data.credentialName.label,
       state.data.configFileName,
       state.data.deploymentName,
