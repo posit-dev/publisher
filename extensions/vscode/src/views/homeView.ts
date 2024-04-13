@@ -141,18 +141,18 @@ export class HomeViewProvider implements WebviewViewProvider {
           case "navigate":
             env.openExternal(Uri.parse(message.payload));
             break;
-          case "updateDeploymentButtonExpanded":
+          case "saveDeploymentButtonExpanded":
             const expanded: boolean = JSON.parse(message.payload);
             commands.executeCommand(
               "setContext",
               contextIsSelectorExpanded,
               expanded,
             );
-            this._updateExpansionState(expanded);
+            this._saveExpansionState(expanded);
             break;
-          case "updateSelectionState":
+          case "saveSelectionState":
             const state: HomeViewSelectionState = JSON.parse(message.payload);
-            this._updateSelectionState(state);
+            this._saveSelectionState(state);
             break;
         }
       },
@@ -328,14 +328,14 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
-  private _updateSelectionState(state: HomeViewSelectionState) {
+  private _saveSelectionState(state: HomeViewSelectionState) {
     return this._context.workspaceState.update(
       lastHomeViewSelectionState,
       state,
     );
   }
 
-  private _updateExpansionState(expanded: boolean) {
+  private _saveExpansionState(expanded: boolean) {
     return this._context.workspaceState.update(
       lastHomeViewExpansionState,
       expanded,

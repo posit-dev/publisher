@@ -340,14 +340,14 @@ const filterCredentialsToDeployment = () => {
 const onClickDeployExpand = () => {
   showDetails.value = !showDetails.value;
   vsCodeApi.postMessage({
-    command: "updateDeploymentButtonExpanded",
+    command: "saveDeploymentButtonExpanded",
     payload: JSON.stringify(showDetails.value),
   });
 };
 
 const updateParentViewSelectionState = () => {
   vsCodeApi.postMessage({
-    command: "updateSelectionState",
+    command: "saveSelectionState",
     payload: JSON.stringify({
       deploymentName: selectedDeployment.value?.saveName,
       configurationName: selectedConfig.value?.configurationName,
