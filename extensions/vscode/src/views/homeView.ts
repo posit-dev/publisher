@@ -45,13 +45,13 @@ const contextActiveMode = viewName + ".deploymentActiveMode";
 const contextActiveModeAdvanced = "advanced-mode";
 const contextActiveModeBasic = "basic-mode";
 
-const lastHomeViewSelectionState = viewName + ".lastHomeViewSelectionState";
-const lastHomeViewExpansionState = viewName + ".lastHomeViewExpansionState";
+const lastSelectionState = viewName + ".lastSelectionState";
+const lastExpansionState = viewName + ".lastExpansionState";
 
 type HomeViewSelectionState = {
-  deploymentName: string;
-  configurationName: string;
-  credentialName: string;
+  deploymentName?: string;
+  configurationName?: string;
+  credentialName?: string;
 };
 
 export class HomeViewProvider implements WebviewViewProvider {
@@ -320,7 +320,7 @@ export class HomeViewProvider implements WebviewViewProvider {
         command: "update_expansion_from_storage",
         payload: JSON.stringify({
           expansionState: this._context.workspaceState.get<boolean>(
-            lastHomeViewExpansionState,
+            lastExpansionState,
             false,
           ),
         }),
@@ -329,17 +329,11 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private _saveSelectionState(state: HomeViewSelectionState) {
-    return this._context.workspaceState.update(
-      lastHomeViewSelectionState,
-      state,
-    );
+    return this._context.workspaceState.update(lastSelectionState, state);
   }
 
   private _saveExpansionState(expanded: boolean) {
-    return this._context.workspaceState.update(
-      lastHomeViewExpansionState,
-      expanded,
-    );
+    return this._context.workspaceState.update(lastExpansionState, expanded);
   }
 
   public resolveWebviewView(
@@ -431,7 +425,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     `;
   }
 
-  public refreshAll = async (includeSavedState: boolean) => {
+  public refreshAll = async (includeSavedState?: boolean) => {
     try {
       await Promise.all([
         this._refreshDeploymentData(),
@@ -448,11 +442,11 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
     const selectionState = includeSavedState
       ? this._context.workspaceState.get<HomeViewSelectionState>(
-          lastHomeViewSelectionState,
+          lastSelectionState,
           {
-            deploymentName: "",
-            configurationName: "",
-            credentialName: "",
+            deploymentName: undefined,
+            configurationName: undefined,
+            credentialName: undefined,
           },
         )
       : undefined;
