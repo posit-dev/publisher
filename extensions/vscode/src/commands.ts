@@ -2,14 +2,14 @@
 
 import * as fs from "fs/promises";
 import * as path from "path";
-import * as vscode from "vscode";
 
 import { HOST } from ".";
+import { ExtensionContext, workspace, window } from "vscode";
 
 const CONFIG_KEY = "publisher.executable.path";
 
 export const create = async (
-  context: vscode.ExtensionContext,
+  context: ExtensionContext,
   path: string,
   port: number,
   subcommand: string = "ui",
@@ -19,16 +19,16 @@ export const create = async (
 };
 
 const getExecutableBinary = async (
-  context: vscode.ExtensionContext,
+  context: ExtensionContext,
 ): Promise<string> => {
-  const configuration = vscode.workspace.getConfiguration("posit");
+  const configuration = workspace.getConfiguration("posit");
   let executable: string | undefined = configuration.get<string>(CONFIG_KEY);
   if (executable) {
     try {
       await fs.access(executable, fs.constants.X_OK);
       return executable;
     } catch {
-      vscode.window.showErrorMessage(
+      window.showErrorMessage(
         `
                 Error: Configuration Property Not Set Correctly
 

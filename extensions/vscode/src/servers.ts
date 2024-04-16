@@ -2,37 +2,37 @@
 
 import * as net from "net";
 import * as retry from "retry";
-import * as vscode from "vscode";
 
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { HOST } from ".";
 
 import * as commands from "./commands";
 import * as workspaces from "./workspaces";
+import { OutputChannel, Disposable, window, ExtensionContext } from "vscode";
 
-export class Server implements vscode.Disposable {
+export class Server implements Disposable {
   readonly port: number;
-  readonly outputChannel: vscode.OutputChannel;
+  readonly outputChannel: OutputChannel;
 
   process: ChildProcessWithoutNullStreams | undefined = undefined;
 
   constructor(port: number) {
     this.port = port;
-    this.outputChannel = vscode.window.createOutputChannel(`Posit Publisher`);
+    this.outputChannel = window.createOutputChannel(`Posit Publisher`);
   }
 
   /**
    * Asynchronously starts the server.
    * If server is already running, do nothing.
    *
-   * @param {vscode.ExtensionContext} context - The VSCode extension context.
+   * @param {ExtensionContext} context - The VSCode extension context.
    * @returns {Promise<void>} A Promise that resolves when the server starts.
    */
-  async start(context: vscode.ExtensionContext): Promise<void> {
+  async start(context: ExtensionContext): Promise<void> {
     // Check if the server is stopped
     if (await this.isDown()) {
       // Display status message to user
-      const message = vscode.window.setStatusBarMessage(
+      const message = window.setStatusBarMessage(
         "Starting Posit Publisher. Please wait...",
       );
       // todo - make this configurable
@@ -67,7 +67,7 @@ export class Server implements vscode.Disposable {
       return;
     }
     // Display status message to user
-    const message = vscode.window.setStatusBarMessage(
+    const message = window.setStatusBarMessage(
       "Stopping Posit Publisher. Please wait...",
     );
     // Send interrupt signal to terminal
