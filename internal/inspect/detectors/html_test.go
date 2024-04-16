@@ -41,7 +41,7 @@ func (s *StaticHTMLDetectorSuite) TestInferTypePreferredFilename() {
 		Type:       config.ContentTypeHTML,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"/**"},
+		Files:      []string{"*"},
 	}, t)
 }
 
@@ -63,7 +63,7 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeOnlyHTMLFile() {
 		Type:       config.ContentTypeHTML,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"/**"},
+		Files:      []string{"*"},
 	}, t)
 }
 

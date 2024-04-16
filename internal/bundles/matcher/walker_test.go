@@ -65,7 +65,7 @@ func (s *WalkerSuite) TestWalk() {
 	err = baseDir.Join("manifest.json").WriteFile(nil, 0777)
 	s.NoError(err)
 
-	w, err := NewMatchingWalker([]string{"/**"}, s.cwd)
+	w, err := NewMatchingWalker([]string{"*"}, s.cwd)
 	s.NoError(err)
 	s.NotNil(w)
 

@@ -121,6 +121,11 @@ var fileTestCases = []testCase{
 	{"*.py", "foo.py", true, false},
 	{"*.py", "app.json", false, false},
 
+	{"*", "app.py", true, false},
+	{"*", "dir/app.py", true, false},
+	{"*", "dir/subdir/app.py", true, false},
+	{"*", "foo.py", true, false},
+
 	{"dir/app.py", "dir/app.py", true, false},
 	{"dir/app.py", "app.py", false, false},
 	{"dir/app.py", "dir/subdir/app.py", false, false},

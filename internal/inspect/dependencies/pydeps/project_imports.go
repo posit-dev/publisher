@@ -31,7 +31,7 @@ func NewProjectImportScanner(log logging.Logger) *defaultProjectImportScanner {
 
 func (s *defaultProjectImportScanner) ScanProjectImports(base util.AbsolutePath) ([]ImportName, error) {
 	// Scanning is not currently driven by the configured file list - we scan everything.
-	matchList, err := matcher.NewMatchingWalker([]string{"/**"}, base)
+	matchList, err := matcher.NewMatchingWalker([]string{"*"}, base)
 	if err != nil {
 		return nil, err
 	}

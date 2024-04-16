@@ -39,7 +39,7 @@ func (s *PyShinySuite) TestInferType() {
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"/**"},
+		Files:      []string{"*"},
 		Python:     &config.Python{},
 	}, t)
 }
@@ -62,7 +62,7 @@ func (s *PyShinySuite) TestInferTypeShinyExpress() {
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: "shiny.express.app:app_2e_py",
 		Validate:   true,
-		Files:      []string{"/**"},
+		Files:      []string{"*"},
 		Python:     &config.Python{},
 	}, t)
 }

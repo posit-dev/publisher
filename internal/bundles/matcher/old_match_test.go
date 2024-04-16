@@ -47,13 +47,13 @@ func (s *MatchListSuite) TestMatch() {
 	err := s.cwd.Join(".git").MkdirAll(0700)
 	s.NoError(err)
 
-	matchList, err := NewMatchList(s.cwd, []string{"/**", "!*.bak", "!ignoredir/"})
+	matchList, err := NewMatchList(s.cwd, []string{"*", "!*.bak", "!ignoredir/"})
 	s.NoError(err)
 
 	m := matchList.Match(s.cwd.Join("app.py"))
 	s.NotNil(m)
 	s.Equal(MatchSourceBuiltIn, m.Source)
-	s.Equal("/**", m.Pattern)
+	s.Equal("*", m.Pattern)
 	s.Equal("", m.FilePath.String())
 	s.Equal("", m.FileName)
 	s.Equal(false, m.Exclude)

@@ -44,8 +44,8 @@ func NewBundler(path util.AbsolutePath, manifest *Manifest, filePatterns []strin
 		filename = path.Base()
 	}
 	if len(filePatterns) == 0 {
-		log.Info("No file patterns specified; using default pattern '/**'")
-		filePatterns = []string{"/**"}
+		log.Info("No file patterns specified; using default pattern '*'")
+		filePatterns = []string{"*"}
 	}
 	matcher, err := matcher.NewMatchingWalker(filePatterns, dir)
 	if err != nil {
