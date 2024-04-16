@@ -15,20 +15,28 @@ type MatchFile struct {
 	patterns []*Pattern
 }
 
-func NewMatchFile(path util.AbsolutePath) (*MatchFile, error) {
-	patterns, err := readMatchFile(path)
-	if err != nil {
-		return nil, err
+func NewBuiltinMatchFile(base util.AbsolutePath, patternStrings []string) (*MatchFile, error) {
+	filePath := util.AbsolutePath{}
+	patterns := []*Pattern{}
+
+	for lineNum, s := range patternStrings {
+		pattern, err := patternFromString(s, base, filePath, lineNum+1)
+		if err != nil {
+			return nil, err
+		}
+		if pattern == nil {
+			continue
+		}
+		patterns = append(patterns, pattern)
 	}
 
 	return &MatchFile{
-		path:     path,
+		path:     filePath,
 		patterns: patterns,
 	}, nil
 }
 
-func NewBuiltinMatchFile(base util.AbsolutePath, patternStrings []string) (*MatchFile, error) {
-	filePath := util.AbsolutePath{}
+func NewMatchFile(base util.AbsolutePath, filePath util.AbsolutePath, patternStrings []string) (*MatchFile, error) {
 	patterns := []*Pattern{}
 
 	for lineNum, s := range patternStrings {
@@ -57,27 +65,6 @@ func (f *MatchFile) Match(filePath string) *Pattern {
 		}
 	}
 	return match
-}
-
-func readMatchFile(filePath util.AbsolutePath) ([]*Pattern, error) {
-	content, err := filePath.ReadFile()
-	if err != nil {
-		return nil, err
-	}
-	var patterns []*Pattern
-
-	lines := strings.Split(string(content), "\n")
-	for lineNum, line := range lines {
-		pattern, err := patternFromString(line, filePath.Dir(), filePath, lineNum+1)
-		if err != nil {
-			return nil, err
-		}
-		if pattern == nil {
-			continue
-		}
-		patterns = append(patterns, pattern)
-	}
-	return patterns, nil
 }
 
 func escapeRegexCharsInPath(s string) string {
@@ -219,7 +206,7 @@ func patternFromString(line string, base util.AbsolutePath, filePath util.Absolu
 		return nil, err
 	}
 
-	source := MatchSourceFile
+	source := MatchSourceConfiguration
 	if filePath.String() == "" {
 		source = MatchSourceBuiltIn
 	}

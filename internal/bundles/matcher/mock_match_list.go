@@ -11,8 +11,8 @@ type MockMatchList struct {
 	mock.Mock
 }
 
-func (m *MockMatchList) AddFile(path util.AbsolutePath) error {
-	args := m.Called(path)
+func (m *MockMatchList) AddFromFile(base util.AbsolutePath, filePath util.AbsolutePath, patterns []string) error {
+	args := m.Called(base, filePath, patterns)
 	return args.Error(0)
 }
 
