@@ -206,7 +206,7 @@ func patternFromString(line string, base util.AbsolutePath, filePath util.Absolu
 		return nil, err
 	}
 
-	source := MatchSourceConfiguration
+	source := MatchSourceFile
 	if filePath.String() == "" {
 		source = MatchSourceBuiltIn
 	}

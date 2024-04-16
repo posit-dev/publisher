@@ -10,7 +10,7 @@ import (
 
 type MatchSource string
 
-const MatchSourceConfiguration MatchSource = "file"
+const MatchSourceFile MatchSource = "file"
 const MatchSourceBuiltIn MatchSource = "built-in"
 
 type Pattern struct {
