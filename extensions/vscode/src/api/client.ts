@@ -38,6 +38,8 @@ class PublishingClientApi {
 
 let api: PublishingClientApi | undefined = undefined;
 
+// NOTE: this function must be called ahead of useApi()
+// so that the class is properly instantiated.
 export const initApi = (
   apiServiceIsUp: Promise<boolean>,
   apiBaseUrl: string = "/api",
@@ -45,11 +47,9 @@ export const initApi = (
   api = new PublishingClientApi(apiBaseUrl, apiServiceIsUp);
 };
 
-// NOTE: The first time this factory function is called, it must be
-// called with both of the optional parameters. After the first call,
-// any optional parameters passed in are ignored.
-// Failure to provide the values on first or incorrectly providing them
-// after the first call will result in errors being thrown.
+// NOTE: initApi(...) must be called ahead of the first time
+// this method is called, otherwise, you are skipping initialization
+// and it will throw an exception
 export const useApi = async () => {
   if (!api) {
     throw new Error("client::useApi() must be called AFTER client::initApi()");
