@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 
 import { HOST } from ".";
 import { Server } from "./servers";
-import { useApi } from "./api";
+import { initApi } from "./api";
 
 export class Service implements vscode.Disposable {
   private context: vscode.ExtensionContext;
@@ -15,7 +15,7 @@ export class Service implements vscode.Disposable {
     this.context = context;
     this.agentURL = `http://${HOST}:${port}/api`;
     this.server = new Server(port);
-    useApi(this.agentURL, this.isUp());
+    initApi(this.isUp(), this.agentURL);
   }
 
   start = async () => {

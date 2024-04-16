@@ -38,24 +38,21 @@ class PublishingClientApi {
 
 let api: PublishingClientApi | undefined = undefined;
 
+export const initApi = (
+  apiServiceIsUp: Promise<boolean>,
+  apiBaseUrl: string = "/api",
+) => {
+  api = new PublishingClientApi(apiBaseUrl, apiServiceIsUp);
+};
+
 // NOTE: The first time this factory function is called, it must be
 // called with both of the optional parameters. After the first call,
 // any optional parameters passed in are ignored.
 // Failure to provide the values on first or incorrectly providing them
 // after the first call will result in errors being thrown.
-export const useApi = async (
-  apiBaseUrl?: string,
-  apiServiceIsUp?: Promise<boolean>,
-) => {
+export const useApi = async () => {
   if (!api) {
-    if (!apiBaseUrl || !apiServiceIsUp) {
-      throw new Error("The factory function PublishingClientApi::useApi is missing required parameters on first call.");
-    }
-    api = new PublishingClientApi(apiBaseUrl, apiServiceIsUp);
-  } else {
-    if (apiBaseUrl || apiServiceIsUp) {
-      throw new Error("The factory function PublishingClientApi::useApi is being called with inappropriate optional parameters. These have already been set within the first call to the factory. ");
-    }
+    throw new Error("client::useApi() must be called AFTER client::initApi()");
   }
   // wait until the service providing the API is available and ready
   await api.apiServiceIsUp;
