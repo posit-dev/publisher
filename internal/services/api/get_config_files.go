@@ -32,7 +32,8 @@ func GetConfigFilesHandlerFunc(base util.AbsolutePath, filesService files.FilesS
 		}
 		err = matchList.AddFromFile(base, configPath, cfg.Files)
 		if err != nil {
-			InternalError(w, req, log, err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			w.Write([]byte("invalid pattern in configuration 'files'"))
 			return
 		}
 
