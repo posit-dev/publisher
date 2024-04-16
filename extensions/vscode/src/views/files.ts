@@ -240,7 +240,7 @@ export class ExcludedFile extends FileTreeItem {
       if (this.exclusion.source === "built-in") {
         this.tooltip += `This is a built-in exclusion for the pattern: '${this.exclusion?.pattern}'`;
       } else {
-        this.tooltip += `Another source is excluding it\nwith the pattern '${this.exclusion?.pattern}' on line #${this.exclusion?.line}`;
+        this.tooltip += `The configuration file ${this.exclusion?.filePath}\nis excluding it with the pattern '${this.exclusion?.pattern}'}`;
       }
     }
   }

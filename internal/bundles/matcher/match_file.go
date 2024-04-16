@@ -19,8 +19,8 @@ func NewBuiltinMatchFile(base util.AbsolutePath, patternStrings []string) (*Matc
 	filePath := util.AbsolutePath{}
 	patterns := []*Pattern{}
 
-	for lineNum, s := range patternStrings {
-		pattern, err := patternFromString(s, base, filePath, lineNum+1)
+	for _, s := range patternStrings {
+		pattern, err := patternFromString(s, base, filePath)
 		if err != nil {
 			return nil, err
 		}
@@ -39,8 +39,8 @@ func NewBuiltinMatchFile(base util.AbsolutePath, patternStrings []string) (*Matc
 func NewMatchFile(base util.AbsolutePath, filePath util.AbsolutePath, patternStrings []string) (*MatchFile, error) {
 	patterns := []*Pattern{}
 
-	for lineNum, s := range patternStrings {
-		pattern, err := patternFromString(s, base, filePath, lineNum+1)
+	for _, s := range patternStrings {
+		pattern, err := patternFromString(s, base, filePath)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +96,7 @@ func escapeRegexChars(s string, specials string) string {
 	return out.String()
 }
 
-func patternFromString(line string, base util.AbsolutePath, filePath util.AbsolutePath, lineNum int) (*Pattern, error) {
+func patternFromString(line string, base util.AbsolutePath, filePath util.AbsolutePath) (*Pattern, error) {
 	inverted := false
 
 	// TODO: Trailing spaces are ignored unless they are quoted with backslash ("\").
@@ -214,7 +214,6 @@ func patternFromString(line string, base util.AbsolutePath, filePath util.Absolu
 	return &Pattern{
 		Source:   source,
 		FilePath: filePath,
-		Line:     lineNum,
 		Pattern:  line,
 		Inverted: inverted,
 		regex:    regex,
