@@ -14,7 +14,7 @@ type File struct {
 	Id               string           `json:"id"`               // a logical (non-universally-unique) identifier
 	FileType         fileType         `json:"fileType"`         // the file type
 	Base             string           `json:"base"`             // the base name
-	Exclusion        *matcher.Pattern `json:"exclusion"`        // object describing the reason for exclusion, null if not excluded
+	Reason           *matcher.Pattern `json:"reason"`           // object describing the reason the file was included/excluded, or null if no pattern matched it
 	Files            []*File          `json:"files"`            // an array of objects of the same type for each file within the directory.
 	IsDir            bool             `json:"isDir"`            // true if the file is a directory
 	IsEntrypoint     bool             `json:"isEntrypoint"`     // true if the file is an entrypoint
@@ -50,7 +50,7 @@ func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.P
 		ModifiedDatetime: info.ModTime().Format(time.RFC3339),
 		IsDir:            info.Mode().IsDir(),
 		IsRegular:        info.Mode().IsRegular(),
-		Exclusion:        match,
+		Reason:           match,
 		Files:            make([]*File, 0),
 		Abs:              path.String(),
 	}, nil

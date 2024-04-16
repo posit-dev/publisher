@@ -63,7 +63,7 @@ func (l *defaultMatchList) Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc
 				return err
 			}
 			m := l.Match(path)
-			if m == nil || m.Inverted {
+			if m == nil || m.Exclude {
 				if info.IsDir() {
 					return filepath.SkipDir
 				}

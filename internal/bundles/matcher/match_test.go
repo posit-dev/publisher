@@ -95,9 +95,9 @@ func (s *MatchSuite) runTestCases(cases []testCase) {
 			s.NotNil(m, "pattern %s should have matched path %s (%s)", test.pattern, test.path, absPath)
 
 			if test.inverted {
-				s.True(m.Inverted, "pattern match should have been inverted: %s with %s (%s)", test.pattern, test.path, absPath)
+				s.True(m.Exclude, "pattern match should have been inverted: %s with %s (%s)", test.pattern, test.path, absPath)
 			} else {
-				s.False(m.Inverted, "pattern match should not have been inverted: %s with %s (%s)", test.pattern, test.path, absPath)
+				s.False(m.Exclude, "pattern match should not have been inverted: %s with %s (%s)", test.pattern, test.path, absPath)
 			}
 		} else {
 			s.Nil(m, "pattern %s should not have matched path %s (%s)", test.pattern, test.path, absPath)

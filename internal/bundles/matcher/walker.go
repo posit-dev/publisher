@@ -47,7 +47,7 @@ type matchingWalker struct {
 func (i *matchingWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
 	return i.matchList.Walk(path, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		m := i.matchList.Match(path)
-		if m == nil || m.Inverted {
+		if m == nil || m.Exclude {
 			if info.IsDir() {
 				return filepath.SkipDir
 			} else {

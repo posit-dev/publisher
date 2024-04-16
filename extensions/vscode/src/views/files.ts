@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { DeploymentFile, ExclusionMatch } from "../api/types/files";
+import { DeploymentFile, FileMatch } from "../api/types/files";
 import { useApi } from "../api";
 import {
   TreeDataProvider,
@@ -65,7 +65,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
       // first call.
       try {
         await this.apiReady;
-        const response = await this.api.files.get();
+        const response = await this.api.files.getByConfiguration("default");
         const file = response.data;
 
         commands.executeCommand("setContext", isEmptyContext, Boolean(file));
@@ -138,21 +138,20 @@ const resetFileTrees = () => {
 const buildFileTrees = (
   file: DeploymentFile,
   root: Uri,
-  // Workaround for API shortcoming which does not populate exclusions down through
-  // subdirectories. Once API has been updated for that, we can remove the override
-  // (although it will continue to function correctly as written)
-  exclusionOverride?: ExclusionMatch | null,
 ) => {
   if (file.isFile) {
-    if (file.exclusion || exclusionOverride) {
+    if (file.reason?.exclude === false) {
+      const f = new IncludedFile(root, {
+        ...file,
+        reason: file.reason,
+    });
+      includedFiles.push(f);
+    } else {
       const f = new ExcludedFile(root, {
         ...file,
-        exclusion: file.exclusion || exclusionOverride || null,
+        reason: file.reason || null,
       });
       excludedFiles.push(f);
-    } else {
-      const f = new IncludedFile(root, file);
-      includedFiles.push(f);
     }
   } else {
     // We're not showing our .posit subdirectory.
@@ -162,7 +161,7 @@ const buildFileTrees = (
   }
 
   file.files.forEach((d) => {
-    buildFileTrees(d, root, file.exclusion || exclusionOverride);
+    buildFileTrees(d, root);
   });
 };
 
@@ -197,7 +196,7 @@ export class ExcludedFilesSection extends TreeItem {
 
 export class FileTreeItem extends TreeItem {
   public fileUri: Uri;
-  public exclusion: ExclusionMatch | null;
+  public reason: FileMatch | null;
 
   constructor(root: Uri, deploymentFile: DeploymentFile) {
     super(deploymentFile.base);
@@ -206,7 +205,7 @@ export class FileTreeItem extends TreeItem {
     this.label = deploymentFile.base;
     this.fileUri = Uri.file(path.join(root.fsPath, deploymentFile.id));
     this.collapsibleState = TreeItemCollapsibleState.None;
-    this.exclusion = deploymentFile.exclusion;
+    this.reason = deploymentFile.reason;
     this.command = {
       title: "Open",
       command: "vscode.open",
@@ -226,7 +225,10 @@ export class IncludedFile extends FileTreeItem {
     super(root, deploymentFile);
     this.contextValue = isIncludedFile;
     this.resourceUri = Uri.parse(`positPublisherFilesIncluded://${this.id}`);
-    this.tooltip = `This file will be included in the next deployment.\n${this.fileUri.fsPath}`;
+    this.tooltip = `This file will be included in the next deployment.\n${deploymentFile.rel}\n\n`;
+    if (this.reason) {
+      this.tooltip += `The configuration file ${this.reason.fileName} is including it with the pattern '${this.reason.pattern}'`;
+    }
   }
 }
 export class ExcludedFile extends FileTreeItem {
@@ -235,13 +237,15 @@ export class ExcludedFile extends FileTreeItem {
 
     this.contextValue = isExcludedFile;
     this.resourceUri = Uri.parse(`positPublisherFilesExcluded://${this.id}`);
-    this.tooltip = `This file will be excluded in the next deployment.\n${this.fileUri.fsPath}\n\n`;
-    if (this.exclusion) {
-      if (this.exclusion.source === "built-in") {
-        this.tooltip += `This is a built-in exclusion for the pattern: '${this.exclusion?.pattern}'`;
+    this.tooltip = `This file will be excluded in the next deployment.\n${deploymentFile.rel}\n\n`;
+    if (this.reason) {
+      if (this.reason.source === "built-in") {
+        this.tooltip += `This is a built-in exclusion for the pattern: '${this.reason.pattern}'`;
       } else {
-        this.tooltip += `The configuration file ${this.exclusion?.filePath}\nis excluding it with the pattern '${this.exclusion?.pattern}'}`;
+        this.tooltip += `The configuration file ${this.reason.fileName} is excluding it with the pattern '${this.reason.pattern}'`;
       }
+    } else {
+      this.tooltip += `It did not match any pattern in the configuration 'files' list.`;
     }
   }
 }
