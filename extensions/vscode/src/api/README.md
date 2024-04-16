@@ -23,7 +23,7 @@ base URL. This will need to be done before any requests are made.
 
 ```typescript
 const api = await useApi();
-await api.setBaseUrl("http://localhost:9000/api");
+api.setBaseUrl("http://localhost:9000/api");
 ```
 
 ## Organization
