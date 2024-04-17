@@ -43,7 +43,7 @@ export class RequirementsTreeDataProvider
   readonly onDidChangeTreeData: RequirementsEvent =
     this._onDidChangeTreeData.event;
 
-  constructor() {
+  constructor(private readonly _context: ExtensionContext) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -97,12 +97,13 @@ export class RequirementsTreeDataProvider
     );
   }
 
-  public register(context: ExtensionContext) {
-    context.subscriptions.push(
+  public register() {
+    this._context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this }),
     );
+
     if (this.root !== undefined) {
-      context.subscriptions.push(
+      this._context.subscriptions.push(
         commands.registerCommand(editCommand, this.edit),
         commands.registerCommand(refreshCommand, this.refresh),
         commands.registerCommand(scanCommand, this.scan),
