@@ -152,4 +152,11 @@ the 'publisher requirements create' command."
 teardown_file() {
     # delete the temp files
     rm -rf ${FULL_PATH}/.posit*
+    # reset the min processes to 0
+    run curl --silent --show-error -L --max-redirs 0 --fail \
+            -X PUT \
+            -H "Authorization: Key ${CONNECT_API_KEY}" \
+            --insecure \
+            --data-raw '{"min_processes": 0}' \
+            "${CONNECT_SERVER}/__api__/v1/content/${GUID}"
 }
