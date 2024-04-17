@@ -1,4 +1,4 @@
-package gitignore
+package matcher
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -10,29 +10,29 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type IgnoreFile struct {
+type MatchFile struct {
 	path     util.AbsolutePath
 	patterns []*Pattern
 }
 
-func NewIgnoreFile(path util.AbsolutePath) (*IgnoreFile, error) {
-	patterns, err := readIgnoreFile(path)
+func NewMatchFile(path util.AbsolutePath) (*MatchFile, error) {
+	patterns, err := readMatchFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	return &IgnoreFile{
+	return &MatchFile{
 		path:     path,
 		patterns: patterns,
 	}, nil
 }
 
-func NewBuiltinIgnoreFile(base util.AbsolutePath, builtins []string) (*IgnoreFile, error) {
+func NewBuiltinMatchFile(base util.AbsolutePath, patternStrings []string) (*MatchFile, error) {
 	filePath := util.AbsolutePath{}
 	patterns := []*Pattern{}
 
-	for lineNum, builtin := range builtins {
-		pattern, err := patternFromString(builtin, base, filePath, lineNum+1)
+	for lineNum, s := range patternStrings {
+		pattern, err := patternFromString(s, base, filePath, lineNum+1)
 		if err != nil {
 			return nil, err
 		}
@@ -42,13 +42,13 @@ func NewBuiltinIgnoreFile(base util.AbsolutePath, builtins []string) (*IgnoreFil
 		patterns = append(patterns, pattern)
 	}
 
-	return &IgnoreFile{
+	return &MatchFile{
 		path:     filePath,
 		patterns: patterns,
 	}, nil
 }
 
-func (f *IgnoreFile) Match(filePath string) *Pattern {
+func (f *MatchFile) Match(filePath string) *Pattern {
 	var match *Pattern
 
 	for _, pattern := range f.patterns {
@@ -62,8 +62,8 @@ func (f *IgnoreFile) Match(filePath string) *Pattern {
 	return match
 }
 
-func readIgnoreFile(ignoreFilePath util.AbsolutePath) ([]*Pattern, error) {
-	content, err := ignoreFilePath.ReadFile()
+func readMatchFile(filePath util.AbsolutePath) ([]*Pattern, error) {
+	content, err := filePath.ReadFile()
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func readIgnoreFile(ignoreFilePath util.AbsolutePath) ([]*Pattern, error) {
 
 	lines := strings.Split(string(content), "\n")
 	for lineNum, line := range lines {
-		pattern, err := patternFromString(line, ignoreFilePath.Dir(), ignoreFilePath, lineNum+1)
+		pattern, err := patternFromString(line, filePath.Dir(), filePath, lineNum+1)
 		if err != nil {
 			return nil, err
 		}
@@ -112,7 +112,7 @@ func escapeRegexChars(s string, specials string) string {
 	return out.String()
 }
 
-func patternFromString(line string, base util.AbsolutePath, ignoreFilePath util.AbsolutePath, lineNum int) (*Pattern, error) {
+func patternFromString(line string, base util.AbsolutePath, filePath util.AbsolutePath, lineNum int) (*Pattern, error) {
 	inverted := false
 
 	// TODO: Trailing spaces are ignored unless they are quoted with backslash ("\").
@@ -223,13 +223,13 @@ func patternFromString(line string, base util.AbsolutePath, ignoreFilePath util.
 	}
 
 	source := MatchSourceFile
-	if ignoreFilePath.String() == "" {
+	if filePath.String() == "" {
 		source = MatchSourceBuiltIn
 	}
 
 	return &Pattern{
 		Source:   source,
-		FilePath: ignoreFilePath,
+		FilePath: filePath,
 		Line:     lineNum,
 		Pattern:  line,
 		Inverted: inverted,

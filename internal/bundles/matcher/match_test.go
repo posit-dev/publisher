@@ -1,4 +1,4 @@
-package gitignore
+package matcher
 
 // Copyright (C) 2023 by Posit Software, PBC.
 
@@ -14,16 +14,16 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type NewIgnoreSuite struct {
+type MatchSuite struct {
 	utiltest.Suite
 	cwd util.AbsolutePath
 }
 
-func TestNewIgnoreSuite(t *testing.T) {
-	suite.Run(t, new(NewIgnoreSuite))
+func TestMatchSuite(t *testing.T) {
+	suite.Run(t, new(MatchSuite))
 }
 
-func (s *NewIgnoreSuite) SetupTest() {
+func (s *MatchSuite) SetupTest() {
 	path := "/project"
 	if runtime.GOOS == "windows" {
 		path = `C:\project`
@@ -37,23 +37,23 @@ type testCase struct {
 	matches bool
 }
 
-func (s *NewIgnoreSuite) TestFiles() {
+func (s *MatchSuite) TestFiles() {
 	s.runTestCases(fileTestCases)
 }
 
-func (s *NewIgnoreSuite) TestDirectories() {
+func (s *MatchSuite) TestDirectories() {
 	s.runTestCases(dirTestCases)
 }
 
-func (s *NewIgnoreSuite) TestInverted() {
+func (s *MatchSuite) TestInverted() {
 	s.runTestCases(invertedTestCases)
 }
 
-func (s *NewIgnoreSuite) TestSpecialLines() {
+func (s *MatchSuite) TestSpecialLines() {
 	s.runTestCases(specialLineTestCases)
 }
 
-func (s *NewIgnoreSuite) TestSpecialChars() {
+func (s *MatchSuite) TestSpecialChars() {
 	if runtime.GOOS == "windows" {
 		s.T().SkipNow()
 	}
@@ -63,7 +63,7 @@ func (s *NewIgnoreSuite) TestSpecialChars() {
 	s.runTestCases(specialCharTestCases)
 }
 
-func (s *NewIgnoreSuite) TestSpecialCharsWindows() {
+func (s *MatchSuite) TestSpecialCharsWindows() {
 	if runtime.GOOS != "windows" {
 		s.T().SkipNow()
 	}
@@ -71,9 +71,9 @@ func (s *NewIgnoreSuite) TestSpecialCharsWindows() {
 	s.runTestCases(windowsSpecialCharTestCases)
 }
 
-func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
+func (s *MatchSuite) runTestCases(cases []testCase) {
 	for _, test := range cases {
-		ign, err := NewIgnoreList(s.cwd, strings.Split(test.pattern, "\n"))
+		matchList, err := NewMatchList(s.cwd, strings.Split(test.pattern, "\n"))
 		s.NoError(err)
 
 		absPath := s.cwd.Join(filepath.FromSlash(test.path))
@@ -88,7 +88,7 @@ func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
 			s.NoError(err)
 		}
 
-		m := ign.Match(absPath)
+		m := matchList.Match(absPath)
 
 		if test.matches {
 			s.NotNil(m, "pattern %s should have matched path %s (%s)", test.pattern, test.path, absPath)
