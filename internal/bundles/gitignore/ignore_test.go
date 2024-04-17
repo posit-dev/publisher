@@ -59,7 +59,7 @@ func (s *NewIgnoreSuite) TestSpecialChars() {
 	}
 	// Don't name your direrctories like this!
 	// But we'll handle it if you do.
-	s.cwd = util.NewAbsolutePath(`/.\|+{}()<>^$:[]?*`, afero.NewMemMapFs())
+	s.cwd = util.NewAbsolutePath(`/.+\|{}()<>^$:[]?*`, afero.NewMemMapFs())
 	s.runTestCases(specialCharTestCases)
 }
 
@@ -67,20 +67,13 @@ func (s *NewIgnoreSuite) TestSpecialCharsWindows() {
 	if runtime.GOOS != "windows" {
 		s.T().SkipNow()
 	}
-	s.cwd = util.NewAbsolutePath(`C:\.\|+{}()<>^$:[]?*`, afero.NewMemMapFs())
+	s.cwd = util.NewAbsolutePath(`C:\.+\|{}()<>^$:[]?*`, afero.NewMemMapFs())
 	s.runTestCases(windowsSpecialCharTestCases)
 }
 
 func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
 	for _, test := range cases {
-		ign, err := NewIgnoreList(nil)
-		s.NoError(err)
-
-		ignorePath := s.cwd.Join(".positignore")
-		err = ignorePath.WriteFile([]byte(test.pattern), 0600)
-		s.NoError(err)
-
-		err = ign.AddFile(ignorePath)
+		ign, err := NewIgnoreList(s.cwd, strings.Split(test.pattern, "\n"))
 		s.NoError(err)
 
 		absPath := s.cwd.Join(filepath.FromSlash(test.path))
@@ -98,9 +91,9 @@ func (s *NewIgnoreSuite) runTestCases(cases []testCase) {
 		m := ign.Match(absPath)
 
 		if test.matches {
-			s.NotNil(m, "pattern %s should have matched path %s", test.pattern, test.path)
+			s.NotNil(m, "pattern %s should have matched path %s (%s)", test.pattern, test.path, absPath)
 		} else {
-			s.Nil(m, "pattern %s should not have matched path %s", test.pattern, test.path)
+			s.Nil(m, "pattern %s should not have matched path %s (%s)", test.pattern, test.path, absPath)
 		}
 	}
 }

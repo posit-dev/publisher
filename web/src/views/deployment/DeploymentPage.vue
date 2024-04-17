@@ -74,8 +74,6 @@ const fileSubTitles = computed(() => {
   return [
     `The files detected for this project. Unless ignored, these files will be
       uploaded to the server each time you deploy this project.`,
-    `NOTE: A .positignore file can be used to indicate which files should
-      not be included in your deployments to the server.`,
   ];
 });
 

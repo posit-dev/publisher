@@ -47,11 +47,6 @@
         The files detected for this project. Unless ignored, these files will be
         uploaded to the server each time you deploy this project.
       </p>
-      <p class="q-mt-xs">
-        NOTE: A <span class="text-bold">.positignore</span> file can be used to
-        indicate which files should not be included in your deployments to the
-        server.
-      </p>
     </div>
     <FileTree data-automation="file-tree" />
   </div>

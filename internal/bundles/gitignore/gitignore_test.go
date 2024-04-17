@@ -35,14 +35,14 @@ func (s *GitIgnoreSuite) SetupTest() {
 }
 
 func (s *GitIgnoreSuite) TestNew() {
-	ign, err := NewIgnoreList([]string{"*.bak"})
+	ign, err := NewIgnoreList(s.cwd, []string{"*.bak"})
 	s.NoError(err)
 	s.NotNil(ign)
 	s.NotNil(ign.files)
 }
 
 func (s *GitIgnoreSuite) TestNewError() {
-	ign, err := NewIgnoreList([]string{"[A-"})
+	ign, err := NewIgnoreList(s.cwd, []string{"[A-"})
 	s.NotNil(err)
 	s.Nil(ign)
 }
@@ -51,27 +51,12 @@ func (s *GitIgnoreSuite) TestMatch() {
 	err := s.cwd.Join(".git").MkdirAll(0700)
 	s.NoError(err)
 
-	ignoreFilePath := s.cwd.Join(".positignore")
-	err = ignoreFilePath.WriteFile([]byte(".Rhistory\nignoreme\n"), 0600)
-	s.NoError(err)
-
-	ign, err := NewIgnoreList([]string{"*.bak", "ignoredir/"})
-	s.NoError(err)
-
-	err = ign.AddFile(ignoreFilePath)
+	ign, err := NewIgnoreList(s.cwd, []string{"*.bak", "ignoredir/"})
 	s.NoError(err)
 
 	// Match returns nil if no match
 	m := ign.Match(s.cwd.Join("app.py"))
 	s.Nil(m)
-
-	// File matches include file info
-	m = ign.Match(s.cwd.Join(".Rhistory"))
-	s.NotNil(m)
-	s.Equal(MatchSourceFile, m.Source)
-	s.Equal(".Rhistory", m.Pattern)
-	s.Equal(ignoreFilePath, m.FilePath)
-	s.Equal(1, m.Line)
 
 	// Non-file matches don't include file info
 	m = ign.Match(s.cwd.Join("app.py.bak"))

@@ -27,14 +27,17 @@ func NewIgnoreFile(path util.AbsolutePath) (*IgnoreFile, error) {
 	}, nil
 }
 
-func NewBuiltinIgnoreFile(builtins []string) (*IgnoreFile, error) {
+func NewBuiltinIgnoreFile(base util.AbsolutePath, builtins []string) (*IgnoreFile, error) {
 	filePath := util.AbsolutePath{}
 	patterns := []*Pattern{}
 
 	for lineNum, builtin := range builtins {
-		pattern, err := patternFromString(builtin, filePath, lineNum+1)
+		pattern, err := patternFromString(builtin, base, filePath, lineNum+1)
 		if err != nil {
 			return nil, err
+		}
+		if pattern == nil {
+			continue
 		}
 		patterns = append(patterns, pattern)
 	}
@@ -68,11 +71,10 @@ func readIgnoreFile(ignoreFilePath util.AbsolutePath) ([]*Pattern, error) {
 
 	lines := strings.Split(string(content), "\n")
 	for lineNum, line := range lines {
-		pattern, err := patternFromString(line, ignoreFilePath, lineNum+1)
+		pattern, err := patternFromString(line, ignoreFilePath.Dir(), ignoreFilePath, lineNum+1)
 		if err != nil {
 			return nil, err
 		}
-
 		if pattern == nil {
 			continue
 		}
@@ -87,7 +89,7 @@ func escapeRegexCharsInPath(s string) string {
 	// conversion to Posix format (ToSlash), so \ is included
 	// as it is a valid char in Posix paths.
 	// https://pkg.go.dev/regexp/syntax
-	return escapeRegexChars(s, `.\|+{}()<>^$:[]?*`)
+	return escapeRegexChars(s, `.\|+{}()<>^$[]?*`)
 }
 
 func escapeRegexCharsInPattern(s string) string {
@@ -95,7 +97,7 @@ func escapeRegexCharsInPattern(s string) string {
 	// so they match literally in the resulting regex.
 	// (Note that * ? [ ] are gitignore syntax and should not be escaped).
 	// https://pkg.go.dev/regexp/syntax
-	return escapeRegexChars(s, `.\|+{}()<>^$:`)
+	return escapeRegexChars(s, `.\|+{}()<>^$`)
 }
 
 func escapeRegexChars(s string, specials string) string {
@@ -110,7 +112,7 @@ func escapeRegexChars(s string, specials string) string {
 	return out.String()
 }
 
-func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum int) (*Pattern, error) {
+func patternFromString(line string, base util.AbsolutePath, ignoreFilePath util.AbsolutePath, lineNum int) (*Pattern, error) {
 	inverted := false
 
 	// TODO: Trailing spaces are ignored unless they are quoted with backslash ("\").
@@ -197,7 +199,7 @@ func patternFromString(line string, ignoreFilePath util.AbsolutePath, lineNum in
 	// Put the prefix and suffix back on (now that * substitution is done)
 	rawRegex = prefix + rawRegex + suffix
 
-	dirPath := escapeRegexCharsInPath(ignoreFilePath.Dir().ToSlash())
+	dirPath := escapeRegexCharsInPath(base.ToSlash())
 
 	if isRooted {
 		// If there is a separator at the beginning or middle (or both) of the

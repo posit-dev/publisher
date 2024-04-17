@@ -19,8 +19,8 @@ type defaultIgnoreList struct {
 	files []*IgnoreFile
 }
 
-func NewIgnoreList(builtins []string) (*defaultIgnoreList, error) {
-	f, err := NewBuiltinIgnoreFile(builtins)
+func NewIgnoreList(base util.AbsolutePath, builtins []string) (*defaultIgnoreList, error) {
+	f, err := NewBuiltinIgnoreFile(base, builtins)
 	if err != nil {
 		return nil, err
 	}
