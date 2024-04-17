@@ -389,7 +389,7 @@ const onClickAddConfiguration = () => {
 const onClickEditConfiguration = () => {
   vsCodeApi.postMessage({
     command: "editConfiguration",
-    payload: selectedConfig.value,
+    payload: selectedConfig.value?.configurationName,
   });
 };
 

@@ -6,9 +6,18 @@ response types.
 ## Usage
 
 ```typescript
-import { useApi } from "src/api";
+import { initApi, useApi } from "src/api";
 
-const api = useApi();
+// You must first initialize the API one time.
+// The initialization method requires a promise which indicates
+// when the server who will provide the API is ready. If you do
+// not have this scenario, you follow the pattern below and
+// pass in a resolved promise.
+
+const ready = Promise.Resolve(true);
+initApi(ready, "http://localhost:15332/api`");
+
+const api = await useApi(); // will wait until the promise that was passed into the initApi call is resolved
 
 try {
   const response = await api.accounts.getAll();
@@ -23,7 +32,7 @@ base URL. This will need to be done before any requests are made.
 
 ```typescript
 const api = await useApi();
-await api.setBaseUrl("http://localhost:9000/api");
+api.setBaseUrl("http://localhost:9000/api");
 ```
 
 ## Organization

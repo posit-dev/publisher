@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/bundles/matcher"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
@@ -35,13 +35,13 @@ func GetFileHandlerFunc(base util.AbsolutePath, filesService files.FilesService,
 			w.Write([]byte(http.StatusText(http.StatusForbidden)))
 			return
 		}
-		ignore, err := gitignore.NewIgnoreList(gitignore.StandardIgnores)
+		matchList, err := matcher.NewMatchList(base, matcher.StandardExclusions)
 		if err != nil {
 			InternalError(w, r, log, err)
 			return
 		}
 
-		file, err := filesService.GetFile(p, ignore)
+		file, err := filesService.GetFile(p, matchList)
 		if err != nil {
 			InternalError(w, r, log, err)
 			return

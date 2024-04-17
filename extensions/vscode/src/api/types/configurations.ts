@@ -55,6 +55,7 @@ export type ConfigurationDetails = {
   quarto?: QuartoConfig;
   environment?: EnvironmentConfig;
   validate: boolean;
+  files?: string[];
   secrets?: string[];
   schedules?: ScheduleConfig[];
   access?: AccessConfig;

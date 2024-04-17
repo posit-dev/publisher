@@ -1,9 +1,5 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from "vscode";
-
 import * as ports from "./ports";
 import { useApi } from "./api";
 import { Service } from "./services";
@@ -17,7 +13,16 @@ import { HelpAndFeedbackTreeDataProvider } from "./views/helpAndFeedback";
 import { LogsTreeDataProvider } from "./views/logs";
 import { EventStream } from "./events";
 import { HomeViewProvider } from "./views/homeView";
-import { commands, window } from "vscode";
+import {
+  ExtensionContext,
+  FileType,
+  RelativePattern,
+  Uri,
+  WorkspaceFolder,
+  commands,
+  window,
+  workspace,
+} from "vscode";
 import { initWorkspaceWithFixedNames } from "./multiStepInputs/initWorkspace";
 import { getSummaryStringFromError } from "./utils/errors";
 
@@ -47,18 +52,14 @@ enum PositPublishCredentialCheck {
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
-async function isMissingPublishDirs(
-  folder: vscode.WorkspaceFolder,
-): Promise<boolean> {
+async function isMissingPublishDirs(folder: WorkspaceFolder): Promise<boolean> {
   try {
     const stats = await Promise.all([
-      vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, ".posit")),
-      vscode.workspace.fs.stat(
-        vscode.Uri.joinPath(folder.uri, ".posit/publish"),
-      ),
+      workspace.fs.stat(Uri.joinPath(folder.uri, ".posit")),
+      workspace.fs.stat(Uri.joinPath(folder.uri, ".posit/publish")),
     ]);
 
-    return !stats.every((stat) => stat.type === vscode.FileType.Directory);
+    return !stats.every((stat) => stat.type === FileType.Directory);
   } catch {
     return true;
   }
@@ -83,36 +84,33 @@ async function checkForCredentials() {
 }
 
 function setMissingContext(context: boolean) {
-  vscode.commands.executeCommand("setContext", MISSING_CONTEXT, context);
+  commands.executeCommand("setContext", MISSING_CONTEXT, context);
 }
 
 function setStateContext(context: PositPublishState) {
-  vscode.commands.executeCommand("setContext", STATE_CONTEXT, context);
+  commands.executeCommand("setContext", STATE_CONTEXT, context);
 }
 
 function setInitializationInProgressContext(context: InitializationInProgress) {
-  vscode.commands.executeCommand("setContext", INITIALIZING_CONTEXT, context);
+  commands.executeCommand("setContext", INITIALIZING_CONTEXT, context);
 }
 
 function setCredentialCheckContext(context: PositPublishCredentialCheck) {
-  vscode.commands.executeCommand("setContext", CREDENTIAL_CHECK, context);
+  commands.executeCommand("setContext", CREDENTIAL_CHECK, context);
 }
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate(context: ExtensionContext) {
   setStateContext(PositPublishState.uninitialized);
   setCredentialCheckContext(PositPublishCredentialCheck.inProgress);
   setInitializationInProgressContext(InitializationInProgress.false);
 
-  if (
-    vscode.workspace.workspaceFolders &&
-    vscode.workspace.workspaceFolders.length
-  ) {
-    const folder = vscode.workspace.workspaceFolders[0];
+  if (workspace.workspaceFolders && workspace.workspaceFolders.length) {
+    const folder = workspace.workspaceFolders[0];
 
-    const watcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(folder, "{.posit,.posit/publish}"),
+    const watcher = workspace.createFileSystemWatcher(
+      new RelativePattern(folder, "{.posit,.posit/publish}"),
       false,
       true,
       false,

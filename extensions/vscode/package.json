@@ -129,12 +129,6 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.files.editPositIgnore",
-        "title": "Create/Edit Posit Ignore file (.positignore)",
-        "icon": "$(gear)",
-        "category": "Posit Publisher"
-      },
-      {
         "command": "posit.publisher.files.addExclusion",
         "title": "Exclude this file",
         "icon": "$(exclude)",
@@ -225,11 +219,6 @@
           "group": "navigation@2"
         },
         {
-          "command": "posit.publisher.files.editPositIgnore",
-          "when": "view == posit.publisher.files",
-          "group": "navigation@1"
-        },
-        {
           "command": "posit.publisher.files.refresh",
           "when": "view == posit.publisher.files",
           "group": "navigation@2"
@@ -296,11 +285,6 @@
           "command": "posit.publisher.deployments.visit",
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment",
           "group": "inline"
-        },
-        {
-          "command": "posit.publisher.files.addExclusion",
-          "when": "viewItem == posit.publisher.files.isIncludedFile",
-          "group": "inline"
         }
       ],
       "commandPalette": [
@@ -358,10 +342,6 @@
         },
         {
           "command": "posit.publisher.files.refresh",
-          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
-        },
-        {
-          "command": "posit.publisher.files.editPositIgnore",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {

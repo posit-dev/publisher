@@ -18,31 +18,18 @@ import {
 import { useApi } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import * as path from "path";
-import { updateNewOrExistingFile, pathSorter } from "../utils/files";
+import { pathSorter } from "../utils/files";
 
 import * as os from "os";
 
 const viewName = "posit.publisher.files";
 const refreshCommand = viewName + ".refresh";
-const editPositIgnoreCommand = viewName + ".editPositIgnore";
-const addExclusionCommand = viewName + ".addExclusion";
 
 const isIncludedTitle = viewName + ".isIncludedTitle";
 const isExcludedTitle = viewName + ".isExcludedTitle";
 const isIncludedFile = viewName + ".isIncludedFile";
 const isExcludedFile = viewName + ".isExcludedFile";
 const isEmptyContext = viewName + ".isEmpty";
-
-const positIgnoreFileTemplate =
-  `#\n` +
-  `# Posit Publishing Ignore File (.positignore)\n` +
-  `#\n` +
-  `# Controls which files will be uploaded to the server within\n` +
-  `# the bundle during the next deployment.\n` +
-  `#\n` +
-  `# Syntax of exclusions conforms with Git Ignore File syntax.\n` +
-  `#\n` +
-  `\n`;
 
 let includedFiles: FileEntries[] = [];
 let excludedFiles: FileEntries[] = [];
@@ -115,33 +102,6 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
     );
-    this._context.subscriptions.push(
-      commands.registerCommand(editPositIgnoreCommand, async () => {
-        if (this.root !== undefined) {
-          updateNewOrExistingFile(
-            path.join(this.root.fsPath, ".positignore"),
-            positIgnoreFileTemplate,
-            undefined, // No suffix
-            true, // open file preview after update
-          );
-        }
-      }),
-    );
-    this._context.subscriptions.push(
-      commands.registerCommand(
-        addExclusionCommand,
-        async (item: FileTreeItem) => {
-          if (this.root !== undefined) {
-            updateNewOrExistingFile(
-              path.join(this.root.fsPath, ".positignore"),
-              positIgnoreFileTemplate,
-              `${item.id}\n`,
-              true, // open file preview after update
-            );
-          }
-        },
-      ),
-    );
 
     if (this.root !== undefined) {
       const watcher = workspace.createFileSystemWatcher(
@@ -193,9 +153,7 @@ const buildFileTrees = (
       includedFiles.push(f);
     }
   } else {
-    // We're not showing our .posit subdirectory, but it will be included
-    // in the deployment bundle unless they explicitly exclude it in the
-    // .positignore.
+    // We're not showing our .posit subdirectory.
     if (file.id === ".posit") {
       return;
     }
@@ -280,7 +238,7 @@ export class ExcludedFile extends FileTreeItem {
       if (this.exclusion.source === "built-in") {
         this.tooltip += `This is a built-in exclusion for the pattern: '${this.exclusion?.pattern}'`;
       } else {
-        this.tooltip += `The project's .positignore file is excluding it\nwith the pattern '${this.exclusion?.pattern}' on line #${this.exclusion?.line}`;
+        this.tooltip += `The configuration file ${this.exclusion?.filePath}\nis excluding it with the pattern '${this.exclusion?.pattern}'}`;
       }
     }
   }
