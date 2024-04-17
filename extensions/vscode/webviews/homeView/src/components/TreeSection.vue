@@ -1,6 +1,11 @@
 <template>
   <div class="pane" :class="{ expanded: expanded }">
-    <div class="pane-header" tabindex="0" :class="{ expanded: expanded }">
+    <div
+      class="pane-header"
+      tabindex="0"
+      :class="{ expanded: expanded }"
+      @keydown.enter.self="toggleExpanded"
+    >
       <div class="pane-header-title-container" @click="toggleExpanded">
         <div
           class="twisty-container codicon"
