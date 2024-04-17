@@ -43,6 +43,7 @@ func (s *AllSuite) TestInferTypeDirectory() {
 		Type:       config.ContentTypePythonDash,
 		Entrypoint: appFilename,
 		Validate:   true,
+		Files:      []string{"/**"},
 		Python:     &config.Python{},
 	}, t)
 }
@@ -68,6 +69,7 @@ func (s *AllSuite) TestInferTypeDirectoryPriority() {
 		Type:       config.ContentTypePythonDash,
 		Entrypoint: appFilename,
 		Validate:   true,
+		Files:      []string{"/**"},
 		Python:     &config.Python{},
 	}, t)
 }
@@ -118,6 +120,7 @@ func (s *AllSuite) TestInferAll() {
 			Type:       config.ContentTypePythonDash,
 			Entrypoint: appFilename,
 			Validate:   true,
+			Files:      []string{"/**"},
 			Python:     &config.Python{},
 		},
 		{
@@ -125,6 +128,7 @@ func (s *AllSuite) TestInferAll() {
 			Type:       config.ContentTypeHTML,
 			Entrypoint: "myfile.html",
 			Validate:   true,
+			Files:      []string{"/**"},
 			Python:     nil,
 		},
 	}, t)

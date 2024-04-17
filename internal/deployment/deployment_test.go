@@ -84,7 +84,7 @@ func (s *DeploymentSuite) TestFromExampleFile() {
 	s.NoError(err)
 	s.NotNil(d)
 
-	cfgPath := schemaDir.Join("deploy.toml")
+	cfgPath := schemaDir.Join("config.toml")
 	cfg, err := config.FromFile(cfgPath)
 	s.NoError(err)
 	s.Equal(cfg, d.Configuration)

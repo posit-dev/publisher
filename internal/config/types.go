@@ -87,6 +87,7 @@ type Config struct {
 	Type          ContentType `toml:"type" json:"type"`
 	Entrypoint    string      `toml:"entrypoint" json:"entrypoint,omitempty"`
 	Validate      bool        `toml:"validate" json:"validate"`
+	Files         []string    `toml:"files" json:"files"`
 	Title         string      `toml:"title,omitempty" json:"title,omitempty"`
 	Description   string      `toml:"description,multiline,omitempty" json:"description,omitempty"`
 	ThumbnailFile string      `toml:"thumbnail,omitempty" json:"thumbnail,omitempty"`
