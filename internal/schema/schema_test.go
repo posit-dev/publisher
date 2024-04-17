@@ -31,7 +31,7 @@ type genericContent map[string]any
 func (s *SchemaSuite) TestValidateConfig() {
 	validator, err := NewValidator[genericContent](ConfigSchemaURL)
 	s.NoError(err)
-	path := s.cwd.Join("schemas", "deploy.toml")
+	path := s.cwd.Join("schemas", "config.toml")
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }
@@ -48,7 +48,7 @@ func (s *SchemaSuite) TestValidateDraftConfig() {
 	const draftConfigSchemaURL = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
 	validator, err := NewValidator[genericContent](draftConfigSchemaURL)
 	s.NoError(err)
-	path := s.cwd.Join("schemas", "draft", "deploy.toml")
+	path := s.cwd.Join("schemas", "draft", "config.toml")
 	err = validator.ValidateTOMLFile(path)
 	s.NoError(err)
 }

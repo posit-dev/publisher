@@ -8,7 +8,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/bundles/matcher"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
@@ -30,10 +30,15 @@ func NewProjectImportScanner(log logging.Logger) *defaultProjectImportScanner {
 }
 
 func (s *defaultProjectImportScanner) ScanProjectImports(base util.AbsolutePath) ([]ImportName, error) {
-	ignore := gitignore.NewExcludingWalker(base)
+	// Scanning is not currently driven by the configured file list - we scan everything.
+	matchList, err := matcher.NewMatchingWalker([]string{"/**"}, base)
+	if err != nil {
+		return nil, err
+	}
+
 	var projectImports []ImportName
 
-	err := ignore.Walk(base, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
+	err = matchList.Walk(base, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

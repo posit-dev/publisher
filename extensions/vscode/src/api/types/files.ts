@@ -29,5 +29,4 @@ export type ExclusionMatch = {
   source: ExclusionMatchSource;
   pattern: string;
   filePath: string;
-  line: number;
 };

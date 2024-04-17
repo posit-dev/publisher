@@ -47,31 +47,6 @@ func (s *InitializeSuite) TestInitEmpty() {
 	s.Nil(err)
 	s.Equal(config.ContentTypeUnknown, cfg.Type)
 	s.Equal("My App", cfg.Title)
-
-	ignorePath := path.Join(".positignore")
-	exists, err := ignorePath.Exists()
-	s.NoError(err)
-	s.True(exists)
-}
-
-func (s *InitializeSuite) TestInitIgnoreExists() {
-	// An existing .positignore file is not overwritten.
-	log := logging.New()
-	path := s.cwd.Join("My App")
-	err := path.Mkdir(0777)
-	s.NoError(err)
-
-	ignorePath := path.Join(".positignore")
-	expectedContents := []byte("ignore-this")
-	err = ignorePath.WriteFile(expectedContents, 0666)
-	s.NoError(err)
-
-	_, err = Init(path, "", util.Path{}, log)
-	s.Nil(err)
-
-	contents, err := ignorePath.ReadFile()
-	s.NoError(err)
-	s.Equal(expectedContents, contents)
 }
 
 func (s *InitializeSuite) createAppPy() {

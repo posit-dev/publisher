@@ -6,32 +6,6 @@ source ../content/bundles/${CONTENT}/test/.publisher-env
 CONTENT_PATH='../content/bundles'
 FULL_PATH="${CONTENT_PATH}/${CONTENT}"
 
-IGNORE_ROOT_FILE="ignoreme.txt"
-IGNORE_WILDCARD="wildcard.wild"
-IGNORE_SUBDIR_FILE="tempdir/subdir.txt"
-IGNORE_SUBDIR_WILDCARD="tempdir/wildcard.wild"
-IGNORE_SUBDIR_DBL_WILDCARD="tempdir/subdir/subdirdbl.wild"
-
-setup_file() {
-    # make subdirectories and files for positignore testing
-    mkdir ${FULL_PATH}/tempdir
-    mkdir ${FULL_PATH}/tempdir/subdir
-    touch ${FULL_PATH}/${IGNORE_ROOT_FILE}
-    touch ${FULL_PATH}/${IGNORE_WILDCARD}
-    touch ${FULL_PATH}/${IGNORE_SUBDIR_FILE}
-    touch ${FULL_PATH}/${IGNORE_SUBDIR_WILDCARD}
-    touch ${FULL_PATH}/${IGNORE_SUBDIR_DBL_WILDCARD}
-
-    touch ${FULL_PATH}/.positignore
-    POSIT_IGNORE=${FULL_PATH}/.positignore
-    # add each case to .positignore
-    echo ${IGNORE_ROOT_FILE} >> ${POSIT_IGNORE}
-    echo ${IGNORE_SUBDIR_FILE} >> ${POSIT_IGNORE}
-    echo "*.wild" >> ${POSIT_IGNORE}
-    echo "/tempdir/*.wild" >> ${POSIT_IGNORE}
-    echo "/tempdir/**/*.wild" >> ${POSIT_IGNORE}
-}
-
 # helper funciton for deploys
 deploy_assertion() {
     if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
@@ -44,7 +18,7 @@ deploy_assertion() {
         GUID="$(echo "${output}" | \
             grep "Direct URL:" | \
             grep -o -E '[0-9a-f-]{36}')"
-        
+
         run curl --silent --show-error -L --max-redirs 0 --fail \
             -X GET \
             -H "Authorization: Key ${CONNECT_API_KEY}" \
@@ -110,7 +84,7 @@ python_content_types=(
     deploy_assertion
 
     # cleanup
-    # rm -rf ${FULL_PATH}/.posit/ ${FULL_PATH}/.positignore
+    # rm -rf ${FULL_PATH}/.posit/
 }
 
 @test "check for toml file" {
@@ -120,20 +94,6 @@ python_content_types=(
         run cat ${FULL_PATH}/.posit/publish/deployments/ci_deploy.toml
             assert_output --partial "type = '${CONTENT_TYPE}'"
             assert_output --partial "entrypoint = '${ENTRYPOINT}'"
-    fi
-}
-
-@test "check for ignored files in toml" {
-    if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
-        skip
-    else
-        run cat ${FULL_PATH}/.posit/publish/deployments/ci_deploy.toml
-            refute_output --partial "${IGNORE_ROOT_FILE}"
-            refute_output --partial "${IGNORE_WILDCARD}"
-            refute_output --partial "${IGNORE_SUBDIR_FILE}"
-            refute_output --partial "${IGNORE_SUBDIR_WILDCARD}"
-            refute_output --partial "${IGNORE_SUBDIR_DBL_WILDCARD}"
-
     fi
 }
 
@@ -156,10 +116,4 @@ the 'publisher requirements create' command."
 teardown_file() {
     # delete the temp files
     rm -rf ${FULL_PATH}/.posit*
-    rm -rf ${FULL_PATH}/tempdir
-    rm -rf ${FULL_PATH}/${IGNORE_ROOT_FILE}
-    rm -rf ${FULL_PATH}/${IGNORE_WILDCARD}
-    rm -rf ${FULL_PATH}/${IGNORE_SUBDIR_FILE}
-    rm -rf ${FULL_PATH}/${IGNORE_SUBDIR_WILDCARD}
-    rm -rf ${FULL_PATH}/${IGNORE_SUBDIR_DBL_WILDCARD}
 }
