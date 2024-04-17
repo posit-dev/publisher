@@ -475,6 +475,10 @@ const onMessageFromProvider = (event: any) => {
 </script>
 
 <style lang="scss" scoped>
+main {
+  padding: 0 20px;
+}
+
 .roomy {
   margin: 0.5rem 0;
 }
