@@ -1,11 +1,7 @@
 <template>
   <div class="pane" :class="{ expanded: expanded }">
-    <div
-      class="pane-header"
-      :class="{ expanded: expanded }"
-      @click="expanded = !expanded"
-    >
-      <div>
+    <div class="pane-header" :class="{ expanded: expanded }">
+      <div class="pane-header-title-container" @click="expanded = !expanded">
         <div
           class="twisty-container codicon"
           :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
@@ -128,26 +124,33 @@ defineProps<{
   align-items: center;
   cursor: pointer;
   display: flex;
+  justify-content: space-between;
   font-size: 11px;
   font-weight: 700;
   height: 22px;
   overflow: hidden;
 
-  .twisty-container {
-    margin: 0 2px;
-    font-size: 16px;
-    color: var(--vscode-icon-foreground);
-  }
+  .pane-header-title-container {
+    display: flex;
+    flex: 1;
+    align-items: center;
 
-  .title {
-    font-size: 11px;
-    min-width: 3ch;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-transform: uppercase;
-    white-space: nowrap;
-    -webkit-margin-before: 0;
-    -webkit-margin-after: 0;
+    .twisty-container {
+      margin: 0 2px;
+      font-size: 16px;
+      color: var(--vscode-icon-foreground);
+    }
+
+    .title {
+      font-size: 11px;
+      min-width: 3ch;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+      white-space: nowrap;
+      -webkit-margin-before: 0;
+      -webkit-margin-after: 0;
+    }
   }
 }
 
