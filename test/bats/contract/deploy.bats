@@ -35,7 +35,7 @@ deploy_assertion() {
 
         # reset min_processes to 0
         run curl --silent --show-error -L --max-redirs 0 --fail \
-            -X PUT \
+            -X PATCH \
             -H "Authorization: Key ${CONNECT_API_KEY}" \
             --insecure \
             --data-raw '{"min_processes": 0}' \
