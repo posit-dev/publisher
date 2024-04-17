@@ -1,7 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { DeploymentFile, FileMatch } from "../api/types/files";
-import { useApi } from "../api";
 import {
   TreeDataProvider,
   TreeItem,
@@ -16,6 +15,7 @@ import {
   ThemeIcon,
   RelativePattern,
 } from "vscode";
+import { useApi } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import * as path from "path";
 import { pathSorter } from "../utils/files";
@@ -42,9 +42,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   private _onDidChangeTreeData: FilesEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: FilesEvent = this._onDidChangeTreeData.event;
 
-  private api = useApi();
-
-  constructor(private apiReady: Promise<boolean>) {
+  constructor(private readonly _context: ExtensionContext) {
     const workspaceFolders = workspace.workspaceFolders;
     this.root = Uri.parse("positPublisherFiles://unknown");
     if (workspaceFolders !== undefined) {
@@ -64,8 +62,8 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     if (element === undefined) {
       // first call.
       try {
-        await this.apiReady;
-        const response = await this.api.files.getByConfiguration("default");
+        const api = await useApi();
+        const response = await api.files.getByConfiguration("default");
         const file = response.data;
 
         commands.executeCommand("setContext", isEmptyContext, Boolean(file));
@@ -96,12 +94,12 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     return [];
   }
 
-  public register(context: ExtensionContext) {
+  public register() {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
-    context.subscriptions.push(treeView);
-    context.subscriptions.push(
+    this._context.subscriptions.push(treeView);
+    this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
     );
 
@@ -112,7 +110,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
       watcher.onDidCreate(this.refresh);
       watcher.onDidDelete(this.refresh);
       watcher.onDidChange(this.refresh);
-      context.subscriptions.push(watcher);
+      this._context.subscriptions.push(watcher);
     }
   }
 }
@@ -135,16 +133,13 @@ const resetFileTrees = () => {
   excludedFiles = [];
 };
 
-const buildFileTrees = (
-  file: DeploymentFile,
-  root: Uri,
-) => {
+const buildFileTrees = (file: DeploymentFile, root: Uri) => {
   if (file.isFile) {
     if (file.reason?.exclude === false) {
       const f = new IncludedFile(root, {
         ...file,
         reason: file.reason,
-    });
+      });
       includedFiles.push(f);
     } else {
       const f = new ExcludedFile(root, {

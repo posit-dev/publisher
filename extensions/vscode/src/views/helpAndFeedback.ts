@@ -18,7 +18,7 @@ const openFeedbackCommand = viewName + "openFeedback";
 export class HelpAndFeedbackTreeDataProvider
   implements TreeDataProvider<HelpAndFeedbackTreeItem>
 {
-  constructor() {}
+  constructor(private readonly _context: ExtensionContext) {}
 
   getTreeItem(element: HelpAndFeedbackTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -44,12 +44,12 @@ export class HelpAndFeedbackTreeDataProvider
     return [];
   }
 
-  public register(context: ExtensionContext) {
-    context.subscriptions.push(
+  public register() {
+    this._context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this }),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(openGettingStartedCommand, () => {
         env.openExternal(
           Uri.parse(
@@ -59,7 +59,7 @@ export class HelpAndFeedbackTreeDataProvider
       }),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(openFeedbackCommand, () => {
         env.openExternal(
           Uri.parse("https://positpbc.slack.com/channels/publisher-feedback"),

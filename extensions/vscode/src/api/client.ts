@@ -16,11 +16,13 @@ class PublishingClientApi {
   deployments: Deployments;
   files: Files;
   requirements: Requirements;
+  apiServiceIsUp: Promise<boolean>;
 
-  constructor() {
+  constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
     this.client = axios.create({
-      baseURL: "/api",
+      baseURL: apiBaseUrl,
     });
+    this.apiServiceIsUp = apiServiceIsUp;
 
     this.accounts = new Accounts(this.client);
     this.configurations = new Configurations(this.client);
@@ -34,6 +36,26 @@ class PublishingClientApi {
   }
 }
 
-export const api = new PublishingClientApi();
+let api: PublishingClientApi | undefined = undefined;
 
-export const useApi = () => api;
+// NOTE: this function must be called ahead of useApi()
+// so that the class is properly instantiated.
+export const initApi = (
+  apiServiceIsUp: Promise<boolean>,
+  apiBaseUrl: string = "/api",
+) => {
+  api = new PublishingClientApi(apiBaseUrl, apiServiceIsUp);
+};
+
+// NOTE: initApi(...) must be called ahead of the first time
+// this method is called, otherwise, you are skipping initialization
+// and it will throw an exception
+export const useApi = async () => {
+  if (!api) {
+    throw new Error("client::useApi() must be called AFTER client::initApi()");
+  }
+  // wait until the service providing the API is available and ready
+  await api.apiServiceIsUp;
+
+  return api;
+};

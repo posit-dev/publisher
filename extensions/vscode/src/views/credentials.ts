@@ -11,7 +11,7 @@ import {
   window,
 } from "vscode";
 
-import api, { Account } from "../api";
+import { Account, useApi } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 
 const viewName = "posit.publisher.credentials";
@@ -30,7 +30,7 @@ export class CredentialsTreeDataProvider
   readonly onDidChangeTreeData: CredentialEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(private apiReady: Promise<boolean>) {}
+  constructor(private readonly _context: ExtensionContext) {}
 
   getTreeItem(element: CredentialsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -44,7 +44,7 @@ export class CredentialsTreeDataProvider
     }
 
     try {
-      await this.apiReady;
+      const api = await useApi();
       const response = await api.accounts.getAll();
       const result = response.data.map((account) => {
         return new CredentialsTreeItem(account);
@@ -66,12 +66,12 @@ export class CredentialsTreeDataProvider
     this._onDidChangeTreeData.fire();
   };
 
-  public register(context: ExtensionContext) {
-    context.subscriptions.push(
+  public register() {
+    this._context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this }),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
     );
   }

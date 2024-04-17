@@ -4,7 +4,6 @@ on:
 jobs:
   cleanup-connect:
     env:
-      DOCKER: false
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
       FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}

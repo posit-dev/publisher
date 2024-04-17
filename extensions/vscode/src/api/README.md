@@ -6,9 +6,18 @@ response types.
 ## Usage
 
 ```typescript
-import { useApi } from "src/api";
+import { initApi, useApi } from "src/api";
 
-const api = useApi();
+// You must first initialize the API one time.
+// The initialization method requires a promise which indicates
+// when the server who will provide the API is ready. If you do
+// not have this scenario, you follow the pattern below and
+// pass in a resolved promise.
+
+const ready = Promise.Resolve(true);
+initApi(ready, "http://localhost:15332/api`");
+
+const api = await useApi(); // will wait until the promise that was passed into the initApi call is resolved
 
 try {
   const response = await api.accounts.getAll();
@@ -22,6 +31,7 @@ using `setBaseUrl`. This changes the client so all requests will use the new
 base URL. This will need to be done before any requests are made.
 
 ```typescript
+const api = await useApi();
 api.setBaseUrl("http://localhost:9000/api");
 ```
 
@@ -39,7 +49,7 @@ Each class in the `resources` folder has methods related to its endpoint. Each
 method has a one-to-one relationship with the API endpoint on the server side.
 
 Example: `/api/accounts` maps to the `resources/Accounts.ts` module and `GET
-api/accounts` maps to the `api.accounts.getAll()` method.
+api/accounts` maps to the `useApi().accounts.getAll()` method.
 
 ### `/types`
 
@@ -51,15 +61,16 @@ getting cluttered.
 ### Limited Exports
 
 Rather than exporting the `AxiosInstance` or the `PublishingClientApi` class a
-constant is exported to prevent more than one client from being created and any
+singleton factory is exported to prevent more than one client from being created and any
 non-resource-method usage of this library.
 
-We can use the exported `api` constant to access an instance of
-`PublishingClientApi`.
-
-Or we can use the `useApi()` function which follows some of the syntax seen in
+We use the `useApi()` function which follows some of the syntax seen in
 the [Composition API](https://vuejs.org/api/sfc-script-setup.html#useslots-useattrs)
 and other Vue 3 libraries such as [Pinia](https://pinia.vuejs.org/).
+
+This factory will wait to return the api class until the backend service responsible for responding
+to the API request is available. Therefore, it is required to await on the response of the useApi()
+before being able to call the API. The examples contained herein implement this pattern of usage.
 
 ### Return All Available Data
 
@@ -69,6 +80,7 @@ to reduce boilerplate and ensure that we do not lose potentially-needed data.
 
 ```typescript
 try {
+  const api = await useApi();
   const { data } = await api.accounts.getAll();
 } catch (err) {
   // handle the error
