@@ -1,9 +1,20 @@
-"$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
+"$schema" = "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
 type = "quarto"
 entrypoint = "report.qmd"
 title = "Regional Quarterly Sales Report"
 description = "This is the quarterly sales report, broken down by region."
+thumbnail = "images/thumbnail.jpg"
 validate = true
+
+files = [
+    "*.py",
+    "*.qmd",
+    "requirements.txt",
+]
+
+tags = [ "sales", "quarterly", "regional" ]
+
+secrets = ["API_KEY"]
 
 [python]
 version = "3.11.3"
@@ -20,6 +31,22 @@ version = "1.4"
 
 [environment]
 API_URL = "https://example.com/api"
+
+[[schedules]]
+start = "2023-10-25T08:00:00Z"
+recurrence = "FREQ=MONTHLY;INTERVAL=3"
+
+[[access.users]]
+id = "jqpublic"
+guid = "536b456e-0311-4f92-ba10-dbf1db8a468e"
+name = "John Q. Public"
+permissions = "editor"
+
+[[access.groups]]
+id = "Data Science Team"
+guid = "8b4fde3e-f995-4894-bc02-ae47538262ff"
+name = "Data Science Team"
+permissions = "editor"
 
 [connect.access]
 run-as = "rstudio-connect"

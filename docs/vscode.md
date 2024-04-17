@@ -116,16 +116,7 @@ divided into two lists:
   the deployment. The tooltip on an excluded file will indicate the reason it
   was excluded.
 
-Exclusions are managed through a `.positignore` file in the root directory of
-your project. It is in the same format as a [`.gitignore` file](https://git-scm.com/docs/gitignore)
-
 ![](https://cdn.posit.co/publisher/assets/img/deployment-files-view.png)
-
-> [!NOTE]
-> Note: the extension UI does not currently support re-including an excluded file
-> (removing the exclusion from .positignore) since it might be the result of a
-> wildcard or directory name match. Click the Edit button to open `.positignore`
-> and edit or remove the pattern.
 
 ### Requirements
 

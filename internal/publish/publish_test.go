@@ -51,7 +51,7 @@ func (s *PublishSuite) SetupTest() {
 
 	// Create a virtual version of the cwd so NewWalker
 	// can Chdir there. This is needed because the
-	// gitignore.IgnoreList uses relative paths internally
+	// matcher.MatchList uses relative paths internally
 	// and expects to be able to call Abs on them.
 	cwd.MkdirAll(0700)
 	cwd.Join("app.py").WriteFile([]byte("import flask\n"), 0600)
@@ -177,7 +177,7 @@ func (s *PublishSuite) publishWithClient(
 	authErr, capErr, createErr, envVarErr, uploadErr, deployErr, waitErr, validateErr,
 	expectedErr error) {
 
-	bundler, err := bundles.NewBundler(s.cwd, bundles.NewManifest(), nil, s.log)
+	bundler, err := bundles.NewBundler(s.cwd, bundles.NewManifest(), []string{"/**"}, s.log)
 	s.NoError(err)
 
 	account := &accounts.Account{

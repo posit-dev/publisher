@@ -34,23 +34,25 @@ class PublishingClientApi {
   setBaseUrl(url: string) {
     this.client.defaults.baseURL = url;
   }
-
-  setServiceState(p: Promise<boolean>) {
-    this.apiServiceIsUp = p;
-  }
 }
 
 let api: PublishingClientApi | undefined = undefined;
 
-export const useApi = async (
-  apiBaseUrl?: string,
-  apiServiceIsUp?: Promise<boolean>,
+// NOTE: this function must be called ahead of useApi()
+// so that the class is properly instantiated.
+export const initApi = (
+  apiServiceIsUp: Promise<boolean>,
+  apiBaseUrl: string = "/api",
 ) => {
+  api = new PublishingClientApi(apiBaseUrl, apiServiceIsUp);
+};
+
+// NOTE: initApi(...) must be called ahead of the first time
+// this method is called, otherwise, you are skipping initialization
+// and it will throw an exception
+export const useApi = async () => {
   if (!api) {
-    if (!apiServiceIsUp || !apiBaseUrl) {
-      throw new Error("PublishingClientApi missing required parameters");
-    }
-    api = new PublishingClientApi(apiBaseUrl, apiServiceIsUp);
+    throw new Error("client::useApi() must be called AFTER client::initApi()");
   }
   // wait until the service providing the API is available and ready
   await api.apiServiceIsUp;

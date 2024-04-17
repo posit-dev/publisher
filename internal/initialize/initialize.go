@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/inspect"
 	"github.com/rstudio/connect-client/internal/inspect/detectors"
@@ -71,23 +70,6 @@ func requiresPython(cfg *config.Config, base util.AbsolutePath, python util.Path
 	return exists, nil
 }
 
-const defaultPositignoreContent = `# List any files or directories that should not be included in the deployment.
-# Wildcards are supported as in .gitignore: https://git-scm.com/docs/gitignore
-`
-
-func createPositignoreIfNeeded(base util.AbsolutePath, log logging.Logger) error {
-	ignorePath := base.Join(gitignore.IgnoreFilename)
-	exists, err := ignorePath.Exists()
-	if err != nil {
-		return err
-	}
-	if exists {
-		log.Debug(".positignore exists; not creating it")
-		return nil
-	}
-	return ignorePath.WriteFile([]byte(defaultPositignoreContent), 0666)
-}
-
 func GetPossibleConfigs(base util.AbsolutePath, python util.Path, log logging.Logger) ([]*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory()
@@ -126,10 +108,6 @@ func Init(base util.AbsolutePath, configName string, python util.Path, log loggi
 		configName = config.DefaultConfigName
 	}
 	cfg, err := inspectProject(base, python, log)
-	if err != nil {
-		return nil, err
-	}
-	err = createPositignoreIfNeeded(base, log)
 	if err != nil {
 		return nil, err
 	}

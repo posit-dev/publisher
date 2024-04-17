@@ -1,6 +1,6 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-export { useApi } from "./client";
+export { initApi, useApi } from "./client";
 
 export * from "./types/accounts";
 export * from "./types/configurations";

@@ -3,7 +3,7 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/rstudio/connect-client/internal/bundles/gitignore"
+	"github.com/rstudio/connect-client/internal/bundles/matcher"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
 	"github.com/rstudio/connect-client/internal/util"
@@ -15,8 +15,8 @@ type MockFilesService struct {
 	files.FilesService
 }
 
-func (m *MockFilesService) GetFile(p util.AbsolutePath, ignore gitignore.IgnoreList) (*files.File, error) {
-	args := m.Called(p, ignore)
+func (m *MockFilesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) (*files.File, error) {
+	args := m.Called(p, matchList)
 	return args.Get(0).(*files.File), args.Error(1)
 }
 
