@@ -54,6 +54,19 @@ type HomeViewSelectionState = {
   credentialName?: string;
 };
 
+export function getSelectionState(
+  context: ExtensionContext,
+): HomeViewSelectionState {
+  return context.workspaceState.get<HomeViewSelectionState>(
+    lastSelectionState,
+    {
+      deploymentName: undefined,
+      configurationName: undefined,
+      credentialName: undefined,
+    },
+  );
+}
+
 export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
   private _deployments: (Deployment | PreDeployment)[] = [];
@@ -441,14 +454,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       return;
     }
     const selectionState = includeSavedState
-      ? this._context.workspaceState.get<HomeViewSelectionState>(
-          lastSelectionState,
-          {
-            deploymentName: undefined,
-            configurationName: undefined,
-            credentialName: undefined,
-          },
-        )
+      ? getSelectionState(this._context)
       : undefined;
     this._updateWebViewViewCredentials(selectionState?.credentialName);
     this._updateWebViewViewConfigurations(selectionState?.configurationName);

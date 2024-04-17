@@ -19,6 +19,7 @@ import { useApi } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import * as path from "path";
 import { pathSorter } from "../utils/files";
+import { getSelectionState } from "./homeView";
 
 import * as os from "os";
 
@@ -63,7 +64,15 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
       // first call.
       try {
         const api = await useApi();
-        const response = await api.files.getByConfiguration("default");
+        const selectedConfigName = getSelectionState(
+          this._context,
+        ).configurationName;
+
+        if (selectedConfigName === undefined) {
+          commands.executeCommand("setContext", isEmptyContext, true);
+          return [];
+        }
+        const response = await api.files.getByConfiguration(selectedConfigName);
         const file = response.data;
 
         commands.executeCommand("setContext", isEmptyContext, Boolean(file));

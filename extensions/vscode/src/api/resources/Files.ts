@@ -26,5 +26,8 @@ export class Files {
   // 500 - internal server error
   getByConfiguration(configName: string) {
     const encodedName = encodeURIComponent(configName);
-    return this.client.get<DeploymentFile>(`/configurations/${encodedName}/files`);
-  }}
+    return this.client.get<DeploymentFile>(
+      `/configurations/${encodedName}/files`,
+    );
+  }
+}
