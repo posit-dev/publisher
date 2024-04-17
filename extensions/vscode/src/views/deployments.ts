@@ -59,11 +59,9 @@ export class DeploymentsTreeDataProvider
   readonly onDidChangeTreeData: DeploymentsEvent =
     this._onDidChangeTreeData.event;
 
-  private api = useApi();
-
   constructor(
-    private stream: EventStream,
-    private apiReady: Promise<boolean>,
+    private readonly _context: ExtensionContext,
+    private readonly _stream: EventStream,
   ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
@@ -97,8 +95,8 @@ export class DeploymentsTreeDataProvider
       // API Returns:
       // 200 - success
       // 500 - internal server error
-      await this.apiReady;
-      const response = await this.api.deployments.getAll();
+      const api = await useApi();
+      const response = await api.deployments.getAll();
       const deployments = response.data;
       commands.executeCommand(
         "setContext",
@@ -121,44 +119,44 @@ export class DeploymentsTreeDataProvider
     }
   }
 
-  public register(context: ExtensionContext) {
+  public register() {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
-    context.subscriptions.push(treeView);
+    this._context.subscriptions.push(treeView);
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(addDeploymentCommand, () => {
         return newDeployment(
           "Deploy Your Project to a New Location",
           true,
-          this.stream,
+          this._stream,
         );
       }),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(createNewDeploymentFileCommand, () => {
         return newDeployment("Create a Deployment File for your Project");
       }),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(
         deployCommand,
         async (item: DeploymentsTreeItem) => {
           if (!isDeploymentError(item.deployment)) {
-            publishDeployment(item.deployment, this.stream);
+            publishDeployment(item.deployment, this._stream);
           }
         },
       ),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(
         forgetCommand,
         async (item: DeploymentsTreeItem) => {
@@ -166,13 +164,14 @@ export class DeploymentsTreeDataProvider
             `Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`,
           );
           if (ok) {
-            await this.api.deployments.delete(item.deployment.deploymentName);
+            const api = await useApi();
+            await api.deployments.delete(item.deployment.deploymentName);
           }
         },
       ),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(
         editCommand,
         async (item: DeploymentsTreeItem) => {
@@ -181,7 +180,7 @@ export class DeploymentsTreeDataProvider
       ),
     );
 
-    context.subscriptions.push(
+    this._context.subscriptions.push(
       commands.registerCommand(
         visitCommand,
         async (item: DeploymentsTreeItem) => {
@@ -201,7 +200,7 @@ export class DeploymentsTreeDataProvider
       watcher.onDidCreate(this.refresh);
       watcher.onDidDelete(this.refresh);
       watcher.onDidChange(this.refresh);
-      context.subscriptions.push(watcher);
+      this._context.subscriptions.push(watcher);
     }
   }
 }

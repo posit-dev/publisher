@@ -2,7 +2,7 @@
 
 import { HOST } from ".";
 import { Server } from "./servers";
-import { useApi } from "./api";
+import { initApi } from "./api";
 import { ExtensionContext, Disposable } from "vscode";
 
 export class Service implements Disposable {
@@ -14,7 +14,7 @@ export class Service implements Disposable {
     this.context = context;
     this.agentURL = `http://${HOST}:${port}/api`;
     this.server = new Server(port);
-    useApi().setBaseUrl(this.agentURL);
+    initApi(this.isUp(), this.agentURL);
   }
 
   start = async () => {

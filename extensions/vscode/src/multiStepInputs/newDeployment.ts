@@ -43,11 +43,10 @@ export async function newDeployment(
   allowPublish?: boolean,
   stream?: EventStream,
 ): Promise<PreDeployment | undefined> {
-  const api = useApi();
-
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
+  const api = await useApi();
 
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];

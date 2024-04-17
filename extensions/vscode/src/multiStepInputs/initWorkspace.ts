@@ -31,11 +31,10 @@ export async function initWorkspace(
   fixedDeploymentName?: string,
   fixedConfigurationName?: string,
 ) {
-  const api = useApi();
-
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
+  const api = await useApi();
 
   let accountListItems: QuickPickItem[] = [];
 

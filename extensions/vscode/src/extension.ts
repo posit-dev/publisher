@@ -1,7 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import * as ports from "./ports";
-import api from "./api";
+import { useApi } from "./api";
 import { Service } from "./services";
 import { ProjectTreeDataProvider } from "./views/project";
 import { DeploymentsTreeDataProvider } from "./views/deployments";
@@ -65,9 +65,9 @@ async function isMissingPublishDirs(folder: WorkspaceFolder): Promise<boolean> {
   }
 }
 
-async function checkForCredentials(apiReady: Promise<boolean>) {
-  await apiReady;
+async function checkForCredentials() {
   try {
+    const api = await useApi();
     const response = await api.accounts.getAll();
     if (response.data.length) {
       setCredentialCheckContext(PositPublishCredentialCheck.succeeded);
@@ -140,20 +140,17 @@ export async function activate(context: ExtensionContext) {
   context.subscriptions.push(stream);
 
   service = new Service(context, port);
-  const apiReady = service.isUp();
-  checkForCredentials(apiReady);
+  checkForCredentials();
 
-  new ProjectTreeDataProvider().register(context);
-  new DeploymentsTreeDataProvider(stream, apiReady).register(context);
-  new ConfigurationsTreeDataProvider(apiReady).register(context);
-  new FilesTreeDataProvider(apiReady).register(context);
-  new RequirementsTreeDataProvider(apiReady).register(context);
-  new CredentialsTreeDataProvider(apiReady).register(context);
-  new HelpAndFeedbackTreeDataProvider().register(context);
-  new LogsTreeDataProvider(stream).register(context);
-  new HomeViewProvider(context.extensionUri, stream, apiReady).register(
-    context,
-  );
+  new ProjectTreeDataProvider(context).register();
+  new DeploymentsTreeDataProvider(context, stream).register();
+  new ConfigurationsTreeDataProvider(context).register();
+  new FilesTreeDataProvider(context).register();
+  new RequirementsTreeDataProvider(context).register();
+  new CredentialsTreeDataProvider(context).register();
+  new HelpAndFeedbackTreeDataProvider(context).register();
+  new LogsTreeDataProvider(context, stream).register();
+  new HomeViewProvider(context, stream).register();
 
   await service.start();
 
@@ -167,7 +164,7 @@ export async function activate(context: ExtensionContext) {
 
   context.subscriptions.push(
     commands.registerCommand(REFRESH_INIT_PROJECT_COMMAND, () =>
-      checkForCredentials(apiReady),
+      checkForCredentials(),
     ),
   );
 
