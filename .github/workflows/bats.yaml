@@ -26,7 +26,7 @@ jobs:
           token: ${{ secrets.CONNECT_PAT }}
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.10
+          python-version: 3.10.14
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: 1.4.549
