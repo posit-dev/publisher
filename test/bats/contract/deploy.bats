@@ -24,9 +24,42 @@ deploy_assertion() {
             -H "Authorization: Key ${CONNECT_API_KEY}" \
             "${CONNECT_SERVER}/__api__/v1/content/${GUID}"
         assert_output --partial "\"app_mode\":\"${APP_MODE}\""
+        assert_output --partial "\"description\":\"${CONTENT} description\""
+        assert_output --partial "\"read_timeout\":30"
+        assert_output --partial "\"init_timeout\":35"
+        assert_output --partial "\"idle_timeout\":40"
+        assert_output --partial "\"max_processes\":2"
+        assert_output --partial "\"min_processes\":1"
+        assert_output --partial "\"max_conns_per_process\":5"
+        assert_output --partial "\"load_factor\":0.8"
     fi
 }
 
+init_with_fields() {
+    run ${EXE} init -c ${CONTENT} ${FULL_PATH}
+    # init to create default.toml
+    if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
+        assert_output --partial "error detecting content type: quarto with knitr engine is not yet supported."
+    else
+        assert_success
+    
+    # add description
+    perl -i -pe '$_ .= qq(description =  "'"${CONTENT}"' description"\n) if /title/' ${FULL_PATH}/.posit/publish/${CONTENT}.toml
+    
+    # add Connect metadata fields
+    echo "
+[connect]
+runtime.connection-timeout = 25
+runtime.read-timeout = 30
+runtime.init-timeout = 35
+runtime.idle-timeout = 40
+runtime.max-processes = 2
+runtime.min-processes = 1
+runtime.max-connections = 5
+runtime.load-factor = 0.8
+" >> ${FULL_PATH}/.posit/publish/${CONTENT}.toml
+    fi
+}
 
 # temporary unsupported quarto types
 quarto_r_content=(
@@ -34,7 +67,7 @@ quarto_r_content=(
     "quarty-website-r" "quarto-website-r-py"
     "quarto-website-r-py-separate-files-deps" "quarto-website-r-deps"
     "quarto-website-r-py-deps"
-    )
+)
 
 quarto_content_types=(
     "quarto" "quarto-static"
@@ -63,7 +96,9 @@ python_content_types=(
         run ${EXE} requirements show ${FULL_PATH}/
         assert_success
 
-        run diff <(grep -o '^[^=]*' ${FULL_PATH}/test/requirements.in | grep -v '^#') <(grep -o '^[^=]*' ${FULL_PATH}/requirements.txt | grep -v '^#')
+        run diff <(grep -o '^[^=]*' ${FULL_PATH}/test/requirements.in | \
+                grep -v '^#') <(grep -o '^[^=]*' ${FULL_PATH}/requirements.txt | \
+                grep -v '^#')
         assert_success
     else
         skip
@@ -72,8 +107,9 @@ python_content_types=(
 
 # deploy content with the env account using requirements files
 @test "deploy ${CONTENT}" {
+    init_with_fields
+    run ${EXE} deploy ${FULL_PATH} -n ci_deploy -c ${CONTENT}
 
-    run ${EXE} deploy ${FULL_PATH} -n ci_deploy
     deploy_assertion
 }
 
