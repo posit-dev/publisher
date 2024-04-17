@@ -1,7 +1,7 @@
 <template>
   <div class="pane" :class="{ expanded: expanded }">
     <div class="pane-header" tabindex="0" :class="{ expanded: expanded }">
-      <div class="pane-header-title-container" @click="expanded = !expanded">
+      <div class="pane-header-title-container" @click="toggleExpanded">
         <div
           class="twisty-container codicon"
           :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
@@ -50,6 +50,10 @@ const expanded = defineModel("expanded", { required: false, default: false });
 defineProps<{
   title: string;
 }>();
+
+const toggleExpanded = () => {
+  expanded.value = !expanded.value;
+};
 </script>
 
 <style lang="scss" scoped>
