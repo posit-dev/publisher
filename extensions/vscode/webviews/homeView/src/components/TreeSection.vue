@@ -1,6 +1,6 @@
 <template>
   <div class="pane" :class="{ expanded: expanded }">
-    <div class="pane-header" :class="{ expanded: expanded }">
+    <div class="pane-header" tabindex="0" :class="{ expanded: expanded }">
       <div class="pane-header-title-container" @click="expanded = !expanded">
         <div
           class="twisty-container codicon"
@@ -110,7 +110,8 @@ defineProps<{
     }
   }
 
-  &.expanded:hover .actions {
+  &.expanded:hover .actions,
+  &.expanded:focus-within .actions {
     display: initial;
   }
 }
@@ -129,6 +130,14 @@ defineProps<{
   font-weight: 700;
   height: 22px;
   overflow: hidden;
+
+  &:focus {
+    opacity: 1;
+    outline-color: var(--vscode-focusBorder);
+    outline-offset: -1px;
+    outline-style: solid;
+    outline-width: 1px;
+  }
 
   .pane-header-title-container {
     display: flex;
