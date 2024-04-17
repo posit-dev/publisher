@@ -10,6 +10,30 @@
         :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
       />
       <h3 class="title">{{ title }}</h3>
+      <div class="actions">
+        <div class="monaco-toolbar">
+          <div class="monaco-action-bar">
+            <ul
+              class="actions-container"
+              role="toolbar"
+              :aria-label="`${title} actions`"
+            >
+              <li
+                class="action-item menu-entry"
+                role="presentation"
+                custom-hover="true"
+              >
+                <a
+                  class="action-label codicon codicon-refresh"
+                  role="button"
+                  aria-label="Refresh Deployment Files"
+                  tabindex="0"
+                ></a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
     <div v-if="expanded" class="pane-body">
       Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo ad adipisci
@@ -31,6 +55,68 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
+.pane {
+  .actions {
+    display: none;
+    margin-left: auto;
+
+    .monaco-toolbar {
+      height: 100%;
+
+      .monaco-action-bar {
+        white-space: nowrap;
+        height: 100%;
+
+        .actions-container {
+          align-items: center;
+          display: flex;
+          height: 100%;
+          margin: 0 auto;
+          padding: 0;
+          width: 100%;
+
+          .action-item {
+            display: block;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            margin-right: 4px;
+
+            .action-label {
+              border-radius: 5px;
+              padding: 2px;
+              font-size: 16px;
+              align-items: center;
+              display: flex;
+              height: 20px;
+              width: 20px;
+              color: var(--vscode-icon-foreground);
+
+              &:focus {
+                opacity: 1;
+                outline-color: var(--vscode-focusBorder);
+                outline-offset: -1px;
+                outline-style: solid;
+                outline-width: 1px;
+              }
+
+              &:hover {
+                background-color: var(--vscode-toolbar-hoverBackground);
+                outline: 1px dashed var(--vscode-toolbar-hoverOutline);
+                outline-offset: -1px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  &.expanded:hover .actions {
+    display: initial;
+  }
+}
+
 .pane-header {
   line-height: 22px;
   color: var(--vscode-sideBarSectionHeader-foreground);
