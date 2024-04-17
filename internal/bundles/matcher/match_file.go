@@ -15,24 +15,32 @@ type MatchFile struct {
 	patterns []*Pattern
 }
 
-func NewMatchFile(path util.AbsolutePath) (*MatchFile, error) {
-	patterns, err := readMatchFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	return &MatchFile{
-		path:     path,
-		patterns: patterns,
-	}, nil
-}
-
 func NewBuiltinMatchFile(base util.AbsolutePath, patternStrings []string) (*MatchFile, error) {
 	filePath := util.AbsolutePath{}
 	patterns := []*Pattern{}
 
-	for lineNum, s := range patternStrings {
-		pattern, err := patternFromString(s, base, filePath, lineNum+1)
+	for _, s := range patternStrings {
+		pattern, err := patternFromString(s, base, filePath)
+		if err != nil {
+			return nil, err
+		}
+		if pattern == nil {
+			continue
+		}
+		patterns = append(patterns, pattern)
+	}
+
+	return &MatchFile{
+		path:     filePath,
+		patterns: patterns,
+	}, nil
+}
+
+func NewMatchFile(base util.AbsolutePath, filePath util.AbsolutePath, patternStrings []string) (*MatchFile, error) {
+	patterns := []*Pattern{}
+
+	for _, s := range patternStrings {
+		pattern, err := patternFromString(s, base, filePath)
 		if err != nil {
 			return nil, err
 		}
@@ -57,27 +65,6 @@ func (f *MatchFile) Match(filePath string) *Pattern {
 		}
 	}
 	return match
-}
-
-func readMatchFile(filePath util.AbsolutePath) ([]*Pattern, error) {
-	content, err := filePath.ReadFile()
-	if err != nil {
-		return nil, err
-	}
-	var patterns []*Pattern
-
-	lines := strings.Split(string(content), "\n")
-	for lineNum, line := range lines {
-		pattern, err := patternFromString(line, filePath.Dir(), filePath, lineNum+1)
-		if err != nil {
-			return nil, err
-		}
-		if pattern == nil {
-			continue
-		}
-		patterns = append(patterns, pattern)
-	}
-	return patterns, nil
 }
 
 func escapeRegexCharsInPath(s string) string {
@@ -109,7 +96,7 @@ func escapeRegexChars(s string, specials string) string {
 	return out.String()
 }
 
-func patternFromString(line string, base util.AbsolutePath, filePath util.AbsolutePath, lineNum int) (*Pattern, error) {
+func patternFromString(line string, base util.AbsolutePath, filePath util.AbsolutePath) (*Pattern, error) {
 	inverted := false
 
 	// TODO: Trailing spaces are ignored unless they are quoted with backslash ("\").
@@ -227,7 +214,6 @@ func patternFromString(line string, base util.AbsolutePath, filePath util.Absolu
 	return &Pattern{
 		Source:   source,
 		FilePath: filePath,
-		Line:     lineNum,
 		Pattern:  line,
 		Inverted: inverted,
 		regex:    regex,

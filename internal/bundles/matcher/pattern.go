@@ -18,6 +18,5 @@ type Pattern struct {
 	Pattern  string            `json:"pattern"`   // exclusion pattern as read from the file
 	Inverted bool              `json:"inverted"`  // true if this pattern un-matches a file
 	FilePath util.AbsolutePath `json:"file_path"` // path to the file where this was defined, empty if not from a file
-	Line     int               `json:"line"`      // line in the file where this was defined, 0 if not from a file
 	regex    *regexp.Regexp
 }

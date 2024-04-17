@@ -10,7 +10,7 @@ import (
 // Copyright (C) 2023 by Posit Software, PBC.
 
 type MatchList interface {
-	AddFile(path util.AbsolutePath) error
+	AddFromFile(base util.AbsolutePath, filePath util.AbsolutePath, patterns []string) error
 	Match(path util.AbsolutePath) *Pattern
 	Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc) error
 }
@@ -29,8 +29,8 @@ func NewMatchList(base util.AbsolutePath, builtins []string) (*defaultMatchList,
 	}, nil
 }
 
-func (l *defaultMatchList) AddFile(path util.AbsolutePath) error {
-	newFile, err := NewMatchFile(path)
+func (l *defaultMatchList) AddFromFile(base util.AbsolutePath, filePath util.AbsolutePath, patterns []string) error {
+	newFile, err := NewMatchFile(base, filePath, patterns)
 	if err != nil {
 		return err
 	}

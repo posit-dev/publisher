@@ -55,7 +55,6 @@ func (s *MatchListSuite) TestMatch() {
 	s.Equal(MatchSourceBuiltIn, m.Source)
 	s.Equal("/**", m.Pattern)
 	s.Equal("", m.FilePath.String())
-	s.Equal(1, m.Line)
 	s.Equal(false, m.Inverted)
 
 	// Non-file matches don't include file info
@@ -64,7 +63,6 @@ func (s *MatchListSuite) TestMatch() {
 	s.Equal(MatchSourceBuiltIn, m.Source)
 	s.Equal("!*.bak", m.Pattern)
 	s.Equal("", m.FilePath.String())
-	s.Equal(2, m.Line)
 	s.Equal(true, m.Inverted)
 
 	ignoredir := s.cwd.Join("ignoredir")
@@ -76,6 +74,5 @@ func (s *MatchListSuite) TestMatch() {
 	s.Equal(MatchSourceBuiltIn, m.Source)
 	s.Equal("!ignoredir/", m.Pattern)
 	s.Equal("", m.FilePath.String())
-	s.Equal(3, m.Line)
 	s.Equal(true, m.Inverted)
 }
