@@ -5,11 +5,13 @@
       :class="{ expanded: expanded }"
       @click="expanded = !expanded"
     >
-      <div
-        class="twisty-container codicon"
-        :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
-      />
-      <h3 class="title">{{ title }}</h3>
+      <div>
+        <div
+          class="twisty-container codicon"
+          :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
+        />
+        <h3 class="title">{{ title }}</h3>
+      </div>
       <div class="actions">
         <div class="monaco-toolbar">
           <div class="monaco-action-bar">
@@ -136,21 +138,21 @@ defineProps<{
     font-size: 16px;
     color: var(--vscode-icon-foreground);
   }
+
+  .title {
+    font-size: 11px;
+    min-width: 3ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+    -webkit-margin-before: 0;
+    -webkit-margin-after: 0;
+  }
 }
 
 .pane-body {
   flex: 1;
   overflow: hidden;
-}
-
-.title {
-  font-size: 11px;
-  min-width: 3ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-  -webkit-margin-before: 0;
-  -webkit-margin-after: 0;
 }
 </style>
