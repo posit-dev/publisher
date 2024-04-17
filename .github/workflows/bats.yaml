@@ -8,7 +8,7 @@ jobs:
       # deploy only these content
       CONTENT: "fastapi-simple quarto-website-py"
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
-      PYTHON_VERSION: 3.10.14
+      PYTHON_VERSION: 3.12.1
       QUARTO_VERSION: 1.4.549
     strategy:
       fail-fast: false
