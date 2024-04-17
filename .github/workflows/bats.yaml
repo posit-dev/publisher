@@ -38,6 +38,7 @@ jobs:
           name: bin
           path: bin
       - run: chmod -R +x ./bin
+      - run: docker compose -f test/docker-compose.yml build
       - run: just bats install
       - run: just bats test common
       - run: just bats test deploy
