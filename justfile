@@ -34,6 +34,9 @@ _uid_args := if os_family() == "unix" {
         ""
     }
 
+PYTHON_VERSION := env("PYTHON_VERSION", "3.12.1")
+QUARTO_VERSION := env("QUARTO_VERSION", "1.4.553")
+
 # Quick start
 default:
     #!/usr/bin/env bash
