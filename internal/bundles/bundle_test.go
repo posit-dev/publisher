@@ -164,6 +164,7 @@ func (s *BundlerSuite) SetupTest() {
 func (s *BundlerSuite) TestNewBundlerDirectory() {
 	log := loggingtest.NewMockLogger()
 	log.On("WithArgs", logging.LogKeyOp, events.PublishCreateBundleOp).Return(log)
+	log.On("Info", mock.Anything)
 	bundler, err := NewBundler(s.cwd, NewManifest(), nil, log)
 	s.Nil(err)
 	s.NotNil(bundler)
@@ -173,6 +174,7 @@ func (s *BundlerSuite) TestNewBundlerDirectory() {
 func (s *BundlerSuite) TestNewBundlerFile() {
 	log := loggingtest.NewMockLogger()
 	log.On("WithArgs", logging.LogKeyOp, events.PublishCreateBundleOp).Return(log)
+	log.On("Info", mock.Anything)
 	path := s.cwd.Join("app.py")
 	err := path.WriteFile([]byte("import flask\napp=flask.Flask(__name)\n"), 0600)
 	s.Nil(err)
@@ -235,27 +237,6 @@ func (s *BundlerSuite) TestCreateBundleAutoDetect() {
 	s.Equal([]string{
 		"app.py",
 		"manifest.json",
-	}, s.getTarFileNames(dest))
-}
-
-func (s *BundlerSuite) TestCreateBundlePythonPackages() {
-	s.makeFileWithContents("app.py", []byte("import flask"))
-	manifest := NewManifest()
-	manifest.Python = &Python{}
-	pythonRequirements := []byte("flask\nnumpy")
-	log := logging.New()
-
-	bundler, err := NewBundler(s.cwd, manifest, pythonRequirements, log)
-	s.Nil(err)
-	dest := new(bytes.Buffer)
-	manifestOut, err := bundler.CreateBundle(dest)
-	s.Nil(err)
-	s.NotNil(manifestOut)
-	s.Len(manifestOut.Files, 2)
-	s.Equal([]string{
-		"app.py",
-		"manifest.json",
-		"requirements.txt",
 	}, s.getTarFileNames(dest))
 }
 

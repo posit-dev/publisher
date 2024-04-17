@@ -36,8 +36,9 @@ func (s *WalkerSuite) SetupTest() {
 	cwd.MkdirAll(0700)
 }
 
-func (s *WalkerSuite) TestNewExcludingWalker() {
-	w := NewMatchingWalker(s.cwd)
+func (s *WalkerSuite) TestNewMatchingWalker() {
+	w, err := NewMatchingWalker(nil, s.cwd)
+	s.NoError(err)
 	s.NotNil(w)
 }
 
@@ -55,26 +56,32 @@ func (s *WalkerSuite) TestWalk() {
 	includedDir := baseDir.Join("included")
 	err = includedDir.MkdirAll(0777)
 	s.NoError(err)
+
 	includedFile := includedDir.Join("includeme")
 	err = includedFile.WriteFile([]byte("this is an included file"), 0600)
 	s.NoError(err)
 
-	w := NewMatchingWalker(s.cwd)
+	// This will be excluded by default
+	err = baseDir.Join("manifest.json").WriteFile(nil, 0777)
+	s.NoError(err)
+
+	w, err := NewMatchingWalker([]string{"/**"}, s.cwd)
+	s.NoError(err)
 	s.NotNil(w)
 
-	seen := []util.RelativePath{}
+	seen := []string{}
 	err = w.Walk(baseDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		s.NoError(err)
 		relPath, err := path.Rel(s.cwd)
 		s.NoError(err)
-		seen = append(seen, relPath)
+		seen = append(seen, relPath.String())
 		return nil
 	})
 	s.NoError(err)
 	dirPath := util.NewRelativePath("test", s.fs).Join("dir")
-	s.Equal([]util.RelativePath{
-		dirPath,
-		dirPath.Join("included"),
-		dirPath.Join("included", "includeme"),
+	s.Equal([]string{
+		dirPath.String(),
+		dirPath.Join("included").String(),
+		dirPath.Join("included", "includeme").String(),
 	}, seen)
 }
