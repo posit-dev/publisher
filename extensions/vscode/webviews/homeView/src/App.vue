@@ -51,6 +51,7 @@
           v-model="selectedDeployment"
           :options="deployments"
           :get-key="(d) => d.saveName"
+          @update:modelValue="onUpdateModelValueSelectedDeployment"
           class="dropdowns"
         />
       </div>
@@ -85,6 +86,7 @@
           v-model="selectedConfig"
           :options="configs"
           :get-key="(c: Configuration) => c.configurationName"
+          @update:modelValue="onUpdateModelValueSelectedConfig"
           class="dropdowns"
         />
       </div>
@@ -94,6 +96,7 @@
         v-model="selectedAccount"
         :options="filteredAccounts"
         :get-key="(a: Account) => a.name"
+        @update:modelValue="onUpdateModelValueSelectedCredential"
         class="dropdowns"
       />
     </div>
@@ -200,9 +203,10 @@ const disableDeployment = computed(() => {
   return result;
 });
 
-watch(selectedDeployment, () => {
+const onUpdateModelValueSelectedDeployment = () => {
   updateCredentialsAndConfigurationForDeployment();
-});
+  updateParentViewSelectionState();
+};
 
 const updateCredentialsAndConfigurationForDeployment = () => {
   filterCredentialsToDeployment();
@@ -211,6 +215,14 @@ const updateCredentialsAndConfigurationForDeployment = () => {
       selectedDeployment.value.configurationName,
     );
   }
+};
+
+const onUpdateModelValueSelectedConfig = () => {
+  updateParentViewSelectionState();
+};
+
+const onUpdateModelValueSelectedCredential = () => {
+  updateParentViewSelectionState();
 };
 
 onBeforeMount(() => {
@@ -261,7 +273,7 @@ const updateSelectedConfigurationByName = (
 ): boolean => {
   const previousSelectedConfig = selectedConfig.value;
   let selectedConfigTarget: Configuration | undefined = undefined;
-  if (selectedConfig.value) {
+  if (configurationName) {
     selectedConfigTarget = configs.value.find(
       (config) => config.configurationName === configurationName,
     );
@@ -276,7 +288,7 @@ const updateSelectedConfigurationByName = (
 const updateSelectedCredentialByName = (credentialName?: string): boolean => {
   const previousSelectedAccount = selectedAccount.value;
   let selectedCredentialTarget: Account | undefined = undefined;
-  if (selectedAccount.value) {
+  if (credentialName) {
     selectedCredentialTarget = accounts.value.find(
       (account) => account.name === credentialName,
     );
@@ -325,6 +337,25 @@ const filterCredentialsToDeployment = () => {
   }
 };
 
+const onClickDeployExpand = () => {
+  showDetails.value = !showDetails.value;
+  vsCodeApi.postMessage({
+    command: "saveDeploymentButtonExpanded",
+    payload: JSON.stringify(showDetails.value),
+  });
+};
+
+const updateParentViewSelectionState = () => {
+  vsCodeApi.postMessage({
+    command: "saveSelectionState",
+    payload: JSON.stringify({
+      deploymentName: selectedDeployment.value?.saveName,
+      configurationName: selectedConfig.value?.configurationName,
+      credentialName: selectedAccount.value?.name,
+    }),
+  });
+};
+
 const onClickDeploy = () => {
   vsCodeApi.postMessage({
     command: "deploy",
@@ -334,19 +365,6 @@ const onClickDeploy = () => {
       credential: selectedAccount.value?.name,
     }),
   });
-};
-
-const onClickDeployExpand = () => {
-  showDetails.value = !showDetails.value;
-  if (showDetails.value) {
-    vsCodeApi.postMessage({
-      command: "expanded",
-    });
-  } else {
-    vsCodeApi.postMessage({
-      command: "collapsed",
-    });
-  }
 };
 
 const navigateToUrl = (url: string) => {
@@ -381,28 +399,45 @@ const onMessageFromProvider = (event: any) => {
     case "refresh_deployment_data": {
       const payload = JSON.parse(event.data.payload);
       deployments.value = payload.deployments;
-      if (
-        !updateSelectedDeploymentByName(
-          selectedDeployment.value?.deploymentName,
-        )
-      ) {
-        // Always cause the re-calculation even if selected deployment didn't change
-        updateCredentialsAndConfigurationForDeployment();
+      if (payload.selectedDeploymentName) {
+        updateSelectedDeploymentByName(payload.selectedDeploymentName);
+      } else {
+        if (
+          !updateSelectedDeploymentByName(
+            selectedDeployment.value?.deploymentName,
+          )
+        ) {
+          // Always cause the re-calculation even if selected deployment didn't change
+          updateCredentialsAndConfigurationForDeployment();
+        }
       }
+      break;
+    }
+    case "update_expansion_from_storage": {
+      const payload = JSON.parse(event.data.payload);
+      showDetails.value = payload.expansionState;
       break;
     }
     case "refresh_config_data": {
       const payload = JSON.parse(event.data.payload);
       configs.value = payload.configurations;
-      updateSelectedConfigurationByName(
-        selectedConfig.value?.configurationName,
-      );
+      if (payload.selectedConfigurationName) {
+        updateSelectedConfigurationByName(payload.selectedConfigurationName);
+      } else {
+        updateSelectedConfigurationByName(
+          selectedConfig.value?.configurationName,
+        );
+      }
       break;
     }
     case "refresh_credential_data": {
       const payload = JSON.parse(event.data.payload);
       accounts.value = payload.credentials;
-      updateSelectedCredentialByName(selectedAccount.value?.name);
+      if (payload.selectedCredentialName) {
+        updateSelectedCredentialByName(payload.selectedCredentialName);
+      } else {
+        updateSelectedCredentialByName(selectedAccount.value?.name);
+      }
       break;
     }
     case "publish_start": {

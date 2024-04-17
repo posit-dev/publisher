@@ -45,6 +45,15 @@ const contextActiveMode = viewName + ".deploymentActiveMode";
 const contextActiveModeAdvanced = "advanced-mode";
 const contextActiveModeBasic = "basic-mode";
 
+const lastSelectionState = viewName + ".lastSelectionState";
+const lastExpansionState = viewName + ".lastExpansionState";
+
+type HomeViewSelectionState = {
+  deploymentName?: string;
+  configurationName?: string;
+  credentialName?: string;
+};
+
 export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
   private _deployments: (Deployment | PreDeployment)[] = [];
@@ -100,7 +109,7 @@ export class HomeViewProvider implements WebviewViewProvider {
           // are created within the webview this._context (i.e. inside media/main.js)
           case "initializing":
             // send back the data needed.
-            await this.refreshAll();
+            await this.refreshAll(true);
             return;
           case "newDeployment":
             const preDeployment: PreDeployment = await commands.executeCommand(
@@ -121,7 +130,6 @@ export class HomeViewProvider implements WebviewViewProvider {
               );
             }
             break;
-
           case "newConfiguration":
             const newConfig: Configuration = await commands.executeCommand(
               "posit.publisher.configurations.add",
@@ -130,22 +138,21 @@ export class HomeViewProvider implements WebviewViewProvider {
               this._updateConfigFileSelection(newConfig);
             }
             break;
-          case "expanded":
-            commands.executeCommand(
-              "setContext",
-              contextIsSelectorExpanded,
-              true,
-            );
-            break;
-          case "collapsed":
-            commands.executeCommand(
-              "setContext",
-              contextIsSelectorExpanded,
-              false,
-            );
-            break;
           case "navigate":
             env.openExternal(Uri.parse(message.payload));
+            break;
+          case "saveDeploymentButtonExpanded":
+            const expanded: boolean = JSON.parse(message.payload);
+            commands.executeCommand(
+              "setContext",
+              contextIsSelectorExpanded,
+              expanded,
+            );
+            this._saveExpansionState(expanded);
+            break;
+          case "saveSelectionState":
+            const state: HomeViewSelectionState = JSON.parse(message.payload);
+            this._saveSelectionState(state);
             break;
         }
       },
@@ -249,34 +256,37 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
-  private _updateWebViewViewDeployments() {
+  private _updateWebViewViewDeployments(selectedDeploymentName?: string) {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
         command: "refresh_deployment_data",
         payload: JSON.stringify({
           deployments: this._deployments,
+          selectedDeploymentName,
         }),
       });
     }
   }
 
-  private _updateWebViewViewConfigurations() {
+  private _updateWebViewViewConfigurations(selectedConfigurationName?: string) {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
         command: "refresh_config_data",
         payload: JSON.stringify({
           configurations: this._configs,
+          selectedConfigurationName,
         }),
       });
     }
   }
 
-  private _updateWebViewViewCredentials() {
+  private _updateWebViewViewCredentials(selectedCredentialName?: string) {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
         command: "refresh_credential_data",
         payload: JSON.stringify({
           credentials: this._credentials,
+          selectedCredentialName,
         }),
       });
     }
@@ -302,6 +312,28 @@ export class HomeViewProvider implements WebviewViewProvider {
         }),
       });
     }
+  }
+
+  private _updateWebViewViewExpansionState() {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "update_expansion_from_storage",
+        payload: JSON.stringify({
+          expansionState: this._context.workspaceState.get<boolean>(
+            lastExpansionState,
+            false,
+          ),
+        }),
+      });
+    }
+  }
+
+  private _saveSelectionState(state: HomeViewSelectionState) {
+    return this._context.workspaceState.update(lastSelectionState, state);
+  }
+
+  private _saveExpansionState(expanded: boolean) {
+    return this._context.workspaceState.update(lastExpansionState, expanded);
   }
 
   public resolveWebviewView(
@@ -393,7 +425,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     `;
   }
 
-  public refreshAll = async () => {
+  public refreshAll = async (includeSavedState?: boolean) => {
     try {
       await Promise.all([
         this._refreshDeploymentData(),
@@ -408,10 +440,20 @@ export class HomeViewProvider implements WebviewViewProvider {
       window.showInformationMessage(summary);
       return;
     }
-
-    this._updateWebViewViewCredentials();
-    this._updateWebViewViewConfigurations();
-    this._updateWebViewViewDeployments();
+    const selectionState = includeSavedState
+      ? this._context.workspaceState.get<HomeViewSelectionState>(
+          lastSelectionState,
+          {
+            deploymentName: undefined,
+            configurationName: undefined,
+            credentialName: undefined,
+          },
+        )
+      : undefined;
+    this._updateWebViewViewCredentials(selectionState?.credentialName);
+    this._updateWebViewViewConfigurations(selectionState?.configurationName);
+    this._updateWebViewViewDeployments(selectionState?.deploymentName);
+    this._updateWebViewViewExpansionState();
   };
 
   public refreshDeployments = async () => {
