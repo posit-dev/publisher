@@ -8,6 +8,8 @@ jobs:
       # deploy only these content
       CONTENT: "fastapi-simple quarto-website-py"
       CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+      PYTHON_VERSION: 3.10.14
+      QUARTO_VERSION: 1.4.549
     strategy:
       fail-fast: false
       matrix:
@@ -26,7 +28,7 @@ jobs:
           token: ${{ secrets.CONNECT_PAT }}
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.10.14
+          python-version: 3.12.1
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: 1.4.549

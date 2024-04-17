@@ -16,8 +16,7 @@ NoWarning = true
 [Python]
 Enabled = true
 VersionMatching = nearest
-Executable = /opt/python/3.10.14/bin/python
-Executable = /opt/python/3.11.9/bin/python
+Executable = /opt/python/bin/python
 
 [Quarto]
 Enabled = true

@@ -3,6 +3,12 @@ version: "3.2"
 services:
   rsconnect:
     image: rstudio/rstudio-connect-preview:dev-jammy-daily
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        QUARTO_VERSION: ${QUARTO_VERSION}
+        PYTHON_VERSION: ${PYTHON_VERSION}
     restart: always
     ports:
       - 3939:3939
