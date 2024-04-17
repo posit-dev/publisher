@@ -59,12 +59,7 @@ export class DeploymentsTreeDataProvider
   readonly onDidChangeTreeData: DeploymentsEvent =
     this._onDidChangeTreeData.event;
 
-  private api = useApi();
-
-  constructor(
-    private stream: EventStream,
-    private apiReady: Promise<boolean>,
-  ) {
+  constructor(private stream: EventStream) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -97,8 +92,8 @@ export class DeploymentsTreeDataProvider
       // API Returns:
       // 200 - success
       // 500 - internal server error
-      await this.apiReady;
-      const response = await this.api.deployments.getAll();
+      const api = await useApi();
+      const response = await api.deployments.getAll();
       const deployments = response.data;
       commands.executeCommand(
         "setContext",
@@ -166,7 +161,8 @@ export class DeploymentsTreeDataProvider
             `Are you sure you want to forget this deployment '${item.deployment.deploymentName}' locally?`,
           );
           if (ok) {
-            await this.api.deployments.delete(item.deployment.deploymentName);
+            const api = await useApi();
+            await api.deployments.delete(item.deployment.deploymentName);
           }
         },
       ),

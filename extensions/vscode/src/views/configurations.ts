@@ -17,7 +17,7 @@ import {
   workspace,
 } from "vscode";
 
-import api from "../api";
+import { useApi } from "../api";
 import {
   Configuration,
   ConfigurationDetails,
@@ -53,7 +53,7 @@ export class ConfigurationsTreeDataProvider
   readonly onDidChangeTreeData: ConfigurationEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(private apiReady: Promise<boolean>) {
+  constructor() {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -78,7 +78,7 @@ export class ConfigurationsTreeDataProvider
     }
 
     try {
-      await this.apiReady;
+      const api = await useApi();
       const response = await api.configurations.getAll();
       const configurations = response.data;
       await this.setContextIsEmpty(configurations.length === 0);
@@ -141,6 +141,7 @@ export class ConfigurationsTreeDataProvider
   private add = async () => {
     let configName: string | undefined;
     try {
+      const api = await useApi();
       const inspectResponse = await api.configurations.inspect();
       const config = await this.chooseConfig(inspectResponse.data);
       if (config === undefined) {
@@ -238,6 +239,7 @@ export class ConfigurationsTreeDataProvider
     );
     if (ok) {
       try {
+        const api = await useApi();
         await api.configurations.delete(name);
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(

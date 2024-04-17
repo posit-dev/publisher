@@ -23,11 +23,10 @@ export async function publishDeployment(
   deployment: PreDeployment | Deployment,
   stream: EventStream,
 ) {
-  const api = useApi();
-
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
+  const api = await useApi();
 
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];

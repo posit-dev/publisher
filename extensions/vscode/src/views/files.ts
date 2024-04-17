@@ -1,7 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { DeploymentFile, ExclusionMatch } from "../api/types/files";
-import { useApi } from "../api";
 import {
   TreeDataProvider,
   TreeItem,
@@ -16,6 +15,7 @@ import {
   ThemeIcon,
   RelativePattern,
 } from "vscode";
+import { useApi } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import * as path from "path";
 import { pathSorter } from "../utils/files";
@@ -42,9 +42,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   private _onDidChangeTreeData: FilesEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: FilesEvent = this._onDidChangeTreeData.event;
 
-  private api = useApi();
-
-  constructor(private apiReady: Promise<boolean>) {
+  constructor() {
     const workspaceFolders = workspace.workspaceFolders;
     this.root = Uri.parse("positPublisherFiles://unknown");
     if (workspaceFolders !== undefined) {
@@ -64,8 +62,8 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     if (element === undefined) {
       // first call.
       try {
-        await this.apiReady;
-        const response = await this.api.files.get();
+        const api = await useApi();
+        const response = await api.files.get();
         const file = response.data;
 
         commands.executeCommand("setContext", isEmptyContext, Boolean(file));
