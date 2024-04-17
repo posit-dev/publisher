@@ -148,6 +148,7 @@ defineProps<{
       text-overflow: ellipsis;
       text-transform: uppercase;
       white-space: nowrap;
+      user-select: none;
       -webkit-margin-before: 0;
       -webkit-margin-after: 0;
     }
