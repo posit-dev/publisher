@@ -239,7 +239,8 @@ export async function initWorkspace(
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: "Select main file and type",
+        placeholder:
+          "Select main file and content type below. Use this field to filter selections.",
         items: entryPointListItems,
         buttons: [],
         shouldResume: () => Promise.resolve(false),

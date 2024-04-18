@@ -111,6 +111,7 @@ export class MultiStepInput {
     shouldResume,
   }: P) {
     const disposables: Disposable[] = [];
+    const origTitle = title;
     try {
       return await new Promise<
         T | (P extends { buttons: (infer I)[] } ? I : never)
@@ -135,6 +136,13 @@ export class MultiStepInput {
               reject(InputFlowAction.back);
             } else {
               resolve(<any>item);
+            }
+          }),
+          input.onDidChangeActive((items) => {
+            if (!items.length) {
+              input.title = `ERROR: Filter does not match any choices. Clear the filter input field to continue.`;
+            } else {
+              input.title = origTitle;
             }
           }),
           input.onDidChangeSelection((items) => resolve(items[0])),
