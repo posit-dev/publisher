@@ -158,6 +158,7 @@ const toggleExpanded = () => {
 
   .pane-header-title-container {
     display: flex;
+    min-width: 0;
     flex: 1;
     align-items: center;
 
