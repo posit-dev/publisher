@@ -12,6 +12,7 @@
           :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
         />
         <h3 class="title">{{ title }}</h3>
+        <p v-if="subtitle">{{ subtitle }}</p>
       </div>
       <div v-if="actions" class="actions">
         <div class="monaco-toolbar">
@@ -58,6 +59,7 @@ const expanded = defineModel("expanded", { required: false, default: false });
 
 defineProps<{
   title: string;
+  subtitle?: string;
   actions?: TreeAction[];
 }>();
 
