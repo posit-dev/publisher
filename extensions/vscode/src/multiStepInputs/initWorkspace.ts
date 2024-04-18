@@ -207,7 +207,8 @@ export async function initWorkspace(
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: "Select the credential you want to use to deploy",
+        placeholder:
+          "Select the credential you want to use to deploy. (Use this field to filter selections.)",
         items: accountListItems,
         activeItem:
           typeof state.data.credentialName !== "string"
@@ -240,7 +241,7 @@ export async function initWorkspace(
         step: thisStepNumber,
         totalSteps: state.totalSteps,
         placeholder:
-          "Select main file and content type below. Use this field to filter selections.",
+          "Select main file and content type below. (Use this field to filter selections.)",
         items: entryPointListItems,
         buttons: [],
         shouldResume: () => Promise.resolve(false),

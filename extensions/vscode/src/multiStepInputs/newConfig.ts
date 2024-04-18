@@ -117,7 +117,7 @@ export async function newConfig(title: string) {
         step: thisStepNumber,
         totalSteps: state.totalSteps,
         placeholder:
-          "Select main file and content type below. Use this field to filter selections.",
+          "Select main file and content type below. (Use this field to filter selections.)",
         items: entryPointListItems,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
