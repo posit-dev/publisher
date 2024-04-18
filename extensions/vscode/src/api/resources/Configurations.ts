@@ -17,6 +17,17 @@ export class Configurations {
 
   // Returns:
   // 200 - success
+  // 404 - not found
+  // 500 - internal server error
+  get(configName: string) {
+    const encodedName = encodeURIComponent(configName);
+    return this.client.get<Configuration | ConfigurationError>(
+      `/configurations/${encodedName}`,
+    );
+  }
+
+  // Returns:
+  // 200 - success
   // 500 - internal server error
   getAll() {
     return this.client.get<Array<Configuration | ConfigurationError>>(
