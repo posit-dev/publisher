@@ -20,7 +20,6 @@ import {
 import { useApi } from "../api";
 import {
   Configuration,
-  ConfigurationDetails,
   ConfigurationError,
   isConfigurationError,
 } from "../api/types/configurations";
@@ -29,6 +28,7 @@ import { confirmDelete, confirmReplace } from "../dialogs";
 import { getSummaryStringFromError } from "../utils/errors";
 import { ensureSuffix, fileExists, isValidFilename } from "../utils/files";
 import { untitledConfigurationName } from "../utils/names";
+import { newConfig } from "../multiStepInputs/newConfig";
 
 const viewName = "posit.publisher.configurations";
 const refreshCommand = viewName + ".refresh";
@@ -106,7 +106,9 @@ export class ConfigurationsTreeDataProvider
     this._context.subscriptions.push(
       treeView,
       commands.registerCommand(refreshCommand, this.refresh),
-      commands.registerCommand(addCommand, this.add),
+      commands.registerCommand(addCommand, () => {
+        return newConfig("Create a Configuration File for your Project");
+      }),
       commands.registerCommand(editCommand, this.edit),
       commands.registerCommand(renameCommand, this.rename),
       commands.registerCommand(cloneCommand, this.clone),
@@ -136,41 +138,6 @@ export class ConfigurationsTreeDataProvider
 
   private refresh = () => {
     this._onDidChangeTreeData.fire();
-  };
-
-  private add = async () => {
-    let configName: string | undefined;
-    try {
-      const api = await useApi();
-      const inspectResponse = await api.configurations.inspect();
-      const config = await this.chooseConfig(inspectResponse.data);
-      if (config === undefined) {
-        // canceled
-        return;
-      }
-      const defaultName = await untitledConfigurationName();
-      configName = await window.showInputBox({
-        value: defaultName,
-        prompt: "Configuration name",
-      });
-      if (configName === undefined || configName === "") {
-        // canceled
-        return;
-      }
-      const createResponse = await api.configurations.createOrUpdate(
-        configName,
-        config,
-      );
-      if (this.root !== undefined) {
-        const fileUri = Uri.file(createResponse.data.configurationPath);
-        await commands.executeCommand("vscode.open", fileUri);
-      }
-      return createResponse.data;
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError("configurations::add", error);
-      window.showInformationMessage(summary);
-    }
-    return undefined;
   };
 
   private edit = async (config: ConfigurationTreeItem) => {
@@ -249,27 +216,6 @@ export class ConfigurationsTreeDataProvider
         window.showInformationMessage(summary);
       }
     }
-  };
-
-  private chooseConfig = async (configs: ConfigurationDetails[]) => {
-    if (configs.length === 1) {
-      return configs[0];
-    }
-    const labels = configs.map(
-      (config) => `${config.entrypoint} (type ${config.type})`,
-    );
-    const labelMap = new Map<string, ConfigurationDetails>();
-    for (let i = 0; i < configs.length; i++) {
-      labelMap.set(labels[i], configs[i]);
-    }
-
-    const selection = await window.showQuickPick(labels, {
-      title: "Select main file and type",
-    });
-    if (selection === undefined) {
-      return undefined;
-    }
-    return labelMap.get(selection);
   };
 }
 
