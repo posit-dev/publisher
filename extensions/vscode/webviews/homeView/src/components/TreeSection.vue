@@ -12,7 +12,7 @@
           :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
         />
         <h3 class="title">{{ title }}</h3>
-        <p v-if="subtitle">{{ subtitle }}</p>
+        <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
       </div>
       <div v-if="actions" class="actions">
         <div class="monaco-toolbar">
@@ -146,6 +146,7 @@ const toggleExpanded = () => {
   font-weight: 700;
   height: 22px;
   overflow: hidden;
+  user-select: none;
 
   &:focus {
     opacity: 1;
@@ -173,7 +174,6 @@ const toggleExpanded = () => {
       text-overflow: ellipsis;
       text-transform: uppercase;
       white-space: nowrap;
-      user-select: none;
       -webkit-margin-before: 0;
       -webkit-margin-after: 0;
     }
