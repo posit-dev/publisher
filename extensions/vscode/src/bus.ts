@@ -7,33 +7,33 @@ export const bus = Omnibus.builder()
   // activeParams: event broadcasting the entire set of HomeView selection state
   .register("activeParams", args<HomeViewSelectionState>())
 
-  // activeDeploymentChanged: triggered if deployment name has changed or if initial value message (where changed is undefined)
+  // activeDeploymentChanged: triggered if deployment name has changed
+  // or if represents the initial value message (where changed is undefined)
   .derive("activeDeploymentChanged", "activeParams", (b) =>
-    b.filter((activeParams) =>
-      Boolean(
+    b.filter(
+      (activeParams) =>
         activeParams?.deploymentNameChanged ||
-          activeParams?.deploymentNameChanged === undefined,
-      ),
+        activeParams?.deploymentNameChanged === undefined,
     ),
   )
 
-  // activeConfigurationChanged: triggered if deployment name has changed or if initial value message (where changed is undefined)
+  // activeConfigurationChanged: triggered if deployment name has changed
+  // or if represents the initial value message (where changed is undefined)
   .derive("activeConfigurationChanged", "activeParams", (b) =>
-    b.filter((activeParams) =>
-      Boolean(
+    b.filter(
+      (activeParams) =>
         activeParams?.configurationNameChanged ||
-          activeParams?.configurationNameChanged === undefined,
-      ),
+        activeParams?.configurationNameChanged === undefined,
     ),
   )
 
-  // activeCredentialChanged: triggered if deployment name has changed or if initial value message (where changed is undefined)
+  // activeCredentialChanged: triggered if deployment name has changed
+  // or if represents the initial value message (where changed is undefined)
   .derive("activeCredentialChanged", "activeParams", (b) =>
-    b.filter((activeParams) =>
-      Boolean(
+    b.filter(
+      (activeParams) =>
         activeParams?.credentialNameChanged ||
-          activeParams?.credentialNameChanged === undefined,
-      ),
+        activeParams?.credentialNameChanged === undefined,
     ),
   )
 
