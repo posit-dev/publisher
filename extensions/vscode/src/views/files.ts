@@ -22,7 +22,7 @@ import { pathSorter } from "../utils/files";
 import { useBus } from "../bus";
 
 import * as os from "os";
-import { HomeViewSelectionState } from "./homeView";
+import { HomeViewState } from "./homeView";
 
 const viewName = "posit.publisher.files";
 const refreshCommand = viewName + ".refresh";
@@ -50,14 +50,11 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0].uri;
     }
-    useBus().on(
-      "activeConfigurationChanged",
-      (state: HomeViewSelectionState) => {
-        console.log(
-          `Files have been notified about the active configuration change, which is now: ${state.configurationName}`,
-        );
-      },
-    );
+    useBus().on("activeConfigurationChanged", (state: HomeViewState) => {
+      console.log(
+        `Files have been notified about the active configuration change, which is now: ${state.configuration.name}`,
+      );
+    });
   }
 
   public refresh = () => {
