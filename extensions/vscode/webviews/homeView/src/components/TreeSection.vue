@@ -42,12 +42,7 @@
       </div>
     </div>
     <div v-if="expanded" class="pane-body">
-      Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo ad adipisci
-      veniam rerum id dicta quos voluptatum ab voluptatem quibusdam hic totam,
-      voluptate reiciendis odit consequatur iste blanditiis harum error! Lorem
-      ipsum dolor sit amet consectetur adipisicing elit. Autem, veritatis!
-      Quidem sequi reiciendis reprehenderit at, iure blanditiis veritatis quod
-      amet eveniet sed officia accusamus vel enim tempora. Enim, eligendi ipsa.
+      <slot />
     </div>
   </div>
 </template>
