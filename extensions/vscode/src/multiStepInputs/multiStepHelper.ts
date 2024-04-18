@@ -122,6 +122,8 @@ export class MultiStepInput {
         input.totalSteps = totalSteps;
         input.ignoreFocusOut = ignoreFocusOut ?? false;
         input.placeholder = placeholder;
+        input.matchOnDescription = true;
+        input.matchOnDetail = true;
         input.items = items;
         if (activeItem) {
           input.activeItems = [activeItem];
