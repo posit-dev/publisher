@@ -12,7 +12,12 @@
           :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
         />
         <h3 class="title">{{ title }}</h3>
-        <p v-if="description" class="description">{{ description }}</p>
+        <span v-if="$slots.description" class="description">
+          <slot name="description" />
+        </span>
+        <span v-else-if="description" class="description">
+          {{ description }}
+        </span>
       </div>
       <div v-if="actions" class="actions">
         <div class="monaco-toolbar">
@@ -180,6 +185,7 @@ const toggleExpanded = () => {
     }
 
     .description {
+      display: block;
       color: var(--vscode-sideBarSectionHeader-foreground);
       flex-shrink: 100000;
       font-weight: 400;
