@@ -54,7 +54,7 @@ init_with_fields() {
     # add description
     perl -i -pe '$_ .= qq(description =  "'"${CONTENT}"' description"\n) if /title/' ${FULL_PATH}/.posit/publish/${CONTENT}.toml
     
-    # add Connect metadata fields
+    # add Connect runtime fields
     echo "
 [connect]
 runtime.connection-timeout = 25
@@ -93,20 +93,12 @@ python_content_types=(
         run ${EXE} requirements create ${FULL_PATH}/
         assert_success
         assert_line "Wrote file requirements.txt:"
-    else
-        skip
-    fi
-}
-
-# verify requirements file has expected content
-@test "requirements show works as expected for ${CONTENT}" {
-    if [[ ${python_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
+        
+        # compare show output to expected existing requirements.in file
         run ${EXE} requirements show ${FULL_PATH}/
         assert_success
 
-        run diff <(grep -o '^[^=]*' ${FULL_PATH}/test/requirements.in | \
-                grep -v '^#') <(grep -o '^[^=]*' ${FULL_PATH}/requirements.txt | \
-                grep -v '^#')
+        run diff <(grep -o '^[^=]*' ${FULL_PATH}/test/requirements.in | grep -v '^#') <(grep -o '^[^=]*' ${FULL_PATH}/requirements.txt | grep -v '^#')
         assert_success
     else
         skip
@@ -126,9 +118,6 @@ python_content_types=(
 
     run ${EXE} redeploy ci_deploy ${FULL_PATH}
     deploy_assertion
-
-    # cleanup
-    # rm -rf ${FULL_PATH}/.posit/
 }
 
 @test "check for toml file" {
