@@ -138,7 +138,7 @@ export async function initWorkspace(
     };
     // determine number of total steps, as each step
     let totalSteps = 4;
-    if (configs.length === 1) {
+    if (entryPointListItems.length === 1) {
       totalSteps -= 1;
     }
     if (fixedDeploymentName) {
@@ -351,5 +351,4 @@ export async function initWorkspace(
     window.showErrorMessage(`Failed to create pre-deployment file. ${summary}`);
     return;
   }
-  return state.data.configFileName;
 }
