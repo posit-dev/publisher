@@ -7,4 +7,5 @@ export * from "./types/configurations";
 export * from "./types/connect";
 export * from "./types/deployments";
 export * from "./types/events";
+export * from "./types/files";
 export * from "./types/schema";

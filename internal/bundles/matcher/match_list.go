@@ -34,7 +34,8 @@ func (l *defaultMatchList) AddFromFile(base util.AbsolutePath, filePath util.Abs
 	if err != nil {
 		return err
 	}
-	l.files = append(l.files, newFile)
+	// Add the new file to the end of the list, but keep the builtins last
+	l.files = append(l.files[:len(l.files)-1], newFile, l.files[len(l.files)-1])
 	return nil
 }
 
