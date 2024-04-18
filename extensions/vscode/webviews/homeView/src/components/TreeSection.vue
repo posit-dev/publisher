@@ -177,6 +177,19 @@ const toggleExpanded = () => {
       -webkit-margin-before: 0;
       -webkit-margin-after: 0;
     }
+
+    .description {
+      color: var(--vscode-sideBarSectionHeader-foreground);
+      flex-shrink: 100000;
+      font-weight: 400;
+      margin: 0;
+      margin-left: 10px;
+      opacity: 0.6;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-transform: none;
+      white-space: nowrap;
+    }
   }
 }
 
