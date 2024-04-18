@@ -21,6 +21,7 @@ import { useApi } from "../api";
 import { confirmOverwrite } from "../dialogs";
 import { getSummaryStringFromError } from "../utils/errors";
 import { fileExists } from "../utils/files";
+import { getSelectionState } from "./homeView";
 
 const viewName = "posit.publisher.requirements";
 const editCommand = viewName + ".edit";
@@ -68,7 +69,17 @@ export class RequirementsTreeDataProvider
     }
     try {
       const api = await useApi();
-      const response = await api.requirements.get();
+      const selectedConfigName = getSelectionState(
+        this._context,
+      ).configurationName;
+
+      if (selectedConfigName === undefined) {
+        // We shouldn't get here if there's no configuration selected.
+        await this.setContextIsEmpty(true);
+        return [];
+      }
+      const response =
+        await api.requirements.getByConfiguration(selectedConfigName);
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(
         (line) => new RequirementsTreeItem(line),
