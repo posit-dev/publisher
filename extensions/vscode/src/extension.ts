@@ -142,15 +142,44 @@ export async function activate(context: ExtensionContext) {
   service = new Service(context, port);
   checkForCredentials();
 
-  new ProjectTreeDataProvider(context).register();
-  new DeploymentsTreeDataProvider(context, stream).register();
-  new ConfigurationsTreeDataProvider(context).register();
-  new FilesTreeDataProvider(context).register();
-  new RequirementsTreeDataProvider(context).register();
-  new CredentialsTreeDataProvider(context).register();
-  new HelpAndFeedbackTreeDataProvider(context).register();
-  new LogsTreeDataProvider(context, stream).register();
-  new HomeViewProvider(context, stream).register();
+  // First the construction of the data providers
+  const projectTreeDataProvider = new ProjectTreeDataProvider(context);
+
+  const deploymentsTreeDataProvider = new DeploymentsTreeDataProvider(
+    context,
+    stream,
+  );
+
+  const configurationsTreeDataProvider = new ConfigurationsTreeDataProvider(
+    context,
+  );
+
+  const filesTreeDataProvider = new FilesTreeDataProvider(context);
+
+  const requirementsTreeDataProvider = new RequirementsTreeDataProvider(
+    context,
+  );
+
+  const credentialsTreeDataProvider = new CredentialsTreeDataProvider(context);
+
+  const helpAndFeedbackTreeDataProvider = new HelpAndFeedbackTreeDataProvider(
+    context,
+  );
+
+  const logsTreeDataProvider = new LogsTreeDataProvider(context, stream);
+
+  const homeViewProvider = new HomeViewProvider(context, stream);
+
+  // Then the registration of the data providers with the VSCode framework
+  projectTreeDataProvider.register();
+  deploymentsTreeDataProvider.register();
+  configurationsTreeDataProvider.register();
+  filesTreeDataProvider.register();
+  requirementsTreeDataProvider.register();
+  credentialsTreeDataProvider.register();
+  helpAndFeedbackTreeDataProvider.register();
+  logsTreeDataProvider.register();
+  homeViewProvider.register();
 
   await service.start();
 

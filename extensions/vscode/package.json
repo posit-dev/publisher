@@ -542,6 +542,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@hypersphere/omnibus": "0.1.6",
     "axios": "^1.6.0",
     "eventsource": "^2.0.2",
     "get-port": "5.1.1",
