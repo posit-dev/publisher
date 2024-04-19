@@ -20,7 +20,6 @@ import { getSummaryStringFromError } from "../utils/errors";
 import * as path from "path";
 import { pathSorter } from "../utils/files";
 import { useBus } from "../bus";
-import { getSelectionState } from "./homeView";
 
 import * as os from "os";
 import { HomeViewState } from "./homeView";
@@ -42,6 +41,8 @@ type FilesEvent = Event<TreeEntries | undefined | void>;
 
 export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   private root: Uri;
+  private activeConfigName: string | undefined;
+
   private _onDidChangeTreeData: FilesEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: FilesEvent = this._onDidChangeTreeData.event;
 
@@ -55,6 +56,10 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
       console.log(
         `Files have been notified about the active configuration change, which is now: ${state.configuration.name}`,
       );
+      if (state.configuration.name !== this.activeConfigName) {
+        this.activeConfigName = state.configuration.name;
+        this.refresh();
+      }
     });
   }
 
@@ -71,15 +76,16 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     if (element === undefined) {
       // first call.
       try {
-        const api = await useApi();
-        const selection = getSelectionState(this._context);
-        const selectedConfigName = selection.configuration.name;
-
-        if (selectedConfigName === undefined) {
+        if (this.activeConfigName === undefined) {
+          // We should not be here without an active configuration.
+          console.log("files::getChildren: No active configuration.");
           commands.executeCommand("setContext", isEmptyContext, true);
           return [];
         }
-        const response = await api.files.getByConfiguration(selectedConfigName);
+        const api = await useApi();
+        const response = await api.files.getByConfiguration(
+          this.activeConfigName,
+        );
         const file = response.data;
 
         commands.executeCommand("setContext", isEmptyContext, Boolean(file));
