@@ -1,32 +1,26 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { DeploymentFile, FileMatch } from "../api/types/files";
+import * as os from "os";
+import * as path from "path";
 import {
+  Event,
+  EventEmitter,
+  ExtensionContext,
+  RelativePattern,
+  ThemeIcon,
   TreeDataProvider,
   TreeItem,
-  ExtensionContext,
-  window,
-  EventEmitter,
-  Event,
-  workspace,
   TreeItemCollapsibleState,
   Uri,
   commands,
-  ThemeIcon,
-  RelativePattern,
+  window,
+  workspace,
 } from "vscode";
-import {
-  ConfigurationDetails,
-  FileMatchSource,
-  isConfigurationError,
-  useApi,
-} from "../api";
-import { getSummaryStringFromError } from "../utils/errors";
-import * as path from "path";
-import { pathSorter } from "../utils/files";
+import { FileMatchSource, useApi } from "../api";
+import { DeploymentFile, FileAction, FileMatch } from "../api/types/files";
 import { useBus } from "../bus";
-
-import * as os from "os";
+import { getSummaryStringFromError } from "../utils/errors";
+import { pathSorter } from "../utils/files";
 import { HomeViewState } from "./homeView";
 
 const viewName = "posit.publisher.files";
@@ -76,85 +70,42 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     useBus().trigger("requestActiveParams", undefined);
   };
 
-  private updateSelectedConfiguration = async (
-    updateFunc: (cfg: ConfigurationDetails) => ConfigurationDetails,
+  private includeFile = async (item: FileTreeItem) => {
+    await this.includeOrExcludeFile(item, FileAction.INCLUDE);
+  };
+
+  private excludeFile = async (item: FileTreeItem) => {
+    await this.includeOrExcludeFile(item, FileAction.EXCLUDE);
+  };
+
+  private includeOrExcludeFile = async (
+    item: FileTreeItem,
+    action: FileAction,
   ) => {
-    const selectedConfigName = getSelectionState(
-      this._context,
-    ).configurationName;
-    if (selectedConfigName === undefined) {
-      // We shouldn't get here unless there is a selected configuration.
-      console.error("No configuration selected to update.");
+    const path = item.id;
+
+    if (path === undefined) {
+      // All of our nodes have defined IDs
+      console.error("files::includeOrExcludeFile: file has no id");
       return;
     }
-
-    const api = await useApi();
-    const oldConfig = (await api.configurations.get(selectedConfigName)).data;
-
-    if (isConfigurationError(oldConfig)) {
-      window.showErrorMessage(
-        "The selected configuration is invalid and can't be updated. " +
-          "Please correct any errors in the configuration file and try again.",
-      );
+    if (this.activeConfigName === undefined) {
+      // Shouldn't be here without an active configuration.
+      console.error("files::includeOrExcludeFile: No active configuration.");
       return;
     }
-
-    const newConfig = updateFunc(oldConfig.configuration);
 
     try {
-      await api.configurations.createOrUpdate(selectedConfigName, newConfig);
+      const api = await useApi();
+      await api.files.updateFileList(this.activeConfigName, path, action);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "updateSelectedConfiguration, configurations.createOrUpdate",
+        "files::includeOrExcludeFile",
         error,
       );
       window.showErrorMessage(`Failed to update config file. ${summary}`);
       return;
     }
-  };
-
-  private includeFile = (item: FileTreeItem) => {
-    this.updateSelectedConfiguration((cfg) => {
-      cfg.files = cfg.files || [];
-      const path = item.id;
-
-      if (path === undefined) {
-        // All of our nodes have defined IDs
-        return cfg;
-      }
-      const pattern = "!" + path;
-      const index = cfg.files.indexOf(pattern);
-      if (index !== -1) {
-        // Remove the exclusion, which will include the file
-        cfg.files.splice(index, 1);
-      } else {
-        // Add the path, which will include the file
-        cfg.files.push(path);
-      }
-      return cfg;
-    });
-  };
-
-  private excludeFile = (item: FileTreeItem) => {
-    this.updateSelectedConfiguration((cfg) => {
-      cfg.files = cfg.files || [];
-      const path = item.id;
-
-      if (path === undefined) {
-        // All of our nodes have defined IDs
-        return cfg;
-      }
-      const index = cfg.files.indexOf(path);
-      if (index !== -1) {
-        // Remove the file from the list, which will exclude it
-        cfg.files.splice(index, 1);
-      } else {
-        // Add an exclusion pattern, which will exclude the file
-        const pattern = "!" + path;
-        cfg.files.push(pattern);
-      }
-      return cfg;
-    });
   };
 
   getTreeItem(element: FileEntries): FileEntries | Thenable<TreeItem> {
