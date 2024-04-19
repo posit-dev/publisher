@@ -119,6 +119,10 @@ const toggleExpanded = () => {
       white-space: nowrap;
     }
   }
+
+  & :deep(.action-item) {
+    margin-right: 4px;
+  }
 }
 
 .pane-body {

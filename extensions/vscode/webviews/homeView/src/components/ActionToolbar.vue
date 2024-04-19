@@ -54,8 +54,6 @@ defineProps<{
       display: block;
       cursor: pointer;
       position: relative;
-      z-index: 2;
-      margin-right: 4px;
 
       .action-label {
         border-radius: 5px;
