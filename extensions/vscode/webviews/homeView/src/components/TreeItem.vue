@@ -10,14 +10,17 @@
             <div class="monaco-icon-label-container">
               <span class="monaco-icon-name-container">
                 <a class="label-name">
-                  <span class="monaco-highlighted-label">settings.json</span>
+                  <span class="monaco-highlighted-label">{{ title }}</span>
                 </a>
               </span>
-              <span class="monaco-icon-description-container">
+              <span
+                v-if="description"
+                class="monaco-icon-description-container"
+              >
                 <span class="label-description">
-                  <span class="monaco-highlighted-label"
-                    >.vscode really long label goes here</span
-                  >
+                  <span class="monaco-highlighted-label">
+                    {{ description }}
+                  </span>
                 </span>
               </span>
             </div>
@@ -53,6 +56,11 @@
 
 <script setup lang="ts">
 import ActionToolbar from "./ActionToolbar.vue";
+
+defineProps<{
+  title: string;
+  description?: string;
+}>();
 </script>
 
 <style lang="scss" scoped>
