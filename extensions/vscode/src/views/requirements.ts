@@ -17,12 +17,11 @@ import {
 } from "vscode";
 
 import { isAxiosError } from "axios";
-import { useApi } from "../api";
+import { Configuration, useApi } from "../api";
+import { useBus } from "../bus";
 import { confirmOverwrite } from "../dialogs";
 import { getSummaryStringFromError } from "../utils/errors";
 import { fileExists } from "../utils/files";
-import { HomeViewState } from "./homeView";
-import { useBus } from "../bus";
 
 const viewName = "posit.publisher.requirements";
 const editCommand = viewName + ".edit";
@@ -52,10 +51,9 @@ export class RequirementsTreeDataProvider
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
-    useBus().on("activeConfigurationChanged", (state: HomeViewState) => {
-      const newConfigName = state.configuration.name;
-      const newRequirementsFile =
-        state.configuration.value?.configuration.python?.packageFile;
+    useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
+      const newConfigName = cfg?.configurationName;
+      const newRequirementsFile = cfg?.configuration.python?.packageFile;
 
       console.log(
         `Requirements have been notified about the active configuration change, which is now: ${newConfigName}`,
@@ -171,7 +169,7 @@ export class RequirementsTreeDataProvider
   }
 
   private refresh = () => {
-    useBus().trigger("requestActiveParams", undefined);
+    useBus().trigger("requestActiveConfig", undefined);
     this._onDidChangeTreeData.fire();
   };
 

@@ -1,28 +1,27 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { DeploymentFile, FileMatch } from "../api/types/files";
+import * as path from "path";
 import {
+  Event,
+  EventEmitter,
+  ExtensionContext,
+  RelativePattern,
+  ThemeIcon,
   TreeDataProvider,
   TreeItem,
-  ExtensionContext,
-  window,
-  EventEmitter,
-  Event,
-  workspace,
   TreeItemCollapsibleState,
   Uri,
   commands,
-  ThemeIcon,
-  RelativePattern,
+  window,
+  workspace,
 } from "vscode";
-import { useApi } from "../api";
-import { getSummaryStringFromError } from "../utils/errors";
-import * as path from "path";
-import { pathSorter } from "../utils/files";
+import { Configuration, useApi } from "../api";
+import { DeploymentFile, FileMatch } from "../api/types/files";
 import { useBus } from "../bus";
+import { getSummaryStringFromError } from "../utils/errors";
+import { pathSorter } from "../utils/files";
 
 import * as os from "os";
-import { HomeViewState } from "./homeView";
 
 const viewName = "posit.publisher.files";
 const refreshCommand = viewName + ".refresh";
@@ -52,12 +51,14 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0].uri;
     }
-    useBus().on("activeConfigurationChanged", (state: HomeViewState) => {
+    useBus().on("activeConfigChanged", (config: Configuration | undefined) => {
+      const newConfigName = config?.configurationName;
+
       console.log(
-        `Files have been notified about the active configuration change, which is now: ${state.configuration.name}`,
+        `Files have been notified about the active configuration change, which is now: ${newConfigName}`,
       );
-      if (state.configuration.name !== this.activeConfigName) {
-        this.activeConfigName = state.configuration.name;
+      if (this.activeConfigName !== newConfigName) {
+        this.activeConfigName = newConfigName;
         this._onDidChangeTreeData.fire();
       }
     });
@@ -65,7 +66,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
 
   public refresh = () => {
     this._onDidChangeTreeData.fire();
-    useBus().trigger("requestActiveParams", undefined);
+    useBus().trigger("requestActiveConfig", undefined);
   };
 
   getTreeItem(element: FileEntries): FileEntries | Thenable<TreeItem> {
@@ -134,7 +135,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
       watcher.onDidChange(this.refresh);
       this._context.subscriptions.push(watcher);
     }
-    useBus().trigger("requestActiveParams", undefined);
+    useBus().trigger("requestActiveConfig", undefined);
   }
 }
 

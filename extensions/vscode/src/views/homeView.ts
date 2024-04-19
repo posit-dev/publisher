@@ -1,37 +1,37 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import {
-  Disposable,
-  Webview,
-  window,
-  Uri,
-  WebviewViewProvider,
-  WebviewView,
-  WebviewViewResolveContext,
   CancellationToken,
+  Disposable,
   ExtensionContext,
-  workspace,
-  WorkspaceFolder,
   RelativePattern,
+  Uri,
+  Webview,
+  WebviewView,
+  WebviewViewProvider,
+  WebviewViewResolveContext,
+  WorkspaceFolder,
   commands,
   env,
+  window,
+  workspace,
 } from "vscode";
-import { getUri } from "../utils/getUri";
-import { getNonce } from "../utils/getNonce";
 import {
-  useApi,
-  isConfigurationError,
-  isDeploymentError,
-  EventStreamMessage,
+  Account,
   Configuration,
   Deployment,
+  EventStreamMessage,
   PreDeployment,
-  Account,
+  isConfigurationError,
+  isDeploymentError,
+  useApi,
 } from "../api";
-import { getSummaryStringFromError } from "../utils/errors";
-import { deployProject } from "./deployProgress";
-import { EventStream } from "../events";
 import { useBus } from "../bus";
+import { EventStream } from "../events";
+import { getSummaryStringFromError } from "../utils/errors";
+import { getNonce } from "../utils/getNonce";
+import { getUri } from "../utils/getUri";
+import { deployProject } from "./deployProgress";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
@@ -46,20 +46,13 @@ const contextActiveMode = viewName + ".deploymentActiveMode";
 const contextActiveModeAdvanced = "advanced-mode";
 const contextActiveModeBasic = "basic-mode";
 
-// Selection State stored in HomeViewState object (without change attributes)
-const lastSelectionState = viewName + ".lastSelectionState.v1";
+const lastSelectionState = viewName + ".lastSelectionState.v2";
 const lastExpansionState = viewName + ".lastExpansionState.v1";
 
-type NameWithChange<T> = {
-  name?: string;
-  changed?: boolean;
-  value?: T;
-};
-
 export type HomeViewState = {
-  deployment: NameWithChange<Deployment | PreDeployment>;
-  configuration: NameWithChange<Configuration>;
-  credential: NameWithChange<Account>;
+  deploymentName: string | undefined;
+  configurationName: string | undefined;
+  credentialName: string | undefined;
 };
 
 export class HomeViewProvider implements WebviewViewProvider {
@@ -81,11 +74,16 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
     this._extensionUri = this._context.extensionUri;
 
-    // if someone needs a refresh of all active params,
+    // if someone needs a refresh of any active params,
     // we are here to service that request!
-    useBus().on("requestActiveParams", () => {
-      // This will send out a HomeViewState object with undefined change attributes
-      useBus().trigger("activeParams", this._getSelectionState());
+    useBus().on("requestActiveConfig", () => {
+      useBus().trigger("activeConfigChanged", this._getActiveConfig());
+    });
+    useBus().on("requestActiveDeployment", () => {
+      useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
+    });
+    useBus().on("requestActiveCredential", () => {
+      useBus().trigger("activeCredentialChanged", this._getActiveCredential());
     });
   }
 
@@ -125,6 +123,9 @@ export class HomeViewProvider implements WebviewViewProvider {
           case "initializing":
             // send back the data needed.
             await this.refreshAll(true);
+            // On first run, we have no saved state. Trigger a save
+            // so we have the state, and can notify dependent views.
+            this._requestWebviewSaveSelection();
             return;
           case "newDeployment":
             const preDeployment: PreDeployment = await commands.executeCommand(
@@ -337,6 +338,14 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
+  private _requestWebviewSaveSelection() {
+    if (this._webviewView) {
+      this._webviewView.webview.postMessage({
+        command: "save_selection",
+      });
+    }
+  }
+
   private _updateWebViewViewExpansionState() {
     if (this._webviewView) {
       this._webviewView.webview.postMessage({
@@ -351,25 +360,31 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
-  private _getSelectionState() {
-    const savedState = this._context.workspaceState.get<HomeViewState>(
+  private _getSelectionState(): HomeViewState {
+    const state = this._context.workspaceState.get<HomeViewState>(
       lastSelectionState,
       {
-        deployment: {},
-        configuration: {},
-        credential: {},
+        deploymentName: undefined,
+        configurationName: undefined,
+        credentialName: undefined,
       },
     );
-    savedState.deployment.value = this.getDeploymentByName(
-      savedState.deployment.name,
-    );
-    savedState.configuration.value = this.getConfigByName(
-      savedState.configuration.name,
-    );
-    savedState.credential.value = this.getCredentialByName(
-      savedState.credential.name,
-    );
-    return savedState;
+    return state;
+  }
+
+  private _getActiveConfig(): Configuration | undefined {
+    const savedState = this._getSelectionState();
+    return this.getConfigByName(savedState.configurationName);
+  }
+
+  private _getActiveDeployment(): Deployment | PreDeployment | undefined {
+    const savedState = this._getSelectionState();
+    return this.getDeploymentByName(savedState.deploymentName);
+  }
+
+  private _getActiveCredential(): Account | undefined {
+    const savedState = this._getSelectionState();
+    return this.getCredentialByName(savedState.credentialName);
   }
 
   private getDeploymentByName(name: string | undefined) {
@@ -384,44 +399,12 @@ export class HomeViewProvider implements WebviewViewProvider {
     return this._credentials.find((c) => c.name === name);
   }
 
-  private async _saveSelectionState(
-    state: HomeViewState,
-  ): Promise<HomeViewState> {
-    // get previous settings
-    const old = this._getSelectionState();
-    // Persisting the changed attributes makes no sense and might cause some
-    // complications. So we'll undefined them before we store the state.
-    const savedState: HomeViewState = {
-      deployment: {
-        name: state.deployment?.name,
-      },
-      configuration: {
-        name: state.configuration?.name,
-      },
-      credential: {
-        name: state.credential?.name,
-      },
-    };
-    await this._context.workspaceState.update(lastSelectionState, savedState);
-    // we'll send out the new state w/ the changed attributes in place.
-    let newState: HomeViewState = {
-      ...savedState,
-    };
-    newState.deployment.changed =
-      old.deployment?.name !== state.deployment?.name;
-    newState.configuration.changed =
-      old.configuration?.name !== state.configuration?.name;
-    newState.credential.changed =
-      old.credential?.name !== state.credential?.name;
+  private async _saveSelectionState(state: HomeViewState): Promise<void> {
+    await this._context.workspaceState.update(lastSelectionState, state);
 
-    newState.deployment.value = this.getDeploymentByName(state.deployment.name);
-    newState.configuration.value = this.getConfigByName(
-      state.configuration.name,
-    );
-    newState.credential.value = this.getCredentialByName(state.credential.name);
-
-    await useBus().trigger("activeParams", newState);
-    return newState;
+    useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
+    useBus().trigger("activeConfigChanged", this._getActiveConfig());
+    useBus().trigger("activeCredentialChanged", this._getActiveCredential());
   }
 
   private _saveExpansionState(expanded: boolean) {
@@ -535,25 +518,27 @@ export class HomeViewProvider implements WebviewViewProvider {
     const selectionState = includeSavedState
       ? this._getSelectionState()
       : undefined;
-    this._updateWebViewViewCredentials(selectionState?.credential.name);
-    this._updateWebViewViewConfigurations(selectionState?.configuration.name);
-    this._updateWebViewViewDeployments(selectionState?.deployment.name);
+    this._updateWebViewViewCredentials(selectionState?.credentialName);
+    this._updateWebViewViewConfigurations(selectionState?.configurationName);
+    this._updateWebViewViewDeployments(selectionState?.deploymentName);
     this._updateWebViewViewExpansionState();
     if (includeSavedState && selectionState) {
-      await useBus().trigger("activeParams", selectionState);
+      useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
+      useBus().trigger("activeConfigChanged", this._getActiveConfig());
+      useBus().trigger("activeCredentialChanged", this._getActiveCredential());
     }
   };
 
   public refreshDeployments = async () => {
     await this._refreshDeploymentData();
     this._updateWebViewViewDeployments();
-    useBus().trigger("activeParams", this._getSelectionState());
+    useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
   };
 
   public refreshConfigurations = async () => {
     await this._refreshConfigurationData();
     this._updateWebViewViewConfigurations();
-    useBus().trigger("activeParams", this._getSelectionState());
+    useBus().trigger("activeConfigChanged", this._getActiveConfig());
   };
 
   /**
