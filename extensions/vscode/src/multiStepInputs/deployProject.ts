@@ -162,7 +162,8 @@ export async function publishDeployment(
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: "Select the credential you want to use to deploy",
+        placeholder:
+          "Select the credential you want to use to deploy. (Use this field to filter selections.)",
         items: accountListItems,
         activeItem:
           typeof state.data.credentialName !== "string"
@@ -194,7 +195,8 @@ export async function publishDeployment(
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: "Select the config file you wish to deploy with",
+        placeholder:
+          "Select the config file you wish to deploy with. (Use this field to filter selections.)",
         items: configFileListItems,
         activeItem:
           typeof state.data.configFile !== "string"

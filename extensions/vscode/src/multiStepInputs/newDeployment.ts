@@ -244,7 +244,8 @@ export async function newDeployment(
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: "Select the credential you want to use to deploy",
+        placeholder:
+          "Select the credential you want to use to deploy. (Use this field to filter selections.)",
         items: accountListItems,
         activeItem:
           typeof state.data.credentialName !== "string"
@@ -276,7 +277,8 @@ export async function newDeployment(
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: "Select the config file you wish to deploy with",
+        placeholder:
+          "Select the config file you wish to deploy with. (Use this field to filter selections.)",
         items: configFileListItems,
         activeItem:
           typeof state.data.configFile !== "string"
@@ -304,7 +306,8 @@ export async function newDeployment(
         title: state.title,
         step: thisStepNumber,
         totalSteps: state.totalSteps,
-        placeholder: "Do you wish to initiate the deployment at this time?",
+        placeholder:
+          "Do you wish to initiate the deployment at this time? (Use this field to filter selections.)",
         items: [
           {
             label: "Yes",
