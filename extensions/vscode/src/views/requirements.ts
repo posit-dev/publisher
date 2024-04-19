@@ -17,7 +17,7 @@ import {
 } from "vscode";
 
 import { isAxiosError } from "axios";
-import { useApi } from "../api";
+import { isConfigurationError, useApi } from "../api";
 import { confirmOverwrite } from "../dialogs";
 import { getSummaryStringFromError } from "../utils/errors";
 import { fileExists } from "../utils/files";
@@ -39,7 +39,6 @@ export class RequirementsTreeDataProvider
   implements TreeDataProvider<RequirementsTreeItem>
 {
   private root: WorkspaceFolder | undefined;
-  private fileUri: Uri | undefined;
   private _onDidChangeTreeData: RequirementsEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: RequirementsEvent =
     this._onDidChangeTreeData.event;
@@ -48,7 +47,6 @@ export class RequirementsTreeDataProvider
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
-      this.fileUri = Uri.joinPath(this.root.uri, fileStore);
     }
   }
 
@@ -136,14 +134,54 @@ export class RequirementsTreeDataProvider
     this._onDidChangeTreeData.fire();
   };
 
+  private getRequirementsFilename = async () => {
+    const selectedConfigName = getSelectionState(
+      this._context,
+    ).configurationName;
+
+    if (selectedConfigName === undefined) {
+      // We shouldn't get here if there's no configuration selected.
+      return undefined;
+    }
+    const api = await useApi();
+    const response = await api.configurations.get(selectedConfigName);
+    const cfg = response.data;
+
+    if (isConfigurationError(cfg)) {
+      window.showErrorMessage(
+        "The selected configuration is invalid. " +
+          "Please correct errors in the configuration file and try again.",
+      );
+      return undefined;
+    }
+
+    // TODO: maybe don't show this view if the configuration doesn't include Python?
+    if (!cfg.configuration.python) {
+      window.showErrorMessage(
+        "The selected configuration does not have a 'python' section. " +
+          "Add Python to the configuration file, or select a different configuration, and try again.",
+      );
+      return undefined;
+    }
+    return cfg.configuration.python.packageFile;
+  };
+
   private scan = async () => {
-    if (this.fileUri === undefined) {
+    if (this.root === undefined) {
+      // We shouldn't get here if there's no workspace folder open.
       return;
     }
 
-    if (await fileExists(this.fileUri)) {
+    const relPath = await this.getRequirementsFilename();
+    if (relPath === undefined) {
+      return;
+    }
+
+    const fileUri = Uri.joinPath(this.root.uri, relPath);
+
+    if (await fileExists(fileUri)) {
       const ok = await confirmOverwrite(
-        "Are you sure you want to overwrite your existing requirements.txt file?",
+        `Are you sure you want to overwrite your existing ${relPath} file?`,
       );
       if (!ok) {
         return;
@@ -152,8 +190,8 @@ export class RequirementsTreeDataProvider
 
     try {
       const api = await useApi();
-      await api.requirements.create("requirements.txt");
-      await this.edit();
+      await api.requirements.create(relPath);
+      await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("dependencies::scan", error);
       window.showInformationMessage(summary);
@@ -161,9 +199,16 @@ export class RequirementsTreeDataProvider
   };
 
   private edit = async () => {
-    if (this.fileUri !== undefined) {
-      await commands.executeCommand("vscode.open", this.fileUri);
+    if (this.root === undefined) {
+      return;
     }
+
+    const relPath = await this.getRequirementsFilename();
+    if (relPath === undefined) {
+      return;
+    }
+    const fileUri = Uri.joinPath(this.root.uri, relPath);
+    await commands.executeCommand("vscode.open", fileUri);
   };
 }
 
