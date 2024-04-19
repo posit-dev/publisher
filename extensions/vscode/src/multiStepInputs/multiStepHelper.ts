@@ -142,7 +142,7 @@ export class MultiStepInput {
           }),
           input.onDidChangeActive((items) => {
             if (!items.length) {
-              input.title = `ERROR: Filter does not match any choices. Clear the filter input field to continue.`;
+              input.title = `${origTitle} ---- An error has occurred. The filter text does not match any choices. Clear the filter input field to continue.`;
             } else {
               input.title = origTitle;
             }
