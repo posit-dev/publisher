@@ -13,7 +13,7 @@
         />
         <h3 class="title">{{ title }}</h3>
       </div>
-      <div class="actions">
+      <div v-if="actions" class="actions">
         <div class="monaco-toolbar">
           <div class="monaco-action-bar">
             <ul
@@ -22,15 +22,18 @@
               :aria-label="`${title} actions`"
             >
               <li
+                v-for="action in actions"
                 class="action-item menu-entry"
                 role="presentation"
-                custom-hover="true"
               >
                 <a
-                  class="action-label codicon codicon-refresh"
+                  class="action-label codicon"
+                  :class="action.codicon"
                   role="button"
-                  aria-label="Refresh Deployment Files"
+                  :aria-label="action.label"
                   tabindex="0"
+                  @click="action.fn"
+                  @keydown.enter="action.fn"
                 ></a>
               </li>
             </ul>
@@ -50,10 +53,17 @@
 </template>
 
 <script setup lang="ts">
+export type TreeAction = {
+  label: string;
+  codicon: string;
+  fn: () => void;
+};
+
 const expanded = defineModel("expanded", { required: false, default: false });
 
 defineProps<{
   title: string;
+  actions?: TreeAction[];
 }>();
 
 const toggleExpanded = () => {
