@@ -17,7 +17,7 @@ import {
 } from "vscode";
 
 import { isAxiosError } from "axios";
-import { Configuration, useApi } from "../api";
+import { useApi } from "../api";
 import { confirmOverwrite } from "../dialogs";
 import { getSummaryStringFromError } from "../utils/errors";
 import { fileExists } from "../utils/files";
@@ -39,8 +39,8 @@ export class RequirementsTreeDataProvider
   implements TreeDataProvider<RequirementsTreeItem>
 {
   private root: WorkspaceFolder | undefined;
-  private activeConfig: Configuration | undefined;
   private activeConfigName: string | undefined;
+  private activeRequirementsFile: string | undefined;
   private fileWatcher: FileSystemWatcher | undefined;
 
   private _onDidChangeTreeData: RequirementsEventEmitter = new EventEmitter();
@@ -53,15 +53,20 @@ export class RequirementsTreeDataProvider
       this.root = workspaceFolders[0];
     }
     useBus().on("activeConfigurationChanged", (state: HomeViewState) => {
+      const newConfigName = state.configuration.name;
+      const newRequirementsFile =
+        state.configuration.value?.configuration.python?.packageFile;
+
       console.log(
-        `Requirements have been notified about the active configuration change, which is now: ${state.configuration.name} (was ${this.activeConfigName})`,
+        `Requirements have been notified about the active configuration change, which is now: ${newConfigName}`,
       );
+
       if (
-        state.configuration.name !== this.activeConfigName ||
-        state.configuration.value !== this.activeConfig
+        newRequirementsFile !== this.activeRequirementsFile ||
+        newConfigName !== this.activeConfigName
       ) {
-        this.activeConfigName = state.configuration.name;
-        this.activeConfig = state.configuration.value;
+        this.activeRequirementsFile = newRequirementsFile;
+        this.activeConfigName = newConfigName;
         this._onDidChangeTreeData.fire();
 
         if (this.root !== undefined) {
@@ -144,10 +149,10 @@ export class RequirementsTreeDataProvider
   }
 
   private createFileSystemWatcher(root: WorkspaceFolder) {
-    const fileStore =
-      this.activeConfig?.configuration.python?.packageFile ||
-      "requirements.txt";
-    const pattern = new RelativePattern(root, fileStore);
+    if (this.activeRequirementsFile === undefined) {
+      return;
+    }
+    const pattern = new RelativePattern(root, this.activeRequirementsFile);
     const watcher = workspace.createFileSystemWatcher(pattern);
     watcher.onDidCreate(this.refresh);
     watcher.onDidDelete(this.refresh);
@@ -170,17 +175,13 @@ export class RequirementsTreeDataProvider
     this._onDidChangeTreeData.fire();
   };
 
-  private getRequirementsFilename() {
-    return this.activeConfig?.configuration.python?.packageFile;
-  }
-
   private scan = async () => {
     if (this.root === undefined) {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
 
-    const relPath = this.getRequirementsFilename();
+    const relPath = this.activeRequirementsFile;
     if (relPath === undefined) {
       return;
     }
@@ -211,7 +212,7 @@ export class RequirementsTreeDataProvider
       return;
     }
 
-    const relPath = this.getRequirementsFilename();
+    const relPath = this.activeRequirementsFile;
     if (relPath === undefined) {
       return;
     }
