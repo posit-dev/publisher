@@ -24,27 +24,8 @@
                 </span>
               </span>
             </div>
-            <div class="actions">
-              <ActionToolbar
-                title="Tree Item"
-                :actions="[
-                  {
-                    label: 'Open File',
-                    codicon: 'codicon-go-to-file',
-                    fn: () => console.log('Open File'),
-                  },
-                  {
-                    label: 'Discard Changes',
-                    codicon: 'codicon-discard',
-                    fn: () => console.log('Discard Changes'),
-                  },
-                  {
-                    label: 'Stage Changes',
-                    codicon: 'codicon-add',
-                    fn: () => console.log('Stage Changes'),
-                  },
-                ]"
-              />
+            <div v-if="actions" class="actions">
+              <ActionToolbar :title="title" :actions="actions" />
             </div>
           </div>
         </div>
@@ -55,11 +36,12 @@
 </template>
 
 <script setup lang="ts">
-import ActionToolbar from "./ActionToolbar.vue";
+import ActionToolbar, { ActionButton } from "./ActionToolbar.vue";
 
 defineProps<{
   title: string;
   description?: string;
+  actions?: ActionButton[];
 }>();
 </script>
 
