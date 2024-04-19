@@ -14,8 +14,19 @@ export class Requirements {
   // 200 - success
   // 404 - no requirements file found
   // 500 - internal server error
-  getAll() {
+  get() {
     return this.client.get<RequirementsResponse>("requirements");
+  }
+
+  // Returns:
+  // 200 - success
+  // 404 - configuration or requirements file not found
+  // 500 - internal server error
+  getByConfiguration(configName: string) {
+    const encodedName = encodeURIComponent(configName);
+    return this.client.get<RequirementsResponse>(
+      `/configurations/${encodedName}/requirements`,
+    );
   }
 
   // Returns:

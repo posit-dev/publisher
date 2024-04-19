@@ -68,7 +68,7 @@ export class RequirementsTreeDataProvider
     }
     try {
       const api = await useApi();
-      const response = await api.requirements.getAll();
+      const response = await api.requirements.get();
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(
         (line) => new RequirementsTreeItem(line),
