@@ -58,7 +58,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
       );
       if (state.configuration.name !== this.activeConfigName) {
         this.activeConfigName = state.configuration.name;
-        this.refresh();
+        this._onDidChangeTreeData.fire();
       }
     });
   }

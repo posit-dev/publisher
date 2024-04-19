@@ -50,25 +50,17 @@ const contextActiveModeBasic = "basic-mode";
 const lastSelectionState = viewName + ".lastSelectionState.v1";
 const lastExpansionState = viewName + ".lastExpansionState.v1";
 
-type NameWithChange = {
+type NameWithChange<T> = {
   name?: string;
   changed?: boolean;
+  value?: T;
 };
 
 export type HomeViewState = {
-  deployment: NameWithChange;
-  configuration: NameWithChange;
-  credential: NameWithChange;
+  deployment: NameWithChange<Deployment | PreDeployment>;
+  configuration: NameWithChange<Configuration>;
+  credential: NameWithChange<Account>;
 };
-
-// export type HomeViewSelectionState = {
-//   deploymentName?: string;
-//   configurationName?: string;
-//   credentialName?: string;
-//   deploymentNameChanged?: boolean;
-//   configurationNameChanged?: boolean;
-//   credentialNameChanged?: boolean;
-// };
 
 export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
@@ -360,11 +352,36 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private _getSelectionState() {
-    return this._context.workspaceState.get<HomeViewState>(lastSelectionState, {
-      deployment: {},
-      configuration: {},
-      credential: {},
-    });
+    const savedState = this._context.workspaceState.get<HomeViewState>(
+      lastSelectionState,
+      {
+        deployment: {},
+        configuration: {},
+        credential: {},
+      },
+    );
+    savedState.deployment.value = this.getDeploymentByName(
+      savedState.deployment.name,
+    );
+    savedState.configuration.value = this.getConfigByName(
+      savedState.configuration.name,
+    );
+    savedState.credential.value = this.getCredentialByName(
+      savedState.credential.name,
+    );
+    return savedState;
+  }
+
+  private getDeploymentByName(name: string | undefined) {
+    return this._deployments.find((d) => d.deploymentName === name);
+  }
+
+  private getConfigByName(name: string | undefined) {
+    return this._configs.find((c) => c.configurationName === name);
+  }
+
+  private getCredentialByName(name: string | undefined) {
+    return this._credentials.find((c) => c.name === name);
   }
 
   private async _saveSelectionState(
@@ -396,6 +413,13 @@ export class HomeViewProvider implements WebviewViewProvider {
       old.configuration?.name !== state.configuration?.name;
     newState.credential.changed =
       old.credential?.name !== state.credential?.name;
+
+    newState.deployment.value = this.getDeploymentByName(state.deployment.name);
+    newState.configuration.value = this.getConfigByName(
+      state.configuration.name,
+    );
+    newState.credential.value = this.getCredentialByName(state.credential.name);
+
     await useBus().trigger("activeParams", newState);
     return newState;
   }
@@ -523,11 +547,13 @@ export class HomeViewProvider implements WebviewViewProvider {
   public refreshDeployments = async () => {
     await this._refreshDeploymentData();
     this._updateWebViewViewDeployments();
+    useBus().trigger("activeParams", this._getSelectionState());
   };
 
   public refreshConfigurations = async () => {
     await this._refreshConfigurationData();
     this._updateWebViewViewConfigurations();
+    useBus().trigger("activeParams", this._getSelectionState());
   };
 
   /**
