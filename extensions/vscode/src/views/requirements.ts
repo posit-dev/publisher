@@ -41,6 +41,7 @@ export class RequirementsTreeDataProvider
   private root: WorkspaceFolder | undefined;
   private activeConfig: Configuration | undefined;
   private activeConfigName: string | undefined;
+  private fileWatcher: FileSystemWatcher | undefined;
 
   private _onDidChangeTreeData: RequirementsEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: RequirementsEvent =
@@ -137,12 +138,12 @@ export class RequirementsTreeDataProvider
         commands.registerCommand(editCommand, this.edit),
         commands.registerCommand(refreshCommand, this.refresh),
         commands.registerCommand(scanCommand, this.scan),
-        this.createFileSystemWatcher(this.root),
       );
+      this.createFileSystemWatcher(this.root);
     }
   }
 
-  private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
+  private createFileSystemWatcher(root: WorkspaceFolder) {
     const fileStore =
       this.activeConfig?.configuration.python?.packageFile ||
       "requirements.txt";
@@ -151,7 +152,17 @@ export class RequirementsTreeDataProvider
     watcher.onDidCreate(this.refresh);
     watcher.onDidDelete(this.refresh);
     watcher.onDidChange(this.refresh);
-    return watcher;
+
+    if (this.fileWatcher !== undefined) {
+      // Dispose of the old watcher, and tell VSCode to forget about it.
+      this.fileWatcher.dispose();
+      const index = this._context.subscriptions.indexOf(this.fileWatcher);
+      if (index !== -1) {
+        this._context.subscriptions.splice(index, 1);
+      }
+    }
+    this._context.subscriptions.push(watcher);
+    this.fileWatcher = watcher;
   }
 
   private refresh = () => {
