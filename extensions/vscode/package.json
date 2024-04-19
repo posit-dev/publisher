@@ -131,13 +131,13 @@
       {
         "command": "posit.publisher.files.exclude",
         "title": "Exclude this file",
-        "icon": "$(circle-slash)",
+        "icon": "$(diff-removed)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.files.include",
         "title": "Include this file",
-        "icon": "$(add)",
+        "icon": "$(diff-added)",
         "category": "Posit Publisher"
       },
       {

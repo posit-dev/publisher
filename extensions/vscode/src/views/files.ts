@@ -317,6 +317,6 @@ export class AlwaysExcludedFile extends FileTreeItem {
     this.contextValue = isAlwaysExcludedFile;
     this.resourceUri = Uri.parse(`positPublisherFilesExcluded://${this.id}`);
     this.tooltip = `${deploymentFile.rel}\nThis file will be excluded from the next deployment.\n`;
-    this.tooltip += `This is a built-in exclusion for the pattern: '${this.reason?.pattern}'`;
+    this.tooltip += `This is a built-in exclusion for the pattern: '${this.reason?.pattern}' and cannot be overridden.`;
   }
 }
