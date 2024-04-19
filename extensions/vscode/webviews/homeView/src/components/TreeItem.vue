@@ -72,6 +72,8 @@ import ActionToolbar from "./ActionToolbar.vue";
       display: flex;
       flex: 1;
       overflow: hidden;
+      padding-left: 16px;
+      padding-right: 12px;
 
       .name {
         flex: 1;
