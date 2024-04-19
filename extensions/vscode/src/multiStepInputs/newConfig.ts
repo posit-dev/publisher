@@ -20,48 +20,63 @@ import { getSummaryStringFromError } from "../utils/errors";
 import { untitledConfigurationName } from "../utils/names";
 import { isValidFilename } from "../utils/files";
 
-export async function newConfig(title: string) {
+export async function newConfig(title: string, viewId: string) {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
   const api = await useApi();
-
   let entryPointLabels: string[] = [];
   let entryPointListItems: QuickPickItem[] = [];
   const entryPointLabelMap = new Map<string, ConfigurationDetails>();
   let configs: ConfigurationDetails[] = [];
-  try {
-    const inspectResponse = await api.configurations.inspect();
-    configs = inspectResponse.data;
-    entryPointLabels = configs.map((config) => `${config.entrypoint}`);
-    configs.forEach((config) => {
-      if (config.entrypoint) {
-        entryPointListItems.push({
-          iconPath: new ThemeIcon("file"),
-          label: config.entrypoint,
-          description: `(type ${config.type})`,
-        });
+
+  const apisComplete = new Promise<boolean>(async (resolve) => {
+    try {
+      const inspectResponse = await api.configurations.inspect();
+      configs = inspectResponse.data;
+      entryPointLabels = configs.map((config) => `${config.entrypoint}`);
+      configs.forEach((config) => {
+        if (config.entrypoint) {
+          entryPointListItems.push({
+            iconPath: new ThemeIcon("file"),
+            label: config.entrypoint,
+            description: `(type ${config.type})`,
+          });
+        }
+      });
+      for (let i = 0; i < configs.length; i++) {
+        entryPointLabelMap.set(entryPointLabels[i], configs[i]);
       }
-    });
-    for (let i = 0; i < configs.length; i++) {
-      entryPointLabelMap.set(entryPointLabels[i], configs[i]);
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "newConfig, configurations.inspect",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to continue with project inspection failure. ${summary}`,
+      );
+      resolve(false);
+      return;
     }
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "initWorkspace, configurations.inspect",
-      error,
-    );
-    window.showErrorMessage(
-      `Unable to continue with project inspection failure. ${summary}`,
-    );
-    return;
-  }
-  if (!entryPointListItems.length) {
-    window.showErrorMessage(
-      `Unable to continue with no project entrypoints found during inspection`,
-    );
-    return;
-  }
+    if (!entryPointListItems.length) {
+      const msg = `Unable to continue with no project entrypoints found during inspection`;
+      window.showErrorMessage(msg);
+      resolve(false);
+      return;
+    }
+    resolve(true);
+  });
+
+  // Start the progress indicator and have it stop when the API calls are complete
+  window.withProgress(
+    {
+      title: "Initializing",
+      location: { viewId },
+    },
+    async (): Promise<boolean> => {
+      return apisComplete;
+    },
+  );
 
   // ***************************************************************
   // Order of all steps
@@ -163,11 +178,16 @@ export async function newConfig(title: string) {
   }
 
   // ***************************************************************
+  // Wait for the api promise to complete
   // Kick off the input collection
   // and await until it completes.
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
+  const success = await apisComplete;
+  if (!success) {
+    return;
+  }
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
@@ -201,7 +221,7 @@ export async function newConfig(title: string) {
     await commands.executeCommand("vscode.open", fileUri);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "initWorkspace, configurations.createOrUpdate",
+      "newConfig, configurations.createOrUpdate",
       error,
     );
     window.showErrorMessage(`Failed to create config file. ${summary}`);

@@ -184,9 +184,12 @@ export async function activate(context: ExtensionContext) {
   await service.start();
 
   context.subscriptions.push(
-    commands.registerCommand(INIT_PROJECT_COMMAND, async () => {
+    commands.registerCommand(INIT_PROJECT_COMMAND, async (viewId?: string) => {
+      if (!viewId) {
+        viewId = "posit.publisher.project";
+      }
       setInitializationInProgressContext(InitializationInProgress.true);
-      await initWorkspaceWithFixedNames();
+      await initWorkspaceWithFixedNames(viewId);
       setInitializationInProgressContext(InitializationInProgress.false);
     }),
   );

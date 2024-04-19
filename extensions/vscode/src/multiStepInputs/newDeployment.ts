@@ -27,19 +27,23 @@ import { isValidFilename } from "../utils/files";
 
 export async function newDeployment(
   title: string,
+  viewId: string,
 ): Promise<PreDeployment | undefined>;
 export async function newDeployment(
   title: string,
+  viewId: string,
   allowPublish: true,
   stream: EventStream,
 ): Promise<PreDeployment | undefined>;
 export async function newDeployment(
   title: string,
+  viewId: string,
   allowPublish: false,
   stream?: undefined,
 ): Promise<PreDeployment | undefined>;
 export async function newDeployment(
   title: string,
+  viewId: string,
   allowPublish?: boolean,
   stream?: EventStream,
 ): Promise<PreDeployment | undefined> {
@@ -52,92 +56,111 @@ export async function newDeployment(
   let configFileListItems: QuickPickItem[] = [];
   let deploymentNames: string[] = [];
 
-  try {
-    const response = await api.accounts.getAll();
-    accountListItems = response.data.map((account) => ({
-      iconPath: new ThemeIcon("account"),
-      label: account.name,
-      description: account.source,
-      detail:
-        account.authType === AccountAuthType.API_KEY
-          ? "Using API Key"
-          : `Using Token Auth for ${account.accountName}`,
-    }));
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "newDeployment, accounts.getAll",
-      error,
-    );
-    window.showInformationMessage(
-      `Unable to continue with no credentials. ${summary}`,
-    );
-    return;
-  }
-  if (accountListItems.length === 0) {
-    window.showInformationMessage(
-      `Unable to continue with no credentials.\n` +
-        `Establish account credentials using rsconnect (R package) or\n` +
-        `rsconnect-python (Python package) and then retry operation.`,
-    );
-    return;
-  }
+  const apisComplete = new Promise<boolean>(async (resolve) => {
+    try {
+      const response = await api.accounts.getAll();
+      accountListItems = response.data.map((account) => ({
+        iconPath: new ThemeIcon("account"),
+        label: account.name,
+        description: account.source,
+        detail:
+          account.authType === AccountAuthType.API_KEY
+            ? "Using API Key"
+            : `Using Token Auth for ${account.accountName}`,
+      }));
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "newDeployment, accounts.getAll",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to continue with no credentials. ${summary}`,
+      );
+      resolve(false);
+      return;
+    }
+    if (accountListItems.length === 0) {
+      window.showInformationMessage(
+        `Unable to continue with no credentials.\n` +
+          `Establish account credentials using rsconnect (R package) or\n` +
+          `rsconnect-python (Python package) and then retry operation.`,
+      );
+      resolve(false);
+      return;
+    }
 
-  try {
-    const response = await api.configurations.getAll();
-    const configurations = response.data;
-    configFileListItems = [];
+    try {
+      const response = await api.configurations.getAll();
+      const configurations = response.data;
+      configFileListItems = [];
 
-    configurations.forEach((configuration) => {
-      if (!isConfigurationError(configuration)) {
-        configFileListItems.push({
-          iconPath: new ThemeIcon("file-code"),
-          label: configuration.configurationName,
-          detail: configuration.configurationPath,
-        });
-      }
-    });
-    configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
-      var x = a.label.toLowerCase();
-      var y = b.label.toLowerCase();
-      return x < y ? -1 : x > y ? 1 : 0;
-    });
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "newDeployment, configurations.getAll",
-      error,
-    );
-    window.showInformationMessage(
-      `Unable to continue with no configurations. ${summary}`,
-    );
-    return;
-  }
-  if (configFileListItems.length === 0) {
-    window.showInformationMessage(
-      `Unable to continue with no configuration files.\n` +
-        `Expand the configuration section and follow the instructions there\n` +
-        `to create a configuration file. After updating any applicable values\n` +
-        `retry the operation.`,
-    );
-    return;
-  }
+      configurations.forEach((configuration) => {
+        if (!isConfigurationError(configuration)) {
+          configFileListItems.push({
+            iconPath: new ThemeIcon("file-code"),
+            label: configuration.configurationName,
+            detail: configuration.configurationPath,
+          });
+        }
+      });
+      configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
+        var x = a.label.toLowerCase();
+        var y = b.label.toLowerCase();
+        return x < y ? -1 : x > y ? 1 : 0;
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "newDeployment, configurations.getAll",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to continue with no configurations. ${summary}`,
+      );
+      resolve(false);
+      return;
+    }
+    if (configFileListItems.length === 0) {
+      window.showInformationMessage(
+        `Unable to continue with no configuration files.\n` +
+          `Expand the configuration section and follow the instructions there\n` +
+          `to create a configuration file. After updating any applicable values\n` +
+          `retry the operation.`,
+      );
+      resolve(false);
+      return;
+    }
 
-  try {
-    const response = await api.deployments.getAll();
-    const deploymentList = response.data;
-    // Note.. we want all of the deployment filenames regardless if they are valid or not.
-    deploymentNames = deploymentList.map(
-      (deployment) => deployment.deploymentName,
-    );
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "newDeployment, deployments.getAll",
-      error,
-    );
-    window.showInformationMessage(
-      `Unable to continue due to deployment error. ${summary}`,
-    );
-    return;
-  }
+    try {
+      const response = await api.deployments.getAll();
+      const deploymentList = response.data;
+      // Note.. we want all of the deployment filenames regardless if they are valid or not.
+      deploymentNames = deploymentList.map(
+        (deployment) => deployment.deploymentName,
+      );
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "newDeployment, deployments.getAll",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to continue due to deployment error. ${summary}`,
+      );
+      resolve(false);
+      return;
+    }
+    resolve(true);
+  });
+
+  // Start the progress indicator and have it stop when the API calls are complete
+  window.withProgress(
+    {
+      title: "Initializing",
+      location: { viewId },
+    },
+    async (): Promise<boolean> => {
+      return apisComplete;
+    },
+  );
 
   // ***************************************************************
   // Order of all steps
@@ -331,11 +354,16 @@ export async function newDeployment(
   }
 
   // ***************************************************************
+  // Wait for the api promise to complete
   // Kick off the input collection
   // and await until it completes.
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
+  const success = await apisComplete;
+  if (!success) {
+    return;
+  }
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window

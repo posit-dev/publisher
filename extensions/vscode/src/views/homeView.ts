@@ -156,6 +156,7 @@ export class HomeViewProvider implements WebviewViewProvider {
           case "newConfiguration":
             const newConfig: Configuration = await commands.executeCommand(
               "posit.publisher.configurations.add",
+              "posit.publisher.homeView",
             );
             if (newConfig) {
               this._updateConfigFileSelection(newConfig, true);

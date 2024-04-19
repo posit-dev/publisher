@@ -22,6 +22,7 @@ import { EventStream } from "../events";
 export async function publishDeployment(
   deployment: PreDeployment | Deployment,
   stream: EventStream,
+  viewId: string,
 ) {
   // ***************************************************************
   // API Calls and results
@@ -31,79 +32,97 @@ export async function publishDeployment(
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];
 
-  try {
-    const response = await api.accounts.getAll();
-    // account list is filtered to match the deployment being published
-    accountListItems = response.data
-      .filter((account) => account.url === deployment.serverUrl)
-      .map((account) => ({
-        iconPath: new ThemeIcon("account"),
-        label: account.name,
-        description: account.source,
-        detail:
-          account.authType === AccountAuthType.API_KEY
-            ? "Using API Key"
-            : `Using Token Auth for ${account.accountName}`,
-      }));
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "publishDeployment, accounts.getAll",
-      error,
-    );
-    window.showInformationMessage(
-      `Unable to continue with no credentials. ${summary}`,
-    );
-    return;
-  }
-  if (accountListItems.length === 0) {
-    window.showInformationMessage(
-      `Unable to continue with no matching credentials for\n` +
-        `deployment URL: ${deployment.serverUrl}\n` +
-        `\n` +
-        `Establish account credentials using rsconnect (R package) or\n` +
-        `rsconnect-python (Python package) and then retry operation.`,
-    );
-    return;
-  }
+  const apisComplete = new Promise<boolean>(async (resolve) => {
+    try {
+      const response = await api.accounts.getAll();
+      // account list is filtered to match the deployment being published
+      accountListItems = response.data
+        .filter((account) => account.url === deployment.serverUrl)
+        .map((account) => ({
+          iconPath: new ThemeIcon("account"),
+          label: account.name,
+          description: account.source,
+          detail:
+            account.authType === AccountAuthType.API_KEY
+              ? "Using API Key"
+              : `Using Token Auth for ${account.accountName}`,
+        }));
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "publishDeployment, accounts.getAll",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to continue with no credentials. ${summary}`,
+      );
+      resolve(false);
+      return;
+    }
+    if (accountListItems.length === 0) {
+      window.showInformationMessage(
+        `Unable to continue with no matching credentials for\n` +
+          `deployment URL: ${deployment.serverUrl}\n` +
+          `\n` +
+          `Establish account credentials using rsconnect (R package) or\n` +
+          `rsconnect-python (Python package) and then retry operation.`,
+      );
+      resolve(false);
+      return;
+    }
 
-  try {
-    const response = await api.configurations.getAll();
-    const configurations = response.data;
-    configFileListItems = [];
+    try {
+      const response = await api.configurations.getAll();
+      const configurations = response.data;
+      configFileListItems = [];
 
-    configurations.forEach((configuration) => {
-      if (!isConfigurationError(configuration)) {
-        configFileListItems.push({
-          iconPath: new ThemeIcon("file-code"),
-          label: configuration.configurationName,
-          detail: configuration.configurationPath,
-        });
-      }
-    });
-    configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
-      var x = a.label.toLowerCase();
-      var y = b.label.toLowerCase();
-      return x < y ? -1 : x > y ? 1 : 0;
-    });
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "addDeployment, configurations.getAll",
-      error,
-    );
-    window.showInformationMessage(
-      `Unable to continue with no configurations. ${summary}`,
-    );
-    return;
-  }
-  if (configFileListItems.length === 0) {
-    window.showInformationMessage(
-      `Unable to continue with no configuration files.\n` +
-        `Expand the configuration section and follow the instructions there\n` +
-        `to create a configuration file. After updating any applicable values\n` +
-        `retry the operation.`,
-    );
-    return;
-  }
+      configurations.forEach((configuration) => {
+        if (!isConfigurationError(configuration)) {
+          configFileListItems.push({
+            iconPath: new ThemeIcon("file-code"),
+            label: configuration.configurationName,
+            detail: configuration.configurationPath,
+          });
+        }
+      });
+      configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
+        var x = a.label.toLowerCase();
+        var y = b.label.toLowerCase();
+        return x < y ? -1 : x > y ? 1 : 0;
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "addDeployment, configurations.getAll",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to continue with no configurations. ${summary}`,
+      );
+      resolve(false);
+      return;
+    }
+    if (configFileListItems.length === 0) {
+      window.showInformationMessage(
+        `Unable to continue with no configuration files.\n` +
+          `Expand the configuration section and follow the instructions there\n` +
+          `to create a configuration file. After updating any applicable values\n` +
+          `retry the operation.`,
+      );
+      resolve(false);
+      return;
+    }
+    resolve(true);
+  });
+
+  // Start the progress indicator and have it stop when the API calls are complete
+  window.withProgress(
+    {
+      title: "Initializing",
+      location: { viewId },
+    },
+    async (): Promise<boolean> => {
+      return apisComplete;
+    },
+  );
 
   // ***************************************************************
   // Order of all steps
@@ -218,12 +237,17 @@ export async function publishDeployment(
   }
 
   // ***************************************************************
+  // Wait for the api promise to complete
   // Kick off the input collection
   // and await until it completes.
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
 
+  const success = await apisComplete;
+  if (!success) {
+    return;
+  }
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window
