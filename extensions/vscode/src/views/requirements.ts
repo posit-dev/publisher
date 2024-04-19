@@ -21,7 +21,8 @@ import { isConfigurationError, useApi } from "../api";
 import { confirmOverwrite } from "../dialogs";
 import { getSummaryStringFromError } from "../utils/errors";
 import { fileExists } from "../utils/files";
-import { getSelectionState } from "./homeView";
+import { HomeViewState } from "./homeView";
+import { useBus } from "../bus";
 
 const viewName = "posit.publisher.requirements";
 const editCommand = viewName + ".edit";
@@ -39,6 +40,8 @@ export class RequirementsTreeDataProvider
   implements TreeDataProvider<RequirementsTreeItem>
 {
   private root: WorkspaceFolder | undefined;
+  private activeConfigName: string | undefined;
+
   private _onDidChangeTreeData: RequirementsEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: RequirementsEvent =
     this._onDidChangeTreeData.event;
@@ -48,6 +51,15 @@ export class RequirementsTreeDataProvider
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
+    useBus().on("activeConfigurationChanged", (state: HomeViewState) => {
+      console.log(
+        `Requirements have been notified about the active configuration change, which is now: ${state.configuration.name}`,
+      );
+      if (state.configuration.name !== this.activeConfigName) {
+        this.activeConfigName = state.configuration.name;
+        this.refresh();
+      }
+    });
   }
 
   getTreeItem(element: RequirementsTreeItem): TreeItem | Thenable<TreeItem> {
@@ -66,18 +78,15 @@ export class RequirementsTreeDataProvider
       return [];
     }
     try {
-      const api = await useApi();
-      const selectedConfigName = getSelectionState(
-        this._context,
-      ).configurationName;
-
-      if (selectedConfigName === undefined) {
+      if (this.activeConfigName === undefined) {
         // We shouldn't get here if there's no configuration selected.
         await this.setContextIsEmpty(true);
         return [];
       }
-      const response =
-        await api.requirements.getByConfiguration(selectedConfigName);
+      const api = await useApi();
+      const response = await api.requirements.getByConfiguration(
+        this.activeConfigName,
+      );
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(
         (line) => new RequirementsTreeItem(line),
@@ -132,19 +141,16 @@ export class RequirementsTreeDataProvider
 
   private refresh = () => {
     this._onDidChangeTreeData.fire();
+    useBus().trigger("requestActiveParams", undefined);
   };
 
   private getRequirementsFilename = async () => {
-    const selectedConfigName = getSelectionState(
-      this._context,
-    ).configurationName;
-
-    if (selectedConfigName === undefined) {
+    if (this.activeConfigName === undefined) {
       // We shouldn't get here if there's no configuration selected.
       return undefined;
     }
     const api = await useApi();
-    const response = await api.configurations.get(selectedConfigName);
+    const response = await api.configurations.get(this.activeConfigName);
     const cfg = response.data;
 
     if (isConfigurationError(cfg)) {
