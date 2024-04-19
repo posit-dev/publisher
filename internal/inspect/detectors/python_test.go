@@ -41,7 +41,7 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 		Type:       config.ContentTypePythonFlask,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"/**"},
+		Files:      []string{"*"},
 		Python:     &config.Python{},
 	}, t)
 }
@@ -67,7 +67,7 @@ func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
 		Type:       config.ContentTypePythonFlask,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"/**"},
+		Files:      []string{"*"},
 		Python:     &config.Python{},
 	}, t)
 }
@@ -90,7 +90,7 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 		Type:       config.ContentTypePythonFlask,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"/**"},
+		Files:      []string{"*"},
 		Python:     &config.Python{},
 	}, t)
 }

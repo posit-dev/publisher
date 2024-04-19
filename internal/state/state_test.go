@@ -82,7 +82,7 @@ func (s *StateSuite) TestLoadConfig() {
 		Type:        "python-dash",
 		Entrypoint:  "app:app",
 		Validate:    true,
-		Files:       []string{"/**"},
+		Files:       []string{"*"},
 		Title:       "Super Title",
 		Description: "minimal description",
 		Python: &config.Python{Version: "3.11.3",

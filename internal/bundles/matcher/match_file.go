@@ -211,11 +211,16 @@ func patternFromString(line string, base util.AbsolutePath, filePath util.Absolu
 		source = MatchSourceBuiltIn
 	}
 
+	fileName := ""
+	if filePath.String() != "" {
+		fileName = filePath.Base()
+	}
 	return &Pattern{
 		Source:   source,
+		FileName: fileName,
 		FilePath: filePath,
 		Pattern:  line,
-		Inverted: inverted,
+		Exclude:  inverted,
 		regex:    regex,
 	}, nil
 }

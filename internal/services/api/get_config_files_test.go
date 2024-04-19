@@ -62,7 +62,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFunc() {
 
 	cfg := config.New()
 	cfg.Type = config.ContentTypeHTML
-	cfg.Files = []string{"/**", "!ignoreme"}
+	cfg.Files = []string{"*", "!ignoreme"}
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
 	s.NoError(err)
 
@@ -92,7 +92,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncGetFileReturnsError() {
 
 	cfg := config.New()
 	cfg.Type = config.ContentTypeHTML
-	cfg.Files = []string{"/**", "!ignoreme"}
+	cfg.Files = []string{"*", "!ignoreme"}
 	err = cfg.WriteFile(config.GetConfigPath(base, "myConfig"))
 	s.NoError(err)
 

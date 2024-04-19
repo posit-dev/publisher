@@ -47,15 +47,16 @@ func (s *MatchListSuite) TestMatch() {
 	err := s.cwd.Join(".git").MkdirAll(0700)
 	s.NoError(err)
 
-	matchList, err := NewMatchList(s.cwd, []string{"/**", "!*.bak", "!ignoredir/"})
+	matchList, err := NewMatchList(s.cwd, []string{"*", "!*.bak", "!ignoredir/"})
 	s.NoError(err)
 
 	m := matchList.Match(s.cwd.Join("app.py"))
 	s.NotNil(m)
 	s.Equal(MatchSourceBuiltIn, m.Source)
-	s.Equal("/**", m.Pattern)
+	s.Equal("*", m.Pattern)
 	s.Equal("", m.FilePath.String())
-	s.Equal(false, m.Inverted)
+	s.Equal("", m.FileName)
+	s.Equal(false, m.Exclude)
 
 	// Non-file matches don't include file info
 	m = matchList.Match(s.cwd.Join("app.py.bak"))
@@ -63,7 +64,8 @@ func (s *MatchListSuite) TestMatch() {
 	s.Equal(MatchSourceBuiltIn, m.Source)
 	s.Equal("!*.bak", m.Pattern)
 	s.Equal("", m.FilePath.String())
-	s.Equal(true, m.Inverted)
+	s.Equal("", m.FileName)
+	s.Equal(true, m.Exclude)
 
 	ignoredir := s.cwd.Join("ignoredir")
 	err = ignoredir.MkdirAll(0700)
@@ -74,5 +76,6 @@ func (s *MatchListSuite) TestMatch() {
 	s.Equal(MatchSourceBuiltIn, m.Source)
 	s.Equal("!ignoredir/", m.Pattern)
 	s.Equal("", m.FilePath.String())
-	s.Equal(true, m.Inverted)
+	s.Equal("", m.FileName)
+	s.Equal(true, m.Exclude)
 }

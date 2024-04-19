@@ -9,7 +9,7 @@ export type DeploymentFile = {
   id: string;
   fileType: DeploymentFileType;
   base: string;
-  exclusion: ExclusionMatch | null;
+  reason: FileMatch | null; // pattern that matched a file, null if no match
   files: DeploymentFile[];
   isDir: boolean;
   isEntrypoint: boolean;
@@ -20,13 +20,15 @@ export type DeploymentFile = {
   abs: string;
 };
 
-export enum ExclusionMatchSource {
+export enum FileMatchSource {
   FILE = "file",
   BUILT_IN = "built-in",
 }
 
-export type ExclusionMatch = {
-  source: ExclusionMatchSource;
+export type FileMatch = {
+  source: FileMatchSource;
   pattern: string;
+  fileName: string;
   filePath: string;
+  exclude: boolean;
 };

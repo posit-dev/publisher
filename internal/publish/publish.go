@@ -114,8 +114,8 @@ func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 	manifest := bundles.NewManifestFromConfig(p.Config)
 	filePatterns := p.Config.Files
 	if len(filePatterns) == 0 {
-		log.Info("No file patterns specified; using default pattern '/**'")
-		filePatterns = []string{"/**"}
+		log.Info("No file patterns specified; using default pattern '*'")
+		filePatterns = []string{"*"}
 	}
 	bundler, err := bundles.NewBundler(p.Dir, manifest, filePatterns, log)
 	if err != nil {

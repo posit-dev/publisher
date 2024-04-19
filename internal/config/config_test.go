@@ -49,7 +49,7 @@ func (s *ConfigSuite) TestNew() {
 	s.NotNil(cfg)
 	s.Equal(schema.ConfigSchemaURL, cfg.Schema)
 	s.Equal(true, cfg.Validate)
-	s.Equal([]string{"/**"}, cfg.Files)
+	s.Equal([]string{"*"}, cfg.Files)
 }
 
 func (s *ConfigSuite) TestGetConfigPath() {

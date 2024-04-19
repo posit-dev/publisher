@@ -95,9 +95,9 @@ func (s *MatchSuite) runTestCases(cases []testCase) {
 			s.NotNil(m, "pattern %s should have matched path %s (%s)", test.pattern, test.path, absPath)
 
 			if test.inverted {
-				s.True(m.Inverted, "pattern match should have been inverted: %s with %s (%s)", test.pattern, test.path, absPath)
+				s.True(m.Exclude, "pattern match should have been inverted: %s with %s (%s)", test.pattern, test.path, absPath)
 			} else {
-				s.False(m.Inverted, "pattern match should not have been inverted: %s with %s (%s)", test.pattern, test.path, absPath)
+				s.False(m.Exclude, "pattern match should not have been inverted: %s with %s (%s)", test.pattern, test.path, absPath)
 			}
 		} else {
 			s.Nil(m, "pattern %s should not have matched path %s (%s)", test.pattern, test.path, absPath)
@@ -120,6 +120,11 @@ var fileTestCases = []testCase{
 	{"*.py", "dir/subdir/app.py", true, false},
 	{"*.py", "foo.py", true, false},
 	{"*.py", "app.json", false, false},
+
+	{"*", "app.py", true, false},
+	{"*", "dir/app.py", true, false},
+	{"*", "dir/subdir/app.py", true, false},
+	{"*", "foo.py", true, false},
 
 	{"dir/app.py", "dir/app.py", true, false},
 	{"dir/app.py", "app.py", false, false},
