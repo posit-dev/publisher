@@ -1,36 +1,38 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { DeploymentFile, FileMatch } from "../api/types/files";
+import * as os from "os";
+import * as path from "path";
 import {
+  Event,
+  EventEmitter,
+  ExtensionContext,
+  RelativePattern,
+  ThemeIcon,
   TreeDataProvider,
   TreeItem,
-  ExtensionContext,
-  window,
-  EventEmitter,
-  Event,
-  workspace,
   TreeItemCollapsibleState,
   Uri,
   commands,
-  ThemeIcon,
-  RelativePattern,
+  window,
+  workspace,
 } from "vscode";
-import { useApi } from "../api";
-import { getSummaryStringFromError } from "../utils/errors";
-import * as path from "path";
-import { pathSorter } from "../utils/files";
+import { FileMatchSource, useApi } from "../api";
+import { DeploymentFile, FileAction, FileMatch } from "../api/types/files";
 import { useBus } from "../bus";
-
-import * as os from "os";
+import { getSummaryStringFromError } from "../utils/errors";
+import { pathSorter } from "../utils/files";
 import { HomeViewState } from "./homeView";
 
 const viewName = "posit.publisher.files";
 const refreshCommand = viewName + ".refresh";
+const includeCommand = viewName + ".include";
+const excludeCommand = viewName + ".exclude";
 
 const isIncludedTitle = viewName + ".isIncludedTitle";
 const isExcludedTitle = viewName + ".isExcludedTitle";
 const isIncludedFile = viewName + ".isIncludedFile";
 const isExcludedFile = viewName + ".isExcludedFile";
+const isAlwaysExcludedFile = viewName + ".isAlwaysExcludedFile";
 const isEmptyContext = viewName + ".isEmpty";
 
 let includedFiles: FileEntries[] = [];
@@ -66,6 +68,44 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
   public refresh = () => {
     this._onDidChangeTreeData.fire();
     useBus().trigger("requestActiveParams", undefined);
+  };
+
+  private includeFile = async (item: FileTreeItem) => {
+    await this.includeOrExcludeFile(item, FileAction.INCLUDE);
+  };
+
+  private excludeFile = async (item: FileTreeItem) => {
+    await this.includeOrExcludeFile(item, FileAction.EXCLUDE);
+  };
+
+  private includeOrExcludeFile = async (
+    item: FileTreeItem,
+    action: FileAction,
+  ) => {
+    const path = item.id;
+
+    if (path === undefined) {
+      // All of our nodes have defined IDs
+      console.error("files::includeOrExcludeFile: file has no id");
+      return;
+    }
+    if (this.activeConfigName === undefined) {
+      // Shouldn't be here without an active configuration.
+      console.error("files::includeOrExcludeFile: No active configuration.");
+      return;
+    }
+
+    try {
+      const api = await useApi();
+      await api.files.updateFileList(this.activeConfigName, path, action);
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "files::includeOrExcludeFile",
+        error,
+      );
+      window.showErrorMessage(`Failed to update config file. ${summary}`);
+      return;
+    }
   };
 
   getTreeItem(element: FileEntries): FileEntries | Thenable<TreeItem> {
@@ -120,9 +160,11 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
-    this._context.subscriptions.push(treeView);
     this._context.subscriptions.push(
+      treeView,
       commands.registerCommand(refreshCommand, this.refresh),
+      commands.registerCommand(includeCommand, this.includeFile),
+      commands.registerCommand(excludeCommand, this.excludeFile),
     );
 
     if (this.root !== undefined) {
@@ -159,12 +201,15 @@ const resetFileTrees = () => {
 const buildFileTrees = (file: DeploymentFile, root: Uri) => {
   if (file.isFile) {
     if (file.reason?.exclude === false) {
-      const f = new IncludedFile(root, {
-        ...file,
-        reason: file.reason,
-      });
+      // These files are included.
+      const f = new IncludedFile(root, file);
       includedFiles.push(f);
+    } else if (file.reason?.source === FileMatchSource.BUILT_IN) {
+      // These files cannot be included.
+      const f = new AlwaysExcludedFile(root, file);
+      excludedFiles.push(f);
     } else {
+      // These files can be included on user request.
       const f = new ExcludedFile(root, {
         ...file,
         reason: file.reason || null,
@@ -243,27 +288,35 @@ export class IncludedFile extends FileTreeItem {
     super(root, deploymentFile);
     this.contextValue = isIncludedFile;
     this.resourceUri = Uri.parse(`positPublisherFilesIncluded://${this.id}`);
-    this.tooltip = `This file will be included in the next deployment.\n${deploymentFile.rel}\n\n`;
+    this.tooltip = `${deploymentFile.rel}\nThis file will be included in the next deployment.\n`;
     if (this.reason) {
       this.tooltip += `The configuration file ${this.reason.fileName} is including it with the pattern '${this.reason.pattern}'`;
     }
   }
 }
+
 export class ExcludedFile extends FileTreeItem {
   constructor(root: Uri, deploymentFile: DeploymentFile) {
     super(root, deploymentFile);
 
     this.contextValue = isExcludedFile;
     this.resourceUri = Uri.parse(`positPublisherFilesExcluded://${this.id}`);
-    this.tooltip = `This file will be excluded in the next deployment.\n${deploymentFile.rel}\n\n`;
+    this.tooltip = `${deploymentFile.rel}\nThis file will be excluded from the next deployment.\n`;
     if (this.reason) {
-      if (this.reason.source === "built-in") {
-        this.tooltip += `This is a built-in exclusion for the pattern: '${this.reason.pattern}'`;
-      } else {
-        this.tooltip += `The configuration file ${this.reason.fileName} is excluding it with the pattern '${this.reason.pattern}'`;
-      }
+      this.tooltip += `The configuration file ${this.reason.fileName} is excluding it with the pattern '${this.reason.pattern}'`;
     } else {
       this.tooltip += `It did not match any pattern in the configuration 'files' list.`;
     }
+  }
+}
+
+export class AlwaysExcludedFile extends FileTreeItem {
+  constructor(root: Uri, deploymentFile: DeploymentFile) {
+    super(root, deploymentFile);
+
+    this.contextValue = isAlwaysExcludedFile;
+    this.resourceUri = Uri.parse(`positPublisherFilesExcluded://${this.id}`);
+    this.tooltip = `${deploymentFile.rel}\nThis file will be excluded from the next deployment.\n`;
+    this.tooltip += `This is a built-in exclusion for the pattern: '${this.reason?.pattern}' and cannot be overridden.`;
   }
 }
