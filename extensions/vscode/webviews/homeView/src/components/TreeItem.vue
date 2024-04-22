@@ -50,6 +50,7 @@ const toggleExpanded = () => {
 
   .tree-item-container {
     display: flex;
+    align-items: center;
     overflow: hidden;
     padding-left: 16px;
     padding-right: 12px;
