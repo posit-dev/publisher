@@ -16,7 +16,7 @@
           role="button"
           :aria-label="action.label"
           tabindex="0"
-          @click="action.fn"
+          @click.stop="action.fn"
           @keydown.enter="action.fn"
         ></a>
       </li>
