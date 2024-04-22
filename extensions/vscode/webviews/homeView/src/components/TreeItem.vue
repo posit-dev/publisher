@@ -10,6 +10,9 @@
       <div v-if="actions" class="actions">
         <ActionToolbar :title="title" :actions="actions" />
       </div>
+      <div v-if="$slots.postDecor">
+        <slot name="postDecor" />
+      </div>
     </div>
   </div>
 </template>
