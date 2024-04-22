@@ -132,10 +132,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("deployments", "{name}"), DeleteDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodDelete)
 
-	// GET /api/requirements
-	r.Handle(ToPath("requirements"), NewGetRequirementsHandler(base, log)).
-		Methods(http.MethodGet)
-
 	// POST /api/requirements
 	r.Handle(ToPath("requirements"), NewPostRequirementsHandler(base, log)).
 		Methods(http.MethodPost)

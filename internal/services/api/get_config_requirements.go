@@ -21,6 +21,10 @@ type GetConfigRequirementsHandler struct {
 	inspector inspect.PythonInspector
 }
 
+type requirementsDTO struct {
+	Requirements []string `json:"requirements"`
+}
+
 func NewGetConfigRequirementsHandler(base util.AbsolutePath, log logging.Logger) *GetConfigRequirementsHandler {
 	return &GetConfigRequirementsHandler{
 		base:      base,
