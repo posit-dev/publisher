@@ -7,3 +7,39 @@
 body {
   padding: 0;
 }
+
+.text-error {
+  color: var(--vscode-list-errorForeground);
+}
+
+.text-git-added {
+  color: var(--vscode-gitDecoration-addedResourceForeground);
+}
+
+.text-git-modified {
+  color: var(--vscode-gitDecoration-modifiedResourceForeground);
+}
+
+.text-git-deleted {
+  color: var(--vscode-gitDecoration-deletedResourceForeground);
+}
+
+.text-git-renamed {
+  color: var(--vscode-gitDecoration-renamedResourceForeground);
+}
+
+.text-git-stage-modified {
+  color: var(--vscode-gitDecoration-stageModifiedResourceForeground);
+}
+
+.text-git-stage-deleted {
+  color: var(--vscode-gitDecoration-stageDeletedResourceForeground);
+}
+
+.text-git-untracked {
+  color: var(--vscode-gitDecoration-untrackedResourceForeground);
+}
+
+.text-git-conflicting {
+  color: var(--vscode-gitDecoration-conflictingResourceForeground);
+}
