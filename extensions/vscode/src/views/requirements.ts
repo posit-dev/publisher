@@ -17,19 +17,17 @@ import {
 } from "vscode";
 
 import { isAxiosError } from "axios";
-import { isConfigurationError, useApi } from "../api";
+import { Configuration, useApi } from "../api";
+import { useBus } from "../bus";
 import { confirmOverwrite } from "../dialogs";
 import { getSummaryStringFromError } from "../utils/errors";
 import { fileExists } from "../utils/files";
-import { HomeViewState } from "./homeView";
-import { useBus } from "../bus";
 
 const viewName = "posit.publisher.requirements";
 const editCommand = viewName + ".edit";
 const refreshCommand = viewName + ".refresh";
 const scanCommand = viewName + ".scan";
 const contextIsEmpty = viewName + ".isEmpty";
-const fileStore = "requirements.txt";
 
 type RequirementsEventEmitter = EventEmitter<
   RequirementsTreeItem | undefined | void
@@ -41,6 +39,8 @@ export class RequirementsTreeDataProvider
 {
   private root: WorkspaceFolder | undefined;
   private activeConfigName: string | undefined;
+  private activeRequirementsFile: string | undefined;
+  private fileWatcher: FileSystemWatcher | undefined;
 
   private _onDidChangeTreeData: RequirementsEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: RequirementsEvent =
@@ -51,13 +51,25 @@ export class RequirementsTreeDataProvider
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
-    useBus().on("activeConfigurationChanged", (state: HomeViewState) => {
+    useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
+      const newConfigName = cfg?.configurationName;
+      const newRequirementsFile = cfg?.configuration.python?.packageFile;
+
       console.log(
-        `Requirements have been notified about the active configuration change, which is now: ${state.configuration.name}`,
+        `Requirements have been notified about the active configuration change, which is now: ${newConfigName}`,
       );
-      if (state.configuration.name !== this.activeConfigName) {
-        this.activeConfigName = state.configuration.name;
-        this.refresh();
+
+      if (
+        newRequirementsFile !== this.activeRequirementsFile ||
+        newConfigName !== this.activeConfigName
+      ) {
+        this.activeRequirementsFile = newRequirementsFile;
+        this.activeConfigName = newConfigName;
+        this._onDidChangeTreeData.fire();
+
+        if (this.root !== undefined) {
+          this.createFileSystemWatcher(this.root);
+        }
       }
     });
   }
@@ -78,6 +90,10 @@ export class RequirementsTreeDataProvider
       return [];
     }
     try {
+      console.log(
+        "requirements::getChildren: activeConfigName",
+        this.activeConfigName,
+      );
       if (this.activeConfigName === undefined) {
         // We shouldn't get here if there's no configuration selected.
         await this.setContextIsEmpty(true);
@@ -125,51 +141,36 @@ export class RequirementsTreeDataProvider
         commands.registerCommand(editCommand, this.edit),
         commands.registerCommand(refreshCommand, this.refresh),
         commands.registerCommand(scanCommand, this.scan),
-        this.createFileSystemWatcher(this.root),
       );
+      this.createFileSystemWatcher(this.root);
     }
   }
 
-  private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
-    const pattern = new RelativePattern(root, fileStore);
+  private createFileSystemWatcher(root: WorkspaceFolder) {
+    if (this.activeRequirementsFile === undefined) {
+      return;
+    }
+    const pattern = new RelativePattern(root, this.activeRequirementsFile);
     const watcher = workspace.createFileSystemWatcher(pattern);
     watcher.onDidCreate(this.refresh);
     watcher.onDidDelete(this.refresh);
     watcher.onDidChange(this.refresh);
-    return watcher;
+
+    if (this.fileWatcher !== undefined) {
+      // Dispose of the old watcher, and tell VSCode to forget about it.
+      this.fileWatcher.dispose();
+      const index = this._context.subscriptions.indexOf(this.fileWatcher);
+      if (index !== -1) {
+        this._context.subscriptions.splice(index, 1);
+      }
+    }
+    this._context.subscriptions.push(watcher);
+    this.fileWatcher = watcher;
   }
 
   private refresh = () => {
+    useBus().trigger("requestActiveConfig", undefined);
     this._onDidChangeTreeData.fire();
-    useBus().trigger("requestActiveParams", undefined);
-  };
-
-  private getRequirementsFilename = async () => {
-    if (this.activeConfigName === undefined) {
-      // We shouldn't get here if there's no configuration selected.
-      return undefined;
-    }
-    const api = await useApi();
-    const response = await api.configurations.get(this.activeConfigName);
-    const cfg = response.data;
-
-    if (isConfigurationError(cfg)) {
-      window.showErrorMessage(
-        "The selected configuration is invalid. " +
-          "Please correct errors in the configuration file and try again.",
-      );
-      return undefined;
-    }
-
-    // TODO: maybe don't show this view if the configuration doesn't include Python?
-    if (!cfg.configuration.python) {
-      window.showErrorMessage(
-        "The selected configuration does not have a 'python' section. " +
-          "Add Python to the configuration file, or select a different configuration, and try again.",
-      );
-      return undefined;
-    }
-    return cfg.configuration.python.packageFile;
   };
 
   private scan = async () => {
@@ -178,7 +179,7 @@ export class RequirementsTreeDataProvider
       return;
     }
 
-    const relPath = await this.getRequirementsFilename();
+    const relPath = this.activeRequirementsFile;
     if (relPath === undefined) {
       return;
     }
@@ -209,7 +210,7 @@ export class RequirementsTreeDataProvider
       return;
     }
 
-    const relPath = await this.getRequirementsFilename();
+    const relPath = this.activeRequirementsFile;
     if (relPath === undefined) {
       return;
     }
