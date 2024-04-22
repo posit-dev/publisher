@@ -2,7 +2,8 @@
 
 import { AxiosInstance } from "axios";
 
-import { DeploymentFile } from "../types/files";
+import { DeploymentFile, FileAction } from "../types/files";
+import { Configuration } from "../types/configurations";
 
 export class Files {
   private client: AxiosInstance;
@@ -28,6 +29,18 @@ export class Files {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<DeploymentFile>(
       `/configurations/${encodedName}/files`,
+    );
+  }
+
+  updateFileList(configName: string, path: string, action: FileAction) {
+    const encodedName = encodeURIComponent(configName);
+    const body = {
+      path,
+      action,
+    };
+    return this.client.post<Configuration>(
+      `/configurations/${encodedName}/files`,
+      body,
     );
   }
 }

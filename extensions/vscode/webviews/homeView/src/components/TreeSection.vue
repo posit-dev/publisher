@@ -12,8 +12,14 @@
           :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
         />
         <h3 class="title">{{ title }}</h3>
+        <span v-if="$slots.description" class="description">
+          <slot name="description" />
+        </span>
+        <span v-else-if="description" class="description">
+          {{ description }}
+        </span>
       </div>
-      <div class="actions">
+      <div v-if="actions" class="actions">
         <div class="monaco-toolbar">
           <div class="monaco-action-bar">
             <ul
@@ -22,15 +28,18 @@
               :aria-label="`${title} actions`"
             >
               <li
+                v-for="action in actions"
                 class="action-item menu-entry"
                 role="presentation"
-                custom-hover="true"
               >
                 <a
-                  class="action-label codicon codicon-refresh"
+                  class="action-label codicon"
+                  :class="action.codicon"
                   role="button"
-                  aria-label="Refresh Deployment Files"
+                  :aria-label="action.label"
                   tabindex="0"
+                  @click="action.fn"
+                  @keydown.enter="action.fn"
                 ></a>
               </li>
             </ul>
@@ -39,21 +48,24 @@
       </div>
     </div>
     <div v-if="expanded" class="pane-body">
-      Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo ad adipisci
-      veniam rerum id dicta quos voluptatum ab voluptatem quibusdam hic totam,
-      voluptate reiciendis odit consequatur iste blanditiis harum error! Lorem
-      ipsum dolor sit amet consectetur adipisicing elit. Autem, veritatis!
-      Quidem sequi reiciendis reprehenderit at, iure blanditiis veritatis quod
-      amet eveniet sed officia accusamus vel enim tempora. Enim, eligendi ipsa.
+      <slot />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+export type TreeAction = {
+  label: string;
+  codicon: string;
+  fn: () => void;
+};
+
 const expanded = defineModel("expanded", { required: false, default: false });
 
 defineProps<{
   title: string;
+  description?: string;
+  actions?: TreeAction[];
 }>();
 
 const toggleExpanded = () => {
@@ -139,6 +151,7 @@ const toggleExpanded = () => {
   font-weight: 700;
   height: 22px;
   overflow: hidden;
+  user-select: none;
 
   &:focus {
     opacity: 1;
@@ -150,6 +163,7 @@ const toggleExpanded = () => {
 
   .pane-header-title-container {
     display: flex;
+    min-width: 0;
     flex: 1;
     align-items: center;
 
@@ -166,9 +180,22 @@ const toggleExpanded = () => {
       text-overflow: ellipsis;
       text-transform: uppercase;
       white-space: nowrap;
-      user-select: none;
       -webkit-margin-before: 0;
       -webkit-margin-after: 0;
+    }
+
+    .description {
+      display: block;
+      color: var(--vscode-sideBarSectionHeader-foreground);
+      flex-shrink: 100000;
+      font-weight: 400;
+      margin: 0;
+      margin-left: 10px;
+      opacity: 0.6;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-transform: none;
+      white-space: nowrap;
     }
   }
 }
