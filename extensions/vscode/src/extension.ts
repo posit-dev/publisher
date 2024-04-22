@@ -124,13 +124,6 @@ export async function activate(context: ExtensionContext) {
     context.subscriptions.push(watcher);
 
     setMissingContext(await isMissingPublishDirs(folder));
-
-    // set our initial mode for the home view
-    commands.executeCommand(
-      "setContext",
-      "posit.publisher.homeView.deploymentActiveMode",
-      "basic-mode",
-    );
   } else {
     setMissingContext(true);
   }

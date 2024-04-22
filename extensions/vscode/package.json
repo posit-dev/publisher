@@ -179,18 +179,6 @@
         "title": "View Deployment in Connect",
         "icon": "$(link-external)",
         "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.homeView.showBasicMode",
-        "title": "Show Basic Mode",
-        "icon": "$(target)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.homeView.showAdvancedMode",
-        "title": "Show Advanced Mode",
-        "icon": "$(list-tree)",
-        "category": "Posit Publisher"
       }
     ],
     "configuration": {
@@ -248,16 +236,6 @@
           "command": "posit.publisher.credentials.refresh",
           "when": "view == posit.publisher.credentials",
           "group": "navigation"
-        },
-        {
-          "command": "posit.publisher.homeView.showBasicMode",
-          "when": "view == posit.publisher.homeView",
-          "group": "navigation@1"
-        },
-        {
-          "command": "posit.publisher.homeView.showAdvancedMode",
-          "when": "view == posit.publisher.homeView",
-          "group": "navigation@2"
         },
         {
           "command": "posit.publisher.homeView.refresh",
@@ -424,38 +402,38 @@
         },
         {
           "id": "posit.publisher.files",
-          "name": "Deployment Files",
+          "name": "Project Files",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
           "id": "posit.publisher.requirements",
           "name": "Requirements",
           "contextualTitle": "Publisher",
           "icon": "$(package)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
-        },
-        {
-          "id": "posit.publisher.configurations",
-          "name": "Configurations",
-          "contextualTitle": "Publisher",
-          "icon": "$(gear)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
-        },
-        {
-          "id": "posit.publisher.credentials",
-          "name": "Credentials",
-          "contextualTitle": "Publisher",
-          "icon": "$(key)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
           "contextualTitle": "Publisher",
           "icon": "$(cloud-upload)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
+        },
+        {
+          "id": "posit.publisher.configurations",
+          "name": "Configurations",
+          "contextualTitle": "Publisher",
+          "icon": "$(gear)",
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
+        },
+        {
+          "id": "posit.publisher.credentials",
+          "name": "Credentials",
+          "contextualTitle": "Publisher",
+          "icon": "$(key)",
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
