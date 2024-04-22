@@ -56,6 +56,7 @@ const toggleExpanded = () => {
     padding-right: 12px;
     cursor: pointer;
     touch-action: none;
+    user-select: none;
 
     .twisty-container {
       margin: 0 2px;
