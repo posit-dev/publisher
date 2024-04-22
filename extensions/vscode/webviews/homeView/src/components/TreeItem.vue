@@ -103,24 +103,24 @@ const toggleExpanded = () => {
       max-width: fit-content;
       flex-grow: 100;
     }
-  }
 
-  &:hover {
-    color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
-    background-color: var(--vscode-list-hoverBackground);
-
-    .tree-item-title {
+    &:hover {
       color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+      background-color: var(--vscode-list-hoverBackground);
+
+      .tree-item-title {
+        color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+      }
+
+      .tree-item-description {
+        color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+      }
     }
 
-    .tree-item-description {
-      color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+    &:hover .actions,
+    &:focus-within .actions {
+      display: initial;
     }
-  }
-
-  &:hover .actions,
-  &:focus-within .actions {
-    display: initial;
   }
 }
 </style>
