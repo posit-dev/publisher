@@ -4,7 +4,6 @@ import {
   Event,
   EventEmitter,
   ExtensionContext,
-  InputBoxValidationSeverity,
   RelativePattern,
   ThemeIcon,
   TreeDataProvider,
@@ -28,13 +27,14 @@ import {
   useApi,
 } from "../api";
 
-import { confirmForget, confirmReplace } from "../dialogs";
-import { ensureSuffix, fileExists, isValidFilename } from "../utils/files";
+import { confirmForget } from "../dialogs";
 import { EventStream } from "../events";
-import { newDeployment } from "../multiStepInputs/newDeployment";
 import { publishDeployment } from "../multiStepInputs/deployProject";
+import { newDeployment } from "../multiStepInputs/newDeployment";
 import { formatDateString } from "../utils/date";
 import { getSummaryStringFromError } from "../utils/errors";
+import { ensureSuffix } from "../utils/files";
+import { deploymentNameValidator } from "../utils/names";
 
 const viewName = "posit.publisher.deployments";
 const refreshCommand = viewName + ".refresh";
@@ -200,19 +200,30 @@ export class DeploymentsTreeDataProvider
       commands.registerCommand(
         renameCommand,
         async (item: DeploymentsTreeItem) => {
+          let deploymentNames: string[] = [];
+
+          try {
+            const api = await useApi();
+            const response = await api.deployments.getAll();
+            const deploymentList = response.data;
+            // Note.. we want all of the deployment filenames regardless if they are valid or not.
+            deploymentNames = deploymentList.map(
+              (deployment) => deployment.deploymentName,
+            );
+          } catch (error: unknown) {
+            const summary = getSummaryStringFromError(
+              "renameDeployment, deployments.getAll",
+              error,
+            );
+            window.showInformationMessage(
+              `Unable to continue due to deployment error. ${summary}`,
+            );
+            return;
+          }
           const newName = await window.showInputBox({
             prompt: "New deployment name",
             value: item.deployment.deploymentName,
-            validateInput: (filename) => {
-              if (isValidFilename(filename)) {
-                return undefined;
-              } else {
-                return {
-                  message: `Invalid Name: Cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
-                  severity: InputBoxValidationSeverity.Error,
-                };
-              }
-            },
+            validateInput: deploymentNameValidator(deploymentNames),
           });
           if (newName === undefined || newName === "") {
             // canceled
@@ -221,15 +232,6 @@ export class DeploymentsTreeDataProvider
           const oldUri = Uri.file(item.deployment.deploymentPath);
           const relativePath = "../" + ensureSuffix(".toml", newName);
           const newUri = Uri.joinPath(oldUri, relativePath);
-
-          if (await fileExists(newUri)) {
-            const ok = await confirmReplace(
-              `Are you sure you want to replace the deployment '${newName}'?`,
-            );
-            if (!ok) {
-              return undefined;
-            }
-          }
           await workspace.fs.rename(oldUri, newUri, { overwrite: true });
         },
       ),

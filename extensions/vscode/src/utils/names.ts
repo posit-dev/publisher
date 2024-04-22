@@ -1,6 +1,9 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { InputBoxValidationSeverity } from "vscode";
+
 import { useApi } from "../api";
+import { isValidFilename } from "./files";
 
 export async function untitledConfigurationName(): Promise<string> {
   const api = await useApi();
@@ -56,4 +59,20 @@ export function uniqueDeploymentName(
   return !existingNames.find((existingName) => {
     return existingName.toLowerCase() === nameToTest.toLowerCase();
   });
+}
+
+export function deploymentNameValidator(deploymentNames: string[]) {
+  return async (value: string) => {
+    if (
+      value.length < 3 ||
+      !uniqueDeploymentName(value, deploymentNames) ||
+      !isValidFilename(value)
+    ) {
+      return {
+        message: `Invalid Name: Value must be unique across other deployment names for this project, be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
+        severity: InputBoxValidationSeverity.Error,
+      };
+    }
+    return undefined;
+  };
 }
