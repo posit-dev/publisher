@@ -1,6 +1,7 @@
 <template>
   <div class="tree-item">
     <div class="tree-item-container">
+      <div v-if="codicon" class="tree-item-icon codicon" :class="codicon" />
       <div class="tree-item-label-container">
         <span class="tree-item-title">{{ title }}</span>
         <span v-if="description" class="tree-item-description">
@@ -23,6 +24,7 @@ import ActionToolbar, { ActionButton } from "./ActionToolbar.vue";
 defineProps<{
   title: string;
   description?: string;
+  codicon?: string;
   actions?: ActionButton[];
 }>();
 </script>
@@ -38,6 +40,20 @@ defineProps<{
     overflow: hidden;
     padding-left: 16px;
     padding-right: 12px;
+
+    .tree-item-icon {
+      color: var(--vscode-icon-foreground);
+      align-items: center;
+      background-position: 0;
+      background-repeat: no-repeat;
+      background-size: 16px;
+      display: flex;
+      height: 22px;
+      width: 22px;
+      justify-content: center;
+      padding-right: 6px;
+      -webkit-font-smoothing: antialiased;
+    }
 
     .tree-item-label-container {
       flex: 1;
