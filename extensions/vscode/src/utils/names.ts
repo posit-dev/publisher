@@ -33,14 +33,14 @@ export function untitledDeploymentName(
   existingDeploymentNames: string[],
 ): string {
   if (existingDeploymentNames.length === 0) {
-    return "Untitled-1";
+    return "deployment-1";
   }
 
   let id = 0;
   let defaultName = "";
   do {
     id += 1;
-    const trialName = `Untitled-${id}`;
+    const trialName = `deployment-${id}`;
 
     if (uniqueDeploymentName(trialName, existingDeploymentNames)) {
       defaultName = trialName;
