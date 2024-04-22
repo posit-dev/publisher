@@ -50,9 +50,9 @@ const lastSelectionState = viewName + ".lastSelectionState.v2";
 const lastExpansionState = viewName + ".lastExpansionState.v1";
 
 export type HomeViewState = {
-  deploymentName: string | undefined;
-  configurationName: string | undefined;
-  credentialName: string | undefined;
+  deploymentName?: string;
+  configurationName?: string;
+  credentialName?: string;
 };
 
 export class HomeViewProvider implements WebviewViewProvider {
