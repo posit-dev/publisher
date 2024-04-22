@@ -32,3 +32,8 @@ export type FileMatch = {
   filePath: string;
   exclude: boolean;
 };
+
+export enum FileAction {
+  INCLUDE = "include",
+  EXCLUDE = "exclude",
+}

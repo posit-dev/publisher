@@ -349,15 +349,9 @@ const updateParentViewSelectionState = () => {
   vsCodeApi.postMessage({
     command: "saveSelectionState",
     payload: JSON.stringify({
-      deployment: {
-        name: selectedDeployment.value?.saveName,
-      },
-      configuration: {
-        name: selectedConfig.value?.configurationName,
-      },
-      credential: {
-        name: selectedAccount.value?.name,
-      },
+      deploymentName: selectedDeployment.value?.saveName,
+      configurationName: selectedConfig.value?.configurationName,
+      credentialName: selectedAccount.value?.name,
     }),
   });
 };
@@ -480,6 +474,10 @@ const onMessageFromProvider = (event: any) => {
       if (payload.saveSelection) {
         updateParentViewSelectionState();
       }
+      break;
+    }
+    case "save_selection": {
+      updateParentViewSelectionState();
       break;
     }
     default:

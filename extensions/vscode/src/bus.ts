@@ -1,44 +1,25 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { Omnibus, args } from "@hypersphere/omnibus";
-import { HomeViewState } from "./views/homeView";
+import { Account, Configuration, Deployment, PreDeployment } from "./api";
 
 export const bus = Omnibus.builder()
-  // activeParams: event broadcasting the entire set of HomeView selection state
-  .register("activeParams", args<HomeViewState>())
-
-  // activeDeploymentChanged: triggered if deployment name has changed
-  // or if represents the initial value message (where changed is undefined)
-  .derive("activeDeploymentChanged", "activeParams", (b) =>
-    b.filter(
-      (activeParams) =>
-        activeParams?.deployment.changed ||
-        activeParams?.deployment.changed === undefined,
-    ),
+  // activeDeploymentChanged: triggered if deployment name or value has changed
+  .register(
+    "activeDeploymentChanged",
+    args<Deployment | PreDeployment | undefined>(),
   )
 
-  // activeConfigurationChanged: triggered if deployment name has changed
-  // or if represents the initial value message (where changed is undefined)
-  .derive("activeConfigurationChanged", "activeParams", (b) =>
-    b.filter(
-      (activeParams) =>
-        activeParams?.configuration.changed ||
-        activeParams?.configuration.changed === undefined,
-    ),
-  )
+  // activeConfigurationChanged: triggered if configuration name or value has changed
+  .register("activeConfigChanged", args<Configuration | undefined>())
 
-  // activeCredentialChanged: triggered if deployment name has changed
-  // or if represents the initial value message (where changed is undefined)
-  .derive("activeCredentialChanged", "activeParams", (b) =>
-    b.filter(
-      (activeParams) =>
-        activeParams?.credential.changed ||
-        activeParams?.credential.changed === undefined,
-    ),
-  )
+  // activeCredentialChanged: triggered if credential name or value has changed
+  .register("activeCredentialChanged", args<Account | undefined>())
 
-  // requestActiveParams: simple event which will cause the ActiveParams event to be sent back out. This allows us
-  .register("requestActiveParams", args<undefined>())
+  // requestActive*: simple event which will cause an Active*Change event to be sent back out.
+  .register("requestActiveConfig", args<undefined>())
+  .register("requestActiveDeployment", args<undefined>())
+  .register("requestActiveCredential", args<undefined>())
   .build();
 
 export const useBus = () => {

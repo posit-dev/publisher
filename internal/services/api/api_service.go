@@ -104,6 +104,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}", "files"), GetConfigFilesHandlerFunc(base, filesService, log)).
 		Methods(http.MethodGet)
 
+	// POST /api/configurations/$NAME/files
+	r.Handle(ToPath("configurations", "{name}", "files"), PostConfigFilesHandlerFunc(base, log)).
+		Methods(http.MethodPost)
+
 	// GET /api/configurations/$NAME/requirements
 	r.Handle(ToPath("configurations", "{name}", "requirements"), NewGetConfigRequirementsHandler(base, log)).
 		Methods(http.MethodGet)
