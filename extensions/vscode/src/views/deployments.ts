@@ -4,6 +4,7 @@ import {
   Event,
   EventEmitter,
   ExtensionContext,
+  InputBoxValidationSeverity,
   RelativePattern,
   ThemeIcon,
   TreeDataProvider,
@@ -27,7 +28,8 @@ import {
   useApi,
 } from "../api";
 
-import { confirmForget } from "../dialogs";
+import { confirmForget, confirmReplace } from "../dialogs";
+import { ensureSuffix, fileExists, isValidFilename } from "../utils/files";
 import { EventStream } from "../events";
 import { newDeployment } from "../multiStepInputs/newDeployment";
 import { publishDeployment } from "../multiStepInputs/deployProject";
@@ -199,14 +201,36 @@ export class DeploymentsTreeDataProvider
         renameCommand,
         async (item: DeploymentsTreeItem) => {
           const newName = await window.showInputBox({
-            prompt: "Enter a new name for the deployment",
+            prompt: "New deployment name",
             value: item.deployment.deploymentName,
+            validateInput: (filename) => {
+              if (isValidFilename(filename)) {
+                return undefined;
+              } else {
+                return {
+                  message: `Invalid Name: Cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
+                  severity: InputBoxValidationSeverity.Error,
+                };
+              }
+            },
           });
-          if (newName !== undefined) {
-            const oldUri = Uri.file(item.deployment.deploymentPath);
-            const newUri = Uri.joinPath(oldUri, "..", newName + ".toml");
-            await workspace.fs.rename(oldUri, newUri);
+          if (newName === undefined || newName === "") {
+            // canceled
+            return;
           }
+          const oldUri = Uri.file(item.deployment.deploymentPath);
+          const relativePath = "../" + ensureSuffix(".toml", newName);
+          const newUri = Uri.joinPath(oldUri, relativePath);
+
+          if (await fileExists(newUri)) {
+            const ok = await confirmReplace(
+              `Are you sure you want to replace the deployment '${newName}'?`,
+            );
+            if (!ok) {
+              return undefined;
+            }
+          }
+          await workspace.fs.rename(oldUri, newUri, { overwrite: true });
         },
       ),
     );
