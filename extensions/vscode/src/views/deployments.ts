@@ -37,6 +37,7 @@ import { getSummaryStringFromError } from "../utils/errors";
 const viewName = "posit.publisher.deployments";
 const refreshCommand = viewName + ".refresh";
 const editCommand = viewName + ".edit";
+const renameCommand = viewName + ".rename";
 const forgetCommand = viewName + ".forget";
 const visitCommand = viewName + ".visit";
 const addDeploymentCommand = viewName + ".addDeployment";
@@ -188,6 +189,23 @@ export class DeploymentsTreeDataProvider
           if (isDeployment(item.deployment)) {
             const uri = Uri.parse(item.deployment.dashboardUrl, true);
             await env.openExternal(uri);
+          }
+        },
+      ),
+    );
+
+    this._context.subscriptions.push(
+      commands.registerCommand(
+        renameCommand,
+        async (item: DeploymentsTreeItem) => {
+          const newName = await window.showInputBox({
+            prompt: "Enter a new name for the deployment",
+            value: item.deployment.deploymentName,
+          });
+          if (newName !== undefined) {
+            const oldUri = Uri.file(item.deployment.deploymentPath);
+            const newUri = Uri.joinPath(oldUri, "..", newName + ".toml");
+            await workspace.fs.rename(oldUri, newUri);
           }
         },
       ),

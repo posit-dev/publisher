@@ -84,6 +84,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.deployments.rename",
+        "title": "Rename",
+        "icon": "$(symbol-key)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.deployments.forget",
         "title": "Forget Deployment Locally",
         "icon": "$(close-all)",
@@ -284,8 +290,14 @@
           "group": "inline"
         },
         {
+          "command": "posit.publisher.deployments.rename",
+          "when": "view == posit.publisher.deployments",
+          "group": "menu@1"
+        },
+        {
           "command": "posit.publisher.deployments.forget",
-          "when": "view == posit.publisher.deployments"
+          "when": "view == posit.publisher.deployments",
+          "group": "menu@2"
         },
         {
           "command": "posit.publisher.deployments.visit",
@@ -338,6 +350,10 @@
         },
         {
           "command": "posit.publisher.deployments.edit",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.deployments.rename",
           "when": "false"
         },
         {
