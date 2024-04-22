@@ -46,14 +46,14 @@ const toggleExpanded = () => {
 <style lang="scss" scoped>
 .tree-item {
   color: var(--vscode-foreground);
-  cursor: pointer;
-  touch-action: none;
 
   .tree-item-container {
     display: flex;
     overflow: hidden;
     padding-left: 16px;
     padding-right: 12px;
+    cursor: pointer;
+    touch-action: none;
 
     .twisty-container {
       margin: 0 2px;
