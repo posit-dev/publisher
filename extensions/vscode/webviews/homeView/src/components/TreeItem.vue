@@ -2,6 +2,7 @@
   <div class="tree-item">
     <div class="tree-item-container" @click="toggleExpanded">
       <div
+        v-if="$slots.default"
         class="twisty-container codicon"
         :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
       />
