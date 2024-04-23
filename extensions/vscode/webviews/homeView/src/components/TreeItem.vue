@@ -66,7 +66,7 @@ const toggleExpanded = () => {
 .tree-item {
   color: var(--vscode-foreground);
 
-  &.align-icon-with-twisty .twisty-container {
+  &.align-icon-with-twisty:not(.collapsible) .twisty-container {
     background-image: none !important;
     padding-right: 0 !important;
     visibility: hidden;
