@@ -39,7 +39,7 @@
     </div>
 
     <div v-if="$slots.default && expanded" class="tree-item-children">
-      <slot />
+      <slot :indent-level="indentLevel + 1" />
     </div>
   </div>
 </template>
@@ -49,12 +49,22 @@ import ActionToolbar, { ActionButton } from "./ActionToolbar.vue";
 
 const expanded = defineModel("expanded", { required: false, default: false });
 
-defineProps<{
+interface Props {
   title: string;
   description?: string;
   alignIconWithTwisty?: boolean;
   codicon?: string;
   actions?: ActionButton[];
+  indentLevel?: number;
+}
+
+withDefaults(defineProps<Props>(), {
+  indentLevel: 1,
+});
+
+defineSlots<{
+  default(props: { indentLevel: number }): any;
+  postDecor(): any;
 }>();
 
 const toggleExpanded = () => {
@@ -77,7 +87,7 @@ const toggleExpanded = () => {
     display: flex;
     align-items: center;
     overflow: hidden;
-    padding-left: 8px;
+    padding-left: calc(v-bind(indentLevel) * 8px);
     padding-right: 12px;
     cursor: pointer;
     touch-action: none;
