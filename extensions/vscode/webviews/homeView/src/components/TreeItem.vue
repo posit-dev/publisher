@@ -12,6 +12,9 @@
         click: $slots.default ? toggleExpanded : undefined,
       }"
     >
+      <div class="indent">
+        <div v-for="_ in indentLevel - 1" class="indent-guide"></div>
+      </div>
       <div
         class="twisty-container"
         :class="[
@@ -75,6 +78,7 @@ const toggleExpanded = () => {
 <style lang="scss" scoped>
 .tree-item {
   color: var(--vscode-foreground);
+  position: relative;
 
   &.align-icon-with-twisty:not(.collapsible) .twisty-container {
     background-image: none !important;
@@ -92,6 +96,23 @@ const toggleExpanded = () => {
     cursor: pointer;
     touch-action: none;
     user-select: none;
+
+    .indent {
+      width: calc(v-bind(indentLevel) * 8px);
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 16px;
+      pointer-events: none;
+
+      .indent-guide {
+        width: 8px;
+        transition: border-color 0.1s linear;
+        border-left: 1px solid transparent;
+        display: inline-block;
+        height: 100%;
+      }
+    }
 
     .twisty-container {
       display: flex;
@@ -149,6 +170,10 @@ const toggleExpanded = () => {
     &:hover {
       color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
       background-color: var(--vscode-list-hoverBackground);
+
+      .indent .indent-guide {
+        border-color: var(--vscode-tree-inactiveIndentGuidesStroke);
+      }
 
       .tree-item-title {
         color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
