@@ -197,17 +197,19 @@ export async function newDeployment(
     state: MultiStepState,
   ) {
     const thisStepNumber = state.lastStep + 1;
+    const currentName =
+      typeof state.data.deploymentName === "string" &&
+      state.data.deploymentName.length
+        ? state.data.deploymentName
+        : untitledDeploymentName(deploymentNames);
+
     const deploymentName = await input.showInputBox({
       title: state.title,
       step: thisStepNumber,
       totalSteps: state.totalSteps,
-      value:
-        typeof state.data.deploymentName === "string" &&
-        state.data.deploymentName.length
-          ? state.data.deploymentName
-          : untitledDeploymentName(deploymentNames),
+      value: currentName,
       prompt: "Choose a unique name for the deployment",
-      validate: deploymentNameValidator(deploymentNames),
+      validate: deploymentNameValidator(deploymentNames, currentName),
       shouldResume: () => Promise.resolve(false),
     });
 

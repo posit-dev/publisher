@@ -61,13 +61,15 @@ export function uniqueDeploymentName(
   });
 }
 
-export function deploymentNameValidator(deploymentNames: string[]) {
+export function deploymentNameValidator(
+  deploymentNames: string[],
+  currentName: string,
+) {
   return async (value: string) => {
-    if (
-      value.length < 3 ||
-      !uniqueDeploymentName(value, deploymentNames) ||
-      !isValidFilename(value)
-    ) {
+    const isUnique =
+      value === currentName || uniqueDeploymentName(value, deploymentNames);
+
+    if (value.length < 3 || !isUnique || !isValidFilename(value)) {
       return {
         message: `Invalid Name: Value must be unique across other deployment names for this project, be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
         severity: InputBoxValidationSeverity.Error,

@@ -220,10 +220,15 @@ export class DeploymentsTreeDataProvider
             );
             return;
           }
+
+          const currentName = item.deployment.deploymentName;
           const newName = await window.showInputBox({
             prompt: "New deployment name",
-            value: item.deployment.deploymentName,
-            validateInput: deploymentNameValidator(deploymentNames),
+            value: currentName,
+            validateInput: deploymentNameValidator(
+              deploymentNames,
+              currentName,
+            ),
           });
           if (newName === undefined || newName === "") {
             // canceled
