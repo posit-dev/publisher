@@ -23,7 +23,7 @@ import { confirmOverwrite } from "../dialogs";
 import { getSummaryStringFromError } from "../utils/errors";
 import { fileExists } from "../utils/files";
 
-const viewName = "posit.publisher.requirements";
+const viewName = "posit.publisher.pythonPackages";
 const editCommand = viewName + ".edit";
 const refreshCommand = viewName + ".refresh";
 const scanCommand = viewName + ".scan";
@@ -56,7 +56,7 @@ export class RequirementsTreeDataProvider
       const newRequirementsFile = cfg?.configuration.python?.packageFile;
 
       console.log(
-        `Requirements have been notified about the active configuration change, which is now: ${newConfigName}`,
+        `Python Packages has been notified about the active configuration change, which is now: ${newConfigName}`,
       );
 
       if (
