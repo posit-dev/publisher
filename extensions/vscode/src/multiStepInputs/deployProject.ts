@@ -32,7 +32,7 @@ export async function publishDeployment(
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];
 
-  const apisComplete = new Promise<boolean>(async (resolve) => {
+  const apisComplete = new Promise<boolean>(async () => {
     try {
       const response = await api.accounts.getAll();
       // account list is filtered to match the deployment being published
@@ -55,8 +55,7 @@ export async function publishDeployment(
       window.showInformationMessage(
         `Unable to continue with no credentials. ${summary}`,
       );
-      resolve(false);
-      return;
+      return false;
     }
     if (accountListItems.length === 0) {
       window.showInformationMessage(
@@ -66,8 +65,7 @@ export async function publishDeployment(
           `Establish account credentials using rsconnect (R package) or\n` +
           `rsconnect-python (Python package) and then retry operation.`,
       );
-      resolve(false);
-      return;
+      return false;
     }
 
     try {
@@ -97,8 +95,7 @@ export async function publishDeployment(
       window.showInformationMessage(
         `Unable to continue with no configurations. ${summary}`,
       );
-      resolve(false);
-      return;
+      return false;
     }
     if (configFileListItems.length === 0) {
       window.showInformationMessage(
@@ -107,10 +104,9 @@ export async function publishDeployment(
           `to create a configuration file. After updating any applicable values\n` +
           `retry the operation.`,
       );
-      resolve(false);
-      return;
+      return false;
     }
-    resolve(true);
+    return true;
   });
 
   // Start the progress indicator and have it stop when the API calls are complete

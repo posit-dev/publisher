@@ -30,7 +30,7 @@ export async function newConfig(title: string, viewId: string) {
   const entryPointLabelMap = new Map<string, ConfigurationDetails>();
   let configs: ConfigurationDetails[] = [];
 
-  const apisComplete = new Promise<boolean>(async (resolve) => {
+  const apisComplete = new Promise<boolean>(async () => {
     try {
       const inspectResponse = await api.configurations.inspect();
       configs = inspectResponse.data;
@@ -55,16 +55,14 @@ export async function newConfig(title: string, viewId: string) {
       window.showErrorMessage(
         `Unable to continue with project inspection failure. ${summary}`,
       );
-      resolve(false);
-      return;
+      return false;
     }
     if (!entryPointListItems.length) {
       const msg = `Unable to continue with no project entrypoints found during inspection`;
       window.showErrorMessage(msg);
-      resolve(false);
-      return;
+      return false;
     }
-    resolve(true);
+    return true;
   });
 
   // Start the progress indicator and have it stop when the API calls are complete

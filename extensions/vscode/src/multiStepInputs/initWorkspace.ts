@@ -44,7 +44,7 @@ export async function initWorkspace(
   const entryPointLabelMap = new Map<string, ConfigurationDetails>();
   let configs: ConfigurationDetails[] = [];
 
-  const apisComplete = new Promise<boolean>(async (resolve) => {
+  const apisComplete = new Promise<boolean>(async () => {
     try {
       const response = await api.accounts.getAll();
       accountListItems = response.data.map((account) => ({
@@ -64,8 +64,7 @@ export async function initWorkspace(
       window.showErrorMessage(
         `Unable to continue with no credentials. ${summary}`,
       );
-      resolve(false);
-      return;
+      return false;
     }
     if (accountListItems.length === 0) {
       window.showErrorMessage(
@@ -73,8 +72,7 @@ export async function initWorkspace(
           `Establish account credentials using rsconnect (R package) or\n` +
           `rsconnect-python (Python package) and then retry operation.`,
       );
-      resolve(false);
-      return;
+      return false;
     }
 
     try {
@@ -101,17 +99,15 @@ export async function initWorkspace(
       window.showErrorMessage(
         `Unable to continue with project inspection failure. ${summary}`,
       );
-      resolve(false);
-      return;
+      return false;
     }
     if (!entryPointListItems.length) {
       window.showErrorMessage(
         `Unable to continue with no project entrypoints found during inspection`,
       );
-      resolve(false);
-      return;
+      return false;
     }
-    resolve(true);
+    return true;
   });
 
   // Start the progress indicator and have it stop when the API calls are complete
