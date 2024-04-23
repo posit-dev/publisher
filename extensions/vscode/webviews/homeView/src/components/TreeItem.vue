@@ -1,6 +1,11 @@
 <template>
   <div class="tree-item">
-    <div class="tree-item-container" @click="toggleExpanded">
+    <div
+      class="tree-item-container"
+      v-on="{
+        click: $slots.default ? toggleExpanded : undefined,
+      }"
+    >
       <div
         v-if="$slots.default"
         class="twisty-container codicon"
