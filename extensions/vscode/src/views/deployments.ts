@@ -29,14 +29,17 @@ import {
 
 import { confirmForget } from "../dialogs";
 import { EventStream } from "../events";
-import { newDeployment } from "../multiStepInputs/newDeployment";
 import { publishDeployment } from "../multiStepInputs/deployProject";
+import { newDeployment } from "../multiStepInputs/newDeployment";
 import { formatDateString } from "../utils/date";
 import { getSummaryStringFromError } from "../utils/errors";
+import { ensureSuffix } from "../utils/files";
+import { deploymentNameValidator } from "../utils/names";
 
 const viewName = "posit.publisher.deployments";
 const refreshCommand = viewName + ".refresh";
 const editCommand = viewName + ".edit";
+const renameCommand = viewName + ".rename";
 const forgetCommand = viewName + ".forget";
 const visitCommand = viewName + ".visit";
 const addDeploymentCommand = viewName + ".addDeployment";
@@ -189,6 +192,52 @@ export class DeploymentsTreeDataProvider
             const uri = Uri.parse(item.deployment.dashboardUrl, true);
             await env.openExternal(uri);
           }
+        },
+      ),
+    );
+
+    this._context.subscriptions.push(
+      commands.registerCommand(
+        renameCommand,
+        async (item: DeploymentsTreeItem) => {
+          let deploymentNames: string[] = [];
+
+          try {
+            const api = await useApi();
+            const response = await api.deployments.getAll();
+            const deploymentList = response.data;
+            // Note.. we want all of the deployment filenames regardless if they are valid or not.
+            deploymentNames = deploymentList.map(
+              (deployment) => deployment.deploymentName,
+            );
+          } catch (error: unknown) {
+            const summary = getSummaryStringFromError(
+              "renameDeployment, deployments.getAll",
+              error,
+            );
+            window.showInformationMessage(
+              `Unable to continue due to deployment error. ${summary}`,
+            );
+            return;
+          }
+
+          const currentName = item.deployment.deploymentName;
+          const newName = await window.showInputBox({
+            prompt: "New deployment name",
+            value: currentName,
+            validateInput: deploymentNameValidator(
+              deploymentNames,
+              currentName,
+            ),
+          });
+          if (newName === undefined || newName === "") {
+            // canceled
+            return;
+          }
+          const oldUri = Uri.file(item.deployment.deploymentPath);
+          const relativePath = "../" + ensureSuffix(".toml", newName);
+          const newUri = Uri.joinPath(oldUri, relativePath);
+          await workspace.fs.rename(oldUri, newUri, { overwrite: true });
         },
       ),
     );
