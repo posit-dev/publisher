@@ -84,6 +84,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.deployments.rename",
+        "title": "Rename",
+        "icon": "$(symbol-key)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.deployments.forget",
         "title": "Forget Deployment Locally",
         "icon": "$(close-all)",
@@ -141,19 +147,19 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.requirements.edit",
+        "command": "posit.publisher.pythonPackages.edit",
         "title": "Edit Requirements File",
         "icon": "$(edit)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.requirements.refresh",
+        "command": "posit.publisher.pythonPackages.refresh",
         "title": "Refresh Requirements",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.requirements.scan",
+        "command": "posit.publisher.pythonPackages.scan",
         "title": "Scan Requirements",
         "icon": "$(eye)",
         "category": "Posit Publisher"
@@ -178,18 +184,6 @@
         "command": "posit.publisher.logs.visit",
         "title": "View Deployment in Connect",
         "icon": "$(link-external)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.homeView.showBasicMode",
-        "title": "Show Basic Mode",
-        "icon": "$(target)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.homeView.showAdvancedMode",
-        "title": "Show Advanced Mode",
-        "icon": "$(list-tree)",
         "category": "Posit Publisher"
       }
     ],
@@ -230,34 +224,24 @@
           "group": "navigation@2"
         },
         {
-          "command": "posit.publisher.requirements.edit",
-          "when": "view == posit.publisher.requirements",
+          "command": "posit.publisher.pythonPackages.edit",
+          "when": "view == posit.publisher.pythonPackages",
           "group": "navigation@1"
         },
         {
-          "command": "posit.publisher.requirements.refresh",
-          "when": "view == posit.publisher.requirements",
+          "command": "posit.publisher.pythonPackages.refresh",
+          "when": "view == posit.publisher.pythonPackages",
           "group": "navigation@2"
         },
         {
-          "command": "posit.publisher.requirements.scan",
-          "when": "view == posit.publisher.requirements",
+          "command": "posit.publisher.pythonPackages.scan",
+          "when": "view == posit.publisher.pythonPackages",
           "group": "navigation@3"
         },
         {
           "command": "posit.publisher.credentials.refresh",
           "when": "view == posit.publisher.credentials",
           "group": "navigation"
-        },
-        {
-          "command": "posit.publisher.homeView.showBasicMode",
-          "when": "view == posit.publisher.homeView",
-          "group": "navigation@1"
-        },
-        {
-          "command": "posit.publisher.homeView.showAdvancedMode",
-          "when": "view == posit.publisher.homeView",
-          "group": "navigation@2"
         },
         {
           "command": "posit.publisher.homeView.refresh",
@@ -284,8 +268,14 @@
           "group": "inline"
         },
         {
+          "command": "posit.publisher.deployments.rename",
+          "when": "view == posit.publisher.deployments",
+          "group": "menu@1"
+        },
+        {
           "command": "posit.publisher.deployments.forget",
-          "when": "view == posit.publisher.deployments"
+          "when": "view == posit.publisher.deployments",
+          "group": "menu@2"
         },
         {
           "command": "posit.publisher.deployments.visit",
@@ -341,6 +331,10 @@
           "when": "false"
         },
         {
+          "command": "posit.publisher.deployments.rename",
+          "when": "false"
+        },
+        {
           "command": "posit.publisher.deployments.forget",
           "when": "false"
         },
@@ -373,11 +367,11 @@
           "when": "false"
         },
         {
-          "command": "posit.publisher.requirements.refresh",
+          "command": "posit.publisher.pythonPackages.refresh",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.requirements.scan",
+          "command": "posit.publisher.pythonPackages.scan",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
@@ -412,6 +406,8 @@
           "id": "posit.publisher.project",
           "name": "Project",
           "contextualTitle": "Publisher",
+          "visibility": "visible",
+          "initialSize": 0,
           "when": "workbenchState == empty || workbenchState == workspace || posit.publish.missing || posit.publish.state == 'uninitialized'"
         },
         {
@@ -420,42 +416,54 @@
           "name": "Home",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
+          "visibility": "visible",
+          "initialSize": 1,
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
           "id": "posit.publisher.files",
-          "name": "Deployment Files",
+          "name": "Project Files",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
+          "visibility": "collapsed",
+          "initialSize": 0,
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
-          "id": "posit.publisher.requirements",
-          "name": "Requirements",
+          "id": "posit.publisher.pythonPackages",
+          "name": "Python Packages",
           "contextualTitle": "Publisher",
           "icon": "$(package)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'basic-mode'"
+          "visibility": "collapsed",
+          "initialSize": 0,
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
           "contextualTitle": "Publisher",
           "icon": "$(gear)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
+          "visibility": "collapsed",
+          "initialSize": 0,
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
           "contextualTitle": "Publisher",
           "icon": "$(key)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
+          "visibility": "collapsed",
+          "initialSize": 0,
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
           "id": "posit.publisher.deployments",
           "name": "Deployments",
           "contextualTitle": "Publisher",
           "icon": "$(cloud-upload)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publisher.homeView.deploymentActiveMode == 'advanced-mode'"
+          "visibility": "collapsed",
+          "initialSize": 0,
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
           "id": "posit.publisher.helpAndFeedback",
@@ -463,6 +471,7 @@
           "contextualTitle": "Publisher",
           "icon": "$(info)",
           "visibility": "collapsed",
+          "initialSize": 0,
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         }
       ],
@@ -488,9 +497,9 @@
         "when": "posit.publisher.deployments.isEmpty"
       },
       {
-        "view": "posit.publisher.requirements",
-        "contents": "To deploy Python content, you need a requirements.txt file listing any package dependencies. Click Scan to create one based on the files in your project.\n[Scan](command:posit.publisher.requirements.scan)",
-        "when": "posit.publisher.requirements.isEmpty == empty"
+        "view": "posit.publisher.pythonPackages",
+        "contents": "To deploy Python content, you need a requirements.txt file listing any package dependencies. Click Scan to create one based on the files in your project.\n[Scan](command:posit.publisher.pythonPackages.scan)",
+        "when": "posit.publisher.pythonPackages.isEmpty == empty"
       },
       {
         "view": "posit.publisher.credentials",

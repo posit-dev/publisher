@@ -1,29 +1,25 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { QuickPickItem, ThemeIcon, window } from "vscode";
+
+import {
+  AccountAuthType,
+  PreDeployment,
+  isConfigurationError,
+  useApi,
+} from "../api";
+import { EventStream } from "../events";
+import { getSummaryStringFromError } from "../utils/errors";
+import {
+  deploymentNameValidator,
+  untitledDeploymentName,
+} from "../utils/names";
+import { deployProject } from "../views/deployProgress";
 import {
   MultiStepInput,
   MultiStepState,
   isQuickPickItem,
 } from "./multiStepHelper";
-
-import {
-  InputBoxValidationSeverity,
-  QuickPickItem,
-  ThemeIcon,
-  window,
-} from "vscode";
-
-import {
-  AccountAuthType,
-  useApi,
-  isConfigurationError,
-  PreDeployment,
-} from "../api";
-import { getSummaryStringFromError } from "../utils/errors";
-import { uniqueDeploymentName, untitledDeploymentName } from "../utils/names";
-import { deployProject } from "../views/deployProgress";
-import { EventStream } from "../events";
-import { isValidFilename } from "../utils/files";
 
 export async function newDeployment(
   title: string,
@@ -224,29 +220,19 @@ export async function newDeployment(
     state: MultiStepState,
   ) {
     const thisStepNumber = state.lastStep + 1;
+    const currentName =
+      typeof state.data.deploymentName === "string" &&
+      state.data.deploymentName.length
+        ? state.data.deploymentName
+        : untitledDeploymentName(deploymentNames);
+
     const deploymentName = await input.showInputBox({
       title: state.title,
       step: thisStepNumber,
       totalSteps: state.totalSteps,
-      value:
-        typeof state.data.deploymentName === "string" &&
-        state.data.deploymentName.length
-          ? state.data.deploymentName
-          : untitledDeploymentName(deploymentNames),
+      value: currentName,
       prompt: "Choose a unique name for the deployment",
-      validate: (value) => {
-        if (
-          value.length < 3 ||
-          !uniqueDeploymentName(value, deploymentNames) ||
-          !isValidFilename(value)
-        ) {
-          return Promise.resolve({
-            message: `Invalid Name: Value must be unique across other deployment names for this project, be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
+      validate: deploymentNameValidator(deploymentNames, currentName),
       shouldResume: () => Promise.resolve(false),
     });
 

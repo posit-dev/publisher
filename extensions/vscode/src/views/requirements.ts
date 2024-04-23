@@ -17,17 +17,17 @@ import {
 } from "vscode";
 
 import { isAxiosError } from "axios";
-import { useApi } from "../api";
+import { Configuration, useApi } from "../api";
+import { useBus } from "../bus";
 import { confirmOverwrite } from "../dialogs";
 import { getSummaryStringFromError } from "../utils/errors";
 import { fileExists } from "../utils/files";
 
-const viewName = "posit.publisher.requirements";
+const viewName = "posit.publisher.pythonPackages";
 const editCommand = viewName + ".edit";
 const refreshCommand = viewName + ".refresh";
 const scanCommand = viewName + ".scan";
 const contextIsEmpty = viewName + ".isEmpty";
-const fileStore = "requirements.txt";
 
 type RequirementsEventEmitter = EventEmitter<
   RequirementsTreeItem | undefined | void
@@ -38,7 +38,10 @@ export class RequirementsTreeDataProvider
   implements TreeDataProvider<RequirementsTreeItem>
 {
   private root: WorkspaceFolder | undefined;
-  private fileUri: Uri | undefined;
+  private activeConfigName: string | undefined;
+  private activeRequirementsFile: string | undefined;
+  private fileWatcher: FileSystemWatcher | undefined;
+
   private _onDidChangeTreeData: RequirementsEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: RequirementsEvent =
     this._onDidChangeTreeData.event;
@@ -47,8 +50,28 @@ export class RequirementsTreeDataProvider
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
-      this.fileUri = Uri.joinPath(this.root.uri, fileStore);
     }
+    useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
+      const newConfigName = cfg?.configurationName;
+      const newRequirementsFile = cfg?.configuration.python?.packageFile;
+
+      console.log(
+        `Python Packages has been notified about the active configuration change, which is now: ${newConfigName}`,
+      );
+
+      if (
+        newRequirementsFile !== this.activeRequirementsFile ||
+        newConfigName !== this.activeConfigName
+      ) {
+        this.activeRequirementsFile = newRequirementsFile;
+        this.activeConfigName = newConfigName;
+        this._onDidChangeTreeData.fire();
+
+        if (this.root !== undefined) {
+          this.createFileSystemWatcher(this.root);
+        }
+      }
+    });
   }
 
   getTreeItem(element: RequirementsTreeItem): TreeItem | Thenable<TreeItem> {
@@ -67,8 +90,19 @@ export class RequirementsTreeDataProvider
       return [];
     }
     try {
+      console.log(
+        "requirements::getChildren: activeConfigName",
+        this.activeConfigName,
+      );
+      if (this.activeConfigName === undefined) {
+        // We shouldn't get here if there's no configuration selected.
+        await this.setContextIsEmpty(true);
+        return [];
+      }
       const api = await useApi();
-      const response = await api.requirements.get();
+      const response = await api.requirements.getByConfiguration(
+        this.activeConfigName,
+      );
       await this.setContextIsEmpty(false);
       return response.data.requirements.map(
         (line) => new RequirementsTreeItem(line),
@@ -107,32 +141,54 @@ export class RequirementsTreeDataProvider
         commands.registerCommand(editCommand, this.edit),
         commands.registerCommand(refreshCommand, this.refresh),
         commands.registerCommand(scanCommand, this.scan),
-        this.createFileSystemWatcher(this.root),
       );
+      this.createFileSystemWatcher(this.root);
     }
   }
 
-  private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
-    const pattern = new RelativePattern(root, fileStore);
+  private createFileSystemWatcher(root: WorkspaceFolder) {
+    if (this.activeRequirementsFile === undefined) {
+      return;
+    }
+    const pattern = new RelativePattern(root, this.activeRequirementsFile);
     const watcher = workspace.createFileSystemWatcher(pattern);
     watcher.onDidCreate(this.refresh);
     watcher.onDidDelete(this.refresh);
     watcher.onDidChange(this.refresh);
-    return watcher;
+
+    if (this.fileWatcher !== undefined) {
+      // Dispose of the old watcher, and tell VSCode to forget about it.
+      this.fileWatcher.dispose();
+      const index = this._context.subscriptions.indexOf(this.fileWatcher);
+      if (index !== -1) {
+        this._context.subscriptions.splice(index, 1);
+      }
+    }
+    this._context.subscriptions.push(watcher);
+    this.fileWatcher = watcher;
   }
 
   private refresh = () => {
+    useBus().trigger("requestActiveConfig", undefined);
     this._onDidChangeTreeData.fire();
   };
 
   private scan = async () => {
-    if (this.fileUri === undefined) {
+    if (this.root === undefined) {
+      // We shouldn't get here if there's no workspace folder open.
       return;
     }
 
-    if (await fileExists(this.fileUri)) {
+    const relPath = this.activeRequirementsFile;
+    if (relPath === undefined) {
+      return;
+    }
+
+    const fileUri = Uri.joinPath(this.root.uri, relPath);
+
+    if (await fileExists(fileUri)) {
       const ok = await confirmOverwrite(
-        "Are you sure you want to overwrite your existing requirements.txt file?",
+        `Are you sure you want to overwrite your existing ${relPath} file?`,
       );
       if (!ok) {
         return;
@@ -141,8 +197,8 @@ export class RequirementsTreeDataProvider
 
     try {
       const api = await useApi();
-      await api.requirements.create("requirements.txt");
-      await this.edit();
+      await api.requirements.create(relPath);
+      await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("dependencies::scan", error);
       window.showInformationMessage(summary);
@@ -150,9 +206,16 @@ export class RequirementsTreeDataProvider
   };
 
   private edit = async () => {
-    if (this.fileUri !== undefined) {
-      await commands.executeCommand("vscode.open", this.fileUri);
+    if (this.root === undefined) {
+      return;
     }
+
+    const relPath = this.activeRequirementsFile;
+    if (relPath === undefined) {
+      return;
+    }
+    const fileUri = Uri.joinPath(this.root.uri, relPath);
+    await commands.executeCommand("vscode.open", fileUri);
   };
 }
 
