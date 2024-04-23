@@ -23,7 +23,7 @@
         <ActionToolbar :title="title" :actions="actions" />
       </div>
     </div>
-    <div v-if="expanded" class="pane-body">
+    <div v-show="expanded" class="pane-body">
       <slot />
     </div>
   </div>
