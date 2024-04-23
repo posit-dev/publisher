@@ -64,8 +64,15 @@ const toggleExpanded = () => {
     user-select: none;
 
     .twisty-container {
-      margin: 0 2px;
+      display: flex;
+      line-height: 22px;
+      align-items: center;
+      flex-shrink: 0;
+      justify-content: center;
       font-size: 16px;
+      transform: translateX(3px);
+      padding-right: 6px;
+      width: 22px;
       color: var(--vscode-icon-foreground);
     }
 
