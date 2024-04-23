@@ -4,6 +4,7 @@ import {
   MultiStepInput,
   MultiStepState,
   isQuickPickItem,
+  assignStep,
 } from "./multiStepHelper";
 
 import {
@@ -68,7 +69,8 @@ export async function newConfig(title: string) {
   // NOTE: This multi-stepper is used for multiple commands
   // ***************************************************************
 
-  // Name the config file to use - if a fixedConfigurationName has not been supplied
+  // Select the entrypoint,  if there is more than one
+  // Name the config file to use
   // Return the name of the config file, so it can be opened.
 
   // ***************************************************************
@@ -88,6 +90,7 @@ export async function newConfig(title: string) {
         entryPoint: undefined, /// eventual type is QuickPickItem
         configFileName: undefined, // eventual type is string
       },
+      promptStepNumbers: {},
     };
     // determine number of total steps, as each step
     let totalSteps = 2;
@@ -111,7 +114,7 @@ export async function newConfig(title: string) {
   ) {
     // skip if we only have one choice.
     if (entryPointListItems.length > 1) {
-      const thisStepNumber = state.lastStep + 1;
+      const thisStepNumber = assignStep(state, "inputEntryPointSelection");
       const pick = await input.showQuickPick({
         title: state.title,
         step: thisStepNumber,
@@ -125,10 +128,12 @@ export async function newConfig(title: string) {
 
       state.data.entryPoint = pick;
       state.lastStep = thisStepNumber;
+      return (input: MultiStepInput) => inputConfigurationName(input, state);
     } else {
       state.data.entryPoint = entryPointListItems[0];
+      // We're skipping this step, so we must silently just jump to the next step
+      return inputConfigurationName(input, state);
     }
-    return (input: MultiStepInput) => inputConfigurationName(input, state);
   }
 
   // ***************************************************************
@@ -139,7 +144,7 @@ export async function newConfig(title: string) {
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    const thisStepNumber = state.lastStep + 1;
+    const thisStepNumber = assignStep(state, "inputConfigurationName");
     const configFileName = await input.showInputBox({
       title: state.title,
       step: thisStepNumber,
@@ -160,6 +165,7 @@ export async function newConfig(title: string) {
 
     state.data.configFileName = configFileName;
     state.lastStep = thisStepNumber;
+    // last step, we don't return anything
   }
 
   // ***************************************************************

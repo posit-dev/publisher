@@ -4,6 +4,7 @@ import {
   MultiStepInput,
   MultiStepState,
   isQuickPickItem,
+  assignStep,
 } from "./multiStepHelper";
 
 import {
@@ -112,7 +113,7 @@ export async function initWorkspace(
 
   // Name the deployment - if a fixedDeploymentName has not been supplied
   // Select the credential to use, if there is more than one
-  // Select the entrypoint if needed
+  // Select the entrypoint, if there is more than one
   // Name the config file to use - if a fixedConfigurationName has not been supplied
   // Return the name of the config file, so it can be opened.
 
@@ -135,6 +136,7 @@ export async function initWorkspace(
         entryPoint: undefined, /// eventual type is QuickPickItem
         configFileName: undefined, // eventual type is string
       },
+      promptStepNumbers: {},
     };
     // determine number of total steps, as each step
     let totalSteps = 4;
@@ -164,7 +166,7 @@ export async function initWorkspace(
     state: MultiStepState,
   ) {
     if (!fixedDeploymentName) {
-      const thisStepNumber = state.lastStep + 1;
+      const thisStepNumber = assignStep(state, "inputDeploymentName");
       const deploymentName = await input.showInputBox({
         title: state.title,
         step: thisStepNumber,
@@ -189,10 +191,12 @@ export async function initWorkspace(
 
       state.data.deploymentName = deploymentName;
       state.lastStep = thisStepNumber;
+      return (input: MultiStepInput) => pickCredentials(input, state);
     } else {
       state.data.deploymentName = fixedDeploymentName;
+      // We're skipping this step, so we must silently just jump to the next step
+      return pickCredentials(input, state);
     }
-    return (input: MultiStepInput) => pickCredentials(input, state);
   }
 
   // ***************************************************************
@@ -202,7 +206,7 @@ export async function initWorkspace(
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     // skip if we only have one choice.
     if (accountListItems.length > 1) {
-      const thisStepNumber = state.lastStep + 1;
+      const thisStepNumber = assignStep(state, "pickCredentials");
       const pick = await input.showQuickPick({
         title: state.title,
         step: thisStepNumber,
@@ -219,10 +223,12 @@ export async function initWorkspace(
       });
       state.data.credentialName = pick;
       state.lastStep = thisStepNumber;
+      return (input: MultiStepInput) => inputEntryPointSelection(input, state);
     } else {
       state.data.credentialName = accountListItems[0];
+      // We're skipping this step, so we must silently just jump to the next step
+      return inputEntryPointSelection(input, state);
     }
-    return (input: MultiStepInput) => inputEntryPointSelection(input, state);
   }
 
   // ***************************************************************
@@ -235,7 +241,7 @@ export async function initWorkspace(
   ) {
     // skip if we only have one choice.
     if (entryPointListItems.length > 1) {
-      const thisStepNumber = state.lastStep + 1;
+      const thisStepNumber = assignStep(state, "inputEntryPointSelection");
       const pick = await input.showQuickPick({
         title: state.title,
         step: thisStepNumber,
@@ -249,10 +255,12 @@ export async function initWorkspace(
 
       state.data.entryPoint = pick;
       state.lastStep = thisStepNumber;
+      return (input: MultiStepInput) => inputConfigurationName(input, state);
     } else {
       state.data.entryPoint = entryPointListItems[0];
+      // We're skipping this step, so we must silently just jump to the next step
+      return inputConfigurationName(input, state);
     }
-    return (input: MultiStepInput) => inputConfigurationName(input, state);
   }
 
   // ***************************************************************
@@ -264,7 +272,7 @@ export async function initWorkspace(
     state: MultiStepState,
   ) {
     if (!fixedConfigurationName) {
-      const thisStepNumber = state.lastStep + 1;
+      const thisStepNumber = assignStep(state, "inputConfigurationName");
       const configFileName = await input.showInputBox({
         title: state.title,
         step: thisStepNumber,
@@ -288,6 +296,7 @@ export async function initWorkspace(
     } else {
       state.data.configFileName = fixedConfigurationName;
     }
+    // last step, we don't return anything
   }
 
   // ***************************************************************
