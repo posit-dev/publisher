@@ -13,9 +13,15 @@
       }"
     >
       <div
-        v-if="$slots.default"
-        class="twisty-container codicon"
-        :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
+        class="twisty-container"
+        :class="[
+          { codicon: $slots.default },
+          $slots.default
+            ? expanded
+              ? 'codicon-chevron-down'
+              : 'codicon-chevron-right'
+            : undefined,
+        ]"
       />
       <div v-if="codicon" class="tree-item-icon codicon" :class="codicon" />
       <div class="tree-item-label-container">
@@ -60,16 +66,18 @@ const toggleExpanded = () => {
 .tree-item {
   color: var(--vscode-foreground);
 
-  &.collapsible .tree-item-container,
-  &.align-icon-with-twisty .tree-item-container {
-    padding-left: 8px;
+  &.align-icon-with-twisty .twisty-container {
+    background-image: none !important;
+    padding-right: 0 !important;
+    visibility: hidden;
+    width: 0 !important;
   }
 
   .tree-item-container {
     display: flex;
     align-items: center;
     overflow: hidden;
-    padding-left: 16px;
+    padding-left: 8px;
     padding-right: 12px;
     cursor: pointer;
     touch-action: none;
