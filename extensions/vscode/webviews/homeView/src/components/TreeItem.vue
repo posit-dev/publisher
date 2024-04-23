@@ -1,5 +1,11 @@
 <template>
-  <div class="tree-item">
+  <div
+    class="tree-item"
+    :class="{
+      'align-icon-with-twisty': alignIconWithTwisty,
+      collapsible: $slots.default,
+    }"
+  >
     <div
       class="tree-item-container"
       v-on="{
@@ -40,6 +46,7 @@ const expanded = defineModel("expanded", { required: false, default: false });
 defineProps<{
   title: string;
   description?: string;
+  alignIconWithTwisty?: boolean;
   codicon?: string;
   actions?: ActionButton[];
 }>();
@@ -52,6 +59,11 @@ const toggleExpanded = () => {
 <style lang="scss" scoped>
 .tree-item {
   color: var(--vscode-foreground);
+
+  &.collapsible .tree-item-container,
+  &.align-icon-with-twisty .tree-item-container {
+    padding-left: 8px;
+  }
 
   .tree-item-container {
     display: flex;
@@ -70,7 +82,6 @@ const toggleExpanded = () => {
       flex-shrink: 0;
       justify-content: center;
       font-size: 16px;
-      transform: translateX(3px);
       padding-right: 6px;
       width: 22px;
       color: var(--vscode-icon-foreground);
