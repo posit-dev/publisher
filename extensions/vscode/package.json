@@ -84,6 +84,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.deployments.rename",
+        "title": "Rename",
+        "icon": "$(symbol-key)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.deployments.forget",
         "title": "Forget Deployment Locally",
         "icon": "$(close-all)",
@@ -262,8 +268,14 @@
           "group": "inline"
         },
         {
+          "command": "posit.publisher.deployments.rename",
+          "when": "view == posit.publisher.deployments",
+          "group": "menu@1"
+        },
+        {
           "command": "posit.publisher.deployments.forget",
-          "when": "view == posit.publisher.deployments"
+          "when": "view == posit.publisher.deployments",
+          "group": "menu@2"
         },
         {
           "command": "posit.publisher.deployments.visit",
@@ -316,6 +328,10 @@
         },
         {
           "command": "posit.publisher.deployments.edit",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.deployments.rename",
           "when": "false"
         },
         {
@@ -390,6 +406,8 @@
           "id": "posit.publisher.project",
           "name": "Project",
           "contextualTitle": "Publisher",
+          "visibility": "visible",
+          "initialSize": 0,
           "when": "workbenchState == empty || workbenchState == workspace || posit.publish.missing || posit.publish.state == 'uninitialized'"
         },
         {
@@ -398,6 +416,8 @@
           "name": "Home",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
+          "visibility": "visible",
+          "initialSize": 1,
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
@@ -405,6 +425,8 @@
           "name": "Project Files",
           "contextualTitle": "Publisher",
           "icon": "$(symbol-file)",
+          "visibility": "collapsed",
+          "initialSize": 0,
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
@@ -412,13 +434,8 @@
           "name": "Requirements",
           "contextualTitle": "Publisher",
           "icon": "$(package)",
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
-        },
-        {
-          "id": "posit.publisher.deployments",
-          "name": "Deployments",
-          "contextualTitle": "Publisher",
-          "icon": "$(cloud-upload)",
+          "visibility": "collapsed",
+          "initialSize": 0,
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
@@ -426,6 +443,8 @@
           "name": "Configurations",
           "contextualTitle": "Publisher",
           "icon": "$(gear)",
+          "visibility": "collapsed",
+          "initialSize": 0,
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
@@ -433,6 +452,17 @@
           "name": "Credentials",
           "contextualTitle": "Publisher",
           "icon": "$(key)",
+          "visibility": "collapsed",
+          "initialSize": 0,
+          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
+        },
+        {
+          "id": "posit.publisher.deployments",
+          "name": "Deployments",
+          "contextualTitle": "Publisher",
+          "icon": "$(cloud-upload)",
+          "visibility": "collapsed",
+          "initialSize": 0,
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
@@ -441,6 +471,7 @@
           "contextualTitle": "Publisher",
           "icon": "$(info)",
           "visibility": "collapsed",
+          "initialSize": 0,
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         }
       ],
