@@ -106,8 +106,11 @@ export class ConfigurationsTreeDataProvider
     this._context.subscriptions.push(
       treeView,
       commands.registerCommand(refreshCommand, this.refresh),
-      commands.registerCommand(addCommand, () => {
-        return newConfig("Create a Configuration File for your Project");
+      commands.registerCommand(addCommand, (viewId?: string) => {
+        return newConfig(
+          "Create a Configuration File for your Project",
+          viewId,
+        );
       }),
       commands.registerCommand(editCommand, this.edit),
       commands.registerCommand(renameCommand, this.rename),
