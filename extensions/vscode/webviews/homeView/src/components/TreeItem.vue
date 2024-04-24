@@ -1,15 +1,30 @@
 <template>
-  <div class="tree-item">
+  <div
+    class="tree-item"
+    :class="{
+      'align-icon-with-twisty': alignIconWithTwisty,
+      collapsible: $slots.default,
+    }"
+  >
     <div
       class="tree-item-container"
       v-on="{
         click: $slots.default ? toggleExpanded : undefined,
       }"
     >
+      <div class="indent">
+        <div v-for="_ in indentLevel - 1" class="indent-guide"></div>
+      </div>
       <div
-        v-if="$slots.default"
-        class="twisty-container codicon"
-        :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
+        class="twisty-container"
+        :class="[
+          { codicon: $slots.default },
+          $slots.default
+            ? expanded
+              ? 'codicon-chevron-down'
+              : 'codicon-chevron-right'
+            : undefined,
+        ]"
       />
       <div v-if="codicon" class="tree-item-icon codicon" :class="codicon" />
       <div class="tree-item-label-container">
@@ -27,7 +42,7 @@
     </div>
 
     <div v-if="$slots.default && expanded" class="tree-item-children">
-      <slot />
+      <slot :indent-level="indentLevel + 1" />
     </div>
   </div>
 </template>
@@ -37,11 +52,22 @@ import ActionToolbar, { ActionButton } from "./ActionToolbar.vue";
 
 const expanded = defineModel("expanded", { required: false, default: false });
 
-defineProps<{
+interface Props {
   title: string;
   description?: string;
+  alignIconWithTwisty?: boolean;
   codicon?: string;
   actions?: ActionButton[];
+  indentLevel?: number;
+}
+
+withDefaults(defineProps<Props>(), {
+  indentLevel: 1,
+});
+
+defineSlots<{
+  default(props: { indentLevel: number }): any;
+  postDecor(): any;
 }>();
 
 const toggleExpanded = () => {
@@ -52,20 +78,51 @@ const toggleExpanded = () => {
 <style lang="scss" scoped>
 .tree-item {
   color: var(--vscode-foreground);
+  position: relative;
+
+  &.align-icon-with-twisty:not(.collapsible) .twisty-container {
+    background-image: none !important;
+    padding-right: 0 !important;
+    visibility: hidden;
+    width: 0 !important;
+  }
 
   .tree-item-container {
     display: flex;
     align-items: center;
     overflow: hidden;
-    padding-left: 16px;
+    padding-left: calc(v-bind(indentLevel) * 8px);
     padding-right: 12px;
     cursor: pointer;
     touch-action: none;
     user-select: none;
 
+    .indent {
+      width: calc(v-bind(indentLevel) * 8px);
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 16px;
+      pointer-events: none;
+
+      .indent-guide {
+        width: 8px;
+        transition: border-color 0.1s linear;
+        border-left: 1px solid transparent;
+        display: inline-block;
+        height: 100%;
+      }
+    }
+
     .twisty-container {
-      margin: 0 2px;
+      display: flex;
+      line-height: 22px;
+      align-items: center;
+      flex-shrink: 0;
+      justify-content: center;
       font-size: 16px;
+      padding-right: 6px;
+      width: 22px;
       color: var(--vscode-icon-foreground);
     }
 
@@ -113,6 +170,10 @@ const toggleExpanded = () => {
     &:hover {
       color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
       background-color: var(--vscode-list-hoverBackground);
+
+      .indent .indent-guide {
+        border-color: var(--vscode-tree-inactiveIndentGuidesStroke);
+      }
 
       .tree-item-title {
         color: var(--vscode-list-hoverForeground, var(--vscode-foreground));

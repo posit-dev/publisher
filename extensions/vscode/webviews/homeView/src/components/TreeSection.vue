@@ -56,6 +56,13 @@ const toggleExpanded = () => {
   &.expanded:focus-within .actions {
     display: initial;
   }
+
+  &.expanded:hover
+    :deep(.tree-item .tree-item-container:not(:hover) .indent .indent-guide),
+  &.expanded:focus-within
+    :deep(.tree-item .tree-item-container:not(:hover) .indent .indent-guide) {
+    border-color: var(--vscode-tree-inactiveIndentGuidesStroke);
+  }
 }
 
 .pane-header {
