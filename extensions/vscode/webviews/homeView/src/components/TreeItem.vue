@@ -41,7 +41,7 @@
       </div>
     </div>
 
-    <div v-if="$slots.default && expanded" class="tree-item-children">
+    <div v-show="$slots.default && expanded" class="tree-item-children">
       <slot :indent-level="indentLevel + 1" />
     </div>
   </div>
