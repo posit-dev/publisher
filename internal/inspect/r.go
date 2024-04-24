@@ -5,6 +5,7 @@ package inspect
 import (
 	"fmt"
 	"io/fs"
+	"os/exec"
 	"regexp"
 	"strings"
 
@@ -19,6 +20,7 @@ type RInspector interface {
 }
 
 type defaultRInspector struct {
+	base        util.AbsolutePath
 	executor    executor.Executor
 	pathLooker  util.PathLooker
 	rExecutable util.Path
@@ -29,8 +31,9 @@ var _ RInspector = &defaultRInspector{}
 
 const DefaultRenvLockfile = "renv.lock"
 
-func NewRInspector(rExecutable util.Path, log logging.Logger) RInspector {
+func NewRInspector(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) RInspector {
 	return &defaultRInspector{
+		base:        base,
 		executor:    executor.NewExecutor(),
 		pathLooker:  util.NewPathLooker(),
 		rExecutable: rExecutable,
@@ -45,13 +48,31 @@ func NewRInspector(rExecutable util.Path, log logging.Logger) RInspector {
 // be determined by the specified pythonExecutable,
 // or by `python3` or `python` on $PATH.
 func (i *defaultRInspector) InspectR() (*config.R, error) {
-	rVersion, err := i.getRVersion()
+	rExecutable, err := i.getRExecutable()
 	if err != nil {
 		return nil, err
 	}
+	rVersion, err := i.getRVersion(rExecutable)
+	if err != nil {
+		return nil, err
+	}
+	lockfilePath, err := i.getRenvLockfile(rExecutable)
+	if err != nil {
+		return nil, err
+	}
+	var relPath util.RelativePath
+	if lockfilePath.IsAbs() {
+		relPath, err = lockfilePath.Rel(i.base)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		relPath = util.NewRelativePath(lockfilePath.String(), lockfilePath.Fs())
+	}
+
 	return &config.R{
 		Version:        rVersion,
-		PackageFile:    DefaultRenvLockfile,
+		PackageFile:    relPath.String(),
 		PackageManager: "renv",
 	}, nil
 }
@@ -94,11 +115,7 @@ func (i *defaultRInspector) getRExecutable() (string, error) {
 
 var rVersionRE = regexp.MustCompile(`^R version (\d+\.\d+\.\d+)`)
 
-func (i *defaultRInspector) getRVersion() (string, error) {
-	rExecutable, err := i.getRExecutable()
-	if err != nil {
-		return "", err
-	}
+func (i *defaultRInspector) getRVersion(rExecutable string) (string, error) {
 	i.log.Info("Getting R version", "r", rExecutable)
 	args := []string{"--version"}
 	output, err := i.executor.RunCommand(rExecutable, args, i.log)
@@ -113,4 +130,28 @@ func (i *defaultRInspector) getRVersion() (string, error) {
 	version := m[1]
 	i.log.Info("Detected R version", "version", version)
 	return version, nil
+}
+
+var renvLockRE = regexp.MustCompile(`^\[1\] "(.*)"$`)
+
+func (i *defaultRInspector) getRenvLockfile(rExecutable string) (util.Path, error) {
+	i.log.Info("Getting renv lockfile path", "r", rExecutable)
+	args := []string{"-s", "-e", "renv::paths$lockfile()"}
+	output, err := i.executor.RunCommand(rExecutable, args, i.log)
+	if err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			i.log.Warn("Couldn't detect lockfile path; is renv installed?")
+			return util.NewPath(DefaultRenvLockfile, i.base.Fs()), nil
+		} else {
+			return util.Path{}, err
+		}
+	}
+	line := strings.SplitN(string(output), "\n", 2)[0]
+	m := renvLockRE.FindStringSubmatch(line)
+	if len(m) < 2 {
+		return util.Path{}, fmt.Errorf("couldn't parse renv lockfile path from output: %s", line)
+	}
+	path := m[1]
+	i.log.Info("Detected renv lockfile path", "path", path)
+	return util.NewPath(path, i.base.Fs()), nil
 }

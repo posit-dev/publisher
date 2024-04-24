@@ -52,7 +52,7 @@ func inspectProject(base util.AbsolutePath, python util.Path, rExecutable util.P
 		return nil, err
 	}
 	if needR {
-		inspector := RInspectorFactory(rExecutable, log)
+		inspector := RInspectorFactory(base, rExecutable, log)
 		rConfig, err := inspector.InspectR()
 		if err != nil {
 			return nil, err
