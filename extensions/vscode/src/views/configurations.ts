@@ -107,9 +107,6 @@ export class ConfigurationsTreeDataProvider
       treeView,
       commands.registerCommand(refreshCommand, this.refresh),
       commands.registerCommand(addCommand, (viewId?: string) => {
-        if (!viewId) {
-          viewId = viewName;
-        }
         return newConfig(
           "Create a Configuration File for your Project",
           viewId,

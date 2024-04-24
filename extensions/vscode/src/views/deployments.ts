@@ -146,9 +146,6 @@ export class DeploymentsTreeDataProvider
       commands.registerCommand(
         createNewDeploymentFileCommand,
         (viewId?: string) => {
-          if (!viewId) {
-            viewId = viewName;
-          }
           return newDeployment(
             "Create a Deployment File for your Project",
             viewId,
@@ -165,9 +162,6 @@ export class DeploymentsTreeDataProvider
       commands.registerCommand(
         deployCommand,
         async (item: DeploymentsTreeItem, viewId?: string) => {
-          if (!viewId) {
-            viewId = viewName;
-          }
           if (!isDeploymentError(item.deployment)) {
             publishDeployment(item.deployment, this._stream, viewId);
           }

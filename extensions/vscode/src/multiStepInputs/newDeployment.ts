@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { QuickPickItem, ThemeIcon, window } from "vscode";
+import { ProgressLocation, QuickPickItem, ThemeIcon, window } from "vscode";
 
 import {
   AccountAuthType,
@@ -23,7 +23,7 @@ import {
 
 export async function newDeployment(
   title: string,
-  viewId: string,
+  viewId?: string,
 ): Promise<PreDeployment | undefined>;
 export async function newDeployment(
   title: string,
@@ -39,7 +39,7 @@ export async function newDeployment(
 ): Promise<PreDeployment | undefined>;
 export async function newDeployment(
   title: string,
-  viewId: string,
+  viewId?: string,
   allowPublish?: boolean,
   stream?: EventStream,
 ): Promise<PreDeployment | undefined> {
@@ -52,7 +52,7 @@ export async function newDeployment(
   let configFileListItems: QuickPickItem[] = [];
   let deploymentNames: string[] = [];
 
-  const apisComplete = new Promise<boolean>(async () => {
+  const getAccounts = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.accounts.getAll();
       accountListItems = response.data.map((account) => ({
@@ -72,7 +72,7 @@ export async function newDeployment(
       window.showInformationMessage(
         `Unable to continue with no credentials. ${summary}`,
       );
-      return false;
+      return reject();
     }
     if (accountListItems.length === 0) {
       window.showInformationMessage(
@@ -80,9 +80,12 @@ export async function newDeployment(
           `Establish account credentials using rsconnect (R package) or\n` +
           `rsconnect-python (Python package) and then retry operation.`,
       );
-      return false;
+      return reject();
     }
+    return resolve();
+  });
 
+  const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.configurations.getAll();
       const configurations = response.data;
@@ -110,7 +113,7 @@ export async function newDeployment(
       window.showInformationMessage(
         `Unable to continue with no configurations. ${summary}`,
       );
-      return false;
+      return reject();
     }
     if (configFileListItems.length === 0) {
       window.showInformationMessage(
@@ -119,9 +122,12 @@ export async function newDeployment(
           `to create a configuration file. After updating any applicable values\n` +
           `retry the operation.`,
       );
-      return false;
+      return reject();
     }
+    resolve();
+  });
 
+  const getDeployments = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.deployments.getAll();
       const deploymentList = response.data;
@@ -137,18 +143,25 @@ export async function newDeployment(
       window.showInformationMessage(
         `Unable to continue due to deployment error. ${summary}`,
       );
-      return false;
+      return reject();
     }
-    return true;
+    return resolve();
   });
+
+  // wait for all of them to complete
+  const apisComplete = Promise.all([
+    getAccounts,
+    getConfigurations,
+    getDeployments,
+  ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
   window.withProgress(
     {
       title: "Initializing",
-      location: { viewId },
+      location: viewId ? { viewId } : ProgressLocation.Window,
     },
-    async (): Promise<boolean> => {
+    async () => {
       return apisComplete;
     },
   );
@@ -341,8 +354,10 @@ export async function newDeployment(
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
-  const success = await apisComplete;
-  if (!success) {
+  try {
+    await apisComplete;
+  } catch {
+    // errors have already been displayed by the underlying promises..
     return;
   }
   const state = await collectInputs();

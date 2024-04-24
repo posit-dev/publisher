@@ -8,6 +8,7 @@ import {
 
 import {
   InputBoxValidationSeverity,
+  ProgressLocation,
   QuickPickItem,
   ThemeIcon,
   Uri,
@@ -20,7 +21,7 @@ import { getSummaryStringFromError } from "../utils/errors";
 import { untitledConfigurationName } from "../utils/names";
 import { isValidFilename } from "../utils/files";
 
-export async function newConfig(title: string, viewId: string) {
+export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
@@ -30,7 +31,7 @@ export async function newConfig(title: string, viewId: string) {
   const entryPointLabelMap = new Map<string, ConfigurationDetails>();
   let configs: ConfigurationDetails[] = [];
 
-  const apisComplete = new Promise<boolean>(async () => {
+  const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
       const inspectResponse = await api.configurations.inspect();
       configs = inspectResponse.data;
@@ -55,24 +56,24 @@ export async function newConfig(title: string, viewId: string) {
       window.showErrorMessage(
         `Unable to continue with project inspection failure. ${summary}`,
       );
-      return false;
+      return reject();
     }
     if (!entryPointListItems.length) {
       const msg = `Unable to continue with no project entrypoints found during inspection`;
       window.showErrorMessage(msg);
-      return false;
+      return reject();
     }
-    return true;
+    return resolve();
   });
 
   // Start the progress indicator and have it stop when the API calls are complete
   window.withProgress(
     {
       title: "Initializing",
-      location: { viewId },
+      location: viewId ? { viewId } : ProgressLocation.Window,
     },
-    async (): Promise<boolean> => {
-      return apisComplete;
+    async () => {
+      return getConfigurations;
     },
   );
 
@@ -182,8 +183,10 @@ export async function newConfig(title: string, viewId: string) {
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
-  const success = await apisComplete;
-  if (!success) {
+  try {
+    await getConfigurations;
+  } catch {
+    // errors have already been displayed by the underlying promises..
     return;
   }
   const state = await collectInputs();

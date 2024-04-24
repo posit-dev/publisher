@@ -6,7 +6,7 @@ import {
   isQuickPickItem,
 } from "./multiStepHelper";
 
-import { QuickPickItem, ThemeIcon, window } from "vscode";
+import { ProgressLocation, QuickPickItem, ThemeIcon, window } from "vscode";
 
 import {
   AccountAuthType,
@@ -22,7 +22,7 @@ import { EventStream } from "../events";
 export async function publishDeployment(
   deployment: PreDeployment | Deployment,
   stream: EventStream,
-  viewId: string,
+  viewId?: string,
 ) {
   // ***************************************************************
   // API Calls and results
@@ -32,7 +32,7 @@ export async function publishDeployment(
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];
 
-  const apisComplete = new Promise<boolean>(async () => {
+  const getAccounts = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.accounts.getAll();
       // account list is filtered to match the deployment being published
@@ -55,7 +55,7 @@ export async function publishDeployment(
       window.showInformationMessage(
         `Unable to continue with no credentials. ${summary}`,
       );
-      return false;
+      return reject();
     }
     if (accountListItems.length === 0) {
       window.showInformationMessage(
@@ -65,9 +65,12 @@ export async function publishDeployment(
           `Establish account credentials using rsconnect (R package) or\n` +
           `rsconnect-python (Python package) and then retry operation.`,
       );
-      return false;
+      return reject();
     }
+    return resolve();
+  });
 
+  const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.configurations.getAll();
       const configurations = response.data;
@@ -95,7 +98,7 @@ export async function publishDeployment(
       window.showInformationMessage(
         `Unable to continue with no configurations. ${summary}`,
       );
-      return false;
+      return reject();
     }
     if (configFileListItems.length === 0) {
       window.showInformationMessage(
@@ -104,18 +107,20 @@ export async function publishDeployment(
           `to create a configuration file. After updating any applicable values\n` +
           `retry the operation.`,
       );
-      return false;
+      return reject();
     }
-    return true;
+    return resolve();
   });
+
+  const apisComplete = Promise.all([getAccounts, getConfigurations]);
 
   // Start the progress indicator and have it stop when the API calls are complete
   window.withProgress(
     {
       title: "Initializing",
-      location: { viewId },
+      location: viewId ? { viewId } : ProgressLocation.Window,
     },
-    async (): Promise<boolean> => {
+    async () => {
       return apisComplete;
     },
   );
@@ -204,7 +209,7 @@ export async function publishDeployment(
     state: MultiStepState,
   ) {
     // skip if we only have one choice or an already decided one
-    if (configFileListItems.length > 1 || deployment.configurationName) {
+    if (configFileListItems.length > 1 || !deployment.configurationName) {
       const thisStepNumber = state.lastStep + 1;
       const pick = await input.showQuickPick({
         title: state.title,
@@ -240,8 +245,10 @@ export async function publishDeployment(
   // collect the info.
   // ***************************************************************
 
-  const success = await apisComplete;
-  if (!success) {
+  try {
+    await apisComplete;
+  } catch {
+    // errors have already been displayed by the underlying promises..
     return;
   }
   const state = await collectInputs();

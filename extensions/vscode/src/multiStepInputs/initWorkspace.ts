@@ -8,6 +8,7 @@ import {
 
 import {
   InputBoxValidationSeverity,
+  ProgressLocation,
   QuickPickItem,
   ThemeIcon,
   Uri,
@@ -23,12 +24,12 @@ import {
 } from "../utils/names";
 import { isValidFilename } from "../utils/files";
 
-export async function initWorkspaceWithFixedNames(viewId: string) {
+export async function initWorkspaceWithFixedNames(viewId?: string) {
   await initWorkspace(viewId, "Untitled-1", "default");
 }
 
 export async function initWorkspace(
-  viewId: string,
+  viewId?: string,
   fixedDeploymentName?: string,
   fixedConfigurationName?: string,
 ) {
@@ -44,7 +45,7 @@ export async function initWorkspace(
   const entryPointLabelMap = new Map<string, ConfigurationDetails>();
   let configs: ConfigurationDetails[] = [];
 
-  const apisComplete = new Promise<boolean>(async () => {
+  const getAccounts = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.accounts.getAll();
       accountListItems = response.data.map((account) => ({
@@ -64,7 +65,7 @@ export async function initWorkspace(
       window.showErrorMessage(
         `Unable to continue with no credentials. ${summary}`,
       );
-      return false;
+      return reject();
     }
     if (accountListItems.length === 0) {
       window.showErrorMessage(
@@ -72,9 +73,12 @@ export async function initWorkspace(
           `Establish account credentials using rsconnect (R package) or\n` +
           `rsconnect-python (Python package) and then retry operation.`,
       );
-      return false;
+      return reject();
     }
+    return resolve();
+  });
 
+  const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
       const inspectResponse = await api.configurations.inspect();
       configs = inspectResponse.data;
@@ -99,24 +103,26 @@ export async function initWorkspace(
       window.showErrorMessage(
         `Unable to continue with project inspection failure. ${summary}`,
       );
-      return false;
+      return reject();
     }
     if (!entryPointListItems.length) {
       window.showErrorMessage(
         `Unable to continue with no project entrypoints found during inspection`,
       );
-      return false;
+      return reject();
     }
-    return true;
+    return resolve();
   });
+
+  const apisComplete = Promise.all([getAccounts, getConfigurations]);
 
   // Start the progress indicator and have it stop when the API calls are complete
   window.withProgress(
     {
       title: "Initializing",
-      location: { viewId },
+      location: viewId ? { viewId } : ProgressLocation.Window,
     },
-    async (): Promise<boolean> => {
+    async () => {
       return apisComplete;
     },
   );
@@ -313,8 +319,10 @@ export async function initWorkspace(
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
-  const success = await apisComplete;
-  if (!success) {
+  try {
+    await apisComplete;
+  } catch {
+    // errors have already been displayed by the underlying promises..
     return;
   }
   const state = await collectInputs();
