@@ -1,6 +1,16 @@
 <template>
   <div class="tree-item">
-    <div class="tree-item-container">
+    <div
+      class="tree-item-container"
+      v-on="{
+        click: $slots.default ? toggleExpanded : undefined,
+      }"
+    >
+      <div
+        v-if="$slots.default"
+        class="twisty-container codicon"
+        :class="expanded ? 'codicon-chevron-down' : 'codicon-chevron-right'"
+      />
       <div v-if="codicon" class="tree-item-icon codicon" :class="codicon" />
       <div class="tree-item-label-container">
         <span class="tree-item-title">{{ title }}</span>
@@ -15,11 +25,17 @@
         <slot name="postDecor" />
       </div>
     </div>
+
+    <div v-if="$slots.default && expanded" class="tree-item-children">
+      <slot />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import ActionToolbar, { ActionButton } from "./ActionToolbar.vue";
+
+const expanded = defineModel("expanded", { required: false, default: false });
 
 defineProps<{
   title: string;
@@ -27,19 +43,31 @@ defineProps<{
   codicon?: string;
   actions?: ActionButton[];
 }>();
+
+const toggleExpanded = () => {
+  expanded.value = !expanded.value;
+};
 </script>
 
 <style lang="scss" scoped>
 .tree-item {
   color: var(--vscode-foreground);
-  cursor: pointer;
-  touch-action: none;
 
   .tree-item-container {
     display: flex;
+    align-items: center;
     overflow: hidden;
     padding-left: 16px;
     padding-right: 12px;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+
+    .twisty-container {
+      margin: 0 2px;
+      font-size: 16px;
+      color: var(--vscode-icon-foreground);
+    }
 
     .tree-item-icon {
       color: var(--vscode-icon-foreground);
@@ -81,24 +109,24 @@ defineProps<{
       max-width: fit-content;
       flex-grow: 100;
     }
-  }
 
-  &:hover {
-    color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
-    background-color: var(--vscode-list-hoverBackground);
-
-    .tree-item-title {
+    &:hover {
       color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+      background-color: var(--vscode-list-hoverBackground);
+
+      .tree-item-title {
+        color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+      }
+
+      .tree-item-description {
+        color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+      }
     }
 
-    .tree-item-description {
-      color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+    &:hover .actions,
+    &:focus-within .actions {
+      display: initial;
     }
-  }
-
-  &:hover .actions,
-  &:focus-within .actions {
-    display: initial;
   }
 }
 </style>
