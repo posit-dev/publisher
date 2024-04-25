@@ -6,8 +6,6 @@ import { Service } from "./services";
 import { ProjectTreeDataProvider } from "./views/project";
 import { DeploymentsTreeDataProvider } from "./views/deployments";
 import { ConfigurationsTreeDataProvider } from "./views/configurations";
-import { FilesTreeDataProvider } from "./views/files";
-import { RequirementsTreeDataProvider } from "./views/requirements";
 import { CredentialsTreeDataProvider } from "./views/credentials";
 import { HelpAndFeedbackTreeDataProvider } from "./views/helpAndFeedback";
 import { LogsTreeDataProvider } from "./views/logs";
@@ -147,12 +145,6 @@ export async function activate(context: ExtensionContext) {
     context,
   );
 
-  const filesTreeDataProvider = new FilesTreeDataProvider(context);
-
-  const requirementsTreeDataProvider = new RequirementsTreeDataProvider(
-    context,
-  );
-
   const credentialsTreeDataProvider = new CredentialsTreeDataProvider(context);
 
   const helpAndFeedbackTreeDataProvider = new HelpAndFeedbackTreeDataProvider(
@@ -167,8 +159,6 @@ export async function activate(context: ExtensionContext) {
   projectTreeDataProvider.register();
   deploymentsTreeDataProvider.register();
   configurationsTreeDataProvider.register();
-  filesTreeDataProvider.register();
-  requirementsTreeDataProvider.register();
   credentialsTreeDataProvider.register();
   helpAndFeedbackTreeDataProvider.register();
   logsTreeDataProvider.register();
