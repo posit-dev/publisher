@@ -1,33 +1,24 @@
 <template>
   <div>
     <div class="roomy">
-      <div class="deploy-combo-button">
-        <vscode-button
-          :disabled="disableDeployment"
-          @click="onClickDeploy"
-          style="
-            flex: 2;
-            border-top-right-radius: unset;
-            border-bottom-right-radius: unset;
-          "
-        >
-          Deploy Your Project
-        </vscode-button>
-        <vscode-button
-          @click="onClickDeployExpand"
-          style="
-            border-top-left-radius: unset;
-            border-bottom-left-radius: unset;
-          "
-          :aria-label="
-            showDetails
-              ? 'Collapse Deployment Selection Details'
-              : 'Expand Deployment Selection Details'
-          "
-        >
-          <span :class="buttonIconClass"></span>
-        </vscode-button>
-      </div>
+      <ButtonDropdown
+        class="deploy-button"
+        :disabled="disableDeployment"
+        :dropdown-label="
+          showDetails
+            ? 'Collapse Deployment Selection Details'
+            : 'Expand Deployment Selection Details'
+        "
+        :dropdown-codicon="
+          showDetails
+            ? 'codicon codicon-chevron-down'
+            : 'codicon codicon-chevron-right'
+        "
+        @click="onClickDeploy"
+        @dropdown-click="onClickDeployExpand"
+      >
+        Deploy Your Project
+      </ButtonDropdown>
     </div>
     <div v-if="showDetails">
       <div>
@@ -154,6 +145,7 @@ import { Account } from "../../../../src/api/types/accounts";
 import { Configuration } from "../../../../src/api/types/configurations";
 import { useHomeStore } from "../stores/home";
 
+import ButtonDropdown from "./ButtonDropdown.vue";
 import PSelect from "./PSelect.vue";
 
 const home = useHomeStore();
@@ -176,12 +168,6 @@ const lastStatusDescription = computed(() => {
     return "Not Yet Deployed";
   }
   return "Last Deployment Successful";
-});
-
-const buttonIconClass = computed(() => {
-  return showDetails.value
-    ? "codicon codicon-chevron-down"
-    : "codicon codicon-chevron-right";
 });
 
 const disableDeployment = computed(() => {
@@ -455,9 +441,8 @@ const onMessageFromProvider = (event: any) => {
   margin-left: 5px;
 }
 
-.deploy-combo-button {
-  display: flex;
-  min-width: 100%;
+:deep(.deploy-button) {
+  flex: 1;
 }
 
 .progress-container {
