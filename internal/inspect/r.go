@@ -3,6 +3,8 @@ package inspect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os/exec"
@@ -52,27 +54,34 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 	if err != nil {
 		return nil, err
 	}
-	rVersion, err := i.getRVersion(rExecutable)
-	if err != nil {
-		return nil, err
-	}
 	lockfilePath, err := i.getRenvLockfile(rExecutable)
 	if err != nil {
 		return nil, err
 	}
-	var relPath util.RelativePath
-	if lockfilePath.IsAbs() {
-		relPath, err = lockfilePath.Rel(i.base)
+	exists, err := lockfilePath.Exists()
+	if err != nil {
+		return nil, err
+	}
+	var rVersion string
+	if exists {
+		// Get R version from the lockfile
+		rVersion, err = i.getRVersionFromLockfile(lockfilePath)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		relPath = util.NewRelativePath(lockfilePath.String(), lockfilePath.Fs())
+		rVersion, err = i.getRVersion(rExecutable)
+		if err != nil {
+			return nil, err
+		}
 	}
-
+	lockfileRelPath, err := lockfilePath.Rel(i.base)
+	if err != nil {
+		return nil, err
+	}
 	return &config.R{
 		Version:        rVersion,
-		PackageFile:    relPath.String(),
+		PackageFile:    lockfileRelPath.String(),
 		PackageManager: "renv",
 	}, nil
 }
@@ -134,24 +143,45 @@ func (i *defaultRInspector) getRVersion(rExecutable string) (string, error) {
 
 var renvLockRE = regexp.MustCompile(`^\[1\] "(.*)"$`)
 
-func (i *defaultRInspector) getRenvLockfile(rExecutable string) (util.Path, error) {
+func (i *defaultRInspector) getRenvLockfile(rExecutable string) (util.AbsolutePath, error) {
 	i.log.Info("Getting renv lockfile path", "r", rExecutable)
 	args := []string{"-s", "-e", "renv::paths$lockfile()"}
 	output, err := i.executor.RunCommand(rExecutable, args, i.log)
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
 			i.log.Warn("Couldn't detect lockfile path; is renv installed?")
-			return util.NewPath(DefaultRenvLockfile, i.base.Fs()), nil
+			return i.base.Join(DefaultRenvLockfile), nil
 		} else {
-			return util.Path{}, err
+			return util.AbsolutePath{}, err
 		}
 	}
 	line := strings.SplitN(string(output), "\n", 2)[0]
 	m := renvLockRE.FindStringSubmatch(line)
 	if len(m) < 2 {
-		return util.Path{}, fmt.Errorf("couldn't parse renv lockfile path from output: %s", line)
+		return util.AbsolutePath{}, fmt.Errorf("couldn't parse renv lockfile path from output: %s", line)
 	}
+	// paths$lockfile returns an absolute path
 	path := m[1]
 	i.log.Info("Detected renv lockfile path", "path", path)
-	return util.NewPath(path, i.base.Fs()), nil
+	return util.NewAbsolutePath(path, nil), nil
+}
+
+type renvLockfile struct {
+	// Only the fields we use are here
+	R struct {
+		Version string
+	}
+}
+
+func (i *defaultRInspector) getRVersionFromLockfile(lockfilePath util.AbsolutePath) (string, error) {
+	content, err := lockfilePath.ReadFile()
+	if err != nil {
+		return "", err
+	}
+	var lockfileContent renvLockfile
+	err = json.NewDecoder(bytes.NewReader(content)).Decode(&lockfileContent)
+	if err != nil {
+		return "", err
+	}
+	return lockfileContent.R.Version, nil
 }
