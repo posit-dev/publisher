@@ -19,21 +19,49 @@
           title="meta.yaml"
           codicon="codicon-debug-stackframe-dot"
           :indentLevel="indentLevel"
+          :actions="[
+            {
+              label: 'Exclude this file',
+              codicon: 'codicon-diff-removed',
+              fn: () => {},
+            },
+          ]"
         />
         <TreeItem
           title="requirements.in"
           codicon="codicon-debug-stackframe-dot"
           :indentLevel="indentLevel"
+          :actions="[
+            {
+              label: 'Exclude this file',
+              codicon: 'codicon-diff-removed',
+              fn: () => {},
+            },
+          ]"
         />
         <TreeItem
           title="requirements.txt"
           codicon="codicon-debug-stackframe-dot"
           :indentLevel="indentLevel"
+          :actions="[
+            {
+              label: 'Exclude this file',
+              codicon: 'codicon-diff-removed',
+              fn: () => {},
+            },
+          ]"
         />
         <TreeItem
           title="simple.py"
           codicon="codicon-debug-stackframe-dot"
           :indentLevel="indentLevel"
+          :actions="[
+            {
+              label: 'Exclude this file',
+              codicon: 'codicon-diff-removed',
+              fn: () => {},
+            },
+          ]"
         />
       </template>
     </TreeItem>
@@ -53,6 +81,18 @@
           title="manifest.json"
           codicon="codicon-debug-stackframe-dot"
           :indentLevel="indentLevel"
+        />
+        <TreeItem
+          title="some-other-file.py"
+          codicon="codicon-debug-stackframe-dot"
+          :indentLevel="indentLevel"
+          :actions="[
+            {
+              label: 'Include this file',
+              codicon: 'codicon-diff-added',
+              fn: () => {},
+            },
+          ]"
         />
       </template>
     </TreeItem>
