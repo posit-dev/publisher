@@ -144,17 +144,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onBeforeUnmount, ref, watch } from "vue";
-import PSelect from "../components/PSelect.vue";
+import { computed, onBeforeMount, onBeforeUnmount, ref } from "vue";
+
+import { formatDateString } from "../../../../../../web/src/utils/date";
 import {
   Deployment,
   PreDeployment,
   isPreDeployment,
 } from "../../../../src/api/types/deployments";
-import { formatDateString } from "../../../../../../web/src/utils/date";
 import { Account } from "../../../../src/api/types/accounts";
 import { Configuration } from "../../../../src/api/types/configurations";
 import { HostConduit } from "../hostConduit";
+
+import PSelect from "../components/PSelect.vue";
 import {
   ConduitMessage,
   MessageType,
