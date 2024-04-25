@@ -156,7 +156,7 @@ import { Account } from "../../../../src/api/types/accounts";
 import { Configuration } from "../../../../src/api/types/configurations";
 import { HostConduit } from "../hostConduit";
 
-import PSelect from "../components/PSelect.vue";
+import PSelect from "./PSelect.vue";
 import {
   ConduitMessage,
   MessageType,
