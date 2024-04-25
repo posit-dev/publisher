@@ -144,18 +144,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onBeforeUnmount, ref } from "vue";
-
-import { formatDateString } from "../../../../../../web/src/utils/date";
+import { computed, onBeforeMount, onBeforeUnmount, ref, watch } from "vue";
+import PSelect from "../components/PSelect.vue";
 import {
   Deployment,
   PreDeployment,
   isPreDeployment,
 } from "../../../../src/api/types/deployments";
+import { formatDateString } from "../../../../../../web/src/utils/date";
 import { Account } from "../../../../src/api/types/accounts";
 import { Configuration } from "../../../../src/api/types/configurations";
-
-import PSelect from "./PSelect.vue";
+import { HostConduit } from "../hostConduit";
+import {
+  ConduitMessage,
+  MessageType,
+  PublishFinishFailureMsg,
+  RefreshConfigDataMsg,
+  RefreshCredentialDataMsg,
+  RefreshDeploymentDataMsg,
+  UpdateConfigSelectionMsg,
+  UpdateDeploymentSelectionMsg,
+  UpdateExpansionFromStorageMsg,
+} from "../../../../src/messages";
 
 let deployments = ref<(Deployment | PreDeployment)[]>([]);
 let configs = ref<Configuration[]>([]);
@@ -172,6 +182,7 @@ const lastDeploymentMsg = ref<string>();
 const showDetails = ref(false);
 
 const vsCodeApi = acquireVsCodeApi();
+const hostConduit = new HostConduit(window, vsCodeApi);
 
 const lastStatusDescription = computed(() => {
   if (!selectedDeployment.value) {
@@ -223,8 +234,8 @@ const onUpdateModelValueSelectedCredential = () => {
 };
 
 onBeforeMount(() => {
-  // Register for our messages from the provider
-  window.addEventListener("message", onMessageFromProvider);
+  // establish our message handler for messages from our host
+  hostConduit.onMsg(onMessageFromHost);
 
   // Send the message which will caue the provider to send us
   // our data back
@@ -234,7 +245,7 @@ onBeforeMount(() => {
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("message", onMessageFromProvider);
+  hostConduit.deactivate();
 });
 
 const updateSelectedDeploymentByObject = (
@@ -390,96 +401,104 @@ const onClickEditConfiguration = () => {
   });
 };
 
-const onMessageFromProvider = (event: any) => {
-  const command = event.data.command;
-  switch (command) {
-    case "refresh_deployment_data": {
-      const payload = JSON.parse(event.data.payload);
-      deployments.value = payload.deployments;
-      if (payload.selectedDeploymentName) {
-        updateSelectedDeploymentByName(payload.selectedDeploymentName);
-      } else {
-        if (
-          !updateSelectedDeploymentByName(
-            selectedDeployment.value?.deploymentName,
-          )
-        ) {
-          // Always cause the re-calculation even if selected deployment didn't change
-          updateCredentialsAndConfigurationForDeployment();
-        }
-      }
-      break;
-    }
-    case "update_expansion_from_storage": {
-      const payload = JSON.parse(event.data.payload);
-      showDetails.value = payload.expansionState;
-      break;
-    }
-    case "refresh_config_data": {
-      const payload = JSON.parse(event.data.payload);
-      configs.value = payload.configurations;
-      if (payload.selectedConfigurationName) {
-        updateSelectedConfigurationByName(payload.selectedConfigurationName);
-      } else {
-        updateSelectedConfigurationByName(
-          selectedConfig.value?.configurationName,
-        );
-      }
-      break;
-    }
-    case "refresh_credential_data": {
-      const payload = JSON.parse(event.data.payload);
-      accounts.value = payload.credentials;
-      if (payload.selectedCredentialName) {
-        updateSelectedCredentialByName(payload.selectedCredentialName);
-      } else {
-        updateSelectedCredentialByName(selectedAccount.value?.name);
-      }
-      break;
-    }
-    case "publish_start": {
-      publishingInProgress.value = true;
-      break;
-    }
-    case "publish_finish_success": {
-      publishingInProgress.value = false;
-      lastDeploymentResult.value = `Last deployment was succesful`;
-      lastDeploymentMsg.value = "";
-      break;
-    }
-    case "publish_finish_failure": {
-      publishingInProgress.value = false;
-      lastDeploymentResult.value = `Last deployment failed`;
-      lastDeploymentMsg.value = event.data.payload.data.message;
-      break;
-    }
-    case "update_deployment_selection": {
-      const payload = JSON.parse(event.data.payload);
-      if (payload.preDeployment) {
-        updateSelectedDeploymentByObject(payload.preDeployment);
-      }
-      if (payload.saveSelection) {
-        updateParentViewSelectionState();
-      }
-      break;
-    }
-    case "update_config_selection": {
-      const payload = JSON.parse(event.data.payload);
-      if (payload.config) {
-        updateSelectedConfigurationByObject(payload.config);
-      }
-      if (payload.saveSelection) {
-        updateParentViewSelectionState();
-      }
-      break;
-    }
-    case "save_selection": {
-      updateParentViewSelectionState();
-      break;
-    }
+const onMessageFromHost = async (msg: ConduitMessage) => {
+  switch (msg.kind) {
+    case MessageType.REFRESH_DEPLOYMENT_DATA:
+      return await onRefreshDeploymentDataMsg(msg);
+    case MessageType.UPDATE_EXPANSION_FROM_STORAGE:
+      return await onUpdateExpansionFromStorageMsg(msg);
+    case MessageType.REFRESH_CONFIG_DATA:
+      return await onRefreshConfigDataMsg(msg);
+    case MessageType.REFRESH_CREDENTIAL_DATA:
+      return await onRefreshCredentialDataMsg(msg);
+    case MessageType.PUBLISH_START:
+      return await onPublishStartMsg();
+    case MessageType.PUBLISH_FINISH_SUCCESS:
+      return await onPublishFinishSuccessMsg();
+    case MessageType.PUBLISH_FINISH_FAILURE:
+      return await onPublishFinishFailureMsg(msg);
+    case MessageType.UPDATE_DEPLOYMENT_SELECTION:
+      return await onUpdateDeploymentSelectionMsg(msg);
+    case MessageType.UPDATE_CONFIG_SELECTION:
+      return await onUpdateConfigSelectionMsg(msg);
+    case MessageType.SAVE_SELECTION:
+      return await onSaveSelectionMsg();
     default:
-      console.log(`unexpected command: ${command}`);
+      console.log(`unexpected command: ${JSON.stringify(msg)}`);
   }
+};
+
+const onRefreshDeploymentDataMsg = (msg: RefreshDeploymentDataMsg) => {
+  deployments.value = msg.content.deployments;
+  // if (payload.selectedDeploymentName) {
+  //   updateSelectedDeploymentByName(msg.content.selectedDeploymentName);
+  // } else {
+  if (
+    !updateSelectedDeploymentByName(selectedDeployment.value?.deploymentName)
+  ) {
+    // Always cause the re-calculation even if selected deployment didn't change
+    updateCredentialsAndConfigurationForDeployment();
+  }
+  // }
+};
+
+const onUpdateExpansionFromStorageMsg = (
+  msg: UpdateExpansionFromStorageMsg,
+) => {
+  showDetails.value = msg.content.expansionState;
+};
+
+const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
+  configs.value = msg.content.configurations;
+
+  // if (payload.selectedConfigurationName) {
+  //   updateSelectedConfigurationByName(payload.selectedConfigurationName);
+  // } else {
+  updateSelectedConfigurationByName(selectedConfig.value?.configurationName);
+  // }
+};
+
+const onRefreshCredentialDataMsg = (msg: RefreshCredentialDataMsg) => {
+  accounts.value = msg.content.credentials;
+  // if (payload.selectedCredentialName) {
+  //   updateSelectedCredentialByName(payload.selectedCredentialName);
+  // } else {
+  updateSelectedCredentialByName(selectedAccount.value?.name);
+  // }
+};
+
+const onPublishStartMsg = () => {
+  publishingInProgress.value = true;
+};
+
+const onPublishFinishSuccessMsg = () => {
+  publishingInProgress.value = false;
+  lastDeploymentResult.value = `Last deployment was succesful`;
+  lastDeploymentMsg.value = "";
+};
+
+const onPublishFinishFailureMsg = (msg: PublishFinishFailureMsg) => {
+  publishingInProgress.value = false;
+  lastDeploymentResult.value = `Last deployment failed`;
+  lastDeploymentMsg.value = msg.content.data.message;
+};
+
+const onUpdateDeploymentSelectionMsg = (msg: UpdateDeploymentSelectionMsg) => {
+  updateSelectedDeploymentByObject(msg.content.preDeployment);
+  if (msg.content.saveSelection) {
+    updateParentViewSelectionState();
+  }
+};
+
+const onUpdateConfigSelectionMsg = (msg: UpdateConfigSelectionMsg) => {
+  updateSelectedConfigurationByObject(msg.content.config);
+  if (msg.content.saveSelection) {
+    updateParentViewSelectionState();
+  }
+};
+
+const onSaveSelectionMsg = () => {
+  updateParentViewSelectionState();
 };
 </script>
 
