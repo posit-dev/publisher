@@ -164,15 +164,17 @@ func (i *defaultRInspector) getRenvLockfile(rExecutable string) (util.AbsolutePa
 			return util.AbsolutePath{}, err
 		}
 	}
-	line := strings.SplitN(string(output), "\n", 2)[0]
-	m := renvLockRE.FindStringSubmatch(line)
-	if len(m) < 2 {
-		return util.AbsolutePath{}, fmt.Errorf("couldn't parse renv lockfile path from output: %s", line)
+	for _, line := range strings.Split(string(output), "\n") {
+		m := renvLockRE.FindStringSubmatch(line)
+		if len(m) < 2 {
+			continue
+		}
+		// paths$lockfile returns an absolute path
+		path := m[1]
+		i.log.Info("Detected renv lockfile path", "path", path)
+		return util.NewAbsolutePath(path, nil), nil
 	}
-	// paths$lockfile returns an absolute path
-	path := m[1]
-	i.log.Info("Detected renv lockfile path", "path", path)
-	return util.NewAbsolutePath(path, nil), nil
+	return util.AbsolutePath{}, fmt.Errorf("couldn't parse renv lockfile path from output: %s", output)
 }
 
 type renvLockfile struct {

@@ -137,6 +137,27 @@ func (s *RSuite) TestGetRenvLockfile() {
 	s.Equal(expected, lockfilePath.String())
 }
 
+const getRenvLockMismatchedOutput = `ℹ Using R 4.3.0 (lockfile was generated with R 3.6.3)
+[1] "/project/renv.lock"
+`
+
+func (s *RSuite) TestGetRenvLockfileMismatchedVersion() {
+	log := logging.New()
+	rPath := s.cwd.Join("bin", "R")
+	rPath.Dir().MkdirAll(0777)
+	rPath.WriteFile(nil, 0777)
+	i := NewRInspector(s.cwd, rPath.Path, log)
+	inspector := i.(*defaultRInspector)
+
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything).Return([]byte(getRenvLockMismatchedOutput), nil, nil)
+	inspector.executor = executor
+	lockfilePath, err := inspector.getRenvLockfile(rPath.String())
+	s.NoError(err)
+	expected := util.NewAbsolutePath("/project/renv.lock", nil).String()
+	s.Equal(expected, lockfilePath.String())
+}
+
 func (s *RSuite) TestGetRenvLockfileRExitCode() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")
