@@ -4,10 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "compile": "npm run clean-dist && npm run type-check && npm run vite-build",
-    "clean-dist": "rm -rd ../../out/webviews/homeView | true",
-    "type-check": "vue-tsc --noEmit",
-    "vite-build": "vite build --outDir ../../out/webviews/homeView"
+    "build": "vue-tsc --noEmit && vite build"
   },
   "dependencies": {
     "axios": "^1.6.0",
