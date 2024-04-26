@@ -26,7 +26,18 @@ export interface MultiStepState {
   lastStep: number;
   totalSteps: number;
   data: Record<string, QuickPickItem | string | undefined>;
+  promptStepNumbers: Record<string, number>;
 }
+
+export const assignStep = (state: MultiStepState, uniqueId: string): number => {
+  const previous = state.promptStepNumbers[uniqueId];
+  if (!previous) {
+    const value = state.lastStep + 1;
+    state.promptStepNumbers[uniqueId] = value;
+    return value;
+  }
+  return previous;
+};
 
 type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
 
