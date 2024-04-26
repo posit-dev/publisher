@@ -10,6 +10,9 @@ scripts/
 CONTRIBUTING.md
 vsc-extension-quickstart.md
 
+# Include codicons dist from node_modules
+!node_modules/@vscode/codicons/dist
+
 # Ignore all webview files except the build directories
 
 webviews/homeView/src/**
