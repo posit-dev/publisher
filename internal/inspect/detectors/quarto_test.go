@@ -153,6 +153,68 @@ func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
 	}, t)
 }
 
+func (s *QuartoDetectorSuite) TestInferTypeWithR() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	// A quarto file must exist before we try to run `quarto inspect`
+	err = base.Join("quarto-proj-r.qmd").WriteFile(nil, 0600)
+	s.Nil(err)
+	err = base.Join("_quarto.yml").WriteFile(nil, 0600)
+	s.Nil(err)
+
+	detector := NewQuartoDetector()
+	executor := executortest.NewMockExecutor()
+	out := []byte(`{
+		"quarto": {
+		  "version": "1.4.553"
+		},
+		"dir": "/project/quarto-proj-r",
+		"engines": [
+		  "knitr"
+		],
+		"config": {
+		  "project": {
+			"title": "this is the title"
+		  },
+		  "editor": "visual",
+		  "language": {}
+		},
+		"files": {
+		  "input": [
+			"/project/quarto-proj-r.qmd"
+		  ],
+		  "resources": [],
+		  "config": [
+			"/project/_quarto.yml"
+		  ],
+		  "configResources": []
+		}
+	  }`)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil)
+	detector.executor = executor
+
+	t, err := detector.InferType(base)
+	s.Nil(err)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "quarto-proj-r.qmd",
+		Title:      "this is the title",
+		Validate:   true,
+		Files:      []string{"*"},
+		R:          &config.R{},
+		Quarto: &config.Quarto{
+			Version: "1.4.553",
+			Engines: []string{"knitr"},
+		},
+	}, t)
+}
+
 func (s *QuartoDetectorSuite) TestInferTypeNonProject() {
 	// Without _quarto.yml, inspect the qmd file instead.
 	if runtime.GOOS == "windows" {
