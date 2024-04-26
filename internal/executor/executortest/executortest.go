@@ -15,12 +15,18 @@ func NewMockExecutor() *MockExecutor {
 	return &MockExecutor{}
 }
 
-func (m *MockExecutor) RunCommand(executable string, argv []string, log logging.Logger) ([]byte, error) {
+func (m *MockExecutor) RunCommand(executable string, argv []string, log logging.Logger) ([]byte, []byte, error) {
 	args := m.Called(executable, argv, log)
+
+	var outSlice []byte
 	out := args.Get(0)
-	if out == nil {
-		return nil, args.Error(1)
-	} else {
-		return out.([]byte), args.Error(1)
+	if out != nil {
+		outSlice = out.([]byte)
 	}
+	var errSlice []byte
+	stderr := args.Get(1)
+	if stderr != nil {
+		errSlice = stderr.([]byte)
+	}
+	return outSlice, errSlice, args.Error(2)
 }

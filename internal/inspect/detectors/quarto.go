@@ -60,7 +60,7 @@ type quartoInspectOutput struct {
 
 func (d *QuartoDetector) quartoInspect(path util.AbsolutePath) (*quartoInspectOutput, error) {
 	args := []string{"inspect", path.String()}
-	out, err := d.executor.RunCommand("quarto", args, d.log)
+	out, _, err := d.executor.RunCommand("quarto", args, d.log)
 	if err != nil {
 		return nil, fmt.Errorf("quarto inspect failed: %w", err)
 	}

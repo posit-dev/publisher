@@ -29,6 +29,8 @@ func NewRMarkdownDetector(log logging.Logger) *RMarkdownDetector {
 	}
 }
 
+// Rmd metadata is a YAML block delimited by lines containing only ---
+// (this pattern allows it to be followed by optional whitespace)
 var rmdMetaRE = regexp.MustCompile(`(?s)^---\s*\n(.*\n)---\s*\n`)
 
 type RMarkdownMetadata map[string]any

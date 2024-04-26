@@ -68,7 +68,7 @@ func (s *QuartoDetectorSuite) TestInferType() {
 			],
 			"configResources": []
 		  }
-	}`), nil)
+	}`), nil, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)
@@ -133,7 +133,7 @@ func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
 			"configResources": []
 		  }
 	}`)
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)
@@ -195,7 +195,7 @@ func (s *QuartoDetectorSuite) TestInferTypeWithR() {
 		  "configResources": []
 		}
 	  }`)
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)
@@ -280,7 +280,7 @@ func (s *QuartoDetectorSuite) TestInferTypeNonProject() {
 		},
 		"resources": []
 	  }`)
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project/project.qmd"}, mock.Anything).Return(out, nil)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project/project.qmd"}, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)
@@ -344,7 +344,7 @@ func (s *QuartoDetectorSuite) TestInferWindows() {
 			],
 			"configResources": []
 		  }
-	}`), nil)
+	}`), nil, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)
@@ -434,7 +434,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		}
 	  }`)
 
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)

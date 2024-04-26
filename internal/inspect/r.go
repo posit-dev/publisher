@@ -97,7 +97,7 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 
 func (i *defaultRInspector) validateRExecutable(rExecutable string) error {
 	args := []string{"--version"}
-	_, err := i.executor.RunCommand(rExecutable, args, i.log)
+	_, _, err := i.executor.RunCommand(rExecutable, args, i.log)
 	if err != nil {
 		return fmt.Errorf("could not run R executable '%s': %w", rExecutable, err)
 	}
@@ -136,11 +136,11 @@ var rVersionRE = regexp.MustCompile(`^R version (\d+\.\d+\.\d+)`)
 func (i *defaultRInspector) getRVersion(rExecutable string) (string, error) {
 	i.log.Info("Getting R version", "r", rExecutable)
 	args := []string{"--version"}
-	output, err := i.executor.RunCommand(rExecutable, args, i.log)
+	output, stderr, err := i.executor.RunCommand(rExecutable, args, i.log)
 	if err != nil {
 		return "", err
 	}
-	line := strings.SplitN(string(output), "\n", 2)[0]
+	line := strings.SplitN(string(append(output, stderr...)), "\n", 2)[0]
 	m := rVersionRE.FindStringSubmatch(line)
 	if len(m) < 2 {
 		return "", fmt.Errorf("couldn't parse R version from output: %s", line)
@@ -155,7 +155,7 @@ var renvLockRE = regexp.MustCompile(`^\[1\] "(.*)"$`)
 func (i *defaultRInspector) getRenvLockfile(rExecutable string) (util.AbsolutePath, error) {
 	i.log.Info("Getting renv lockfile path", "r", rExecutable)
 	args := []string{"-s", "-e", "renv::paths$lockfile()"}
-	output, err := i.executor.RunCommand(rExecutable, args, i.log)
+	output, _, err := i.executor.RunCommand(rExecutable, args, i.log)
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
 			i.log.Warn("Couldn't detect lockfile path; is renv installed?")
