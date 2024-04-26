@@ -17,7 +17,7 @@ export class HostConduit {
 
   private rawMsgCB = (e: any) => {
     if (this.externalMsgCB) {
-      const obj = JSON.parse(e);
+      const obj = JSON.parse(e.data);
       if (isConduitMessage(obj)) {
         this.externalMsgCB(obj);
       } else {

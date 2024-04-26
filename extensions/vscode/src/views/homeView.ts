@@ -43,6 +43,8 @@ import {
   SaveSelectionStatedMsg,
 } from "../messages";
 
+import type { HomeViewState } from "../types/shared";
+
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
 
@@ -52,12 +54,6 @@ const contextIsSelectorExpanded = viewName + ".expanded";
 
 const lastSelectionState = viewName + ".lastSelectionState.v2";
 const lastExpansionState = viewName + ".lastExpansionState.v1";
-
-export type HomeViewState = {
-  deploymentName?: string;
-  configurationName?: string;
-  credentialName?: string;
-};
 
 export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
@@ -194,38 +190,28 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private _onPublishStart() {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "publish_start",
-      });
-    } else {
-      window.showErrorMessage(
-        "_onPublishStart: oops! No _webViewView defined!",
-      );
-      console.log("_onPublishStart: oops! No _webViewView defined!");
-    }
+    this._webviewConduit.sendMsg({
+      kind: MessageType.PUBLISH_START,
+      content: {},
+    });
   }
 
-  private _onPublishSuccess(msg: EventStreamMessage) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "publish_finish_success",
-        payload: msg,
-      });
-    } else {
-      console.log("_onPublishSuccess: oops! No _webViewView defined!");
-    }
+  private _onPublishSuccess() {
+    this._webviewConduit.sendMsg({
+      kind: MessageType.PUBLISH_FINISH_SUCCESS,
+      content: {},
+    });
   }
 
   private _onPublishFailure(msg: EventStreamMessage) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "publish_finish_failure",
-        payload: msg,
-      });
-    } else {
-      console.log("_onPublishFailure: oops! No _webViewView defined!");
-    }
+    this._webviewConduit.sendMsg({
+      kind: MessageType.PUBLISH_FINISH_FAILURE,
+      content: {
+        data: {
+          message: msg.data.message,
+        },
+      },
+    });
   }
 
   private async _refreshDeploymentData() {
@@ -289,91 +275,78 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private _updateWebViewViewDeployments(selectedDeploymentName?: string) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "refresh_deployment_data",
-        payload: JSON.stringify({
-          deployments: this._deployments,
-          selectedDeploymentName,
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: MessageType.REFRESH_DEPLOYMENT_DATA,
+      content: {
+        deployments: this._deployments,
+        selectedDeploymentName,
+      },
+    });
   }
 
   private _updateWebViewViewConfigurations(selectedConfigurationName?: string) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "refresh_config_data",
-        payload: JSON.stringify({
-          configurations: this._configs,
-          selectedConfigurationName,
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: MessageType.REFRESH_CONFIG_DATA,
+      content: {
+        configurations: this._configs,
+        selectedConfigurationName,
+      },
+    });
   }
 
   private _updateWebViewViewCredentials(selectedCredentialName?: string) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "refresh_credential_data",
-        payload: JSON.stringify({
-          credentials: this._credentials,
-          selectedCredentialName,
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: MessageType.REFRESH_CREDENTIAL_DATA,
+      content: {
+        credentials: this._credentials,
+        selectedCredentialName,
+      },
+    });
   }
 
   private _updateDeploymentFileSelection(
     preDeployment: PreDeployment,
     saveSelection = false,
   ) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "update_deployment_selection",
-        payload: JSON.stringify({
-          preDeployment,
-          saveSelection,
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: MessageType.UPDATE_DEPLOYMENT_SELECTION,
+      content: {
+        preDeployment,
+        saveSelection,
+      },
+    });
   }
 
   private _updateConfigFileSelection(
     config: Configuration,
     saveSelection = false,
   ) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "update_config_selection",
-        payload: JSON.stringify({
-          config,
-          saveSelection,
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: MessageType.UPDATE_CONFIG_SELECTION,
+      content: {
+        config,
+        saveSelection,
+      },
+    });
   }
 
   private _requestWebviewSaveSelection() {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "save_selection",
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: MessageType.SAVE_SELECTION,
+      content: {},
+    });
   }
 
   private _updateWebViewViewExpansionState() {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "update_expansion_from_storage",
-        payload: JSON.stringify({
-          expansionState: this._context.workspaceState.get<boolean>(
-            lastExpansionState,
-            false,
-          ),
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: MessageType.UPDATE_EXPANSION_FROM_STORAGE,
+      content: {
+        expansionState: this._context.workspaceState.get<boolean>(
+          lastExpansionState,
+          false,
+        ),
+      },
+    });
   }
 
   private _getSelectionState(): HomeViewState {
@@ -433,6 +406,8 @@ export class HomeViewProvider implements WebviewViewProvider {
     _token: CancellationToken,
   ) {
     this._webviewView = webviewView;
+    this._webviewConduit.init(this._webviewView.webview);
+
     // Allow scripts in the webview
     webviewView.webview.options = {
       // Enable JavaScript in the webview
@@ -449,11 +424,11 @@ export class HomeViewProvider implements WebviewViewProvider {
       this._extensionUri,
     );
 
-    this._webviewConduit.init(this._webviewView.webview);
-
     // Sets up an event listener to listen for messages passed from the webview view this._context
     // and executes code based on the message that is recieved
-    this._disposables.push(this._webviewConduit.onMsg(this._onConduitMessage));
+    this._disposables.push(
+      this._webviewConduit.onMsg(this._onConduitMessage.bind(this)),
+    );
   }
   /**
    * Defines and returns the HTML that should be rendered within the webview panel.
@@ -576,8 +551,8 @@ export class HomeViewProvider implements WebviewViewProvider {
     this._stream.register("publish/start", () => {
       this._onPublishStart();
     });
-    this._stream.register("publish/success", (msg: EventStreamMessage) => {
-      this._onPublishSuccess(msg);
+    this._stream.register("publish/success", () => {
+      this._onPublishSuccess();
     });
     this._stream.register("publish/failure", (msg: EventStreamMessage) => {
       this._onPublishFailure(msg);

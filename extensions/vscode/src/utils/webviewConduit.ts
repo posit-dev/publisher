@@ -12,7 +12,8 @@ export class WebviewConduit {
   constructor() {}
 
   private _onRawMsgCB = (e: any) => {
-    const obj = JSON.parse(e);
+    const obj = JSON.parse(e.data);
+    console.log(`Received msg kind: ${obj.kind}`);
     if (!isConduitMessage(obj)) {
       throw new Error(`NonConduitMessage Received: ${JSON.stringify(e)}`);
     }

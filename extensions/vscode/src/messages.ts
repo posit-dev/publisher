@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { HomeViewState } from "../src/views/homeView";
+import { HomeViewState } from "../src/types/shared";
 import { Account, Configuration, Deployment, PreDeployment } from "./api";
 
 export enum MessageType {
@@ -71,6 +71,7 @@ export type RefreshDeploymentDataMsg = AnyMessage<
   MessageType.REFRESH_DEPLOYMENT_DATA,
   {
     deployments: (Deployment | PreDeployment)[];
+    selectedDeploymentName?: string;
   }
 >;
 export type UpdateExpansionFromStorageMsg = AnyMessage<
@@ -83,12 +84,14 @@ export type RefreshConfigDataMsg = AnyMessage<
   MessageType.REFRESH_CONFIG_DATA,
   {
     configurations: Configuration[];
+    selectedConfigurationName?: string;
   }
 >;
 export type RefreshCredentialDataMsg = AnyMessage<
   MessageType.REFRESH_CREDENTIAL_DATA,
   {
     credentials: Account[];
+    selectedCredentialName?: string;
   }
 >;
 export type PublishStartMsg = AnyMessage<MessageType.PUBLISH_START, {}>;

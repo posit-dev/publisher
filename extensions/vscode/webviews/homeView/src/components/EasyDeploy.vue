@@ -241,8 +241,9 @@ onBeforeMount(() => {
 
   // Send the message which will caue the provider to send us
   // our data back
-  vsCodeApi.postMessage({
-    command: "initializing",
+  hostConduit.sendMsg({
+    kind: MessageType.INITIALIZING,
+    content: {},
   });
 });
 
@@ -349,57 +350,77 @@ const filterCredentialsToDeployment = () => {
 
 const onClickDeployExpand = () => {
   showDetails.value = !showDetails.value;
-  vsCodeApi.postMessage({
-    command: "saveDeploymentButtonExpanded",
-    payload: JSON.stringify(showDetails.value),
+  hostConduit.sendMsg({
+    kind: MessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED,
+    content: {
+      expanded: showDetails.value,
+    },
   });
 };
 
 const updateParentViewSelectionState = () => {
-  vsCodeApi.postMessage({
-    command: "saveSelectionState",
-    payload: JSON.stringify({
-      deploymentName: selectedDeployment.value?.saveName,
-      configurationName: selectedConfig.value?.configurationName,
-      credentialName: selectedAccount.value?.name,
-    }),
+  hostConduit.sendMsg({
+    kind: MessageType.SAVE_SELECTION_STATE,
+    content: {
+      state: {
+        deploymentName: selectedDeployment.value?.saveName,
+        configurationName: selectedConfig.value?.configurationName,
+        credentialName: selectedAccount.value?.name,
+      },
+    },
   });
 };
 
 const onClickDeploy = () => {
-  vsCodeApi.postMessage({
-    command: "deploy",
-    payload: JSON.stringify({
-      deployment: selectedDeployment.value?.saveName,
-      configuration: selectedConfig.value?.configurationName,
-      credential: selectedAccount.value?.name,
-    }),
+  if (
+    !selectedDeployment.value ||
+    !selectedAccount.value ||
+    !selectedConfig.value
+  ) {
+    return;
+  }
+  hostConduit.sendMsg({
+    kind: MessageType.DEPLOY,
+    content: {
+      deploymentName: selectedDeployment.value.saveName,
+      configurationName: selectedConfig.value.configurationName,
+      credentialName: selectedAccount.value.name,
+    },
   });
 };
 
 const navigateToUrl = (url: string) => {
-  vsCodeApi.postMessage({
-    command: "navigate",
-    payload: url,
+  hostConduit.sendMsg({
+    kind: MessageType.NAVIGATE,
+    content: {
+      uriPath: url,
+    },
   });
 };
 
 const onClickAddDeployment = () => {
-  vsCodeApi.postMessage({
-    command: "newDeployment",
+  hostConduit.sendMsg({
+    kind: MessageType.NEW_DEPLOYMENT,
+    content: {},
   });
 };
 
 const onClickAddConfiguration = () => {
-  vsCodeApi.postMessage({
-    command: "newConfiguration",
+  hostConduit.sendMsg({
+    kind: MessageType.NEW_CONFIGURATION,
+    content: {},
   });
 };
 
 const onClickEditConfiguration = () => {
-  vsCodeApi.postMessage({
-    command: "editConfiguration",
-    payload: selectedConfig.value?.configurationName,
+  if (!selectedConfig.value) {
+    return;
+  }
+  hostConduit.sendMsg({
+    kind: MessageType.EDIT_CONFIGURATION,
+    content: {
+      configurationName: selectedConfig.value.configurationName,
+    },
   });
 };
 
@@ -432,16 +453,16 @@ const onMessageFromHost = async (msg: ConduitMessage) => {
 
 const onRefreshDeploymentDataMsg = (msg: RefreshDeploymentDataMsg) => {
   deployments.value = msg.content.deployments;
-  // if (payload.selectedDeploymentName) {
-  //   updateSelectedDeploymentByName(msg.content.selectedDeploymentName);
-  // } else {
-  if (
-    !updateSelectedDeploymentByName(selectedDeployment.value?.deploymentName)
-  ) {
-    // Always cause the re-calculation even if selected deployment didn't change
-    updateCredentialsAndConfigurationForDeployment();
+  if (msg.content.selectedDeploymentName) {
+    updateSelectedDeploymentByName(msg.content.selectedDeploymentName);
+  } else {
+    if (
+      !updateSelectedDeploymentByName(selectedDeployment.value?.deploymentName)
+    ) {
+      // Always cause the re-calculation even if selected deployment didn't change
+      updateCredentialsAndConfigurationForDeployment();
+    }
   }
-  // }
 };
 
 const onUpdateExpansionFromStorageMsg = (
@@ -453,20 +474,20 @@ const onUpdateExpansionFromStorageMsg = (
 const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
   configs.value = msg.content.configurations;
 
-  // if (payload.selectedConfigurationName) {
-  //   updateSelectedConfigurationByName(payload.selectedConfigurationName);
-  // } else {
-  updateSelectedConfigurationByName(selectedConfig.value?.configurationName);
-  // }
+  if (msg.content.selectedConfigurationName) {
+    updateSelectedConfigurationByName(msg.content.selectedConfigurationName);
+  } else {
+    updateSelectedConfigurationByName(selectedConfig.value?.configurationName);
+  }
 };
 
 const onRefreshCredentialDataMsg = (msg: RefreshCredentialDataMsg) => {
   accounts.value = msg.content.credentials;
-  // if (payload.selectedCredentialName) {
-  //   updateSelectedCredentialByName(payload.selectedCredentialName);
-  // } else {
-  updateSelectedCredentialByName(selectedAccount.value?.name);
-  // }
+  if (msg.content.selectedCredentialName) {
+    updateSelectedCredentialByName(msg.content.selectedCredentialName);
+  } else {
+    updateSelectedCredentialByName(selectedAccount.value?.name);
+  }
 };
 
 const onPublishStartMsg = () => {
