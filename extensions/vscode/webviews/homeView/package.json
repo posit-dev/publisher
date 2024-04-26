@@ -4,11 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "compile": "npm run clean-dist && npm run type-check && npm run vite-build && npm run copy-codicons",
+    "compile": "npm run clean-dist && npm run type-check && npm run vite-build",
     "clean-dist": "rm -rd ../../out/webviews/homeView | true",
     "type-check": "vue-tsc --noEmit",
-    "vite-build": "vite build --outDir ../../out/webviews/homeView",
-    "copy-codicons": "cp node_modules/@vscode/codicons/dist/codicon.css node_modules/@vscode/codicons/dist/codicon.ttf ../../out/webviews/homeView"
+    "vite-build": "vite build --outDir ../../out/webviews/homeView"
   },
   "dependencies": {
     "axios": "^1.6.0",
@@ -22,7 +21,6 @@
     "@types/node": "^18.11.9",
     "@types/vscode-webview": "^1.57.5",
     "@vitejs/plugin-vue": "^5.0.4",
-    "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.4.0",
     "@vue/tsconfig": "^0.5.1",
     "sass": "^1.72.0",

@@ -416,9 +416,16 @@ export class HomeViewProvider implements WebviewViewProvider {
     webviewView.webview.options = {
       // Enable JavaScript in the webview
       enableScripts: true,
-      // Restrict the webview to only load resources from the `out` directory
+      // Restrict the webview to only load resources from these directories
       localResourceRoots: [
         Uri.joinPath(this._extensionUri, "out", "webviews", "homeView"),
+        Uri.joinPath(
+          this._extensionUri,
+          "node_modules",
+          "@vscode",
+          "codicons",
+          "dist",
+        ),
       ],
     };
 
@@ -451,7 +458,6 @@ export class HomeViewProvider implements WebviewViewProvider {
       "homeView",
       "index.css",
     ]);
-    // const codiconsUri = webview.asWebviewUri(Uri.joinPath(extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
     // The JS file from the Vue build output
     const scriptUri = getUri(webview, extensionUri, [
       "out",
@@ -461,9 +467,10 @@ export class HomeViewProvider implements WebviewViewProvider {
     ]);
     // The codicon css (and related tff file) are needing to be loaded for icons
     const codiconsUri = getUri(webview, extensionUri, [
-      "out",
-      "webviews",
-      "homeView",
+      "node_modules",
+      "@vscode",
+      "codicons",
+      "dist",
       "codicon.css",
     ]);
 

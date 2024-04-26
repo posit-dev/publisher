@@ -571,6 +571,7 @@
   },
   "dependencies": {
     "@hypersphere/omnibus": "0.1.6",
+    "@vscode/codicons": "^0.0.35",
     "axios": "^1.6.0",
     "eventsource": "^2.0.2",
     "get-port": "5.1.1",
