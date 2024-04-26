@@ -129,9 +129,13 @@ export class DeploymentsTreeDataProvider
     this._context.subscriptions.push(treeView);
 
     this._context.subscriptions.push(
-      commands.registerCommand(addDeploymentCommand, () => {
+      commands.registerCommand(addDeploymentCommand, (viewId?: string) => {
+        if (!viewId) {
+          viewId = viewName;
+        }
         return newDeployment(
           "Deploy Your Project to a New Location",
+          viewName,
           true,
           this._stream,
         );
@@ -139,9 +143,15 @@ export class DeploymentsTreeDataProvider
     );
 
     this._context.subscriptions.push(
-      commands.registerCommand(createNewDeploymentFileCommand, () => {
-        return newDeployment("Create a Deployment File for your Project");
-      }),
+      commands.registerCommand(
+        createNewDeploymentFileCommand,
+        (viewId?: string) => {
+          return newDeployment(
+            "Create a Deployment File for your Project",
+            viewId,
+          );
+        },
+      ),
     );
 
     this._context.subscriptions.push(
@@ -151,9 +161,9 @@ export class DeploymentsTreeDataProvider
     this._context.subscriptions.push(
       commands.registerCommand(
         deployCommand,
-        async (item: DeploymentsTreeItem) => {
+        async (item: DeploymentsTreeItem, viewId?: string) => {
           if (!isDeploymentError(item.deployment)) {
-            publishDeployment(item.deployment, this._stream);
+            publishDeployment(item.deployment, this._stream, viewId);
           }
         },
       ),

@@ -9,6 +9,7 @@ import {
 
 import {
   InputBoxValidationSeverity,
+  ProgressLocation,
   QuickPickItem,
   ThemeIcon,
   Uri,
@@ -24,11 +25,12 @@ import {
 } from "../utils/names";
 import { isValidFilename } from "../utils/files";
 
-export async function initWorkspaceWithFixedNames() {
-  await initWorkspace("Untitled-1", "default");
+export async function initWorkspaceWithFixedNames(viewId?: string) {
+  await initWorkspace(viewId, "Untitled-1", "default");
 }
 
 export async function initWorkspace(
+  viewId?: string,
   fixedDeploymentName?: string,
   fixedConfigurationName?: string,
 ) {
@@ -39,72 +41,92 @@ export async function initWorkspace(
 
   let accountListItems: QuickPickItem[] = [];
 
-  try {
-    const response = await api.accounts.getAll();
-    accountListItems = response.data.map((account) => ({
-      iconPath: new ThemeIcon("account"),
-      label: account.name,
-      description: account.source,
-      detail:
-        account.authType === AccountAuthType.API_KEY
-          ? "Using API Key"
-          : `Using Token Auth for ${account.accountName}`,
-    }));
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "initWorkspace, accounts.getAll",
-      error,
-    );
-    window.showErrorMessage(
-      `Unable to continue with no credentials. ${summary}`,
-    );
-    return;
-  }
-  if (accountListItems.length === 0) {
-    window.showErrorMessage(
-      `Unable to continue with no credentials.\n` +
-        `Establish account credentials using rsconnect (R package) or\n` +
-        `rsconnect-python (Python package) and then retry operation.`,
-    );
-    return;
-  }
-
   let entryPointLabels: string[] = [];
   let entryPointListItems: QuickPickItem[] = [];
   const entryPointLabelMap = new Map<string, ConfigurationDetails>();
   let configs: ConfigurationDetails[] = [];
-  try {
-    const inspectResponse = await api.configurations.inspect();
-    configs = inspectResponse.data;
-    entryPointLabels = configs.map((config) => `${config.entrypoint}`);
-    configs.forEach((config) => {
-      if (config.entrypoint) {
-        entryPointListItems.push({
-          iconPath: new ThemeIcon("file"),
-          label: config.entrypoint,
-          description: `(type ${config.type})`,
-        });
-      }
-    });
-    for (let i = 0; i < configs.length; i++) {
-      entryPointLabelMap.set(entryPointLabels[i], configs[i]);
+
+  const getAccounts = new Promise<void>(async (resolve, reject) => {
+    try {
+      const response = await api.accounts.getAll();
+      accountListItems = response.data.map((account) => ({
+        iconPath: new ThemeIcon("account"),
+        label: account.name,
+        description: account.source,
+        detail:
+          account.authType === AccountAuthType.API_KEY
+            ? "Using API Key"
+            : `Using Token Auth for ${account.accountName}`,
+      }));
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "initWorkspace, accounts.getAll",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to continue with no credentials. ${summary}`,
+      );
+      return reject();
     }
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "initWorkspace, configurations.inspect",
-      error,
-    );
-    window.showErrorMessage(
-      `Unable to continue with project inspection failure. ${summary}`,
-    );
-    return;
-  }
-  if (!entryPointListItems.length) {
-    window.showErrorMessage(
-      `Unable to continue with no project entrypoints found during inspection`,
-    );
-    return;
-  }
+    if (accountListItems.length === 0) {
+      window.showErrorMessage(
+        `Unable to continue with no credentials.\n` +
+          `Establish account credentials using rsconnect (R package) or\n` +
+          `rsconnect-python (Python package) and then retry operation.`,
+      );
+      return reject();
+    }
+    return resolve();
+  });
+
+  const getConfigurations = new Promise<void>(async (resolve, reject) => {
+    try {
+      const inspectResponse = await api.configurations.inspect();
+      configs = inspectResponse.data;
+      entryPointLabels = configs.map((config) => `${config.entrypoint}`);
+      configs.forEach((config) => {
+        if (config.entrypoint) {
+          entryPointListItems.push({
+            iconPath: new ThemeIcon("file"),
+            label: config.entrypoint,
+            description: `(type ${config.type})`,
+          });
+        }
+      });
+      for (let i = 0; i < configs.length; i++) {
+        entryPointLabelMap.set(entryPointLabels[i], configs[i]);
+      }
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "initWorkspace, configurations.inspect",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to continue with project inspection failure. ${summary}`,
+      );
+      return reject();
+    }
+    if (!entryPointListItems.length) {
+      window.showErrorMessage(
+        `Unable to continue with no project entrypoints found during inspection`,
+      );
+      return reject();
+    }
+    return resolve();
+  });
+
+  const apisComplete = Promise.all([getAccounts, getConfigurations]);
+
+  // Start the progress indicator and have it stop when the API calls are complete
+  window.withProgress(
+    {
+      title: "Initializing",
+      location: viewId ? { viewId } : ProgressLocation.Window,
+    },
+    async () => {
+      return apisComplete;
+    },
+  );
 
   // ***************************************************************
   // Order of all steps
@@ -300,11 +322,18 @@ export async function initWorkspace(
   }
 
   // ***************************************************************
+  // Wait for the api promise to complete
   // Kick off the input collection
   // and await until it completes.
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
+  try {
+    await apisComplete;
+  } catch {
+    // errors have already been displayed by the underlying promises..
+    return;
+  }
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window

@@ -7,7 +7,7 @@ import {
   assignStep,
 } from "./multiStepHelper";
 
-import { QuickPickItem, ThemeIcon, window } from "vscode";
+import { ProgressLocation, QuickPickItem, ThemeIcon, window } from "vscode";
 
 import {
   AccountAuthType,
@@ -23,6 +23,7 @@ import { EventStream } from "../events";
 export async function publishDeployment(
   deployment: PreDeployment | Deployment,
   stream: EventStream,
+  viewId?: string,
 ) {
   // ***************************************************************
   // API Calls and results
@@ -32,79 +33,98 @@ export async function publishDeployment(
   let accountListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];
 
-  try {
-    const response = await api.accounts.getAll();
-    // account list is filtered to match the deployment being published
-    accountListItems = response.data
-      .filter((account) => account.url === deployment.serverUrl)
-      .map((account) => ({
-        iconPath: new ThemeIcon("account"),
-        label: account.name,
-        description: account.source,
-        detail:
-          account.authType === AccountAuthType.API_KEY
-            ? "Using API Key"
-            : `Using Token Auth for ${account.accountName}`,
-      }));
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "publishDeployment, accounts.getAll",
-      error,
-    );
-    window.showInformationMessage(
-      `Unable to continue with no credentials. ${summary}`,
-    );
-    return;
-  }
-  if (accountListItems.length === 0) {
-    window.showInformationMessage(
-      `Unable to continue with no matching credentials for\n` +
-        `deployment URL: ${deployment.serverUrl}\n` +
-        `\n` +
-        `Establish account credentials using rsconnect (R package) or\n` +
-        `rsconnect-python (Python package) and then retry operation.`,
-    );
-    return;
-  }
+  const getAccounts = new Promise<void>(async (resolve, reject) => {
+    try {
+      const response = await api.accounts.getAll();
+      // account list is filtered to match the deployment being published
+      accountListItems = response.data
+        .filter((account) => account.url === deployment.serverUrl)
+        .map((account) => ({
+          iconPath: new ThemeIcon("account"),
+          label: account.name,
+          description: account.source,
+          detail:
+            account.authType === AccountAuthType.API_KEY
+              ? "Using API Key"
+              : `Using Token Auth for ${account.accountName}`,
+        }));
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "publishDeployment, accounts.getAll",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to continue with no credentials. ${summary}`,
+      );
+      return reject();
+    }
+    if (accountListItems.length === 0) {
+      window.showInformationMessage(
+        `Unable to continue with no matching credentials for\n` +
+          `deployment URL: ${deployment.serverUrl}\n` +
+          `\n` +
+          `Establish account credentials using rsconnect (R package) or\n` +
+          `rsconnect-python (Python package) and then retry operation.`,
+      );
+      return reject();
+    }
+    return resolve();
+  });
 
-  try {
-    const response = await api.configurations.getAll();
-    const configurations = response.data;
-    configFileListItems = [];
+  const getConfigurations = new Promise<void>(async (resolve, reject) => {
+    try {
+      const response = await api.configurations.getAll();
+      const configurations = response.data;
+      configFileListItems = [];
 
-    configurations.forEach((configuration) => {
-      if (!isConfigurationError(configuration)) {
-        configFileListItems.push({
-          iconPath: new ThemeIcon("file-code"),
-          label: configuration.configurationName,
-          detail: configuration.configurationPath,
-        });
-      }
-    });
-    configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
-      var x = a.label.toLowerCase();
-      var y = b.label.toLowerCase();
-      return x < y ? -1 : x > y ? 1 : 0;
-    });
-  } catch (error: unknown) {
-    const summary = getSummaryStringFromError(
-      "addDeployment, configurations.getAll",
-      error,
-    );
-    window.showInformationMessage(
-      `Unable to continue with no configurations. ${summary}`,
-    );
-    return;
-  }
-  if (configFileListItems.length === 0) {
-    window.showInformationMessage(
-      `Unable to continue with no configuration files.\n` +
-        `Expand the configuration section and follow the instructions there\n` +
-        `to create a configuration file. After updating any applicable values\n` +
-        `retry the operation.`,
-    );
-    return;
-  }
+      configurations.forEach((configuration) => {
+        if (!isConfigurationError(configuration)) {
+          configFileListItems.push({
+            iconPath: new ThemeIcon("file-code"),
+            label: configuration.configurationName,
+            detail: configuration.configurationPath,
+          });
+        }
+      });
+      configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
+        var x = a.label.toLowerCase();
+        var y = b.label.toLowerCase();
+        return x < y ? -1 : x > y ? 1 : 0;
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "addDeployment, configurations.getAll",
+        error,
+      );
+      window.showInformationMessage(
+        `Unable to continue with no configurations. ${summary}`,
+      );
+      return reject();
+    }
+    if (configFileListItems.length === 0) {
+      window.showInformationMessage(
+        `Unable to continue with no configuration files.\n` +
+          `Expand the configuration section and follow the instructions there\n` +
+          `to create a configuration file. After updating any applicable values\n` +
+          `retry the operation.`,
+      );
+      return reject();
+    }
+    return resolve();
+  });
+
+  const apisComplete = Promise.all([getAccounts, getConfigurations]);
+
+  // Start the progress indicator and have it stop when the API calls are complete
+  window.withProgress(
+    {
+      title: "Initializing",
+      location: viewId ? { viewId } : ProgressLocation.Window,
+    },
+    async () => {
+      return apisComplete;
+    },
+  );
 
   // ***************************************************************
   // Order of all steps
@@ -193,7 +213,7 @@ export async function publishDeployment(
     state: MultiStepState,
   ) {
     // skip if we only have one choice or an already decided one
-    if (configFileListItems.length > 1 || deployment.configurationName) {
+    if (configFileListItems.length > 1 || !deployment.configurationName) {
       const thisStepNumber = assignStep(state, "inputConfigFileSelection");
       const pick = await input.showQuickPick({
         title: state.title,
@@ -222,12 +242,19 @@ export async function publishDeployment(
   }
 
   // ***************************************************************
+  // Wait for the api promise to complete
   // Kick off the input collection
   // and await until it completes.
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
 
+  try {
+    await apisComplete;
+  } catch {
+    // errors have already been displayed by the underlying promises..
+    return;
+  }
   const state = await collectInputs();
 
   // make sure user has not hit escape or moved away from the window

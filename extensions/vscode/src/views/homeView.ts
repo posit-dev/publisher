@@ -39,12 +39,6 @@ const configFiles = ".posit/publish/*.toml";
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
 const contextIsSelectorExpanded = viewName + ".expanded";
-const showBasicModeCommand = viewName + ".showBasicMode";
-const showAdvancedModeCommand = viewName + ".showAdvancedMode";
-
-const contextActiveMode = viewName + ".deploymentActiveMode";
-const contextActiveModeAdvanced = "advanced-mode";
-const contextActiveModeBasic = "basic-mode";
 
 const lastSelectionState = viewName + ".lastSelectionState.v2";
 const lastExpansionState = viewName + ".lastExpansionState.v1";
@@ -149,6 +143,7 @@ export class HomeViewProvider implements WebviewViewProvider {
           case "newConfiguration":
             const newConfig: Configuration = await commands.executeCommand(
               "posit.publisher.configurations.add",
+              viewName,
             );
             if (newConfig) {
               this._updateConfigFileSelection(newConfig, true);
@@ -565,26 +560,6 @@ export class HomeViewProvider implements WebviewViewProvider {
       this._onPublishFailure(msg);
     });
     commands.executeCommand("setContext", contextIsSelectorExpanded, false);
-
-    this._context.subscriptions.push(
-      commands.registerCommand(showBasicModeCommand, () => {
-        commands.executeCommand(
-          "setContext",
-          contextActiveMode,
-          contextActiveModeBasic,
-        );
-      }),
-    );
-
-    this._context.subscriptions.push(
-      commands.registerCommand(showAdvancedModeCommand, () => {
-        commands.executeCommand(
-          "setContext",
-          contextActiveMode,
-          contextActiveModeAdvanced,
-        );
-      }),
-    );
 
     this._context.subscriptions.push(
       window.registerWebviewViewProvider(viewName, this, {
