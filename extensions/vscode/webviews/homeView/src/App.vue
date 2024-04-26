@@ -3,11 +3,15 @@
 <template>
   <main>
     <EasyDeploy class="easy-deploy-container" />
+    <ProjectFiles />
+    <PythonPackages />
   </main>
 </template>
 
 <script setup lang="ts">
 import EasyDeploy from "./components/EasyDeploy.vue";
+import ProjectFiles from "./components/views/ProjectFiles.vue";
+import PythonPackages from "./components/views/PythonPackages.vue";
 </script>
 
 <style lang="scss" scoped>
