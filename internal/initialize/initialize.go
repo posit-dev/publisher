@@ -86,8 +86,8 @@ func requiresPython(cfg *config.Config, base util.AbsolutePath, python util.Path
 
 func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path) (bool, error) {
 	if rExecutable.String() != "" {
-		// If user provided Python on the command line,
-		// then configure Python for the project.
+		// If user provided R on the command line,
+		// then configure R for the project.
 		return true, nil
 	}
 	if cfg.R != nil && cfg.R.Version == "" {

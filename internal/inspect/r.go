@@ -44,25 +44,30 @@ func NewRInspector(base util.AbsolutePath, rExecutable util.Path, log logging.Lo
 }
 
 // InspectR inspects the specified project directory,
-// returning a Python configuration.
-// If requirements.txt does not exist, it will be created.
-// The python version (and packages if needed) will
-// be determined by the specified pythonExecutable,
-// or by `python3` or `python` on $PATH.
+// returning an R configuration.
+// If R is available, use it to determine the renv lockfile path
+// (to support renv profiles). Otherwise, look for renv.lock.
+// If there's a lockfile, we get the R version from there.
+// Otherwise, we run R to get the version (and if it's not
+// available, that's an error).
 func (i *defaultRInspector) InspectR() (*config.R, error) {
-	rExecutable, err := i.getRExecutable()
-	if err != nil {
-		return nil, err
-	}
-	lockfilePath, err := i.getRenvLockfile(rExecutable)
-	if err != nil {
-		return nil, err
+	var rVersion string
+	var lockfilePath util.AbsolutePath
+	var err error
+
+	rExecutable, getRExecutableErr := i.getRExecutable()
+	if getRExecutableErr == nil {
+		lockfilePath, err = i.getRenvLockfile(rExecutable)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		lockfilePath = i.base.Join(DefaultRenvLockfile)
 	}
 	exists, err := lockfilePath.Exists()
 	if err != nil {
 		return nil, err
 	}
-	var rVersion string
 	if exists {
 		// Get R version from the lockfile
 		rVersion, err = i.getRVersionFromLockfile(lockfilePath)
@@ -70,6 +75,10 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 			return nil, err
 		}
 	} else {
+		// Now R is required, err if it couldn't be found.
+		if getRExecutableErr != nil {
+			return nil, getRExecutableErr
+		}
 		rVersion, err = i.getRVersion(rExecutable)
 		if err != nil {
 			return nil, err
