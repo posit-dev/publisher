@@ -28,12 +28,12 @@ func TestPythonSuite(t *testing.T) {
 	suite.Run(t, new(PythonSuite))
 }
 
-type MockPythonExecutor struct {
+type mockExecutor struct {
 	mock.Mock
 }
 
-func (m *MockPythonExecutor) RunCommand(pythonExecutable string, callArgs []string, log logging.Logger) ([]byte, error) {
-	args := m.Called(pythonExecutable, callArgs, log)
+func (m *mockExecutor) RunCommand(executable string, callArgs []string, log logging.Logger) ([]byte, error) {
+	args := m.Called(executable, callArgs, log)
 	data := args.Get(0)
 	if data == nil {
 		return nil, args.Error(1)
@@ -42,8 +42,8 @@ func (m *MockPythonExecutor) RunCommand(pythonExecutable string, callArgs []stri
 	}
 }
 
-func NewMockPythonExecutor() *MockPythonExecutor {
-	return &MockPythonExecutor{}
+func NewMockExecutor() *mockExecutor {
+	return &mockExecutor{}
 }
 
 func (s *PythonSuite) SetupTest() {
@@ -71,7 +71,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 	i := NewPythonInspector(s.cwd, pythonPath.Path, log)
 	inspector := i.(*defaultPythonInspector)
 
-	executor := NewMockPythonExecutor()
+	executor := NewMockExecutor()
 	executor.On("RunCommand", pythonPath.String(), mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
 	version, err := inspector.getPythonVersion()
@@ -87,7 +87,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	i := NewPythonInspector(s.cwd, pythonPath.Path, log)
 	inspector := i.(*defaultPythonInspector)
 
-	executor := NewMockPythonExecutor()
+	executor := NewMockExecutor()
 	testError := errors.New("test error from RunCommand")
 	executor.On("RunCommand", pythonPath.String(), mock.Anything, mock.Anything).Return(nil, testError)
 	inspector.executor = executor
@@ -102,7 +102,7 @@ func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	i := NewPythonInspector(s.cwd, util.Path{}, log)
 	inspector := i.(*defaultPythonInspector)
 
-	executor := NewMockPythonExecutor()
+	executor := NewMockExecutor()
 	executor.On("RunCommand", mock.Anything, mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil)
 	inspector.executor = executor
 	version, err := inspector.getPythonVersion()
