@@ -45,8 +45,8 @@
           </vscode-button>
         </div>
         <PSelect
-          v-model="selectedDeployment"
-          :options="deployments"
+          v-model="home.selectedDeployment"
+          :options="home.deployments"
           :get-key="(d) => d.saveName"
           @update:modelValue="onUpdateModelValueSelectedDeployment"
           class="dropdowns"
@@ -57,7 +57,7 @@
           <label for="config-selector">Configuration:</label>
           <div>
             <vscode-button
-              v-if="selectedConfig"
+              v-if="home.selectedConfiguration"
               appearance="icon"
               class="action-icons"
               aria-label="Edit Selected Configuration"
@@ -80,8 +80,8 @@
           </div>
         </div>
         <PSelect
-          v-model="selectedConfig"
-          :options="configs"
+          v-model="home.selectedConfiguration"
+          :options="home.configurations"
           :get-key="(c: Configuration) => c.configurationName"
           @update:modelValue="onUpdateModelValueSelectedConfig"
           class="dropdowns"
@@ -89,16 +89,16 @@
       </div>
       <label for="credentials-selector">Credentials:</label>
       <PSelect
-        v-model="selectedAccount"
-        :options="filteredAccounts"
+        v-model="home.selectedCredential"
+        :options="home.filteredCredentials"
         :get-key="(a: Account) => a.name"
         @update:modelValue="onUpdateModelValueSelectedCredential"
         class="dropdowns"
       />
     </div>
-    <div v-if="selectedDeployment && selectedDeployment.serverType">
+    <div v-if="home.selectedDeployment && home.selectedDeployment.serverType">
       <vscode-divider />
-      <div v-if="publishingInProgress" class="progress-container">
+      <div v-if="home.publishInProgress" class="progress-container">
         <vscode-progress-ring class="progress-ring" />
         Deployment in Progress...
       </div>
@@ -107,33 +107,35 @@
           {{ lastStatusDescription }}
         </h4>
         <div
-          v-if="!isPreDeployment(selectedDeployment)"
+          v-if="!isPreDeployment(home.selectedDeployment)"
           class="last-deployment-time"
         >
-          {{ formatDateString(selectedDeployment.deployedAt) }}
+          {{ formatDateString(home.selectedDeployment.deployedAt) }}
         </div>
         <div
-          v-if="selectedDeployment.deploymentError"
+          v-if="home.selectedDeployment.deploymentError"
           class="last-deployment-details last-deployment-error"
         >
           <span class="codicon codicon-error error-icon"></span>
           <span class="error-message">
-            Error: {{ selectedDeployment.deploymentError.msg }}
+            Error: {{ home.selectedDeployment.deploymentError.msg }}
           </span>
         </div>
         <div class="last-deployment-details">
           Targeting Posit Connect server at
-          <a href="" @click="navigateToUrl(selectedDeployment.serverUrl)">{{
-            selectedDeployment.serverUrl
-          }}</a>
+          <a
+            href=""
+            @click="navigateToUrl(home.selectedDeployment.serverUrl)"
+            >{{ home.selectedDeployment.serverUrl }}</a
+          >
         </div>
         <div
-          v-if="!isPreDeployment(selectedDeployment)"
+          v-if="!isPreDeployment(home.selectedDeployment)"
           class="last-deployment-details"
         >
           <vscode-button
             appearance="secondary"
-            @click="navigateToUrl(selectedDeployment.dashboardUrl)"
+            @click="navigateToUrl(home.selectedDeployment.dashboardUrl)"
             class="dashboard-button"
             >View Content
           </vscode-button>
@@ -147,24 +149,14 @@
 import { computed, onBeforeMount, onBeforeUnmount, ref } from "vue";
 
 import { formatDateString } from "../../../../../../web/src/utils/date";
-import {
-  Deployment,
-  PreDeployment,
-  isPreDeployment,
-} from "../../../../src/api/types/deployments";
+import { isPreDeployment } from "../../../../src/api/types/deployments";
 import { Account } from "../../../../src/api/types/accounts";
 import { Configuration } from "../../../../src/api/types/configurations";
+import { useHomeStore } from "../stores/home";
 
 import PSelect from "./PSelect.vue";
 
-let deployments = ref<(Deployment | PreDeployment)[]>([]);
-let configs = ref<Configuration[]>([]);
-let accounts = ref<Account[]>([]);
-let publishingInProgress = ref(false);
-
-const selectedDeployment = ref<Deployment | PreDeployment>();
-const selectedConfig = ref<Configuration>();
-const selectedAccount = ref<Account>();
+const home = useHomeStore();
 
 const lastDeploymentResult = ref<string>();
 const lastDeploymentMsg = ref<string>();
@@ -174,13 +166,13 @@ const showDetails = ref(false);
 const vsCodeApi = acquireVsCodeApi();
 
 const lastStatusDescription = computed(() => {
-  if (!selectedDeployment.value) {
+  if (!home.selectedDeployment) {
     return undefined;
   }
-  if (selectedDeployment.value.deploymentError) {
+  if (home.selectedDeployment.deploymentError) {
     return "Last Deployment Failed";
   }
-  if (isPreDeployment(selectedDeployment.value)) {
+  if (isPreDeployment(home.selectedDeployment)) {
     return "Not Yet Deployed";
   }
   return "Last Deployment Successful";
@@ -194,9 +186,9 @@ const buttonIconClass = computed(() => {
 
 const disableDeployment = computed(() => {
   const result =
-    !Boolean(selectedDeployment.value) ||
-    !Boolean(selectedConfig.value) ||
-    !Boolean(selectedAccount.value);
+    !Boolean(home.selectedDeployment) ||
+    !Boolean(home.selectedConfiguration) ||
+    !Boolean(home.selectedCredential);
   return result;
 });
 
@@ -207,9 +199,9 @@ const onUpdateModelValueSelectedDeployment = () => {
 
 const updateCredentialsAndConfigurationForDeployment = () => {
   filterCredentialsToDeployment();
-  if (selectedDeployment.value?.configurationName) {
-    updateSelectedConfigurationByName(
-      selectedDeployment.value.configurationName,
+  if (home.selectedDeployment?.configurationName) {
+    home.updateSelectedConfigurationByName(
+      home.selectedDeployment.configurationName,
     );
   }
 };
@@ -237,99 +229,30 @@ onBeforeUnmount(() => {
   window.removeEventListener("message", onMessageFromProvider);
 });
 
-const updateSelectedDeploymentByObject = (
-  preDeployment: PreDeployment,
-): void => {
-  deployments.value.push(preDeployment);
-  selectedDeployment.value = preDeployment;
-};
-
-const updateSelectedDeploymentByName = (deploymentName?: string): boolean => {
-  const previousSelectedDeployment = selectedDeployment.value;
-  let selectedDeploymentTarget: Deployment | PreDeployment | undefined =
-    undefined;
-  if (deploymentName) {
-    selectedDeploymentTarget = deployments.value.find(
-      (deployment) => deployment.deploymentName === deploymentName,
-    );
-  }
-  if (!selectedDeploymentTarget && deployments.value.length) {
-    selectedDeploymentTarget = deployments.value[0];
-  }
-  selectedDeployment.value = selectedDeploymentTarget;
-  return previousSelectedDeployment === selectedDeployment.value;
-};
-
-const updateSelectedConfigurationByObject = (config: Configuration): void => {
-  configs.value.push(config);
-  selectedConfig.value = config;
-};
-
-const updateSelectedConfigurationByName = (
-  configurationName?: string,
-): boolean => {
-  const previousSelectedConfig = selectedConfig.value;
-  let selectedConfigTarget: Configuration | undefined = undefined;
-  if (configurationName) {
-    selectedConfigTarget = configs.value.find(
-      (config) => config.configurationName === configurationName,
-    );
-  }
-  if (!selectedConfigTarget && configs.value.length) {
-    selectedConfigTarget = configs.value[0];
-  }
-  selectedConfig.value = selectedConfigTarget;
-  return previousSelectedConfig === selectedConfig.value;
-};
-
-const updateSelectedCredentialByName = (credentialName?: string): boolean => {
-  const previousSelectedAccount = selectedAccount.value;
-  let selectedCredentialTarget: Account | undefined = undefined;
-  if (credentialName) {
-    selectedCredentialTarget = accounts.value.find(
-      (account) => account.name === credentialName,
-    );
-  }
-  if (!selectedCredentialTarget && accounts.value.length) {
-    selectedCredentialTarget = accounts.value[0];
-  }
-  selectedAccount.value = selectedCredentialTarget;
-  return previousSelectedAccount === selectedAccount.value;
-};
-
-const filteredAccounts = computed(() => {
-  return accounts.value.filter((account) => {
-    return (
-      account.url.toLowerCase() ===
-      selectedDeployment.value?.serverUrl.toLowerCase()
-    );
-  });
-});
-
 // TODO: We need to show an error when you have no credentials which can get to
 // the deployment URL
 // OR
 // Should we filter deployment list to just include what you can access. Maybe disable others?
 
 const filterCredentialsToDeployment = () => {
-  if (filteredAccounts.value.length === 0) {
+  if (home.filteredCredentials.length === 0) {
     // TODO: Show ERROR HERE!!!!
-    selectedAccount.value = undefined;
-  } else if (!selectedAccount.value) {
-    selectedAccount.value = filteredAccounts.value[0];
-  } else if (selectedAccount.value) {
-    let targetAccount: Account | undefined = filteredAccounts.value.find(
+    home.selectedCredential = undefined;
+  } else if (!home.selectedCredential) {
+    home.selectedCredential = home.filteredCredentials[0];
+  } else if (home.selectedCredential) {
+    let targetAccount: Account | undefined = home.filteredCredentials.find(
       (account) => {
-        if (selectedAccount.value) {
-          return account.name === selectedAccount.value.name;
+        if (home.selectedCredential) {
+          return account.name === home.selectedCredential.name;
         }
         return false;
       },
     );
     if (targetAccount) {
-      selectedAccount.value = targetAccount;
+      home.selectedCredential = targetAccount;
     } else {
-      selectedAccount.value = filteredAccounts.value[0];
+      home.selectedCredential = home.filteredCredentials[0];
     }
   }
 };
@@ -346,9 +269,9 @@ const updateParentViewSelectionState = () => {
   vsCodeApi.postMessage({
     command: "saveSelectionState",
     payload: JSON.stringify({
-      deploymentName: selectedDeployment.value?.saveName,
-      configurationName: selectedConfig.value?.configurationName,
-      credentialName: selectedAccount.value?.name,
+      deploymentName: home.selectedDeployment?.saveName,
+      configurationName: home.selectedConfiguration?.configurationName,
+      credentialName: home.selectedCredential?.name,
     }),
   });
 };
@@ -357,9 +280,9 @@ const onClickDeploy = () => {
   vsCodeApi.postMessage({
     command: "deploy",
     payload: JSON.stringify({
-      deployment: selectedDeployment.value?.saveName,
-      configuration: selectedConfig.value?.configurationName,
-      credential: selectedAccount.value?.name,
+      deployment: home.selectedDeployment?.saveName,
+      configuration: home.selectedConfiguration?.configurationName,
+      credential: home.selectedCredential?.name,
     }),
   });
 };
@@ -386,7 +309,7 @@ const onClickAddConfiguration = () => {
 const onClickEditConfiguration = () => {
   vsCodeApi.postMessage({
     command: "editConfiguration",
-    payload: selectedConfig.value?.configurationName,
+    payload: home.selectedConfiguration?.configurationName,
   });
 };
 
@@ -395,13 +318,13 @@ const onMessageFromProvider = (event: any) => {
   switch (command) {
     case "refresh_deployment_data": {
       const payload = JSON.parse(event.data.payload);
-      deployments.value = payload.deployments;
+      home.deployments = payload.deployments;
       if (payload.selectedDeploymentName) {
-        updateSelectedDeploymentByName(payload.selectedDeploymentName);
+        home.updateSelectedDeploymentByName(payload.selectedDeploymentName);
       } else {
         if (
-          !updateSelectedDeploymentByName(
-            selectedDeployment.value?.deploymentName,
+          !home.updateSelectedDeploymentByName(
+            home.selectedDeployment?.deploymentName,
           )
         ) {
           // Always cause the re-calculation even if selected deployment didn't change
@@ -417,38 +340,40 @@ const onMessageFromProvider = (event: any) => {
     }
     case "refresh_config_data": {
       const payload = JSON.parse(event.data.payload);
-      configs.value = payload.configurations;
+      home.configurations = payload.configurations;
       if (payload.selectedConfigurationName) {
-        updateSelectedConfigurationByName(payload.selectedConfigurationName);
+        home.updateSelectedConfigurationByName(
+          payload.selectedConfigurationName,
+        );
       } else {
-        updateSelectedConfigurationByName(
-          selectedConfig.value?.configurationName,
+        home.updateSelectedConfigurationByName(
+          home.selectedConfiguration?.configurationName,
         );
       }
       break;
     }
     case "refresh_credential_data": {
       const payload = JSON.parse(event.data.payload);
-      accounts.value = payload.credentials;
+      home.credentials = payload.credentials;
       if (payload.selectedCredentialName) {
-        updateSelectedCredentialByName(payload.selectedCredentialName);
+        home.updateSelectedCredentialByName(payload.selectedCredentialName);
       } else {
-        updateSelectedCredentialByName(selectedAccount.value?.name);
+        home.updateSelectedCredentialByName(home.selectedCredential?.name);
       }
       break;
     }
     case "publish_start": {
-      publishingInProgress.value = true;
+      home.publishInProgress = true;
       break;
     }
     case "publish_finish_success": {
-      publishingInProgress.value = false;
+      home.publishInProgress = false;
       lastDeploymentResult.value = `Last deployment was succesful`;
       lastDeploymentMsg.value = "";
       break;
     }
     case "publish_finish_failure": {
-      publishingInProgress.value = false;
+      home.publishInProgress = false;
       lastDeploymentResult.value = `Last deployment failed`;
       lastDeploymentMsg.value = event.data.payload.data.message;
       break;
@@ -456,7 +381,7 @@ const onMessageFromProvider = (event: any) => {
     case "update_deployment_selection": {
       const payload = JSON.parse(event.data.payload);
       if (payload.preDeployment) {
-        updateSelectedDeploymentByObject(payload.preDeployment);
+        home.updateSelectedDeploymentByObject(payload.preDeployment);
       }
       if (payload.saveSelection) {
         updateParentViewSelectionState();
@@ -466,7 +391,7 @@ const onMessageFromProvider = (event: any) => {
     case "update_config_selection": {
       const payload = JSON.parse(event.data.payload);
       if (payload.config) {
-        updateSelectedConfigurationByObject(payload.config);
+        home.updateSelectedConfigurationByObject(payload.config);
       }
       if (payload.saveSelection) {
         updateParentViewSelectionState();
