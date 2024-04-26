@@ -45,8 +45,8 @@ func detectMarkdownLanguagesInContent(content []byte) (bool, bool) {
 	//   literal ```
 	//   space or closing brace (accommodates {r} and {r echo=FALSE})
 	//   alternatively, inline code block with single backtick and language
-	rBlockRE := regexp.MustCompile("((?m)^```[{]r[ }])|(`r )")
-	pyBlockRE := regexp.MustCompile("((?m)^```[{]python[ }])|(`python )")
+	rBlockRE := regexp.MustCompile("((?m)^```[{]r[ ,}])|(`r )")
+	pyBlockRE := regexp.MustCompile("((?m)^```[{]python[ ,}])|(`python )")
 
 	needsR := rBlockRE.Match(content)
 	needsPython := pyBlockRE.Match(content)

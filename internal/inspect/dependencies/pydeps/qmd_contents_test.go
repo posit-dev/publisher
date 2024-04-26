@@ -40,6 +40,12 @@ func (s *QMDContentsSuite) TestDetectMarkdownLanguagesInContentRBlock() {
 	s.False(py)
 }
 
+func (s *QMDContentsSuite) TestDetectMarkdownLanguagesInContentRBlockWithComma() {
+	r, py := detectMarkdownLanguagesInContent([]byte("```{r, echo=TRUE}\nlibrary(foo)\n```"))
+	s.True(r)
+	s.False(py)
+}
+
 func (s *QMDContentsSuite) TestDetectMarkdownLanguagesInContentRInline() {
 	r, py := detectMarkdownLanguagesInContent([]byte("`r library(foo)`"))
 	s.True(r)
