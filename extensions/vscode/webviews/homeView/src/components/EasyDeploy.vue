@@ -424,28 +424,28 @@ const onClickEditConfiguration = () => {
   });
 };
 
-const onMessageFromHost = async (msg: ConduitMessage) => {
+const onMessageFromHost = (msg: ConduitMessage) => {
   switch (msg.kind) {
     case MessageType.REFRESH_DEPLOYMENT_DATA:
-      return await onRefreshDeploymentDataMsg(msg);
+      return onRefreshDeploymentDataMsg(msg);
     case MessageType.UPDATE_EXPANSION_FROM_STORAGE:
-      return await onUpdateExpansionFromStorageMsg(msg);
+      return onUpdateExpansionFromStorageMsg(msg);
     case MessageType.REFRESH_CONFIG_DATA:
-      return await onRefreshConfigDataMsg(msg);
+      return onRefreshConfigDataMsg(msg);
     case MessageType.REFRESH_CREDENTIAL_DATA:
-      return await onRefreshCredentialDataMsg(msg);
+      return onRefreshCredentialDataMsg(msg);
     case MessageType.PUBLISH_START:
-      return await onPublishStartMsg();
+      return onPublishStartMsg();
     case MessageType.PUBLISH_FINISH_SUCCESS:
-      return await onPublishFinishSuccessMsg();
+      return onPublishFinishSuccessMsg();
     case MessageType.PUBLISH_FINISH_FAILURE:
-      return await onPublishFinishFailureMsg(msg);
+      return onPublishFinishFailureMsg(msg);
     case MessageType.UPDATE_DEPLOYMENT_SELECTION:
-      return await onUpdateDeploymentSelectionMsg(msg);
+      return onUpdateDeploymentSelectionMsg(msg);
     case MessageType.UPDATE_CONFIG_SELECTION:
-      return await onUpdateConfigSelectionMsg(msg);
+      return onUpdateConfigSelectionMsg(msg);
     case MessageType.SAVE_SELECTION:
-      return await onSaveSelectionMsg();
+      return onSaveSelectionMsg();
     default:
       console.log(`unexpected command: ${JSON.stringify(msg)}`);
   }

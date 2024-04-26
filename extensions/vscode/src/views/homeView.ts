@@ -171,18 +171,18 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _onNavigateMsg(msg: NavigateMsg) {
-    env.openExternal(Uri.parse(msg.content.uriPath));
+    await env.openExternal(Uri.parse(msg.content.uriPath));
   }
 
   private async _onSaveDeploymentButtonExpandedMsg(
     msg: SaveDeploymentButtonExpandedMsg,
   ) {
-    commands.executeCommand(
+    await commands.executeCommand(
       "setContext",
       contextIsSelectorExpanded,
       msg.content.expanded,
     );
-    this._saveExpansionState(msg.content.expanded);
+    await this._saveExpansionState(msg.content.expanded);
   }
 
   private async _onSaveSelectionState(msg: SaveSelectionStatedMsg) {
