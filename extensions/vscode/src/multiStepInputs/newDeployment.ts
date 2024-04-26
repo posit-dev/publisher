@@ -19,6 +19,7 @@ import {
   MultiStepInput,
   MultiStepState,
   isQuickPickItem,
+  assignStep,
 } from "./multiStepHelper";
 
 export async function newDeployment(
@@ -197,6 +198,7 @@ export async function newDeployment(
         configFile: undefined, // eventual type is QuickPickItem
         promptToDeploy: undefined, /// eventual type is QuickPickItem
       },
+      promptStepNumbers: {},
     };
     // determin number of total steps, as each step
     // will suppress its choice if there is only one option
@@ -207,7 +209,7 @@ export async function newDeployment(
     if (configFileListItems.length === 1) {
       totalSteps -= 1;
     }
-    if (!promptToDeploy) {
+    if (!allowPublish) {
       totalSteps -= 1;
     }
 
@@ -227,7 +229,7 @@ export async function newDeployment(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    const thisStepNumber = state.lastStep + 1;
+    const thisStepNumber = assignStep(state, "inputDeploymentName");
     const currentName =
       typeof state.data.deploymentName === "string" &&
       state.data.deploymentName.length
@@ -256,7 +258,7 @@ export async function newDeployment(
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     // skip if we only have one choice.
     if (accountListItems.length > 1) {
-      const thisStepNumber = state.lastStep + 1;
+      const thisStepNumber = assignStep(state, "pickCredentials");
       const pick = await input.showQuickPick({
         title: state.title,
         step: thisStepNumber,
@@ -273,10 +275,12 @@ export async function newDeployment(
       });
       state.data.credentialName = pick;
       state.lastStep = thisStepNumber;
+      return (input: MultiStepInput) => inputConfigFileSelection(input, state);
     } else {
       state.data.credentialName = accountListItems[0];
+      // We're skipping this step, so we must silently just jump to the next step
+      return inputConfigFileSelection(input, state);
     }
-    return (input: MultiStepInput) => inputConfigFileSelection(input, state);
   }
 
   // ***************************************************************
@@ -289,7 +293,7 @@ export async function newDeployment(
   ) {
     // skip if we only have one choice.
     if (configFileListItems.length > 1) {
-      const thisStepNumber = state.lastStep + 1;
+      const thisStepNumber = assignStep(state, "inputConfigFileSelection");
       const pick = await input.showQuickPick({
         title: state.title,
         step: thisStepNumber,
@@ -306,10 +310,12 @@ export async function newDeployment(
       });
       state.data.configFile = pick;
       state.lastStep = thisStepNumber;
+      return (input: MultiStepInput) => promptToDeploy(input, state);
     } else {
       state.data.configFile = configFileListItems[0];
+      // We're skipping this step, so we must silently just jump to the next step
+      return promptToDeploy(input, state);
     }
-    return (input: MultiStepInput) => promptToDeploy(input, state);
   }
 
   // ***************************************************************
@@ -318,7 +324,7 @@ export async function newDeployment(
   // ***************************************************************
   async function promptToDeploy(input: MultiStepInput, state: MultiStepState) {
     if (allowPublish) {
-      const thisStepNumber = state.lastStep + 1;
+      const thisStepNumber = assignStep(state, "promptToDeploy");
       const pick = await input.showQuickPick({
         title: state.title,
         step: thisStepNumber,
@@ -345,6 +351,7 @@ export async function newDeployment(
       state.data.promptToDeploy = pick;
       state.lastStep = thisStepNumber;
     }
+    // last step, nothing gets returned.
   }
 
   // ***************************************************************

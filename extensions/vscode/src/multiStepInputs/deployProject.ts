@@ -4,6 +4,7 @@ import {
   MultiStepInput,
   MultiStepState,
   isQuickPickItem,
+  assignStep,
 } from "./multiStepHelper";
 
 import { ProgressLocation, QuickPickItem, ThemeIcon, window } from "vscode";
@@ -150,6 +151,7 @@ export async function publishDeployment(
         credentialName: undefined, // eventual type is QuickPickItem
         configFile: undefined, // eventual type is QuickPickItem
       },
+      promptStepNumbers: {},
     };
 
     // determin number of total steps, as each step
@@ -177,7 +179,7 @@ export async function publishDeployment(
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     // skip if we only have one choice.
     if (accountListItems.length > 1) {
-      const thisStepNumber = state.lastStep + 1;
+      const thisStepNumber = assignStep(state, "pickCredentials");
       const pick = await input.showQuickPick({
         title: state.title,
         step: thisStepNumber,
@@ -194,10 +196,12 @@ export async function publishDeployment(
       });
       state.data.credentialName = pick;
       state.lastStep = thisStepNumber;
+      return (input: MultiStepInput) => inputConfigFileSelection(input, state);
     } else {
       state.data.credentialName = accountListItems[0];
+      // We're skipping this step, so we must silently just jump to the next step
+      return inputConfigFileSelection(input, state);
     }
-    return (input: MultiStepInput) => inputConfigFileSelection(input, state);
   }
 
   // ***************************************************************
@@ -210,7 +214,7 @@ export async function publishDeployment(
   ) {
     // skip if we only have one choice or an already decided one
     if (configFileListItems.length > 1 || !deployment.configurationName) {
-      const thisStepNumber = state.lastStep + 1;
+      const thisStepNumber = assignStep(state, "inputConfigFileSelection");
       const pick = await input.showQuickPick({
         title: state.title,
         step: thisStepNumber,
