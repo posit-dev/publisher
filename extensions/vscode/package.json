@@ -549,7 +549,8 @@
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "lint": "eslint src --ext ts --max-warnings 0",
-    "test": "tsc -p ./ && node ./out/test/runTest.js"
+    "compile": "tsc -p ./",
+    "test": "npm run compile && node ./out/test/runTest.js"
   },
   "devDependencies": {
     "@types/eventsource": "^1.1.15",
