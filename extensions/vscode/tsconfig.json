@@ -13,8 +13,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-    "noEmit": true
+    "noImplicitReturns": true
   },
   "exclude": ["node_modules", "webviews"]
 }
