@@ -12,6 +12,10 @@
 import EasyDeploy from "./components/EasyDeploy.vue";
 import ProjectFiles from "./components/views/ProjectFiles.vue";
 import PythonPackages from "./components/views/PythonPackages.vue";
+
+import { useHostConduitService } from "./HostConduitService";
+
+useHostConduitService();
 </script>
 
 <style lang="scss" scoped>
