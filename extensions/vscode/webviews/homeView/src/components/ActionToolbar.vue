@@ -14,6 +14,7 @@
           class="action-label codicon"
           :class="action.codicon"
           role="button"
+          :title="action.label"
           :aria-label="action.label"
           tabindex="0"
           @click.stop="action.fn"
