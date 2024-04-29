@@ -31,6 +31,12 @@ export class WebviewConduit {
   };
 
   public init = (target: Webview) => {
+    if (this._target) {
+      // we are in the process of replacing the target. That means we're going to be re-registering
+      // a new callback, so we need to reset a bit.
+      // It would be great if we knew about this sooner, but this works for now.
+      this._onMsgCB = undefined;
+    }
     this._target = target;
   };
 
