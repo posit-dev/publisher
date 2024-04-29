@@ -74,6 +74,7 @@
       <template #default="{ indentLevel }">
         <TreeItem
           title=".DS_Store"
+          :tooltip="`.DS_Store will be excluded from the next deployment.\nThis is a built-in exclusion for the pattern: '!.DS_Store' and cannot be overridden.`"
           codicon="codicon-debug-stackframe-dot"
           :indentLevel="indentLevel"
         />
