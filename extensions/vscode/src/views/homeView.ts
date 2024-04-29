@@ -33,17 +33,18 @@ import { getNonce } from "../utils/getNonce";
 import { getUri } from "../utils/getUri";
 import { deployProject } from "./deployProgress";
 import { WebviewConduit } from "../utils/webviewConduit";
+
+import type { HomeViewState } from "../types/shared";
 import {
-  ConduitMessage,
   DeployMsg,
   EditConfigurationMsg,
-  MessageType,
   NavigateMsg,
   SaveDeploymentButtonExpandedMsg,
   SaveSelectionStatedMsg,
-} from "../messages";
-
-import type { HomeViewState } from "../types/shared";
+  WebviewToHostMessage,
+  WebviewToHostMessageType,
+} from "../types/messages/webviewToHostMessages";
+import { HostToWebviewMessageType } from "../types/messages/hostToWebviewMessages";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
@@ -91,23 +92,23 @@ export class HomeViewProvider implements WebviewViewProvider {
   /**
    * Dispatch messages passed from the webview to the handling code
    */
-  private async _onConduitMessage(msg: ConduitMessage) {
+  private async _onConduitMessage(msg: WebviewToHostMessage) {
     switch (msg.kind) {
-      case MessageType.DEPLOY:
+      case WebviewToHostMessageType.DEPLOY:
         return await this._onDeployMsg(msg);
-      case MessageType.INITIALIZING:
+      case WebviewToHostMessageType.INITIALIZING:
         return await this._onInitializingMsg();
-      case MessageType.NEW_DEPLOYMENT:
+      case WebviewToHostMessageType.NEW_DEPLOYMENT:
         return await this._onNewDeploymentMsg();
-      case MessageType.EDIT_CONFIGURATION:
+      case WebviewToHostMessageType.EDIT_CONFIGURATION:
         return await this._onEditConfigurationMsg(msg);
-      case MessageType.NEW_CONFIGURATION:
+      case WebviewToHostMessageType.NEW_CONFIGURATION:
         return await this._onNewConfigurationMsg();
-      case MessageType.NAVIGATE:
+      case WebviewToHostMessageType.NAVIGATE:
         return await this._onNavigateMsg(msg);
-      case MessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED:
+      case WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED:
         return await this._onSaveDeploymentButtonExpandedMsg(msg);
-      case MessageType.SAVE_SELECTION_STATE:
+      case WebviewToHostMessageType.SAVE_SELECTION_STATE:
         return await this._onSaveSelectionState(msg);
       default:
         throw new Error(
@@ -117,6 +118,11 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _onDeployMsg(msg: DeployMsg) {
+    if (!msg.content) {
+      throw new Error(
+        "HomeViewProvider::_onDeployMsg received empty content message.",
+      );
+    }
     try {
       const api = await useApi();
       const response = await api.deployments.publish(
@@ -149,8 +155,15 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _onEditConfigurationMsg(msg: EditConfigurationMsg) {
-    const config = this._configs.find(
-      (config) => config.configurationName === msg.content.configurationName,
+    if (!msg.content) {
+      throw new Error(
+        "HomeViewProvider::_onEditConfigurationMsg received empty content message.",
+      );
+    }
+    const config = this._configs.find((config) =>
+      msg.content
+        ? config.configurationName === msg.content.configurationName
+        : false,
     );
     if (config) {
       await commands.executeCommand(
@@ -171,12 +184,22 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _onNavigateMsg(msg: NavigateMsg) {
+    if (!msg.content) {
+      throw new Error(
+        "HomeViewProvider::_onNavigateMsg received empty content message.",
+      );
+    }
     await env.openExternal(Uri.parse(msg.content.uriPath));
   }
 
   private async _onSaveDeploymentButtonExpandedMsg(
     msg: SaveDeploymentButtonExpandedMsg,
   ) {
+    if (!msg.content) {
+      throw new Error(
+        "HomeViewProvider::_onSaveDeploymentButtonExpandedMsg received empty content message.",
+      );
+    }
     await commands.executeCommand(
       "setContext",
       contextIsSelectorExpanded,
@@ -186,26 +209,31 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _onSaveSelectionState(msg: SaveSelectionStatedMsg) {
+    if (!msg.content) {
+      throw new Error(
+        "HomeViewProvider::_onSaveSelectionState received empty content message.",
+      );
+    }
     await this._saveSelectionState(msg.content.state);
   }
 
   private _onPublishStart() {
     this._webviewConduit.sendMsg({
-      kind: MessageType.PUBLISH_START,
+      kind: HostToWebviewMessageType.PUBLISH_START,
       content: {},
     });
   }
 
   private _onPublishSuccess() {
     this._webviewConduit.sendMsg({
-      kind: MessageType.PUBLISH_FINISH_SUCCESS,
+      kind: HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS,
       content: {},
     });
   }
 
   private _onPublishFailure(msg: EventStreamMessage) {
     this._webviewConduit.sendMsg({
-      kind: MessageType.PUBLISH_FINISH_FAILURE,
+      kind: HostToWebviewMessageType.PUBLISH_FINISH_FAILURE,
       content: {
         data: {
           message: msg.data.message,
@@ -276,7 +304,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private _updateWebViewViewDeployments(selectedDeploymentName?: string) {
     this._webviewConduit.sendMsg({
-      kind: MessageType.REFRESH_DEPLOYMENT_DATA,
+      kind: HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA,
       content: {
         deployments: this._deployments,
         selectedDeploymentName,
@@ -286,7 +314,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private _updateWebViewViewConfigurations(selectedConfigurationName?: string) {
     this._webviewConduit.sendMsg({
-      kind: MessageType.REFRESH_CONFIG_DATA,
+      kind: HostToWebviewMessageType.REFRESH_CONFIG_DATA,
       content: {
         configurations: this._configs,
         selectedConfigurationName,
@@ -296,7 +324,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private _updateWebViewViewCredentials(selectedCredentialName?: string) {
     this._webviewConduit.sendMsg({
-      kind: MessageType.REFRESH_CREDENTIAL_DATA,
+      kind: HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
       content: {
         credentials: this._credentials,
         selectedCredentialName,
@@ -309,7 +337,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     saveSelection = false,
   ) {
     this._webviewConduit.sendMsg({
-      kind: MessageType.UPDATE_DEPLOYMENT_SELECTION,
+      kind: HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION,
       content: {
         preDeployment,
         saveSelection,
@@ -322,7 +350,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     saveSelection = false,
   ) {
     this._webviewConduit.sendMsg({
-      kind: MessageType.UPDATE_CONFIG_SELECTION,
+      kind: HostToWebviewMessageType.UPDATE_CONFIG_SELECTION,
       content: {
         config,
         saveSelection,
@@ -332,14 +360,14 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private _requestWebviewSaveSelection() {
     this._webviewConduit.sendMsg({
-      kind: MessageType.SAVE_SELECTION,
+      kind: HostToWebviewMessageType.SAVE_SELECTION,
       content: {},
     });
   }
 
   private _updateWebViewViewExpansionState() {
     this._webviewConduit.sendMsg({
-      kind: MessageType.UPDATE_EXPANSION_FROM_STORAGE,
+      kind: HostToWebviewMessageType.UPDATE_EXPANSION_FROM_STORAGE,
       content: {
         expansionState: this._context.workspaceState.get<boolean>(
           lastExpansionState,

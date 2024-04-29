@@ -158,8 +158,8 @@ import { HostConduit } from "../hostConduit";
 
 import PSelect from "./PSelect.vue";
 import {
-  ConduitMessage,
-  MessageType,
+  HostToWebviewMessage,
+  HostToWebviewMessageType,
   PublishFinishFailureMsg,
   RefreshConfigDataMsg,
   RefreshCredentialDataMsg,
@@ -167,7 +167,8 @@ import {
   UpdateConfigSelectionMsg,
   UpdateDeploymentSelectionMsg,
   UpdateExpansionFromStorageMsg,
-} from "../../../../src/messages";
+} from "../../../../src/types/messages/hostToWebviewMessages";
+import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 
 let deployments = ref<(Deployment | PreDeployment)[]>([]);
 let configs = ref<Configuration[]>([]);
@@ -242,7 +243,7 @@ onBeforeMount(() => {
   // Send the message which will caue the provider to send us
   // our data back
   hostConduit.sendMsg({
-    kind: MessageType.INITIALIZING,
+    kind: WebviewToHostMessageType.INITIALIZING,
     content: {},
   });
 });
@@ -351,7 +352,7 @@ const filterCredentialsToDeployment = () => {
 const onClickDeployExpand = () => {
   showDetails.value = !showDetails.value;
   hostConduit.sendMsg({
-    kind: MessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED,
+    kind: WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED,
     content: {
       expanded: showDetails.value,
     },
@@ -360,7 +361,7 @@ const onClickDeployExpand = () => {
 
 const updateParentViewSelectionState = () => {
   hostConduit.sendMsg({
-    kind: MessageType.SAVE_SELECTION_STATE,
+    kind: WebviewToHostMessageType.SAVE_SELECTION_STATE,
     content: {
       state: {
         deploymentName: selectedDeployment.value?.saveName,
@@ -380,7 +381,7 @@ const onClickDeploy = () => {
     return;
   }
   hostConduit.sendMsg({
-    kind: MessageType.DEPLOY,
+    kind: WebviewToHostMessageType.DEPLOY,
     content: {
       deploymentName: selectedDeployment.value.saveName,
       configurationName: selectedConfig.value.configurationName,
@@ -391,7 +392,7 @@ const onClickDeploy = () => {
 
 const navigateToUrl = (url: string) => {
   hostConduit.sendMsg({
-    kind: MessageType.NAVIGATE,
+    kind: WebviewToHostMessageType.NAVIGATE,
     content: {
       uriPath: url,
     },
@@ -400,14 +401,14 @@ const navigateToUrl = (url: string) => {
 
 const onClickAddDeployment = () => {
   hostConduit.sendMsg({
-    kind: MessageType.NEW_DEPLOYMENT,
+    kind: WebviewToHostMessageType.NEW_DEPLOYMENT,
     content: {},
   });
 };
 
 const onClickAddConfiguration = () => {
   hostConduit.sendMsg({
-    kind: MessageType.NEW_CONFIGURATION,
+    kind: WebviewToHostMessageType.NEW_CONFIGURATION,
     content: {},
   });
 };
@@ -417,34 +418,34 @@ const onClickEditConfiguration = () => {
     return;
   }
   hostConduit.sendMsg({
-    kind: MessageType.EDIT_CONFIGURATION,
+    kind: WebviewToHostMessageType.EDIT_CONFIGURATION,
     content: {
       configurationName: selectedConfig.value.configurationName,
     },
   });
 };
 
-const onMessageFromHost = (msg: ConduitMessage) => {
+const onMessageFromHost = (msg: HostToWebviewMessage): void => {
   switch (msg.kind) {
-    case MessageType.REFRESH_DEPLOYMENT_DATA:
+    case HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA:
       return onRefreshDeploymentDataMsg(msg);
-    case MessageType.UPDATE_EXPANSION_FROM_STORAGE:
+    case HostToWebviewMessageType.UPDATE_EXPANSION_FROM_STORAGE:
       return onUpdateExpansionFromStorageMsg(msg);
-    case MessageType.REFRESH_CONFIG_DATA:
+    case HostToWebviewMessageType.REFRESH_CONFIG_DATA:
       return onRefreshConfigDataMsg(msg);
-    case MessageType.REFRESH_CREDENTIAL_DATA:
+    case HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA:
       return onRefreshCredentialDataMsg(msg);
-    case MessageType.PUBLISH_START:
+    case HostToWebviewMessageType.PUBLISH_START:
       return onPublishStartMsg();
-    case MessageType.PUBLISH_FINISH_SUCCESS:
+    case HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS:
       return onPublishFinishSuccessMsg();
-    case MessageType.PUBLISH_FINISH_FAILURE:
+    case HostToWebviewMessageType.PUBLISH_FINISH_FAILURE:
       return onPublishFinishFailureMsg(msg);
-    case MessageType.UPDATE_DEPLOYMENT_SELECTION:
+    case HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION:
       return onUpdateDeploymentSelectionMsg(msg);
-    case MessageType.UPDATE_CONFIG_SELECTION:
+    case HostToWebviewMessageType.UPDATE_CONFIG_SELECTION:
       return onUpdateConfigSelectionMsg(msg);
-    case MessageType.SAVE_SELECTION:
+    case HostToWebviewMessageType.SAVE_SELECTION:
       return onSaveSelectionMsg();
     default:
       console.log(`unexpected command: ${JSON.stringify(msg)}`);
@@ -452,6 +453,11 @@ const onMessageFromHost = (msg: ConduitMessage) => {
 };
 
 const onRefreshDeploymentDataMsg = (msg: RefreshDeploymentDataMsg) => {
+  if (!msg.content) {
+    throw new Error(
+      "EasyDeploy::onRefreshDeploymentDataMsg received msg without content.",
+    );
+  }
   deployments.value = msg.content.deployments;
   if (msg.content.selectedDeploymentName) {
     updateSelectedDeploymentByName(msg.content.selectedDeploymentName);
@@ -468,10 +474,20 @@ const onRefreshDeploymentDataMsg = (msg: RefreshDeploymentDataMsg) => {
 const onUpdateExpansionFromStorageMsg = (
   msg: UpdateExpansionFromStorageMsg,
 ) => {
+  if (!msg.content) {
+    throw new Error(
+      "EasyDeploy::onUpdateExpansionFromStorageMsg received msg without content.",
+    );
+  }
   showDetails.value = msg.content.expansionState;
 };
 
 const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
+  if (!msg.content) {
+    throw new Error(
+      "EasyDeploy::onRefreshConfigDataMsg received msg without content.",
+    );
+  }
   configs.value = msg.content.configurations;
 
   if (msg.content.selectedConfigurationName) {
@@ -482,6 +498,11 @@ const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
 };
 
 const onRefreshCredentialDataMsg = (msg: RefreshCredentialDataMsg) => {
+  if (!msg.content) {
+    throw new Error(
+      "EasyDeploy::onRefreshCredentialDataMsg received msg without content.",
+    );
+  }
   accounts.value = msg.content.credentials;
   if (msg.content.selectedCredentialName) {
     updateSelectedCredentialByName(msg.content.selectedCredentialName);
@@ -501,12 +522,22 @@ const onPublishFinishSuccessMsg = () => {
 };
 
 const onPublishFinishFailureMsg = (msg: PublishFinishFailureMsg) => {
+  if (!msg.content) {
+    throw new Error(
+      "EasyDeploy::onPublishFinishFailureMsg received msg without content.",
+    );
+  }
   publishingInProgress.value = false;
   lastDeploymentResult.value = `Last deployment failed`;
   lastDeploymentMsg.value = msg.content.data.message;
 };
 
 const onUpdateDeploymentSelectionMsg = (msg: UpdateDeploymentSelectionMsg) => {
+  if (!msg.content) {
+    throw new Error(
+      "EasyDeploy::onUpdateDeploymentSelectionMsg received msg without content.",
+    );
+  }
   updateSelectedDeploymentByObject(msg.content.preDeployment);
   if (msg.content.saveSelection) {
     updateParentViewSelectionState();
@@ -514,6 +545,11 @@ const onUpdateDeploymentSelectionMsg = (msg: UpdateDeploymentSelectionMsg) => {
 };
 
 const onUpdateConfigSelectionMsg = (msg: UpdateConfigSelectionMsg) => {
+  if (!msg.content) {
+    throw new Error(
+      "EasyDeploy::onUpdateConfigSelectionMsg received msg without content.",
+    );
+  }
   updateSelectedConfigurationByObject(msg.content.config);
   if (msg.content.saveSelection) {
     updateParentViewSelectionState();
