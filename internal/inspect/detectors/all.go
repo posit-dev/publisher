@@ -17,6 +17,7 @@ func NewContentTypeDetector() *ContentTypeDetector {
 			// The order here is important, since the first
 			// ContentTypeInferer to return a non-nil
 			// ContentType will determine the result.
+			NewPlumberDetector(),
 			NewQuartoDetector(),
 			NewNotebookDetector(),
 			NewPyShinyDetector(),
