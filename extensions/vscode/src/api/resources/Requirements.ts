@@ -12,8 +12,8 @@ export class Requirements {
 
   // Returns:
   // 200 - success
-  // 204 - no content (Python is not configured)
   // 404 - configuration or requirements file not found
+  // 409 - conflict (Python is not configured)
   // 500 - internal server error
   getByConfiguration(configName: string) {
     const encodedName = encodeURIComponent(configName);
