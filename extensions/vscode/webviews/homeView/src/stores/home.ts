@@ -1,5 +1,6 @@
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
+import { useHostConduitService } from "../../src/HostConduitService";
 
 import {
   Deployment,
@@ -7,6 +8,7 @@ import {
   Account,
   Configuration,
 } from "../../../../src/api";
+import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 
 export const useHomeStore = defineStore("home", () => {
   const publishInProgress = ref(false);
@@ -18,6 +20,10 @@ export const useHomeStore = defineStore("home", () => {
   const selectedDeployment = ref<Deployment | PreDeployment>();
   const selectedConfiguration = ref<Configuration>();
   const selectedCredential = ref<Account>();
+  const easyDeployExpanded = ref(false);
+
+  const lastDeploymentResult = ref<string>();
+  const lastDeploymentMsg = ref<string>();
 
   const filteredCredentials = computed(() => {
     return credentials.value.filter((c) => {
@@ -84,6 +90,71 @@ export const useHomeStore = defineStore("home", () => {
     return previousSelectedAccount === selectedCredential.value;
   }
 
+  const updateCredentialsAndConfigurationForDeployment = () => {
+    filterCredentialsToDeployment();
+    if (selectedDeployment.value?.configurationName) {
+      updateSelectedConfigurationByName(
+        selectedDeployment.value?.configurationName,
+      );
+    }
+  };
+
+  // TODO: We need to show an error when you have no credentials which can get to
+  // the deployment URL
+  // OR
+  // Should we filter deployment list to just include what you can access. Maybe disable others?
+
+  const filterCredentialsToDeployment = () => {
+    if (filteredCredentials.value.length === 0) {
+      // TODO: Show ERROR HERE!!!!
+      selectedCredential.value = undefined;
+    } else if (!selectedCredential.value) {
+      selectedCredential.value = filteredCredentials.value[0];
+    } else if (selectedCredential.value) {
+      let targetAccount: Account | undefined = filteredCredentials.value.find(
+        (account) => {
+          if (selectedCredential.value) {
+            return account.name === selectedCredential.value.name;
+          }
+          return false;
+        },
+      );
+      if (targetAccount) {
+        selectedCredential.value = targetAccount;
+      } else {
+        selectedCredential.value = filteredCredentials.value[0];
+      }
+    }
+  };
+
+  watch([selectedConfiguration, selectedCredential], () =>
+    updateParentViewSelectionState(),
+  );
+
+  const updateParentViewSelectionState = () => {
+    const hostConduit = useHostConduitService();
+    hostConduit.sendMsg({
+      kind: WebviewToHostMessageType.SAVE_SELECTION_STATE,
+      content: {
+        state: {
+          deploymentName: selectedDeployment.value?.saveName,
+          configurationName: selectedConfiguration.value?.configurationName,
+          credentialName: selectedCredential.value?.name,
+        },
+      },
+    });
+  };
+
+  watch(easyDeployExpanded, () => {
+    const hostConduit = useHostConduitService();
+    hostConduit.sendMsg({
+      kind: WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED,
+      content: {
+        expanded: easyDeployExpanded.value,
+      },
+    });
+  });
+
   return {
     publishInProgress,
     deployments,
@@ -92,11 +163,17 @@ export const useHomeStore = defineStore("home", () => {
     selectedDeployment,
     selectedConfiguration,
     selectedCredential,
+    easyDeployExpanded,
     filteredCredentials,
+    lastDeploymentResult,
+    lastDeploymentMsg,
     updateSelectedDeploymentByName,
     updateSelectedDeploymentByObject,
     updateSelectedConfigurationByName,
     updateSelectedConfigurationByObject,
     updateSelectedCredentialByName,
+    updateCredentialsAndConfigurationForDeployment,
+    updateParentViewSelectionState,
+    filterCredentialsToDeployment,
   };
 });

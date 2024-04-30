@@ -32,6 +32,19 @@ import { getSummaryStringFromError } from "../utils/errors";
 import { getNonce } from "../utils/getNonce";
 import { getUri } from "../utils/getUri";
 import { deployProject } from "./deployProgress";
+import { WebviewConduit } from "../utils/webviewConduit";
+
+import type { HomeViewState } from "../types/shared";
+import {
+  DeployMsg,
+  EditConfigurationMsg,
+  NavigateMsg,
+  SaveDeploymentButtonExpandedMsg,
+  SaveSelectionStatedMsg,
+  WebviewToHostMessage,
+  WebviewToHostMessageType,
+} from "../types/messages/webviewToHostMessages";
+import { HostToWebviewMessageType } from "../types/messages/hostToWebviewMessages";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
@@ -43,12 +56,6 @@ const contextIsSelectorExpanded = viewName + ".expanded";
 const lastSelectionState = viewName + ".lastSelectionState.v2";
 const lastExpansionState = viewName + ".lastExpansionState.v1";
 
-export type HomeViewState = {
-  deploymentName?: string;
-  configurationName?: string;
-  credentialName?: string;
-};
-
 export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
   private _deployments: (Deployment | PreDeployment)[] = [];
@@ -57,6 +64,7 @@ export class HomeViewProvider implements WebviewViewProvider {
   private root: WorkspaceFolder | undefined;
   private _webviewView?: WebviewView;
   private _extensionUri: Uri;
+  private _webviewConduit: WebviewConduit;
 
   constructor(
     private readonly _context: ExtensionContext,
@@ -67,6 +75,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       this.root = workspaceFolders[0];
     }
     this._extensionUri = this._context.extensionUri;
+    this._webviewConduit = new WebviewConduit();
 
     // if someone needs a refresh of any active params,
     // we are here to service that request!
@@ -80,131 +89,128 @@ export class HomeViewProvider implements WebviewViewProvider {
       useBus().trigger("activeCredentialChanged", this._getActiveCredential());
     });
   }
-
   /**
-   * Sets up an event listener to listen for messages passed from the webview this._context and
-   * executes code based on the message that is received.
+   * Dispatch messages passed from the webview to the handling code
    */
-  private async _setWebviewMessageListener() {
-    if (!this._webviewView) {
-      return;
+  private async _onConduitMessage(msg: WebviewToHostMessage) {
+    switch (msg.kind) {
+      case WebviewToHostMessageType.DEPLOY:
+        return await this._onDeployMsg(msg);
+      case WebviewToHostMessageType.INITIALIZING:
+        return await this._onInitializingMsg();
+      case WebviewToHostMessageType.NEW_DEPLOYMENT:
+        return await this._onNewDeploymentMsg();
+      case WebviewToHostMessageType.EDIT_CONFIGURATION:
+        return await this._onEditConfigurationMsg(msg);
+      case WebviewToHostMessageType.NEW_CONFIGURATION:
+        return await this._onNewConfigurationMsg();
+      case WebviewToHostMessageType.NAVIGATE:
+        return await this._onNavigateMsg(msg);
+      case WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED:
+        return await this._onSaveDeploymentButtonExpandedMsg(msg);
+      case WebviewToHostMessageType.SAVE_SELECTION_STATE:
+        return await this._onSaveSelectionState(msg);
+      default:
+        throw new Error(
+          `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
+        );
     }
-    this._webviewView.webview.onDidReceiveMessage(
-      async (message: any) => {
-        const command = message.command;
-        switch (command) {
-          case "deploy":
-            const payload = JSON.parse(message.payload);
-            try {
-              const api = await useApi();
-              const response = await api.deployments.publish(
-                payload.deployment,
-                payload.credential,
-                payload.configuration,
-              );
-              deployProject(response.data.localId, this._stream);
-            } catch (error: unknown) {
-              const summary = getSummaryStringFromError(
-                "homeView, deploy",
-                error,
-              );
-              window.showInformationMessage(`Failed to deploy . ${summary}`);
-              return;
-            }
-            return;
-          // Add more switch case statements here as more webview message commands
-          // are created within the webview this._context (i.e. inside media/main.js)
-          case "initializing":
-            // send back the data needed.
-            await this.refreshAll(true);
-            // On first run, we have no saved state. Trigger a save
-            // so we have the state, and can notify dependent views.
-            this._requestWebviewSaveSelection();
-            return;
-          case "newDeployment":
-            const preDeployment: PreDeployment = await commands.executeCommand(
-              "posit.publisher.deployments.createNewDeploymentFile",
-            );
-            if (preDeployment) {
-              this._updateDeploymentFileSelection(preDeployment, true);
-            }
-            break;
-          case "editConfiguration":
-            const config = this._configs.find(
-              (config) => config.configurationName === message.payload,
-            );
-            if (config) {
-              await commands.executeCommand(
-                "vscode.open",
-                Uri.file(config.configurationPath),
-              );
-            }
-            break;
-          case "newConfiguration":
-            const newConfig: Configuration = await commands.executeCommand(
-              "posit.publisher.configurations.add",
-              viewName,
-            );
-            if (newConfig) {
-              this._updateConfigFileSelection(newConfig, true);
-            }
-            break;
-          case "navigate":
-            env.openExternal(Uri.parse(message.payload));
-            break;
-          case "saveDeploymentButtonExpanded":
-            const expanded: boolean = JSON.parse(message.payload);
-            commands.executeCommand(
-              "setContext",
-              contextIsSelectorExpanded,
-              expanded,
-            );
-            this._saveExpansionState(expanded);
-            break;
-          case "saveSelectionState":
-            const state: HomeViewState = JSON.parse(message.payload);
-            await this._saveSelectionState(state);
-            break;
-        }
-      },
-      undefined,
-      this._disposables,
+  }
+
+  private async _onDeployMsg(msg: DeployMsg) {
+    try {
+      const api = await useApi();
+      const response = await api.deployments.publish(
+        msg.content.deploymentName,
+        msg.content.credentialName,
+        msg.content.configurationName,
+      );
+      deployProject(response.data.localId, this._stream);
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("homeView, deploy", error);
+      window.showInformationMessage(`Failed to deploy . ${summary}`);
+    }
+  }
+
+  private async _onInitializingMsg() {
+    // send back the data needed.
+    await this.refreshAll(true);
+    // On first run, we have no saved state. Trigger a save
+    // so we have the state, and can notify dependent views.
+    this._requestWebviewSaveSelection();
+  }
+
+  private async _onNewDeploymentMsg() {
+    const preDeployment: PreDeployment = await commands.executeCommand(
+      "posit.publisher.deployments.createNewDeploymentFile",
     );
+    if (preDeployment) {
+      this._updateDeploymentFileSelection(preDeployment, true);
+    }
+  }
+
+  private async _onEditConfigurationMsg(msg: EditConfigurationMsg) {
+    const config = this._configs.find(
+      (config) => config.configurationName === msg.content.configurationName,
+    );
+    if (config) {
+      await commands.executeCommand(
+        "vscode.open",
+        Uri.file(config.configurationPath),
+      );
+    }
+  }
+
+  private async _onNewConfigurationMsg() {
+    const newConfig: Configuration = await commands.executeCommand(
+      "posit.publisher.configurations.add",
+      viewName,
+    );
+    if (newConfig) {
+      this._updateConfigFileSelection(newConfig, true);
+    }
+  }
+
+  private async _onNavigateMsg(msg: NavigateMsg) {
+    await env.openExternal(Uri.parse(msg.content.uriPath));
+  }
+
+  private async _onSaveDeploymentButtonExpandedMsg(
+    msg: SaveDeploymentButtonExpandedMsg,
+  ) {
+    await commands.executeCommand(
+      "setContext",
+      contextIsSelectorExpanded,
+      msg.content.expanded,
+    );
+    await this._saveExpansionState(msg.content.expanded);
+  }
+
+  private async _onSaveSelectionState(msg: SaveSelectionStatedMsg) {
+    await this._saveSelectionState(msg.content.state);
   }
 
   private _onPublishStart() {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "publish_start",
-      });
-    } else {
-      window.showErrorMessage(
-        "_onPublishStart: oops! No _webViewView defined!",
-      );
-      console.log("_onPublishStart: oops! No _webViewView defined!");
-    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.PUBLISH_START,
+    });
   }
 
-  private _onPublishSuccess(msg: EventStreamMessage) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "publish_finish_success",
-        payload: msg,
-      });
-    } else {
-      console.log("_onPublishSuccess: oops! No _webViewView defined!");
-    }
+  private _onPublishSuccess() {
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS,
+    });
   }
 
   private _onPublishFailure(msg: EventStreamMessage) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "publish_finish_failure",
-        payload: msg,
-      });
-    } else {
-      console.log("_onPublishFailure: oops! No _webViewView defined!");
-    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.PUBLISH_FINISH_FAILURE,
+      content: {
+        data: {
+          message: msg.data.message,
+        },
+      },
+    });
   }
 
   private async _refreshDeploymentData() {
@@ -268,91 +274,77 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private _updateWebViewViewDeployments(selectedDeploymentName?: string) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "refresh_deployment_data",
-        payload: JSON.stringify({
-          deployments: this._deployments,
-          selectedDeploymentName,
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA,
+      content: {
+        deployments: this._deployments,
+        selectedDeploymentName,
+      },
+    });
   }
 
   private _updateWebViewViewConfigurations(selectedConfigurationName?: string) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "refresh_config_data",
-        payload: JSON.stringify({
-          configurations: this._configs,
-          selectedConfigurationName,
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.REFRESH_CONFIG_DATA,
+      content: {
+        configurations: this._configs,
+        selectedConfigurationName,
+      },
+    });
   }
 
   private _updateWebViewViewCredentials(selectedCredentialName?: string) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "refresh_credential_data",
-        payload: JSON.stringify({
-          credentials: this._credentials,
-          selectedCredentialName,
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
+      content: {
+        credentials: this._credentials,
+        selectedCredentialName,
+      },
+    });
   }
 
   private _updateDeploymentFileSelection(
     preDeployment: PreDeployment,
     saveSelection = false,
   ) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "update_deployment_selection",
-        payload: JSON.stringify({
-          preDeployment,
-          saveSelection,
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION,
+      content: {
+        preDeployment,
+        saveSelection,
+      },
+    });
   }
 
   private _updateConfigFileSelection(
     config: Configuration,
     saveSelection = false,
   ) {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "update_config_selection",
-        payload: JSON.stringify({
-          config,
-          saveSelection,
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.UPDATE_CONFIG_SELECTION,
+      content: {
+        config,
+        saveSelection,
+      },
+    });
   }
 
   private _requestWebviewSaveSelection() {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "save_selection",
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.SAVE_SELECTION,
+    });
   }
 
   private _updateWebViewViewExpansionState() {
-    if (this._webviewView) {
-      this._webviewView.webview.postMessage({
-        command: "update_expansion_from_storage",
-        payload: JSON.stringify({
-          expansionState: this._context.workspaceState.get<boolean>(
-            lastExpansionState,
-            false,
-          ),
-        }),
-      });
-    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.UPDATE_EXPANSION_FROM_STORAGE,
+      content: {
+        expansionState: this._context.workspaceState.get<boolean>(
+          lastExpansionState,
+          false,
+        ),
+      },
+    });
   }
 
   private _getSelectionState(): HomeViewState {
@@ -412,6 +404,8 @@ export class HomeViewProvider implements WebviewViewProvider {
     _token: CancellationToken,
   ) {
     this._webviewView = webviewView;
+    this._webviewConduit.init(this._webviewView.webview);
+
     // Allow scripts in the webview
     webviewView.webview.options = {
       // Enable JavaScript in the webview
@@ -430,7 +424,9 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     // Sets up an event listener to listen for messages passed from the webview view this._context
     // and executes code based on the message that is recieved
-    this._setWebviewMessageListener();
+    this._disposables.push(
+      this._webviewConduit.onMsg(this._onConduitMessage.bind(this)),
+    );
   }
   /**
    * Defines and returns the HTML that should be rendered within the webview panel.
@@ -553,8 +549,8 @@ export class HomeViewProvider implements WebviewViewProvider {
     this._stream.register("publish/start", () => {
       this._onPublishStart();
     });
-    this._stream.register("publish/success", (msg: EventStreamMessage) => {
-      this._onPublishSuccess(msg);
+    this._stream.register("publish/success", () => {
+      this._onPublishSuccess();
     });
     this._stream.register("publish/failure", (msg: EventStreamMessage) => {
       this._onPublishFailure(msg);
