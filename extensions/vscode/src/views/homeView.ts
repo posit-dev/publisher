@@ -45,6 +45,7 @@ import {
   WebviewToHostMessageType,
 } from "../types/messages/webviewToHostMessages";
 import { HostToWebviewMessageType } from "../types/messages/hostToWebviewMessages";
+import { splitFilesOnInclusion } from "../utils/files";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
@@ -532,6 +533,23 @@ export class HomeViewProvider implements WebviewViewProvider {
     useBus().trigger("activeConfigChanged", this._getActiveConfig());
   };
 
+  public sendRefreshedFilesLists = async () => {
+    const api = await useApi();
+    const activeConfig = this._getActiveConfig();
+    if (activeConfig) {
+      const response = await api.files.getByConfiguration(
+        activeConfig.configurationName,
+      );
+
+      this._webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.REFRESH_FILES_LISTS,
+        content: {
+          ...splitFilesOnInclusion(response.data),
+        },
+      });
+    }
+  };
+
   /**
    * Cleans up and disposes of webview resources when view is disposed
    */
@@ -585,6 +603,14 @@ export class HomeViewProvider implements WebviewViewProvider {
       deploymentFileWatcher.onDidDelete(this.refreshDeployments);
       deploymentFileWatcher.onDidChange(this.refreshDeployments);
       this._context.subscriptions.push(deploymentFileWatcher);
+
+      const allFileWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, "**"),
+      );
+      allFileWatcher.onDidCreate(this.sendRefreshedFilesLists);
+      allFileWatcher.onDidDelete(this.sendRefreshedFilesLists);
+      allFileWatcher.onDidChange(this.sendRefreshedFilesLists);
+      this._context.subscriptions.push(allFileWatcher);
     }
   }
 }
