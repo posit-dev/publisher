@@ -16,10 +16,10 @@ import {
   useApi,
   isConfigurationError,
   Configuration,
-} from "../api";
-import { getSummaryStringFromError } from "../utils/errors";
-import { deployProject } from "../views/deployProgress";
-import { EventStream } from "../events";
+} from "src/api";
+import { getSummaryStringFromError } from "src/utils/errors";
+import { deployProject } from "src/views/deployProgress";
+import { EventStream } from "src/events";
 
 export async function publishDeployment(
   deployment: PreDeployment | Deployment,

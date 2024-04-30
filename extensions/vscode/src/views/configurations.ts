@@ -17,18 +17,18 @@ import {
   workspace,
 } from "vscode";
 
-import { useApi } from "../api";
 import {
+  useApi,
   Configuration,
   ConfigurationError,
   isConfigurationError,
-} from "../api/types/configurations";
+} from "src/api";
 
-import { confirmDelete, confirmReplace } from "../dialogs";
-import { getSummaryStringFromError } from "../utils/errors";
-import { ensureSuffix, fileExists, isValidFilename } from "../utils/files";
-import { untitledConfigurationName } from "../utils/names";
-import { newConfig } from "../multiStepInputs/newConfig";
+import { confirmDelete, confirmReplace } from "src/dialogs";
+import { getSummaryStringFromError } from "src/utils/errors";
+import { ensureSuffix, fileExists, isValidFilename } from "src/utils/files";
+import { untitledConfigurationName } from "src/utils/names";
+import { newConfig } from "src/multiStepInputs/newConfig";
 
 const viewName = "posit.publisher.configurations";
 const refreshCommand = viewName + ".refresh";

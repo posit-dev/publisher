@@ -4,11 +4,11 @@ import * as net from "net";
 import * as retry from "retry";
 
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
-import { HOST } from ".";
-
-import * as commands from "./commands";
-import * as workspaces from "./workspaces";
 import { OutputChannel, Disposable, window, ExtensionContext } from "vscode";
+
+import { HOST } from "src";
+import * as commands from "src/commands";
+import * as workspaces from "src/workspaces";
 
 export class Server implements Disposable {
   readonly port: number;

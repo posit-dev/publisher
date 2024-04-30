@@ -1,16 +1,5 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import * as ports from "./ports";
-import { useApi } from "./api";
-import { Service } from "./services";
-import { ProjectTreeDataProvider } from "./views/project";
-import { DeploymentsTreeDataProvider } from "./views/deployments";
-import { ConfigurationsTreeDataProvider } from "./views/configurations";
-import { CredentialsTreeDataProvider } from "./views/credentials";
-import { HelpAndFeedbackTreeDataProvider } from "./views/helpAndFeedback";
-import { LogsTreeDataProvider } from "./views/logs";
-import { EventStream } from "./events";
-import { HomeViewProvider } from "./views/homeView";
 import {
   ExtensionContext,
   FileType,
@@ -21,8 +10,20 @@ import {
   window,
   workspace,
 } from "vscode";
-import { initWorkspaceWithFixedNames } from "./multiStepInputs/initWorkspace";
-import { getSummaryStringFromError } from "./utils/errors";
+
+import * as ports from "src/ports";
+import { useApi } from "src/api";
+import { Service } from "src/services";
+import { ProjectTreeDataProvider } from "src/views/project";
+import { DeploymentsTreeDataProvider } from "src/views/deployments";
+import { ConfigurationsTreeDataProvider } from "src/views/configurations";
+import { CredentialsTreeDataProvider } from "src/views/credentials";
+import { HelpAndFeedbackTreeDataProvider } from "src/views/helpAndFeedback";
+import { LogsTreeDataProvider } from "src/views/logs";
+import { EventStream } from "src/events";
+import { HomeViewProvider } from "src/views/homeView";
+import { initWorkspaceWithFixedNames } from "src/multiStepInputs/initWorkspace";
+import { getSummaryStringFromError } from "src/utils/errors";
 
 const STATE_CONTEXT = "posit.publish.state";
 const MISSING_CONTEXT = "posit.publish.missing";

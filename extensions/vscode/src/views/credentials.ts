@@ -11,8 +11,8 @@ import {
   window,
 } from "vscode";
 
-import { Account, useApi } from "../api";
-import { getSummaryStringFromError } from "../utils/errors";
+import { Account, useApi } from "src/api";
+import { getSummaryStringFromError } from "src/utils/errors";
 
 const viewName = "posit.publisher.credentials";
 const refreshCommand = viewName + ".refresh";

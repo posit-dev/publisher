@@ -25,16 +25,16 @@ import {
   isDeploymentError,
   isPreDeployment,
   useApi,
-} from "../api";
+} from "src/api";
 
-import { confirmForget } from "../dialogs";
-import { EventStream } from "../events";
-import { publishDeployment } from "../multiStepInputs/deployProject";
-import { newDeployment } from "../multiStepInputs/newDeployment";
-import { formatDateString } from "../utils/date";
-import { getSummaryStringFromError } from "../utils/errors";
-import { ensureSuffix } from "../utils/files";
-import { deploymentNameValidator } from "../utils/names";
+import { confirmForget } from "src/dialogs";
+import { EventStream } from "src/events";
+import { publishDeployment } from "src/multiStepInputs/deployProject";
+import { newDeployment } from "src/multiStepInputs/newDeployment";
+import { formatDateString } from "src/utils/date";
+import { getSummaryStringFromError } from "src/utils/errors";
+import { ensureSuffix } from "src/utils/files";
+import { deploymentNameValidator } from "src/utils/names";
 
 const viewName = "posit.publisher.deployments";
 const refreshCommand = viewName + ".refresh";

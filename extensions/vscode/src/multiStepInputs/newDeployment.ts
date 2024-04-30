@@ -7,20 +7,20 @@ import {
   PreDeployment,
   isConfigurationError,
   useApi,
-} from "../api";
-import { EventStream } from "../events";
-import { getSummaryStringFromError } from "../utils/errors";
+} from "src/api";
+import { EventStream } from "src/events";
+import { getSummaryStringFromError } from "src/utils/errors";
 import {
   deploymentNameValidator,
   untitledDeploymentName,
-} from "../utils/names";
-import { deployProject } from "../views/deployProgress";
+} from "src/utils/names";
+import { deployProject } from "src/views/deployProgress";
 import {
   MultiStepInput,
   MultiStepState,
   isQuickPickItem,
   assignStep,
-} from "./multiStepHelper";
+} from "src/multiStepInputs/multiStepHelper";
 
 export async function newDeployment(
   title: string,

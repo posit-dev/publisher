@@ -3,8 +3,9 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 
-import { HOST } from ".";
 import { ExtensionContext, workspace, window } from "vscode";
+
+import { HOST } from "src";
 
 const CONFIG_KEY = "publisher.executable.path";
 
