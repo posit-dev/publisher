@@ -11,6 +11,7 @@
       <div class="separator-line" />
     </div>
     <vscode-button
+      :title="dropdownLabel"
       :aria-label="dropdownLabel"
       class="dropdown-button"
       @click="emit('dropdownClick')"

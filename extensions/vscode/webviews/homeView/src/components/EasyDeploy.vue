@@ -27,6 +27,7 @@
           <vscode-button
             appearance="icon"
             class="action-icons"
+            title="Add Deployment"
             aria-label="Add Deployment"
           >
             <span
@@ -51,6 +52,7 @@
               v-if="home.selectedConfiguration"
               appearance="icon"
               class="action-icons"
+              title="Edit Selected Configuration"
               aria-label="Edit Selected Configuration"
             >
               <span
@@ -61,6 +63,7 @@
             <vscode-button
               appearance="icon"
               class="action-icons"
+              title="Add Configuration"
               aria-label="Add Configuration"
             >
               <span
