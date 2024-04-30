@@ -1,19 +1,5 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-// typesafe creation of a message
-// const a3: ConduitMessage = {
-//   kind: HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA,
-//   content: {
-//     deployments: activeDeployments,
-//     selectedDeploymentName: "Untitled-1"
-//   },
-// };
-
-// // working narrowing
-// if ((a3.kind = HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA)) {
-//   const x = a3.content.selectedDeploymentName;
-// }
-
 import { Account, Configuration, Deployment, PreDeployment } from "../../api";
 
 export enum HostToWebviewMessageType {

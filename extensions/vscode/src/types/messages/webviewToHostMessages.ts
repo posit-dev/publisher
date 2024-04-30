@@ -1,20 +1,5 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-// typesafe creation of a message
-// const a3: ConduitMessage = {
-//   kind: WebviewToHostMessageType.DEPLOY,
-//   content: {
-//     deploymentName: "abc".
-//     credentialName: "xyz",
-//     configurationName: "untitled-1",
-//   },
-// };
-
-// // working narrowing
-// if ((a3.kind = HostToWebviewMessageType.DEPLOY)) {
-//   const name = a3.content.configurationName;
-// }
-
 import { HomeViewState } from "../shared";
 
 export enum WebviewToHostMessageType {

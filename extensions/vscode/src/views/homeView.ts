@@ -150,10 +150,8 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _onEditConfigurationMsg(msg: EditConfigurationMsg) {
-    const config = this._configs.find((config) =>
-      msg.content
-        ? config.configurationName === msg.content.configurationName
-        : false,
+    const config = this._configs.find(
+      (config) => config.configurationName === msg.content.configurationName,
     );
     if (config) {
       await commands.executeCommand(
