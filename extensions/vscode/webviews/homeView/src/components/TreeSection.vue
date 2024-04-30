@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import ActionToolbar, { ActionButton } from "./ActionToolbar.vue";
+import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
 
 const expanded = defineModel("expanded", { required: false, default: false });
 

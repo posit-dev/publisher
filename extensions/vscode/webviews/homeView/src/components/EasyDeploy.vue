@@ -138,18 +138,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onBeforeUnmount, ref } from "vue";
+import { computed } from "vue";
 
 import { formatDateString } from "../../../../../../web/src/utils/date";
 import { isPreDeployment } from "../../../../src/api/types/deployments";
 import { Account } from "../../../../src/api/types/accounts";
 import { Configuration } from "../../../../src/api/types/configurations";
-import { useHomeStore } from "../stores/home";
-
-import ButtonDropdown from "./ButtonDropdown.vue";
-import PSelect from "./PSelect.vue";
-import { useHostConduitService } from "../HostConduitService";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
+
+import { useHomeStore } from "src/stores/home";
+import ButtonDropdown from "src/components/ButtonDropdown.vue";
+import PSelect from "src/components/PSelect.vue";
+
+import { useHostConduitService } from "src/HostConduitService";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();

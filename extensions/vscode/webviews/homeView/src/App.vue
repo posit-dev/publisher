@@ -9,11 +9,11 @@
 </template>
 
 <script setup lang="ts">
-import EasyDeploy from "./components/EasyDeploy.vue";
-import ProjectFiles from "./components/views/ProjectFiles.vue";
-import PythonPackages from "./components/views/PythonPackages.vue";
+import EasyDeploy from "src/components/EasyDeploy.vue";
+import ProjectFiles from "src/components/views/ProjectFiles.vue";
+import PythonPackages from "src/components/views/PythonPackages.vue";
 
-import { useHostConduitService } from "./HostConduitService";
+import { useHostConduitService } from "src/HostConduitService";
 
 useHostConduitService();
 </script>

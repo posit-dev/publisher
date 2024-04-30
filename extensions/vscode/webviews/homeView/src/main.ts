@@ -2,7 +2,6 @@
 
 import { createApp } from "vue";
 import { createPinia } from "pinia";
-import App from "./App.vue";
 import {
   provideVSCodeDesignSystem,
   vsCodeButton,
@@ -12,7 +11,9 @@ import {
   vsCodeDivider,
 } from "@vscode/webview-ui-toolkit";
 
-import "./style.css";
+import App from "src/App.vue";
+
+import "src/style.css";
 
 // In order to use the Webview UI Toolkit web components they
 // must be registered with the browser (i.e. webview) using the
