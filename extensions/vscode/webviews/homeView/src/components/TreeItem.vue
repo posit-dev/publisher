@@ -8,6 +8,7 @@
   >
     <div
       class="tree-item-container"
+      :title="tooltip"
       v-on="{
         click: $slots.default ? toggleExpanded : undefined,
       }"
@@ -55,6 +56,7 @@ const expanded = defineModel("expanded", { required: false, default: false });
 interface Props {
   title: string;
   description?: string;
+  tooltip?: string;
   alignIconWithTwisty?: boolean;
   codicon?: string;
   actions?: ActionButton[];
