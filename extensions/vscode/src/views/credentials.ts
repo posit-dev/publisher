@@ -17,10 +17,12 @@ import { getSummaryStringFromError } from "src/utils/errors";
 const viewName = "posit.publisher.credentials";
 const refreshCommand = viewName + ".refresh";
 const contextIsEmpty = viewName + ".isEmpty";
+const addCommand = viewName + ".add";
 
 type CredentialEventEmitter = EventEmitter<
   CredentialsTreeItem | undefined | void
 >;
+
 type CredentialEvent = Event<CredentialsTreeItem | undefined | void>;
 
 export class CredentialsTreeDataProvider
@@ -69,10 +71,8 @@ export class CredentialsTreeDataProvider
   public register() {
     this._context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this }),
-    );
-
-    this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
+      commands.registerCommand(addCommand, this.add),
     );
   }
 
@@ -83,7 +83,47 @@ export class CredentialsTreeDataProvider
       isEmpty ? "empty" : "notEmpty",
     );
   }
+
+  public add = async () => {
+    const name = await window.showInputBox({
+      prompt: "Enter the Server Name:",
+      ignoreFocusOut: true,
+    });
+
+    if (name === undefined) {
+      return;
+    }
+
+    const url = await window.showInputBox({
+      prompt: "Enter the Server URL:",
+      ignoreFocusOut: true,
+    });
+
+    if (url === undefined) {
+      return;
+    }
+
+    const apiKey = await window.showInputBox({
+      prompt: "Enter the API Key:",
+      ignoreFocusOut: true,
+    });
+
+    if (apiKey === undefined) {
+      return;
+    }
+
+    const api = await useApi();
+    await api.credentials.createOrUpdate({
+      name,
+      url,
+      apiKey,
+    });
+
+    // FIXME - this isn't firing correctly
+    this.refresh();
+  };
 }
+
 export class CredentialsTreeItem extends TreeItem {
   contextValue = "posit.publisher.credentials.tree.item";
 

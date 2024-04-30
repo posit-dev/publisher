@@ -80,6 +80,14 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
+	// GET /api/credentials
+	r.Handle(ToPath("credentials"), GetCredentialsHandlerFunc(log)).
+		Methods(http.MethodGet)
+
+	// POST /api/credentials
+	r.Handle(ToPath("credentials"), PostCredentialFuncHandler(log)).
+		Methods(http.MethodPost)
+
 	// GET /api/configurations
 	r.Handle(ToPath("configurations"), GetConfigurationsHandlerFunc(base, log)).
 		Methods(http.MethodGet)

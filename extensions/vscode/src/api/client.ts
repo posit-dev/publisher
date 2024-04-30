@@ -3,6 +3,7 @@
 import axios from "axios";
 
 import { Accounts } from "./resources/Accounts";
+import { Credentials } from "./resources/Credentials";
 import { Deployments } from "./resources/Deployments";
 import { Configurations } from "./resources/Configurations";
 import { Files } from "./resources/Files";
@@ -13,6 +14,7 @@ class PublishingClientApi {
 
   accounts: Accounts;
   configurations: Configurations;
+  credentials: Credentials;
   deployments: Deployments;
   files: Files;
   requirements: Requirements;
@@ -26,6 +28,7 @@ class PublishingClientApi {
 
     this.accounts = new Accounts(this.client);
     this.configurations = new Configurations(this.client);
+    this.credentials = new Credentials(this.client);
     this.deployments = new Deployments(this.client);
     this.files = new Files(this.client);
     this.requirements = new Requirements(this.client);
