@@ -27,7 +27,13 @@ const viewName = "posit.publisher.pythonPackages";
 const editCommand = viewName + ".edit";
 const refreshCommand = viewName + ".refresh";
 const scanCommand = viewName + ".scan";
-const contextIsEmpty = viewName + ".isEmpty";
+const contextKey = viewName + ".context";
+
+enum ContextValue {
+  ok = "ok",
+  noRequirements = "noRequirements",
+  noPython = "noPython",
+}
 
 type RequirementsEventEmitter = EventEmitter<
   RequirementsTreeItem | undefined | void
@@ -63,7 +69,7 @@ export class RequirementsTreeDataProvider
         newRequirementsFile !== this.activeRequirementsFile ||
         newConfigName !== this.activeConfigName
       ) {
-        this.activeRequirementsFile = newRequirementsFile;
+        this.activeRequirementsFile = newRequirementsFile || "requirements.txt";
         this.activeConfigName = newConfigName;
         this._onDidChangeTreeData.fire();
 
@@ -96,39 +102,40 @@ export class RequirementsTreeDataProvider
       );
       if (this.activeConfigName === undefined) {
         // We shouldn't get here if there's no configuration selected.
-        await this.setContextIsEmpty(true);
+        await this.setContext(ContextValue.noRequirements);
         return [];
       }
       const api = await useApi();
       const response = await api.requirements.getByConfiguration(
         this.activeConfigName,
       );
-      await this.setContextIsEmpty(false);
+      await this.setContext(ContextValue.ok);
       return response.data.requirements.map(
         (line) => new RequirementsTreeItem(line),
       );
     } catch (error: unknown) {
-      if (isAxiosError(error) && error.response?.status === 404) {
-        // No requirements file; show the welcome view.
-        await this.setContextIsEmpty(true);
-        return [];
-      } else {
-        const summary = getSummaryStringFromError(
-          "requirements::getChildren",
-          error,
-        );
-        window.showInformationMessage(summary);
-        return [];
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          // No requirements file; show the welcome view.
+          await this.setContext(ContextValue.noRequirements);
+          return [];
+        } else if (error.response?.status === 409) {
+          // Python is not present in the configuration file
+          await this.setContext(ContextValue.noPython);
+          return [];
+        }
       }
+      const summary = getSummaryStringFromError(
+        "requirements::getChildren",
+        error,
+      );
+      window.showInformationMessage(summary);
+      return [];
     }
   }
 
-  private async setContextIsEmpty(isEmpty: boolean): Promise<void> {
-    await commands.executeCommand(
-      "setContext",
-      contextIsEmpty,
-      isEmpty ? "empty" : "notEmpty",
-    );
+  private async setContext(value: ContextValue): Promise<void> {
+    await commands.executeCommand("setContext", contextKey, value);
   }
 
   public register() {
