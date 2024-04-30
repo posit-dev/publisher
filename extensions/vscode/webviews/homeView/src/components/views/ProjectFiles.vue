@@ -103,8 +103,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
-import TreeItem from "../TreeItem.vue";
-import TreeSection from "../TreeSection.vue";
+import TreeItem from "src/components/TreeItem.vue";
+import TreeSection from "src/components/TreeSection.vue";
 
 const includedExpanded = ref(true);
 const excludedExpanded = ref(true);
