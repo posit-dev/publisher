@@ -15,6 +15,7 @@ import {
   Deployment,
   useApi,
   isConfigurationError,
+  Configuration,
 } from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import { deployProject } from "../views/deployProgress";
@@ -31,6 +32,8 @@ export async function publishDeployment(
   const api = await useApi();
 
   let accountListItems: QuickPickItem[] = [];
+  let configurations: Configuration[] = [];
+  let automaticConfigurationName: string | undefined = undefined;
   let configFileListItems: QuickPickItem[] = [];
 
   const getAccounts = new Promise<void>(async (resolve, reject) => {
@@ -74,9 +77,14 @@ export async function publishDeployment(
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.configurations.getAll();
-      const configurations = response.data;
+      // save off our non-error configurations
+      response.data.forEach((config) => {
+        if (!isConfigurationError(config)) {
+          configurations.push(config);
+        }
+      });
+      // create our list items
       configFileListItems = [];
-
       configurations.forEach((configuration) => {
         if (!isConfigurationError(configuration)) {
           configFileListItems.push({
@@ -162,10 +170,23 @@ export async function publishDeployment(
     }
     // We are not always guaranteed that we have a configuration name in a pre-deployment file
     // this could occur until the API is updated to store one when creating, but also can occur
-    // if the user has edited the deployment file.
-    if (configFileListItems.length === 1 || deployment.configurationName) {
+    // if the user has edited the deployment file. We could also be missing the config file that
+    // was last deployed due to a rename or deletion.
+
+    if (deployment.configurationName) {
+      if (
+        configurations.find(
+          (config) => config.configurationName === deployment.configurationName,
+        )
+      ) {
+        automaticConfigurationName = deployment.configurationName;
+        totalSteps -= 1;
+      }
+    } else if (configFileListItems.length === 1) {
+      automaticConfigurationName = configFileListItems[0].label;
       totalSteps -= 1;
     }
+
     state.totalSteps = totalSteps;
 
     await MultiStepInput.run((input) => pickCredentials(input, state));
@@ -213,7 +234,7 @@ export async function publishDeployment(
     state: MultiStepState,
   ) {
     // skip if we only have one choice or an already decided one
-    if (configFileListItems.length > 1 || !deployment.configurationName) {
+    if (!automaticConfigurationName) {
       const thisStepNumber = assignStep(state, "inputConfigFileSelection");
       const pick = await input.showQuickPick({
         title: state.title,
@@ -232,11 +253,7 @@ export async function publishDeployment(
       state.data.configFile = pick;
       state.lastStep = thisStepNumber;
     } else {
-      if (deployment.configurationName) {
-        state.data.configFile = deployment.configurationName;
-      } else {
-        state.data.configFile = configFileListItems[0];
-      }
+      state.data.configFile = automaticConfigurationName;
     }
     // last step, we don't return anything
   }
