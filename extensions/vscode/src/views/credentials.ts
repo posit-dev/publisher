@@ -119,6 +119,7 @@ export class CredentialsTreeItem extends TreeItem {
     super(account.name);
     this.tooltip = this.getTooltip(account);
     this.iconPath = new ThemeIcon("key");
+    this.description = `${account.url}`;
   }
 
   getTooltip(account: Account): string {
@@ -126,11 +127,8 @@ export class CredentialsTreeItem extends TreeItem {
 
     if (account.authType === "token-key") {
       result += `Account: ${account.accountName}\n`;
-    } else if (account.authType === "api-key") {
-      result += "Account: Using API Key\n";
     }
 
-    result += `URL: ${account.url}\n`;
     result += `Managed by: ${account.source}`;
 
     return result;
@@ -140,7 +138,9 @@ export class CredentialsTreeItem extends TreeItem {
 const getServerNameFromInputBox = async (): Promise<string | undefined> => {
   while (true) {
     let name = await window.showInputBox({
-      title: "Enter the Server Name (1/3)",
+      title: "Enter the Credential Name (1/3)",
+      placeHolder: "Posit Connect",
+      prompt: "Choose a unique nickname for your credential.",
       ignoreFocusOut: true,
     });
     if (name === undefined) {
@@ -149,7 +149,9 @@ const getServerNameFromInputBox = async (): Promise<string | undefined> => {
     }
     name = name.trim();
     if (name === "") {
-      window.showErrorMessage(`Server name is invalid. Found '${name}'`);
+      window.showErrorMessage(
+        `The provided credential name is invalid. Please try again.`,
+      );
     } else {
       return name;
     }
@@ -160,6 +162,9 @@ const getServerUrlFromInputBox = async (): Promise<string | undefined> => {
   while (true) {
     let url = await window.showInputBox({
       title: "Enter the Server URL (2/3)",
+      placeHolder: "https://connect.example.com/",
+      prompt:
+        "The server url is the web address where you access and interact with your deployed content, typically this is the address you access in your web browser.",
       ignoreFocusOut: true,
     });
     if (url === undefined) {
@@ -169,7 +174,9 @@ const getServerUrlFromInputBox = async (): Promise<string | undefined> => {
 
     url = url.trim();
     if (url === "") {
-      window.showErrorMessage(`Server URL not provided.`);
+      window.showErrorMessage(
+        `The provided server URL invalid. Please try again.`,
+      );
     } else {
       try {
         new URL(url);
@@ -177,7 +184,10 @@ const getServerUrlFromInputBox = async (): Promise<string | undefined> => {
         if (!(e instanceof TypeError)) {
           throw e;
         }
-        window.showErrorMessage(`Server URL format is invalid. Found '${url}'`);
+        window.showErrorMessage(
+          `The provided server URL invalid. Found '${url}'. Please try again.`,
+        );
+        continue;
       }
       return url;
     }
@@ -188,8 +198,13 @@ const getApiKeyFromInputBox = async (): Promise<string | undefined> => {
   while (true) {
     let apiKey = await window.showInputBox({
       title: "Enter the API Key (3/3)",
+      password: true,
+      placeHolder: "ABcdEfgHIJKlMNopqRstuvWXyz012345",
+      prompt:
+        "An API key is a unique 32 character code that identifies and grants access to your server.",
       ignoreFocusOut: true,
     });
+
     if (apiKey === undefined) {
       // user pressed escape
       return undefined;
@@ -197,10 +212,10 @@ const getApiKeyFromInputBox = async (): Promise<string | undefined> => {
 
     apiKey = apiKey.trim();
     if (apiKey === "") {
-      window.showErrorMessage("API Key not provided.");
+      window.showErrorMessage("An API key was not provided. Please try again.");
     } else if (apiKey.length !== 32) {
       window.showErrorMessage(
-        `API Key format is invalid. Found '${apiKey}. Expected format 32 character string.`,
+        `The provided information is invalid. Expected a unique 32 character code. Please try again.`,
       );
     } else {
       return apiKey;
