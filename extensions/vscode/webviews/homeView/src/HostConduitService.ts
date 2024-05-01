@@ -12,6 +12,7 @@ import {
   UpdateConfigSelectionMsg,
   UpdateDeploymentSelectionMsg,
   UpdateExpansionFromStorageMsg,
+  UpdatePythonPackages,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
   WebviewToHostMessage,
@@ -68,6 +69,8 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onUpdateConfigSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
       return onSaveSelectionMsg();
+    case HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES:
+      return onUpdatePythonPackages(msg);
     default:
       console.log(`unexpected command: ${JSON.stringify(msg)}`);
   }
@@ -150,4 +153,12 @@ const onUpdateConfigSelectionMsg = (msg: UpdateConfigSelectionMsg) => {
 const onSaveSelectionMsg = () => {
   const home = useHomeStore();
   home.updateParentViewSelectionState();
+};
+const onUpdatePythonPackages = (msg: UpdatePythonPackages) => {
+  const home = useHomeStore();
+  home.updatePythonPackages({
+    packages: msg.content.packages,
+    file: msg.content.file,
+    manager: msg.content.manager,
+  });
 };

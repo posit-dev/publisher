@@ -14,6 +14,7 @@ export enum HostToWebviewMessageType {
   UPDATE_DEPLOYMENT_SELECTION = "updateDeploymentSelection",
   UPDATE_CONFIG_SELECTION = "updateConfigSelection",
   SAVE_SELECTION = "saveSelection",
+  UPDATE_PYTHON_PACKAGES = "updatePythonPackages",
 }
 
 export type AnyHostToWebviewMessage<
@@ -36,7 +37,8 @@ export type HostToWebviewMessage =
   | PublishFinishFailureMsg
   | UpdateDeploymentSelectionMsg
   | UpdateConfigSelectionMsg
-  | SaveSelectionMsg;
+  | SaveSelectionMsg
+  | UpdatePythonPackages;
 
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
@@ -49,7 +51,8 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_FAILURE ||
     msg.kind === HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION ||
     msg.kind === HostToWebviewMessageType.UPDATE_CONFIG_SELECTION ||
-    msg.kind === HostToWebviewMessageType.SAVE_SELECTION
+    msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
+    msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES
   );
 }
 
@@ -108,3 +111,12 @@ export type UpdateConfigSelectionMsg = AnyHostToWebviewMessage<
 >;
 export type SaveSelectionMsg =
   AnyHostToWebviewMessage<HostToWebviewMessageType.SAVE_SELECTION>;
+
+export type UpdatePythonPackages = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES,
+  {
+    file?: string;
+    manager?: string;
+    packages?: string[];
+  }
+>;

@@ -3,20 +3,26 @@
     title="Python Packages"
     :actions="[
       {
-        label: 'Edit Requirements File',
+        label: 'Edit Package Requirements File',
         codicon: 'codicon-edit',
-        fn: () => {},
+        fn: onEditRequirementsFile,
       },
       {
-        label: 'Refresh Requirements',
+        label: 'Refresh Packages',
         codicon: 'codicon-refresh',
-        fn: () => {},
+        fn: onRefresh,
       },
-      { label: 'Scan Requirements', codicon: 'codicon-eye', fn: () => {} },
+      {
+        label: 'Scan For Package Requirements',
+        codicon: 'codicon-eye',
+        fn: onScanForPackageRequirements,
+      },
     ]"
   >
     <TreeItem
-      title="fastapi===3.6"
+      v-for="pkg in home.pythonPackages"
+      :key="pkg"
+      :title="pkg"
       codicon="codicon-package"
       align-icon-with-twisty
     />
@@ -26,4 +32,36 @@
 <script setup lang="ts">
 import TreeItem from "src/components/TreeItem.vue";
 import TreeSection from "src/components/TreeSection.vue";
+
+import { useHomeStore } from "src/stores/home";
+import { useHostConduitService } from "src/HostConduitService";
+import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
+
+const home = useHomeStore();
+
+const hostConduit = useHostConduitService();
+
+const onRefresh = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES,
+  });
+};
+
+const onScanForPackageRequirements = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS,
+  });
+};
+
+const onEditRequirementsFile = () => {
+  if (!home.pythonPackageFile) {
+    return;
+  }
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.RELATIVE_OPEN_VSCODE,
+    content: {
+      relativePath: home.pythonPackageFile,
+    },
+  });
+};
 </script>

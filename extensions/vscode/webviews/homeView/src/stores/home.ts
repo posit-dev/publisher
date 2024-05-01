@@ -25,6 +25,10 @@ export const useHomeStore = defineStore("home", () => {
   const lastDeploymentResult = ref<string>();
   const lastDeploymentMsg = ref<string>();
 
+  const pythonPackages = ref<string[] | undefined>(undefined);
+  const pythonPackageFile = ref<string | undefined>(undefined);
+  const pythonPackageManager = ref<string | undefined>(undefined);
+
   const filteredCredentials = computed(() => {
     return credentials.value.filter((c) => {
       return (
@@ -155,6 +159,16 @@ export const useHomeStore = defineStore("home", () => {
     });
   });
 
+  const updatePythonPackages = ({
+    packages = <string[] | undefined>undefined,
+    file = <string | undefined>undefined,
+    manager = <string | undefined>undefined,
+  }) => {
+    pythonPackages.value = packages;
+    pythonPackageFile.value = file;
+    pythonPackageManager.value = manager;
+  };
+
   return {
     publishInProgress,
     deployments,
@@ -167,6 +181,9 @@ export const useHomeStore = defineStore("home", () => {
     filteredCredentials,
     lastDeploymentResult,
     lastDeploymentMsg,
+    pythonPackages,
+    pythonPackageFile,
+    pythonPackageManager,
     updateSelectedDeploymentByName,
     updateSelectedDeploymentByObject,
     updateSelectedConfigurationByName,
@@ -175,5 +192,6 @@ export const useHomeStore = defineStore("home", () => {
     updateCredentialsAndConfigurationForDeployment,
     updateParentViewSelectionState,
     filterCredentialsToDeployment,
+    updatePythonPackages,
   };
 });
