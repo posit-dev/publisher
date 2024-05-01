@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ref, onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted } from "vue";
 import { HostConduit } from "./utils/hostConduit";
 import {
   HostToWebviewMessage,
@@ -9,6 +9,7 @@ import {
   RefreshConfigDataMsg,
   RefreshCredentialDataMsg,
   RefreshDeploymentDataMsg,
+  RefreshFilesListsMsg,
   UpdateConfigSelectionMsg,
   UpdateDeploymentSelectionMsg,
   UpdateExpansionFromStorageMsg,
@@ -68,6 +69,8 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onUpdateConfigSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
       return onSaveSelectionMsg();
+    case HostToWebviewMessageType.REFRESH_FILES_LISTS:
+      return onRefreshFilesListMsg(msg);
     default:
       console.log(`unexpected command: ${JSON.stringify(msg)}`);
   }
@@ -150,4 +153,10 @@ const onUpdateConfigSelectionMsg = (msg: UpdateConfigSelectionMsg) => {
 const onSaveSelectionMsg = () => {
   const home = useHomeStore();
   home.updateParentViewSelectionState();
+};
+
+const onRefreshFilesListMsg = (msg: RefreshFilesListsMsg) => {
+  const home = useHomeStore();
+  home.includedFiles = msg.content.includedFiles;
+  home.excludedFiles = msg.content.excludedFiles;
 };
