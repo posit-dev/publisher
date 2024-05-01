@@ -140,7 +140,7 @@ export class CredentialsTreeItem extends TreeItem {
 const getServerNameFromInputBox = async (): Promise<string | undefined> => {
   while (true) {
     let name = await window.showInputBox({
-      prompt: "Enter the Server Name:",
+      title: "Enter the Server Name (1/3)",
       ignoreFocusOut: true,
     });
     if (name === undefined) {
@@ -159,7 +159,7 @@ const getServerNameFromInputBox = async (): Promise<string | undefined> => {
 const getServerUrlFromInputBox = async (): Promise<string | undefined> => {
   while (true) {
     let url = await window.showInputBox({
-      prompt: "Enter the Server URL:",
+      title: "Enter the Server URL (2/3)",
       ignoreFocusOut: true,
     });
     if (url === undefined) {
@@ -187,7 +187,7 @@ const getServerUrlFromInputBox = async (): Promise<string | undefined> => {
 const getApiKeyFromInputBox = async (): Promise<string | undefined> => {
   while (true) {
     let apiKey = await window.showInputBox({
-      prompt: "Enter the Api Key:",
+      title: "Enter the API Key (3/3)",
       ignoreFocusOut: true,
     });
     if (apiKey === undefined) {
