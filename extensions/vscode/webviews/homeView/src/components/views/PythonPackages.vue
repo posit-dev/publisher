@@ -19,19 +19,34 @@
       },
     ]"
   >
-    <TreeItem
-      v-for="pkg in home.pythonPackages"
-      :key="pkg"
-      :title="pkg"
-      codicon="codicon-package"
-      align-icon-with-twisty
-    />
+    <WelcomeView
+      v-if="!home.pythonPackages || home.pythonPackages.length === 0"
+    >
+      <p>
+        To deploy Python content, you need a requirements.txt file listing any
+        package dependencies. Click Scan to create or update one based on the
+        files in your project and your configuration.
+      </p>
+      <vscode-button @click="onScanForPackageRequirements()">
+        Scan
+      </vscode-button>
+    </WelcomeView>
+    <template v-else>
+      <TreeItem
+        v-for="pkg in home.pythonPackages"
+        :key="pkg"
+        :title="pkg"
+        codicon="codicon-package"
+        align-icon-with-twisty
+      />
+    </template>
   </TreeSection>
 </template>
 
 <script setup lang="ts">
 import TreeItem from "src/components/TreeItem.vue";
 import TreeSection from "src/components/TreeSection.vue";
+import WelcomeView from "src/components/WelcomeView.vue";
 
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
