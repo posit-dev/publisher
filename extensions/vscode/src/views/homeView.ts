@@ -99,6 +99,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
       this.sendRefreshedFilesLists();
+      this._onRefreshPythonPackages();
       this.createActiveConfigFileWatcher(cfg);
     });
   }
