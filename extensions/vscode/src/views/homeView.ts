@@ -119,6 +119,11 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onSaveDeploymentButtonExpandedMsg(msg);
       case WebviewToHostMessageType.SAVE_SELECTION_STATE:
         return await this._onSaveSelectionState(msg);
+      case WebviewToHostMessageType.VSCODE_OPEN:
+        return commands.executeCommand(
+          "vscode.open",
+          Uri.parse(msg.content.uri),
+        );
       default:
         throw new Error(
           `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,

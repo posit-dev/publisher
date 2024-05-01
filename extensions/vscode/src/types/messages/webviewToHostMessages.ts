@@ -12,6 +12,7 @@ export enum WebviewToHostMessageType {
   NAVIGATE = "navigate",
   SAVE_DEPLOYMENT_BUTTON_EXPANDED = "saveDeploymentButtonExpanded",
   SAVE_SELECTION_STATE = "saveSelectionState",
+  VSCODE_OPEN = "vscode.open",
 }
 
 export type AnyWebviewToHostMessage<
@@ -32,7 +33,8 @@ export type WebviewToHostMessage =
   | NewConfigurationMsg
   | NavigateMsg
   | SaveDeploymentButtonExpandedMsg
-  | SaveSelectionStatedMsg;
+  | SaveSelectionStatedMsg
+  | VsCodeOpenMsg;
 
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
@@ -43,7 +45,8 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.NEW_CONFIGURATION ||
     msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED ||
-    msg.kind === WebviewToHostMessageType.SAVE_SELECTION_STATE
+    msg.kind === WebviewToHostMessageType.SAVE_SELECTION_STATE ||
+    msg.kind === WebviewToHostMessageType.VSCODE_OPEN
   );
 }
 
@@ -83,5 +86,12 @@ export type SaveSelectionStatedMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.SAVE_SELECTION_STATE,
   {
     state: HomeViewState;
+  }
+>;
+
+export type VsCodeOpenMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.VSCODE_OPEN,
+  {
+    uri: string;
   }
 >;
