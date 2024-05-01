@@ -642,7 +642,6 @@ export class HomeViewProvider implements WebviewViewProvider {
       );
       allFileWatcher.onDidCreate(this.sendRefreshedFilesLists);
       allFileWatcher.onDidDelete(this.sendRefreshedFilesLists);
-      allFileWatcher.onDidChange(this.sendRefreshedFilesLists);
       this._context.subscriptions.push(allFileWatcher);
     }
   }
