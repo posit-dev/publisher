@@ -22,6 +22,7 @@ import {
   Configuration,
   Deployment,
   EventStreamMessage,
+  FileAction,
   PreDeployment,
   isConfigurationError,
   isDeploymentError,
@@ -124,6 +125,10 @@ export class HomeViewProvider implements WebviewViewProvider {
           "vscode.open",
           Uri.parse(msg.content.uri),
         );
+      case WebviewToHostMessageType.INCLUDE_FILE:
+        return this.updateFileList(msg.content.path, FileAction.INCLUDE);
+      case WebviewToHostMessageType.EXCLUDE_FILE:
+        return this.updateFileList(msg.content.path, FileAction.EXCLUDE);
       default:
         throw new Error(
           `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -202,6 +207,30 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private async _onSaveSelectionState(msg: SaveSelectionStatedMsg) {
     await this._saveSelectionState(msg.content.state);
+  }
+
+  private async updateFileList(uri: string, action: FileAction) {
+    const activeConfig = this._getActiveConfig();
+    if (activeConfig === undefined) {
+      console.error("homeView::updateFileList: No active configuration.");
+      return;
+    }
+
+    try {
+      const api = await useApi();
+      await api.files.updateFileList(
+        activeConfig.configurationName,
+        uri,
+        action,
+      );
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "homeView::updateFileList",
+        error,
+      );
+      window.showErrorMessage(`Failed to update config file. ${summary}`);
+      return;
+    }
   }
 
   private _onPublishStart() {

@@ -31,7 +31,11 @@
             {
               label: 'Exclude this file',
               codicon: 'codicon-diff-removed',
-              fn: () => {},
+              fn: () =>
+                sendMsg({
+                  kind: WebviewToHostMessageType.EXCLUDE_FILE,
+                  content: { path: file.id },
+                }),
             },
           ]"
         />
@@ -63,7 +67,11 @@
                   {
                     label: 'Include this file',
                     codicon: 'codicon-diff-added',
-                    fn: () => {},
+                    fn: () =>
+                      sendMsg({
+                        kind: WebviewToHostMessageType.INCLUDE_FILE,
+                        content: { path: file.id },
+                      }),
                   },
                 ]
           "
