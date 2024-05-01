@@ -9,6 +9,8 @@ import {
   commands,
 } from "vscode";
 
+import { DeploymentFile } from "../api";
+
 export async function fileExists(fileUri: Uri): Promise<boolean> {
   try {
     await workspace.fs.stat(fileUri);
@@ -186,4 +188,32 @@ export function standalonePathSorter(sep: string) {
   return (a: string, b: string) => {
     return pathSorter(a.split(sep), b.split(sep));
   };
+}
+
+export function splitFilesOnInclusion(
+  file: DeploymentFile,
+  response: {
+    includedFiles: DeploymentFile[];
+    excludedFiles: DeploymentFile[];
+  } = { includedFiles: [], excludedFiles: [] },
+): {
+  includedFiles: DeploymentFile[];
+  excludedFiles: DeploymentFile[];
+} {
+  if (file.isFile) {
+    if (file.reason?.exclude === false) {
+      response.includedFiles.push(file);
+    } else {
+      response.excludedFiles.push(file);
+    }
+  } else {
+    // Don't include .posit files in the response
+    if (file.id === ".posit") {
+      return response;
+    }
+  }
+
+  file.files.forEach((f) => splitFilesOnInclusion(f, response));
+
+  return response;
 }

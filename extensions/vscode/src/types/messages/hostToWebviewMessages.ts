@@ -1,6 +1,12 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Account, Configuration, Deployment, PreDeployment } from "../../api";
+import {
+  Account,
+  Configuration,
+  Deployment,
+  DeploymentFile,
+  PreDeployment,
+} from "../../api";
 
 export enum HostToWebviewMessageType {
   // Sent from host to webviewView
@@ -14,6 +20,7 @@ export enum HostToWebviewMessageType {
   UPDATE_DEPLOYMENT_SELECTION = "updateDeploymentSelection",
   UPDATE_CONFIG_SELECTION = "updateConfigSelection",
   SAVE_SELECTION = "saveSelection",
+  REFRESH_FILES_LISTS = "refreshFilesLists",
   UPDATE_PYTHON_PACKAGES = "updatePythonPackages",
 }
 
@@ -38,6 +45,7 @@ export type HostToWebviewMessage =
   | UpdateDeploymentSelectionMsg
   | UpdateConfigSelectionMsg
   | SaveSelectionMsg
+  | RefreshFilesListsMsg
   | UpdatePythonPackages;
 
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
@@ -52,6 +60,7 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION ||
     msg.kind === HostToWebviewMessageType.UPDATE_CONFIG_SELECTION ||
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
+    msg.kind === HostToWebviewMessageType.REFRESH_FILES_LISTS ||
     msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES
   );
 }
@@ -111,6 +120,14 @@ export type UpdateConfigSelectionMsg = AnyHostToWebviewMessage<
 >;
 export type SaveSelectionMsg =
   AnyHostToWebviewMessage<HostToWebviewMessageType.SAVE_SELECTION>;
+
+export type RefreshFilesListsMsg = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.REFRESH_FILES_LISTS,
+  {
+    includedFiles: DeploymentFile[];
+    excludedFiles: DeploymentFile[];
+  }
+>;
 
 export type UpdatePythonPackages = AnyHostToWebviewMessage<
   HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES,

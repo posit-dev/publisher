@@ -12,8 +12,9 @@ export enum WebviewToHostMessageType {
   NAVIGATE = "navigate",
   SAVE_DEPLOYMENT_BUTTON_EXPANDED = "saveDeploymentButtonExpanded",
   SAVE_SELECTION_STATE = "saveSelectionState",
-  REFRESH_PYTHON_PACKAGES = "refreshPythonPackages",
+  VSCODE_OPEN = "vscode.open",
   RELATIVE_OPEN_VSCODE = "relativeOpenVSCode",
+  REFRESH_PYTHON_PACKAGES = "refreshPythonPackages",
   SCAN_PYTHON_PACKAGE_REQUIREMENTS = "scanPythonPackageRequirements",
 }
 
@@ -36,6 +37,7 @@ export type WebviewToHostMessage =
   | NavigateMsg
   | SaveDeploymentButtonExpandedMsg
   | SaveSelectionStatedMsg
+  | VsCodeOpenMsg
   | RefreshPythonPackages
   | relativeOpenVSCode
   | ScanPythonPackageRequirements;
@@ -50,6 +52,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED ||
     msg.kind === WebviewToHostMessageType.SAVE_SELECTION_STATE ||
+    msg.kind === WebviewToHostMessageType.VSCODE_OPEN ||
     msg.kind === WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES ||
     msg.kind === WebviewToHostMessageType.RELATIVE_OPEN_VSCODE ||
     msg.kind === WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS
@@ -99,6 +102,13 @@ export type SaveSelectionStatedMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.SAVE_SELECTION_STATE,
   {
     state: HomeViewState;
+  }
+>;
+
+export type VsCodeOpenMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.VSCODE_OPEN,
+  {
+    uri: string;
   }
 >;
 

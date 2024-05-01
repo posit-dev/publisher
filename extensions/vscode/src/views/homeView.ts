@@ -4,6 +4,7 @@ import {
   CancellationToken,
   Disposable,
   ExtensionContext,
+  FileSystemWatcher,
   RelativePattern,
   Uri,
   Webview,
@@ -49,6 +50,7 @@ import {
 import { HostToWebviewMessageType } from "../types/messages/hostToWebviewMessages";
 import { isAxiosError } from "axios";
 import { confirmOverwrite } from "../dialogs";
+import { splitFilesOnInclusion } from "../utils/files";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
@@ -69,6 +71,8 @@ export class HomeViewProvider implements WebviewViewProvider {
   private _webviewView?: WebviewView;
   private _extensionUri: Uri;
   private _webviewConduit: WebviewConduit;
+
+  private activeConfigFileWatcher: FileSystemWatcher | undefined;
 
   constructor(
     private readonly _context: ExtensionContext,
@@ -91,6 +95,11 @@ export class HomeViewProvider implements WebviewViewProvider {
     });
     useBus().on("requestActiveCredential", () => {
       useBus().trigger("activeCredentialChanged", this._getActiveCredential());
+    });
+
+    useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
+      this.sendRefreshedFilesLists();
+      this.createActiveConfigFileWatcher(cfg);
     });
   }
   /**
@@ -120,6 +129,11 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onRelativeOpenVSCode(msg);
       case WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS:
         return await this._onScanForPythonPackageRequirements();
+      case WebviewToHostMessageType.VSCODE_OPEN:
+        return commands.executeCommand(
+          "vscode.open",
+          Uri.parse(msg.content.uri),
+        );
       default:
         throw new Error(
           `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -626,6 +640,23 @@ export class HomeViewProvider implements WebviewViewProvider {
     useBus().trigger("activeConfigChanged", this._getActiveConfig());
   };
 
+  public sendRefreshedFilesLists = async () => {
+    const api = await useApi();
+    const activeConfig = this._getActiveConfig();
+    if (activeConfig) {
+      const response = await api.files.getByConfiguration(
+        activeConfig.configurationName,
+      );
+
+      this._webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.REFRESH_FILES_LISTS,
+        content: {
+          ...splitFilesOnInclusion(response.data),
+        },
+      });
+    }
+  };
+
   /**
    * Cleans up and disposes of webview resources when view is disposed
    */
@@ -637,6 +668,31 @@ export class HomeViewProvider implements WebviewViewProvider {
         disposable.dispose();
       }
     }
+  }
+
+  private createActiveConfigFileWatcher(cfg: Configuration | undefined) {
+    if (this.root === undefined || cfg === undefined) {
+      return;
+    }
+
+    const watcher = workspace.createFileSystemWatcher(
+      new RelativePattern(this.root, cfg.configurationPath),
+    );
+    watcher.onDidChange(this.sendRefreshedFilesLists);
+
+    if (this.activeConfigFileWatcher) {
+      // Dispose the previous configuration file watcher
+      this.activeConfigFileWatcher.dispose();
+      const index = this._context.subscriptions.indexOf(
+        this.activeConfigFileWatcher,
+      );
+      if (index !== -1) {
+        this._context.subscriptions.splice(index, 1);
+      }
+    }
+
+    this.activeConfigFileWatcher = watcher;
+    this._context.subscriptions.push(watcher);
   }
 
   public register() {
@@ -679,6 +735,13 @@ export class HomeViewProvider implements WebviewViewProvider {
       deploymentFileWatcher.onDidDelete(this.refreshDeployments);
       deploymentFileWatcher.onDidChange(this.refreshDeployments);
       this._context.subscriptions.push(deploymentFileWatcher);
+
+      const allFileWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, "**"),
+      );
+      allFileWatcher.onDidCreate(this.sendRefreshedFilesLists);
+      allFileWatcher.onDidDelete(this.sendRefreshedFilesLists);
+      this._context.subscriptions.push(allFileWatcher);
     }
   }
 }
