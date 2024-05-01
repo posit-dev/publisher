@@ -4,6 +4,7 @@ import {
   CancellationToken,
   Disposable,
   ExtensionContext,
+  FileSystemWatcher,
   RelativePattern,
   Uri,
   Webview,
@@ -67,6 +68,8 @@ export class HomeViewProvider implements WebviewViewProvider {
   private _extensionUri: Uri;
   private _webviewConduit: WebviewConduit;
 
+  private activeConfigFileWatcher: FileSystemWatcher | undefined;
+
   constructor(
     private readonly _context: ExtensionContext,
     private readonly _stream: EventStream,
@@ -88,6 +91,11 @@ export class HomeViewProvider implements WebviewViewProvider {
     });
     useBus().on("requestActiveCredential", () => {
       useBus().trigger("activeCredentialChanged", this._getActiveCredential());
+    });
+
+    useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
+      this.sendRefreshedFilesLists();
+      this.createActiveConfigFileWatcher(cfg);
     });
   }
   /**
@@ -561,6 +569,31 @@ export class HomeViewProvider implements WebviewViewProvider {
         disposable.dispose();
       }
     }
+  }
+
+  private createActiveConfigFileWatcher(cfg: Configuration | undefined) {
+    if (this.root === undefined || cfg === undefined) {
+      return;
+    }
+
+    const watcher = workspace.createFileSystemWatcher(
+      new RelativePattern(this.root, cfg.configurationPath),
+    );
+    watcher.onDidChange(this.sendRefreshedFilesLists);
+
+    if (this.activeConfigFileWatcher) {
+      // Dispose the previous configuration file watcher
+      this.activeConfigFileWatcher.dispose();
+      const index = this._context.subscriptions.indexOf(
+        this.activeConfigFileWatcher,
+      );
+      if (index !== -1) {
+        this._context.subscriptions.splice(index, 1);
+      }
+    }
+
+    this.activeConfigFileWatcher = watcher;
+    this._context.subscriptions.push(watcher);
   }
 
   public register() {
