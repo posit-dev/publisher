@@ -20,7 +20,7 @@ func (p *CredentialsProvider) Load() ([]Account, error) {
 	i := 0
 	for _, cred := range creds {
 		accounts[i] = Account{
-			Source:     AccountSourceKeyring,
+			Source:     AccountSourceKeychain,
 			ServerType: serverTypeFromURL(cred.URL),
 			Name:       cred.Name,
 			URL:        cred.URL,

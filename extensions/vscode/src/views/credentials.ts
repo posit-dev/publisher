@@ -85,29 +85,17 @@ export class CredentialsTreeDataProvider
   }
 
   public add = async () => {
-    const name = await window.showInputBox({
-      prompt: "Enter the Server Name:",
-      ignoreFocusOut: true,
-    });
-
+    const name = await getServerNameFromInputBox();
     if (name === undefined) {
       return;
     }
 
-    const url = await window.showInputBox({
-      prompt: "Enter the Server URL:",
-      ignoreFocusOut: true,
-    });
-
+    const url = await getServerUrlFromInputBox();
     if (url === undefined) {
       return;
     }
 
-    const apiKey = await window.showInputBox({
-      prompt: "Enter the API Key:",
-      ignoreFocusOut: true,
-    });
-
+    const apiKey = await getApiKeyFromInputBox();
     if (apiKey === undefined) {
       return;
     }
@@ -119,7 +107,7 @@ export class CredentialsTreeDataProvider
       apiKey,
     });
 
-    // FIXME - this isn't firing correctly
+    // refresh the credentials view
     this.refresh();
   };
 }
@@ -148,3 +136,74 @@ export class CredentialsTreeItem extends TreeItem {
     return result;
   }
 }
+
+const getServerNameFromInputBox = async (): Promise<string | undefined> => {
+  while (true) {
+    let name = await window.showInputBox({
+      prompt: "Enter the Server Name:",
+      ignoreFocusOut: true,
+    });
+    if (name === undefined) {
+      // user pressed escape
+      return undefined;
+    }
+    name = name.trim();
+    if (name === "") {
+      window.showErrorMessage(`Server name is invalid. Found '${name}'`);
+    } else {
+      return name;
+    }
+  }
+};
+
+const getServerUrlFromInputBox = async (): Promise<string | undefined> => {
+  while (true) {
+    let url = await window.showInputBox({
+      prompt: "Enter the Server URL:",
+      ignoreFocusOut: true,
+    });
+    if (url === undefined) {
+      // user pressed escape
+      return undefined;
+    }
+
+    url = url.trim();
+    if (url === "") {
+      window.showErrorMessage(`Server URL not provided.`);
+    } else {
+      try {
+        new URL(url);
+      } catch (e) {
+        if (!(e instanceof TypeError)) {
+          throw e;
+        }
+        window.showErrorMessage(`Server URL format is invalid. Found '${url}'`);
+      }
+      return url;
+    }
+  }
+};
+
+const getApiKeyFromInputBox = async (): Promise<string | undefined> => {
+  while (true) {
+    let apiKey = await window.showInputBox({
+      prompt: "Enter the Api Key:",
+      ignoreFocusOut: true,
+    });
+    if (apiKey === undefined) {
+      // user pressed escape
+      return undefined;
+    }
+
+    apiKey = apiKey.trim();
+    if (apiKey === "") {
+      window.showErrorMessage("API Key not provided.");
+    } else if (apiKey.length !== 32) {
+      window.showErrorMessage(
+        `API Key format is invalid. Found '${apiKey}. Expected format 32 character string.`,
+      );
+    } else {
+      return apiKey;
+    }
+  }
+};
