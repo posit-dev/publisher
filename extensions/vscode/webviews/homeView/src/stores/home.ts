@@ -163,11 +163,11 @@ export const useHomeStore = defineStore("home", () => {
     });
   });
 
-  const updatePythonPackages = ({
+  const updatePythonPackages = (
     packages = <string[] | undefined>undefined,
     file = <string | undefined>undefined,
     manager = <string | undefined>undefined,
-  }) => {
+  ) => {
     pythonPackages.value = packages;
     pythonPackageFile.value = file;
     pythonPackageManager.value = manager;

@@ -166,9 +166,9 @@ const onRefreshFilesListMsg = (msg: RefreshFilesListsMsg) => {
 
 const onUpdatePythonPackages = (msg: UpdatePythonPackages) => {
   const home = useHomeStore();
-  home.updatePythonPackages({
-    packages: msg.content.packages,
-    file: msg.content.file,
-    manager: msg.content.manager,
-  });
+  home.updatePythonPackages(
+    msg.content.packages,
+    msg.content.file,
+    msg.content.manager,
+  );
 };

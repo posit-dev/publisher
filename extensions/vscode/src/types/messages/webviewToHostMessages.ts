@@ -12,10 +12,10 @@ export enum WebviewToHostMessageType {
   NAVIGATE = "navigate",
   SAVE_DEPLOYMENT_BUTTON_EXPANDED = "saveDeploymentButtonExpanded",
   SAVE_SELECTION_STATE = "saveSelectionState",
-  VSCODE_OPEN = "vscode.open",
-  RELATIVE_OPEN_VSCODE = "relativeOpenVSCode",
-  REFRESH_PYTHON_PACKAGES = "refreshPythonPackages",
-  SCAN_PYTHON_PACKAGE_REQUIREMENTS = "scanPythonPackageRequirements",
+  VSCODE_OPEN = "vsCodeOpen",
+  VSCODE_OPEN_RELATIVE = "VSCodeOpenRelativeMsg",
+  REFRESH_PYTHON_PACKAGES = "RefreshPythonPackagesMsg",
+  SCAN_PYTHON_PACKAGE_REQUIREMENTS = "ScanPythonPackageRequirementsMsg",
 }
 
 export type AnyWebviewToHostMessage<
@@ -37,10 +37,10 @@ export type WebviewToHostMessage =
   | NavigateMsg
   | SaveDeploymentButtonExpandedMsg
   | SaveSelectionStatedMsg
-  | VsCodeOpenMsg
-  | RefreshPythonPackages
-  | relativeOpenVSCode
-  | ScanPythonPackageRequirements;
+  | VSCodeOpenMsg
+  | RefreshPythonPackagesMsg
+  | VSCodeOpenRelativeMsg
+  | ScanPythonPackageRequirementsMsg;
 
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
@@ -54,7 +54,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.SAVE_SELECTION_STATE ||
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN ||
     msg.kind === WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES ||
-    msg.kind === WebviewToHostMessageType.RELATIVE_OPEN_VSCODE ||
+    msg.kind === WebviewToHostMessageType.VSCODE_OPEN_RELATIVE ||
     msg.kind === WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS
   );
 }
@@ -105,22 +105,22 @@ export type SaveSelectionStatedMsg = AnyWebviewToHostMessage<
   }
 >;
 
-export type VsCodeOpenMsg = AnyWebviewToHostMessage<
+export type VSCodeOpenMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.VSCODE_OPEN,
   {
     uri: string;
   }
 >;
 
-export type RefreshPythonPackages =
+export type RefreshPythonPackagesMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES>;
 
-export type relativeOpenVSCode = AnyWebviewToHostMessage<
-  WebviewToHostMessageType.RELATIVE_OPEN_VSCODE,
+export type VSCodeOpenRelativeMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
   {
     relativePath: string;
   }
 >;
 
-export type ScanPythonPackageRequirements =
+export type ScanPythonPackageRequirementsMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS>;

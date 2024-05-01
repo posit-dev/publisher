@@ -40,12 +40,12 @@ import type { HomeViewState } from "../types/shared";
 import {
   DeployMsg,
   EditConfigurationMsg,
-  relativeOpenVSCode,
   NavigateMsg,
   SaveDeploymentButtonExpandedMsg,
   SaveSelectionStatedMsg,
   WebviewToHostMessage,
   WebviewToHostMessageType,
+  VSCodeOpenRelativeMsg,
 } from "../types/messages/webviewToHostMessages";
 import { HostToWebviewMessageType } from "../types/messages/hostToWebviewMessages";
 import { isAxiosError } from "axios";
@@ -126,7 +126,7 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onSaveSelectionState(msg);
       case WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES:
         return await this._onRefreshPythonPackages();
-      case WebviewToHostMessageType.RELATIVE_OPEN_VSCODE:
+      case WebviewToHostMessageType.VSCODE_OPEN_RELATIVE:
         return await this._onRelativeOpenVSCode(msg);
       case WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS:
         return await this._onScanForPythonPackageRequirements();
@@ -463,7 +463,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     });
   }
 
-  private async _onRelativeOpenVSCode(msg: relativeOpenVSCode) {
+  private async _onRelativeOpenVSCode(msg: VSCodeOpenRelativeMsg) {
     if (this.root === undefined) {
       return;
     }

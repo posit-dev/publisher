@@ -1,31 +1,10 @@
 <template>
-  <TreeSection
-    title="Python Packages"
-    :actions="[
-      {
-        label: 'Edit Package Requirements File',
-        codicon: 'codicon-edit',
-        fn: onEditRequirementsFile,
-      },
-      {
-        label: 'Refresh Packages',
-        codicon: 'codicon-refresh',
-        fn: onRefresh,
-      },
-      {
-        label: 'Scan For Package Requirements',
-        codicon: 'codicon-eye',
-        fn: onScanForPackageRequirements,
-      },
-    ]"
-  >
-    <WelcomeView
-      v-if="!home.pythonPackages || home.pythonPackages.length === 0"
-    >
+  <TreeSection title="Python Packages" :actions="pythonPackageActions">
+    <WelcomeView v-if="showWelcomeView">
       <p>
-        To deploy Python content, you need a requirements.txt file listing any
-        package dependencies. Click Scan to create or update one based on the
-        files in your project and your configuration.
+        To deploy Python content, you need a package file listing any package
+        dependencies. Click Scan to create or update one based on the files in
+        your project and your configuration.
       </p>
       <vscode-button @click="onScanForPackageRequirements()">
         Scan
@@ -47,6 +26,8 @@
 import TreeItem from "src/components/TreeItem.vue";
 import TreeSection from "src/components/TreeSection.vue";
 import WelcomeView from "src/components/WelcomeView.vue";
+
+import { computed } from "vue";
 
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
@@ -73,10 +54,42 @@ const onEditRequirementsFile = () => {
     return;
   }
   hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.RELATIVE_OPEN_VSCODE,
+    kind: WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
     content: {
       relativePath: home.pythonPackageFile,
     },
   });
 };
+
+const pythonPackageActions = computed(() => {
+  const result = [];
+  if (showEditRequirementsFile.value) {
+    result.push({
+      label: "Edit Package Requirements File",
+      codicon: "codicon-edit",
+      fn: onEditRequirementsFile,
+    });
+  }
+  result.push(
+    {
+      label: "Refresh Packages",
+      codicon: "codicon-refresh",
+      fn: onRefresh,
+    },
+    {
+      label: "Scan For Package Requirements",
+      codicon: "codicon-eye",
+      fn: onScanForPackageRequirements,
+    },
+  );
+  return result;
+});
+
+const showEditRequirementsFile = computed(() => {
+  return Boolean(home.pythonPackageFile);
+});
+
+const showWelcomeView = computed(() => {
+  return !home.pythonPackages || home.pythonPackages.length === 0;
+});
 </script>
