@@ -17,6 +17,12 @@
       <template #default="{ indentLevel }">
         <TreeItem
           v-for="file in home.includedFiles"
+          @click="
+            sendMsg({
+              kind: WebviewToHostMessageType.VSCODE_OPEN,
+              content: { uri: file.abs },
+            })
+          "
           :key="file.id"
           :title="file.base"
           codicon="codicon-debug-stackframe-dot"
@@ -40,6 +46,12 @@
       <template #default="{ indentLevel }">
         <TreeItem
           v-for="file in home.excludedFiles"
+          @click="
+            sendMsg({
+              kind: WebviewToHostMessageType.VSCODE_OPEN,
+              content: { uri: file.abs },
+            })
+          "
           :key="file.id"
           :title="file.base"
           codicon="codicon-debug-stackframe-dot"
@@ -65,12 +77,15 @@
 import { ref } from "vue";
 
 import { FileMatchSource } from "../../../../../src/api";
+import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 
 import TreeItem from "src/components/TreeItem.vue";
 import TreeSection from "src/components/TreeSection.vue";
 import { useHomeStore } from "src/stores/home";
+import { useHostConduitService } from "src/HostConduitService";
 
 const home = useHomeStore();
+const { sendMsg } = useHostConduitService();
 
 const includedExpanded = ref(true);
 const excludedExpanded = ref(true);
