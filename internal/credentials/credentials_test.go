@@ -28,7 +28,7 @@ func TestGet(t *testing.T) {
 	assert.NoError(t, err)
 	res, err := cs.Get("example")
 	assert.NoError(t, err)
-	assert.Equal(t, res, cred)
+	assert.Equal(t, *res, cred)
 
 }
 

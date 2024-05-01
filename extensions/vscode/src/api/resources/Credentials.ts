@@ -17,4 +17,17 @@ export class Credentials {
   createOrUpdate(cred: Credential) {
     return this.client.post(`credentials`, cred);
   }
+
+  // Returns:
+  // 204 - accepted
+  // 400 - bad request
+  // 404 - not found
+  // 500 - internal server error
+  delete(name: string) {
+    return this.client.delete<Credential>(`credentials`, {
+      params: {
+        name
+      }
+    });
+  }
 }
