@@ -7,6 +7,7 @@ import {
   PreDeployment,
   Account,
   Configuration,
+  DeploymentFile,
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 
@@ -24,6 +25,9 @@ export const useHomeStore = defineStore("home", () => {
 
   const lastDeploymentResult = ref<string>();
   const lastDeploymentMsg = ref<string>();
+
+  const includedFiles = ref<DeploymentFile[]>([]);
+  const excludedFiles = ref<DeploymentFile[]>([]);
 
   const filteredCredentials = computed(() => {
     return credentials.value.filter((c) => {
@@ -164,6 +168,8 @@ export const useHomeStore = defineStore("home", () => {
     selectedConfiguration,
     selectedCredential,
     easyDeployExpanded,
+    includedFiles,
+    excludedFiles,
     filteredCredentials,
     lastDeploymentResult,
     lastDeploymentMsg,
