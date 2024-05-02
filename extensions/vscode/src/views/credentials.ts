@@ -84,14 +84,23 @@ export class CredentialsTreeDataProvider
     );
   }
 
+  /**
+   * Add credential.
+   *
+   * Prompt the user for credential information. Then create or update the credential. Afterwards, refresh the provider.
+   *
+   * Once the server url is provided, the user is prompted with the url hostname as the default server name.
+   *
+   * @returns
+   */
   public add = async () => {
-    const name = await getServerNameFromInputBox();
-    if (name === undefined) {
+    const url = await getServerUrlFromInputBox();
+    if (url === undefined) {
       return;
     }
 
-    const url = await getServerUrlFromInputBox();
-    if (url === undefined) {
+    const name = await getServerNameFromInputBox(url.hostname);
+    if (name === undefined) {
       return;
     }
 
@@ -103,7 +112,7 @@ export class CredentialsTreeDataProvider
     const api = await useApi();
     await api.credentials.createOrUpdate({
       name,
-      url,
+      url: url.toString(),
       apiKey,
     });
 
@@ -135,12 +144,24 @@ export class CredentialsTreeItem extends TreeItem {
   }
 }
 
-const getServerNameFromInputBox = async (): Promise<string | undefined> => {
+/**
+ * Get server name from user.
+ *
+ * Prompt the user via an input box for the server name (aka nickname, display name). Retry until a valid server name is provided.
+ *
+ * @param value default value (optional)
+ * @returns the server name or undefined if the user escapes
+ */
+const getServerNameFromInputBox = async (
+  value: string = "",
+): Promise<string | undefined> => {
+  let errorMessage = "";
   while (true) {
     let name = await window.showInputBox({
       title: "Enter the Credential Name (1/3)",
-      placeHolder: "Posit Connect",
+      placeHolder: errorMessage || "Posit Connect",
       prompt: "Choose a unique nickname for your credential.",
+      value: errorMessage ? undefined : value,
       ignoreFocusOut: true,
     });
     if (name === undefined) {
@@ -149,20 +170,29 @@ const getServerNameFromInputBox = async (): Promise<string | undefined> => {
     }
     name = name.trim();
     if (name === "") {
-      window.showErrorMessage(
-        `The provided credential name is invalid. Please try again.`,
-      );
+      errorMessage = `The provided credential nickname is invalid. Please try again.`;
+      window.showErrorMessage(errorMessage);
     } else {
       return name;
     }
   }
 };
 
-const getServerUrlFromInputBox = async (): Promise<string | undefined> => {
+/**
+ * Get URL from user.
+ *
+ * Prompt the user with an input box for a url. Retry until a valid URL is provided or the user quits.
+ *
+ * Defaults the URL scheme to 'https://' (i.e., example.com -> https://example.com)
+ *
+ * @returns Promise<URL | undefined>
+ */
+const getServerUrlFromInputBox = async (): Promise<URL | undefined> => {
+  let errorMessage = "";
   while (true) {
     let url = await window.showInputBox({
       title: "Enter the Server URL (2/3)",
-      placeHolder: "https://connect.example.com/",
+      placeHolder: errorMessage || "https://connect.example.com/",
       prompt:
         "The server url is the web address where you access and interact with your deployed content, typically this is the address you access in your web browser.",
       ignoreFocusOut: true,
@@ -174,32 +204,43 @@ const getServerUrlFromInputBox = async (): Promise<string | undefined> => {
 
     url = url.trim();
     if (url === "") {
-      window.showErrorMessage(
-        `The provided server URL invalid. Please try again.`,
-      );
+      (errorMessage = `The provided server URL is invalid. Please try again.`),
+        window.showErrorMessage(errorMessage);
     } else {
       try {
-        new URL(url);
+        // check if the URL starts with a scheme
+        if (/^[a-zA-Z]+:\/\//.test(url)) {
+          return new URL(url);
+        } else {
+          // default scheme to 'https://'
+          return new URL(`https://${url}`);
+        }
       } catch (e) {
         if (!(e instanceof TypeError)) {
           throw e;
         }
-        window.showErrorMessage(
-          `The provided server URL invalid. Found '${url}'. Please try again.`,
-        );
+        (errorMessage = `The provided server URL '${url}' is invalid. Please try again.`),
+          window.showErrorMessage(errorMessage);
         continue;
       }
-      return url;
     }
   }
 };
 
+/**
+ * Get API key from user.
+ *
+ * Prompt the user with an input box for an API key. Retry until a valid API key is provided or the user quits.
+ *
+ * @returns Promise<string | undefined> - the API key, or undefined if user quits
+ */
 const getApiKeyFromInputBox = async (): Promise<string | undefined> => {
+  let errorMessage;
   while (true) {
     let apiKey = await window.showInputBox({
       title: "Enter the API Key (3/3)",
       password: true,
-      placeHolder: "ABcdEfgHIJKlMNopqRstuvWXyz012345",
+      placeHolder: errorMessage || "ABcdEfgHIJKlMNopqRstuvWXyz012345",
       prompt:
         "An API key is a unique 32 character code that identifies and grants access to your server.",
       ignoreFocusOut: true,
@@ -212,11 +253,11 @@ const getApiKeyFromInputBox = async (): Promise<string | undefined> => {
 
     apiKey = apiKey.trim();
     if (apiKey === "") {
-      window.showErrorMessage("An API key was not provided. Please try again.");
+      errorMessage = "An API key was not provided. Please try again.";
+      window.showErrorMessage(errorMessage);
     } else if (apiKey.length !== 32) {
-      window.showErrorMessage(
-        `The provided information is invalid. Expected a unique 32 character code. Please try again.`,
-      );
+      (errorMessage = `The provided API key is invalid. Expected a unique 32 character code. Please try again.`),
+        window.showErrorMessage(errorMessage);
     } else {
       return apiKey;
     }
