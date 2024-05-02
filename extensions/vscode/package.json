@@ -499,7 +499,12 @@
       {
         "view": "posit.publisher.pythonPackages",
         "contents": "To deploy Python content, you need a requirements.txt file listing any package dependencies. Click Scan to create one based on the files in your project.\n[Scan](command:posit.publisher.pythonPackages.scan)",
-        "when": "posit.publisher.pythonPackages.isEmpty == empty"
+        "when": "posit.publisher.pythonPackages.context == noRequirements"
+      },
+      {
+        "view": "posit.publisher.pythonPackages",
+        "contents": "This project is not configured to use Python. To configure Python, add a [python] section to the configuration file.",
+        "when": "posit.publisher.pythonPackages.context == noPython"
       },
       {
         "view": "posit.publisher.credentials",

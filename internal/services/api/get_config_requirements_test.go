@@ -108,3 +108,20 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoRequirementsFile
 
 	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
 }
+
+func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoPythonInConfig() {
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	err := cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
+	s.NoError(err)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/configurations/myConfig/requirements", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
+
+	h := NewGetConfigRequirementsHandler(s.cwd, s.log)
+	h.ServeHTTP(rec, req)
+
+	s.Equal(http.StatusConflict, rec.Result().StatusCode)
+}

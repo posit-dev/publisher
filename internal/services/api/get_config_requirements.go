@@ -46,6 +46,14 @@ func (h *GetConfigRequirementsHandler) ServeHTTP(w http.ResponseWriter, req *htt
 		return
 	}
 
+	if cfg.Python == nil {
+		// Not a Python project; there are no requirements.
+		// We distinguish this from the case where there is
+		// an empty requirements file (200 with empty array),
+		// or no requirements file (404).
+		w.WriteHeader(http.StatusConflict)
+		return
+	}
 	requirementsFilename := cfg.Python.PackageFile
 	if requirementsFilename == "" {
 		requirementsFilename = inspect.PythonRequirementsFilename
