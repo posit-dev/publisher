@@ -158,7 +158,7 @@ const getServerNameFromInputBox = async (
   let errorMessage = "";
   while (true) {
     let name = await window.showInputBox({
-      title: "Enter the Credential Name (1/3)",
+      title: "Enter the Credential Name (2/3)",
       placeHolder: errorMessage || "Posit Connect",
       prompt: "Choose a unique nickname for your credential.",
       value: errorMessage ? undefined : value,
@@ -191,7 +191,7 @@ const getServerUrlFromInputBox = async (): Promise<URL | undefined> => {
   let errorMessage = "";
   while (true) {
     let url = await window.showInputBox({
-      title: "Enter the Server URL (2/3)",
+      title: "Enter the Server URL (1/3)",
       placeHolder: errorMessage || "https://connect.example.com/",
       prompt:
         "The server url is the web address where you access and interact with your deployed content, typically this is the address you access in your web browser.",
