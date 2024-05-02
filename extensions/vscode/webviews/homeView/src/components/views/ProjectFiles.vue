@@ -26,6 +26,7 @@
           "
           :key="file.id"
           :title="file.base"
+          :description="fileDescription(file)"
           codicon="codicon-debug-stackframe-dot"
           :tooltip="includedFileTooltip(file)"
           :indentLevel="indentLevel"
@@ -60,6 +61,7 @@
           "
           :key="file.id"
           :title="file.base"
+          :description="fileDescription(file)"
           codicon="codicon-debug-stackframe-dot"
           :tooltip="excludedFileTooltip(file)"
           :indentLevel="indentLevel"
@@ -100,6 +102,13 @@ const { sendMsg } = useHostConduitService();
 
 const includedExpanded = ref(true);
 const excludedExpanded = ref(true);
+
+const fileDescription = (file: DeploymentFile) => {
+  if (file.relDir === ".") {
+    return undefined;
+  }
+  return file.relDir;
+};
 
 const includedFileTooltip = (file: DeploymentFile) => {
   let tooltip = `${file.rel} will be included in the next deployment.`;
