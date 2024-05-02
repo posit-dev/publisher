@@ -4,4 +4,3 @@ export type Credential = {
   apiKey: string;
 };
 
-export type Credentials = Map<string, Credential>;

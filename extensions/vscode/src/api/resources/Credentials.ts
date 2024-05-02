@@ -15,6 +15,6 @@ export class Credentials {
   // 400 - bad request
   // 500 - internal server error
   createOrUpdate(cred: Credential) {
-    return this.client.post<Credential>(`credentials`, cred);
+    return this.client.post(`credentials`, cred);
   }
 }
