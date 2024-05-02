@@ -13,6 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/util"
+	"github.com/rstudio/connect-client/internal/util/dcf"
 )
 
 // ManifestFilename is the well-known manifest.json filename contained within
@@ -78,13 +79,13 @@ type PythonPackageManager struct {
 }
 
 type PackageMap map[string]Package
-type DescriptionMap map[string]string
 
 // Package describes a single R package.
 type Package struct {
-	Source      string         // Symbolic name describing where this package originated. e.g. "CRAN".
-	Repository  string         // URL to the source repository
-	Description DescriptionMap // A collection of key:value fields from the DESCRIPTION file
+	Source      string     `json:",omitempty"`  // Symbolic name describing where this package originated. e.g. "CRAN".
+	Repository  string     `json:",omitempty"`  // URL to the source repository
+	Description dcf.Record `json:"description"` // A collection of key:value fields from the DESCRIPTION file
+	// plus GitHub* fields if deploying to shinyapps.io
 }
 
 type ManifestFileMap map[string]ManifestFile

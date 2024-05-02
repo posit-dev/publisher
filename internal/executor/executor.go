@@ -12,7 +12,7 @@ import (
 )
 
 type Executor interface {
-	RunCommand(pythonExecutable string, args []string, log logging.Logger) ([]byte, []byte, error)
+	RunCommand(executable string, args []string, log logging.Logger) ([]byte, []byte, error)
 }
 
 type defaultExecutor struct{}

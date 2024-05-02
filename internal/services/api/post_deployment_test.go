@@ -71,7 +71,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(nil)
-	publisherFactory = func(*state.State, events.Emitter) (publish.Publisher, error) {
+	publisherFactory = func(*state.State, events.Emitter, logging.Logger) (publish.Publisher, error) {
 		return publisher, nil
 	}
 	stateFactory = func(
@@ -191,7 +191,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 	testErr := errors.New("test error from PublishDirectory")
 	publisher := &mockPublisher{}
 	publisher.On("PublishDirectory", mock.Anything).Return(testErr)
-	publisherFactory = func(*state.State, events.Emitter) (publish.Publisher, error) {
+	publisherFactory = func(*state.State, events.Emitter, logging.Logger) (publish.Publisher, error) {
 		return publisher, nil
 	}
 

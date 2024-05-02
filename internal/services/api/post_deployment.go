@@ -72,7 +72,7 @@ func PostDeploymentHandlerFunc(
 		json.NewEncoder(w).Encode(response)
 
 		newState.LocalID = localID
-		publisher, err := publisherFactory(newState, emitter)
+		publisher, err := publisherFactory(newState, emitter, log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return

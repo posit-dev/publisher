@@ -61,7 +61,7 @@ func (s *PublishSuite) SetupTest() {
 
 func (s *PublishSuite) TestNewFromState() {
 	stateStore := state.Empty()
-	publisher, err := NewFromState(stateStore, events.NewNullEmitter())
+	publisher, err := NewFromState(stateStore, events.NewNullEmitter(), logging.New())
 	s.NoError(err)
 	s.Equal(stateStore, publisher.(*defaultPublisher).State)
 }

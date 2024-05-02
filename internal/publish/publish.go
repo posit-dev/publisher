@@ -15,11 +15,14 @@ import (
 	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/inspect"
+	"github.com/rstudio/connect-client/internal/inspect/dependencies/renv"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/state"
 	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type Publisher interface {
@@ -28,7 +31,8 @@ type Publisher interface {
 
 type defaultPublisher struct {
 	*state.State
-	emitter events.Emitter
+	emitter        events.Emitter
+	rPackageMapper renv.PackageMapper
 }
 
 type baseEventData struct {
@@ -55,7 +59,7 @@ type publishDeployedFailureData struct {
 	DirectURL    string `mapstructure:"url"`
 }
 
-func NewFromState(s *state.State, emitter events.Emitter) (Publisher, error) {
+func NewFromState(s *state.State, emitter events.Emitter, log logging.Logger) (Publisher, error) {
 	if s.LocalID != "" {
 		data := baseEventData{
 			LocalID: s.LocalID,
@@ -68,8 +72,9 @@ func NewFromState(s *state.State, emitter events.Emitter) (Publisher, error) {
 		emitter = events.NewDataEmitter(dataMap, emitter)
 	}
 	return &defaultPublisher{
-		State:   s,
-		emitter: emitter,
+		State:          s,
+		emitter:        emitter,
+		rPackageMapper: renv.NewPackageMapper(util.NewPath("R", nil), log),
 	}, nil
 }
 
@@ -109,6 +114,28 @@ func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log l
 	}
 }
 
+func (p *defaultPublisher) getRPackages(log logging.Logger) (bundles.PackageMap, error) {
+	if p.Config.R == nil {
+		return nil, nil
+	}
+	log.Info("Collecting R package descriptions")
+
+	lockfileString := p.Config.R.PackageFile
+	if lockfileString == "" {
+		lockfileString = inspect.DefaultRenvLockfile
+	}
+	lockfilePath := p.Dir.Join(lockfileString)
+
+	// Always using R from path here; do we need to let you specify it at deploy time?
+	rExecutable := util.NewPath("R", nil)
+	rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath, rExecutable)
+	if err != nil {
+		return nil, err
+	}
+	log.Info("Done collecting R package descriptions")
+	return rPackages, nil
+}
+
 func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 	log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir)
 	manifest := bundles.NewManifestFromConfig(p.Config)
@@ -117,6 +144,12 @@ func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 		log.Info("No file patterns specified; using default pattern '*'")
 		filePatterns = []string{"*"}
 	}
+	rPackages, err := p.getRPackages(log)
+	if err != nil {
+		return err
+	}
+	manifest.Packages = rPackages
+
 	bundler, err := bundles.NewBundler(p.Dir, manifest, filePatterns, log)
 	if err != nil {
 		return err
