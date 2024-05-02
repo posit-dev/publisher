@@ -21,6 +21,7 @@ type File struct {
 	IsRegular        bool             `json:"isFile"`           // true if the file is a regular file
 	ModifiedDatetime string           `json:"modifiedDatetime"` // the last modified datetime
 	Rel              string           `json:"rel"`              // the relative path to the project root, which is used as the identifier
+	RelDir           string           `json:"relDir"`           // the relative path of the directory containing the file
 	Size             int64            `json:"size"`             // nullable; length in bytes for regular files; system-dependent
 	Abs              string           `json:"abs"`              // the absolute path
 }
@@ -45,6 +46,7 @@ func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.P
 		Id:               rel.String(),
 		FileType:         filetype,
 		Rel:              rel.String(),
+		RelDir:           rel.Dir().String(),
 		Base:             path.Base(),
 		Size:             info.Size(),
 		ModifiedDatetime: info.ModTime().Format(time.RFC3339),
