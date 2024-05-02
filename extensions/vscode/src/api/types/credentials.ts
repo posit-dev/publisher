@@ -3,4 +3,3 @@ export type Credential = {
   url: string;
   apiKey: string;
 };
-
