@@ -426,36 +426,47 @@ export class HomeViewProvider implements WebviewViewProvider {
   private async _onRefreshPythonPackages() {
     const savedState = this._getSelectionState();
     const activeConfiguration = savedState.configurationName;
+    let pythonProject = true;
     let packages: string[] = [];
     let packageFile: string | undefined;
     let packageMgr: string | undefined;
 
     if (activeConfiguration) {
-      const api = await useApi();
-      try {
-        const response =
-          await api.requirements.getByConfiguration(activeConfiguration);
-        packages = response.data.requirements;
-      } catch (error: unknown) {
-        if (isAxiosError(error) && error.response?.status === 404) {
-          // No requirements file; show the welcome view.
-          packages = [];
-        } else {
-          const summary = getSummaryStringFromError(
-            "homeView::_onRefreshPythonPackages",
-            error,
-          );
-          window.showInformationMessage(summary);
-          return;
+      const currentConfig = this.getConfigByName(activeConfiguration);
+      const pythonSection = currentConfig?.configuration.python;
+      if (!pythonSection) {
+        pythonProject = false;
+      } else {
+        try {
+          const api = await useApi();
+          packageFile = pythonSection.packageFile;
+          packageMgr = pythonSection.packageManager;
+
+          const response =
+            await api.requirements.getByConfiguration(activeConfiguration);
+          packages = response.data.requirements;
+        } catch (error: unknown) {
+          if (isAxiosError(error) && error.response?.status === 404) {
+            // No requirements file; show the welcome view.
+            packageFile = undefined;
+          } else if (isAxiosError(error) && error.response?.status === 404) {
+            // Python is not present in the configuration file
+            pythonProject = false;
+          } else {
+            const summary = getSummaryStringFromError(
+              "homeView::_onRefreshPythonPackages",
+              error,
+            );
+            window.showInformationMessage(summary);
+            return;
+          }
         }
       }
-      const currentConfig = this.getConfigByName(activeConfiguration);
-      packageFile = currentConfig?.configuration.python?.packageFile;
-      packageMgr = currentConfig?.configuration.python?.packageManager;
     }
     this._webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES,
       content: {
+        pythonProject,
         file: packageFile,
         manager: packageMgr,
         packages,

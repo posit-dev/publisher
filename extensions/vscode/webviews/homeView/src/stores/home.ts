@@ -29,6 +29,7 @@ export const useHomeStore = defineStore("home", () => {
   const includedFiles = ref<DeploymentFile[]>([]);
   const excludedFiles = ref<DeploymentFile[]>([]);
 
+  const pythonProject = ref<boolean>(false);
   const pythonPackages = ref<string[] | undefined>(undefined);
   const pythonPackageFile = ref<string | undefined>(undefined);
   const pythonPackageManager = ref<string | undefined>(undefined);
@@ -164,10 +165,12 @@ export const useHomeStore = defineStore("home", () => {
   });
 
   const updatePythonPackages = (
+    ispythonProject: boolean,
     packages = <string[] | undefined>undefined,
     file = <string | undefined>undefined,
     manager = <string | undefined>undefined,
   ) => {
+    pythonProject.value = ispythonProject;
     pythonPackages.value = packages;
     pythonPackageFile.value = file;
     pythonPackageManager.value = manager;
@@ -187,6 +190,7 @@ export const useHomeStore = defineStore("home", () => {
     filteredCredentials,
     lastDeploymentResult,
     lastDeploymentMsg,
+    pythonProject,
     pythonPackages,
     pythonPackageFile,
     pythonPackageManager,

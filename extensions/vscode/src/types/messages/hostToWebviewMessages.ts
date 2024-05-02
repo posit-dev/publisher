@@ -132,6 +132,7 @@ export type RefreshFilesListsMsg = AnyHostToWebviewMessage<
 export type UpdatePythonPackages = AnyHostToWebviewMessage<
   HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES,
   {
+    pythonProject: boolean;
     file?: string;
     manager?: string;
     packages?: string[];

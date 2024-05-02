@@ -1,14 +1,34 @@
 <template>
   <TreeSection title="Python Packages" :actions="pythonPackageActions">
     <WelcomeView v-if="showWelcomeView">
-      <p>
-        To deploy Python content, you need a package file listing any package
-        dependencies. Click Scan to create or update one based on the files in
-        your project and your configuration.
-      </p>
-      <vscode-button @click="onScanForPackageRequirements()">
-        Scan
-      </vscode-button>
+      <template v-if="showScanWelcomeView">
+        <p>
+          To deploy Python content, you need a package file listing any package
+          dependencies, but the file does not exist. Click Scan to create one
+          based on the files in your project and your configuration.
+        </p>
+        <vscode-button @click="onScanForPackageRequirements()">
+          Scan
+        </vscode-button>
+      </template>
+      <template v-if="isNotPythonProject">
+        <p>
+          This project is not configured to use Python. To configure Python, add
+          a [python] section to the currently selected configuration file (
+          {{ home.selectedConfiguration }}
+          ).
+        </p>
+      </template>
+      <template v-if="emptyRequirements">
+        <p>
+          This project currently has no Python package requirements. If this is
+          not accurate, click Scan to update based on the files in your project
+          and configuration.
+        </p>
+        <vscode-button @click="onScanForPackageRequirements()">
+          Scan
+        </vscode-button>
+      </template>
     </WelcomeView>
     <template v-else>
       <TreeItem
@@ -63,33 +83,51 @@ const onEditRequirementsFile = () => {
 
 const pythonPackageActions = computed(() => {
   const result = [];
-  if (showEditRequirementsFile.value) {
+  // if we have no requirements file, so we can't edit or scan
+  if (Boolean(home.pythonPackageFile)) {
     result.push({
       label: "Edit Package Requirements File",
       codicon: "codicon-edit",
       fn: onEditRequirementsFile,
     });
   }
-  result.push(
-    {
-      label: "Refresh Packages",
-      codicon: "codicon-refresh",
-      fn: onRefresh,
-    },
-    {
+  result.push({
+    label: "Refresh Packages",
+    codicon: "codicon-refresh",
+    fn: onRefresh,
+  });
+  if (Boolean(home.pythonPackageFile)) {
+    result.push({
       label: "Scan For Package Requirements",
       codicon: "codicon-eye",
       fn: onScanForPackageRequirements,
-    },
-  );
+    });
+  }
   return result;
 });
 
-const showEditRequirementsFile = computed(() => {
-  return Boolean(home.pythonPackageFile);
+const showWelcomeView = computed(() => {
+  return (
+    isNotPythonProject.value ||
+    emptyRequirements.value ||
+    showScanWelcomeView.value
+  );
 });
 
-const showWelcomeView = computed(() => {
-  return !home.pythonPackages || home.pythonPackages.length === 0;
+const isNotPythonProject = computed(() => {
+  return !home.pythonProject;
+});
+
+const emptyRequirements = computed(() => {
+  return (
+    home.pythonProject &&
+    home.pythonPackageFile &&
+    home.pythonPackages &&
+    home.pythonPackages.length === 0
+  );
+});
+
+const showScanWelcomeView = computed(() => {
+  return home.pythonProject && !home.pythonPackageFile;
 });
 </script>
