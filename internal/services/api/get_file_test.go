@@ -78,6 +78,7 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFunc() {
 	s.NoError(dec.Decode(res))
 
 	s.Equal(src.Rel, res.Rel)
+	s.Equal(src.RelDir, res.RelDir)
 }
 
 func (s *GetFileHandlerFuncSuite) TestHandlerFuncUsingPathname() {
@@ -112,6 +113,7 @@ func (s *GetFileHandlerFuncSuite) TestHandlerFuncUsingPathname() {
 	s.NoError(dec.Decode(res))
 
 	s.Equal(src.Rel, res.Rel)
+	s.Equal(src.RelDir, res.RelDir)
 }
 
 func (s *GetFileHandlerFuncSuite) TestHandlerFuncIsSafeReturnsError() {
