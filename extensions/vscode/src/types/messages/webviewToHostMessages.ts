@@ -15,6 +15,7 @@ export enum WebviewToHostMessageType {
   VSCODE_OPEN = "vscode.open",
   INCLUDE_FILE = "includeFile",
   EXCLUDE_FILE = "excludeFile",
+  REQUEST_FILES_LISTS = "requestFilesLists",
 }
 
 export type AnyWebviewToHostMessage<
@@ -38,7 +39,8 @@ export type WebviewToHostMessage =
   | SaveSelectionStatedMsg
   | VsCodeOpenMsg
   | IncludeFileMsg
-  | ExcludeFileMsg;
+  | ExcludeFileMsg
+  | RequestFilesListsMsg;
 
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
@@ -52,7 +54,8 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.SAVE_SELECTION_STATE ||
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN ||
     msg.kind === WebviewToHostMessageType.INCLUDE_FILE ||
-    msg.kind === WebviewToHostMessageType.EXCLUDE_FILE
+    msg.kind === WebviewToHostMessageType.EXCLUDE_FILE ||
+    msg.kind === WebviewToHostMessageType.REQUEST_FILES_LISTS
   );
 }
 
@@ -115,3 +118,6 @@ export type ExcludeFileMsg = AnyWebviewToHostMessage<
     path: string;
   }
 >;
+
+export type RequestFilesListsMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.REQUEST_FILES_LISTS>;

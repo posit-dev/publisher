@@ -5,7 +5,8 @@
       {
         label: 'Refresh Project Files',
         codicon: 'codicon-refresh',
-        fn: () => {},
+        fn: () =>
+          sendMsg({ kind: WebviewToHostMessageType.REQUEST_FILES_LISTS }),
       },
     ]"
   >

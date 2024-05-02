@@ -125,6 +125,8 @@ export class HomeViewProvider implements WebviewViewProvider {
           "vscode.open",
           Uri.parse(msg.content.uri),
         );
+      case WebviewToHostMessageType.REQUEST_FILES_LISTS:
+        return this.sendRefreshedFilesLists();
       case WebviewToHostMessageType.INCLUDE_FILE:
         return this.updateFileList(msg.content.path, FileAction.INCLUDE);
       case WebviewToHostMessageType.EXCLUDE_FILE:
