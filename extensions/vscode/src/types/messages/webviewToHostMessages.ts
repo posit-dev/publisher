@@ -13,6 +13,8 @@ export enum WebviewToHostMessageType {
   SAVE_DEPLOYMENT_BUTTON_EXPANDED = "saveDeploymentButtonExpanded",
   SAVE_SELECTION_STATE = "saveSelectionState",
   VSCODE_OPEN = "vscode.open",
+  INCLUDE_FILE = "includeFile",
+  EXCLUDE_FILE = "excludeFile",
 }
 
 export type AnyWebviewToHostMessage<
@@ -34,7 +36,9 @@ export type WebviewToHostMessage =
   | NavigateMsg
   | SaveDeploymentButtonExpandedMsg
   | SaveSelectionStatedMsg
-  | VsCodeOpenMsg;
+  | VsCodeOpenMsg
+  | IncludeFileMsg
+  | ExcludeFileMsg;
 
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
@@ -46,7 +50,9 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED ||
     msg.kind === WebviewToHostMessageType.SAVE_SELECTION_STATE ||
-    msg.kind === WebviewToHostMessageType.VSCODE_OPEN
+    msg.kind === WebviewToHostMessageType.VSCODE_OPEN ||
+    msg.kind === WebviewToHostMessageType.INCLUDE_FILE ||
+    msg.kind === WebviewToHostMessageType.EXCLUDE_FILE
   );
 }
 
@@ -93,5 +99,19 @@ export type VsCodeOpenMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.VSCODE_OPEN,
   {
     uri: string;
+  }
+>;
+
+export type IncludeFileMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.INCLUDE_FILE,
+  {
+    path: string;
+  }
+>;
+
+export type ExcludeFileMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.EXCLUDE_FILE,
+  {
+    path: string;
   }
 >;
