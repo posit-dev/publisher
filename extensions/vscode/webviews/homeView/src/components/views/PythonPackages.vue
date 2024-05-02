@@ -14,9 +14,7 @@
       <template v-if="isNotPythonProject">
         <p>
           This project is not configured to use Python. To configure Python, add
-          a [python] section to the currently selected configuration file (
-          {{ home.selectedConfiguration }}
-          ).
+          a [python] section to your configuration file.
         </p>
       </template>
       <template v-if="emptyRequirements">
