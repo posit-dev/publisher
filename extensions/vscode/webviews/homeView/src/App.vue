@@ -3,12 +3,14 @@
 <template>
   <main>
     <EasyDeploy class="easy-deploy-container" />
-    <ProjectFiles />
+    <ProjectFiles v-model:expanded="projectFilesExpanded" />
     <PythonPackages />
   </main>
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
+
 import EasyDeploy from "src/components/EasyDeploy.vue";
 import ProjectFiles from "src/components/views/ProjectFiles.vue";
 import PythonPackages from "src/components/views/PythonPackages.vue";
@@ -16,6 +18,8 @@ import PythonPackages from "src/components/views/PythonPackages.vue";
 import { useHostConduitService } from "src/HostConduitService";
 
 useHostConduitService();
+
+const projectFilesExpanded = ref(true);
 </script>
 
 <style lang="scss" scoped>

@@ -81,6 +81,7 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFunc() {
 	s.NoError(dec.Decode(res))
 
 	s.Equal(src.Rel, res.Rel)
+	s.Equal(src.RelDir, res.RelDir)
 }
 
 func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncGetFileReturnsError() {

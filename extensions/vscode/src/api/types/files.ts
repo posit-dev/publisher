@@ -16,6 +16,7 @@ export type DeploymentFile = {
   isFile: boolean;
   modifiedDatetime: string;
   rel: string;
+  relDir: string;
   size: number;
   abs: string;
 };

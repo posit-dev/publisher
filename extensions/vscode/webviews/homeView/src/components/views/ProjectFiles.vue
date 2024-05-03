@@ -5,7 +5,8 @@
       {
         label: 'Refresh Project Files',
         codicon: 'codicon-refresh',
-        fn: () => {},
+        fn: () =>
+          sendMsg({ kind: WebviewToHostMessageType.REQUEST_FILES_LISTS }),
       },
     ]"
   >
@@ -25,13 +26,19 @@
           "
           :key="file.id"
           :title="file.base"
+          :description="fileDescription(file)"
           codicon="codicon-debug-stackframe-dot"
+          :tooltip="includedFileTooltip(file)"
           :indentLevel="indentLevel"
           :actions="[
             {
               label: 'Exclude this file',
               codicon: 'codicon-diff-removed',
-              fn: () => {},
+              fn: () =>
+                sendMsg({
+                  kind: WebviewToHostMessageType.EXCLUDE_FILE,
+                  content: { path: file.id },
+                }),
             },
           ]"
         />
@@ -54,7 +61,9 @@
           "
           :key="file.id"
           :title="file.base"
+          :description="fileDescription(file)"
           codicon="codicon-debug-stackframe-dot"
+          :tooltip="excludedFileTooltip(file)"
           :indentLevel="indentLevel"
           :actions="
             file.reason?.source === FileMatchSource.BUILT_IN
@@ -63,7 +72,11 @@
                   {
                     label: 'Include this file',
                     codicon: 'codicon-diff-added',
-                    fn: () => {},
+                    fn: () =>
+                      sendMsg({
+                        kind: WebviewToHostMessageType.INCLUDE_FILE,
+                        content: { path: file.id },
+                      }),
                   },
                 ]
           "
@@ -76,7 +89,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
-import { FileMatchSource } from "../../../../../src/api";
+import { DeploymentFile, FileMatchSource } from "../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 
 import TreeItem from "src/components/TreeItem.vue";
@@ -89,4 +102,33 @@ const { sendMsg } = useHostConduitService();
 
 const includedExpanded = ref(true);
 const excludedExpanded = ref(true);
+
+const fileDescription = (file: DeploymentFile) => {
+  if (file.relDir === ".") {
+    return undefined;
+  }
+  return file.relDir;
+};
+
+const includedFileTooltip = (file: DeploymentFile) => {
+  let tooltip = `${file.rel} will be included in the next deployment.`;
+  if (file.reason) {
+    tooltip += `\nThe configuration file ${file.reason?.fileName} is including it with the pattern '${file.reason?.pattern}'`;
+  }
+  return tooltip;
+};
+
+const excludedFileTooltip = (file: DeploymentFile) => {
+  let tooltip = `${file.rel} will be excluded in the next deployment.`;
+  if (file.reason) {
+    if (file.reason.source === FileMatchSource.BUILT_IN) {
+      tooltip += `\nThis is a built-in exclusion for the pattern: '${file.reason.pattern}' and cannot be overridden.`;
+    } else {
+      tooltip += `\nThe configuration file ${file.reason?.fileName} is excluding it with the pattern '${file.reason?.pattern}'`;
+    }
+  } else {
+    tooltip += `\nIt did not match any pattern in the configuration 'files' list.`;
+  }
+  return tooltip;
+};
 </script>

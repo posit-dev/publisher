@@ -285,7 +285,6 @@ const updateCredentialsAndConfigurationForDeployment = () => {
   border-color: gray;
   padding: 5px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
 }
 
