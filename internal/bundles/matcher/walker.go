@@ -32,6 +32,10 @@ var StandardExclusions = []string{
 
 	// Exclude existing manifest.json; we will create one.
 	"!manifest.json",
+
+	// renv library cannot be included; Connect doesn't need it
+	// and it's probably the wrong platform anyway.
+	"!renv/library",
 }
 
 // matchingWalker is a Walker that excludes files and directories
