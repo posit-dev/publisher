@@ -1,9 +1,9 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 /* eslint-disable @typescript-eslint/naming-convention */
-import * as path from "path";
-import * as Mocha from "mocha";
-import * as glob from "glob";
+import path from "path";
+import Mocha from "mocha";
+import { Glob } from "glob";
 
 export function run(): Promise<void> {
   // Create the mocha test
@@ -16,7 +16,7 @@ export function run(): Promise<void> {
   const testsRoot = path.resolve(__dirname, "..");
 
   return new Promise((c, e) => {
-    const testFiles = new glob.Glob("**/**.test.js", { cwd: testsRoot });
+    const testFiles = new Glob("**/**.test.js", { cwd: testsRoot });
     const testFileStream = testFiles.stream();
 
     testFileStream.on("data", (file) => {

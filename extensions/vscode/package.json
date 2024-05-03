@@ -20,7 +20,7 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
@@ -219,26 +219,6 @@
           "group": "navigation@2"
         },
         {
-          "command": "posit.publisher.files.refresh",
-          "when": "view == posit.publisher.files",
-          "group": "navigation@2"
-        },
-        {
-          "command": "posit.publisher.pythonPackages.edit",
-          "when": "view == posit.publisher.pythonPackages",
-          "group": "navigation@1"
-        },
-        {
-          "command": "posit.publisher.pythonPackages.refresh",
-          "when": "view == posit.publisher.pythonPackages",
-          "group": "navigation@2"
-        },
-        {
-          "command": "posit.publisher.pythonPackages.scan",
-          "when": "view == posit.publisher.pythonPackages",
-          "group": "navigation@3"
-        },
-        {
           "command": "posit.publisher.credentials.refresh",
           "when": "view == posit.publisher.credentials",
           "group": "navigation"
@@ -280,16 +260,6 @@
         {
           "command": "posit.publisher.deployments.visit",
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment",
-          "group": "inline"
-        },
-        {
-          "command": "posit.publisher.files.include",
-          "when": "viewItem == posit.publisher.files.isExcludedFile",
-          "group": "inline"
-        },
-        {
-          "command": "posit.publisher.files.exclude",
-          "when": "viewItem == posit.publisher.files.isIncludedFile",
           "group": "inline"
         }
       ],
@@ -421,24 +391,6 @@
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
-          "id": "posit.publisher.files",
-          "name": "Project Files",
-          "contextualTitle": "Publisher",
-          "icon": "$(symbol-file)",
-          "visibility": "collapsed",
-          "initialSize": 0,
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
-        },
-        {
-          "id": "posit.publisher.pythonPackages",
-          "name": "Python Packages",
-          "contextualTitle": "Publisher",
-          "icon": "$(package)",
-          "visibility": "collapsed",
-          "initialSize": 0,
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
-        },
-        {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
           "contextualTitle": "Publisher",
@@ -497,16 +449,6 @@
         "when": "posit.publisher.deployments.isEmpty"
       },
       {
-        "view": "posit.publisher.pythonPackages",
-        "contents": "To deploy Python content, you need a requirements.txt file listing any package dependencies. Click Scan to create one based on the files in your project.\n[Scan](command:posit.publisher.pythonPackages.scan)",
-        "when": "posit.publisher.pythonPackages.context == noRequirements"
-      },
-      {
-        "view": "posit.publisher.pythonPackages",
-        "contents": "This project is not configured to use Python. To configure Python, add a [python] section to the configuration file.",
-        "when": "posit.publisher.pythonPackages.context == noPython"
-      },
-      {
         "view": "posit.publisher.credentials",
         "contents": "Posit Publisher currently uses credentials managed by the following utilities:\n- [RSConnect](https://github.com/rstudio/rsconnect) (R Package)\n- [RSConnect-Python](https://github.com/rstudio/rsconnect-python) (Python utility).\n\nUse one of these utilities to define a credential to your server, then return and click the refresh button\n[Refresh](command:posit.publisher.credentials.refresh)",
         "when": "posit.publisher.credentials.isEmpty == empty"
@@ -549,14 +491,13 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "npm run compile-extension && npm run compile-deploy-selector",
-    "compile-extension": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile",
+    "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "lint": "eslint src --ext ts --max-warnings 0",
-    "compile-deploy-selector": "npm run --prefix webviews/homeView compile",
-    "test": "node ./out/test/runTest.js"
+    "compile": "tsc -p ./",
+    "test": "npm run compile && node ./out/test/runTest.js"
   },
   "devDependencies": {
     "@types/eventsource": "^1.1.15",
@@ -569,6 +510,7 @@
     "@typescript-eslint/eslint-plugin": "^7.4.0",
     "@typescript-eslint/parser": "^7.4.0",
     "@vscode/test-electron": "^2.3.8",
+    "esbuild": "^0.20.2",
     "eslint": "^8.50.0",
     "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.3",
@@ -577,6 +519,7 @@
   },
   "dependencies": {
     "@hypersphere/omnibus": "0.1.6",
+    "@vscode/codicons": "^0.0.35",
     "axios": "^1.6.0",
     "eventsource": "^2.0.2",
     "get-port": "5.1.1",
