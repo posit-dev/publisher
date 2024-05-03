@@ -21,6 +21,7 @@ export enum HostToWebviewMessageType {
   UPDATE_CONFIG_SELECTION = "updateConfigSelection",
   SAVE_SELECTION = "saveSelection",
   REFRESH_FILES_LISTS = "refreshFilesLists",
+  UPDATE_PYTHON_PACKAGES = "updatePythonPackages",
 }
 
 export type AnyHostToWebviewMessage<
@@ -44,7 +45,8 @@ export type HostToWebviewMessage =
   | UpdateDeploymentSelectionMsg
   | UpdateConfigSelectionMsg
   | SaveSelectionMsg
-  | RefreshFilesListsMsg;
+  | RefreshFilesListsMsg
+  | UpdatePythonPackages;
 
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
@@ -58,7 +60,8 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION ||
     msg.kind === HostToWebviewMessageType.UPDATE_CONFIG_SELECTION ||
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
-    msg.kind === HostToWebviewMessageType.REFRESH_FILES_LISTS
+    msg.kind === HostToWebviewMessageType.REFRESH_FILES_LISTS ||
+    msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES
   );
 }
 
@@ -123,5 +126,15 @@ export type RefreshFilesListsMsg = AnyHostToWebviewMessage<
   {
     includedFiles: DeploymentFile[];
     excludedFiles: DeploymentFile[];
+  }
+>;
+
+export type UpdatePythonPackages = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES,
+  {
+    pythonProject: boolean;
+    file?: string;
+    manager?: string;
+    packages?: string[];
   }
 >;

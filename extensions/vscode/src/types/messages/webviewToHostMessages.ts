@@ -12,10 +12,13 @@ export enum WebviewToHostMessageType {
   NAVIGATE = "navigate",
   SAVE_DEPLOYMENT_BUTTON_EXPANDED = "saveDeploymentButtonExpanded",
   SAVE_SELECTION_STATE = "saveSelectionState",
-  VSCODE_OPEN = "vscode.open",
+  VSCODE_OPEN = "vsCodeOpen",
   INCLUDE_FILE = "includeFile",
   EXCLUDE_FILE = "excludeFile",
   REQUEST_FILES_LISTS = "requestFilesLists",
+  VSCODE_OPEN_RELATIVE = "VSCodeOpenRelativeMsg",
+  REFRESH_PYTHON_PACKAGES = "RefreshPythonPackagesMsg",
+  SCAN_PYTHON_PACKAGE_REQUIREMENTS = "ScanPythonPackageRequirementsMsg",
 }
 
 export type AnyWebviewToHostMessage<
@@ -37,10 +40,13 @@ export type WebviewToHostMessage =
   | NavigateMsg
   | SaveDeploymentButtonExpandedMsg
   | SaveSelectionStatedMsg
-  | VsCodeOpenMsg
+  | VSCodeOpenMsg
   | IncludeFileMsg
   | ExcludeFileMsg
-  | RequestFilesListsMsg;
+  | RequestFilesListsMsg
+  | RefreshPythonPackagesMsg
+  | VSCodeOpenRelativeMsg
+  | ScanPythonPackageRequirementsMsg;
 
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
@@ -55,7 +61,10 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN ||
     msg.kind === WebviewToHostMessageType.INCLUDE_FILE ||
     msg.kind === WebviewToHostMessageType.EXCLUDE_FILE ||
-    msg.kind === WebviewToHostMessageType.REQUEST_FILES_LISTS
+    msg.kind === WebviewToHostMessageType.REQUEST_FILES_LISTS ||
+    msg.kind === WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES ||
+    msg.kind === WebviewToHostMessageType.VSCODE_OPEN_RELATIVE ||
+    msg.kind === WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS
   );
 }
 
@@ -67,30 +76,37 @@ export type DeployMsg = AnyWebviewToHostMessage<
     configurationName: string;
   }
 >;
+
 export type InitializingMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.INITIALIZING>;
+
 export type NewDeploymentMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_DEPLOYMENT>;
+
 export type EditConfigurationMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.EDIT_CONFIGURATION,
   {
     configurationName: string;
   }
 >;
+
 export type NewConfigurationMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_CONFIGURATION>;
+
 export type NavigateMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.NAVIGATE,
   {
     uriPath: string;
   }
 >;
+
 export type SaveDeploymentButtonExpandedMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED,
   {
     expanded: boolean;
   }
 >;
+
 export type SaveSelectionStatedMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.SAVE_SELECTION_STATE,
   {
@@ -98,7 +114,7 @@ export type SaveSelectionStatedMsg = AnyWebviewToHostMessage<
   }
 >;
 
-export type VsCodeOpenMsg = AnyWebviewToHostMessage<
+export type VSCodeOpenMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.VSCODE_OPEN,
   {
     uri: string;
@@ -121,3 +137,16 @@ export type ExcludeFileMsg = AnyWebviewToHostMessage<
 
 export type RequestFilesListsMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.REQUEST_FILES_LISTS>;
+
+export type RefreshPythonPackagesMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES>;
+
+export type VSCodeOpenRelativeMsg = AnyWebviewToHostMessage<
+  WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
+  {
+    relativePath: string;
+  }
+>;
+
+export type ScanPythonPackageRequirementsMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS>;

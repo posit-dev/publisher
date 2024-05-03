@@ -35,6 +35,7 @@ import { getNonce } from "../utils/getNonce";
 import { getUri } from "../utils/getUri";
 import { deployProject } from "./deployProgress";
 import { WebviewConduit } from "../utils/webviewConduit";
+import { fileExists } from "../utils/files";
 
 import type { HomeViewState } from "../types/shared";
 import {
@@ -45,8 +46,11 @@ import {
   SaveSelectionStatedMsg,
   WebviewToHostMessage,
   WebviewToHostMessageType,
+  VSCodeOpenRelativeMsg,
 } from "../types/messages/webviewToHostMessages";
 import { HostToWebviewMessageType } from "../types/messages/hostToWebviewMessages";
+import { isAxiosError } from "axios";
+import { confirmOverwrite } from "../dialogs";
 import { splitFilesOnInclusion } from "../utils/files";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
@@ -96,6 +100,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
       this.sendRefreshedFilesLists();
+      this._onRefreshPythonPackages();
       this.createActiveConfigFileWatcher(cfg);
     });
   }
@@ -120,6 +125,12 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onSaveDeploymentButtonExpandedMsg(msg);
       case WebviewToHostMessageType.SAVE_SELECTION_STATE:
         return await this._onSaveSelectionState(msg);
+      case WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES:
+        return await this._onRefreshPythonPackages();
+      case WebviewToHostMessageType.VSCODE_OPEN_RELATIVE:
+        return await this._onRelativeOpenVSCode(msg);
+      case WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS:
+        return await this._onScanForPythonPackageRequirements();
       case WebviewToHostMessageType.VSCODE_OPEN:
         return commands.executeCommand(
           "vscode.open",
@@ -441,6 +452,102 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private _saveExpansionState(expanded: boolean) {
     return this._context.workspaceState.update(lastExpansionState, expanded);
+  }
+
+  private async _onRefreshPythonPackages() {
+    const savedState = this._getSelectionState();
+    const activeConfiguration = savedState.configurationName;
+    let pythonProject = true;
+    let packages: string[] = [];
+    let packageFile: string | undefined;
+    let packageMgr: string | undefined;
+
+    const api = await useApi();
+
+    if (activeConfiguration) {
+      const currentConfig = this.getConfigByName(activeConfiguration);
+      const pythonSection = currentConfig?.configuration.python;
+      if (!pythonSection) {
+        pythonProject = false;
+      } else {
+        try {
+          packageFile = pythonSection.packageFile;
+          packageMgr = pythonSection.packageManager;
+
+          const response =
+            await api.requirements.getByConfiguration(activeConfiguration);
+          packages = response.data.requirements;
+        } catch (error: unknown) {
+          if (isAxiosError(error) && error.response?.status === 404) {
+            // No requirements file; show the welcome view.
+            packageFile = undefined;
+          } else if (isAxiosError(error) && error.response?.status === 409) {
+            // Python is not present in the configuration file
+            pythonProject = false;
+          } else {
+            const summary = getSummaryStringFromError(
+              "homeView::_onRefreshPythonPackages",
+              error,
+            );
+            window.showInformationMessage(summary);
+            return;
+          }
+        }
+      }
+    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES,
+      content: {
+        pythonProject,
+        file: packageFile,
+        manager: packageMgr,
+        packages,
+      },
+    });
+  }
+
+  private async _onRelativeOpenVSCode(msg: VSCodeOpenRelativeMsg) {
+    if (this.root === undefined) {
+      return;
+    }
+    const fileUri = Uri.joinPath(this.root.uri, msg.content.relativePath);
+    await commands.executeCommand("vscode.open", fileUri);
+  }
+
+  private async _onScanForPythonPackageRequirements() {
+    if (this.root === undefined) {
+      // We shouldn't get here if there's no workspace folder open.
+      return;
+    }
+    const activeConfiguration = this._getActiveConfig();
+    const relPathPackageFile =
+      activeConfiguration?.configuration.python?.packageFile;
+    if (relPathPackageFile === undefined) {
+      return;
+    }
+
+    const fileUri = Uri.joinPath(this.root.uri, relPathPackageFile);
+
+    if (await fileExists(fileUri)) {
+      const ok = await confirmOverwrite(
+        `Are you sure you want to overwrite your existing ${relPathPackageFile} file?`,
+      );
+      if (!ok) {
+        return;
+      }
+    }
+
+    try {
+      const api = await useApi();
+      await api.requirements.create(relPathPackageFile);
+      await commands.executeCommand("vscode.open", fileUri);
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "homeView::_onScanForPythonPackageRequirements",
+        error,
+      );
+      window.showInformationMessage(summary);
+    }
   }
 
   public resolveWebviewView(

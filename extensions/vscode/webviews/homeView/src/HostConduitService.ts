@@ -13,6 +13,7 @@ import {
   UpdateConfigSelectionMsg,
   UpdateDeploymentSelectionMsg,
   UpdateExpansionFromStorageMsg,
+  UpdatePythonPackages,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
   WebviewToHostMessage,
@@ -71,6 +72,8 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onSaveSelectionMsg();
     case HostToWebviewMessageType.REFRESH_FILES_LISTS:
       return onRefreshFilesListMsg(msg);
+    case HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES:
+      return onUpdatePythonPackages(msg);
     default:
       console.log(`unexpected command: ${JSON.stringify(msg)}`);
   }
@@ -159,4 +162,14 @@ const onRefreshFilesListMsg = (msg: RefreshFilesListsMsg) => {
   const home = useHomeStore();
   home.includedFiles = msg.content.includedFiles;
   home.excludedFiles = msg.content.excludedFiles;
+};
+
+const onUpdatePythonPackages = (msg: UpdatePythonPackages) => {
+  const home = useHomeStore();
+  home.updatePythonPackages(
+    msg.content.pythonProject,
+    msg.content.packages,
+    msg.content.file,
+    msg.content.manager,
+  );
 };

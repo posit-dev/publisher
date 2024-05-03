@@ -29,6 +29,11 @@ export const useHomeStore = defineStore("home", () => {
   const includedFiles = ref<DeploymentFile[]>([]);
   const excludedFiles = ref<DeploymentFile[]>([]);
 
+  const pythonProject = ref<boolean>(false);
+  const pythonPackages = ref<string[]>();
+  const pythonPackageFile = ref<string>();
+  const pythonPackageManager = ref<string>();
+
   const filteredCredentials = computed(() => {
     return credentials.value.filter((c) => {
       return (
@@ -159,6 +164,18 @@ export const useHomeStore = defineStore("home", () => {
     });
   });
 
+  const updatePythonPackages = (
+    ispythonProject: boolean,
+    packages?: string[],
+    file?: string,
+    manager?: string,
+  ) => {
+    pythonProject.value = ispythonProject;
+    pythonPackages.value = packages;
+    pythonPackageFile.value = file;
+    pythonPackageManager.value = manager;
+  };
+
   return {
     publishInProgress,
     deployments,
@@ -173,6 +190,10 @@ export const useHomeStore = defineStore("home", () => {
     filteredCredentials,
     lastDeploymentResult,
     lastDeploymentMsg,
+    pythonProject,
+    pythonPackages,
+    pythonPackageFile,
+    pythonPackageManager,
     updateSelectedDeploymentByName,
     updateSelectedDeploymentByObject,
     updateSelectedConfigurationByName,
@@ -181,5 +202,6 @@ export const useHomeStore = defineStore("home", () => {
     updateCredentialsAndConfigurationForDeployment,
     updateParentViewSelectionState,
     filterCredentialsToDeployment,
+    updatePythonPackages,
   };
 });

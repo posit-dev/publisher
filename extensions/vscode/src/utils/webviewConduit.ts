@@ -12,12 +12,15 @@ import { HostToWebviewMessage } from "../types/messages/hostToWebviewMessages";
 export class WebviewConduit {
   private _target: Webview | undefined;
   private _onMsgCB: WebviewToHostMessageCB | undefined;
+  private pendingMsgs: HostToWebviewMessage[] = [];
 
   constructor() {}
 
   private _onRawMsgCB = (e: any) => {
     const obj = JSON.parse(e);
-    console.log(`Received msg kind: ${obj.kind}`);
+    console.debug(
+      `\nWebviewConduit trace: ${obj.kind}: ${JSON.stringify(obj.content)}`,
+    );
     if (!isWebviewToHostMessage(obj)) {
       throw new Error(`NonConduitMessage Received: ${JSON.stringify(e)}`);
     }
@@ -38,6 +41,10 @@ export class WebviewConduit {
       this._onMsgCB = undefined;
     }
     this._target = target;
+
+    // send any messages which were queued up awaiting initialization
+    this.pendingMsgs.forEach((msg) => this.sendMsg(msg));
+    this.pendingMsgs = [];
   };
 
   public onMsg = (cb: WebviewToHostMessageCB): Disposable => {
@@ -56,9 +63,11 @@ export class WebviewConduit {
   public sendMsg = (msg: HostToWebviewMessage) => {
     const e = JSON.stringify(msg);
     if (!this._target) {
-      throw new Error(
-        `WebviewConduit::sendMsg called before webview reference established with init(). msg`,
+      console.warn(
+        `Warning: WebviewConduit::sendMsg queueing up msg called before webview reference established with init(): ${e}`,
       );
+      this.pendingMsgs.push(msg);
+      return;
     }
     this._target.postMessage(e);
   };
