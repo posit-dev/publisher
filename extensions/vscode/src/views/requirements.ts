@@ -61,7 +61,7 @@ export class RequirementsTreeDataProvider
       const newConfigName = cfg?.configurationName;
       const newRequirementsFile = cfg?.configuration.python?.packageFile;
 
-      console.log(
+      console.debug(
         `Python Packages has been notified about the active configuration change, which is now: ${newConfigName}`,
       );
 
@@ -96,12 +96,9 @@ export class RequirementsTreeDataProvider
       return [];
     }
     try {
-      console.log(
-        "requirements::getChildren: activeConfigName",
-        this.activeConfigName,
-      );
       if (this.activeConfigName === undefined) {
         // We shouldn't get here if there's no configuration selected.
+        console.warn("requirements::getChildren: No active configuration.");
         await this.setContext(ContextValue.noRequirements);
         return [];
       }

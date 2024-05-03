@@ -39,7 +39,6 @@ export function deployProject(localID: string, stream: EventStream) {
           progress.report({
             message: progressStr,
           });
-          console.log(progressStr);
         }
       };
 

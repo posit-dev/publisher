@@ -109,8 +109,10 @@ export class EventStream extends Readable implements Disposable {
       // Parse the event data and convert keys to camel case
       const message = convertKeysToCamelCase(JSON.parse(event.data));
 
-      // DEBUG
-      // console.log(JSON.stringify(message));
+      // Trace message
+      console.debug(
+        `eventSource trace: ${event.type}: ${JSON.stringify(event)}`,
+      );
 
       // Add the message to the messages array
       this.messages.push(message);

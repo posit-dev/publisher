@@ -56,7 +56,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
     useBus().on("activeConfigChanged", (config: Configuration | undefined) => {
       const newConfigName = config?.configurationName;
 
-      console.log(
+      console.debug(
         `Files have been notified about the active configuration change, which is now: ${newConfigName}`,
       );
       if (this.activeConfigName !== newConfigName) {
@@ -119,7 +119,7 @@ export class FilesTreeDataProvider implements TreeDataProvider<TreeEntries> {
       try {
         if (this.activeConfigName === undefined) {
           // We should not be here without an active configuration.
-          console.log("files::getChildren: No active configuration.");
+          console.warn("files::getChildren: No active configuration.");
           commands.executeCommand("setContext", isEmptyContext, true);
           return [];
         }
