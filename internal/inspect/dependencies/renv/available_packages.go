@@ -88,6 +88,7 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 			"-e",
 			packageListCode,
 		},
+		l.base,
 		l.log)
 
 	if err != nil {
@@ -133,6 +134,7 @@ func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.Absolute
 			"-e",
 			biocRepoListCode,
 		},
+		l.base,
 		l.log)
 
 	if err != nil {
@@ -168,6 +170,7 @@ func (l *defaultAvailablePackagesLister) GetLibPaths() ([]util.AbsolutePath, err
 			"-e",
 			getLibPathsCode,
 		},
+		l.base,
 		l.log)
 
 	if err != nil {

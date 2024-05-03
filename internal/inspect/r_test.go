@@ -64,7 +64,7 @@ func (s *RSuite) TestGetRVersionFromExecutable() {
 	inspector := i.(*defaultRInspector)
 
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything).Return([]byte(rOutput), nil, nil)
+	executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(rOutput), nil, nil)
 	inspector.executor = executor
 	version, err := inspector.getRVersion(rPath.String())
 	s.NoError(err)
@@ -81,7 +81,7 @@ func (s *RSuite) TestGetRVersionFromExecutableWindows() {
 	inspector := i.(*defaultRInspector)
 
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything).Return(nil, []byte(rOutput), nil)
+	executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return(nil, []byte(rOutput), nil)
 	inspector.executor = executor
 	version, err := inspector.getRVersion(rPath.String())
 	s.NoError(err)
@@ -98,7 +98,7 @@ func (s *RSuite) TestGetRVersionFromExecutableErr() {
 
 	executor := executortest.NewMockExecutor()
 	testError := errors.New("test error from RunCommand")
-	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything).Return(nil, nil, testError)
+	executor.On("RunCommand", rPath.String(), []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, testError)
 	inspector.executor = executor
 	version, err := inspector.getRVersion(rPath.String())
 	s.NotNil(err)
@@ -129,7 +129,7 @@ func (s *RSuite) TestGetRenvLockfile() {
 
 	const getRenvLockOutput = "[1] \"/project/renv.lock\"\n"
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything).Return([]byte(getRenvLockOutput), nil, nil)
+	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything, mock.Anything).Return([]byte(getRenvLockOutput), nil, nil)
 	inspector.executor = executor
 	lockfilePath, err := inspector.getRenvLockfile(rPath.String())
 	s.NoError(err)
@@ -150,7 +150,7 @@ func (s *RSuite) TestGetRenvLockfileMismatchedVersion() {
 	inspector := i.(*defaultRInspector)
 
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything).Return([]byte(getRenvLockMismatchedOutput), nil, nil)
+	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything, mock.Anything).Return([]byte(getRenvLockMismatchedOutput), nil, nil)
 	inspector.executor = executor
 	lockfilePath, err := inspector.getRenvLockfile(rPath.String())
 	s.NoError(err)
@@ -183,7 +183,7 @@ func (s *RSuite) TestGetRenvLockfileRError() {
 
 	testError := errors.New("test error from RunCommand")
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything).Return(nil, nil, testError)
+	executor.On("RunCommand", rPath.String(), mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, testError)
 	inspector.executor = executor
 	lockfilePath, err := inspector.getRenvLockfile(rPath.String())
 	s.ErrorIs(err, testError)
@@ -220,7 +220,7 @@ func (s *RSuite) TestGetRVersionFromLockFile() {
 func (s *PythonSuite) TestGetRExecutable() {
 	log := logging.New()
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "/some/R", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	executor.On("RunCommand", "/some/R", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, nil)
 	i := &defaultRInspector{
 		executor: executor,
 		log:      log,
@@ -241,7 +241,7 @@ func (s *PythonSuite) TestGetRExecutableSpecifiedR() {
 	rPath.WriteFile(nil, 0777)
 
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "/some/R", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	executor.On("RunCommand", "/some/R", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, nil)
 	i := &defaultRInspector{
 		rExecutable: rPath.Path,
 		executor:    executor,
@@ -269,7 +269,7 @@ func (s *PythonSuite) TestGetRExecutableNotRunnable() {
 
 	testError := errors.New("test error from RunCommand")
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "/some/R", mock.Anything, mock.Anything).Return(nil, nil, testError)
+	executor.On("RunCommand", "/some/R", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, testError)
 	i := &defaultRInspector{
 		executor: executor,
 		log:      log,

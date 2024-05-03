@@ -4,6 +4,7 @@ package executortest
 
 import (
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -15,8 +16,8 @@ func NewMockExecutor() *MockExecutor {
 	return &MockExecutor{}
 }
 
-func (m *MockExecutor) RunCommand(executable string, argv []string, log logging.Logger) ([]byte, []byte, error) {
-	args := m.Called(executable, argv, log)
+func (m *MockExecutor) RunCommand(executable string, argv []string, cwd util.AbsolutePath, log logging.Logger) ([]byte, []byte, error) {
+	args := m.Called(executable, argv, cwd, log)
 
 	var outSlice []byte
 	out := args.Get(0)

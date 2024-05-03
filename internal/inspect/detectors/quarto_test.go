@@ -42,7 +42,7 @@ func (s *QuartoDetectorSuite) TestInferType() {
 
 	detector := NewQuartoDetector()
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return([]byte(`{
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything, mock.Anything).Return([]byte(`{
 		"quarto": {
 			"version": "1.3.353"
 		  },
@@ -133,7 +133,7 @@ func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
 			"configResources": []
 		  }
 	}`)
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil, nil)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)
@@ -195,7 +195,7 @@ func (s *QuartoDetectorSuite) TestInferTypeWithR() {
 		  "configResources": []
 		}
 	  }`)
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil, nil)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)
@@ -280,7 +280,7 @@ func (s *QuartoDetectorSuite) TestInferTypeNonProject() {
 		},
 		"resources": []
 	  }`)
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project/project.qmd"}, mock.Anything).Return(out, nil, nil)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project/project.qmd"}, mock.Anything, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)
@@ -318,7 +318,7 @@ func (s *QuartoDetectorSuite) TestInferWindows() {
 
 	detector := NewQuartoDetector()
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "quarto", []string{"inspect", base.String()}, mock.Anything).Return([]byte(`{
+	executor.On("RunCommand", "quarto", []string{"inspect", base.String()}, mock.Anything, mock.Anything).Return([]byte(`{
 		"quarto": {
 			"version": "1.3.353"
 		  },
@@ -434,7 +434,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		}
 	  }`)
 
-	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything).Return(out, nil, nil)
+	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
 	t, err := detector.InferType(base)

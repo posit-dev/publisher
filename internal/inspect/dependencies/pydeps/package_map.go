@@ -68,7 +68,7 @@ func packageSpecFromDirName(infoDir util.Path) *PackageSpec {
 
 func (m *defaultPackageMapper) getLibDirs(pythonExecutable string) ([]util.Path, error) {
 	code := "import sys; [print(p) for p in sys.path]"
-	out, _, err := m.executor.RunCommand(pythonExecutable, []string{"-c", code}, m.log)
+	out, _, err := m.executor.RunCommand(pythonExecutable, []string{"-c", code}, util.AbsolutePath{}, m.log)
 	if err != nil {
 		return nil, err
 	}

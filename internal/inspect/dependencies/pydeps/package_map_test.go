@@ -48,7 +48,7 @@ func (s *PackageMapperSuite) TestGetPackageMap() {
 
 	executor := executortest.NewMockExecutor()
 	out := []byte(libDir + "\n/path/to/libraries.zip\n")
-	executor.On("RunCommand", mock.Anything, mock.Anything, mock.Anything).Return(out, nil, nil)
+	executor.On("RunCommand", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(out, nil, nil)
 	m.executor = executor
 
 	mapping, err := m.GetPackageMap("/some/python")

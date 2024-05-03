@@ -9,10 +9,11 @@ import (
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type Executor interface {
-	RunCommand(executable string, args []string, log logging.Logger) ([]byte, []byte, error)
+	RunCommand(executable string, args []string, cwd util.AbsolutePath, log logging.Logger) ([]byte, []byte, error)
 }
 
 type defaultExecutor struct{}
@@ -23,9 +24,10 @@ func NewExecutor() *defaultExecutor {
 	return &defaultExecutor{}
 }
 
-func (e *defaultExecutor) RunCommand(executable string, args []string, log logging.Logger) ([]byte, []byte, error) {
+func (e *defaultExecutor) RunCommand(executable string, args []string, cwd util.AbsolutePath, log logging.Logger) ([]byte, []byte, error) {
 	log.Debug("Running command", "cmd", executable, "args", strings.Join(args, " "))
 	cmd := exec.Command(executable, args...)
+	cmd.Dir = cwd.String()
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	stderrBuf := new(bytes.Buffer)
