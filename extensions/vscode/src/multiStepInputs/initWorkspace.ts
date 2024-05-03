@@ -5,7 +5,7 @@ import {
   MultiStepState,
   isQuickPickItem,
   assignStep,
-} from "./multiStepHelper";
+} from "src/multiStepInputs/multiStepHelper";
 
 import {
   InputBoxValidationSeverity,
@@ -17,13 +17,13 @@ import {
   window,
 } from "vscode";
 
-import { AccountAuthType, useApi, ConfigurationDetails } from "../api";
-import { getSummaryStringFromError } from "../utils/errors";
+import { AccountAuthType, useApi, ConfigurationDetails } from "src/api";
+import { getSummaryStringFromError } from "src/utils/errors";
 import {
   untitledConfigurationName,
   untitledDeploymentName,
-} from "../utils/names";
-import { isValidFilename } from "../utils/files";
+} from "src/utils/names";
+import { isValidFilename } from "src/utils/files";
 
 export async function initWorkspaceWithFixedNames(viewId?: string) {
   await initWorkspace(viewId, "Untitled-1", "default");

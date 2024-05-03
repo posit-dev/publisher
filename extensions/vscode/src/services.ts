@@ -1,9 +1,10 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { HOST } from ".";
-import { Server } from "./servers";
-import { initApi } from "./api";
 import { ExtensionContext, Disposable } from "vscode";
+
+import { HOST } from "src";
+import { initApi } from "src/api";
+import { Server } from "src/servers";
 
 export class Service implements Disposable {
   private context: ExtensionContext;

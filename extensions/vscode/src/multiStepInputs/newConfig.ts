@@ -5,7 +5,7 @@ import {
   MultiStepState,
   isQuickPickItem,
   assignStep,
-} from "./multiStepHelper";
+} from "src/multiStepInputs/multiStepHelper";
 
 import {
   InputBoxValidationSeverity,
@@ -17,10 +17,10 @@ import {
   window,
 } from "vscode";
 
-import { useApi, ConfigurationDetails, Configuration } from "../api";
-import { getSummaryStringFromError } from "../utils/errors";
-import { untitledConfigurationName } from "../utils/names";
-import { isValidFilename } from "../utils/files";
+import { useApi, ConfigurationDetails, Configuration } from "src/api";
+import { getSummaryStringFromError } from "src/utils/errors";
+import { untitledConfigurationName } from "src/utils/names";
+import { isValidFilename } from "src/utils/files";
 
 export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************

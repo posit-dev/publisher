@@ -17,6 +17,8 @@ import {
   window,
   workspace,
 } from "vscode";
+import { isAxiosError } from "axios";
+
 import {
   Account,
   Configuration,
@@ -27,17 +29,17 @@ import {
   isConfigurationError,
   isDeploymentError,
   useApi,
-} from "../api";
-import { useBus } from "../bus";
-import { EventStream } from "../events";
-import { getSummaryStringFromError } from "../utils/errors";
-import { getNonce } from "../utils/getNonce";
-import { getUri } from "../utils/getUri";
-import { deployProject } from "./deployProgress";
-import { WebviewConduit } from "../utils/webviewConduit";
-import { fileExists } from "../utils/files";
+} from "src/api";
+import { useBus } from "src/bus";
+import { EventStream } from "src/events";
+import { getSummaryStringFromError } from "src/utils/errors";
+import { getNonce } from "src/utils/getNonce";
+import { getUri } from "src/utils/getUri";
+import { deployProject } from "src/views/deployProgress";
+import { WebviewConduit } from "src/utils/webviewConduit";
+import { fileExists } from "src/utils/files";
 
-import type { HomeViewState } from "../types/shared";
+import type { HomeViewState } from "src/types/shared";
 import {
   DeployMsg,
   EditConfigurationMsg,
@@ -47,11 +49,10 @@ import {
   WebviewToHostMessage,
   WebviewToHostMessageType,
   VSCodeOpenRelativeMsg,
-} from "../types/messages/webviewToHostMessages";
-import { HostToWebviewMessageType } from "../types/messages/hostToWebviewMessages";
-import { isAxiosError } from "axios";
-import { confirmOverwrite } from "../dialogs";
-import { splitFilesOnInclusion } from "../utils/files";
+} from "src/types/messages/webviewToHostMessages";
+import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
+import { confirmOverwrite } from "src/dialogs";
+import { splitFilesOnInclusion } from "src/utils/files";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
