@@ -90,15 +90,21 @@ func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path
 		// then configure R for the project.
 		return true, nil
 	}
-	if cfg.R != nil && cfg.R.Version == "" {
+	if cfg.R != nil {
 		// InferType returned an R configuration for us to fill in.
 		return true, nil
 	}
-	// Presence of renv.lock implies R is needed.
-	lockfilePath := base.Join(inspect.DefaultRenvLockfile)
-	exists, err := lockfilePath.Exists()
-	if err != nil {
-		return false, err
+	if cfg.Type != config.ContentTypeHTML {
+		// Presence of renv.lock implies R is needed,
+		// unless we're deploying pre-rendered Rmd or Quarto
+		// (where there will usually be a source file and
+		// associated lockfile in the directory)
+		lockfilePath := base.Join(inspect.DefaultRenvLockfile)
+		exists, err := lockfilePath.Exists()
+		if err != nil {
+			return false, err
+		}
+		return exists, nil
 	}
 	return exists, nil
 }
