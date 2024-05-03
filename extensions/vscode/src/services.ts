@@ -2,7 +2,7 @@
 
 import { ExtensionContext, Disposable } from "vscode";
 
-import { initApi } from "@publishing-client/api"
+import { initApi } from "@publishing-client/api";
 
 import { HOST } from "src";
 import { Server } from "src/servers";
