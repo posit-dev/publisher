@@ -4,6 +4,7 @@ import {
   Event,
   EventEmitter,
   ExtensionContext,
+  InputBoxValidationSeverity,
   ThemeIcon,
   TreeDataProvider,
   TreeItem,
@@ -155,27 +156,23 @@ export class CredentialsTreeItem extends TreeItem {
 const getServerNameFromInputBox = async (
   value: string = "",
 ): Promise<string | undefined> => {
-  let errorMessage = "";
-  while (true) {
-    let name = await window.showInputBox({
-      title: "Enter the Credential Name (2/3)",
-      placeHolder: errorMessage || "Posit Connect",
-      prompt: "Choose a unique nickname for your credential.",
-      value: errorMessage ? undefined : value,
-      ignoreFocusOut: true,
-    });
-    if (name === undefined) {
-      // user pressed escape
-      return undefined;
-    }
-    name = name.trim();
-    if (name === "") {
-      errorMessage = `The provided credential nickname is invalid. Please try again.`;
-      window.showErrorMessage(errorMessage);
-    } else {
-      return name;
-    }
-  }
+  return window.showInputBox({
+    title: "Enter the Credential Name (2/3)",
+    placeHolder: "Posit Connect",
+    prompt: "Choose a unique nickname for your credential.",
+    value: value,
+    ignoreFocusOut: true,
+    validateInput: (input) => {
+      input = input.trim();
+      if (input.trim() === "") {
+        return {
+          message: "Oops! It seems like your forgot something.",
+          severity: InputBoxValidationSeverity.Error,
+        };
+      }
+      return;
+    },
+  });
 };
 
 /**
@@ -188,43 +185,49 @@ const getServerNameFromInputBox = async (
  * @returns Promise<URL | undefined>
  */
 const getServerUrlFromInputBox = async (): Promise<URL | undefined> => {
-  let errorMessage = "";
-  while (true) {
-    let url = await window.showInputBox({
-      title: "Enter the Server URL (1/3)",
-      placeHolder: errorMessage || "https://connect.example.com/",
-      prompt:
-        "The server url is the web address where you access and interact with your deployed content, typically this is the address you access in your web browser.",
-      ignoreFocusOut: true,
-    });
-    if (url === undefined) {
-      // user pressed escape
-      return undefined;
+  const format = (input: string): string => {
+    // check if the URL starts with a scheme
+    if (/^[a-zA-Z]+:\/\//.test(input)) {
+      return input;
     }
-
-    url = url.trim();
-    if (url === "") {
-      (errorMessage = `The provided server URL is invalid. Please try again.`),
-        window.showErrorMessage(errorMessage);
-    } else {
+    return `https://${input}`;
+  };
+  const url = await window.showInputBox({
+    title: "Enter the Server URL (1/3)",
+    placeHolder: "https://connect.example.com/",
+    prompt:
+      "The server URL is the web address you enter in your browser to access Posit Connect.",
+    ignoreFocusOut: true,
+    validateInput: (input) => {
+      input = input.trim();
+      if (input === "") {
+        return {
+          message: "Oops! It seems like your forgot something.",
+          severity: InputBoxValidationSeverity.Error,
+        };
+      }
       try {
         // check if the URL starts with a scheme
-        if (/^[a-zA-Z]+:\/\//.test(url)) {
-          return new URL(url);
-        } else {
-          // default scheme to 'https://'
-          return new URL(`https://${url}`);
+        const url = new URL(format(input));
+        if (!(url.hostname.includes('.'))) {
+          return {
+            message: "Hold up! You're missing a domain! Are you sure you want to proceed?",
+            severity: InputBoxValidationSeverity.Warning,
+          };
         }
       } catch (e) {
         if (!(e instanceof TypeError)) {
           throw e;
         }
-        (errorMessage = `The provided server URL '${url}' is invalid. Please try again.`),
-          window.showErrorMessage(errorMessage);
-        continue;
+        return {
+          message: "Whoops! This URL isn't valid.",
+          severity: InputBoxValidationSeverity.Error,
+        };
       }
-    }
-  }
+      return;
+    },
+  });
+  return url !== undefined ? new URL(format(url)) : url;
 };
 
 /**
@@ -235,31 +238,21 @@ const getServerUrlFromInputBox = async (): Promise<URL | undefined> => {
  * @returns Promise<string | undefined> - the API key, or undefined if user quits
  */
 const getApiKeyFromInputBox = async (): Promise<string | undefined> => {
-  let errorMessage;
-  while (true) {
-    let apiKey = await window.showInputBox({
+  return window.showInputBox({
       title: "Enter the API Key (3/3)",
       password: true,
-      placeHolder: errorMessage || "ABcdEfgHIJKlMNopqRstuvWXyz012345",
+      placeHolder: "ABcdEfgHIJKlMNopqRstuvWXyz012345",
       prompt:
         "An API key is a unique 32 character code that identifies and grants access to your server.",
       ignoreFocusOut: true,
+      validateInput: (input) => {
+        input = input.trim();
+        if (input === "") {
+          return "Oops! It looks like you forgot your API key.";
+        } else if (input.length !== 32) {
+          return "Hmm, the API key you entered doesn't match the secret 32-character code we were expecting. Please double-check it and try again!";
+        }
+        return;
+      }
     });
-
-    if (apiKey === undefined) {
-      // user pressed escape
-      return undefined;
-    }
-
-    apiKey = apiKey.trim();
-    if (apiKey === "") {
-      errorMessage = "An API key was not provided. Please try again.";
-      window.showErrorMessage(errorMessage);
-    } else if (apiKey.length !== 32) {
-      (errorMessage = `The provided API key is invalid. Expected a unique 32 character code. Please try again.`),
-        window.showErrorMessage(errorMessage);
-    } else {
-      return apiKey;
-    }
-  }
 };
