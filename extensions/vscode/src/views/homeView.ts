@@ -462,6 +462,8 @@ export class HomeViewProvider implements WebviewViewProvider {
     let packageFile: string | undefined;
     let packageMgr: string | undefined;
 
+    const api = await useApi();
+
     if (activeConfiguration) {
       const currentConfig = this.getConfigByName(activeConfiguration);
       const pythonSection = currentConfig?.configuration.python;
@@ -469,7 +471,6 @@ export class HomeViewProvider implements WebviewViewProvider {
         pythonProject = false;
       } else {
         try {
-          const api = await useApi();
           packageFile = pythonSection.packageFile;
           packageMgr = pythonSection.packageManager;
 
