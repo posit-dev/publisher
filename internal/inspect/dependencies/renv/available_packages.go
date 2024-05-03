@@ -104,8 +104,8 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 	available := []AvailablePackage{}
 	lines := strings.Split(string(out), "\n")
 	for _, line := range lines {
-		parts := strings.SplitN(line, " ", 2)
-		if len(parts) != 2 {
+		parts := strings.SplitN(line, " ", 3)
+		if len(parts) != 3 {
 			continue
 		}
 		packageName := parts[0]
@@ -125,8 +125,8 @@ const bioconductorReposCodeTemplate = `
 	if (requireNamespace("BiocManager", quietly = TRUE) ||
 		requireNamespace("BiocInstaller", quietly = TRUE)) {
 		repos <- getFromNamespace("renv_bioconductor_repos", "renv")("%s")
-		repos[setdiff(names(repos), "CRAN")]
-		cat(repos, labels=names(r), fill=1)
+		repos <- repos[setdiff(names(repos), "CRAN")]
+		cat(repos, labels=names(repos), fill=1)
 		invisible()
 	}
 })()

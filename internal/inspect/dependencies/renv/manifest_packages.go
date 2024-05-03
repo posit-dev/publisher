@@ -45,7 +45,7 @@ func package_version(vs string) []int {
 	// usually represented as character strings with the elements of the sequence
 	// concatenated and separated by single . or - characters"
 	parts := strings.FieldsFunc(vs, func(c rune) bool {
-		return c >= '0' && c <= '9'
+		return c < '0' || c > '9'
 	})
 	values := []int{}
 	for _, part := range parts {
@@ -132,8 +132,10 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 var errBadDescription = errors.New("invalid DESCRIPTION file")
 var errPackageNotFound = errors.New("package not found in current libPaths")
 
+var keepWhiteFields = []string{"Description", "Authors@R", "Author", "Built", "Packaged"}
+
 func readPackageDescription(name PackageName, libPaths []util.AbsolutePath) (dcf.Record, error) {
-	reader := dcf.NewFileReader()
+	reader := dcf.NewFileReader(keepWhiteFields)
 	for _, libPath := range libPaths {
 		descPath := libPath.Join(string(name), "DESCRIPTION")
 		descRecords, err := reader.ReadFile(descPath)
@@ -145,7 +147,7 @@ func readPackageDescription(name PackageName, libPaths []util.AbsolutePath) (dcf
 				return nil, err
 			}
 		}
-		if len(descRecords) != 1 {
+		if len(descRecords) == 0 {
 			return nil, fmt.Errorf("%s: %w", descPath.String(), errBadDescription)
 		}
 		return descRecords[0], nil
@@ -154,6 +156,7 @@ func readPackageDescription(name PackageName, libPaths []util.AbsolutePath) (dcf
 }
 
 var errLockfileLibraryMismatch = errors.New("library and lockfile are out of sync. Use renv::restore() or renv::snapshot() to synchronize")
+var errMissingPackageSource = errors.New("can't re-install packages installed from source; all packages must be installed from a reproducible location")
 
 func (m *defaultPackageMapper) GetManifestPackages(
 	base util.AbsolutePath,
@@ -198,6 +201,9 @@ func (m *defaultPackageMapper) GetManifestPackages(
 		if description["Version"] != pkg.Version {
 			return nil, fmt.Errorf("package %s: lockfile version '%s', library version '%s': %w",
 				pkg.Package, pkg.Version, description["Version"], errLockfileLibraryMismatch)
+		}
+		if manifestPkg.Source == "" {
+			return nil, fmt.Errorf("package %s, version %s: %w", pkg.Package, pkg.Version, errMissingPackageSource)
 		}
 		manifestPkg.Description = description
 		manifestPackages[string(pkg.Package)] = *manifestPkg
