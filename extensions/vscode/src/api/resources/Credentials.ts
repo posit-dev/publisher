@@ -26,8 +26,8 @@ export class Credentials {
   delete(name: string) {
     return this.client.delete<Credential>(`credentials`, {
       params: {
-        name
-      }
+        name,
+      },
     });
   }
 }

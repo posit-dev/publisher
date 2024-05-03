@@ -10,6 +10,7 @@ export enum AccountSource {
   RSCONNECT_PYTHON = "rsconnect-python",
   RSCONNECT = "rsconnect",
   ENVIRONMENT = "environment",
+  KEYCHAIN = "keychain",
 }
 
 export enum AccountAuthType {

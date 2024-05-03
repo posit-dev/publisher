@@ -78,6 +78,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.credentials.delete",
+        "title": "Delete",
+        "icon": "$(trash)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.credentials.refresh",
         "title": "Refresh Credentials",
         "icon": "$(refresh)",
@@ -274,6 +280,10 @@
           "when": "view == posit.publisher.configurations"
         },
         {
+          "command": "posit.publisher.credentials.delete",
+          "when": "view == posit.publisher.credentials && viewItem == posit.publisher.credentials.tree.item.keychain"
+        },
+        {
           "command": "posit.publisher.deployments.deploy",
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment || viewItem == posit.publisher.deployments.tree.item.predeployment",
           "group": "inline"
@@ -322,6 +332,9 @@
         {
           "command": "posit.publisher.configurations.delete",
           "when": "false"
+        },
+        {
+          "command": "posit.publisher.credentials.delete"
         },
         {
           "command": "posit.publisher.credentials.refresh",

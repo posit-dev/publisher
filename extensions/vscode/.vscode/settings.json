@@ -17,5 +17,6 @@
   "editor.formatOnPaste": true,
   "[vue]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "r.lsp.promptToInstall": false
 }
