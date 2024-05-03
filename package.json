@@ -4,7 +4,8 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "extensions/*"
+    "extensions/*",
+    "extensions/vscode/webviews/*"
   ],
   "scripts": {
     "format": "prettier . --write",
