@@ -219,26 +219,6 @@
           "group": "navigation@2"
         },
         {
-          "command": "posit.publisher.files.refresh",
-          "when": "view == posit.publisher.files",
-          "group": "navigation@2"
-        },
-        {
-          "command": "posit.publisher.pythonPackages.edit",
-          "when": "view == posit.publisher.pythonPackages",
-          "group": "navigation@1"
-        },
-        {
-          "command": "posit.publisher.pythonPackages.refresh",
-          "when": "view == posit.publisher.pythonPackages",
-          "group": "navigation@2"
-        },
-        {
-          "command": "posit.publisher.pythonPackages.scan",
-          "when": "view == posit.publisher.pythonPackages",
-          "group": "navigation@3"
-        },
-        {
           "command": "posit.publisher.credentials.refresh",
           "when": "view == posit.publisher.credentials",
           "group": "navigation"
@@ -280,16 +260,6 @@
         {
           "command": "posit.publisher.deployments.visit",
           "when": "viewItem == posit.publisher.deployments.tree.item.deployment",
-          "group": "inline"
-        },
-        {
-          "command": "posit.publisher.files.include",
-          "when": "viewItem == posit.publisher.files.isExcludedFile",
-          "group": "inline"
-        },
-        {
-          "command": "posit.publisher.files.exclude",
-          "when": "viewItem == posit.publisher.files.isIncludedFile",
           "group": "inline"
         }
       ],
@@ -421,24 +391,6 @@
           "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
         },
         {
-          "id": "posit.publisher.files",
-          "name": "Project Files",
-          "contextualTitle": "Publisher",
-          "icon": "$(symbol-file)",
-          "visibility": "collapsed",
-          "initialSize": 0,
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
-        },
-        {
-          "id": "posit.publisher.pythonPackages",
-          "name": "Python Packages",
-          "contextualTitle": "Publisher",
-          "icon": "$(package)",
-          "visibility": "collapsed",
-          "initialSize": 0,
-          "when": "workbenchState == folder && !posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.credentialCheck == 'succeeded'"
-        },
-        {
           "id": "posit.publisher.configurations",
           "name": "Configurations",
           "contextualTitle": "Publisher",
@@ -495,16 +447,6 @@
         "view": "posit.publisher.deployments",
         "contents": "To publish your content, you need to create a deployment. Click the button below to create one and optionally publish your project using it.\n[New Deployment](command:posit.publisher.deployments.addDeployment)",
         "when": "posit.publisher.deployments.isEmpty"
-      },
-      {
-        "view": "posit.publisher.pythonPackages",
-        "contents": "To deploy Python content, you need a requirements.txt file listing any package dependencies. Click Scan to create one based on the files in your project.\n[Scan](command:posit.publisher.pythonPackages.scan)",
-        "when": "posit.publisher.pythonPackages.context == noRequirements"
-      },
-      {
-        "view": "posit.publisher.pythonPackages",
-        "contents": "This project is not configured to use Python. To configure Python, add a [python] section to the configuration file.",
-        "when": "posit.publisher.pythonPackages.context == noPython"
       },
       {
         "view": "posit.publisher.credentials",
