@@ -568,6 +568,7 @@ export class HomeViewProvider implements WebviewViewProvider {
         Uri.joinPath(this._extensionUri, "webviews", "homeView", "dist"),
         Uri.joinPath(
           this._extensionUri,
+          "../..",
           "node_modules",
           "@vscode",
           "codicons",
@@ -616,6 +617,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     ]);
     // The codicon css (and related tff file) are needing to be loaded for icons
     const codiconsUri = getUri(webview, extensionUri, [
+      "../..",
       "node_modules",
       "@vscode",
       "codicons",
