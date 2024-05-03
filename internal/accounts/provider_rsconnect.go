@@ -26,7 +26,7 @@ func newRSConnectProvider(fs afero.Fs, log logging.Logger) *rsconnectProvider {
 	return &rsconnectProvider{
 		fs:        fs,
 		goos:      runtime.GOOS,
-		dcfReader: dcf.NewFileReader(),
+		dcfReader: dcf.NewFileReader(nil),
 		log:       log,
 	}
 }

@@ -30,7 +30,7 @@ func (s *DCFSuite) TestReadFile() {
 	fs.On("Open", mock.Anything).Return(f, nil)
 
 	expectedRecords := Records{}
-	r := NewFileReader()
+	r := NewFileReader(nil)
 	decoder := NewMockDecoder()
 	decoder.On("Decode", mock.Anything).Return(expectedRecords, nil)
 	r.decoder = decoder
@@ -45,7 +45,7 @@ func (s *DCFSuite) TestReadFileNonexistent() {
 	fs := utiltest.NewMockFs()
 	fs.On("Open", mock.Anything).Return(nil, os.ErrNotExist)
 
-	r := NewFileReader()
+	r := NewFileReader(nil)
 	path := util.NewAbsolutePath("/nonexistent.dcf", fs)
 	data, err := r.ReadFile(path)
 	s.ErrorIs(err, os.ErrNotExist)
@@ -68,7 +68,7 @@ func (s *DCFSuite) TestReadFiles() {
 		{"a": "1"},
 		{"b": "2"},
 	}
-	r := NewFileReader()
+	r := NewFileReader(nil)
 
 	records, err := r.ReadFiles(path, "*.dcf")
 	s.Nil(err)
@@ -83,7 +83,7 @@ func (s *DCFSuite) TestReadFilesErr() {
 	err = path.Join("a.dcf").WriteFile([]byte(`abc`), 0600)
 	s.NoError(err)
 
-	r := NewFileReader()
+	r := NewFileReader(nil)
 
 	records, err := r.ReadFiles(path, "*.dcf")
 	s.NotNil(err)
@@ -91,23 +91,60 @@ func (s *DCFSuite) TestReadFilesErr() {
 }
 
 func (s *DCFSuite) TestDecode() {
-	input := "a: 1\nb: 2\n\na: 3\nb: 4\n\ns: abc\n  def"
+	input := "a: 1\nb: 2\n\na: 3\nb: 4\n\ns: abc\n  def "
 	expectedRecords := Records{
 		{"a": "1", "b": "2"},
 		{"a": "3", "b": "4"},
-		{"s": "abcdef"},
+		{"s": "abc\ndef"},
 	}
 	r := bytes.NewReader([]byte(input))
-	decoder := NewDecoder()
+	decoder := NewDecoder(nil)
 	records, err := decoder.Decode(r)
 	s.Nil(err)
 	s.Equal(expectedRecords, records)
 }
 
-func (s *DCFSuite) TestDecodeMissingColor() {
+func (s *DCFSuite) TestDecodeKeepWhiteWithFollowingField() {
+	input := "s: abc \n  def \nt: abc \n  def "
+	expectedRecords := Records{
+		{"s": "abc \n  def", "t": "abc\ndef"},
+	}
+	r := bytes.NewReader([]byte(input))
+	decoder := NewDecoder([]string{"s"})
+	records, err := decoder.Decode(r)
+	s.Nil(err)
+	s.Equal(expectedRecords, records)
+}
+
+func (s *DCFSuite) TestDecodeKeepWhiteLastFieldInRecord() {
+	input := "t: abc\n  def \ns: abc\n  def \n\na: 1"
+	expectedRecords := Records{
+		{"s": "abc\n  def", "t": "abc\ndef"},
+		{"a": "1"},
+	}
+	r := bytes.NewReader([]byte(input))
+	decoder := NewDecoder([]string{"s"})
+	records, err := decoder.Decode(r)
+	s.Nil(err)
+	s.Equal(expectedRecords, records)
+}
+
+func (s *DCFSuite) TestDecodeKeepWhiteLastFieldInLastRecord() {
+	input := "t: abc\n  def \ns: abc\n  def "
+	expectedRecords := Records{
+		{"s": "abc\n  def", "t": "abc\ndef"},
+	}
+	r := bytes.NewReader([]byte(input))
+	decoder := NewDecoder([]string{"s"})
+	records, err := decoder.Decode(r)
+	s.Nil(err)
+	s.Equal(expectedRecords, records)
+}
+
+func (s *DCFSuite) TestDecodeMissingTag() {
 	input := "a: 1\nabc"
 	r := bytes.NewReader([]byte(input))
-	decoder := NewDecoder()
+	decoder := NewDecoder(nil)
 	records, err := decoder.Decode(r)
 	s.ErrorContains(err, "missing ':'")
 	s.Nil(records)
@@ -116,7 +153,7 @@ func (s *DCFSuite) TestDecodeMissingColor() {
 func (s *DCFSuite) TestDecodeUnexpectedContinuation() {
 	input := "a: 1\n\n  def"
 	r := bytes.NewReader([]byte(input))
-	decoder := NewDecoder()
+	decoder := NewDecoder(nil)
 	records, err := decoder.Decode(r)
 	s.ErrorContains(err, "unexpected continuation")
 	s.Nil(records)

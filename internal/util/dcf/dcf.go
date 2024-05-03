@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/util"
@@ -23,7 +24,9 @@ type FileReader interface {
 	ReadFiles(path util.AbsolutePath, pattern string) (Records, error)
 }
 
-type decoder struct{}
+type decoder struct {
+	keepWhite []string
+}
 
 var _ Decoder = &decoder{}
 
@@ -33,14 +36,16 @@ type fileReader struct {
 
 var _ FileReader = &fileReader{}
 
-func NewFileReader() *fileReader {
+func NewFileReader(keepWhite []string) *fileReader {
 	return &fileReader{
-		decoder: NewDecoder(),
+		decoder: NewDecoder(keepWhite),
 	}
 }
 
-func NewDecoder() *decoder {
-	return &decoder{}
+func NewDecoder(keepWhite []string) *decoder {
+	return &decoder{
+		keepWhite: keepWhite,
+	}
 }
 
 const whitespace = " \t"
@@ -88,6 +93,7 @@ func (d *decoder) Decode(r io.Reader) (Records, error) {
 		trimmedLine := strings.TrimLeft(line, whitespace)
 		if trimmedLine == "" && len(currentRecord) != 0 {
 			// Blank (whitespace-only) line indicates end of record
+			currentRecord[currentTag] = strings.TrimRight(currentRecord[currentTag], whitespace)
 			records = append(records, currentRecord)
 			currentRecord = Record{}
 			currentTag = ""
@@ -96,19 +102,32 @@ func (d *decoder) Decode(r io.Reader) (Records, error) {
 			if currentTag == "" {
 				return nil, fmt.Errorf("couldn't parse DCF data: unexpected continuation on line %d", lineNum)
 			}
-			currentRecord[currentTag] += strings.Trim(line, whitespace)
+			if !slices.Contains(d.keepWhite, currentTag) {
+				line = strings.Trim(line, whitespace)
+			}
+			currentRecord[currentTag] += "\n" + line
 		} else {
 			// New field in the current record
 			tag, value, ok := strings.Cut(line, ":")
 			if !ok {
 				return nil, fmt.Errorf("couldn't parse DCF data: missing ':' on line %d", lineNum)
 			}
-			currentRecord[tag] = strings.Trim(value, whitespace)
+
+			// Trim end of current record value if needed
+			if len(currentRecord) != 0 {
+				currentRecord[currentTag] = strings.TrimRight(currentRecord[currentTag], whitespace)
+			}
+
+			if !slices.Contains(d.keepWhite, tag) {
+				value = strings.TrimRight(value, whitespace)
+			}
+			currentRecord[tag] = strings.TrimLeft(value, whitespace)
 			currentTag = tag
 		}
 	}
 	// Include last record (if it wasn't followed by a blank line before EOF)
 	if len(currentRecord) != 0 {
+		currentRecord[currentTag] = strings.TrimRight(currentRecord[currentTag], whitespace)
 		records = append(records, currentRecord)
 	}
 	return records, nil
