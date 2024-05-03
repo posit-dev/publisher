@@ -50,6 +50,7 @@ import { computed } from "vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
+import { ActionButton } from "../ActionToolbar.vue";
 
 const home = useHomeStore();
 
@@ -79,8 +80,8 @@ const onEditRequirementsFile = () => {
   });
 };
 
-const pythonPackageActions = computed(() => {
-  const result = [];
+const pythonPackageActions = computed((): ActionButton[] => {
+  const result: ActionButton[] = [];
   // if we have no requirements file, so we can't edit or scan
   if (Boolean(home.pythonPackageFile)) {
     result.push({

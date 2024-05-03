@@ -449,7 +449,7 @@ export class HomeViewProvider implements WebviewViewProvider {
           if (isAxiosError(error) && error.response?.status === 404) {
             // No requirements file; show the welcome view.
             packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 404) {
+          } else if (isAxiosError(error) && error.response?.status === 409) {
             // Python is not present in the configuration file
             pythonProject = false;
           } else {
