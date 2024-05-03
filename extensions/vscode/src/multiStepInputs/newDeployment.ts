@@ -7,7 +7,7 @@ import {
   PreDeployment,
   isConfigurationError,
   useApi,
-} from "src/api";
+} from "@publishing-client/api";
 import { EventStream } from "src/events";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {

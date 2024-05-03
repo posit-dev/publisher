@@ -6,7 +6,7 @@ import {
   Deployment,
   DeploymentFile,
   PreDeployment,
-} from "../../api";
+} from "@publishing-client/api";
 
 export enum HostToWebviewMessageType {
   // Sent from host to webviewView

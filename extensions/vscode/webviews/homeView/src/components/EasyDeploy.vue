@@ -140,10 +140,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+import {
+  isPreDeployment,
+  Account,
+  Configuration,
+} from "@publishing-client/api";
 import { formatDateString } from "../../../../../../web/src/utils/date";
-import { isPreDeployment } from "../../../../src/api/types/deployments";
-import { Account } from "../../../../src/api/types/accounts";
-import { Configuration } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 
 import { useHomeStore } from "src/stores/home";

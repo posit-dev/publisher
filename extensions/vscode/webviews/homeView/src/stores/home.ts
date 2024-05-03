@@ -8,7 +8,7 @@ import {
   Account,
   Configuration,
   DeploymentFile,
-} from "../../../../src/api";
+} from "@publishing-client/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 
 export const useHomeStore = defineStore("home", () => {

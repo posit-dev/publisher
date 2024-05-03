@@ -29,7 +29,7 @@ import {
   isConfigurationError,
   isDeploymentError,
   useApi,
-} from "src/api";
+} from "@publishing-client/api";
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
 import { getSummaryStringFromError } from "src/utils/errors";

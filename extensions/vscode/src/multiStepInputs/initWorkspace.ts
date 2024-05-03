@@ -17,7 +17,11 @@ import {
   window,
 } from "vscode";
 
-import { AccountAuthType, useApi, ConfigurationDetails } from "src/api";
+import {
+  AccountAuthType,
+  useApi,
+  ConfigurationDetails,
+} from "@publishing-client/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   untitledConfigurationName,

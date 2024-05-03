@@ -17,7 +17,11 @@ import {
   window,
 } from "vscode";
 
-import { useApi, ConfigurationDetails, Configuration } from "src/api";
+import {
+  useApi,
+  ConfigurationDetails,
+  Configuration,
+} from "@publishing-client/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { untitledConfigurationName } from "src/utils/names";
 import { isValidFilename } from "src/utils/files";

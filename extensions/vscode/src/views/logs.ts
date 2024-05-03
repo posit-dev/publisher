@@ -17,7 +17,7 @@ import {
 
 import { EventStream, displayEventStreamMessage } from "src/events";
 
-import { EventStreamMessage } from "src/api";
+import { EventStreamMessage } from "@publishing-client/api";
 
 enum LogStageStatus {
   notStarted,

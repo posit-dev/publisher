@@ -1,7 +1,12 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { Omnibus, args } from "@hypersphere/omnibus";
-import { Account, Configuration, Deployment, PreDeployment } from "src/api";
+import {
+  Account,
+  Configuration,
+  Deployment,
+  PreDeployment,
+} from "@publishing-client/api";
 
 export const bus = Omnibus.builder()
   // activeDeploymentChanged: triggered if deployment name or value has changed
