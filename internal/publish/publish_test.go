@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
@@ -177,9 +176,6 @@ func (s *PublishSuite) publishWithClient(
 	authErr, capErr, createErr, envVarErr, uploadErr, deployErr, waitErr, validateErr,
 	expectedErr error) {
 
-	bundler, err := bundles.NewBundler(s.cwd, bundles.NewManifest(), []string{"*"}, s.log)
-	s.NoError(err)
-
 	account := &accounts.Account{
 		ServerType: accounts.ServerTypeConnect,
 		Name:       "test-account",
@@ -246,7 +242,7 @@ func (s *PublishSuite) publishWithClient(
 		emitter: emitter,
 	}
 
-	err = publisher.publishWithClient(bundler, account, client, s.log)
+	err := publisher.publishWithClient(account, client, s.log)
 	if expectedErr == nil {
 		s.NoError(err)
 	} else {

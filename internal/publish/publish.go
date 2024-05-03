@@ -131,28 +131,6 @@ func (p *defaultPublisher) getRPackages(log logging.Logger) (bundles.PackageMap,
 	return rPackages, nil
 }
 
-func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
-	log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir)
-	manifest := bundles.NewManifestFromConfig(p.Config)
-	filePatterns := p.Config.Files
-	if len(filePatterns) == 0 {
-		log.Info("No file patterns specified; using default pattern '*'")
-		filePatterns = []string{"*"}
-	}
-	if p.Config.R != nil {
-		rPackages, err := p.getRPackages(log)
-		if err != nil {
-			return err
-		}
-		manifest.Packages = rPackages
-	}
-	bundler, err := bundles.NewBundler(p.Dir, manifest, filePatterns, log)
-	if err != nil {
-		return err
-	}
-	return p.publish(bundler, log)
-}
-
 func (p *defaultPublisher) isDeployed() bool {
 	return p.Target != nil && p.Target.ID != ""
 }
@@ -207,10 +185,8 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 		data))
 }
 
-func (p *defaultPublisher) publish(
-	bundler bundles.Bundler,
-	log logging.Logger) error {
-
+func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
+	log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir)
 	p.emitter.Emit(events.New(events.PublishOp, events.StartPhase, events.NoError, publishStartData{
 		Server: p.Account.URL,
 	}))
@@ -222,7 +198,7 @@ func (p *defaultPublisher) publish(
 	if err != nil {
 		return err
 	}
-	err = p.publishWithClient(bundler, p.Account, client, log)
+	err = p.publishWithClient(p.Account, client, log)
 	if p.isDeployed() {
 		logAppInfo(os.Stderr, p.Account.URL, p.Target.ID, log, err)
 	}
@@ -295,12 +271,29 @@ func (p *defaultPublisher) createDeploymentRecord(
 }
 
 func (p *defaultPublisher) publishWithClient(
-	bundler bundles.Bundler,
 	account *accounts.Account,
 	client connect.APIClient,
 	log logging.Logger) error {
 
-	err := p.checkConfiguration(client, log)
+	manifest := bundles.NewManifestFromConfig(p.Config)
+	filePatterns := p.Config.Files
+	if len(filePatterns) == 0 {
+		log.Info("No file patterns specified; using default pattern '*'")
+		filePatterns = []string{"*"}
+	}
+	if p.Config.R != nil {
+		rPackages, err := p.getRPackages(log)
+		if err != nil {
+			return err
+		}
+		manifest.Packages = rPackages
+	}
+	bundler, err := bundles.NewBundler(p.Dir, manifest, filePatterns, log)
+	if err != nil {
+		return err
+	}
+
+	err = p.checkConfiguration(client, log)
 	if err != nil {
 		return err
 	}
