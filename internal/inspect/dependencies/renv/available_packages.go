@@ -13,6 +13,7 @@ import (
 
 type AvailablePackage struct {
 	Name       PackageName
+	Version    string
 	Repository string
 }
 
@@ -23,13 +24,18 @@ type AvailablePackagesLister interface {
 }
 
 type defaultAvailablePackagesLister struct {
+	base        util.AbsolutePath
 	rExecutable util.Path
 	rExecutor   executor.Executor
 	log         logging.Logger
 }
 
-func NewAvailablePackageLister(rExecutable util.Path, log logging.Logger) *defaultAvailablePackagesLister {
+func NewAvailablePackageLister(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) *defaultAvailablePackagesLister {
+	if rExecutable.String() == "" {
+		rExecutable = util.NewPath("R", nil)
+	}
 	return &defaultAvailablePackagesLister{
+		base:        base,
 		rExecutable: rExecutable,
 		rExecutor:   executor.NewExecutor(),
 		log:         log,
@@ -46,7 +52,7 @@ const packageListCodeTemplate = `
 		"duplicates"
 	  )
 	)
-	info <- pkgs[,c("Package", "Repository")]
+	info <- pkgs[,c("Package", "Version", "Repository")]
 	apply(info, 1, function(x) { cat(x, sep=" ", collapse="\n") } )
 	invisible()
   })()
@@ -103,9 +109,11 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 			continue
 		}
 		packageName := parts[0]
-		repoUrl := strings.TrimSuffix(parts[1], "/src/contrib")
+		version := parts[1]
+		repoUrl := strings.TrimSuffix(parts[2], "/src/contrib")
 		available = append(available, AvailablePackage{
 			Name:       PackageName(packageName),
+			Version:    version,
 			Repository: repoUrl,
 		})
 	}

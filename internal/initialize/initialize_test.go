@@ -180,7 +180,7 @@ func (s *InitializeSuite) TestGetPossibleConfigs() {
 	s.NoError(err)
 
 	PythonInspectorFactory = makeMockPythonInspector
-	configs, err := GetPossibleConfigs(s.cwd, util.Path{}, log)
+	configs, err := GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, log)
 	s.NoError(err)
 
 	s.Len(configs, 2)

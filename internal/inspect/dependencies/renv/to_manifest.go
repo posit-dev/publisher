@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/rstudio/connect-client/internal/bundles"
@@ -15,22 +17,54 @@ import (
 )
 
 type PackageMapper interface {
-	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, rExecutable util.Path) (bundles.PackageMap, error)
+	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath) (bundles.PackageMap, error)
 }
 
 type defaultPackageMapper struct {
 	lister AvailablePackagesLister
 }
 
-func NewPackageMapper(rExecutable util.Path, log logging.Logger) *defaultPackageMapper {
+func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) *defaultPackageMapper {
 	return &defaultPackageMapper{
-		lister: NewAvailablePackageLister(rExecutable, log),
+		lister: NewAvailablePackageLister(base, rExecutable, log),
 	}
 }
 
-func isDevVersion(*Package, []AvailablePackage) bool {
-	// TODO
-	return false
+func findAvailableVersion(pkgName PackageName, availablePackages []AvailablePackage) string {
+	for _, avail := range availablePackages {
+		if avail.Name == pkgName {
+			return avail.Version
+		}
+	}
+	return ""
+}
+
+func package_version(vs string) []int {
+	// https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/numeric_version
+	// "Numeric versions are sequences of one or more non-negative integers,
+	// usually represented as character strings with the elements of the sequence
+	// concatenated and separated by single . or - characters"
+	parts := strings.FieldsFunc(vs, func(c rune) bool {
+		return c >= '0' && c <= '9'
+	})
+	values := []int{}
+	for _, part := range parts {
+		// There shouldn't be any invalid parts because we only took digits
+		v, _ := strconv.Atoi(part)
+		values = append(values, v)
+	}
+	return values
+}
+
+func isDevVersion(pkg *Package, availablePackages []AvailablePackage) bool {
+	// A package is a dev version if it's newer than the one
+	// available in the configured repositories.
+	repoVersion := findAvailableVersion(pkg.Package, availablePackages)
+	if repoVersion == "" {
+		return false
+	}
+	cmp := slices.Compare(package_version(pkg.Version), package_version(repoVersion))
+	return cmp > 0
 }
 
 func findRepoName(repoUrl RepoURL, repos []Repository) string {
@@ -123,8 +157,7 @@ var errLockfileLibraryMismatch = errors.New("library and lockfile are out of syn
 
 func (m *defaultPackageMapper) GetManifestPackages(
 	base util.AbsolutePath,
-	lockfilePath util.AbsolutePath,
-	rExecutable util.Path) (bundles.PackageMap, error) {
+	lockfilePath util.AbsolutePath) (bundles.PackageMap, error) {
 
 	lockfile, err := ReadLockfile(lockfilePath)
 	if err != nil {
@@ -163,7 +196,8 @@ func (m *defaultPackageMapper) GetManifestPackages(
 			return nil, err
 		}
 		if description["Version"] != pkg.Version {
-			return nil, errLockfileLibraryMismatch
+			return nil, fmt.Errorf("package %s: lockfile version '%s', library version '%s': %w",
+				pkg.Package, pkg.Version, description["Version"], errLockfileLibraryMismatch)
 		}
 		manifestPkg.Description = description
 		manifestPackages[string(pkg.Package)] = *manifestPkg

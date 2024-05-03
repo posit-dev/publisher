@@ -74,7 +74,7 @@ func NewFromState(s *state.State, emitter events.Emitter, log logging.Logger) (P
 	return &defaultPublisher{
 		State:          s,
 		emitter:        emitter,
-		rPackageMapper: renv.NewPackageMapper(util.NewPath("R", nil), log),
+		rPackageMapper: renv.NewPackageMapper(s.Dir, util.Path{}, log),
 	}, nil
 }
 
@@ -115,9 +115,6 @@ func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log l
 }
 
 func (p *defaultPublisher) getRPackages(log logging.Logger) (bundles.PackageMap, error) {
-	if p.Config.R == nil {
-		return nil, nil
-	}
 	log.Info("Collecting R package descriptions")
 
 	lockfileString := p.Config.R.PackageFile
@@ -126,9 +123,7 @@ func (p *defaultPublisher) getRPackages(log logging.Logger) (bundles.PackageMap,
 	}
 	lockfilePath := p.Dir.Join(lockfileString)
 
-	// Always using R from path here; do we need to let you specify it at deploy time?
-	rExecutable := util.NewPath("R", nil)
-	rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath, rExecutable)
+	rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -144,12 +139,13 @@ func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 		log.Info("No file patterns specified; using default pattern '*'")
 		filePatterns = []string{"*"}
 	}
-	rPackages, err := p.getRPackages(log)
-	if err != nil {
-		return err
+	if p.Config.R != nil {
+		rPackages, err := p.getRPackages(log)
+		if err != nil {
+			return err
+		}
+		manifest.Packages = rPackages
 	}
-	manifest.Packages = rPackages
-
 	bundler, err := bundles.NewBundler(p.Dir, manifest, filePatterns, log)
 	if err != nil {
 		return err

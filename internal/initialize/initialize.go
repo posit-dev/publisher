@@ -106,10 +106,10 @@ func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path
 		}
 		return exists, nil
 	}
-	return exists, nil
+	return false, nil
 }
 
-func GetPossibleConfigs(base util.AbsolutePath, python util.Path, log logging.Logger) ([]*config.Config, error) {
+func GetPossibleConfigs(base util.AbsolutePath, python util.Path, rExecutable util.Path, log logging.Logger) ([]*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory(log)
 	configs, err := typeDetector.InferAll(base)
@@ -138,6 +138,19 @@ func GetPossibleConfigs(base util.AbsolutePath, python util.Path, log logging.Lo
 			}
 			cfg.Python = pyConfig
 		}
+		needR, err := requiresR(cfg, base, rExecutable)
+		if err != nil {
+			return nil, err
+		}
+		if needR {
+			inspector := RInspectorFactory(base, rExecutable, log)
+			rConfig, err := inspector.InspectR()
+			if err != nil {
+				return nil, err
+			}
+			cfg.R = rConfig
+		}
+
 	}
 	return configs, nil
 }

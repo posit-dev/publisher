@@ -13,7 +13,7 @@ import (
 
 func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		cfg, err := initialize.GetPossibleConfigs(base, util.Path{}, log)
+		cfg, err := initialize.GetPossibleConfigs(base, util.Path{}, util.Path{}, log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
