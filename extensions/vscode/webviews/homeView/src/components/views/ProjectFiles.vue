@@ -41,7 +41,11 @@
                 }),
             },
           ]"
-        />
+        >
+          <template #postDecor v-if="!lastDeployedFiles.has(file.rel)">
+            <PostDecor class="text-git-added">A</PostDecor>
+          </template>
+        </TreeItem>
       </template>
     </TreeItem>
 
@@ -87,9 +91,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
-import { DeploymentFile, FileMatchSource } from "../../../../../src/api";
+import {
+  DeploymentFile,
+  DeploymentState,
+  FileMatchSource,
+} from "../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 
 import TreeItem from "src/components/TreeItem.vue";
@@ -102,6 +110,14 @@ const { sendMsg } = useHostConduitService();
 
 const includedExpanded = ref(true);
 const excludedExpanded = ref(true);
+
+const lastDeployedFiles = computed(() => {
+  if (home.selectedDeployment?.state === DeploymentState.NEW) {
+    return new Set();
+  }
+
+  return new Set(home.selectedDeployment?.files);
+});
 
 const fileDescription = (file: DeploymentFile) => {
   if (file.relDir === ".") {
