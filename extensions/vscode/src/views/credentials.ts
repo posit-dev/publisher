@@ -110,12 +110,17 @@ export class CredentialsTreeDataProvider
       return;
     }
 
-    const api = await useApi();
-    await api.credentials.createOrUpdate({
-      name,
-      url: url.toString(),
-      apiKey,
-    });
+    try {
+      const api = await useApi();
+      await api.credentials.createOrUpdate({
+        name,
+        url: url.toString(),
+        apiKey,
+      });
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("credentials::add", error);
+      window.showInformationMessage(summary);
+    }
 
     // refresh the credentials view
     this.refresh();
@@ -209,9 +214,10 @@ const getServerUrlFromInputBox = async (): Promise<URL | undefined> => {
       try {
         // check if the URL starts with a scheme
         const url = new URL(format(input));
-        if (!(url.hostname.includes('.'))) {
+        if (!url.hostname.includes(".")) {
           return {
-            message: "Hold up! You're missing a domain! Are you sure you want to proceed?",
+            message:
+              "Hold up! You're missing a domain! Are you sure you want to proceed?",
             severity: InputBoxValidationSeverity.Warning,
           };
         }
@@ -239,20 +245,20 @@ const getServerUrlFromInputBox = async (): Promise<URL | undefined> => {
  */
 const getApiKeyFromInputBox = async (): Promise<string | undefined> => {
   return window.showInputBox({
-      title: "Enter the API Key (3/3)",
-      password: true,
-      placeHolder: "ABcdEfgHIJKlMNopqRstuvWXyz012345",
-      prompt:
-        "An API key is a unique 32 character code that identifies and grants access to your server.",
-      ignoreFocusOut: true,
-      validateInput: (input) => {
-        input = input.trim();
-        if (input === "") {
-          return "Oops! It looks like you forgot your API key.";
-        } else if (input.length !== 32) {
-          return "Hmm, the API key you entered doesn't match the secret 32-character code we were expecting. Please double-check it and try again!";
-        }
-        return;
+    title: "Enter the API Key (3/3)",
+    password: true,
+    placeHolder: "ABcdEfgHIJKlMNopqRstuvWXyz012345",
+    prompt:
+      "An API key is a unique 32 character code that identifies and grants access to your server.",
+    ignoreFocusOut: true,
+    validateInput: (input) => {
+      input = input.trim();
+      if (input === "") {
+        return "Oops! It looks like you forgot your API key.";
+      } else if (input.length !== 32) {
+        return "Hmm, the API key you entered doesn't match the secret 32-character code we were expecting. Please double-check it and try again!";
       }
-    });
+      return;
+    },
+  });
 };
