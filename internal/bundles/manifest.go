@@ -187,8 +187,7 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 		}
 	}
 	switch cfg.Type {
-	case config.ContentTypeRMarkdown:
-	case config.ContentTypeRMarkdownShiny:
+	case config.ContentTypeRMarkdown, config.ContentTypeRMarkdownShiny:
 		m.Metadata.PrimaryRmd = cfg.Entrypoint
 	case config.ContentTypeHTML:
 		m.Metadata.PrimaryHtml = cfg.Entrypoint
