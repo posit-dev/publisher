@@ -135,7 +135,9 @@ export class CredentialsTreeDataProvider
       switch (res.status) {
         case 202:
           // set status bar message on success
-          window.setStatusBarMessage(`Credential for ${item.account.name} has been erased from our memory!`);
+          window.setStatusBarMessage(
+            `Credential for ${item.account.name} has been erased from our memory!`,
+          );
           break;
         case 404:
           // show warning message if not found
