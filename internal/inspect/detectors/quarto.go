@@ -119,9 +119,23 @@ func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput) string {
 	return ""
 }
 
+var quartoSuffixes = []string{".qmd", ".Rmd", ".ipynb"}
+
+func (d *QuartoDetector) findEntrypoint(base util.AbsolutePath) (string, util.AbsolutePath, error) {
+	for _, suffix := range quartoSuffixes {
+		entrypoint, entrypointPath, err := d.InferEntrypoint(base, suffix, base.Base()+suffix, "index"+suffix)
+		if err != nil {
+			return "", util.AbsolutePath{}, err
+		}
+		if entrypoint != "" {
+			return entrypoint, entrypointPath, nil
+		}
+	}
+	return "", util.AbsolutePath{}, nil
+}
+
 func (d *QuartoDetector) InferType(base util.AbsolutePath) (*config.Config, error) {
-	defaultEntrypoint := base.Base() + ".qmd"
-	entrypoint, entrypointPath, err := d.InferEntrypoint(base, ".qmd", defaultEntrypoint, "index.qmd")
+	entrypoint, entrypointPath, err := d.findEntrypoint(base)
 	if err != nil {
 		return nil, err
 	}
