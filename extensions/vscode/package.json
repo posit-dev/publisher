@@ -334,7 +334,8 @@
           "when": "false"
         },
         {
-          "command": "posit.publisher.credentials.delete"
+          "command": "posit.publisher.credentials.delete",
+          "when": "false"
         },
         {
           "command": "posit.publisher.credentials.refresh",
