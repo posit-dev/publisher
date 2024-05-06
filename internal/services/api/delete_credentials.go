@@ -32,6 +32,6 @@ func DeleteCredentialHandlerFunc(log logging.Logger) http.HandlerFunc {
 			}
 		}
 
-		w.WriteHeader(http.StatusAccepted)
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

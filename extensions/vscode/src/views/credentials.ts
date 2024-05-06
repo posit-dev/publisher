@@ -131,24 +131,10 @@ export class CredentialsTreeDataProvider
   public delete = async (item: CredentialsTreeItem) => {
     try {
       const api = await useApi();
-      const res = await api.credentials.delete(item.account.name);
-      switch (res.status) {
-        case 202:
-          // set status bar message on success
-          window.setStatusBarMessage(
-            `Credential for ${item.account.name} has been erased from our memory!`,
-          );
-          break;
-        case 404:
-          // show warning message if not found
-          window.showWarningMessage(
-            `Credential '${item.account.name}' not found`,
-          );
-          break;
-        default:
-          window.showErrorMessage("Unexpected error when deleting credential.");
-          break;
-      }
+      await api.credentials.delete(item.account.name);
+      window.setStatusBarMessage(
+        `Credential for ${item.account.name} has been erased from our memory!`,
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("credential::delete", error);
       window.showInformationMessage(summary);

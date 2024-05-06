@@ -30,7 +30,7 @@ func (s *DeleteCredentialsSuite) SetupTest() {
 	keyring.MockInit()
 }
 
-func (s *DeleteCredentialsSuite) Test202() {
+func (s *DeleteCredentialsSuite) Test204() {
 
 	name := "test"
 	cs := credentials.CredentialsService{}
@@ -55,7 +55,7 @@ func (s *DeleteCredentialsSuite) Test202() {
 	h := DeleteCredentialHandlerFunc(s.log)
 	h(rec, req)
 
-	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
+	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
 }
 
 func (s *DeleteCredentialsSuite) Test404() {

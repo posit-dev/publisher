@@ -19,7 +19,7 @@ export class Credentials {
   }
 
   // Returns:
-  // 204 - accepted
+  // 204 - no content
   // 400 - bad request
   // 404 - not found
   // 500 - internal server error
