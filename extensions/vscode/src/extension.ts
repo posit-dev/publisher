@@ -181,6 +181,32 @@ export async function activate(context: ExtensionContext) {
     ),
   );
 
+  commands.executeCommand(
+    "setContext",
+    "posit.publisher.init.walkthrough.welcome.completed",
+    "not-me",
+  );
+
+  context.subscriptions.push(
+    commands.registerCommand("posit.publisher.welcome", () => {
+      commands.executeCommand(
+        `workbench.action.openWalkthrough`,
+        `posit.publisher#posit.publisher.init.walkthrough`,
+        false,
+      );
+    }),
+  );
+  // command:posit.publisher.init.walkthrough.initiate
+  // onContext:posit.publisher.init.walkthrough.welcome.completed == 'true'
+  // command:posit.publisher.init.walkthrough.createCredential
+  // onContext:posit.publisher.init.walkthrough.credentials.completed == 'true'
+  // command:posit.publisher.init.walkthrough.initDirectory
+  // onContext:posit.publisher.init.walkthrough.directory.completed == 'true'
+  // command:posit.publisher.init.walkthrough.createDestination
+  // onContext:posit.publisher.init.walkthrough.destination.completed = 'true'
+  // onContext:posit.publisher.init.walkthrough.publish.completed = 'true'
+  // onContext:posit.publisher.init.walkthrough.advanced.completed = 'true'
+
   setStateContext(PositPublishState.initialized);
 }
 
@@ -190,3 +216,35 @@ export async function deactivate() {
     await service.stop();
   }
 }
+
+//   {
+//     "id": "posit.publisher.init.walkthrough.credentials",
+//     "title": "Destination Credentials",
+//     "description": "To publish to a specific Posit Connect server, you will need to have established at least one credentisl with the Posit Publishing extension for your destination server.\n\n[Create Credential](command:getting-started-sample.runCommand)",
+//     "media": {
+//       "image": "",
+//       "altText": ""
+//     },
+//     "completionEvents": []
+//   },
+//   {
+//     "id": "posit.publisher.init.walkthrough.directory",
+//     "title": "Initialize the Project Directory",
+//     "description": "To use this extension, your project must be initialized with a '.posit/publishing' directory.\n\n[Initialize Directory](command:getting-started-sample.runCommand)",
+//     "media": {
+//       "image": "",
+//       "altText": ""
+//     },
+//     "completionEvents": []
+//   },
+//   {
+//     "id": "posit.publisher.init.walkthrough.destination",
+//     "title": "Create at least one destination",
+//     "description": "To publish your project, you must first create a destination to represent the application on the Posit Connect server that you are targeting.\n\n[Create Destination](command:getting-started-sample.runCommand)",
+//     "media": {
+//       "image": "",
+//       "altText": ""
+//     },
+//     "completionEvents": []
+//   }
+// ]

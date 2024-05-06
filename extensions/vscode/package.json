@@ -24,6 +24,12 @@
   "contributes": {
     "commands": [
       {
+        "command": "posit.publisher.welcome",
+        "title": "Welcome",
+        "icon": "${star}",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.init-project",
         "title": "Initialize Project",
         "icon": "${star)",
@@ -480,13 +486,100 @@
       },
       {
         "view": "posit.publisher.project",
-        "contents": "Initialization of the Posit Publishing VSCode Extension is required for this project.\nThis initialization involves adding a Posit Publisher subdirectory within your workspace folder and creating two files within it.\n Click the Initialize Project button below to create:\n- a new subdirectory called .posit/publish\n- a default deployment file (Untitled-1.toml)\n- a default configuration file (default.toml)\n[Initialize Project](command:posit.publisher.init-project)",
+        "contents": "Project initialization is required prior to using the Posit Publisher for Visual Studio Code.\n[Initialize Project](command:posit.publisher.welcome)",
         "when": "workbenchState == folder && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.inProgress === 'false'"
       },
       {
         "view": "posit.publisher.project",
         "contents": "Project Initialization in progress...\n\nPlease answer the prompts at the top of the VSCode window.",
         "when": "workbenchState == folder && posit.publish.initialization.credentialCheck == 'succeeded' && posit.publish.missing && posit.publish.state == 'initialized' && posit.publish.initialization.inProgress === 'true'"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "posit.publisher.init.walkthrough",
+        "title": "Getting Started with the Posit Publisher",
+        "description": "Initialization is required to use the Posit Publisher for Visual Code extension.",
+        "steps": [
+          {
+            "id": "posit.publisher.init.walkthrough.welcome",
+            "title": "Welcome to the Posit Publisher for Visual Code",
+            "description": "You are about to embark on a productive journey of publishing your content to Posit Connect servers. Congratulations!.\n\nClick the button to get started.\n\n[Get Startedl](command:posit.publisher.init.walkthrough.initiate)",
+            "media": {
+              "svg": "assets/img/color/posit-publisher.svg",
+              "altText": "Posit Publisher"
+            },
+            "completionEvents": [
+              "onContext:posit.publisher.init.walkthrough.welcome.completed == 'abc'"
+            ]
+          },
+          {
+            "id": "posit.publisher.init.walkthrough.credentials",
+            "title": "Destination Credentials",
+            "description": "To publish to a specific Posit Connect server, you will need to have established at least one credentisl with the Posit Publishing extension for your destination server.\n\n[Create Credential](command:posit.publisher.init.walkthrough.createCredential)",
+            "media": {
+              "markdown": "assets/markdown/credentials.md"
+            },
+            "completionEvents": [
+              "onContext:posit.publisher.init.walkthrough.credentials.completed == 'true'"
+            ]
+          },
+          {
+            "id": "posit.publisher.init.walkthrough.directory",
+            "title": "Initialize the Project Directory",
+            "description": "To use this extension, your project must be initialized with a '.posit/publishing' directory.\n\n[Initialize Directory](command:posit.publisher.init.walkthrough.initDirectory)",
+            "media": {
+              "markdown": "assets/markdown/directory.md"
+            },
+            "completionEvents": [
+              "onContext:posit.publisher.init.walkthrough.directory.completed == 'true'"
+            ]
+          },
+          {
+            "id": "posit.publisher.init.walkthrough.destination",
+            "title": "Create at least one destination",
+            "description": "To publish your project, you must first create a destination to represent the application on the Posit Connect server that you are targeting.\n\n[Create Destination](command:posit.publisher.init.walkthrough.createDestination)",
+            "media": {
+              "markdown": "assets/markdown/destination.md"
+            },
+            "completionEvents": [
+              "onContext:posit.publisher.init.walkthrough.destination.completed = 'true'"
+            ]
+          },
+          {
+            "id": "posit.publisher.init.walkthrough.publish",
+            "title": "Publish your Project!",
+            "description": "To publish your project...",
+            "media": {
+              "markdown": "assets/markdown/publish.md"
+            },
+            "completionEvents": [
+              "onContext:posit.publisher.init.walkthrough.publish.completed = 'true'"
+            ]
+          },
+          {
+            "id": "posit.publisher.init.walkthrough.view",
+            "title": "View your Content!",
+            "description": "Let's view your content on the Posit Connect Server!",
+            "media": {
+              "markdown": "assets/markdown/view.md"
+            },
+            "completionEvents": [
+              "onContext:posit.publisher.init.walkthrough.view.completed = 'true'"
+            ]
+          },
+          {
+            "id": "posit.publisher.init.walkthrough.advanced",
+            "title": "Advanced Topics",
+            "description": "There are so many more things which can be done with Posit Publisher!",
+            "media": {
+              "markdown": "assets/markdown/advanced.md"
+            },
+            "completionEvents": [
+              "onContext:posit.publisher.init.walkthrough.advanced.completed = 'true'"
+            ]
+          }
+        ]
       }
     ]
   },
