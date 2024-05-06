@@ -104,6 +104,7 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 	available := []AvailablePackage{}
 	lines := strings.Split(string(out), "\n")
 	for _, line := range lines {
+		line = strings.TrimSpace(line)
 		parts := strings.SplitN(line, " ", 3)
 		if len(parts) != 3 {
 			continue
@@ -189,6 +190,9 @@ func (l *defaultAvailablePackagesLister) GetLibPaths() ([]util.AbsolutePath, err
 	lines := strings.Split(string(out), "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
 		paths = append(paths, util.NewAbsolutePath(line, nil))
 	}
 	return paths, nil
