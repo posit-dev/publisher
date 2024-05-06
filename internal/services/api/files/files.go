@@ -43,7 +43,7 @@ func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.P
 	}
 
 	return &File{
-		Id:               rel.String(),
+		Id:               rel.ToSlash(),
 		FileType:         filetype,
 		Rel:              rel.String(),
 		RelDir:           rel.Dir().String(),
