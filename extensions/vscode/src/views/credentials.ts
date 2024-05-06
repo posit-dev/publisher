@@ -19,6 +19,7 @@ const viewName = "posit.publisher.credentials";
 const refreshCommand = viewName + ".refresh";
 const contextIsEmpty = viewName + ".isEmpty";
 const addCommand = viewName + ".add";
+const deleteCommand = viewName + ".delete";
 
 type CredentialEventEmitter = EventEmitter<
   CredentialsTreeItem | undefined | void
@@ -74,6 +75,7 @@ export class CredentialsTreeDataProvider
       window.createTreeView(viewName, { treeDataProvider: this }),
       commands.registerCommand(refreshCommand, this.refresh),
       commands.registerCommand(addCommand, this.add),
+      commands.registerCommand(deleteCommand, this.delete),
     );
   }
 
@@ -125,16 +127,29 @@ export class CredentialsTreeDataProvider
     // refresh the credentials view
     this.refresh();
   };
+
+  public delete = async (item: CredentialsTreeItem) => {
+    try {
+      const api = await useApi();
+      await api.credentials.delete(item.account.name);
+      window.setStatusBarMessage(
+        `Credential for ${item.account.name} has been erased from our memory!`,
+      );
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("credential::delete", error);
+      window.showInformationMessage(summary);
+    }
+    this.refresh();
+  };
 }
 
 export class CredentialsTreeItem extends TreeItem {
-  contextValue = "posit.publisher.credentials.tree.item";
-
-  constructor(account: Account) {
+  constructor(public readonly account: Account) {
     super(account.name);
     this.tooltip = this.getTooltip(account);
     this.iconPath = new ThemeIcon("key");
     this.description = `${account.url}`;
+    this.contextValue = `posit.publisher.credentials.tree.item.${account.source}`;
   }
 
   getTooltip(account: Account): string {

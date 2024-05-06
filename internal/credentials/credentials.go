@@ -17,13 +17,29 @@ type Credential struct {
 
 type CredentialsService struct{}
 
+type LoadError struct {
+	Err error
+}
+
+func (e *LoadError) Error() string {
+	return fmt.Sprintf("failed to load credentials: %v", e.Err)
+}
+
+type NotFoundError struct {
+	Name string
+}
+
+func (e *NotFoundError) Error() string {
+	return fmt.Sprintf("credential not found: %s", e.Name)
+}
+
 func (cs *CredentialsService) Load() (map[string]Credential, error) {
 	data, err := keyring.Get(ServiceName, "credentials")
 	if err != nil {
 		if err == keyring.ErrNotFound {
 			return make(map[string]Credential), nil
 		}
-		return nil, fmt.Errorf("failed to get credentials: %v", err)
+		return nil, &LoadError{Err: err}
 	}
 
 	var creds map[string]Credential
@@ -33,6 +49,45 @@ func (cs *CredentialsService) Load() (map[string]Credential, error) {
 	}
 
 	return creds, nil
+}
+
+func (cs *CredentialsService) Set(cred Credential) error {
+	creds, err := cs.Load()
+	if err != nil {
+		return err
+	}
+
+	creds[cred.Name] = cred
+	return cs.save(creds)
+}
+
+func (cs *CredentialsService) Get(name string) (*Credential, error) {
+	creds, err := cs.Load()
+	if err != nil {
+		return nil, err
+	}
+
+	cred, exists := creds[name]
+	if !exists {
+		return nil, &NotFoundError{Name: name}
+	}
+
+	return &cred, nil
+}
+
+func (cs *CredentialsService) Delete(name string) error {
+	creds, err := cs.Load()
+	if err != nil {
+		return err
+	}
+
+	_, exists := creds[name]
+	if !exists {
+		return &NotFoundError{Name: name}
+	}
+
+	delete(creds, name)
+	return cs.save(creds)
 }
 
 func (cs *CredentialsService) save(creds map[string]Credential) error {
@@ -46,42 +101,4 @@ func (cs *CredentialsService) save(creds map[string]Credential) error {
 		return fmt.Errorf("failed to set credentials: %v", err)
 	}
 	return nil
-}
-
-func (cs *CredentialsService) Set(cred Credential) error {
-	creds, err := cs.Load()
-	if err != nil {
-		return err
-	}
-
-	creds[cred.Name] = cred
-	return cs.save(creds)
-}
-
-func (cs *CredentialsService) Get(name string) (Credential, error) {
-	creds, err := cs.Load()
-	if err != nil {
-		return Credential{}, err
-	}
-
-	cred, exists := creds[name]
-	if !exists {
-		return Credential{}, fmt.Errorf("credential not found")
-	}
-	return cred, nil
-}
-
-func (cs *CredentialsService) Delete(name string) error {
-	creds, err := cs.Load()
-	if err != nil {
-		return err
-	}
-
-	_, exists := creds[name]
-	if !exists {
-		return fmt.Errorf("credential not found")
-	}
-
-	delete(creds, name)
-	return cs.save(creds)
 }
