@@ -34,6 +34,7 @@ func NewAccountList(fs afero.Fs, log logging.Logger) *defaultAccountList {
 			newEnvVarProvider(log),
 			newRSConnectProvider(fs, log),
 			newRSConnectPythonProvider(fs, log),
+			NewCredentialsProvider(),
 		},
 		log: log,
 	}

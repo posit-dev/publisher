@@ -8,6 +8,7 @@ const (
 	AccountSourceRsconnectPython AccountSource = "rsconnect-python"
 	AccountSourceRsconnect       AccountSource = "rsconnect"
 	AccountSourceEnvironment     AccountSource = "environment"
+	AccountSourceKeychain        AccountSource = "keychain"
 )
 
 var sourceDescriptions = map[AccountSource]string{

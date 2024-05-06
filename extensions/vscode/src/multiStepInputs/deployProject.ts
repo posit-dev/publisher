@@ -41,7 +41,7 @@ export async function publishDeployment(
       const response = await api.accounts.getAll();
       // account list is filtered to match the deployment being published
       accountListItems = response.data
-        .filter((account) => account.url === deployment.serverUrl)
+        .filter((account) => account.url.trim() === deployment.serverUrl.trim())
         .map((account) => ({
           iconPath: new ThemeIcon("account"),
           label: account.name,

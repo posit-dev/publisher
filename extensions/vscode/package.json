@@ -72,6 +72,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.credentials.add",
+        "title": "New Credential",
+        "icon": "$(add)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.credentials.refresh",
         "title": "Refresh Credentials",
         "icon": "$(refresh)",
@@ -219,9 +225,34 @@
           "group": "navigation@2"
         },
         {
+          "command": "posit.publisher.files.refresh",
+          "when": "view == posit.publisher.files",
+          "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.pythonPackages.edit",
+          "when": "view == posit.publisher.pythonPackages",
+          "group": "navigation@1"
+        },
+        {
+          "command": "posit.publisher.pythonPackages.refresh",
+          "when": "view == posit.publisher.pythonPackages",
+          "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.pythonPackages.scan",
+          "when": "view == posit.publisher.pythonPackages",
+          "group": "navigation@3"
+        },
+        {
+          "command": "posit.publisher.credentials.add",
+          "when": "view == posit.publisher.credentials",
+          "group": "navigation@1"
+        },
+        {
           "command": "posit.publisher.credentials.refresh",
           "when": "view == posit.publisher.credentials",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "posit.publisher.homeView.refresh",

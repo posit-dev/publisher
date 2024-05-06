@@ -19,6 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/setup
       - uses: actions/checkout@v4
         with:
           repository: rstudio/connect-content
