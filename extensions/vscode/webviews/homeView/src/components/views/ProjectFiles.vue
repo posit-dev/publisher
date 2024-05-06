@@ -97,7 +97,7 @@ import {
   DeploymentFile,
   DeploymentState,
   FileMatchSource,
-} from "../../../../../src/api";
+} from "@publishing-client/api";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 
 import TreeItem from "src/components/TreeItem.vue";

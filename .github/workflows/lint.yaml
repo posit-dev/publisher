@@ -14,7 +14,6 @@ jobs:
       - run: just npm-install
       - run: just check-format
 
-      - run: just vscode deps
       - run: just vscode lint
 
       - run: just web install

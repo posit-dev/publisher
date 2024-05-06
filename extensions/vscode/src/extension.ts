@@ -11,8 +11,9 @@ import {
   workspace,
 } from "vscode";
 
+import { useApi } from "@publishing-client/api";
+
 import * as ports from "src/ports";
-import { useApi } from "src/api";
 import { Service } from "src/services";
 import { ProjectTreeDataProvider } from "src/views/project";
 import { DeploymentsTreeDataProvider } from "src/views/deployments";

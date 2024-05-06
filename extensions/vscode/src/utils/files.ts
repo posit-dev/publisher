@@ -9,7 +9,7 @@ import {
   commands,
 } from "vscode";
 
-import { DeploymentFile } from "../api";
+import { DeploymentFile } from "@publishing-client/api";
 
 export async function fileExists(fileUri: Uri): Promise<boolean> {
   try {

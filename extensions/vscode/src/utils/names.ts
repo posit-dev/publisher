@@ -2,7 +2,7 @@
 
 import { InputBoxValidationSeverity } from "vscode";
 
-import { useApi } from "src/api";
+import { useApi } from "@publishing-client/api";
 import { isValidFilename } from "src/utils/files";
 
 export async function untitledConfigurationName(): Promise<string> {

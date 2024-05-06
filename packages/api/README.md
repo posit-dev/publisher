@@ -6,7 +6,7 @@ response types.
 ## Usage
 
 ```typescript
-import { initApi, useApi } from "src/api";
+import { initApi, useApi } from "@publishing-client/api";
 
 // You must first initialize the API one time.
 // The initialization method requires a promise which indicates

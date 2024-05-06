@@ -178,9 +178,9 @@ npm-install:
     {{ _with_debug }}
 
     if [ {{ _ci }} = "true" ]; then
-        npm ci --no-audit --no-fund
+        npm ci --no-audit --no-fund | sed 's/^/debug: /'
     else
-        npm install --no-audit --no-fund
+        npm install --no-audit --no-fund | sed 's/^/debug: /'
     fi
 
 # staticcheck, vet, and format check
@@ -215,7 +215,7 @@ name:
 
     basename {{ _cmd }}
 
-package:
+package: npm-install
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}

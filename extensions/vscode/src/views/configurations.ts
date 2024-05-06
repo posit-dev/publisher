@@ -22,7 +22,7 @@ import {
   Configuration,
   ConfigurationError,
   isConfigurationError,
-} from "src/api";
+} from "@publishing-client/api";
 
 import { confirmDelete, confirmReplace } from "src/dialogs";
 import { getSummaryStringFromError } from "src/utils/errors";

@@ -7,6 +7,7 @@
     "build": "vue-tsc --noEmit && vite build"
   },
   "dependencies": {
+    "@publishing-client/api": "^1.0.0",
     "axios": "^1.6.0",
     "eventsource": "^2.0.2",
     "get-port": "5.1.1",

@@ -7,7 +7,7 @@ import { Disposable } from "vscode";
 import EventSource from "eventsource";
 import { Readable } from "stream";
 
-import { EventStreamMessage } from "src/api";
+import { EventStreamMessage } from "@publishing-client/api";
 
 export type EventStreamRegistration = (message: EventStreamMessage) => void;
 

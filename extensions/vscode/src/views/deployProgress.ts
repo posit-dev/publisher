@@ -1,7 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { ProgressLocation, Uri, env, window } from "vscode";
-import { eventTypeToString, EventStreamMessage } from "src/api";
+import { eventTypeToString, EventStreamMessage } from "@publishing-client/api";
 import { EventStream, UnregisterCallback } from "src/events";
 
 export function deployProject(localID: string, stream: EventStream) {

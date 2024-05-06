@@ -12,7 +12,7 @@ import {
   window,
 } from "vscode";
 
-import { Account, useApi } from "src/api";
+import { Account, useApi } from "@publishing-client/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 
 const viewName = "posit.publisher.credentials";
