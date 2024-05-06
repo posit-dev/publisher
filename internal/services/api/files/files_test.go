@@ -35,6 +35,7 @@ func (s *FilesSuite) TestCreateFile() {
 	file, err := CreateFile(path, path, nil)
 	s.NoError(err)
 	s.NotNil(file)
+	s.Equal(file.Id, ".")
 	s.Equal(file.Rel, ".")
 	s.Equal(file.RelDir, ".")
 }
