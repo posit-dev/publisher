@@ -3,6 +3,7 @@ package renv
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/rstudio/connect-client/internal/executor/executortest"
@@ -77,6 +78,9 @@ const libPathsOutput = `/project/renv/library/R-4.3/x86_64-apple-darwin20
 `
 
 func (s *AvailablePackagesSuite) TestGetLibPaths() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip()
+	}
 	lister := NewAvailablePackageLister(s.base, util.Path{}, logging.New())
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", "R", mock.Anything, s.base, mock.Anything).Return([]byte(libPathsOutput), []byte{}, nil)
@@ -87,4 +91,24 @@ func (s *AvailablePackagesSuite) TestGetLibPaths() {
 	s.Len(repos, 2)
 	s.Equal("/project/renv/library/R-4.3/x86_64-apple-darwin20", repos[0].String())
 	s.Equal("/Users/me/Library/Caches/org.R-project.R/R/renv/sandbox/R-4.3/x86_64-apple-darwin20/b06620f4", repos[1].String())
+}
+
+const windowsLibPathsOutput = `D:\project\renv\library\R-4.3\x86_64-apple-darwin20
+C:\Users\me\AppData\Local\R\Cache\R\renv\sandbox\R-4.3\etc
+`
+
+func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
+	if runtime.GOOS != "windows" {
+		s.T().Skip()
+	}
+	lister := NewAvailablePackageLister(s.base, util.Path{}, logging.New())
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", "R", mock.Anything, s.base, mock.Anything).Return([]byte(windowsLibPathsOutput), []byte{}, nil)
+	lister.rExecutor = executor
+
+	repos, err := lister.GetLibPaths()
+	s.NoError(err)
+	s.Len(repos, 2)
+	s.Equal(`D:\project\renv\library\R-4.3\x86_64-apple-darwin20`, repos[0].String())
+	s.Equal(`C:\Users\me\AppData\Local\R\Cache\R\renv\sandbox\R-4.3\etc`, repos[1].String())
 }
