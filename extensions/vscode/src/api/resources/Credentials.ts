@@ -24,7 +24,7 @@ export class Credentials {
   // 404 - not found
   // 500 - internal server error
   delete(name: string) {
-    return this.client.delete<Credential>(`credentials`, {
+    return this.client.delete(`credentials`, {
       params: {
         name,
       },
