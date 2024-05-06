@@ -61,7 +61,7 @@ func (i *matchingWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc) 
 
 		// Ignore Python environment directories. We check for these
 		// separately because they aren't expressible as gitignore patterns.
-		if info.IsDir() && util.IsPythonEnvironmentDir(path) {
+		if info.IsDir() && (util.IsPythonEnvironmentDir(path) || util.IsRenvLibraryDir(path)) {
 			return filepath.SkipDir
 		}
 		return fn(path, info, err)

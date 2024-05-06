@@ -52,6 +52,10 @@ func IsPythonEnvironmentDir(path AbsolutePath) bool {
 	return false
 }
 
+func IsRenvLibraryDir(path AbsolutePath) bool {
+	return path.Base() == "library" && path.Dir().Base() == "renv"
+}
+
 const badChars = `/:\*?"<>|`
 
 var ErrInvalidName = errors.New("invalid name: cannot be empty or '.', or contain '..' or any of these characters: " + badChars)
