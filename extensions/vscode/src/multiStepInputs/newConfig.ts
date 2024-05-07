@@ -3,7 +3,6 @@
 import {
   MultiStepInput,
   MultiStepState,
-  isQuickPickItem,
   assignStep,
 } from "src/multiStepInputs/multiStepHelper";
 
@@ -43,33 +42,36 @@ const contentTypeStrings = {
   [ContentType.UNKNOWN]: "unknown content type; cannot deploy this item",
 };
 
+export type QuickPickItemWithIndex = QuickPickItem & { index: number };
+
+export function isQuickPickItemWithIndex(
+  d: QuickPickItem | string,
+): d is QuickPickItemWithIndex {
+  return (d as QuickPickItemWithIndex).index !== undefined;
+}
+
 export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
   const api = await useApi();
-  let entryPointLabels: string[] = [];
-  let entryPointListItems: QuickPickItem[] = [];
-  const entryPointLabelMap = new Map<string, ConfigurationDetails>();
+  let entryPointListItems: QuickPickItemWithIndex[] = [];
   let configs: ConfigurationDetails[] = [];
 
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
       const inspectResponse = await api.configurations.inspect();
       configs = inspectResponse.data;
-      entryPointLabels = configs.map((config) => `${config.entrypoint}`);
-      configs.forEach((config) => {
+      configs.forEach((config, i) => {
         if (config.entrypoint) {
           entryPointListItems.push({
             iconPath: new ThemeIcon("file"),
             label: config.entrypoint,
             description: `(${contentTypeStrings[config.type]})`,
+            index: i,
           });
         }
       });
-      for (let i = 0; i < configs.length; i++) {
-        entryPointLabelMap.set(entryPointLabels[i], configs[i]);
-      }
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "newConfig, configurations.inspect",
@@ -225,7 +227,7 @@ export async function newConfig(title: string, viewId?: string) {
     state.data.entryPoint === undefined ||
     state.data.configFileName === undefined ||
     // have to add type guards here to eliminate the variability
-    !isQuickPickItem(state.data.entryPoint) ||
+    !isQuickPickItemWithIndex(state.data.entryPoint) ||
     typeof state.data.configFileName !== "string"
   ) {
     return;
@@ -233,7 +235,7 @@ export async function newConfig(title: string, viewId?: string) {
   // Create the Config File
   let newConfig: Configuration | undefined = undefined;
   try {
-    const selectedConfig = entryPointLabelMap.get(state.data.entryPoint.label);
+    const selectedConfig = configs[state.data.entryPoint.index];
     if (!selectedConfig) {
       window.showErrorMessage(
         `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}`,

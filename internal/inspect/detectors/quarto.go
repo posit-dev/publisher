@@ -158,10 +158,10 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, er
 			// Maybe this isn't really a quarto project, or maybe the user doesn't have quarto.
 			// We log this error and return nil so other inspectors can have a shot at it.
 			d.log.Warn("quarto inspect failed", "error", err)
-			return nil, nil
+			continue
 		}
 		if inspectOutput.Files.Input != nil && len(inspectOutput.Files.Input) == 0 {
-			return nil, nil
+			continue
 		}
 		entrypoint, err := entrypointPath.Rel(base)
 		if err != nil {
