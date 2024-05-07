@@ -20,34 +20,26 @@ func NewPlumberDetector() *PlumberDetector {
 	}
 }
 
-func (d *PlumberDetector) InferType(base util.AbsolutePath) (*config.Config, error) {
-	// rsconnect looks for these two specific entrypoint filenames
-	entrypoint := base.Join("plumber.R")
-	exists, err := entrypoint.Exists()
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		entrypoint = base.Join("entrypoint.R")
-		exists, err = entrypoint.Exists()
+func (d *PlumberDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+	var configs []*config.Config
+	// rsconnect looks for these two specific entrypointPath filenames
+	possibleEntrypoints := []string{"plumber.R", "entrypoint.R"}
+
+	for _, entrypoint := range possibleEntrypoints {
+		entrypointPath := base.Join(entrypoint)
+		exists, err := entrypointPath.Exists()
 		if err != nil {
 			return nil, err
 		}
-		if !exists {
-			// Not a Plumber project
-			return nil, nil
+		if exists {
+			cfg := config.New()
+			cfg.Type = config.ContentTypeRPlumber
+			cfg.Entrypoint = entrypoint
+
+			// Indicate that R inspection is needed.
+			cfg.R = &config.R{}
+			configs = append(configs, cfg)
 		}
 	}
-
-	cfg := config.New()
-	cfg.Type = config.ContentTypeRPlumber
-	relPath, err := entrypoint.Rel(base)
-	if err != nil {
-		return nil, err
-	}
-	cfg.Entrypoint = relPath.String()
-
-	// Indicate that R inspection is needed.
-	cfg.R = &config.R{}
-	return cfg, nil
+	return configs, nil
 }

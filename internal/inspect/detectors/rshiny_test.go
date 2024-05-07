@@ -32,8 +32,10 @@ func (s *ShinySuite) TestInferTypeAppR() {
 	s.Nil(err)
 
 	detector := NewRShinyDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRShiny,
@@ -42,7 +44,7 @@ func (s *ShinySuite) TestInferTypeAppR() {
 		Validate:   true,
 		Files:      []string{"*"},
 		R:          &config.R{},
-	}, t)
+	}, configs[0])
 }
 
 func (s *ShinySuite) TestInferTypeServerR() {
@@ -56,8 +58,10 @@ func (s *ShinySuite) TestInferTypeServerR() {
 	s.Nil(err)
 
 	detector := NewRShinyDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRShiny,
@@ -66,7 +70,7 @@ func (s *ShinySuite) TestInferTypeServerR() {
 		Validate:   true,
 		Files:      []string{"*"},
 		R:          &config.R{},
-	}, t)
+	}, configs[0])
 }
 
 func (s *ShinySuite) TestInferTypeNone() {

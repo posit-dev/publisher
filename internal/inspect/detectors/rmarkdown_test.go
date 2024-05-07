@@ -131,8 +131,10 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:        schema.ConfigSchemaURL,
 		Type:          config.ContentTypeRMarkdown,
@@ -142,5 +144,5 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 		HasParameters: true,
 		Files:         []string{"*"},
 		R:             &config.R{},
-	}, t)
+	}, configs[0])
 }
