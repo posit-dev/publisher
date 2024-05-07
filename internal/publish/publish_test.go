@@ -35,6 +35,20 @@ type PublishSuite struct {
 	cwd       util.AbsolutePath
 }
 
+type mockPackageMapper struct {
+	mock.Mock
+}
+
+func (m *mockPackageMapper) GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath) (bundles.PackageMap, error) {
+	args := m.Called(base, lockfilePath)
+	pkgs := args.Get(0)
+	if pkgs == nil {
+		return nil, args.Error(1)
+	} else {
+		return pkgs.(bundles.PackageMap), args.Error(1)
+	}
+}
+
 func TestPublishSuite(t *testing.T) {
 	suite.Run(t, new(PublishSuite))
 }
@@ -61,13 +75,13 @@ func (s *PublishSuite) SetupTest() {
 
 func (s *PublishSuite) TestNewFromState() {
 	stateStore := state.Empty()
-	publisher, err := NewFromState(stateStore, events.NewNullEmitter())
+	publisher, err := NewFromState(stateStore, events.NewNullEmitter(), logging.New())
 	s.NoError(err)
 	s.Equal(stateStore, publisher.(*defaultPublisher).State)
 }
 
 func (s *PublishSuite) TestPublishWithClientNewSuccess() {
-	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func (s *PublishSuite) TestPublishWithClientNewUpdate() {
@@ -75,110 +89,112 @@ func (s *PublishSuite) TestPublishWithClientNewUpdate() {
 	target.ID = "myContentID"
 	// Make CreatedAt earlier so it will differ from DeployedAt.
 	target.CreatedAt = time.Now().Add(-time.Hour).Format(time.RFC3339)
-	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func (s *PublishSuite) TestPublishWithClientNewFailAuth() {
 	authErr := errors.New("error from TestAuthentication")
-	s.publishWithClient(nil, authErr, nil, nil, nil, nil, nil, nil, nil, authErr)
+	s.publishWithClient(nil, nil, authErr, nil, nil, nil, nil, nil, nil, nil, authErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientNewFailCapabilities() {
 	capErr := errors.New("error from CheckCapabilities")
-	s.publishWithClient(nil, nil, capErr, nil, nil, nil, nil, nil, nil, capErr)
+	s.publishWithClient(nil, nil, nil, capErr, nil, nil, nil, nil, nil, nil, capErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientNewFailCreate() {
 	createErr := errors.New("error from Create")
-	s.publishWithClient(nil, nil, nil, createErr, nil, nil, nil, nil, nil, createErr)
+	s.publishWithClient(nil, nil, nil, nil, createErr, nil, nil, nil, nil, nil, createErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientNewFailEnvVars() {
 	envVarErr := errors.New("error from SetEnvVars")
-	s.publishWithClient(nil, nil, nil, nil, envVarErr, nil, nil, nil, nil, envVarErr)
+	s.publishWithClient(nil, nil, nil, nil, nil, envVarErr, nil, nil, nil, nil, envVarErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientNewFailUpload() {
 	uploadErr := errors.New("error from Upload")
-	s.publishWithClient(nil, nil, nil, nil, nil, uploadErr, nil, nil, nil, uploadErr)
+	s.publishWithClient(nil, nil, nil, nil, nil, nil, uploadErr, nil, nil, nil, uploadErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientNewFailDeploy() {
 	deployErr := errors.New("error from Deploy")
-	s.publishWithClient(nil, nil, nil, nil, nil, nil, deployErr, nil, nil, deployErr)
+	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, deployErr, nil, nil, deployErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientNewFailWaitForTask() {
 	waitErr := errors.New("error from WaitForTask")
-	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, waitErr, nil, waitErr)
+	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil, waitErr, nil, waitErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientNewFailValidation() {
 	validateErr := errors.New("error from ValidateDeployment")
-	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil, validateErr, validateErr)
+	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil, nil, validateErr, validateErr)
+}
+
+func (s *PublishSuite) TestPublishWithClientNewRPackages() {
+	rPackageErr := errors.New("error from GetManifestPackages")
+	s.publishWithClient(nil, rPackageErr, nil, nil, nil, nil, nil, nil, nil, nil, rPackageErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientRedeployFailAuth() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	authErr := errors.New("error from TestAuthentication")
-	s.publishWithClient(target, authErr, nil, nil, nil, nil, nil, nil, nil, authErr)
+	s.publishWithClient(target, nil, authErr, nil, nil, nil, nil, nil, nil, nil, authErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientRedeployFailCapabilities() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	capErr := errors.New("error from CheckCapabilities")
-	s.publishWithClient(target, nil, capErr, nil, nil, nil, nil, nil, nil, capErr)
+	s.publishWithClient(target, nil, nil, capErr, nil, nil, nil, nil, nil, nil, capErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientRedeployFailUpdate() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	updateErr := errors.New("error from Update")
-	s.publishWithClient(target, nil, nil, updateErr, nil, nil, nil, nil, nil, updateErr)
+	s.publishWithClient(target, nil, nil, nil, updateErr, nil, nil, nil, nil, nil, updateErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientRedeployFailEnvVars() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	envVarErr := errors.New("error from SetEnvVars")
-	s.publishWithClient(target, nil, nil, nil, envVarErr, nil, nil, nil, nil, envVarErr)
+	s.publishWithClient(target, nil, nil, nil, nil, envVarErr, nil, nil, nil, nil, envVarErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientRedeployFailUpload() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	uploadErr := errors.New("error from Upload")
-	s.publishWithClient(target, nil, nil, nil, nil, uploadErr, nil, nil, nil, uploadErr)
+	s.publishWithClient(target, nil, nil, nil, nil, nil, uploadErr, nil, nil, nil, uploadErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientRedeployFailDeploy() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	deployErr := errors.New("error from Deploy")
-	s.publishWithClient(target, nil, nil, nil, nil, nil, deployErr, nil, nil, deployErr)
+	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, deployErr, nil, nil, deployErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientRedeployFailWaitForTask() {
 	target := deployment.New()
 	target.ID = "myContentID"
 	waitErr := errors.New("error from WaitForTask")
-	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, waitErr, nil, waitErr)
+	s.publishWithClient(target, nil, nil, nil, nil, nil, nil, nil, waitErr, nil, waitErr)
 }
 
 func (s *PublishSuite) TestPublishWithClientRedeployFailValidation() {
 	validateErr := errors.New("error from ValidateDeployment")
-	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil, validateErr, validateErr)
+	s.publishWithClient(nil, nil, nil, nil, nil, nil, nil, nil, nil, validateErr, validateErr)
 }
 
 func (s *PublishSuite) publishWithClient(
 	target *deployment.Deployment,
-	authErr, capErr, createErr, envVarErr, uploadErr, deployErr, waitErr, validateErr,
+	rPackageErr, authErr, capErr, createErr, envVarErr, uploadErr, deployErr, waitErr, validateErr,
 	expectedErr error) {
-
-	bundler, err := bundles.NewBundler(s.cwd, bundles.NewManifest(), []string{"*"}, s.log)
-	s.NoError(err)
 
 	account := &accounts.Account{
 		ServerType: accounts.ServerTypeConnect,
@@ -213,6 +229,11 @@ func (s *PublishSuite) publishWithClient(
 		Version:        "3.4.5",
 		PackageManager: "pip",
 	}
+	cfg.R = &config.R{
+		Version:        "4.3.2",
+		PackageManager: "renv",
+		PackageFile:    "renv.lock",
+	}
 	saveName := ""
 	targetName := ""
 	recordName := "" // name we will find the deployment record under
@@ -246,7 +267,15 @@ func (s *PublishSuite) publishWithClient(
 		emitter: emitter,
 	}
 
-	err = publisher.publishWithClient(bundler, account, client, s.log)
+	rPackageMapper := &mockPackageMapper{}
+	if rPackageErr != nil {
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(nil, rPackageErr)
+	} else {
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+	}
+	publisher.rPackageMapper = rPackageMapper
+
+	err := publisher.publishWithClient(account, client, s.log)
 	if expectedErr == nil {
 		s.NoError(err)
 	} else {
@@ -263,7 +292,7 @@ func (s *PublishSuite) publishWithClient(
 			s.NotEqual(stateStore.Target.CreatedAt, stateStore.Target.DeployedAt)
 		}
 	}
-	couldCreateDeployment := (authErr == nil && capErr == nil && createErr == nil)
+	couldCreateDeployment := (rPackageErr == nil && authErr == nil && capErr == nil && createErr == nil)
 	if (stateStore.Target != nil) || couldCreateDeployment {
 		// Either a pre-existing deployment record, or we got far enough to create one
 		recordPath := deployment.GetDeploymentPath(stateStore.Dir, recordName)

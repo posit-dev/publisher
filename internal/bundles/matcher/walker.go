@@ -32,6 +32,10 @@ var StandardExclusions = []string{
 
 	// Exclude existing manifest.json; we will create one.
 	"!manifest.json",
+
+	// renv library cannot be included; Connect doesn't need it
+	// and it's probably the wrong platform anyway.
+	"!renv/library",
 }
 
 // matchingWalker is a Walker that excludes files and directories
@@ -57,7 +61,7 @@ func (i *matchingWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc) 
 
 		// Ignore Python environment directories. We check for these
 		// separately because they aren't expressible as gitignore patterns.
-		if info.IsDir() && util.IsPythonEnvironmentDir(path) {
+		if info.IsDir() && (util.IsPythonEnvironmentDir(path) || util.IsRenvLibraryDir(path)) {
 			return filepath.SkipDir
 		}
 		return fn(path, info, err)

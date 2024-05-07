@@ -51,7 +51,7 @@ func (cmd *RedeployCmd) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 		stateStore.Account.Name,
 		stateStore.ConfigName)
 
-	publisher, err := publish.NewFromState(stateStore, events.NewCliEmitter(os.Stderr, ctx.Logger))
+	publisher, err := publish.NewFromState(stateStore, events.NewCliEmitter(os.Stderr, ctx.Logger), ctx.Logger)
 	if err != nil {
 		return err
 	}

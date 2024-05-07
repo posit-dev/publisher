@@ -47,7 +47,7 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 		if info.IsDir() {
 			// Ignore Python environment directories. We check for these
 			// separately because they aren't expressible as gitignore patterns.
-			if util.IsPythonEnvironmentDir(path) {
+			if util.IsPythonEnvironmentDir(path) || util.IsRenvLibraryDir(path) {
 				return filepath.SkipDir
 			}
 		}

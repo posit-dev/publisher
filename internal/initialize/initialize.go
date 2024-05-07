@@ -90,20 +90,26 @@ func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path
 		// then configure R for the project.
 		return true, nil
 	}
-	if cfg.R != nil && cfg.R.Version == "" {
+	if cfg.R != nil {
 		// InferType returned an R configuration for us to fill in.
 		return true, nil
 	}
-	// Presence of renv.lock implies R is needed.
-	lockfilePath := base.Join(inspect.DefaultRenvLockfile)
-	exists, err := lockfilePath.Exists()
-	if err != nil {
-		return false, err
+	if cfg.Type != config.ContentTypeHTML && !cfg.Type.IsPythonContent() {
+		// Presence of renv.lock implies R is needed,
+		// unless we're deploying pre-rendered Rmd or Quarto
+		// (where there will usually be a source file and
+		// associated lockfile in the directory)
+		lockfilePath := base.Join(inspect.DefaultRenvLockfile)
+		exists, err := lockfilePath.Exists()
+		if err != nil {
+			return false, err
+		}
+		return exists, nil
 	}
-	return exists, nil
+	return false, nil
 }
 
-func GetPossibleConfigs(base util.AbsolutePath, python util.Path, log logging.Logger) ([]*config.Config, error) {
+func GetPossibleConfigs(base util.AbsolutePath, python util.Path, rExecutable util.Path, log logging.Logger) ([]*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory(log)
 	configs, err := typeDetector.InferAll(base)
@@ -132,6 +138,19 @@ func GetPossibleConfigs(base util.AbsolutePath, python util.Path, log logging.Lo
 			}
 			cfg.Python = pyConfig
 		}
+		needR, err := requiresR(cfg, base, rExecutable)
+		if err != nil {
+			return nil, err
+		}
+		if needR {
+			inspector := RInspectorFactory(base, rExecutable, log)
+			rConfig, err := inspector.InspectR()
+			if err != nil {
+				return nil, err
+			}
+			cfg.R = rConfig
+		}
+
 	}
 	return configs, nil
 }
