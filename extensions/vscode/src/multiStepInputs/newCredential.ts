@@ -143,7 +143,6 @@ export async function newCredential(
         }
         return Promise.resolve(undefined);
       },
-      // shouldResume: shouldResumePrompt(state.abortingDescription),
       shouldResume: () => Promise.resolve(false),
       ignoreFocusOut: true,
     });
