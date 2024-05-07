@@ -28,7 +28,7 @@ func (s *AllSuite) TestInferTypeDirectory() {
 	err := base.MkdirAll(0777)
 	s.NoError(err)
 
-	htmlFilename := "myfile.html"
+	htmlFilename := "index.html"
 	err = base.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
 	s.NoError(err)
 
@@ -37,8 +37,17 @@ func (s *AllSuite) TestInferTypeDirectory() {
 	s.NoError(err)
 
 	detector := NewContentTypeDetector(logging.New())
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.NoError(err)
+	s.Len(configs, 2)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeHTML,
+		Entrypoint: "index.html",
+		Validate:   true,
+		Files:      []string{"*"},
+	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonDash,
@@ -46,33 +55,7 @@ func (s *AllSuite) TestInferTypeDirectory() {
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},
-	}, t)
-}
-
-func (s *AllSuite) TestInferTypeDirectoryPriority() {
-	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
-	err := base.MkdirAll(0777)
-	s.NoError(err)
-
-	htmlFilename := "myfile.html"
-	err = base.Join(htmlFilename).WriteFile([]byte("<html></html>\n"), 0600)
-	s.NoError(err)
-
-	appFilename := "myapp.py"
-	err = base.Join(appFilename).WriteFile([]byte("import dash\n"), 0600)
-	s.NoError(err)
-
-	detector := NewContentTypeDetector(logging.New())
-	t, err := detector.InferType(base)
-	s.NoError(err)
-	s.Equal(&config.Config{
-		Schema:     schema.ConfigSchemaURL,
-		Type:       config.ContentTypePythonDash,
-		Entrypoint: appFilename,
-		Validate:   true,
-		Files:      []string{"*"},
-		Python:     &config.Python{},
-	}, t)
+	}, configs[1])
 }
 
 func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
@@ -84,19 +67,20 @@ func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
 	s.NoError(err)
 
 	detector := NewContentTypeDetector(logging.New())
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.NoError(err)
-	s.Equal(config.ContentTypeUnknown, t.Type)
+	s.Len(configs, 1)
+	s.Equal(config.ContentTypeUnknown, configs[0].Type)
 }
 
 func (s *AllSuite) TestInferTypeErr() {
 	fs := afero.NewMemMapFs()
 	detector := NewContentTypeDetector(logging.New())
 	base := util.NewAbsolutePath("/foo", fs)
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
-	s.Nil(t)
+	s.Nil(configs)
 }
 
 func (s *AllSuite) TestInferAll() {
@@ -113,7 +97,7 @@ func (s *AllSuite) TestInferAll() {
 	s.NoError(err)
 
 	detector := NewContentTypeDetector(logging.New())
-	t, err := detector.InferAll(base)
+	t, err := detector.InferType(base)
 	s.NoError(err)
 	s.Equal([]*config.Config{
 		{
@@ -144,7 +128,7 @@ func (s *AllSuite) TestInferAllIndeterminate() {
 	s.NoError(err)
 
 	detector := NewContentTypeDetector(logging.New())
-	configs, err := detector.InferAll(base)
+	configs, err := detector.InferType(base)
 	s.NoError(err)
 
 	s.Len(configs, 1)

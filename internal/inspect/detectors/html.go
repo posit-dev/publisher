@@ -18,7 +18,7 @@ func NewStaticHTMLDetector() *StaticHTMLDetector {
 }
 
 func (d *StaticHTMLDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
-	configs := []*config.Config{}
+	var configs []*config.Config
 	entrypointPaths, err := base.Glob("*.html")
 	if err != nil {
 		return nil, err

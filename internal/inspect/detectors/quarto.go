@@ -135,12 +135,12 @@ func (d *QuartoDetector) findEntrypoints(base util.AbsolutePath) ([]util.Absolut
 }
 
 func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
-	configs := []*config.Config{}
+	var configs []*config.Config
 	entrypointPaths, err := d.findEntrypoints(base)
 	if err != nil {
 		return nil, err
 	}
-	if entrypointPaths == nil {
+	if len(entrypointPaths) == 0 {
 		return nil, nil
 	}
 	isQuartoProject, err := base.Join("_quarto.yml").Exists()

@@ -3,6 +3,7 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -50,25 +51,21 @@ var preferredNames = []string{
 	"streamlit_app",
 }
 
-func compareConfigs(a, b *config.Config) int {
-	entrypointA := a.Entrypoint
-	entrypointB := b.Entrypoint
-	aIsPreferred := slices.Contains(preferredNames, entrypointA)
-	bIsPreferred := slices.Contains(preferredNames, entrypointB)
-	if aIsPreferred && !bIsPreferred {
-		return -1
-	} else if !aIsPreferred && bIsPreferred {
-		return 1
-	} else {
-		return strings.Compare(entrypointA, entrypointB)
-	}
+func filenameStem(filename string) string {
+	ext := filepath.Ext(filename)
+	return strings.TrimSuffix(filename, ext)
 }
 
-func (t *ContentTypeDetector) InferType(path util.AbsolutePath) ([]*config.Config, error) {
+func (t *ContentTypeDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
 	var allConfigs []*config.Config
 
+	_, err := base.Stat()
+	if err != nil {
+		return nil, err
+	}
+
 	for _, detector := range t.detectors {
-		configs, err := detector.InferType(path)
+		configs, err := detector.InferType(base)
 		if err != nil {
 			return nil, err
 		}
@@ -79,6 +76,25 @@ func (t *ContentTypeDetector) InferType(path util.AbsolutePath) ([]*config.Confi
 	if allConfigs == nil {
 		allConfigs = append(allConfigs, newUnknownConfig())
 	}
+
+	compareConfigs := func(a, b *config.Config) int {
+		entrypointA := a.Entrypoint
+		entrypointB := b.Entrypoint
+		stemA := filenameStem(entrypointA)
+		stemB := filenameStem(entrypointB)
+
+		aIsPreferred := base.Base() == stemA || slices.Contains(preferredNames, stemA)
+		bIsPreferred := base.Base() == stemB || slices.Contains(preferredNames, stemB)
+
+		if aIsPreferred && !bIsPreferred {
+			return -1
+		} else if !aIsPreferred && bIsPreferred {
+			return 1
+		} else {
+			return strings.Compare(entrypointA, entrypointB)
+		}
+	}
+
 	slices.SortFunc(allConfigs, compareConfigs)
 	return allConfigs, nil
 }

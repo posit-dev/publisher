@@ -47,8 +47,10 @@ func (s *RMarkdownSuite) TestInferType() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
@@ -57,7 +59,7 @@ func (s *RMarkdownSuite) TestInferType() {
 		Validate:   true,
 		Files:      []string{"*"},
 		R:          &config.R{},
-	}, t)
+	}, configs[0])
 }
 
 var pythonRmdContent = fmt.Sprintf(`---
@@ -82,8 +84,9 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
@@ -92,7 +95,7 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},
-	}, t)
+	}, configs[0])
 }
 
 var parameterizedRmdContent = fmt.Sprintf(`---

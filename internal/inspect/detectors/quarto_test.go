@@ -35,8 +35,6 @@ func (s *QuartoDetectorSuite) TestInferType() {
 	// A quarto file must exist before we try to run `quarto inspect`
 	err = base.Join("project.qmd").WriteFile(nil, 0600)
 	s.Nil(err)
-	err = base.Join("other.qmd").WriteFile(nil, 0600)
-	s.Nil(err)
 	err = base.Join("_quarto.yml").WriteFile(nil, 0600)
 	s.Nil(err)
 
@@ -59,8 +57,7 @@ func (s *QuartoDetectorSuite) TestInferType() {
 		  },
 		  "files": {
 			"input": [
-				"/project/project.qmd",
-				"/project/other.qmd"
+				"/project/project.qmd"
 			],
 			"resources": [],
 			"config": [
@@ -71,8 +68,10 @@ func (s *QuartoDetectorSuite) TestInferType() {
 	}`), nil, nil)
 	detector.executor = executor
 
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
@@ -84,7 +83,7 @@ func (s *QuartoDetectorSuite) TestInferType() {
 			Version: "1.3.353",
 			Engines: []string{"markdown"},
 		},
-	}, t)
+	}, configs[0])
 }
 
 func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
@@ -136,8 +135,23 @@ func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
 	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 2)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "other.qmd",
+		Title:      "this is the title",
+		Validate:   true,
+		Files:      []string{"*"},
+		Python:     &config.Python{},
+		Quarto: &config.Quarto{
+			Version: "1.3.353",
+			Engines: []string{"jupyter", "markdown"},
+		},
+	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
@@ -150,7 +164,7 @@ func (s *QuartoDetectorSuite) TestInferTypeWithPython() {
 			Version: "1.3.353",
 			Engines: []string{"jupyter", "markdown"},
 		},
-	}, t)
+	}, configs[1])
 }
 
 func (s *QuartoDetectorSuite) TestInferTypeWithR() {
@@ -198,8 +212,10 @@ func (s *QuartoDetectorSuite) TestInferTypeWithR() {
 	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
@@ -212,7 +228,7 @@ func (s *QuartoDetectorSuite) TestInferTypeWithR() {
 			Version: "1.4.553",
 			Engines: []string{"knitr"},
 		},
-	}, t)
+	}, configs[0])
 }
 
 func (s *QuartoDetectorSuite) TestInferTypeNonProject() {
@@ -283,9 +299,10 @@ func (s *QuartoDetectorSuite) TestInferTypeNonProject() {
 	executor.On("RunCommand", "quarto", []string{"inspect", "/project/project.qmd"}, mock.Anything, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
-	s.NotNil(t)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
@@ -297,7 +314,7 @@ func (s *QuartoDetectorSuite) TestInferTypeNonProject() {
 			Version: "1.3.353",
 			Engines: []string{"markdown"},
 		},
-	}, t)
+	}, configs[0])
 }
 
 func (s *QuartoDetectorSuite) TestInferWindows() {
@@ -437,8 +454,21 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 	executor.On("RunCommand", "quarto", []string{"inspect", "/project"}, mock.Anything, mock.Anything).Return(out, nil, nil)
 	detector.executor = executor
 
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 2)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "about.qmd",
+		Title:      "website",
+		Validate:   true,
+		Files:      []string{"*"},
+		Quarto: &config.Quarto{
+			Version: "1.3.353",
+			Engines: []string{"markdown"},
+		},
+	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
@@ -450,5 +480,5 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 			Version: "1.3.353",
 			Engines: []string{"markdown"},
 		},
-	}, t)
+	}, configs[1])
 }

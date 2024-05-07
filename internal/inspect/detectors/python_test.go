@@ -34,8 +34,10 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonFlask,
@@ -43,7 +45,7 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},
-	}, t)
+	}, configs[0])
 }
 
 func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
@@ -60,8 +62,10 @@ func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonFlask,
@@ -69,7 +73,7 @@ func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},
-	}, t)
+	}, configs[0])
 }
 
 func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
@@ -83,8 +87,10 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonFlask,
@@ -92,7 +98,7 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},
-	}, t)
+	}, configs[0])
 }
 
 func (s *PythonSuite) TestInferTypeNotFlask() {
@@ -106,46 +112,30 @@ func (s *PythonSuite) TestInferTypeNotFlask() {
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
-	s.Nil(t)
-}
-
-func (s *PythonSuite) TestInferTypeEntrypointErr() {
-	inferrer := &MockInferenceHelper{}
-	testError := errors.New("test error from InferEntrypoint")
-	inferrer.On("InferEntrypoint", mock.Anything, mock.Anything, mock.Anything).Return("", util.AbsolutePath{}, testError)
-
-	detector := NewFlaskDetector()
-	detector.inferenceHelper = inferrer
-	base, err := util.Getwd(utiltest.NewMockFs())
-	s.NoError(err)
-
-	t, err := detector.InferType(base)
-	s.NotNil(err)
-	s.ErrorIs(err, testError)
-	s.Nil(t)
-	inferrer.AssertExpectations(s.T())
+	s.Nil(configs)
 }
 
 func (s *PythonSuite) TestInferTypeHasImportsErr() {
-	base, err := util.Getwd(utiltest.NewMockFs())
+	base, err := util.Getwd(afero.NewMemMapFs())
+	s.NoError(err)
+	err = base.MkdirAll(0777)
+	s.NoError(err)
+
+	err = base.Join("app.py").WriteFile(nil, 0600)
 	s.NoError(err)
 
 	inferrer := &MockInferenceHelper{}
-	entrypoint := "app.py"
-	entrypointPath := base.Join(entrypoint)
-
-	inferrer.On("InferEntrypoint", mock.Anything, ".py", mock.Anything).Return(entrypoint, entrypointPath, nil)
 	testError := errors.New("test error from FileHasPythonImports")
 	inferrer.On("FileHasPythonImports", mock.Anything, mock.Anything).Return(false, testError)
 
 	detector := NewFlaskDetector()
 	detector.inferenceHelper = inferrer
 
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
-	s.Nil(t)
+	s.Nil(configs)
 	inferrer.AssertExpectations(s.T())
 }

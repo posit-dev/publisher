@@ -45,12 +45,12 @@ func shinyExpressEntrypoint(entrypoint string) string {
 }
 
 func (d *pyShinyDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
-	configs := []*config.Config{}
+	var configs []*config.Config
 	entrypointPaths, err := base.Glob("*.py")
 	if err != nil {
 		return nil, err
 	}
-	if entrypointPaths == nil {
+	if len(entrypointPaths) == 0 {
 		// We didn't find a matching filename
 		return nil, nil
 	}

@@ -58,12 +58,12 @@ func (d *RMarkdownDetector) getRmdFileMetadata(path util.AbsolutePath) (RMarkdow
 }
 
 func (d *RMarkdownDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
-	configs := []*config.Config{}
+	var configs []*config.Config
 	entrypointPaths, err := base.Glob("*.Rmd")
 	if err != nil {
 		return nil, err
 	}
-	if entrypointPaths == nil {
+	if len(entrypointPaths) == 0 {
 		// Not an R Markdown project
 		return nil, nil
 	}
