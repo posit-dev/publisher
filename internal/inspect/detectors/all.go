@@ -22,6 +22,7 @@ func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 			NewQuartoDetector(),
 			NewRMarkdownDetector(log),
 			NewNotebookDetector(),
+			NewRShinyDetector(),
 			NewPyShinyDetector(),
 			NewFastAPIDetector(),
 			NewFlaskDetector(),
