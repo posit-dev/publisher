@@ -244,6 +244,7 @@ export async function newDeployment(
       prompt: "Choose a unique name for the deployment",
       validate: deploymentNameValidator(deploymentNames, currentName),
       shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
     });
 
     state.data.deploymentName = deploymentName;
@@ -272,6 +273,7 @@ export async function newDeployment(
             : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
       });
       state.data.credentialName = pick;
       state.lastStep = thisStepNumber;
@@ -307,6 +309,7 @@ export async function newDeployment(
             : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
       });
       state.data.configFile = pick;
       state.lastStep = thisStepNumber;
@@ -347,6 +350,7 @@ export async function newDeployment(
             : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
       });
       state.data.promptToDeploy = pick;
       state.lastStep = thisStepNumber;

@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 package accounts
 
 import "github.com/rstudio/connect-client/internal/credentials"
