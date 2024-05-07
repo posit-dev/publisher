@@ -17,14 +17,21 @@ var ContentDetectorFactory = detectors.NewContentTypeDetector
 var PythonInspectorFactory = inspect.NewPythonInspector
 var RInspectorFactory = inspect.NewRInspector
 
+var errNoDeployableContent = fmt.Errorf("no deployable content was detected")
+
 func inspectProject(base util.AbsolutePath, python util.Path, rExecutable util.Path, log logging.Logger) (*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory(log)
 
-	cfg, err := typeDetector.InferType(base)
+	configs, err := typeDetector.InferType(base)
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
+	if len(configs) == 0 {
+		return nil, errNoDeployableContent
+	}
+	// Command line `init` takes the first detected configuration.
+	cfg := configs[0]
 	log.Info("Deployment type", "Entrypoint", cfg.Entrypoint, "Type", cfg.Type)
 
 	if cfg.Type == config.ContentTypeUnknown {
@@ -112,7 +119,7 @@ func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path
 func GetPossibleConfigs(base util.AbsolutePath, python util.Path, rExecutable util.Path, log logging.Logger) ([]*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory(log)
-	configs, err := typeDetector.InferAll(base)
+	configs, err := typeDetector.InferType(base)
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
