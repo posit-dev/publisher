@@ -5,33 +5,28 @@
     <div class="label">
       <span>Destination:</span>
 
-      <ActionToolbar
-        title="Destination"
-        :actions="[
-          {
-            label: 'Add Destination',
-            codicon: 'codicon-add',
-            fn: () => console.log('Add Destination'),
-          },
-          {
-            label: 'Edit Configuration',
-            codicon: 'codicon-edit',
-            fn: () => console.log('Edit Configuration'),
-          },
-          {
-            label: 'More Deployment Actions',
-            codicon: 'codicon-ellipsis',
-            fn: () => console.log('More'),
-          },
-        ]"
-      />
+      <ActionToolbar title="Destination" :actions="toolbarActions" />
     </div>
 
-    <div class="destination-control">
+    <div
+      class="destination-control"
+      :disabled="home.deployments.length === 0 ? true : undefined"
+    >
       <QuickPickItem
-        label="Connect title"
-        description="default"
-        detail="rsc.radixu.com"
+        v-if="
+          home.selectedDeployment &&
+          home.selectedConfiguration &&
+          home.selectedCredential
+        "
+        :label="home.selectedDeployment.saveName"
+        :description="home.selectedConfiguration.configurationName"
+        :detail="home.selectedCredential.name"
+      />
+      <QuickPickItem
+        v-else
+        class="text-placeholder"
+        label="Select a Destination"
+        detail="Get deploying"
       />
       <div
         class="select-indicator codicon codicon-chevron-down"
@@ -42,8 +37,47 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
+import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
+
+import { useHostConduitService } from "src/HostConduitService";
+import { useHomeStore } from "src/stores/home";
 import QuickPickItem from "src/components/QuickPickItem.vue";
-import ActionToolbar from "./ActionToolbar.vue";
+import ActionToolbar from "src/components/ActionToolbar.vue";
+
+const home = useHomeStore();
+const hostConduit = useHostConduitService();
+
+const toolbarActions = computed(() => {
+  const result = [];
+  result.push({
+    label: "Add Destination",
+    codicon: "codicon-add",
+    fn: () => console.log("Add Destination"),
+  });
+
+  if (home.selectedConfiguration) {
+    result.push({
+      label: "Edit Configuration",
+      codicon: "codicon-edit",
+      fn: () =>
+        hostConduit.sendMsg({
+          kind: WebviewToHostMessageType.EDIT_CONFIGURATION,
+          content: {
+            configurationName: home.selectedConfiguration!.configurationName,
+          },
+        }),
+    });
+  }
+
+  result.push({
+    label: "More Deployment Actions",
+    codicon: "codicon-ellipsis",
+    fn: () => console.log("More"),
+  });
+  return result;
+});
 </script>
 
 <style lang="scss" scoped>
@@ -70,8 +104,13 @@ import ActionToolbar from "./ActionToolbar.vue";
   outline: none;
 
   &[open],
-  &:active {
+  &:active:not([disabled]) {
     border-color: var(--focus-border);
+  }
+
+  &[disabled] {
+    cursor: not-allowed;
+    opacity: var(--disabled-opacity);
   }
 
   .select-indicator {
