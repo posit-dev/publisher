@@ -5,7 +5,6 @@ import {
   MultiStepState,
   isQuickPickItem,
   assignStep,
-  // shouldResumePrompt,
 } from "./multiStepHelper";
 
 import { InputBoxValidationSeverity, ProgressLocation, window } from "vscode";
@@ -70,7 +69,6 @@ export async function newCredential(
   async function collectInputs() {
     const state: MultiStepState = {
       title: "Create a New Credential",
-      abortingDescription: "the creation of a new credential",
       step: -1,
       lastStep: 0,
       totalSteps: -1,
