@@ -8,6 +8,10 @@ body {
   padding: 0;
 }
 
+.text-placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
 .text-error {
   color: var(--vscode-list-errorForeground);
 }
