@@ -209,6 +209,7 @@ export async function initWorkspace(
           return Promise.resolve(undefined);
         },
         shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
       });
 
       state.data.deploymentName = deploymentName;
@@ -242,6 +243,7 @@ export async function initWorkspace(
             : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
       });
       state.data.credentialName = pick;
       state.lastStep = thisStepNumber;
@@ -273,6 +275,7 @@ export async function initWorkspace(
         items: entryPointListItems,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
       });
 
       state.data.entryPoint = pick;
@@ -311,6 +314,7 @@ export async function initWorkspace(
           return Promise.resolve(undefined);
         },
         shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
       });
 
       state.data.configFileName = configFileName;

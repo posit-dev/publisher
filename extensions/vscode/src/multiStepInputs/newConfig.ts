@@ -138,6 +138,7 @@ export async function newConfig(title: string, viewId?: string) {
         items: entryPointListItems,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
       });
 
       state.data.entryPoint = pick;
@@ -175,6 +176,7 @@ export async function newConfig(title: string, viewId?: string) {
         return Promise.resolve(undefined);
       },
       shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
     });
 
     state.data.configFileName = configFileName;

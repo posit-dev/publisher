@@ -214,6 +214,7 @@ export async function publishDeployment(
             : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
       });
       state.data.credentialName = pick;
       state.lastStep = thisStepNumber;
@@ -249,6 +250,7 @@ export async function publishDeployment(
             : undefined,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
       });
       state.data.configFile = pick;
       state.lastStep = thisStepNumber;
