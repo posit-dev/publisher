@@ -94,7 +94,7 @@ func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path
 		// InferType returned an R configuration for us to fill in.
 		return true, nil
 	}
-	if cfg.Type != config.ContentTypeHTML {
+	if cfg.Type != config.ContentTypeHTML && !cfg.Type.IsPythonContent() {
 		// Presence of renv.lock implies R is needed,
 		// unless we're deploying pre-rendered Rmd or Quarto
 		// (where there will usually be a source file and
