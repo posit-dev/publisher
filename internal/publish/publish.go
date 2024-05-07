@@ -145,7 +145,7 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 	// Record the error in the deployment record
 	if p.Target != nil {
 		p.Target.Error = agentErr
-		writeErr := p.writeDeploymentRecord(log)
+		writeErr := p.writeDeploymentRecord()
 		if writeErr != nil {
 			log.Warn("failed to write updated deployment record", "name", p.TargetName, "err", writeErr)
 		}
@@ -210,7 +210,7 @@ func (p *defaultPublisher) publish(
 	return err
 }
 
-func (p *defaultPublisher) writeDeploymentRecord(log logging.Logger) error {
+func (p *defaultPublisher) writeDeploymentRecord() error {
 	if p.SaveName == "" {
 		// Redeployment
 		p.SaveName = p.TargetName
@@ -230,8 +230,7 @@ func (p *defaultPublisher) writeDeploymentRecord(log logging.Logger) error {
 
 func (p *defaultPublisher) createDeploymentRecord(
 	contentID types.ContentID,
-	account *accounts.Account,
-	log logging.Logger) error {
+	account *accounts.Account) error {
 
 	// Initial deployment record doesn't know the files or
 	// bundleID. These will be added after the
@@ -263,7 +262,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 	}
 
 	// Save current deployment information for this target
-	return p.writeDeploymentRecord(log)
+	return p.writeDeploymentRecord()
 }
 
 func (p *defaultPublisher) publishWithClient(
@@ -288,7 +287,7 @@ func (p *defaultPublisher) publishWithClient(
 			return err
 		}
 	}
-	err = p.createDeploymentRecord(contentID, account, log)
+	err = p.createDeploymentRecord(contentID, account)
 	if err != nil {
 		return types.OperationError(events.PublishCreateNewDeploymentOp, err)
 	}

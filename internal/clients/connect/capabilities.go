@@ -15,6 +15,7 @@ import (
 )
 
 type allSettings struct {
+	base        util.AbsolutePath
 	user        UserDTO
 	general     server_settings.ServerSettings
 	application server_settings.ApplicationSettings
@@ -49,15 +50,17 @@ func (c *ConnectClient) CheckCapabilities(base util.AbsolutePath, cfg *config.Co
 			return err
 		}
 	}
-	settings, err := c.getSettings(cfg, log)
+	settings, err := c.getSettings(base, cfg, log)
 	if err != nil {
 		return err
 	}
 	return settings.checkConfig(cfg)
 }
 
-func (c *ConnectClient) getSettings(cfg *config.Config, log logging.Logger) (*allSettings, error) {
-	settings := &allSettings{}
+func (c *ConnectClient) getSettings(base util.AbsolutePath, cfg *config.Config, log logging.Logger) (*allSettings, error) {
+	settings := &allSettings{
+		base: base,
+	}
 
 	err := c.client.Get("/__api__/v1/user", &settings.user, log)
 	if err != nil {
@@ -268,7 +271,23 @@ func (a *allSettings) checkAccess(cfg *config.Config) error {
 	return nil
 }
 
+func (a *allSettings) checkFileExists(filename string, attr string) error {
+	if filename == "" {
+		return nil
+	}
+	path := a.base.Join(filename)
+	exists, err := path.Exists()
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("the file %s specified in %s does not exist", filename, attr)
+	}
+	return nil
+}
+
 func (a *allSettings) checkConfig(cfg *config.Config) error {
+	var err error
 	if cfg.Type.IsAPIContent() {
 		if !a.general.License.AllowAPIs {
 			return errAPIsNotLicensed
@@ -280,13 +299,23 @@ func (a *allSettings) checkConfig(cfg *config.Config) error {
 	// we don't upload thumbnails yet, but when we do, we will check MaximumAppImageSize
 
 	if cfg.Python != nil {
-		err := a.checkMatchingPython(cfg.Python.Version)
+		err = a.checkMatchingPython(cfg.Python.Version)
+		if err != nil {
+			return err
+		}
+		err = a.checkFileExists(cfg.Python.PackageFile, "python.package-file")
+		if err != nil {
+			return err
+		}
+	}
+	if cfg.R != nil {
+		err = a.checkFileExists(cfg.R.PackageFile, "r.package-file")
 		if err != nil {
 			return err
 		}
 	}
 	if cfg.Connect != nil {
-		err := a.checkAccess(cfg)
+		err = a.checkAccess(cfg)
 		if err != nil {
 			return err
 		}

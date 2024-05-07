@@ -16,6 +16,7 @@ import (
 type InitCommand struct {
 	Path       util.Path `help:"Path to project directory containing files to publish." arg:"" default:"."`
 	Python     util.Path `help:"Path to Python interpreter for this content, if it is Python-based. Default is the Python 3 on your PATH."`
+	R          util.Path `help:"Path to R interpreter for this content, if it is R-based. Default is the R on your PATH."`
 	ConfigName string    `name:"config" short:"c" help:"Configuration name to create (in .posit/publish/)"`
 }
 
@@ -51,7 +52,7 @@ func (cmd *InitCommand) Run(args *cli_types.CommonArgs, ctx *cli_types.CLIContex
 	if cmd.ConfigName == "" {
 		cmd.ConfigName = config.DefaultConfigName
 	}
-	cfg, err := initialize.Init(absPath, cmd.ConfigName, cmd.Python, ctx.Logger)
+	cfg, err := initialize.Init(absPath, cmd.ConfigName, cmd.Python, cmd.R, ctx.Logger)
 	if err != nil {
 		return err
 	}

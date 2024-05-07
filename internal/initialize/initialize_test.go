@@ -43,7 +43,7 @@ func (s *InitializeSuite) TestInitEmpty() {
 	err := path.Mkdir(0777)
 	s.NoError(err)
 
-	cfg, err := Init(path, "", util.Path{}, log)
+	cfg, err := Init(path, "", util.Path{}, util.Path{}, log)
 	s.Nil(err)
 	s.Equal(config.ContentTypeUnknown, cfg.Type)
 	s.Equal("My App", cfg.Title)
@@ -93,7 +93,7 @@ func (s *InitializeSuite) TestInitInferredType() {
 	s.createAppPy()
 	PythonInspectorFactory = makeMockPythonInspector
 	configName := ""
-	cfg, err := Init(s.cwd, configName, util.Path{}, log)
+	cfg, err := Init(s.cwd, configName, util.Path{}, util.Path{}, log)
 	s.NoError(err)
 	configPath := config.GetConfigPath(s.cwd, configName)
 	cfg2, err := config.FromFile(configPath)
@@ -109,7 +109,7 @@ func (s *InitializeSuite) TestInitExplicitPython() {
 	PythonInspectorFactory = makeMockPythonInspector
 	configName := ""
 	python := util.NewPath("/usr/bin/python", s.cwd.Fs())
-	cfg, err := Init(s.cwd, configName, python, log)
+	cfg, err := Init(s.cwd, configName, python, util.Path{}, log)
 	s.NoError(err)
 	configPath := config.GetConfigPath(s.cwd, configName)
 	cfg2, err := config.FromFile(configPath)
@@ -125,7 +125,7 @@ func (s *InitializeSuite) TestInitRequirementsFile() {
 	s.createRequirementsFile()
 	PythonInspectorFactory = makeMockPythonInspector
 	configName := ""
-	cfg, err := Init(s.cwd, configName, util.Path{}, log)
+	cfg, err := Init(s.cwd, configName, util.Path{}, util.Path{}, log)
 	s.NoError(err)
 	configPath := config.GetConfigPath(s.cwd, configName)
 	cfg2, err := config.FromFile(configPath)

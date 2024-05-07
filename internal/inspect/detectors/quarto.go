@@ -4,7 +4,6 @@ package detectors
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -28,8 +27,6 @@ func NewQuartoDetector() *QuartoDetector {
 		log:             logging.New(),
 	}
 }
-
-var errNoQuartoKnitrSupport = errors.New("quarto with knitr engine is not yet supported")
 
 type quartoInspectOutput struct {
 	// Only the fields we use are included; the rest
@@ -63,7 +60,7 @@ type quartoInspectOutput struct {
 
 func (d *QuartoDetector) quartoInspect(path util.AbsolutePath) (*quartoInspectOutput, error) {
 	args := []string{"inspect", path.String()}
-	out, err := d.executor.RunCommand("quarto", args, d.log)
+	out, _, err := d.executor.RunCommand("quarto", args, d.log)
 	if err != nil {
 		return nil, fmt.Errorf("quarto inspect failed: %w", err)
 	}
@@ -86,6 +83,23 @@ func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
 	}
 	for _, script := range inspectOutput.Config.Project.PostRender {
 		if strings.HasSuffix(script, ".py") {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *QuartoDetector) needsR(inspectOutput *quartoInspectOutput) bool {
+	if slices.Contains(inspectOutput.Engines, "knitr") {
+		return true
+	}
+	for _, script := range inspectOutput.Config.Project.PreRender {
+		if strings.HasSuffix(script, ".R") {
+			return true
+		}
+	}
+	for _, script := range inspectOutput.Config.Project.PostRender {
+		if strings.HasSuffix(script, ".R") {
 			return true
 		}
 	}
@@ -130,8 +144,8 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) (*config.Config, erro
 		d.log.Warn("quarto inspect failed", "error", err)
 		return nil, nil
 	}
-	if slices.Contains(inspectOutput.Engines, "knitr") {
-		return nil, errNoQuartoKnitrSupport
+	if inspectOutput.Files.Input != nil && len(inspectOutput.Files.Input) == 0 {
+		return nil, nil
 	}
 	cfg := config.New()
 	cfg.Type = config.ContentTypeQuarto
@@ -145,6 +159,10 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) (*config.Config, erro
 	if d.needsPython(inspectOutput) {
 		// Indicate that Python inspection is needed.
 		cfg.Python = &config.Python{}
+	}
+	if d.needsR(inspectOutput) {
+		// Indicate that R inspection is needed.
+		cfg.R = &config.R{}
 	}
 	return cfg, nil
 }

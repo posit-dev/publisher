@@ -72,7 +72,7 @@ func (p *defaultPublisher) createAndUploadBundle(
 	p.Target.BundleID = bundleID
 	p.Target.BundleURL = getBundleURL(p.Account.URL, contentID, bundleID)
 
-	err = p.writeDeploymentRecord(log)
+	err = p.writeDeploymentRecord()
 	if err != nil {
 		return "", err
 	}

@@ -27,3 +27,45 @@ func (s *QMDContentsSuite) TestGetQuartoFilePythonCode() {
 	s.Nil(err)
 	s.Equal("import that\n\nthat.do_something()\n", inputs)
 }
+
+func (s *QMDContentsSuite) TestDetectMarkdownLanguagesInContentEmpty() {
+	r, py := detectMarkdownLanguagesInContent([]byte{})
+	s.False(r)
+	s.False(py)
+}
+
+func (s *QMDContentsSuite) TestDetectMarkdownLanguagesInContentRBlock() {
+	r, py := detectMarkdownLanguagesInContent([]byte("```{r echo=TRUE}\nlibrary(foo)\n```"))
+	s.True(r)
+	s.False(py)
+}
+
+func (s *QMDContentsSuite) TestDetectMarkdownLanguagesInContentRBlockWithComma() {
+	r, py := detectMarkdownLanguagesInContent([]byte("```{r, echo=TRUE}\nlibrary(foo)\n```"))
+	s.True(r)
+	s.False(py)
+}
+
+func (s *QMDContentsSuite) TestDetectMarkdownLanguagesInContentRInline() {
+	r, py := detectMarkdownLanguagesInContent([]byte("`r library(foo)`"))
+	s.True(r)
+	s.False(py)
+}
+
+func (s *QMDContentsSuite) TestDetectMarkdownLanguagesInContentPythonBlock() {
+	r, py := detectMarkdownLanguagesInContent([]byte("```{python}\nimport foo\n```"))
+	s.False(r)
+	s.True(py)
+}
+
+func (s *QMDContentsSuite) TestDetectMarkdownLanguagesInContentPythonInline() {
+	r, py := detectMarkdownLanguagesInContent([]byte("`python import foo`"))
+	s.False(r)
+	s.True(py)
+}
+
+func (s *QMDContentsSuite) TestDetectMarkdownLanguagesBothBlock() {
+	r, py := detectMarkdownLanguagesInContent([]byte("```{r echo=TRUE}\nlibrary(foo)\n```\n```{python}\nimport foo\n```"))
+	s.True(r)
+	s.True(py)
+}

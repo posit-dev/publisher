@@ -15,10 +15,11 @@ import (
 
 var ContentDetectorFactory = detectors.NewContentTypeDetector
 var PythonInspectorFactory = inspect.NewPythonInspector
+var RInspectorFactory = inspect.NewRInspector
 
-func inspectProject(base util.AbsolutePath, python util.Path, log logging.Logger) (*config.Config, error) {
+func inspectProject(base util.AbsolutePath, python util.Path, rExecutable util.Path, log logging.Logger) (*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
-	typeDetector := ContentDetectorFactory()
+	typeDetector := ContentDetectorFactory(log)
 
 	cfg, err := typeDetector.InferType(base)
 	if err != nil {
@@ -46,6 +47,19 @@ func inspectProject(base util.AbsolutePath, python util.Path, log logging.Logger
 		}
 		cfg.Python = pyConfig
 	}
+	needR, err := requiresR(cfg, base, rExecutable)
+	if err != nil {
+		return nil, err
+	}
+	if needR {
+		inspector := RInspectorFactory(base, rExecutable, log)
+		rConfig, err := inspector.InspectR()
+		if err != nil {
+			return nil, err
+		}
+		cfg.R = rConfig
+	}
+
 	return cfg, nil
 }
 
@@ -70,9 +84,28 @@ func requiresPython(cfg *config.Config, base util.AbsolutePath, python util.Path
 	return exists, nil
 }
 
+func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path) (bool, error) {
+	if rExecutable.String() != "" {
+		// If user provided R on the command line,
+		// then configure R for the project.
+		return true, nil
+	}
+	if cfg.R != nil && cfg.R.Version == "" {
+		// InferType returned an R configuration for us to fill in.
+		return true, nil
+	}
+	// Presence of renv.lock implies R is needed.
+	lockfilePath := base.Join(inspect.DefaultRenvLockfile)
+	exists, err := lockfilePath.Exists()
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
 func GetPossibleConfigs(base util.AbsolutePath, python util.Path, log logging.Logger) ([]*config.Config, error) {
 	log.Info("Detecting deployment type and entrypoint...")
-	typeDetector := ContentDetectorFactory()
+	typeDetector := ContentDetectorFactory(log)
 	configs, err := typeDetector.InferAll(base)
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
@@ -103,11 +136,11 @@ func GetPossibleConfigs(base util.AbsolutePath, python util.Path, log logging.Lo
 	return configs, nil
 }
 
-func Init(base util.AbsolutePath, configName string, python util.Path, log logging.Logger) (*config.Config, error) {
+func Init(base util.AbsolutePath, configName string, python util.Path, rExecutable util.Path, log logging.Logger) (*config.Config, error) {
 	if configName == "" {
 		configName = config.DefaultConfigName
 	}
-	cfg, err := inspectProject(base, python, log)
+	cfg, err := inspectProject(base, python, rExecutable, log)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +161,7 @@ func InitIfNeeded(path util.AbsolutePath, configName string, log logging.Logger)
 	}
 	if !exists {
 		log.Info("Configuration file does not exist; creating it", "path", configPath.String())
-		_, err = Init(path, configName, util.Path{}, log)
+		_, err = Init(path, configName, util.Path{}, util.Path{}, log)
 		if err != nil {
 			return err
 		}
