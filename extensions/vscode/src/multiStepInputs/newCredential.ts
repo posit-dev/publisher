@@ -105,7 +105,8 @@ export async function newCredential(
       step: thisStepNumber,
       totalSteps: state.totalSteps,
       value: currentURL,
-      prompt: "Enter the Server URL",
+      prompt: "Enter the Public URL of the Posit Connect Server",
+      placeholder: "example: https://servername.com:3939",
       validate: (input: string) => {
         input = input.trim();
         if (input === "") {
@@ -114,15 +115,10 @@ export async function newCredential(
             severity: InputBoxValidationSeverity.Error,
           });
         }
+        input = formatURL(input);
         try {
-          // check if the URL starts with a scheme
-          const url = new URL(formatURL(input));
-          if (!url.hostname.includes(".")) {
-            return Promise.resolve({
-              message: "Invalid URL format (no domain).",
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
+          // will validate that this is a valid URL
+          new URL(input);
         } catch (e) {
           if (!(e instanceof TypeError)) {
             throw e;
@@ -137,7 +133,7 @@ export async function newCredential(
         );
         if (existingAccount) {
           return Promise.resolve({
-            message: `Server URL is already assigned to your credential ${existingAccount.name}. Only one credential per unique URL is allowed.`,
+            message: `Server URL is already assigned to your credential "${existingAccount.name}". Only one credential per unique URL is allowed.`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -147,7 +143,7 @@ export async function newCredential(
       ignoreFocusOut: true,
     });
 
-    state.data.url = url.trim();
+    state.data.url = formatURL(url.trim());
     state.lastStep = thisStepNumber;
     return (input: MultiStepInput) => inputCredentialName(input, state);
   }
@@ -161,6 +157,7 @@ export async function newCredential(
     state: MultiStepState,
   ) {
     const thisStepNumber = assignStep(state, "inputCredentialName");
+
     const currentName =
       typeof state.data.name === "string" && state.data.name.length
         ? state.data.name
@@ -172,18 +169,18 @@ export async function newCredential(
       totalSteps: state.totalSteps,
       value: currentName,
       prompt: "Enter a Unique Nickname for your Credential.",
+      placeholder: "example: Posit Connect",
       validate: (input: string) => {
         input = input.trim();
         if (input === "") {
           return Promise.resolve({
-            message: "A Unique Nickname for your Credential is required.",
+            message: "A credential is required.",
             severity: InputBoxValidationSeverity.Error,
           });
         }
         if (accounts.find((account) => account.name === input)) {
           return Promise.resolve({
-            message:
-              "Credential Nickname already in use. Please enter a unique value.",
+            message: "Nickname is already in use. Please enter a unique value.",
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -214,13 +211,13 @@ export async function newCredential(
       step: thisStepNumber,
       totalSteps: state.totalSteps,
       value: currentAPIKey,
-      prompt:
-        "Enter an API key that identifies and grants access to your server.",
+      prompt: "The API key to be used to authenticate with Posit Connect",
+      placeholder: "example: v1cKJzUzYnHP1p5WrAINMump4Sjp5pbq",
       validate: (input: string) => {
         input = input.trim();
         if (input === "") {
           return Promise.resolve({
-            message: "An API key for your Posit Connect server is required.",
+            message: "An API key is required.",
             severity: InputBoxValidationSeverity.Error,
           });
         }
