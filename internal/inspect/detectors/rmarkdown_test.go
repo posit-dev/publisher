@@ -94,3 +94,50 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 		Python:     &config.Python{},
 	}, t)
 }
+
+var parameterizedRmdContent = fmt.Sprintf(`---
+title: Special Report
+params:
+  truthiness: TRUE
+  exprtruthiness: !r TRUE
+  f: 1.2
+  # exprf: !r 1.4
+  g: # floating with controls
+    label: float
+    value: 2.3
+    min: 1.75
+    max: 4.0
+    step: 0.25
+---
+
+# A Very Special Report
+
+%s{r, echo=TRUE}
+library(foo)
+%s
+`, backticks, backticks)
+
+func (s *RMarkdownSuite) TestInferTypeParameterized() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte(parameterizedRmdContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	t, err := detector.InferType(base)
+	s.Nil(err)
+	s.Equal(&config.Config{
+		Schema:        schema.ConfigSchemaURL,
+		Type:          config.ContentTypeRMarkdown,
+		Title:         "Special Report",
+		Entrypoint:    filename,
+		Validate:      true,
+		HasParameters: true,
+		Files:         []string{"*"},
+		R:             &config.R{},
+	}, t)
+}

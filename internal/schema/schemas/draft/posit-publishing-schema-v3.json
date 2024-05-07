@@ -66,6 +66,11 @@
       "description": "Access the content after deploying, to validate that it is live. Defaults to true.",
       "default": true
     },
+    "has-parameters": {
+      "type": "boolean",
+      "description": "True if this is a report that accepts parameters.",
+      "default": false
+    },
     "files": {
       "type": "array",
       "items": {

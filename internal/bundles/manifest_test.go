@@ -124,11 +124,12 @@ func (s *ManifestSuite) TestReadManifestFileErr() {
 
 func (s *ManifestSuite) TestNewManifestFromConfig() {
 	cfg := &config.Config{
-		Schema:      schema.ConfigSchemaURL,
-		Type:        "python-dash",
-		Entrypoint:  "app:myapp",
-		Title:       "Super Title",
-		Description: "minimal description",
+		Schema:        schema.ConfigSchemaURL,
+		Type:          "python-dash",
+		Entrypoint:    "app:myapp",
+		Title:         "Super Title",
+		Description:   "minimal description",
+		HasParameters: true,
 		Python: &config.Python{
 			Version:        "3.4.5",
 			PackageFile:    "requirements.in",
@@ -149,8 +150,9 @@ func (s *ManifestSuite) TestNewManifestFromConfig() {
 		Version:  1,
 		Platform: "4.5.6",
 		Metadata: Metadata{
-			AppMode:    "python-dash",
-			Entrypoint: "app:myapp",
+			AppMode:       "python-dash",
+			Entrypoint:    "app:myapp",
+			HasParameters: true,
 		},
 		Python: &Python{
 			Version: "3.4.5",

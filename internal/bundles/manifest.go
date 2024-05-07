@@ -192,6 +192,8 @@ func NewManifestFromConfig(cfg *config.Config) *Manifest {
 	case config.ContentTypeHTML:
 		m.Metadata.PrimaryHtml = cfg.Entrypoint
 	}
+
+	m.Metadata.HasParameters = cfg.HasParameters
 	return m
 }
 
