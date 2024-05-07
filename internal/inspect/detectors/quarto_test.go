@@ -364,8 +364,22 @@ func (s *QuartoDetectorSuite) TestInferWindows() {
 	}`), nil, nil)
 	detector.executor = executor
 
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 2)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "other.qmd",
+		Title:      "this is the title",
+		Validate:   true,
+		Files:      []string{"*"},
+		Quarto: &config.Quarto{
+			Version: "1.3.353",
+			Engines: []string{"markdown"},
+		},
+	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeQuarto,
@@ -377,7 +391,7 @@ func (s *QuartoDetectorSuite) TestInferWindows() {
 			Version: "1.3.353",
 			Engines: []string{"markdown"},
 		},
-	}, t)
+	}, configs[1])
 }
 
 func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
