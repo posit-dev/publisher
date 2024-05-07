@@ -22,6 +22,7 @@ import {
 import { useHomeStore } from "./stores/home";
 
 let _hostConduit: HostConduit | undefined = undefined;
+
 const vsCodeApi = acquireVsCodeApi();
 
 export function useHostConduitService() {
@@ -40,6 +41,7 @@ export function useHostConduitService() {
         "HostCondiutService::sendMsg attemped ahead of call to useHostConduitService",
       );
     }
+    console.debug(`HostConduitService - Sending Msg: ${JSON.stringify(msg)}`);
     return _hostConduit.sendMsg(msg);
   };
 
@@ -49,6 +51,7 @@ export function useHostConduitService() {
 }
 
 const onMessageFromHost = (msg: HostToWebviewMessage): void => {
+  console.debug(`HostConduitService - Receiving Msg: ${JSON.stringify(msg)}`);
   switch (msg.kind) {
     case HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA:
       return onRefreshDeploymentDataMsg(msg);
@@ -75,7 +78,7 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
     case HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES:
       return onUpdatePythonPackages(msg);
     default:
-      console.log(`unexpected command: ${JSON.stringify(msg)}`);
+      console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
 };
 

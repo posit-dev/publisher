@@ -73,7 +73,7 @@ export class DeploymentsTreeDataProvider
   }
 
   public refresh = () => {
-    console.log("refreshing deployments");
+    console.debug("refreshing deployments");
     this._onDidChangeTreeData.fire();
   };
 
