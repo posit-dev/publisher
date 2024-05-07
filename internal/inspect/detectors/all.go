@@ -18,6 +18,7 @@ func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 			// The order here is important, since the first
 			// ContentTypeInferer to return a non-nil
 			// ContentType will determine the result.
+			NewPlumberDetector(),
 			NewQuartoDetector(),
 			NewRMarkdownDetector(log),
 			NewNotebookDetector(),
