@@ -66,8 +66,7 @@ export async function publishDeployment(
         `Unable to continue with no matching credentials for\n` +
           `deployment URL: ${deployment.serverUrl}\n` +
           `\n` +
-          `Establish account credentials using rsconnect (R package) or\n` +
-          `rsconnect-python (Python package) and then retry operation.`,
+          `Establish account credentials, then try again.`,
       );
       return reject();
     }
