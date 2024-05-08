@@ -5,7 +5,11 @@
     <div class="label">
       <span>Destination:</span>
 
-      <ActionToolbar title="Destination" :actions="toolbarActions" />
+      <ActionToolbar
+        title="Destination"
+        :actions="toolbarActions"
+        context-menu="even-easier-deploy-more-menu"
+      />
     </div>
 
     <div
@@ -70,12 +74,6 @@ const toolbarActions = computed(() => {
         }),
     });
   }
-
-  result.push({
-    label: "More Deployment Actions",
-    codicon: "codicon-ellipsis",
-    fn: () => console.log("More"),
-  });
   return result;
 });
 </script>
