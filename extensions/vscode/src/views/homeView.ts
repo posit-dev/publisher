@@ -185,14 +185,14 @@ export class HomeViewProvider implements WebviewViewProvider {
   private async _onInitializingMsg() {
     // send back the data needed.
     await this.refreshAll(true);
-    this.setInitializationContext(HomeViweInitialized.initialized);
+    this.setInitializationContext(HomeViewInitialized.initialized);
 
     // On first run, we have no saved state. Trigger a save
     // so we have the state, and can notify dependent views.
     this._requestWebviewSaveSelection();
   }
 
-  private setInitializationContext(context: HomeViweInitialized) {
+  private setInitializationContext(context: HomeViewInitialized) {
     commands.executeCommand(
       "setContext",
       contextIsHomeViewInitialized,
