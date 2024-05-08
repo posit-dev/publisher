@@ -38,7 +38,9 @@ func applyFileAction(cfg *config.Config, action fileAction, path string) error {
 			cfg.Files = slices.Delete(cfg.Files, index, index+1)
 		} else {
 			// Add the path, which will include the file
-			cfg.Files = append(cfg.Files, path)
+			if !slices.Contains(cfg.Files, path) {
+				cfg.Files = append(cfg.Files, path)
+			}
 		}
 		return nil
 	case fileActionExclude:
@@ -49,7 +51,9 @@ func applyFileAction(cfg *config.Config, action fileAction, path string) error {
 		} else {
 			// Add an exclusion pattern, which will exclude the file
 			pattern := "!" + path
-			cfg.Files = append(cfg.Files, pattern)
+			if !slices.Contains(cfg.Files, pattern) {
+				cfg.Files = append(cfg.Files, pattern)
+			}
 		}
 		return nil
 	default:

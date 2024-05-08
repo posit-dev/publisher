@@ -111,3 +111,93 @@ func (s *PostConfigFilesSuite) TestPostConfigFilesBadJSON() {
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
+
+func (s *PostConfigFilesSuite) TestPostConfigFilesExcludeTwice() {
+	log := logging.New()
+
+	configName := "myConfig"
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	cfg.Files = []string{"*"}
+	configPath := config.GetConfigPath(s.cwd, configName)
+	err := cfg.WriteFile(configPath)
+	s.NoError(err)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/configurations/"+configName+"/files", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": configName})
+
+	handler := PostConfigFilesHandlerFunc(s.cwd, log)
+
+	reqBody := `{
+		"action": "exclude",
+		"path": "app.py"
+	}`
+
+	req.Body = io.NopCloser(strings.NewReader(reqBody))
+	handler(rec, req)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	// POST it again
+	req.Body = io.NopCloser(strings.NewReader(reqBody))
+	handler(rec, req)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	// The new configuration should have been written.
+	updatedConfig, err := config.FromFile(configPath)
+	s.NoError(err)
+	s.Equal([]string{"*", "!app.py"}, updatedConfig.Files)
+
+	var res configDTO
+	err = json.NewDecoder(rec.Result().Body).Decode(&res)
+	s.NoError(err)
+	s.Nil(res.Error)
+	s.NotNil(res.Configuration)
+	s.Equal(res.Configuration, updatedConfig)
+}
+
+func (s *PostConfigFilesSuite) TestPostConfigFilesIncludeTwice() {
+	log := logging.New()
+
+	configName := "myConfig"
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	cfg.Files = []string{"*"}
+	configPath := config.GetConfigPath(s.cwd, configName)
+	err := cfg.WriteFile(configPath)
+	s.NoError(err)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/configurations/"+configName+"/files", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": configName})
+
+	handler := PostConfigFilesHandlerFunc(s.cwd, log)
+
+	reqBody := `{
+		"action": "include",
+		"path": "app.py"
+	}`
+
+	req.Body = io.NopCloser(strings.NewReader(reqBody))
+	handler(rec, req)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	// POST it again
+	req.Body = io.NopCloser(strings.NewReader(reqBody))
+	handler(rec, req)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	// The new configuration should have been written.
+	updatedConfig, err := config.FromFile(configPath)
+	s.NoError(err)
+	s.Equal([]string{"*", "app.py"}, updatedConfig.Files)
+
+	var res configDTO
+	err = json.NewDecoder(rec.Result().Body).Decode(&res)
+	s.NoError(err)
+	s.Nil(res.Error)
+	s.NotNil(res.Configuration)
+	s.Equal(res.Configuration, updatedConfig)
+}
