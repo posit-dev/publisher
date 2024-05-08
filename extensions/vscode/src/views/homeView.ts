@@ -161,6 +161,8 @@ export class HomeViewProvider implements WebviewViewProvider {
         return this.updateFileList(msg.content.path, FileAction.INCLUDE);
       case WebviewToHostMessageType.EXCLUDE_FILE:
         return this.updateFileList(msg.content.path, FileAction.EXCLUDE);
+      case WebviewToHostMessageType.SELECT_DESTINATION:
+        return this.showDestinationQuickPick();
       default:
         throw new Error(
           `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -579,13 +581,12 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
-  private async showDestinationQuickPick(
-    lastDeploymentName?: string,
-    lastConfigName?: string,
-    lastCredentialName?: string,
-  ): Promise<Destination | undefined> {
+  private async showDestinationQuickPick(): Promise<Destination | undefined> {
     // Create quick pick list from current deployments, credentials and configs
     const destinations: DestinationQuickPick[] = [];
+    const lastDeploymentName = this._getActiveDeployment()?.saveName;
+    const lastConfigName = this._getActiveConfig()?.configurationName;
+    const lastCredentialName = this._getActiveCredential()?.name;
 
     this._deployments.forEach((deployment) => {
       if (
@@ -689,6 +690,10 @@ export class HomeViewProvider implements WebviewViewProvider {
         configurationName: destination.config?.configurationName,
         credentialName: destination.credential?.name,
       };
+      this._updateWebViewViewCredentials(result.credentialName);
+      this._updateWebViewViewConfigurations(result.configurationName);
+      this._updateWebViewViewDeployments(result.deploymentName);
+      this._requestWebviewSaveSelection();
     }
     return result;
   }
