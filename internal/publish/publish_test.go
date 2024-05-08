@@ -15,6 +15,7 @@ import (
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/inspect/dependencies/renv"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/logging/loggingtest"
 	"github.com/rstudio/connect-client/internal/project"
@@ -53,6 +54,31 @@ func TestPublishSuite(t *testing.T) {
 	suite.Run(t, new(PublishSuite))
 }
 
+const renvLockContent = `{
+	"R": {
+		"Version": "4.3.0",
+		"Repositories": [
+			{
+				"Name": "CRAN",
+				"URL": "https://cran.rstudio.com"
+			}
+		]
+	},
+	"Packages": {
+		"mypkg": {
+			"Package": "mypkg",
+			"Version": "1.2.3",
+			"Source": "Repository",
+			"Repository": "CRAN",
+			"Requirements": [
+			"R"
+			],
+			"Hash": "470851b6d5d0ac559e9d01bb352b4021"
+		}
+	}
+}
+`
+
 func (s *PublishSuite) SetupTest() {
 	s.logBuffer = new(bytes.Buffer)
 	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
@@ -70,6 +96,7 @@ func (s *PublishSuite) SetupTest() {
 	cwd.MkdirAll(0700)
 	cwd.Join("app.py").WriteFile([]byte("import flask\n"), 0600)
 	cwd.Join("requirements.txt").WriteFile([]byte("flask\n"), 0600)
+	cwd.Join("renv.lock").WriteFile([]byte(renvLockContent), 0600)
 
 }
 
@@ -313,6 +340,7 @@ func (s *PublishSuite) publishWithClient(
 				s.Contains(record.Files, "app.py")
 				s.Contains(record.Files, "requirements.txt")
 				s.Equal([]string{"flask"}, record.Requirements)
+				s.Contains(record.Renv.Packages, renv.PackageName("mypkg"))
 			}
 		}
 	}

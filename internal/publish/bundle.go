@@ -10,6 +10,7 @@ import (
 	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/inspect"
+	"github.com/rstudio/connect-client/internal/inspect/dependencies/renv"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
 	"github.com/rstudio/connect-client/internal/util"
@@ -85,6 +86,18 @@ func (p *defaultPublisher) createAndUploadBundle(
 			return "", err
 		}
 		p.Target.Requirements = requirements
+	}
+
+	if p.Config.R != nil {
+		filename := p.Config.R.PackageFile
+		if filename == "" {
+			filename = inspect.DefaultRenvLockfile
+		}
+		lockfile, err := renv.ReadLockfile(p.Dir.Join(filename))
+		if err != nil {
+			return "", err
+		}
+		p.Target.Renv = lockfile
 	}
 
 	err = p.writeDeploymentRecord()

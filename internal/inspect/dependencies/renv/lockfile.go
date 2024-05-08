@@ -9,37 +9,37 @@ import (
 )
 
 type Lockfile struct {
-	R        R
-	Packages map[PackageName]Package
+	R        R                       `toml:"r" json:"r"`
+	Packages map[PackageName]Package `toml:"packages" json:"packages"`
 }
 
 type R struct {
-	Version      string
-	Repositories []Repository
+	Version      string       `toml:"version" json:"version"`
+	Repositories []Repository `toml:"repositories" json:"repositories"`
 }
 
 type Repository struct {
-	Name string
-	URL  RepoURL
+	Name string  `toml:"name" json:"name"`
+	URL  RepoURL `toml:"url" json:"url"`
 }
 
 type PackageName string
 type RepoURL string
 
 type Package struct {
-	Package           PackageName
-	Version           string
-	Source            string
-	Repository        RepoURL
-	Requirements      []PackageName
-	Hash              string
-	RemoteType        string
-	RemotePkgRef      string
-	RemoteRef         string
-	RemoteRepos       string
-	RemoteReposName   string
-	RemotePkgPlatform string
-	RemoteSha         string
+	Package           PackageName   `toml:"package" json:"package"`
+	Version           string        `toml:"version" json:"version"`
+	Source            string        `toml:"source" json:"source"`
+	Repository        RepoURL       `toml:"repository" json:"repository"`
+	Requirements      []PackageName `toml:"requirements,omitempty" json:"requirements"`
+	Hash              string        `toml:"hash" json:"hash"`
+	RemoteType        string        `toml:"remote-type,omitempty" json:"remoteType"`
+	RemotePkgRef      string        `toml:"remote-pkg-ref,omitempty" json:"remotePkgRef"`
+	RemoteRef         string        `toml:"remote-ref,omitempty" json:"remoteRef"`
+	RemoteRepos       string        `toml:"remote-repos,omitempty" json:"remoteRepos"`
+	RemoteReposName   string        `toml:"remote-repos-name,omitempty" json:"remoteReposName"`
+	RemotePkgPlatform string        `toml:"remote-pkg-platform,omitempty" json:"remotePkgPlatform"`
+	RemoteSha         string        `toml:"remote-sha,omitempty" json:"remoteSha"`
 }
 
 func ReadLockfile(path util.AbsolutePath) (*Lockfile, error) {
