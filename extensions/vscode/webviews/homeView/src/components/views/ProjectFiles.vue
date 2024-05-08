@@ -21,7 +21,7 @@
           @click="
             sendMsg({
               kind: WebviewToHostMessageType.VSCODE_OPEN,
-              content: { uri: file.abs },
+              content: { uri: file.id },
             })
           "
           :key="file.id"
@@ -60,7 +60,7 @@
           @click="
             sendMsg({
               kind: WebviewToHostMessageType.VSCODE_OPEN,
-              content: { uri: file.abs },
+              content: { uri: file.id },
             })
           "
           :key="file.id"
