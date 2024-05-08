@@ -312,6 +312,7 @@ func (s *PublishSuite) publishWithClient(
 			if uploadErr == nil {
 				s.Contains(record.Files, "app.py")
 				s.Contains(record.Files, "requirements.txt")
+				s.Equal([]string{"flask"}, record.Requirements)
 			}
 		}
 	}

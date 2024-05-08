@@ -259,6 +259,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ID:            contentID,
 		ConfigName:    p.ConfigName,
 		Files:         nil,
+		Requirements:  nil,
 		Configuration: &cfg,
 		BundleID:      "",
 		DashboardURL:  getDashboardURL(p.Account.URL, contentID),

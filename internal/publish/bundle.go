@@ -9,8 +9,10 @@ import (
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/events"
+	"github.com/rstudio/connect-client/internal/inspect"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type createBundleStartData struct{}
@@ -71,6 +73,19 @@ func (p *defaultPublisher) createAndUploadBundle(
 	p.Target.Files = manifest.GetFilenames()
 	p.Target.BundleID = bundleID
 	p.Target.BundleURL = getBundleURL(p.Account.URL, contentID, bundleID)
+
+	if p.Config.Python != nil {
+		filename := p.Config.Python.PackageFile
+		if filename == "" {
+			filename = inspect.PythonRequirementsFilename
+		}
+		inspector := inspect.NewPythonInspector(p.Dir, util.Path{}, log)
+		requirements, err := inspector.ReadRequirementsFile(p.Dir.Join(filename))
+		if err != nil {
+			return "", err
+		}
+		p.Target.Requirements = requirements
+	}
 
 	err = p.writeDeploymentRecord()
 	if err != nil {

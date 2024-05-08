@@ -107,6 +107,14 @@
         }
       }
     },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": ["string"]
+      },
+      "description": "List of package requirements deployed with the content.",
+      "examples": ["numpy==1.23.4", "click=8.0.0"]
+    },
     "configuration": {
       "$ref": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
     },

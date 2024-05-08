@@ -35,6 +35,7 @@ type Deployment struct {
 	DirectURL     string            `toml:"direct-url,omitempty" json:"directUrl"`
 	Error         *types.AgentError `toml:"deployment-error,omitempty" json:"deploymentError"`
 	Files         []string          `toml:"files,multiline,omitempty" json:"files"`
+	Requirements  []string          `toml:"requirements,multiline,omitempty" json:"requirements"`
 	Configuration *config.Config    `toml:"configuration,omitempty" json:"configuration"`
 }
 
@@ -44,8 +45,6 @@ func New() *Deployment {
 		ServerType:    accounts.ServerTypeConnect,
 		ClientVersion: project.Version,
 		CreatedAt:     time.Now().Format(time.RFC3339),
-		Configuration: nil,
-		Files:         nil,
 	}
 }
 
