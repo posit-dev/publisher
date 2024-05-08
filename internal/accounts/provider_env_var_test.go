@@ -55,22 +55,13 @@ func (s *AccountEnvVarProviderSuite) TestLoadAll() {
 	}}, accountList)
 }
 
-func (s *AccountEnvVarProviderSuite) TestLoadSome() {
+func (s *AccountEnvVarProviderSuite) TestLoadMissingApiKey() {
 	log := logging.New()
 	provider := newEnvVarProvider(log)
 	os.Setenv("CONNECT_SERVER", "https://connect.example.com:1234")
 	accountList, err := provider.Load()
 	s.Nil(err)
-	s.Equal([]Account{{
-		ServerType:  ServerTypeConnect,
-		AuthType:    AuthTypeNone,
-		Source:      AccountSourceEnvironment,
-		Name:        "env",
-		URL:         "https://connect.example.com:1234",
-		Insecure:    false,
-		Certificate: "",
-		ApiKey:      "",
-	}}, accountList)
+	s.Nil(accountList)
 }
 
 func (s *AccountEnvVarProviderSuite) TestLoadNone() {
