@@ -36,6 +36,10 @@ func (p *envVarProvider) Load() ([]Account, error) {
 	if err != nil {
 		return nil, err
 	}
+	apiKey := os.Getenv("CONNECT_API_KEY")
+	if apiKey == "" {
+		return nil, nil
+	}
 	account := Account{
 		ServerType:  serverTypeFromURL(serverURL),
 		Source:      AccountSourceEnvironment,
@@ -43,7 +47,7 @@ func (p *envVarProvider) Load() ([]Account, error) {
 		URL:         serverURL,
 		Insecure:    (os.Getenv("CONNECT_INSECURE") != ""),
 		Certificate: os.Getenv("CONNECT_CERT"),
-		ApiKey:      os.Getenv("CONNECT_API_KEY"),
+		ApiKey:      apiKey,
 	}
 	account.AuthType = account.InferAuthType()
 	p.log.Info("Creating account from CONNECT_SERVER", "name", account.Name, "url", serverURL)
