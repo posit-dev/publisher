@@ -3,8 +3,10 @@
 <template>
   <main>
     <EasyDeploy class="easy-deploy-container" />
-    <ProjectFiles v-model:expanded="projectFilesExpanded" />
-    <PythonPackages />
+    <template v-if="home.selectedConfiguration">
+      <ProjectFiles v-model:expanded="projectFilesExpanded" />
+      <PythonPackages />
+    </template>
   </main>
 </template>
 
@@ -16,8 +18,11 @@ import ProjectFiles from "src/components/views/ProjectFiles.vue";
 import PythonPackages from "src/components/views/PythonPackages.vue";
 
 import { useHostConduitService } from "src/HostConduitService";
+import { useHomeStore } from "./stores/home";
 
 useHostConduitService();
+
+const home = useHomeStore();
 
 const projectFilesExpanded = ref(true);
 </script>
