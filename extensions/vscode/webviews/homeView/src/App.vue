@@ -2,22 +2,29 @@
 
 <template>
   <main>
+    <EvenEasierDeploy class="easy-deploy-container" />
     <EasyDeploy class="easy-deploy-container" />
-    <ProjectFiles v-model:expanded="projectFilesExpanded" />
-    <PythonPackages />
+    <template v-if="home.selectedConfiguration">
+      <ProjectFiles v-model:expanded="projectFilesExpanded" />
+      <PythonPackages />
+    </template>
   </main>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
 
+import EvenEasierDeploy from "src/components/EvenEasierDeploy.vue";
 import EasyDeploy from "src/components/EasyDeploy.vue";
 import ProjectFiles from "src/components/views/ProjectFiles.vue";
 import PythonPackages from "src/components/views/PythonPackages.vue";
 
 import { useHostConduitService } from "src/HostConduitService";
+import { useHomeStore } from "./stores/home";
 
 useHostConduitService();
+
+const home = useHomeStore();
 
 const projectFilesExpanded = ref(true);
 </script>

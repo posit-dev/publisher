@@ -65,6 +65,7 @@ const configFiles = ".posit/publish/*.toml";
 
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
+const deployWithDiffConfigCommand = viewName + ".deployWithDiffConfig";
 const selectDestinationCommand = viewName + ".selectDestination";
 const contextIsSelectorExpanded = viewName + ".expanded";
 const contextIsHomeViewInitialized = viewName + ".initialized";
@@ -918,6 +919,9 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refreshAll),
+      commands.registerCommand(deployWithDiffConfigCommand, () =>
+        console.log("deploying with different configuration command executed"),
+      ),
     );
 
     if (this.root !== undefined) {

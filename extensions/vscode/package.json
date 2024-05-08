@@ -183,6 +183,11 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.homeView.deployWithDiffConfig",
+        "title": "Deploy with a Different Configuration",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.homeView.selectDestination",
         "title": "Select Destination",
         "icon": "$(list-selection)",
@@ -406,6 +411,12 @@
         {
           "command": "posit.publisher.init-project.refresh",
           "when": "false"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "posit.publisher.homeView.deployWithDiffConfig",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu'"
         }
       ]
     },
