@@ -69,7 +69,7 @@ const selectDestinationCommand = viewName + ".selectDestination";
 const contextIsSelectorExpanded = viewName + ".expanded";
 const contextIsHomeViewInitialized = viewName + ".initialized";
 
-enum HomeViweInitialized {
+enum HomeViewInitialized {
   initialized = "initialized",
   uninitialized = "uninitialized",
 }
