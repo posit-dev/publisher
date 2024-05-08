@@ -132,7 +132,9 @@ export async function activate(context: ExtensionContext) {
   context.subscriptions.push(stream);
 
   service = new Service(context, port);
-  checkForCredentials();
+  // TEMP
+  // checkForCredentials();
+  setCredentialCheckContext(PositPublishCredentialCheck.succeeded);
 
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
