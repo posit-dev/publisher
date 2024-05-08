@@ -6,6 +6,7 @@ import {
   ExtensionContext,
   FileSystemWatcher,
   RelativePattern,
+  ThemeIcon,
   Uri,
   Webview,
   WebviewView,
@@ -26,8 +27,11 @@ import {
   EventStreamMessage,
   FileAction,
   PreDeployment,
+  PreDeploymentWithConfig,
   isConfigurationError,
   isDeploymentError,
+  isPreDeployment,
+  isPreDeploymentWithConfig,
   useApi,
 } from "src/api";
 import { useBus } from "src/bus";
@@ -39,7 +43,7 @@ import { deployProject } from "src/views/deployProgress";
 import { WebviewConduit } from "src/utils/webviewConduit";
 import { fileExists } from "src/utils/files";
 
-import type { HomeViewState } from "src/types/shared";
+import type { Destination, HomeViewState } from "src/types/shared";
 import {
   DeployMsg,
   EditConfigurationMsg,
@@ -53,20 +57,33 @@ import {
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
 import { confirmOverwrite } from "src/dialogs";
 import { splitFilesOnInclusion } from "src/utils/files";
+import { DestinationQuickPick } from "src/types/quickPicks";
+import { normalizeURL } from "src/utils/url";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
 
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
+const selectDestinationCommand = viewName + ".selectDestination";
 const contextIsSelectorExpanded = viewName + ".expanded";
+const contextIsHomeViewInitialized = viewName + ".initialized";
+
+enum HomeViweInitialized {
+  initialized = "initialized",
+  uninitialized = "uninitialized",
+}
 
 const lastSelectionState = viewName + ".lastSelectionState.v2";
 const lastExpansionState = viewName + ".lastExpansionState.v1";
 
 export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
-  private _deployments: (Deployment | PreDeployment)[] = [];
+  private _deployments: (
+    | Deployment
+    | PreDeployment
+    | PreDeploymentWithConfig
+  )[] = [];
   private _credentials: Account[] = [];
   private _configs: Configuration[] = [];
   private root: WorkspaceFolder | undefined;
@@ -168,9 +185,19 @@ export class HomeViewProvider implements WebviewViewProvider {
   private async _onInitializingMsg() {
     // send back the data needed.
     await this.refreshAll(true);
+    this.setInitializationContext(HomeViweInitialized.initialized);
+
     // On first run, we have no saved state. Trigger a save
     // so we have the state, and can notify dependent views.
     this._requestWebviewSaveSelection();
+  }
+
+  private setInitializationContext(context: HomeViweInitialized) {
+    commands.executeCommand(
+      "setContext",
+      contextIsHomeViewInitialized,
+      context,
+    );
   }
 
   private async _onNewDeploymentMsg() {
@@ -551,6 +578,119 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
+  private async showDestinationQuickPick(
+    lastDeploymentName?: string,
+    lastConfigName?: string,
+    lastCredentialName?: string,
+  ): Promise<Destination | undefined> {
+    // Create quick pick list from current deployments, credentials and configs
+    const destinations: DestinationQuickPick[] = [];
+
+    this._deployments.forEach((deployment) => {
+      if (
+        isDeploymentError(deployment) ||
+        (isPreDeployment(deployment) && !isPreDeploymentWithConfig(deployment))
+      ) {
+        // we won't include these for now. Perhaps in the future, we can show them
+        // as disabled.
+        return;
+      }
+
+      let config: Configuration | undefined;
+      if (deployment.configurationName) {
+        config = this._configs.find(
+          (config) => config.configurationName === deployment.configurationName,
+        );
+      }
+
+      let credential = this._credentials.find(
+        (credential) =>
+          normalizeURL(credential.url).toLowerCase() ===
+          normalizeURL(deployment.serverUrl).toLowerCase(),
+      );
+
+      let title = deployment.saveName;
+      let problem = false;
+
+      let configName = config?.configurationName;
+      if (!configName) {
+        configName = deployment.configurationName
+          ? `${deployment.configurationName} - ERROR: Config Not Found!`
+          : `ERROR: No Config Entry in Deployment file - ${deployment.saveName}`;
+        problem = true;
+      }
+
+      let credentialName = credential?.name;
+      if (!credentialName) {
+        credentialName = `${deployment.serverUrl} - ERROR: No Matching Credential!`;
+        problem = true;
+      }
+
+      let lastMatch =
+        lastDeploymentName === deployment.saveName &&
+        lastConfigName === configName &&
+        lastCredentialName === credentialName;
+
+      const destination: DestinationQuickPick = {
+        label: title,
+        description: configName,
+        detail: credentialName,
+        iconPath: problem
+          ? new ThemeIcon("error")
+          : new ThemeIcon("cloud-upload"),
+        deployment,
+        config,
+        credential,
+        lastMatch,
+      };
+      // Should we not push destinations with no config or matching credentials?
+      destinations.push(destination);
+    });
+
+    const toDispose: Disposable[] = [];
+    const destination = await new Promise<DestinationQuickPick | undefined>(
+      (resolve) => {
+        const quickPick = window.createQuickPick<DestinationQuickPick>();
+        this._disposables.push(quickPick);
+
+        quickPick.items = destinations;
+        const lastMatches = destinations.filter(
+          (destination) => destination.lastMatch,
+        );
+        if (lastMatches) {
+          quickPick.activeItems = lastMatches;
+        }
+        quickPick.title = "Select Destination";
+        quickPick.ignoreFocusOut = true;
+        quickPick.matchOnDescription = true;
+        quickPick.matchOnDetail = true;
+        quickPick.show();
+
+        quickPick.onDidAccept(
+          () => {
+            quickPick.hide();
+            if (quickPick.selectedItems.length > 0) {
+              return resolve(quickPick.selectedItems[0]);
+            }
+            resolve(undefined);
+          },
+          undefined,
+          toDispose,
+        );
+        quickPick.onDidHide(() => resolve(undefined), undefined, toDispose);
+      },
+    );
+    let result: Destination | undefined;
+    if (destination) {
+      result = {
+        deploymentName: destination.deployment.saveName,
+        configurationName: destination.config?.configurationName,
+        credentialName: destination.credential?.name,
+      };
+    }
+    return result;
+  }
+
   public resolveWebviewView(
     webviewView: WebviewView,
     _: WebviewViewResolveContext,
@@ -765,6 +905,14 @@ export class HomeViewProvider implements WebviewViewProvider {
           retainContextWhenHidden: true,
         },
       }),
+    );
+
+    this._context.subscriptions.push(
+      commands.registerCommand(
+        selectDestinationCommand,
+        this.showDestinationQuickPick,
+        this,
+      ),
     );
 
     this._context.subscriptions.push(
