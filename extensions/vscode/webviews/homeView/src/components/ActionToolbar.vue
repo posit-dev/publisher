@@ -21,11 +21,32 @@
           @keydown.enter="action.fn"
         ></a>
       </li>
+
+      <li
+        v-if="contextMenu"
+        ref="contextMenuButton"
+        :data-vscode-context="`{&quot;webviewSection&quot;: &quot;${contextMenu}&quot;, &quot;preventDefaultContextMenuItems&quot;: true}`"
+        class="action-item menu-entry"
+        role="presentation"
+      >
+        <a
+          class="action-label codicon codicon-ellipsis"
+          role="button"
+          :title="`More ${title} actions`"
+          :aria-label="`More ${title} actions`"
+          tabindex="0"
+          @click.stop.prevent="openContextMenu"
+          @keydown.enter="openContextMenu"
+        >
+        </a>
+      </li>
     </ul>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
+
 export type ActionButton = {
   label: string;
   codicon: string;
@@ -35,7 +56,30 @@ export type ActionButton = {
 defineProps<{
   title: string;
   actions?: ActionButton[];
+  contextMenu?: string;
 }>();
+
+const contextMenuButton = ref<HTMLAnchorElement | null>(null);
+
+const openContextMenu = (e: Event) => {
+  if (e instanceof PointerEvent) {
+    e.target?.dispatchEvent(
+      new MouseEvent("contextmenu", {
+        bubbles: true,
+        clientX: e.clientX,
+        clientY: e.clientY,
+      }),
+    );
+  } else if (e instanceof KeyboardEvent) {
+    e.target?.dispatchEvent(
+      new MouseEvent("contextmenu", {
+        bubbles: true,
+        clientX: contextMenuButton.value?.getBoundingClientRect().x,
+        clientY: contextMenuButton.value?.getBoundingClientRect().bottom,
+      }),
+    );
+  }
+};
 </script>
 
 <style lang="scss" scoped>
