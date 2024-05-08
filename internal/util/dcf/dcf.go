@@ -105,7 +105,10 @@ func (d *decoder) Decode(r io.Reader) (Records, error) {
 			if !slices.Contains(d.keepWhite, currentTag) {
 				line = strings.Trim(line, whitespace)
 			}
-			currentRecord[currentTag] += "\n" + line
+			if currentRecord[currentTag] != "" {
+				currentRecord[currentTag] += "\n"
+			}
+			currentRecord[currentTag] += line
 		} else {
 			// New field in the current record
 			tag, value, ok := strings.Cut(line, ":")
