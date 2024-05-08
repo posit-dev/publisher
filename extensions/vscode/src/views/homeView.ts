@@ -679,7 +679,8 @@ export class HomeViewProvider implements WebviewViewProvider {
         );
         quickPick.onDidHide(() => resolve(undefined), undefined, toDispose);
       },
-    );
+    ).finally(() => Disposable.from(...toDispose).dispose());
+
     let result: Destination | undefined;
     if (destination) {
       result = {
