@@ -52,7 +52,8 @@ type quartoInspectOutput struct {
 	Formats struct {
 		HTML struct {
 			Metadata struct {
-				Title string `json:"title"`
+				Title   string `json:"title"`
+				Runtime string `json:"runtime"`
 			} `json:"metadata"`
 		} `json:"html"`
 	} `json:"formats"`
@@ -168,9 +169,14 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, er
 			return nil, err
 		}
 		cfg := config.New()
-		cfg.Type = config.ContentTypeQuarto
 		cfg.Entrypoint = entrypoint.String()
 		cfg.Title = d.getTitle(inspectOutput)
+
+		if inspectOutput.Formats.HTML.Metadata.Runtime == "shiny" {
+			cfg.Type = config.ContentTypeQuartoShiny
+		} else {
+			cfg.Type = config.ContentTypeQuarto
+		}
 
 		cfg.Quarto = &config.Quarto{
 			Version: inspectOutput.Quarto.Version,
