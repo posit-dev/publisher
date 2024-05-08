@@ -2,6 +2,7 @@
 
 <template>
   <main>
+    <EvenEasierDeploy class="easy-deploy-container" />
     <EasyDeploy class="easy-deploy-container" />
     <ProjectFiles v-model:expanded="projectFilesExpanded" />
     <PythonPackages />
@@ -11,6 +12,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+import EvenEasierDeploy from "src/components/EvenEasierDeploy.vue";
 import EasyDeploy from "src/components/EasyDeploy.vue";
 import ProjectFiles from "src/components/views/ProjectFiles.vue";
 import PythonPackages from "src/components/views/PythonPackages.vue";
