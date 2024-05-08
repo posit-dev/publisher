@@ -55,7 +55,7 @@ func (s *AccountEnvVarProviderSuite) TestLoadAll() {
 	}}, accountList)
 }
 
-func (s *AccountEnvVarProviderSuite) TestLoaMissingApiKey() {
+func (s *AccountEnvVarProviderSuite) TestLoadMissingApiKey() {
 	log := logging.New()
 	provider := newEnvVarProvider(log)
 	os.Setenv("CONNECT_SERVER", "https://connect.example.com:1234")
