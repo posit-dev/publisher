@@ -91,11 +91,12 @@ func (s *DCFSuite) TestReadFilesErr() {
 }
 
 func (s *DCFSuite) TestDecode() {
-	input := "a: 1\nb: 2\n\na: 3\nb: 4\n\ns: abc\n  def "
+	input := "a: 1\nb: 2\n\na: 3\nb: 4\n\ns: abc\n  def \n\nt: \n  ghi"
 	expectedRecords := Records{
 		{"a": "1", "b": "2"},
 		{"a": "3", "b": "4"},
 		{"s": "abc\ndef"},
+		{"t": "ghi"},
 	}
 	r := bytes.NewReader([]byte(input))
 	decoder := NewDecoder(nil)
