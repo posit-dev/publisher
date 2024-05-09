@@ -84,12 +84,16 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("credentials"), GetCredentialsHandlerFunc(log)).
 		Methods(http.MethodGet)
 
+	// GET /api/credentials/$GUID
+	r.Handle(ToPath("credentials", "{guid}"), GetCredentialHandlerFunc(log)).
+		Methods(http.MethodGet)
+
 	// POST /api/credentials
 	r.Handle(ToPath("credentials"), PostCredentialFuncHandler(log)).
 		Methods(http.MethodPost)
 
 	// DELETE /api/credentials
-	r.Handle(ToPath("credentials"), DeleteCredentialHandlerFunc(log)).
+	r.Handle(ToPath("credentials", "{guid}"), DeleteCredentialHandlerFunc(log)).
 		Methods(http.MethodDelete)
 
 	// GET /api/configurations
