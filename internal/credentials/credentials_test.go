@@ -16,6 +16,18 @@ func TestSet(t *testing.T) {
 	err := cs.Set(cred)
 	assert.NoError(t, err)
 }
+
+func TestSetURLCollisionError(t *testing.T) {
+	keyring.MockInit()
+	url := "https://example.com"
+	cs := CredentialsService{}
+	err := cs.Set(Credential{Name: "original", URL: url, ApiKey: "example"})
+	assert.NoError(t, err)
+	err = cs.Set(Credential{Name: "duplicate", URL: url, ApiKey: "example"})
+	assert.Error(t, err)
+	assert.IsType(t, &URLCollisionError{}, err)
+}
+
 func TestGet(t *testing.T) {
 	keyring.MockInit()
 	cs := CredentialsService{}

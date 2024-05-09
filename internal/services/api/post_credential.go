@@ -25,8 +25,14 @@ func PostCredentialFuncHandler(log logging.Logger) http.HandlerFunc {
 		cs := credentials.CredentialsService{}
 		err = cs.Set(cred)
 		if err != nil {
+			if _, ok := err.(*credentials.URLCollisionError); ok {
+				http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+				return
+			}
 			InternalError(w, req, log, err)
 			return
 		}
+
+		w.WriteHeader(http.StatusCreated)
 	}
 }
