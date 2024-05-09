@@ -35,6 +35,15 @@ func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("credential not found: %s", e.Name)
 }
 
+// URL is used by another credential
+type URLCollisionError struct {
+	URL string
+}
+
+func (e *URLCollisionError) Error() string {
+	return fmt.Sprintf("URL already in use: %s", e.URL)
+}
+
 func (cs *CredentialsService) Load() (map[string]Credential, error) {
 	data, err := keyring.Get(ServiceName, "credentials")
 	if err != nil {
@@ -57,6 +66,13 @@ func (cs *CredentialsService) Set(cred Credential) error {
 	creds, err := cs.Load()
 	if err != nil {
 		return err
+	}
+
+	// Check if URL is already used by another credential
+	for name, value := range creds {
+		if value.URL == cred.URL && name != cred.Name {
+			return &URLCollisionError{URL: cred.URL}
+		}
 	}
 
 	creds[cred.Name] = cred
