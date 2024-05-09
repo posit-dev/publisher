@@ -84,7 +84,7 @@
       <PSelect
         v-model="home.selectedCredential"
         :options="home.filteredCredentials"
-        :get-key="(a: Account) => a.name"
+        :get-key="(c: Credential) => c.name"
         class="dropdowns"
       />
     </div>
@@ -141,7 +141,7 @@
 import { computed } from "vue";
 
 import { isPreDeployment } from "../../../../src/api/types/deployments";
-import { Account } from "../../../../src/api/types/accounts";
+import { Credential } from "../../../../src/api/types/credentials";
 import { Configuration } from "../../../../src/api/types/configurations";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 
