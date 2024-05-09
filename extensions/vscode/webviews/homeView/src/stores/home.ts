@@ -3,9 +3,9 @@ import { defineStore } from "pinia";
 import { useHostConduitService } from "../../src/HostConduitService";
 
 import {
+  Credential,
   Deployment,
   PreDeployment,
-  Account,
   Configuration,
   DeploymentFile,
 } from "../../../../src/api";
@@ -16,11 +16,11 @@ export const useHomeStore = defineStore("home", () => {
 
   const deployments = ref<(Deployment | PreDeployment)[]>([]);
   const configurations = ref<Configuration[]>([]);
-  const credentials = ref<Account[]>([]);
+  const credentials = ref<Credential[]>([]);
 
   const selectedDeployment = ref<Deployment | PreDeployment>();
   const selectedConfiguration = ref<Configuration>();
-  const selectedCredential = ref<Account>();
+  const selectedCredential = ref<Credential>();
   const easyDeployExpanded = ref(false);
 
   const lastDeploymentResult = ref<string>();
@@ -88,7 +88,7 @@ export const useHomeStore = defineStore("home", () => {
 
   function updateSelectedCredentialByName(name?: string) {
     const previousSelectedAccount = selectedCredential.value;
-    let selectedCredentialTarget: Account | undefined = undefined;
+    let selectedCredentialTarget: Credential | undefined = undefined;
     if (name) {
       selectedCredentialTarget = credentials.value.find((c) => c.name === name);
     }
@@ -120,7 +120,7 @@ export const useHomeStore = defineStore("home", () => {
     } else if (!selectedCredential.value) {
       selectedCredential.value = filteredCredentials.value[0];
     } else if (selectedCredential.value) {
-      let targetAccount: Account | undefined = filteredCredentials.value.find(
+      let target: Credential | undefined = filteredCredentials.value.find(
         (account) => {
           if (selectedCredential.value) {
             return account.name === selectedCredential.value.name;
@@ -128,8 +128,8 @@ export const useHomeStore = defineStore("home", () => {
           return false;
         },
       );
-      if (targetAccount) {
-        selectedCredential.value = targetAccount;
+      if (target) {
+        selectedCredential.value = target;
       } else {
         selectedCredential.value = filteredCredentials.value[0];
       }

@@ -1,7 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import {
-  Account,
+  Credential,
   Configuration,
   Deployment,
   DeploymentFile,
@@ -88,7 +88,7 @@ export type RefreshConfigDataMsg = AnyHostToWebviewMessage<
 export type RefreshCredentialDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
   {
-    credentials: Account[];
+    credentials: Credential[];
     selectedCredentialName?: string;
   }
 >;
