@@ -13,18 +13,14 @@ func NewCredentialsProvider() *CredentialsProvider {
 }
 
 func (p *CredentialsProvider) Load() ([]Account, error) {
-	creds, err := p.cs.Load()
+	creds, err := p.cs.List()
 	if err != nil {
 		return nil, err
 	}
 
 	accounts := make([]Account, len(creds))
 	i := 0
-	for _, cr := range creds {
-		cred, err := cr.ToCredential()
-		if err != nil {
-			return nil, err
-		}
+	for _, cred := range creds {
 		accounts[i] = Account{
 			Source:     AccountSourceKeychain,
 			ServerType: serverTypeFromURL(cred.URL),
