@@ -1,44 +1,37 @@
 # Posit Publisher
 
-Posit Publisher lets you deploy projects to Connect. This version only supports
-Python projects, and Quarto projects using Python. Support for R projects is
-planned for a later release.
+Posit Publisher lets you deploy projects to Connect from VSCode / Positron.
 
 Key concepts:
 
-- Publisher provides a binary with a CLI and an API server. There is also a VSCode
+- Publisher is a VSCode
   extension that presents a UI within the VSCode left activity panel.
 - Deployment options are set via a configuration file in `.posit/publish/`.
 - Records of where you have deployed are kept in `.posit/publish/deployments`.
-- Accounts/credentials are currently read from rsconnect and rsconnect-python.
 
 ## Features
 
 Supported features:
 
 - Deploy projects to Connect
-- UI available via VSCode extension
-- Deploy using CLI
+- UI available as a VSCode extension
 - Configuration-file based workflow
 - Configuration schema enables editing with the [Even Better TOML
   VSCode](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
   extension
 - Python content: APIs, applications, and notebooks
-- Automatic detection of client Python and Quarto version
+- Quarto content: .qmd, .Rmd, and .ipynb files. Support for embedded Shiny apps
+- R content: Shiny apps, RMarkdown, Plumber APIs, and Rmd with embedded Shiny apps
+- Automatic detection of client R, Python and Quarto versions
+- Dependencies from requirements.txt and/or renv.lock files
 - Automatic creation of a minimal requirements.txt file if needed, by scanning imports and mapping them to package names/versions installed in the local Python library path.
-- Deploy Quarto documents (using the `jupyter` and `markdown` engines only)
 - Collaborate via git, or by downloading a source bundle from Connect
-- Uses existing publishing accounts from `rsconnect` and `rsconnect-python`
 - Pre-flight checking of settings before deploying to Connect
 - Verification that deployed apps can successfully start
 
 What's not supported yet but is on our to-do list:
 
-- Deploy to servers other than Connect (shinyapps.io, Cloud, etc)
-- Manage the list of accounts and provide an import function for existing
-  accounts
-- R content such as Shiny, R Markdown, and Quarto (with the `knitr` engine)
-- Automatic detection of R version and dependencies
+- Deploy to servers other than Connect
 - Show more information in the UI such as changes since last deployment
 - Inject secrets as environment variables
 - More metadata such as tags, thumbnail image, etc
@@ -54,9 +47,6 @@ What's not supported yet but is on our to-do list:
 
 See the [Installation](installation.md) page.
 
-## Getting Started
+## Using the Extension
 
-There are two ways to deploy content.
-
-- [publisher cli](cli.md)
-- [Posit Publisher extension in Positron + VSCode](vscode.md)
+See the [VSCode Extension](vscode.md) page.

@@ -17,46 +17,6 @@ To learn how to install a `.vsix` file, see the [Install from a
 VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
 guide from Visual Studio Code.
 
-## Optional: Install the CLI
-
-If you want to try deploying from the command line,
-install the `publisher` CLI.
-
-### Script installation
-
-**This method is available for macOS and Linux only.**
-
-Follow the [manual installation](#manual-installation) instructions below for
-other operating systems.
-
-Paste the following command into your terminal or shell prompt.
-
-The script explains what it does and then pauses before it does it.
-
-```console
-/bin/bash -c "$(curl -fsSL https://cdn.posit.co/publisher/install.bash)"
-```
-
-### Manual installation
-
-1. Go to [GitHub
-   releases](https://github.com/rstudio/publishing-client/releases).
-1. Select the Posit Publisher version for installation.
-1. Download the asset for your operating system and architecture. See below for
-   additional information on operating systems and architectures.
-1. Once downloaded, extract the archive file (e.g., unzip or untar).
-1. Install the executable in a location available on your `PATH` (e.g.,
-   `/usr/local/bin`).
-   1. To view locations on your PATH, invoke `/bin/bash -c "echo $PATH"` from
-      your terminal or shell prompt.
-   1. In most cases, the correct installation location is `/usr/local/bin` on
-      macOS and Linux operating systems.
-   1. Use the following command to install and set the correct permissions on
-      Linux or macOS:
-   1. `sudo install -o root -g wheel -m 0755 ./bin/publisher /usr/local/bin`.
-      Replace `/usr/local/bin` with your preferred installation directory.
-      Otherwise, you may need to allow access manually after first invocation.
-
 ## Optional: Install Quarto
 
 If you plan on deploying Quarto content having Quarto installed will allow
@@ -64,50 +24,6 @@ Posit Publisher to correctly detect Quarto application types for easier
 deploying.
 
 [Quarto - Get Started](https://quarto.org/docs/get-started/)
-
-## Verification
-
-### MacOS
-
-Verify that you have installed Posit Publisher.
-
-1. In MacOS, open Spotlight.
-1. In the search box, type `Terminal`, then press Return.
-1. In the Terminal window that appears, type the following command:
-
-```console
-publisher
-```
-
-#### Permissions
-
-If prompted with the following, click **Ok**, then go to **Settings** ->
-**Privacy & Security** and click **Always Allow**.
-
-> “publisher” can’t be opened because Apple cannot check it for malicious
-> software.
-
-### Windows
-
-Verify that you have installed Posit Publisher.
-
-1. In Windows, click the Start menu.
-1. In the search box, type `cmd`, then press Enter.
-1. In the Command Prompt window that appears, type the following command:
-
-```console
-publisher
-```
-
-### Linux
-
-Verify that you have installed Posit Publisher.
-
-1. Open a shell prompt and type the following command.
-
-```console
-publisher
-```
 
 ## Operating systems
 
