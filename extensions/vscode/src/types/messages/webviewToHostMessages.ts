@@ -20,6 +20,7 @@ export enum WebviewToHostMessageType {
   REFRESH_PYTHON_PACKAGES = "RefreshPythonPackagesMsg",
   SCAN_PYTHON_PACKAGE_REQUIREMENTS = "ScanPythonPackageRequirementsMsg",
   SELECT_DESTINATION = "selectDestination",
+  NEW_DESTINATION = "newDestination",
 }
 
 export type AnyWebviewToHostMessage<
@@ -48,7 +49,8 @@ export type WebviewToHostMessage =
   | RefreshPythonPackagesMsg
   | VSCodeOpenRelativeMsg
   | ScanPythonPackageRequirementsMsg
-  | SelectDestinationMsg;
+  | SelectDestinationMsg
+  | NewDestinationMsg;
 
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
@@ -67,7 +69,8 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES ||
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN_RELATIVE ||
     msg.kind === WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS ||
-    msg.kind === WebviewToHostMessageType.SELECT_DESTINATION
+    msg.kind === WebviewToHostMessageType.SELECT_DESTINATION ||
+    msg.kind === WebviewToHostMessageType.NEW_DESTINATION
   );
 }
 
@@ -156,3 +159,6 @@ export type ScanPythonPackageRequirementsMsg =
 
 export type SelectDestinationMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.SELECT_DESTINATION>;
+
+export type NewDestinationMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_DESTINATION>;

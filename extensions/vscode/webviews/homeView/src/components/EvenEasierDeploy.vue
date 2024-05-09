@@ -60,7 +60,7 @@ const toolbarActions = computed(() => {
   result.push({
     label: "Add Destination",
     codicon: "codicon-add",
-    fn: () => console.log("Add Destination"),
+    fn: onAddDestination,
   });
 
   if (home.selectedConfiguration) {
@@ -82,6 +82,12 @@ const toolbarActions = computed(() => {
 const onSelectDestination = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.SELECT_DESTINATION,
+  });
+};
+
+const onAddDestination = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.NEW_DESTINATION,
   });
 };
 </script>

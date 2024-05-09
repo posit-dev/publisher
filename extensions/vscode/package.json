@@ -194,6 +194,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.homeView.newDestination",
+        "title": "New Destination",
+        "icon": "$(new)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.helpAndFeedback.gettingStarted",
         "title": "Open Getting Started Documentation",
         "category": "Posit Publisher"
@@ -406,6 +412,10 @@
         },
         {
           "command": "posit.publisher.homeView.selectDestination",
+          "when": "posit.publisher.homeView.initialized == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.homeView.newDestination",
           "when": "posit.publisher.homeView.initialized == 'initialized'"
         },
         {
