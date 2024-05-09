@@ -10,7 +10,6 @@ import {
 import { ProgressLocation, QuickPickItem, ThemeIcon, window } from "vscode";
 
 import {
-  AccountAuthType,
   PreDeployment,
   Deployment,
   useApi,
@@ -31,29 +30,25 @@ export async function publishDeployment(
   // ***************************************************************
   const api = await useApi();
 
-  let accountListItems: QuickPickItem[] = [];
+  let credentialListItems: QuickPickItem[] = [];
   let configurations: Configuration[] = [];
   let automaticConfigurationName: string | undefined = undefined;
   let configFileListItems: QuickPickItem[] = [];
 
-  const getAccounts = new Promise<void>(async (resolve, reject) => {
+  const getCredentials = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.accounts.getAll();
+      const response = await api.credentials.list();
       // account list is filtered to match the deployment being published
-      accountListItems = response.data
+      credentialListItems = response.data
         .filter((account) => account.url.trim() === deployment.serverUrl.trim())
         .map((account) => ({
           iconPath: new ThemeIcon("account"),
           label: account.name,
-          description: account.source,
-          detail:
-            account.authType === AccountAuthType.API_KEY
-              ? "Using API Key"
-              : `Using Token Auth for ${account.accountName}`,
+          description: account.url,
         }));
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "publishDeployment, accounts.getAll",
+        "publishDeployment, credentials.list",
         error,
       );
       window.showInformationMessage(
@@ -61,7 +56,7 @@ export async function publishDeployment(
       );
       return reject();
     }
-    if (accountListItems.length === 0) {
+    if (credentialListItems.length === 0) {
       window.showInformationMessage(
         `Unable to continue with no matching credentials for\n` +
           `deployment URL: ${deployment.serverUrl}\n` +
@@ -120,7 +115,7 @@ export async function publishDeployment(
     return resolve();
   });
 
-  const apisComplete = Promise.all([getAccounts, getConfigurations]);
+  const apisComplete = Promise.all([getCredentials, getConfigurations]);
 
   // Start the progress indicator and have it stop when the API calls are complete
   window.withProgress(
@@ -164,7 +159,7 @@ export async function publishDeployment(
     // determin number of total steps, as each step
     // will suppress its choice if there is only one option
     let totalSteps = 2;
-    if (accountListItems.length === 1) {
+    if (credentialListItems.length === 1) {
       totalSteps -= 1;
     }
     // We are not always guaranteed that we have a configuration name in a pre-deployment file
@@ -198,7 +193,7 @@ export async function publishDeployment(
   // ***************************************************************
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     // skip if we only have one choice.
-    if (accountListItems.length > 1) {
+    if (credentialListItems.length > 1) {
       const thisStepNumber = assignStep(state, "pickCredentials");
       const pick = await input.showQuickPick({
         title: state.title,
@@ -206,7 +201,7 @@ export async function publishDeployment(
         totalSteps: state.totalSteps,
         placeholder:
           "Select the credential you want to use to deploy. (Use this field to filter selections.)",
-        items: accountListItems,
+        items: credentialListItems,
         activeItem:
           typeof state.data.credentialName !== "string"
             ? state.data.credentialName
@@ -219,7 +214,7 @@ export async function publishDeployment(
       state.lastStep = thisStepNumber;
       return (input: MultiStepInput) => inputConfigFileSelection(input, state);
     } else {
-      state.data.credentialName = accountListItems[0];
+      state.data.credentialName = credentialListItems[0];
       // We're skipping this step, so we must silently just jump to the next step
       return inputConfigFileSelection(input, state);
     }
