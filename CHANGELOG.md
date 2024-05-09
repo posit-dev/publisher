@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.alpha7]
+
+### Added
+
+- Credentials are now managed within the extension (#1483)
+- R content can now be deployed (#1452). You must have an renv.lock file in your project and have the project's renv library populated (for example via `renv::restore()`).
+- Deployment records now include package dependencies that were included in the deployment (#1329)
+- Jupyter notebooks can now be deployed in Quarto mode (#963)
+
+### Changed
+
+- Redesigned the main extension UI to simplify the deployment process (#1517)
+
+### Fixed
+
+- Fixed opening project files on Windows (#1512)
+
+### Removed
+
+- Remove documentation for the `publisher` CLI until the CLI is officially supported (#1561)
+
+## [1.0.alpha6]
+
+### Added
+
+- Configuration files can now include a `files` list to specify which files are included in the deployment (#1350)
+- You can now include and exclude files from the Project Files view (#1360)
+- The deployment UI remembers the last selected settings (#1229, #1271)
+
+### Changed
+
+- The Requirements and Project Files view now update based on the selected configuration (#1362)
+
+### Fixed
+
+- Fixed handling of include/exclude file paths on Windows (#1500)
+
+### Removed
+
+- .positignore files are no longer used to select which files are included in the deployment (#1350)
+- Credentials are no longer imported from rsconnect and rsconnect-python (#1539)
+
 ## [1.0.alpha5]
 
 ### Added
