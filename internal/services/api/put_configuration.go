@@ -17,26 +17,26 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-func camelToKebab(s string) string {
+func camelToSnake(s string) string {
 	var out strings.Builder
 	for _, c := range s {
 		if unicode.ToLower(c) == c {
 			out.WriteRune(c)
 		} else {
-			out.WriteRune('-')
+			out.WriteRune('_')
 			out.WriteRune(unicode.ToLower(c))
 		}
 	}
 	return out.String()
 }
 
-func camelToKebabMap(m map[string]any) {
+func camelToSnakeMap(m map[string]any) {
 	for k, v := range m {
 		vMap, ok := v.(map[string]any)
 		if ok {
-			camelToKebabMap(vMap)
+			camelToSnakeMap(vMap)
 		}
-		newKey := camelToKebab(k)
+		newKey := camelToSnake(k)
 		if newKey != k {
 			delete(m, k)
 			m[newKey] = v
@@ -68,7 +68,7 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 		}
 
 		// Translate keys from camelCase to kebab-case
-		camelToKebabMap(rawConfig)
+		camelToSnakeMap(rawConfig)
 
 		t, ok := rawConfig["type"]
 		if ok && t == string(config.ContentTypeUnknown) {

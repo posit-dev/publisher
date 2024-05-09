@@ -33,13 +33,13 @@ type Package struct {
 	Repository        RepoURL       `toml:"repository" json:"repository"`
 	Requirements      []PackageName `toml:"requirements,omitempty" json:"requirements"`
 	Hash              string        `toml:"hash" json:"hash"`
-	RemoteType        string        `toml:"remote-type,omitempty" json:"remoteType"`
-	RemotePkgRef      string        `toml:"remote-pkg-ref,omitempty" json:"remotePkgRef"`
-	RemoteRef         string        `toml:"remote-ref,omitempty" json:"remoteRef"`
-	RemoteRepos       string        `toml:"remote-repos,omitempty" json:"remoteRepos"`
-	RemoteReposName   string        `toml:"remote-repos-name,omitempty" json:"remoteReposName"`
-	RemotePkgPlatform string        `toml:"remote-pkg-platform,omitempty" json:"remotePkgPlatform"`
-	RemoteSha         string        `toml:"remote-sha,omitempty" json:"remoteSha"`
+	RemoteType        string        `toml:"remote_type,omitempty" json:"remoteType"`
+	RemotePkgRef      string        `toml:"remote_pkg_ref,omitempty" json:"remotePkgRef"`
+	RemoteRef         string        `toml:"remote_ref,omitempty" json:"remoteRef"`
+	RemoteRepos       string        `toml:"remote_repos,omitempty" json:"remoteRepos"`
+	RemoteReposName   string        `toml:"remote_repos_name,omitempty" json:"remoteReposName"`
+	RemotePkgPlatform string        `toml:"remote_pkg_platform,omitempty" json:"remotePkgPlatform"`
+	RemoteSha         string        `toml:"remote_sha,omitempty" json:"remoteSha"`
 }
 
 func ReadLockfile(path util.AbsolutePath) (*Lockfile, error) {
