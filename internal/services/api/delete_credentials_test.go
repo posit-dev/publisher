@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/rstudio/connect-client/internal/credentials"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
@@ -34,24 +35,17 @@ func (s *DeleteCredentialsSuite) SetupTest() {
 
 func (s *DeleteCredentialsSuite) Test204() {
 
-	name := "test"
 	cs := credentials.CredentialsService{}
-	err := cs.Set(credentials.Credential{
-		Name:   name,
-		URL:    "http://example.com",
-		ApiKey: "12345",
-	})
+	cred, err := cs.Set("example", "https://example.com", "12345")
 	s.NoError(err)
 
-	base, err := url.Parse(("http://example.com/api/credentials"))
+	path, err := url.JoinPath("http://example.com/api/credentials/", cred.GUID)
 	s.NoError(err)
 
-	params := url.Values{}
-	params.Add("name", name)
-	base.RawQuery = params.Encode()
-
-	req, err := http.NewRequest("DELETE", base.String(), nil)
+	req, err := http.NewRequest("DELETE", path, nil)
 	s.NoError(err)
+
+	req = mux.SetURLVars(req, map[string]string{"guid": cred.GUID})
 
 	rec := httptest.NewRecorder()
 	h := DeleteCredentialHandlerFunc(s.log)
@@ -61,16 +55,13 @@ func (s *DeleteCredentialsSuite) Test204() {
 }
 
 func (s *DeleteCredentialsSuite) Test404() {
-	base, err := url.Parse(("http://example.com/api/credentials"))
+	path, err := url.JoinPath("http://example.com/api/credentials/", "example")
 	s.NoError(err)
 
-	name := "test"
-	params := url.Values{}
-	params.Add("name", name)
-	base.RawQuery = params.Encode()
-
-	req, err := http.NewRequest("DELETE", base.String(), nil)
+	req, err := http.NewRequest("DELETE", path, nil)
 	s.NoError(err)
+
+	req = mux.SetURLVars(req, map[string]string{"guid": "example"})
 
 	rec := httptest.NewRecorder()
 	h := DeleteCredentialHandlerFunc(s.log)

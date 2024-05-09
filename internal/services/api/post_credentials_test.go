@@ -35,13 +35,13 @@ func (s *PostCredentialTestSuite) SetupTest() {
 
 func (s *PostCredentialTestSuite) Test201() {
 
-	cred := credentials.Credential{
+	body := PostCredentialsRequest{
 		Name:   "example",
 		URL:    "http://example.com",
 		ApiKey: "12345",
 	}
 
-	data, err := json.Marshal(cred)
+	data, err := json.Marshal(body)
 	s.NoError(err)
 
 	req, err := http.NewRequest("POST", "http://example.com/api/credentials", bytes.NewBuffer(data))
@@ -56,15 +56,15 @@ func (s *PostCredentialTestSuite) Test201() {
 
 func (s *PostCredentialTestSuite) Test409() {
 
+	name := "example"
+	url := "http://example.com"
+	ak := "12345"
+
 	cs := credentials.CredentialsService{}
-	err := cs.Set(credentials.Credential{
-		Name:   "existing",
-		URL:    "http://example.com",
-		ApiKey: "12345",
-	})
+	_, err := cs.Set(name, url, ak)
 	s.NoError(err)
 
-	cred := credentials.Credential{
+	cred := PostCredentialsRequest{
 		Name:   "collision",
 		URL:    "http://example.com",
 		ApiKey: "12345",
