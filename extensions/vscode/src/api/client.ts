@@ -2,7 +2,6 @@
 
 import axios from "axios";
 
-import { Accounts } from "./resources/Accounts";
 import { Credentials } from "./resources/Credentials";
 import { Deployments } from "./resources/Deployments";
 import { Configurations } from "./resources/Configurations";
@@ -12,7 +11,6 @@ import { Requirements } from "./resources/Requirements";
 class PublishingClientApi {
   private client;
 
-  accounts: Accounts;
   configurations: Configurations;
   credentials: Credentials;
   deployments: Deployments;
@@ -26,7 +24,6 @@ class PublishingClientApi {
     });
     this.apiServiceIsUp = apiServiceIsUp;
 
-    this.accounts = new Accounts(this.client);
     this.configurations = new Configurations(this.client);
     this.credentials = new Credentials(this.client);
     this.deployments = new Deployments(this.client);

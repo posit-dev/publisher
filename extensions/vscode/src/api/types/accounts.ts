@@ -5,28 +5,3 @@ export enum ServerType {
   SHINY_APPS = "shinyapps",
   CLOUD = "cloud",
 }
-
-export enum AccountSource {
-  RSCONNECT_PYTHON = "rsconnect-python",
-  RSCONNECT = "rsconnect",
-  ENVIRONMENT = "environment",
-  KEYCHAIN = "keychain",
-}
-
-export enum AccountAuthType {
-  NONE = "none",
-  API_KEY = "api-key",
-  TOKEN_KEY = "token-key",
-  TOKEN_SECRET = "token-secret",
-}
-
-export type Account = {
-  accountName: string;
-  authType: AccountAuthType;
-  caCert: string;
-  insecure: boolean;
-  name: string;
-  source: AccountSource;
-  type: ServerType;
-  url: string;
-};
