@@ -99,6 +99,11 @@ export const useHomeStore = defineStore("home", () => {
     return previousSelectedAccount === selectedCredential.value;
   }
 
+  function updateSelectedCredentialByObject(credential: Account) {
+    credentials.value.push(credential);
+    selectedCredential.value = credential;
+  }
+
   const updateCredentialsAndConfigurationForDeployment = () => {
     filterCredentialsToDeployment();
     if (selectedDeployment.value?.configurationName) {
@@ -199,6 +204,7 @@ export const useHomeStore = defineStore("home", () => {
     updateSelectedConfigurationByName,
     updateSelectedConfigurationByObject,
     updateSelectedCredentialByName,
+    updateSelectedCredentialByObject,
     updateCredentialsAndConfigurationForDeployment,
     updateParentViewSelectionState,
     filterCredentialsToDeployment,

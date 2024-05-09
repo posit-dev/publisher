@@ -57,7 +57,7 @@ export async function newCredential(
   // ***************************************************************
 
   // Get the server url
-  // Get the server name
+  // Get the credential name
   // Get the API key
   // result in calling credential API
 
