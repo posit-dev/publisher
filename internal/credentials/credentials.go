@@ -1,5 +1,28 @@
+// Package credentials provides a secure storage and management system for user credentials.
+// The service uses the "go-keyring" library to interact with the system's native keyring service.
+//
+// This package is not thread safe! Manipulation of credentials from multiple threads can result in data loss.
+// A distributed write lock is required to ensure threads do not overwrite the credential store.
+//
+// Support for breaking changes to the Credentials schema is supported via version system.
+// The current implementation supports a single version (Version 0), but is designed to be extendable to future versions.
+// For example, adding a new field to Credential.
+//
+// Migration instructions:
+// - Modify the current version to retain the current Credential structure (i.e., copy the struct of Credential to CredentialV0)
+// - Modify Credential to include required changes.
+// - Create a new version (e.g., CredentialV1) and assign Credential to it (.e.g, CredentialV1 = Credential)
+// - Increment CurrentVersion to match the new version (e.g., CredentialVersion = 1)
+// - Add a case statement for the new version to ToCredential.
+// - Modify the existing ToCredential implementation to accommodate changes to Credential.
+//
+// Key components include:
+// - Credential: The main structure representing a single credential.
+// - CredentialRecord: A structure for storing credential data along with its version for future compatibility.
+// - CredentialsService: A service that provides methods for managing credentials.
+//
+// Author: Posit Software, PBC
 // Copyright (C) 2024 by Posit Software, PBC.
-
 package credentials
 
 import (
@@ -23,24 +46,15 @@ type Credential struct {
 
 type CredentialV0 = Credential
 
-type CredentialV1 struct {
-	// not implemented
-	//
-	// When a migration is needed, take the following steps:
-	// 1. modify the credential schema to include what needs to be changed/
-	// 2. set this equal to credential (.e.g, CredentialV1 = Credential)
-	// 3. Update CurrentVersion to 1
-	// 4. In ToCredential below, add a case statement for version 1. This should be a generic Umarshal
-	// 5. Modify case 0 to map CredentialV0 to CredentialV1
-	// 6. Go ahead and setup CredentialV2 with these instructions.
-}
-
 type CredentialRecord struct {
 	GUID    string          `json:"guid"`
 	Version uint            `json:"version"`
 	Data    json.RawMessage `json:"data"`
 }
 
+type CredentialTable = map[string]CredentialRecord
+
+// ToCredential converts a CredentialRecord to a Credential based on its version.
 func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 	switch cr.Version {
 	case 0:
@@ -56,26 +70,41 @@ func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 
 type CredentialsService struct{}
 
-func (cs *CredentialsService) Load() (map[string]CredentialRecord, error) {
-	data, err := keyring.Get(ServiceName, "credentials")
+// Delete removes a Credential by its guid.
+// If lookup by guid fails, a NotFoundError is returned.
+func (cs *CredentialsService) Delete(guid string) error {
+	table, err := cs.load()
 	if err != nil {
-		if err == keyring.ErrNotFound {
-			return make(map[string]CredentialRecord), nil
-		}
-		return nil, &LoadError{Err: err}
+		return err
 	}
 
-	var creds map[string]CredentialRecord
-	err = json.Unmarshal([]byte(data), &creds)
-	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize credentials: %v", err)
+	_, exists := table[guid]
+	if !exists {
+		return &NotFoundError{GUID: guid}
 	}
 
-	return creds, nil
+	delete(table, guid)
+	return cs.save(table)
 }
 
+// Get retrieves a Credential by its guid.
+func (cs *CredentialsService) Get(guid string) (*Credential, error) {
+	table, err := cs.load()
+	if err != nil {
+		return nil, err
+	}
+
+	cr, exists := table[guid]
+	if !exists {
+		return nil, &NotFoundError{GUID: guid}
+	}
+
+	return cr.ToCredential()
+}
+
+// List retrieves all Credentials
 func (cs *CredentialsService) List() ([]Credential, error) {
-	records, err := cs.Load()
+	records, err := cs.load()
 	if err != nil {
 		return nil, err
 	}
@@ -90,15 +119,17 @@ func (cs *CredentialsService) List() ([]Credential, error) {
 	return creds, nil
 }
 
+// Set creates a Credential.
+// A guid is assigned to the Credential using the UUIDv4 specification.
 func (cs *CredentialsService) Set(name string, url string, ak string) (*Credential, error) {
-	creds, err := cs.Load()
+	table, err := cs.load()
 	if err != nil {
 		return nil, err
 	}
 
 	// Check if URL is already used by another credential
-	for guid, cr := range creds {
-		cred, err := cr.ToCredential()
+	for guid, record := range table {
+		cred, err := record.ToCredential()
 		if err != nil {
 			return nil, &CorruptedError{GUID: guid}
 		}
@@ -120,13 +151,13 @@ func (cs *CredentialsService) Set(name string, url string, ak string) (*Credenti
 		return nil, fmt.Errorf("error marshalling credential: %v", err)
 	}
 
-	creds[guid] = CredentialRecord{
+	table[guid] = CredentialRecord{
 		GUID:    guid,
 		Version: CurrentVersion,
 		Data:    json.RawMessage(raw),
 	}
 
-	err = cs.save(creds)
+	err = cs.save(table)
 	if err != nil {
 		return nil, err
 	}
@@ -134,37 +165,9 @@ func (cs *CredentialsService) Set(name string, url string, ak string) (*Credenti
 	return &cred, nil
 }
 
-func (cs *CredentialsService) Get(guid string) (*Credential, error) {
-	creds, err := cs.Load()
-	if err != nil {
-		return nil, err
-	}
-
-	cr, exists := creds[guid]
-	if !exists {
-		return nil, &NotFoundError{GUID: guid}
-	}
-
-	return cr.ToCredential()
-}
-
-func (cs *CredentialsService) Delete(guid string) error {
-	creds, err := cs.Load()
-	if err != nil {
-		return err
-	}
-
-	_, exists := creds[guid]
-	if !exists {
-		return &NotFoundError{GUID: guid}
-	}
-
-	delete(creds, guid)
-	return cs.save(creds)
-}
-
-func (cs *CredentialsService) save(creds map[string]CredentialRecord) error {
-	data, err := json.Marshal(creds)
+// Saves the CredentialTable
+func (cs *CredentialsService) save(table CredentialTable) error {
+	data, err := json.Marshal(table)
 	if err != nil {
 		return fmt.Errorf("failed to serialize credentials: %v", err)
 	}
@@ -174,4 +177,23 @@ func (cs *CredentialsService) save(creds map[string]CredentialRecord) error {
 		return fmt.Errorf("failed to set credentials: %v", err)
 	}
 	return nil
+}
+
+// Loads the CredentialTable
+func (cs *CredentialsService) load() (CredentialTable, error) {
+	data, err := keyring.Get(ServiceName, "credentials")
+	if err != nil {
+		if err == keyring.ErrNotFound {
+			return make(map[string]CredentialRecord), nil
+		}
+		return nil, &LoadError{Err: err}
+	}
+
+	var table CredentialTable
+	err = json.Unmarshal([]byte(data), &table)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize credentials: %v", err)
+	}
+
+	return table, nil
 }
