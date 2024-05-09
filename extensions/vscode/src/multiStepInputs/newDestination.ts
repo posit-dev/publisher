@@ -37,6 +37,201 @@ import { formatURL, normalizeURL } from "src/utils/url";
 import { validateApiKey } from "src/utils/apiKeys";
 import { DestinationObjects } from "src/types/shared";
 
+type stepInfo = {
+  step: number;
+  totalSteps: number;
+};
+
+type possibleSteps = {
+  newCredentials: {
+    singleEntryPoint: stepInfo;
+    multipleEntryPoints: stepInfo;
+  };
+  existingCredentials: {
+    singleEntryPoint: stepInfo;
+    multipleEntryPoints: stepInfo;
+  };
+};
+
+const steps: Record<string, possibleSteps | undefined> = {
+  inputDeploymentName: {
+    newCredentials: {
+      singleEntryPoint: {
+        step: 1,
+        totalSteps: 7,
+      },
+      multipleEntryPoints: {
+        step: 1,
+        totalSteps: 8,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 1,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 1,
+        totalSteps: 5,
+      },
+    },
+  },
+  pickCredentials: {
+    newCredentials: {
+      singleEntryPoint: {
+        step: 2,
+        totalSteps: 7,
+      },
+      multipleEntryPoints: {
+        step: 2,
+        totalSteps: 8,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 2,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 2,
+        totalSteps: 5,
+      },
+    },
+  },
+  inputServerUrl: {
+    newCredentials: {
+      singleEntryPoint: {
+        step: 3,
+        totalSteps: 7,
+      },
+      multipleEntryPoints: {
+        step: 3,
+        totalSteps: 8,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 0,
+        totalSteps: 5,
+      },
+    },
+  },
+  inputCredentialName: {
+    newCredentials: {
+      singleEntryPoint: {
+        step: 4,
+        totalSteps: 7,
+      },
+      multipleEntryPoints: {
+        step: 4,
+        totalSteps: 8,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 0,
+        totalSteps: 5,
+      },
+    },
+  },
+  inputAPIKey: {
+    newCredentials: {
+      singleEntryPoint: {
+        step: 5,
+        totalSteps: 7,
+      },
+      multipleEntryPoints: {
+        step: 5,
+        totalSteps: 8,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 0,
+        totalSteps: 5,
+      },
+    },
+  },
+  inputEntryPointSelection: {
+    newCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 7,
+      },
+      multipleEntryPoints: {
+        step: 6,
+        totalSteps: 8,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 3,
+        totalSteps: 5,
+      },
+    },
+  },
+  inputConfigurationName: {
+    newCredentials: {
+      singleEntryPoint: {
+        step: 6,
+        totalSteps: 7,
+      },
+      multipleEntryPoints: {
+        step: 7,
+        totalSteps: 8,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 3,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 4,
+        totalSteps: 5,
+      },
+    },
+  },
+  promptToCreateDestination: {
+    newCredentials: {
+      singleEntryPoint: {
+        step: 7,
+        totalSteps: 7,
+      },
+      multipleEntryPoints: {
+        step: 8,
+        totalSteps: 8,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 4,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 5,
+        totalSteps: 5,
+      },
+    },
+  },
+};
+
 export async function newDestination(
   viewId?: string,
 ): Promise<DestinationObjects | undefined> {
@@ -61,12 +256,39 @@ export async function newDestination(
 
   const createNewCredentialLabel = "Create a New Credential";
 
-  const creatingNewCredential = (state: MultiStepState) => {
+  const createNewCredential = (state?: MultiStepState) => {
+    if (!state) {
+      return false;
+    }
     return (
       state.data.credentialName &&
       isQuickPickItem(state.data.credentialName) &&
       state.data.credentialName.label === createNewCredentialLabel
     );
+  };
+
+  const hasMultipleEntryPoints = () => {
+    return entryPointListItems.length > 1;
+  };
+
+  const getStepInfo = (
+    stepId: string,
+    multiStepState: MultiStepState,
+  ): stepInfo | undefined => {
+    const step = steps[stepId];
+    if (!step) {
+      return undefined;
+    }
+    if (createNewCredential(multiStepState)) {
+      if (hasMultipleEntryPoints()) {
+        return step.newCredentials.multipleEntryPoints;
+      }
+      return step.newCredentials.singleEntryPoint;
+    }
+    if (hasMultipleEntryPoints()) {
+      return step.existingCredentials.multipleEntryPoints;
+    }
+    return step.existingCredentials.singleEntryPoint;
   };
 
   const getAccounts = new Promise<void>(async (resolve, reject) => {
@@ -260,10 +482,16 @@ export async function newDestination(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
+    const step = getStepInfo("inputDeploymentName", state);
+    if (!step) {
+      throw new Error(
+        "newDestination::inputDeploymentName step info not found.",
+      );
+    }
     const deploymentName = await input.showInputBox({
       title: state.title,
-      step: 0,
-      totalSteps: state.totalSteps,
+      step: step.step,
+      totalSteps: step.totalSteps,
       value:
         typeof state.data.deploymentName === "string" &&
         state.data.deploymentName.length
@@ -298,10 +526,14 @@ export async function newDestination(
   // Select the credentials to be used
   // ***************************************************************
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
+    const step = getStepInfo("pickCredentials", state);
+    if (!step) {
+      throw new Error("newDestination::pickCredentials step info not found.");
+    }
     const pick = await input.showQuickPick({
       title: state.title,
-      step: 0,
-      totalSteps: state.totalSteps,
+      step: step.step,
+      totalSteps: step.totalSteps,
       placeholder:
         "Select the credential you want to use to deploy. (Use this field to filter selections.)",
       items: accountListItems,
@@ -323,17 +555,22 @@ export async function newDestination(
   // Get the server url
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
-    if (creatingNewCredential(state)) {
+    if (createNewCredential(state)) {
       const currentURL =
         typeof state.data.newCredentialUrl === "string" &&
         state.data.newCredentialUrl.length
           ? state.data.newCredentialUrl
           : "";
 
+      const step = getStepInfo("inputServerUrl", state);
+      if (!step) {
+        throw new Error("newDestination::inputServerUrl step info not found.");
+      }
+
       const url = await input.showInputBox({
         title: state.title,
-        step: 0,
-        totalSteps: state.totalSteps,
+        step: step.step,
+        totalSteps: step.totalSteps,
         value: currentURL,
         prompt: "Enter the Public URL of the Posit Connect Server",
         placeholder: "example: https://servername.com:3939",
@@ -389,17 +626,24 @@ export async function newDestination(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    if (creatingNewCredential(state)) {
+    if (createNewCredential(state)) {
       const currentName =
         typeof state.data.newCredentialName === "string" &&
         state.data.newCredentialName.length
           ? state.data.newCredentialName
           : "";
 
+      const step = getStepInfo("inputCredentialName", state);
+      if (!step) {
+        throw new Error(
+          "newDestination::inputCredentialName step info not found.",
+        );
+      }
+
       const name = await input.showInputBox({
         title: state.title,
-        step: 0,
-        totalSteps: state.totalSteps,
+        step: step.step,
+        totalSteps: step.totalSteps,
         value: currentName,
         prompt: "Enter a Unique Nickname for your Credential.",
         placeholder: "example: Posit Connect",
@@ -442,17 +686,22 @@ export async function newDestination(
   // Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    if (creatingNewCredential(state)) {
+    if (createNewCredential(state)) {
       const currentAPIKey =
         typeof state.data.newCredentialApiKey === "string" &&
         state.data.newCredentialApiKey.length
           ? state.data.newCredentialApiKey
           : "";
 
+      const step = getStepInfo("inputAPIKey", state);
+      if (!step) {
+        throw new Error("newDestination::inputAPIKey step info not found.");
+      }
+
       const apiKey = await input.showInputBox({
         title: state.title,
-        step: 0,
-        totalSteps: state.totalSteps,
+        step: step.step,
+        totalSteps: step.totalSteps,
         value: currentAPIKey,
         prompt: "The API key to be used to authenticate with Posit Connect",
         placeholder: "example: v1cKJzUzYnHP1p5WrAINMump4Sjp5pbq",
@@ -493,10 +742,17 @@ export async function newDestination(
   ) {
     // skip if we only have one choice.
     if (entryPointListItems.length > 1) {
+      const step = getStepInfo("inputEntryPointSelection", state);
+      if (!step) {
+        throw new Error(
+          "newDestination::inputEntryPointSelection step info not found.",
+        );
+      }
+
       const pick = await input.showQuickPick({
         title: state.title,
-        step: 0,
-        totalSteps: state.totalSteps,
+        step: step.step,
+        totalSteps: step.totalSteps,
         placeholder:
           "Select main file and content type below. (Use this field to filter selections.)",
         items: entryPointListItems,
@@ -522,10 +778,17 @@ export async function newDestination(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
+    const step = getStepInfo("inputConfigurationName", state);
+    if (!step) {
+      throw new Error(
+        "newDestination::inputConfigurationName step info not found.",
+      );
+    }
+
     const configFileName = await input.showInputBox({
       title: state.title,
-      step: 0,
-      totalSteps: state.totalSteps,
+      step: step.step,
+      totalSteps: step.totalSteps,
       value: await untitledConfigurationName(),
       prompt: "Choose a unique name for the configuration",
       validate: (value) => {
@@ -553,10 +816,16 @@ export async function newDestination(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
+    const step = getStepInfo("promptToCreateDestination", state);
+    if (!step) {
+      throw new Error(
+        "newDestination::promptToCreateDestination step info not found.",
+      );
+    }
     const pick = await input.showQuickPick({
       title: state.title,
-      step: 0,
-      totalSteps: state.totalSteps,
+      step: step.step,
+      totalSteps: step.totalSteps,
       placeholder:
         "Do you still wish to create the destination? (Use this field to filter selections.)",
       items: [
@@ -619,7 +888,7 @@ export async function newDestination(
   }
 
   // Maybe create a new credential?
-  if (creatingNewCredential(state)) {
+  if (createNewCredential(state)) {
     // have to type guard here, will protect us against
     // cancellation.
     if (
@@ -696,7 +965,7 @@ export async function newDestination(
 
   let finalCredentialName = <string | undefined>undefined;
   if (
-    creatingNewCredential(state) &&
+    createNewCredential(state) &&
     state.data.newCredentialName &&
     !isQuickPickItem(state.data.newCredentialName)
   ) {
