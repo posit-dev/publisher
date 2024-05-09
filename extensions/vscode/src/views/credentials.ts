@@ -11,7 +11,7 @@ import {
   window,
 } from "vscode";
 
-import { Account, useApi } from "src/api";
+import { useApi, Credential } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { newCredential } from "src/multiStepInputs/newCredential";
 
@@ -49,9 +49,10 @@ export class CredentialsTreeDataProvider
 
     try {
       const api = await useApi();
-      const response = await api.accounts.getAll();
-      const result = response.data.map((account) => {
-        return new CredentialsTreeItem(account);
+      const response = await api.credentials.list();
+      const creds = response.data.sort((a, b) => a.name.localeCompare(b.name));
+      const result = creds.map((cred) => {
+        return new CredentialsTreeItem(cred);
       });
       await this.setContextIsEmpty(result.length === 0);
       return result;
@@ -107,9 +108,9 @@ export class CredentialsTreeDataProvider
   public delete = async (item: CredentialsTreeItem) => {
     try {
       const api = await useApi();
-      await api.credentials.delete(item.account.name);
+      await api.credentials.delete(item.cred.guid);
       window.setStatusBarMessage(
-        `Credential for ${item.account.name} has been erased from our memory!`,
+        `Credential for ${item.cred.name} has been erased from our memory!`,
       );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("credential::delete", error);
@@ -120,23 +121,10 @@ export class CredentialsTreeDataProvider
 }
 
 export class CredentialsTreeItem extends TreeItem {
-  constructor(public readonly account: Account) {
-    super(account.name);
-    this.tooltip = this.getTooltip(account);
+  constructor(public readonly cred: Credential) {
+    super(cred.name);
     this.iconPath = new ThemeIcon("key");
-    this.description = `${account.url}`;
-    this.contextValue = `posit.publisher.credentials.tree.item.${account.source}`;
-  }
-
-  getTooltip(account: Account): string {
-    let result = "";
-
-    if (account.authType === "token-key") {
-      result += `Account: ${account.accountName}\n`;
-    }
-
-    result += `Managed by: ${account.source}`;
-
-    return result;
+    this.description = `${cred.url}`;
+    this.contextValue = `posit.publisher.credentials.tree.item.keychain`;
   }
 }
