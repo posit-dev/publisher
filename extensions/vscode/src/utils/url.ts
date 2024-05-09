@@ -7,3 +7,12 @@ export const formatURL = (input: string): string => {
   }
   return `https://${input}`;
 };
+
+// Currently just adds a trailing slash
+export const normalizeURL = (input: string): string => {
+  let result = input;
+  if (!result.endsWith("/")) {
+    result += "/";
+  }
+  return result;
+};

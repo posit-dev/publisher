@@ -24,6 +24,7 @@ import {
   isDeployment,
   isDeploymentError,
   isPreDeployment,
+  isPreDeploymentWithConfig,
   useApi,
 } from "src/api";
 
@@ -273,7 +274,10 @@ export class DeploymentsTreeItem extends TreeItem {
 
     if (isDeployment(this.deployment)) {
       this.initializeDeployment(this.deployment);
-    } else if (isPreDeployment(this.deployment)) {
+    } else if (
+      isPreDeployment(this.deployment) ||
+      isPreDeploymentWithConfig(this.deployment)
+    ) {
       this.initializePreDeployment(this.deployment);
     } else {
       this.initializeDeploymentError(this.deployment);
