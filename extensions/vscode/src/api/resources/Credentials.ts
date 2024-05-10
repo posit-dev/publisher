@@ -11,8 +11,9 @@ export class Credentials {
   }
 
   // Returns:
-  // 200 - success
+  // 201 - accepted
   // 400 - bad request
+  // 409 - conflict
   // 500 - internal server error
   createOrUpdate(cred: Credential) {
     return this.client.post(`credentials`, cred);
