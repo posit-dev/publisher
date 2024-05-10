@@ -110,6 +110,75 @@
     "configuration": {
       "$ref": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
     },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": ["string"]
+      },
+      "description": "List of package requirements deployed with the content.",
+      "examples": ["numpy==1.23.4", "click=8.0.0"]
+    },
+    "renv": {
+      "type": "object",
+      "description": "Contents of renv.lock deployed with the content.",
+      "additionalProperties": false,
+      "properties": {
+        "r": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "string",
+              "description": "R version"
+            },
+            "repositories": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Name of the repository"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL of the repository"
+                  }
+                }
+              },
+              "description": "List of R repositories"
+            }
+          }
+        },
+        "packages": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "package": {
+                "type": "string",
+                "description": "Name of the R package"
+              },
+              "version": {
+                "type": "string",
+                "description": "Version of the R package"
+              },
+              "source": {
+                "type": "string",
+                "description": "Source of the R package"
+              },
+              "repository": {
+                "type": "string",
+                "description": "Repository where the R package originated"
+              }
+            }
+          },
+          "description": "Detailed list of R packages"
+        }
+      }
+    },
     "files": {
       "type": "array",
       "items": {

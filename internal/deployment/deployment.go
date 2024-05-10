@@ -11,6 +11,7 @@ import (
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/inspect/dependencies/renv"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/types"
@@ -35,7 +36,9 @@ type Deployment struct {
 	DirectURL     string            `toml:"direct-url,omitempty" json:"directUrl"`
 	Error         *types.AgentError `toml:"deployment-error,omitempty" json:"deploymentError"`
 	Files         []string          `toml:"files,multiline,omitempty" json:"files"`
+	Requirements  []string          `toml:"requirements,multiline,omitempty" json:"requirements"`
 	Configuration *config.Config    `toml:"configuration,omitempty" json:"configuration"`
+	Renv          *renv.Lockfile    `toml:"renv,omitempty" json:"renv"`
 }
 
 func New() *Deployment {
@@ -44,8 +47,6 @@ func New() *Deployment {
 		ServerType:    accounts.ServerTypeConnect,
 		ClientVersion: project.Version,
 		CreatedAt:     time.Now().Format(time.RFC3339),
-		Configuration: nil,
-		Files:         nil,
 	}
 }
 
