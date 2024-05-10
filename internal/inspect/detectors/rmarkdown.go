@@ -57,47 +57,54 @@ func (d *RMarkdownDetector) getRmdFileMetadata(path util.AbsolutePath) (RMarkdow
 	return d.getRmdMetadata(string(content))
 }
 
-func (d *RMarkdownDetector) InferType(base util.AbsolutePath) (*config.Config, error) {
-	projectRmdName := base.Base() + ".Rmd"
-	entrypoint, entrypointPath, err := d.InferEntrypoint(base, ".Rmd", "index.Rmd", projectRmdName)
+func (d *RMarkdownDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+	var configs []*config.Config
+	entrypointPaths, err := base.Glob("*.Rmd")
 	if err != nil {
 		return nil, err
 	}
-	if entrypoint == "" {
+	if len(entrypointPaths) == 0 {
 		// Not an R Markdown project
 		return nil, nil
 	}
-	metadata, err := d.getRmdFileMetadata(entrypointPath)
-	if err != nil {
-		return nil, err
-	}
-	cfg := config.New()
-	cfg.Type = config.ContentTypeRMarkdown
-	cfg.Entrypoint = entrypoint
+	for _, entrypointPath := range entrypointPaths {
+		metadata, err := d.getRmdFileMetadata(entrypointPath)
+		if err != nil {
+			d.log.Warn("Failed to read RMarkdown metadata", "path", entrypointPath, "error", err)
+			continue
+		}
+		entrypoint, err := entrypointPath.Rel(base)
+		if err != nil {
+			return nil, err
+		}
+		cfg := config.New()
+		cfg.Type = config.ContentTypeRMarkdown
+		cfg.Entrypoint = entrypoint.String()
 
-	title := metadata["title"]
-	if title != nil {
-		cfg.Title = fmt.Sprintf("%s", title)
-	}
+		title := metadata["title"]
+		if title != nil {
+			cfg.Title = fmt.Sprintf("%s", title)
+		}
 
-	params := metadata["params"]
-	if params != nil {
-		cfg.HasParameters = true
+		params := metadata["params"]
+		if params != nil {
+			cfg.HasParameters = true
+		}
+		needsR, needsPython, err := pydeps.DetectMarkdownLanguages(base)
+		if err != nil {
+			return nil, err
+		}
+		if needsR {
+			// Indicate that R inspection is needed.
+			d.log.Info("RMarkdown: detected R code; configuration will include R")
+			cfg.R = &config.R{}
+		}
+		if needsPython {
+			// Indicate that Python inspection is needed.
+			d.log.Info("RMarkdown: detected Python code; configuration will include Python")
+			cfg.Python = &config.Python{}
+		}
+		configs = append(configs, cfg)
 	}
-
-	needsR, needsPython, err := pydeps.DetectMarkdownLanguages(base)
-	if err != nil {
-		return nil, err
-	}
-	if needsR {
-		// Indicate that R inspection is needed.
-		d.log.Info("RMarkdown: detected R code; configuration will include R")
-		cfg.R = &config.R{}
-	}
-	if needsPython {
-		// Indicate that Python inspection is needed.
-		d.log.Info("RMarkdown: detected Python code; configuration will include Python")
-		cfg.Python = &config.Python{}
-	}
-	return cfg, nil
+	return configs, nil
 }

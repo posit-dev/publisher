@@ -32,12 +32,16 @@ var voilaImportNames = []string{
 	"ipywebrtc",
 }
 
-func (d *NotebookDetector) InferType(path util.AbsolutePath) (*config.Config, error) {
-	entrypoint, entrypointPath, err := d.InferEntrypoint(path, ".ipynb", "index.ipynb")
+func (d *NotebookDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+	var configs []*config.Config
+	entrypointPaths, err := base.Glob("*.ipynb")
 	if err != nil {
 		return nil, err
 	}
-	if entrypoint != "" {
+	if len(entrypointPaths) == 0 {
+		return nil, nil
+	}
+	for _, entrypointPath := range entrypointPaths {
 		code, err := pydeps.GetNotebookFileInputs(entrypointPath)
 		if err != nil {
 			return nil, err
@@ -46,9 +50,13 @@ func (d *NotebookDetector) InferType(path util.AbsolutePath) (*config.Config, er
 		if err != nil {
 			return nil, err
 		}
+		entrypoint, err := entrypointPath.Rel(base)
+		if err != nil {
+			return nil, err
+		}
 		cfg := config.New()
 		cfg.Type = config.ContentTypeHTML
-		cfg.Entrypoint = entrypoint
+		cfg.Entrypoint = entrypoint.String()
 		if isVoila {
 			cfg.Type = config.ContentTypeJupyterVoila
 		} else {
@@ -56,7 +64,7 @@ func (d *NotebookDetector) InferType(path util.AbsolutePath) (*config.Config, er
 		}
 		// indicate that Python inspection is needed
 		cfg.Python = &config.Python{}
-		return cfg, nil
+		configs = append(configs, cfg)
 	}
-	return nil, nil
+	return configs, nil
 }

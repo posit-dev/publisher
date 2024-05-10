@@ -17,22 +17,29 @@ func NewStaticHTMLDetector() *StaticHTMLDetector {
 	}
 }
 
-func (d *StaticHTMLDetector) InferType(path util.AbsolutePath) (*config.Config, error) {
-	entrypoint, _, err := d.InferEntrypoint(path, ".html", "index.html")
+func (d *StaticHTMLDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+	var configs []*config.Config
+	entrypointPaths, err := base.Glob("*.html")
 	if err != nil {
 		return nil, err
 	}
-	if entrypoint == "" {
-		entrypoint, _, err = d.InferEntrypoint(path, ".htm", "index.htm")
+	moreEntrypointPaths, err := base.Glob("*.htm")
+	if err != nil {
+		return nil, err
+	}
+	entrypointPaths = append(entrypointPaths, moreEntrypointPaths...)
+	if len(entrypointPaths) == 0 {
+		return nil, nil
+	}
+	for _, entrypointPath := range entrypointPaths {
+		entrypoint, err := entrypointPath.Rel(base)
 		if err != nil {
 			return nil, err
 		}
-	}
-	if entrypoint != "" {
 		cfg := config.New()
 		cfg.Type = config.ContentTypeHTML
-		cfg.Entrypoint = entrypoint
-		return cfg, nil
+		cfg.Entrypoint = entrypoint.String()
+		configs = append(configs, cfg)
 	}
-	return nil, nil
+	return configs, nil
 }

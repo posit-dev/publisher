@@ -119,50 +119,72 @@ func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput) string {
 	return ""
 }
 
-func (d *QuartoDetector) InferType(base util.AbsolutePath) (*config.Config, error) {
-	defaultEntrypoint := base.Base() + ".qmd"
-	entrypoint, entrypointPath, err := d.InferEntrypoint(base, ".qmd", defaultEntrypoint, "index.qmd")
+var quartoSuffixes = []string{".qmd", ".Rmd", ".ipynb"}
+
+func (d *QuartoDetector) findEntrypoints(base util.AbsolutePath) ([]util.AbsolutePath, error) {
+	allPaths := []util.AbsolutePath{}
+
+	for _, suffix := range quartoSuffixes {
+		entrypointPaths, err := base.Glob("*" + suffix)
+		if err != nil {
+			return nil, err
+		}
+		allPaths = append(allPaths, entrypointPaths...)
+	}
+	return allPaths, nil
+}
+
+func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+	var configs []*config.Config
+	entrypointPaths, err := d.findEntrypoints(base)
 	if err != nil {
 		return nil, err
 	}
-	if entrypoint == "" {
+	if len(entrypointPaths) == 0 {
 		return nil, nil
 	}
 	isQuartoProject, err := base.Join("_quarto.yml").Exists()
 	if err != nil {
 		return nil, err
 	}
-	var inspectOutput *quartoInspectOutput
-	if isQuartoProject {
-		inspectOutput, err = d.quartoInspect(base)
-	} else {
-		inspectOutput, err = d.quartoInspect(entrypointPath)
-	}
-	if err != nil {
-		// Maybe this isn't really a quarto project, or maybe the user doesn't have quarto.
-		// We log this error and return nil so other inspectors can have a shot at it.
-		d.log.Warn("quarto inspect failed", "error", err)
-		return nil, nil
-	}
-	if inspectOutput.Files.Input != nil && len(inspectOutput.Files.Input) == 0 {
-		return nil, nil
-	}
-	cfg := config.New()
-	cfg.Type = config.ContentTypeQuarto
-	cfg.Entrypoint = entrypoint
-	cfg.Title = d.getTitle(inspectOutput)
+	for _, entrypointPath := range entrypointPaths {
+		var inspectOutput *quartoInspectOutput
+		if isQuartoProject {
+			inspectOutput, err = d.quartoInspect(base)
+		} else {
+			inspectOutput, err = d.quartoInspect(entrypointPath)
+		}
+		if err != nil {
+			// Maybe this isn't really a quarto project, or maybe the user doesn't have quarto.
+			// We log this error and return nil so other inspectors can have a shot at it.
+			d.log.Warn("quarto inspect failed", "error", err)
+			continue
+		}
+		if inspectOutput.Files.Input != nil && len(inspectOutput.Files.Input) == 0 {
+			continue
+		}
+		entrypoint, err := entrypointPath.Rel(base)
+		if err != nil {
+			return nil, err
+		}
+		cfg := config.New()
+		cfg.Type = config.ContentTypeQuarto
+		cfg.Entrypoint = entrypoint.String()
+		cfg.Title = d.getTitle(inspectOutput)
 
-	cfg.Quarto = &config.Quarto{
-		Version: inspectOutput.Quarto.Version,
-		Engines: inspectOutput.Engines,
+		cfg.Quarto = &config.Quarto{
+			Version: inspectOutput.Quarto.Version,
+			Engines: inspectOutput.Engines,
+		}
+		if d.needsPython(inspectOutput) {
+			// Indicate that Python inspection is needed.
+			cfg.Python = &config.Python{}
+		}
+		if d.needsR(inspectOutput) {
+			// Indicate that R inspection is needed.
+			cfg.R = &config.R{}
+		}
+		configs = append(configs, cfg)
 	}
-	if d.needsPython(inspectOutput) {
-		// Indicate that Python inspection is needed.
-		cfg.Python = &config.Python{}
-	}
-	if d.needsR(inspectOutput) {
-		// Indicate that R inspection is needed.
-		cfg.R = &config.R{}
-	}
-	return cfg, nil
+	return configs, nil
 }

@@ -32,8 +32,10 @@ func (s *PyShinySuite) TestInferType() {
 	s.Nil(err)
 
 	detector := NewPyShinyDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonShiny,
@@ -41,7 +43,7 @@ func (s *PyShinySuite) TestInferType() {
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},
-	}, t)
+	}, configs[0])
 }
 
 func (s *PyShinySuite) TestInferTypeShinyExpress() {
@@ -55,8 +57,10 @@ func (s *PyShinySuite) TestInferTypeShinyExpress() {
 	s.Nil(err)
 
 	detector := NewPyShinyDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonShiny,
@@ -64,5 +68,5 @@ func (s *PyShinySuite) TestInferTypeShinyExpress() {
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},
-	}, t)
+	}, configs[0])
 }

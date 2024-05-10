@@ -60,28 +60,34 @@ func NewBokehDetector() *PythonAppDetector {
 	})
 }
 
-func (d *PythonAppDetector) InferType(path util.AbsolutePath) (*config.Config, error) {
-	entrypoint, entrypointPath, err := d.InferEntrypoint(
-		path, ".py", "main.py", "app.py", "streamlit_app.py", "api.py")
+func (d *PythonAppDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+	var configs []*config.Config
+	entrypointPaths, err := base.Glob("*.py")
 
 	if err != nil {
 		return nil, err
 	}
-	if entrypoint == "" {
+	if len(entrypointPaths) == 0 {
 		// We didn't find a matching import
 		return nil, nil
 	}
-	matches, err := d.FileHasPythonImports(entrypointPath, d.imports)
-	if err != nil {
-		return nil, err
+	for _, entrypointPath := range entrypointPaths {
+		matches, err := d.FileHasPythonImports(entrypointPath, d.imports)
+		if err != nil {
+			return nil, err
+		}
+		if matches {
+			entrypoint, err := entrypointPath.Rel(base)
+			if err != nil {
+				return nil, err
+			}
+			cfg := config.New()
+			cfg.Entrypoint = entrypoint.String()
+			cfg.Type = d.contentType
+			// indicate that Python inspection is needed
+			cfg.Python = &config.Python{}
+			configs = append(configs, cfg)
+		}
 	}
-	if matches {
-		cfg := config.New()
-		cfg.Entrypoint = entrypoint
-		cfg.Type = d.contentType
-		// indicate that Python inspection is needed
-		cfg.Python = &config.Python{}
-		return cfg, nil
-	}
-	return nil, nil
+	return configs, nil
 }
