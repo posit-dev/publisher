@@ -44,16 +44,17 @@ deploy_assertion() {
 }
 
 init_with_fields() {
+    run ${EXE} credentials create bats ${CONNECT_SERVER} ${CONNECT_API_KEY}
     run ${EXE} init -c ${CONTENT} ${FULL_PATH}
     # init to create default.toml
     if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
         assert_output --partial "error detecting content type: quarto with knitr engine is not yet supported."
     else
         assert_success
-    
+
     # add description
     perl -i -pe '$_ .= qq(description =  "'"${CONTENT}"' description"\n) if /title/' ${FULL_PATH}/.posit/publish/${CONTENT}.toml
-    
+
     # add Connect runtime fields
     echo "
 [connect]
@@ -93,7 +94,7 @@ python_content_types=(
         run ${EXE} requirements create ${FULL_PATH}/
         assert_success
         assert_line "Wrote file requirements.txt:"
-        
+
         # compare show output to expected existing requirements.in file
         run ${EXE} requirements show ${FULL_PATH}/
         assert_success
