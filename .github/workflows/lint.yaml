@@ -17,8 +17,5 @@ jobs:
       - run: just vscode deps
       - run: just vscode lint
 
-      - run: just web install
-      - run: just web lint
-
       - run: just test/cy install
       - run: just test/cy lint

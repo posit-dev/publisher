@@ -5,7 +5,6 @@ alias co := cover
 alias l := lint
 alias r := run
 alias t := test
-alias w := web
 alias v := version
 
 _ci := env_var_or_default("CI", "false")
@@ -44,7 +43,6 @@ default:
     {{ _with_debug }}
 
     just clean
-    just web
     just build
     just package
     just archive
@@ -184,7 +182,7 @@ npm-install:
     fi
 
 # staticcheck, vet, and format check
-lint: stub
+lint:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
@@ -239,22 +237,8 @@ run *args:
     pathname=`just executable-path`
     ${pathname} {{ args }}
 
-# Creates a fake './web/dist' directory for when it isn't needed.
-stub:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    dir=web/dist
-
-    if [ ! -d "$dir" ]; then
-        mkdir -p $dir
-        touch $dir/generated.txt
-        echo "This file was created by ./scripts/stub.bash" >> $dir/generated.txt
-    fi
-
 # Execute unit tests.
-test *args=("./..."): stub
+test *args=("./..."):
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
@@ -269,13 +253,6 @@ upload *args:
 
     ./scripts/upload.bash {{ _cmd }} {{ args }}
 
-# Executes commands in ./web/Justfile. Equivalent to `just web/dist.
-web *args:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just web/{{ args }}
 
 # Print the version.
 version:
