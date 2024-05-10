@@ -5,11 +5,6 @@ then
   set -x
 fi
 
-if [ ! -d "./web/dist" ]; then
-    echo "error: Missing frontend distribution. Run \`just web build\` or \`just stub\`." 1>&2
-    exit 1
-fi
-
 CI="${CI:-false}"
 
 cmd=$1

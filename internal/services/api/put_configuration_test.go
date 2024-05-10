@@ -57,6 +57,11 @@ func (s *PutConfigurationSuite) TestPutConfiguration() {
 		"python": {
 			"version": "3.4.5",
 			"packageManager": "pip"
+		},
+		"connect": {
+			"kubernetes": {
+				"defaultREnvironmentManagement": true
+			}
 		}
 	}`))
 
@@ -76,6 +81,8 @@ func (s *PutConfigurationSuite) TestPutConfiguration() {
 	s.Nil(responseBody.Error)
 	s.NotNil(responseBody.Configuration)
 	s.Equal(config.ContentTypePythonShiny, responseBody.Configuration.Type)
+	expected := true
+	s.Equal(&expected, responseBody.Configuration.Connect.Kubernetes.DefaultREnvironmentManagement)
 }
 
 func (s *PutConfigurationSuite) TestPutConfigurationBadConfig() {

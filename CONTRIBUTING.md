@@ -93,14 +93,6 @@ The [Bats](https://bats-core.readthedocs.io/en/stable/) framework is used to per
 just bats
 ```
 
-### UI Tests
-
-The [Cypress](https://www.cypress.io) framework is used to perform UI tests.
-
-```
-just cy
-```
-
 ## Development
 
 ### Build Tools

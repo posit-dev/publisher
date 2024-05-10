@@ -3,7 +3,6 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -33,12 +32,18 @@ func NewRMarkdownDetector(log logging.Logger) *RMarkdownDetector {
 // (this pattern allows it to be followed by optional whitespace)
 var rmdMetaRE = regexp.MustCompile(`(?s)^---\s*\n(.*\n)---\s*\n`)
 
-type RMarkdownMetadata map[string]any
+type RMarkdownMetadata struct {
+	// Only	the	fields we need are defined here
+	Title   string         `yaml:"title"`
+	Runtime string         `yaml:"runtime"`
+	Params  map[string]any `yaml:"params"`
+	Server  any            `yaml:"server"` // string or a map
+}
 
-func (d *RMarkdownDetector) getRmdMetadata(rmdContent string) (RMarkdownMetadata, error) {
+func (d *RMarkdownDetector) getRmdMetadata(rmdContent string) (*RMarkdownMetadata, error) {
 	m := rmdMetaRE.FindStringSubmatch(rmdContent)
 	if len(m) < 2 {
-		return RMarkdownMetadata{}, nil
+		return nil, nil
 	}
 	var metadata RMarkdownMetadata
 	decoder := yaml.NewDecoder(strings.NewReader(m[1]))
@@ -46,10 +51,10 @@ func (d *RMarkdownDetector) getRmdMetadata(rmdContent string) (RMarkdownMetadata
 	if err != nil {
 		return nil, err
 	}
-	return metadata, nil
+	return &metadata, nil
 }
 
-func (d *RMarkdownDetector) getRmdFileMetadata(path util.AbsolutePath) (RMarkdownMetadata, error) {
+func (d *RMarkdownDetector) getRmdFileMetadata(path util.AbsolutePath) (*RMarkdownMetadata, error) {
 	content, err := path.ReadFile()
 	if err != nil {
 		return nil, err
@@ -57,47 +62,77 @@ func (d *RMarkdownDetector) getRmdFileMetadata(path util.AbsolutePath) (RMarkdow
 	return d.getRmdMetadata(string(content))
 }
 
-func (d *RMarkdownDetector) InferType(base util.AbsolutePath) (*config.Config, error) {
-	projectRmdName := base.Base() + ".Rmd"
-	entrypoint, entrypointPath, err := d.InferEntrypoint(base, ".Rmd", "index.Rmd", projectRmdName)
+func isShinyRmd(metadata *RMarkdownMetadata) bool {
+	if metadata == nil {
+		return false
+	}
+	if strings.HasPrefix(metadata.Runtime, "shiny") {
+		return true
+	}
+	serverString, ok := metadata.Server.(string)
+	if ok && serverString == "shiny" {
+		return true
+	}
+	serverMap, ok := metadata.Server.(map[string]any)
+	if ok && serverMap["type"] == "shiny" {
+		return true
+	}
+	return false
+}
+
+func (d *RMarkdownDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+	var configs []*config.Config
+	entrypointPaths, err := base.Glob("*.Rmd")
 	if err != nil {
 		return nil, err
 	}
-	if entrypoint == "" {
+	if len(entrypointPaths) == 0 {
 		// Not an R Markdown project
 		return nil, nil
 	}
-	metadata, err := d.getRmdFileMetadata(entrypointPath)
-	if err != nil {
-		return nil, err
-	}
-	cfg := config.New()
-	cfg.Type = config.ContentTypeRMarkdown
-	cfg.Entrypoint = entrypoint
+	for _, entrypointPath := range entrypointPaths {
+		metadata, err := d.getRmdFileMetadata(entrypointPath)
+		if err != nil {
+			d.log.Warn("Failed to read RMarkdown metadata", "path", entrypointPath, "error", err)
+			continue
+		}
+		entrypoint, err := entrypointPath.Rel(base)
+		if err != nil {
+			return nil, err
+		}
+		cfg := config.New()
+		cfg.Entrypoint = entrypoint.String()
 
-	title := metadata["title"]
-	if title != nil {
-		cfg.Title = fmt.Sprintf("%s", title)
-	}
+		if isShinyRmd(metadata) {
+			cfg.Type = config.ContentTypeRMarkdownShiny
+		} else {
+			cfg.Type = config.ContentTypeRMarkdown
+		}
 
-	params := metadata["params"]
-	if params != nil {
-		cfg.HasParameters = true
-	}
+		title := metadata.Title
+		if title != "" {
+			cfg.Title = title
+		}
 
-	needsR, needsPython, err := pydeps.DetectMarkdownLanguages(base)
-	if err != nil {
-		return nil, err
+		if metadata.Params != nil {
+			cfg.HasParameters = true
+		}
+
+		needsR, needsPython, err := pydeps.DetectMarkdownLanguages(base)
+		if err != nil {
+			return nil, err
+		}
+		if needsR {
+			// Indicate that R inspection is needed.
+			d.log.Info("RMarkdown: detected R code; configuration will include R")
+			cfg.R = &config.R{}
+		}
+		if needsPython {
+			// Indicate that Python inspection is needed.
+			d.log.Info("RMarkdown: detected Python code; configuration will include Python")
+			cfg.Python = &config.Python{}
+		}
+		configs = append(configs, cfg)
 	}
-	if needsR {
-		// Indicate that R inspection is needed.
-		d.log.Info("RMarkdown: detected R code; configuration will include R")
-		cfg.R = &config.R{}
-	}
-	if needsPython {
-		// Indicate that Python inspection is needed.
-		d.log.Info("RMarkdown: detected Python code; configuration will include Python")
-		cfg.Python = &config.Python{}
-	}
-	return cfg, nil
+	return configs, nil
 }

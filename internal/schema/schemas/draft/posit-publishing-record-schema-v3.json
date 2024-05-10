@@ -4,7 +4,7 @@
   "type": "object",
   "additionalProperties": false,
   "description": "Posit Publishing Record",
-  "required": ["$schema", "server-url", "id", "configuration-name"],
+  "required": ["$schema", "server_url", "id", "configuration_name"],
   "properties": {
     "$schema": {
       "type": "string",
@@ -17,13 +17,13 @@
         "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-record-schema-v3.json"
       ]
     },
-    "server-url": {
+    "server_url": {
       "type": "string",
       "format": "uri",
       "description": "URL of the server where this content was deployed.",
       "examples": ["https://connect.example.com"]
     },
-    "server-type": {
+    "server_type": {
       "type": "string",
       "description": "Type of server",
       "enum": ["connect"],
@@ -34,33 +34,33 @@
       "description": "Unique ID of this deployment.",
       "examples": ["de2e7bdb-b085-401e-a65c-443e40009749"]
     },
-    "client-version": {
+    "client_version": {
       "type": "string",
       "description": "Version of the publisher that deployed the content."
     },
-    "created-at": {
+    "created_at": {
       "type": "string",
       "format": "date-time",
       "description": "Date and time the deployment was created.",
       "examples": ["2024-01-19T09:33:33.131481-05:00"]
     },
-    "deployed-at": {
+    "deployed_at": {
       "type": "string",
       "format": "date-time",
       "description": "Date and time of the last deployment to the server.",
       "examples": ["2024-01-19T09:33:33.131481-05:00"]
     },
-    "configuration-name": {
+    "configuration_name": {
       "type": "string",
       "description": "Name of the configuration that was used during deployment.",
       "examples": ["production"]
     },
-    "bundle-id": {
+    "bundle_id": {
       "type": "string",
       "description": "ID of the uploaded file bundle.",
       "examples": ["123"]
     },
-    "bundle-url": {
+    "bundle_url": {
       "type": "string",
       "format": "uri",
       "description": "URL to download the bundle for this deployment.",
@@ -68,7 +68,7 @@
         "https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download"
       ]
     },
-    "dashboard-url": {
+    "dashboard_url": {
       "type": "string",
       "format": "uri",
       "description": "URL of this deployment in the Connect dashboard.",
@@ -76,7 +76,7 @@
         "https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/"
       ]
     },
-    "direct-url": {
+    "direct_url": {
       "type": "string",
       "format": "uri",
       "description": "Direct URL for this deployment. This is the link to use when accessing a deployed API.",
@@ -84,7 +84,7 @@
         "https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40009749/"
       ]
     },
-    "deployment-error": {
+    "deployment_error": {
       "type": "object",
       "description": "Error from the deployment operation. Will be omitted if no error occurred.",
       "properties": {
@@ -105,6 +105,75 @@
     },
     "configuration": {
       "$ref": "https://cdn.posit.co/publisher/schemas/draft/posit-publishing-schema-v3.json"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": ["string"]
+      },
+      "description": "List of package requirements deployed with the content.",
+      "examples": ["numpy==1.23.4", "click=8.0.0"]
+    },
+    "renv": {
+      "type": "object",
+      "description": "Contents of renv.lock deployed with the content.",
+      "additionalProperties": false,
+      "properties": {
+        "r": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "string",
+              "description": "R version"
+            },
+            "repositories": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Name of the repository"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL of the repository"
+                  }
+                }
+              },
+              "description": "List of R repositories"
+            }
+          }
+        },
+        "packages": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "package": {
+                "type": "string",
+                "description": "Name of the R package"
+              },
+              "version": {
+                "type": "string",
+                "description": "Version of the R package"
+              },
+              "source": {
+                "type": "string",
+                "description": "Source of the R package"
+              },
+              "repository": {
+                "type": "string",
+                "description": "Repository where the R package originated"
+              }
+            }
+          },
+          "description": "Detailed list of R packages"
+        }
+      }
     },
     "files": {
       "type": "array",

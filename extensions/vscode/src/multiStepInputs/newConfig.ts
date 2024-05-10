@@ -3,7 +3,6 @@
 import {
   MultiStepInput,
   MultiStepState,
-  isQuickPickItem,
   assignStep,
 } from "src/multiStepInputs/multiStepHelper";
 
@@ -17,10 +16,39 @@ import {
   window,
 } from "vscode";
 
-import { useApi, ConfigurationDetails, Configuration } from "src/api";
-import { getSummaryStringFromError } from "src/utils/errors";
-import { untitledConfigurationName } from "src/utils/names";
-import { isValidFilename } from "src/utils/files";
+import { Configuration, ConfigurationDetails, useApi } from "../api";
+import { ContentType } from "../api/types/configurations";
+import { getSummaryStringFromError } from "../utils/errors";
+import { isValidFilename } from "../utils/files";
+import { untitledConfigurationName } from "../utils/names";
+
+const contentTypeStrings = {
+  [ContentType.HTML]: "serve pre-rendered HTML",
+  [ContentType.JUPYTER_NOTEBOOK]: "render with Jupyter nbconvert",
+  [ContentType.JUPYTER_VOILA]: "run with Jupyter Voila",
+  [ContentType.PYTHON_BOKEH]: "run with Bokeh",
+  [ContentType.PYTHON_DASH]: "run with Dash",
+  [ContentType.PYTHON_FASTAPI]: "run with FastAPI",
+  [ContentType.PYTHON_FLASK]: "run with Flask",
+  [ContentType.PYTHON_SHINY]: "run with Python Shiny",
+  [ContentType.PYTHON_STREAMLIT]: "run with Streamlit",
+  [ContentType.QUARTO_SHINY]: "render with Quarto and run embedded Shiny app",
+  [ContentType.QUARTO]: "render with Quarto",
+  [ContentType.R_PLUMBER]: "run with Plumber",
+  [ContentType.R_SHINY]: "run with R Shiny",
+  [ContentType.RMD_SHINY]:
+    "render with rmarkdown/knitr and run embedded Shiny app",
+  [ContentType.RMD]: "render with rmarkdown/knitr",
+  [ContentType.UNKNOWN]: "unknown content type; cannot deploy this item",
+};
+
+export type QuickPickItemWithIndex = QuickPickItem & { index: number };
+
+export function isQuickPickItemWithIndex(
+  d: QuickPickItem | string,
+): d is QuickPickItemWithIndex {
+  return (d as QuickPickItemWithIndex).index !== undefined;
+}
 
 export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
@@ -41,12 +69,13 @@ export async function newConfig(title: string, viewId?: string) {
         entryPointLabels = configDetails.map(
           (config) => `${config.entrypoint}`,
         );
-        configDetails.forEach((config) => {
+        configDetails.forEach((config, i) => {
           if (config.entrypoint) {
             entryPointListItems.push({
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
-              description: `(type ${config.type})`,
+              description: `(${contentTypeStrings[config.type]})`,
+              index: i,
             });
           }
         });
@@ -239,7 +268,7 @@ export async function newConfig(title: string, viewId?: string) {
     state.data.entryPoint === undefined ||
     state.data.configFileName === undefined ||
     // have to add type guards here to eliminate the variability
-    !isQuickPickItem(state.data.entryPoint) ||
+    !isQuickPickItemWithIndex(state.data.entryPoint) ||
     typeof state.data.configFileName !== "string"
   ) {
     return;
@@ -247,7 +276,7 @@ export async function newConfig(title: string, viewId?: string) {
   // Create the Config File
   let newConfig: Configuration | undefined = undefined;
   try {
-    const selectedConfig = entryPointLabelMap.get(state.data.entryPoint.label);
+    const selectedConfig = configs[state.data.entryPoint.index];
     if (!selectedConfig) {
       window.showErrorMessage(
         `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}`,

@@ -3,6 +3,10 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"path/filepath"
+	"slices"
+	"strings"
+
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
@@ -40,35 +44,59 @@ func newUnknownConfig() *config.Config {
 	return cfg
 }
 
-func (t *ContentTypeDetector) InferType(path util.AbsolutePath) (*config.Config, error) {
-	for _, detector := range t.detectors {
-		cfg, err := detector.InferType(path)
-		if err != nil {
-			return nil, err
-		}
-		if cfg != nil {
-			return cfg, nil
-		}
-	}
-	return newUnknownConfig(), nil
+var preferredNames = []string{
+	"index",
+	"main",
+	"app",
+	"streamlit_app",
 }
 
-func (t *ContentTypeDetector) InferAll(path util.AbsolutePath) ([]*config.Config, error) {
-	var configs []*config.Config
+func filenameStem(filename string) string {
+	ext := filepath.Ext(filename)
+	return strings.TrimSuffix(filename, ext)
+}
+
+func (t *ContentTypeDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+	var allConfigs []*config.Config
+
+	_, err := base.Stat()
+	if err != nil {
+		return nil, err
+	}
 
 	for _, detector := range t.detectors {
-		cfg, err := detector.InferType(path)
+		configs, err := detector.InferType(base)
 		if err != nil {
 			return nil, err
 		}
-		if cfg != nil {
-			configs = append(configs, cfg)
+		if configs != nil {
+			allConfigs = append(allConfigs, configs...)
 		}
 	}
-	if configs == nil {
-		configs = append(configs, newUnknownConfig())
+	if allConfigs == nil {
+		allConfigs = append(allConfigs, newUnknownConfig())
 	}
-	return configs, nil
+
+	compareConfigs := func(a, b *config.Config) int {
+		entrypointA := a.Entrypoint
+		entrypointB := b.Entrypoint
+		stemA := filenameStem(entrypointA)
+		stemB := filenameStem(entrypointB)
+
+		aIsPreferred := base.Base() == stemA || slices.Contains(preferredNames, stemA)
+		bIsPreferred := base.Base() == stemB || slices.Contains(preferredNames, stemB)
+
+		if aIsPreferred && !bIsPreferred {
+			return -1
+		} else if !aIsPreferred && bIsPreferred {
+			return 1
+		} else {
+			return strings.Compare(entrypointA, entrypointB)
+		}
+	}
+
+	slices.SortFunc(allConfigs, compareConfigs)
+	return allConfigs, nil
 }
 
 var _ ContentTypeInferer = &ContentTypeDetector{}

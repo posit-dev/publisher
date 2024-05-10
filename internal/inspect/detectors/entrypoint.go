@@ -6,59 +6,11 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"strings"
 
 	"github.com/rstudio/connect-client/internal/util"
 )
 
 type defaultInferenceHelper struct{}
-
-// inferEntrypoint looks for an entrypoint for the provided path.
-// If path is a file, it must end with the specified suffix to be the entrypoint.
-// If it's a directory, it specifies the deployment directory.
-// - If preferredFilename exists in the directory, it is the entrypoint.
-// - If there is only one file with the specified suffix, it is the entrypoint.
-func (h defaultInferenceHelper) InferEntrypoint(path util.AbsolutePath, suffix string, preferredFilenames ...string) (string, util.AbsolutePath, error) {
-	isDir, err := path.IsDir()
-	if err != nil {
-		return "", util.AbsolutePath{}, err
-	}
-	if isDir {
-		matchingFiles, err := path.Glob("*" + suffix)
-		if err != nil {
-			return "", util.AbsolutePath{}, err
-		}
-		if len(matchingFiles) == 0 {
-			return "", util.AbsolutePath{}, nil
-		} else if len(matchingFiles) == 1 {
-			// This must be it
-			relPath, err := matchingFiles[0].Rel(path)
-			return relPath.String(), matchingFiles[0], err
-		} else {
-			for _, preferredFilename := range preferredFilenames {
-				// Favor one of the preferredFilenames as an entrypoint
-				preferredPath := path.Join(preferredFilename)
-				exists, err := preferredPath.Exists()
-				if err != nil {
-					return "", util.AbsolutePath{}, err
-				}
-				if exists {
-					return preferredFilename, preferredPath, nil
-				}
-			}
-			// else entrypoint is ambiguous.
-			// Return the first one.
-			relPath, err := matchingFiles[0].Rel(path)
-			return relPath.String(), matchingFiles[0], err
-		}
-	} else {
-		fileSuffix := strings.ToLower(path.Ext())
-		if fileSuffix == suffix {
-			return path.Base(), path, nil
-		}
-	}
-	return "", util.AbsolutePath{}, nil
-}
 
 func (h defaultInferenceHelper) FileHasPythonImports(path util.AbsolutePath, packages []string) (bool, error) {
 	f, err := path.Open()

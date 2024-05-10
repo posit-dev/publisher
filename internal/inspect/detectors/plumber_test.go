@@ -32,8 +32,10 @@ func (s *PlumberSuite) TestInferTypePlumberR() {
 	s.Nil(err)
 
 	detector := NewPlumberDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRPlumber,
@@ -42,7 +44,7 @@ func (s *PlumberSuite) TestInferTypePlumberR() {
 		Validate:   true,
 		Files:      []string{"*"},
 		R:          &config.R{},
-	}, t)
+	}, configs[0])
 }
 
 func (s *PlumberSuite) TestInferTypeEntrypointR() {
@@ -56,8 +58,10 @@ func (s *PlumberSuite) TestInferTypeEntrypointR() {
 	s.Nil(err)
 
 	detector := NewPlumberDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRPlumber,
@@ -66,7 +70,7 @@ func (s *PlumberSuite) TestInferTypeEntrypointR() {
 		Validate:   true,
 		Files:      []string{"*"},
 		R:          &config.R{},
-	}, t)
+	}, configs[0])
 }
 
 func (s *PlumberSuite) TestInferTypeNone() {

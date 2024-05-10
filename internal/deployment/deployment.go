@@ -11,6 +11,7 @@ import (
 	"github.com/pelletier/go-toml/v2"
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/config"
+	"github.com/rstudio/connect-client/internal/inspect/dependencies/renv"
 	"github.com/rstudio/connect-client/internal/project"
 	"github.com/rstudio/connect-client/internal/schema"
 	"github.com/rstudio/connect-client/internal/types"
@@ -20,22 +21,24 @@ import (
 type Deployment struct {
 	// Predeployment and full deployment fields
 	Schema        string              `toml:"$schema" json:"$schema"`
-	ServerType    accounts.ServerType `toml:"server-type" json:"serverType"`
-	ServerURL     string              `toml:"server-url" json:"serverUrl"`
-	ClientVersion string              `toml:"client-version" json:"-"`
-	CreatedAt     string              `toml:"created-at" json:"createdAt"`
-	ConfigName    string              `toml:"configuration-name" json:"configurationName"`
+	ServerType    accounts.ServerType `toml:"server_type" json:"serverType"`
+	ServerURL     string              `toml:"server_url" json:"serverUrl"`
+	ClientVersion string              `toml:"client_version" json:"-"`
+	CreatedAt     string              `toml:"created_at" json:"createdAt"`
+	ConfigName    string              `toml:"configuration_name" json:"configurationName"`
 
 	// Full deployment fields
 	ID            types.ContentID   `toml:"id,omitempty" json:"id"`
-	DeployedAt    string            `toml:"deployed-at,omitempty" json:"deployedAt"`
-	BundleID      types.BundleID    `toml:"bundle-id,omitempty" json:"bundleId"`
-	BundleURL     string            `toml:"bundle-url,omitempty" json:"bundleUrl"`
-	DashboardURL  string            `toml:"dashboard-url,omitempty" json:"dashboardUrl"`
-	DirectURL     string            `toml:"direct-url,omitempty" json:"directUrl"`
-	Error         *types.AgentError `toml:"deployment-error,omitempty" json:"deploymentError"`
+	DeployedAt    string            `toml:"deployed_at,omitempty" json:"deployedAt"`
+	BundleID      types.BundleID    `toml:"bundle_id,omitempty" json:"bundleId"`
+	BundleURL     string            `toml:"bundle_url,omitempty" json:"bundleUrl"`
+	DashboardURL  string            `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
+	DirectURL     string            `toml:"direct_url,omitempty" json:"directUrl"`
+	Error         *types.AgentError `toml:"deployment_error,omitempty" json:"deploymentError"`
 	Files         []string          `toml:"files,multiline,omitempty" json:"files"`
+	Requirements  []string          `toml:"requirements,multiline,omitempty" json:"requirements"`
 	Configuration *config.Config    `toml:"configuration,omitempty" json:"configuration"`
+	Renv          *renv.Lockfile    `toml:"renv,omitempty" json:"renv"`
 }
 
 func New() *Deployment {
@@ -44,8 +47,6 @@ func New() *Deployment {
 		ServerType:    accounts.ServerTypeConnect,
 		ClientVersion: project.Version,
 		CreatedAt:     time.Now().Format(time.RFC3339),
-		Configuration: nil,
-		Files:         nil,
 	}
 }
 

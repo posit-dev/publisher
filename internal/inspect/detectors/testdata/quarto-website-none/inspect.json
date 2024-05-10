@@ -1,0 +1,48 @@
+{
+  "quarto": {
+    "version": "1.4.553"
+  },
+  "dir": "/Users/mike/rstudio/connect-content/bundles/quarto-website-none",
+  "engines": ["markdown"],
+  "config": {
+    "project": {
+      "type": "website",
+      "lib-dir": "site_libs",
+      "output-dir": "_site"
+    },
+    "website": {
+      "title": "quarto-website-none",
+      "navbar": {
+        "background": "primary",
+        "left": [
+          {
+            "href": "index.qmd",
+            "text": "Home"
+          },
+          "about.qmd"
+        ]
+      }
+    },
+    "format": {
+      "html": {
+        "theme": "cosmo",
+        "css": "styles.css"
+      }
+    },
+    "editor": "visual",
+    "language": {}
+  },
+  "files": {
+    "input": [
+      "/Users/mike/rstudio/connect-content/bundles/quarto-website-none/index.qmd",
+      "/Users/mike/rstudio/connect-content/bundles/quarto-website-none/about.qmd"
+    ],
+    "resources": [],
+    "config": [
+      "/Users/mike/rstudio/connect-content/bundles/quarto-website-none/_quarto.yml"
+    ],
+    "configResources": [
+      "/Users/mike/rstudio/connect-content/bundles/quarto-website-none/styles.css"
+    ]
+  }
+}

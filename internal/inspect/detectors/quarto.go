@@ -10,6 +10,7 @@ import (
 
 	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/executor"
+	"github.com/rstudio/connect-client/internal/inspect/dependencies/pydeps"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
@@ -28,22 +29,30 @@ func NewQuartoDetector() *QuartoDetector {
 	}
 }
 
+type quartoMetadata struct {
+	Title   string `json:"title"`
+	Runtime string `json:"runtime"`
+	Server  any    `json:"server"`
+}
+
 type quartoInspectOutput struct {
 	// Only the fields we use are included; the rest
 	// are discarded by the JSON decoder.
 	Quarto struct {
 		Version string `json:"version"`
 	} `json:"quarto"`
-	Config struct {
-		Project struct {
-			Title      string   `json:"title"`
-			PreRender  []string `json:"pre-render"`
-			PostRender []string `json:"post-render"`
-		} `json:"project"`
-		Website struct {
-			Title string `json:"title"`
-		} `json:"website"`
-	} `json:"config"`
+	Project struct {
+		Config struct {
+			Project struct {
+				Title      string   `json:"title"`
+				PreRender  []string `json:"pre-render"`
+				PostRender []string `json:"post-render"`
+			} `json:"project"`
+			Website struct {
+				Title string `json:"title"`
+			} `json:"website"`
+		} `json:"config"`
+	} `json:"project"`
 	Engines []string `json:"engines"`
 	Files   struct {
 		Input []string `json:"input"`
@@ -51,9 +60,7 @@ type quartoInspectOutput struct {
 	// For single quarto docs without _quarto.yml
 	Formats struct {
 		HTML struct {
-			Metadata struct {
-				Title string `json:"title"`
-			} `json:"metadata"`
+			Metadata quartoMetadata `json:"metadata"`
 		} `json:"html"`
 	} `json:"formats"`
 }
@@ -73,15 +80,18 @@ func (d *QuartoDetector) quartoInspect(path util.AbsolutePath) (*quartoInspectOu
 }
 
 func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
+	if inspectOutput == nil {
+		return false
+	}
 	if slices.Contains(inspectOutput.Engines, "jupyter") {
 		return true
 	}
-	for _, script := range inspectOutput.Config.Project.PreRender {
+	for _, script := range inspectOutput.Project.Config.Project.PreRender {
 		if strings.HasSuffix(script, ".py") {
 			return true
 		}
 	}
-	for _, script := range inspectOutput.Config.Project.PostRender {
+	for _, script := range inspectOutput.Project.Config.Project.PostRender {
 		if strings.HasSuffix(script, ".py") {
 			return true
 		}
@@ -90,15 +100,18 @@ func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
 }
 
 func (d *QuartoDetector) needsR(inspectOutput *quartoInspectOutput) bool {
+	if inspectOutput == nil {
+		return false
+	}
 	if slices.Contains(inspectOutput.Engines, "knitr") {
 		return true
 	}
-	for _, script := range inspectOutput.Config.Project.PreRender {
+	for _, script := range inspectOutput.Project.Config.Project.PreRender {
 		if strings.HasSuffix(script, ".R") {
 			return true
 		}
 	}
-	for _, script := range inspectOutput.Config.Project.PostRender {
+	for _, script := range inspectOutput.Project.Config.Project.PostRender {
 		if strings.HasSuffix(script, ".R") {
 			return true
 		}
@@ -107,62 +120,112 @@ func (d *QuartoDetector) needsR(inspectOutput *quartoInspectOutput) bool {
 }
 
 func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput) string {
-	if inspectOutput.Config.Website.Title != "" {
-		return inspectOutput.Config.Website.Title
-	}
 	if inspectOutput.Formats.HTML.Metadata.Title != "" {
 		return inspectOutput.Formats.HTML.Metadata.Title
 	}
-	if inspectOutput.Config.Project.Title != "" {
-		return inspectOutput.Config.Project.Title
+	if inspectOutput.Project.Config.Website.Title != "" {
+		return inspectOutput.Project.Config.Website.Title
+	}
+	if inspectOutput.Project.Config.Project.Title != "" {
+		return inspectOutput.Project.Config.Project.Title
 	}
 	return ""
 }
 
-func (d *QuartoDetector) InferType(base util.AbsolutePath) (*config.Config, error) {
-	defaultEntrypoint := base.Base() + ".qmd"
-	entrypoint, entrypointPath, err := d.InferEntrypoint(base, ".qmd", defaultEntrypoint, "index.qmd")
-	if err != nil {
-		return nil, err
-	}
-	if entrypoint == "" {
-		return nil, nil
-	}
-	isQuartoProject, err := base.Join("_quarto.yml").Exists()
-	if err != nil {
-		return nil, err
-	}
-	var inspectOutput *quartoInspectOutput
-	if isQuartoProject {
-		inspectOutput, err = d.quartoInspect(base)
-	} else {
-		inspectOutput, err = d.quartoInspect(entrypointPath)
-	}
-	if err != nil {
-		// Maybe this isn't really a quarto project, or maybe the user doesn't have quarto.
-		// We log this error and return nil so other inspectors can have a shot at it.
-		d.log.Warn("quarto inspect failed", "error", err)
-		return nil, nil
-	}
-	if inspectOutput.Files.Input != nil && len(inspectOutput.Files.Input) == 0 {
-		return nil, nil
-	}
-	cfg := config.New()
-	cfg.Type = config.ContentTypeQuarto
-	cfg.Entrypoint = entrypoint
-	cfg.Title = d.getTitle(inspectOutput)
+var quartoSuffixes = []string{".qmd", ".Rmd", ".ipynb"}
 
-	cfg.Quarto = &config.Quarto{
-		Version: inspectOutput.Quarto.Version,
-		Engines: inspectOutput.Engines,
+func (d *QuartoDetector) findEntrypoints(base util.AbsolutePath) ([]util.AbsolutePath, error) {
+	allPaths := []util.AbsolutePath{}
+
+	for _, suffix := range quartoSuffixes {
+		entrypointPaths, err := base.Glob("*" + suffix)
+		if err != nil {
+			return nil, err
+		}
+		allPaths = append(allPaths, entrypointPaths...)
 	}
-	if d.needsPython(inspectOutput) {
-		// Indicate that Python inspection is needed.
-		cfg.Python = &config.Python{}
+	return allPaths, nil
+}
+
+func isQuartoShiny(metadata *quartoMetadata) bool {
+	if metadata == nil {
+		return false
 	}
-	if d.needsR(inspectOutput) {
-		// Indicate that R inspection is needed.
-		cfg.R = &config.R{}
+	if metadata.Runtime == "shiny" || metadata.Server == "shiny" {
+		return true
 	}
-	return cfg, nil
+	if server, ok := metadata.Server.(map[string]any); ok && server["type"] == "shiny" {
+		return true
+	}
+	return false
+}
+
+func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+	var configs []*config.Config
+	entrypointPaths, err := d.findEntrypoints(base)
+	if err != nil {
+		return nil, err
+	}
+	if len(entrypointPaths) == 0 {
+		return nil, nil
+	}
+	for _, entrypointPath := range entrypointPaths {
+		inspectOutput, err := d.quartoInspect(entrypointPath)
+		if err != nil {
+			// Maybe this isn't really a quarto project, or maybe the user doesn't have quarto.
+			// We log this error and continue checking the other files.
+			d.log.Warn("quarto inspect failed", "file", entrypointPath.String(), "error", err)
+			continue
+		}
+		if inspectOutput.Files.Input != nil && len(inspectOutput.Files.Input) == 0 {
+			continue
+		}
+		entrypoint, err := entrypointPath.Rel(base)
+		if err != nil {
+			return nil, err
+		}
+		cfg := config.New()
+		cfg.Entrypoint = entrypoint.String()
+		cfg.Title = d.getTitle(inspectOutput)
+
+		if isQuartoShiny(&inspectOutput.Formats.HTML.Metadata) {
+			cfg.Type = config.ContentTypeQuartoShiny
+		} else {
+			cfg.Type = config.ContentTypeQuarto
+		}
+
+		content, err := entrypointPath.ReadFile()
+		if err != nil {
+			return nil, err
+		}
+
+		needR, needPython := pydeps.DetectMarkdownLanguagesInContent(content)
+		if err != nil {
+			return nil, err
+		}
+
+		engines := inspectOutput.Engines
+		if needPython || d.needsPython(inspectOutput) {
+			// Indicate that Python inspection is needed.
+			cfg.Python = &config.Python{}
+			if !slices.Contains(engines, "jupyter") {
+				engines = append(engines, "jupyter")
+			}
+		}
+		if needR || d.needsR(inspectOutput) {
+			// Indicate that R inspection is needed.
+			cfg.R = &config.R{}
+			if !slices.Contains(engines, "knitr") {
+				engines = append(engines, "knitr")
+			}
+		}
+		slices.Sort(engines)
+
+		cfg.Quarto = &config.Quarto{
+			Version: inspectOutput.Quarto.Version,
+			Engines: engines,
+		}
+		configs = append(configs, cfg)
+	}
+	return configs, nil
 }

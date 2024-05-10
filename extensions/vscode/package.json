@@ -526,7 +526,7 @@
       },
       {
         "view": "posit.publisher.credentials",
-        "contents": "Posit Publisher currently uses credentials managed by the following utilities:\n- [RSConnect](https://github.com/rstudio/rsconnect) (R Package)\n- [RSConnect-Python](https://github.com/rstudio/rsconnect-python) (Python utility).\n\nUse one of these utilities to define a credential to your server, then return and click the refresh button\n[Refresh](command:posit.publisher.credentials.refresh)",
+        "contents": "To publish your content, you need account credentials for a Connect server.\n[Add Credential](command:posit.publisher.credentials.add)",
         "when": "posit.publisher.credentials.isEmpty == empty"
       },
       {
@@ -536,7 +536,7 @@
       },
       {
         "view": "posit.publisher.project",
-        "contents": "Use of Posit Publisher requires that you create at least one account credential using [RSConnect](https://github.com/rstudio/rsconnect) (R Package) or [RSConnect-Python](https://github.com/rstudio/rsconnect-python) (Python utility).\n\nUse one of these utilities to define a credential to your server, then return and click the refresh button\n[Refresh](command:posit.publisher.init-project.refresh)",
+        "contents": "Use of Posit Publisher requires that you create at least one account credential.",
         "when": "posit.publish.initialization.credentialCheck == 'failed'"
       },
       {

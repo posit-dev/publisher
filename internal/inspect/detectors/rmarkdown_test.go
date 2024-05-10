@@ -47,8 +47,10 @@ func (s *RMarkdownSuite) TestInferType() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
@@ -57,7 +59,7 @@ func (s *RMarkdownSuite) TestInferType() {
 		Validate:   true,
 		Files:      []string{"*"},
 		R:          &config.R{},
-	}, t)
+	}, configs[0])
 }
 
 var pythonRmdContent = fmt.Sprintf(`---
@@ -82,8 +84,9 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
@@ -92,7 +95,7 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},
-	}, t)
+	}, configs[0])
 }
 
 var parameterizedRmdContent = fmt.Sprintf(`---
@@ -128,8 +131,10 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:        schema.ConfigSchemaURL,
 		Type:          config.ContentTypeRMarkdown,
@@ -139,5 +144,120 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 		HasParameters: true,
 		Files:         []string{"*"},
 		R:             &config.R{},
-	}, t)
+	}, configs[0])
+}
+
+var shinyRmdRuntimeContent = fmt.Sprintf(`---
+title: Interactive Report
+runtime: shiny
+---
+
+# A Very Interactive Report
+
+%s{r, echo=TRUE}
+library(foo)
+%s
+`, backticks, backticks)
+
+func (s *RMarkdownSuite) TestInferTypeShinyRmdRuntime() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte(shinyRmdRuntimeContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	configs, err := detector.InferType(base)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdownShiny,
+		Title:      "Interactive Report",
+		Entrypoint: filename,
+		Validate:   true,
+		Files:      []string{"*"},
+		R:          &config.R{},
+	}, configs[0])
+}
+
+var shinyRmdServerContent = fmt.Sprintf(`---
+title: Interactive Report
+server: shiny
+---
+
+# A Very Interactive Report
+
+%s{r, echo=TRUE}
+library(foo)
+%s
+`, backticks, backticks)
+
+func (s *RMarkdownSuite) TestInferTypeShinyRmdServer() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte(shinyRmdServerContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	configs, err := detector.InferType(base)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdownShiny,
+		Title:      "Interactive Report",
+		Entrypoint: filename,
+		Validate:   true,
+		Files:      []string{"*"},
+		R:          &config.R{},
+	}, configs[0])
+}
+
+var shinyRmdServerTypeContent = fmt.Sprintf(`---
+title: Interactive Report
+server:
+    type: shiny
+---
+
+# A Very Interactive Report
+
+%s{r, echo=TRUE}
+library(foo)
+%s
+`, backticks, backticks)
+
+func (s *RMarkdownSuite) TestInferTypeShinyRmdServerType() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte(shinyRmdServerTypeContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	configs, err := detector.InferType(base)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdownShiny,
+		Title:      "Interactive Report",
+		Entrypoint: filename,
+		Validate:   true,
+		Files:      []string{"*"},
+		R:          &config.R{},
+	}, configs[0])
 }

@@ -1,0 +1,19 @@
+---
+title: "quarto-proj-r-py"
+resource_files:
+- _quarto.yml
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+```{r}
+# This is an R code chunk
+1 + 1
+```
+
+```{python}
+# This is a Python code chunk
+1 + 1
+```

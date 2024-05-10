@@ -20,36 +20,27 @@ func NewRShinyDetector() *RShinyDetector {
 	}
 }
 
-func (d *RShinyDetector) InferType(base util.AbsolutePath) (*config.Config, error) {
+func (d *RShinyDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
 	// rsconnect looks for these two specific entrypoint filenames.
-	// Note that this has to happen after rmd-shiny and quarto-shiny detection,
-	// since server.R might contain server code referenced from a shiny-document.
-	entrypoint := base.Join("app.R")
-	exists, err := entrypoint.Exists()
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		entrypoint = base.Join("server.R")
-		exists, err = entrypoint.Exists()
+	// Note that server.R might contain server code referenced from a shiny-document.
+	possibleEntrypoints := []string{"app.R", "server.R"}
+	var configs []*config.Config
+
+	for _, entrypoint := range possibleEntrypoints {
+		entrypointPath := base.Join(entrypoint)
+		exists, err := entrypointPath.Exists()
 		if err != nil {
 			return nil, err
 		}
-		if !exists {
-			// Not a Shiny project
-			return nil, nil
+		if exists {
+			cfg := config.New()
+			cfg.Type = config.ContentTypeRShiny
+			cfg.Entrypoint = entrypoint
+
+			// Indicate that R inspection is needed.
+			cfg.R = &config.R{}
+			configs = append(configs, cfg)
 		}
 	}
-
-	cfg := config.New()
-	cfg.Type = config.ContentTypeRShiny
-	relPath, err := entrypoint.Rel(base)
-	if err != nil {
-		return nil, err
-	}
-	cfg.Entrypoint = relPath.String()
-
-	// Indicate that R inspection is needed.
-	cfg.R = &config.R{}
-	return cfg, nil
+	return configs, nil
 }

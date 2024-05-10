@@ -5,7 +5,6 @@ package detectors
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 
@@ -74,8 +73,10 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeJupyterNotebook,
@@ -83,7 +84,7 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},
-	}, t)
+	}, configs[0])
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
@@ -97,8 +98,10 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
+	s.Len(configs, 1)
+
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeJupyterVoila,
@@ -106,7 +109,7 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},
-	}, t)
+	}, configs[0])
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeNonNotebook() {
@@ -120,18 +123,9 @@ func (s *NotebookDetectorSuite) TestInferTypeNonNotebook() {
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	t, err := detector.InferType(base)
+	configs, err := detector.InferType(base)
 	s.Nil(err)
-	s.Nil(t)
-}
-
-func (s *NotebookDetectorSuite) TestInferTypeFsErr() {
-	base := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
-	detector := NewNotebookDetector()
-	t, err := detector.InferType(base)
-	s.NotNil(err)
-	s.ErrorIs(err, os.ErrNotExist)
-	s.Nil(t)
+	s.Nil(configs)
 }
 
 func (s *NotebookDetectorSuite) TestInferTypeBadNotebook() {

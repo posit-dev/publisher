@@ -22,6 +22,5 @@ node_modules
 
 # Built Visual Studio Code Extensions
 *.vsix
-web-old
 .pnpm-store
 .Rproj.user
