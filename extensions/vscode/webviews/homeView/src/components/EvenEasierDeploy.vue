@@ -15,7 +15,7 @@
     <div
       class="destination-control"
       :disabled="home.deployments.length === 0 ? true : undefined"
-      @click="onSelectDestination"
+      v-on="home.deployments.length ? { click: onSelectDestination } : {}"
     >
       <QuickPickItem
         v-if="
@@ -32,7 +32,6 @@
         class="text-placeholder"
         label="Select a Destination"
         detail="Get deploying"
-        @click="onSelectDestination"
       />
       <div
         class="select-indicator codicon codicon-chevron-down"
