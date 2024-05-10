@@ -12,7 +12,6 @@ import {
   RefreshFilesListsMsg,
   UpdateConfigSelectionMsg,
   UpdateDeploymentSelectionMsg,
-  UpdateExpansionFromStorageMsg,
   UpdatePythonPackages,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
@@ -55,8 +54,6 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
   switch (msg.kind) {
     case HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA:
       return onRefreshDeploymentDataMsg(msg);
-    case HostToWebviewMessageType.UPDATE_EXPANSION_FROM_STORAGE:
-      return onUpdateExpansionFromStorageMsg(msg);
     case HostToWebviewMessageType.REFRESH_CONFIG_DATA:
       return onRefreshConfigDataMsg(msg);
     case HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA:
@@ -111,13 +108,6 @@ const onRefreshDeploymentDataMsg = (msg: RefreshDeploymentDataMsg) => {
   if (home.selectedDeployment === undefined) {
     home.selectedConfiguration = undefined;
   }
-};
-
-const onUpdateExpansionFromStorageMsg = (
-  msg: UpdateExpansionFromStorageMsg,
-) => {
-  const home = useHomeStore();
-  home.easyDeployExpanded = msg.content.expansionState;
 };
 
 /**
