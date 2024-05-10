@@ -2,12 +2,7 @@
 
 import { ProgressLocation, QuickPickItem, ThemeIcon, window } from "vscode";
 
-import {
-  AccountAuthType,
-  PreDeployment,
-  isConfigurationError,
-  useApi,
-} from "src/api";
+import { PreDeployment, isConfigurationError, useApi } from "src/api";
 import { EventStream } from "src/events";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
@@ -49,25 +44,21 @@ export async function newDeployment(
   // ***************************************************************
   const api = await useApi();
 
-  let accountListItems: QuickPickItem[] = [];
+  let credentialListItems: QuickPickItem[] = [];
   let configFileListItems: QuickPickItem[] = [];
   let deploymentNames: string[] = [];
 
-  const getAccounts = new Promise<void>(async (resolve, reject) => {
+  const getCredentials = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.accounts.getAll();
-      accountListItems = response.data.map((account) => ({
+      const response = await api.credentials.list();
+      credentialListItems = response.data.map((cred) => ({
         iconPath: new ThemeIcon("key"),
-        label: account.name,
-        description: account.source,
-        detail:
-          account.authType === AccountAuthType.API_KEY
-            ? "Using API Key"
-            : `Using Token Auth for ${account.accountName}`,
+        label: cred.name,
+        description: cred.url,
       }));
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "newDeployment, accounts.getAll",
+        "newDeployment, credentials.list",
         error,
       );
       window.showInformationMessage(
@@ -75,7 +66,7 @@ export async function newDeployment(
       );
       return reject();
     }
-    if (accountListItems.length === 0) {
+    if (credentialListItems.length === 0) {
       window.showInformationMessage(
         `Unable to continue with no credentials.\n` +
           `Establish account credentials, then try again.`,
@@ -150,7 +141,7 @@ export async function newDeployment(
 
   // wait for all of them to complete
   const apisComplete = Promise.all([
-    getAccounts,
+    getCredentials,
     getConfigurations,
     getDeployments,
   ]);
@@ -202,7 +193,7 @@ export async function newDeployment(
     // determin number of total steps, as each step
     // will suppress its choice if there is only one option
     let totalSteps = 4;
-    if (accountListItems.length === 1) {
+    if (credentialListItems.length === 1) {
       totalSteps -= 1;
     }
     if (configFileListItems.length === 1) {
@@ -257,7 +248,7 @@ export async function newDeployment(
   // ***************************************************************
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     // skip if we only have one choice.
-    if (accountListItems.length > 1) {
+    if (credentialListItems.length > 1) {
       const thisStepNumber = assignStep(state, "pickCredentials");
       const pick = await input.showQuickPick({
         title: state.title,
@@ -265,7 +256,7 @@ export async function newDeployment(
         totalSteps: state.totalSteps,
         placeholder:
           "Select the credential you want to use to deploy. (Use this field to filter selections.)",
-        items: accountListItems,
+        items: credentialListItems,
         activeItem:
           typeof state.data.credentialName !== "string"
             ? state.data.credentialName
@@ -278,7 +269,7 @@ export async function newDeployment(
       state.lastStep = thisStepNumber;
       return (input: MultiStepInput) => inputConfigFileSelection(input, state);
     } else {
-      state.data.credentialName = accountListItems[0];
+      state.data.credentialName = credentialListItems[0];
       // We're skipping this step, so we must silently just jump to the next step
       return inputConfigFileSelection(input, state);
     }

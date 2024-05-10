@@ -1,7 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import {
-  Account,
+  Credential,
   Configuration,
   Deployment,
   PreDeploymentWithConfig,
@@ -11,6 +11,6 @@ import { QuickPickItem } from "vscode";
 export interface DestinationQuickPick extends QuickPickItem {
   deployment: Deployment | PreDeploymentWithConfig;
   config?: Configuration;
-  credential?: Account;
+  credential?: Credential;
   lastMatch: boolean;
 }

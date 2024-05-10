@@ -17,15 +17,12 @@ import {
 } from "vscode";
 
 import {
-  AccountAuthType,
   useApi,
   ConfigurationDetails,
   isConfigurationError,
-  Account,
+  Credential,
   Configuration,
   PreDeployment,
-  ServerType,
-  AccountSource,
 } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
@@ -218,8 +215,8 @@ export async function newDestination(
   // ***************************************************************
   const api = await useApi();
 
-  let accounts: Account[] = [];
-  let accountListItems: QuickPickItem[] = [];
+  let credentials: Credential[] = [];
+  let credentialListItems: QuickPickItem[] = [];
 
   let entryPointLabels: string[] = [];
   let entryPointListItems: QuickPickItem[] = [];
@@ -228,7 +225,7 @@ export async function newDestination(
   let deploymentNames: string[] = [];
 
   let newConfig: Configuration | undefined;
-  let newOrSelectedCredential: Account | undefined;
+  let newOrSelectedCredential: Credential | undefined;
   let newDeployment: PreDeployment | undefined;
 
   const createNewCredentialLabel = "Create a New Credential";
@@ -268,29 +265,23 @@ export async function newDestination(
     return step.existingCredentials.singleEntryPoint;
   };
 
-  const getAccounts = new Promise<void>(async (resolve, reject) => {
+  const getCredentials = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.accounts.getAll();
-      accounts = response.data;
-      accountListItems = accounts.map((account) => ({
+      const response = await api.credentials.list();
+      credentials = response.data;
+      credentialListItems = credentials.map((credential) => ({
         iconPath: new ThemeIcon("key"),
-        label: account.name,
-        description: account.source,
-        detail:
-          account.authType === AccountAuthType.API_KEY
-            ? "Using API Key"
-            : account.accountName
-              ? `Using Token Auth for ${account.accountName}`
-              : `Using Token Auth`,
+        label: credential.name,
+        description: credential.url,
       }));
-      accountListItems.push({
+      credentialListItems.push({
         iconPath: new ThemeIcon("plus"),
         label: createNewCredentialLabel,
         detail: "Select this option to create a destination to a new server",
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "initWorkspace, accounts.getAll",
+        "initWorkspace, credentials.getAll",
         error,
       );
       window.showErrorMessage(
@@ -382,7 +373,7 @@ export async function newDestination(
   });
 
   const apisComplete = Promise.all([
-    getAccounts,
+    getCredentials,
     getEntryPoints,
     getConfigurations,
     getDeployments,
@@ -511,7 +502,7 @@ export async function newDestination(
       totalSteps: step.totalSteps,
       placeholder:
         "Select the credential you want to use to deploy. (Use this field to filter selections.)",
-      items: accountListItems,
+      items: credentialListItems,
       activeItem:
         typeof state.data.credentialName !== "string"
           ? state.data.credentialName
@@ -570,14 +561,14 @@ export async function newDestination(
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          const existingAccount = accounts.find(
-            (account) =>
+          const existingCredential = credentials.find(
+            (credential) =>
               normalizeURL(input).toLowerCase() ===
-              normalizeURL(account.url).toLowerCase(),
+              normalizeURL(credential.url).toLowerCase(),
           );
-          if (existingAccount) {
+          if (existingCredential) {
             return Promise.resolve({
-              message: `Server URL is already assigned to your credential "${existingAccount.name}". Only one credential per unique URL is allowed.`,
+              message: `Server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed.`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
@@ -630,7 +621,7 @@ export async function newDestination(
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          if (accounts.find((account) => account.name === input)) {
+          if (credentials.find((credential) => credential.name === input)) {
             return Promise.resolve({
               message:
                 "Nickname is already in use. Please enter a unique value.",
@@ -835,24 +826,13 @@ export async function newDestination(
       return;
     }
     try {
-      // NEED an account to be returned from this API
+      // NEED an credential to be returned from this API
       // and assigned to newOrExistingCredential
-      await api.credentials.createOrUpdate({
-        name: state.data.newCredentialName,
-        url: state.data.newCredentialUrl,
-        apiKey: state.data.newCredentialApiKey,
-      });
-      // This will be replaced with the API change
-      newOrSelectedCredential = {
-        name: state.data.newCredentialName,
-        url: state.data.newCredentialUrl,
-        type: ServerType.CONNECT,
-        authType: AccountAuthType.API_KEY,
-        accountName: "",
-        caCert: "",
-        insecure: false,
-        source: AccountSource.KEYCHAIN,
-      };
+      newOrSelectedCredential = await api.credentials.create(
+        state.data.newCredentialName,
+        state.data.newCredentialUrl,
+        state.data.newCredentialApiKey,
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("credentials::add", error);
       window.showInformationMessage(summary);
@@ -864,8 +844,8 @@ export async function newDestination(
       targetName = state.data.credentialName.label;
     }
     if (targetName) {
-      newOrSelectedCredential = accounts.find(
-        (account) => account.name === targetName,
+      newOrSelectedCredential = credentials.find(
+        (credential) => credential.name === targetName,
       );
     }
   }

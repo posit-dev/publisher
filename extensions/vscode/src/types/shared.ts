@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Account, Configuration, Deployment, PreDeployment } from "../api";
+import { Credential, Configuration, Deployment, PreDeployment } from "../api";
 
 export type HomeViewState = {
   deploymentName?: string;
@@ -17,5 +17,5 @@ export type DestinationNames = {
 export type DestinationObjects = {
   deployment: Deployment | PreDeployment;
   configuration: Configuration;
-  credential: Account;
+  credential: Credential;
 };

@@ -21,8 +21,8 @@ import {
 import { isAxiosError } from "axios";
 
 import {
-  Account,
   Configuration,
+  Credential,
   Deployment,
   EventStreamMessage,
   FileAction,
@@ -87,7 +87,8 @@ export class HomeViewProvider implements WebviewViewProvider {
     | PreDeployment
     | PreDeploymentWithConfig
   )[] = [];
-  private _credentials: Account[] = [];
+
+  private _credentials: Credential[] = [];
   private _configs: Configuration[] = [];
   private root: WorkspaceFolder | undefined;
   private _webviewView?: WebviewView;
@@ -352,11 +353,11 @@ export class HomeViewProvider implements WebviewViewProvider {
   private async _refreshCredentialData() {
     try {
       const api = await useApi();
-      const response = await api.accounts.getAll();
+      const response = await api.credentials.list();
       this._credentials = response.data;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "_refreshCredentialData::accounts.getAll",
+        "_refreshCredentialData::credentials.list",
         error,
       );
       window.showInformationMessage(summary);
@@ -460,7 +461,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     return this.getDeploymentByName(savedState.deploymentName);
   }
 
-  private _getActiveCredential(): Account | undefined {
+  private _getActiveCredential(): Credential | undefined {
     const savedState = this._getSelectionState();
     return this.getCredentialByName(savedState.credentialName);
   }

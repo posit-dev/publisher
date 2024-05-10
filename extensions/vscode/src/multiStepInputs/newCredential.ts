@@ -9,7 +9,7 @@ import {
 
 import { InputBoxValidationSeverity, ProgressLocation, window } from "vscode";
 
-import { Account, useApi } from "src/api";
+import { useApi, Credential } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { formatURL } from "src/utils/url";
 import { validateApiKey } from "src/utils/apiKeys";
@@ -21,17 +21,17 @@ export async function newCredential(
   // API Calls and results
   // ***************************************************************
   const api = await useApi();
-  let accounts: Account[] = [];
+  let credentials: Credential[] = [];
 
-  const getAccounts = new Promise<void>(async (resolve, reject) => {
+  const getCredentials = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.accounts.getAll();
+      const response = await api.credentials.list();
       if (response.data) {
-        accounts = response.data;
+        credentials = response.data;
       }
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "newCredentials, accounts.getAll",
+        "newCredentials, credentials.list",
         error,
       );
       window.showInformationMessage(
@@ -48,7 +48,7 @@ export async function newCredential(
       location: viewId ? { viewId } : ProgressLocation.Window,
     },
     async () => {
-      return getAccounts;
+      return getCredentials;
     },
   );
 
@@ -128,12 +128,12 @@ export async function newCredential(
             severity: InputBoxValidationSeverity.Error,
           });
         }
-        const existingAccount = accounts.find(
-          (account) => input.toLowerCase() === account.url.toLowerCase(),
+        const existingCredential = credentials.find(
+          (cred) => input.toLowerCase() === cred.url.toLowerCase(),
         );
-        if (existingAccount) {
+        if (existingCredential) {
           return Promise.resolve({
-            message: `Server URL is already assigned to your credential "${existingAccount.name}". Only one credential per unique URL is allowed.`,
+            message: `Server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed.`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -178,7 +178,7 @@ export async function newCredential(
             severity: InputBoxValidationSeverity.Error,
           });
         }
-        if (accounts.find((account) => account.name === input)) {
+        if (credentials.find((cred) => cred.name === input)) {
           return Promise.resolve({
             message: "Nickname is already in use. Please enter a unique value.",
             severity: InputBoxValidationSeverity.Error,
@@ -248,7 +248,7 @@ export async function newCredential(
   // ***************************************************************
 
   try {
-    await getAccounts;
+    await getCredentials;
   } catch {
     // errors have already been displayed by the underlying promises..
     return;
@@ -273,11 +273,11 @@ export async function newCredential(
   // create the credential!
   try {
     const api = await useApi();
-    await api.credentials.createOrUpdate({
-      name: state.data.name,
-      url: state.data.url,
-      apiKey: state.data.apiKey,
-    });
+    await api.credentials.create(
+      state.data.name,
+      state.data.url,
+      state.data.apiKey,
+    );
   } catch (error: unknown) {
     const summary = getSummaryStringFromError("credentials::add", error);
     window.showInformationMessage(summary);

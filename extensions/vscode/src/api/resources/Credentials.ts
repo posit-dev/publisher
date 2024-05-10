@@ -11,24 +11,38 @@ export class Credentials {
   }
 
   // Returns:
+  // 200 - accepted
+  // 500 - internal server error
+  list() {
+    return this.client.get<Credential[]>(`credentials`);
+  }
+
+  // Returns:
   // 201 - accepted
   // 400 - bad request
   // 409 - conflict
   // 500 - internal server error
-  createOrUpdate(cred: Credential) {
-    return this.client.post(`credentials`, cred);
+  create(name: string, url: string, apiKey: string) {
+    return this.client.post<Credential>(`credentials`, {
+      name,
+      url,
+      apiKey,
+    });
+  }
+
+  // Returns:
+  // 200 - accepted
+  // 404 - not found
+  // 500 - internal server error
+  get(guid: string) {
+    return this.client.get<Credential>(`credentials/${guid}`);
   }
 
   // Returns:
   // 204 - no content
-  // 400 - bad request
   // 404 - not found
   // 500 - internal server error
-  delete(name: string) {
-    return this.client.delete(`credentials`, {
-      params: {
-        name,
-      },
-    });
+  delete(guid: string) {
+    return this.client.delete(`credentials/${guid}`);
   }
 }
