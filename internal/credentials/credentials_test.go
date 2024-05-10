@@ -12,18 +12,20 @@ import (
 func TestSet(t *testing.T) {
 	keyring.MockInit()
 	cs := CredentialsService{}
-	cred := Credential{Name: "example", URL: "https://example.com", ApiKey: "example"}
-	err := cs.Set(cred)
+	cred, err := cs.Set("example", "https://example.com", "12345")
 	assert.NoError(t, err)
+	assert.NotNil(t, cred.GUID)
+	assert.Equal(t, cred.Name, "example")
+	assert.Equal(t, cred.URL, "https://example.com")
+	assert.Equal(t, cred.ApiKey, "12345")
 }
 
 func TestSetURLCollisionError(t *testing.T) {
 	keyring.MockInit()
-	url := "https://example.com"
 	cs := CredentialsService{}
-	err := cs.Set(Credential{Name: "original", URL: url, ApiKey: "example"})
+	_, err := cs.Set("example", "https://example.com", "12345")
 	assert.NoError(t, err)
-	err = cs.Set(Credential{Name: "duplicate", URL: url, ApiKey: "example"})
+	_, err = cs.Set("example", "https://example.com", "12345")
 	assert.Error(t, err)
 	assert.IsType(t, &URLCollisionError{}, err)
 }
@@ -31,33 +33,31 @@ func TestSetURLCollisionError(t *testing.T) {
 func TestGet(t *testing.T) {
 	keyring.MockInit()
 	cs := CredentialsService{}
-	cred := Credential{Name: "example", URL: "https://example.com", ApiKey: "example"}
 
 	// error if missing
 	_, err := cs.Get("example")
 	assert.Error(t, err)
 
 	// pass if exists
-	err = cs.Set(cred)
+	cred, err := cs.Set("example", "https://example.com", "12345")
 	assert.NoError(t, err)
-	res, err := cs.Get("example")
+	res, err := cs.Get(cred.GUID)
 	assert.NoError(t, err)
-	assert.Equal(t, *res, cred)
+	assert.Equal(t, res, cred)
 
 }
 
 func TestDelete(t *testing.T) {
 	keyring.MockInit()
 	cs := CredentialsService{}
-	cred := Credential{Name: "example", URL: "https://example.com", ApiKey: "example"}
-	err := cs.Set(cred)
+	cred, err := cs.Set("example", "https://example.com", "12345")
 	assert.NoError(t, err)
 
 	// no error if exists
-	err = cs.Delete("example")
+	err = cs.Delete(cred.GUID)
 	assert.NoError(t, err)
 
 	// err if missing
-	err = cs.Delete("example")
+	err = cs.Delete(cred.GUID)
 	assert.Error(t, err)
 }

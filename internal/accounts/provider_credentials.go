@@ -13,7 +13,7 @@ func NewCredentialsProvider() *CredentialsProvider {
 }
 
 func (p *CredentialsProvider) Load() ([]Account, error) {
-	creds, err := p.cs.Load()
+	creds, err := p.cs.List()
 	if err != nil {
 		return nil, err
 	}

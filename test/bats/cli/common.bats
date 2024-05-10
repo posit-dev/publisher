@@ -15,9 +15,27 @@ load '../node_modules/bats-assert/load'
     assert_line "  requirements create [<path>]"
     assert_line "  requirements show [<path>]"
     assert_line "  version"
-    assert_line "  list-accounts"
-    assert_line "  test-account <account-name>"
     assert_line --partial "<command> --help\" for more information on a command."
+}
+
+@test "credentials --help command succeeds" {
+    run ${EXE} credentials -h
+}
+
+@test "credentials create --help command succeeds" {
+    run ${EXE} credentials create -h
+}
+
+@test "credentials delete --help command succeeds" {
+    run ${EXE} credentials delete -h
+}
+
+@test "credentials --help get command succeeds" {
+    run ${EXE} credentials get -h
+}
+
+@test "credentials list --help command succeeds" {
+    run ${EXE} credentials list -h
 }
 
 @test "init --help command succeeds" {
@@ -84,20 +102,6 @@ load '../node_modules/bats-assert/load'
     assert_line "                       Python-based. Default is the Python 3 on your PATH."
 }
 
-@test "list-accounts --help command succeeds" {
-    run ${EXE} list-accounts -h
-    assert_success
-    assert_line "  -h, --help           Show context-sensitive help."
-    assert_line "  -v, --verbose=INT    Enable verbose logging. Use -vv or --verbose=2 for debug"
-}
-
-@test "test-account --help command succeeds" {
-    run ${EXE} test-account -h
-    assert_success
-    assert_line "  -h, --help           Show context-sensitive help."
-    assert_line "  -v, --verbose=INT    Enable verbose logging. Use -vv or --verbose=2 for debug"
-}
-
 @test "test version" {
     run ${EXE} version
     assert_success
@@ -106,5 +110,5 @@ load '../node_modules/bats-assert/load'
 @test "test missing command" {
     run ${EXE}
     assert_failure
-    assert_line --partial "error: expected one of \"list-accounts\",  \"test-account\",  \"init\",  \"deploy\",  \"redeploy\",  ..."
+    assert_line --partial 'publisher: error: expected one of "credentials",  "deploy",  "init",  "redeploy",  "requirements",  ...'
 }

@@ -17,7 +17,7 @@ import {
   window,
 } from "vscode";
 
-import { AccountAuthType, useApi, ConfigurationDetails } from "src/api";
+import { useApi, ConfigurationDetails } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   untitledConfigurationName,
@@ -39,7 +39,7 @@ export async function initWorkspace(
   // ***************************************************************
   const api = await useApi();
 
-  let accountListItems: QuickPickItem[] = [];
+  let credsListItems: QuickPickItem[] = [];
 
   let entryPointLabels: string[] = [];
   let entryPointListItems: QuickPickItem[] = [];
@@ -48,19 +48,15 @@ export async function initWorkspace(
 
   const getAccounts = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.accounts.getAll();
-      accountListItems = response.data.map((account) => ({
+      const response = await api.credentials.list();
+      credsListItems = response.data.map((cred) => ({
         iconPath: new ThemeIcon("account"),
-        label: account.name,
-        description: account.source,
-        detail:
-          account.authType === AccountAuthType.API_KEY
-            ? "Using API Key"
-            : `Using Token Auth for ${account.accountName}`,
+        label: cred.name,
+        description: cred.url,
       }));
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "initWorkspace, accounts.getAll",
+        "initWorkspace, credentials.list",
         error,
       );
       window.showErrorMessage(
@@ -68,7 +64,7 @@ export async function initWorkspace(
       );
       return reject();
     }
-    if (accountListItems.length === 0) {
+    if (credsListItems.length === 0) {
       window.showErrorMessage(
         `Unable to continue with no credentials.\n` +
           `Establish account credentials, then try again.`,
@@ -227,7 +223,7 @@ export async function initWorkspace(
   // ***************************************************************
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
     // skip if we only have one choice.
-    if (accountListItems.length > 1) {
+    if (credsListItems.length > 1) {
       const thisStepNumber = assignStep(state, "pickCredentials");
       const pick = await input.showQuickPick({
         title: state.title,
@@ -235,7 +231,7 @@ export async function initWorkspace(
         totalSteps: state.totalSteps,
         placeholder:
           "Select the credential you want to use to deploy. (Use this field to filter selections.)",
-        items: accountListItems,
+        items: credsListItems,
         activeItem:
           typeof state.data.credentialName !== "string"
             ? state.data.credentialName
@@ -248,7 +244,7 @@ export async function initWorkspace(
       state.lastStep = thisStepNumber;
       return (input: MultiStepInput) => inputEntryPointSelection(input, state);
     } else {
-      state.data.credentialName = accountListItems[0];
+      state.data.credentialName = credsListItems[0];
       // We're skipping this step, so we must silently just jump to the next step
       return inputEntryPointSelection(input, state);
     }
