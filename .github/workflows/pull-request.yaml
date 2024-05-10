@@ -36,6 +36,3 @@ jobs:
     needs: build
     secrets: inherit
     uses: ./.github/workflows/bats.yaml
-  cypress:
-    needs: build
-    uses: ./.github/workflows/ui.yaml

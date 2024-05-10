@@ -133,13 +133,6 @@ cover:
 
     go tool cover -html=cover.out
 
-# Executes commands in ./test/cy/justfile. Equivalent to `just test/cy/`.
-cy *args:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just test/cy/{{ args }}
 
 # Prints the executable path for this operating system. It may not exist yet (see `just build`).
 executable-path os="$(just os)" arch="$(just arch)":
