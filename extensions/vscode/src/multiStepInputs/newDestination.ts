@@ -58,21 +58,21 @@ const steps: Record<string, possibleSteps | undefined> = {
     newCredentials: {
       singleEntryPoint: {
         step: 1,
-        totalSteps: 7,
+        totalSteps: 6,
       },
       multipleEntryPoints: {
         step: 1,
-        totalSteps: 8,
+        totalSteps: 7,
       },
     },
     existingCredentials: {
       singleEntryPoint: {
         step: 1,
-        totalSteps: 4,
+        totalSteps: 3,
       },
       multipleEntryPoints: {
         step: 1,
-        totalSteps: 5,
+        totalSteps: 4,
       },
     },
   },
@@ -80,21 +80,21 @@ const steps: Record<string, possibleSteps | undefined> = {
     newCredentials: {
       singleEntryPoint: {
         step: 2,
-        totalSteps: 7,
+        totalSteps: 6,
       },
       multipleEntryPoints: {
         step: 2,
-        totalSteps: 8,
+        totalSteps: 7,
       },
     },
     existingCredentials: {
       singleEntryPoint: {
         step: 2,
-        totalSteps: 4,
+        totalSteps: 3,
       },
       multipleEntryPoints: {
         step: 2,
-        totalSteps: 5,
+        totalSteps: 4,
       },
     },
   },
@@ -102,21 +102,21 @@ const steps: Record<string, possibleSteps | undefined> = {
     newCredentials: {
       singleEntryPoint: {
         step: 3,
-        totalSteps: 7,
+        totalSteps: 6,
       },
       multipleEntryPoints: {
         step: 3,
-        totalSteps: 8,
+        totalSteps: 7,
       },
     },
     existingCredentials: {
       singleEntryPoint: {
         step: 0,
-        totalSteps: 4,
+        totalSteps: 3,
       },
       multipleEntryPoints: {
         step: 0,
-        totalSteps: 5,
+        totalSteps: 4,
       },
     },
   },
@@ -124,21 +124,21 @@ const steps: Record<string, possibleSteps | undefined> = {
     newCredentials: {
       singleEntryPoint: {
         step: 4,
-        totalSteps: 7,
+        totalSteps: 6,
       },
       multipleEntryPoints: {
         step: 4,
-        totalSteps: 8,
+        totalSteps: 7,
       },
     },
     existingCredentials: {
       singleEntryPoint: {
         step: 0,
-        totalSteps: 4,
+        totalSteps: 3,
       },
       multipleEntryPoints: {
         step: 0,
-        totalSteps: 5,
+        totalSteps: 4,
       },
     },
   },
@@ -146,21 +146,21 @@ const steps: Record<string, possibleSteps | undefined> = {
     newCredentials: {
       singleEntryPoint: {
         step: 5,
-        totalSteps: 7,
+        totalSteps: 6,
       },
       multipleEntryPoints: {
         step: 5,
-        totalSteps: 8,
+        totalSteps: 7,
       },
     },
     existingCredentials: {
       singleEntryPoint: {
         step: 0,
-        totalSteps: 4,
+        totalSteps: 3,
       },
       multipleEntryPoints: {
         step: 0,
-        totalSteps: 5,
+        totalSteps: 4,
       },
     },
   },
@@ -168,21 +168,21 @@ const steps: Record<string, possibleSteps | undefined> = {
     newCredentials: {
       singleEntryPoint: {
         step: 0,
-        totalSteps: 7,
+        totalSteps: 6,
       },
       multipleEntryPoints: {
         step: 6,
-        totalSteps: 8,
+        totalSteps: 7,
       },
     },
     existingCredentials: {
       singleEntryPoint: {
         step: 0,
-        totalSteps: 4,
+        totalSteps: 3,
       },
       multipleEntryPoints: {
         step: 3,
-        totalSteps: 5,
+        totalSteps: 4,
       },
     },
   },
@@ -190,43 +190,21 @@ const steps: Record<string, possibleSteps | undefined> = {
     newCredentials: {
       singleEntryPoint: {
         step: 6,
-        totalSteps: 7,
+        totalSteps: 6,
       },
       multipleEntryPoints: {
         step: 7,
-        totalSteps: 8,
+        totalSteps: 7,
       },
     },
     existingCredentials: {
       singleEntryPoint: {
         step: 3,
-        totalSteps: 4,
+        totalSteps: 3,
       },
       multipleEntryPoints: {
         step: 4,
-        totalSteps: 5,
-      },
-    },
-  },
-  promptToCreateDestination: {
-    newCredentials: {
-      singleEntryPoint: {
-        step: 7,
-        totalSteps: 7,
-      },
-      multipleEntryPoints: {
-        step: 8,
-        totalSteps: 8,
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 4,
         totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        step: 5,
-        totalSteps: 5,
       },
     },
   },
@@ -435,7 +413,6 @@ export async function newDestination(
   // - Get the API key
   // Select the entrypoint, if there is more than one
   // Name the config file to use
-  // Prompt if want to continue with creation
   // Call APIs and hopefully succeed at everything
   // Return the names of the deployment, config and credentials
 
@@ -462,7 +439,6 @@ export async function newDestination(
         newCredentialApiKey: undefined, // eventual type is string
         entryPoint: undefined, // eventual type is QuickPickItem
         configFileName: undefined, // eventual type is string
-        promptToCreateDestination: undefined, // eventual type is QuickPickItem
       },
       promptStepNumbers: {},
     };
@@ -810,48 +786,6 @@ export async function newDestination(
     });
 
     state.data.configFileName = configFileName;
-    return (input: MultiStepInput) => promptToCreateDestination(input, state);
-  }
-
-  // ***************************************************************
-  // Step #8 - maybe:
-  // Does the user want to continue creating this destination
-  // ***************************************************************
-  async function promptToCreateDestination(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    const step = getStepInfo("promptToCreateDestination", state);
-    if (!step) {
-      throw new Error(
-        "newDestination::promptToCreateDestination step info not found.",
-      );
-    }
-    const pick = await input.showQuickPick({
-      title: state.title,
-      step: step.step,
-      totalSteps: step.totalSteps,
-      placeholder:
-        "Do you still wish to create the destination? (Use this field to filter selections.)",
-      items: [
-        {
-          label: "Yes",
-          description: "Proceed with creation of a new destination",
-        },
-        {
-          label: "No",
-          description: "Abort this process and create nothing",
-        },
-      ],
-      activeItem:
-        typeof state.data.promptToCreateDestination !== "string"
-          ? state.data.promptToCreateDestination
-          : undefined,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-    state.data.promptToCreateDestination = pick;
     // last step, nothing gets returned.
   }
 
@@ -881,14 +815,8 @@ export async function newDestination(
     state.data.entryPoint === undefined ||
     !isQuickPickItem(state.data.entryPoint) ||
     state.data.configFileName === undefined ||
-    typeof state.data.configFileName !== "string" ||
-    state.data.promptToCreateDestination === undefined ||
-    !isQuickPickItem(state.data.promptToCreateDestination)
+    typeof state.data.configFileName !== "string"
   ) {
-    return;
-  }
-
-  if (state.data.promptToCreateDestination.label !== "Yes") {
     return;
   }
 
