@@ -78,8 +78,7 @@ export async function newDeployment(
     if (accountListItems.length === 0) {
       window.showInformationMessage(
         `Unable to continue with no credentials.\n` +
-          `Establish account credentials using rsconnect (R package) or\n` +
-          `rsconnect-python (Python package) and then retry operation.`,
+          `Establish account credentials, then try again.`,
       );
       return reject();
     }
