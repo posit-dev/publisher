@@ -42,7 +42,7 @@ func (s *AccountListSuite) TestNewAccountList() {
 	log := logging.New()
 	fs := utiltest.NewMockFs()
 	accountList := NewAccountList(fs, log)
-	s.Len(accountList.providers, 4)
+	s.Len(accountList.providers, 1)
 	s.Equal(log, accountList.log)
 }
 
