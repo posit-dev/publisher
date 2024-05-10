@@ -22,8 +22,8 @@ import { HelpAndFeedbackTreeDataProvider } from "src/views/helpAndFeedback";
 import { LogsTreeDataProvider } from "src/views/logs";
 import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
-import { initWorkspaceWithFixedNames } from "src/multiStepInputs/initWorkspace";
 import { getSummaryStringFromError } from "src/utils/errors";
+import { newDestination } from "./multiStepInputs/newDestination";
 
 const STATE_CONTEXT = "posit.publish.state";
 const MISSING_CONTEXT = "posit.publish.missing";
@@ -172,7 +172,7 @@ export async function activate(context: ExtensionContext) {
   context.subscriptions.push(
     commands.registerCommand(INIT_PROJECT_COMMAND, async (viewId?: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
-      await initWorkspaceWithFixedNames(viewId);
+      await newDestination(viewId);
       setInitializationInProgressContext(InitializationInProgress.false);
     }),
   );

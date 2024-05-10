@@ -56,7 +56,7 @@ export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
   const api = await useApi();
   let entryPointLabels: string[] = [];
-  let entryPointListItems: QuickPickItem[] = [];
+  let entryPointListItems: QuickPickItemWithIndex[] = [];
   const entryPointLabelMap = new Map<string, ConfigurationDetails>();
   let configDetails: ConfigurationDetails[] = [];
   let configNames: string[] = [];
@@ -276,7 +276,7 @@ export async function newConfig(title: string, viewId?: string) {
   // Create the Config File
   let newConfig: Configuration | undefined = undefined;
   try {
-    const selectedConfig = configs[state.data.entryPoint.index];
+    const selectedConfig = configDetails[state.data.entryPoint.index];
     if (!selectedConfig) {
       window.showErrorMessage(
         `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}`,

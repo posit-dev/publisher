@@ -281,7 +281,7 @@ export async function newDestination(
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "initWorkspace, credentials.getAll",
+        "newDestination, credentials.getAll",
         error,
       );
       window.showErrorMessage(
@@ -311,7 +311,7 @@ export async function newDestination(
       }
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "initWorkspace, configurations.inspect",
+        "newDestination, configurations.inspect",
         error,
       );
       window.showErrorMessage(
@@ -828,11 +828,12 @@ export async function newDestination(
     try {
       // NEED an credential to be returned from this API
       // and assigned to newOrExistingCredential
-      newOrSelectedCredential = await api.credentials.create(
+      const response = await api.credentials.create(
         state.data.newCredentialName,
         state.data.newCredentialUrl,
         state.data.newCredentialApiKey,
       );
+      newOrSelectedCredential = response.data;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("credentials::add", error);
       window.showInformationMessage(summary);
