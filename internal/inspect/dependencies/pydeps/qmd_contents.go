@@ -37,7 +37,7 @@ func GetQuartoPythonCode(content string) string {
 	return strings.Join(codeLines, "\n")
 }
 
-func detectMarkdownLanguagesInContent(content []byte) (bool, bool) {
+func DetectMarkdownLanguagesInContent(content []byte) (bool, bool) {
 	// Find code chunks: blocks delimited by ```{language}...```
 	// or inline code as `language...`
 	// RE structure:
@@ -67,7 +67,7 @@ func DetectMarkdownLanguages(base util.AbsolutePath) (bool, bool, error) {
 		if err != nil {
 			return false, false, err
 		}
-		fileNeedsR, fileNeedsPython := detectMarkdownLanguagesInContent(content)
+		fileNeedsR, fileNeedsPython := DetectMarkdownLanguagesInContent(content)
 		needsR = needsR || fileNeedsR
 		needsPython = needsPython || fileNeedsPython
 

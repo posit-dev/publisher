@@ -1,0 +1,24 @@
+{
+  "quarto": {
+    "version": "1.4.553"
+  },
+  "dir": "/Users/mike/rstudio/connect-content/bundles/quarto-proj-none",
+  "engines": ["markdown"],
+  "config": {
+    "project": {
+      "title": "quarto-proj-none"
+    },
+    "editor": "visual",
+    "language": {}
+  },
+  "files": {
+    "input": [
+      "/Users/mike/rstudio/connect-content/bundles/quarto-proj-none/quarto-proj-none.qmd"
+    ],
+    "resources": [],
+    "config": [
+      "/Users/mike/rstudio/connect-content/bundles/quarto-proj-none/_quarto.yml"
+    ],
+    "configResources": []
+  }
+}

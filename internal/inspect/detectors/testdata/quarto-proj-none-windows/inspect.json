@@ -1,0 +1,20 @@
+{
+  "quarto": {
+    "version": "1.4.553"
+  },
+  "dir": "C:\\Users\\somebody\\quarto-proj-none",
+  "engines": ["markdown"],
+  "config": {
+    "project": {
+      "title": "quarto-proj-none"
+    },
+    "editor": "visual",
+    "language": {}
+  },
+  "files": {
+    "input": ["C:\\Users\\somebody\\quarto-proj-none\\quarto-proj-none.qmd"],
+    "resources": [],
+    "config": ["C:\\Users\\somebody\\quarto-proj-none\\_quarto.yml"],
+    "configResources": []
+  }
+}

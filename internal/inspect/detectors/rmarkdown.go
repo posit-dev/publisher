@@ -3,7 +3,6 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -33,12 +32,18 @@ func NewRMarkdownDetector(log logging.Logger) *RMarkdownDetector {
 // (this pattern allows it to be followed by optional whitespace)
 var rmdMetaRE = regexp.MustCompile(`(?s)^---\s*\n(.*\n)---\s*\n`)
 
-type RMarkdownMetadata map[string]any
+type RMarkdownMetadata struct {
+	// Only	the	fields we need are defined here
+	Title   string         `yaml:"title"`
+	Runtime string         `yaml:"runtime"`
+	Params  map[string]any `yaml:"params"`
+	Server  any            `yaml:"server"` // string or a map
+}
 
-func (d *RMarkdownDetector) getRmdMetadata(rmdContent string) (RMarkdownMetadata, error) {
+func (d *RMarkdownDetector) getRmdMetadata(rmdContent string) (*RMarkdownMetadata, error) {
 	m := rmdMetaRE.FindStringSubmatch(rmdContent)
 	if len(m) < 2 {
-		return RMarkdownMetadata{}, nil
+		return nil, nil
 	}
 	var metadata RMarkdownMetadata
 	decoder := yaml.NewDecoder(strings.NewReader(m[1]))
@@ -46,15 +51,33 @@ func (d *RMarkdownDetector) getRmdMetadata(rmdContent string) (RMarkdownMetadata
 	if err != nil {
 		return nil, err
 	}
-	return metadata, nil
+	return &metadata, nil
 }
 
-func (d *RMarkdownDetector) getRmdFileMetadata(path util.AbsolutePath) (RMarkdownMetadata, error) {
+func (d *RMarkdownDetector) getRmdFileMetadata(path util.AbsolutePath) (*RMarkdownMetadata, error) {
 	content, err := path.ReadFile()
 	if err != nil {
 		return nil, err
 	}
 	return d.getRmdMetadata(string(content))
+}
+
+func isShinyRmd(metadata *RMarkdownMetadata) bool {
+	if metadata == nil {
+		return false
+	}
+	if strings.HasPrefix(metadata.Runtime, "shiny") {
+		return true
+	}
+	serverString, ok := metadata.Server.(string)
+	if ok && serverString == "shiny" {
+		return true
+	}
+	serverMap, ok := metadata.Server.(map[string]any)
+	if ok && serverMap["type"] == "shiny" {
+		return true
+	}
+	return false
 }
 
 func (d *RMarkdownDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
@@ -78,18 +101,23 @@ func (d *RMarkdownDetector) InferType(base util.AbsolutePath) ([]*config.Config,
 			return nil, err
 		}
 		cfg := config.New()
-		cfg.Type = config.ContentTypeRMarkdown
 		cfg.Entrypoint = entrypoint.String()
 
-		title := metadata["title"]
-		if title != nil {
-			cfg.Title = fmt.Sprintf("%s", title)
+		if isShinyRmd(metadata) {
+			cfg.Type = config.ContentTypeRMarkdownShiny
+		} else {
+			cfg.Type = config.ContentTypeRMarkdown
 		}
 
-		params := metadata["params"]
-		if params != nil {
+		title := metadata.Title
+		if title != "" {
+			cfg.Title = title
+		}
+
+		if metadata.Params != nil {
 			cfg.HasParameters = true
 		}
+
 		needsR, needsPython, err := pydeps.DetectMarkdownLanguages(base)
 		if err != nil {
 			return nil, err

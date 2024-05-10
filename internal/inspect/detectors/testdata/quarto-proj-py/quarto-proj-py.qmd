@@ -1,0 +1,15 @@
+---
+title: "quarto-proj-py"
+jupyter: python3
+resource_files:
+- _quarto.yml
+- requirements.txt
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+```{python}
+1 + 1
+```

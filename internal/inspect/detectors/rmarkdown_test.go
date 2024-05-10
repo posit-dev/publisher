@@ -146,3 +146,118 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 		R:             &config.R{},
 	}, configs[0])
 }
+
+var shinyRmdRuntimeContent = fmt.Sprintf(`---
+title: Interactive Report
+runtime: shiny
+---
+
+# A Very Interactive Report
+
+%s{r, echo=TRUE}
+library(foo)
+%s
+`, backticks, backticks)
+
+func (s *RMarkdownSuite) TestInferTypeShinyRmdRuntime() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte(shinyRmdRuntimeContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	configs, err := detector.InferType(base)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdownShiny,
+		Title:      "Interactive Report",
+		Entrypoint: filename,
+		Validate:   true,
+		Files:      []string{"*"},
+		R:          &config.R{},
+	}, configs[0])
+}
+
+var shinyRmdServerContent = fmt.Sprintf(`---
+title: Interactive Report
+server: shiny
+---
+
+# A Very Interactive Report
+
+%s{r, echo=TRUE}
+library(foo)
+%s
+`, backticks, backticks)
+
+func (s *RMarkdownSuite) TestInferTypeShinyRmdServer() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte(shinyRmdServerContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	configs, err := detector.InferType(base)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdownShiny,
+		Title:      "Interactive Report",
+		Entrypoint: filename,
+		Validate:   true,
+		Files:      []string{"*"},
+		R:          &config.R{},
+	}, configs[0])
+}
+
+var shinyRmdServerTypeContent = fmt.Sprintf(`---
+title: Interactive Report
+server:
+    type: shiny
+---
+
+# A Very Interactive Report
+
+%s{r, echo=TRUE}
+library(foo)
+%s
+`, backticks, backticks)
+
+func (s *RMarkdownSuite) TestInferTypeShinyRmdServerType() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte(shinyRmdServerTypeContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	configs, err := detector.InferType(base)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdownShiny,
+		Title:      "Interactive Report",
+		Entrypoint: filename,
+		Validate:   true,
+		Files:      []string{"*"},
+		R:          &config.R{},
+	}, configs[0])
+}
