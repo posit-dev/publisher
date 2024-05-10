@@ -67,7 +67,7 @@ func isDevVersion(pkg *Package, availablePackages []AvailablePackage) bool {
 	return cmp > 0
 }
 
-func findRepoName(repoUrl RepoURL, repos []Repository) string {
+func findRepoNameByURL(repoUrl RepoURL, repos []Repository) string {
 	for _, repo := range repos {
 		if repo.URL == repoUrl {
 			return repo.Name
@@ -111,8 +111,8 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 		} else {
 			// Repository comes from DESCRIPTION and is set by repo, so can be
 			// anything. So we must look up from the package name.
-			out.Source = findRepoName(pkg.Repository, repos)
 			out.Repository = findRepoUrl(pkg.Package, availablePackages)
+			out.Source = findRepoNameByURL(RepoURL(out.Repository), repos)
 		}
 	case "Bioconductor":
 		out.Repository = findRepoUrl(pkg.Package, availablePackages)
@@ -192,7 +192,14 @@ func (m *defaultPackageMapper) GetManifestPackages(
 	}
 
 	manifestPackages := bundles.PackageMap{}
+	names := []PackageName{}
 	for _, pkg := range lockfile.Packages {
+		names = append(names, pkg.Package)
+	}
+	slices.Sort(names)
+	for _, pkgName := range names {
+		pkg := lockfile.Packages[pkgName]
+
 		manifestPkg := toManifestPackage(&pkg, repos, available, biocPackages)
 		description, err := readPackageDescription(pkg.Package, libPaths)
 		if err != nil {
