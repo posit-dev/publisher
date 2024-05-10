@@ -9,8 +9,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: just web install
-      - run: just web build
       - run: just build
       - uses: actions/upload-artifact@v4
         id: upload

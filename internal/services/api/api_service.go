@@ -12,9 +12,7 @@ import (
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/services/api/files"
 	"github.com/rstudio/connect-client/internal/services/api/paths"
-	"github.com/rstudio/connect-client/internal/services/middleware"
 	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/connect-client/web"
 
 	"github.com/gorilla/mux"
 	"github.com/r3labs/sse/v2"
@@ -147,13 +145,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	// POST /api/requirements
 	r.Handle(ToPath("requirements"), NewPostRequirementsHandler(base, log)).
 		Methods(http.MethodPost)
-
-	// GET /<anything>
-	// Serves static files from /web/dist.
-	fileHandler := middleware.InsertPrefix(web.Handler, web.Prefix)
-	r.PathPrefix("/").
-		Handler(middleware.ServeIndexOn404(fileHandler, "/")).
-		Methods("GET")
 
 	c := cors.AllowAll().Handler(r)
 	return c.ServeHTTP

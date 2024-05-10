@@ -8,8 +8,6 @@ jobs:
   # Unit Tests
   agent:
     uses: ./.github/workflows/agent.yaml
-  web:
-    uses: ./.github/workflows/web.yaml
   vscode:
     uses: ./.github/workflows/vscode.yaml
 
@@ -34,6 +32,3 @@ jobs:
     needs: build
     secrets: inherit
     uses: ./.github/workflows/bats.yaml
-  cypress:
-    needs: build
-    uses: ./.github/workflows/ui.yaml
