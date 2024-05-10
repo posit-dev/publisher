@@ -15,6 +15,7 @@
     <div
       class="destination-control"
       :disabled="home.deployments.length === 0 ? true : undefined"
+      v-on="home.deployments.length ? { click: onSelectDestination } : {}"
     >
       <QuickPickItem
         v-if="
@@ -76,6 +77,12 @@ const toolbarActions = computed(() => {
   }
   return result;
 });
+
+const onSelectDestination = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.SELECT_DESTINATION,
+  });
+};
 </script>
 
 <style lang="scss" scoped>
