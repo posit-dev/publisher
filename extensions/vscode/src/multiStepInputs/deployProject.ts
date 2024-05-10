@@ -43,7 +43,7 @@ export async function publishDeployment(
       accountListItems = response.data
         .filter((account) => account.url.trim() === deployment.serverUrl.trim())
         .map((account) => ({
-          iconPath: new ThemeIcon("account"),
+          iconPath: new ThemeIcon("key"),
           label: account.name,
           description: account.source,
           detail:

@@ -57,7 +57,7 @@ export async function newDeployment(
     try {
       const response = await api.accounts.getAll();
       accountListItems = response.data.map((account) => ({
-        iconPath: new ThemeIcon("account"),
+        iconPath: new ThemeIcon("key"),
         label: account.name,
         description: account.source,
         detail:

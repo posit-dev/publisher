@@ -246,7 +246,6 @@ export async function newDestination(
   let entryPointLabels: string[] = [];
   let entryPointListItems: QuickPickItem[] = [];
   const entryPointLabelMap = new Map<string, ConfigurationDetails>();
-  let configDetails: ConfigurationDetails[] = [];
   let configFileNames: string[] = [];
   let deploymentNames: string[] = [];
 
@@ -256,14 +255,14 @@ export async function newDestination(
 
   const createNewCredentialLabel = "Create a New Credential";
 
-  const createNewCredential = (state?: MultiStepState) => {
+  const newCredentialToBeCreated = (state?: MultiStepState): boolean => {
     if (!state) {
       return false;
     }
-    return (
+    return Boolean(
       state.data.credentialName &&
-      isQuickPickItem(state.data.credentialName) &&
-      state.data.credentialName.label === createNewCredentialLabel
+        isQuickPickItem(state.data.credentialName) &&
+        state.data.credentialName.label === createNewCredentialLabel,
     );
   };
 
@@ -279,7 +278,7 @@ export async function newDestination(
     if (!step) {
       return undefined;
     }
-    if (createNewCredential(multiStepState)) {
+    if (newCredentialToBeCreated(multiStepState)) {
       if (hasMultipleEntryPoints()) {
         return step.newCredentials.multipleEntryPoints;
       }
@@ -296,7 +295,7 @@ export async function newDestination(
       const response = await api.accounts.getAll();
       accounts = response.data;
       accountListItems = accounts.map((account) => ({
-        iconPath: new ThemeIcon("account"),
+        iconPath: new ThemeIcon("key"),
         label: account.name,
         description: account.source,
         detail:
@@ -327,7 +326,7 @@ export async function newDestination(
   const getEntryPoints = new Promise<void>(async (resolve, reject) => {
     try {
       const inspectResponse = await api.configurations.inspect();
-      configDetails = inspectResponse.data;
+      const configDetails = inspectResponse.data;
       entryPointLabels = configDetails.map((config) => `${config.entrypoint}`);
       configDetails.forEach((config) => {
         if (config.entrypoint) {
@@ -555,7 +554,7 @@ export async function newDestination(
   // Get the server url
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
-    if (createNewCredential(state)) {
+    if (newCredentialToBeCreated(state)) {
       const currentURL =
         typeof state.data.newCredentialUrl === "string" &&
         state.data.newCredentialUrl.length
@@ -626,7 +625,7 @@ export async function newDestination(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    if (createNewCredential(state)) {
+    if (newCredentialToBeCreated(state)) {
       const currentName =
         typeof state.data.newCredentialName === "string" &&
         state.data.newCredentialName.length
@@ -686,7 +685,7 @@ export async function newDestination(
   // Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    if (createNewCredential(state)) {
+    if (newCredentialToBeCreated(state)) {
       const currentAPIKey =
         typeof state.data.newCredentialApiKey === "string" &&
         state.data.newCredentialApiKey.length
@@ -798,6 +797,12 @@ export async function newDestination(
             severity: InputBoxValidationSeverity.Error,
           });
         }
+        if (configFileNames.includes(value)) {
+          return Promise.resolve({
+            message: `Invalid Name: Name is already in use for this project. Please enter a unique name.`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
         return Promise.resolve(undefined);
       },
       shouldResume: () => Promise.resolve(false),
@@ -888,7 +893,7 @@ export async function newDestination(
   }
 
   // Maybe create a new credential?
-  if (createNewCredential(state)) {
+  if (newCredentialToBeCreated(state)) {
     // have to type guard here, will protect us against
     // cancellation.
     if (
@@ -902,7 +907,6 @@ export async function newDestination(
       return;
     }
     try {
-      const api = await useApi();
       // NEED an account to be returned from this API
       // and assigned to newOrExistingCredential
       await api.credentials.createOrUpdate({
@@ -965,7 +969,7 @@ export async function newDestination(
 
   let finalCredentialName = <string | undefined>undefined;
   if (
-    createNewCredential(state) &&
+    newCredentialToBeCreated(state) &&
     state.data.newCredentialName &&
     !isQuickPickItem(state.data.newCredentialName)
   ) {

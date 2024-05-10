@@ -44,13 +44,14 @@ export async function initWorkspace(
   let entryPointLabels: string[] = [];
   let entryPointListItems: QuickPickItem[] = [];
   const entryPointLabelMap = new Map<string, ConfigurationDetails>();
-  let configs: ConfigurationDetails[] = [];
+  let configDetails: ConfigurationDetails[] = [];
+  let configNames: string[] = [];
 
   const getAccounts = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.accounts.getAll();
       accountListItems = response.data.map((account) => ({
-        iconPath: new ThemeIcon("account"),
+        iconPath: new ThemeIcon("key"),
         label: account.name,
         description: account.source,
         detail:
@@ -79,43 +80,68 @@ export async function initWorkspace(
     return resolve();
   });
 
+  const getConfigurationInspections = new Promise<void>(
+    async (resolve, reject) => {
+      try {
+        const inspectResponse = await api.configurations.inspect();
+        configDetails = inspectResponse.data;
+        entryPointLabels = configDetails.map(
+          (config) => `${config.entrypoint}`,
+        );
+        configDetails.forEach((config) => {
+          if (config.entrypoint) {
+            entryPointListItems.push({
+              iconPath: new ThemeIcon("file"),
+              label: config.entrypoint,
+              description: `(type ${config.type})`,
+            });
+          }
+        });
+        for (let i = 0; i < configDetails.length; i++) {
+          entryPointLabelMap.set(entryPointLabels[i], configDetails[i]);
+        }
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "initWorkspace, configurations.inspect",
+          error,
+        );
+        window.showErrorMessage(
+          `Unable to continue with project inspection failure. ${summary}`,
+        );
+        return reject();
+      }
+      if (!entryPointListItems.length) {
+        window.showErrorMessage(
+          `Unable to continue with no project entrypoints found during inspection`,
+        );
+        return reject();
+      }
+      return resolve();
+    },
+  );
+
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
-      const inspectResponse = await api.configurations.inspect();
-      configs = inspectResponse.data;
-      entryPointLabels = configs.map((config) => `${config.entrypoint}`);
-      configs.forEach((config) => {
-        if (config.entrypoint) {
-          entryPointListItems.push({
-            iconPath: new ThemeIcon("file"),
-            label: config.entrypoint,
-            description: `(type ${config.type})`,
-          });
-        }
-      });
-      for (let i = 0; i < configs.length; i++) {
-        entryPointLabelMap.set(entryPointLabels[i], configs[i]);
-      }
+      const response = await api.configurations.getAll();
+      configNames = response.data.map((config) => config.configurationName);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "initWorkspace, configurations.inspect",
+        "newConfig, configurations.getAll",
         error,
       );
-      window.showErrorMessage(
-        `Unable to continue with project inspection failure. ${summary}`,
+      window.showInformationMessage(
+        `Unable to continue with failed configuration API call. ${summary}`,
       );
       return reject();
     }
-    if (!entryPointListItems.length) {
-      window.showErrorMessage(
-        `Unable to continue with no project entrypoints found during inspection`,
-      );
-      return reject();
-    }
-    return resolve();
+    resolve();
   });
 
-  const apisComplete = Promise.all([getAccounts, getConfigurations]);
+  const apisComplete = Promise.all([
+    getAccounts,
+    getConfigurationInspections,
+    getConfigurations,
+  ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
   window.withProgress(
@@ -308,6 +334,12 @@ export async function initWorkspace(
           if (value.length < 3 || !isValidFilename(value)) {
             return Promise.resolve({
               message: `Invalid Name: Value must be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          if (configNames.includes(value)) {
+            return Promise.resolve({
+              message: `Invalid Name: Name is already in use for this project. Please enter a unique name.`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
