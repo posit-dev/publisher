@@ -20,7 +20,7 @@ initApi(ready, "http://localhost:15332/api`");
 const api = await useApi(); // will wait until the promise that was passed into the initApi call is resolved
 
 try {
-  const response = await api.accounts.getAll();
+  const response = await api.credentials.list();
 } catch (err) {
   // handle the error
 }
@@ -48,8 +48,8 @@ resources. This is the what we interact with.
 Each class in the `resources` folder has methods related to its endpoint. Each
 method has a one-to-one relationship with the API endpoint on the server side.
 
-Example: `/api/accounts` maps to the `resources/Accounts.ts` module and `GET
-api/accounts` maps to the `useApi().accounts.getAll()` method.
+Example: `/api/credentials` maps to the `resources/Credentials.ts` module and `GET
+api/credentials` maps to the `useApi().credentials.list()` method.
 
 ### `/types`
 
@@ -81,7 +81,7 @@ to reduce boilerplate and ensure that we do not lose potentially-needed data.
 ```typescript
 try {
   const api = await useApi();
-  const { data } = await api.accounts.getAll();
+  const { data } = await api.credentials.list();
 } catch (err) {
   // handle the error
 }

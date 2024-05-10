@@ -44,6 +44,7 @@ deploy_assertion() {
 }
 
 init_with_fields() {
+    run ${EXE} credentials create bats ${CONNECT_SERVER} ${CONNECT_API_KEY}
     run ${EXE} init -c ${CONTENT} ${FULL_PATH}
     # init to create default.toml
     if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then

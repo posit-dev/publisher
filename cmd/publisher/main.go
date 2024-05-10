@@ -20,13 +20,13 @@ import (
 
 type cliSpec struct {
 	cli_types.CommonArgs
-	commands.AccountCommands `group:"Accounts"`
 
-	Init         commands.InitCommand          `kong:"cmd" help:"Create a configuration file based on the contents of the project directory."`
+	Credentials  commands.CredentialsCommand   `kong:"cmd" help:"Manage credentials."`
 	Deploy       commands.DeployCmd            `kong:"cmd" help:"Create a new deployment."`
+	Init         commands.InitCommand          `kong:"cmd" help:"Create a configuration file based on the contents of the project directory."`
 	Redeploy     commands.RedeployCmd          `kong:"cmd" help:"Update an existing deployment."`
-	UI           commands.UICmd                `kong:"cmd" help:"Serve the publisher UI."`
 	Requirements commands.RequirementsCommands `kong:"cmd" help:"Create a Python requirements.txt file."`
+	UI           commands.UICmd                `kong:"cmd" help:"Serve the publisher UI."`
 	Version      commands.VersionCmd           `kong:"cmd" help:"Show the client software version and exit."`
 }
 
