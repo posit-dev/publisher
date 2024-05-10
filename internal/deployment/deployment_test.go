@@ -115,12 +115,12 @@ func (s *DeploymentSuite) TestWriteFile() {
 
 	// This is a pre-deployment, so should not contain certain fields.
 	s.NotContains(stringContent, "id")
-	s.NotContains(stringContent, "deployed-at")
-	s.NotContains(stringContent, "bundle-id")
-	s.NotContains(stringContent, "bundle-url")
-	s.NotContains(stringContent, "dashboard-url")
-	s.NotContains(stringContent, "direct-url")
-	s.NotContains(stringContent, "deployment-error")
+	s.NotContains(stringContent, "deployed_at")
+	s.NotContains(stringContent, "bundle_id")
+	s.NotContains(stringContent, "bundle_url")
+	s.NotContains(stringContent, "dashboard_url")
+	s.NotContains(stringContent, "direct_url")
+	s.NotContains(stringContent, "deployment_error")
 	s.NotContains(stringContent, "files")
 	s.NotContains(stringContent, "[configuration")
 }

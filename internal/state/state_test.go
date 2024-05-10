@@ -54,14 +54,14 @@ func (s *StateSuite) createConfigFile(name string, bad bool) {
 
 		[python]
 		version = "3.11.3"
-		package-manager = "pip"
-		package-file = "requirements.txt"
+		package_manager = "pip"
+		package_file = "requirements.txt"
 
 		[environment]
 		FOO = 'BAR'
 
 		[connect.runtime]
-		min-processes = 1
+		min_processes = 1
 	`)
 
 	if bad {
@@ -118,10 +118,10 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 	targetFile := deployment.GetDeploymentPath(s.cwd, name)
 	targetData := []byte(`
 		'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json'
-		server-url = 'https://connect.example.com'
-		server-type = "connect"
+		server_url = 'https://connect.example.com'
+		server_type = "connect"
 		id = '1234567890ABCDEF'
-		configuration-name = "myConfig"
+		configuration_name = "myConfig"
 		files = [
 			'app.py',
 			'requirements.txt'
@@ -136,14 +136,14 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 
 		[configuration.python]
 		version = "3.11.3"
-		package-manager = "pip"
-		package-file = "requirements.txt"
+		package_manager = "pip"
+		package_file = "requirements.txt"
 
 		[configuration.environment]
 		FOO = 'BAR'
 
 		[configuration.connect.runtime]
-		min-processes = 1
+		min_processes = 1
 	`)
 
 	if bad {

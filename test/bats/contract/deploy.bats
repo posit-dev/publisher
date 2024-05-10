@@ -50,21 +50,21 @@ init_with_fields() {
         assert_output --partial "error detecting content type: quarto with knitr engine is not yet supported."
     else
         assert_success
-    
+
     # add description
     perl -i -pe '$_ .= qq(description =  "'"${CONTENT}"' description"\n) if /title/' ${FULL_PATH}/.posit/publish/${CONTENT}.toml
-    
+
     # add Connect runtime fields
     echo "
 [connect]
-runtime.connection-timeout = 25
-runtime.read-timeout = 30
-runtime.init-timeout = 35
-runtime.idle-timeout = 40
-runtime.max-processes = 2
-runtime.min-processes = 1
-runtime.max-connections = 5
-runtime.load-factor = 0.8
+runtime.connection_timeout = 25
+runtime.read_timeout = 30
+runtime.init_timeout = 35
+runtime.idle_timeout = 40
+runtime.max_processes = 2
+runtime.min_processes = 1
+runtime.max_conns_per_process = 5
+runtime.load_factor = 0.8
 " >> ${FULL_PATH}/.posit/publish/${CONTENT}.toml
     fi
 }
@@ -93,7 +93,7 @@ python_content_types=(
         run ${EXE} requirements create ${FULL_PATH}/
         assert_success
         assert_line "Wrote file requirements.txt:"
-        
+
         # compare show output to expected existing requirements.in file
         run ${EXE} requirements show ${FULL_PATH}/
         assert_success

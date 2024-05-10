@@ -103,9 +103,9 @@ func (c *ConnectClient) getSettings(base util.AbsolutePath, cfg *config.Config, 
 
 var (
 	errDescriptionTooLong                = errors.New("the description cannot be longer than 4096 characters")
-	errCurrentUserExecutionNotLicensed   = errors.New("run-as-current-user is not licensed on this Connect server")
-	errCurrentUserExecutionNotConfigured = errors.New("run-as-current-user is not configured on this Connect server")
-	errOnlyAppsCanRACU                   = errors.New("run-as-current-user can only be used with application types, not APIs or reports")
+	errCurrentUserExecutionNotLicensed   = errors.New("run_as_current_user is not licensed on this Connect server")
+	errCurrentUserExecutionNotConfigured = errors.New("run_as_current_user is not configured on this Connect server")
+	errOnlyAppsCanRACU                   = errors.New("run_as_current_user can only be used with application types, not APIs or reports")
 	errAPIsNotLicensed                   = errors.New("API deployment is not licensed on this Connect server")
 	errKubernetesNotLicensed             = errors.New("off-host execution with Kubernetes is not licensed on this Connect server")
 	errKubernetesNotConfigured           = errors.New("off-host execution with Kubernetes is not configured on this Connect server")
@@ -177,39 +177,39 @@ func (a *allSettings) checkKubernetes(cfg *config.Config) error {
 		return errImageSelectionNotEnabled
 	}
 	if k.ServiceAccountName != "" && !a.user.CanAdmin() {
-		return adminError("service-account-name")
+		return adminError("service_account_name")
 	}
 
 	s := a.scheduler
-	if err := checkMaxFloat("cpu-request", k.CPURequest, s.MaxCPURequest); err != nil {
+	if err := checkMaxFloat("cpu_request", k.CPURequest, s.MaxCPURequest); err != nil {
 		return err
 	}
-	if err := checkMaxFloat("cpu-limit", k.CPULimit, s.MaxCPULimit); err != nil {
+	if err := checkMaxFloat("cpu_limit", k.CPULimit, s.MaxCPULimit); err != nil {
 		return err
 	}
-	if err := checkMaxInt("memory-request", k.MemoryRequest, s.MaxMemoryRequest); err != nil {
+	if err := checkMaxInt("memory_request", k.MemoryRequest, s.MaxMemoryRequest); err != nil {
 		return err
 	}
-	if err := checkMaxInt("memory-limit", k.MemoryLimit, s.MaxMemoryLimit); err != nil {
+	if err := checkMaxInt("memory_limit", k.MemoryLimit, s.MaxMemoryLimit); err != nil {
 		return err
 	}
-	if err := checkMaxInt("amd-gpu-limit", k.AMDGPULimit, s.MaxAMDGPULimit); err != nil {
+	if err := checkMaxInt("amd_gpu_limit", k.AMDGPULimit, s.MaxAMDGPULimit); err != nil {
 		return err
 	}
-	if err := checkMaxInt("nvidia-gpu-limit", k.NvidiaGPULimit, s.MaxNvidiaGPULimit); err != nil {
+	if err := checkMaxInt("nvidia_gpu_limit", k.NvidiaGPULimit, s.MaxNvidiaGPULimit); err != nil {
 		return err
 	}
 
 	// Requests cannot be > limits
 	if err := checkMinMaxFloatWithDefaults(
-		"cpu-request", k.CPURequest, s.CPURequest,
-		"cpu-limit", k.CPULimit, s.CPULimit,
+		"cpu_request", k.CPURequest, s.CPURequest,
+		"cpu_limit", k.CPULimit, s.CPULimit,
 	); err != nil {
 		return err
 	}
 	if err := checkMinMaxIntWithDefaults(
-		"memory-request", k.MemoryRequest, s.MemoryRequest,
-		"memory-limit", k.MemoryLimit, s.MemoryLimit,
+		"memory_request", k.MemoryRequest, s.MemoryRequest,
+		"memory_limit", k.MemoryLimit, s.MemoryLimit,
 	); err != nil {
 		return err
 	}
@@ -228,16 +228,16 @@ func (a *allSettings) checkRuntime(cfg *config.Config) error {
 	}
 	s := a.scheduler
 
-	if err := checkMaxInt("max-processes", r.MaxProcesses, int32(s.MaxProcessesLimit)); err != nil {
+	if err := checkMaxInt("max_processes", r.MaxProcesses, int32(s.MaxProcessesLimit)); err != nil {
 		return err
 	}
-	if err := checkMaxInt("min-processes", r.MinProcesses, int32(s.MinProcessesLimit)); err != nil {
+	if err := checkMaxInt("min_processes", r.MinProcesses, int32(s.MinProcessesLimit)); err != nil {
 		return err
 	}
 	// min/max values for timeouts are validate by the schema
 	if err := checkMinMaxIntWithDefaults(
-		"min-processes", r.MinProcesses, int32(s.MinProcesses),
-		"max-processes", r.MaxProcesses, int32(s.MaxProcesses),
+		"min_processes", r.MinProcesses, int32(s.MinProcesses),
+		"max_processes", r.MaxProcesses, int32(s.MaxProcesses),
 	); err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func (a *allSettings) checkAccess(cfg *config.Config) error {
 			return errCurrentUserExecutionNotConfigured
 		}
 		if !a.user.CanAdmin() {
-			return adminError("run-as-current-user")
+			return adminError("run_as_current_user")
 		}
 		if !cfg.Type.IsAppContent() {
 			return errOnlyAppsCanRACU
@@ -266,7 +266,7 @@ func (a *allSettings) checkAccess(cfg *config.Config) error {
 	}
 
 	if cfg.Connect.Access.RunAs != "" && !a.user.CanAdmin() {
-		return adminError("run-as")
+		return adminError("run_as")
 	}
 	return nil
 }

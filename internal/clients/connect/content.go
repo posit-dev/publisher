@@ -30,8 +30,8 @@ type ConnectContent struct {
 	NvidiaGPULimit                 *int64            `json:"nvidia_gpu_limit,omitempty"`
 	ServiceAccountName             string            `json:"service_account_name,omitempty"`
 	DefaultImageName               string            `json:"default_image_name,omitempty"`
-	DefaultREnvironmentManagement  *bool             `json:"default_r_environment_management"`
-	DefaultPyEnvironmentManagement *bool             `json:"default_py_environment_management"`
+	DefaultREnvironmentManagement  *bool             `json:"default_r_environment_management,omitempty"`
+	DefaultPyEnvironmentManagement *bool             `json:"default_py_environment_management,omitempty"`
 }
 
 func copy[T any](src *T) *T {

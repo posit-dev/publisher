@@ -73,10 +73,10 @@ func (s *CapabilitiesSuite) TestMinMaxProcs() {
 	}
 	s.NoError(a.checkConfig(makeMinMaxProcs(1, 5)))
 	s.NoError(a.checkConfig(makeMinMaxProcs(5, 5)))
-	s.ErrorContains(a.checkConfig(makeMinMaxProcs(11, 11)), "min-processes value of 11 is higher than configured maximum of 10 on this server")
-	s.ErrorContains(a.checkConfig(makeMinMaxProcs(0, 21)), "max-processes value of 21 is higher than configured maximum of 20 on this server")
-	s.ErrorContains(a.checkConfig(makeMinMaxProcs(5, 1)), "min-processes value of 5 is higher than max-processes value of 1")
-	s.ErrorContains(a.checkConfig(makeMinMaxProcs(-1, 5)), "min-processes value cannot be less than 0")
+	s.ErrorContains(a.checkConfig(makeMinMaxProcs(11, 11)), "min_processes value of 11 is higher than configured maximum of 10 on this server")
+	s.ErrorContains(a.checkConfig(makeMinMaxProcs(0, 21)), "max_processes value of 21 is higher than configured maximum of 20 on this server")
+	s.ErrorContains(a.checkConfig(makeMinMaxProcs(5, 1)), "min_processes value of 5 is higher than max_processes value of 1")
+	s.ErrorContains(a.checkConfig(makeMinMaxProcs(-1, 5)), "min_processes value cannot be less than 0")
 }
 
 func (s *CapabilitiesSuite) TestRuntimeNonWorker() {
@@ -109,7 +109,7 @@ func (s *CapabilitiesSuite) TestRunAs() {
 		},
 	}
 	s.NoError(adminSettings.checkConfig(cfg))
-	s.ErrorContains(publisherSettings.checkConfig(cfg), "run-as requires administrator privileges")
+	s.ErrorContains(publisherSettings.checkConfig(cfg), "run_as requires administrator privileges")
 }
 
 func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
@@ -147,7 +147,7 @@ func (s *CapabilitiesSuite) TestRunAsCurrentUser() {
 
 	notAdmin := goodSettings
 	notAdmin.user.UserRole = AuthRolePublisher
-	s.ErrorContains(notAdmin.checkConfig(&cfg), "run-as-current-user requires administrator privileges")
+	s.ErrorContains(notAdmin.checkConfig(&cfg), "run_as_current_user requires administrator privileges")
 
 	notAnApp := cfg
 	notAnApp.Type = config.ContentTypeJupyterNotebook
@@ -225,7 +225,7 @@ func (s *CapabilitiesSuite) TestKubernetesEnablement() {
 
 	noAdmin := goodSettings
 	noAdmin.user.UserRole = AuthRolePublisher
-	s.ErrorContains(noAdmin.checkConfig(&cfg), "service-account-name requires administrator privileges")
+	s.ErrorContains(noAdmin.checkConfig(&cfg), "service_account_name requires administrator privileges")
 }
 
 func makeCpuRequestLimit(req, limit float64) *config.Config {
@@ -281,11 +281,11 @@ func (s *CapabilitiesSuite) TestKubernetesRuntimeCPU() {
 	s.NoError(a.checkConfig(makeCpuRequestLimit(1.0, 2.0)))
 	s.NoError(a.checkConfig(makeCpuRequestLimit(3.0, 3.0)))
 	s.NoError(a.checkConfig(makeCpuRequestLimit(3.0, 0.0)))
-	s.ErrorContains(a.checkConfig(makeCpuRequestLimit(-1.0, 2.0)), "cpu-request value cannot be less than 0")
-	s.ErrorContains(a.checkConfig(makeCpuRequestLimit(1.0, -2.0)), "cpu-limit value cannot be less than 0")
-	s.ErrorContains(a.checkConfig(makeCpuRequestLimit(4.0, 4.0)), "cpu-request value of 4.000000 is higher than configured maximum of 3.000000 on this server")
-	s.ErrorContains(a.checkConfig(makeCpuRequestLimit(1.0, 10.0)), "cpu-limit value of 10.000000 is higher than configured maximum of 4.000000 on this server")
-	s.ErrorContains(a.checkConfig(makeCpuRequestLimit(3.0, 2.0)), "cpu-request value of 3.000000 is higher than cpu-limit value of 2.000000")
+	s.ErrorContains(a.checkConfig(makeCpuRequestLimit(-1.0, 2.0)), "cpu_request value cannot be less than 0")
+	s.ErrorContains(a.checkConfig(makeCpuRequestLimit(1.0, -2.0)), "cpu_limit value cannot be less than 0")
+	s.ErrorContains(a.checkConfig(makeCpuRequestLimit(4.0, 4.0)), "cpu_request value of 4.000000 is higher than configured maximum of 3.000000 on this server")
+	s.ErrorContains(a.checkConfig(makeCpuRequestLimit(1.0, 10.0)), "cpu_limit value of 10.000000 is higher than configured maximum of 4.000000 on this server")
+	s.ErrorContains(a.checkConfig(makeCpuRequestLimit(3.0, 2.0)), "cpu_request value of 3.000000 is higher than cpu_limit value of 2.000000")
 }
 
 func (s *CapabilitiesSuite) TestKubernetesRuntimeNoConfiguredLimits() {
@@ -310,11 +310,11 @@ func (s *CapabilitiesSuite) TestKubernetesRuntimeMemory() {
 	s.NoError(a.checkConfig(makeMemoryRequestLimit(1000, 2000)))
 	s.NoError(a.checkConfig(makeMemoryRequestLimit(3000, 3000)))
 	s.NoError(a.checkConfig(makeMemoryRequestLimit(3000, 0)))
-	s.ErrorContains(a.checkConfig(makeMemoryRequestLimit(-1000, 2000)), "memory-request value cannot be less than 0")
-	s.ErrorContains(a.checkConfig(makeMemoryRequestLimit(1000, -2000)), "memory-limit value cannot be less than 0")
-	s.ErrorContains(a.checkConfig(makeMemoryRequestLimit(4000, 4000)), "memory-request value of 4000 is higher than configured maximum of 3000 on this server")
-	s.ErrorContains(a.checkConfig(makeMemoryRequestLimit(1000, 10000)), "memory-limit value of 10000 is higher than configured maximum of 4000 on this server")
-	s.ErrorContains(a.checkConfig(makeMemoryRequestLimit(3000, 2000)), "memory-request value of 3000 is higher than memory-limit value of 2000")
+	s.ErrorContains(a.checkConfig(makeMemoryRequestLimit(-1000, 2000)), "memory_request value cannot be less than 0")
+	s.ErrorContains(a.checkConfig(makeMemoryRequestLimit(1000, -2000)), "memory_limit value cannot be less than 0")
+	s.ErrorContains(a.checkConfig(makeMemoryRequestLimit(4000, 4000)), "memory_request value of 4000 is higher than configured maximum of 3000 on this server")
+	s.ErrorContains(a.checkConfig(makeMemoryRequestLimit(1000, 10000)), "memory_limit value of 10000 is higher than configured maximum of 4000 on this server")
+	s.ErrorContains(a.checkConfig(makeMemoryRequestLimit(3000, 2000)), "memory_request value of 3000 is higher than memory_limit value of 2000")
 }
 
 func (s *CapabilitiesSuite) TestKubernetesGPULimits() {
@@ -326,6 +326,6 @@ func (s *CapabilitiesSuite) TestKubernetesGPULimits() {
 	s.NoError(a.checkConfig(makeGPURequest(0, 1)))
 	s.NoError(a.checkConfig(makeGPURequest(1, 0)))
 	s.NoError(a.checkConfig(makeGPURequest(1, 1)))
-	s.ErrorContains(a.checkConfig(makeGPURequest(5, 0)), "amd-gpu-limit value of 5 is higher than configured maximum of 1 on this server")
-	s.ErrorContains(a.checkConfig(makeGPURequest(0, 5)), "nvidia-gpu-limit value of 5 is higher than configured maximum of 2 on this server")
+	s.ErrorContains(a.checkConfig(makeGPURequest(5, 0)), "amd_gpu_limit value of 5 is higher than configured maximum of 1 on this server")
+	s.ErrorContains(a.checkConfig(makeGPURequest(0, 5)), "nvidia_gpu_limit value of 5 is higher than configured maximum of 2 on this server")
 }

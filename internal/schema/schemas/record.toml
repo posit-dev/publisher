@@ -1,14 +1,14 @@
 "$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json"
-server-url = "https://connect.example.com"
+server_url = "https://connect.example.com"
 id = "de2e7bdb-b085-401e-a65c-443e40009749"
-client-version = '1.0.1'
-created-at = '2024-01-19T09:33:33.131481-05:00'
-configuration-name = "production"
-deployed-at = '2024-01-19T09:33:33.131481-05:00'
-bundle-id = '123'
-bundle-url = 'https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download'
-dashboard-url = 'https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/'
-direct-url = 'https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40009749/'
+client_version = '1.0.1'
+created_at = '2024-01-19T09:33:33.131481-05:00'
+configuration_name = "production"
+deployed_at = '2024-01-19T09:33:33.131481-05:00'
+bundle_id = '123'
+bundle_url = 'https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download'
+dashboard_url = 'https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/'
+direct_url = 'https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40009749/'
 
 [configuration]
 "$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
@@ -25,13 +25,13 @@ description = "This is the quarterly sales report, broken down by region."
 
 [configuration.python]
 version = "3.11.3"
-package-file = "requirements.txt"
-package-manager = "pip"
+package_file = "requirements.txt"
+package_manager = "pip"
 
 [configuration.r]
 version = "4.3.1"
-package-file = "renv.lock"
-package-manager = "renv"
+package_file = "renv.lock"
+package_manager = "renv"
 
 [configuration.quarto]
 version = "1.4"
@@ -40,27 +40,27 @@ version = "1.4"
 API_URL = "https://example.com/api"
 
 [configuration.connect.access]
-run-as = "rstudio-connect"
-run-as-current-user = false
+run_as = "rstudio-connect"
+run_as_current_user = false
 
 [configuration.connect.runtime]
-connection-timeout = 5
-read-timeout = 30
-init-timeout = 60
-idle-timeout = 120
-max-processes = 5
-min-processes = 1
-max-connections = 50
-load-factor = 0.5
+connection_timeout = 5
+read_timeout = 30
+init_timeout = 60
+idle_timeout = 120
+max_processes = 5
+min_processes = 1
+max_conns_per_process = 50
+load_factor = 0.5
 
 [configuration.connect.kubernetes]
-amd-gpu-limit = 0
-cpu-limit = 1.5
-cpu-request = 0.5
-image-name = "posit/connect-runtime-python3.11-r4.3"
-memory-limit = 100000000
-memory-request = 20000000
-nvidia-gpu-limit = 0
-service-account-name = "posit-connect-content"
-r-environment-management = true
-py-environment-management = true
+amd_gpu_limit = 0
+cpu_limit = 1.5
+cpu_request = 0.5
+default_image_name = "posit/connect-runtime-python3.11-r4.3"
+memory_limit = 100000000
+memory_request = 20000000
+nvidia_gpu_limit = 0
+service_account_name = "posit-connect-content"
+default_r_environment_management = true
+default_py_environment_management = true
