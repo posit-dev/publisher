@@ -40,6 +40,10 @@ type stepInfo = {
 };
 
 type possibleSteps = {
+  noCredentials: {
+    singleEntryPoint: stepInfo;
+    multipleEntryPoints: stepInfo;
+  };
   newCredentials: {
     singleEntryPoint: stepInfo;
     multipleEntryPoints: stepInfo;
@@ -52,6 +56,16 @@ type possibleSteps = {
 
 const steps: Record<string, possibleSteps | undefined> = {
   inputDeploymentName: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 1,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 1,
+        totalSteps: 6,
+      },
+    },
     newCredentials: {
       singleEntryPoint: {
         step: 1,
@@ -74,6 +88,16 @@ const steps: Record<string, possibleSteps | undefined> = {
     },
   },
   pickCredentials: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 0,
+        totalSteps: 6,
+      },
+    },
     newCredentials: {
       singleEntryPoint: {
         step: 2,
@@ -96,6 +120,16 @@ const steps: Record<string, possibleSteps | undefined> = {
     },
   },
   inputServerUrl: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 2,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 2,
+        totalSteps: 6,
+      },
+    },
     newCredentials: {
       singleEntryPoint: {
         step: 3,
@@ -118,6 +152,16 @@ const steps: Record<string, possibleSteps | undefined> = {
     },
   },
   inputCredentialName: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 3,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 3,
+        totalSteps: 6,
+      },
+    },
     newCredentials: {
       singleEntryPoint: {
         step: 4,
@@ -140,6 +184,16 @@ const steps: Record<string, possibleSteps | undefined> = {
     },
   },
   inputAPIKey: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 4,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 4,
+        totalSteps: 6,
+      },
+    },
     newCredentials: {
       singleEntryPoint: {
         step: 5,
@@ -162,6 +216,16 @@ const steps: Record<string, possibleSteps | undefined> = {
     },
   },
   inputEntryPointSelection: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 5,
+        totalSteps: 6,
+      },
+    },
     newCredentials: {
       singleEntryPoint: {
         step: 0,
@@ -184,6 +248,16 @@ const steps: Record<string, possibleSteps | undefined> = {
     },
   },
   inputConfigurationName: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 5,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 6,
+        totalSteps: 6,
+      },
+    },
     newCredentials: {
       singleEntryPoint: {
         step: 6,
@@ -230,7 +304,14 @@ export async function newDestination(
 
   const createNewCredentialLabel = "Create a New Credential";
 
-  const newCredentialToBeCreated = (state?: MultiStepState): boolean => {
+  const newCredentialForced = (state?: MultiStepState): boolean => {
+    if (!state) {
+      return false;
+    }
+    return credentials.length === 0;
+  };
+
+  const newCredentialSelected = (state?: MultiStepState): boolean => {
     if (!state) {
       return false;
     }
@@ -239,6 +320,10 @@ export async function newDestination(
         isQuickPickItem(state.data.credentialName) &&
         state.data.credentialName.label === createNewCredentialLabel,
     );
+  };
+
+  const newCredentialByAnyMeans = (state?: MultiStepState): boolean => {
+    return newCredentialForced(state) || newCredentialSelected(state);
   };
 
   const hasMultipleEntryPoints = () => {
@@ -253,12 +338,19 @@ export async function newDestination(
     if (!step) {
       return undefined;
     }
-    if (newCredentialToBeCreated(multiStepState)) {
+    if (newCredentialForced(multiStepState)) {
+      if (hasMultipleEntryPoints()) {
+        return step.noCredentials.multipleEntryPoints;
+      }
+      return step.noCredentials.singleEntryPoint;
+    }
+    if (newCredentialSelected(multiStepState)) {
       if (hasMultipleEntryPoints()) {
         return step.newCredentials.multipleEntryPoints;
       }
       return step.newCredentials.singleEntryPoint;
     }
+    // else it has to be existing credential selected
     if (hasMultipleEntryPoints()) {
       return step.existingCredentials.multipleEntryPoints;
     }
@@ -492,28 +584,31 @@ export async function newDestination(
   // Select the credentials to be used
   // ***************************************************************
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
-    const step = getStepInfo("pickCredentials", state);
-    if (!step) {
-      throw new Error("newDestination::pickCredentials step info not found.");
-    }
-    const pick = await input.showQuickPick({
-      title: state.title,
-      step: step.step,
-      totalSteps: step.totalSteps,
-      placeholder:
-        "Select the credential you want to use to deploy. (Use this field to filter selections.)",
-      items: credentialListItems,
-      activeItem:
-        typeof state.data.credentialName !== "string"
-          ? state.data.credentialName
-          : undefined,
-      buttons: [],
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-    state.data.credentialName = pick;
+    if (!newCredentialForced(state)) {
+      const step = getStepInfo("pickCredentials", state);
+      if (!step) {
+        throw new Error("newDestination::pickCredentials step info not found.");
+      }
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: step.step,
+        totalSteps: step.totalSteps,
+        placeholder:
+          "Select the credential you want to use to deploy. (Use this field to filter selections.)",
+        items: credentialListItems,
+        activeItem:
+          typeof state.data.credentialName !== "string"
+            ? state.data.credentialName
+            : undefined,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+      });
+      state.data.credentialName = pick;
 
-    return (input: MultiStepInput) => inputServerUrl(input, state);
+      return (input: MultiStepInput) => inputServerUrl(input, state);
+    }
+    return inputServerUrl(input, state);
   }
 
   // ***************************************************************
@@ -521,7 +616,7 @@ export async function newDestination(
   // Get the server url
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
-    if (newCredentialToBeCreated(state)) {
+    if (newCredentialByAnyMeans(state)) {
       const currentURL =
         typeof state.data.newCredentialUrl === "string" &&
         state.data.newCredentialUrl.length
@@ -592,7 +687,7 @@ export async function newDestination(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
-    if (newCredentialToBeCreated(state)) {
+    if (newCredentialByAnyMeans(state)) {
       const currentName =
         typeof state.data.newCredentialName === "string" &&
         state.data.newCredentialName.length
@@ -652,7 +747,7 @@ export async function newDestination(
   // Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    if (newCredentialToBeCreated(state)) {
+    if (newCredentialByAnyMeans(state)) {
       const currentAPIKey =
         typeof state.data.newCredentialApiKey === "string" &&
         state.data.newCredentialApiKey.length
@@ -801,18 +896,19 @@ export async function newDestination(
   if (
     state.data.deploymentName === undefined ||
     typeof state.data.deploymentName !== "string" ||
-    state.data.credentialName === undefined ||
+    (!newCredentialForced(state) && state.data.credentialName === undefined) ||
     // credentialName can be either type
     state.data.entryPoint === undefined ||
     !isQuickPickItem(state.data.entryPoint) ||
     state.data.configFileName === undefined ||
     typeof state.data.configFileName !== "string"
   ) {
+    console.log("User has aborted flow. Exiting.");
     return;
   }
 
   // Maybe create a new credential?
-  if (newCredentialToBeCreated(state)) {
+  if (newCredentialByAnyMeans(state)) {
     // have to type guard here, will protect us against
     // cancellation.
     if (
@@ -823,7 +919,7 @@ export async function newDestination(
       state.data.newCredentialApiKey === undefined ||
       isQuickPickItem(state.data.newCredentialApiKey)
     ) {
-      return;
+      throw new Error("NewDestination Unexpected type guard failure @1");
     }
     try {
       // NEED an credential to be returned from this API
@@ -838,7 +934,7 @@ export async function newDestination(
       const summary = getSummaryStringFromError("credentials::add", error);
       window.showInformationMessage(summary);
     }
-  } else {
+  } else if (state.data.credentialName) {
     // If not creating, then we need to retrieve the one we're using.
     let targetName: string | undefined = undefined;
     if (isQuickPickItem(state.data.credentialName)) {
@@ -849,6 +945,9 @@ export async function newDestination(
         (credential) => credential.name === targetName,
       );
     }
+  } else {
+    // we are not creating a credential but also do not have a required existing value
+    throw new Error("NewDestination Unexpected type guard failure @2");
   }
 
   // Create the Config File
@@ -878,7 +977,15 @@ export async function newDestination(
 
   let finalCredentialName = <string | undefined>undefined;
   if (
-    newCredentialToBeCreated(state) &&
+    newCredentialForced(state) &&
+    state.data.newCredentialName &&
+    !isQuickPickItem(state.data.newCredentialName)
+  ) {
+    finalCredentialName = state.data.newCredentialName;
+  } else if (!state.data.credentialName) {
+    throw new Error("NewDestination Unexpected type guard failure @3");
+  } else if (
+    newCredentialSelected(state) &&
     state.data.newCredentialName &&
     !isQuickPickItem(state.data.newCredentialName)
   ) {
@@ -887,7 +994,8 @@ export async function newDestination(
     finalCredentialName = state.data.credentialName.label;
   }
   if (!finalCredentialName) {
-    return;
+    // should have assigned it by now. Logic error!
+    throw new Error("NewDestination Unexpected type guard failure @4");
   }
 
   // Create the Predeployment File
@@ -907,7 +1015,7 @@ export async function newDestination(
     return;
   }
   if (!newOrSelectedCredential) {
-    return;
+    throw new Error("NewDestination Unexpected type guard failure @5");
   }
   return {
     deployment: newDeployment,
