@@ -119,9 +119,6 @@ func (d *RMarkdownDetector) InferType(base util.AbsolutePath) ([]*config.Config,
 				cfg.HasParameters = true
 			}
 		}
-		if cfg.Title == "" {
-			cfg.Title = base.Base()
-		}
 		needsR, needsPython, err := pydeps.DetectMarkdownLanguages(base)
 		if err != nil {
 			return nil, err

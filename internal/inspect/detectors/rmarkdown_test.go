@@ -288,7 +288,7 @@ func (s *RMarkdownSuite) TestInferTypeNoMetadata() {
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
-		Title:      "project",
+		Title:      "",
 		Entrypoint: filename,
 		Validate:   true,
 		Files:      []string{"*"},
