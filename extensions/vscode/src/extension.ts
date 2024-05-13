@@ -12,7 +12,6 @@ import { HelpAndFeedbackTreeDataProvider } from "src/views/helpAndFeedback";
 import { LogsTreeDataProvider } from "src/views/logs";
 import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
-import { newDestination } from "./multiStepInputs/newDestination";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -87,7 +86,7 @@ export async function activate(context: ExtensionContext) {
   context.subscriptions.push(
     commands.registerCommand(INIT_PROJECT_COMMAND, async (viewId?: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
-      await newDestination(viewId);
+      await homeViewProvider.showNewDestinationMultiStep(viewId);
       setInitializationInProgressContext(InitializationInProgress.false);
     }),
   );

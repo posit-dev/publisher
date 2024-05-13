@@ -22,7 +22,6 @@ import {
   DeploymentError,
   PreDeployment,
   isDeployment,
-  isDeploymentError,
   isPreDeployment,
   isPreDeploymentWithConfig,
   useApi,
@@ -30,7 +29,6 @@ import {
 
 import { confirmForget } from "src/dialogs";
 import { EventStream } from "src/events";
-import { publishDeployment } from "src/multiStepInputs/deployProject";
 import { newDeployment } from "src/multiStepInputs/newDeployment";
 import { formatDateString } from "src/utils/date";
 import { getSummaryStringFromError } from "src/utils/errors";
@@ -45,7 +43,6 @@ const forgetCommand = viewName + ".forget";
 const visitCommand = viewName + ".visit";
 const addDeploymentCommand = viewName + ".addDeployment";
 const createNewDeploymentFileCommand = viewName + ".createNewDeploymentFile";
-const deployCommand = viewName + ".deploy";
 
 const fileStore = ".posit/publish/deployments/*.toml";
 
@@ -150,17 +147,6 @@ export class DeploymentsTreeDataProvider
 
     this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),
-    );
-
-    this._context.subscriptions.push(
-      commands.registerCommand(
-        deployCommand,
-        async (item: DeploymentsTreeItem, viewId?: string) => {
-          if (!isDeploymentError(item.deployment)) {
-            publishDeployment(item.deployment, this._stream, viewId);
-          }
-        },
-      ),
     );
 
     this._context.subscriptions.push(

@@ -547,13 +547,22 @@ export class HomeViewProvider implements WebviewViewProvider {
     configurationName?: string,
     deploymentName?: string,
   ) {
+    // We have to break our protocol and go ahead and write this into storage,
+    // in case this multi-stepper is actually running ahead of the webview
+    // being brought up.
+    this._saveSelectionState({
+      deploymentName,
+      configurationName,
+    });
+    // Now push down into the webview
     this._updateWebViewViewCredentials();
     this._updateWebViewViewConfigurations(configurationName);
     this._updateWebViewViewDeployments(deploymentName);
+    // And have the webview save what it has selected.
     this._requestWebviewSaveSelection();
   }
 
-  private async showNewDestinationMultiStep(
+  public async showNewDestinationMultiStep(
     viewId?: string,
   ): Promise<DestinationNames | undefined> {
     const destinationObjects = await newDestination(viewId);
@@ -592,6 +601,7 @@ export class HomeViewProvider implements WebviewViewProvider {
         this._credentials.push(destinationObjects.credential);
         refreshCredentials = true;
       }
+
       this.propogateDestinationSelection(
         destinationObjects.configuration.configurationName,
         destinationObjects.deployment.saveName,
