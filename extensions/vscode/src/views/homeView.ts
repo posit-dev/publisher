@@ -544,11 +544,10 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async propogateDestinationSelection(
-    credentialName?: string,
     configurationName?: string,
     deploymentName?: string,
   ) {
-    this._updateWebViewViewCredentials(credentialName);
+    this._updateWebViewViewCredentials();
     this._updateWebViewViewConfigurations(configurationName);
     this._updateWebViewViewDeployments(deploymentName);
     this._requestWebviewSaveSelection();
@@ -594,7 +593,6 @@ export class HomeViewProvider implements WebviewViewProvider {
         refreshCredentials = true;
       }
       this.propogateDestinationSelection(
-        destinationObjects.credential.name,
         destinationObjects.configuration.configurationName,
         destinationObjects.deployment.saveName,
       );
@@ -603,7 +601,6 @@ export class HomeViewProvider implements WebviewViewProvider {
         this._refreshCredentialData();
       }
       return {
-        credentialName: destinationObjects.credential.name,
         configurationName: destinationObjects.configuration.configurationName,
         deploymentName: destinationObjects.deployment.saveName,
       };
