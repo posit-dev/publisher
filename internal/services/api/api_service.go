@@ -126,6 +126,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}", "requirements"), NewGetConfigRequirementsHandler(base, log)).
 		Methods(http.MethodGet)
 
+	// GET /api/configurations/$NAME/packages
+	r.Handle(ToPath("configurations", "{name}", "packages"), NewGetConfigPackagesHandler(base, log)).
+		Methods(http.MethodGet)
+
 	// GET /api/deployments
 	r.Handle(ToPath("deployments"), GetDeploymentsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
