@@ -43,19 +43,19 @@ export const useHomeStore = defineStore("home", () => {
     });
   });
 
-  function updateSelectedDeploymentByName(name?: string) {
+  /**
+   * Updates the selected deployment to one with the given name.
+   * If the named deployment is not found, the selected deployment is set to undefined.
+   *
+   * @param name the name of the new deployment to select
+   * @returns true if the selected deployment was the same, false if not
+   */
+  function updateSelectedDeploymentByName(name: string) {
     const previousSelectedDeployment = selectedDeployment.value;
-    let selectedDeploymentTarget: Deployment | PreDeployment | undefined =
-      undefined;
-    if (name) {
-      selectedDeploymentTarget = deployments.value.find(
-        (d) => d.deploymentName === name,
-      );
-    }
-    if (!selectedDeploymentTarget && deployments.value.length) {
-      selectedDeploymentTarget = deployments.value[0];
-    }
-    selectedDeployment.value = selectedDeploymentTarget;
+
+    const deployment = deployments.value.find((d) => d.deploymentName === name);
+
+    selectedDeployment.value = deployment;
     return previousSelectedDeployment === selectedDeployment.value;
   }
 
@@ -66,18 +66,21 @@ export const useHomeStore = defineStore("home", () => {
     selectedDeployment.value = deployment;
   }
 
-  function updateSelectedConfigurationByName(name?: string) {
+  /**
+   * Updates the selected configuration to the one with the given name.
+   * If the named configuration is not found, the selected deployment is set to undefined.
+   *
+   * @param name the name of the new configuration to select
+   * @returns true if the selected deployment was the same, false if not
+   */
+  function updateSelectedConfigurationByName(name: string) {
     const previousSelectedConfig = selectedConfiguration.value;
-    let selectedConfigTarget: Configuration | undefined = undefined;
-    if (name) {
-      selectedConfigTarget = configurations.value.find(
-        (c) => c.configurationName === name,
-      );
-    }
-    if (!selectedConfigTarget && configurations.value.length) {
-      selectedConfigTarget = configurations.value[0];
-    }
-    selectedConfiguration.value = selectedConfigTarget;
+
+    const config = configurations.value.find(
+      (c) => c.configurationName === name,
+    );
+
+    selectedConfiguration.value = config;
     return previousSelectedConfig === selectedConfiguration.value;
   }
 
@@ -86,22 +89,20 @@ export const useHomeStore = defineStore("home", () => {
     selectedConfiguration.value = config;
   }
 
-  function updateSelectedCredentialByName(name?: string) {
-    const previousSelectedCredential = selectedCredential.value;
-    let selectedCredentialTarget: Credential | undefined = undefined;
-    if (name) {
-      selectedCredentialTarget = credentials.value.find((c) => c.name === name);
-    }
-    if (!selectedCredentialTarget && credentials.value.length) {
-      selectedCredentialTarget = credentials.value[0];
-    }
-    selectedCredential.value = selectedCredentialTarget;
-    return previousSelectedCredential === selectedCredential.value;
-  }
+  /**
+   * Updates the selected credential to the one with the given name.
+   * If the named credential is not found, the selected credential is set to undefined.
+   *
+   * @param name the name of the new credential to select
+   * @returns true if the selected credential was the same, false if not
+   */
+  function updateSelectedCredentialByName(name: string) {
+    const previousSelectedAccount = selectedCredential.value;
 
-  function updateSelectedCredentialByObject(credential: Credential) {
-    credentials.value.push(credential);
+    const credential = credentials.value.find((c) => c.name === name);
+
     selectedCredential.value = credential;
+    return previousSelectedAccount === selectedCredential.value;
   }
 
   const updateCredentialsAndConfigurationForDeployment = () => {

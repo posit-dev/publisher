@@ -365,7 +365,9 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
-  private _updateWebViewViewDeployments(selectedDeploymentName?: string) {
+  private _updateWebViewViewDeployments(
+    selectedDeploymentName?: string | null,
+  ) {
     this._webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA,
       content: {
@@ -375,7 +377,9 @@ export class HomeViewProvider implements WebviewViewProvider {
     });
   }
 
-  private _updateWebViewViewConfigurations(selectedConfigurationName?: string) {
+  private _updateWebViewViewConfigurations(
+    selectedConfigurationName?: string | null,
+  ) {
     this._webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CONFIG_DATA,
       content: {
@@ -385,7 +389,9 @@ export class HomeViewProvider implements WebviewViewProvider {
     });
   }
 
-  private _updateWebViewViewCredentials(selectedCredentialName?: string) {
+  private _updateWebViewViewCredentials(
+    selectedCredentialName?: string | null,
+  ) {
     this._webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
       content: {
@@ -718,6 +724,7 @@ export class HomeViewProvider implements WebviewViewProvider {
         deployment,
         config,
         credential,
+        credentialName,
         lastMatch,
       };
       // Should we not push destinations with no config or matching credentials?
@@ -762,8 +769,8 @@ export class HomeViewProvider implements WebviewViewProvider {
     if (destination) {
       result = {
         deploymentName: destination.deployment.saveName,
-        configurationName: destination.config?.configurationName,
-        credentialName: destination.credential?.name,
+        configurationName: destination.deployment.configurationName,
+        credentialName: destination.credentialName,
       };
       this.propogateDestinationSelection(
         result.credentialName,
@@ -892,9 +899,11 @@ export class HomeViewProvider implements WebviewViewProvider {
     const selectionState = includeSavedState
       ? this._getSelectionState()
       : undefined;
-    this._updateWebViewViewCredentials(selectionState?.credentialName);
-    this._updateWebViewViewConfigurations(selectionState?.configurationName);
-    this._updateWebViewViewDeployments(selectionState?.deploymentName);
+    this._updateWebViewViewCredentials(selectionState?.credentialName || null);
+    this._updateWebViewViewConfigurations(
+      selectionState?.configurationName || null,
+    );
+    this._updateWebViewViewDeployments(selectionState?.deploymentName || null);
     this._updateWebViewViewExpansionState();
     if (includeSavedState && selectionState) {
       useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
