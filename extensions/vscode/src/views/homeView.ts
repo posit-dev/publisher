@@ -116,9 +116,6 @@ export class HomeViewProvider implements WebviewViewProvider {
     useBus().on("requestActiveDeployment", () => {
       useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
     });
-    useBus().on("requestActiveCredential", () => {
-      useBus().trigger("activeCredentialChanged", this._getActiveCredential());
-    });
 
     useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
       this.sendRefreshedFilesLists();
@@ -389,14 +386,11 @@ export class HomeViewProvider implements WebviewViewProvider {
     });
   }
 
-  private _updateWebViewViewCredentials(
-    selectedCredentialName?: string | null,
-  ) {
+  private _updateWebViewViewCredentials() {
     this._webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
       content: {
         credentials: this._credentials,
-        selectedCredentialName,
       },
     });
   }
@@ -451,7 +445,6 @@ export class HomeViewProvider implements WebviewViewProvider {
       {
         deploymentName: undefined,
         configurationName: undefined,
-        credentialName: undefined,
       },
     );
     return state;
@@ -467,11 +460,6 @@ export class HomeViewProvider implements WebviewViewProvider {
     return this.getDeploymentByName(savedState.deploymentName);
   }
 
-  private _getActiveCredential(): Credential | undefined {
-    const savedState = this._getSelectionState();
-    return this.getCredentialByName(savedState.credentialName);
-  }
-
   private getDeploymentByName(name: string | undefined) {
     return this._deployments.find((d) => d.deploymentName === name);
   }
@@ -480,16 +468,11 @@ export class HomeViewProvider implements WebviewViewProvider {
     return this._configs.find((c) => c.configurationName === name);
   }
 
-  private getCredentialByName(name: string | undefined) {
-    return this._credentials.find((c) => c.name === name);
-  }
-
   private async _saveSelectionState(state: HomeViewState): Promise<void> {
     await this._context.workspaceState.update(lastSelectionState, state);
 
     useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
     useBus().trigger("activeConfigChanged", this._getActiveConfig());
-    useBus().trigger("activeCredentialChanged", this._getActiveCredential());
   }
 
   private _saveExpansionState(expanded: boolean) {
@@ -667,7 +650,6 @@ export class HomeViewProvider implements WebviewViewProvider {
     const destinations: DestinationQuickPick[] = [];
     const lastDeploymentName = this._getActiveDeployment()?.saveName;
     const lastConfigName = this._getActiveConfig()?.configurationName;
-    const lastCredentialName = this._getActiveCredential()?.name;
 
     this._deployments.forEach((deployment) => {
       if (
@@ -711,8 +693,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
       let lastMatch =
         lastDeploymentName === deployment.saveName &&
-        lastConfigName === configName &&
-        lastCredentialName === credentialName;
+        lastConfigName === configName;
 
       const destination: DestinationQuickPick = {
         label: title,
@@ -723,8 +704,6 @@ export class HomeViewProvider implements WebviewViewProvider {
           : new ThemeIcon("cloud-upload"),
         deployment,
         config,
-        credential,
-        credentialName,
         lastMatch,
       };
       // Should we not push destinations with no config or matching credentials?
@@ -770,13 +749,11 @@ export class HomeViewProvider implements WebviewViewProvider {
       result = {
         deploymentName: destination.deployment.saveName,
         configurationName: destination.deployment.configurationName,
-        credentialName: destination.credentialName,
       };
-      this.propogateDestinationSelection(
-        result.credentialName,
-        result.configurationName,
-        result.deploymentName,
-      );
+      this._updateWebViewViewCredentials();
+      this._updateWebViewViewConfigurations(result.configurationName);
+      this._updateWebViewViewDeployments(result.deploymentName);
+      this._requestWebviewSaveSelection();
     }
     return result;
   }
@@ -899,7 +876,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     const selectionState = includeSavedState
       ? this._getSelectionState()
       : undefined;
-    this._updateWebViewViewCredentials(selectionState?.credentialName || null);
+    this._updateWebViewViewCredentials();
     this._updateWebViewViewConfigurations(
       selectionState?.configurationName || null,
     );
@@ -908,7 +885,6 @@ export class HomeViewProvider implements WebviewViewProvider {
     if (includeSavedState && selectionState) {
       useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
       useBus().trigger("activeConfigChanged", this._getActiveConfig());
-      useBus().trigger("activeCredentialChanged", this._getActiveCredential());
     }
   };
 

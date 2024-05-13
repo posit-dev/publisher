@@ -5,13 +5,11 @@ import { Credential, Configuration, Deployment, PreDeployment } from "../api";
 export type HomeViewState = {
   deploymentName?: string;
   configurationName?: string;
-  credentialName?: string;
 };
 
 export type DestinationNames = {
   deploymentName: string;
   configurationName?: string;
-  credentialName?: string;
 };
 
 export type DestinationObjects = {

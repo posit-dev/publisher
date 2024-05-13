@@ -18,10 +18,10 @@
       v-on="home.deployments.length ? { click: onSelectDestination } : {}"
     >
       <QuickPickItem
-        v-if="home.selectedDeployment && home.selectedCredential"
+        v-if="home.selectedDeployment"
         :label="home.selectedDeployment.saveName"
         :description="home.selectedDeployment.configurationName"
-        :detail="home.selectedCredential.name"
+        :detail="home.serverCredential?.name || 'No matching Credential found'"
       />
       <QuickPickItem
         v-else
@@ -40,12 +40,17 @@
     <p>
       Config: {{ home.selectedConfiguration?.configurationName || "undefined" }}
     </p>
-    <p>Cred: {{ home.selectedCredential?.name || " undefined" }}</p>
+    <p>Cred: {{ home.serverCredential?.name || " undefined" }}</p>
     <!-- Remove this later -->
 
     <p v-if="home.selectedDeployment && !home.selectedConfiguration">
       The last Configuration used for this Destination was not found. Choose a
       new Configuration.
+    </p>
+
+    <p v-if="home.selectedDeployment && !home.serverCredential">
+      A Credential for the Destination's server URL was not found. Create a new
+      Credential.
     </p>
   </div>
 </template>

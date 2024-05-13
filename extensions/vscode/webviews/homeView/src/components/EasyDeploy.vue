@@ -81,12 +81,9 @@
         />
       </div>
       <label for="credentials-selector">Credentials:</label>
-      <PSelect
-        v-model="home.selectedCredential"
-        :options="home.filteredCredentials"
-        :get-key="(c: Credential) => c.name"
-        class="dropdowns"
-      />
+      <p>
+        {{ home.serverCredential?.name }}
+      </p>
     </div>
     <div v-if="home.selectedDeployment && home.selectedDeployment.serverType">
       <vscode-divider />
@@ -172,7 +169,7 @@ const disableDeployment = computed(() => {
   const result =
     !Boolean(home.selectedDeployment) ||
     !Boolean(home.selectedConfiguration) ||
-    !Boolean(home.selectedCredential);
+    !Boolean(home.serverCredential);
   return result;
 });
 
@@ -184,7 +181,7 @@ const onClickDeploy = () => {
   if (
     !home.selectedDeployment ||
     !home.selectedConfiguration ||
-    !home.selectedCredential
+    !home.serverCredential
   ) {
     throw new Error(
       "EasyDeploy::onClickDeploy trying to send message with undefined values",
@@ -195,7 +192,7 @@ const onClickDeploy = () => {
     content: {
       deploymentName: home.selectedDeployment.saveName,
       configurationName: home.selectedConfiguration.configurationName,
-      credentialName: home.selectedCredential.name,
+      credentialName: home.serverCredential.name,
     },
   });
 };
@@ -241,7 +238,6 @@ const onUpdateModelValueSelectedDeployment = () => {
 };
 
 const updateCredentialsAndConfigurationForDeployment = () => {
-  home.filterCredentialsToDeployment();
   if (home.selectedDeployment?.configurationName) {
     home.updateSelectedConfigurationByName(
       home.selectedDeployment.configurationName,
