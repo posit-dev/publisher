@@ -12,6 +12,7 @@ import {
 } from "vscode";
 
 import { useApi, Credential } from "src/api";
+import { useBus } from "src/bus";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { newCredential } from "src/multiStepInputs/newCredential";
 
@@ -34,7 +35,11 @@ export class CredentialsTreeDataProvider
   readonly onDidChangeTreeData: CredentialEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(private readonly _context: ExtensionContext) {}
+  constructor(private readonly _context: ExtensionContext) {
+    useBus().on("refreshCredentials", () => {
+      this._onDidChangeTreeData.fire();
+    });
+  }
 
   getTreeItem(element: CredentialsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;

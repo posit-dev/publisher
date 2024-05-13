@@ -107,6 +107,10 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     // if someone needs a refresh of any active params,
     // we are here to service that request!
+    useBus().on("refreshCredentials", async () => {
+      await this._refreshCredentialData();
+      this._updateWebViewViewCredentials();
+    });
     useBus().on("requestActiveConfig", () => {
       useBus().trigger("activeConfigChanged", this._getActiveConfig());
     });
@@ -598,7 +602,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       );
       // Credentials aren't auto-refreshed, so we have to trigger it ourselves.
       if (refreshCredentials) {
-        this._refreshCredentialData();
+        useBus().trigger("refreshCredentials", undefined);
       }
       return {
         configurationName: destinationObjects.configuration.configurationName,
