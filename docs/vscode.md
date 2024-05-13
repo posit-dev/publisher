@@ -10,36 +10,20 @@ Open the _Posit Publisher_ UI by clicking the icon in the activity bar.
 
 ![](https://cdn.posit.co/publisher/assets/img/icon.png)
 
-### Initialization
+### Home
 
-To deploy, the following must be created:
+The Home view shows information about the selected deployment destination.
 
-- a credential
-- a deployment
-- a configuration
+To create your first deployment, click the Add Destination button.
 
-A credential is a way to authenticate with the server you will deploy to.
+![](https://cdn.posit.co/publisher/assets/img/no-destinations.png)
 
-A deployment describes where your project is going to be deployed.
+This will take you through the process of creating a new destination,
+which includes a credential, configuration file, and deployment.
 
-A configuration describes how it will be deployed.
-
-If you don't already have a credential, you'll be prompted to set one up.
-See the [Credentials](#credentials) section for more information.
-
-![](https://cdn.posit.co/publisher/assets/img/init-credentials.png)
-
-If the project hasn't been initailzed as a Posit Publisher project yet, the extension will prompt you to initialize it.
-
-![](https://cdn.posit.co/publisher/assets/img/initialize-project.png)
-
-Click the `Initialize `Project button, and you will be led through the creation and configuration of your first deployment.
-
-If the extension detects more than one project type, you will be prompted to choose which one to use for your initial configuration.
-
-![](https://cdn.posit.co/publisher/assets/img/choose-configuration.png)
-
-The new configuration file will also be opened so you can review and make any necessary changes.
+- A credential defines the server you will deploy to and the API key that will be used to authenticate you. Once you have created a credential, you can use it for all of your deployments to that server.
+- A configuration file describes how your project will be deployed. If the extension detects more than one possible project type, you will be asked which one to use when creating the configuration file.
+- A deployment describes where your project is going to be deployed, and records the settings used for that deployment and the result.
 
 > [!TIP]
 > If you have the [Even Better TOML extension](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
@@ -48,50 +32,31 @@ The new configuration file will also be opened so you can review and make any ne
 
 ![](https://cdn.posit.co/publisher/assets/img/configuration-file-with-tooltip.png)
 
-> [!TIP]
-> You can have multiple configuration files for different deployments; for
-> example, staging and production.
->
-> Configurations can be created either in the Home view or the Configuration view
-> by pressing the `+` buttons.
-
-### Home
-
-From here you will be taken to the Home view.
-
-![](https://cdn.posit.co/publisher/assets/img/home-view.png)
-
-The Home view shows information about your currently selected deployment. After initialization, you will only have one.
-
-The `>` button next to `Deploy Your Project` can be pressed to expand the view to show deployment, configuration, and credentials selections. In addition, the buttons `+` can be used to create new ones and edit your selection in the case of configurations.
+Clicking the `Select a Destination` widget lets you choose a destination to deploy to.
+This enables you to have multiple deployments for different purposes. For example,
+you can use a staging deployment for testing before deploying to a production
+destination that is shared with your users.
 
 ![](https://cdn.posit.co/publisher/assets/img/home-view-expanded.png)
 
-### Basic and Advanced Mode
+### Setting up Python Requirements
 
-The buttons at the top-right of the Home view allow you to switch between Basic and Advanced modes, which will change the visible views.
-
-By default, you will be seeing the Basic mode with the views
-
-- Home
-- Deployment Files
-- Requirements
-- Help and Feedback
-
-Clicking the "Show Advanced Mode" button will show the views
-
-- Home
-- Deployments
-- Configurations
-- Credentials
-- Help and Feedback
-
-### Setting up Requirements
-
-Finally, to be ready to deploy, you must set up the requirements for your Python project. If you don't already have a `requirements.txt` you can open
-the Requirements view and click the `Scan` button to generate one.
+Before you can deploy a Python project, you must set up the requirements file
+for your project. If you don't already have a `requirements.txt` you can open
+the Requirements view and click the `Scan` button to generate one. Review
+the generated requirements file to ensure it includes all the packages your
+project needs.
 
 ![](https://cdn.posit.co/publisher/assets/img/requirements-view-init.png)
+
+### R Packages
+
+For R projects, you need an `renv.lock` file that captures the R package dependencies
+for your project. You also need an active `renv` library with those packages installed
+so the extension can gather details about them.
+
+If your `renv.lock` file and library are out of sync, run `renv::snapshot()`
+or `renv::restore()` to update the lockfile or library, respectively.
 
 ### Ready to Deploy
 
@@ -100,13 +65,20 @@ You are all set to Deploy!
 Click the `Deploy Your Project` button in the Home view to start the deployment
 process. :tada:
 
+![](https://cdn.posit.co/publisher/assets/img/deploy-your-project.png)
+
+During deployment, the extension will show a progress window with the status of the deployment.
+Once the deployment completes, the result will be displayed in the Home view.
+
+![](https://cdn.posit.co/publisher/assets/img/deployment-successful.png)
+
 ---
 
 ### Other Views and Features
 
 ### Deployment Files
 
-The Deployment Files view shows a list of the files in your project directory,
+This view shows the files in your project directory,
 divided into two lists:
 
 - Included Files show the files that will be included in your deployment and
@@ -118,20 +90,31 @@ divided into two lists:
 
 ![](https://cdn.posit.co/publisher/assets/img/deployment-files-view.png)
 
-### Requirements
+The files included in your project are controlled by the `files` list in
+the deployment configuration file. The buttons in the UI update that list.
+If you have more than one destination with different configuration files,
+they can have different sets of included and excluded files.
 
-The Requirements view shows the contents of the `requirements.txt` file in your
+The `files` list accepts wildcards in [`.gitignore` format](https://git-scm.com/docs/gitignore).
+For example, to include all Python source files from your project directory, you can use
+`*.py`. Exclude files (or wildcard patterns) by prefixing them with `!`.
+
+### Python Packages
+
+This view shows the contents of the `requirements.txt` file in your
 project directory. It's required when deploying a Python project.
 
-![](https://cdn.posit.co/publisher/assets/img/requirements.png)
+![](https://cdn.posit.co/publisher/assets/img/python-packages.png)
 
 If you don't have a `requirements.txt` file yet, you'll see a message prompting you to scan it. Clicking Scan will scan your project code for imports and attempt to map those to package names and versions using the package metadata from your local Python installation. After scanning, verify the contents of the generated `requirements.txt` file and make any changes needed.
 
 If you already have a `requirements.txt` file, you can scan your code again using the eye icon in the Requirements view.
 
+You can specify an alternate requirements file in the deployment configuration file using the `package_file` field under the `[python]` section.
+
 ### Deployments
 
-Deployments for the project appear in the Deployment view. The icon indicates
+This view lists the deployments for the project. The icon indicates
 whether the content has been successfully deployed.
 
 Not deployed yet:
@@ -142,19 +125,17 @@ Deployed:
 
 ![](https://cdn.posit.co/publisher/assets/img/deployment.png)
 
-Failure Publishing:
+Failure Deploying:
 
 ![](https://cdn.posit.co/publisher/assets/img/deployment-publish-error.png)
 
-Error parsing Deployment:
+Error parsing the Deployment file:
 
 ![](https://cdn.posit.co/publisher/assets/img/deployment-error.png)
 
-Click the deploy icon next to a deployment, which will prompt you for your credentials and the configuration you want to use - if you have more than one.
-
 ### Configurations
 
-Lists the configurations in your project.
+This view lists the configurations in your project.
 
 Clicking a configuration will open the configuration file in the editor.
 Additionally, you can right-click on a configuration for more operations
@@ -167,20 +148,17 @@ Additionally, you can right-click on a configuration for more operations
 
 ### Credentials
 
-In the current release, _Posit Publisher_ acquires credentials from the RStudio
-IDE/rsconnect package and rsconnect-python. Additionally, if the environment
-variables `CONNECT_SERVER` and `CONNECT_API_KEY` are set, an additional
-credential named `env` will be created.
+This view lists the credentials you have defined.
+Credentials are securely stored in the OS keychain.
 
-These are shown in the Credentials view. To add or remove account credentials,
-use rsconnect or
-[rsconnect-python](https://docs.posit.co/rsconnect-python/#remembering-server-information).
+To add a credential for a new server, click the `+` button.
+To remove a credential, right-click on it and select `Delete`.
 
 ![](https://cdn.posit.co/publisher/assets/img/credentials.png)
 
 ### Help and Feedback
 
-Contains links to this documentation and other resources.
+This view contains links to this documentation and other resources.
 
 ### Posit Publisher Logs
 
@@ -193,13 +171,3 @@ There are a few ways to easily get to them:
 - Run `Posit Publisher Logs: Focus on Logs View` from the command palette.
 - Click the `Show Logs` button in the error notification that appears on a
   deployment failure.
-
-## Extension Configuration
-
-### `posit.publisher.executable.path`
-
-By default, the extension uses the bundled Posit Publisher binary executable. To
-override this behavior, configure the `posit.publisher.executable.path` property
-in your _User_ or _Workspace_ settings.
-
-![](https://cdn.posit.co/publisher/assets/img/settings.png)
