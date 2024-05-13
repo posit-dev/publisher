@@ -20,8 +20,15 @@ export const useHomeStore = defineStore("home", () => {
 
   const selectedDeployment = ref<Deployment | PreDeployment>();
   const selectedConfiguration = ref<Configuration>();
-  const selectedCredential = ref<Credential>();
-  const easyDeployExpanded = ref(false);
+
+  const serverCredential = computed(() => {
+    return credentials.value.find((c) => {
+      return (
+        c.url.toLowerCase() ===
+        selectedDeployment.value?.serverUrl.toLowerCase()
+      );
+    });
+  });
 
   const lastDeploymentResult = ref<string>();
   const lastDeploymentMsg = ref<string>();
@@ -34,28 +41,19 @@ export const useHomeStore = defineStore("home", () => {
   const pythonPackageFile = ref<string>();
   const pythonPackageManager = ref<string>();
 
-  const filteredCredentials = computed(() => {
-    return credentials.value.filter((c) => {
-      return (
-        c.url.toLowerCase() ===
-        selectedDeployment.value?.serverUrl.toLowerCase()
-      );
-    });
-  });
-
-  function updateSelectedDeploymentByName(name?: string) {
+  /**
+   * Updates the selected deployment to one with the given name.
+   * If the named deployment is not found, the selected deployment is set to undefined.
+   *
+   * @param name the name of the new deployment to select
+   * @returns true if the selected deployment was the same, false if not
+   */
+  function updateSelectedDeploymentByName(name: string) {
     const previousSelectedDeployment = selectedDeployment.value;
-    let selectedDeploymentTarget: Deployment | PreDeployment | undefined =
-      undefined;
-    if (name) {
-      selectedDeploymentTarget = deployments.value.find(
-        (d) => d.deploymentName === name,
-      );
-    }
-    if (!selectedDeploymentTarget && deployments.value.length) {
-      selectedDeploymentTarget = deployments.value[0];
-    }
-    selectedDeployment.value = selectedDeploymentTarget;
+
+    const deployment = deployments.value.find((d) => d.deploymentName === name);
+
+    selectedDeployment.value = deployment;
     return previousSelectedDeployment === selectedDeployment.value;
   }
 
@@ -66,18 +64,21 @@ export const useHomeStore = defineStore("home", () => {
     selectedDeployment.value = deployment;
   }
 
-  function updateSelectedConfigurationByName(name?: string) {
+  /**
+   * Updates the selected configuration to the one with the given name.
+   * If the named configuration is not found, the selected deployment is set to undefined.
+   *
+   * @param name the name of the new configuration to select
+   * @returns true if the selected deployment was the same, false if not
+   */
+  function updateSelectedConfigurationByName(name: string) {
     const previousSelectedConfig = selectedConfiguration.value;
-    let selectedConfigTarget: Configuration | undefined = undefined;
-    if (name) {
-      selectedConfigTarget = configurations.value.find(
-        (c) => c.configurationName === name,
-      );
-    }
-    if (!selectedConfigTarget && configurations.value.length) {
-      selectedConfigTarget = configurations.value[0];
-    }
-    selectedConfiguration.value = selectedConfigTarget;
+
+    const config = configurations.value.find(
+      (c) => c.configurationName === name,
+    );
+
+    selectedConfiguration.value = config;
     return previousSelectedConfig === selectedConfiguration.value;
   }
 
@@ -86,26 +87,7 @@ export const useHomeStore = defineStore("home", () => {
     selectedConfiguration.value = config;
   }
 
-  function updateSelectedCredentialByName(name?: string) {
-    const previousSelectedCredential = selectedCredential.value;
-    let selectedCredentialTarget: Credential | undefined = undefined;
-    if (name) {
-      selectedCredentialTarget = credentials.value.find((c) => c.name === name);
-    }
-    if (!selectedCredentialTarget && credentials.value.length) {
-      selectedCredentialTarget = credentials.value[0];
-    }
-    selectedCredential.value = selectedCredentialTarget;
-    return previousSelectedCredential === selectedCredential.value;
-  }
-
-  function updateSelectedCredentialByObject(credential: Credential) {
-    credentials.value.push(credential);
-    selectedCredential.value = credential;
-  }
-
   const updateCredentialsAndConfigurationForDeployment = () => {
-    filterCredentialsToDeployment();
     if (selectedDeployment.value?.configurationName) {
       updateSelectedConfigurationByName(
         selectedDeployment.value?.configurationName,
@@ -113,37 +95,7 @@ export const useHomeStore = defineStore("home", () => {
     }
   };
 
-  // TODO: We need to show an error when you have no credentials which can get to
-  // the deployment URL
-  // OR
-  // Should we filter deployment list to just include what you can access. Maybe disable others?
-
-  const filterCredentialsToDeployment = () => {
-    if (filteredCredentials.value.length === 0) {
-      // TODO: Show ERROR HERE!!!!
-      selectedCredential.value = undefined;
-    } else if (!selectedCredential.value) {
-      selectedCredential.value = filteredCredentials.value[0];
-    } else if (selectedCredential.value) {
-      let target: Credential | undefined = filteredCredentials.value.find(
-        (credential) => {
-          if (selectedCredential.value) {
-            return credential.name === selectedCredential.value.name;
-          }
-          return false;
-        },
-      );
-      if (target) {
-        selectedCredential.value = target;
-      } else {
-        selectedCredential.value = filteredCredentials.value[0];
-      }
-    }
-  };
-
-  watch([selectedConfiguration, selectedCredential], () =>
-    updateParentViewSelectionState(),
-  );
+  watch([selectedConfiguration], () => updateParentViewSelectionState());
 
   const updateParentViewSelectionState = () => {
     const hostConduit = useHostConduitService();
@@ -153,21 +105,10 @@ export const useHomeStore = defineStore("home", () => {
         state: {
           deploymentName: selectedDeployment.value?.saveName,
           configurationName: selectedConfiguration.value?.configurationName,
-          credentialName: selectedCredential.value?.name,
         },
       },
     });
   };
-
-  watch(easyDeployExpanded, () => {
-    const hostConduit = useHostConduitService();
-    hostConduit.sendMsg({
-      kind: WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED,
-      content: {
-        expanded: easyDeployExpanded.value,
-      },
-    });
-  });
 
   const updatePythonPackages = (
     ispythonProject: boolean,
@@ -188,11 +129,9 @@ export const useHomeStore = defineStore("home", () => {
     credentials,
     selectedDeployment,
     selectedConfiguration,
-    selectedCredential,
-    easyDeployExpanded,
+    serverCredential,
     includedFiles,
     excludedFiles,
-    filteredCredentials,
     lastDeploymentResult,
     lastDeploymentMsg,
     pythonProject,
@@ -203,11 +142,8 @@ export const useHomeStore = defineStore("home", () => {
     updateSelectedDeploymentByObject,
     updateSelectedConfigurationByName,
     updateSelectedConfigurationByObject,
-    updateSelectedCredentialByName,
-    updateSelectedCredentialByObject,
     updateCredentialsAndConfigurationForDeployment,
     updateParentViewSelectionState,
-    filterCredentialsToDeployment,
     updatePythonPackages,
   };
 });

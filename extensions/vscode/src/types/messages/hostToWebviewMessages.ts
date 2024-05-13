@@ -11,7 +11,6 @@ import {
 export enum HostToWebviewMessageType {
   // Sent from host to webviewView
   REFRESH_DEPLOYMENT_DATA = "refreshDeploymentData",
-  UPDATE_EXPANSION_FROM_STORAGE = "updateExpansionFromStorage",
   REFRESH_CONFIG_DATA = "refreshConfigData",
   REFRESH_CREDENTIAL_DATA = "refreshCredentialData",
   PUBLISH_START = "publishStart",
@@ -36,7 +35,6 @@ export type AnyHostToWebviewMessage<
 
 export type HostToWebviewMessage =
   | RefreshDeploymentDataMsg
-  | UpdateExpansionFromStorageMsg
   | RefreshConfigDataMsg
   | RefreshCredentialDataMsg
   | PublishStartMsg
@@ -51,7 +49,6 @@ export type HostToWebviewMessage =
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
     msg.kind === HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA ||
-    msg.kind === HostToWebviewMessageType.UPDATE_EXPANSION_FROM_STORAGE ||
     msg.kind === HostToWebviewMessageType.REFRESH_CONFIG_DATA ||
     msg.kind === HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA ||
     msg.kind === HostToWebviewMessageType.PUBLISH_START ||
@@ -69,27 +66,20 @@ export type RefreshDeploymentDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA,
   {
     deployments: (Deployment | PreDeployment)[];
-    selectedDeploymentName?: string;
-  }
->;
-export type UpdateExpansionFromStorageMsg = AnyHostToWebviewMessage<
-  HostToWebviewMessageType.UPDATE_EXPANSION_FROM_STORAGE,
-  {
-    expansionState: boolean;
+    selectedDeploymentName?: string | null;
   }
 >;
 export type RefreshConfigDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CONFIG_DATA,
   {
     configurations: Configuration[];
-    selectedConfigurationName?: string;
+    selectedConfigurationName?: string | null;
   }
 >;
 export type RefreshCredentialDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
   {
     credentials: Credential[];
-    selectedCredentialName?: string;
   }
 >;
 export type PublishStartMsg =

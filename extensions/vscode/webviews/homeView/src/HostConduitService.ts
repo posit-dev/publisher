@@ -12,7 +12,6 @@ import {
   RefreshFilesListsMsg,
   UpdateConfigSelectionMsg,
   UpdateDeploymentSelectionMsg,
-  UpdateExpansionFromStorageMsg,
   UpdatePythonPackages,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
@@ -55,8 +54,6 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
   switch (msg.kind) {
     case HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA:
       return onRefreshDeploymentDataMsg(msg);
-    case HostToWebviewMessageType.UPDATE_EXPANSION_FROM_STORAGE:
-      return onUpdateExpansionFromStorageMsg(msg);
     case HostToWebviewMessageType.REFRESH_CONFIG_DATA:
       return onRefreshConfigDataMsg(msg);
     case HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA:
@@ -82,49 +79,71 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
   }
 };
 
+/**
+ * When getting new deployments set the new name if given one,
+ * unset the deployment if told to do so with null,
+ * or keep the selected deployment with updated data.
+ */
 const onRefreshDeploymentDataMsg = (msg: RefreshDeploymentDataMsg) => {
   const home = useHomeStore();
   home.deployments = msg.content.deployments;
-  if (msg.content.selectedDeploymentName) {
-    home.updateSelectedDeploymentByName(msg.content.selectedDeploymentName);
-  } else {
+
+  const name = msg.content.selectedDeploymentName;
+  if (name) {
+    home.updateSelectedDeploymentByName(name);
+  } else if (name === null) {
+    home.selectedDeployment = undefined;
+  } else if (home.selectedDeployment) {
     if (
       !home.updateSelectedDeploymentByName(
-        home.selectedDeployment?.deploymentName,
+        home.selectedDeployment.deploymentName,
       )
     ) {
-      // Always cause the re-calculation even if selected deployment didn't change
+      // Recalculate if the deployment object changed with new data
       home.updateCredentialsAndConfigurationForDeployment();
     }
   }
+
+  // If no deployment is selected, unset the selected configuration
+  if (home.selectedDeployment === undefined) {
+    home.selectedConfiguration = undefined;
+  }
 };
-const onUpdateExpansionFromStorageMsg = (
-  msg: UpdateExpansionFromStorageMsg,
-) => {
-  const home = useHomeStore();
-  home.easyDeployExpanded = msg.content.expansionState;
-};
+
+/**
+ * When getting new configurations set the new name if given one,
+ * unset the configuration if told to do so with null,
+ * keep the selected configuration with updated data,
+ * or set the selected configuration to the one from the selected deployment.
+ */
 const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
   const home = useHomeStore();
   home.configurations = msg.content.configurations;
-  if (msg.content.selectedConfigurationName) {
+
+  const name = msg.content.selectedConfigurationName;
+  if (name) {
+    home.updateSelectedConfigurationByName(name);
+  } else if (name === null) {
+    home.selectedConfiguration = undefined;
+  } else if (home.selectedConfiguration) {
     home.updateSelectedConfigurationByName(
-      msg.content.selectedConfigurationName,
+      home.selectedConfiguration.configurationName,
     );
-  } else {
+  } else if (home.selectedDeployment?.configurationName) {
     home.updateSelectedConfigurationByName(
-      home.selectedConfiguration?.configurationName,
+      home.selectedDeployment.configurationName,
     );
   }
 };
+
+/**
+ * When getting new credentials set the new name if given one,
+ * unset the credential if told to do so with null,
+ * or keep the selected credential with updated data.
+ */
 const onRefreshCredentialDataMsg = (msg: RefreshCredentialDataMsg) => {
   const home = useHomeStore();
   home.credentials = msg.content.credentials;
-  if (msg.content.selectedCredentialName) {
-    home.updateSelectedCredentialByName(msg.content.selectedCredentialName);
-  } else {
-    home.updateSelectedCredentialByName(home.selectedCredential?.name);
-  }
 };
 const onPublishStartMsg = () => {
   const home = useHomeStore();

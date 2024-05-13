@@ -18,14 +18,10 @@
       v-on="home.deployments.length ? { click: onSelectDestination } : {}"
     >
       <QuickPickItem
-        v-if="
-          home.selectedDeployment &&
-          home.selectedConfiguration &&
-          home.selectedCredential
-        "
+        v-if="home.selectedDeployment"
         :label="home.selectedDeployment.saveName"
-        :description="home.selectedConfiguration.configurationName"
-        :detail="home.selectedCredential.name"
+        :description="home.selectedDeployment.configurationName"
+        :detail="home.serverCredential?.name || 'No matching Credential found'"
       />
       <QuickPickItem
         v-else
@@ -38,18 +34,85 @@
         aria-hidden="true"
       />
     </div>
+
+    <p v-if="home.selectedDeployment && !home.selectedConfiguration">
+      The last Configuration used for this Destination was not found. Choose a
+      new Configuration.
+    </p>
+
+    <p v-if="home.selectedDeployment && !home.serverCredential">
+      A Credential for the Destination's server URL was not found. Create a new
+      Credential.
+    </p>
+
+    <DeployButton class="w-full" />
+
+    <template
+      v-if="home.selectedDeployment && home.selectedDeployment.serverType"
+    >
+      <vscode-divider class="home-view-divider" />
+
+      <div v-if="home.publishInProgress" class="progress-container">
+        <vscode-progress-ring class="progress-ring" />
+        Deployment in Progress...
+      </div>
+      <div v-else>
+        <h4 class="deployment-summary">
+          {{ lastStatusDescription }}
+        </h4>
+        <div
+          v-if="!isPreDeployment(home.selectedDeployment)"
+          class="last-deployment-time"
+        >
+          {{ formatDateString(home.selectedDeployment.deployedAt) }}
+        </div>
+        <div
+          v-if="home.selectedDeployment.deploymentError"
+          class="last-deployment-details last-deployment-error"
+        >
+          <span class="codicon codicon-error error-icon"></span>
+          <span class="error-message">
+            Error: {{ home.selectedDeployment.deploymentError.msg }}
+          </span>
+        </div>
+        <div class="last-deployment-details">
+          Targeting Posit Connect server at
+          <a
+            href=""
+            @click="navigateToUrl(home.selectedDeployment.serverUrl)"
+            >{{ home.selectedDeployment.serverUrl }}</a
+          >
+        </div>
+
+        <div
+          v-if="!isPreDeployment(home.selectedDeployment)"
+          class="last-deployment-details"
+        >
+          <vscode-button
+            appearance="secondary"
+            @click="navigateToUrl(home.selectedDeployment.dashboardUrl)"
+            class="w-full"
+          >
+            View Content
+          </vscode-button>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 
+import { isPreDeployment } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 
 import { useHostConduitService } from "src/HostConduitService";
 import { useHomeStore } from "src/stores/home";
 import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
+import DeployButton from "src/components/DeployButton.vue";
+import { formatDateString } from "src/utils/date";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
@@ -87,6 +150,28 @@ const onSelectDestination = () => {
 const onAddDestination = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.NEW_DESTINATION,
+  });
+};
+
+const lastStatusDescription = computed(() => {
+  if (!home.selectedDeployment) {
+    return undefined;
+  }
+  if (home.selectedDeployment.deploymentError) {
+    return "Last Deployment Failed";
+  }
+  if (isPreDeployment(home.selectedDeployment)) {
+    return "Not Yet Deployed";
+  }
+  return "Last Deployment Successful";
+});
+
+const navigateToUrl = (url: string) => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.NAVIGATE,
+    content: {
+      uriPath: url,
+    },
   });
 };
 </script>
@@ -132,5 +217,48 @@ const onAddDestination = () => {
 
 :deep(.action-item) {
   margin-right: 4px;
+}
+
+.home-view-divider {
+  margin-top: 1.33em;
+}
+
+.deployment-summary {
+  margin-bottom: 5px;
+}
+
+.last-deployment-time {
+  margin-bottom: 20px;
+}
+
+.last-deployment-details {
+  margin-top: 10px;
+}
+
+.last-deployment-error {
+  border: solid 2px;
+  border-color: gray;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.error-icon {
+  flex: 0;
+}
+
+.error-message {
+  margin-left: 5px;
+}
+
+.progress-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.progress-ring {
+  margin-right: 10px;
 }
 </style>

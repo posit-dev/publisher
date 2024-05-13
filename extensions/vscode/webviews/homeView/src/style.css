@@ -8,6 +8,10 @@ body {
   padding: 0;
 }
 
+.w-full {
+  width: 100%;
+}
+
 .text-placeholder {
   color: var(--vscode-input-placeholderForeground);
 }
