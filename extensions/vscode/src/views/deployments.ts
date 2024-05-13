@@ -46,7 +46,6 @@ const visitCommand = viewName + ".visit";
 const addDeploymentCommand = viewName + ".addDeployment";
 const createNewDeploymentFileCommand = viewName + ".createNewDeploymentFile";
 const deployCommand = viewName + ".deploy";
-const isEmptyContext = viewName + ".isEmpty";
 
 const fileStore = ".posit/publish/deployments/*.toml";
 
@@ -102,11 +101,6 @@ export class DeploymentsTreeDataProvider
       const api = await useApi();
       const response = await api.deployments.getAll();
       const deployments = response.data;
-      commands.executeCommand(
-        "setContext",
-        isEmptyContext,
-        deployments.length === 0,
-      );
 
       return deployments.map((deployment) => {
         const fileUri = Uri.file(deployment.deploymentPath);
@@ -117,7 +111,6 @@ export class DeploymentsTreeDataProvider
         "deployments::getChildren",
         error,
       );
-      commands.executeCommand("setContext", isEmptyContext, true);
       window.showInformationMessage(summary);
       return [];
     }

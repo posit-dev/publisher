@@ -17,7 +17,6 @@ import { newCredential } from "src/multiStepInputs/newCredential";
 
 const viewName = "posit.publisher.credentials";
 const refreshCommand = viewName + ".refresh";
-const contextIsEmpty = viewName + ".isEmpty";
 const addCommand = viewName + ".add";
 const deleteCommand = viewName + ".delete";
 
@@ -54,7 +53,6 @@ export class CredentialsTreeDataProvider
       const result = creds.map((cred) => {
         return new CredentialsTreeItem(cred);
       });
-      await this.setContextIsEmpty(result.length === 0);
       return result;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -62,7 +60,6 @@ export class CredentialsTreeDataProvider
         error,
       );
       window.showInformationMessage(summary);
-      await this.setContextIsEmpty(true);
       return [];
     }
   }
@@ -77,14 +74,6 @@ export class CredentialsTreeDataProvider
       commands.registerCommand(refreshCommand, this.refresh),
       commands.registerCommand(addCommand, this.add),
       commands.registerCommand(deleteCommand, this.delete),
-    );
-  }
-
-  private async setContextIsEmpty(isEmpty: boolean): Promise<void> {
-    await commands.executeCommand(
-      "setContext",
-      contextIsEmpty,
-      isEmpty ? "empty" : "notEmpty",
     );
   }
 

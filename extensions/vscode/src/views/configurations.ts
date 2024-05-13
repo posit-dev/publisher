@@ -37,7 +37,6 @@ const editCommand = viewName + ".edit";
 const cloneCommand = viewName + ".clone";
 const renameCommand = viewName + ".rename";
 const deleteCommand = viewName + ".delete";
-const contextIsEmpty = viewName + ".isEmpty";
 const fileStore = ".posit/publish/*.toml";
 
 type ConfigurationEventEmitter = EventEmitter<
@@ -81,7 +80,6 @@ export class ConfigurationsTreeDataProvider
       const api = await useApi();
       const response = await api.configurations.getAll();
       const configurations = response.data;
-      await this.setContextIsEmpty(configurations.length === 0);
 
       return configurations.map((config) => {
         const fileUri = Uri.file(config.configurationPath);
@@ -93,7 +91,6 @@ export class ConfigurationsTreeDataProvider
         error,
       );
       window.showInformationMessage(summary);
-      await this.setContextIsEmpty(true);
       return [];
     }
   }
@@ -120,14 +117,6 @@ export class ConfigurationsTreeDataProvider
     if (this.root !== undefined) {
       this._context.subscriptions.push(this.createFileSystemWatcher(this.root));
     }
-  }
-
-  private async setContextIsEmpty(isEmpty: boolean): Promise<void> {
-    await commands.executeCommand(
-      "setContext",
-      contextIsEmpty,
-      isEmpty ? "empty" : "notEmpty",
-    );
   }
 
   private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {

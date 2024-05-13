@@ -36,7 +36,4 @@ export class ProjectTreeItem extends TreeItem {
   constructor(itemString: string) {
     super(itemString);
   }
-
-  contextValue = "posit.publisher.project.tree.item";
-  tooltip = "This is a \nProject Tree Item";
 }
