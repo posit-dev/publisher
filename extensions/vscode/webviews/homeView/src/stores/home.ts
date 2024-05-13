@@ -30,8 +30,6 @@ export const useHomeStore = defineStore("home", () => {
     });
   });
 
-  const easyDeployExpanded = ref(false);
-
   const lastDeploymentResult = ref<string>();
   const lastDeploymentMsg = ref<string>();
 
@@ -112,16 +110,6 @@ export const useHomeStore = defineStore("home", () => {
     });
   };
 
-  watch(easyDeployExpanded, () => {
-    const hostConduit = useHostConduitService();
-    hostConduit.sendMsg({
-      kind: WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED,
-      content: {
-        expanded: easyDeployExpanded.value,
-      },
-    });
-  });
-
   const updatePythonPackages = (
     ispythonProject: boolean,
     packages?: string[],
@@ -142,7 +130,6 @@ export const useHomeStore = defineStore("home", () => {
     selectedDeployment,
     selectedConfiguration,
     serverCredential,
-    easyDeployExpanded,
     includedFiles,
     excludedFiles,
     lastDeploymentResult,

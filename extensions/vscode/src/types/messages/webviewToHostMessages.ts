@@ -10,7 +10,6 @@ export enum WebviewToHostMessageType {
   EDIT_CONFIGURATION = "editConfiguration",
   NEW_CONFIGURATION = "newConfiguration",
   NAVIGATE = "navigate",
-  SAVE_DEPLOYMENT_BUTTON_EXPANDED = "saveDeploymentButtonExpanded",
   SAVE_SELECTION_STATE = "saveSelectionState",
   VSCODE_OPEN = "vsCodeOpen",
   INCLUDE_FILE = "includeFile",
@@ -40,7 +39,6 @@ export type WebviewToHostMessage =
   | EditConfigurationMsg
   | NewConfigurationMsg
   | NavigateMsg
-  | SaveDeploymentButtonExpandedMsg
   | SaveSelectionStatedMsg
   | VSCodeOpenMsg
   | IncludeFileMsg
@@ -60,7 +58,6 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.NAVIGATE ||
     msg.kind === WebviewToHostMessageType.NEW_CONFIGURATION ||
     msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
-    msg.kind === WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED ||
     msg.kind === WebviewToHostMessageType.SAVE_SELECTION_STATE ||
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN ||
     msg.kind === WebviewToHostMessageType.INCLUDE_FILE ||
@@ -103,13 +100,6 @@ export type NavigateMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.NAVIGATE,
   {
     uriPath: string;
-  }
->;
-
-export type SaveDeploymentButtonExpandedMsg = AnyWebviewToHostMessage<
-  WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED,
-  {
-    expanded: boolean;
   }
 >;
 
