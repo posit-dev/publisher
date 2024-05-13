@@ -130,7 +130,7 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 }
 
 var errBadDescription = errors.New("invalid DESCRIPTION file")
-var errPackageNotFound = errors.New("package not found in current libPaths")
+var errPackageNotFound = errors.New("package not found in current libPaths; consider running renv::restore() to populate the renv library")
 
 var keepWhiteFields = []string{"Description", "Authors@R", "Author", "Built", "Packaged"}
 
