@@ -59,7 +59,10 @@ func (h *GetConfigPackagesHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		if errors.Is(err, fs.ErrNotExist) {
 			NotFound(w, h.log, err)
 		} else {
-			InternalError(w, req, h.log, err)
+			msg := "could not read renv lockfile"
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			w.Write([]byte(msg))
+			h.log.Error(msg, "method", req.Method, "url", req.URL.String(), "error", err)
 		}
 		return
 	}
