@@ -14,6 +14,7 @@ export const bus = Omnibus.builder()
   // requestActive*: simple events which will cause an Active*Change event to be sent back out.
   .register("requestActiveConfig", args<undefined>())
   .register("requestActiveDeployment", args<undefined>())
+  .register("refreshCredentials", args<undefined>())
 
   .build();
 
@@ -31,6 +32,9 @@ bus.on("requestActiveConfig", (msg) => {
 });
 bus.on("requestActiveDeployment", (msg) => {
   console.debug(`\nbus trace: requestActiveDeployment: ${JSON.stringify(msg)}`);
+});
+bus.on("refreshCredentials", (msg) => {
+  console.debug(`\nbus trace: refreshCredentials: ${JSON.stringify(msg)}`);
 });
 
 export const useBus = () => {

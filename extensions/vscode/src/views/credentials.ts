@@ -12,6 +12,7 @@ import {
 } from "vscode";
 
 import { useApi, Credential } from "src/api";
+import { useBus } from "src/bus";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { newCredential } from "src/multiStepInputs/newCredential";
 
@@ -34,7 +35,11 @@ export class CredentialsTreeDataProvider
   readonly onDidChangeTreeData: CredentialEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(private readonly _context: ExtensionContext) {}
+  constructor(private readonly _context: ExtensionContext) {
+    useBus().on("refreshCredentials", () => {
+      this._onDidChangeTreeData.fire();
+    });
+  }
 
   getTreeItem(element: CredentialsTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -67,14 +72,18 @@ export class CredentialsTreeDataProvider
     }
   }
 
-  public refresh = () => {
-    this._onDidChangeTreeData.fire();
+  public triggerRefresh = () => {
+    // it's round-about, but we post a message on the bus so that
+    // everyone will refresh their credentials, and on that message
+    // then refresh ourselves from the API. This then allows everyone
+    // to work the same to trigger a credential refresh.
+    useBus().trigger("refreshCredentials", undefined);
   };
 
   public register() {
     this._context.subscriptions.push(
       window.createTreeView(viewName, { treeDataProvider: this }),
-      commands.registerCommand(refreshCommand, this.refresh),
+      commands.registerCommand(refreshCommand, this.triggerRefresh),
       commands.registerCommand(addCommand, this.add),
       commands.registerCommand(deleteCommand, this.delete),
     );
@@ -101,7 +110,7 @@ export class CredentialsTreeDataProvider
     const credential = await newCredential();
     if (credential) {
       // refresh the credentials view
-      this.refresh();
+      this.triggerRefresh();
     }
   };
 
@@ -116,7 +125,7 @@ export class CredentialsTreeDataProvider
       const summary = getSummaryStringFromError("credential::delete", error);
       window.showInformationMessage(summary);
     }
-    this.refresh();
+    this.triggerRefresh();
   };
 }
 
