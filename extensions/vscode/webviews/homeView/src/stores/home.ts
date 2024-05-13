@@ -20,7 +20,16 @@ export const useHomeStore = defineStore("home", () => {
 
   const selectedDeployment = ref<Deployment | PreDeployment>();
   const selectedConfiguration = ref<Configuration>();
-  const selectedCredential = ref<Credential>();
+
+  const serverCredential = computed(() => {
+    return credentials.value.find((c) => {
+      return (
+        c.url.toLowerCase() ===
+        selectedDeployment.value?.serverUrl.toLowerCase()
+      );
+    });
+  });
+
   const easyDeployExpanded = ref(false);
 
   const lastDeploymentResult = ref<string>();
@@ -33,15 +42,6 @@ export const useHomeStore = defineStore("home", () => {
   const pythonPackages = ref<string[]>();
   const pythonPackageFile = ref<string>();
   const pythonPackageManager = ref<string>();
-
-  const filteredCredentials = computed(() => {
-    return credentials.value.filter((c) => {
-      return (
-        c.url.toLowerCase() ===
-        selectedDeployment.value?.serverUrl.toLowerCase()
-      );
-    });
-  });
 
   /**
    * Updates the selected deployment to one with the given name.
@@ -89,24 +89,7 @@ export const useHomeStore = defineStore("home", () => {
     selectedConfiguration.value = config;
   }
 
-  /**
-   * Updates the selected credential to the one with the given name.
-   * If the named credential is not found, the selected credential is set to undefined.
-   *
-   * @param name the name of the new credential to select
-   * @returns true if the selected credential was the same, false if not
-   */
-  function updateSelectedCredentialByName(name: string) {
-    const previousSelectedAccount = selectedCredential.value;
-
-    const credential = credentials.value.find((c) => c.name === name);
-
-    selectedCredential.value = credential;
-    return previousSelectedAccount === selectedCredential.value;
-  }
-
   const updateCredentialsAndConfigurationForDeployment = () => {
-    filterCredentialsToDeployment();
     if (selectedDeployment.value?.configurationName) {
       updateSelectedConfigurationByName(
         selectedDeployment.value?.configurationName,
@@ -114,37 +97,7 @@ export const useHomeStore = defineStore("home", () => {
     }
   };
 
-  // TODO: We need to show an error when you have no credentials which can get to
-  // the deployment URL
-  // OR
-  // Should we filter deployment list to just include what you can access. Maybe disable others?
-
-  const filterCredentialsToDeployment = () => {
-    if (filteredCredentials.value.length === 0) {
-      // TODO: Show ERROR HERE!!!!
-      selectedCredential.value = undefined;
-    } else if (!selectedCredential.value) {
-      selectedCredential.value = filteredCredentials.value[0];
-    } else if (selectedCredential.value) {
-      let target: Credential | undefined = filteredCredentials.value.find(
-        (account) => {
-          if (selectedCredential.value) {
-            return account.name === selectedCredential.value.name;
-          }
-          return false;
-        },
-      );
-      if (target) {
-        selectedCredential.value = target;
-      } else {
-        selectedCredential.value = filteredCredentials.value[0];
-      }
-    }
-  };
-
-  watch([selectedConfiguration, selectedCredential], () =>
-    updateParentViewSelectionState(),
-  );
+  watch([selectedConfiguration], () => updateParentViewSelectionState());
 
   const updateParentViewSelectionState = () => {
     const hostConduit = useHostConduitService();
@@ -154,7 +107,6 @@ export const useHomeStore = defineStore("home", () => {
         state: {
           deploymentName: selectedDeployment.value?.saveName,
           configurationName: selectedConfiguration.value?.configurationName,
-          credentialName: selectedCredential.value?.name,
         },
       },
     });
@@ -189,11 +141,10 @@ export const useHomeStore = defineStore("home", () => {
     credentials,
     selectedDeployment,
     selectedConfiguration,
-    selectedCredential,
+    serverCredential,
     easyDeployExpanded,
     includedFiles,
     excludedFiles,
-    filteredCredentials,
     lastDeploymentResult,
     lastDeploymentMsg,
     pythonProject,
@@ -204,10 +155,8 @@ export const useHomeStore = defineStore("home", () => {
     updateSelectedDeploymentByObject,
     updateSelectedConfigurationByName,
     updateSelectedConfigurationByObject,
-    updateSelectedCredentialByName,
     updateCredentialsAndConfigurationForDeployment,
     updateParentViewSelectionState,
-    filterCredentialsToDeployment,
     updatePythonPackages,
   };
 });

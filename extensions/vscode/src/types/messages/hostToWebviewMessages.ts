@@ -89,7 +89,6 @@ export type RefreshCredentialDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
   {
     credentials: Credential[];
-    selectedCredentialName?: string | null;
   }
 >;
 export type PublishStartMsg =

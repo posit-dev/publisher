@@ -107,10 +107,9 @@ const onRefreshDeploymentDataMsg = (msg: RefreshDeploymentDataMsg) => {
     }
   }
 
-  // If no deployment is selected, unset the selected configuration and credential
+  // If no deployment is selected, unset the selected configuration
   if (home.selectedDeployment === undefined) {
     home.selectedConfiguration = undefined;
-    home.selectedCredential = undefined;
   }
 };
 
@@ -155,15 +154,6 @@ const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
 const onRefreshCredentialDataMsg = (msg: RefreshCredentialDataMsg) => {
   const home = useHomeStore();
   home.credentials = msg.content.credentials;
-
-  const name = msg.content.selectedCredentialName;
-  if (name) {
-    home.updateSelectedCredentialByName(name);
-  } else if (name === null) {
-    home.selectedCredential = undefined;
-  } else if (home.selectedCredential) {
-    home.updateSelectedCredentialByName(home.selectedCredential.name);
-  }
 };
 const onPublishStartMsg = () => {
   const home = useHomeStore();
