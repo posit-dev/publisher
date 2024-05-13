@@ -259,3 +259,35 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 		},
 	}, configs[0])
 }
+
+func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	configs := s.runInferType("quarto-multidoc-proj-none")
+	s.Len(configs, 2)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "document1.qmd",
+		Title:      "quarto-proj-none-multidocument",
+		Validate:   true,
+		Files:      []string{"*"},
+		Quarto: &config.Quarto{
+			Version: "1.4.553",
+			Engines: []string{"markdown"},
+		},
+	}, configs[0])
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "document2.qmd",
+		Title:      "quarto-proj-none-multidocument",
+		Validate:   true,
+		Files:      []string{"*"},
+		Quarto: &config.Quarto{
+			Version: "1.4.553",
+			Engines: []string{"markdown"},
+		},
+	}, configs[1])
+}
