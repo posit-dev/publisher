@@ -48,7 +48,6 @@ import {
   DeployMsg,
   EditConfigurationMsg,
   NavigateMsg,
-  SaveDeploymentButtonExpandedMsg,
   SaveSelectionStatedMsg,
   WebviewToHostMessage,
   WebviewToHostMessageType,
@@ -67,7 +66,6 @@ const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
 const deployWithDiffConfigCommand = viewName + ".deployWithDiffConfig";
 const selectDestinationCommand = viewName + ".selectDestination";
-const contextIsSelectorExpanded = viewName + ".expanded";
 const contextIsHomeViewInitialized = viewName + ".initialized";
 
 enum HomeViewInitialized {
@@ -76,7 +74,6 @@ enum HomeViewInitialized {
 }
 
 const lastSelectionState = viewName + ".lastSelectionState.v2";
-const lastExpansionState = viewName + ".lastExpansionState.v1";
 
 export class HomeViewProvider implements WebviewViewProvider {
   private _disposables: Disposable[] = [];
@@ -138,8 +135,6 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onNewConfigurationMsg();
       case WebviewToHostMessageType.NAVIGATE:
         return await this._onNavigateMsg(msg);
-      case WebviewToHostMessageType.SAVE_DEPLOYMENT_BUTTON_EXPANDED:
-        return await this._onSaveDeploymentButtonExpandedMsg(msg);
       case WebviewToHostMessageType.SAVE_SELECTION_STATE:
         return await this._onSaveSelectionState(msg);
       case WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES:
@@ -234,17 +229,6 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private async _onNavigateMsg(msg: NavigateMsg) {
     await env.openExternal(Uri.parse(msg.content.uriPath));
-  }
-
-  private async _onSaveDeploymentButtonExpandedMsg(
-    msg: SaveDeploymentButtonExpandedMsg,
-  ) {
-    await commands.executeCommand(
-      "setContext",
-      contextIsSelectorExpanded,
-      msg.content.expanded,
-    );
-    await this._saveExpansionState(msg.content.expanded);
   }
 
   private async _onSaveSelectionState(msg: SaveSelectionStatedMsg) {
@@ -423,18 +407,6 @@ export class HomeViewProvider implements WebviewViewProvider {
     });
   }
 
-  private _updateWebViewViewExpansionState() {
-    this._webviewConduit.sendMsg({
-      kind: HostToWebviewMessageType.UPDATE_EXPANSION_FROM_STORAGE,
-      content: {
-        expansionState: this._context.workspaceState.get<boolean>(
-          lastExpansionState,
-          false,
-        ),
-      },
-    });
-  }
-
   private _getSelectionState(): HomeViewState {
     const state = this._context.workspaceState.get<HomeViewState>(
       lastSelectionState,
@@ -469,10 +441,6 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
     useBus().trigger("activeConfigChanged", this._getActiveConfig());
-  }
-
-  private _saveExpansionState(expanded: boolean) {
-    return this._context.workspaceState.update(lastExpansionState, expanded);
   }
 
   private async _onRefreshPythonPackages() {
@@ -807,7 +775,6 @@ export class HomeViewProvider implements WebviewViewProvider {
       selectionState?.configurationName || null,
     );
     this._updateWebViewViewDeployments(selectionState?.deploymentName || null);
-    this._updateWebViewViewExpansionState();
     if (includeSavedState && selectionState) {
       useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
       useBus().trigger("activeConfigChanged", this._getActiveConfig());
@@ -891,7 +858,6 @@ export class HomeViewProvider implements WebviewViewProvider {
     this._stream.register("publish/failure", (msg: EventStreamMessage) => {
       this._onPublishFailure(msg);
     });
-    commands.executeCommand("setContext", contextIsSelectorExpanded, false);
 
     this._context.subscriptions.push(
       window.registerWebviewViewProvider(viewName, this, {
