@@ -69,7 +69,7 @@ export type RefreshDeploymentDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA,
   {
     deployments: (Deployment | PreDeployment)[];
-    selectedDeploymentName?: string;
+    selectedDeploymentName?: string | null;
   }
 >;
 export type UpdateExpansionFromStorageMsg = AnyHostToWebviewMessage<
@@ -82,14 +82,14 @@ export type RefreshConfigDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CONFIG_DATA,
   {
     configurations: Configuration[];
-    selectedConfigurationName?: string;
+    selectedConfigurationName?: string | null;
   }
 >;
 export type RefreshCredentialDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
   {
     credentials: Credential[];
-    selectedCredentialName?: string;
+    selectedCredentialName?: string | null;
   }
 >;
 export type PublishStartMsg =

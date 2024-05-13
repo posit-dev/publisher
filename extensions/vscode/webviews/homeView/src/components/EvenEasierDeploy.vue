@@ -18,13 +18,9 @@
       v-on="home.deployments.length ? { click: onSelectDestination } : {}"
     >
       <QuickPickItem
-        v-if="
-          home.selectedDeployment &&
-          home.selectedConfiguration &&
-          home.selectedCredential
-        "
+        v-if="home.selectedDeployment && home.selectedCredential"
         :label="home.selectedDeployment.saveName"
-        :description="home.selectedConfiguration.configurationName"
+        :description="home.selectedDeployment.configurationName"
         :detail="home.selectedCredential.name"
       />
       <QuickPickItem
@@ -38,6 +34,19 @@
         aria-hidden="true"
       />
     </div>
+
+    <!-- Temporary Section -->
+    <p>Deployment: {{ home.selectedDeployment?.saveName || "undefined" }}</p>
+    <p>
+      Config: {{ home.selectedConfiguration?.configurationName || "undefined" }}
+    </p>
+    <p>Cred: {{ home.selectedCredential?.name || " undefined" }}</p>
+    <!-- Remove this later -->
+
+    <p v-if="home.selectedDeployment && !home.selectedConfiguration">
+      The last Configuration used for this Destination was not found. Choose a
+      new Configuration.
+    </p>
   </div>
 </template>
 

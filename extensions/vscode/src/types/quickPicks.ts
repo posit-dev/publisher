@@ -12,5 +12,6 @@ export interface DestinationQuickPick extends QuickPickItem {
   deployment: Deployment | PreDeploymentWithConfig;
   config?: Configuration;
   credential?: Credential;
+  credentialName: string;
   lastMatch: boolean;
 }
