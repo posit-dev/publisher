@@ -52,7 +52,7 @@ export async function newDeployment(
     try {
       const response = await api.credentials.list();
       credentialListItems = response.data.map((cred) => ({
-        iconPath: new ThemeIcon("account"),
+        iconPath: new ThemeIcon("key"),
         label: cred.name,
         description: cred.url,
       }));

@@ -42,8 +42,9 @@ import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { WebviewConduit } from "src/utils/webviewConduit";
 import { fileExists } from "src/utils/files";
+import { newDestination } from "src/multiStepInputs/newDestination";
 
-import type { Destination, HomeViewState } from "src/types/shared";
+import type { DestinationNames, HomeViewState } from "src/types/shared";
 import {
   DeployMsg,
   EditConfigurationMsg,
@@ -66,6 +67,7 @@ const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
 const deployWithDiffConfigCommand = viewName + ".deployWithDiffConfig";
 const selectDestinationCommand = viewName + ".selectDestination";
+const newDestinationCommand = viewName + ".newDestination";
 const contextIsHomeViewInitialized = viewName + ".initialized";
 
 enum HomeViewInitialized {
@@ -156,6 +158,8 @@ export class HomeViewProvider implements WebviewViewProvider {
         return this.updateFileList(msg.content.path, FileAction.EXCLUDE);
       case WebviewToHostMessageType.SELECT_DESTINATION:
         return this.showDestinationQuickPick();
+      case WebviewToHostMessageType.NEW_DESTINATION:
+        return this.showNewDestinationMultiStep(viewName);
       default:
         throw new Error(
           `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -539,7 +543,74 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
   }
 
-  private async showDestinationQuickPick(): Promise<Destination | undefined> {
+  private async propogateDestinationSelection(
+    configurationName?: string,
+    deploymentName?: string,
+  ) {
+    this._updateWebViewViewCredentials();
+    this._updateWebViewViewConfigurations(configurationName);
+    this._updateWebViewViewDeployments(deploymentName);
+    this._requestWebviewSaveSelection();
+  }
+
+  private async showNewDestinationMultiStep(
+    viewId?: string,
+  ): Promise<DestinationNames | undefined> {
+    const destinationObjects = await newDestination(viewId);
+    if (destinationObjects) {
+      // add out new objects into our collections possibly ahead (we don't know) of
+      // the file refresh activity (for deployment and config)
+      // and the credential refresh that we will kick off
+      //
+      // Doing this as an alternative to forcing a full refresh
+      // of all three APIs prior to updating the UX, which would
+      // be seen as a visible delay (we'd have to have a progress indicator).
+      let refreshCredentials = false;
+      if (
+        !this._deployments.find(
+          (deployment) =>
+            deployment.saveName === destinationObjects.deployment.saveName,
+        )
+      ) {
+        this._deployments.push(destinationObjects.deployment);
+      }
+      if (
+        !this._configs.find(
+          (config) =>
+            config.configurationName ===
+            destinationObjects.configuration.configurationName,
+        )
+      ) {
+        this._configs.push(destinationObjects.configuration);
+      }
+      if (
+        !this._credentials.find(
+          (credential) =>
+            credential.name === destinationObjects.credential.name,
+        )
+      ) {
+        this._credentials.push(destinationObjects.credential);
+        refreshCredentials = true;
+      }
+      this.propogateDestinationSelection(
+        destinationObjects.configuration.configurationName,
+        destinationObjects.deployment.saveName,
+      );
+      // Credentials aren't auto-refreshed, so we have to trigger it ourselves.
+      if (refreshCredentials) {
+        this._refreshCredentialData();
+      }
+      return {
+        configurationName: destinationObjects.configuration.configurationName,
+        deploymentName: destinationObjects.deployment.saveName,
+      };
+    }
+    return undefined;
+  }
+
+  private async showDestinationQuickPick(): Promise<
+    DestinationNames | undefined
+  > {
     // Create quick pick list from current deployments, credentials and configs
     const destinations: DestinationQuickPick[] = [];
     const lastDeploymentName = this._getActiveDeployment()?.saveName;
@@ -638,7 +709,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       },
     ).finally(() => Disposable.from(...toDispose).dispose());
 
-    let result: Destination | undefined;
+    let result: DestinationNames | undefined;
     if (destination) {
       result = {
         deploymentName: destination.deployment.saveName,
@@ -871,6 +942,11 @@ export class HomeViewProvider implements WebviewViewProvider {
       commands.registerCommand(
         selectDestinationCommand,
         this.showDestinationQuickPick,
+        this,
+      ),
+      commands.registerCommand(
+        newDestinationCommand,
+        () => this.showNewDestinationMultiStep(viewName),
         this,
       ),
     );

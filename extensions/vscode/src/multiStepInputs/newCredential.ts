@@ -57,7 +57,7 @@ export async function newCredential(
   // ***************************************************************
 
   // Get the server url
-  // Get the server name
+  // Get the credential name
   // Get the API key
   // result in calling credential API
 
@@ -128,12 +128,12 @@ export async function newCredential(
             severity: InputBoxValidationSeverity.Error,
           });
         }
-        const existingAccount = credentials.find(
+        const existingCredential = credentials.find(
           (cred) => input.toLowerCase() === cred.url.toLowerCase(),
         );
-        if (existingAccount) {
+        if (existingCredential) {
           return Promise.resolve({
-            message: `Server URL is already assigned to your credential "${existingAccount.name}". Only one credential per unique URL is allowed.`,
+            message: `Server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed.`,
             severity: InputBoxValidationSeverity.Error,
           });
         }

@@ -38,13 +38,15 @@ export async function publishDeployment(
   const getCredentials = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.credentials.list();
-      // account list is filtered to match the deployment being published
+      // credential list is filtered to match the deployment being published
       credentialListItems = response.data
-        .filter((account) => account.url.trim() === deployment.serverUrl.trim())
-        .map((account) => ({
-          iconPath: new ThemeIcon("account"),
-          label: account.name,
-          description: account.url,
+        .filter(
+          (credential) => credential.url.trim() === deployment.serverUrl.trim(),
+        )
+        .map((credential) => ({
+          iconPath: new ThemeIcon("key"),
+          label: credential.name,
+          description: credential.url,
         }));
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -61,7 +63,7 @@ export async function publishDeployment(
         `Unable to continue with no matching credentials for\n` +
           `deployment URL: ${deployment.serverUrl}\n` +
           `\n` +
-          `Establish account credentials, then try again.`,
+          `Establish account credentials for the Server URL, then try again.`,
       );
       return reject();
     }

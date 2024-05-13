@@ -55,40 +55,73 @@ export async function newConfig(title: string, viewId?: string) {
   // API Calls and results
   // ***************************************************************
   const api = await useApi();
+  let entryPointLabels: string[] = [];
   let entryPointListItems: QuickPickItemWithIndex[] = [];
-  let configs: ConfigurationDetails[] = [];
+  const entryPointLabelMap = new Map<string, ConfigurationDetails>();
+  let configDetails: ConfigurationDetails[] = [];
+  let configNames: string[] = [];
+
+  const getConfigurationInspections = new Promise<void>(
+    async (resolve, reject) => {
+      try {
+        const inspectResponse = await api.configurations.inspect();
+        configDetails = inspectResponse.data;
+        entryPointLabels = configDetails.map(
+          (config) => `${config.entrypoint}`,
+        );
+        configDetails.forEach((config, i) => {
+          if (config.entrypoint) {
+            entryPointListItems.push({
+              iconPath: new ThemeIcon("file"),
+              label: config.entrypoint,
+              description: `(${contentTypeStrings[config.type]})`,
+              index: i,
+            });
+          }
+        });
+        for (let i = 0; i < configDetails.length; i++) {
+          entryPointLabelMap.set(entryPointLabels[i], configDetails[i]);
+        }
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "newConfig, configurations.inspect",
+          error,
+        );
+        window.showErrorMessage(
+          `Unable to continue with project inspection failure. ${summary}`,
+        );
+        return reject();
+      }
+      if (!entryPointListItems.length) {
+        const msg = `Unable to continue with no project entrypoints found during inspection`;
+        window.showErrorMessage(msg);
+        return reject();
+      }
+      return resolve();
+    },
+  );
 
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
-      const inspectResponse = await api.configurations.inspect();
-      configs = inspectResponse.data;
-      configs.forEach((config, i) => {
-        if (config.entrypoint) {
-          entryPointListItems.push({
-            iconPath: new ThemeIcon("file"),
-            label: config.entrypoint,
-            description: `(${contentTypeStrings[config.type]})`,
-            index: i,
-          });
-        }
-      });
+      const response = await api.configurations.getAll();
+      configNames = response.data.map((config) => config.configurationName);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "newConfig, configurations.inspect",
+        "newConfig, configurations.getAll",
         error,
       );
-      window.showErrorMessage(
-        `Unable to continue with project inspection failure. ${summary}`,
+      window.showInformationMessage(
+        `Unable to continue with failed configuration API call. ${summary}`,
       );
       return reject();
     }
-    if (!entryPointListItems.length) {
-      const msg = `Unable to continue with no project entrypoints found during inspection`;
-      window.showErrorMessage(msg);
-      return reject();
-    }
-    return resolve();
+    resolve();
   });
+
+  const apiCalls = Promise.all([
+    getConfigurationInspections,
+    getConfigurations,
+  ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
   window.withProgress(
@@ -97,7 +130,7 @@ export async function newConfig(title: string, viewId?: string) {
       location: viewId ? { viewId } : ProgressLocation.Window,
     },
     async () => {
-      return getConfigurations;
+      return apiCalls;
     },
   );
 
@@ -196,6 +229,12 @@ export async function newConfig(title: string, viewId?: string) {
             severity: InputBoxValidationSeverity.Error,
           });
         }
+        if (configNames.includes(value)) {
+          return Promise.resolve({
+            message: `Invalid Name: Name is already in use for this project. Please enter a unique name.`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
         return Promise.resolve(undefined);
       },
       shouldResume: () => Promise.resolve(false),
@@ -215,7 +254,7 @@ export async function newConfig(title: string, viewId?: string) {
   // collect the info.
   // ***************************************************************
   try {
-    await getConfigurations;
+    await apiCalls;
   } catch {
     // errors have already been displayed by the underlying promises..
     return;
@@ -237,7 +276,7 @@ export async function newConfig(title: string, viewId?: string) {
   // Create the Config File
   let newConfig: Configuration | undefined = undefined;
   try {
-    const selectedConfig = configs[state.data.entryPoint.index];
+    const selectedConfig = configDetails[state.data.entryPoint.index];
     if (!selectedConfig) {
       window.showErrorMessage(
         `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}`,
