@@ -261,3 +261,37 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServerType() {
 		R:          &config.R{},
 	}, configs[0])
 }
+
+var noMetaRmdContent = fmt.Sprintf(`
+# Special Report
+
+%s{r, echo=TRUE}
+library(foo)
+%s
+`, backticks, backticks)
+
+func (s *RMarkdownSuite) TestInferTypeNoMetadata() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte(noMetaRmdContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	configs, err := detector.InferType(base)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdown,
+		Title:      "",
+		Entrypoint: filename,
+		Validate:   true,
+		Files:      []string{"*"},
+		R:          &config.R{},
+	}, configs[0])
+}

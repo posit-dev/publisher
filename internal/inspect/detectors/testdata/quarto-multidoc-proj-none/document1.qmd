@@ -1,0 +1,9 @@
+---
+title: "document1.qmd"
+resource_files:
+- _quarto.yml
+---
+
+## Document 1
+
+The first of two documents.

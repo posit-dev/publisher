@@ -119,14 +119,17 @@ func (d *QuartoDetector) needsR(inspectOutput *quartoInspectOutput) bool {
 	return false
 }
 
-func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput) string {
-	if inspectOutput.Formats.HTML.Metadata.Title != "" {
+func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput, entrypointName string) string {
+	isValidTitle := func(title string) bool {
+		return title != "" && title != entrypointName
+	}
+	if isValidTitle(inspectOutput.Formats.HTML.Metadata.Title) {
 		return inspectOutput.Formats.HTML.Metadata.Title
 	}
-	if inspectOutput.Project.Config.Website.Title != "" {
+	if isValidTitle(inspectOutput.Project.Config.Website.Title) {
 		return inspectOutput.Project.Config.Website.Title
 	}
-	if inspectOutput.Project.Config.Project.Title != "" {
+	if isValidTitle(inspectOutput.Project.Config.Project.Title) {
 		return inspectOutput.Project.Config.Project.Title
 	}
 	return ""
@@ -186,7 +189,7 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, er
 		}
 		cfg := config.New()
 		cfg.Entrypoint = entrypoint.String()
-		cfg.Title = d.getTitle(inspectOutput)
+		cfg.Title = d.getTitle(inspectOutput, entrypoint.String())
 
 		if isQuartoShiny(&inspectOutput.Formats.HTML.Metadata) {
 			cfg.Type = config.ContentTypeQuartoShiny

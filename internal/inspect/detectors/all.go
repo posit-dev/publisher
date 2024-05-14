@@ -21,11 +21,13 @@ func NewContentTypeDetector(log logging.Logger) *ContentTypeDetector {
 		detectors: []ContentTypeInferer{
 			// The order here is important, since the first
 			// ContentTypeInferer to return a non-nil
-			// ContentType will determine the result.
+			// ContentType will determine the result
+			// for CLI `init`. For the UI, we show all of the
+			// detected content types.
 			NewPlumberDetector(),
-			NewQuartoDetector(),
 			NewRMarkdownDetector(log),
 			NewNotebookDetector(),
+			NewQuartoDetector(),
 			NewRShinyDetector(),
 			NewPyShinyDetector(),
 			NewFastAPIDetector(),
