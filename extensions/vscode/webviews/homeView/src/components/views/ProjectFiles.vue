@@ -20,8 +20,8 @@
           v-for="file in home.includedFiles"
           @click="
             sendMsg({
-              kind: WebviewToHostMessageType.VSCODE_OPEN,
-              content: { uri: file.id },
+              kind: WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
+              content: { relativePath: file.id },
             })
           "
           :key="file.id"
@@ -59,8 +59,8 @@
           v-for="file in home.excludedFiles"
           @click="
             sendMsg({
-              kind: WebviewToHostMessageType.VSCODE_OPEN,
-              content: { uri: file.id },
+              kind: WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
+              content: { relativePath: file.id },
             })
           "
           :key="file.id"
