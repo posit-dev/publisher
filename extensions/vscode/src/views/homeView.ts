@@ -93,6 +93,7 @@ export class HomeViewProvider implements WebviewViewProvider {
   private _webviewConduit: WebviewConduit;
 
   private activeConfigFileWatcher: FileSystemWatcher | undefined;
+  private activePythonPackageFileWatcher: FileSystemWatcher | undefined;
 
   constructor(
     private readonly _context: ExtensionContext,
@@ -122,6 +123,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       this.sendRefreshedFilesLists();
       this._onRefreshPythonPackages();
       this.createActiveConfigFileWatcher(cfg);
+      this.createActivePythonPackageFileWatcher(cfg);
     });
   }
   /**
@@ -930,6 +932,36 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
 
     this.activeConfigFileWatcher = watcher;
+    this._context.subscriptions.push(watcher);
+  }
+
+  private createActivePythonPackageFileWatcher(cfg: Configuration | undefined) {
+    if (this.root === undefined || cfg === undefined) {
+      return;
+    }
+
+    const watcher = workspace.createFileSystemWatcher(
+      new RelativePattern(
+        this.root,
+        cfg.configuration.python?.packageFile || "requirements.txt",
+      ),
+    );
+    watcher.onDidCreate(this._onRefreshPythonPackages, this);
+    watcher.onDidChange(this._onRefreshPythonPackages, this);
+    watcher.onDidDelete(this._onRefreshPythonPackages, this);
+
+    if (this.activePythonPackageFileWatcher) {
+      // Dispose the previous configuration file watcher
+      this.activePythonPackageFileWatcher.dispose();
+      const index = this._context.subscriptions.indexOf(
+        this.activePythonPackageFileWatcher,
+      );
+      if (index !== -1) {
+        this._context.subscriptions.splice(index, 1);
+      }
+    }
+
+    this.activePythonPackageFileWatcher = watcher;
     this._context.subscriptions.push(watcher);
   }
 
