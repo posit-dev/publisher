@@ -65,6 +65,7 @@ const configFiles = ".posit/publish/*.toml";
 
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
+const redeployCommand = viewName + ".redeploy";
 const deployWithDiffConfigCommand = viewName + ".deployWithDiffConfig";
 const selectDestinationCommand = viewName + ".selectDestination";
 const newDestinationCommand = viewName + ".newDestination";
@@ -180,6 +181,27 @@ export class HomeViewProvider implements WebviewViewProvider {
         msg.content.deploymentName,
         msg.content.credentialName,
         msg.content.configurationName,
+      );
+      deployProject(response.data.localId, this._stream);
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("homeView, deploy", error);
+      window.showInformationMessage(`Failed to deploy . ${summary}`);
+    }
+  }
+
+  private async _onDeployCommand(): Promise<void> {
+    const savedState = this._getSelectionState();
+    if (savedState.deploymentName === undefined) {
+      window.showInformationMessage("Select a deployment to redeploy.");
+      return;
+    }
+
+    try {
+      const api = await useApi();
+      const response = await api.deployments.publish(
+        savedState.deploymentName,
+        "", // use the credential that matches the deployment URL
+        savedState.configurationName,
       );
       deployProject(response.data.localId, this._stream);
     } catch (error: unknown) {
@@ -999,11 +1021,11 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, () => this.refreshAll(true)),
+      commands.registerCommand(redeployCommand, () => this._onDeployCommand()),
       commands.registerCommand(deployWithDiffConfigCommand, () =>
         console.log("deploying with different configuration command executed"),
       ),
     );
-
     if (this.root !== undefined) {
       const configFileWatcher = workspace.createFileSystemWatcher(
         new RelativePattern(this.root, configFiles),

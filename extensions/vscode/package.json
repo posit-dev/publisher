@@ -174,6 +174,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.homeView.redeploy",
+        "title": "Redeploy",
+        "icon": "$(cloud-upload)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.homeView.deployWithDiffConfig",
         "title": "Deploy with a Different Configuration",
         "category": "Posit Publisher"
@@ -391,6 +397,10 @@
         {
           "command": "posit.publisher.homeView.refresh",
           "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.homeView.redeploy",
+          "when": "posit.publish.state == 'initialized'"
         },
         {
           "command": "posit.publisher.homeView.selectDestination",
