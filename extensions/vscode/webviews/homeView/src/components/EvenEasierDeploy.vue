@@ -8,45 +8,61 @@
       <ActionToolbar
         title="Destination"
         :actions="toolbarActions"
-        context-menu="even-easier-deploy-more-menu"
+        :context-menu="
+          home.selectedDeployment ? 'even-easier-deploy-more-menu' : undefined
+        "
       />
     </div>
 
-    <div
-      class="destination-control"
-      :disabled="home.deployments.length === 0 ? true : undefined"
-      v-on="home.deployments.length ? { click: onSelectDestination } : {}"
-    >
-      <QuickPickItem
-        v-if="home.selectedDeployment"
-        :label="home.selectedDeployment.saveName"
-        :description="home.selectedDeployment.configurationName"
-        :detail="home.serverCredential?.name || 'No matching Credential found'"
-      />
-      <QuickPickItem
-        v-else
-        class="text-placeholder"
-        label="Select a Destination"
-        detail="Get deploying"
-      />
+    <template v-if="home.deployments.length > 0">
       <div
-        class="select-indicator codicon codicon-chevron-down"
-        aria-hidden="true"
-      />
-    </div>
+        class="destination-control"
+        :disabled="home.deployments.length === 0 ? true : undefined"
+        v-on="home.deployments.length ? { click: onSelectDestination } : {}"
+      >
+        <QuickPickItem
+          v-if="home.selectedDeployment"
+          :label="home.selectedDeployment.saveName"
+          :description="home.selectedDeployment.configurationName"
+          :detail="
+            home.serverCredential?.name || 'No matching Credential found'
+          "
+        />
 
-    <p v-if="home.selectedDeployment && !home.selectedConfiguration">
-      The last Configuration used for this Destination was not found. Choose a
-      new Configuration.
-    </p>
+        <QuickPickItem
+          v-else
+          class="text-placeholder"
+          label="Select a Destination"
+          detail="Get deploying"
+        />
 
-    <p v-if="home.selectedDeployment && !home.serverCredential">
-      A Credential for the Destination's server URL was not found.
-      <a href="" role="button" @click="newCredential">Create a new Credential</a
-      >.
-    </p>
+        <div
+          class="select-indicator codicon codicon-chevron-down"
+          aria-hidden="true"
+        />
+      </div>
 
-    <DeployButton class="w-full" />
+      <p v-if="home.selectedDeployment && !home.selectedConfiguration">
+        The last Configuration used for this Destination was not found. Choose a
+        new Configuration.
+      </p>
+
+      <p v-if="home.selectedDeployment && !home.serverCredential">
+        A Credential for the Destination's server URL was not found.
+        <a href="" role="button" @click="newCredential"
+          >Create a new Credential</a
+        >.
+      </p>
+
+      <DeployButton class="w-full" />
+    </template>
+    <vscode-button
+      v-else
+      class="w-full add-destination-btn"
+      @click="onAddDestination"
+    >
+      Add Destination
+    </vscode-button>
 
     <template
       v-if="home.selectedDeployment && home.selectedDeployment.serverType"
@@ -224,6 +240,10 @@ const newCredential = () => {
 
 :deep(.action-item) {
   margin-right: 4px;
+}
+
+.add-destination-btn {
+  margin: 0.5rem 0 1rem;
 }
 
 .home-view-divider {
