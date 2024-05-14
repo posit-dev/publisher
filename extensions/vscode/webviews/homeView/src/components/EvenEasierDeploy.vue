@@ -49,8 +49,8 @@
 
       <p v-if="home.selectedDeployment && !home.serverCredential">
         A Credential for the Destination's server URL was not found.
-        <a href="" role="button" @click="newCredential">
-          Create a new Credential </a
+        <a href="" role="button" @click="newCredential"
+          >Create a new Credential</a
         >.
       </p>
 
