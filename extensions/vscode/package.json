@@ -270,8 +270,8 @@
         },
         {
           "command": "posit.publisher.homeView.refresh",
-          "when": "view == posit.publisher.homeView && posit.publisher.homeView.expanded",
-          "group": "navigation@3"
+          "when": "view == posit.publisher.homeView",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [

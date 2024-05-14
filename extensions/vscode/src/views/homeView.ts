@@ -966,7 +966,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     );
 
     this._context.subscriptions.push(
-      commands.registerCommand(refreshCommand, this.refreshAll),
+      commands.registerCommand(refreshCommand, () => this.refreshAll(true)),
       commands.registerCommand(deployWithDiffConfigCommand, () =>
         console.log("deploying with different configuration command executed"),
       ),
