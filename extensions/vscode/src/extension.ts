@@ -1,14 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import {
-  ExtensionContext,
-  FileType,
-  RelativePattern,
-  Uri,
-  WorkspaceFolder,
-  commands,
-  workspace,
-} from "vscode";
+import { ExtensionContext, commands } from "vscode";
 
 import * as ports from "src/ports";
 import { Service } from "src/services";
@@ -22,7 +14,6 @@ import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
 
 const STATE_CONTEXT = "posit.publish.state";
-const MISSING_CONTEXT = "posit.publish.missing";
 
 enum PositPublishState {
   initialized = "initialized",
@@ -39,23 +30,6 @@ enum InitializationInProgress {
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
 
-async function isMissingPublishDirs(folder: WorkspaceFolder): Promise<boolean> {
-  try {
-    const stats = await Promise.all([
-      workspace.fs.stat(Uri.joinPath(folder.uri, ".posit")),
-      workspace.fs.stat(Uri.joinPath(folder.uri, ".posit/publish")),
-    ]);
-
-    return !stats.every((stat) => stat.type === FileType.Directory);
-  } catch {
-    return true;
-  }
-}
-
-function setMissingContext(context: boolean) {
-  commands.executeCommand("setContext", MISSING_CONTEXT, context);
-}
-
 function setStateContext(context: PositPublishState) {
   commands.executeCommand("setContext", STATE_CONTEXT, context);
 }
@@ -69,28 +43,6 @@ function setInitializationInProgressContext(context: InitializationInProgress) {
 export async function activate(context: ExtensionContext) {
   setStateContext(PositPublishState.uninitialized);
   setInitializationInProgressContext(InitializationInProgress.false);
-
-  if (workspace.workspaceFolders && workspace.workspaceFolders.length) {
-    const folder = workspace.workspaceFolders[0];
-
-    const watcher = workspace.createFileSystemWatcher(
-      new RelativePattern(folder, "{.posit,.posit/publish}"),
-      false,
-      true,
-      false,
-    );
-    watcher.onDidCreate(async () => {
-      setMissingContext(await isMissingPublishDirs(folder));
-    });
-    watcher.onDidDelete(() => {
-      setMissingContext(true);
-    });
-    context.subscriptions.push(watcher);
-
-    setMissingContext(await isMissingPublishDirs(folder));
-  } else {
-    setMissingContext(true);
-  }
 
   const port = await ports.acquire();
   const stream = new EventStream(port);
