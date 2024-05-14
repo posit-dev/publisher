@@ -130,7 +130,7 @@ func toManifestPackage(pkg *Package, repos []Repository, availablePackages, bioc
 }
 
 var errBadDescription = errors.New("invalid DESCRIPTION file")
-var errPackageNotFound = errors.New("package not found in current libPaths")
+var errPackageNotFound = errors.New("package not found in current libPaths; consider running renv::restore() to populate the renv library")
 
 var keepWhiteFields = []string{"Description", "Authors@R", "Author", "Built", "Packaged"}
 
@@ -155,8 +155,8 @@ func readPackageDescription(name PackageName, libPaths []util.AbsolutePath) (dcf
 	return nil, fmt.Errorf("%s: %w", name, errPackageNotFound)
 }
 
-var errLockfileLibraryMismatch = errors.New("library and lockfile are out of sync. Use renv::restore() or renv::snapshot() to synchronize")
-var errMissingPackageSource = errors.New("can't re-install packages installed from source; all packages must be installed from a reproducible location")
+var errLockfileLibraryMismatch = errors.New("package versions in library and lockfile are out of sync; use renv::restore() or renv::snapshot() to synchronize")
+var errMissingPackageSource = errors.New("can't re-install packages installed from source; all packages must be installed from a reproducible location such as a repository")
 
 func (m *defaultPackageMapper) GetManifestPackages(
 	base util.AbsolutePath,
