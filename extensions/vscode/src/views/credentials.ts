@@ -106,8 +106,8 @@ export class CredentialsTreeDataProvider
    *
    * @returns
    */
-  public add = async () => {
-    const credential = await newCredential();
+  public add = async (startingServerUrl?: string) => {
+    const credential = await newCredential(startingServerUrl);
     if (credential) {
       // refresh the credentials view
       this.triggerRefresh();

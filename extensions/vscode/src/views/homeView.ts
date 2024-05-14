@@ -164,6 +164,8 @@ export class HomeViewProvider implements WebviewViewProvider {
         return this.showDestinationQuickPick();
       case WebviewToHostMessageType.NEW_DESTINATION:
         return this.showNewDestinationMultiStep(viewName);
+      case WebviewToHostMessageType.NEW_CREDENTIAL:
+        return this.showNewCredential();
       default:
         throw new Error(
           `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -620,6 +622,15 @@ export class HomeViewProvider implements WebviewViewProvider {
       };
     }
     return undefined;
+  }
+
+  private showNewCredential() {
+    const deployment = this._getActiveDeployment();
+
+    return commands.executeCommand(
+      "posit.publisher.credentials.add",
+      deployment?.serverUrl,
+    );
   }
 
   private async showDestinationQuickPick(): Promise<

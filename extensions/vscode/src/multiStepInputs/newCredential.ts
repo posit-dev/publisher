@@ -15,6 +15,7 @@ import { formatURL } from "src/utils/url";
 import { validateApiKey } from "src/utils/apiKeys";
 
 export async function newCredential(
+  startingServerUrl?: string,
   viewId?: string,
 ): Promise<string | undefined> {
   // ***************************************************************
@@ -75,7 +76,7 @@ export async function newCredential(
       data: {
         // each attribute is initialized to undefined
         // to be returned when it has not been cancelled
-        url: undefined, // eventual type is string
+        url: startingServerUrl, // eventual type is string
         name: <string | undefined>undefined, // eventual type is string
         apiKey: <string | undefined>undefined, // eventual type is string
       },

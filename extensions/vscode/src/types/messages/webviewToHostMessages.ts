@@ -20,6 +20,7 @@ export enum WebviewToHostMessageType {
   SCAN_PYTHON_PACKAGE_REQUIREMENTS = "ScanPythonPackageRequirementsMsg",
   SELECT_DESTINATION = "selectDestination",
   NEW_DESTINATION = "newDestination",
+  NEW_CREDENTIAL = "newCredential",
 }
 
 export type AnyWebviewToHostMessage<
@@ -48,7 +49,8 @@ export type WebviewToHostMessage =
   | VSCodeOpenRelativeMsg
   | ScanPythonPackageRequirementsMsg
   | SelectDestinationMsg
-  | NewDestinationMsg;
+  | NewDestinationMsg
+  | NewCredentialMsg;
 
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
@@ -67,7 +69,8 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN_RELATIVE ||
     msg.kind === WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS ||
     msg.kind === WebviewToHostMessageType.SELECT_DESTINATION ||
-    msg.kind === WebviewToHostMessageType.NEW_DESTINATION
+    msg.kind === WebviewToHostMessageType.NEW_DESTINATION ||
+    msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL
   );
 }
 
@@ -152,3 +155,6 @@ export type SelectDestinationMsg =
 
 export type NewDestinationMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_DESTINATION>;
+
+export type NewCredentialMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_CREDENTIAL>;
