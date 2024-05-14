@@ -23,9 +23,14 @@
         <QuickPickItem
           v-if="home.selectedDeployment"
           :label="home.selectedDeployment.saveName"
-          :description="home.selectedDeployment.configurationName"
+          :description="
+            isConfigMissing
+              ? `Missing Configuration ${home.selectedDeployment.configurationName}`
+              : home.selectedDeployment.configurationName
+          "
           :detail="
-            home.serverCredential?.name || 'No matching Credential found'
+            home.serverCredential?.name ||
+            `Missing Credential for ${home.selectedDeployment.serverUrl}`
           "
         />
 
@@ -42,12 +47,12 @@
         />
       </div>
 
-      <p v-if="home.selectedDeployment && !home.selectedConfiguration">
+      <p v-if="isConfigMissing">
         The last Configuration used for this Destination was not found. Choose a
         new Configuration.
       </p>
 
-      <p v-if="home.selectedDeployment && !home.serverCredential">
+      <p v-if="isCredentialMissing">
         A Credential for the Destination's server URL was not found.
         <a href="" role="button" @click="newCredential"
           >Create a new Credential</a
@@ -169,6 +174,14 @@ const onAddDestination = () => {
     kind: WebviewToHostMessageType.NEW_DESTINATION,
   });
 };
+
+const isConfigMissing = computed((): boolean => {
+  return Boolean(home.selectedDeployment && !home.selectedConfiguration);
+});
+
+const isCredentialMissing = computed((): boolean => {
+  return Boolean(home.selectedDeployment && !home.serverCredential);
+});
 
 const lastStatusDescription = computed(() => {
   if (!home.selectedDeployment) {
