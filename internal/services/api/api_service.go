@@ -138,6 +138,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("deployments"), PostDeploymentsHandlerFunc(base, log, lister)).
 		Methods(http.MethodPost)
 
+	// PATCH /api/deployments/$NAME updates a deployment record
+	r.Handle(ToPath("deployments", "{name}"), PatchDeploymentHandlerFunc(base, log)).
+		Methods(http.MethodPatch)
+
 	// GET /api/deployments/$NAME
 	r.Handle(ToPath("deployments", "{name}"), GetDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodGet)
