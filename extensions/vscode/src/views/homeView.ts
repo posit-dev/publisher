@@ -672,14 +672,14 @@ export class HomeViewProvider implements WebviewViewProvider {
       let configName = config?.configurationName;
       if (!configName) {
         configName = deployment.configurationName
-          ? `${deployment.configurationName} - ERROR: Config Not Found!`
+          ? `Missing Configuration ${deployment.configurationName}`
           : `ERROR: No Config Entry in Deployment file - ${deployment.saveName}`;
         problem = true;
       }
 
       let credentialName = credential?.name;
       if (!credentialName) {
-        credentialName = `${deployment.serverUrl} - ERROR: No Matching Credential!`;
+        credentialName = `Missing Credential for ${deployment.serverUrl}`;
         problem = true;
       }
 
