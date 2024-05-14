@@ -369,7 +369,6 @@ export async function newDestination(
       credentialListItems.push({
         iconPath: new ThemeIcon("plus"),
         label: createNewCredentialLabel,
-        detail: "Select this option to create a destination to a new server",
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
