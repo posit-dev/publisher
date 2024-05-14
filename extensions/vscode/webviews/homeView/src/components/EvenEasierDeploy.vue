@@ -41,8 +41,9 @@
     </p>
 
     <p v-if="home.selectedDeployment && !home.serverCredential">
-      A Credential for the Destination's server URL was not found. Create a new
-      Credential.
+      A Credential for the Destination's server URL was not found.
+      <a href="" role="button" @click="newCredential">Create a new Credential</a
+      >.
     </p>
 
     <DeployButton class="w-full" />
@@ -172,6 +173,12 @@ const navigateToUrl = (url: string) => {
     content: {
       uriPath: url,
     },
+  });
+};
+
+const newCredential = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.NEW_CREDENTIAL,
   });
 };
 </script>
