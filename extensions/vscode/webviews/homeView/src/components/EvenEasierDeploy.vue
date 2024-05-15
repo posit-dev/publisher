@@ -50,7 +50,7 @@
       <p v-if="isConfigMissing">
         The last Configuration used for this Destination was not found.
         <a href="" role="button" @click="selectConfiguration"
-          >Select Configuration</a
+          >Select a Configuration</a
         >.
       </p>
 
