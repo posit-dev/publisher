@@ -85,7 +85,7 @@ export async function newDeployment(
       configurations.forEach((configuration) => {
         if (!isConfigurationError(configuration)) {
           configFileListItems.push({
-            iconPath: new ThemeIcon("file-code"),
+            iconPath: new ThemeIcon("gear"),
             label: configuration.configurationName,
             detail: configuration.configurationPath,
           });
