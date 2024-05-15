@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Credentials are now managed within the extension (#1483)
+- Credentials are now managed within the extension. A Connect API key is required. (#1483)
 - Credentials must be unique per server URL (#1534)
 - R content can now be deployed (#1452). You must have an renv.lock file in your project and have the project's renv library populated (for example via `renv::restore()`).
 - Deployment records now include package dependencies that were included in the deployment (#1329)
