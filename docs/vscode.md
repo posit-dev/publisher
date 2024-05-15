@@ -40,7 +40,7 @@ the Requirements view and click the `Scan` button to generate one. Review
 the generated requirements file to ensure it includes all the packages your
 project needs.
 
-![](https://cdn.posit.co/publisher/assets/img/requirements-view-init.png)
+![](https://cdn.posit.co/publisher/assets/img/python-packages-scan.png)
 
 ### R Packages
 
@@ -95,7 +95,7 @@ divided into two lists:
   the deployment. The tooltip on an excluded file will indicate the reason it
   was excluded.
 
-![](https://cdn.posit.co/publisher/assets/img/deployment-files-view.png)
+![](https://cdn.posit.co/publisher/assets/img/project-files-view.png)
 
 The files included in your project are controlled by the `files` list in
 the deployment configuration file. The buttons in the UI update that list.
@@ -163,7 +163,7 @@ This view contains links to this documentation and other resources.
 
 The Posit Publisher logs are available in the VSCode bottom panel.
 
-![](https://cdn.posit.co/publisher/assets/img/deployment-logs.png)
+![](https://cdn.posit.co/publisher/assets/img/deployment-logs-view.png)
 
 There are a few ways to easily get to them:
 
