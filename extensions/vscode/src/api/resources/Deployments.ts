@@ -80,8 +80,9 @@ export class Deployments {
   // 204 - no content
   // 404 - deployment or config file not found
   // 500 - internal server error
-  patch(deploymentname: string, configName: string) {
-    return this.client.patch<Deployment>(`deployments/${deploymentname}`, {
+  patch(deploymentName: string, configName: string) {
+    const encodedName = encodeURIComponent(deploymentName);
+    return this.client.patch<Deployment>(`deployments/${encodedName}`, {
       configurationName: configName,
     });
   }
