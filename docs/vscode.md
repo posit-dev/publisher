@@ -75,7 +75,7 @@ You can create multiple deployment destinations for different purposes.
 For example, you can use a staging deployment for testing before deploying
 to a production destination that is shared with your users.
 
-Clicking the `Select a Destination` dropdown lets you choose which destination to deploy to.
+Clicking the `Destination` dropdown lets you choose which destination to deploy to.
 
 ![](https://cdn.posit.co/publisher/assets/img/deploy-your-project.png)
 
