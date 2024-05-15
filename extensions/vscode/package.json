@@ -48,12 +48,6 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.configurations.select",
-        "title": "Select Active Configuration",
-        "icon": "$(list-selection)",
-        "category": "Posit Publisher"
-      },
-      {
         "command": "posit.publisher.configurations.clone",
         "title": "Clone",
         "icon": "$(files)",
@@ -180,8 +174,8 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.deployWithDiffConfig",
-        "title": "Deploy with a Different Configuration",
+        "command": "posit.publisher.homeView.selectConfigForDestination",
+        "title": "Select Active Configuration",
         "category": "Posit Publisher"
       },
       {
@@ -327,10 +321,6 @@
           "when": "posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.configurations.select",
-          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
-        },
-        {
           "command": "posit.publisher.configurations.clone",
           "when": "false"
         },
@@ -417,7 +407,7 @@
       ],
       "webview/context": [
         {
-          "command": "posit.publisher.homeView.deployWithDiffConfig",
+          "command": "posit.publisher.homeView.selectConfigForDestination",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu'"
         }
       ]

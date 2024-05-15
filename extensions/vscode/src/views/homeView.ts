@@ -59,13 +59,14 @@ import { confirmOverwrite } from "src/dialogs";
 import { splitFilesOnInclusion } from "src/utils/files";
 import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
+import { selectConfig } from "src/multiStepInputs/selectConfig";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
 
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
-const deployWithDiffConfigCommand = viewName + ".deployWithDiffConfig";
+const selectConfigForDestination = viewName + ".selectConfigForDestination";
 const selectDestinationCommand = viewName + ".selectDestination";
 const newDestinationCommand = viewName + ".newDestination";
 const contextIsHomeViewInitialized = viewName + ".initialized";
@@ -142,7 +143,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       case WebviewToHostMessageType.NEW_CONFIGURATION:
         return await this._onNewConfigurationMsg();
       case WebviewToHostMessageType.SELECT_CONFIGURATION:
-        return await this._onSelectConfigurationMsg();
+        return await this.selectConfigForDestination();
       case WebviewToHostMessageType.NAVIGATE:
         return await this._onNavigateMsg(msg);
       case WebviewToHostMessageType.SAVE_SELECTION_STATE:
@@ -234,14 +235,6 @@ export class HomeViewProvider implements WebviewViewProvider {
   private async _onNewConfigurationMsg() {
     await commands.executeCommand(
       "posit.publisher.configurations.add",
-      viewName,
-    );
-  }
-
-  private async _onSelectConfigurationMsg() {
-    console.log("in _onSelectConfigurationMsg");
-    await commands.executeCommand(
-      "posit.publisher.configurations.select",
       viewName,
     );
   }
@@ -562,6 +555,28 @@ export class HomeViewProvider implements WebviewViewProvider {
     this._updateWebViewViewDeployments(deploymentName);
     // And have the webview save what it has selected.
     this._requestWebviewSaveSelection();
+  }
+
+  private async selectConfigForDestination() {
+    // await commands.executeCommand(
+    //   "posit.publisher.configurations.select",
+    //   viewName,
+    // ),
+    const config = await selectConfig("Select a Configuration", viewName);
+    if (config) {
+      const activeDeployment = this._getActiveDeployment();
+      if (activeDeployment === undefined) {
+        console.error(
+          "homeView::selectConfigForDestination: No active deployment.",
+        );
+        return;
+      }
+      const api = await useApi();
+      await api.deployments.patch(
+        activeDeployment.deploymentName,
+        config.configurationName,
+      );
+    }
   }
 
   public async showNewDestinationMultiStep(
@@ -1005,12 +1020,8 @@ export class HomeViewProvider implements WebviewViewProvider {
     this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, () => this.refreshAll(true)),
       commands.registerCommand(
-        deployWithDiffConfigCommand,
-        async () =>
-          await commands.executeCommand(
-            "posit.publisher.configurations.select",
-            viewName,
-          ),
+        selectConfigForDestination,
+        this.selectConfigForDestination.bind(this),
       ),
     );
 
