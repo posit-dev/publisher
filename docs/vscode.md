@@ -19,7 +19,7 @@ To create your first deployment, click the Add Destination button.
 ![](https://cdn.posit.co/publisher/assets/img/no-destinations.png)
 
 This will take you through the process of creating a new destination,
-which includes a credential, configuration file, and deployment.
+which includes a credential, configuration, and deployment.
 
 - A credential defines the server you will deploy to and the API key that will be used to authenticate you. Once you have created a credential, you can use it for all of your deployments to that server.
 - A configuration file describes how your project will be deployed. If the extension detects more than one possible project type, you will be asked which one to use when creating the configuration file.
@@ -32,12 +32,12 @@ which includes a credential, configuration file, and deployment.
 
 ![](https://cdn.posit.co/publisher/assets/img/configuration-file-with-tooltip.png)
 
-Clicking the `Select a Destination` widget lets you choose a destination to deploy to.
+Clicking the `Select a Destination` dropdown lets you choose a destination to deploy to.
 This enables you to have multiple deployments for different purposes. For example,
 you can use a staging deployment for testing before deploying to a production
 destination that is shared with your users.
 
-![](https://cdn.posit.co/publisher/assets/img/home-view-expanded.png)
+![](https://cdn.posit.co/publisher/assets/img/select-destination.png)
 
 ### Setting up Python Requirements
 
@@ -76,7 +76,7 @@ Once the deployment completes, the result will be displayed in the Home view.
 
 ### Other Views and Features
 
-### Deployment Files
+### Project Files
 
 This view shows the files in your project directory,
 divided into two lists:
@@ -101,37 +101,24 @@ For example, to include all Python source files from your project directory, you
 
 ### Python Packages
 
-This view shows the contents of the `requirements.txt` file in your
+This view shows the contents of the requirements file in your
 project directory. It's required when deploying a Python project.
+By default, the filename is `requirements.txt`. You can specify an alternate
+name in the deployment configuration file using the `package_file`
+field under the `[python]` section.
 
 ![](https://cdn.posit.co/publisher/assets/img/python-packages.png)
 
-If you don't have a `requirements.txt` file yet, you'll see a message prompting you to scan it. Clicking Scan will scan your project code for imports and attempt to map those to package names and versions using the package metadata from your local Python installation. After scanning, verify the contents of the generated `requirements.txt` file and make any changes needed.
+If you don't have a requirements file yet, you'll see a message prompting you to scan it. Clicking Scan will scan your project code for imports and attempt to map those to package names and versions using the package metadata from your local Python installation. After scanning, verify the contents of the generated requirements file and make any changes needed.
 
-If you already have a `requirements.txt` file, you can scan your code again using the eye icon in the Requirements view.
-
-You can specify an alternate requirements file in the deployment configuration file using the `package_file` field under the `[python]` section.
+If you already have a requirements file, you can scan your code again using the eye icon in the Requirements view.
 
 ### Deployments
 
 This view lists the deployments for the project. The icon indicates
 whether the content has been successfully deployed.
 
-Not deployed yet:
-
-![](https://cdn.posit.co/publisher/assets/img/pre-deployment.png)
-
-Deployed:
-
-![](https://cdn.posit.co/publisher/assets/img/deployment.png)
-
-Failure Deploying:
-
-![](https://cdn.posit.co/publisher/assets/img/deployment-publish-error.png)
-
-Error parsing the Deployment file:
-
-![](https://cdn.posit.co/publisher/assets/img/deployment-error.png)
+![](https://cdn.posit.co/publisher/assets/img/deployment-icons.png)
 
 ### Configurations
 
@@ -149,12 +136,17 @@ Additionally, you can right-click on a configuration for more operations
 ### Credentials
 
 This view lists the credentials you have defined.
+You need a credential for each Connect server you want to deploy to;
+each credential includes the server URL and an API key.
 Credentials are securely stored in the OS keychain.
 
 To add a credential for a new server, click the `+` button.
 To remove a credential, right-click on it and select `Delete`.
 
 ![](https://cdn.posit.co/publisher/assets/img/credentials.png)
+
+For instructions on how to create a Connect API key, see the
+[Connect documentation](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating).
 
 ### Help and Feedback
 
