@@ -48,8 +48,10 @@
       </div>
 
       <p v-if="isConfigMissing">
-        The last Configuration used for this Destination was not found. Choose a
-        new Configuration.
+        The last Configuration used for this Destination was not found.
+        <a href="" role="button" @click="selectConfiguration"
+          >Select a Configuration</a
+        >.
       </p>
 
       <p v-if="isCredentialMissing">
@@ -182,6 +184,12 @@ const isConfigMissing = computed((): boolean => {
 const isCredentialMissing = computed((): boolean => {
   return Boolean(home.selectedDeployment && !home.serverCredential);
 });
+
+const selectConfiguration = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.SELECT_CONFIGURATION,
+  });
+};
 
 const lastStatusDescription = computed(() => {
   if (!home.selectedDeployment) {

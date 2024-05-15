@@ -59,13 +59,14 @@ import { confirmOverwrite } from "src/dialogs";
 import { splitFilesOnInclusion } from "src/utils/files";
 import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
+import { selectConfig } from "src/multiStepInputs/selectConfig";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
 
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
-const deployWithDiffConfigCommand = viewName + ".deployWithDiffConfig";
+const selectConfigForDestination = viewName + ".selectConfigForDestination";
 const selectDestinationCommand = viewName + ".selectDestination";
 const newDestinationCommand = viewName + ".newDestination";
 const contextIsHomeViewInitialized = viewName + ".initialized";
@@ -141,6 +142,8 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onEditConfigurationMsg(msg);
       case WebviewToHostMessageType.NEW_CONFIGURATION:
         return await this._onNewConfigurationMsg();
+      case WebviewToHostMessageType.SELECT_CONFIGURATION:
+        return await this.selectConfigForDestination();
       case WebviewToHostMessageType.NAVIGATE:
         return await this._onNavigateMsg(msg);
       case WebviewToHostMessageType.SAVE_SELECTION_STATE:
@@ -230,13 +233,10 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _onNewConfigurationMsg() {
-    const newConfig: Configuration = await commands.executeCommand(
+    await commands.executeCommand(
       "posit.publisher.configurations.add",
       viewName,
     );
-    if (newConfig) {
-      this._updateConfigFileSelection(newConfig, true);
-    }
   }
 
   private async _onNavigateMsg(msg: NavigateMsg) {
@@ -400,19 +400,6 @@ export class HomeViewProvider implements WebviewViewProvider {
     });
   }
 
-  private _updateConfigFileSelection(
-    config: Configuration,
-    saveSelection = false,
-  ) {
-    this._webviewConduit.sendMsg({
-      kind: HostToWebviewMessageType.UPDATE_CONFIG_SELECTION,
-      content: {
-        config,
-        saveSelection,
-      },
-    });
-  }
-
   private _requestWebviewSaveSelection() {
     this._webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.SAVE_SELECTION,
@@ -568,6 +555,24 @@ export class HomeViewProvider implements WebviewViewProvider {
     this._updateWebViewViewDeployments(deploymentName);
     // And have the webview save what it has selected.
     this._requestWebviewSaveSelection();
+  }
+
+  private async selectConfigForDestination() {
+    const config = await selectConfig("Select a Configuration", viewName);
+    if (config) {
+      const activeDeployment = this._getActiveDeployment();
+      if (activeDeployment === undefined) {
+        console.error(
+          "homeView::selectConfigForDestination: No active deployment.",
+        );
+        return;
+      }
+      const api = await useApi();
+      await api.deployments.patch(
+        activeDeployment.deploymentName,
+        config.configurationName,
+      );
+    }
   }
 
   public async showNewDestinationMultiStep(
@@ -1010,8 +1015,10 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, () => this.refreshAll(true)),
-      commands.registerCommand(deployWithDiffConfigCommand, () =>
-        console.log("deploying with different configuration command executed"),
+      commands.registerCommand(
+        selectConfigForDestination,
+        this.selectConfigForDestination,
+        this,
       ),
     );
 

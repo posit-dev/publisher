@@ -2,7 +2,11 @@
 
 import { AxiosInstance } from "axios";
 
-import { PreDeployment, AllDeploymentTypes } from "../types/deployments";
+import {
+  PreDeployment,
+  AllDeploymentTypes,
+  Deployment,
+} from "../types/deployments";
 
 export class Deployments {
   private client: AxiosInstance;
@@ -70,5 +74,16 @@ export class Deployments {
   delete(saveName: string) {
     const encodedSaveName = encodeURIComponent(saveName);
     return this.client.delete(`deployments/${encodedSaveName}`);
+  }
+
+  // Returns:
+  // 204 - no content
+  // 404 - deployment or config file not found
+  // 500 - internal server error
+  patch(deploymentName: string, configName: string) {
+    const encodedName = encodeURIComponent(deploymentName);
+    return this.client.patch<Deployment>(`deployments/${encodedName}`, {
+      configurationName: configName,
+    });
   }
 }

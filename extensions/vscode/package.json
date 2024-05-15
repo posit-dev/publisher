@@ -174,8 +174,8 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.deployWithDiffConfig",
-        "title": "Deploy with a Different Configuration",
+        "command": "posit.publisher.homeView.selectConfigForDestination",
+        "title": "Select Active Configuration",
         "category": "Posit Publisher"
       },
       {
@@ -407,7 +407,7 @@
       ],
       "webview/context": [
         {
-          "command": "posit.publisher.homeView.deployWithDiffConfig",
+          "command": "posit.publisher.homeView.selectConfigForDestination",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu'"
         }
       ]

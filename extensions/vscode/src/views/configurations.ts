@@ -103,12 +103,7 @@ export class ConfigurationsTreeDataProvider
     this._context.subscriptions.push(
       treeView,
       commands.registerCommand(refreshCommand, this.refresh),
-      commands.registerCommand(addCommand, (viewId?: string) => {
-        return newConfig(
-          "Create a Configuration File for your Project",
-          viewId,
-        );
-      }),
+      commands.registerCommand(addCommand, this.add),
       commands.registerCommand(editCommand, this.edit),
       commands.registerCommand(renameCommand, this.rename),
       commands.registerCommand(cloneCommand, this.clone),
@@ -130,6 +125,13 @@ export class ConfigurationsTreeDataProvider
 
   private refresh = () => {
     this._onDidChangeTreeData.fire();
+  };
+
+  private add = async (viewId?: string) => {
+    // We only create a new configuration through this
+    // command. We do not associate it automatically with
+    // the current destination
+    await newConfig("Create a Configuration File for your Project", viewId);
   };
 
   private edit = async (config: ConfigurationTreeItem) => {

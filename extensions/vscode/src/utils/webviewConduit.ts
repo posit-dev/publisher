@@ -22,14 +22,16 @@ export class WebviewConduit {
       `\nWebviewConduit trace: ${obj.kind}: ${JSON.stringify(obj.content)}`,
     );
     if (!isWebviewToHostMessage(obj)) {
-      throw new Error(`NonConduitMessage Received: ${JSON.stringify(e)}`);
+      const msg = `\nNonConduitMessage Received: ${JSON.stringify(e)}\n`;
+
+      throw new Error(msg);
     }
     if (this._onMsgCB) {
       this._onMsgCB(obj);
     } else {
-      throw new Error(
-        `onMsg callback not set ahead of receiving message: ${JSON.stringify(e)}`,
-      );
+      const msg = `onMsg callback not set ahead of receiving message: ${JSON.stringify(e)}`;
+      console.error(msg);
+      throw new Error(msg);
     }
   };
 
