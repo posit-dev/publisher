@@ -50,3 +50,7 @@ See the [Installation](installation.md) page.
 ## Using the Extension
 
 See the [VSCode Extension](vscode.md) page.
+
+## Configuration Reference
+
+See the [Configuration Reference](configuration.md) page.
