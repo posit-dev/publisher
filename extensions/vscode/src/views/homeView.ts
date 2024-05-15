@@ -558,10 +558,6 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async selectConfigForDestination() {
-    // await commands.executeCommand(
-    //   "posit.publisher.configurations.select",
-    //   viewName,
-    // ),
     const config = await selectConfig("Select a Configuration", viewName);
     if (config) {
       const activeDeployment = this._getActiveDeployment();
