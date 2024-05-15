@@ -30,14 +30,7 @@ which includes a credential, configuration, and deployment.
 > installed, VSCode will show tooltips for the fields. It will also validate the
 > structure and contents of the configuration file using the provided schema.
 
-![](https://cdn.posit.co/publisher/assets/img/configuration-file-with-tooltip.png)
-
-Clicking the `Select a Destination` dropdown lets you choose a destination to deploy to.
-This enables you to have multiple deployments for different purposes. For example,
-you can use a staging deployment for testing before deploying to a production
-destination that is shared with your users.
-
-![](https://cdn.posit.co/publisher/assets/img/select-destination.png)
+![](https://cdn.posit.co/publisher/assets/img/configuration-file-tooltip.png)
 
 ### Setting up Python Requirements
 
@@ -75,6 +68,20 @@ Once the deployment completes, the result will be displayed in the Home view.
 ---
 
 ### Other Views and Features
+
+### Multiple Destinations
+
+You can create multiple deployment destinations for different purposes.
+For example, you can use a staging deployment for testing before deploying
+to a production destination that is shared with your users.
+
+Clicking the `Select a Destination` dropdown lets you choose which destination to deploy to.
+
+![](https://cdn.posit.co/publisher/assets/img/deploy-your-project.png)
+
+Then choose from the displayed list.
+
+![](https://cdn.posit.co/publisher/assets/img/select-destination.png)
 
 ### Project Files
 
