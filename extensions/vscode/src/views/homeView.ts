@@ -1021,7 +1021,8 @@ export class HomeViewProvider implements WebviewViewProvider {
       commands.registerCommand(refreshCommand, () => this.refreshAll(true)),
       commands.registerCommand(
         selectConfigForDestination,
-        this.selectConfigForDestination.bind(this),
+        this.selectConfigForDestination,
+        this,
       ),
     );
 
