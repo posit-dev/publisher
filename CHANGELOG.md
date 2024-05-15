@@ -10,13 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Credentials are now managed within the extension (#1483)
+- Credentials must be unique per server URL (#1534)
 - R content can now be deployed (#1452). You must have an renv.lock file in your project and have the project's renv library populated (for example via `renv::restore()`).
 - Deployment records now include package dependencies that were included in the deployment (#1329)
 - Jupyter notebooks can now be deployed in Quarto mode (#963)
 
 ### Changed
 
-- Redesigned the main extension UI to simplify the deployment process (#1517)
+- Redesigned the main extension UI to simplify the deployment process. Creating a Destination creates a new Deployment target as well as a Configuration. (#1517)
+- Changed TOML attributes across files to use `snake_case` (#1377)
 
 ### Fixed
 
@@ -32,15 +34,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Configuration files can now include a `files` list to specify which files are included in the deployment (#1350)
 - You can now include and exclude files from the Project Files view (#1360)
-- The deployment UI remembers the last selected settings (#1229, #1271)
+- The deployment UI remembers the last selection (#1229, #1271)
+- Views show progress indicators more accurately when performing actions (#1385)
 
 ### Changed
 
 - The Requirements and Project Files view now update based on the selected configuration (#1362)
+- Combined the "basic" and "advanced" views into a single, easier to use view (#1336)
 
 ### Fixed
 
 - Fixed handling of include/exclude file paths on Windows (#1500)
+- Alignment of deployment error messages (#1504)
+- Fixed forward / backward navigation and step count in multi-step inputs (#1424)
 
 ### Removed
 
