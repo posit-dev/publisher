@@ -1,5 +1,8 @@
 <template>
-  <vscode-button :disabled="!haveResources" @click="deploy">
+  <vscode-button
+    :disabled="!haveResources || home.publishInProgress"
+    @click="deploy"
+  >
     Deploy Your Project
   </vscode-button>
 </template>
