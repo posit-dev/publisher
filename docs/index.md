@@ -6,7 +6,7 @@ Key concepts:
 
 - Publisher is a VSCode
   extension that presents a UI within the VSCode left activity panel.
-- Deployment options are set via a configuration file in `.posit/publish/`.
+- Deployment options are set via configuration files in `.posit/publish/`.
 - Records of where you have deployed are kept in `.posit/publish/deployments`.
 
 ## Features
