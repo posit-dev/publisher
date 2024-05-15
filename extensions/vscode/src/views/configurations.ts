@@ -22,6 +22,8 @@ import {
   Configuration,
   ConfigurationError,
   isConfigurationError,
+  Deployment,
+  PreDeployment,
 } from "src/api";
 
 import { confirmDelete, confirmReplace } from "src/dialogs";
@@ -29,10 +31,13 @@ import { getSummaryStringFromError } from "src/utils/errors";
 import { ensureSuffix, fileExists, isValidFilename } from "src/utils/files";
 import { untitledConfigurationName } from "src/utils/names";
 import { newConfig } from "src/multiStepInputs/newConfig";
+import { selectConfig } from "src/multiStepInputs/selectConfig";
+import { useBus } from "src/bus";
 
 const viewName = "posit.publisher.configurations";
 const refreshCommand = viewName + ".refresh";
 const addCommand = viewName + ".add";
+const selectCommand = viewName + ".select";
 const editCommand = viewName + ".edit";
 const cloneCommand = viewName + ".clone";
 const renameCommand = viewName + ".rename";
@@ -51,12 +56,20 @@ export class ConfigurationsTreeDataProvider
   private _onDidChangeTreeData: ConfigurationEventEmitter = new EventEmitter();
   readonly onDidChangeTreeData: ConfigurationEvent =
     this._onDidChangeTreeData.event;
+  private activeDeployment: Deployment | PreDeployment | undefined;
 
   constructor(private readonly _context: ExtensionContext) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
+
+    useBus().on(
+      "activeDeploymentChanged",
+      (deployment: Deployment | PreDeployment | undefined) => {
+        this.activeDeployment = deployment;
+      },
+    );
   }
 
   getTreeItem(element: ConfigurationTreeItem): TreeItem | Thenable<TreeItem> {
@@ -103,12 +116,8 @@ export class ConfigurationsTreeDataProvider
     this._context.subscriptions.push(
       treeView,
       commands.registerCommand(refreshCommand, this.refresh),
-      commands.registerCommand(addCommand, (viewId?: string) => {
-        return newConfig(
-          "Create a Configuration File for your Project",
-          viewId,
-        );
-      }),
+      commands.registerCommand(addCommand, this.add),
+      commands.registerCommand(selectCommand, this.select),
       commands.registerCommand(editCommand, this.edit),
       commands.registerCommand(renameCommand, this.rename),
       commands.registerCommand(cloneCommand, this.clone),
@@ -130,6 +139,35 @@ export class ConfigurationsTreeDataProvider
 
   private refresh = () => {
     this._onDidChangeTreeData.fire();
+  };
+
+  private add = async (viewId?: string) => {
+    const config = await newConfig(
+      "Create a Configuration File for your Project",
+      viewId,
+    );
+    if (config && this.activeDeployment) {
+      const api = await useApi();
+      await api.deployments.patch(
+        this.activeDeployment.deploymentName,
+        config.configurationName,
+      );
+    } else {
+      throw new Error(
+        "configurations::add this.activeDeployment is out of sync.",
+      );
+    }
+  };
+
+  private select = async (viewId?: string) => {
+    const config = await selectConfig("Select a Configuration", viewId);
+    if (config && this.activeDeployment) {
+      const api = await useApi();
+      await api.deployments.patch(
+        this.activeDeployment.deploymentName,
+        config.configurationName,
+      );
+    }
   };
 
   private edit = async (config: ConfigurationTreeItem) => {

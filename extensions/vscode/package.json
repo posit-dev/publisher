@@ -48,6 +48,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.configurations.select",
+        "title": "Select Active Configuration",
+        "icon": "$(list-selection)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.configurations.clone",
         "title": "Clone",
         "icon": "$(files)",
@@ -319,6 +325,10 @@
         {
           "command": "posit.publisher.configurations.add",
           "when": "posit.publish.state == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.configurations.select",
+          "when": "!posit.publish.missing && posit.publish.state == 'initialized'"
         },
         {
           "command": "posit.publisher.configurations.clone",

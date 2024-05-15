@@ -141,6 +141,8 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onEditConfigurationMsg(msg);
       case WebviewToHostMessageType.NEW_CONFIGURATION:
         return await this._onNewConfigurationMsg();
+      case WebviewToHostMessageType.SELECT_CONFIGURATION:
+        return await this._onSelectConfigurationMsg();
       case WebviewToHostMessageType.NAVIGATE:
         return await this._onNavigateMsg(msg);
       case WebviewToHostMessageType.SAVE_SELECTION_STATE:
@@ -230,13 +232,18 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _onNewConfigurationMsg() {
-    const newConfig: Configuration = await commands.executeCommand(
+    await commands.executeCommand(
       "posit.publisher.configurations.add",
       viewName,
     );
-    if (newConfig) {
-      this._updateConfigFileSelection(newConfig, true);
-    }
+  }
+
+  private async _onSelectConfigurationMsg() {
+    console.log("in _onSelectConfigurationMsg");
+    await commands.executeCommand(
+      "posit.publisher.configurations.select",
+      viewName,
+    );
   }
 
   private async _onNavigateMsg(msg: NavigateMsg) {
@@ -395,19 +402,6 @@ export class HomeViewProvider implements WebviewViewProvider {
       kind: HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION,
       content: {
         preDeployment,
-        saveSelection,
-      },
-    });
-  }
-
-  private _updateConfigFileSelection(
-    config: Configuration,
-    saveSelection = false,
-  ) {
-    this._webviewConduit.sendMsg({
-      kind: HostToWebviewMessageType.UPDATE_CONFIG_SELECTION,
-      content: {
-        config,
         saveSelection,
       },
     });
@@ -1010,8 +1004,13 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, () => this.refreshAll(true)),
-      commands.registerCommand(deployWithDiffConfigCommand, () =>
-        console.log("deploying with different configuration command executed"),
+      commands.registerCommand(
+        deployWithDiffConfigCommand,
+        async () =>
+          await commands.executeCommand(
+            "posit.publisher.configurations.select",
+            viewName,
+          ),
       ),
     );
 
