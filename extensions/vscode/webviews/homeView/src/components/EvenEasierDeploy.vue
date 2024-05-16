@@ -23,11 +23,7 @@
         <QuickPickItem
           v-if="home.selectedDeployment"
           :label="home.selectedDeployment.saveName"
-          :description="
-            isConfigMissing
-              ? `Missing Configuration ${home.selectedDeployment.configurationName}`
-              : home.selectedDeployment.configurationName
-          "
+          :description="configDescription"
           :detail="
             home.serverCredential?.name ||
             `Missing Credential for ${home.selectedDeployment.serverUrl}`
@@ -51,6 +47,17 @@
         The last Configuration used for this Destination was not found.
         <a href="" role="button" @click="selectConfiguration"
           >Select a Configuration</a
+        >.
+      </p>
+      <p v-if="isConfigInError">
+        The current Configuration used for this Destination is in error.
+        <a
+          href=""
+          role="button"
+          @click="
+            onEditConfiguration(home.selectedDeployment!.configurationName)
+          "
+          >Edit the Configuration</a
         >.
       </p>
 
@@ -128,7 +135,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { isPreDeployment } from "../../../../src/api";
+import { isConfigurationError, isPreDeployment } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 
 import { useHostConduitService } from "src/HostConduitService";
@@ -154,12 +161,7 @@ const toolbarActions = computed(() => {
       label: "Edit Configuration",
       codicon: "codicon-edit",
       fn: () =>
-        hostConduit.sendMsg({
-          kind: WebviewToHostMessageType.EDIT_CONFIGURATION,
-          content: {
-            configurationName: home.selectedConfiguration!.configurationName,
-          },
-        }),
+        onEditConfiguration(home.selectedConfiguration!.configurationName),
     });
   }
   return result;
@@ -177,8 +179,53 @@ const onAddDestination = () => {
   });
 };
 
+const onEditConfiguration = (name: string) => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.EDIT_CONFIGURATION,
+    content: {
+      configurationName: name,
+    },
+  });
+};
+
+const isConfigInErrorList = (configName?: string): boolean => {
+  if (!configName) {
+    return false;
+  }
+  return Boolean(
+    home.configurationsInError.find(
+      (config) =>
+        config.configurationName === home.selectedDeployment?.configurationName,
+    ),
+  );
+};
+
 const isConfigMissing = computed((): boolean => {
-  return Boolean(home.selectedDeployment && !home.selectedConfiguration);
+  return Boolean(
+    home.selectedDeployment &&
+      !home.selectedConfiguration &&
+      !isConfigInErrorList(home.selectedDeployment?.configurationName),
+  );
+});
+
+const isConfigInError = computed((): boolean => {
+  return Boolean(
+    home.selectedDeployment &&
+      !home.selectedConfiguration &&
+      isConfigInErrorList(home.selectedDeployment?.configurationName),
+  );
+});
+
+const configDescription = computed(() => {
+  if (!home.selectedDeployment) {
+    return undefined;
+  }
+  if (isConfigMissing.value) {
+    return `Missing Configuration ${home.selectedDeployment.configurationName}`;
+  } else if (isConfigInError.value) {
+    return `Error in Configuration ${home.selectedDeployment.configurationName}`;
+  }
+  return home.selectedDeployment.configurationName;
 });
 
 const isCredentialMissing = computed((): boolean => {

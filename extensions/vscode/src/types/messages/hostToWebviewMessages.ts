@@ -6,6 +6,7 @@ import {
   Deployment,
   DeploymentFile,
   PreDeployment,
+  ConfigurationError,
 } from "../../api";
 
 export enum HostToWebviewMessageType {
@@ -73,6 +74,7 @@ export type RefreshConfigDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CONFIG_DATA,
   {
     configurations: Configuration[];
+    configurationsInError: ConfigurationError[];
     selectedConfigurationName?: string | null;
   }
 >;

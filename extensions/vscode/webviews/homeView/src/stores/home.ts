@@ -8,6 +8,7 @@ import {
   PreDeployment,
   Configuration,
   DeploymentFile,
+  ConfigurationError,
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 
@@ -16,6 +17,7 @@ export const useHomeStore = defineStore("home", () => {
 
   const deployments = ref<(Deployment | PreDeployment)[]>([]);
   const configurations = ref<Configuration[]>([]);
+  const configurationsInError = ref<ConfigurationError[]>([]);
   const credentials = ref<Credential[]>([]);
 
   const selectedDeployment = ref<Deployment | PreDeployment>();
@@ -126,6 +128,7 @@ export const useHomeStore = defineStore("home", () => {
     publishInProgress,
     deployments,
     configurations,
+    configurationsInError,
     credentials,
     selectedDeployment,
     selectedConfiguration,
