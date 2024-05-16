@@ -59,57 +59,6 @@ error() {
     exit 1
 }
 
-# Check sudo access
-unset HAVE_SUDO_ACCESS # unset this from the environment
-have_sudo_access() {
-  if [[ ! -x "/usr/bin/sudo" ]]
-  then
-    return 1
-  fi
-
-  local -a SUDO=("/usr/bin/sudo")
-  if [[ -n "${SUDO_ASKPASS-}" ]]
-  then
-    SUDO+=("-A")
-  elif [[ -n "${NONINTERACTIVE-}" ]]
-  then
-    SUDO+=("-n")
-  fi
-
-  if [[ -z "${HAVE_SUDO_ACCESS-}" ]]
-  then
-    if [[ -n "${NONINTERACTIVE-}" ]]
-    then
-      "${SUDO[@]}" -l mkdir &>/dev/null
-    else
-      "${SUDO[@]}" -v && "${SUDO[@]}" -l mkdir &>/dev/null
-    fi
-    HAVE_SUDO_ACCESS="$?"
-  fi
-
-  if [[ "${HAVE_SUDO_ACCESS}" -ne 0 ]]
-  then
-    error "Need sudo access (e.g. the user ${USER} needs to be an Administrator)!"
-  fi
-
-  return "${HAVE_SUDO_ACCESS}"
-}
-
-# execute with sudo function
-execute_sudo() {
-  local -a args=("$@")
-  if [[ "${EUID:-${UID}}" != "0" ]] && have_sudo_access
-  then
-    if [[ -n "${SUDO_ASKPASS-}" ]]
-    then
-      args=("-A" "${args[@]}")
-    fi
-    execute "/usr/bin/sudo" "${args[@]}"
-  else
-    execute "${args[@]}"
-  fi
-}
-
 # execute function
 execute() {
   if ! "$@"
@@ -126,42 +75,36 @@ getc() {
   /bin/stty "${save_state}"
 }
 
-wait_for_user() {
+confirm_install() {
   local c
-  info "Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to continue or any other key to abort:"
+  info "Found $1, would you like to install the publisher extension for $1? [Y/n]:"
+
   getc c
   # we test for \r and \n because some stuff does \r instead
-  if ! [[ "${c}" == $'\r' || "${c}" == $'\n' ]]
-  then
-    info "Aborting..."
-    exit 1
+  if [[ "${c}" == $'\r' || "${c}" == $'\n' || "${c}" == "y" ]]; then
+    execute $1 "--install-extension" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.vsix"
+  else
+    echo "Skipping $1"
   fi
+}
+
+check_ides() {
+  local ides
+  local ides_found
+  ides=("positron" "code") 
+  ides_found=()
+  for program in "${ides[@]}"; do
+    if command -v "$program" &> /dev/null; then
+        ides_found+=("$program") 
+    fi
+  done
+
+  echo "${ides_found[@]}"
 }
 
 # =============================================================================
 # main
 # =============================================================================
-
-# USER isn't always set so provide a fall back for the installer and subprocesses.
-if [[ -z "${USER-}" ]]
-then
-    USER="$(chomp "$(id -un)")"
-    export USER
-fi
-
-info "Checking for \`sudo\` access (which may request your password)..."
-if [[ "${OS}" == "darwin" ]]
-then
-  [[ "${EUID:-${UID}}" == "0" ]] || have_sudo_access
-elif ! [[ -w "${PREFIX}" ]] &&
-     ! have_sudo_access
-then
-  error "$(
-    cat <<EOABORT
-Insufficient permissions to install Posit Publisher to ${PREFIX}.
-EOABORT
-  )"
-fi
 
 # Commands
 DOWNLOAD=("curl")
@@ -210,7 +153,6 @@ fi
 
 # Variables
 NAME="publisher"
-PREFIX="/usr/local/bin"
 TMPDIR=$(execute "${MKTMP[@]}")
 case $VERSION_TYPE in
   release)
@@ -225,12 +167,9 @@ OS="$(uname)"
 if [[ "${OS}" == "Darwin" ]]
 then
     OS="darwin"
-    INSTALL=("/usr/bin/install" -o root -g "wheel" -m "0755")
 elif [[ "${OS}" == "Linux" ]]
 then
     OS="linux"
-    GROUP="$(id -gn)"
-    INSTALL=("/usr/bin/install" -o "${USER}" -g "${GROUP}" -m "0755")
 else
     error "This script is only supported on macOS and Linux."
 fi
@@ -249,11 +188,18 @@ else
     error "This script is only supported on arm64 and x86_64 architectures."
 fi
 
-info "This script will install:"
-echo "${PREFIX}/${NAME}"
-echo
-wait_for_user
-info "Downloading and installing Posit Publisher..."
+# If none are found, warn before downloading
+ides_found=($(check_ides))
+
+if (( ${#ides_found[@]} < 1 )); then
+  info "Could not find either positron or code (for vscode) in your path. "
+  info "You can install either to your path by using Cmd+Shift+P from the IDE "
+  info "and then selecting the 'Shell Command: install ... command in PATH'"
+  info "For more information: https://github.com/posit-dev/publisher/blob/main/docs/installation.md"
+  exit 1
+fi
+
+echo "Downloading Posit Publisher..."
 if [[ $VERSION_TYPE == "nightly" && $VERSION == "latest" ]]
 then
   # Try today and the last 10 dates, there should be one since then
@@ -266,32 +212,27 @@ then
       DAY=$(date --date="$i day ago" -I) 
     fi
 
-    URL_TO_TRY="${URL}/v${DAY}/${NAME}-${DAY}-${OS}-${ARCH}.tar.gz"
-    OUTPATH="${TMPDIR}/${NAME}-${DAY}-${OS}-${ARCH}.tar.gz"
+    URL_TO_TRY="${URL}/v${DAY}/${NAME}-${DAY}-${OS}-${ARCH}.vsix"
+    OUTPATH="${TMPDIR}/${NAME}-${DAY}-${OS}-${ARCH}.vsix"
 
-    # Set the version to day so that the untar later works.
+    # Set the version to day so that the commands later works.
     VERSION=$DAY
 
     # Try each date, stopping on the first one that works
-    info "Trying ${URL_TO_TRY}"
+    echo "Trying ${URL_TO_TRY}"
     if "${DOWNLOAD[@]}" "--fail-with-body" "-o" "$OUTPATH" "$URL_TO_TRY" > /dev/null 2>&1
     then
       break
     fi
   done
 else
-  info "Trying ${URL}/v${VERSION}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz"
-  execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" "${URL}/v${VERSION}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz" > /dev/null 2>&1
+  echo "Trying ${URL}/v${VERSION}/${NAME}-${VERSION}-${OS}-${ARCH}.vsix"
+  execute "${DOWNLOAD[@]}" "-o" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.vsix" "${URL}/v${VERSION}/${NAME}-${VERSION}-${OS}-${ARCH}.vsix" > /dev/null 2>&1
 fi
-execute "${TAR[@]}" "-C" "${TMPDIR}" "-xf" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.tar.gz"
-execute_sudo "${INSTALL[@]}" "${TMPDIR}/${NAME}/bin/${NAME}" "${PREFIX}"
-info "Installation successful!"
-info "Next Steps..."
-cat <<EOS
 
-  Run ${tty_bold}publisher --help${tty_reset} to get started.
+for ide in "${ides_found[@]}"; do
+  confirm_install $ide
+done
 
-  An extension for VSCode is available for download at
-  ${URL}/v${VERSION}/${NAME}-${VERSION}-${OS}-${ARCH}.vsix
-
-EOS
+echo
+info "You may need to relaunch your IDE or CMD/CTRL+SHIFT+P > Reload Window to use the new version. Goodbye!"

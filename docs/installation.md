@@ -17,6 +17,45 @@ To learn how to install a `.vsix` file, see the [Install from a
 VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
 guide from Visual Studio Code.
 
+## Quick install and updates
+
+We have updates scripts for macOS and linux to download and install the latest version of the publisher:
+
+#### Setup (one time)
+
+First, [download the update script](https://raw.githubusercontent.com/posit-dev/publisher/main/install-publisher.bash) you will also have to mark it executable:
+
+```bash
+
+chmod u+x install-publisher.bash
+```
+
+You can put the script somewhere on your `$PATH` so you can run it from any directory, or add it to your `.bashrc` or `.zshrc`.
+
+
+#### Usage
+
+Run the script as follows:
+
+```bash
+./install-publisher.bash
+```
+
+Which will install the most recent release of the publisher. 
+
+You can also install nightlies with:
+
+```bash
+./install-publisher.bash nightly
+```
+
+Or install a specific version with:
+
+
+```bash
+./install-publisher.bash 1.0.alpha4
+```
+
 ## Optional: Install Quarto
 
 If you plan on deploying Quarto content having Quarto installed will allow
@@ -72,7 +111,7 @@ This includes all Apple Mac products before Apple Silicon.
 ##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
 
 When running Windows with x86-64 compliant processors, install
-`windows-amd64.tar.gz`.
+`windows-amd64.visx`.
 
 ### Linux
 
@@ -88,12 +127,12 @@ When running Windows with x86-64 compliant processors, install
 ##### ARM64 / AArch64 / ARMv8 / ARMv9
 
 When running Linux with ARM64 compliant processors, install
-`linux-arm64.tar.gz`.
+`linux-arm64.visx`.
 
 ##### x86-64 / x86_64 / x64 / AMD64 / Intel 64
 
 When running Linux with x86-64 compliant processors, install
-`linux-amd64.tar.gz`.
+`linux-amd64.visx`.
 
 ### Support grid
 
