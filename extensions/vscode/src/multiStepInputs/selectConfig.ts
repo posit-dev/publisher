@@ -13,6 +13,7 @@ import {
 import {
   Configuration,
   ConfigurationDetails,
+  contentTypeStrings,
   isConfigurationError,
   useApi,
 } from "src/api";
@@ -20,7 +21,9 @@ import { getSummaryStringFromError } from "src/utils/errors";
 import {
   MultiStepInput,
   MultiStepState,
+  QuickPickItemWithIndex,
   isQuickPickItem,
+  isQuickPickItemWithIndex,
 } from "src/multiStepInputs/multiStepHelper";
 import { untitledConfigurationName } from "src/utils/names";
 import { isValidFilename } from "src/utils/files";
@@ -37,10 +40,8 @@ export async function selectConfig(
   let configFileNames: string[] = [];
   let configFileListItems: QuickPickItem[] = [];
   let configurations: Configuration[] = [];
-  let entryPointLabels: string[] = [];
-  let entryPointListItems: QuickPickItem[] = [];
-
-  const entryPointLabelMap = new Map<string, ConfigurationDetails>();
+  let entryPointListItems: QuickPickItemWithIndex[] = [];
+  let configDetails: ConfigurationDetails[] = [];
 
   const createNewConfigurationLabel = "Create a New Configuration";
 
@@ -113,44 +114,45 @@ export async function selectConfig(
     resolve();
   });
 
-  const getEntryPoints = new Promise<void>(async (resolve, reject) => {
-    try {
-      const inspectResponse = await api.configurations.inspect();
-      const configDetails = inspectResponse.data;
-      entryPointLabels = configDetails.map((config) => `${config.entrypoint}`);
-      configDetails.forEach((config) => {
-        if (config.entrypoint) {
-          entryPointListItems.push({
-            iconPath: new ThemeIcon("file"),
-            label: config.entrypoint,
-            description: `(type ${config.type})`,
-          });
-        }
-      });
-      for (let i = 0; i < configDetails.length; i++) {
-        entryPointLabelMap.set(entryPointLabels[i], configDetails[i]);
+  const getConfigurationInspections = new Promise<void>(
+    async (resolve, reject) => {
+      try {
+        const inspectResponse = await api.configurations.inspect();
+        configDetails = inspectResponse.data;
+        configDetails.forEach((config, i) => {
+          if (config.entrypoint) {
+            entryPointListItems.push({
+              iconPath: new ThemeIcon("file"),
+              label: config.entrypoint,
+              description: `(${contentTypeStrings[config.type]})`,
+              index: i,
+            });
+          }
+        });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "selectConfig, configurations.inspect",
+          error,
+        );
+        window.showErrorMessage(
+          `Unable to continue with project inspection failure. ${summary}`,
+        );
+        return reject();
       }
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "newDestination, configurations.inspect",
-        error,
-      );
-      window.showErrorMessage(
-        `Unable to continue with project inspection failure. ${summary}`,
-      );
-      return reject();
-    }
-    if (!entryPointListItems.length) {
-      window.showErrorMessage(
-        `Unable to continue with no project entrypoints found during inspection`,
-      );
-      return reject();
-    }
-    return resolve();
-  });
+      if (!entryPointListItems.length) {
+        const msg = `Unable to continue with no project entrypoints found during inspection`;
+        window.showErrorMessage(msg);
+        return reject();
+      }
+      return resolve();
+    },
+  );
 
   // wait for all of them to complete
-  const apisComplete = Promise.all([getConfigurations, getEntryPoints]);
+  const apisComplete = Promise.all([
+    getConfigurations,
+    getConfigurationInspections,
+  ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
   window.withProgress(
@@ -192,7 +194,7 @@ export async function selectConfig(
         // the selection. :-(
         existingConfigurationName: undefined, // eventual type is QuickPickItem
         newConfigurationName: undefined, // eventual type is string
-        entryPoint: undefined, // eventual type is QuickPickItem
+        entryPoint: undefined, // eventual type is isQuickPickItemWithIndex
       },
       promptStepNumbers: {},
     };
@@ -340,7 +342,7 @@ export async function selectConfig(
       return;
     }
     if (
-      !isQuickPickItem(state.data.entryPoint) ||
+      !isQuickPickItemWithIndex(state.data.entryPoint) ||
       isQuickPickItem(state.data.newConfigurationName)
     ) {
       return;
@@ -348,18 +350,16 @@ export async function selectConfig(
 
     // Create the Config File
     try {
-      const selectedConfigEntry = entryPointLabelMap.get(
-        state.data.entryPoint.label,
-      );
-      if (!selectedConfigEntry) {
+      const selectedConfigDetails = configDetails[state.data.entryPoint.index];
+      if (!selectedConfigDetails) {
         window.showErrorMessage(
-          `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}`,
+          `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
         );
         return;
       }
       const createResponse = await api.configurations.createOrUpdate(
         state.data.newConfigurationName,
-        selectedConfigEntry,
+        selectedConfigDetails,
       );
       const fileUri = Uri.file(createResponse.data.configurationPath);
       const newConfig = createResponse.data;

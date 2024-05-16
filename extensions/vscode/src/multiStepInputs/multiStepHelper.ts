@@ -20,6 +20,14 @@ export function isQuickPickItem(d: QuickPickItem | string): d is QuickPickItem {
   return typeof d !== "string";
 }
 
+export type QuickPickItemWithIndex = QuickPickItem & { index: number };
+
+export function isQuickPickItemWithIndex(
+  d: QuickPickItem | string,
+): d is QuickPickItemWithIndex {
+  return (d as QuickPickItemWithIndex).index !== undefined;
+}
+
 export interface MultiStepState {
   title: string;
   step: number;
