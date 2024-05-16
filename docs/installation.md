@@ -32,7 +32,6 @@ chmod u+x install-publisher.bash
 
 You can put the script somewhere on your `$PATH` so you can run it from any directory, or add it to your `.bashrc` or `.zshrc`.
 
-
 #### Usage
 
 Run the script as follows:
@@ -41,7 +40,7 @@ Run the script as follows:
 ./install-publisher.bash
 ```
 
-Which will install the most recent release of the publisher. 
+Which will install the most recent release of the publisher.
 
 You can also install nightlies with:
 
@@ -50,7 +49,6 @@ You can also install nightlies with:
 ```
 
 Or install a specific version with:
-
 
 ```bash
 ./install-publisher.bash 1.0.alpha4
