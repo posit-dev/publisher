@@ -3,7 +3,9 @@
 import {
   MultiStepInput,
   MultiStepState,
+  QuickPickItemWithIndex,
   isQuickPickItem,
+  isQuickPickItemWithIndex,
 } from "src/multiStepInputs/multiStepHelper";
 
 import {
@@ -23,6 +25,7 @@ import {
   Credential,
   Configuration,
   PreDeployment,
+  contentTypeStrings,
 } from "src/api";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
@@ -292,9 +295,8 @@ export async function newDestination(
   let credentials: Credential[] = [];
   let credentialListItems: QuickPickItem[] = [];
 
-  let entryPointLabels: string[] = [];
-  let entryPointListItems: QuickPickItem[] = [];
-  const entryPointLabelMap = new Map<string, ConfigurationDetails>();
+  let entryPointListItems: QuickPickItemWithIndex[] = [];
+  let configDetails: ConfigurationDetails[] = [];
   let configFileNames: string[] = [];
   let deploymentNames: string[] = [];
 
@@ -383,41 +385,39 @@ export async function newDestination(
     return resolve();
   });
 
-  const getEntryPoints = new Promise<void>(async (resolve, reject) => {
-    try {
-      const inspectResponse = await api.configurations.inspect();
-      const configDetails = inspectResponse.data;
-      entryPointLabels = configDetails.map((config) => `${config.entrypoint}`);
-      configDetails.forEach((config) => {
-        if (config.entrypoint) {
-          entryPointListItems.push({
-            iconPath: new ThemeIcon("file"),
-            label: config.entrypoint,
-            description: `(type ${config.type})`,
-          });
-        }
-      });
-      for (let i = 0; i < configDetails.length; i++) {
-        entryPointLabelMap.set(entryPointLabels[i], configDetails[i]);
+  const getConfigurationInspections = new Promise<void>(
+    async (resolve, reject) => {
+      try {
+        const inspectResponse = await api.configurations.inspect();
+        configDetails = inspectResponse.data;
+        configDetails.forEach((config, i) => {
+          if (config.entrypoint) {
+            entryPointListItems.push({
+              iconPath: new ThemeIcon("file"),
+              label: config.entrypoint,
+              description: `(${contentTypeStrings[config.type]})`,
+              index: i,
+            });
+          }
+        });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "newDestination, configurations.inspect",
+          error,
+        );
+        window.showErrorMessage(
+          `Unable to continue with project inspection failure. ${summary}`,
+        );
+        return reject();
       }
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "newDestination, configurations.inspect",
-        error,
-      );
-      window.showErrorMessage(
-        `Unable to continue with project inspection failure. ${summary}`,
-      );
-      return reject();
-    }
-    if (!entryPointListItems.length) {
-      window.showErrorMessage(
-        `Unable to continue with no project entrypoints found during inspection`,
-      );
-      return reject();
-    }
-    return resolve();
-  });
+      if (!entryPointListItems.length) {
+        const msg = `Unable to continue with no project entrypoints found during inspection`;
+        window.showErrorMessage(msg);
+        return reject();
+      }
+      return resolve();
+    },
+  );
 
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
@@ -465,7 +465,7 @@ export async function newDestination(
 
   const apisComplete = Promise.all([
     getCredentials,
-    getEntryPoints,
+    getConfigurationInspections,
     getConfigurations,
     getDeployments,
   ]);
@@ -898,7 +898,7 @@ export async function newDestination(
     (!newCredentialForced(state) && state.data.credentialName === undefined) ||
     // credentialName can be either type
     state.data.entryPoint === undefined ||
-    !isQuickPickItem(state.data.entryPoint) ||
+    !isQuickPickItemWithIndex(state.data.entryPoint) ||
     state.data.configFileName === undefined ||
     typeof state.data.configFileName !== "string"
   ) {
@@ -951,16 +951,16 @@ export async function newDestination(
 
   // Create the Config File
   try {
-    const selectedConfig = entryPointLabelMap.get(state.data.entryPoint.label);
-    if (!selectedConfig) {
+    const selectedConfigDetails = configDetails[state.data.entryPoint.index];
+    if (!selectedConfigDetails) {
       window.showErrorMessage(
-        `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}`,
+        `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
       );
       return;
     }
     const createResponse = await api.configurations.createOrUpdate(
       state.data.configFileName,
-      selectedConfig,
+      selectedConfigDetails,
     );
     const fileUri = Uri.file(createResponse.data.configurationPath);
     newConfig = createResponse.data;

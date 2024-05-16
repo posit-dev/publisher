@@ -42,6 +42,26 @@ export enum ContentType {
   UNKNOWN = "unknown",
 }
 
+export const contentTypeStrings = {
+  [ContentType.HTML]: "serve pre-rendered HTML",
+  [ContentType.JUPYTER_NOTEBOOK]: "render with Jupyter nbconvert",
+  [ContentType.JUPYTER_VOILA]: "run with Jupyter Voila",
+  [ContentType.PYTHON_BOKEH]: "run with Bokeh",
+  [ContentType.PYTHON_DASH]: "run with Dash",
+  [ContentType.PYTHON_FASTAPI]: "run with FastAPI",
+  [ContentType.PYTHON_FLASK]: "run with Flask",
+  [ContentType.PYTHON_SHINY]: "run with Python Shiny",
+  [ContentType.PYTHON_STREAMLIT]: "run with Streamlit",
+  [ContentType.QUARTO_SHINY]: "render with Quarto and run embedded Shiny app",
+  [ContentType.QUARTO]: "render with Quarto",
+  [ContentType.R_PLUMBER]: "run with Plumber",
+  [ContentType.R_SHINY]: "run with R Shiny",
+  [ContentType.RMD_SHINY]:
+    "render with rmarkdown/knitr and run embedded Shiny app",
+  [ContentType.RMD]: "render with rmarkdown/knitr",
+  [ContentType.UNKNOWN]: "unknown content type; cannot deploy this item",
+};
+
 export type ConfigurationDetails = {
   $schema: SchemaURL;
   type: ContentType;

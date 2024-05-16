@@ -3,61 +3,36 @@
 import {
   MultiStepInput,
   MultiStepState,
+  QuickPickItemWithIndex,
   assignStep,
+  isQuickPickItemWithIndex,
 } from "src/multiStepInputs/multiStepHelper";
 
 import {
   InputBoxValidationSeverity,
   ProgressLocation,
-  QuickPickItem,
   ThemeIcon,
   Uri,
   commands,
   window,
 } from "vscode";
 
-import { Configuration, ConfigurationDetails, useApi } from "../api";
-import { ContentType } from "../api/types/configurations";
+import {
+  Configuration,
+  ConfigurationDetails,
+  contentTypeStrings,
+  useApi,
+} from "../api";
 import { getSummaryStringFromError } from "../utils/errors";
 import { isValidFilename } from "../utils/files";
 import { untitledConfigurationName } from "../utils/names";
-
-const contentTypeStrings = {
-  [ContentType.HTML]: "serve pre-rendered HTML",
-  [ContentType.JUPYTER_NOTEBOOK]: "render with Jupyter nbconvert",
-  [ContentType.JUPYTER_VOILA]: "run with Jupyter Voila",
-  [ContentType.PYTHON_BOKEH]: "run with Bokeh",
-  [ContentType.PYTHON_DASH]: "run with Dash",
-  [ContentType.PYTHON_FASTAPI]: "run with FastAPI",
-  [ContentType.PYTHON_FLASK]: "run with Flask",
-  [ContentType.PYTHON_SHINY]: "run with Python Shiny",
-  [ContentType.PYTHON_STREAMLIT]: "run with Streamlit",
-  [ContentType.QUARTO_SHINY]: "render with Quarto and run embedded Shiny app",
-  [ContentType.QUARTO]: "render with Quarto",
-  [ContentType.R_PLUMBER]: "run with Plumber",
-  [ContentType.R_SHINY]: "run with R Shiny",
-  [ContentType.RMD_SHINY]:
-    "render with rmarkdown/knitr and run embedded Shiny app",
-  [ContentType.RMD]: "render with rmarkdown/knitr",
-  [ContentType.UNKNOWN]: "unknown content type; cannot deploy this item",
-};
-
-export type QuickPickItemWithIndex = QuickPickItem & { index: number };
-
-export function isQuickPickItemWithIndex(
-  d: QuickPickItem | string,
-): d is QuickPickItemWithIndex {
-  return (d as QuickPickItemWithIndex).index !== undefined;
-}
 
 export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
   const api = await useApi();
-  let entryPointLabels: string[] = [];
   let entryPointListItems: QuickPickItemWithIndex[] = [];
-  const entryPointLabelMap = new Map<string, ConfigurationDetails>();
   let configDetails: ConfigurationDetails[] = [];
   let configNames: string[] = [];
 
@@ -66,9 +41,6 @@ export async function newConfig(title: string, viewId?: string) {
       try {
         const inspectResponse = await api.configurations.inspect();
         configDetails = inspectResponse.data;
-        entryPointLabels = configDetails.map(
-          (config) => `${config.entrypoint}`,
-        );
         configDetails.forEach((config, i) => {
           if (config.entrypoint) {
             entryPointListItems.push({
@@ -79,9 +51,6 @@ export async function newConfig(title: string, viewId?: string) {
             });
           }
         });
-        for (let i = 0; i < configDetails.length; i++) {
-          entryPointLabelMap.set(entryPointLabels[i], configDetails[i]);
-        }
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
           "newConfig, configurations.inspect",
@@ -276,16 +245,16 @@ export async function newConfig(title: string, viewId?: string) {
   // Create the Config File
   let newConfig: Configuration | undefined = undefined;
   try {
-    const selectedConfig = configDetails[state.data.entryPoint.index];
-    if (!selectedConfig) {
+    const selectedConfigDetails = configDetails[state.data.entryPoint.index];
+    if (!selectedConfigDetails) {
       window.showErrorMessage(
-        `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}`,
+        `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
       );
       return;
     }
     const createResponse = await api.configurations.createOrUpdate(
       state.data.configFileName,
-      selectedConfig,
+      selectedConfigDetails,
     );
     newConfig = createResponse.data;
     const fileUri = Uri.file(newConfig.configurationPath);
