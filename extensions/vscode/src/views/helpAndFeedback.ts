@@ -53,7 +53,7 @@ export class HelpAndFeedbackTreeDataProvider
       commands.registerCommand(openGettingStartedCommand, () => {
         env.openExternal(
           Uri.parse(
-            "https://github.com/posit-dev/publisher/blob/e72828f3585497649b8b55470a665f7fa890a21f/docs/vscode.md",
+            "https://github.com/posit-dev/publisher/blob/main/docs/index.md",
           ),
         );
       }),
