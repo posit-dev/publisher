@@ -22,6 +22,7 @@ import { isAxiosError } from "axios";
 
 import {
   Configuration,
+  ConfigurationError,
   Credential,
   Deployment,
   EventStreamMessage,
@@ -88,6 +89,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private _credentials: Credential[] = [];
   private _configs: Configuration[] = [];
+  private configsInError: ConfigurationError[] = [];
   private root: WorkspaceFolder | undefined;
   private _webviewView?: WebviewView;
   private _extensionUri: Uri;
@@ -221,9 +223,15 @@ export class HomeViewProvider implements WebviewViewProvider {
   }
 
   private async _onEditConfigurationMsg(msg: EditConfigurationMsg) {
-    const config = this._configs.find(
+    let config: Configuration | ConfigurationError | undefined;
+    config = this._configs.find(
       (config) => config.configurationName === msg.content.configurationName,
     );
+    if (!config) {
+      config = this.configsInError.find(
+        (config) => config.configurationName === msg.content.configurationName,
+      );
+    }
     if (config) {
       await commands.executeCommand(
         "vscode.open",
@@ -324,9 +332,12 @@ export class HomeViewProvider implements WebviewViewProvider {
       const response = await api.configurations.getAll();
       const configurations = response.data;
       this._configs = [];
+      this.configsInError = [];
       configurations.forEach((config) => {
         if (!isConfigurationError(config)) {
           this._configs.push(config);
+        } else {
+          this.configsInError.push(config);
         }
       });
     } catch (error: unknown) {
@@ -373,6 +384,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       kind: HostToWebviewMessageType.REFRESH_CONFIG_DATA,
       content: {
         configurations: this._configs,
+        configurationsInError: this.configsInError,
         selectedConfigurationName,
       },
     });

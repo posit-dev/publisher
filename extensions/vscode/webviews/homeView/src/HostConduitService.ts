@@ -119,6 +119,7 @@ const onRefreshDeploymentDataMsg = (msg: RefreshDeploymentDataMsg) => {
 const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
   const home = useHomeStore();
   home.configurations = msg.content.configurations;
+  home.configurationsInError = msg.content.configurationsInError;
 
   const name = msg.content.selectedConfigurationName;
   if (name) {
