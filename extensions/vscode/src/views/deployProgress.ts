@@ -8,7 +8,7 @@ export function deployProject(localID: string, stream: EventStream) {
   window.withProgress(
     {
       location: ProgressLocation.Notification,
-      title: `Deploying your project...`,
+      title: `Deploying your project`,
       cancellable: false,
     },
     (progress) => {
