@@ -50,7 +50,7 @@
         >.
       </p>
       <p v-if="isConfigInError">
-        The current Configuration used for this Destination is in error.
+        The selected Configuration has an error.
         <a
           href=""
           role="button"
