@@ -81,7 +81,7 @@ confirm_install() {
 
   getc c
   # we test for \r and \n because some stuff does \r instead
-  if [[ "${c}" == $'\r' || "${c}" == $'\n' || "${c}" == "y" ]]; then
+  if [[ "${c}" == $'\r' || "${c}" == $'\n' || "${c}" =~ ^(y|Y)$ ]]; then
     execute $1 "--install-extension" "${TMPDIR}/${NAME}-${VERSION}-${OS}-${ARCH}.vsix"
   else
     echo "Skipping $1"
