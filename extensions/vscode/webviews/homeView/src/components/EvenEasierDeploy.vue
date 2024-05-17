@@ -343,6 +343,8 @@ const newCredential = () => {
 }
 
 .error-message {
+  min-width: 0;
+  word-wrap: break-word;
   margin-left: 5px;
 }
 
