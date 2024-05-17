@@ -62,7 +62,7 @@ func repoUrlsAsStrings(repos []Repository) string {
 	quotedUrls := []string{}
 	for _, repo := range repos {
 		url := strings.TrimSuffix(string(repo.URL), "/")
-		quotedUrls = append(quotedUrls, fmt.Sprintf("%q", url))
+		quotedUrls = append(quotedUrls, fmt.Sprintf("\"%s\"", url))
 	}
 	return strings.Join(quotedUrls, ", ")
 }
@@ -77,7 +77,7 @@ func repoNamesAsStrings(repos []Repository) string {
 			// See rsconnect:::standardizeRepos.
 			name = fmt.Sprintf("repo_%d", i)
 		}
-		quotedNames = append(quotedNames, fmt.Sprintf("%q", name))
+		quotedNames = append(quotedNames, fmt.Sprintf("\"%s\"", name))
 	}
 	return strings.Join(quotedNames, ", ")
 }
