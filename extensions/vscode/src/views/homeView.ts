@@ -61,6 +61,7 @@ import { splitFilesOnInclusion } from "src/utils/files";
 import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
 import { selectConfig } from "src/multiStepInputs/selectConfig";
+import { RRequirement, RVersionConfig } from "src/api/types/requirements";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
@@ -152,6 +153,8 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onSaveSelectionState(msg);
       case WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES:
         return await this._onRefreshPythonPackages();
+      case WebviewToHostMessageType.REFRESH_R_PACKAGES:
+        return await this._onRefreshRPackages();
       case WebviewToHostMessageType.VSCODE_OPEN_RELATIVE:
         return await this._onRelativeOpenVSCode(msg);
       case WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS:
@@ -475,7 +478,7 @@ export class HomeViewProvider implements WebviewViewProvider {
           packageMgr = pythonSection.packageManager;
 
           const response =
-            await api.requirements.getByConfiguration(activeConfiguration);
+            await api.requirements.getPythonRequirements(activeConfiguration);
           packages = response.data.requirements;
         } catch (error: unknown) {
           if (isAxiosError(error) && error.response?.status === 404) {
@@ -501,6 +504,61 @@ export class HomeViewProvider implements WebviewViewProvider {
         pythonProject,
         file: packageFile,
         manager: packageMgr,
+        packages,
+      },
+    });
+  }
+
+  private async _onRefreshRPackages() {
+    const savedState = this._getSelectionState();
+    const activeConfiguration = savedState.configurationName;
+    let rProject = true;
+    let packages: RRequirement[] = [];
+    let packageFile: string | undefined;
+    let packageMgr: string | undefined;
+    let rVersionConfig: RVersionConfig | undefined;
+
+    const api = await useApi();
+
+    if (activeConfiguration) {
+      const currentConfig = this.getConfigByName(activeConfiguration);
+      const rSection = currentConfig?.configuration.r;
+      if (!rSection) {
+        rProject = false;
+      } else {
+        try {
+          packageFile = rSection.packageFile;
+          packageMgr = rSection.packageManager;
+
+          const response =
+            await api.requirements.getRRequirements(activeConfiguration);
+          packages = response.data.packages;
+          rVersionConfig = response.data.r;
+        } catch (error: unknown) {
+          if (isAxiosError(error) && error.response?.status === 404) {
+            // No requirements file; show the welcome view.
+            packageFile = undefined;
+          } else if (isAxiosError(error) && error.response?.status === 409) {
+            // R is not present in the configuration file
+            rProject = false;
+          } else {
+            const summary = getSummaryStringFromError(
+              "homeView::_onRefreshRPackages",
+              error,
+            );
+            window.showInformationMessage(summary);
+            return;
+          }
+        }
+      }
+    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.UPDATE_R_PACKAGES,
+      content: {
+        rProject,
+        file: packageFile,
+        manager: packageMgr,
+        rVersion: rVersionConfig?.version,
         packages,
       },
     });
@@ -912,7 +970,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     const api = await useApi();
     const activeConfig = this._getActiveConfig();
     if (activeConfig) {
-      const response = await api.files.getByConfiguration(
+      const response = await api.files.getPythonRequirements(
         activeConfig.configurationName,
       );
 

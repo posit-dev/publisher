@@ -1,7 +1,10 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import { AxiosInstance } from "axios";
-import { RequirementsResponse } from "../types/requirements";
+import {
+  GetRRequirementsResponse,
+  PythonRequirementsResponse,
+} from "../types/requirements";
 
 export class Requirements {
   private client: AxiosInstance;
@@ -15,10 +18,22 @@ export class Requirements {
   // 404 - configuration or requirements file not found
   // 409 - conflict (Python is not configured)
   // 500 - internal server error
-  getByConfiguration(configName: string) {
+  getPythonRequirements(configName: string) {
     const encodedName = encodeURIComponent(configName);
-    return this.client.get<RequirementsResponse>(
+    return this.client.get<PythonRequirementsResponse>(
       `/configurations/${encodedName}/requirements`,
+    );
+  }
+
+  // Returns:
+  // 200 - success
+  // 404 - configuration or requirements file not found
+  // 409 - conflict (R is not configured)
+  // 500 - internal server error
+  getRRequirements(configName: string) {
+    const encodedName = encodeURIComponent(configName);
+    return this.client.get<GetRRequirementsResponse>(
+      `/configurations/${encodedName}/packages`,
     );
   }
 
