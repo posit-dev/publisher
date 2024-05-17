@@ -46,7 +46,7 @@ func repoUrlsAsStrings(repos []Repository) string {
 	quotedUrls := []string{}
 	for _, repo := range repos {
 		url := strings.TrimSuffix(string(repo.URL), "/")
-		quotedUrls = append(quotedUrls, fmt.Sprintf("\"%s\"", url))
+		quotedUrls = append(quotedUrls, fmt.Sprintf(`"%s"`, url))
 	}
 	return strings.Join(quotedUrls, ", ")
 }
@@ -61,7 +61,7 @@ func repoNamesAsStrings(repos []Repository) string {
 			// See rsconnect:::standardizeRepos.
 			name = fmt.Sprintf("repo_%d", i)
 		}
-		quotedNames = append(quotedNames, fmt.Sprintf("\"%s\"", name))
+		quotedNames = append(quotedNames, fmt.Sprintf(`"%s"`, name))
 	}
 	return strings.Join(quotedNames, ", ")
 }
@@ -108,7 +108,8 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 
 func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.AbsolutePath) ([]Repository, error) {
 	const bioconductorReposCodeTemplate = `(function() { if (requireNamespace("BiocManager", quietly = TRUE) || requireNamespace("BiocInstaller", quietly = TRUE)) {repos <- getFromNamespace("renv_bioconductor_repos", "renv")("%s"); repos <- repos[setdiff(names(repos), "CRAN")]; cat(repos, labels=names(repos), fill=1); invisible()}})()`
-	biocRepoListCode := fmt.Sprintf(bioconductorReposCodeTemplate, base)
+	escapedBase := strings.ReplaceAll(l.base.String(), `\`, `\\`)
+	biocRepoListCode := fmt.Sprintf(bioconductorReposCodeTemplate, escapedBase)
 
 	out, _, err := l.rExecutor.RunCommand(
 		l.rExecutable.String(),
