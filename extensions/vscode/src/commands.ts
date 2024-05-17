@@ -16,7 +16,7 @@ export const create = async (
   subcommand: string = "ui",
 ): Promise<[string, string[]]> => {
   const executable = await getExecutableBinary(context);
-  return [executable, [subcommand, "-vv", `--listen=${HOST}:${port}`, path]];
+  return [executable, [subcommand, "-v", `--listen=${HOST}:${port}`, path]];
 };
 
 const getExecutableBinary = async (
