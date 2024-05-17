@@ -42,22 +42,6 @@ func NewAvailablePackageLister(base util.AbsolutePath, rExecutable util.Path, lo
 	}
 }
 
-const packageListCodeTemplate = `
-(function() {
-	pkgs <- available.packages(
-	  repos = setNames(c(%s), c(%s)),
-	  type = "source",
-	  filters = c(
-		getOption("rsconnect.available_packages_filters", default = c()),
-		"duplicates"
-	  )
-	)
-	info <- pkgs[,c("Package", "Version", "Repository")]
-	apply(info, 1, function(x) { cat(x, sep=" ", collapse="\n") } )
-	invisible()
-  })()
-`
-
 func repoUrlsAsStrings(repos []Repository) string {
 	quotedUrls := []string{}
 	for _, repo := range repos {
@@ -83,6 +67,7 @@ func repoNamesAsStrings(repos []Repository) string {
 }
 
 func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repository) ([]AvailablePackage, error) {
+	const packageListCodeTemplate = `(function() { pkgs <- available.packages( repos = setNames(c(%s), c(%s)), type = "source", filters = c(getOption("rsconnect.available_packages_filters", default = c()), "duplicates"));info <- pkgs[,c("Package", "Version", "Repository")];apply(info, 1, function(x) { cat(x, sep=" ", collapse="\n") } );invisible()})()`
 	repoUrls := repoUrlsAsStrings(repos)
 	repoNames := repoNamesAsStrings(repos)
 	packageListCode := fmt.Sprintf(packageListCodeTemplate, repoUrls, repoNames)
@@ -121,19 +106,8 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 	return available, nil
 }
 
-const bioconductorReposCodeTemplate = `
-(function() {
-	if (requireNamespace("BiocManager", quietly = TRUE) ||
-		requireNamespace("BiocInstaller", quietly = TRUE)) {
-		repos <- getFromNamespace("renv_bioconductor_repos", "renv")("%s")
-		repos <- repos[setdiff(names(repos), "CRAN")]
-		cat(repos, labels=names(repos), fill=1)
-		invisible()
-	}
-})()
-`
-
 func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.AbsolutePath) ([]Repository, error) {
+	const bioconductorReposCodeTemplate = `(function() { if (requireNamespace("BiocManager", quietly = TRUE) || requireNamespace("BiocInstaller", quietly = TRUE)) {repos <- getFromNamespace("renv_bioconductor_repos", "renv")("%s"); repos <- repos[setdiff(names(repos), "CRAN")]; cat(repos, labels=names(repos), fill=1); invisible()}})()`
 	biocRepoListCode := fmt.Sprintf(bioconductorReposCodeTemplate, base)
 
 	out, _, err := l.rExecutor.RunCommand(
