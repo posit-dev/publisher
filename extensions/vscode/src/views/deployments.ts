@@ -233,13 +233,41 @@ export class DeploymentsTreeDataProvider
     );
 
     if (this.root !== undefined) {
+      const positDirWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, ".posit"),
+        true,
+        true,
+        false,
+      );
+      positDirWatcher.onDidDelete(this.refresh, this);
+      const publishDirWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, ".posit/publish"),
+        true,
+        true,
+        false,
+      );
+      publishDirWatcher.onDidDelete(this.refresh, this);
+      const deploymentsDirWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, ".posit/publish/deployments"),
+        true,
+        true,
+        false,
+      );
+      deploymentsDirWatcher.onDidDelete(this.refresh, this);
+
       const watcher = workspace.createFileSystemWatcher(
         new RelativePattern(this.root, fileStore),
       );
       watcher.onDidCreate(this.refresh);
       watcher.onDidDelete(this.refresh);
       watcher.onDidChange(this.refresh);
-      this._context.subscriptions.push(watcher);
+
+      this._context.subscriptions.push(
+        positDirWatcher,
+        publishDirWatcher,
+        deploymentsDirWatcher,
+        watcher,
+      );
     }
   }
 }

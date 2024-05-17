@@ -110,17 +110,34 @@ export class ConfigurationsTreeDataProvider
       commands.registerCommand(deleteCommand, this.delete),
     );
     if (this.root !== undefined) {
-      this._context.subscriptions.push(this.createFileSystemWatcher(this.root));
-    }
-  }
+      const positDirWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, ".posit"),
+        true,
+        true,
+        false,
+      );
+      positDirWatcher.onDidDelete(this.refresh, this);
+      const publishDirWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, ".posit/publish"),
+        true,
+        true,
+        false,
+      );
+      publishDirWatcher.onDidDelete(this.refresh, this);
 
-  private createFileSystemWatcher(root: WorkspaceFolder): FileSystemWatcher {
-    const pattern = new RelativePattern(root, fileStore);
-    const watcher = workspace.createFileSystemWatcher(pattern);
-    watcher.onDidCreate(this.refresh);
-    watcher.onDidDelete(this.refresh);
-    watcher.onDidChange(this.refresh);
-    return watcher;
+      const watcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, fileStore),
+      );
+      watcher.onDidCreate(this.refresh);
+      watcher.onDidDelete(this.refresh);
+      watcher.onDidChange(this.refresh);
+
+      this._context.subscriptions.push(
+        positDirWatcher,
+        publishDirWatcher,
+        watcher,
+      );
+    }
   }
 
   private refresh = () => {
