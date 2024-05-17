@@ -150,7 +150,7 @@ func (i *defaultRInspector) getRVersion(rExecutable string) (string, error) {
 	return version, nil
 }
 
-var renvLockRE = regexp.MustCompile(`^\[1\] "(.*)"$`)
+var renvLockRE = regexp.MustCompile(`^\[1\] "(.*)"`)
 
 func (i *defaultRInspector) getRenvLockfile(rExecutable string) (util.AbsolutePath, error) {
 	i.log.Info("Getting renv lockfile path", "r", rExecutable)
