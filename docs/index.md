@@ -54,3 +54,7 @@ See the [VSCode Extension](vscode.md) page.
 ## Configuration Reference
 
 See the [Configuration Reference](configuration.md) page.
+
+## Acknowledgements
+
+See the [Licenses](licenses.md) page.
