@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"path/filepath"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 )
 
@@ -44,26 +45,32 @@ var StandardExclusions = []string{
 //   - a built-in exclusion list (of negative match patterns)
 type matchingWalker struct {
 	matchList MatchList
+	log       logging.Logger
 }
 
 // Walk traverses the directory at `path`, calling the specified function
 // for every file and directory that matches the match list.
-func (i *matchingWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
-	return i.matchList.Walk(path, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
-		m := i.matchList.Match(path)
-		if m == nil || m.Exclude {
-			if info.IsDir() {
+func (i *matchingWalker) Walk(base util.AbsolutePath, fn util.AbsoluteWalkFunc) error {
+	return base.Walk(func(path util.AbsolutePath, info fs.FileInfo, err error) error {
+		if path != base {
+			m := i.matchList.Match(path)
+			if m == nil || m.Exclude {
+				i.log.Debug("excluding", "path", path)
+				if info.IsDir() {
+					return filepath.SkipDir
+				} else {
+					return nil
+				}
+			}
+
+			// Ignore Python environment directories. We check for these
+			// separately because they aren't expressible as gitignore patterns.
+			if info.IsDir() && (util.IsPythonEnvironmentDir(path) || util.IsRenvLibraryDir(path)) {
+				i.log.Debug("excluding library dir", "path", path)
 				return filepath.SkipDir
-			} else {
-				return nil
 			}
 		}
-
-		// Ignore Python environment directories. We check for these
-		// separately because they aren't expressible as gitignore patterns.
-		if info.IsDir() && (util.IsPythonEnvironmentDir(path) || util.IsRenvLibraryDir(path)) {
-			return filepath.SkipDir
-		}
+		i.log.Debug("including", "path", path)
 		return fn(path, info, err)
 	})
 }
@@ -71,7 +78,7 @@ func (i *matchingWalker) Walk(path util.AbsolutePath, fn util.AbsoluteWalkFunc) 
 // NewMatchingWalker returns a Walker that only iterates over matching files and directories.
 // All files are included, except exclusions sourced from the built-in exclusion list
 // and Python environment directories.
-func NewMatchingWalker(configuredMatches []string, dir util.AbsolutePath) (util.Walker, error) {
+func NewMatchingWalker(configuredMatches []string, dir util.AbsolutePath, log logging.Logger) (util.Walker, error) {
 	patterns := append(configuredMatches, StandardExclusions...)
 	matchList, err := NewMatchList(dir, patterns)
 	if err != nil {
@@ -79,5 +86,6 @@ func NewMatchingWalker(configuredMatches []string, dir util.AbsolutePath) (util.
 	}
 	return &matchingWalker{
 		matchList: matchList,
+		log:       log,
 	}, nil
 }

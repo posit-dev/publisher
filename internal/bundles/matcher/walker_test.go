@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"testing"
 
+	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/util"
 	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/spf13/afero"
@@ -37,7 +38,7 @@ func (s *WalkerSuite) SetupTest() {
 }
 
 func (s *WalkerSuite) TestNewMatchingWalker() {
-	w, err := NewMatchingWalker(nil, s.cwd)
+	w, err := NewMatchingWalker(nil, s.cwd, logging.New())
 	s.NoError(err)
 	s.NotNil(w)
 }
@@ -65,7 +66,7 @@ func (s *WalkerSuite) TestWalk() {
 	err = baseDir.Join("manifest.json").WriteFile(nil, 0777)
 	s.NoError(err)
 
-	w, err := NewMatchingWalker([]string{"*"}, s.cwd)
+	w, err := NewMatchingWalker([]string{"*"}, s.cwd, logging.New())
 	s.NoError(err)
 	s.NotNil(w)
 
