@@ -240,7 +240,7 @@ export class ConfigurationTreeItem extends TreeItem {
 
     if (isConfigurationError(this.config)) {
       tooltip =
-        `Configuration file: ${this.config.configurationPath}\n` +
+        `Configuration file: ${this.config.configurationRelPath}\n` +
         `\n` +
         `Error: This configuration file is invalid.\n` +
         `Click to open it and resolve the underlined errors.\n` +
@@ -251,7 +251,7 @@ export class ConfigurationTreeItem extends TreeItem {
       const c = this.config.configuration;
 
       tooltip =
-        `Configuration file: ${this.config.configurationPath}\n` +
+        `Configuration file: ${this.config.configurationRelPath}\n` +
         `\n` +
         `Title: ${c.title}\n` +
         `Entrypoint File: ${c.entrypoint}\n` +

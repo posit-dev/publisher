@@ -43,9 +43,15 @@ func PostInitializeHandlerFunc(base util.AbsolutePath, log logging.Logger) http.
 		if err != nil {
 			cfg = config.New()
 		}
+		relPath, err := configPath.Rel(base)
+		if err != nil {
+			InternalError(w, req, log, err)
+			return
+		}
 		response := configDTO{
 			Name:          b.ConfigName,
 			Path:          configPath.String(),
+			RelPath:       relPath.String(),
 			Configuration: cfg,
 		}
 		w.Header().Set("content-type", "application/json")
