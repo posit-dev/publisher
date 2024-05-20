@@ -83,10 +83,11 @@ func (s *PostInitializeSuite) TestPostInitializeDefault() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 
-	actualPath, err := util.NewPath(res.Path, s.cwd.Fs()).Rel(s.cwd)
-	s.NoError(err)
+	relPath := filepath.Join(".posit", "publish", "default.toml")
+	s.Equal(s.cwd.Join(relPath).String(), res.Path)
+	s.Equal(relPath, res.RelPath)
+
 	s.Equal("default", res.Name)
-	s.Equal(filepath.Join(".posit", "publish", "default.toml"), actualPath.String())
 	s.Equal(config.ContentTypePythonFlask, res.Configuration.Type)
 	s.Equal(expectedPyConfig, res.Configuration.Python)
 }
@@ -109,10 +110,11 @@ func (s *PostInitializeSuite) TestPostInitializeNamed() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 
-	actualPath, err := util.NewPath(res.Path, s.cwd.Fs()).Rel(s.cwd)
-	s.NoError(err)
+	relPath := filepath.Join(".posit", "publish", "newConfig.toml")
+	s.Equal(s.cwd.Join(relPath).String(), res.Path)
+	s.Equal(relPath, res.RelPath)
+
 	s.Equal("newConfig", res.Name)
-	s.Equal(filepath.Join(".posit", "publish", "newConfig.toml"), actualPath.String())
 	s.Equal(config.ContentTypePythonFlask, res.Configuration.Type)
 	s.Equal(expectedPyConfig, res.Configuration.Python)
 }
@@ -147,10 +149,11 @@ func (s *PostInitializeSuite) TestPostInitializeInspectionFails() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 
-	actualPath, err := util.NewPath(res.Path, s.cwd.Fs()).Rel(s.cwd)
-	s.NoError(err)
+	relPath := filepath.Join(".posit", "publish", "default.toml")
+	s.Equal(s.cwd.Join(relPath).String(), res.Path)
+	s.Equal(relPath, res.RelPath)
+
 	s.Equal("default", res.Name)
-	s.Equal(filepath.Join(".posit", "publish", "default.toml"), actualPath.String())
 	expected := config.New()
 	expected.Title = s.cwd.Base()
 	s.Equal(expected, res.Configuration)

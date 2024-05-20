@@ -7,6 +7,7 @@ import { SchemaURL } from "./schema";
 export type ConfigurationLocation = {
   configurationName: string;
   configurationPath: string;
+  configurationRelPath: string;
 };
 
 export type ConfigurationError = {

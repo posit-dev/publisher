@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -73,7 +74,10 @@ func (s *GetConfigurationuite) TestGetConfiguration() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 
-	s.Equal(s.cwd.Join(".posit", "publish", "myConfig.toml").String(), res.Path)
+	relPath := filepath.Join(".posit", "publish", "myConfig.toml")
+	s.Equal(s.cwd.Join(relPath).String(), res.Path)
+	s.Equal(relPath, res.RelPath)
+
 	s.Equal("myConfig", res.Name)
 	s.Nil(res.Error)
 	s.Equal(cfg, res.Configuration)
@@ -102,7 +106,10 @@ func (s *GetConfigurationuite) TestGetConfigurationError() {
 	s.NoError(dec.Decode(&res))
 
 	var nilConfiguration *config.Config
-	s.Equal(s.cwd.Join(".posit", "publish", "myConfig.toml").String(), res.Path)
+	relPath := filepath.Join(".posit", "publish", "myConfig.toml")
+	s.Equal(s.cwd.Join(relPath).String(), res.Path)
+	s.Equal(relPath, res.RelPath)
+
 	s.Equal("myConfig", res.Name)
 	s.NotNil(res.Error)
 	s.Equal(nilConfiguration, res.Configuration)
