@@ -63,12 +63,14 @@ func (l *defaultMatchList) Walk(root util.AbsolutePath, fn util.AbsoluteWalkFunc
 			if err != nil {
 				return err
 			}
-			m := l.Match(path)
-			if m == nil || m.Exclude {
-				if info.IsDir() {
-					return filepath.SkipDir
+			if path != root {
+				m := l.Match(path)
+				if m == nil || m.Exclude {
+					if info.IsDir() {
+						return filepath.SkipDir
+					}
+					return nil
 				}
-				return nil
 			}
 			return fn(path, info, err)
 		})
