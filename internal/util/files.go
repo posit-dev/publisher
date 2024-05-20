@@ -53,7 +53,8 @@ func IsPythonEnvironmentDir(path AbsolutePath) bool {
 }
 
 func IsRenvLibraryDir(path AbsolutePath) bool {
-	return path.Base() == "library" && path.Dir().Base() == "renv"
+	return path.Dir().Base() == "renv" &&
+		(path.Base() == "library" || path.Base() == "sandbox" || path.Base() == "staging")
 }
 
 const badChars = `/:\*?"<>|`

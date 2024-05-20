@@ -36,6 +36,8 @@ var StandardExclusions = []string{
 	// renv library cannot be included; Connect doesn't need it
 	// and it's probably the wrong platform anyway.
 	"!renv/library",
+	"!renv/sandbox",
+	"!renv/staging",
 }
 
 // matchingWalker is a Walker that excludes files and directories
