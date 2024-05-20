@@ -66,6 +66,24 @@ func (s *WalkerSuite) TestWalk() {
 	err = baseDir.Join("manifest.json").WriteFile(nil, 0777)
 	s.NoError(err)
 
+	renvLibDir := baseDir.Join("renv", "library")
+	err = renvLibDir.MkdirAll(0777)
+	s.NoError(err)
+	err = renvLibDir.Join("foo").WriteFile(nil, 0777)
+	s.NoError(err)
+
+	renvStagingDir := baseDir.Join("renv", "staging")
+	err = renvLibDir.MkdirAll(0777)
+	s.NoError(err)
+	err = renvStagingDir.Join("foo").WriteFile(nil, 0777)
+	s.NoError(err)
+
+	renvSandboxDir := baseDir.Join("renv", "sandbox")
+	err = renvLibDir.MkdirAll(0777)
+	s.NoError(err)
+	err = renvSandboxDir.Join("foo").WriteFile(nil, 0777)
+	s.NoError(err)
+
 	w, err := NewMatchingWalker([]string{"*"}, s.cwd, logging.New())
 	s.NoError(err)
 	s.NotNil(w)
@@ -84,5 +102,6 @@ func (s *WalkerSuite) TestWalk() {
 		dirPath.String(),
 		dirPath.Join("included").String(),
 		dirPath.Join("included", "includeme").String(),
+		dirPath.Join("renv").String(),
 	}, seen)
 }
