@@ -58,13 +58,13 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirements() {
 	s.NoError(err)
 	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
 
-	h := NewGetConfigRequirementsHandler(s.cwd, s.log)
+	h := NewGetConfigPythonPackagesHandler(s.cwd, s.log)
 	h.ServeHTTP(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
 	s.Equal("application/json", rec.Header().Get("content-type"))
 
-	res := requirementsDTO{}
+	res := pythonPackagesDTO{}
 	dec := json.NewDecoder(rec.Body)
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
@@ -81,7 +81,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNotFound() {
 	s.NoError(err)
 	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
 
-	h := NewGetConfigRequirementsHandler(s.cwd, s.log)
+	h := NewGetConfigPythonPackagesHandler(s.cwd, s.log)
 	h.ServeHTTP(rec, req)
 
 	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
@@ -103,7 +103,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoRequirementsFile
 	s.NoError(err)
 	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
 
-	h := NewGetConfigRequirementsHandler(s.cwd, s.log)
+	h := NewGetConfigPythonPackagesHandler(s.cwd, s.log)
 	h.ServeHTTP(rec, req)
 
 	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
@@ -120,7 +120,7 @@ func (s *GetConfigRequirementsSuite) TestGetConfigRequirementsNoPythonInConfig()
 	s.NoError(err)
 	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
 
-	h := NewGetConfigRequirementsHandler(s.cwd, s.log)
+	h := NewGetConfigPythonPackagesHandler(s.cwd, s.log)
 	h.ServeHTTP(rec, req)
 
 	s.Equal(http.StatusConflict, rec.Result().StatusCode)
