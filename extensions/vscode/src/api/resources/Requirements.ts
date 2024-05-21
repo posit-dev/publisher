@@ -22,7 +22,7 @@ export class Requirements {
   getPythonRequirements(configName: string) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<PythonRequirementsResponse>(
-      `/configurations/${encodedName}/requirements`,
+      `/configurations/${encodedName}/packages/python`,
     );
   }
 
@@ -35,7 +35,7 @@ export class Requirements {
   getRRequirements(configName: string) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<GetRRequirementsResponse>(
-      `/configurations/${encodedName}/packages`,
+      `/configurations/${encodedName}/packages/r`,
     );
   }
 
