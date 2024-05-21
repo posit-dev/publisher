@@ -23,5 +23,5 @@ export type RVersionConfig = {
 
 export type GetRRequirementsResponse = {
   r: RVersionConfig;
-  packages: RRequirement[];
+  packages: Record<string, RRequirement>;
 };

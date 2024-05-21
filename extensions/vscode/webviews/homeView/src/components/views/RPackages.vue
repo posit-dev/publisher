@@ -4,10 +4,12 @@
       <template v-if="showScanWelcomeView">
         <p>
           To deploy R content, you need a package file listing any package
-          dependencies, but the file does not exist. Click Scan to create one
-          based on the files in your project and your configuration. [!!! DO WE
-          WANT SOMETHING ELSE HERE ???]
+          dependencies, but the file does not exist or is invalid. Use
+          'renv::snapshot()' at an R console to create one or edit the current
+          configuration file ({{ home.selectedDeployment?.configurationName }})
+          to point to an existing valid file.`
         </p>
+        <!-- Implementation coming soon as soon as we have an API! -->
         <!-- <vscode-button @click="onScanForPackageRequirements()">
           Scan
         </vscode-button> -->
@@ -20,10 +22,11 @@
       </template>
       <template v-if="emptyRequirements">
         <p>
-          This project currently has no R package requirements. If this is not
-          accurate, click Scan to update based on the files in your project and
-          configuration. [!!! DO WE WANT SOMETHING ELSE HERE ???]
+          This project currently has no R package requirements (file ({{
+            home.rPackageFile
+          }}) is either missing, empty or invalid).
         </p>
+        <!-- Implementation coming as soon as we have an API! -->
         <!-- <vscode-button @click="onScanForPackageRequirements()">
           Scan
         </vscode-button> -->

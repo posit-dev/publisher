@@ -98,6 +98,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private activeConfigFileWatcher: FileSystemWatcher | undefined;
   private activePythonPackageFileWatcher: FileSystemWatcher | undefined;
+  private activeRPackageFileWatcher: FileSystemWatcher | undefined;
 
   constructor(
     private readonly _context: ExtensionContext,
@@ -126,8 +127,10 @@ export class HomeViewProvider implements WebviewViewProvider {
     useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
       this.sendRefreshedFilesLists();
       this._onRefreshPythonPackages();
+      this._onRefreshRPackages();
       this.createActiveConfigFileWatcher(cfg);
       this.createActivePythonPackageFileWatcher(cfg);
+      this.createActiveRPackageFileWatcher(cfg);
     });
   }
   /**
@@ -482,7 +485,10 @@ export class HomeViewProvider implements WebviewViewProvider {
           packages = response.data.requirements;
         } catch (error: unknown) {
           if (isAxiosError(error) && error.response?.status === 404) {
-            // No requirements file; show the welcome view.
+            // No requirements file or contains invalid entries; show the welcome view.
+            packageFile = undefined;
+          } else if (isAxiosError(error) && error.response?.status === 422) {
+            // invalid package file
             packageFile = undefined;
           } else if (isAxiosError(error) && error.response?.status === 409) {
             // Python is not present in the configuration file
@@ -532,11 +538,17 @@ export class HomeViewProvider implements WebviewViewProvider {
 
           const response =
             await api.requirements.getRRequirements(activeConfiguration);
-          packages = response.data.packages;
+          packages = [];
+          Object.keys(response.data.packages).forEach((key: string) =>
+            packages.push(response.data.packages[key]),
+          );
           rVersionConfig = response.data.r;
         } catch (error: unknown) {
           if (isAxiosError(error) && error.response?.status === 404) {
             // No requirements file; show the welcome view.
+            packageFile = undefined;
+          } else if (isAxiosError(error) && error.response?.status === 422) {
+            // invalid package file
             packageFile = undefined;
           } else if (isAxiosError(error) && error.response?.status === 409) {
             // R is not present in the configuration file
@@ -1048,6 +1060,36 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
 
     this.activePythonPackageFileWatcher = watcher;
+    this._context.subscriptions.push(watcher);
+  }
+
+  private createActiveRPackageFileWatcher(cfg: Configuration | undefined) {
+    if (this.root === undefined || cfg === undefined) {
+      return;
+    }
+
+    const watcher = workspace.createFileSystemWatcher(
+      new RelativePattern(
+        this.root,
+        cfg.configuration.r?.packageFile || "renv.lock",
+      ),
+    );
+    watcher.onDidCreate(this._onRefreshRPackages, this);
+    watcher.onDidChange(this._onRefreshRPackages, this);
+    watcher.onDidDelete(this._onRefreshRPackages, this);
+
+    if (this.activeRPackageFileWatcher) {
+      // Dispose the previous configuration file watcher
+      this.activeRPackageFileWatcher.dispose();
+      const index = this._context.subscriptions.indexOf(
+        this.activeRPackageFileWatcher,
+      );
+      if (index !== -1) {
+        this._context.subscriptions.splice(index, 1);
+      }
+    }
+
+    this.activeRPackageFileWatcher = watcher;
     this._context.subscriptions.push(watcher);
   }
 

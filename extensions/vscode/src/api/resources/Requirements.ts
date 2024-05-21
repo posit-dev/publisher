@@ -17,6 +17,7 @@ export class Requirements {
   // 200 - success
   // 404 - configuration or requirements file not found
   // 409 - conflict (Python is not configured)
+  // 422 - package file is invalid
   // 500 - internal server error
   getPythonRequirements(configName: string) {
     const encodedName = encodeURIComponent(configName);
@@ -29,6 +30,7 @@ export class Requirements {
   // 200 - success
   // 404 - configuration or requirements file not found
   // 409 - conflict (R is not configured)
+  // 422 - package file is invalid
   // 500 - internal server error
   getRRequirements(configName: string) {
     const encodedName = encodeURIComponent(configName);
