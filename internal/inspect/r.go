@@ -19,6 +19,7 @@ import (
 
 type RInspector interface {
 	InspectR() (*config.R, error)
+	CreateLockfile(lockfilePath util.AbsolutePath) error
 }
 
 type defaultRInspector struct {
@@ -93,6 +94,27 @@ func (i *defaultRInspector) InspectR() (*config.R, error) {
 		PackageFile:    lockfileRelPath.String(),
 		PackageManager: "renv",
 	}, nil
+}
+
+// CreateLockfile creates a lockfile at the specified path
+// by invoking R to run `renv::snapshot()`.
+func (i *defaultRInspector) CreateLockfile(lockfilePath util.AbsolutePath) error {
+	rExecutable, err := i.getRExecutable()
+	if err != nil {
+		return err
+	}
+	i.log.Info("Creating renv lockfile", "path", lockfilePath.String(), "r", rExecutable)
+
+	err = lockfilePath.Dir().MkdirAll(0777)
+	if err != nil {
+		return err
+	}
+
+	code := fmt.Sprintf(`renv::snapshot(lockfile="%s")`, lockfilePath.String())
+	args := []string{"-s", "-e", code}
+	stdout, stderr, err := i.executor.RunCommand(rExecutable, args, i.base, i.log)
+	i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))
+	return err
 }
 
 func (i *defaultRInspector) validateRExecutable(rExecutable string) error {
