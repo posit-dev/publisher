@@ -16,19 +16,19 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type GetConfigPackagesHandler struct {
+type getConfigRPackagesHandler struct {
 	base util.AbsolutePath
 	log  logging.Logger
 }
 
-func NewGetConfigPackagesHandler(base util.AbsolutePath, log logging.Logger) *GetConfigPackagesHandler {
-	return &GetConfigPackagesHandler{
+func NewGetConfigRPackagesHandler(base util.AbsolutePath, log logging.Logger) *getConfigRPackagesHandler {
+	return &getConfigRPackagesHandler{
 		base: base,
 		log:  log,
 	}
 }
 
-func (h *GetConfigPackagesHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h *getConfigRPackagesHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	name := mux.Vars(req)["name"]
 	configPath := config.GetConfigPath(h.base, name)
 	cfg, err := config.FromFile(configPath)

@@ -17,34 +17,34 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type PostRequirementsSuite struct {
+type PostPackagesPythonScanSuite struct {
 	utiltest.Suite
 }
 
 func TestPostRequirementsSuite(t *testing.T) {
-	suite.Run(t, new(PostRequirementsSuite))
+	suite.Run(t, new(PostPackagesPythonScanSuite))
 }
 
-func (s *PostRequirementsSuite) TestNewPostRequirementsHandler() {
+func (s *PostPackagesPythonScanSuite) TestNewPostRequirementsHandler() {
 	base := util.NewAbsolutePath("/project", nil)
 	log := logging.New()
-	h := NewPostRequirementsHandler(base, log)
+	h := NewPostPackagesPythonScanHandler(base, log)
 	s.Equal(base, h.base)
 	s.Equal(log, h.log)
 	s.NotNil(h.inspector)
 }
 
-func (s *PostRequirementsSuite) TestServeHTTP() {
+func (s *PostPackagesPythonScanSuite) TestServeHTTP() {
 	rec := httptest.NewRecorder()
 	body := strings.NewReader(`{"saveName":""}`)
-	req, err := http.NewRequest("POST", "/api/requirements", body)
+	req, err := http.NewRequest("POST", "/api/packages/python/scan", body)
 	s.NoError(err)
 
 	base := util.NewAbsolutePath("/project", nil)
 	destPath := base.Join("requirements.txt")
 
 	log := logging.New()
-	h := NewPostRequirementsHandler(base, log)
+	h := NewPostPackagesPythonScanHandler(base, log)
 
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
@@ -56,17 +56,17 @@ func (s *PostRequirementsSuite) TestServeHTTP() {
 	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
 }
 
-func (s *PostRequirementsSuite) TestServeHTTPEmptyBody() {
+func (s *PostPackagesPythonScanSuite) TestServeHTTPEmptyBody() {
 	rec := httptest.NewRecorder()
 	body := strings.NewReader("")
-	req, err := http.NewRequest("POST", "/api/requirements", body)
+	req, err := http.NewRequest("POST", "/api/packages/python/scan", body)
 	s.NoError(err)
 
 	base := util.NewAbsolutePath("/project", nil)
 	destPath := base.Join("requirements.txt")
 
 	log := logging.New()
-	h := NewPostRequirementsHandler(base, log)
+	h := NewPostPackagesPythonScanHandler(base, log)
 
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
@@ -78,17 +78,17 @@ func (s *PostRequirementsSuite) TestServeHTTPEmptyBody() {
 	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
 }
 
-func (s *PostRequirementsSuite) TestServeHTTPWithSaveName() {
+func (s *PostPackagesPythonScanSuite) TestServeHTTPWithSaveName() {
 	rec := httptest.NewRecorder()
 	body := strings.NewReader(`{"saveName":"my_requirements.txt"}`)
-	req, err := http.NewRequest("POST", "/api/requirements", body)
+	req, err := http.NewRequest("POST", "/api/packages/python/scan", body)
 	s.NoError(err)
 
 	base := util.NewAbsolutePath("/project", nil)
 	destPath := base.Join("my_requirements.txt")
 
 	log := logging.New()
-	h := NewPostRequirementsHandler(base, log)
+	h := NewPostPackagesPythonScanHandler(base, log)
 
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
@@ -100,15 +100,15 @@ func (s *PostRequirementsSuite) TestServeHTTPWithSaveName() {
 	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
 }
 
-func (s *PostRequirementsSuite) TestServeHTTPErr() {
+func (s *PostPackagesPythonScanSuite) TestServeHTTPErr() {
 	rec := httptest.NewRecorder()
 	body := strings.NewReader(`{"saveName":""}`)
-	req, err := http.NewRequest("POST", "/api/requirements", body)
+	req, err := http.NewRequest("POST", "/api/packages/python/scan", body)
 	s.NoError(err)
 
 	base := util.NewAbsolutePath("/project", nil)
 	log := logging.New()
-	h := NewPostRequirementsHandler(base, log)
+	h := NewPostPackagesPythonScanHandler(base, log)
 
 	testError := errors.New("test error from ScanRequirements")
 	i := inspect.NewMockPythonInspector()
