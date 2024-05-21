@@ -43,7 +43,15 @@ export class Requirements {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  create(saveName: string | undefined) {
+  createPythonRequirementsFile(saveName: string | undefined) {
     return this.client.post<void>("packages/python/scan", { saveName });
+  }
+
+  // Returns:
+  // 200 - success
+  // 400 - bad request
+  // 500 - internal server error
+  createRRequirementsFile(saveName: string | undefined) {
+    return this.client.post<void>("packages/r/scan", { saveName });
   }
 }

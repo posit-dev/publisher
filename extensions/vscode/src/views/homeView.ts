@@ -162,6 +162,8 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onRelativeOpenVSCode(msg);
       case WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS:
         return await this._onScanForPythonPackageRequirements();
+      case WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS:
+        return await this._onScanForRPackageRequirements();
       case WebviewToHostMessageType.VSCODE_OPEN:
         return commands.executeCommand(
           "vscode.open",
@@ -609,11 +611,47 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     try {
       const api = await useApi();
-      await api.requirements.create(relPathPackageFile);
+      await api.requirements.createPythonRequirementsFile(relPathPackageFile);
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::_onScanForPythonPackageRequirements",
+        error,
+      );
+      window.showInformationMessage(summary);
+    }
+  }
+
+  private async _onScanForRPackageRequirements() {
+    if (this.root === undefined) {
+      // We shouldn't get here if there's no workspace folder open.
+      return;
+    }
+    const activeConfiguration = this._getActiveConfig();
+    const relPathPackageFile =
+      activeConfiguration?.configuration.r?.packageFile;
+    if (relPathPackageFile === undefined) {
+      return;
+    }
+
+    const fileUri = Uri.joinPath(this.root.uri, relPathPackageFile);
+
+    if (await fileExists(fileUri)) {
+      const ok = await confirmOverwrite(
+        `Are you sure you want to overwrite your existing ${relPathPackageFile} file?`,
+      );
+      if (!ok) {
+        return;
+      }
+    }
+
+    try {
+      const api = await useApi();
+      await api.requirements.createRRequirementsFile(relPathPackageFile);
+      await commands.executeCommand("vscode.open", fileUri);
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "homeView::_onScanForRPackageRequirements",
         error,
       );
       window.showInformationMessage(summary);

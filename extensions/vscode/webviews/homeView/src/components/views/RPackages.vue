@@ -9,10 +9,9 @@
           configuration file ({{ home.selectedDeployment?.configurationName }})
           to point to an existing valid file.`
         </p>
-        <!-- Implementation coming soon as soon as we have an API! -->
-        <!-- <vscode-button @click="onScanForPackageRequirements()">
+        <vscode-button @click="onScanForPackageRequirements()">
           Scan
-        </vscode-button> -->
+        </vscode-button>
       </template>
       <template v-if="isNotRProject">
         <p>
@@ -26,10 +25,9 @@
             home.rPackageFile
           }}) is either missing, empty or invalid).
         </p>
-        <!-- Implementation coming as soon as we have an API! -->
-        <!-- <vscode-button @click="onScanForPackageRequirements()">
+        <vscode-button @click="onScanForPackageRequirements()">
           Scan
-        </vscode-button> -->
+        </vscode-button>
       </template>
     </WelcomeView>
     <template v-else>
@@ -68,11 +66,11 @@ const onRefresh = () => {
   });
 };
 
-// const onScanForPackageRequirements = () => {
-//   hostConduit.sendMsg({
-//     kind: WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS,
-//   });
-// };
+const onScanForPackageRequirements = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS,
+  });
+};
 
 const onEditRequirementsFile = () => {
   if (!home.rPackageFile) {
@@ -101,13 +99,13 @@ const rPackageActions = computed((): ActionButton[] => {
     codicon: "codicon-refresh",
     fn: onRefresh,
   });
-  // if (Boolean(home.rPackageFile)) {
-  //   result.push({
-  //     label: "Scan For Package Requirements",
-  //     codicon: "codicon-eye",
-  //     fn: onScanForPackageRequirements,
-  //   });
-  // }
+  if (Boolean(home.rPackageFile)) {
+    result.push({
+      label: "Scan For Package Requirements",
+      codicon: "codicon-eye",
+      fn: onScanForPackageRequirements,
+    });
+  }
   return result;
 });
 
