@@ -49,8 +49,9 @@ func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentHandlerFunc() {
 	s.NoError(err)
 	req = mux.SetURLVars(req, map[string]string{"name": "myTargetName"})
 
+	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
-	err = d.WriteFile(deployment.GetDeploymentPath(s.cwd, "myTargetName"))
+	err = d.WriteFile(path)
 	s.NoError(err)
 
 	cfg := config.New()
@@ -63,6 +64,10 @@ func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentHandlerFunc() {
 	handler(rec, req)
 
 	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	updated, err := deployment.FromFile(path)
+	s.NoError(err)
+	s.Equal("myConfig", updated.ConfigName)
 }
 
 func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentHandlerFuncBadJSON() {
