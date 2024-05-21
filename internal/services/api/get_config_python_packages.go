@@ -15,25 +15,25 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type GetConfigRequirementsHandler struct {
+type getConfigPythonPackagesHandler struct {
 	base      util.AbsolutePath
 	log       logging.Logger
 	inspector inspect.PythonInspector
 }
 
-type requirementsDTO struct {
+type pythonPackagesDTO struct {
 	Requirements []string `json:"requirements"`
 }
 
-func NewGetConfigRequirementsHandler(base util.AbsolutePath, log logging.Logger) *GetConfigRequirementsHandler {
-	return &GetConfigRequirementsHandler{
+func NewGetConfigPythonPackagesHandler(base util.AbsolutePath, log logging.Logger) *getConfigPythonPackagesHandler {
+	return &getConfigPythonPackagesHandler{
 		base:      base,
 		log:       log,
 		inspector: inspect.NewPythonInspector(base, util.Path{}, log),
 	}
 }
 
-func (h *GetConfigRequirementsHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h *getConfigPythonPackagesHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	name := mux.Vars(req)["name"]
 	configPath := config.GetConfigPath(h.base, name)
 	cfg, err := config.FromFile(configPath)
@@ -69,7 +69,7 @@ func (h *GetConfigRequirementsHandler) ServeHTTP(w http.ResponseWriter, req *htt
 		}
 		return
 	}
-	response := requirementsDTO{
+	response := pythonPackagesDTO{
 		Requirements: reqs,
 	}
 	w.Header().Set("content-type", "application/json")

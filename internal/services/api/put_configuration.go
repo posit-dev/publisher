@@ -106,9 +106,15 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			InternalError(w, req, log, err)
 			return
 		}
+		relPath, err := configPath.Rel(base)
+		if err != nil {
+			InternalError(w, req, log, err)
+			return
+		}
 		response = configDTO{
 			Name:          name,
 			Path:          configPath.String(),
+			RelPath:       relPath.String(),
 			Configuration: &cfg,
 		}
 		w.Header().Set("content-type", "application/json")

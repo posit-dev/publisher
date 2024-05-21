@@ -122,12 +122,12 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations", "{name}", "files"), PostConfigFilesHandlerFunc(base, log)).
 		Methods(http.MethodPost)
 
-	// GET /api/configurations/$NAME/requirements
-	r.Handle(ToPath("configurations", "{name}", "requirements"), NewGetConfigRequirementsHandler(base, log)).
+	// GET /api/configurations/$NAME/packages/python
+	r.Handle(ToPath("configurations", "{name}", "packages", "python"), NewGetConfigPythonPackagesHandler(base, log)).
 		Methods(http.MethodGet)
 
-	// GET /api/configurations/$NAME/packages
-	r.Handle(ToPath("configurations", "{name}", "packages"), NewGetConfigPackagesHandler(base, log)).
+	// GET /api/configurations/$NAME/packages/r
+	r.Handle(ToPath("configurations", "{name}", "packages", "r"), NewGetConfigRPackagesHandler(base, log)).
 		Methods(http.MethodGet)
 
 	// GET /api/deployments
@@ -154,8 +154,8 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("deployments", "{name}"), DeleteDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodDelete)
 
-	// POST /api/requirements
-	r.Handle(ToPath("requirements"), NewPostRequirementsHandler(base, log)).
+	// POST /api/packages/python/scan
+	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log)).
 		Methods(http.MethodPost)
 
 	c := cors.AllowAll().Handler(r)
