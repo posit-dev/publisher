@@ -154,8 +154,8 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("deployments", "{name}"), DeleteDeploymentHandlerFunc(base, log)).
 		Methods(http.MethodDelete)
 
-	// POST /api/requirements
-	r.Handle(ToPath("requirements"), NewPostRequirementsHandler(base, log)).
+	// POST /api/packages/python/scan
+	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log)).
 		Methods(http.MethodPost)
 
 	c := cors.AllowAll().Handler(r)

@@ -13,25 +13,25 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
-type PostRequirementsRequest struct {
+type PostPackagesPythonScanRequest struct {
 	SaveName string `json:"saveName"`
 }
 
-type PostRequirementsHandler struct {
+type PostPackagesPythonScanHandler struct {
 	base      util.AbsolutePath
 	log       logging.Logger
 	inspector inspect.PythonInspector
 }
 
-func NewPostRequirementsHandler(base util.AbsolutePath, log logging.Logger) *PostRequirementsHandler {
-	return &PostRequirementsHandler{
+func NewPostPackagesPythonScanHandler(base util.AbsolutePath, log logging.Logger) *PostPackagesPythonScanHandler {
+	return &PostPackagesPythonScanHandler{
 		base:      base,
 		log:       log,
 		inspector: inspect.NewPythonInspector(base, util.Path{}, log),
 	}
 }
 
-func (h *PostRequirementsHandler) scan(saveName string) error {
+func (h *PostPackagesPythonScanHandler) scan(saveName string) error {
 	reqs, _, err := h.inspector.ScanRequirements(h.base)
 	if err != nil {
 		return err
@@ -40,10 +40,10 @@ func (h *PostRequirementsHandler) scan(saveName string) error {
 	return h.inspector.WriteRequirementsFile(dest, reqs)
 }
 
-func (h *PostRequirementsHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	dec := json.NewDecoder(req.Body)
 	dec.DisallowUnknownFields()
-	var b PostRequirementsRequest
+	var b PostPackagesPythonScanRequest
 	err := dec.Decode(&b)
 	if err != nil && !errors.Is(err, io.EOF) {
 		BadRequest(w, req, h.log, err)
