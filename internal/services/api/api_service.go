@@ -158,6 +158,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("packages", "python", "scan"), NewPostPackagesPythonScanHandler(base, log)).
 		Methods(http.MethodPost)
 
+	// POST /api/packages/r/scan
+	r.Handle(ToPath("packages", "r", "scan"), NewPostPackagesRScanHandler(base, log)).
+		Methods(http.MethodPost)
+
 	c := cors.AllowAll().Handler(r)
 	return c.ServeHTTP
 }
