@@ -1020,7 +1020,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     const api = await useApi();
     const activeConfig = this._getActiveConfig();
     if (activeConfig) {
-      const response = await api.files.getPythonRequirements(
+      const response = await api.files.getByConfiguration(
         activeConfig.configurationName,
       );
 
