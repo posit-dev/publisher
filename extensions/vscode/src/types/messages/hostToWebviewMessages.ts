@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { RRequirement } from "../../api/types/requirements";
+import { RPackage } from "../../api/types/packages";
 import {
   Credential,
   Configuration,
@@ -142,6 +142,6 @@ export type UpdateRPackages = AnyHostToWebviewMessage<
     file?: string;
     manager?: string;
     rVersion?: string;
-    packages?: RRequirement[];
+    packages?: RPackage[];
   }
 >;

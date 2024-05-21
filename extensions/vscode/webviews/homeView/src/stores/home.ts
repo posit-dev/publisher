@@ -11,7 +11,7 @@ import {
   ConfigurationError,
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
-import { RRequirement } from "../../../../src/api/types/requirements";
+import { RPackage } from "../../../../src/api/types/packages";
 
 export const useHomeStore = defineStore("home", () => {
   const publishInProgress = ref(false);
@@ -45,7 +45,7 @@ export const useHomeStore = defineStore("home", () => {
   const pythonPackageManager = ref<string>();
 
   const rProject = ref<boolean>(false);
-  const rPackages = ref<RRequirement[]>();
+  const rPackages = ref<RPackage[]>();
   const rPackageFile = ref<string>();
   const rPackageManager = ref<string>();
   const rVersion = ref<string>();
@@ -133,7 +133,7 @@ export const useHomeStore = defineStore("home", () => {
 
   const updateRPackages = (
     isRProject: boolean,
-    packages?: RRequirement[],
+    packages?: RPackage[],
     file?: string,
     manager?: string,
     version?: string,

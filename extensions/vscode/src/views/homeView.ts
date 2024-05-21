@@ -61,7 +61,7 @@ import { splitFilesOnInclusion } from "src/utils/files";
 import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
 import { selectConfig } from "src/multiStepInputs/selectConfig";
-import { RRequirement, RVersionConfig } from "src/api/types/requirements";
+import { RPackage, RVersionConfig } from "src/api/types/packages";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
@@ -483,7 +483,7 @@ export class HomeViewProvider implements WebviewViewProvider {
           packageMgr = pythonSection.packageManager;
 
           const response =
-            await api.requirements.getPythonRequirements(activeConfiguration);
+            await api.packages.getPythonPackages(activeConfiguration);
           packages = response.data.requirements;
         } catch (error: unknown) {
           if (isAxiosError(error) && error.response?.status === 404) {
@@ -521,7 +521,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     const savedState = this._getSelectionState();
     const activeConfiguration = savedState.configurationName;
     let rProject = true;
-    let packages: RRequirement[] = [];
+    let packages: RPackage[] = [];
     let packageFile: string | undefined;
     let packageMgr: string | undefined;
     let rVersionConfig: RVersionConfig | undefined;
@@ -538,8 +538,7 @@ export class HomeViewProvider implements WebviewViewProvider {
           packageFile = rSection.packageFile;
           packageMgr = rSection.packageManager;
 
-          const response =
-            await api.requirements.getRRequirements(activeConfiguration);
+          const response = await api.packages.getRPackages(activeConfiguration);
           packages = [];
           Object.keys(response.data.packages).forEach((key: string) =>
             packages.push(response.data.packages[key]),
@@ -611,7 +610,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     try {
       const api = await useApi();
-      await api.requirements.createPythonRequirementsFile(relPathPackageFile);
+      await api.packages.createPythonRequirementsFile(relPathPackageFile);
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -647,7 +646,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     try {
       const api = await useApi();
-      await api.requirements.createRRequirementsFile(relPathPackageFile);
+      await api.packages.createRRequirementsFile(relPathPackageFile);
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(

@@ -1,11 +1,11 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-export type PythonRequirementsResponse = {
+export type PythonPackagesResponse = {
   requirements: string[];
 };
 
-export type RRequirement = {
-  package: string;
+export type RPackage = {
+  packageName: string;
   version: string;
   source: string;
   repository: string;
@@ -21,7 +21,7 @@ export type RVersionConfig = {
   repositories: RRepositoryConfig[];
 };
 
-export type GetRRequirementsResponse = {
+export type GetRPackagesResponse = {
   r: RVersionConfig;
-  packages: Record<string, RRequirement>;
+  packages: Record<string, RPackage>;
 };

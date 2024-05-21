@@ -33,8 +33,8 @@
     <template v-else>
       <TreeItem
         v-for="pkg in home.rPackages"
-        :key="pkg.package"
-        :title="pkg.package"
+        :key="pkg.packageName"
+        :title="pkg.packageName"
         :description="pkg.version"
         :tooltip="pkg.source + ': ' + pkg.repository"
         codicon="codicon-package"

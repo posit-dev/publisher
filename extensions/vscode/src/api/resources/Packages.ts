@@ -2,11 +2,11 @@
 
 import { AxiosInstance } from "axios";
 import {
-  GetRRequirementsResponse,
-  PythonRequirementsResponse,
-} from "../types/requirements";
+  GetRPackagesResponse,
+  PythonPackagesResponse,
+} from "../types/packages";
 
-export class Requirements {
+export class Packages {
   private client: AxiosInstance;
 
   constructor(client: AxiosInstance) {
@@ -19,9 +19,9 @@ export class Requirements {
   // 409 - conflict (Python is not configured)
   // 422 - package file is invalid
   // 500 - internal server error
-  getPythonRequirements(configName: string) {
+  getPythonPackages(configName: string) {
     const encodedName = encodeURIComponent(configName);
-    return this.client.get<PythonRequirementsResponse>(
+    return this.client.get<PythonPackagesResponse>(
       `/configurations/${encodedName}/packages/python`,
     );
   }
@@ -32,9 +32,9 @@ export class Requirements {
   // 409 - conflict (R is not configured)
   // 422 - package file is invalid
   // 500 - internal server error
-  getRRequirements(configName: string) {
+  getRPackages(configName: string) {
     const encodedName = encodeURIComponent(configName);
-    return this.client.get<GetRRequirementsResponse>(
+    return this.client.get<GetRPackagesResponse>(
       `/configurations/${encodedName}/packages/r`,
     );
   }
