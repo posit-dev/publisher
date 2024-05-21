@@ -7,7 +7,7 @@
           dependencies, but the file does not exist or is invalid. Use
           'renv::snapshot()' at an R console to create one or edit the current
           configuration file ({{ home.selectedDeployment?.configurationName }})
-          to point to an existing valid file.`
+          to point to an existing valid file.
         </p>
         <vscode-button @click="onScanForPackageRequirements()">
           Scan
