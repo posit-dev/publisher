@@ -4,7 +4,6 @@ import {
   Event,
   EventEmitter,
   ExtensionContext,
-  FileSystemWatcher,
   InputBoxValidationSeverity,
   RelativePattern,
   ThemeIcon,
