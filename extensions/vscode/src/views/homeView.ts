@@ -1035,6 +1035,39 @@ export class HomeViewProvider implements WebviewViewProvider {
     );
 
     if (this.root !== undefined) {
+      const positDirWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, ".posit"),
+        true,
+        true,
+        false,
+      );
+      positDirWatcher.onDidDelete(() => {
+        this.refreshDeployments();
+        this.refreshConfigurations();
+      }, this);
+      const publishDirWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, ".posit/publish"),
+        true,
+        true,
+        false,
+      );
+      publishDirWatcher.onDidDelete(() => {
+        this.refreshDeployments();
+        this.refreshConfigurations();
+      }, this);
+      const deploymentsDirWatcher = workspace.createFileSystemWatcher(
+        new RelativePattern(this.root, ".posit/publish/deployments"),
+        true,
+        true,
+        false,
+      );
+      deploymentsDirWatcher.onDidDelete(this.refreshDeployments, this);
+      this._context.subscriptions.push(
+        positDirWatcher,
+        publishDirWatcher,
+        deploymentsDirWatcher,
+      );
+
       const configFileWatcher = workspace.createFileSystemWatcher(
         new RelativePattern(this.root, configFiles),
       );
