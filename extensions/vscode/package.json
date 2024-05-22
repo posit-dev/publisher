@@ -1,16 +1,26 @@
 {
   "name": "publisher",
   "publisher": "posit",
+  "author": "Posit, PBC",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
   "version": "0.0.0",
   "icon": "assets/img/color/posit-publisher.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rstudio/publishing-client/tree/main/extensions/vscode"
+    "url": "https://github.com/posit-dev/publisher/tree/main/extensions/vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/posit-dev/publisher/discussions"
   },
   "engines": {
     "vscode": "^1.87.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "This extension does not support untrusted workspaces because it is not safe to deploy untrusted code."
+    }
   },
   "categories": [
     "Data Science",
