@@ -5,6 +5,7 @@
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
   "version": "0.0.0",
+  "license": "MIT",
   "icon": "assets/img/color/posit-publisher.png",
   "repository": {
     "type": "git",
