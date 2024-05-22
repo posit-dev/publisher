@@ -5,7 +5,7 @@ export type PythonPackagesResponse = {
 };
 
 export type RPackage = {
-  packageName: string;
+  package: string;
   version: string;
   source: string;
   repository: string;
