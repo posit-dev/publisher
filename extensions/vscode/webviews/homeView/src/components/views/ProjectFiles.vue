@@ -108,8 +108,8 @@ import { useHostConduitService } from "src/HostConduitService";
 const home = useHomeStore();
 const { sendMsg } = useHostConduitService();
 
-const includedExpanded = ref(true);
-const excludedExpanded = ref(true);
+const includedExpanded = ref(false);
+const excludedExpanded = ref(false);
 
 const lastDeployedFiles = computed(() => {
   if (home.selectedDeployment?.state === DeploymentState.NEW) {
