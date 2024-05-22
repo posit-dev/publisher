@@ -19,6 +19,8 @@ export enum WebviewToHostMessageType {
   VSCODE_OPEN_RELATIVE = "VSCodeOpenRelativeMsg",
   REFRESH_PYTHON_PACKAGES = "RefreshPythonPackagesMsg",
   SCAN_PYTHON_PACKAGE_REQUIREMENTS = "ScanPythonPackageRequirementsMsg",
+  REFRESH_R_PACKAGES = "RefreshRPackagesMsg",
+  SCAN_R_PACKAGE_REQUIREMENTS = "ScanRPackageRequirementsMsg",
   SELECT_DESTINATION = "selectDestination",
   NEW_DESTINATION = "newDestination",
   NEW_CREDENTIAL = "newCredential",
@@ -50,6 +52,8 @@ export type WebviewToHostMessage =
   | RefreshPythonPackagesMsg
   | VSCodeOpenRelativeMsg
   | ScanPythonPackageRequirementsMsg
+  | RefreshRPackagesMsg
+  | ScanRPackageRequirementsMsg
   | SelectDestinationMsg
   | NewDestinationMsg
   | NewCredentialMsg;
@@ -71,6 +75,8 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES ||
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN_RELATIVE ||
     msg.kind === WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS ||
+    msg.kind === WebviewToHostMessageType.REFRESH_R_PACKAGES ||
+    msg.kind === WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS ||
     msg.kind === WebviewToHostMessageType.SELECT_DESTINATION ||
     msg.kind === WebviewToHostMessageType.NEW_DESTINATION ||
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL
@@ -155,6 +161,12 @@ export type VSCodeOpenRelativeMsg = AnyWebviewToHostMessage<
 
 export type ScanPythonPackageRequirementsMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS>;
+
+export type RefreshRPackagesMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.REFRESH_R_PACKAGES>;
+
+export type ScanRPackageRequirementsMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS>;
 
 export type SelectDestinationMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.SELECT_DESTINATION>;

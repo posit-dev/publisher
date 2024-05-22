@@ -13,6 +13,7 @@ import {
   UpdateConfigSelectionMsg,
   UpdateDeploymentSelectionMsg,
   UpdatePythonPackages,
+  UpdateRPackages,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
   WebviewToHostMessage,
@@ -74,6 +75,8 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onRefreshFilesListMsg(msg);
     case HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES:
       return onUpdatePythonPackages(msg);
+    case HostToWebviewMessageType.UPDATE_R_PACKAGES:
+      return onUpdateRPackages(msg);
     default:
       console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
@@ -194,5 +197,16 @@ const onUpdatePythonPackages = (msg: UpdatePythonPackages) => {
     msg.content.packages,
     msg.content.file,
     msg.content.manager,
+  );
+};
+
+const onUpdateRPackages = (msg: UpdateRPackages) => {
+  const home = useHomeStore();
+  home.updateRPackages(
+    msg.content.rProject,
+    msg.content.packages,
+    msg.content.file,
+    msg.content.manager,
+    msg.content.rVersion,
   );
 };

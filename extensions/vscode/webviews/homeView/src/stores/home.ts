@@ -11,6 +11,7 @@ import {
   ConfigurationError,
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
+import { RPackage } from "../../../../src/api/types/packages";
 
 export const useHomeStore = defineStore("home", () => {
   const publishInProgress = ref(false);
@@ -42,6 +43,12 @@ export const useHomeStore = defineStore("home", () => {
   const pythonPackages = ref<string[]>();
   const pythonPackageFile = ref<string>();
   const pythonPackageManager = ref<string>();
+
+  const rProject = ref<boolean>(false);
+  const rPackages = ref<RPackage[]>();
+  const rPackageFile = ref<string>();
+  const rPackageManager = ref<string>();
+  const rVersion = ref<string>();
 
   /**
    * Updates the selected deployment to one with the given name.
@@ -124,6 +131,20 @@ export const useHomeStore = defineStore("home", () => {
     pythonPackageManager.value = manager;
   };
 
+  const updateRPackages = (
+    isRProject: boolean,
+    packages?: RPackage[],
+    file?: string,
+    manager?: string,
+    version?: string,
+  ) => {
+    rProject.value = isRProject;
+    rPackages.value = packages;
+    rPackageFile.value = file;
+    rPackageManager.value = manager;
+    rVersion.value = version;
+  };
+
   return {
     publishInProgress,
     deployments,
@@ -141,6 +162,9 @@ export const useHomeStore = defineStore("home", () => {
     pythonPackages,
     pythonPackageFile,
     pythonPackageManager,
+    rProject,
+    rPackages,
+    rPackageFile,
     updateSelectedDeploymentByName,
     updateSelectedDeploymentByObject,
     updateSelectedConfigurationByName,
@@ -148,5 +172,6 @@ export const useHomeStore = defineStore("home", () => {
     updateCredentialsAndConfigurationForDeployment,
     updateParentViewSelectionState,
     updatePythonPackages,
+    updateRPackages,
   };
 });

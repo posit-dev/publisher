@@ -61,6 +61,7 @@ import { splitFilesOnInclusion } from "src/utils/files";
 import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
 import { selectConfig } from "src/multiStepInputs/selectConfig";
+import { RPackage, RVersionConfig } from "src/api/types/packages";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
@@ -97,6 +98,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
   private activeConfigFileWatcher: FileSystemWatcher | undefined;
   private activePythonPackageFileWatcher: FileSystemWatcher | undefined;
+  private activeRPackageFileWatcher: FileSystemWatcher | undefined;
 
   constructor(
     private readonly _context: ExtensionContext,
@@ -125,8 +127,10 @@ export class HomeViewProvider implements WebviewViewProvider {
     useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
       this.sendRefreshedFilesLists();
       this._onRefreshPythonPackages();
+      this._onRefreshRPackages();
       this.createActiveConfigFileWatcher(cfg);
       this.createActivePythonPackageFileWatcher(cfg);
+      this.createActiveRPackageFileWatcher(cfg);
     });
   }
   /**
@@ -152,10 +156,14 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onSaveSelectionState(msg);
       case WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES:
         return await this._onRefreshPythonPackages();
+      case WebviewToHostMessageType.REFRESH_R_PACKAGES:
+        return await this._onRefreshRPackages();
       case WebviewToHostMessageType.VSCODE_OPEN_RELATIVE:
         return await this._onRelativeOpenVSCode(msg);
       case WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS:
         return await this._onScanForPythonPackageRequirements();
+      case WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS:
+        return await this._onScanForRPackageRequirements();
       case WebviewToHostMessageType.VSCODE_OPEN:
         return commands.executeCommand(
           "vscode.open",
@@ -475,11 +483,14 @@ export class HomeViewProvider implements WebviewViewProvider {
           packageMgr = pythonSection.packageManager;
 
           const response =
-            await api.requirements.getByConfiguration(activeConfiguration);
+            await api.packages.getPythonPackages(activeConfiguration);
           packages = response.data.requirements;
         } catch (error: unknown) {
           if (isAxiosError(error) && error.response?.status === 404) {
-            // No requirements file; show the welcome view.
+            // No requirements file or contains invalid entries; show the welcome view.
+            packageFile = undefined;
+          } else if (isAxiosError(error) && error.response?.status === 422) {
+            // invalid package file
             packageFile = undefined;
           } else if (isAxiosError(error) && error.response?.status === 409) {
             // Python is not present in the configuration file
@@ -501,6 +512,66 @@ export class HomeViewProvider implements WebviewViewProvider {
         pythonProject,
         file: packageFile,
         manager: packageMgr,
+        packages,
+      },
+    });
+  }
+
+  private async _onRefreshRPackages() {
+    const savedState = this._getSelectionState();
+    const activeConfiguration = savedState.configurationName;
+    let rProject = true;
+    let packages: RPackage[] = [];
+    let packageFile: string | undefined;
+    let packageMgr: string | undefined;
+    let rVersionConfig: RVersionConfig | undefined;
+
+    const api = await useApi();
+
+    if (activeConfiguration) {
+      const currentConfig = this.getConfigByName(activeConfiguration);
+      const rSection = currentConfig?.configuration.r;
+      if (!rSection) {
+        rProject = false;
+      } else {
+        try {
+          packageFile = rSection.packageFile;
+          packageMgr = rSection.packageManager;
+
+          const response = await api.packages.getRPackages(activeConfiguration);
+          packages = [];
+          Object.keys(response.data.packages).forEach((key: string) =>
+            packages.push(response.data.packages[key]),
+          );
+          rVersionConfig = response.data.r;
+        } catch (error: unknown) {
+          if (isAxiosError(error) && error.response?.status === 404) {
+            // No requirements file; show the welcome view.
+            packageFile = undefined;
+          } else if (isAxiosError(error) && error.response?.status === 422) {
+            // invalid package file
+            packageFile = undefined;
+          } else if (isAxiosError(error) && error.response?.status === 409) {
+            // R is not present in the configuration file
+            rProject = false;
+          } else {
+            const summary = getSummaryStringFromError(
+              "homeView::_onRefreshRPackages",
+              error,
+            );
+            window.showInformationMessage(summary);
+            return;
+          }
+        }
+      }
+    }
+    this._webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.UPDATE_R_PACKAGES,
+      content: {
+        rProject,
+        file: packageFile,
+        manager: packageMgr,
+        rVersion: rVersionConfig?.version,
         packages,
       },
     });
@@ -539,11 +610,47 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     try {
       const api = await useApi();
-      await api.requirements.create(relPathPackageFile);
+      await api.packages.createPythonRequirementsFile(relPathPackageFile);
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::_onScanForPythonPackageRequirements",
+        error,
+      );
+      window.showInformationMessage(summary);
+    }
+  }
+
+  private async _onScanForRPackageRequirements() {
+    if (this.root === undefined) {
+      // We shouldn't get here if there's no workspace folder open.
+      return;
+    }
+    const activeConfiguration = this._getActiveConfig();
+    const relPathPackageFile =
+      activeConfiguration?.configuration.r?.packageFile;
+    if (relPathPackageFile === undefined) {
+      return;
+    }
+
+    const fileUri = Uri.joinPath(this.root.uri, relPathPackageFile);
+
+    if (await fileExists(fileUri)) {
+      const ok = await confirmOverwrite(
+        `Are you sure you want to overwrite your existing ${relPathPackageFile} file?`,
+      );
+      if (!ok) {
+        return;
+      }
+    }
+
+    try {
+      const api = await useApi();
+      await api.packages.createRRequirementsFile(relPathPackageFile);
+      await commands.executeCommand("vscode.open", fileUri);
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "homeView::_onScanForRPackageRequirements",
         error,
       );
       window.showInformationMessage(summary);
@@ -990,6 +1097,36 @@ export class HomeViewProvider implements WebviewViewProvider {
     }
 
     this.activePythonPackageFileWatcher = watcher;
+    this._context.subscriptions.push(watcher);
+  }
+
+  private createActiveRPackageFileWatcher(cfg: Configuration | undefined) {
+    if (this.root === undefined || cfg === undefined) {
+      return;
+    }
+
+    const watcher = workspace.createFileSystemWatcher(
+      new RelativePattern(
+        this.root,
+        cfg.configuration.r?.packageFile || "renv.lock",
+      ),
+    );
+    watcher.onDidCreate(this._onRefreshRPackages, this);
+    watcher.onDidChange(this._onRefreshRPackages, this);
+    watcher.onDidDelete(this._onRefreshRPackages, this);
+
+    if (this.activeRPackageFileWatcher) {
+      // Dispose the previous configuration file watcher
+      this.activeRPackageFileWatcher.dispose();
+      const index = this._context.subscriptions.indexOf(
+        this.activeRPackageFileWatcher,
+      );
+      if (index !== -1) {
+        this._context.subscriptions.splice(index, 1);
+      }
+    }
+
+    this.activeRPackageFileWatcher = watcher;
     this._context.subscriptions.push(watcher);
   }
 

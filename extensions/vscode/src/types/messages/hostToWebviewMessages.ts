@@ -1,5 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { RPackage } from "../../api/types/packages";
 import {
   Credential,
   Configuration,
@@ -22,6 +23,7 @@ export enum HostToWebviewMessageType {
   SAVE_SELECTION = "saveSelection",
   REFRESH_FILES_LISTS = "refreshFilesLists",
   UPDATE_PYTHON_PACKAGES = "updatePythonPackages",
+  UPDATE_R_PACKAGES = "updateRPackages",
 }
 
 export type AnyHostToWebviewMessage<
@@ -45,7 +47,8 @@ export type HostToWebviewMessage =
   | UpdateConfigSelectionMsg
   | SaveSelectionMsg
   | RefreshFilesListsMsg
-  | UpdatePythonPackages;
+  | UpdatePythonPackages
+  | UpdateRPackages;
 
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
@@ -59,7 +62,8 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.UPDATE_CONFIG_SELECTION ||
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
     msg.kind === HostToWebviewMessageType.REFRESH_FILES_LISTS ||
-    msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES
+    msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES ||
+    msg.kind === HostToWebviewMessageType.UPDATE_R_PACKAGES
   );
 }
 
@@ -128,5 +132,16 @@ export type UpdatePythonPackages = AnyHostToWebviewMessage<
     file?: string;
     manager?: string;
     packages?: string[];
+  }
+>;
+
+export type UpdateRPackages = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.UPDATE_R_PACKAGES,
+  {
+    rProject: boolean;
+    file?: string;
+    manager?: string;
+    rVersion?: string;
+    packages?: RPackage[];
   }
 >;

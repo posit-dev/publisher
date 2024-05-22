@@ -7,7 +7,7 @@ import { Credentials } from "./resources/Credentials";
 import { Deployments } from "./resources/Deployments";
 import { Configurations } from "./resources/Configurations";
 import { Files } from "./resources/Files";
-import { Requirements } from "./resources/Requirements";
+import { Packages } from "./resources/Packages";
 
 class PublishingClientApi {
   private client;
@@ -17,7 +17,7 @@ class PublishingClientApi {
   credentials: Credentials;
   deployments: Deployments;
   files: Files;
-  requirements: Requirements;
+  packages: Packages;
   apiServiceIsUp: Promise<boolean>;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
@@ -31,7 +31,7 @@ class PublishingClientApi {
     this.credentials = new Credentials(this.client);
     this.deployments = new Deployments(this.client);
     this.files = new Files(this.client);
-    this.requirements = new Requirements(this.client);
+    this.packages = new Packages(this.client);
   }
 
   setBaseUrl(url: string) {
