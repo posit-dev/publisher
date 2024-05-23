@@ -62,9 +62,7 @@ import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
 import { selectConfig } from "src/multiStepInputs/selectConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
-
-const deploymentFiles = ".posit/publish/deployments/*.toml";
-const configFiles = ".posit/publish/*.toml";
+import { WatcherManager } from "src/watchers";
 
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
@@ -1130,7 +1128,7 @@ export class HomeViewProvider implements WebviewViewProvider {
     this._context.subscriptions.push(watcher);
   }
 
-  public register() {
+  public register(watchers: WatcherManager) {
     this._stream.register("publish/start", () => {
       this._onPublishStart();
     });
@@ -1171,62 +1169,25 @@ export class HomeViewProvider implements WebviewViewProvider {
       ),
     );
 
-    if (this.root !== undefined) {
-      const positDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit"),
-        true,
-        true,
-        false,
-      );
-      positDirWatcher.onDidDelete(() => {
-        this.refreshDeployments();
-        this.refreshConfigurations();
-      }, this);
-      const publishDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit/publish"),
-        true,
-        true,
-        false,
-      );
-      publishDirWatcher.onDidDelete(() => {
-        this.refreshDeployments();
-        this.refreshConfigurations();
-      }, this);
-      const deploymentsDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit/publish/deployments"),
-        true,
-        true,
-        false,
-      );
-      deploymentsDirWatcher.onDidDelete(this.refreshDeployments, this);
-      this._context.subscriptions.push(
-        positDirWatcher,
-        publishDirWatcher,
-        deploymentsDirWatcher,
-      );
+    watchers.positDir?.onDidDelete(() => {
+      this.refreshDeployments();
+      this.refreshConfigurations();
+    }, this);
+    watchers.publishDir?.onDidDelete(() => {
+      this.refreshDeployments();
+      this.refreshConfigurations();
+    }, this);
+    watchers.deploymentsDir?.onDidDelete(this.refreshDeployments, this);
 
-      const configFileWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, configFiles),
-      );
-      configFileWatcher.onDidCreate(this.refreshConfigurations);
-      configFileWatcher.onDidDelete(this.refreshConfigurations);
-      configFileWatcher.onDidChange(this.refreshConfigurations);
-      this._context.subscriptions.push(configFileWatcher);
+    watchers.configurations?.onDidCreate(this.refreshConfigurations, this);
+    watchers.configurations?.onDidDelete(this.refreshConfigurations, this);
+    watchers.configurations?.onDidChange(this.refreshConfigurations, this);
 
-      const deploymentFileWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, deploymentFiles),
-      );
-      deploymentFileWatcher.onDidCreate(this.refreshDeployments);
-      deploymentFileWatcher.onDidDelete(this.refreshDeployments);
-      deploymentFileWatcher.onDidChange(this.refreshDeployments);
-      this._context.subscriptions.push(deploymentFileWatcher);
+    watchers.deployments?.onDidCreate(this.refreshDeployments, this);
+    watchers.deployments?.onDidDelete(this.refreshDeployments, this);
+    watchers.deployments?.onDidChange(this.refreshDeployments, this);
 
-      const allFileWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, "**"),
-      );
-      allFileWatcher.onDidCreate(this.sendRefreshedFilesLists);
-      allFileWatcher.onDidDelete(this.sendRefreshedFilesLists);
-      this._context.subscriptions.push(allFileWatcher);
-    }
+    watchers.allFiles?.onDidCreate(this.sendRefreshedFilesLists, this);
+    watchers.allFiles?.onDidDelete(this.sendRefreshedFilesLists, this);
   }
 }
