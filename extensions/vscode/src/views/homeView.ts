@@ -790,8 +790,12 @@ export class HomeViewProvider implements WebviewViewProvider {
           normalizeURL(deployment.serverUrl).toLowerCase(),
       );
 
-      let title = deployment.saveName;
       let problem = false;
+      let title = config?.configuration.title;
+      if (!title) {
+        title = "<No Title Defined in Configuration>";
+        problem = true;
+      }
 
       let configName = config?.configurationName;
       if (!configName) {
@@ -801,9 +805,9 @@ export class HomeViewProvider implements WebviewViewProvider {
         problem = true;
       }
 
-      let credentialName = credential?.name;
-      if (!credentialName) {
-        credentialName = `Missing Credential for ${deployment.serverUrl}`;
+      let detail = credential?.name;
+      if (!credential?.name) {
+        detail = `Missing Credential for ${deployment.serverUrl}`;
         problem = true;
       }
 
@@ -813,8 +817,7 @@ export class HomeViewProvider implements WebviewViewProvider {
 
       const destination: DestinationQuickPick = {
         label: title,
-        description: configName,
-        detail: credentialName,
+        detail,
         iconPath: problem
           ? new ThemeIcon("error")
           : new ThemeIcon("cloud-upload"),

@@ -22,12 +22,8 @@
       >
         <QuickPickItem
           v-if="home.selectedDeployment"
-          :label="home.selectedDeployment.saveName"
-          :description="configDescription"
-          :detail="
-            home.serverCredential?.name ||
-            `Missing Credential for ${home.selectedDeployment.serverUrl}`
-          "
+          :label="destinationTitle"
+          :detail="destinationSubTitle"
         />
 
         <QuickPickItem
@@ -41,6 +37,20 @@
           class="select-indicator codicon codicon-chevron-down"
           aria-hidden="true"
         />
+      </div>
+
+      <div
+        v-if="home.selectedConfiguration?.configuration?.entrypoint"
+        class="destination-details-container"
+      >
+        <div class="destination-details-row">
+          <span class="destination-details-label">{{
+            home.selectedConfiguration?.configuration?.entrypoint
+          }}</span>
+          <span class="destination-details-info">
+            (selected as entrypoint)</span
+          >
+        </div>
       </div>
 
       <p v-if="isConfigMissing">
@@ -216,6 +226,23 @@ const isConfigInError = computed((): boolean => {
   );
 });
 
+const destinationTitle = computed(() => {
+  if (!home.selectedDeployment || !home.selectedConfiguration) {
+    return "";
+  }
+  return (
+    home.selectedConfiguration.configuration.title ||
+    "<No Title Defined in Configuration>"
+  );
+});
+
+const destinationSubTitle = computed(() => {
+  if (home.serverCredential?.name) {
+    return `${home.serverCredential.name}`;
+  }
+  return "<Unknown Credential>";
+});
+
 const configDescription = computed(() => {
   if (!home.selectedDeployment) {
     return undefined;
@@ -281,7 +308,7 @@ const newCredential = () => {
   align-items: center;
 
   cursor: pointer;
-  margin: 0.5rem 0 1rem;
+  margin: 0.5rem 0;
   padding: 2px 6px 6px 8px;
   background: var(--dropdown-background);
   border: calc(var(--border-width) * 1px) solid var(--dropdown-border);
@@ -357,5 +384,39 @@ const newCredential = () => {
 
 .progress-ring {
   margin-right: 10px;
+}
+
+.destination-details-container {
+  margin-left: 0.5rem;
+  margin-bottom: 0.5rem;
+
+  .icon-space {
+    padding-right: 5px;
+  }
+
+  .destination-details-row {
+    display: flex;
+    align-items: center;
+
+    .destination-details-label {
+      font-size: 0.9em;
+      line-height: normal;
+      opacity: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: pre;
+      margin-bottom: 5px;
+    }
+
+    .destination-details-info {
+      font-size: 0.8em;
+      line-height: normal;
+      opacity: 0.7;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: pre;
+      margin-bottom: 5px;
+    }
+  }
 }
 </style>
