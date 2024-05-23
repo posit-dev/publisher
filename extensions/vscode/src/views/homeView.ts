@@ -142,8 +142,6 @@ export class HomeViewProvider implements WebviewViewProvider {
         return await this._onDeployMsg(msg);
       case WebviewToHostMessageType.INITIALIZING:
         return await this._onInitializingMsg();
-      case WebviewToHostMessageType.NEW_DEPLOYMENT:
-        return await this._onNewDeploymentMsg();
       case WebviewToHostMessageType.EDIT_CONFIGURATION:
         return await this._onEditConfigurationMsg(msg);
       case WebviewToHostMessageType.NEW_CONFIGURATION:
@@ -219,15 +217,6 @@ export class HomeViewProvider implements WebviewViewProvider {
       contextIsHomeViewInitialized,
       context,
     );
-  }
-
-  private async _onNewDeploymentMsg() {
-    const preDeployment: PreDeployment = await commands.executeCommand(
-      "posit.publisher.deployments.createNewDeploymentFile",
-    );
-    if (preDeployment) {
-      this._updateDeploymentFileSelection(preDeployment, true);
-    }
   }
 
   private async _onEditConfigurationMsg(msg: EditConfigurationMsg) {
@@ -403,19 +392,6 @@ export class HomeViewProvider implements WebviewViewProvider {
       kind: HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
       content: {
         credentials: this._credentials,
-      },
-    });
-  }
-
-  private _updateDeploymentFileSelection(
-    preDeployment: PreDeployment,
-    saveSelection = false,
-  ) {
-    this._webviewConduit.sendMsg({
-      kind: HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION,
-      content: {
-        preDeployment,
-        saveSelection,
       },
     });
   }
