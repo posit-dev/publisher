@@ -21,7 +21,6 @@ import {
 import {
   useApi,
   ConfigurationDetails,
-  isConfigurationError,
   Credential,
   Configuration,
   PreDeployment,
@@ -32,7 +31,6 @@ import {
   untitledConfigurationName,
   untitledDeploymentName,
 } from "src/utils/names";
-import { isValidFilename } from "src/utils/files";
 import { formatURL, normalizeURL } from "src/utils/url";
 import { validateApiKey } from "src/utils/apiKeys";
 import { DestinationObjects } from "src/types/shared";
@@ -58,73 +56,51 @@ type possibleSteps = {
 };
 
 const steps: Record<string, possibleSteps | undefined> = {
-  inputDeploymentName: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 1,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        step: 1,
-        totalSteps: 6,
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 1,
-        totalSteps: 6,
-      },
-      multipleEntryPoints: {
-        step: 1,
-        totalSteps: 7,
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 1,
-        totalSteps: 3,
-      },
-      multipleEntryPoints: {
-        step: 1,
-        totalSteps: 4,
-      },
-    },
-  },
   pickCredentials: {
     noCredentials: {
       singleEntryPoint: {
         step: 0,
-        totalSteps: 5,
+        totalSteps: 4,
       },
       multipleEntryPoints: {
         step: 0,
-        totalSteps: 6,
+        totalSteps: 5,
       },
     },
     newCredentials: {
       singleEntryPoint: {
-        step: 2,
-        totalSteps: 6,
+        step: 1,
+        totalSteps: 5,
       },
       multipleEntryPoints: {
-        step: 2,
-        totalSteps: 7,
+        step: 1,
+        totalSteps: 6,
       },
     },
     existingCredentials: {
       singleEntryPoint: {
-        step: 2,
-        totalSteps: 3,
+        step: 1,
+        totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 2,
-        totalSteps: 4,
+        step: 1,
+        totalSteps: 3,
       },
     },
   },
   inputServerUrl: {
     noCredentials: {
       singleEntryPoint: {
+        step: 1,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 1,
+        totalSteps: 5,
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
         step: 2,
         totalSteps: 5,
       },
@@ -133,30 +109,30 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 6,
       },
     },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 3,
-        totalSteps: 6,
-      },
-      multipleEntryPoints: {
-        step: 3,
-        totalSteps: 7,
-      },
-    },
     existingCredentials: {
       singleEntryPoint: {
         step: 0,
-        totalSteps: 3,
+        totalSteps: 2,
       },
       multipleEntryPoints: {
         step: 0,
-        totalSteps: 4,
+        totalSteps: 3,
       },
     },
   },
   inputCredentialName: {
     noCredentials: {
       singleEntryPoint: {
+        step: 2,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 2,
+        totalSteps: 5,
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
         step: 3,
         totalSteps: 5,
       },
@@ -165,30 +141,30 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 6,
       },
     },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 4,
-        totalSteps: 6,
-      },
-      multipleEntryPoints: {
-        step: 4,
-        totalSteps: 7,
-      },
-    },
     existingCredentials: {
       singleEntryPoint: {
         step: 0,
-        totalSteps: 3,
+        totalSteps: 2,
       },
       multipleEntryPoints: {
         step: 0,
-        totalSteps: 4,
+        totalSteps: 3,
       },
     },
   },
   inputAPIKey: {
     noCredentials: {
       singleEntryPoint: {
+        step: 3,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 3,
+        totalSteps: 5,
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
         step: 4,
         totalSteps: 5,
       },
@@ -197,24 +173,14 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 6,
       },
     },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 5,
-        totalSteps: 6,
-      },
-      multipleEntryPoints: {
-        step: 5,
-        totalSteps: 7,
-      },
-    },
     existingCredentials: {
       singleEntryPoint: {
         step: 0,
-        totalSteps: 3,
+        totalSteps: 2,
       },
       multipleEntryPoints: {
         step: 0,
-        totalSteps: 4,
+        totalSteps: 3,
       },
     },
   },
@@ -222,63 +188,63 @@ const steps: Record<string, possibleSteps | undefined> = {
     noCredentials: {
       singleEntryPoint: {
         step: 0,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        step: 5,
-        totalSteps: 6,
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 0,
-        totalSteps: 6,
-      },
-      multipleEntryPoints: {
-        step: 6,
-        totalSteps: 7,
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 0,
-        totalSteps: 3,
-      },
-      multipleEntryPoints: {
-        step: 3,
         totalSteps: 4,
-      },
-    },
-  },
-  inputConfigurationName: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 5,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        step: 6,
-        totalSteps: 6,
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 6,
-        totalSteps: 6,
-      },
-      multipleEntryPoints: {
-        step: 7,
-        totalSteps: 7,
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 3,
-        totalSteps: 3,
       },
       multipleEntryPoints: {
         step: 4,
+        totalSteps: 5,
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 5,
+        totalSteps: 6,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 2,
+      },
+      multipleEntryPoints: {
+        step: 2,
+        totalSteps: 3,
+      },
+    },
+  },
+  inputTitle: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 4,
         totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 5,
+        totalSteps: 5,
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
+        step: 5,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 6,
+        totalSteps: 6,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 2,
+        totalSteps: 2,
+      },
+      multipleEntryPoints: {
+        step: 3,
+        totalSteps: 3,
       },
     },
   },
@@ -297,7 +263,6 @@ export async function newDestination(
 
   let entryPointListItems: QuickPickItemWithIndex[] = [];
   let configDetails: ConfigurationDetails[] = [];
-  let configFileNames: string[] = [];
   let deploymentNames: string[] = [];
 
   let newConfig: Configuration | undefined;
@@ -419,29 +384,6 @@ export async function newDestination(
     },
   );
 
-  const getConfigurations = new Promise<void>(async (resolve, reject) => {
-    try {
-      const response = await api.configurations.getAll();
-      const configurations = response.data;
-
-      configurations.forEach((configuration) => {
-        if (!isConfigurationError(configuration)) {
-          configFileNames.push(configuration.configurationName);
-        }
-      });
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "newDeployment, configurations.getAll",
-        error,
-      );
-      window.showInformationMessage(
-        `Unable to continue with configuration API Error. ${summary}`,
-      );
-      return reject();
-    }
-    resolve();
-  });
-
   const getDeployments = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.deployments.getAll();
@@ -466,7 +408,6 @@ export async function newDestination(
   const apisComplete = Promise.all([
     getCredentials,
     getConfigurationInspections,
-    getConfigurations,
     getDeployments,
   ]);
 
@@ -486,7 +427,6 @@ export async function newDestination(
   // NOTE: This multi-stepper is used for multiple commands
   // ***************************************************************
 
-  // Name the deployment
   // If no credentials, then skip to create new credential
   // If some credentials, select either use of existing or creation of a new one
   // If creating credential:
@@ -494,7 +434,9 @@ export async function newDestination(
   // - Get the credential nickname
   // - Get the API key
   // Select the entrypoint, if there is more than one
-  // Name the config file to use
+  // Prompt for Title
+  // Auto-name the config file to use
+  // Auto-name the deployment
   // Call APIs and hopefully succeed at everything
   // Return the names of the deployment, config and credentials
 
@@ -514,68 +456,19 @@ export async function newDestination(
       data: {
         // each attribute is initialized to undefined
         // to be returned when it has not been cancelled to assist type guards
-        deploymentName: undefined, // eventual type is string
         credentialName: undefined, // eventual type is either a string or QuickPickItem
         newCredentialUrl: undefined, // eventual type is string
         newCredentialName: undefined, // eventual type is string
         newCredentialApiKey: undefined, // eventual type is string
         entryPoint: undefined, // eventual type is QuickPickItem
-        configFileName: undefined, // eventual type is string
+        title: undefined, // eventual type is string
       },
       promptStepNumbers: {},
     };
 
     // start the progression through the steps
-
-    await MultiStepInput.run((input) => inputDeploymentName(input, state));
+    await MultiStepInput.run((input) => pickCredentials(input, state));
     return state as MultiStepState;
-  }
-
-  // ***************************************************************
-  // Step #1:
-  // Name the deployment file
-  // ***************************************************************
-  async function inputDeploymentName(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    const step = getStepInfo("inputDeploymentName", state);
-    if (!step) {
-      throw new Error(
-        "newDestination::inputDeploymentName step info not found.",
-      );
-    }
-    const deploymentName = await input.showInputBox({
-      title: state.title,
-      step: step.step,
-      totalSteps: step.totalSteps,
-      value:
-        typeof state.data.deploymentName === "string" &&
-        state.data.deploymentName.length
-          ? state.data.deploymentName
-          : untitledDeploymentName(deploymentNames),
-      prompt: "Choose a unique name for the deployment",
-      validate: (value) => {
-        if (value.length < 3 || !isValidFilename(value)) {
-          return Promise.resolve({
-            message: `Invalid Name: Value must be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        if (deploymentNames.includes(value)) {
-          return Promise.resolve({
-            message: `Invalid Name: Value is already in use by a deployment file.`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    state.data.deploymentName = deploymentName;
-    return (input: MultiStepInput) => pickCredentials(input, state);
   }
 
   // ***************************************************************
@@ -822,45 +715,37 @@ export async function newDestination(
       });
 
       state.data.entryPoint = pick;
-      return (input: MultiStepInput) => inputConfigurationName(input, state);
+      return (input: MultiStepInput) => inputTitle(input, state);
     } else {
       state.data.entryPoint = entryPointListItems[0];
       // We're skipping this step, so we must silently just jump to the next step
-      return inputConfigurationName(input, state);
+      return inputTitle(input, state);
     }
   }
 
   // ***************************************************************
-  // Step #7 - maybe:
+  // Step #7
   // Name the configuration
   // ***************************************************************
-  async function inputConfigurationName(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    const step = getStepInfo("inputConfigurationName", state);
+  async function inputTitle(input: MultiStepInput, state: MultiStepState) {
+    const step = getStepInfo("inputTitle", state);
     if (!step) {
-      throw new Error(
-        "newDestination::inputConfigurationName step info not found.",
-      );
+      throw new Error("newDestination::inputTitle step info not found.");
     }
 
-    const configFileName = await input.showInputBox({
+    const title = await input.showInputBox({
       title: state.title,
       step: step.step,
       totalSteps: step.totalSteps,
-      value: await untitledConfigurationName(),
-      prompt: "Choose a unique name for the configuration",
+      value:
+        typeof state.data.title === "string" && state.data.title.length
+          ? state.data.title
+          : "",
+      prompt: "Enter a title for your content or application.",
       validate: (value) => {
-        if (value.length < 3 || !isValidFilename(value)) {
+        if (value.length < 3) {
           return Promise.resolve({
-            message: `Invalid Name: Value must be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        if (configFileNames.includes(value)) {
-          return Promise.resolve({
-            message: `Invalid Name: Name is already in use for this project. Please enter a unique name.`,
+            message: `Invalid Title: Value must be longer than 3 characters`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -870,7 +755,7 @@ export async function newDestination(
       ignoreFocusOut: true,
     });
 
-    state.data.configFileName = configFileName;
+    state.data.title = title;
     // last step, nothing gets returned.
   }
 
@@ -893,14 +778,12 @@ export async function newDestination(
   // before completing the steps. This also serves as a type guard on
   // our state data vars down to the actual type desired
   if (
-    state.data.deploymentName === undefined ||
-    typeof state.data.deploymentName !== "string" ||
     (!newCredentialForced(state) && state.data.credentialName === undefined) ||
     // credentialName can be either type
     state.data.entryPoint === undefined ||
     !isQuickPickItemWithIndex(state.data.entryPoint) ||
-    state.data.configFileName === undefined ||
-    typeof state.data.configFileName !== "string"
+    state.data.title === undefined ||
+    typeof state.data.title !== "string"
   ) {
     console.log("User has aborted flow. Exiting.");
     return;
@@ -950,7 +833,9 @@ export async function newDestination(
   }
 
   // Create the Config File
+  let configName: string | undefined;
   try {
+    configName = await untitledConfigurationName();
     const selectedConfigDetails = configDetails[state.data.entryPoint.index];
     if (!selectedConfigDetails) {
       window.showErrorMessage(
@@ -958,8 +843,9 @@ export async function newDestination(
       );
       return;
     }
+    selectedConfigDetails.title = state.data.title;
     const createResponse = await api.configurations.createOrUpdate(
-      state.data.configFileName,
+      configName,
       selectedConfigDetails,
     );
     const fileUri = Uri.file(createResponse.data.configurationPath);
@@ -1001,8 +887,8 @@ export async function newDestination(
   try {
     const response = await api.deployments.createNew(
       finalCredentialName,
-      state.data.configFileName,
-      state.data.deploymentName,
+      configName,
+      untitledDeploymentName(deploymentNames),
     );
     newDeployment = response.data;
   } catch (error: unknown) {
