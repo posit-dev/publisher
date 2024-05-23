@@ -4,8 +4,6 @@ import {
   CancellationToken,
   Disposable,
   ExtensionContext,
-  FileSystemWatcher,
-  RelativePattern,
   ThemeIcon,
   Uri,
   Webview,
@@ -62,7 +60,7 @@ import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
 import { selectConfig } from "src/multiStepInputs/selectConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
-import { WatcherManager } from "src/watchers";
+import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
@@ -78,7 +76,7 @@ enum HomeViewInitialized {
 
 const lastSelectionState = viewName + ".lastSelectionState.v2";
 
-export class HomeViewProvider implements WebviewViewProvider {
+export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private _disposables: Disposable[] = [];
   private _deployments: (
     | Deployment
@@ -94,9 +92,7 @@ export class HomeViewProvider implements WebviewViewProvider {
   private _extensionUri: Uri;
   private _webviewConduit: WebviewConduit;
 
-  private activeConfigFileWatcher: FileSystemWatcher | undefined;
-  private activePythonPackageFileWatcher: FileSystemWatcher | undefined;
-  private activeRPackageFileWatcher: FileSystemWatcher | undefined;
+  private configWatchers: ConfigWatcherManager | undefined;
 
   constructor(
     private readonly _context: ExtensionContext,
@@ -122,13 +118,44 @@ export class HomeViewProvider implements WebviewViewProvider {
       useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
     });
 
-    useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
+    useBus().on("activeConfigChanged", (cfg) => {
       this.sendRefreshedFilesLists();
       this._onRefreshPythonPackages();
       this._onRefreshRPackages();
-      this.createActiveConfigFileWatcher(cfg);
-      this.createActivePythonPackageFileWatcher(cfg);
-      this.createActiveRPackageFileWatcher(cfg);
+
+      this.configWatchers?.dispose();
+      this.configWatchers = new ConfigWatcherManager(cfg);
+
+      this.configWatchers.configFile?.onDidChange(
+        this.sendRefreshedFilesLists,
+        this,
+      );
+
+      this.configWatchers.pythonPackageFile?.onDidCreate(
+        this._onRefreshPythonPackages,
+        this,
+      );
+      this.configWatchers.pythonPackageFile?.onDidChange(
+        this._onRefreshPythonPackages,
+        this,
+      );
+      this.configWatchers.pythonPackageFile?.onDidDelete(
+        this._onRefreshPythonPackages,
+        this,
+      );
+
+      this.configWatchers.rPackageFile?.onDidCreate(
+        this._onRefreshPythonPackages,
+        this,
+      );
+      this.configWatchers.rPackageFile?.onDidChange(
+        this._onRefreshPythonPackages,
+        this,
+      );
+      this.configWatchers.rPackageFile?.onDidDelete(
+        this._onRefreshPythonPackages,
+        this,
+      );
     });
   }
   /**
@@ -1034,98 +1061,9 @@ export class HomeViewProvider implements WebviewViewProvider {
    * Cleans up and disposes of webview resources when view is disposed
    */
   public dispose() {
-    // Dispose of all disposables (i.e. commands) for the current webview panel
-    while (this._disposables.length) {
-      const disposable = this._disposables.pop();
-      if (disposable) {
-        disposable.dispose();
-      }
-    }
-  }
+    Disposable.from(...this._disposables).dispose();
 
-  private createActiveConfigFileWatcher(cfg: Configuration | undefined) {
-    if (this.root === undefined || cfg === undefined) {
-      return;
-    }
-
-    const watcher = workspace.createFileSystemWatcher(
-      new RelativePattern(this.root, cfg.configurationPath),
-    );
-    watcher.onDidChange(this.sendRefreshedFilesLists);
-
-    if (this.activeConfigFileWatcher) {
-      // Dispose the previous configuration file watcher
-      this.activeConfigFileWatcher.dispose();
-      const index = this._context.subscriptions.indexOf(
-        this.activeConfigFileWatcher,
-      );
-      if (index !== -1) {
-        this._context.subscriptions.splice(index, 1);
-      }
-    }
-
-    this.activeConfigFileWatcher = watcher;
-    this._context.subscriptions.push(watcher);
-  }
-
-  private createActivePythonPackageFileWatcher(cfg: Configuration | undefined) {
-    if (this.root === undefined || cfg === undefined) {
-      return;
-    }
-
-    const watcher = workspace.createFileSystemWatcher(
-      new RelativePattern(
-        this.root,
-        cfg.configuration.python?.packageFile || "requirements.txt",
-      ),
-    );
-    watcher.onDidCreate(this._onRefreshPythonPackages, this);
-    watcher.onDidChange(this._onRefreshPythonPackages, this);
-    watcher.onDidDelete(this._onRefreshPythonPackages, this);
-
-    if (this.activePythonPackageFileWatcher) {
-      // Dispose the previous configuration file watcher
-      this.activePythonPackageFileWatcher.dispose();
-      const index = this._context.subscriptions.indexOf(
-        this.activePythonPackageFileWatcher,
-      );
-      if (index !== -1) {
-        this._context.subscriptions.splice(index, 1);
-      }
-    }
-
-    this.activePythonPackageFileWatcher = watcher;
-    this._context.subscriptions.push(watcher);
-  }
-
-  private createActiveRPackageFileWatcher(cfg: Configuration | undefined) {
-    if (this.root === undefined || cfg === undefined) {
-      return;
-    }
-
-    const watcher = workspace.createFileSystemWatcher(
-      new RelativePattern(
-        this.root,
-        cfg.configuration.r?.packageFile || "renv.lock",
-      ),
-    );
-    watcher.onDidCreate(this._onRefreshRPackages, this);
-    watcher.onDidChange(this._onRefreshRPackages, this);
-    watcher.onDidDelete(this._onRefreshRPackages, this);
-
-    if (this.activeRPackageFileWatcher) {
-      // Dispose the previous configuration file watcher
-      this.activeRPackageFileWatcher.dispose();
-      const index = this._context.subscriptions.indexOf(
-        this.activeRPackageFileWatcher,
-      );
-      if (index !== -1) {
-        this._context.subscriptions.splice(index, 1);
-      }
-    }
-
-    this.activeRPackageFileWatcher = watcher;
-    this._context.subscriptions.push(watcher);
+    this.configWatchers?.dispose();
   }
 
   public register(watchers: WatcherManager) {

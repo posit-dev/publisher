@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ExtensionContext, commands, workspace } from "vscode";
+import { ExtensionContext, commands } from "vscode";
 
 import * as ports from "src/ports";
 import { Service } from "src/services";
@@ -51,7 +51,7 @@ export async function activate(context: ExtensionContext) {
 
   service = new Service(context, port);
 
-  const watchers = new WatcherManager(workspace.workspaceFolders?.[0]);
+  const watchers = new WatcherManager();
   context.subscriptions.push(watchers);
 
   // First the construction of the data providers
@@ -75,6 +75,7 @@ export async function activate(context: ExtensionContext) {
   const logsTreeDataProvider = new LogsTreeDataProvider(context, stream);
 
   const homeViewProvider = new HomeViewProvider(context, stream);
+  context.subscriptions.push(homeViewProvider);
 
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
