@@ -232,7 +232,7 @@ const destinationTitle = computed(() => {
   }
   return (
     home.selectedConfiguration.configuration.title ||
-    "<No Title Defined in Configuration>"
+    `No Title (in ${home.selectedConfiguration.configurationName})`
   );
 });
 

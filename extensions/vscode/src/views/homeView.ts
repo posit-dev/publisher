@@ -793,7 +793,7 @@ export class HomeViewProvider implements WebviewViewProvider {
       let problem = false;
       let title = config?.configuration.title;
       if (!title) {
-        title = "<No Title Defined in Configuration>";
+        title = `No Title (in ${config?.configurationName})`;
         problem = true;
       }
 
