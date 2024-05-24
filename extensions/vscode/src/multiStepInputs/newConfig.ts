@@ -23,6 +23,7 @@ import {
   contentTypeStrings,
   useApi,
 } from "../api";
+import { getPythonInterpreterPath } from "../utils/config";
 import { getSummaryStringFromError } from "../utils/errors";
 import { isValidFilename } from "../utils/files";
 import { untitledConfigurationName } from "../utils/names";
@@ -39,7 +40,8 @@ export async function newConfig(title: string, viewId?: string) {
   const getConfigurationInspections = new Promise<void>(
     async (resolve, reject) => {
       try {
-        const inspectResponse = await api.configurations.inspect();
+        const python = getPythonInterpreterPath();
+        const inspectResponse = await api.configurations.inspect(python);
         configDetails = inspectResponse.data;
         configDetails.forEach((config, i) => {
           if (config.entrypoint) {

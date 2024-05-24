@@ -27,6 +27,7 @@ import {
   PreDeployment,
   contentTypeStrings,
 } from "src/api";
+import { getPythonInterpreterPath } from "src/utils/config";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   untitledConfigurationName,
@@ -388,7 +389,8 @@ export async function newDestination(
   const getConfigurationInspections = new Promise<void>(
     async (resolve, reject) => {
       try {
-        const inspectResponse = await api.configurations.inspect();
+        const python = getPythonInterpreterPath();
+        const inspectResponse = await api.configurations.inspect(python);
         configDetails = inspectResponse.data;
         configDetails.forEach((config, i) => {
           if (config.entrypoint) {

@@ -35,6 +35,7 @@ import {
 } from "src/api";
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
+import { getPythonInterpreterPath } from "../utils/config";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
@@ -635,7 +636,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       const api = await useApi();
-      await api.packages.createPythonRequirementsFile(relPathPackageFile);
+      const python = getPythonInterpreterPath();
+      await api.packages.createPythonRequirementsFile(
+        python,
+        relPathPackageFile,
+      );
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(

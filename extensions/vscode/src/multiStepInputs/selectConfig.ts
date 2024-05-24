@@ -17,6 +17,7 @@ import {
   isConfigurationError,
   useApi,
 } from "src/api";
+import { getPythonInterpreterPath } from "src/utils/config";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   MultiStepInput,
@@ -117,7 +118,8 @@ export async function selectConfig(
   const getConfigurationInspections = new Promise<void>(
     async (resolve, reject) => {
       try {
-        const inspectResponse = await api.configurations.inspect();
+        const python = getPythonInterpreterPath();
+        const inspectResponse = await api.configurations.inspect(python);
         configDetails = inspectResponse.data;
         configDetails.forEach((config, i) => {
           if (config.entrypoint) {
