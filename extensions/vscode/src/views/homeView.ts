@@ -636,7 +636,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       const api = await useApi();
-      const python = getPythonInterpreterPath();
+      const python = await getPythonInterpreterPath();
       await api.packages.createPythonRequirementsFile(
         python,
         relPathPackageFile,

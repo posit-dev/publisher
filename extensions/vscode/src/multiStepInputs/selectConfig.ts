@@ -118,7 +118,7 @@ export async function selectConfig(
   const getConfigurationInspections = new Promise<void>(
     async (resolve, reject) => {
       try {
-        const python = getPythonInterpreterPath();
+        const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(python);
         configDetails = inspectResponse.data;
         configDetails.forEach((config, i) => {
