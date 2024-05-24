@@ -135,6 +135,7 @@ export const eventTypeToString = (eventTypeStr: string): string => {
     "publish/createDeployment": "Create Deployment",
     "publish/deployBundle": "Deploy Bundle",
     "publish/restorePythonEnv": "Restore Python Environment",
+    "publish/restoreREnv": "Restore R Environment",
     "publish/runContent": "Run Content",
     "publish/setVanityURL": "Set Vanity URL",
     "publish/validateDeployment": "Validate Deployment",
