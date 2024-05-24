@@ -1,21 +1,23 @@
 import {
   Disposable,
   RelativePattern,
-  WorkspaceFolder,
   FileSystemWatcher,
   workspace,
 } from "vscode";
 
+import { Configuration } from "src/api";
 import {
   PUBLISH_DEPLOYMENTS_FOLDER,
   POSIT_FOLDER,
   PUBLISH_FOLDER,
   CONFIGURATIONS_PATTERN,
   DEPLOYMENTS_PATTERN,
+  DEFAULT_PYTHON_PACKAGE_FILE,
+  DEFAULT_R_PACKAGE_FILE,
 } from "src/constants";
 
 /**
- * Manages all the file system watchers for the extension.
+ * Manages persistent file system watchers for the extension.
  *
  * The directory watchers only watch for onDidDelete events.
  */
@@ -27,7 +29,8 @@ export class WatcherManager implements Disposable {
   deployments: FileSystemWatcher | undefined;
   allFiles: FileSystemWatcher | undefined;
 
-  constructor(root?: WorkspaceFolder) {
+  constructor() {
+    const root = workspace.workspaceFolders?.[0];
     if (root === undefined) {
       return;
     }
@@ -73,5 +76,45 @@ export class WatcherManager implements Disposable {
     this.deploymentsDir?.dispose();
     this.deployments?.dispose();
     this.allFiles?.dispose();
+  }
+}
+
+/**
+ * Manages file watchers for a specific Configuration File
+ */
+export class ConfigWatcherManager implements Disposable {
+  configFile: FileSystemWatcher | undefined;
+  pythonPackageFile: FileSystemWatcher | undefined;
+  rPackageFile: FileSystemWatcher | undefined;
+
+  constructor(cfg?: Configuration) {
+    const root = workspace.workspaceFolders?.[0];
+    if (root === undefined || cfg === undefined) {
+      return;
+    }
+
+    this.configFile = workspace.createFileSystemWatcher(
+      new RelativePattern(root, cfg.configurationPath),
+    );
+
+    this.pythonPackageFile = workspace.createFileSystemWatcher(
+      new RelativePattern(
+        root,
+        cfg.configuration.python?.packageFile || DEFAULT_PYTHON_PACKAGE_FILE,
+      ),
+    );
+
+    this.rPackageFile = workspace.createFileSystemWatcher(
+      new RelativePattern(
+        root,
+        cfg.configuration.r?.packageFile || DEFAULT_R_PACKAGE_FILE,
+      ),
+    );
+  }
+
+  dispose() {
+    this.configFile?.dispose();
+    this.pythonPackageFile?.dispose();
+    this.rPackageFile?.dispose();
   }
 }
