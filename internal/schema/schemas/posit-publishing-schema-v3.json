@@ -6,6 +6,13 @@
   "description": "Posit Publishing Configuration",
   "required": ["$schema", "type", "entrypoint"],
   "properties": {
+    "comments": {
+      "type": "array",
+      "items": {
+        "type": ["string"]
+      },
+      "description": "Comments are allowed at the top of the configuration file, with a leading '#' character."
+    },
     "$schema": {
       "type": "string",
       "format": "url",
