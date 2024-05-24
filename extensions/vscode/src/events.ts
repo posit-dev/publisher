@@ -46,7 +46,10 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     }
   }
 
-  if (msg.type === "publish/restorePythonEnv/log") {
+  if (
+    msg.type === "publish/restorePythonEnv/log" ||
+    msg.type === "publish/restoreREnv/log"
+  ) {
     return `${msg.data.message}`;
   }
 
