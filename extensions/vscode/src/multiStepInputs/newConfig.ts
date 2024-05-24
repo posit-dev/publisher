@@ -165,10 +165,7 @@ export async function newConfig(title: string, viewId?: string) {
       title: state.title,
       step: thisStepNumber,
       totalSteps: state.totalSteps,
-      value:
-        typeof state.data.title === "string" && state.data.title.length
-          ? state.data.title
-          : "",
+      value: typeof state.data.title === "string" ? state.data.title : "",
       prompt: "Enter a title for your content or application.",
       validate: (value) => {
         if (value.length < 3) {
