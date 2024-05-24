@@ -16,8 +16,6 @@ func NewClientAuth(acct *accounts.Account) AuthMethod {
 	switch acct.AuthType {
 	case accounts.AuthTypeAPIKey:
 		return NewApiKeyAuthenticator(acct.ApiKey, "")
-	case accounts.AuthTypeTokenKey, accounts.AuthTypeTokenSecret:
-		return NewTokenAuthenticator(acct.Token, acct.Secret, acct.PrivateKey)
 	case accounts.AuthTypeNone:
 		// This is bogus since we know we can't publish
 		// without authentication. Our workflow needs to do one
