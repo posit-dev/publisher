@@ -87,6 +87,9 @@ func (s *DeploymentSuite) TestFromExampleFile() {
 	cfgPath := schemaDir.Join("config.toml")
 	cfg, err := config.FromFile(cfgPath)
 	s.NoError(err)
+
+	// Deployments do not round-trip config comments
+	cfg.Comments = nil
 	s.Equal(cfg, d.Configuration)
 
 	s.Equal("https://connect.example.com", d.ServerURL)

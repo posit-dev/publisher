@@ -156,6 +156,11 @@ func (s *PostInitializeSuite) TestPostInitializeInspectionFails() {
 	s.Equal("default", res.Name)
 	expected := config.New()
 	expected.Title = s.cwd.Base()
+
+	// Assert that there are comments; don't require a specific value.
+	s.NotEmpty(res.Configuration.Comments)
+	res.Configuration.Comments = nil
+
 	s.Equal(expected, res.Configuration)
 	s.Nil(res.Configuration.Python)
 }
