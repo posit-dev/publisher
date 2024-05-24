@@ -127,6 +127,23 @@ export interface EventSubscriptionTargetCallbackMap {
   "publish/failure": OnPublishFailureCallback;
 }
 
+export const eventMsgToString = (msg: EventStreamMessage): string => {
+  let suffix: string | undefined;
+  if (isPublishRestorePythonEnvStatus(msg) || isPublishRestoreREnvStatus(msg)) {
+    suffix = msg.data.name;
+    if (msg.data.version) {
+      suffix = `${suffix} (${msg.data.version})...`;
+    } else {
+      suffix = `${suffix}...`;
+    }
+  }
+
+  if (suffix) {
+    return `${eventTypeToString(msg.type)} - ${suffix}`;
+  }
+  return eventTypeToString(msg.type);
+};
+
 export const eventTypeToString = (eventTypeStr: string): string => {
   const eventVerbToString: Record<string, string> = {
     "publish/checkCapabilities": "Check Capabilities",
