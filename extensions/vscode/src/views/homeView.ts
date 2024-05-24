@@ -145,15 +145,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
 
       this.configWatchers.rPackageFile?.onDidCreate(
-        this._onRefreshPythonPackages,
+        this._onRefreshRPackages,
         this,
       );
       this.configWatchers.rPackageFile?.onDidChange(
-        this._onRefreshPythonPackages,
+        this._onRefreshRPackages,
         this,
       );
       this.configWatchers.rPackageFile?.onDidDelete(
-        this._onRefreshPythonPackages,
+        this._onRefreshRPackages,
         this,
       );
     });
