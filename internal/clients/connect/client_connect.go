@@ -275,7 +275,7 @@ func (c *ConnectClient) getTask(taskID types.TaskID, previous *taskDTO, log logg
 
 var buildRPattern = regexp.MustCompile("Building (Shiny application|Plumber API|R Markdown document).*")
 var buildPythonPattern = regexp.MustCompile("Building (.* application|.* API|Jupyter notebook).*")
-var launchPattern = regexp.MustCompile("Launching .*(Quarto|application|API|notebook)")
+var launchPattern = regexp.MustCompile("Launching .*(Quarto|R Markdown|application|API|notebook)")
 var staticPattern = regexp.MustCompile("(Building|Launching) static content")
 
 func eventOpFromLogLine(currentOp events.Operation, line string) events.Operation {

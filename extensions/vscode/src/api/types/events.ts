@@ -100,6 +100,14 @@ export interface EventSubscriptionTargetCallbackMap {
   "publish/restorePythonEnv/failure": OnPublishRestorePythonEnvFailureCallback;
   // 'publish/restorePythonEnv/failure/serverErr' | // received but temporarily converted
 
+  "publish/restoreREnv/start": OnPublishRestoreREnvStartCallback;
+  "publish/restoreREnv/log": OnPublishRestoreREnvLogCallback;
+  "publish/restoreREnv/progress": OnPublishRestoreREnvProgressCallback;
+  "publish/restoreREnv/status": OnPublishRestoreREnvStatusCallback;
+  "publish/restoreREnv/success": OnPublishRestoreREnvSuccessCallback;
+  "publish/restoreREnv/failure": OnPublishRestoreREnvFailureCallback;
+  // 'publish/restoreREnv/failure/serverErr' | // received but temporarily converted
+
   "publish/runContent/start": OnPublishRunContentStartCallback;
   "publish/runContent/log": OnPublishRunContentLogCallback;
   "publish/runContent/success": OnPublishRunContentSuccessCallback;
@@ -119,6 +127,23 @@ export interface EventSubscriptionTargetCallbackMap {
   "publish/failure": OnPublishFailureCallback;
 }
 
+export const eventMsgToString = (msg: EventStreamMessage): string => {
+  let suffix: string | undefined;
+  if (isPublishRestorePythonEnvStatus(msg) || isPublishRestoreREnvStatus(msg)) {
+    suffix = msg.data.name;
+    if (msg.data.version) {
+      suffix = `${suffix} (${msg.data.version})...`;
+    } else {
+      suffix = `${suffix}...`;
+    }
+  }
+
+  if (suffix) {
+    return `${eventTypeToString(msg.type)} - ${suffix}`;
+  }
+  return eventTypeToString(msg.type);
+};
+
 export const eventTypeToString = (eventTypeStr: string): string => {
   const eventVerbToString: Record<string, string> = {
     "publish/checkCapabilities": "Check Capabilities",
@@ -127,6 +152,7 @@ export const eventTypeToString = (eventTypeStr: string): string => {
     "publish/createDeployment": "Create Deployment",
     "publish/deployBundle": "Deploy Bundle",
     "publish/restorePythonEnv": "Restore Python Environment",
+    "publish/restoreREnv": "Restore R Environment",
     "publish/runContent": "Run Content",
     "publish/setVanityURL": "Set Vanity URL",
     "publish/validateDeployment": "Validate Deployment",
@@ -742,6 +768,101 @@ export function isPublishRestorePythonEnvFailure(
 ): arg is PublishRestorePythonEnvFailure {
   return arg.type === "publish/restorePythonEnv/failure";
 }
+
+// begin
+export interface PublishRestoreREnvStart extends EventStreamMessage {
+  type: "publish/restoreREnv/start";
+  data: {
+    localId: string;
+  };
+}
+export type OnPublishRestoreREnvStartCallback = (
+  msg: PublishRestoreREnvStart,
+) => void;
+export function isPublishRestoreREnvStart(
+  arg: Events,
+): arg is PublishRestoreREnvStart {
+  return arg.type === "publish/restoreREnv/start";
+}
+
+export interface PublishRestoreREnvLog extends EventStreamMessage {
+  type: "publish/restoreREnv/log";
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishRestoreREnvLogCallback = (
+  msg: PublishRestoreREnvLog,
+) => void;
+export function isPublishRestoreREnvLog(
+  arg: Events,
+): arg is PublishRestoreREnvLog {
+  return arg.type === "publish/restoreREnv/log";
+}
+
+export interface PublishRestoreREnvProgress extends EventStreamMessage {
+  type: "publish/restoreREnv/progress";
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishRestoreREnvProgressCallback = (
+  msg: PublishRestoreREnvProgress,
+) => void;
+export function isPublishRestoreREnvProgress(
+  arg: Events,
+): arg is PublishRestoreREnvProgress {
+  return arg.type === "publish/restoreREnv/progress";
+}
+
+export interface PublishRestoreREnvStatus extends EventStreamMessage {
+  type: "publish/restorePythonEnv/status";
+  data: {
+    localId: string;
+    name: string;
+    runtime: packageRuntime;
+    status: packageStatus;
+    version: string;
+  };
+}
+export type OnPublishRestoreREnvStatusCallback = (
+  msg: PublishRestoreREnvStatus,
+) => void;
+export function isPublishRestoreREnvStatus(
+  arg: Events,
+): arg is PublishRestoreREnvStatus {
+  return arg.type === "publish/restoreREnv/status";
+}
+
+export interface PublishRestoreREnvSuccess extends EventStreamMessage {
+  type: "publish/restoreREnv/success";
+  data: {
+    localId: string;
+  };
+}
+export type OnPublishRestoreREnvSuccessCallback = (
+  msg: PublishRestoreREnvSuccess,
+) => void;
+export function isPublishRestoreREnvSuccess(
+  arg: Events,
+): arg is PublishRestoreREnvSuccess {
+  return arg.type === "publish/restoreREnv/success";
+}
+
+export interface PublishRestoreREnvFailure extends EventStreamMessage {
+  type: "publish/restoreREnv/failure";
+  error: string; // translated internally
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishRestoreREnvFailureCallback = (
+  msg: PublishRestoreREnvFailure,
+) => void;
+export function isPublishRestoreREnvFailure(
+  arg: Events,
+): arg is PublishRestoreREnvFailure {
+  return arg.type === "publish/restoreREnv/failure";
+}
+
+// end
 
 export interface PublishRunContentStart extends EventStreamMessage {
   type: "publish/runContent/start";

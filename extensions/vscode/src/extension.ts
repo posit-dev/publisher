@@ -57,10 +57,7 @@ export async function activate(context: ExtensionContext) {
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
 
-  const deploymentsTreeDataProvider = new DeploymentsTreeDataProvider(
-    context,
-    stream,
-  );
+  const deploymentsTreeDataProvider = new DeploymentsTreeDataProvider(context);
 
   const configurationsTreeDataProvider = new ConfigurationsTreeDataProvider(
     context,

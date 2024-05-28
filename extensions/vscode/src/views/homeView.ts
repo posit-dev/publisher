@@ -35,6 +35,7 @@ import {
 } from "src/api";
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
+import { getPythonInterpreterPath } from "../utils/config";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
@@ -60,6 +61,7 @@ import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
 import { selectConfig } from "src/multiStepInputs/selectConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
+import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 
 const viewName = "posit.publisher.homeView";
@@ -167,8 +169,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return await this._onDeployMsg(msg);
       case WebviewToHostMessageType.INITIALIZING:
         return await this._onInitializingMsg();
-      case WebviewToHostMessageType.NEW_DEPLOYMENT:
-        return await this._onNewDeploymentMsg();
       case WebviewToHostMessageType.EDIT_CONFIGURATION:
         return await this._onEditConfigurationMsg(msg);
       case WebviewToHostMessageType.NEW_CONFIGURATION:
@@ -244,15 +244,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       contextIsHomeViewInitialized,
       context,
     );
-  }
-
-  private async _onNewDeploymentMsg() {
-    const preDeployment: PreDeployment = await commands.executeCommand(
-      "posit.publisher.deployments.createNewDeploymentFile",
-    );
-    if (preDeployment) {
-      this._updateDeploymentFileSelection(preDeployment, true);
-    }
   }
 
   private async _onEditConfigurationMsg(msg: EditConfigurationMsg) {
@@ -428,19 +419,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       kind: HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
       content: {
         credentials: this._credentials,
-      },
-    });
-  }
-
-  private _updateDeploymentFileSelection(
-    preDeployment: PreDeployment,
-    saveSelection = false,
-  ) {
-    this._webviewConduit.sendMsg({
-      kind: HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION,
-      content: {
-        preDeployment,
-        saveSelection,
       },
     });
   }
@@ -635,7 +613,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       const api = await useApi();
-      await api.packages.createPythonRequirementsFile(relPathPackageFile);
+      const python = await getPythonInterpreterPath();
+      await api.packages.createPythonRequirementsFile(
+        python,
+        relPathPackageFile,
+      );
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -815,8 +797,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           normalizeURL(deployment.serverUrl).toLowerCase(),
       );
 
-      let title = deployment.saveName;
-      let problem = false;
+      const result = calculateTitle(deployment, config);
+      const title = result.title;
+      let problem = result.problem;
 
       let configName = config?.configurationName;
       if (!configName) {
@@ -826,9 +809,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         problem = true;
       }
 
-      let credentialName = credential?.name;
-      if (!credentialName) {
-        credentialName = `Missing Credential for ${deployment.serverUrl}`;
+      let detail = credential?.name;
+      if (!credential?.name) {
+        detail = `Missing Credential for ${deployment.serverUrl}`;
         problem = true;
       }
 
@@ -838,8 +821,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       const destination: DestinationQuickPick = {
         label: title,
-        description: configName,
-        detail: credentialName,
+        detail,
         iconPath: problem
           ? new ThemeIcon("error")
           : new ThemeIcon("cloud-upload"),

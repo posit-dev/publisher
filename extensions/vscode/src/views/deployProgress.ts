@@ -1,7 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { ProgressLocation, Uri, env, window } from "vscode";
-import { eventTypeToString, EventStreamMessage } from "src/api";
+import { EventStreamMessage, eventMsgToString } from "src/api";
 import { EventStream, UnregisterCallback } from "src/events";
 
 export function deployProject(localID: string, stream: EventStream) {
@@ -35,7 +35,7 @@ export function deployProject(localID: string, stream: EventStream) {
 
       const handleProgressMessages = (msg: EventStreamMessage) => {
         if (localID === msg.data.localId) {
-          const progressStr = eventTypeToString(msg.type);
+          const progressStr = eventMsgToString(msg);
           progress.report({
             message: progressStr,
           });
@@ -293,6 +293,54 @@ export function deployProject(localID: string, stream: EventStream) {
       registrations.push(
         stream.register(
           "publish/restorePythonEnv/status",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/restoreREnv/start",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/restoreREnv/success",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/restoreREnv/failure",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/restoreREnv/log",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/restoreREnv/progress",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register(
+          "publish/restoreREnv/status",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },

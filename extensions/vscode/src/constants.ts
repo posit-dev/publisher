@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 export const POSIT_FOLDER = ".posit";
 export const PUBLISH_FOLDER = ".posit/publish";
 export const PUBLISH_DEPLOYMENTS_FOLDER = ".posit/publish/deployments";

@@ -93,6 +93,26 @@ func (s *PythonSuite) TestGetPythonVersionFromPATH() {
 	executor.AssertExpectations(s.T())
 }
 
+func (s *PythonSuite) TestGetPythonVersionFromSpecifiedNameOnPATH() {
+	log := logging.New()
+	i := NewPythonInspector(s.cwd, util.NewPath("py", nil), log)
+	inspector := i.(*defaultPythonInspector)
+
+	executor := executortest.NewMockExecutor()
+	executor.On("RunCommand", "/some/python3", mock.Anything, mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil, nil)
+	inspector.executor = executor
+
+	pathLooker := util.NewMockPathLooker()
+	pathLooker.On("LookPath", "py").Return("", os.ErrNotExist)
+	pathLooker.On("LookPath", "python3").Return("/some/python3", nil)
+	inspector.pathLooker = pathLooker
+
+	version, err := inspector.getPythonVersion()
+	s.NoError(err)
+	s.Equal("3.10.4", version)
+	executor.AssertExpectations(s.T())
+}
+
 func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
 	// This test can only run if python3 or python is on the PATH.
 	_, err := exec.LookPath("python3")
