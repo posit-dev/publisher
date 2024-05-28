@@ -78,8 +78,12 @@ func NewFromState(s *state.State, emitter events.Emitter, log logging.Logger) (P
 	}, nil
 }
 
-func getDashboardURL(accountURL string, contentID types.ContentID) string {
-	return fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID)
+func getDashboardURL(accountURL string, contentID types.ContentID, failed bool) string {
+	url := fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID)
+	if failed {
+		url += "/logs"
+	}
+	return url
 }
 
 func getDirectURL(accountURL string, contentID types.ContentID) string {
@@ -91,7 +95,7 @@ func getBundleURL(accountURL string, contentID types.ContentID, bundleID types.B
 }
 
 func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log logging.Logger, publishingErr error) {
-	dashboardURL := getDashboardURL(accountURL, contentID)
+	dashboardURL := getDashboardURL(accountURL, contentID, publishingErr != nil)
 	directURL := getDirectURL(accountURL, contentID)
 	if publishingErr != nil {
 		if contentID == "" {
@@ -158,7 +162,7 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 		}
 		if p.isDeployed() {
 			// Provide URL in the event, if we got far enough in the deployment.
-			dashboardURL = getDashboardURL(p.Account.URL, p.Target.ID)
+			dashboardURL = getDashboardURL(p.Account.URL, p.Target.ID, err != nil)
 			directURL = getDirectURL(p.Account.URL, p.Target.ID)
 
 			mapstructure.Decode(publishDeployedFailureData{
@@ -206,7 +210,7 @@ func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 		p.emitErrorEvents(err, log)
 	} else {
 		p.emitter.Emit(events.New(events.PublishOp, events.SuccessPhase, events.NoError, publishSuccessData{
-			DashboardURL: getDashboardURL(p.Account.URL, p.Target.ID),
+			DashboardURL: getDashboardURL(p.Account.URL, p.Target.ID, false),
 			DirectURL:    getDirectURL(p.Account.URL, p.Target.ID),
 			ServerURL:    p.Account.URL,
 			ContentID:    p.Target.ID,
@@ -262,7 +266,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		Requirements:  nil,
 		Configuration: &cfg,
 		BundleID:      "",
-		DashboardURL:  getDashboardURL(p.Account.URL, contentID),
+		DashboardURL:  getDashboardURL(p.Account.URL, contentID, false),
 		DirectURL:     getDirectURL(p.Account.URL, contentID),
 		Error:         nil,
 	}

@@ -73,7 +73,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
 
   if (msg.type === "publish/failure") {
     if (msg.data.dashboardUrl) {
-      return `Deployment failed: ${msg.data.dashboardUrl}`;
+      return `Deployment failed, click to view Connect logs: ${msg.data.dashboardUrl}`;
     }
     return "Deployment failed";
   }
