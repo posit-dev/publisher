@@ -131,18 +131,6 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.deployments.addDeployment",
-        "title": "Initiate New Deployment",
-        "icon": "$(add)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.deployments.createNewDeploymentFile",
-        "title": "Create New Deployment File",
-        "icon": "$(add)",
-        "category": "Posit Publisher"
-      },
-      {
         "command": "posit.publisher.files.refresh",
         "title": "Refresh Deployment Files",
         "icon": "$(refresh)",
@@ -238,11 +226,6 @@
           "command": "posit.publisher.configurations.refresh",
           "when": "view == posit.publisher.configurations",
           "group": "navigation@2"
-        },
-        {
-          "command": "posit.publisher.deployments.addDeployment",
-          "when": "view == posit.publisher.deployments",
-          "group": "navigation@1"
         },
         {
           "command": "posit.publisher.deployments.refresh",
@@ -372,10 +355,6 @@
           "when": "posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.deployments.addDeployment",
-          "when": "posit.publish.state == 'initialized'"
-        },
-        {
           "command": "posit.publisher.files.refresh",
           "when": "posit.publish.state == 'initialized'"
         },
@@ -385,10 +364,6 @@
         },
         {
           "command": "posit.publisher.files.exclude",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.deployments.createNewDeploymentFile",
           "when": "false"
         },
         {

@@ -28,8 +28,6 @@ import {
 } from "src/api";
 
 import { confirmForget } from "src/dialogs";
-import { EventStream } from "src/events";
-import { newDeployment } from "src/multiStepInputs/newDeployment";
 import { formatDateString } from "src/utils/date";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { ensureSuffix } from "src/utils/files";
@@ -41,8 +39,6 @@ const editCommand = viewName + ".edit";
 const renameCommand = viewName + ".rename";
 const forgetCommand = viewName + ".forget";
 const visitCommand = viewName + ".visit";
-const addDeploymentCommand = viewName + ".addDeployment";
-const createNewDeploymentFileCommand = viewName + ".createNewDeploymentFile";
 
 const fileStore = ".posit/publish/deployments/*.toml";
 
@@ -59,10 +55,7 @@ export class DeploymentsTreeDataProvider
   readonly onDidChangeTreeData: DeploymentsEvent =
     this._onDidChangeTreeData.event;
 
-  constructor(
-    private readonly _context: ExtensionContext,
-    private readonly _stream: EventStream,
-  ) {
+  constructor(private readonly _context: ExtensionContext) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -118,32 +111,6 @@ export class DeploymentsTreeDataProvider
       treeDataProvider: this,
     });
     this._context.subscriptions.push(treeView);
-
-    this._context.subscriptions.push(
-      commands.registerCommand(addDeploymentCommand, (viewId?: string) => {
-        if (!viewId) {
-          viewId = viewName;
-        }
-        return newDeployment(
-          "Deploy Your Project to a New Location",
-          viewName,
-          true,
-          this._stream,
-        );
-      }),
-    );
-
-    this._context.subscriptions.push(
-      commands.registerCommand(
-        createNewDeploymentFileCommand,
-        (viewId?: string) => {
-          return newDeployment(
-            "Create a Deployment File for your Project",
-            viewId,
-          );
-        },
-      ),
-    );
 
     this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, this.refresh),

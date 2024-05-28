@@ -6,7 +6,6 @@ export enum WebviewToHostMessageType {
   // Sent from webviewView to host
   DEPLOY = "deploy",
   INITIALIZING = "initializing",
-  NEW_DEPLOYMENT = "newDeployment",
   EDIT_CONFIGURATION = "editConfiguration",
   NEW_CONFIGURATION = "newConfiguration",
   SELECT_CONFIGURATION = "selectConfiguration",
@@ -39,7 +38,6 @@ export type AnyWebviewToHostMessage<
 export type WebviewToHostMessage =
   | DeployMsg
   | InitializingMsg
-  | NewDeploymentMsg
   | EditConfigurationMsg
   | NewConfigurationMsg
   | SelectConfigurationMsg
@@ -66,7 +64,6 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.NAVIGATE ||
     msg.kind === WebviewToHostMessageType.NEW_CONFIGURATION ||
     msg.kind === WebviewToHostMessageType.SELECT_CONFIGURATION ||
-    msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.SAVE_SELECTION_STATE ||
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN ||
     msg.kind === WebviewToHostMessageType.INCLUDE_FILE ||
@@ -94,9 +91,6 @@ export type DeployMsg = AnyWebviewToHostMessage<
 
 export type InitializingMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.INITIALIZING>;
-
-export type NewDeploymentMsg =
-  AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_DEPLOYMENT>;
 
 export type EditConfigurationMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.EDIT_CONFIGURATION,
