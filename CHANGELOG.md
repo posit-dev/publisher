@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- There is now an R Packages view in the UI that lists dependencies from your renv.lock file. There is also a Scan button, which will create/update your renv.lock file by running `renv::snapshot()` (#1657)
+- There is now an R Packages view in the UI that lists dependencies from your renv.lock file. The Scan button will create or update your renv.lock file by running `renv::snapshot()` (#1657)
 - There is now a separate step for `Restoring R Environment` in the Posit Publisher Logs view (#1660)
 - Auto-generated configuration files now include a header comment (#1708)
 - The documentation now includes a section listing the licenses and attribution for third-party software used in the extension (#1661)
@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Destinations are now identified by the `title` field in the configuration file. You'll be prompted for a title when creating a new desintation (#1536)
+- Destinations are now identified by the `title` field in the configuration file. You'll be prompted for a title when creating a new destination (#1536)
 - Deployment and configuration files are automatically named (#1536)
 - The Files and Packages sections now start out collapsed (#1629)
 
