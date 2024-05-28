@@ -80,7 +80,7 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 
 func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
 	args := []string{"--version"}
-	_, _, err := i.executor.RunCommand(pythonExecutable, args, util.AbsolutePath{}, i.log)
+	_, _, err := i.executor.RunCommand(pythonExecutable, args, i.base, i.log)
 	if err != nil {
 		return fmt.Errorf("could not run python executable '%s': %w", pythonExecutable, err)
 	}
@@ -141,7 +141,7 @@ func (i *defaultPythonInspector) getPythonVersion() (string, error) {
 		`-c`, // execute the next argument as python code
 		`import sys; v = sys.version_info; print("%d.%d.%d" % (v[0], v[1], v[2]))`,
 	}
-	output, _, err := i.executor.RunCommand(pythonExecutable, args, util.AbsolutePath{}, i.log)
+	output, _, err := i.executor.RunCommand(pythonExecutable, args, i.base, i.log)
 	if err != nil {
 		return "", err
 	}
