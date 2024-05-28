@@ -17,6 +17,7 @@ import {
   isConfigurationError,
   useApi,
 } from "src/api";
+import { getPythonInterpreterPath } from "src/utils/config";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   MultiStepInput,
@@ -87,7 +88,7 @@ export async function selectConfig(
           configFileListItems.push({
             iconPath: new ThemeIcon("gear"),
             label: configuration.configurationName,
-            detail: configuration.configurationPath,
+            detail: configuration.configurationRelPath,
           });
         }
       });
@@ -116,7 +117,8 @@ export async function selectConfig(
   const getConfigurationInspections = new Promise<void>(
     async (resolve, reject) => {
       try {
-        const inspectResponse = await api.configurations.inspect();
+        const python = await getPythonInterpreterPath();
+        const inspectResponse = await api.configurations.inspect(python);
         configDetails = inspectResponse.data;
         configDetails.forEach((config, i) => {
           if (config.entrypoint) {
@@ -293,9 +295,7 @@ export async function selectConfig(
       step: hasMultipleEntryPoints() ? 3 : 2,
       totalSteps: hasMultipleEntryPoints() ? 3 : 2,
       value:
-        typeof state.data.title === "string" && state.data.title.length
-          ? state.data.title
-          : initialValue,
+        typeof state.data.title === "string" ? state.data.title : initialValue,
       prompt: "Enter a title for your content or application.",
       validate: (value) => {
         if (value.length < 3) {

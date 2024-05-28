@@ -24,6 +24,7 @@ require (
 	github.com/alessio/shellescape v1.4.2 // indirect
 	github.com/danieljoos/wincred v1.2.1 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
 )
 
 require (

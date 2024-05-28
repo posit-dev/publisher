@@ -3,6 +3,7 @@ package config
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"bytes"
 	"io/fs"
 	"strings"
 	"testing"
@@ -122,4 +123,34 @@ func (s *ConfigSuite) TestWriteFileErr() {
 	cfg := New()
 	err := cfg.WriteFile(readonlyFile)
 	s.NotNil(err)
+}
+
+func (s *ConfigSuite) TestWriteComments() {
+	configFile := GetConfigPath(s.cwd, "myConfig")
+	cfg := New()
+	cfg.Comments = []string{" This is a comment.", " This is another comment."}
+	err := cfg.WriteFile(configFile)
+	s.NoError(err)
+
+	contents, err := configFile.ReadFile()
+	s.NoError(err)
+	s.True(bytes.HasPrefix(contents, []byte("# This is a comment.\n# This is another comment.\n")))
+}
+
+const commentedConfig = `# These are comments.
+# They will be preserved.
+'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
+type = 'html'
+entrypoint = 'index.html'
+`
+
+func (s *ConfigSuite) TestReadComments() {
+	configFile := GetConfigPath(s.cwd, "myConfig")
+	err := configFile.WriteFile([]byte(commentedConfig), 0666)
+	s.NoError(err)
+
+	cfg, err := FromFile(configFile)
+	s.NoError(err)
+
+	s.Equal([]string{" These are comments.", " They will be preserved."}, cfg.Comments)
 }

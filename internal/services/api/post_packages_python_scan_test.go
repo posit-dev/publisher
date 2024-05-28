@@ -25,13 +25,16 @@ func TestPostRequirementsSuite(t *testing.T) {
 	suite.Run(t, new(PostPackagesPythonScanSuite))
 }
 
+func (s *PostPackagesPythonScanSuite) SetupTest() {
+	inspectorFactory = inspect.NewPythonInspector
+}
+
 func (s *PostPackagesPythonScanSuite) TestNewPostRequirementsHandler() {
 	base := util.NewAbsolutePath("/project", nil)
 	log := logging.New()
 	h := NewPostPackagesPythonScanHandler(base, log)
 	s.Equal(base, h.base)
 	s.Equal(log, h.log)
-	s.NotNil(h.inspector)
 }
 
 func (s *PostPackagesPythonScanSuite) TestServeHTTP() {
@@ -49,7 +52,7 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTP() {
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
 	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
-	h.inspector = i
+	inspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector { return i }
 
 	h.ServeHTTP(rec, req)
 
@@ -71,7 +74,7 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPEmptyBody() {
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
 	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
-	h.inspector = i
+	inspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector { return i }
 
 	h.ServeHTTP(rec, req)
 
@@ -93,7 +96,7 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPWithSaveName() {
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
 	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
-	h.inspector = i
+	inspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector { return i }
 
 	h.ServeHTTP(rec, req)
 
@@ -113,7 +116,7 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPErr() {
 	testError := errors.New("test error from ScanRequirements")
 	i := inspect.NewMockPythonInspector()
 	i.On("ScanRequirements", mock.Anything).Return(nil, "", testError)
-	h.inspector = i
+	inspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector { return i }
 
 	h.ServeHTTP(rec, req)
 

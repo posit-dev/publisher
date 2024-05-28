@@ -20,7 +20,5 @@ func TestAccountAuthTypeSuite(t *testing.T) {
 func (s *AccountAuthTypeSuite) TestDescription() {
 	s.Equal("No saved credentials", AuthTypeNone.Description())
 	s.Equal("Connect API key", AuthTypeAPIKey.Description())
-	s.Equal("RStudio IDE/rsconnect token+key", AuthTypeTokenKey.Description())
-	s.Equal("RStudio IDE/rsconnect token+secret", AuthTypeTokenSecret.Description())
 	s.Equal("hey", AccountAuthType("hey").Description())
 }

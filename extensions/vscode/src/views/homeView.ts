@@ -4,8 +4,6 @@ import {
   CancellationToken,
   Disposable,
   ExtensionContext,
-  FileSystemWatcher,
-  RelativePattern,
   ThemeIcon,
   Uri,
   Webview,
@@ -37,6 +35,7 @@ import {
 } from "src/api";
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
+import { getPythonInterpreterPath } from "../utils/config";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
@@ -62,9 +61,8 @@ import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
 import { selectConfig } from "src/multiStepInputs/selectConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
-
-const deploymentFiles = ".posit/publish/deployments/*.toml";
-const configFiles = ".posit/publish/*.toml";
+import { calculateTitle } from "src/utils/titles";
+import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
@@ -80,7 +78,7 @@ enum HomeViewInitialized {
 
 const lastSelectionState = viewName + ".lastSelectionState.v2";
 
-export class HomeViewProvider implements WebviewViewProvider {
+export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private _disposables: Disposable[] = [];
   private _deployments: (
     | Deployment
@@ -96,9 +94,7 @@ export class HomeViewProvider implements WebviewViewProvider {
   private _extensionUri: Uri;
   private _webviewConduit: WebviewConduit;
 
-  private activeConfigFileWatcher: FileSystemWatcher | undefined;
-  private activePythonPackageFileWatcher: FileSystemWatcher | undefined;
-  private activeRPackageFileWatcher: FileSystemWatcher | undefined;
+  private configWatchers: ConfigWatcherManager | undefined;
 
   constructor(
     private readonly _context: ExtensionContext,
@@ -124,13 +120,44 @@ export class HomeViewProvider implements WebviewViewProvider {
       useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
     });
 
-    useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
+    useBus().on("activeConfigChanged", (cfg) => {
       this.sendRefreshedFilesLists();
       this._onRefreshPythonPackages();
       this._onRefreshRPackages();
-      this.createActiveConfigFileWatcher(cfg);
-      this.createActivePythonPackageFileWatcher(cfg);
-      this.createActiveRPackageFileWatcher(cfg);
+
+      this.configWatchers?.dispose();
+      this.configWatchers = new ConfigWatcherManager(cfg);
+
+      this.configWatchers.configFile?.onDidChange(
+        this.sendRefreshedFilesLists,
+        this,
+      );
+
+      this.configWatchers.pythonPackageFile?.onDidCreate(
+        this._onRefreshPythonPackages,
+        this,
+      );
+      this.configWatchers.pythonPackageFile?.onDidChange(
+        this._onRefreshPythonPackages,
+        this,
+      );
+      this.configWatchers.pythonPackageFile?.onDidDelete(
+        this._onRefreshPythonPackages,
+        this,
+      );
+
+      this.configWatchers.rPackageFile?.onDidCreate(
+        this._onRefreshRPackages,
+        this,
+      );
+      this.configWatchers.rPackageFile?.onDidChange(
+        this._onRefreshRPackages,
+        this,
+      );
+      this.configWatchers.rPackageFile?.onDidDelete(
+        this._onRefreshRPackages,
+        this,
+      );
     });
   }
   /**
@@ -586,7 +613,11 @@ export class HomeViewProvider implements WebviewViewProvider {
 
     try {
       const api = await useApi();
-      await api.packages.createPythonRequirementsFile(relPathPackageFile);
+      const python = await getPythonInterpreterPath();
+      await api.packages.createPythonRequirementsFile(
+        python,
+        relPathPackageFile,
+      );
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -766,12 +797,9 @@ export class HomeViewProvider implements WebviewViewProvider {
           normalizeURL(deployment.serverUrl).toLowerCase(),
       );
 
-      let problem = false;
-      let title = config?.configuration.title;
-      if (!title) {
-        title = `No Title (in ${config?.configurationName})`;
-        problem = true;
-      }
+      const result = calculateTitle(deployment, config);
+      const title = result.title;
+      let problem = result.problem;
 
       let configName = config?.configurationName;
       if (!configName) {
@@ -1015,101 +1043,12 @@ export class HomeViewProvider implements WebviewViewProvider {
    * Cleans up and disposes of webview resources when view is disposed
    */
   public dispose() {
-    // Dispose of all disposables (i.e. commands) for the current webview panel
-    while (this._disposables.length) {
-      const disposable = this._disposables.pop();
-      if (disposable) {
-        disposable.dispose();
-      }
-    }
+    Disposable.from(...this._disposables).dispose();
+
+    this.configWatchers?.dispose();
   }
 
-  private createActiveConfigFileWatcher(cfg: Configuration | undefined) {
-    if (this.root === undefined || cfg === undefined) {
-      return;
-    }
-
-    const watcher = workspace.createFileSystemWatcher(
-      new RelativePattern(this.root, cfg.configurationPath),
-    );
-    watcher.onDidChange(this.sendRefreshedFilesLists);
-
-    if (this.activeConfigFileWatcher) {
-      // Dispose the previous configuration file watcher
-      this.activeConfigFileWatcher.dispose();
-      const index = this._context.subscriptions.indexOf(
-        this.activeConfigFileWatcher,
-      );
-      if (index !== -1) {
-        this._context.subscriptions.splice(index, 1);
-      }
-    }
-
-    this.activeConfigFileWatcher = watcher;
-    this._context.subscriptions.push(watcher);
-  }
-
-  private createActivePythonPackageFileWatcher(cfg: Configuration | undefined) {
-    if (this.root === undefined || cfg === undefined) {
-      return;
-    }
-
-    const watcher = workspace.createFileSystemWatcher(
-      new RelativePattern(
-        this.root,
-        cfg.configuration.python?.packageFile || "requirements.txt",
-      ),
-    );
-    watcher.onDidCreate(this._onRefreshPythonPackages, this);
-    watcher.onDidChange(this._onRefreshPythonPackages, this);
-    watcher.onDidDelete(this._onRefreshPythonPackages, this);
-
-    if (this.activePythonPackageFileWatcher) {
-      // Dispose the previous configuration file watcher
-      this.activePythonPackageFileWatcher.dispose();
-      const index = this._context.subscriptions.indexOf(
-        this.activePythonPackageFileWatcher,
-      );
-      if (index !== -1) {
-        this._context.subscriptions.splice(index, 1);
-      }
-    }
-
-    this.activePythonPackageFileWatcher = watcher;
-    this._context.subscriptions.push(watcher);
-  }
-
-  private createActiveRPackageFileWatcher(cfg: Configuration | undefined) {
-    if (this.root === undefined || cfg === undefined) {
-      return;
-    }
-
-    const watcher = workspace.createFileSystemWatcher(
-      new RelativePattern(
-        this.root,
-        cfg.configuration.r?.packageFile || "renv.lock",
-      ),
-    );
-    watcher.onDidCreate(this._onRefreshRPackages, this);
-    watcher.onDidChange(this._onRefreshRPackages, this);
-    watcher.onDidDelete(this._onRefreshRPackages, this);
-
-    if (this.activeRPackageFileWatcher) {
-      // Dispose the previous configuration file watcher
-      this.activeRPackageFileWatcher.dispose();
-      const index = this._context.subscriptions.indexOf(
-        this.activeRPackageFileWatcher,
-      );
-      if (index !== -1) {
-        this._context.subscriptions.splice(index, 1);
-      }
-    }
-
-    this.activeRPackageFileWatcher = watcher;
-    this._context.subscriptions.push(watcher);
-  }
-
-  public register() {
+  public register(watchers: WatcherManager) {
     this._stream.register("publish/start", () => {
       this._onPublishStart();
     });
@@ -1150,62 +1089,25 @@ export class HomeViewProvider implements WebviewViewProvider {
       ),
     );
 
-    if (this.root !== undefined) {
-      const positDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit"),
-        true,
-        true,
-        false,
-      );
-      positDirWatcher.onDidDelete(() => {
-        this.refreshDeployments();
-        this.refreshConfigurations();
-      }, this);
-      const publishDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit/publish"),
-        true,
-        true,
-        false,
-      );
-      publishDirWatcher.onDidDelete(() => {
-        this.refreshDeployments();
-        this.refreshConfigurations();
-      }, this);
-      const deploymentsDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit/publish/deployments"),
-        true,
-        true,
-        false,
-      );
-      deploymentsDirWatcher.onDidDelete(this.refreshDeployments, this);
-      this._context.subscriptions.push(
-        positDirWatcher,
-        publishDirWatcher,
-        deploymentsDirWatcher,
-      );
+    watchers.positDir?.onDidDelete(() => {
+      this.refreshDeployments();
+      this.refreshConfigurations();
+    }, this);
+    watchers.publishDir?.onDidDelete(() => {
+      this.refreshDeployments();
+      this.refreshConfigurations();
+    }, this);
+    watchers.deploymentsDir?.onDidDelete(this.refreshDeployments, this);
 
-      const configFileWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, configFiles),
-      );
-      configFileWatcher.onDidCreate(this.refreshConfigurations);
-      configFileWatcher.onDidDelete(this.refreshConfigurations);
-      configFileWatcher.onDidChange(this.refreshConfigurations);
-      this._context.subscriptions.push(configFileWatcher);
+    watchers.configurations?.onDidCreate(this.refreshConfigurations, this);
+    watchers.configurations?.onDidDelete(this.refreshConfigurations, this);
+    watchers.configurations?.onDidChange(this.refreshConfigurations, this);
 
-      const deploymentFileWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, deploymentFiles),
-      );
-      deploymentFileWatcher.onDidCreate(this.refreshDeployments);
-      deploymentFileWatcher.onDidDelete(this.refreshDeployments);
-      deploymentFileWatcher.onDidChange(this.refreshDeployments);
-      this._context.subscriptions.push(deploymentFileWatcher);
+    watchers.deployments?.onDidCreate(this.refreshDeployments, this);
+    watchers.deployments?.onDidDelete(this.refreshDeployments, this);
+    watchers.deployments?.onDidChange(this.refreshDeployments, this);
 
-      const allFileWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, "**"),
-      );
-      allFileWatcher.onDidCreate(this.sendRefreshedFilesLists);
-      allFileWatcher.onDidDelete(this.sendRefreshedFilesLists);
-      this._context.subscriptions.push(allFileWatcher);
-    }
+    watchers.allFiles?.onDidCreate(this.sendRefreshedFilesLists, this);
+    watchers.allFiles?.onDidDelete(this.sendRefreshedFilesLists, this);
   }
 }

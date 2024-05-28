@@ -5,7 +5,6 @@ import {
   EventEmitter,
   ExtensionContext,
   InputBoxValidationSeverity,
-  RelativePattern,
   ThemeIcon,
   TreeDataProvider,
   TreeItem,
@@ -28,6 +27,7 @@ import { getSummaryStringFromError } from "src/utils/errors";
 import { ensureSuffix, fileExists, isValidFilename } from "src/utils/files";
 import { untitledConfigurationName } from "src/utils/names";
 import { newConfig } from "src/multiStepInputs/newConfig";
+import { WatcherManager } from "src/watchers";
 
 const viewName = "posit.publisher.configurations";
 const refreshCommand = viewName + ".refresh";
@@ -36,7 +36,6 @@ const editCommand = viewName + ".edit";
 const cloneCommand = viewName + ".clone";
 const renameCommand = viewName + ".rename";
 const deleteCommand = viewName + ".delete";
-const fileStore = ".posit/publish/*.toml";
 
 type ConfigurationEventEmitter = EventEmitter<
   ConfigurationTreeItem | undefined | void
@@ -94,7 +93,7 @@ export class ConfigurationsTreeDataProvider
     }
   }
 
-  public register() {
+  public register(watchers: WatcherManager) {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
@@ -108,35 +107,13 @@ export class ConfigurationsTreeDataProvider
       commands.registerCommand(cloneCommand, this.clone),
       commands.registerCommand(deleteCommand, this.delete),
     );
-    if (this.root !== undefined) {
-      const positDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit"),
-        true,
-        true,
-        false,
-      );
-      positDirWatcher.onDidDelete(this.refresh, this);
-      const publishDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit/publish"),
-        true,
-        true,
-        false,
-      );
-      publishDirWatcher.onDidDelete(this.refresh, this);
 
-      const watcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, fileStore),
-      );
-      watcher.onDidCreate(this.refresh);
-      watcher.onDidDelete(this.refresh);
-      watcher.onDidChange(this.refresh);
+    watchers.positDir?.onDidDelete(this.refresh, this);
+    watchers.publishDir?.onDidDelete(this.refresh, this);
 
-      this._context.subscriptions.push(
-        positDirWatcher,
-        publishDirWatcher,
-        watcher,
-      );
-    }
+    watchers.configurations?.onDidCreate(this.refresh, this);
+    watchers.configurations?.onDidDelete(this.refresh, this);
+    watchers.configurations?.onDidChange(this.refresh, this);
   }
 
   private refresh = () => {

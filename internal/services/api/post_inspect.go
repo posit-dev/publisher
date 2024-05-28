@@ -11,9 +11,22 @@ import (
 	"github.com/rstudio/connect-client/internal/util"
 )
 
+type postInspectRequestBody struct {
+	Python string `json:"python"`
+}
+
 func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		cfg, err := initialize.GetPossibleConfigs(base, util.Path{}, util.Path{}, log)
+		dec := json.NewDecoder(req.Body)
+		dec.DisallowUnknownFields()
+		var b postInspectRequestBody
+		err := dec.Decode(&b)
+		if err != nil {
+			BadRequest(w, req, log, err)
+			return
+		}
+
+		cfg, err := initialize.GetPossibleConfigs(base, util.NewPath(b.Python, nil), util.Path{}, log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return

@@ -4,7 +4,6 @@ import {
   Event,
   EventEmitter,
   ExtensionContext,
-  RelativePattern,
   ThemeIcon,
   TreeDataProvider,
   TreeItem,
@@ -32,6 +31,7 @@ import { formatDateString } from "src/utils/date";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { ensureSuffix } from "src/utils/files";
 import { deploymentNameValidator } from "src/utils/names";
+import { WatcherManager } from "src/watchers";
 
 const viewName = "posit.publisher.deployments";
 const refreshCommand = viewName + ".refresh";
@@ -39,8 +39,6 @@ const editCommand = viewName + ".edit";
 const renameCommand = viewName + ".rename";
 const forgetCommand = viewName + ".forget";
 const visitCommand = viewName + ".visit";
-
-const fileStore = ".posit/publish/deployments/*.toml";
 
 type DeploymentsEventEmitter = EventEmitter<
   DeploymentsTreeItem | undefined | void
@@ -106,7 +104,7 @@ export class DeploymentsTreeDataProvider
     }
   }
 
-  public register() {
+  public register(watchers: WatcherManager) {
     const treeView = window.createTreeView(viewName, {
       treeDataProvider: this,
     });
@@ -199,43 +197,13 @@ export class DeploymentsTreeDataProvider
       ),
     );
 
-    if (this.root !== undefined) {
-      const positDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit"),
-        true,
-        true,
-        false,
-      );
-      positDirWatcher.onDidDelete(this.refresh, this);
-      const publishDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit/publish"),
-        true,
-        true,
-        false,
-      );
-      publishDirWatcher.onDidDelete(this.refresh, this);
-      const deploymentsDirWatcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, ".posit/publish/deployments"),
-        true,
-        true,
-        false,
-      );
-      deploymentsDirWatcher.onDidDelete(this.refresh, this);
+    watchers.positDir?.onDidDelete(this.refresh, this);
+    watchers.publishDir?.onDidDelete(this.refresh, this);
+    watchers.deploymentsDir?.onDidDelete(this.refresh, this);
 
-      const watcher = workspace.createFileSystemWatcher(
-        new RelativePattern(this.root, fileStore),
-      );
-      watcher.onDidCreate(this.refresh);
-      watcher.onDidDelete(this.refresh);
-      watcher.onDidChange(this.refresh);
-
-      this._context.subscriptions.push(
-        positDirWatcher,
-        publishDirWatcher,
-        deploymentsDirWatcher,
-        watcher,
-      );
-    }
+    watchers.deployments?.onDidCreate(this.refresh, this);
+    watchers.deployments?.onDidDelete(this.refresh, this);
+    watchers.deployments?.onDidChange(this.refresh, this);
   }
 }
 
