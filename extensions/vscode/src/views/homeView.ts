@@ -62,6 +62,7 @@ import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
 import { selectConfig } from "src/multiStepInputs/selectConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
+import { calculateTitle } from "src/utils/titles";
 
 const deploymentFiles = ".posit/publish/deployments/*.toml";
 const configFiles = ".posit/publish/*.toml";
@@ -790,12 +791,9 @@ export class HomeViewProvider implements WebviewViewProvider {
           normalizeURL(deployment.serverUrl).toLowerCase(),
       );
 
-      let problem = false;
-      let title = config?.configuration.title;
-      if (!title) {
-        title = `No Title (in ${config?.configurationName})`;
-        problem = true;
-      }
+      const result = calculateTitle(deployment, config);
+      const title = result.title;
+      let problem = result.problem;
 
       let configName = config?.configurationName;
       if (!configName) {

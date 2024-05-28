@@ -155,6 +155,7 @@ import { computed } from "vue";
 
 import { isConfigurationError, isPreDeployment } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
+import { calculateTitle } from "../../../../src/utils/titles";
 
 import { useHostConduitService } from "src/HostConduitService";
 import { useHomeStore } from "src/stores/home";
@@ -228,7 +229,8 @@ const isConfigMissing = computed((): boolean => {
   return Boolean(
     home.selectedDeployment &&
       !home.selectedConfiguration &&
-      !isConfigInErrorList(home.selectedDeployment?.configurationName),
+      !isConfigInErrorList(home.selectedDeployment?.configurationName) &&
+      !isConfigEntryMissing.value,
   );
 });
 
@@ -245,13 +247,12 @@ const destinationTitle = computed(() => {
     // no title if there is no selected deployment
     return "";
   }
-  if (!home.selectedDeployment?.configurationName) {
-    return "Unknown Title Due To Missing Config Entry";
-  }
-  return (
-    home.selectedConfiguration?.configuration.title ||
-    `No Title (in ${home.selectedConfiguration?.configurationName})`
+
+  const result = calculateTitle(
+    home.selectedDeployment,
+    home.selectedConfiguration,
   );
+  return result.title;
 });
 
 const destinationSubTitle = computed(() => {
