@@ -734,12 +734,23 @@ export async function newDestination(
     if (!step) {
       throw new Error("newDestination::inputTitle step info not found.");
     }
+    let initialValue = "";
+    if (
+      state.data.entryPoint &&
+      isQuickPickItemWithIndex(state.data.entryPoint)
+    ) {
+      const detail = configDetails[state.data.entryPoint.index].title;
+      if (detail) {
+        initialValue = detail;
+      }
+    }
 
     const title = await input.showInputBox({
       title: state.title,
       step: step.step,
       totalSteps: step.totalSteps,
-      value: typeof state.data.title === "string" ? state.data.title : "",
+      value:
+        typeof state.data.title === "string" ? state.data.title : initialValue,
       prompt: "Enter a title for your content or application.",
       validate: (value) => {
         if (value.length < 3) {

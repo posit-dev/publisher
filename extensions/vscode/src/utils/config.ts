@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import { Uri, commands, workspace } from "vscode";
 import { fileExists, isDir } from "./files";
 import { substituteVariables } from "./variables";

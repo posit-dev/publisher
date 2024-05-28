@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import * as path from "path";
 import { window, workspace } from "vscode";
 

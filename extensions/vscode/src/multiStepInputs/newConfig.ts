@@ -163,11 +163,22 @@ export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
   async function inputTitle(input: MultiStepInput, state: MultiStepState) {
     const thisStepNumber = assignStep(state, "inputTitle");
+    let initialValue = "";
+    if (
+      state.data.entryPoint &&
+      isQuickPickItemWithIndex(state.data.entryPoint)
+    ) {
+      const detail = configDetails[state.data.entryPoint.index].title;
+      if (detail) {
+        initialValue = detail;
+      }
+    }
     const configFileName = await input.showInputBox({
       title: state.title,
       step: thisStepNumber,
       totalSteps: state.totalSteps,
-      value: typeof state.data.title === "string" ? state.data.title : "",
+      value:
+        typeof state.data.title === "string" ? state.data.title : initialValue,
       prompt: "Enter a title for your content or application.",
       validate: (value) => {
         if (value.length < 3) {
