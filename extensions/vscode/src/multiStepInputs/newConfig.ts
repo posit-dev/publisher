@@ -25,7 +25,6 @@ import {
 } from "../api";
 import { getPythonInterpreterPath } from "../utils/config";
 import { getSummaryStringFromError } from "../utils/errors";
-import { isValidFilename } from "../utils/files";
 import { untitledConfigurationName } from "../utils/names";
 
 export async function newConfig(title: string, viewId?: string) {
@@ -35,7 +34,6 @@ export async function newConfig(title: string, viewId?: string) {
   const api = await useApi();
   let entryPointListItems: QuickPickItemWithIndex[] = [];
   let configDetails: ConfigurationDetails[] = [];
-  let configNames: string[] = [];
 
   const getConfigurationInspections = new Promise<void>(
     async (resolve, reject) => {
@@ -72,27 +70,7 @@ export async function newConfig(title: string, viewId?: string) {
     },
   );
 
-  const getConfigurations = new Promise<void>(async (resolve, reject) => {
-    try {
-      const response = await api.configurations.getAll();
-      configNames = response.data.map((config) => config.configurationName);
-    } catch (error: unknown) {
-      const summary = getSummaryStringFromError(
-        "newConfig, configurations.getAll",
-        error,
-      );
-      window.showInformationMessage(
-        `Unable to continue with failed configuration API call. ${summary}`,
-      );
-      return reject();
-    }
-    resolve();
-  });
-
-  const apiCalls = Promise.all([
-    getConfigurationInspections,
-    getConfigurations,
-  ]);
+  const apiCalls = Promise.all([getConfigurationInspections]);
 
   // Start the progress indicator and have it stop when the API calls are complete
   window.withProgress(
@@ -111,7 +89,8 @@ export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
 
   // Select the entrypoint,  if there is more than one
-  // Name the config file to use
+  // Prompt for Title
+  // Autoname the config file to use, do not provide prompt
   // Return the name of the config file, so it can be opened.
 
   // ***************************************************************
@@ -170,39 +149,30 @@ export async function newConfig(title: string, viewId?: string) {
 
       state.data.entryPoint = pick;
       state.lastStep = thisStepNumber;
-      return (input: MultiStepInput) => inputConfigurationName(input, state);
+      return (input: MultiStepInput) => inputTitle(input, state);
     } else {
       state.data.entryPoint = entryPointListItems[0];
       // We're skipping this step, so we must silently just jump to the next step
-      return inputConfigurationName(input, state);
+      return inputTitle(input, state);
     }
   }
 
   // ***************************************************************
   // Step #2:
-  // Name the configuration
+  // Enter the title
   // ***************************************************************
-  async function inputConfigurationName(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    const thisStepNumber = assignStep(state, "inputConfigurationName");
+  async function inputTitle(input: MultiStepInput, state: MultiStepState) {
+    const thisStepNumber = assignStep(state, "inputTitle");
     const configFileName = await input.showInputBox({
       title: state.title,
       step: thisStepNumber,
       totalSteps: state.totalSteps,
-      value: await untitledConfigurationName(),
-      prompt: "Choose a unique name for the configuration",
+      value: typeof state.data.title === "string" ? state.data.title : "",
+      prompt: "Enter a title for your content or application.",
       validate: (value) => {
-        if (value.length < 3 || !isValidFilename(value)) {
+        if (value.length < 3) {
           return Promise.resolve({
-            message: `Invalid Name: Value must be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        if (configNames.includes(value)) {
-          return Promise.resolve({
-            message: `Invalid Name: Name is already in use for this project. Please enter a unique name.`,
+            message: `Invalid Title: Value must be longer than 3 characters`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -212,7 +182,7 @@ export async function newConfig(title: string, viewId?: string) {
       ignoreFocusOut: true,
     });
 
-    state.data.configFileName = configFileName;
+    state.data.title = configFileName;
     state.lastStep = thisStepNumber;
     // last step, we don't return anything
   }
@@ -237,10 +207,10 @@ export async function newConfig(title: string, viewId?: string) {
   // our state data vars down to the actual type desired
   if (
     state.data.entryPoint === undefined ||
-    state.data.configFileName === undefined ||
+    state.data.title === undefined ||
     // have to add type guards here to eliminate the variability
     !isQuickPickItemWithIndex(state.data.entryPoint) ||
-    typeof state.data.configFileName !== "string"
+    typeof state.data.title !== "string"
   ) {
     return;
   }
@@ -254,8 +224,10 @@ export async function newConfig(title: string, viewId?: string) {
       );
       return;
     }
+    selectedConfigDetails.title = state.data.title;
+    const configName = await untitledConfigurationName();
     const createResponse = await api.configurations.createOrUpdate(
-      state.data.configFileName,
+      configName,
       selectedConfigDetails,
     );
     newConfig = createResponse.data;

@@ -61,6 +61,7 @@ import { DestinationQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
 import { selectConfig } from "src/multiStepInputs/selectConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
+import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 
 const viewName = "posit.publisher.homeView";
@@ -820,8 +821,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           normalizeURL(deployment.serverUrl).toLowerCase(),
       );
 
-      let title = deployment.saveName;
-      let problem = false;
+      const result = calculateTitle(deployment, config);
+      const title = result.title;
+      let problem = result.problem;
 
       let configName = config?.configurationName;
       if (!configName) {
@@ -831,9 +833,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         problem = true;
       }
 
-      let credentialName = credential?.name;
-      if (!credentialName) {
-        credentialName = `Missing Credential for ${deployment.serverUrl}`;
+      let detail = credential?.name;
+      if (!credential?.name) {
+        detail = `Missing Credential for ${deployment.serverUrl}`;
         problem = true;
       }
 
@@ -843,8 +845,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       const destination: DestinationQuickPick = {
         label: title,
-        description: configName,
-        detail: credentialName,
+        detail,
         iconPath: problem
           ? new ThemeIcon("error")
           : new ThemeIcon("cloud-upload"),

@@ -86,7 +86,7 @@ export async function publishDeployment(
           configFileListItems.push({
             iconPath: new ThemeIcon("gear"),
             label: configuration.configurationName,
-            detail: configuration.configurationPath,
+            detail: configuration.configurationRelPath,
           });
         }
       });
