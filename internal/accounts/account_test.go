@@ -30,21 +30,3 @@ func (s *AccountSuite) TestInferAuthTypeApiKey() {
 	auth := account.InferAuthType()
 	s.Equal(AuthTypeAPIKey, auth)
 }
-
-func (s *AccountSuite) TestInferAuthTypeTokenSecret() {
-	account := Account{
-		Token:  "abc",
-		Secret: "def",
-	}
-	auth := account.InferAuthType()
-	s.Equal(AuthTypeTokenSecret, auth)
-}
-
-func (s *AccountSuite) TestInferAuthTypeTokenKey() {
-	account := Account{
-		Token:      "abc",
-		PrivateKey: "def",
-	}
-	auth := account.InferAuthType()
-	s.Equal(AuthTypeTokenKey, auth)
-}

@@ -12,6 +12,7 @@ import { HelpAndFeedbackTreeDataProvider } from "src/views/helpAndFeedback";
 import { LogsTreeDataProvider } from "src/views/logs";
 import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
+import { WatcherManager } from "./watchers";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -50,6 +51,9 @@ export async function activate(context: ExtensionContext) {
 
   service = new Service(context, port);
 
+  const watchers = new WatcherManager();
+  context.subscriptions.push(watchers);
+
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
 
@@ -71,15 +75,16 @@ export async function activate(context: ExtensionContext) {
   const logsTreeDataProvider = new LogsTreeDataProvider(context, stream);
 
   const homeViewProvider = new HomeViewProvider(context, stream);
+  context.subscriptions.push(homeViewProvider);
 
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
-  deploymentsTreeDataProvider.register();
-  configurationsTreeDataProvider.register();
+  deploymentsTreeDataProvider.register(watchers);
+  configurationsTreeDataProvider.register(watchers);
   credentialsTreeDataProvider.register();
   helpAndFeedbackTreeDataProvider.register();
   logsTreeDataProvider.register();
-  homeViewProvider.register();
+  homeViewProvider.register(watchers);
 
   await service.start();
 
