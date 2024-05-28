@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Destinations are now identified by the `title` field in the configuration file. You'll be prompted for a title when creating a new destination (#1536)
 - Deployment and configuration files are automatically named (#1536)
 - The Files and Packages sections now start out collapsed (#1629)
+- Configurations are now referenced by the relative path (#1653, #1711)
 
 ### Fixed
 
