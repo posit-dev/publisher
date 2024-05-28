@@ -9,10 +9,13 @@ export async function getPythonInterpreterPath(): Promise<string | undefined> {
   if (workspaceFolder === undefined) {
     return undefined;
   }
-  const configuredPython = await commands.executeCommand<string>(
-    "python.interpreterPath",
-    { workspaceFolder: workspaceFolder },
-  );
+  let configuredPython: string | undefined;
+  try {
+    configuredPython = await commands.executeCommand<string>(
+      "python.interpreterPath",
+      { workspaceFolder: workspaceFolder },
+    );
+  } catch {}
   if (configuredPython === undefined) {
     return undefined;
   }
