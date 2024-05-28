@@ -1,10 +1,16 @@
-import { Uri, workspace } from "vscode";
+import { Uri, commands, workspace } from "vscode";
 import { fileExists, isDir } from "./files";
 import { substituteVariables } from "./variables";
 
 export async function getPythonInterpreterPath(): Promise<string | undefined> {
-  const configuration = workspace.getConfiguration("python");
-  const configuredPython = configuration.get<string>("defaultInterpreterPath");
+  const workspaceFolder = workspace.workspaceFolders?.[0];
+  if (workspaceFolder === undefined) {
+    return undefined;
+  }
+  const configuredPython = await commands.executeCommand<string>(
+    "python.interpreterPath",
+    { workspaceFolder: workspaceFolder },
+  );
   if (configuredPython === undefined) {
     return undefined;
   }
