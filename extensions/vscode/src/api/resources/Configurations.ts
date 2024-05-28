@@ -58,7 +58,7 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  inspect() {
-    return this.client.post<ConfigurationDetails[]>("/inspect");
+  inspect(python?: string) {
+    return this.client.post<ConfigurationDetails[]>("/inspect", { python });
   }
 }
