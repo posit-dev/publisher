@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Python interpreter selected in VSCode/Positron is now used when deploying Python content (#1514)
 - Adding a new destination on Windows no longer fails with a 500 error for R projects (#1631)
 - Deploying R projects on Linux no longer fails (#1637)
+- Disposables are now correctly disposed in the home view improving performance on workspace changes (#1673)
 
 ### Removed
 
