@@ -22,12 +22,9 @@
       >
         <QuickPickItem
           v-if="home.selectedDeployment"
-          :label="home.selectedDeployment.saveName"
-          :description="configDescription"
-          :detail="
-            home.serverCredential?.name ||
-            `Missing Credential for ${home.selectedDeployment.serverUrl}`
-          "
+          :label="destinationTitle"
+          :detail="destinationSubTitle"
+          :title="toolTipText"
         />
 
         <QuickPickItem
@@ -43,6 +40,27 @@
         />
       </div>
 
+      <div
+        v-if="home.selectedConfiguration?.configuration?.entrypoint"
+        class="destination-details-container"
+      >
+        <div class="destination-details-row">
+          <span class="destination-details-label">{{
+            home.selectedConfiguration.configuration.entrypoint
+          }}</span>
+          <span class="destination-details-info">
+            (selected as entrypoint)</span
+          >
+        </div>
+      </div>
+
+      <p v-if="isConfigEntryMissing">
+        No Config Entry in Deployment file -
+        {{ home.selectedDeployment?.saveName }}.
+        <a href="" role="button" @click="selectConfiguration"
+          >Select a Configuration</a
+        >.
+      </p>
       <p v-if="isConfigMissing">
         The last Configuration used for this Destination was not found.
         <a href="" role="button" @click="selectConfiguration"
@@ -137,6 +155,7 @@ import { computed } from "vue";
 
 import { isConfigurationError, isPreDeployment } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
+import { calculateTitle } from "../../../../src/utils/titles";
 
 import { useHostConduitService } from "src/HostConduitService";
 import { useHomeStore } from "src/stores/home";
@@ -200,11 +219,18 @@ const isConfigInErrorList = (configName?: string): boolean => {
   );
 };
 
+const isConfigEntryMissing = computed((): boolean => {
+  return Boolean(
+    home.selectedDeployment && !home.selectedDeployment.configurationName,
+  );
+});
+
 const isConfigMissing = computed((): boolean => {
   return Boolean(
     home.selectedDeployment &&
       !home.selectedConfiguration &&
-      !isConfigInErrorList(home.selectedDeployment?.configurationName),
+      !isConfigInErrorList(home.selectedDeployment?.configurationName) &&
+      !isConfigEntryMissing.value,
   );
 });
 
@@ -216,16 +242,24 @@ const isConfigInError = computed((): boolean => {
   );
 });
 
-const configDescription = computed(() => {
+const destinationTitle = computed(() => {
   if (!home.selectedDeployment) {
-    return undefined;
+    // no title if there is no selected deployment
+    return "";
   }
-  if (isConfigMissing.value) {
-    return `Missing Configuration ${home.selectedDeployment.configurationName}`;
-  } else if (isConfigInError.value) {
-    return `Error in Configuration ${home.selectedDeployment.configurationName}`;
+
+  const result = calculateTitle(
+    home.selectedDeployment,
+    home.selectedConfiguration,
+  );
+  return result.title;
+});
+
+const destinationSubTitle = computed(() => {
+  if (home.serverCredential?.name) {
+    return `${home.serverCredential.name}`;
   }
-  return home.selectedDeployment.configurationName;
+  return `Missing Credential for ${home.selectedDeployment?.serverUrl}`;
 });
 
 const isCredentialMissing = computed((): boolean => {
@@ -249,6 +283,14 @@ const lastStatusDescription = computed(() => {
     return "Not Yet Deployed";
   }
   return "Last Deployment Successful";
+});
+
+const toolTipText = computed(() => {
+  return `Destination Details
+- Deployment File: ${home.selectedDeployment?.saveName || "<undefined>"}
+- Configuration File: ${home.selectedConfiguration?.configurationName || "<undefined>"}
+- Credential In Use: ${home.serverCredential?.name || "<undefined>"}
+- Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
 
 const navigateToUrl = (url: string) => {
@@ -281,7 +323,7 @@ const newCredential = () => {
   align-items: center;
 
   cursor: pointer;
-  margin: 0.5rem 0 1rem;
+  margin: 0.5rem 0;
   padding: 2px 6px 6px 8px;
   background: var(--dropdown-background);
   border: calc(var(--border-width) * 1px) solid var(--dropdown-border);
@@ -357,5 +399,32 @@ const newCredential = () => {
 
 .progress-ring {
   margin-right: 10px;
+}
+
+.destination-details-container {
+  margin-bottom: 0.5rem;
+
+  .destination-details-row {
+    display: flex;
+    align-items: center;
+
+    .destination-details-label {
+      font-size: 0.9em;
+      line-height: normal;
+      opacity: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: pre;
+    }
+
+    .destination-details-info {
+      font-size: 0.8em;
+      line-height: normal;
+      opacity: 0.7;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: pre;
+    }
+  }
 }
 </style>

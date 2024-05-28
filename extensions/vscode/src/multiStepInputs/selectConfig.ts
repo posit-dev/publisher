@@ -17,6 +17,7 @@ import {
   isConfigurationError,
   useApi,
 } from "src/api";
+import { getPythonInterpreterPath } from "src/utils/config";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   MultiStepInput,
@@ -26,7 +27,6 @@ import {
   isQuickPickItemWithIndex,
 } from "src/multiStepInputs/multiStepHelper";
 import { untitledConfigurationName } from "src/utils/names";
-import { isValidFilename } from "src/utils/files";
 
 export async function selectConfig(
   title: string,
@@ -88,7 +88,7 @@ export async function selectConfig(
           configFileListItems.push({
             iconPath: new ThemeIcon("gear"),
             label: configuration.configurationName,
-            detail: configuration.configurationPath,
+            detail: configuration.configurationRelPath,
           });
         }
       });
@@ -117,7 +117,8 @@ export async function selectConfig(
   const getConfigurationInspections = new Promise<void>(
     async (resolve, reject) => {
       try {
-        const inspectResponse = await api.configurations.inspect();
+        const python = await getPythonInterpreterPath();
+        const inspectResponse = await api.configurations.inspect(python);
         configDetails = inspectResponse.data;
         configDetails.forEach((config, i) => {
           if (config.entrypoint) {
@@ -172,7 +173,9 @@ export async function selectConfig(
 
   // Select the config file to use or create
   // Select the entrypoint, if there is more than one and creating
-  // Name the config file to use - if creating
+  // Prompt for title
+  // Auto-name the config file to use - if creating
+  // Call the APIs
   // return the config
 
   // ***************************************************************
@@ -195,6 +198,7 @@ export async function selectConfig(
         existingConfigurationName: undefined, // eventual type is QuickPickItem
         newConfigurationName: undefined, // eventual type is string
         entryPoint: undefined, // eventual type is isQuickPickItemWithIndex
+        title: undefined, // eventual type is string
       },
       promptStepNumbers: {},
     };
@@ -263,38 +267,40 @@ export async function selectConfig(
       });
 
       state.data.entryPoint = pick;
-      return (input: MultiStepInput) => inputConfigurationName(input, state);
+      return (input: MultiStepInput) => inputTitle(input, state);
     } else {
       state.data.entryPoint = entryPointListItems[0];
       // We're skipping this step, so we must silently just jump to the next step
-      return inputConfigurationName(input, state);
+      return inputTitle(input, state);
     }
   }
 
   // ***************************************************************
   // Step #2 - maybe:
-  // Name the configuration
+  // Provide the title for the content
   // ***************************************************************
-  async function inputConfigurationName(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    const configFileName = await input.showInputBox({
+  async function inputTitle(input: MultiStepInput, state: MultiStepState) {
+    let initialValue = "";
+    if (
+      state.data.entryPoint &&
+      isQuickPickItemWithIndex(state.data.entryPoint)
+    ) {
+      const detail = configDetails[state.data.entryPoint.index].title;
+      if (detail) {
+        initialValue = detail;
+      }
+    }
+    const title = await input.showInputBox({
       title: state.title,
       step: hasMultipleEntryPoints() ? 3 : 2,
       totalSteps: hasMultipleEntryPoints() ? 3 : 2,
-      value: await untitledConfigurationName(),
-      prompt: "Choose a unique name for the configuration",
+      value:
+        typeof state.data.title === "string" ? state.data.title : initialValue,
+      prompt: "Enter a title for your content or application.",
       validate: (value) => {
-        if (value.length < 3 || !isValidFilename(value)) {
+        if (value.length < 3) {
           return Promise.resolve({
-            message: `Invalid Name: Value must be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        if (configFileNames.includes(value)) {
-          return Promise.resolve({
-            message: `Invalid Name: Name is already in use for this project. Please enter a unique name.`,
+            message: `Invalid Title: Value must be longer than 3 characters`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -304,7 +310,7 @@ export async function selectConfig(
       ignoreFocusOut: true,
     });
 
-    state.data.newConfigurationName = configFileName;
+    state.data.title = title;
     // last step, nothing gets returned.
   }
 
@@ -327,7 +333,7 @@ export async function selectConfig(
   // before completing the steps. This also serves as a type guard on
   // our state data vars down to the actual type desired
   if (newConfigurationByAnyMeans(state)) {
-    if (!state.data.newConfigurationName || !state.data.entryPoint) {
+    if (!state.data.title || !state.data.entryPoint) {
       return;
     }
   } else if (
@@ -338,18 +344,19 @@ export async function selectConfig(
   }
 
   if (newConfigurationByAnyMeans(state)) {
-    if (!state.data.entryPoint || !state.data.newConfigurationName) {
+    if (!state.data.entryPoint || !state.data.title) {
       return;
     }
     if (
       !isQuickPickItemWithIndex(state.data.entryPoint) ||
-      isQuickPickItem(state.data.newConfigurationName)
+      isQuickPickItem(state.data.title)
     ) {
       return;
     }
 
     // Create the Config File
     try {
+      const configName = await untitledConfigurationName();
       const selectedConfigDetails = configDetails[state.data.entryPoint.index];
       if (!selectedConfigDetails) {
         window.showErrorMessage(
@@ -357,8 +364,9 @@ export async function selectConfig(
         );
         return;
       }
+      selectedConfigDetails.title = state.data.title;
       const createResponse = await api.configurations.createOrUpdate(
-        state.data.newConfigurationName,
+        configName,
         selectedConfigDetails,
       );
       const fileUri = Uri.file(createResponse.data.configurationPath);

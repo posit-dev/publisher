@@ -1,3 +1,4 @@
+# Example schema file
 "$schema" = "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json"
 type = "quarto"
 entrypoint = "report.qmd"
