@@ -93,6 +93,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         "publish/restorePythonEnv",
         createLogStage("Restore Python Environment"),
       ],
+      ["publish/restoreREnv", createLogStage("Restore R Environment")],
       ["publish/runContent", createLogStage("Run Content")],
       ["publish/validateDeployment", createLogStage("Validate Deployment")],
     ]);
