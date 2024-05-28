@@ -52,6 +52,10 @@ func (s *PutConfigurationSuite) TestPutConfiguration() {
 
 	req.Body = io.NopCloser(strings.NewReader(`{
 		"$schema": "https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json",
+		"comments": [
+			" This is a configuration file",
+			" Use it to configure your project"
+		],
 		"type": "python-shiny",
 		"entrypoint": "app.py",
 		"python": {
@@ -83,6 +87,7 @@ func (s *PutConfigurationSuite) TestPutConfiguration() {
 	s.Equal(config.ContentTypePythonShiny, responseBody.Configuration.Type)
 	expected := true
 	s.Equal(&expected, responseBody.Configuration.Connect.Kubernetes.DefaultREnvironmentManagement)
+	s.Len(responseBody.Configuration.Comments, 2)
 }
 
 func (s *PutConfigurationSuite) TestPutConfigurationBadConfig() {

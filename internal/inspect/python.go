@@ -80,7 +80,7 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 
 func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
 	args := []string{"--version"}
-	_, _, err := i.executor.RunCommand(pythonExecutable, args, util.AbsolutePath{}, i.log)
+	_, _, err := i.executor.RunCommand(pythonExecutable, args, i.base, i.log)
 	if err != nil {
 		return fmt.Errorf("could not run python executable '%s': %w", pythonExecutable, err)
 	}
@@ -88,40 +88,46 @@ func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable strin
 }
 
 func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
-	if i.pythonPath.String() != "" {
-		// User-provided python executable
-		exists, err := i.pythonPath.Exists()
-		if err != nil {
-			return "", err
+	rawPath := i.pythonPath.String()
+	executableNames := []string{"python3", "python"}
+
+	if rawPath != "" {
+		if strings.ContainsRune(rawPath, os.PathSeparator) {
+			// User-provided python executable
+			exists, err := i.pythonPath.Exists()
+			if err != nil {
+				return "", err
+			}
+			if exists {
+				return i.pythonPath.String(), nil
+			}
+			return "", fmt.Errorf(
+				"cannot find the specified Python executable %s: %w",
+				i.pythonPath, fs.ErrNotExist)
+		} else {
+			// Only the interpreter name was specified; look for it on PATH.
+			executableNames = append([]string{rawPath}, executableNames...)
 		}
-		if exists {
-			return i.pythonPath.String(), nil
-		}
-		return "", fmt.Errorf(
-			"cannot find the specified Python executable %s: %w",
-			i.pythonPath, fs.ErrNotExist)
-	} else {
-		// Use whatever is on PATH
-		i.log.Info("Looking for Python on PATH", "PATH", os.Getenv("PATH"))
-		path, err := i.pathLooker.LookPath("python3")
+	}
+	// Find the executable on PATH
+	var path string
+	var err error
+
+	i.log.Info("Looking for Python on PATH", "PATH", os.Getenv("PATH"))
+	for _, executableName := range executableNames {
+		path, err = i.pathLooker.LookPath(executableName)
 		if err == nil {
 			// Ensure the Python is actually runnable. This is especially
 			// needed on Windows, where `python3` is (by default)
 			// an app execution alias. Also, installing Python from
 			// python.org does not disable the built-in app execution aliases.
 			err = i.validatePythonExecutable(path)
-		}
-		if err != nil {
-			path, err = i.pathLooker.LookPath("python")
 			if err == nil {
-				err = i.validatePythonExecutable(path)
+				return path, nil
 			}
 		}
-		if err != nil {
-			return "", err
-		}
-		return path, nil
 	}
+	return "", err
 }
 
 func (i *defaultPythonInspector) getPythonVersion() (string, error) {
@@ -135,7 +141,7 @@ func (i *defaultPythonInspector) getPythonVersion() (string, error) {
 		`-c`, // execute the next argument as python code
 		`import sys; v = sys.version_info; print("%d.%d.%d" % (v[0], v[1], v[2]))`,
 	}
-	output, _, err := i.executor.RunCommand(pythonExecutable, args, util.AbsolutePath{}, i.log)
+	output, _, err := i.executor.RunCommand(pythonExecutable, args, i.base, i.log)
 	if err != nil {
 		return "", err
 	}
