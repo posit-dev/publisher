@@ -403,7 +403,7 @@ func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
 	for _, event := range emitter.Events {
 		s.True(strings.HasSuffix(event.Type, "/failure"))
 		s.Equal(expectedErr.Error(), event.Data["message"])
-		s.Equal(getDashboardURL("connect.example.com", targetID), event.Data["dashboardUrl"])
+		s.Equal(getDashboardURL("connect.example.com", targetID, true), event.Data["dashboardUrl"])
 		s.Equal(getDirectURL("connect.example.com", targetID), event.Data["url"])
 	}
 	s.Equal("publish/failure", emitter.Events[1].Type)
@@ -411,7 +411,12 @@ func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
 
 func (s *PublishSuite) TestGetDashboardURL() {
 	expected := "https://connect.example.com:1234/connect/#/apps/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"
-	s.Equal(expected, getDashboardURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"))
+	s.Equal(expected, getDashboardURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f", false))
+}
+
+func (s *PublishSuite) TestGetDashboardURLFailed() {
+	expected := "https://connect.example.com:1234/connect/#/apps/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f/logs"
+	s.Equal(expected, getDashboardURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f", true))
 }
 
 func (s *PublishSuite) TestGetDirectURL() {
@@ -423,7 +428,7 @@ func (s *PublishSuite) TestLogAppInfo() {
 	accountURL := "https://connect.example.com:1234"
 	contentID := types.ContentID("myContentID")
 	directURL := getDirectURL(accountURL, contentID)
-	dashboardURL := getDashboardURL(accountURL, contentID)
+	dashboardURL := getDashboardURL(accountURL, contentID, false)
 
 	buf := new(bytes.Buffer)
 	a := mock.Anything
@@ -440,7 +445,7 @@ func (s *PublishSuite) TestLogAppInfoErr() {
 	accountURL := "https://connect.example.com:1234"
 	contentID := types.ContentID("myContentID")
 	directURL := getDirectURL(accountURL, contentID)
-	dashboardURL := getDashboardURL(accountURL, contentID)
+	dashboardURL := getDashboardURL(accountURL, contentID, true)
 
 	buf := new(bytes.Buffer)
 

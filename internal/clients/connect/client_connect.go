@@ -416,6 +416,8 @@ func (c *ConnectClient) WaitForTask(taskID types.TaskID, log logging.Logger) err
 	}
 }
 
+var errValidationFailed = errors.New("couldn't access the deployed content; see the logs in Connect for details")
+
 func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log logging.Logger) error {
 	url := fmt.Sprintf("/content/%s/", contentID)
 	log.Info("Testing URL", "url", url)
@@ -427,7 +429,7 @@ func (c *ConnectClient) ValidateDeployment(contentID types.ContentID, log loggin
 		if ok {
 			if httpErr.Status >= 500 {
 				// Validation failed - the content is not up and running
-				return fmt.Errorf("couldn't access the deployed content: status code %d", httpErr.Status)
+				return errValidationFailed
 			} else {
 				// Other HTTP codes are acceptable, for example
 				// if the content doesn't implement GET /,

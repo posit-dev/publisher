@@ -357,7 +357,7 @@ func (s *ConnectClientSuite) TestValidateDeploymentAppFailure() {
 	}
 	contentID := types.ContentID("myContentID")
 	err := client.ValidateDeployment(contentID, logging.New())
-	s.ErrorContains(err, "couldn't access the deployed content: status code 502")
+	s.ErrorContains(err, "couldn't access the deployed content")
 }
 
 func (s *ConnectClientSuite) TestValidateDeploymentHTTPNonAppErr() {
