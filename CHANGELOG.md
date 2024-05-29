@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The renv/staging and renv/sandbox directories are now excluded from deployment (#1627)
-- Deploying without the wilcard `*` in the `files` section of the configuration file now includes the correct files (#1647)
+- Deploying without the wildcard `*` in the `files` section of the configuration file now includes the correct files (#1647)
 - The Python interpreter selected in VSCode/Positron is now used when deploying Python content (#1514)
 - Adding a new destination on Windows no longer fails with a 500 error for R projects (#1631)
 - Deploying R projects on Linux no longer fails (#1637)
