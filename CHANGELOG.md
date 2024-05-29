@@ -9,13 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- There is now an R Packages view in the UI that lists dependencies from your renv.lock file. The Scan button will create or update your renv.lock file by running `renv::snapshot()` (#1657)
+- There is now a separate step for `Restoring R Environment` in the Posit Publisher Logs view (#1660)
+- Auto-generated configuration files now include a header comment (#1708)
+- The documentation now includes a section listing the licenses and attribution for third-party software used in the extension (#1661)
+- Snyk scanning is now enabled (#1680)
+- The GitHub repository now includes a LICENSE file (#1701)
+
 ### Changed
+
+- Destinations are now identified by the `title` field in the configuration file. You'll be prompted for a title when creating a new destination (#1536)
+- Deployment and configuration files are automatically named (#1536)
+- The Files and Packages sections now start out collapsed (#1629)
+- Configurations are now referenced by the relative path (#1653, #1711)
 
 ### Fixed
 
 - The renv/staging and renv/sandbox directories are now excluded from deployment (#1627)
+- Deploying without the wildcard `*` in the `files` section of the configuration file now includes the correct files (#1647)
+- The Python interpreter selected in VSCode/Positron is now used when deploying Python content (#1514)
+- Adding a new destination on Windows no longer fails with a 500 error for R projects (#1631)
+- Deploying R projects on Linux no longer fails (#1637)
+- Disposables are now correctly disposed in the home view improving performance on workspace changes (#1673)
 
 ### Removed
+
+- The Deployments detail view no longer includes Add and Redeploy buttons. Use the Destinations view to manage the list of deployment destinations, and to deploy your project (#1696, #1700)
 
 ## [1.0.alpha7]
 
