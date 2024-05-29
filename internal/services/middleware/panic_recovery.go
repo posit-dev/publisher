@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"runtime"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 func PanicRecovery(log logging.Logger, next http.HandlerFunc) http.HandlerFunc {

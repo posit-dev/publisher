@@ -6,7 +6,7 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 func NewCLILogger(verbosity int, w io.Writer) logging.Logger {

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/clients/connect/server_settings"
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/posit-dev/publisher/internal/clients/connect/server_settings"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
 

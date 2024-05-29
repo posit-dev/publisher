@@ -3,10 +3,10 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/rstudio/connect-client/internal/bundles/matcher"
-	"github.com/rstudio/connect-client/internal/services/api/files"
-	"github.com/rstudio/connect-client/internal/services/api/paths"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/bundles/matcher"
+	"github.com/posit-dev/publisher/internal/services/api/files"
+	"github.com/posit-dev/publisher/internal/services/api/paths"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/stretchr/testify/mock"
 )
 

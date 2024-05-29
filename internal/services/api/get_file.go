@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/bundles/matcher"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/services/api/files"
-	"github.com/rstudio/connect-client/internal/services/api/paths"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/bundles/matcher"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/services/api/files"
+	"github.com/posit-dev/publisher/internal/services/api/paths"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 func GetFileHandlerFunc(base util.AbsolutePath, filesService files.FilesService, pathsService paths.PathsService, log logging.Logger) http.HandlerFunc {

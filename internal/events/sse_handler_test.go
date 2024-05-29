@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/r3labs/sse/v2"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )

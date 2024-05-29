@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 func readTOML(r io.Reader, dest any) error {

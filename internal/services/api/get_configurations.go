@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/types"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 type configDTO struct {

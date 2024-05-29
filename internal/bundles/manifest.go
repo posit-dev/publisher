@@ -10,10 +10,10 @@ import (
 	"io"
 	"sort"
 
-	"github.com/rstudio/connect-client/internal/clients/connect"
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/connect-client/internal/util/dcf"
+	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/util"
+	"github.com/posit-dev/publisher/internal/util/dcf"
 )
 
 // ManifestFilename is the well-known manifest.json filename contained within

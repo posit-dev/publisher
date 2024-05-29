@@ -5,10 +5,10 @@ package files
 import (
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/bundles/matcher"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/posit-dev/publisher/internal/bundles/matcher"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 )

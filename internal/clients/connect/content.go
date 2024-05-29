@@ -3,8 +3,8 @@ package connect
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 type ConnectContent struct {

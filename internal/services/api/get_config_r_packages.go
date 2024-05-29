@@ -9,11 +9,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/inspect"
-	"github.com/rstudio/connect-client/internal/inspect/dependencies/renv"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/inspect"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 type getConfigRPackagesHandler struct {

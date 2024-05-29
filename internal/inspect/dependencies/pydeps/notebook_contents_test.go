@@ -6,8 +6,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/posit-dev/publisher/internal/util"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )

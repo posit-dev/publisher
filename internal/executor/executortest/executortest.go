@@ -3,8 +3,8 @@ package executortest
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/stretchr/testify/mock"
 )
 

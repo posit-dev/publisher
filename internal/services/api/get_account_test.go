@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
 

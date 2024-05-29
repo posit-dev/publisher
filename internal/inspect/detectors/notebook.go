@@ -5,9 +5,9 @@ package detectors
 import (
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/inspect/dependencies/pydeps"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/inspect/dependencies/pydeps"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 type NotebookDetector struct {

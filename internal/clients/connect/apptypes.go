@@ -5,7 +5,7 @@ package connect
 import (
 	"fmt"
 
-	"github.com/rstudio/connect-client/internal/config"
+	"github.com/posit-dev/publisher/internal/config"
 )
 
 type AppMode string
