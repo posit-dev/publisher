@@ -110,7 +110,8 @@ func (i *defaultRInspector) CreateLockfile(lockfilePath util.AbsolutePath) error
 		return err
 	}
 
-	code := fmt.Sprintf(`renv::snapshot(lockfile="%s")`, lockfilePath.String())
+	escaped := strings.ReplaceAll(lockfilePath.String(), `\`, `\\`)
+	code := fmt.Sprintf(`renv::snapshot(lockfile="%s")`, escaped)
 	args := []string{"-s", "-e", code}
 	stdout, stderr, err := i.executor.RunCommand(rExecutable, args, i.base, i.log)
 	i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))
