@@ -30,6 +30,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/rstudio/connect-client/internal/util"
 	"github.com/zalando/go-keyring"
 )
 
@@ -127,6 +128,11 @@ func (cs *CredentialsService) Set(name string, url string, ak string) (*Credenti
 		return nil, err
 	}
 
+	normalizedUrl, err := util.NormalizeServerURL(url)
+	if err != nil {
+		return nil, err
+	}
+
 	// Check if URL is already used by another credential
 	for guid, record := range table {
 		cred, err := record.ToCredential()
@@ -142,7 +148,7 @@ func (cs *CredentialsService) Set(name string, url string, ak string) (*Credenti
 	cred := Credential{
 		GUID:   guid,
 		Name:   name,
-		URL:    url,
+		URL:    normalizedUrl,
 		ApiKey: ak,
 	}
 

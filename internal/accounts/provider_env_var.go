@@ -5,8 +5,8 @@ package accounts
 import (
 	"os"
 
-	"github.com/PuerkitoBio/purell"
 	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/rstudio/connect-client/internal/util"
 )
 
 type envVarProvider struct {
@@ -19,20 +19,12 @@ func newEnvVarProvider(log logging.Logger) *envVarProvider {
 	}
 }
 
-func normalizeServerURL(serverURL string) (string, error) {
-	flags := (purell.FlagsSafe |
-		purell.FlagRemoveTrailingSlash |
-		purell.FlagRemoveDotSegments |
-		purell.FlagRemoveDuplicateSlashes)
-	return purell.NormalizeURLString(serverURL, flags)
-}
-
 func (p *envVarProvider) Load() ([]Account, error) {
 	serverURL := os.Getenv("CONNECT_SERVER")
 	if serverURL == "" {
 		return nil, nil
 	}
-	serverURL, err := normalizeServerURL(serverURL)
+	serverURL, err := util.NormalizeServerURL(serverURL)
 	if err != nil {
 		return nil, err
 	}

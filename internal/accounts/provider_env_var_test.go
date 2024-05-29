@@ -71,19 +71,3 @@ func (s *AccountEnvVarProviderSuite) TestLoadNone() {
 	s.Nil(err)
 	s.Nil(accountList)
 }
-
-func (s *AccountEnvVarProviderSuite) normalizedUrlEquals(expected string, url string) {
-	normalized, err := normalizeServerURL(url)
-	s.NoError(err)
-	s.Equal(expected, normalized)
-}
-
-func (s *AccountEnvVarProviderSuite) TestNormalizeServerURL() {
-	s.normalizedUrlEquals("http://connect.example.com", "http://connect.example.com")
-	s.normalizedUrlEquals("https://connect.example.com", "https://connect.example.com")
-	s.normalizedUrlEquals("https://connect.example.com/rsc", "https://connect.example.com/rsc")
-
-	s.normalizedUrlEquals("https://connect.example.com", "https://CONNECT.example.com")
-	s.normalizedUrlEquals("https://connect.example.com/rsc", "https://connect.example.com:443/rsc")
-	s.normalizedUrlEquals("https://connect.example.com/rsc", "https://connect.example.com///rsc/")
-}

@@ -47,6 +47,28 @@ func TestGet(t *testing.T) {
 
 }
 
+func TestNormalizedSet(t *testing.T) {
+	keyring.MockInit()
+	cs := CredentialsService{}
+
+	// pass if no change (already normalized)
+	cred, err := cs.Set("example", "https://example.com", "12345")
+	assert.NoError(t, err)
+	res, err := cs.Get(cred.GUID)
+	assert.NoError(t, err)
+	assert.Equal(t, res.URL, cred.URL)
+
+	// pass if URL ends up normalized
+	cred, err = cs.Set("example", "https://example.com///another/seg/", "12345")
+	assert.NoError(t, err)
+	assert.NotEqual(t, cred.URL, "https://example.com///another/seg/")
+
+	res, err = cs.Get(cred.GUID)
+	assert.NoError(t, err)
+	assert.Equal(t, res.URL, "https://example.com/another/seg")
+	assert.Equal(t, cred.URL, res.URL)
+}
+
 func TestDelete(t *testing.T) {
 	keyring.MockInit()
 	cs := CredentialsService{}
