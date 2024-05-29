@@ -204,6 +204,36 @@
         "title": "View Deployment in Connect",
         "icon": "$(link-external)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.homeView.navigateToDestination.Server",
+        "title": "Browse Destination Server",
+        "icon": "$(server)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.homeView.navigateToDestionation.Content",
+        "title": "View Content",
+        "icon": "$(server-process)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.showOutputChannel",
+        "title": "Go to Agent Log",
+        "icon": "$(output)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.showPublishingLog",
+        "title": "Go to Publishing Log",
+        "icon": "$(output)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.homeView.navigateToDestionation.ContentLog",
+        "title": "Show Content Logs",
+        "icon": "$(output)",
+        "category": "Posit Publisher"
       }
     ],
     "configuration": {
@@ -389,12 +419,62 @@
         {
           "command": "posit.publisher.init-project.refresh",
           "when": "false"
+        },
+        {
+          "command": "posit.publisher.showOutputChannel",
+          "when": "posit.publisher.homeView.initialized == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.showPublishingLog",
+          "when": "posit.publisher.homeView.initialized == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.homeView.navigateToDestination.Server",
+          "when": "posit.publisher.homeView.initialized == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.homeView.navigateToDestionation.Content",
+          "when": "posit.publisher.homeView.initialized == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.homeView.navigateToDestionation.ContentLog",
+          "when": "posit.publisher.homeView.initialized == 'initialized'"
         }
       ],
       "webview/context": [
         {
           "command": "posit.publisher.homeView.selectConfigForDestination",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu'"
+        },
+        {
+          "command": "posit.publisher.homeView.navigateToDestination.Server",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-deployment-more-menu'",
+          "group": "navigation@1"
+        },
+        {
+          "command": "posit.publisher.homeView.navigateToDestionation.ContentLog",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-deployment-more-menu'",
+          "group": "navigation@2"
+        },
+        {
+          "command": "posit.publisher.showOutputChannel",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-deployment-more-menu'",
+          "group": "show@1"
+        },
+        {
+          "command": "posit.publisher.showPublishingLog",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-deployment-more-menu'",
+          "group": "show@2"
+        },
+        {
+          "command": "posit.publisher.showOutputChannel",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-active-deployment-more-menu'",
+          "group": "show@1"
+        },
+        {
+          "command": "posit.publisher.showPublishingLog",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-active-deployment-more-menu'",
+          "group": "show@2"
         }
       ]
     },
