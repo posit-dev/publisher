@@ -3,6 +3,8 @@ package publish
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
+
 	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
@@ -25,6 +27,14 @@ func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logg
 	}
 	log.Info("Publishing with credentials", "username", user.Username, "email", user.Email)
 
+	if p.Target != nil && p.Target.Configuration != nil {
+		previousType := p.Target.Configuration.Type
+		currentType := p.Config.Type
+
+		if currentType != previousType {
+			return types.OperationError(op, fmt.Errorf("configuration type changed from %s to %s", previousType, currentType))
+		}
+	}
 	err = client.CheckCapabilities(p.Dir, p.Config, log)
 	if err != nil {
 		return types.OperationError(op, err)
