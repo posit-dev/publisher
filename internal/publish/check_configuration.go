@@ -3,7 +3,7 @@ package publish
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/rstudio/connect-client/internal/clients/connect"
 	"github.com/rstudio/connect-client/internal/config"
@@ -14,6 +14,8 @@ import (
 
 type checkConfigurationStartData struct{}
 type checkConfigurationSuccessData struct{}
+
+var errTypeChanged = errors.New("configuration type cannot be changed once deployed; create a new destination to use a different type")
 
 func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logging.Logger) error {
 	op := events.PublishCheckCapabilitiesOp
@@ -33,7 +35,7 @@ func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logg
 		currentType := p.Config.Type
 
 		if previousType != "" && previousType != config.ContentTypeUnknown && currentType != previousType {
-			return types.OperationError(op, fmt.Errorf("configuration type changed from %s to %s", previousType, currentType))
+			return types.OperationError(op, errTypeChanged)
 		}
 	}
 	err = client.CheckCapabilities(p.Dir, p.Config, log)
