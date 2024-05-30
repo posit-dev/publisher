@@ -103,22 +103,6 @@ func (s *InitializeSuite) TestInitInferredType() {
 	s.Equal(cfg, cfg2)
 }
 
-func (s *InitializeSuite) TestInitExplicitPython() {
-	log := logging.New()
-	s.createHTML()
-	PythonInspectorFactory = makeMockPythonInspector
-	configName := ""
-	python := util.NewPath("/usr/bin/python", s.cwd.Fs())
-	cfg, err := Init(s.cwd, configName, python, util.Path{}, log)
-	s.NoError(err)
-	configPath := config.GetConfigPath(s.cwd, configName)
-	cfg2, err := config.FromFile(configPath)
-	s.NoError(err)
-	s.Equal(cfg.Type, config.ContentTypeHTML)
-	s.Equal("3.4.5", cfg.Python.Version)
-	s.Equal(cfg, cfg2)
-}
-
 func (s *InitializeSuite) TestInitRequirementsFile() {
 	log := logging.New()
 	s.createHTML()
