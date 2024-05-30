@@ -253,6 +253,9 @@ func (p *defaultPublisher) createDeploymentRecord(
 	if p.Target != nil {
 		created = p.Target.CreatedAt
 		contentType = p.Target.Type
+		if contentType == "" || contentType == config.ContentTypeUnknown {
+			contentType = cfg.Type
+		}
 	} else {
 		created = time.Now().Format(time.RFC3339)
 		contentType = cfg.Type
