@@ -25,6 +25,7 @@ type Deployment struct {
 	ServerURL     string              `toml:"server_url" json:"serverUrl"`
 	ClientVersion string              `toml:"client_version" json:"-"`
 	CreatedAt     string              `toml:"created_at" json:"createdAt"`
+	Type          config.ContentType  `toml:"type" json:"type"`
 	ConfigName    string              `toml:"configuration_name" json:"configurationName"`
 
 	// Full deployment fields
@@ -46,6 +47,7 @@ func New() *Deployment {
 		Schema:        schema.DeploymentSchemaURL,
 		ServerType:    accounts.ServerTypeConnect,
 		ClientVersion: project.Version,
+		Type:          config.ContentTypeUnknown,
 		CreatedAt:     time.Now().Format(time.RFC3339),
 	}
 }

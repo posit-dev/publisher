@@ -13,6 +13,7 @@ import (
 	"github.com/rstudio/connect-client/internal/accounts"
 	"github.com/rstudio/connect-client/internal/bundles"
 	"github.com/rstudio/connect-client/internal/clients/connect"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/deployment"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/inspect"
@@ -247,11 +248,14 @@ func (p *defaultPublisher) createDeploymentRecord(
 	cfg := *p.Config
 
 	created := ""
+	var contentType config.ContentType
 
 	if p.Target != nil {
 		created = p.Target.CreatedAt
+		contentType = p.Target.Type
 	} else {
 		created = time.Now().Format(time.RFC3339)
+		contentType = cfg.Type
 	}
 
 	p.Target = &deployment.Deployment{
@@ -259,6 +263,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ServerType:    account.ServerType,
 		ServerURL:     account.URL,
 		ClientVersion: project.Version,
+		Type:          contentType,
 		CreatedAt:     created,
 		ID:            contentID,
 		ConfigName:    p.ConfigName,

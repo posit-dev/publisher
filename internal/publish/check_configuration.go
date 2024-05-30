@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/rstudio/connect-client/internal/clients/connect"
+	"github.com/rstudio/connect-client/internal/config"
 	"github.com/rstudio/connect-client/internal/events"
 	"github.com/rstudio/connect-client/internal/logging"
 	"github.com/rstudio/connect-client/internal/types"
@@ -27,11 +28,11 @@ func (p *defaultPublisher) checkConfiguration(client connect.APIClient, log logg
 	}
 	log.Info("Publishing with credentials", "username", user.Username, "email", user.Email)
 
-	if p.Target != nil && p.Target.Configuration != nil {
-		previousType := p.Target.Configuration.Type
+	if p.Target != nil {
+		previousType := p.Target.Type
 		currentType := p.Config.Type
 
-		if currentType != previousType {
+		if previousType != "" && previousType != config.ContentTypeUnknown && currentType != previousType {
 			return types.OperationError(op, fmt.Errorf("configuration type changed from %s to %s", previousType, currentType))
 		}
 	}

@@ -121,6 +121,7 @@ func (s *StateSuite) createTargetFile(name string, bad bool) {
 		server_url = 'https://connect.example.com'
 		server_type = "connect"
 		id = '1234567890ABCDEF'
+		type = 'python-dash'
 		configuration_name = "myConfig"
 		files = [
 			'app.py',
@@ -168,6 +169,7 @@ func (s *StateSuite) TestLoadTarget() {
 		ServerURL:  "https://connect.example.com",
 		ServerType: "connect",
 		ConfigName: "myConfig",
+		Type:       config.ContentTypePythonDash,
 		CreatedAt:  "",
 		Files: []string{
 			"app.py",
@@ -343,6 +345,7 @@ func (s *StateSuite) TestNewWithTarget() {
 	targetPath := deployment.GetDeploymentPath(s.cwd, "myTargetName")
 	d := deployment.New()
 	d.ID = "myTargetName"
+	d.Type = cfg.Type
 	d.ConfigName = "savedConfigName"
 	d.ServerURL = "https://saved.server.example.com"
 	d.Configuration = cfg

@@ -38,6 +38,30 @@
       "type": "string",
       "description": "Version of the publisher that deployed the content."
     },
+    "type": {
+      "type": "string",
+      "description": "Indicates the type of content. Valid values are: html, jupyter-notebook, jupyter-voila, python-bokeh, python-dash, python-fastapi, python-flask, python-shiny, python-streamlit, quarto-shiny, quarto, r-plumber, r-shiny, rmd-shiny, rmd",
+      "enum": [
+        "",
+        "html",
+        "jupyter-notebook",
+        "jupyter-voila",
+        "python-bokeh",
+        "python-dash",
+        "python-fastapi",
+        "python-flask",
+        "python-shiny",
+        "python-streamlit",
+        "quarto-shiny",
+        "quarto",
+        "r-plumber",
+        "r-shiny",
+        "rmd-shiny",
+        "rmd",
+        "unknown"
+      ],
+      "examples": ["quarto"]
+    },
     "created_at": {
       "type": "string",
       "format": "date-time",
