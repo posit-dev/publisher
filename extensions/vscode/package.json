@@ -219,7 +219,7 @@
       },
       {
         "command": "posit.publisher.showOutputChannel",
-        "title": "Go to Agent Log",
+        "title": "Go to Debug Log",
         "icon": "$(output)",
         "category": "Posit Publisher"
       },

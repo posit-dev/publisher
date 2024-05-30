@@ -110,7 +110,7 @@
           <ActionToolbar
             title="Logs"
             :actions="[]"
-            context-menu="homeview-active-deployment-more-menu"
+            :context-menu="contextMenuVSCodeContext"
           />
         </div>
       </div>
@@ -122,7 +122,7 @@
           <ActionToolbar
             title="Logs"
             :actions="[]"
-            context-menu="homeview-last-deployment-more-menu"
+            :context-menu="contextMenuVSCodeContext"
           />
         </div>
         <div
@@ -225,6 +225,12 @@ const isConfigInErrorList = (configName?: string): boolean => {
     ),
   );
 };
+
+const contextMenuVSCodeContext = computed((): string => {
+  return home.publishInProgress || isPreDeployment(home.selectedDeployment)
+    ? "homeview-active-deployment-more-menu"
+    : "homeview-last-deployment-more-menu";
+});
 
 const isConfigEntryMissing = computed((): boolean => {
   return Boolean(
