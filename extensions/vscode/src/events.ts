@@ -113,17 +113,19 @@ export class EventStream extends Readable implements Disposable {
       // Parse the event data and convert keys to camel case
       const message = convertKeysToCamelCase(JSON.parse(event.data));
 
-      // Trace message
-      console.debug(
-        `eventSource trace: ${event.type}: ${JSON.stringify(event)}`,
-      );
-
-      // Add the message to the messages array
-      this.messages.push(message);
-      // Emit a 'message' event with the message as the payload
-      this.emit("message", message);
-      // Invoke the registered callbacks for the message type
-      this.invokeCallbacks(message);
+      // Invoke the message factory
+      this.messageFactory(message).forEach((msg) => {
+        // Trace message
+        console.debug(
+          `eventSource trace: ${event.type}: ${JSON.stringify(event)}`,
+        );
+        // Add the message to the messages array
+        this.messages.push(msg);
+        // Emit a 'message' event with the message as the payload
+        this.emit("message", msg);
+        // Invoke the registered callbacks for the message type
+        this.invokeCallbacks(msg);
+      });
     });
   }
 
@@ -166,6 +168,83 @@ export class EventStream extends Readable implements Disposable {
       // Invoke all the callbacks for the specified event type with the message as the argument
       this.callbacks.get(type)?.forEach((callback) => callback(message));
     }
+  }
+
+  private messageFactory(message: EventStreamMessage): EventStreamMessage[] {
+    // Transform restoreREnv messages into restoreEnv messages
+    // while maintaining original message
+    if (message.type.includes("publish/restoreREnv")) {
+      const messages: EventStreamMessage[] = [];
+      messages.push(message);
+      const newMessage: EventStreamMessage = JSON.parse(
+        JSON.stringify(message),
+      );
+
+      switch (message.type) {
+        case "publish/restoreREnv/start":
+          newMessage.type = "publish/restoreEnv/start";
+          break;
+        case "publish/restoreREnv/success":
+          newMessage.type = "publish/restoreEnv/success";
+          break;
+        case "publish/restoreREnv/failure":
+          newMessage.type = "publish/restoreEnv/failure";
+          break;
+        case "publish/restoreREnv/status":
+          newMessage.type = "publish/restoreEnv/status";
+          break;
+        case "publish/restoreREnv/log":
+          newMessage.type = "publish/restoreEnv/log";
+          break;
+        case "publish/restoreREnv/progress":
+          newMessage.type = "publish/restoreEnv/progress";
+          break;
+        default:
+          throw new Error(
+            `events::messageFactory: Unknown publish/restoreREnv based message: ${newMessage.type}`,
+          );
+      }
+      messages.push(newMessage);
+      return messages;
+    }
+    // Transform restorePythonEnv messages into restoreEnv messages
+    // while maintaining original message
+    if (message.type.includes("publish/restorePythonEnv")) {
+      const messages: EventStreamMessage[] = [];
+      messages.push(message);
+      const newMessage: EventStreamMessage = JSON.parse(
+        JSON.stringify(message),
+      );
+      switch (message.type) {
+        case "publish/restorePythonEnv/start":
+          newMessage.type = "publish/restoreEnv/start";
+          break;
+        case "publish/restorePythonEnv/success":
+          newMessage.type = "publish/restoreEnv/success";
+          break;
+        case "publish/restorePythonEnv/failure":
+          newMessage.type = "publish/restoreEnv/failure";
+          break;
+        case "publish/restorePythonEnv/status":
+          newMessage.type = "publish/restoreEnv/status";
+          break;
+        case "publish/restorePythonEnv/log":
+          newMessage.type = "publish/restoreEnv/log";
+          break;
+        case "publish/restorePythonEnv/progress":
+          newMessage.type = "publish/restoreEnv/progress";
+          break;
+        default:
+          throw new Error(
+            `events::messageFactory: Unknown publish/restorePythonEnv based message: ${newMessage.type}`,
+          );
+      }
+      messages.push(newMessage);
+      return messages;
+    }
+
+    // no transformation
+    return [message];
   }
 }
 
