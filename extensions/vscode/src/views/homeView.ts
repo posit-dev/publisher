@@ -690,7 +690,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async selectConfigForDestination() {
-    const config = await selectConfig("Select a Configuration", viewName);
+    const label =
+      this._configs.length > 0
+        ? "Select a Configuration"
+        : "Create a Configuration";
+
+    const config = await selectConfig(label, viewName);
     if (config) {
       const activeDeployment = this._getActiveDeployment();
       if (activeDeployment === undefined) {
