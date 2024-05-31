@@ -16,4 +16,4 @@ jobs:
         with:
           python-version: 3.11
       - uses: extractions/setup-just@v2
-      - run: just cy fuzzbucket-stop
+      - run: just bats fuzzbucket-stop

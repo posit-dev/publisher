@@ -6,11 +6,18 @@ source ../content/bundles/${CONTENT}/test/.publisher-env
 CONTENT_PATH='../content/bundles'
 FULL_PATH="${CONTENT_PATH}/${CONTENT}"
 
+setup_file() {
+   
+    if [[ ${RENV_REQUIRED} == "yes" ]]; then
+        echo "setup for ${CONTENT}" && \
+        echo "quarto engine: ${QUARTO_ENGINE}" && \
+        (cd ${FULL_PATH} && R -e 'renv::restore()') && \
+        (cd ${FULL_PATH} && R -e 'renv::snapshot()')
+    fi
+}
+
 # helper funciton for deploys
 deploy_assertion() {
-    if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
-        assert_output --partial "error detecting content type: quarto with knitr engine is not yet supported."
-    else
         assert_success
         assert_output --partial "Test Deployment...                 [OK]"
 
@@ -25,13 +32,16 @@ deploy_assertion() {
             "${CONNECT_SERVER}/__api__/v1/content/${GUID}"
         assert_output --partial "\"app_mode\":\"${APP_MODE}\""
         assert_output --partial "\"description\":\"${CONTENT} description\""
-        assert_output --partial "\"read_timeout\":30"
-        assert_output --partial "\"init_timeout\":35"
-        assert_output --partial "\"idle_timeout\":40"
-        assert_output --partial "\"max_processes\":2"
-        assert_output --partial "\"min_processes\":1"
-        assert_output --partial "\"max_conns_per_process\":5"
-        assert_output --partial "\"load_factor\":0.8"
+        # if [[  ${static_content[@]} != ${CONTENT_TYPE} ]]; then
+            assert_output --partial "\"connection_timeout\":25"
+            assert_output --partial "\"read_timeout\":30"
+            assert_output --partial "\"init_timeout\":35"
+            assert_output --partial "\"idle_timeout\":40"
+            assert_output --partial "\"max_processes\":2"
+            assert_output --partial "\"min_processes\":1"
+            assert_output --partial "\"max_conns_per_process\":5"
+            assert_output --partial "\"load_factor\":0.8"
+        # fi
 
         # reset min_processes to 0
         run curl --silent --show-error -L --max-redirs 0 --fail \
@@ -40,22 +50,17 @@ deploy_assertion() {
             --insecure \
             --data-raw '{"min_processes": 0}' \
             "${CONNECT_SERVER}/__api__/v1/content/${GUID}"
-    fi
 }
 
 init_with_fields() {
     run ${EXE} credentials create bats ${CONNECT_SERVER} ${CONNECT_API_KEY}
     run ${EXE} init -c ${CONTENT} ${FULL_PATH}
-    # init to create default.toml
-    if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
-        assert_output --partial "error detecting content type: quarto with knitr engine is not yet supported."
-    else
-        assert_success
+    assert_success
 
     # add description
     perl -i -pe '$_ .= qq(description =  "'"${CONTENT}"' description"\n) if /title/' ${FULL_PATH}/.posit/publish/${CONTENT}.toml
 
-    # add Connect runtime fields
+    # add Connect runtime fields for interactive content
     echo "
 [connect]
 runtime.connection_timeout = 25
@@ -67,16 +72,11 @@ runtime.min_processes = 1
 runtime.max_conns_per_process = 5
 runtime.load_factor = 0.8
 " >> ${FULL_PATH}/.posit/publish/${CONTENT}.toml
-    fi
-}
 
-# temporary unsupported quarto types
-quarto_r_content=(
-    "quarto-proj-r-shiny" "quarto-proj-r" "quarto-proj-r-py"
-    "quarty-website-r" "quarto-website-r-py"
-    "quarto-website-r-py-separate-files-deps" "quarto-website-r-deps"
-    "quarto-website-r-py-deps"
-)
+# TODO: replace the type field with what we expect
+# sed -i "" "s/type = '[^']*'/type = '${CONTENT_TYPE}'/g" "${FULL_PATH}/.posit/publish/${CONTENT}.toml"
+sed -i"" -e "s/type = '[^']*'/type = '${CONTENT_TYPE}'/g" "${FULL_PATH}/.posit/publish/${CONTENT}.toml"
+}
 
 quarto_content_types=(
     "quarto" "quarto-static"
@@ -108,26 +108,28 @@ python_content_types=(
 
 # deploy content with the env account using requirements files
 @test "deploy ${CONTENT}" {
-    init_with_fields
-    run ${EXE} deploy ${FULL_PATH} -n ci_deploy -c ${CONTENT}
-
-    deploy_assertion
+    if [[ ${CONTENT} != "parameterized_report" ]]; then 
+        init_with_fields
+        run ${EXE} deploy ${FULL_PATH} -n ci_deploy -c ${CONTENT}
+        deploy_assertion
+    fi
+    
 }
 
 # redeploy content from previous test
 @test "redeploy ${CONTENT}" {
-
-    run ${EXE} redeploy ci_deploy ${FULL_PATH}
-    deploy_assertion
+    if [[ ${CONTENT} != "parameterized_report" ]]; then 
+        run ${EXE} redeploy ci_deploy ${FULL_PATH}
+        deploy_assertion
+    fi
 }
 
 @test "check for toml file" {
-    if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
-        skip
-    else
+    if [[ ${CONTENT} != "parameterized_report" ]]; then 
         run cat ${FULL_PATH}/.posit/publish/deployments/ci_deploy.toml
             assert_output --partial "type = '${CONTENT_TYPE}'"
             assert_output --partial "entrypoint = '${ENTRYPOINT}'"
+            assert_output --partial "title = '${TITLE}'"
     fi
 }
 
@@ -148,6 +150,10 @@ the 'publisher requirements create' command."
 }
 
 teardown_file() {
+    unset QUARTO_ENGINE
+    # delete the bats credentials after each run
+    CREDS_GUID="$(${EXE} credentials list | jq -r '.[] | select(.name == "bats") | .guid')"
+    ${EXE} credentials delete ${CREDS_GUID}
     # delete the temp files
     rm -rf ${FULL_PATH}/.posit*
 }

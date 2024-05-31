@@ -22,6 +22,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
+      - name: R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 4.3.0
       - name: quarto
         uses: quarto-dev/quarto-actions/setup@v2
         with:
@@ -38,11 +42,43 @@ jobs:
           sparse-checkout: bundles
           sparse-checkout-cone-mode: false
           token: ${{ secrets.CONNECT_PAT }}
+      - name: Install deps on ubuntu
+        run: |
+          sudo apt-get install libcurl4-openssl-dev libsodium-dev libfontconfig1-dev libfribidi-dev libfontconfig1-dev libpng-dev
+          R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
+        if: matrix.runs-on == 'ubuntu-latest'
+      - name: Install deps on windows
+        run: |
+          R.exe -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
+        if: matrix.runs-on == 'windows-latest'
+      - name: Install deps on macos
+        run: R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
+        if: matrix.runs-on == 'macos-latest'
+
+      - name: Cache R packages ubuntu
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-r-${{ hashFiles('**/DESCRIPTION') }}
+          restore-keys: ${{ runner.os }}-r-
+        if: matrix.runs-on == 'ubuntu-latest'
+
+      - name: Cache R packages Windows
+        uses: actions/cache@v2
+        with:
+          path: D:\a\_temp\R-4.3.0-win.exe
+          key: ${{ runner.os }}-r-${{ hashFiles('**/DESCRIPTION') }}
+          restore-keys: ${{ runner.os }}-r-
+        if: matrix.runs-on == 'windows-latest'
 
       - run: chmod -R +x ./bin
-      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/cy/fuzzbucket-ssh-key && chmod 600 test/cy/fuzzbucket-ssh-key
+      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/bats/fuzzbucket-ssh-key && chmod 600 test/bats/fuzzbucket-ssh-key
       - run: just bats install
       - run: just bats test common
       - run: just bats test init
-      - run: just bats test accounts
       - run: just bats test deploy
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true

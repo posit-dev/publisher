@@ -20,16 +20,13 @@ python_content_types=(
 )
 
 quarto_content_types=(
-    "quarto" "quarto-static"
+    "quarto" "quarto-static" "quarto-shiny"
 )
 
 @test "init creates expected file for ${CONTENT}" {
     python_version="$(python --version | awk '{print $2}')"
     quarto_version="$(quarto --version)"
 
-    if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
-        skip "${CONTENT} is not yet supported"
-    else
         # init against content should create default.toml
         run ${EXE} init ${CONTENT_PATH}/${CONTENT}
         assert_success
@@ -38,29 +35,28 @@ quarto_content_types=(
         # the default.toml should have the expected fields
         run cat ${CONTENT_PATH}/${CONTENT}/.posit/publish/default.toml
         assert_success
-        # quarto + r content is not yet supported
-        if [[ ${quarto_r_content[@]} =~ ${CONTENT} ]]; then
-            skip "${CONTENT} is not yet supported"
-        else
-            assert_line "type = '${CONTENT_TYPE}'"
-            assert_line "entrypoint = '${ENTRYPOINT}'"
-            assert_line "validate = true"
-            assert_line "title = '${TITLE}'"
-            # for python content we create a toml with python version
-            if [[ ${python_content_type[@]} =~ ${CONTENT_TYPE} ]]; then
+        assert_line "type = '${CONTENT_TYPE}'"
+        assert_line "entrypoint = '${ENTRYPOINT}'"
+        assert_line "validate = true"
+        assert_line "title = '${TITLE}'"
+        # for python content we create a toml with python version
+        if [[ ${python_content_type[@]} =~ ${CONTENT_TYPE} ]]; then
+            assert_line "version = '${python_version}'"
+            assert_line "package-file = 'requirements.txt'"
+            assert_line "package-manager = 'pip'"
+        # for quarto content we create a toml with quarto version    
+        elif [[ ${quarto_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
+            assert_line "version = '${quarto_version}'"
+            assert_line "engines = ['${QUARTO_ENGINE}']"
+            # quarto + python content has 'py' in its name
+            # test python version for quarto + python content too
+            if [[ "py" =~ ${CONTENT_TYPE} ]]; then
                 assert_line "version = '${python_version}'"
-                assert_line "package-file = 'requirements.txt'"
-                assert_line "package-manager = 'pip'"
-            # for quarto content we create a toml with quarto version    
-            elif [[ ${quarto_content_types[@]} =~ ${CONTENT_TYPE} ]]; then
-                assert_line "version = '${quarto_version}'"
-                assert_line "engines = ['${QUARTO_ENGINE}']"
-                # quarto + python content has 'py' in its name
-                # test python version for quarto + python content too
-                if [[ "py" =~ ${CONTENT_TYPE} ]]; then
-                    assert_line "version = '${python_version}'"
-                fi
             fi
-        fi 
-    fi
+        fi
+}
+
+teardown_file() {
+    # delete the temp files
+    rm -rf ${FULL_PATH}/.posit*
 }

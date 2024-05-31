@@ -30,6 +30,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12.1
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 4.3.0
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: 1.4.549
@@ -38,10 +41,21 @@ jobs:
         with:
           name: bin
           path: bin
+      - name: Install deps on ubuntu
+        run: |
+          sudo apt-get install libcurl4-openssl-dev libsodium-dev libfontconfig1-dev libfribidi-dev libfontconfig1-dev libpng-dev
+          R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
+        if: matrix.runs-on == 'ubuntu-latest'
+      - name: Install deps on windows
+        run: R.exe -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
+        if: matrix.runs-on == 'windows-latest'
+      - name: Install deps on macos
+        run: R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
+        if: matrix.runs-on == 'macos-latest'
+
       - run: chmod -R +x ./bin
-      - run: docker compose -f test/docker-compose.yml build
+      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/bats/fuzzbucket-ssh-key && chmod 600 test/bats/fuzzbucket-ssh-key
       - run: just bats install
       - run: just bats test common
-      - run: just bats test deploy
       - run: just bats test init
-      - uses: actions/checkout@v4
+      - run: just bats test deploy

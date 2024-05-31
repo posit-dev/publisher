@@ -41,6 +41,18 @@ install:
 
     npm install
 
+fuzzbucket-start:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    pip install -r ../setup/requirements.txt
+    python ../setup/connect_setup.py
+
+fuzzbucket-stop:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    pip install -r ../setup/requirements.txt
+    fuzzbucket-client rm connect-publishing-client
+
 # Executes commands via `npm`. Equivalent to `npm run`. Provides arbitrary command chaining inside of Docker from project root (i.e., `just bats run test`)
 run *args:
     #!/usr/bin/env bash
