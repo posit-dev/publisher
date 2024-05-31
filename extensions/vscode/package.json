@@ -439,7 +439,7 @@
           "name": "Configurations",
           "contextualTitle": "Publisher",
           "icon": "$(gear)",
-          "visibility": "collapsed",
+          "visibility": "hidden",
           "initialSize": 0,
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
         },
@@ -457,7 +457,7 @@
           "name": "Deployments",
           "contextualTitle": "Publisher",
           "icon": "$(cloud-upload)",
-          "visibility": "collapsed",
+          "visibility": "hidden",
           "initialSize": 0,
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
         },
