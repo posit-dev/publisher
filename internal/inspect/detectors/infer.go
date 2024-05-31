@@ -5,8 +5,8 @@ package detectors
 import (
 	"io"
 
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 // ContentTypeInferer infers as much as possible about the

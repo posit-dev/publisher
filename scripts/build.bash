@@ -39,7 +39,7 @@ do
         GOARCH="$arch"\
         go build\
         -o "$executable"\
-        -ldflags "-X 'github.com/rstudio/connect-client/internal/project.Version=$version' -X 'github.com/rstudio/connect-client/internal/project.Mode=$mode'"\
+        -ldflags "-X 'github.com/posit-dev/publisher/internal/project.Version=$version' -X 'github.com/posit-dev/publisher/internal/project.Mode=$mode'"\
         "$cmd"
 
     chmod +x "$executable"

@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/initialize"
-	"github.com/rstudio/connect-client/internal/inspect"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/initialize"
+	"github.com/posit-dev/publisher/internal/inspect"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 )

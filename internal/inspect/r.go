@@ -11,10 +11,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/executor"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/executor"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 type RInspector interface {
@@ -110,7 +110,8 @@ func (i *defaultRInspector) CreateLockfile(lockfilePath util.AbsolutePath) error
 		return err
 	}
 
-	code := fmt.Sprintf(`renv::snapshot(lockfile="%s")`, lockfilePath.String())
+	escaped := strings.ReplaceAll(lockfilePath.String(), `\`, `\\`)
+	code := fmt.Sprintf(`renv::snapshot(lockfile="%s")`, escaped)
 	args := []string{"-s", "-e", code}
 	stdout, stderr, err := i.executor.RunCommand(rExecutable, args, i.base, i.log)
 	i.log.Debug("renv::snapshot()", "out", string(stdout), "err", string(stderr))

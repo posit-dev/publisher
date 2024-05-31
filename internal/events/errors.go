@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 func NewErrorEvent(e types.EventableError) Event {

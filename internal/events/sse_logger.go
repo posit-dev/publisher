@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 func logLevel(verbosity int) slog.Level {

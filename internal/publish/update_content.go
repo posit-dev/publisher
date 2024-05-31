@@ -5,11 +5,11 @@ package publish
 import (
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/clients/connect"
-	"github.com/rstudio/connect-client/internal/clients/http_client"
-	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/clients/http_client"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 type updateContentStartData struct {

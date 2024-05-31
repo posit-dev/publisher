@@ -1,4 +1,4 @@
-module github.com/rstudio/connect-client
+module github.com/posit-dev/publisher
 
 go 1.22
 

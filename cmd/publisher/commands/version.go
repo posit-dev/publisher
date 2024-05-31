@@ -5,8 +5,8 @@ package commands
 import (
 	"fmt"
 
-	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/project"
+	"github.com/posit-dev/publisher/internal/cli_types"
+	"github.com/posit-dev/publisher/internal/project"
 )
 
 type VersionCmd struct{}

@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 func GetQuartoFilePythonCode(path util.AbsolutePath) (string, error) {

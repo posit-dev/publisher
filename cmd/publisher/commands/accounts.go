@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/clients/connect"
-	"github.com/rstudio/connect-client/internal/events"
+	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/cli_types"
+	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/events"
 )
 
 type testAccountCmd struct {

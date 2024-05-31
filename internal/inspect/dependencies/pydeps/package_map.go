@@ -11,9 +11,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/executor"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/executor"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/spf13/afero"
 )
 

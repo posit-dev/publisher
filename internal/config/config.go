@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
-	"github.com/rstudio/connect-client/internal/schema"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/schema"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 const DefaultConfigName = "default"

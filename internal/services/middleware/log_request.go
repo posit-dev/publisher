@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 type statusCapturingResponseWriter struct {

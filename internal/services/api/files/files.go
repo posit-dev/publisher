@@ -5,8 +5,8 @@ package files
 import (
 	"time"
 
-	"github.com/rstudio/connect-client/internal/bundles/matcher"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/bundles/matcher"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 type File struct {

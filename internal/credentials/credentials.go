@@ -30,7 +30,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/zalando/go-keyring"
 )
 

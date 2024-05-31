@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 type Record map[string]string

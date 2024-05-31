@@ -9,8 +9,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/types"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/types"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 

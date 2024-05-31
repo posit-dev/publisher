@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/bundles"
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/inspect"
-	"github.com/rstudio/connect-client/internal/inspect/detectors"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/bundles"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/inspect"
+	"github.com/posit-dev/publisher/internal/inspect/detectors"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 var ContentDetectorFactory = detectors.NewContentTypeDetector
