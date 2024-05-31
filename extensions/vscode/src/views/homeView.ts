@@ -70,6 +70,12 @@ const selectConfigForDestination = viewName + ".selectConfigForDestination";
 const selectDestinationCommand = viewName + ".selectDestination";
 const newDestinationCommand = viewName + ".newDestination";
 const contextIsHomeViewInitialized = viewName + ".initialized";
+const visitDestinationServerCommand =
+  viewName + ".navigateToDestination.Server";
+const visitDestinationContentCommand =
+  viewName + ".navigateToDestionation.Content";
+const visitDestinationContentLogCommand =
+  viewName + ".navigateToDestionation.ContentLog";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -1078,15 +1084,31 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         () => this.showNewDestinationMultiStep(viewName),
         this,
       ),
-    );
-
-    this._context.subscriptions.push(
       commands.registerCommand(refreshCommand, () => this.refreshAll(true)),
       commands.registerCommand(
         selectConfigForDestination,
         this.selectConfigForDestination,
         this,
       ),
+      commands.registerCommand(visitDestinationServerCommand, async () => {
+        const deployment = this._getActiveDeployment();
+        if (deployment) {
+          await env.openExternal(Uri.parse(deployment.serverUrl));
+        }
+      }),
+      commands.registerCommand(visitDestinationContentCommand, async () => {
+        const deployment = this._getActiveDeployment();
+        if (deployment && !isPreDeployment(deployment)) {
+          await env.openExternal(Uri.parse(deployment.dashboardUrl));
+        }
+      }),
+      commands.registerCommand(visitDestinationContentLogCommand, async () => {
+        const deployment = this._getActiveDeployment();
+        if (deployment && !isPreDeployment(deployment)) {
+          const logUrl = `${deployment.dashboardUrl}/logs`;
+          await env.openExternal(Uri.parse(logUrl));
+        }
+      }),
     );
 
     watchers.positDir?.onDidDelete(() => {

@@ -27,6 +27,8 @@ enum InitializationInProgress {
   true = "true",
   false = "false",
 }
+const SHOW_OUTPUT_CHANNEL_COMMAND = "posit.publisher.showOutputChannel";
+const SHOW_PUBLISHING_LOG_COMMAND = "posit.publisher.showPublishingLog";
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
@@ -91,6 +93,12 @@ export async function activate(context: ExtensionContext) {
       await homeViewProvider.showNewDestinationMultiStep(viewId);
       setInitializationInProgressContext(InitializationInProgress.false);
     }),
+    commands.registerCommand(SHOW_OUTPUT_CHANNEL_COMMAND, () =>
+      service.showOutputChannel(),
+    ),
+    commands.registerCommand(SHOW_PUBLISHING_LOG_COMMAND, () =>
+      commands.executeCommand("posit.publisher.logs.focus"),
+    ),
   );
 
   setStateContext(PositPublishState.initialized);

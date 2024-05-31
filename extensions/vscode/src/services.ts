@@ -34,4 +34,10 @@ export class Service implements Disposable {
   dispose() {
     this.server.dispose();
   }
+
+  showOutputChannel() {
+    if (this.server) {
+      this.server.outputChannel.show();
+    }
+  }
 }
