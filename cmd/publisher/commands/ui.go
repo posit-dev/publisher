@@ -3,11 +3,11 @@ package commands
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"github.com/posit-dev/publisher/internal/cli_types"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/services/api"
+	"github.com/posit-dev/publisher/internal/util"
 	"github.com/r3labs/sse/v2"
-	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/services/api"
-	"github.com/rstudio/connect-client/internal/util"
 )
 
 type UICmd struct {

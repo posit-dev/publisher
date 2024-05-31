@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/initialize"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/cli_types"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/initialize"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 type InitCommand struct {

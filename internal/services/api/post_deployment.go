@@ -8,12 +8,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/publish"
-	"github.com/rstudio/connect-client/internal/state"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/publish"
+	"github.com/posit-dev/publisher/internal/state"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 type PostDeploymentRequestBody struct {

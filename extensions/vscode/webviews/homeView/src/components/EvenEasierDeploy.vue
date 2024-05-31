@@ -57,14 +57,20 @@
       <p v-if="isConfigEntryMissing">
         No Config Entry in Deployment file -
         {{ home.selectedDeployment?.saveName }}.
-        <a href="" role="button" @click="selectConfiguration"
-          >Select a Configuration</a
+        <a href="" role="button" @click="selectConfiguration">{{
+          home.configurations.length > 0
+            ? "Select a Configuration"
+            : "Create a Configuration"
+        }}</a
         >.
       </p>
       <p v-if="isConfigMissing">
         The last Configuration used for this Destination was not found.
-        <a href="" role="button" @click="selectConfiguration"
-          >Select a Configuration</a
+        <a href="" role="button" @click="selectConfiguration">{{
+          home.configurations.length > 0
+            ? "Select a Configuration"
+            : "Create a Configuration"
+        }}</a
         >.
       </p>
       <p v-if="isConfigInError">
@@ -101,14 +107,30 @@
     >
       <vscode-divider class="home-view-divider" />
 
-      <div v-if="home.publishInProgress" class="progress-container">
-        <vscode-progress-ring class="progress-ring" />
-        Deployment in Progress...
+      <div v-if="home.publishInProgress">
+        <div class="deployment-in-progress-container">
+          <div class="progress-container">
+            <vscode-progress-ring class="progress-ring" />
+            Deployment in Progress...
+          </div>
+          <ActionToolbar
+            title="Logs"
+            :actions="[]"
+            :context-menu="contextMenuVSCodeContext"
+          />
+        </div>
       </div>
       <div v-else>
-        <h4 class="deployment-summary">
-          {{ lastStatusDescription }}
-        </h4>
+        <div class="deployment-summary-container">
+          <h4 class="deployment-summary">
+            {{ lastStatusDescription }}
+          </h4>
+          <ActionToolbar
+            title="Logs"
+            :actions="[]"
+            :context-menu="contextMenuVSCodeContext"
+          />
+        </div>
         <div
           v-if="!isPreDeployment(home.selectedDeployment)"
           class="last-deployment-time"
@@ -124,15 +146,6 @@
             Error: {{ home.selectedDeployment.deploymentError.msg }}
           </span>
         </div>
-        <div class="last-deployment-details">
-          Targeting Posit Connect server at
-          <a
-            href=""
-            @click="navigateToUrl(home.selectedDeployment.serverUrl)"
-            >{{ home.selectedDeployment.serverUrl }}</a
-          >
-        </div>
-
         <div
           v-if="!isPreDeployment(home.selectedDeployment)"
           class="last-deployment-details"
@@ -218,6 +231,12 @@ const isConfigInErrorList = (configName?: string): boolean => {
     ),
   );
 };
+
+const contextMenuVSCodeContext = computed((): string => {
+  return home.publishInProgress || isPreDeployment(home.selectedDeployment)
+    ? "homeview-active-deployment-more-menu"
+    : "homeview-last-deployment-more-menu";
+});
 
 const isConfigEntryMissing = computed((): boolean => {
   return Boolean(
@@ -316,6 +335,19 @@ const newCredential = () => {
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: center;
+}
+
+.deployment-in-progress-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.deployment-summary-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  align-items: baseline;
 }
 
 .destination-control {

@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/rstudio/connect-client/internal/credentials"
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/posit-dev/publisher/internal/credentials"
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 func DeleteCredentialHandlerFunc(log logging.Logger) http.HandlerFunc {
