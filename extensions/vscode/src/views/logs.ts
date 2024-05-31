@@ -22,6 +22,7 @@ import { EventStreamMessage } from "src/api";
 enum LogStageStatus {
   notStarted,
   neverStarted,
+  skipped,
   inProgress,
   completed,
   failed,
@@ -144,6 +145,13 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     this._stream.register("publish/success", (msg: EventStreamMessage) => {
       this.publishingStage.status = LogStageStatus.completed;
       this.publishingStage.events.push(msg);
+
+      this.stages.forEach((stage) => {
+        if (stage.status === LogStageStatus.notStarted) {
+          stage.status = LogStageStatus.skipped;
+        }
+      });
+
       this.refresh();
     });
 
@@ -312,6 +320,10 @@ export class LogsTreeStageItem extends TreeItem {
       case LogStageStatus.neverStarted:
         this.label = this.stage.inactiveLabel;
         this.iconPath = new ThemeIcon("circle-slash");
+        break;
+      case LogStageStatus.skipped:
+        this.label = `${this.stage.inactiveLabel} (skipped)`;
+        this.iconPath = new ThemeIcon("check");
         break;
       case LogStageStatus.inProgress:
         this.label = this.stage.activeLabel;
