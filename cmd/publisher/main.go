@@ -9,12 +9,12 @@ import (
 	"strings"
 
 	"github.com/alecthomas/kong"
-	"github.com/rstudio/connect-client/cmd/publisher/commands"
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/cli_types"
-	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/project"
+	"github.com/posit-dev/publisher/cmd/publisher/commands"
+	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/cli_types"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/project"
 	"github.com/spf13/afero"
 )
 

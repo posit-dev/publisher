@@ -5,7 +5,7 @@ package matcher
 import (
 	"regexp"
 
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 type MatchSource string

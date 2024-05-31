@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 )
 
 type MainSuite struct {

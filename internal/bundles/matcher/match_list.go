@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 // Copyright (C) 2023 by Posit Software, PBC.

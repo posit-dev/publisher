@@ -2,7 +2,7 @@
 
 package accounts
 
-import "github.com/rstudio/connect-client/internal/credentials"
+import "github.com/posit-dev/publisher/internal/credentials"
 
 type CredentialsProvider struct {
 	cs credentials.CredentialsService

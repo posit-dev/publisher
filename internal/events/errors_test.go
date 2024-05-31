@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rstudio/connect-client/internal/types"
-	"github.com/rstudio/connect-client/internal/util/utiltest"
+	"github.com/posit-dev/publisher/internal/types"
+	"github.com/posit-dev/publisher/internal/util/utiltest"
 	"github.com/stretchr/testify/suite"
 )
 

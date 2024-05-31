@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/rstudio/connect-client/internal/project"
-	"github.com/rstudio/connect-client/internal/types"
+	"github.com/posit-dev/publisher/internal/project"
+	"github.com/posit-dev/publisher/internal/types"
 )
 
 type EventType = string

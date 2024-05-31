@@ -5,7 +5,7 @@ package http_client
 import (
 	"io"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/stretchr/testify/mock"
 )
 

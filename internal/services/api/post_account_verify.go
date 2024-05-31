@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/rstudio/connect-client/internal/accounts"
-	"github.com/rstudio/connect-client/internal/clients/connect"
-	"github.com/rstudio/connect-client/internal/events"
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/events"
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 type PostAccountVerifyResponse struct {

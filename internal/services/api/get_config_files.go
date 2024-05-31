@@ -9,11 +9,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/rstudio/connect-client/internal/bundles/matcher"
-	"github.com/rstudio/connect-client/internal/config"
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/services/api/files"
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/bundles/matcher"
+	"github.com/posit-dev/publisher/internal/config"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/services/api/files"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 func GetConfigFilesHandlerFunc(base util.AbsolutePath, filesService files.FilesService, log logging.Logger) http.HandlerFunc {

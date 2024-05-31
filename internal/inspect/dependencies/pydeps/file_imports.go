@@ -8,7 +8,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 type ImportName string

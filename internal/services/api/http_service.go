@@ -10,9 +10,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/logging"
-	"github.com/rstudio/connect-client/internal/project"
-	"github.com/rstudio/connect-client/internal/services/middleware"
+	"github.com/posit-dev/publisher/internal/logging"
+	"github.com/posit-dev/publisher/internal/project"
+	"github.com/posit-dev/publisher/internal/services/middleware"
 
 	"github.com/pkg/browser"
 )

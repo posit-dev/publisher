@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/rstudio/connect-client/internal/credentials"
-	"github.com/rstudio/connect-client/internal/logging"
+	"github.com/posit-dev/publisher/internal/credentials"
+	"github.com/posit-dev/publisher/internal/logging"
 )
 
 type PostCredentialsRequest struct {

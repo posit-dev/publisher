@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/rstudio/connect-client/internal/util"
+	"github.com/posit-dev/publisher/internal/util"
 )
 
 func GetNotebookFileInputs(path util.AbsolutePath) (string, error) {
