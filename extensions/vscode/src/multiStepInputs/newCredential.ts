@@ -77,8 +77,8 @@ export async function newCredential(
         // each attribute is initialized to undefined
         // to be returned when it has not been cancelled
         url: startingServerUrl, // eventual type is string
-        name: <string | undefined>undefined, // eventual type is string
         apiKey: <string | undefined>undefined, // eventual type is string
+        name: <string | undefined>undefined, // eventual type is string
       },
       promptStepNumbers: {},
     };
@@ -146,11 +146,57 @@ export async function newCredential(
 
     state.data.url = formatURL(url.trim());
     state.lastStep = thisStepNumber;
-    return (input: MultiStepInput) => inputCredentialName(input, state);
+    return (input: MultiStepInput) => inputAPIKey(input, state);
   }
 
   // ***************************************************************
   // Step #2:
+  // Enter the API Key
+  // ***************************************************************
+  async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
+    const thisStepNumber = assignStep(state, "inputAPIKey");
+    const currentAPIKey =
+      typeof state.data.apiKey === "string" && state.data.apiKey.length
+        ? state.data.apiKey
+        : "";
+
+    const apiKey = await input.showInputBox({
+      title: state.title,
+      step: thisStepNumber,
+      totalSteps: state.totalSteps,
+      password: true,
+      value: currentAPIKey,
+      prompt: `The API key to be used to authenticate with Posit Connect.
+        See the [User Guide](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating)
+        for further information.`,
+      validate: (input: string) => {
+        input = input.trim();
+        if (input === "") {
+          return Promise.resolve({
+            message: "An API key is required.",
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        const errorMsg = validateApiKey(input);
+        if (errorMsg) {
+          return Promise.resolve({
+            message: errorMsg,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    state.data.apiKey = apiKey;
+    state.lastStep = thisStepNumber;
+    return (input: MultiStepInput) => inputCredentialName(input, state);
+  }
+
+  // ***************************************************************
+  // Step #3:
   // Name the credential
   // ***************************************************************
   async function inputCredentialName(
@@ -193,53 +239,6 @@ export async function newCredential(
 
     state.data.name = name.trim();
     state.lastStep = thisStepNumber;
-    return (input: MultiStepInput) => inputAPIKey(input, state);
-  }
-
-  // ***************************************************************
-  // Step #3:
-  // Enter the API Key
-  // ***************************************************************
-  async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
-    const thisStepNumber = assignStep(state, "inputAPIKey");
-    const currentAPIKey =
-      typeof state.data.apiKey === "string" && state.data.apiKey.length
-        ? state.data.apiKey
-        : "";
-
-    const apiKey = await input.showInputBox({
-      title: state.title,
-      step: thisStepNumber,
-      totalSteps: state.totalSteps,
-      password: true,
-      value: currentAPIKey,
-      prompt: `The API key to be used to authenticate with Posit Connect.
-        See the [User Guide](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating)
-        for further information.`,
-      validate: (input: string) => {
-        input = input.trim();
-        if (input === "") {
-          return Promise.resolve({
-            message: "An API key is required.",
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        const errorMsg = validateApiKey(input);
-        if (errorMsg) {
-          return Promise.resolve({
-            message: errorMsg,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    state.data.apiKey = apiKey;
-    state.lastStep = thisStepNumber;
-    // last step, we don't return anything
   }
 
   // ***************************************************************
@@ -265,10 +264,10 @@ export async function newCredential(
     // have to add type guards here to eliminate the variability
     state.data.url === undefined ||
     isQuickPickItem(state.data.url) ||
-    state.data.name === undefined ||
-    isQuickPickItem(state.data.name) ||
     state.data.apiKey === undefined ||
-    isQuickPickItem(state.data.apiKey)
+    isQuickPickItem(state.data.apiKey) ||
+    state.data.name === undefined ||
+    isQuickPickItem(state.data.name)
   ) {
     return;
   }
