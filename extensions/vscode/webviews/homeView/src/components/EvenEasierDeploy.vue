@@ -57,14 +57,20 @@
       <p v-if="isConfigEntryMissing">
         No Config Entry in Deployment file -
         {{ home.selectedDeployment?.saveName }}.
-        <a href="" role="button" @click="selectConfiguration"
-          >Select a Configuration</a
+        <a href="" role="button" @click="selectConfiguration">{{
+          home.configurations.length > 0
+            ? "Select a Configuration"
+            : "Create a Configuration"
+        }}</a
         >.
       </p>
       <p v-if="isConfigMissing">
         The last Configuration used for this Destination was not found.
-        <a href="" role="button" @click="selectConfiguration"
-          >Select a Configuration</a
+        <a href="" role="button" @click="selectConfiguration">{{
+          home.configurations.length > 0
+            ? "Select a Configuration"
+            : "Create a Configuration"
+        }}</a
         >.
       </p>
       <p v-if="isConfigInError">
