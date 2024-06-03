@@ -55,22 +55,6 @@ jobs:
         run: R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
         if: matrix.runs-on == 'macos-latest'
 
-      - name: Cache R packages ubuntu
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-${{ hashFiles('**/DESCRIPTION') }}
-          restore-keys: ${{ runner.os }}-r-
-        if: matrix.runs-on == 'ubuntu-latest'
-
-      - name: Cache R packages Windows
-        uses: actions/cache@v2
-        with:
-          path: D:\a\_temp\R-4.3.0-win.exe
-          key: ${{ runner.os }}-r-${{ hashFiles('**/DESCRIPTION') }}
-          restore-keys: ${{ runner.os }}-r-
-        if: matrix.runs-on == 'windows-latest'
-
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/bats/fuzzbucket-ssh-key && chmod 600 test/bats/fuzzbucket-ssh-key
       - run: just bats install
