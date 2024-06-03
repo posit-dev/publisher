@@ -170,7 +170,7 @@ import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import { formatDateString } from "src/utils/date";
-import { filterConfigurationsToValidAndType } from "../../../../src/utils/filter";
+import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();

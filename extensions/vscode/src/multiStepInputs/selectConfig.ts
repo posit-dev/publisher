@@ -31,7 +31,7 @@ import {
 } from "src/multiStepInputs/multiStepHelper";
 import { untitledConfigurationName } from "src/utils/names";
 import { calculateTitle } from "src/utils/titles";
-import { filterConfigurationsToValidAndType } from "src/utils/filter";
+import { filterConfigurationsToValidAndType } from "src/utils/filters";
 
 export async function selectConfig(
   activeDeployment: Deployment | PreDeployment,
