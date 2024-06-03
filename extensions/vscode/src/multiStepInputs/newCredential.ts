@@ -211,6 +211,7 @@ export async function newCredential(
       title: state.title,
       step: thisStepNumber,
       totalSteps: state.totalSteps,
+      password: true,
       value: currentAPIKey,
       prompt: `The API key to be used to authenticate with Posit Connect.
         See the [User Guide](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating)
