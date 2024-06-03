@@ -1,7 +1,11 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import { AgentError } from "./error";
-import { Configuration, ConfigurationLocation } from "./configurations";
+import {
+  Configuration,
+  ConfigurationLocation,
+  ContentType,
+} from "./configurations";
 import { SchemaURL } from "./schema";
 import { ServerType } from "./accounts";
 
@@ -28,6 +32,7 @@ type DeploymentRecord = {
   saveName: string;
   createdAt: string;
   configurationName: string;
+  type: ContentType;
   deploymentError: AgentError | null;
 } & DeploymentLocation;
 

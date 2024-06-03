@@ -690,20 +690,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async selectConfigForDestination() {
-    const label =
-      this._configs.length > 0
-        ? "Select a Configuration"
-        : "Create a Configuration";
-
-    const config = await selectConfig(label, viewName);
+    const activeDeployment = this._getActiveDeployment();
+    if (activeDeployment === undefined) {
+      console.error(
+        "homeView::selectConfigForDestination: No active deployment.",
+      );
+      return;
+    }
+    const config = await selectConfig(activeDeployment, viewName);
     if (config) {
-      const activeDeployment = this._getActiveDeployment();
-      if (activeDeployment === undefined) {
-        console.error(
-          "homeView::selectConfigForDestination: No active deployment.",
-        );
-        return;
-      }
       const api = await useApi();
       await api.deployments.patch(
         activeDeployment.deploymentName,

@@ -174,7 +174,12 @@
       },
       {
         "command": "posit.publisher.homeView.selectConfigForDestination",
-        "title": "Select Active Configuration",
+        "title": "Select Active Configuration For Destination",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.homeView.createConfigForDestination",
+        "title": "Create New Configuration For Destination",
         "category": "Posit Publisher"
       },
       {
@@ -444,7 +449,11 @@
       "webview/context": [
         {
           "command": "posit.publisher.homeView.selectConfigForDestination",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu'"
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs'"
+        },
+        {
+          "command": "posit.publisher.homeView.createConfigForDestination",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-no-matching-configs'"
         },
         {
           "command": "posit.publisher.homeView.navigateToDestination.Server",

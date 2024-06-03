@@ -8,9 +8,7 @@
       <ActionToolbar
         title="Destination"
         :actions="toolbarActions"
-        :context-menu="
-          home.selectedDeployment ? 'even-easier-deploy-more-menu' : undefined
-        "
+        :context-menu="home.selectedDeployment ? contextMenuContext : undefined"
       />
     </div>
 
@@ -58,18 +56,14 @@
         No Config Entry in Deployment file -
         {{ home.selectedDeployment?.saveName }}.
         <a href="" role="button" @click="selectConfiguration">{{
-          home.configurations.length > 0
-            ? "Select a Configuration"
-            : "Create a Configuration"
+          promptForConfigSelection
         }}</a
         >.
       </p>
       <p v-if="isConfigMissing">
         The last Configuration used for this Destination was not found.
         <a href="" role="button" @click="selectConfiguration">{{
-          home.configurations.length > 0
-            ? "Select a Configuration"
-            : "Create a Configuration"
+          promptForConfigSelection
         }}</a
         >.
       </p>
@@ -176,6 +170,7 @@ import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import { formatDateString } from "src/utils/date";
+import { filterConfigurationsToValidAndType } from "../../../../src/utils/filter";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
@@ -231,6 +226,26 @@ const isConfigInErrorList = (configName?: string): boolean => {
     ),
   );
 };
+
+const contextMenuContext = computed((): string => {
+  const configs = filterConfigurationsToValidAndType(
+    home.configurations,
+    home.selectedDeployment?.type,
+  );
+  return configs.length > 0
+    ? "even-easier-deploy-more-menu-matching-configs"
+    : "even-easier-deploy-more-menu-no-matching-configs";
+});
+
+const promptForConfigSelection = computed((): string => {
+  const configs = filterConfigurationsToValidAndType(
+    home.configurations,
+    home.selectedDeployment?.type,
+  );
+  return configs.length > 0
+    ? "Select a Configuration"
+    : "Create a Configuration";
+});
 
 const contextMenuVSCodeContext = computed((): string => {
   return home.publishInProgress || isPreDeployment(home.selectedDeployment)
