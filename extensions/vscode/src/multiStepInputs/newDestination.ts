@@ -657,6 +657,7 @@ export async function newDestination(
         title: state.title,
         step: step.step,
         totalSteps: step.totalSteps,
+        password: true,
         value: currentAPIKey,
         prompt: "The API key to be used to authenticate with Posit Connect",
         placeholder: "example: v1cKJzUzYnHP1p5WrAINMump4Sjp5pbq",

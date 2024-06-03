@@ -57,5 +57,5 @@ func GetNotebookInputs(r io.Reader) (string, error) {
 			}
 		}
 	}
-	return strings.Join(combinedSource, ""), nil
+	return strings.Join(combinedSource, "\n"), nil
 }

@@ -65,6 +65,7 @@ interface InputBoxParameters {
   title: string;
   step: number;
   totalSteps: number;
+  password?: boolean;
   value: string;
   prompt: string;
   validate: (
@@ -199,6 +200,7 @@ export class MultiStepInput {
     ignoreFocusOut,
     placeholder,
     shouldResume,
+    password,
   }: P) {
     const disposables: Disposable[] = [];
     try {
@@ -209,6 +211,11 @@ export class MultiStepInput {
         input.title = title;
         input.step = step;
         input.totalSteps = totalSteps;
+
+        if (password) {
+          input.password = password;
+        }
+
         input.value = value || "";
         input.prompt = prompt;
         input.ignoreFocusOut = ignoreFocusOut ?? false;
