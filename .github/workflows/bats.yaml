@@ -41,17 +41,6 @@ jobs:
         with:
           name: bin
           path: bin
-      - name: Install deps on ubuntu
-        run: |
-          sudo apt-get install libcurl4-openssl-dev libsodium-dev libfontconfig1-dev libfribidi-dev libfontconfig1-dev libpng-dev
-          R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
-        if: matrix.runs-on == 'ubuntu-latest'
-      - name: Install deps on windows
-        run: R.exe -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
-        if: matrix.runs-on == 'windows-latest'
-      - name: Install deps on macos
-        run: R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
-        if: matrix.runs-on == 'macos-latest'
 
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/bats/fuzzbucket-ssh-key && chmod 600 test/bats/fuzzbucket-ssh-key
