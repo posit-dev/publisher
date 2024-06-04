@@ -42,9 +42,9 @@ import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { WebviewConduit } from "src/utils/webviewConduit";
 import { fileExists } from "src/utils/files";
-import { newDestination } from "src/multiStepInputs/newDestination";
+import { newDeployment } from "src/multiStepInputs/newDeployment";
 
-import type { DestinationNames, HomeViewState } from "src/types/shared";
+import type { DeploymentNames, HomeViewState } from "src/types/shared";
 import {
   DeployMsg,
   EditConfigurationMsg,
@@ -57,7 +57,7 @@ import {
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
 import { confirmOverwrite } from "src/dialogs";
 import { splitFilesOnInclusion } from "src/utils/files";
-import { DestinationQuickPick } from "src/types/quickPicks";
+import { DeploymentQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
 import { selectConfig } from "src/multiStepInputs/selectConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
@@ -66,16 +66,15 @@ import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
-const selectConfigForDestination = viewName + ".selectConfigForDestination";
-const selectDestinationCommand = viewName + ".selectDestination";
-const newDestinationCommand = viewName + ".newDestination";
+const selectConfigForDeployment = viewName + ".selectConfigForDeployment";
+const selectDeploymentCommand = viewName + ".selectDeployment";
+const newDeploymentCommand = viewName + ".newDeployment";
 const contextIsHomeViewInitialized = viewName + ".initialized";
-const visitDestinationServerCommand =
-  viewName + ".navigateToDestination.Server";
-const visitDestinationContentCommand =
-  viewName + ".navigateToDestionation.Content";
-const visitDestinationContentLogCommand =
-  viewName + ".navigateToDestionation.ContentLog";
+const visitDeploymentServerCommand = viewName + ".navigateToDeployment.Server";
+const visitDeploymentContentCommand =
+  viewName + ".navigateToDeployment.Content";
+const visitDeploymentContentLogCommand =
+  viewName + ".navigateToDeployment.ContentLog";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -183,7 +182,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.NEW_CONFIGURATION:
         return await this._onNewConfigurationMsg();
       case WebviewToHostMessageType.SELECT_CONFIGURATION:
-        return await this.selectConfigForDestination();
+        return await this.selectConfigForDeployment();
       case WebviewToHostMessageType.NAVIGATE:
         return await this._onNavigateMsg(msg);
       case WebviewToHostMessageType.SAVE_SELECTION_STATE:
@@ -209,10 +208,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.updateFileList(msg.content.path, FileAction.INCLUDE);
       case WebviewToHostMessageType.EXCLUDE_FILE:
         return this.updateFileList(msg.content.path, FileAction.EXCLUDE);
-      case WebviewToHostMessageType.SELECT_DESTINATION:
-        return this.showDestinationQuickPick();
-      case WebviewToHostMessageType.NEW_DESTINATION:
-        return this.showNewDestinationMultiStep(viewName);
+      case WebviewToHostMessageType.SELECT_DEPLOYMENT:
+        return this.showDeploymentQuickPick();
+      case WebviewToHostMessageType.NEW_DEPLOYMENT:
+        return this.showNewDeploymentMultiStep(viewName);
       case WebviewToHostMessageType.NEW_CREDENTIAL:
         return this.showNewCredential();
       default:
@@ -679,7 +678,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private async propogateDestinationSelection(
+  private async propogateDeploymentSelection(
     configurationName?: string,
     contentRecordName?: string,
   ) {
@@ -698,7 +697,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this._requestWebviewSaveSelection();
   }
 
-  private async selectConfigForDestination() {
+  private async selectConfigForDeployment() {
     const label =
       this._configs.length > 0
         ? "Select a Configuration"
@@ -709,7 +708,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const activeContentRecord = this._getActiveContentRecord();
       if (activeContentRecord === undefined) {
         console.error(
-          "homeView::selectConfigForDestination: No active contentRecord.",
+          "homeView::selectConfigForDeployment: No active contentRecord.",
         );
         return;
       }
@@ -721,11 +720,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  public async showNewDestinationMultiStep(
+  public async showNewDeploymentMultiStep(
     viewId?: string,
-  ): Promise<DestinationNames | undefined> {
-    const destinationObjects = await newDestination(viewId);
-    if (destinationObjects) {
+  ): Promise<DeploymentNames | undefined> {
+    const deploymentObjects = await newDeployment(viewId);
+    if (deploymentObjects) {
       // add out new objects into our collections possibly ahead (we don't know) of
       // the file refresh activity (for contentRecord and config)
       // and the credential refresh that we will kick off
@@ -737,42 +736,40 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (
         !this._contentRecords.find(
           (contentRecord) =>
-            contentRecord.saveName ===
-            destinationObjects.contentRecord.saveName,
+            contentRecord.saveName === deploymentObjects.contentRecord.saveName,
         )
       ) {
-        this._contentRecords.push(destinationObjects.contentRecord);
+        this._contentRecords.push(deploymentObjects.contentRecord);
       }
       if (
         !this._configs.find(
           (config) =>
             config.configurationName ===
-            destinationObjects.configuration.configurationName,
+            deploymentObjects.configuration.configurationName,
         )
       ) {
-        this._configs.push(destinationObjects.configuration);
+        this._configs.push(deploymentObjects.configuration);
       }
       if (
         !this._credentials.find(
-          (credential) =>
-            credential.name === destinationObjects.credential.name,
+          (credential) => credential.name === deploymentObjects.credential.name,
         )
       ) {
-        this._credentials.push(destinationObjects.credential);
+        this._credentials.push(deploymentObjects.credential);
         refreshCredentials = true;
       }
 
-      this.propogateDestinationSelection(
-        destinationObjects.configuration.configurationName,
-        destinationObjects.contentRecord.saveName,
+      this.propogateDeploymentSelection(
+        deploymentObjects.configuration.configurationName,
+        deploymentObjects.contentRecord.saveName,
       );
       // Credentials aren't auto-refreshed, so we have to trigger it ourselves.
       if (refreshCredentials) {
         useBus().trigger("refreshCredentials", undefined);
       }
       return {
-        configurationName: destinationObjects.configuration.configurationName,
-        contentRecordName: destinationObjects.contentRecord.saveName,
+        configurationName: deploymentObjects.configuration.configurationName,
+        contentRecordName: deploymentObjects.contentRecord.saveName,
       };
     }
     return undefined;
@@ -787,11 +784,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
   }
 
-  private async showDestinationQuickPick(): Promise<
-    DestinationNames | undefined
+  private async showDeploymentQuickPick(): Promise<
+    DeploymentNames | undefined
   > {
     // Create quick pick list from current contentRecords, credentials and configs
-    const destinations: DestinationQuickPick[] = [];
+    const deployments: DeploymentQuickPick[] = [];
     const lastContentRecordName = this._getActiveContentRecord()?.saveName;
     const lastConfigName = this._getActiveConfig()?.configurationName;
 
@@ -842,7 +839,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         lastContentRecordName === contentRecord.saveName &&
         lastConfigName === configName;
 
-      const destination: DestinationQuickPick = {
+      const deployment: DeploymentQuickPick = {
         label: title,
         detail,
         iconPath: problem
@@ -852,24 +849,24 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         config,
         lastMatch,
       };
-      // Should we not push destinations with no config or matching credentials?
-      destinations.push(destination);
+      // Should we not push deployments with no config or matching credentials?
+      deployments.push(deployment);
     });
 
     const toDispose: Disposable[] = [];
-    const destination = await new Promise<DestinationQuickPick | undefined>(
+    const deployment = await new Promise<DeploymentQuickPick | undefined>(
       (resolve) => {
-        const quickPick = window.createQuickPick<DestinationQuickPick>();
+        const quickPick = window.createQuickPick<DeploymentQuickPick>();
         this._disposables.push(quickPick);
 
-        quickPick.items = destinations;
-        const lastMatches = destinations.filter(
-          (destination) => destination.lastMatch,
+        quickPick.items = deployments;
+        const lastMatches = deployments.filter(
+          (deployment) => deployment.lastMatch,
         );
         if (lastMatches) {
           quickPick.activeItems = lastMatches;
         }
-        quickPick.title = "Select Destination";
+        quickPick.title = "Select Deployment";
         quickPick.ignoreFocusOut = true;
         quickPick.matchOnDescription = true;
         quickPick.matchOnDetail = true;
@@ -890,11 +887,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       },
     ).finally(() => Disposable.from(...toDispose).dispose());
 
-    let result: DestinationNames | undefined;
-    if (destination) {
+    let result: DeploymentNames | undefined;
+    if (deployment) {
       result = {
-        contentRecordName: destination.contentRecord.saveName,
-        configurationName: destination.contentRecord.configurationName,
+        contentRecordName: deployment.contentRecord.saveName,
+        configurationName: deployment.contentRecord.configurationName,
       };
       this._updateWebViewViewCredentials();
       this._updateWebViewViewConfigurations(result.configurationName);
@@ -1100,34 +1097,34 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        selectDestinationCommand,
-        this.showDestinationQuickPick,
+        selectDeploymentCommand,
+        this.showDeploymentQuickPick,
         this,
       ),
       commands.registerCommand(
-        newDestinationCommand,
-        () => this.showNewDestinationMultiStep(viewName),
+        newDeploymentCommand,
+        () => this.showNewDeploymentMultiStep(viewName),
         this,
       ),
       commands.registerCommand(refreshCommand, () => this.refreshAll(true)),
       commands.registerCommand(
-        selectConfigForDestination,
-        this.selectConfigForDestination,
+        selectConfigForDeployment,
+        this.selectConfigForDeployment,
         this,
       ),
-      commands.registerCommand(visitDestinationServerCommand, async () => {
+      commands.registerCommand(visitDeploymentServerCommand, async () => {
         const contentRecord = this._getActiveContentRecord();
         if (contentRecord) {
           await env.openExternal(Uri.parse(contentRecord.serverUrl));
         }
       }),
-      commands.registerCommand(visitDestinationContentCommand, async () => {
+      commands.registerCommand(visitDeploymentContentCommand, async () => {
         const contentRecord = this._getActiveContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
           await env.openExternal(Uri.parse(contentRecord.dashboardUrl));
         }
       }),
-      commands.registerCommand(visitDestinationContentLogCommand, async () => {
+      commands.registerCommand(visitDeploymentContentLogCommand, async () => {
         const contentRecord = this._getActiveContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
           const logUrl = `${contentRecord.dashboardUrl}/logs`;

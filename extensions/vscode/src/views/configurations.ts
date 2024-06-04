@@ -123,7 +123,7 @@ export class ConfigurationsTreeDataProvider
   private add = async (viewId?: string) => {
     // We only create a new configuration through this
     // command. We do not associate it automatically with
-    // the current destination
+    // the current deployment
     await newConfig("Create a Configuration File for your Project", viewId);
   };
 

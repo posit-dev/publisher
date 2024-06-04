@@ -12,12 +12,12 @@ export type HomeViewState = {
   configurationName?: string;
 };
 
-export type DestinationNames = {
+export type DeploymentNames = {
   contentRecordName: string;
   configurationName?: string;
 };
 
-export type DestinationObjects = {
+export type DeploymentObjects = {
   contentRecord: ContentRecord | PreContentRecord;
   configuration: Configuration;
   credential: Credential;

@@ -173,19 +173,19 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.selectConfigForDestination",
+        "command": "posit.publisher.homeView.selectConfigForDeployment",
         "title": "Select Active Configuration",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.selectDestination",
-        "title": "Select Destination",
+        "command": "posit.publisher.homeView.selectDeployment",
+        "title": "Select Deployment",
         "icon": "$(list-selection)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.newDestination",
-        "title": "New Destination",
+        "command": "posit.publisher.homeView.newDeployment",
+        "title": "New Deployment",
         "icon": "$(new)",
         "category": "Posit Publisher"
       },
@@ -206,13 +206,13 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.navigateToDestination.Server",
-        "title": "Browse Destination Server",
+        "command": "posit.publisher.homeView.navigateToDeployment.Server",
+        "title": "Browse Deployment Server",
         "icon": "$(server)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.navigateToDestionation.Content",
+        "command": "posit.publisher.homeView.navigateToDeployment.Content",
         "title": "View Content",
         "icon": "$(server-process)",
         "category": "Posit Publisher"
@@ -230,7 +230,7 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.navigateToDestionation.ContentLog",
+        "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
         "title": "Show Content Logs",
         "icon": "$(output)",
         "category": "Posit Publisher"
@@ -409,11 +409,11 @@
           "when": "posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.homeView.selectDestination",
+          "command": "posit.publisher.homeView.selectDeployment",
           "when": "posit.publisher.homeView.initialized == 'initialized'"
         },
         {
-          "command": "posit.publisher.homeView.newDestination",
+          "command": "posit.publisher.homeView.newDeployment",
           "when": "posit.publisher.homeView.initialized == 'initialized'"
         },
         {
@@ -429,30 +429,30 @@
           "when": "posit.publisher.homeView.initialized == 'initialized'"
         },
         {
-          "command": "posit.publisher.homeView.navigateToDestination.Server",
+          "command": "posit.publisher.homeView.navigateToDeployment.Server",
           "when": "posit.publisher.homeView.initialized == 'initialized'"
         },
         {
-          "command": "posit.publisher.homeView.navigateToDestionation.Content",
+          "command": "posit.publisher.homeView.navigateToDeployment.Content",
           "when": "posit.publisher.homeView.initialized == 'initialized'"
         },
         {
-          "command": "posit.publisher.homeView.navigateToDestionation.ContentLog",
+          "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
           "when": "posit.publisher.homeView.initialized == 'initialized'"
         }
       ],
       "webview/context": [
         {
-          "command": "posit.publisher.homeView.selectConfigForDestination",
+          "command": "posit.publisher.homeView.selectConfigForDeployment",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu'"
         },
         {
-          "command": "posit.publisher.homeView.navigateToDestination.Server",
+          "command": "posit.publisher.homeView.navigateToDeployment.Server",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-contentRecord-more-menu'",
           "group": "navigation@1"
         },
         {
-          "command": "posit.publisher.homeView.navigateToDestionation.ContentLog",
+          "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-contentRecord-more-menu'",
           "group": "navigation@2"
         },

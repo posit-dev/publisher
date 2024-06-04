@@ -34,7 +34,7 @@ import {
 } from "src/utils/names";
 import { formatURL, normalizeURL } from "src/utils/url";
 import { validateApiKey } from "src/utils/apiKeys";
-import { DestinationObjects } from "src/types/shared";
+import { DeploymentObjects } from "src/types/shared";
 
 type stepInfo = {
   step: number;
@@ -251,9 +251,9 @@ const steps: Record<string, possibleSteps | undefined> = {
   },
 };
 
-export async function newDestination(
+export async function newDeployment(
   viewId?: string,
-): Promise<DestinationObjects | undefined> {
+): Promise<DeploymentObjects | undefined> {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
@@ -340,7 +340,7 @@ export async function newDestination(
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "newDestination, credentials.getAll",
+        "newDeployment, credentials.getAll",
         error,
       );
       window.showErrorMessage(
@@ -369,7 +369,7 @@ export async function newDestination(
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "newDestination, configurations.inspect",
+          "newDeployment, configurations.inspect",
           error,
         );
         window.showErrorMessage(
@@ -449,7 +449,7 @@ export async function newDestination(
   // ***************************************************************
   async function collectInputs() {
     const state: MultiStepState = {
-      title: "Create a New Destination",
+      title: "Create a New Deployment",
       // We're going to temporarily disable display of steps due to the complex
       // nature of calculation with multiple paths through this flow.
       step: 0,
@@ -481,7 +481,7 @@ export async function newDestination(
     if (!newCredentialForced(state)) {
       const step = getStepInfo("pickCredentials", state);
       if (!step) {
-        throw new Error("newDestination::pickCredentials step info not found.");
+        throw new Error("newDeployment::pickCredentials step info not found.");
       }
       const pick = await input.showQuickPick({
         title: state.title,
@@ -519,7 +519,7 @@ export async function newDestination(
 
       const step = getStepInfo("inputServerUrl", state);
       if (!step) {
-        throw new Error("newDestination::inputServerUrl step info not found.");
+        throw new Error("newDeployment::inputServerUrl step info not found.");
       }
 
       const url = await input.showInputBox({
@@ -591,7 +591,7 @@ export async function newDestination(
       const step = getStepInfo("inputCredentialName", state);
       if (!step) {
         throw new Error(
-          "newDestination::inputCredentialName step info not found.",
+          "newDeployment::inputCredentialName step info not found.",
         );
       }
 
@@ -650,7 +650,7 @@ export async function newDestination(
 
       const step = getStepInfo("inputAPIKey", state);
       if (!step) {
-        throw new Error("newDestination::inputAPIKey step info not found.");
+        throw new Error("newDeployment::inputAPIKey step info not found.");
       }
 
       const apiKey = await input.showInputBox({
@@ -701,7 +701,7 @@ export async function newDestination(
       const step = getStepInfo("inputEntryPointSelection", state);
       if (!step) {
         throw new Error(
-          "newDestination::inputEntryPointSelection step info not found.",
+          "newDeployment::inputEntryPointSelection step info not found.",
         );
       }
 
@@ -733,7 +733,7 @@ export async function newDestination(
   async function inputTitle(input: MultiStepInput, state: MultiStepState) {
     const step = getStepInfo("inputTitle", state);
     if (!step) {
-      throw new Error("newDestination::inputTitle step info not found.");
+      throw new Error("newDeployment::inputTitle step info not found.");
     }
     let initialValue = "";
     if (
@@ -812,7 +812,7 @@ export async function newDestination(
       state.data.newCredentialApiKey === undefined ||
       isQuickPickItem(state.data.newCredentialApiKey)
     ) {
-      throw new Error("NewDestination Unexpected type guard failure @1");
+      throw new Error("NewDeployment Unexpected type guard failure @1");
     }
     try {
       // NEED an credential to be returned from this API
@@ -840,7 +840,7 @@ export async function newDestination(
     }
   } else {
     // we are not creating a credential but also do not have a required existing value
-    throw new Error("NewDestination Unexpected type guard failure @2");
+    throw new Error("NewDeployment Unexpected type guard failure @2");
   }
 
   // Create the Config File
@@ -864,7 +864,7 @@ export async function newDestination(
     await commands.executeCommand("vscode.open", fileUri);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "newDestination, configurations.createOrUpdate",
+      "newDeployment, configurations.createOrUpdate",
       error,
     );
     window.showErrorMessage(`Failed to create config file. ${summary}`);
@@ -879,7 +879,7 @@ export async function newDestination(
   ) {
     finalCredentialName = state.data.newCredentialName;
   } else if (!state.data.credentialName) {
-    throw new Error("NewDestination Unexpected type guard failure @3");
+    throw new Error("NewDeployment Unexpected type guard failure @3");
   } else if (
     newCredentialSelected(state) &&
     state.data.newCredentialName &&
@@ -891,7 +891,7 @@ export async function newDestination(
   }
   if (!finalCredentialName) {
     // should have assigned it by now. Logic error!
-    throw new Error("NewDestination Unexpected type guard failure @4");
+    throw new Error("NewDeployment Unexpected type guard failure @4");
   }
 
   // Create the PrecontentRecord File
@@ -904,7 +904,7 @@ export async function newDestination(
     newContentRecord = response.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "newDestination, contentRecords.createNew",
+      "newDeployment, contentRecords.createNew",
       error,
     );
     window.showErrorMessage(
@@ -913,7 +913,7 @@ export async function newDestination(
     return;
   }
   if (!newOrSelectedCredential) {
-    throw new Error("NewDestination Unexpected type guard failure @5");
+    throw new Error("NewDeployment Unexpected type guard failure @5");
   }
   return {
     contentRecord: newContentRecord,

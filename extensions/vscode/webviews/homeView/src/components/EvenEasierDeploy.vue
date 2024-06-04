@@ -3,10 +3,10 @@
 <template>
   <div>
     <div class="label">
-      <span>Destination:</span>
+      <span>Deployment:</span>
 
       <ActionToolbar
-        title="Destination"
+        title="Deployment"
         :actions="toolbarActions"
         :context-menu="
           home.selectedContentRecord
@@ -18,21 +18,21 @@
 
     <template v-if="home.contentRecords.length > 0">
       <div
-        class="destination-control"
+        class="deployment-control"
         :disabled="home.contentRecords.length === 0 ? true : undefined"
-        v-on="home.contentRecords.length ? { click: onSelectDestination } : {}"
+        v-on="home.contentRecords.length ? { click: onSelectDeployment } : {}"
       >
         <QuickPickItem
           v-if="home.selectedContentRecord"
-          :label="destinationTitle"
-          :detail="destinationSubTitle"
+          :label="deploymentTitle"
+          :detail="deploymentSubTitle"
           :title="toolTipText"
         />
 
         <QuickPickItem
           v-else
           class="text-placeholder"
-          label="Select a Destination"
+          label="Select a Deployment"
           detail="Get deploying"
         />
 
@@ -44,15 +44,13 @@
 
       <div
         v-if="home.selectedConfiguration?.configuration?.entrypoint"
-        class="destination-details-container"
+        class="deployment-details-container"
       >
-        <div class="destination-details-row">
-          <span class="destination-details-label">{{
+        <div class="deployment-details-row">
+          <span class="deployment-details-label">{{
             home.selectedConfiguration.configuration.entrypoint
           }}</span>
-          <span class="destination-details-info">
-            (selected as entrypoint)</span
-          >
+          <span class="deployment-details-info"> (selected as entrypoint)</span>
         </div>
       </div>
 
@@ -67,7 +65,7 @@
         >.
       </p>
       <p v-if="isConfigMissing">
-        The last Configuration used for this Destination was not found.
+        The last Configuration used for this Deployment was not found.
         <a href="" role="button" @click="selectConfiguration">{{
           home.configurations.length > 0
             ? "Select a Configuration"
@@ -88,7 +86,7 @@
       </p>
 
       <p v-if="isCredentialMissing">
-        A Credential for the Destination's server URL was not found.
+        A Credential for the Deployment's server URL was not found.
         <a href="" role="button" @click="newCredential"
           >Create a new Credential</a
         >.
@@ -98,10 +96,10 @@
     </template>
     <vscode-button
       v-else
-      class="w-full add-destination-btn"
-      @click="onAddDestination"
+      class="w-full add-deployment-btn"
+      @click="onAddDeployment"
     >
-      Add Destination
+      Add Deployment
     </vscode-button>
 
     <template
@@ -185,9 +183,9 @@ const hostConduit = useHostConduitService();
 const toolbarActions = computed(() => {
   const result = [];
   result.push({
-    label: "Add Destination",
+    label: "Add Deployment",
     codicon: "codicon-add",
-    fn: onAddDestination,
+    fn: onAddDeployment,
   });
 
   if (home.selectedConfiguration) {
@@ -201,15 +199,15 @@ const toolbarActions = computed(() => {
   return result;
 });
 
-const onSelectDestination = () => {
+const onSelectDeployment = () => {
   hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.SELECT_DESTINATION,
+    kind: WebviewToHostMessageType.SELECT_DEPLOYMENT,
   });
 };
 
-const onAddDestination = () => {
+const onAddDeployment = () => {
   hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.NEW_DESTINATION,
+    kind: WebviewToHostMessageType.NEW_DEPLOYMENT,
   });
 };
 
@@ -265,7 +263,7 @@ const isConfigInError = computed((): boolean => {
   );
 });
 
-const destinationTitle = computed(() => {
+const deploymentTitle = computed(() => {
   if (!home.selectedContentRecord) {
     // no title if there is no selected contentRecord
     return "";
@@ -278,7 +276,7 @@ const destinationTitle = computed(() => {
   return result.title;
 });
 
-const destinationSubTitle = computed(() => {
+const deploymentSubTitle = computed(() => {
   if (home.serverCredential?.name) {
     return `${home.serverCredential.name}`;
   }
@@ -309,7 +307,7 @@ const lastStatusDescription = computed(() => {
 });
 
 const toolTipText = computed(() => {
-  return `Destination Details
+  return `Deployment Details
 - ContentRecord File: ${home.selectedContentRecord?.saveName || "<undefined>"}
 - Configuration File: ${home.selectedConfiguration?.configurationName || "<undefined>"}
 - Credential In Use: ${home.serverCredential?.name || "<undefined>"}
@@ -354,7 +352,7 @@ const newCredential = () => {
   align-items: baseline;
 }
 
-.destination-control {
+.deployment-control {
   display: flex;
   align-items: center;
 
@@ -388,7 +386,7 @@ const newCredential = () => {
   margin-right: 4px;
 }
 
-.add-destination-btn {
+.add-deployment-btn {
   margin: 0.5rem 0 1rem;
 }
 
@@ -437,14 +435,14 @@ const newCredential = () => {
   margin-right: 10px;
 }
 
-.destination-details-container {
+.deployment-details-container {
   margin-bottom: 0.5rem;
 
-  .destination-details-row {
+  .deployment-details-row {
     display: flex;
     align-items: center;
 
-    .destination-details-label {
+    .deployment-details-label {
       font-size: 0.9em;
       line-height: normal;
       opacity: 1;
@@ -453,7 +451,7 @@ const newCredential = () => {
       white-space: pre;
     }
 
-    .destination-details-info {
+    .deployment-details-info {
       font-size: 0.8em;
       line-height: normal;
       opacity: 0.7;

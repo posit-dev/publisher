@@ -7,7 +7,7 @@ import {
 } from "src/api";
 import { QuickPickItem } from "vscode";
 
-export interface DestinationQuickPick extends QuickPickItem {
+export interface DeploymentQuickPick extends QuickPickItem {
   contentRecord: ContentRecord | PreContentRecordWithConfig;
   config?: Configuration;
   lastMatch: boolean;
