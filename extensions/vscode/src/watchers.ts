@@ -9,11 +9,11 @@ import {
 
 import { Configuration } from "src/api";
 import {
-  PUBLISH_CONTENTRECORDS_FOLDER,
+  PUBLISH_DEPLOYMENTS_FOLDER,
   POSIT_FOLDER,
   PUBLISH_FOLDER,
   CONFIGURATIONS_PATTERN,
-  CONTENTRECORDS_PATTERN,
+  DEPLOYMENTS_PATTERN,
   DEFAULT_PYTHON_PACKAGE_FILE,
   DEFAULT_R_PACKAGE_FILE,
 } from "src/constants";
@@ -56,14 +56,14 @@ export class WatcherManager implements Disposable {
     );
 
     this.contentRecordsDir = workspace.createFileSystemWatcher(
-      new RelativePattern(root, PUBLISH_CONTENTRECORDS_FOLDER),
+      new RelativePattern(root, PUBLISH_DEPLOYMENTS_FOLDER),
       true,
       true,
       false,
     );
 
     this.contentRecords = workspace.createFileSystemWatcher(
-      new RelativePattern(root, CONTENTRECORDS_PATTERN),
+      new RelativePattern(root, DEPLOYMENTS_PATTERN),
     );
 
     this.allFiles = workspace.createFileSystemWatcher(

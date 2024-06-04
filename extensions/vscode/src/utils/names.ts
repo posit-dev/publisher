@@ -36,14 +36,14 @@ export function untitledContentRecordName(
   existingContentRecordNames: string[],
 ): string {
   if (existingContentRecordNames.length === 0) {
-    return "contentRecord-1";
+    return "deployment-1";
   }
 
   let id = 0;
   let defaultName = "";
   do {
     id += 1;
-    const trialName = `contentRecord-${id}`;
+    const trialName = `deployment-${id}`;
 
     if (uniqueContentRecordName(trialName, existingContentRecordNames)) {
       defaultName = trialName;
