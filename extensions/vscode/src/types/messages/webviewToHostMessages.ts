@@ -83,7 +83,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
 export type DeployMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.DEPLOY,
   {
-    contentRecordName: string;
+    deploymentName: string;
     credentialName: string;
     configurationName: string;
   }

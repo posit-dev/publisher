@@ -445,13 +445,13 @@ export function deployProject(localID: string, stream: EventStream) {
           if (localID === msg.data.localId) {
             unregiserAll();
             progress.report({
-              message: "ContentRecord was successful",
+              message: "Deployment was successful",
             });
             resolveCB("Success!");
 
             let visitOption = "Visit";
             const selection = await window.showInformationMessage(
-              "ContentRecord was successful",
+              "Deployment was successful",
               visitOption,
             );
             if (selection === visitOption) {
@@ -467,7 +467,7 @@ export function deployProject(localID: string, stream: EventStream) {
           if (localID === msg.data.localId) {
             unregiserAll();
             progress.report({
-              message: "ContentRecord process encountered an error",
+              message: "Deployment process encountered an error",
             });
             rejectCB("Error Encountered!");
           }

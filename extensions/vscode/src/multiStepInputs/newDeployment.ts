@@ -392,7 +392,7 @@ export async function newDeployment(
       const contentRecordList = response.data;
       // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
       contentRecordNames = contentRecordList.map(
-        (contentRecord) => contentRecord.contentRecordName,
+        (contentRecord) => contentRecord.deploymentName,
       );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(

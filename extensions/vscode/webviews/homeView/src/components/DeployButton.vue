@@ -39,7 +39,7 @@ const deploy = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.DEPLOY,
     content: {
-      contentRecordName: home.selectedContentRecord.saveName,
+      deploymentName: home.selectedContentRecord.saveName,
       configurationName: home.selectedConfiguration.configurationName,
       credentialName: home.serverCredential.name,
     },

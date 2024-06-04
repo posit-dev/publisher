@@ -61,7 +61,7 @@ export const useHomeStore = defineStore("home", () => {
     const previousSelectedContentRecord = selectedContentRecord.value;
 
     const contentRecord = contentRecords.value.find(
-      (d) => d.contentRecordName === name,
+      (d) => d.deploymentName === name,
     );
 
     selectedContentRecord.value = contentRecord;
@@ -114,7 +114,7 @@ export const useHomeStore = defineStore("home", () => {
       kind: WebviewToHostMessageType.SAVE_SELECTION_STATE,
       content: {
         state: {
-          contentRecordName: selectedContentRecord.value?.saveName,
+          deploymentName: selectedContentRecord.value?.saveName,
           configurationName: selectedConfiguration.value?.configurationName,
         },
       },

@@ -99,7 +99,7 @@ const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
   } else if (home.selectedContentRecord) {
     if (
       !home.updateSelectedContentRecordByName(
-        home.selectedContentRecord.contentRecordName,
+        home.selectedContentRecord.deploymentName,
       )
     ) {
       // Recalculate if the contentRecord object changed with new data
@@ -156,13 +156,13 @@ const onPublishStartMsg = () => {
 const onPublishFinishSuccessMsg = () => {
   const home = useHomeStore();
   home.publishInProgress = false;
-  home.lastContentRecordResult = `Last contentRecord was succesful`;
+  home.lastContentRecordResult = `Last Deployment was Successful`;
   home.lastContentRecordMsg = "";
 };
 const onPublishFinishFailureMsg = (msg: PublishFinishFailureMsg) => {
   const home = useHomeStore();
   home.publishInProgress = false;
-  home.lastContentRecordResult = `Last contentRecord failed`;
+  home.lastContentRecordResult = `Last Deployment Failed`;
   home.lastContentRecordMsg = msg.content.data.message;
 };
 const onUpdateContentRecordSelectionMsg = (

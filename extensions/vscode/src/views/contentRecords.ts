@@ -91,7 +91,7 @@ export class ContentRecordsTreeDataProvider
       const contentRecords = response.data;
 
       return contentRecords.map((contentRecord) => {
-        const fileUri = Uri.file(contentRecord.contentRecordPath);
+        const fileUri = Uri.file(contentRecord.deploymentPath);
         return new ContentRecordsTreeItem(contentRecord, fileUri);
       });
     } catch (error: unknown) {
@@ -119,13 +119,11 @@ export class ContentRecordsTreeDataProvider
         forgetCommand,
         async (item: ContentRecordsTreeItem) => {
           const ok = await confirmForget(
-            `Are you sure you want to forget this contentRecord '${item.contentRecord.contentRecordName}' locally?`,
+            `Are you sure you want to forget this contentRecord '${item.contentRecord.deploymentName}' locally?`,
           );
           if (ok) {
             const api = await useApi();
-            await api.contentRecords.delete(
-              item.contentRecord.contentRecordName,
-            );
+            await api.contentRecords.delete(item.contentRecord.deploymentName);
           }
         },
       ),
@@ -165,7 +163,7 @@ export class ContentRecordsTreeDataProvider
             const contentRecordList = response.data;
             // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
             contentRecordNames = contentRecordList.map(
-              (contentRecord) => contentRecord.contentRecordName,
+              (contentRecord) => contentRecord.deploymentName,
             );
           } catch (error: unknown) {
             const summary = getSummaryStringFromError(
@@ -178,7 +176,7 @@ export class ContentRecordsTreeDataProvider
             return;
           }
 
-          const currentName = item.contentRecord.contentRecordName;
+          const currentName = item.contentRecord.deploymentName;
           const newName = await window.showInputBox({
             prompt: "New contentRecord name",
             value: currentName,
@@ -191,7 +189,7 @@ export class ContentRecordsTreeDataProvider
             // canceled
             return;
           }
-          const oldUri = Uri.file(item.contentRecord.contentRecordPath);
+          const oldUri = Uri.file(item.contentRecord.deploymentPath);
           const relativePath = "../" + ensureSuffix(".toml", newName);
           const newUri = Uri.joinPath(oldUri, relativePath);
           await workspace.fs.rename(oldUri, newUri, { overwrite: true });
@@ -214,7 +212,7 @@ export class ContentRecordsTreeItem extends TreeItem {
     public contentRecord: AllContentRecordTypes,
     public readonly fileUri: Uri,
   ) {
-    super(contentRecord.contentRecordName);
+    super(contentRecord.deploymentName);
 
     if (isContentRecord(this.contentRecord)) {
       this.initializeContentRecord(this.contentRecord);
@@ -236,9 +234,9 @@ export class ContentRecordsTreeItem extends TreeItem {
   private initializeContentRecord(contentRecord: ContentRecord) {
     this.contextValue =
       "posit.publisher.contentRecords.tree.item.contentRecord";
-    if (!contentRecord.contentRecordError) {
+    if (!contentRecord.deploymentError) {
       this.tooltip =
-        `ContentRecord file: ${contentRecord.contentRecordPath}\n` +
+        `ContentRecord file: ${contentRecord.deploymentPath}\n` +
         `\n` +
         `Last Deployed on ${formatDateString(contentRecord.deployedAt)}\n` +
         `Targeting ${contentRecord.serverType} at ${contentRecord.serverUrl}\n` +
@@ -246,16 +244,16 @@ export class ContentRecordsTreeItem extends TreeItem {
       this.iconPath = new ThemeIcon("cloud-upload");
     } else {
       this.tooltip =
-        `ContentRecord file: ${contentRecord.contentRecordPath}\n` +
+        `ContentRecord file: ${contentRecord.deploymentPath}\n` +
         `\n` +
-        `Last contentRecord failed on ${formatDateString(contentRecord.deployedAt)}\n` +
+        `Last Deployment Failed on ${formatDateString(contentRecord.deployedAt)}\n` +
         `Targeting ${contentRecord.serverType} at ${contentRecord.serverUrl}`;
       // contentRecord id may not yet be assigned...
       if (contentRecord.id) {
         this.tooltip += `\n` + `GUID = ${contentRecord.id}`;
       }
       this.tooltip +=
-        "\n" + `\n` + `Error: ${contentRecord.contentRecordError.msg}`;
+        "\n" + `\n` + `Error: ${contentRecord.deploymentError.msg}`;
       this.iconPath = new ThemeIcon("run-errors");
     }
   }
@@ -264,7 +262,7 @@ export class ContentRecordsTreeItem extends TreeItem {
     this.contextValue =
       "posit.publisher.contentRecords.tree.item.precontentRecord";
     this.tooltip =
-      `ContentRecord file: ${precontentRecord.contentRecordPath}\n` +
+      `ContentRecord file: ${precontentRecord.deploymentPath}\n` +
       `\n` +
       `Created on ${formatDateString(precontentRecord.createdAt)}\n` +
       `Targeting ${precontentRecord.serverType} at ${precontentRecord.serverUrl}\n` +
@@ -273,15 +271,15 @@ export class ContentRecordsTreeItem extends TreeItem {
     this.iconPath = new ThemeIcon("ellipsis");
   }
 
-  private initializeContentRecordError(contentRecordError: ContentRecordError) {
+  private initializeContentRecordError(deploymentError: ContentRecordError) {
     this.contextValue =
-      "posit.publisher.contentRecords.tree.item.contentRecordError";
+      "posit.publisher.contentRecords.tree.item.deploymentError";
     this.tooltip =
-      `ContentRecord file: ${contentRecordError.contentRecordPath}\n` +
+      `ContentRecord file: ${deploymentError.deploymentPath}\n` +
       `\n` +
       `ERROR! File is invalid\n` +
-      `Code: ${contentRecordError.error.code}\n` +
-      `Msg: ${contentRecordError.error.msg}\n` +
+      `Code: ${deploymentError.error.code}\n` +
+      `Msg: ${deploymentError.error.msg}\n` +
       `\n` +
       `Warning: This contentRecord cannot be deployed\n` +
       `until the issue is resolved.`;

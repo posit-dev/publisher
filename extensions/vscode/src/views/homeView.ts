@@ -225,7 +225,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const response = await api.contentRecords.publish(
-        msg.content.contentRecordName,
+        msg.content.deploymentName,
         msg.content.credentialName,
         msg.content.configurationName,
       );
@@ -441,7 +441,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const state = this._context.workspaceState.get<HomeViewState>(
       lastSelectionState,
       {
-        contentRecordName: undefined,
+        deploymentName: undefined,
         configurationName: undefined,
       },
     );
@@ -458,11 +458,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     | PreContentRecord
     | undefined {
     const savedState = this._getSelectionState();
-    return this.getContentRecordByName(savedState.contentRecordName);
+    return this.getContentRecordByName(savedState.deploymentName);
   }
 
   private getContentRecordByName(name: string | undefined) {
-    return this._contentRecords.find((d) => d.contentRecordName === name);
+    return this._contentRecords.find((d) => d.deploymentName === name);
   }
 
   private getConfigByName(name: string | undefined) {
@@ -680,19 +680,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async propogateDeploymentSelection(
     configurationName?: string,
-    contentRecordName?: string,
+    deploymentName?: string,
   ) {
     // We have to break our protocol and go ahead and write this into storage,
     // in case this multi-stepper is actually running ahead of the webview
     // being brought up.
     this._saveSelectionState({
-      contentRecordName,
+      deploymentName,
       configurationName,
     });
     // Now push down into the webview
     this._updateWebViewViewCredentials();
     this._updateWebViewViewConfigurations(configurationName);
-    this._updateWebViewViewContentRecords(contentRecordName);
+    this._updateWebViewViewContentRecords(deploymentName);
     // And have the webview save what it has selected.
     this._requestWebviewSaveSelection();
   }
@@ -714,7 +714,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
       const api = await useApi();
       await api.contentRecords.patch(
-        activeContentRecord.contentRecordName,
+        activeContentRecord.deploymentName,
         config.configurationName,
       );
     }
@@ -769,7 +769,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
       return {
         configurationName: deploymentObjects.configuration.configurationName,
-        contentRecordName: deploymentObjects.contentRecord.saveName,
+        deploymentName: deploymentObjects.contentRecord.saveName,
       };
     }
     return undefined;
@@ -890,12 +890,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let result: DeploymentNames | undefined;
     if (deployment) {
       result = {
-        contentRecordName: deployment.contentRecord.saveName,
+        deploymentName: deployment.contentRecord.saveName,
         configurationName: deployment.contentRecord.configurationName,
       };
       this._updateWebViewViewCredentials();
       this._updateWebViewViewConfigurations(result.configurationName);
-      this._updateWebViewViewContentRecords(result.contentRecordName);
+      this._updateWebViewViewContentRecords(result.deploymentName);
       this._requestWebviewSaveSelection();
     }
     return result;
@@ -1024,7 +1024,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       selectionState?.configurationName || null,
     );
     this._updateWebViewViewContentRecords(
-      selectionState?.contentRecordName || null,
+      selectionState?.deploymentName || null,
     );
     if (includeSavedState && selectionState) {
       useBus().trigger(

@@ -114,19 +114,19 @@
       },
       {
         "command": "posit.publisher.contentRecords.forget",
-        "title": "Forget ContentRecord Locally",
+        "title": "Forget Deployment Locally",
         "icon": "$(close-all)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.contentRecords.visit",
-        "title": "View ContentRecord in Connect",
+        "title": "View Deployment in Connect",
         "icon": "$(link-external)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.contentRecords.refresh",
-        "title": "Refresh ContentRecords",
+        "title": "Refresh Deployments",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
@@ -201,7 +201,7 @@
       },
       {
         "command": "posit.publisher.logs.visit",
-        "title": "View ContentRecord in Connect",
+        "title": "View Deployment in Connect",
         "icon": "$(link-external)",
         "category": "Posit Publisher"
       },
@@ -534,7 +534,7 @@
         },
         {
           "id": "posit.publisher.contentRecords",
-          "name": "ContentRecords",
+          "name": "Deployments",
           "contextualTitle": "Publisher",
           "icon": "$(cloud-upload)",
           "visibility": "hidden",

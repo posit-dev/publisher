@@ -111,7 +111,7 @@
         <div class="contentRecord-in-progress-container">
           <div class="progress-container">
             <vscode-progress-ring class="progress-ring" />
-            ContentRecord in Progress...
+            Deployment in Progress...
           </div>
           <ActionToolbar
             title="Logs"
@@ -138,12 +138,12 @@
           {{ formatDateString(home.selectedContentRecord.deployedAt) }}
         </div>
         <div
-          v-if="home.selectedContentRecord.contentRecordError"
+          v-if="home.selectedContentRecord.deploymentError"
           class="last-contentRecord-details last-contentRecord-error"
         >
           <span class="codicon codicon-error error-icon"></span>
           <span class="error-message">
-            Error: {{ home.selectedContentRecord.contentRecordError.msg }}
+            Error: {{ home.selectedContentRecord.deploymentError.msg }}
           </span>
         </div>
         <div
@@ -297,13 +297,13 @@ const lastStatusDescription = computed(() => {
   if (!home.selectedContentRecord) {
     return undefined;
   }
-  if (home.selectedContentRecord.contentRecordError) {
-    return "Last ContentRecord Failed";
+  if (home.selectedContentRecord.deploymentError) {
+    return "Last Deployment Failed";
   }
   if (isPreContentRecord(home.selectedContentRecord)) {
     return "Not Yet Deployed";
   }
-  return "Last ContentRecord Successful";
+  return "Last Deployment Successful";
 });
 
 const toolTipText = computed(() => {

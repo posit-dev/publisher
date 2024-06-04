@@ -8,12 +8,12 @@ import {
 } from "../api";
 
 export type HomeViewState = {
-  contentRecordName?: string;
+  deploymentName?: string;
   configurationName?: string;
 };
 
 export type DeploymentNames = {
-  contentRecordName: string;
+  deploymentName: string;
   configurationName?: string;
 };
 

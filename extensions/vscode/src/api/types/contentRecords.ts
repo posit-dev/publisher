@@ -12,8 +12,8 @@ export enum ContentRecordState {
 }
 
 export type ContentRecordLocation = {
-  contentRecordName: string;
-  contentRecordPath: string;
+  deploymentName: string;
+  deploymentPath: string;
 };
 
 export type ContentRecordError = {
@@ -28,7 +28,7 @@ type ContentRecordRecord = {
   saveName: string;
   createdAt: string;
   configurationName: string;
-  contentRecordError: AgentError | null;
+  deploymentError: AgentError | null;
 } & ContentRecordLocation;
 
 export type PreContentRecord = {
@@ -65,7 +65,7 @@ export function isSuccessful(
   if (isContentRecordError(d)) {
     return false;
   }
-  return Boolean(!d.contentRecordError);
+  return Boolean(!d.deploymentError);
 }
 
 export function isUnsuccessful(
