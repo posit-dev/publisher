@@ -96,7 +96,7 @@ configure os="$(just ../../os)" arch="$(just ../../arch)":
 
     cp "$binary_executable" ./bin/$(basename -- "$binary_executable")
     just assert-binary-executable-exists
-    just version
+    just set-version
 
 set-version:
     #!/usr/bin/env bash
