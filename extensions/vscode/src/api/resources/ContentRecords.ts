@@ -19,7 +19,7 @@ export class ContentRecords {
   // 200 - success
   // 500 - internal server error
   getAll() {
-    return this.client.get<Array<AllContentRecordTypes>>("/contentRecords");
+    return this.client.get<Array<AllContentRecordTypes>>("/deployments");
   }
 
   // Returns:
@@ -28,9 +28,7 @@ export class ContentRecords {
   // 500 - internal server error
   get(id: string) {
     const encodedId = encodeURIComponent(id);
-    return this.client.get<AllContentRecordTypes>(
-      `contentRecords/${encodedId}`,
-    );
+    return this.client.get<AllContentRecordTypes>(`deployments/${encodedId}`);
   }
 
   // Returns:
@@ -45,7 +43,7 @@ export class ContentRecords {
       config: configName,
       saveName,
     };
-    return this.client.post<PreContentRecord>("/contentRecords", params);
+    return this.client.post<PreContentRecord>("/deployments", params);
   }
 
   // Returns:
@@ -64,7 +62,7 @@ export class ContentRecords {
     };
     const encodedTarget = encodeURIComponent(targetName);
     return this.client.post<{ localId: string }>(
-      `contentRecords/${encodedTarget}`,
+      `deployments/${encodedTarget}`,
       params,
     );
   }
@@ -75,7 +73,7 @@ export class ContentRecords {
   // 500 - internal server error
   delete(saveName: string) {
     const encodedSaveName = encodeURIComponent(saveName);
-    return this.client.delete(`contentRecords/${encodedSaveName}`);
+    return this.client.delete(`deployments/${encodedSaveName}`);
   }
 
   // Returns:
@@ -84,7 +82,7 @@ export class ContentRecords {
   // 500 - internal server error
   patch(contentRecordName: string, configName: string) {
     const encodedName = encodeURIComponent(contentRecordName);
-    return this.client.patch<ContentRecord>(`contentRecords/${encodedName}`, {
+    return this.client.patch<ContentRecord>(`deployments/${encodedName}`, {
       configurationName: configName,
     });
   }
