@@ -159,7 +159,7 @@ func (i *defaultPythonInspector) warnIfNoRequirementsFile() error {
 	if exists {
 		i.log.Info("Using Python packages", "source", requirementsFilename)
 	} else {
-		i.log.Warn("can't find requirements.txt; run `publisher requirements create` to create it.")
+		i.log.Warn("can't find requirements.txt")
 	}
 	return nil
 }
