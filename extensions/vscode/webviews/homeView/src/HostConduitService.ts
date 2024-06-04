@@ -8,10 +8,10 @@ import {
   PublishFinishFailureMsg,
   RefreshConfigDataMsg,
   RefreshCredentialDataMsg,
-  RefreshDeploymentDataMsg,
+  RefreshContentRecordDataMsg,
   RefreshFilesListsMsg,
   UpdateConfigSelectionMsg,
-  UpdateDeploymentSelectionMsg,
+  UpdateContentRecordSelectionMsg,
   UpdatePythonPackages,
   UpdateRPackages,
 } from "../../../src/types/messages/hostToWebviewMessages";
@@ -53,8 +53,8 @@ export function useHostConduitService() {
 const onMessageFromHost = (msg: HostToWebviewMessage): void => {
   console.debug(`HostConduitService - Receiving Msg: ${JSON.stringify(msg)}`);
   switch (msg.kind) {
-    case HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA:
-      return onRefreshDeploymentDataMsg(msg);
+    case HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA:
+      return onRefreshContentRecordDataMsg(msg);
     case HostToWebviewMessageType.REFRESH_CONFIG_DATA:
       return onRefreshConfigDataMsg(msg);
     case HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA:
@@ -65,8 +65,8 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onPublishFinishSuccessMsg();
     case HostToWebviewMessageType.PUBLISH_FINISH_FAILURE:
       return onPublishFinishFailureMsg(msg);
-    case HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION:
-      return onUpdateDeploymentSelectionMsg(msg);
+    case HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION:
+      return onUpdateContentRecordSelectionMsg(msg);
     case HostToWebviewMessageType.UPDATE_CONFIG_SELECTION:
       return onUpdateConfigSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
@@ -83,32 +83,32 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
 };
 
 /**
- * When getting new deployments set the new name if given one,
- * unset the deployment if told to do so with null,
- * or keep the selected deployment with updated data.
+ * When getting new contentRecords set the new name if given one,
+ * unset the contentRecord if told to do so with null,
+ * or keep the selected contentRecord with updated data.
  */
-const onRefreshDeploymentDataMsg = (msg: RefreshDeploymentDataMsg) => {
+const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
   const home = useHomeStore();
-  home.deployments = msg.content.deployments;
+  home.contentRecords = msg.content.contentRecords;
 
-  const name = msg.content.selectedDeploymentName;
+  const name = msg.content.selectedContentRecordName;
   if (name) {
-    home.updateSelectedDeploymentByName(name);
+    home.updateSelectedContentRecordByName(name);
   } else if (name === null) {
-    home.selectedDeployment = undefined;
-  } else if (home.selectedDeployment) {
+    home.selectedContentRecord = undefined;
+  } else if (home.selectedContentRecord) {
     if (
-      !home.updateSelectedDeploymentByName(
-        home.selectedDeployment.deploymentName,
+      !home.updateSelectedContentRecordByName(
+        home.selectedContentRecord.contentRecordName,
       )
     ) {
-      // Recalculate if the deployment object changed with new data
-      home.updateCredentialsAndConfigurationForDeployment();
+      // Recalculate if the contentRecord object changed with new data
+      home.updateCredentialsAndConfigurationForContentRecord();
     }
   }
 
-  // If no deployment is selected, unset the selected configuration
-  if (home.selectedDeployment === undefined) {
+  // If no contentRecord is selected, unset the selected configuration
+  if (home.selectedContentRecord === undefined) {
     home.selectedConfiguration = undefined;
   }
 };
@@ -117,7 +117,7 @@ const onRefreshDeploymentDataMsg = (msg: RefreshDeploymentDataMsg) => {
  * When getting new configurations set the new name if given one,
  * unset the configuration if told to do so with null,
  * keep the selected configuration with updated data,
- * or set the selected configuration to the one from the selected deployment.
+ * or set the selected configuration to the one from the selected contentRecord.
  */
 const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
   const home = useHomeStore();
@@ -133,9 +133,9 @@ const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
     home.updateSelectedConfigurationByName(
       home.selectedConfiguration.configurationName,
     );
-  } else if (home.selectedDeployment?.configurationName) {
+  } else if (home.selectedContentRecord?.configurationName) {
     home.updateSelectedConfigurationByName(
-      home.selectedDeployment.configurationName,
+      home.selectedContentRecord.configurationName,
     );
   }
 };
@@ -156,18 +156,20 @@ const onPublishStartMsg = () => {
 const onPublishFinishSuccessMsg = () => {
   const home = useHomeStore();
   home.publishInProgress = false;
-  home.lastDeploymentResult = `Last deployment was succesful`;
-  home.lastDeploymentMsg = "";
+  home.lastContentRecordResult = `Last contentRecord was succesful`;
+  home.lastContentRecordMsg = "";
 };
 const onPublishFinishFailureMsg = (msg: PublishFinishFailureMsg) => {
   const home = useHomeStore();
   home.publishInProgress = false;
-  home.lastDeploymentResult = `Last deployment failed`;
-  home.lastDeploymentMsg = msg.content.data.message;
+  home.lastContentRecordResult = `Last contentRecord failed`;
+  home.lastContentRecordMsg = msg.content.data.message;
 };
-const onUpdateDeploymentSelectionMsg = (msg: UpdateDeploymentSelectionMsg) => {
+const onUpdateContentRecordSelectionMsg = (
+  msg: UpdateContentRecordSelectionMsg,
+) => {
   const home = useHomeStore();
-  home.updateSelectedDeploymentByObject(msg.content.preDeployment);
+  home.updateSelectedContentRecordByObject(msg.content.preContentRecord);
   if (msg.content.saveSelection) {
     home.updateParentViewSelectionState();
   }

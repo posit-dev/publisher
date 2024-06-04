@@ -62,7 +62,7 @@ const createLogStage = (
 
 const viewName = "posit.publisher.logs";
 const visitCommand = viewName + ".visit";
-const showDeploymentLogsCommand = "posit.publisher.logs.focus";
+const showContentRecordLogsCommand = "posit.publisher.logs.focus";
 
 /**
  * Tree data provider for the Logs view.
@@ -104,8 +104,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         createLogStage("Upload Bundle", "Uploading Bundle"),
       ],
       [
-        "publish/createDeployment",
-        createLogStage("Create Deployment", "Creating Deployment"),
+        "publish/createContentRecord",
+        createLogStage("Create ContentRecord", "Creating ContentRecord"),
       ],
       [
         "publish/deployBundle",
@@ -117,8 +117,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ],
       ["publish/runContent", createLogStage("Run Content", "Running Content")],
       [
-        "publish/validateDeployment",
-        createLogStage("Validate Deployment", "Validating Deployment"),
+        "publish/validateContentRecord",
+        createLogStage("Validate ContentRecord", "Validating ContentRecord"),
       ],
     ]);
 
@@ -169,11 +169,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
         let showLogsOption = "Show Logs";
         const selection = await window.showErrorMessage(
-          `Deployment failed: ${msg.data.message}`,
+          `ContentRecord failed: ${msg.data.message}`,
           showLogsOption,
         );
         if (selection === showLogsOption) {
-          await commands.executeCommand(showDeploymentLogsCommand);
+          await commands.executeCommand(showContentRecordLogsCommand);
         }
         this.refresh();
       },

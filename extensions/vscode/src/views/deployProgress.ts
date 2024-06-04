@@ -76,7 +76,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createNewDeployment/start",
+          "publish/createNewContentRecord/start",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -84,7 +84,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createNewDeployment/success",
+          "publish/createNewContentRecord/success",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -92,7 +92,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createNewDeployment/failure",
+          "publish/createNewContentRecord/failure",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -156,7 +156,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createDeployment/start",
+          "publish/createContentRecord/start",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -164,7 +164,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createDeployment/success",
+          "publish/createContentRecord/success",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -172,7 +172,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createDeployment/failure",
+          "publish/createContentRecord/failure",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -180,7 +180,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createDeployment/log",
+          "publish/createContentRecord/log",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -409,7 +409,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/validateDeployment/start",
+          "publish/validateContentRecord/start",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -417,7 +417,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/validateDeployment/success",
+          "publish/validateContentRecord/success",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -425,7 +425,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/validateDeployment/failure",
+          "publish/validateContentRecord/failure",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -433,7 +433,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/validateDeployment/log",
+          "publish/validateContentRecord/log",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -445,13 +445,13 @@ export function deployProject(localID: string, stream: EventStream) {
           if (localID === msg.data.localId) {
             unregiserAll();
             progress.report({
-              message: "Deployment was successful",
+              message: "ContentRecord was successful",
             });
             resolveCB("Success!");
 
             let visitOption = "Visit";
             const selection = await window.showInformationMessage(
-              "Deployment was successful",
+              "ContentRecord was successful",
               visitOption,
             );
             if (selection === visitOption) {
@@ -467,7 +467,7 @@ export function deployProject(localID: string, stream: EventStream) {
           if (localID === msg.data.localId) {
             unregiserAll();
             progress.report({
-              message: "Deployment process encountered an error",
+              message: "ContentRecord process encountered an error",
             });
             rejectCB("Error Encountered!");
           }

@@ -9,11 +9,11 @@ import {
 
 import { Configuration } from "src/api";
 import {
-  PUBLISH_DEPLOYMENTS_FOLDER,
+  PUBLISH_CONTENTRECORDS_FOLDER,
   POSIT_FOLDER,
   PUBLISH_FOLDER,
   CONFIGURATIONS_PATTERN,
-  DEPLOYMENTS_PATTERN,
+  CONTENTRECORDS_PATTERN,
   DEFAULT_PYTHON_PACKAGE_FILE,
   DEFAULT_R_PACKAGE_FILE,
 } from "src/constants";
@@ -27,8 +27,8 @@ export class WatcherManager implements Disposable {
   positDir: FileSystemWatcher | undefined;
   publishDir: FileSystemWatcher | undefined;
   configurations: FileSystemWatcher | undefined;
-  deploymentsDir: FileSystemWatcher | undefined;
-  deployments: FileSystemWatcher | undefined;
+  contentRecordsDir: FileSystemWatcher | undefined;
+  contentRecords: FileSystemWatcher | undefined;
   allFiles: FileSystemWatcher | undefined;
 
   constructor() {
@@ -55,15 +55,15 @@ export class WatcherManager implements Disposable {
       new RelativePattern(root, CONFIGURATIONS_PATTERN),
     );
 
-    this.deploymentsDir = workspace.createFileSystemWatcher(
-      new RelativePattern(root, PUBLISH_DEPLOYMENTS_FOLDER),
+    this.contentRecordsDir = workspace.createFileSystemWatcher(
+      new RelativePattern(root, PUBLISH_CONTENTRECORDS_FOLDER),
       true,
       true,
       false,
     );
 
-    this.deployments = workspace.createFileSystemWatcher(
-      new RelativePattern(root, DEPLOYMENTS_PATTERN),
+    this.contentRecords = workspace.createFileSystemWatcher(
+      new RelativePattern(root, CONTENTRECORDS_PATTERN),
     );
 
     this.allFiles = workspace.createFileSystemWatcher(
@@ -75,8 +75,8 @@ export class WatcherManager implements Disposable {
     this.positDir?.dispose();
     this.publishDir?.dispose();
     this.configurations?.dispose();
-    this.deploymentsDir?.dispose();
-    this.deployments?.dispose();
+    this.contentRecordsDir?.dispose();
+    this.contentRecords?.dispose();
     this.allFiles?.dispose();
   }
 }

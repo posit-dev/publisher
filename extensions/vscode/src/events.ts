@@ -20,16 +20,16 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     }
   }
 
-  if (msg.type === "publish/createNewDeployment/success") {
-    return `Created new deployment as ${msg.data.saveName}`;
+  if (msg.type === "publish/createNewContentRecord/success") {
+    return `Created new contentRecord as ${msg.data.saveName}`;
   }
 
   if (msg.type === "publish/createBundle/success") {
     return `Prepared file archive: ${msg.data.filename}`;
   }
 
-  if (msg.type === "publish/createDeployment/start") {
-    return `Updating existing deployment with ID ${msg.data.contentId}`;
+  if (msg.type === "publish/createContentRecord/start") {
+    return `Updating existing contentRecord with ID ${msg.data.contentId}`;
   }
 
   if (msg.type === "publish/createBundle/log") {
@@ -57,7 +57,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     return `${msg.data.message} ${msg.data.path}`;
   }
 
-  if (msg.type === "publish/validateDeployment/log") {
+  if (msg.type === "publish/validateContentRecord/log") {
     if (msg.data.url) {
       if (msg.data.method) {
         return `${msg.data.message}: status ${msg.data.status} on ${msg.data.url}`;
@@ -66,7 +66,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     }
   }
 
-  if (msg.type === "publish/validateDeployment/failure") {
+  if (msg.type === "publish/validateContentRecord/failure") {
     return `${msg.data.message}: status ${msg.data.status} on ${msg.data.url}`;
   }
 
@@ -76,9 +76,9 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
 
   if (msg.type === "publish/failure") {
     if (msg.data.dashboardUrl) {
-      return `Deployment failed, click to view Connect logs: ${msg.data.dashboardUrl}`;
+      return `ContentRecord failed, click to view Connect logs: ${msg.data.dashboardUrl}`;
     }
-    return "Deployment failed";
+    return "ContentRecord failed";
   }
   if (msg.error !== undefined) {
     return `${msg.data.error}`;

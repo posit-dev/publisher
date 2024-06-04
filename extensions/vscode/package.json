@@ -101,38 +101,38 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.deployments.edit",
+        "command": "posit.publisher.contentRecords.edit",
         "title": "Edit",
         "icon": "$(edit)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.deployments.rename",
+        "command": "posit.publisher.contentRecords.rename",
         "title": "Rename",
         "icon": "$(symbol-key)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.deployments.forget",
-        "title": "Forget Deployment Locally",
+        "command": "posit.publisher.contentRecords.forget",
+        "title": "Forget ContentRecord Locally",
         "icon": "$(close-all)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.deployments.visit",
-        "title": "View Deployment in Connect",
+        "command": "posit.publisher.contentRecords.visit",
+        "title": "View ContentRecord in Connect",
         "icon": "$(link-external)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.deployments.refresh",
-        "title": "Refresh Deployments",
+        "command": "posit.publisher.contentRecords.refresh",
+        "title": "Refresh ContentRecords",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.files.refresh",
-        "title": "Refresh Deployment Files",
+        "title": "Refresh ContentRecord Files",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
@@ -201,7 +201,7 @@
       },
       {
         "command": "posit.publisher.logs.visit",
-        "title": "View Deployment in Connect",
+        "title": "View ContentRecord in Connect",
         "icon": "$(link-external)",
         "category": "Posit Publisher"
       },
@@ -258,8 +258,8 @@
           "group": "navigation@2"
         },
         {
-          "command": "posit.publisher.deployments.refresh",
-          "when": "view == posit.publisher.deployments",
+          "command": "posit.publisher.contentRecords.refresh",
+          "when": "view == posit.publisher.contentRecords",
           "group": "navigation@2"
         },
         {
@@ -316,18 +316,18 @@
           "when": "view == posit.publisher.credentials && viewItem == posit.publisher.credentials.tree.item.keychain"
         },
         {
-          "command": "posit.publisher.deployments.rename",
-          "when": "view == posit.publisher.deployments",
+          "command": "posit.publisher.contentRecords.rename",
+          "when": "view == posit.publisher.contentRecords",
           "group": "menu@1"
         },
         {
-          "command": "posit.publisher.deployments.forget",
-          "when": "view == posit.publisher.deployments",
+          "command": "posit.publisher.contentRecords.forget",
+          "when": "view == posit.publisher.contentRecords",
           "group": "menu@2"
         },
         {
-          "command": "posit.publisher.deployments.visit",
-          "when": "viewItem == posit.publisher.deployments.tree.item.deployment",
+          "command": "posit.publisher.contentRecords.visit",
+          "when": "viewItem == posit.publisher.contentRecords.tree.item.contentRecord",
           "group": "inline"
         }
       ],
@@ -369,19 +369,19 @@
           "when": "posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.deployments.edit",
+          "command": "posit.publisher.contentRecords.edit",
           "when": "false"
         },
         {
-          "command": "posit.publisher.deployments.rename",
+          "command": "posit.publisher.contentRecords.rename",
           "when": "false"
         },
         {
-          "command": "posit.publisher.deployments.forget",
+          "command": "posit.publisher.contentRecords.forget",
           "when": "false"
         },
         {
-          "command": "posit.publisher.deployments.refresh",
+          "command": "posit.publisher.contentRecords.refresh",
           "when": "posit.publish.state == 'initialized'"
         },
         {
@@ -448,32 +448,32 @@
         },
         {
           "command": "posit.publisher.homeView.navigateToDestination.Server",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-deployment-more-menu'",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-contentRecord-more-menu'",
           "group": "navigation@1"
         },
         {
           "command": "posit.publisher.homeView.navigateToDestionation.ContentLog",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-deployment-more-menu'",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-contentRecord-more-menu'",
           "group": "navigation@2"
         },
         {
           "command": "posit.publisher.showOutputChannel",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-deployment-more-menu'",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-contentRecord-more-menu'",
           "group": "show@1"
         },
         {
           "command": "posit.publisher.showPublishingLog",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-deployment-more-menu'",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-last-contentRecord-more-menu'",
           "group": "show@2"
         },
         {
           "command": "posit.publisher.showOutputChannel",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-active-deployment-more-menu'",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-active-contentRecord-more-menu'",
           "group": "show@1"
         },
         {
           "command": "posit.publisher.showPublishingLog",
-          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-active-deployment-more-menu'",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-active-contentRecord-more-menu'",
           "group": "show@2"
         }
       ]
@@ -533,8 +533,8 @@
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
         },
         {
-          "id": "posit.publisher.deployments",
-          "name": "Deployments",
+          "id": "posit.publisher.contentRecords",
+          "name": "ContentRecords",
           "contextualTitle": "Publisher",
           "icon": "$(cloud-upload)",
           "visibility": "hidden",

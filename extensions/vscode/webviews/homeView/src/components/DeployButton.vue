@@ -20,14 +20,14 @@ const hostConduit = useHostConduitService();
 
 const haveResources = computed(
   () =>
-    Boolean(home.selectedDeployment) &&
+    Boolean(home.selectedContentRecord) &&
     Boolean(home.selectedConfiguration) &&
     Boolean(home.serverCredential),
 );
 
 const deploy = () => {
   if (
-    !home.selectedDeployment ||
+    !home.selectedContentRecord ||
     !home.selectedConfiguration ||
     !home.serverCredential
   ) {
@@ -39,7 +39,7 @@ const deploy = () => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.DEPLOY,
     content: {
-      deploymentName: home.selectedDeployment.saveName,
+      contentRecordName: home.selectedContentRecord.saveName,
       configurationName: home.selectedConfiguration.configurationName,
       credentialName: home.serverCredential.name,
     },

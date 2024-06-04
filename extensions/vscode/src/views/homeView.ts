@@ -22,15 +22,15 @@ import {
   Configuration,
   ConfigurationError,
   Credential,
-  Deployment,
+  ContentRecord,
   EventStreamMessage,
   FileAction,
-  PreDeployment,
-  PreDeploymentWithConfig,
+  PreContentRecord,
+  PreContentRecordWithConfig,
   isConfigurationError,
-  isDeploymentError,
-  isPreDeployment,
-  isPreDeploymentWithConfig,
+  isContentRecordError,
+  isPreContentRecord,
+  isPreContentRecordWithConfig,
   useApi,
 } from "src/api";
 import { useBus } from "src/bus";
@@ -86,10 +86,10 @@ const lastSelectionState = viewName + ".lastSelectionState.v2";
 
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private _disposables: Disposable[] = [];
-  private _deployments: (
-    | Deployment
-    | PreDeployment
-    | PreDeploymentWithConfig
+  private _contentRecords: (
+    | ContentRecord
+    | PreContentRecord
+    | PreContentRecordWithConfig
   )[] = [];
 
   private _credentials: Credential[] = [];
@@ -122,8 +122,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     useBus().on("requestActiveConfig", () => {
       useBus().trigger("activeConfigChanged", this._getActiveConfig());
     });
-    useBus().on("requestActiveDeployment", () => {
-      useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
+    useBus().on("requestActiveContentRecord", () => {
+      useBus().trigger(
+        "activeContentRecordChanged",
+        this._getActiveContentRecord(),
+      );
     });
 
     useBus().on("activeConfigChanged", (cfg) => {
@@ -222,8 +225,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async _onDeployMsg(msg: DeployMsg) {
     try {
       const api = await useApi();
-      const response = await api.deployments.publish(
-        msg.content.deploymentName,
+      const response = await api.contentRecords.publish(
+        msg.content.contentRecordName,
         msg.content.credentialName,
         msg.content.configurationName,
       );
@@ -332,23 +335,23 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private async _refreshDeploymentData() {
+  private async _refreshContentRecordData() {
     try {
       // API Returns:
       // 200 - success
       // 500 - internal server error
       const api = await useApi();
-      const response = await api.deployments.getAll();
-      const deployments = response.data;
-      this._deployments = [];
-      deployments.forEach((deployment) => {
-        if (!isDeploymentError(deployment)) {
-          this._deployments.push(deployment);
+      const response = await api.contentRecords.getAll();
+      const contentRecords = response.data;
+      this._contentRecords = [];
+      contentRecords.forEach((contentRecord) => {
+        if (!isContentRecordError(contentRecord)) {
+          this._contentRecords.push(contentRecord);
         }
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "_refreshDeploymentData::deployments.getAll",
+        "_refreshContentRecordData::contentRecords.getAll",
         error,
       );
       window.showInformationMessage(summary);
@@ -395,14 +398,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private _updateWebViewViewDeployments(
-    selectedDeploymentName?: string | null,
+  private _updateWebViewViewContentRecords(
+    selectedContentRecordName?: string | null,
   ) {
     this._webviewConduit.sendMsg({
-      kind: HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA,
+      kind: HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,
       content: {
-        deployments: this._deployments,
-        selectedDeploymentName,
+        contentRecords: this._contentRecords,
+        selectedContentRecordName,
       },
     });
   }
@@ -439,7 +442,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const state = this._context.workspaceState.get<HomeViewState>(
       lastSelectionState,
       {
-        deploymentName: undefined,
+        contentRecordName: undefined,
         configurationName: undefined,
       },
     );
@@ -451,13 +454,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return this.getConfigByName(savedState.configurationName);
   }
 
-  private _getActiveDeployment(): Deployment | PreDeployment | undefined {
+  private _getActiveContentRecord():
+    | ContentRecord
+    | PreContentRecord
+    | undefined {
     const savedState = this._getSelectionState();
-    return this.getDeploymentByName(savedState.deploymentName);
+    return this.getContentRecordByName(savedState.contentRecordName);
   }
 
-  private getDeploymentByName(name: string | undefined) {
-    return this._deployments.find((d) => d.deploymentName === name);
+  private getContentRecordByName(name: string | undefined) {
+    return this._contentRecords.find((d) => d.contentRecordName === name);
   }
 
   private getConfigByName(name: string | undefined) {
@@ -467,7 +473,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async _saveSelectionState(state: HomeViewState): Promise<void> {
     await this._context.workspaceState.update(lastSelectionState, state);
 
-    useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
+    useBus().trigger(
+      "activeContentRecordChanged",
+      this._getActiveContentRecord(),
+    );
     useBus().trigger("activeConfigChanged", this._getActiveConfig());
   }
 
@@ -672,19 +681,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async propogateDestinationSelection(
     configurationName?: string,
-    deploymentName?: string,
+    contentRecordName?: string,
   ) {
     // We have to break our protocol and go ahead and write this into storage,
     // in case this multi-stepper is actually running ahead of the webview
     // being brought up.
     this._saveSelectionState({
-      deploymentName,
+      contentRecordName,
       configurationName,
     });
     // Now push down into the webview
     this._updateWebViewViewCredentials();
     this._updateWebViewViewConfigurations(configurationName);
-    this._updateWebViewViewDeployments(deploymentName);
+    this._updateWebViewViewContentRecords(contentRecordName);
     // And have the webview save what it has selected.
     this._requestWebviewSaveSelection();
   }
@@ -697,16 +706,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const config = await selectConfig(label, viewName);
     if (config) {
-      const activeDeployment = this._getActiveDeployment();
-      if (activeDeployment === undefined) {
+      const activeContentRecord = this._getActiveContentRecord();
+      if (activeContentRecord === undefined) {
         console.error(
-          "homeView::selectConfigForDestination: No active deployment.",
+          "homeView::selectConfigForDestination: No active contentRecord.",
         );
         return;
       }
       const api = await useApi();
-      await api.deployments.patch(
-        activeDeployment.deploymentName,
+      await api.contentRecords.patch(
+        activeContentRecord.contentRecordName,
         config.configurationName,
       );
     }
@@ -718,7 +727,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const destinationObjects = await newDestination(viewId);
     if (destinationObjects) {
       // add out new objects into our collections possibly ahead (we don't know) of
-      // the file refresh activity (for deployment and config)
+      // the file refresh activity (for contentRecord and config)
       // and the credential refresh that we will kick off
       //
       // Doing this as an alternative to forcing a full refresh
@@ -726,12 +735,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // be seen as a visible delay (we'd have to have a progress indicator).
       let refreshCredentials = false;
       if (
-        !this._deployments.find(
-          (deployment) =>
-            deployment.saveName === destinationObjects.deployment.saveName,
+        !this._contentRecords.find(
+          (contentRecord) =>
+            contentRecord.saveName ===
+            destinationObjects.contentRecord.saveName,
         )
       ) {
-        this._deployments.push(destinationObjects.deployment);
+        this._contentRecords.push(destinationObjects.contentRecord);
       }
       if (
         !this._configs.find(
@@ -754,7 +764,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       this.propogateDestinationSelection(
         destinationObjects.configuration.configurationName,
-        destinationObjects.deployment.saveName,
+        destinationObjects.contentRecord.saveName,
       );
       // Credentials aren't auto-refreshed, so we have to trigger it ourselves.
       if (refreshCredentials) {
@@ -762,33 +772,34 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
       return {
         configurationName: destinationObjects.configuration.configurationName,
-        deploymentName: destinationObjects.deployment.saveName,
+        contentRecordName: destinationObjects.contentRecord.saveName,
       };
     }
     return undefined;
   }
 
   private showNewCredential() {
-    const deployment = this._getActiveDeployment();
+    const contentRecord = this._getActiveContentRecord();
 
     return commands.executeCommand(
       "posit.publisher.credentials.add",
-      deployment?.serverUrl,
+      contentRecord?.serverUrl,
     );
   }
 
   private async showDestinationQuickPick(): Promise<
     DestinationNames | undefined
   > {
-    // Create quick pick list from current deployments, credentials and configs
+    // Create quick pick list from current contentRecords, credentials and configs
     const destinations: DestinationQuickPick[] = [];
-    const lastDeploymentName = this._getActiveDeployment()?.saveName;
+    const lastContentRecordName = this._getActiveContentRecord()?.saveName;
     const lastConfigName = this._getActiveConfig()?.configurationName;
 
-    this._deployments.forEach((deployment) => {
+    this._contentRecords.forEach((contentRecord) => {
       if (
-        isDeploymentError(deployment) ||
-        (isPreDeployment(deployment) && !isPreDeploymentWithConfig(deployment))
+        isContentRecordError(contentRecord) ||
+        (isPreContentRecord(contentRecord) &&
+          !isPreContentRecordWithConfig(contentRecord))
       ) {
         // we won't include these for now. Perhaps in the future, we can show them
         // as disabled.
@@ -796,38 +807,39 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
 
       let config: Configuration | undefined;
-      if (deployment.configurationName) {
+      if (contentRecord.configurationName) {
         config = this._configs.find(
-          (config) => config.configurationName === deployment.configurationName,
+          (config) =>
+            config.configurationName === contentRecord.configurationName,
         );
       }
 
       let credential = this._credentials.find(
         (credential) =>
           normalizeURL(credential.url).toLowerCase() ===
-          normalizeURL(deployment.serverUrl).toLowerCase(),
+          normalizeURL(contentRecord.serverUrl).toLowerCase(),
       );
 
-      const result = calculateTitle(deployment, config);
+      const result = calculateTitle(contentRecord, config);
       const title = result.title;
       let problem = result.problem;
 
       let configName = config?.configurationName;
       if (!configName) {
-        configName = deployment.configurationName
-          ? `Missing Configuration ${deployment.configurationName}`
-          : `ERROR: No Config Entry in Deployment file - ${deployment.saveName}`;
+        configName = contentRecord.configurationName
+          ? `Missing Configuration ${contentRecord.configurationName}`
+          : `ERROR: No Config Entry in ContentRecord file - ${contentRecord.saveName}`;
         problem = true;
       }
 
       let detail = credential?.name;
       if (!credential?.name) {
-        detail = `Missing Credential for ${deployment.serverUrl}`;
+        detail = `Missing Credential for ${contentRecord.serverUrl}`;
         problem = true;
       }
 
       let lastMatch =
-        lastDeploymentName === deployment.saveName &&
+        lastContentRecordName === contentRecord.saveName &&
         lastConfigName === configName;
 
       const destination: DestinationQuickPick = {
@@ -836,7 +848,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         iconPath: problem
           ? new ThemeIcon("error")
           : new ThemeIcon("cloud-upload"),
-        deployment,
+        contentRecord,
         config,
         lastMatch,
       };
@@ -881,12 +893,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let result: DestinationNames | undefined;
     if (destination) {
       result = {
-        deploymentName: destination.deployment.saveName,
-        configurationName: destination.deployment.configurationName,
+        contentRecordName: destination.contentRecord.saveName,
+        configurationName: destination.contentRecord.configurationName,
       };
       this._updateWebViewViewCredentials();
       this._updateWebViewViewConfigurations(result.configurationName);
-      this._updateWebViewViewDeployments(result.deploymentName);
+      this._updateWebViewViewContentRecords(result.contentRecordName);
       this._requestWebviewSaveSelection();
     }
     return result;
@@ -995,7 +1007,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   public refreshAll = async (includeSavedState?: boolean) => {
     try {
       await Promise.all([
-        this._refreshDeploymentData(),
+        this._refreshContentRecordData(),
         this._refreshConfigurationData(),
         this._refreshCredentialData(),
       ]);
@@ -1014,17 +1026,25 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this._updateWebViewViewConfigurations(
       selectionState?.configurationName || null,
     );
-    this._updateWebViewViewDeployments(selectionState?.deploymentName || null);
+    this._updateWebViewViewContentRecords(
+      selectionState?.contentRecordName || null,
+    );
     if (includeSavedState && selectionState) {
-      useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
+      useBus().trigger(
+        "activeContentRecordChanged",
+        this._getActiveContentRecord(),
+      );
       useBus().trigger("activeConfigChanged", this._getActiveConfig());
     }
   };
 
-  public refreshDeployments = async () => {
-    await this._refreshDeploymentData();
-    this._updateWebViewViewDeployments();
-    useBus().trigger("activeDeploymentChanged", this._getActiveDeployment());
+  public refreshContentRecords = async () => {
+    await this._refreshContentRecordData();
+    this._updateWebViewViewContentRecords();
+    useBus().trigger(
+      "activeContentRecordChanged",
+      this._getActiveContentRecord(),
+    );
   };
 
   public refreshConfigurations = async () => {
@@ -1096,43 +1116,43 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this,
       ),
       commands.registerCommand(visitDestinationServerCommand, async () => {
-        const deployment = this._getActiveDeployment();
-        if (deployment) {
-          await env.openExternal(Uri.parse(deployment.serverUrl));
+        const contentRecord = this._getActiveContentRecord();
+        if (contentRecord) {
+          await env.openExternal(Uri.parse(contentRecord.serverUrl));
         }
       }),
       commands.registerCommand(visitDestinationContentCommand, async () => {
-        const deployment = this._getActiveDeployment();
-        if (deployment && !isPreDeployment(deployment)) {
-          await env.openExternal(Uri.parse(deployment.dashboardUrl));
+        const contentRecord = this._getActiveContentRecord();
+        if (contentRecord && !isPreContentRecord(contentRecord)) {
+          await env.openExternal(Uri.parse(contentRecord.dashboardUrl));
         }
       }),
       commands.registerCommand(visitDestinationContentLogCommand, async () => {
-        const deployment = this._getActiveDeployment();
-        if (deployment && !isPreDeployment(deployment)) {
-          const logUrl = `${deployment.dashboardUrl}/logs`;
+        const contentRecord = this._getActiveContentRecord();
+        if (contentRecord && !isPreContentRecord(contentRecord)) {
+          const logUrl = `${contentRecord.dashboardUrl}/logs`;
           await env.openExternal(Uri.parse(logUrl));
         }
       }),
     );
 
     watchers.positDir?.onDidDelete(() => {
-      this.refreshDeployments();
+      this.refreshContentRecords();
       this.refreshConfigurations();
     }, this);
     watchers.publishDir?.onDidDelete(() => {
-      this.refreshDeployments();
+      this.refreshContentRecords();
       this.refreshConfigurations();
     }, this);
-    watchers.deploymentsDir?.onDidDelete(this.refreshDeployments, this);
+    watchers.contentRecordsDir?.onDidDelete(this.refreshContentRecords, this);
 
     watchers.configurations?.onDidCreate(this.refreshConfigurations, this);
     watchers.configurations?.onDidDelete(this.refreshConfigurations, this);
     watchers.configurations?.onDidChange(this.refreshConfigurations, this);
 
-    watchers.deployments?.onDidCreate(this.refreshDeployments, this);
-    watchers.deployments?.onDidDelete(this.refreshDeployments, this);
-    watchers.deployments?.onDidChange(this.refreshDeployments, this);
+    watchers.contentRecords?.onDidCreate(this.refreshContentRecords, this);
+    watchers.contentRecords?.onDidDelete(this.refreshContentRecords, this);
+    watchers.contentRecords?.onDidChange(this.refreshContentRecords, this);
 
     watchers.allFiles?.onDidCreate(this.sendRefreshedFilesLists, this);
     watchers.allFiles?.onDidDelete(this.sendRefreshedFilesLists, this);

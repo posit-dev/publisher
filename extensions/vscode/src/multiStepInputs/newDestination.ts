@@ -23,14 +23,14 @@ import {
   ConfigurationDetails,
   Credential,
   Configuration,
-  PreDeployment,
+  PreContentRecord,
   contentTypeStrings,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   untitledConfigurationName,
-  untitledDeploymentName,
+  untitledContentRecordName,
 } from "src/utils/names";
 import { formatURL, normalizeURL } from "src/utils/url";
 import { validateApiKey } from "src/utils/apiKeys";
@@ -264,11 +264,11 @@ export async function newDestination(
 
   let entryPointListItems: QuickPickItemWithIndex[] = [];
   let configDetails: ConfigurationDetails[] = [];
-  let deploymentNames: string[] = [];
+  let contentRecordNames: string[] = [];
 
   let newConfig: Configuration | undefined;
   let newOrSelectedCredential: Credential | undefined;
-  let newDeployment: PreDeployment | undefined;
+  let newContentRecord: PreContentRecord | undefined;
 
   const createNewCredentialLabel = "Create a New Credential";
 
@@ -386,21 +386,21 @@ export async function newDestination(
     },
   );
 
-  const getDeployments = new Promise<void>(async (resolve, reject) => {
+  const getContentRecords = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.deployments.getAll();
-      const deploymentList = response.data;
-      // Note.. we want all of the deployment filenames regardless if they are valid or not.
-      deploymentNames = deploymentList.map(
-        (deployment) => deployment.deploymentName,
+      const response = await api.contentRecords.getAll();
+      const contentRecordList = response.data;
+      // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
+      contentRecordNames = contentRecordList.map(
+        (contentRecord) => contentRecord.contentRecordName,
       );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "newDeployment, deployments.getAll",
+        "newContentRecord, contentRecords.getAll",
         error,
       );
       window.showInformationMessage(
-        `Unable to continue due to deployment error. ${summary}`,
+        `Unable to continue due to contentRecord error. ${summary}`,
       );
       return reject();
     }
@@ -410,7 +410,7 @@ export async function newDestination(
   const apisComplete = Promise.all([
     getCredentials,
     getConfigurationInspections,
-    getDeployments,
+    getContentRecords,
   ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
@@ -438,9 +438,9 @@ export async function newDestination(
   // Select the entrypoint, if there is more than one
   // Prompt for Title
   // Auto-name the config file to use
-  // Auto-name the deployment
+  // Auto-name the contentRecord
   // Call APIs and hopefully succeed at everything
-  // Return the names of the deployment, config and credentials
+  // Return the names of the contentRecord, config and credentials
 
   // ***************************************************************
   // Method which kicks off the multi-step.
@@ -690,7 +690,7 @@ export async function newDestination(
 
   // ***************************************************************
   // Step #6 - maybe?:
-  // Select the config to be used w/ the deployment
+  // Select the config to be used w/ the contentRecord
   // ***************************************************************
   async function inputEntryPointSelection(
     input: MultiStepInput,
@@ -894,27 +894,29 @@ export async function newDestination(
     throw new Error("NewDestination Unexpected type guard failure @4");
   }
 
-  // Create the Predeployment File
+  // Create the PrecontentRecord File
   try {
-    const response = await api.deployments.createNew(
+    const response = await api.contentRecords.createNew(
       finalCredentialName,
       configName,
-      untitledDeploymentName(deploymentNames),
+      untitledContentRecordName(contentRecordNames),
     );
-    newDeployment = response.data;
+    newContentRecord = response.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "newDestination, deployments.createNew",
+      "newDestination, contentRecords.createNew",
       error,
     );
-    window.showErrorMessage(`Failed to create pre-deployment file. ${summary}`);
+    window.showErrorMessage(
+      `Failed to create pre-contentRecord file. ${summary}`,
+    );
     return;
   }
   if (!newOrSelectedCredential) {
     throw new Error("NewDestination Unexpected type guard failure @5");
   }
   return {
-    deployment: newDeployment,
+    contentRecord: newContentRecord,
     configuration: newConfig,
     credential: newOrSelectedCredential,
   };

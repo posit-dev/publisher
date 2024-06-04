@@ -1,27 +1,27 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { Omnibus, args } from "@hypersphere/omnibus";
-import { Configuration, Deployment, PreDeployment } from "src/api";
+import { Configuration, ContentRecord, PreContentRecord } from "src/api";
 
 export const bus = Omnibus.builder()
-  // activeDeploymentChanged: triggered if deployment name or value has changed
+  // activeContentRecordChanged: triggered if contentRecord name or value has changed
   .register(
-    "activeDeploymentChanged",
-    args<Deployment | PreDeployment | undefined>(),
+    "activeContentRecordChanged",
+    args<ContentRecord | PreContentRecord | undefined>(),
   )
   // activeConfigurationChanged: triggered if configuration name or value has changed
   .register("activeConfigChanged", args<Configuration | undefined>())
   // requestActive*: simple events which will cause an Active*Change event to be sent back out.
   .register("requestActiveConfig", args<undefined>())
-  .register("requestActiveDeployment", args<undefined>())
+  .register("requestActiveContentRecord", args<undefined>())
   .register("refreshCredentials", args<undefined>())
 
   .build();
 
 // Setup message logging
-bus.on("activeDeploymentChanged", (msg) => {
+bus.on("activeContentRecordChanged", (msg) => {
   console.debug(
-    `\nbus trace: activeDeploymentChanged: ${JSON.stringify(msg)}\n`,
+    `\nbus trace: activeContentRecordChanged: ${JSON.stringify(msg)}\n`,
   );
 });
 bus.on("activeConfigChanged", (msg) => {
@@ -30,8 +30,10 @@ bus.on("activeConfigChanged", (msg) => {
 bus.on("requestActiveConfig", (msg) => {
   console.debug(`\nbus trace: requestActiveConfig: ${JSON.stringify(msg)}`);
 });
-bus.on("requestActiveDeployment", (msg) => {
-  console.debug(`\nbus trace: requestActiveDeployment: ${JSON.stringify(msg)}`);
+bus.on("requestActiveContentRecord", (msg) => {
+  console.debug(
+    `\nbus trace: requestActiveContentRecord: ${JSON.stringify(msg)}`,
+  );
 });
 bus.on("refreshCredentials", (msg) => {
   console.debug(`\nbus trace: refreshCredentials: ${JSON.stringify(msg)}`);

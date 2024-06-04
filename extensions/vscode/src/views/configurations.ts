@@ -238,7 +238,7 @@ export class ConfigurationTreeItem extends TreeItem {
         `Error: This configuration file is invalid.\n` +
         `Click to open it and resolve the underlined errors.\n` +
         `\n` +
-        `Warning: This configuration will not be available for deployment operations\n` +
+        `Warning: This configuration will not be available for contentRecord operations\n` +
         `until the issue is resolved.`;
     } else {
       const c = this.config.configuration;
