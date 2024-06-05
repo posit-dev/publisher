@@ -5,8 +5,12 @@ then
   set -x
 fi
 
-if ! ./scripts/get-version.bash | grep -E -q "^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"; then
+minor_version=$(./scripts/get-version.bash | cut -d '.' -f 2)
+
+if [[ $minor_version = *[13579] ]]; then
+    # odd minor versions are pre-releases
     echo true
 else
+    # even minor versions are production releases
     echo false
 fi
