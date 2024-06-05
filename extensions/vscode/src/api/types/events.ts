@@ -164,6 +164,7 @@ export const eventTypeToString = (eventTypeStr: string): string => {
     "publish/restoreREnv": "Restore R Environment",
     "publish/runContent": "Run Content",
     "publish/setVanityURL": "Set Vanity URL",
+    "publish/setEnvVars": "Set Environment Variables",
     "publish/validateDeployment": "Validate Deployment",
     "publish/success": "Wrapping up Deployment",
   };
