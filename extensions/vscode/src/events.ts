@@ -28,7 +28,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     return `Prepared file archive: ${msg.data.filename}`;
   }
 
-  if (msg.type === "publish/createContentRecord/start") {
+  if (msg.type === "publish/createDeployment/start") {
     return `Updating existing contentRecord with ID ${msg.data.contentId}`;
   }
 

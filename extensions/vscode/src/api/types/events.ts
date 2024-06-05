@@ -77,10 +77,10 @@ export interface EventSubscriptionTargetCallbackMap {
   "publish/createBundle/success": OnPublishCreateBundleSuccessCallback;
   "publish/createBundle/failure": OnPublishCreateBundleFailureCallback;
 
-  "publish/createContentRecord/start": OnPublishCreateContentRecordStartCallback;
-  "publish/createContentRecord/log": OnPublishCreateContentRecordLogCallback;
-  "publish/createContentRecord/success": OnPublishCreateContentRecordSuccessCallback;
-  "publish/createContentRecord/failure": OnPublishCreateContentRecordFailureCallback;
+  "publish/createDeployment/start": OnPublishCreateDeploymentStartCallback;
+  "publish/createDeployment/log": OnPublishCreateDeploymentLogCallback;
+  "publish/createDeployment/success": OnPublishCreateDeploymentSuccessCallback;
+  "publish/createDeployment/failure": OnPublishCreateDeploymentFailureCallback;
 
   "publish/uploadBundle/start": OnPublishUploadBundleStartCallback;
   "publish/uploadBundle/log": OnPublishUploadBundleLogCallback;
@@ -158,7 +158,7 @@ export const eventTypeToString = (eventTypeStr: string): string => {
     "publish/checkCapabilities": "Check Capabilities",
     "publish/createBundle": "Create Bundle",
     "publish/uploadBundle": "Upload Bundle",
-    "publish/createContentRecord": "Create ContentRecord",
+    "publish/createDeployment": "Create ContentRecord",
     "publish/deployBundle": "Deploy Bundle",
     "publish/restorePythonEnv": "Restore Python Environment",
     "publish/restoreREnv": "Restore R Environment",
@@ -496,67 +496,67 @@ export function isPublishCreateBundleFailure(
   return arg.type === "publish/createBundle/failure";
 }
 
-export interface PublishCreateContentRecordStart extends EventStreamMessage {
-  type: "publish/createContentRecord/start";
+export interface PublishCreateDeploymentStart extends EventStreamMessage {
+  type: "publish/createDeployment/start";
   data: {
     localId: string;
     contentId: string;
     saveName: string;
   };
 }
-export type OnPublishCreateContentRecordStartCallback = (
-  msg: PublishCreateContentRecordStart,
+export type OnPublishCreateDeploymentStartCallback = (
+  msg: PublishCreateDeploymentStart,
 ) => void;
-export function isPublishCreateContentRecordStart(
+export function isPublishCreateDeploymentStart(
   arg: Events,
-): arg is PublishCreateContentRecordStart {
-  return arg.type === "publish/createContentRecord/start";
+): arg is PublishCreateDeploymentStart {
+  return arg.type === "publish/createDeployment/start";
 }
 
-export interface PublishCreateContentRecordLog extends EventStreamMessage {
-  type: "publish/createContentRecord/log";
+export interface PublishCreateDeploymentLog extends EventStreamMessage {
+  type: "publish/createDeployment/log";
   data: {
     // structured data not guaranteed, use selective or generic queries
     // from data map
   };
 }
-export type OnPublishCreateContentRecordLogCallback = (
-  msg: PublishCreateContentRecordLog,
+export type OnPublishCreateDeploymentLogCallback = (
+  msg: PublishCreateDeploymentLog,
 ) => void;
-export function isPublishCreateContentRecordLog(
+export function isPublishCreateDeploymentLog(
   arg: Events,
-): arg is PublishCreateContentRecordLog {
-  return arg.type === "publish/createContentRecord/log";
+): arg is PublishCreateDeploymentLog {
+  return arg.type === "publish/createDeployment/log";
 }
 
-export interface PublishCreateContentRecordSuccess extends EventStreamMessage {
-  type: "publish/createContentRecord/success";
+export interface PublishCreateDeploymentSuccess extends EventStreamMessage {
+  type: "publish/createDeployment/success";
   data: {
     localId: string;
   };
 }
-export type OnPublishCreateContentRecordSuccessCallback = (
-  msg: PublishCreateContentRecordSuccess,
+export type OnPublishCreateDeploymentSuccessCallback = (
+  msg: PublishCreateDeploymentSuccess,
 ) => void;
-export function isPublishCreateContentRecordSuccess(
+export function isPublishCreateDeploymentSuccess(
   arg: Events,
-): arg is PublishCreateContentRecordSuccess {
-  return arg.type === "publish/createContentRecord/success";
+): arg is PublishCreateDeploymentSuccess {
+  return arg.type === "publish/createDeployment/success";
 }
 
-export interface PublishCreateContentRecordFailure extends EventStreamMessage {
-  type: "publish/createContentRecord/failure";
+export interface PublishCreateDeploymentFailure extends EventStreamMessage {
+  type: "publish/createDeployment/failure";
   error: string; // translated internally
   // structured data not guaranteed, use selective or generic queries
   // from data map
 }
-export type OnPublishCreateContentRecordFailureCallback = (
-  msg: PublishCreateContentRecordFailure,
+export type OnPublishCreateDeploymentFailureCallback = (
+  msg: PublishCreateDeploymentFailure,
 ) => void;
-export function isPublishCreateContentRecordFailure(
+export function isPublishCreateDeploymentFailure(
   arg: Events,
-): arg is PublishCreateContentRecordFailure {
-  return arg.type === "publish/createContentRecord/failure";
+): arg is PublishCreateDeploymentFailure {
+  return arg.type === "publish/createDeployment/failure";
 }
 
 export interface PublishUploadBundleStart extends EventStreamMessage {
@@ -1182,9 +1182,9 @@ export type Events =
   | PublishCreateBundleLog
   | PublishCreateBundleSuccess
   | PublishCreateBundleFailure
-  | PublishCreateContentRecordStart
-  | PublishCreateContentRecordSuccess
-  | PublishCreateContentRecordFailure
+  | PublishCreateDeploymentStart
+  | PublishCreateDeploymentSuccess
+  | PublishCreateDeploymentFailure
   | PublishUploadBundleStart
   | PublishUploadBundleSuccess
   | PublishUploadBundleFailure

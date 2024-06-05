@@ -104,7 +104,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         createLogStage("Upload Bundle", "Uploading Bundle"),
       ],
       [
-        "publish/createContentRecord",
+        "publish/createDeployment",
         createLogStage(
           "Create Deployment Record",
           "Creating Deployment Record",
