@@ -62,7 +62,7 @@ const createLogStage = (
 
 const viewName = "posit.publisher.logs";
 const visitCommand = viewName + ".visit";
-const showDeploymentLogsCommand = "posit.publisher.logs.focus";
+const showContentRecordLogsCommand = "posit.publisher.logs.focus";
 
 /**
  * Tree data provider for the Logs view.
@@ -105,7 +105,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ],
       [
         "publish/createDeployment",
-        createLogStage("Create Deployment", "Creating Deployment"),
+        createLogStage(
+          "Create Deployment Record",
+          "Creating Deployment Record",
+        ),
       ],
       [
         "publish/deployBundle",
@@ -118,7 +121,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ["publish/runContent", createLogStage("Run Content", "Running Content")],
       [
         "publish/validateDeployment",
-        createLogStage("Validate Deployment", "Validating Deployment"),
+        createLogStage(
+          "Validate Deployment Record",
+          "Validating Deployment Record",
+        ),
       ],
     ]);
 
@@ -173,7 +179,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           showLogsOption,
         );
         if (selection === showLogsOption) {
-          await commands.executeCommand(showDeploymentLogsCommand);
+          await commands.executeCommand(showContentRecordLogsCommand);
         }
         this.refresh();
       },

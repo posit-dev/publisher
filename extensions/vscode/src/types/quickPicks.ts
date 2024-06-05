@@ -1,10 +1,14 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Configuration, Deployment, PreDeploymentWithConfig } from "src/api";
+import {
+  Configuration,
+  ContentRecord,
+  PreContentRecordWithConfig,
+} from "src/api";
 import { QuickPickItem } from "vscode";
 
-export interface DestinationQuickPick extends QuickPickItem {
-  deployment: Deployment | PreDeploymentWithConfig;
+export interface DeploymentQuickPick extends QuickPickItem {
+  contentRecord: ContentRecord | PreContentRecordWithConfig;
   config?: Configuration;
   lastMatch: boolean;
 }

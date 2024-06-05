@@ -13,11 +13,11 @@ import {
 import {
   Configuration,
   ConfigurationDetails,
-  Deployment,
-  PreDeployment,
+  ContentRecord,
+  PreContentRecord,
   contentTypeStrings,
   isConfigurationError,
-  isPreDeployment,
+  isPreContentRecord,
   useApi,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
@@ -37,7 +37,7 @@ import {
 } from "src/utils/filters";
 
 export async function selectConfig(
-  activeDeployment: Deployment | PreDeployment,
+  activeDeployment: ContentRecord | PreContentRecord,
   viewId?: string,
 ): Promise<Configuration | undefined> {
   // ***************************************************************
@@ -86,7 +86,7 @@ export async function selectConfig(
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment
       // or if the deployment file has no content type assigned yet.
-      if (!isPreDeployment(activeDeployment)) {
+      if (!isPreContentRecord(activeDeployment)) {
         configurations = filterConfigurationsToValidAndType(
           rawConfigs,
           activeDeployment.type,
@@ -230,7 +230,7 @@ export async function selectConfig(
 
   // ***************************************************************
   // Step #1:
-  // Select the config to be used w/ the deployment
+  // Select the config to be used w/ the contentRecord
   // ***************************************************************
   async function inputConfigFileSelection(
     input: MultiStepInput,
