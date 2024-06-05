@@ -1,6 +1,7 @@
 import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { useHostConduitService } from "../../src/HostConduitService";
+import { normalizeURL } from "../../../../src/utils/url";
 
 import {
   Credential,
@@ -26,10 +27,12 @@ export const useHomeStore = defineStore("home", () => {
 
   const serverCredential = computed(() => {
     return credentials.value.find((c) => {
-      return (
-        c.url.toLowerCase() ===
-        selectedContentRecord.value?.serverUrl.toLowerCase()
-      );
+      const credentialUrl = c.url.toLowerCase();
+      const recordUrl = selectedContentRecord.value?.serverUrl.toLowerCase();
+      if (!recordUrl) {
+        return false;
+      }
+      return normalizeURL(credentialUrl) === normalizeURL(recordUrl);
     });
   });
 
