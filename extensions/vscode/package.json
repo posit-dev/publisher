@@ -132,7 +132,7 @@
       },
       {
         "command": "posit.publisher.files.refresh",
-        "title": "Refresh ContentRecord Files",
+        "title": "Refresh Deployment Files",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },

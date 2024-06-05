@@ -908,7 +908,7 @@ export async function newDeployment(
       error,
     );
     window.showErrorMessage(
-      `Failed to create pre-contentRecord file. ${summary}`,
+      `Failed to create pre-deployment record. ${summary}`,
     );
     return;
   }

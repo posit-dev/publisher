@@ -64,9 +64,9 @@ export interface EventSubscriptionTargetCallbackMap {
   "publish/checkCapabilities/failure": OnPublishCheckCapabilitiesFailureCallback;
 
   // 'publish/createBundle/failure/authFailure' | // received but temporarily converted
-  "publish/createNewContentRecord/start": OnPublishCreateNewContentRecordStartCallback;
-  "publish/createNewContentRecord/success": OnPublishCreateNewContentRecordSuccessCallback;
-  "publish/createNewContentRecord/failure": OnPublishCreateNewContentRecordFailureCallback;
+  "publish/createNewDeployment/start": OnPublishCreateNewDeploymentStartCallback;
+  "publish/createNewDeployment/success": OnPublishCreateNewDeploymentSuccessCallback;
+  "publish/createNewDeployment/failure": OnPublishCreateNewDeploymentFailureCallback;
 
   "publish/setEnvVars/start": OnPublishSetEnvVarsStartCallback;
   "publish/setEnvVars/success": OnPublishSetEnvVarsSuccessCallback;
@@ -127,10 +127,10 @@ export interface EventSubscriptionTargetCallbackMap {
   "publish/setVanityURL/success": OnPublishSetVanityURLSuccessCallback;
   "publish/setVanityURL/failure": OnPublishSetVanityURLFailureCallback;
 
-  "publish/validateContentRecord/start": OnPublishValidateContentRecordStartCallback;
-  "publish/validateContentRecord/log": OnPublishValidateContentRecordLogCallback;
-  "publish/validateContentRecord/success": OnPublishValidateContentRecordSuccessCallback;
-  "publish/validateContentRecord/failure": OnPublishValidateContentRecordFailureCallback;
+  "publish/validateDeployment/start": OnPublishValidateDeploymentStartCallback;
+  "publish/validateDeployment/log": OnPublishValidateDeploymentLogCallback;
+  "publish/validateDeployment/success": OnPublishValidateDeploymentSuccessCallback;
+  "publish/validateDeployment/failure": OnPublishValidateDeploymentFailureCallback;
 
   "publish/success": OnPublishSuccessCallback;
   "publish/failure": OnPublishFailureCallback;
@@ -164,7 +164,7 @@ export const eventTypeToString = (eventTypeStr: string): string => {
     "publish/restoreREnv": "Restore R Environment",
     "publish/runContent": "Run Content",
     "publish/setVanityURL": "Set Vanity URL",
-    "publish/validateContentRecord": "Validate ContentRecord",
+    "publish/validateDeployment": "Validate ContentRecord",
     "publish/success": "Wrapping up ContentRecord",
   };
 
@@ -342,54 +342,52 @@ export function isPublishCheckCapabilitiesFailure(
   return arg.type === "publish/checkCapabilities/failure";
 }
 
-export interface PublishCreateNewContentRecordStart extends EventStreamMessage {
-  type: "publish/createNewContentRecord/start";
+export interface PublishCreateNewDeploymentStart extends EventStreamMessage {
+  type: "publish/createNewDeployment/start";
   data: {
     localId: string;
     saveName: string;
   };
 }
-export type OnPublishCreateNewContentRecordStartCallback = (
-  msg: PublishCreateNewContentRecordStart,
+export type OnPublishCreateNewDeploymentStartCallback = (
+  msg: PublishCreateNewDeploymentStart,
 ) => void;
-export function isPublishCreateNewContentRecordStart(
+export function isPublishCreateNewDeploymentStart(
   arg: Events,
-): arg is PublishCreateNewContentRecordStart {
-  return arg.type === "publish/createNewContentRecord/start";
+): arg is PublishCreateNewDeploymentStart {
+  return arg.type === "publish/createNewDeployment/start";
 }
 
-export interface PublishCreateNewContentRecordSuccess
-  extends EventStreamMessage {
-  type: "publish/createNewContentRecord/success";
+export interface PublishCreateNewDeploymentSuccess extends EventStreamMessage {
+  type: "publish/createNewDeployment/success";
   data: {
     localId: string;
     contentId: string;
     saveName: string;
   };
 }
-export type OnPublishCreateNewContentRecordSuccessCallback = (
-  msg: PublishCreateNewContentRecordSuccess,
+export type OnPublishCreateNewDeploymentSuccessCallback = (
+  msg: PublishCreateNewDeploymentSuccess,
 ) => void;
-export function isPublishCreateNewContentRecordSuccess(
+export function isPublishCreateNewDeploymentSuccess(
   arg: Events,
-): arg is PublishCreateNewContentRecordSuccess {
-  return arg.type === "publish/createNewContentRecord/success";
+): arg is PublishCreateNewDeploymentSuccess {
+  return arg.type === "publish/createNewDeployment/success";
 }
 
-export interface PublishCreateNewContentRecordFailure
-  extends EventStreamMessage {
-  type: "publish/createNewContentRecord/failure";
+export interface PublishCreateNewDeploymentFailure extends EventStreamMessage {
+  type: "publish/createNewDeployment/failure";
   error: string; // translated internally
   // structured data not guaranteed, use selective or generic queries
   // from data map
 }
-export type OnPublishCreateNewContentRecordFailureCallback = (
-  msg: PublishCreateNewContentRecordFailure,
+export type OnPublishCreateNewDeploymentFailureCallback = (
+  msg: PublishCreateNewDeploymentFailure,
 ) => void;
-export function isPublishCreateNewContentRecordFailure(
+export function isPublishCreateNewDeploymentFailure(
   arg: Events,
-): arg is PublishCreateNewContentRecordFailure {
-  return arg.type === "publish/createNewContentRecord/failure";
+): arg is PublishCreateNewDeploymentFailure {
+  return arg.type === "publish/createNewDeployment/failure";
 }
 
 export interface PublishSetEnvVarsStart extends EventStreamMessage {
@@ -1081,66 +1079,64 @@ export function isPublishSetVanityURLFailure(
 ): arg is PublishRestorePythonEnvFailure {
   return arg.type === "publish/setVanityURL/failure";
 }
-export interface PublishValidateContentRecordStart extends EventStreamMessage {
-  type: "publish/validateContentRecord/start";
+export interface PublishValidateDeploymentStart extends EventStreamMessage {
+  type: "publish/validateDeployment/start";
   data: {
     localId: string;
     url: string;
   };
 }
-export type OnPublishValidateContentRecordStartCallback = (
-  msg: PublishValidateContentRecordStart,
+export type OnPublishValidateDeploymentStartCallback = (
+  msg: PublishValidateDeploymentStart,
 ) => void;
-export function isPublishValidateContentRecordStart(
+export function isPublishValidateDeploymentStart(
   arg: Events,
-): arg is PublishValidateContentRecordStart {
-  return arg.type === "publish/validateContentRecord/start";
+): arg is PublishValidateDeploymentStart {
+  return arg.type === "publish/validateDeployment/start";
 }
 
-export interface PublishValidateContentRecordLog extends EventStreamMessage {
-  type: "publish/validateContentRecord/log";
+export interface PublishValidateDeploymentLog extends EventStreamMessage {
+  type: "publish/validateDeployment/log";
   // structured data not guaranteed, use selective or generic queries
   // from data map
 }
-export type OnPublishValidateContentRecordLogCallback = (
-  msg: PublishValidateContentRecordLog,
+export type OnPublishValidateDeploymentLogCallback = (
+  msg: PublishValidateDeploymentLog,
 ) => void;
-export function isPublishValidateContentRecordLog(
+export function isPublishValidateDeploymentLog(
   arg: Events,
-): arg is PublishValidateContentRecordLog {
-  return arg.type === "publish/validateContentRecord/log";
+): arg is PublishValidateDeploymentLog {
+  return arg.type === "publish/validateDeployment/log";
 }
 
-export interface PublishValidateContentRecordSuccess
-  extends EventStreamMessage {
-  type: "publish/validateContentRecord/success";
+export interface PublishValidateDeploymentSuccess extends EventStreamMessage {
+  type: "publish/validateDeployment/success";
   data: {
     localId: string;
   };
 }
-export type OnPublishValidateContentRecordSuccessCallback = (
-  msg: PublishValidateContentRecordSuccess,
+export type OnPublishValidateDeploymentSuccessCallback = (
+  msg: PublishValidateDeploymentSuccess,
 ) => void;
-export function isPublisValidateContentRecordSuccess(
+export function isPublisValidateDeploymentSuccess(
   arg: Events,
-): arg is PublishValidateContentRecordSuccess {
-  return arg.type === "publish/validateContentRecord/success";
+): arg is PublishValidateDeploymentSuccess {
+  return arg.type === "publish/validateDeployment/success";
 }
 
-export interface PublishValidateContentRecordFailure
-  extends EventStreamMessage {
-  type: "publish/validateContentRecord/failure";
+export interface PublishValidateDeploymentFailure extends EventStreamMessage {
+  type: "publish/validateDeployment/failure";
   error: string; // translated internally
   // structured data not guaranteed, use selective or generic queries
   // from data map
 }
-export type OnPublishValidateContentRecordFailureCallback = (
-  msg: PublishValidateContentRecordFailure,
+export type OnPublishValidateDeploymentFailureCallback = (
+  msg: PublishValidateDeploymentFailure,
 ) => void;
-export function isPublishValidateContentRecordFailure(
+export function isPublishValidateDeploymentFailure(
   arg: Events,
-): arg is PublishValidateContentRecordFailure {
-  return arg.type === "publish/validateContentRecord/failure";
+): arg is PublishValidateDeploymentFailure {
+  return arg.type === "publish/validateDeployment/failure";
 }
 
 export interface PublishSuccess extends EventStreamMessage {

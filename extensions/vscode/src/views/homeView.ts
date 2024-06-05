@@ -708,7 +708,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const activeContentRecord = this._getActiveContentRecord();
       if (activeContentRecord === undefined) {
         console.error(
-          "homeView::selectConfigForDeployment: No active contentRecord.",
+          "homeView::selectConfigForDeployment: No active deployment.",
         );
         return;
       }
@@ -825,7 +825,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (!configName) {
         configName = contentRecord.configurationName
           ? `Missing Configuration ${contentRecord.configurationName}`
-          : `ERROR: No Config Entry in ContentRecord file - ${contentRecord.saveName}`;
+          : `ERROR: No Config Entry in Deployment record - ${contentRecord.saveName}`;
         problem = true;
       }
 

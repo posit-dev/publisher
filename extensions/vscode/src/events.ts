@@ -20,7 +20,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     }
   }
 
-  if (msg.type === "publish/createNewContentRecord/success") {
+  if (msg.type === "publish/createNewDeployment/success") {
     return `Created new contentRecord as ${msg.data.saveName}`;
   }
 
@@ -57,7 +57,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     return `${msg.data.message} ${msg.data.path}`;
   }
 
-  if (msg.type === "publish/validateContentRecord/log") {
+  if (msg.type === "publish/validateDeployment/log") {
     if (msg.data.url) {
       if (msg.data.method) {
         return `${msg.data.message}: status ${msg.data.status} on ${msg.data.url}`;
@@ -66,7 +66,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
     }
   }
 
-  if (msg.type === "publish/validateContentRecord/failure") {
+  if (msg.type === "publish/validateDeployment/failure") {
     return `${msg.data.message}: status ${msg.data.status} on ${msg.data.url}`;
   }
 

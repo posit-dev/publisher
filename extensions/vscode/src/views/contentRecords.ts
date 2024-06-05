@@ -119,7 +119,7 @@ export class ContentRecordsTreeDataProvider
         forgetCommand,
         async (item: ContentRecordsTreeItem) => {
           const ok = await confirmForget(
-            `Are you sure you want to forget this contentRecord '${item.contentRecord.deploymentName}' locally?`,
+            `Are you sure you want to forget this deployment '${item.contentRecord.deploymentName}' locally?`,
           );
           if (ok) {
             const api = await useApi();
@@ -171,14 +171,14 @@ export class ContentRecordsTreeDataProvider
               error,
             );
             window.showInformationMessage(
-              `Unable to continue due to contentRecord error. ${summary}`,
+              `Unable to continue due to an error with the Deployment record. ${summary}`,
             );
             return;
           }
 
           const currentName = item.contentRecord.deploymentName;
           const newName = await window.showInputBox({
-            prompt: "New contentRecord name",
+            prompt: "New Deployment name",
             value: currentName,
             validateInput: contentRecordNameValidator(
               contentRecordNames,

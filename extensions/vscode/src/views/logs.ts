@@ -105,7 +105,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ],
       [
         "publish/createContentRecord",
-        createLogStage("Create ContentRecord", "Creating ContentRecord"),
+        createLogStage(
+          "Create Deployment Record",
+          "Creating Deployment Record",
+        ),
       ],
       [
         "publish/deployBundle",
@@ -117,8 +120,11 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ],
       ["publish/runContent", createLogStage("Run Content", "Running Content")],
       [
-        "publish/validateContentRecord",
-        createLogStage("Validate ContentRecord", "Validating ContentRecord"),
+        "publish/validateDeployment",
+        createLogStage(
+          "Validate Deployment Record",
+          "Validating Deployment Record",
+        ),
       ],
     ]);
 

@@ -76,7 +76,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createNewContentRecord/start",
+          "publish/createNewDeployment/start",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -84,7 +84,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createNewContentRecord/success",
+          "publish/createNewDeployment/success",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -92,7 +92,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createNewContentRecord/failure",
+          "publish/createNewDeployment/failure",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -156,7 +156,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createContentRecord/start",
+          "publish/createDeployment/start",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -164,7 +164,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createContentRecord/success",
+          "publish/createDeployment/success",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -172,7 +172,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createContentRecord/failure",
+          "publish/createDeployment/failure",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -180,7 +180,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/createContentRecord/log",
+          "publish/createDeployment/log",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -409,7 +409,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/validateContentRecord/start",
+          "publish/validateDeployment/start",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -417,7 +417,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/validateContentRecord/success",
+          "publish/validateDeployment/success",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -425,7 +425,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/validateContentRecord/failure",
+          "publish/validateDeployment/failure",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -433,7 +433,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/validateContentRecord/log",
+          "publish/validateDeployment/log",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },

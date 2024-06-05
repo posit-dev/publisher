@@ -127,7 +127,7 @@ const fileDescription = (file: ContentRecordFile) => {
 };
 
 const includedFileTooltip = (file: ContentRecordFile) => {
-  let tooltip = `${file.rel} will be included in the next contentRecord.`;
+  let tooltip = `${file.rel} will be included in the next deployment.`;
   if (file.reason) {
     tooltip += `\nThe configuration file ${file.reason?.fileName} is including it with the pattern '${file.reason?.pattern}'`;
   }
@@ -135,7 +135,7 @@ const includedFileTooltip = (file: ContentRecordFile) => {
 };
 
 const excludedFileTooltip = (file: ContentRecordFile) => {
-  let tooltip = `${file.rel} will be excluded in the next contentRecord.`;
+  let tooltip = `${file.rel} will be excluded in the next deployment.`;
   if (file.reason) {
     if (file.reason.source === FileMatchSource.BUILT_IN) {
       tooltip += `\nThis is a built-in exclusion for the pattern: '${file.reason.pattern}' and cannot be overridden.`;

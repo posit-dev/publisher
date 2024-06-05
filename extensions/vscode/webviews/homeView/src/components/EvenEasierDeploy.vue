@@ -55,7 +55,7 @@
       </div>
 
       <p v-if="isConfigEntryMissing">
-        No Config Entry in ContentRecord file -
+        No Config Entry in Deployment record -
         {{ home.selectedContentRecord?.saveName }}.
         <a href="" role="button" @click="selectConfiguration">{{
           home.configurations.length > 0
@@ -108,7 +108,7 @@
       <vscode-divider class="home-view-divider" />
 
       <div v-if="home.publishInProgress">
-        <div class="contentRecord-in-progress-container">
+        <div class="deployment-in-progress-container">
           <div class="progress-container">
             <vscode-progress-ring class="progress-ring" />
             Deployment in Progress...
@@ -121,8 +121,8 @@
         </div>
       </div>
       <div v-else>
-        <div class="contentRecord-summary-container">
-          <h4 class="contentRecord-summary">
+        <div class="deployment-summary-container">
+          <h4 class="deployment-summary">
             {{ lastStatusDescription }}
           </h4>
           <ActionToolbar
@@ -133,13 +133,13 @@
         </div>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
-          class="last-contentRecord-time"
+          class="last-deployment-time"
         >
           {{ formatDateString(home.selectedContentRecord.deployedAt) }}
         </div>
         <div
           v-if="home.selectedContentRecord.deploymentError"
-          class="last-contentRecord-details last-contentRecord-error"
+          class="last-deployment-details last-deployment-error"
         >
           <span class="codicon codicon-error error-icon"></span>
           <span class="error-message">
@@ -148,7 +148,7 @@
         </div>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
-          class="last-contentRecord-details"
+          class="last-deployment-details"
         >
           <vscode-button
             appearance="secondary"
@@ -308,7 +308,7 @@ const lastStatusDescription = computed(() => {
 
 const toolTipText = computed(() => {
   return `Deployment Details
-- ContentRecord File: ${home.selectedContentRecord?.saveName || "<undefined>"}
+- Deployment Record: ${home.selectedContentRecord?.saveName || "<undefined>"}
 - Configuration File: ${home.selectedConfiguration?.configurationName || "<undefined>"}
 - Credential In Use: ${home.serverCredential?.name || "<undefined>"}
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
@@ -339,13 +339,13 @@ const newCredential = () => {
   align-items: center;
 }
 
-.contentRecord-in-progress-container {
+.deployment-in-progress-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.contentRecord-summary-container {
+.deployment-summary-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -394,19 +394,19 @@ const newCredential = () => {
   margin-top: 1.33em;
 }
 
-.contentRecord-summary {
+.deployment-summary {
   margin-bottom: 5px;
 }
 
-.last-contentRecord-time {
+.last-deployment-time {
   margin-bottom: 20px;
 }
 
-.last-contentRecord-details {
+.last-deployment-details {
   margin-top: 10px;
 }
 
-.last-contentRecord-error {
+.last-deployment-error {
   border: solid 2px;
   border-color: gray;
   padding: 5px;
