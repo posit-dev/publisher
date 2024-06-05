@@ -67,6 +67,7 @@ import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
 const selectConfigForDeployment = viewName + ".selectConfigForDeployment";
+const createConfigForDeployment = viewName + ".createConfigForDeployment";
 const selectDeploymentCommand = viewName + ".selectDeployment";
 const newDeploymentCommand = viewName + ".newDeployment";
 const contextIsHomeViewInitialized = viewName + ".initialized";
@@ -698,12 +699,33 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async selectConfigForDeployment() {
-    const label =
-      this._configs.length > 0
-        ? "Select a Configuration"
-        : "Create a Configuration";
+    const activeDeployment = this._getActiveContentRecord();
+    if (activeDeployment === undefined) {
+      console.error(
+        "homeView::selectConfigForDeployment: No active deployment.",
+      );
+      return;
+    }
+    const config = await selectConfig(activeDeployment, viewName);
+    if (config) {
+      const api = await useApi();
+      await api.contentRecords.patch(
+        activeDeployment.deploymentName,
+        config.configurationName,
+      );
+    }
+  }
 
-    const config = await selectConfig(label, viewName);
+  private async createConfigForDeployment() {
+    const activeDeployment = this._getActiveContentRecord();
+    if (activeDeployment === undefined) {
+      console.error(
+        "homeView::createConfigForDestination: No active deployment.",
+      );
+      return;
+    }
+    // selectConfig handles create as well
+    const config = await selectConfig(activeDeployment, viewName);
     if (config) {
       const activeContentRecord = this._getActiveContentRecord();
       if (activeContentRecord === undefined) {
@@ -1112,10 +1134,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this.selectConfigForDeployment,
         this,
       ),
+      commands.registerCommand(
+        createConfigForDeployment,
+        this.createConfigForDeployment,
+        this,
+      ),
       commands.registerCommand(visitDeploymentServerCommand, async () => {
-        const contentRecord = this._getActiveContentRecord();
-        if (contentRecord) {
-          await env.openExternal(Uri.parse(contentRecord.serverUrl));
+        const deployment = this._getActiveContentRecord();
+        if (deployment) {
+          await env.openExternal(Uri.parse(deployment.serverUrl));
         }
       }),
       commands.registerCommand(visitDeploymentContentCommand, async () => {

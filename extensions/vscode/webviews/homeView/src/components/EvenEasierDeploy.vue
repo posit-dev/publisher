@@ -9,9 +9,7 @@
         title="Deployment"
         :actions="toolbarActions"
         :context-menu="
-          home.selectedContentRecord
-            ? 'even-easier-deploy-more-menu'
-            : undefined
+          home.selectedContentRecord ? contextMenuContext : undefined
         "
       />
     </div>
@@ -58,18 +56,14 @@
         No Config Entry in Deployment record -
         {{ home.selectedContentRecord?.saveName }}.
         <a href="" role="button" @click="selectConfiguration">{{
-          home.configurations.length > 0
-            ? "Select a Configuration"
-            : "Create a Configuration"
+          promptForConfigSelection
         }}</a
         >.
       </p>
       <p v-if="isConfigMissing">
         The last Configuration used for this Deployment was not found.
         <a href="" role="button" @click="selectConfiguration">{{
-          home.configurations.length > 0
-            ? "Select a Configuration"
-            : "Create a Configuration"
+          promptForConfigSelection
         }}</a
         >.
       </p>
@@ -166,7 +160,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { isConfigurationError, isPreContentRecord } from "../../../../src/api";
+import { Configuration, isPreContentRecord } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
 
@@ -176,6 +170,7 @@ import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
 import { formatDateString } from "src/utils/date";
+import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
@@ -232,6 +227,25 @@ const isConfigInErrorList = (configName?: string): boolean => {
     ),
   );
 };
+
+const filteredConfigs = computed((): Configuration[] => {
+  return filterConfigurationsToValidAndType(
+    home.configurations,
+    home.selectedContentRecord?.type,
+  );
+});
+
+const contextMenuContext = computed((): string => {
+  return filteredConfigs.value.length > 0
+    ? "even-easier-deploy-more-menu-matching-configs"
+    : "even-easier-deploy-more-menu-no-matching-configs";
+});
+
+const promptForConfigSelection = computed((): string => {
+  return filteredConfigs.value.length > 0
+    ? "Select a Configuration"
+    : "Create a Configuration";
+});
 
 const contextMenuVSCodeContext = computed((): string => {
   return home.publishInProgress ||
