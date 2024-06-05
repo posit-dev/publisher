@@ -72,7 +72,7 @@ export function contentRecordNameValidator(
 
     if (value.length < 3 || !isUnique || !isValidFilename(value)) {
       return {
-        message: `Invalid Name: Value must be unique across other contentRecord names for this project, be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
+        message: `Invalid Name: Value must be unique across other deployment record names for this project, be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
         severity: InputBoxValidationSeverity.Error,
       };
     }

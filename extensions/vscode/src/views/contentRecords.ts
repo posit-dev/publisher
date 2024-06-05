@@ -61,7 +61,7 @@ export class ContentRecordsTreeDataProvider
   }
 
   public refresh = () => {
-    console.debug("refreshing contentRecords");
+    console.debug("refreshing deployment records");
     this._onDidChangeTreeData.fire();
   };
 
@@ -244,7 +244,7 @@ export class ContentRecordsTreeItem extends TreeItem {
       this.iconPath = new ThemeIcon("cloud-upload");
     } else {
       this.tooltip =
-        `ContentRecord file: ${contentRecord.deploymentPath}\n` +
+        `Deployment record file: ${contentRecord.deploymentPath}\n` +
         `\n` +
         `Last Deployment Failed on ${formatDateString(contentRecord.deployedAt)}\n` +
         `Targeting ${contentRecord.serverType} at ${contentRecord.serverUrl}`;
@@ -262,7 +262,7 @@ export class ContentRecordsTreeItem extends TreeItem {
     this.contextValue =
       "posit.publisher.contentRecords.tree.item.precontentRecord";
     this.tooltip =
-      `ContentRecord file: ${precontentRecord.deploymentPath}\n` +
+      `Deployment Record file: ${precontentRecord.deploymentPath}\n` +
       `\n` +
       `Created on ${formatDateString(precontentRecord.createdAt)}\n` +
       `Targeting ${precontentRecord.serverType} at ${precontentRecord.serverUrl}\n` +
@@ -275,13 +275,13 @@ export class ContentRecordsTreeItem extends TreeItem {
     this.contextValue =
       "posit.publisher.contentRecords.tree.item.deploymentError";
     this.tooltip =
-      `ContentRecord file: ${deploymentError.deploymentPath}\n` +
+      `Deployment Record file: ${deploymentError.deploymentPath}\n` +
       `\n` +
       `ERROR! File is invalid\n` +
       `Code: ${deploymentError.error.code}\n` +
       `Msg: ${deploymentError.error.msg}\n` +
       `\n` +
-      `Warning: This contentRecord cannot be deployed\n` +
+      `Warning: This deployment record cannot be deployed\n` +
       `until the issue is resolved.`;
 
     this.iconPath = new ThemeIcon("warning");

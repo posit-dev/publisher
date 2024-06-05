@@ -158,14 +158,14 @@ export const eventTypeToString = (eventTypeStr: string): string => {
     "publish/checkCapabilities": "Check Capabilities",
     "publish/createBundle": "Create Bundle",
     "publish/uploadBundle": "Upload Bundle",
-    "publish/createDeployment": "Create ContentRecord",
+    "publish/createDeployment": "Create Deployment",
     "publish/deployBundle": "Deploy Bundle",
     "publish/restorePythonEnv": "Restore Python Environment",
     "publish/restoreREnv": "Restore R Environment",
     "publish/runContent": "Run Content",
     "publish/setVanityURL": "Set Vanity URL",
-    "publish/validateDeployment": "Validate ContentRecord",
-    "publish/success": "Wrapping up ContentRecord",
+    "publish/validateDeployment": "Validate Deployment",
+    "publish/success": "Wrapping up Deployment",
   };
 
   // we do not provide strings for wildcards

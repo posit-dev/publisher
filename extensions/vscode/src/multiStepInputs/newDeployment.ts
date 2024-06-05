@@ -400,7 +400,7 @@ export async function newDeployment(
         error,
       );
       window.showInformationMessage(
-        `Unable to continue due to contentRecord error. ${summary}`,
+        `Unable to continue due to deployment error. ${summary}`,
       );
       return reject();
     }
