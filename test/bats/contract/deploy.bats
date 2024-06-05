@@ -140,8 +140,9 @@ python_content_types=(
         assert_output --partial "\
 can't find the package file (requirements.txt) in the project directory.
 Create the file, listing the packages your project depends on.
-Or scan your project dependencies using the publisher UI or
-the 'publisher requirements create' command."
+Or scan your project dependencies using scan button in
+the Python Packages section of the UI and review the
+generated file."
     else
         skip
     fi

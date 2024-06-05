@@ -28,8 +28,9 @@ type allSettings struct {
 const requirementsFileMissing = `
 can't find the package file (%s) in the project directory.
 Create the file, listing the packages your project depends on.
-Or scan your project dependencies using the publisher UI or
-the 'publisher requirements create' command`
+Or scan your project dependencies using scan button in
+the Python Packages section of the UI and review the
+generated file`
 
 func checkRequirementsFile(base util.AbsolutePath, requirementsFilename string) error {
 	packageFile := base.Join(requirementsFilename)

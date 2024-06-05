@@ -211,6 +211,7 @@ package:
     set -eou pipefail
     {{ _with_debug }}
 
+    just vscode set-version
     ./scripts/package.bash {{ _cmd }}
 
 # Prints the pre-release status based on the version (see `just version`).
