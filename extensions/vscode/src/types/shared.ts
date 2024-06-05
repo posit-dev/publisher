@@ -1,19 +1,24 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Credential, Configuration, Deployment, PreDeployment } from "../api";
+import {
+  Credential,
+  Configuration,
+  ContentRecord,
+  PreContentRecord,
+} from "../api";
 
 export type HomeViewState = {
   deploymentName?: string;
   configurationName?: string;
 };
 
-export type DestinationNames = {
+export type DeploymentNames = {
   deploymentName: string;
   configurationName?: string;
 };
 
-export type DestinationObjects = {
-  deployment: Deployment | PreDeployment;
+export type DeploymentObjects = {
+  contentRecord: ContentRecord | PreContentRecord;
   configuration: Configuration;
   credential: Credential;
 };

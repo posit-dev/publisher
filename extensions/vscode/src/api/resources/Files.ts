@@ -2,7 +2,7 @@
 
 import { AxiosInstance } from "axios";
 
-import { DeploymentFile, FileAction } from "../types/files";
+import { ContentRecordFile, FileAction } from "../types/files";
 import { Configuration } from "../types/configurations";
 
 export class Files {
@@ -17,7 +17,7 @@ export class Files {
   // 403 - pathname is not safe - forbidden
   // 500 - internal server error
   get() {
-    return this.client.get<DeploymentFile>("/files");
+    return this.client.get<ContentRecordFile>("/files");
   }
 
   // Returns:
@@ -27,7 +27,7 @@ export class Files {
   // 500 - internal server error
   getByConfiguration(configName: string) {
     const encodedName = encodeURIComponent(configName);
-    return this.client.get<DeploymentFile>(
+    return this.client.get<ContentRecordFile>(
       `/configurations/${encodedName}/files`,
     );
   }

@@ -94,8 +94,8 @@
 import { computed, ref } from "vue";
 
 import {
-  DeploymentFile,
-  DeploymentState,
+  ContentRecordFile,
+  ContentRecordState,
   FileMatchSource,
 } from "../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
@@ -112,21 +112,21 @@ const includedExpanded = ref(false);
 const excludedExpanded = ref(false);
 
 const lastDeployedFiles = computed(() => {
-  if (home.selectedDeployment?.state === DeploymentState.NEW) {
+  if (home.selectedContentRecord?.state === ContentRecordState.NEW) {
     return new Set();
   }
 
-  return new Set(home.selectedDeployment?.files);
+  return new Set(home.selectedContentRecord?.files);
 });
 
-const fileDescription = (file: DeploymentFile) => {
+const fileDescription = (file: ContentRecordFile) => {
   if (file.relDir === ".") {
     return undefined;
   }
   return file.relDir;
 };
 
-const includedFileTooltip = (file: DeploymentFile) => {
+const includedFileTooltip = (file: ContentRecordFile) => {
   let tooltip = `${file.rel} will be included in the next deployment.`;
   if (file.reason) {
     tooltip += `\nThe configuration file ${file.reason?.fileName} is including it with the pattern '${file.reason?.pattern}'`;
@@ -134,7 +134,7 @@ const includedFileTooltip = (file: DeploymentFile) => {
   return tooltip;
 };
 
-const excludedFileTooltip = (file: DeploymentFile) => {
+const excludedFileTooltip = (file: ContentRecordFile) => {
   let tooltip = `${file.rel} will be excluded in the next deployment.`;
   if (file.reason) {
     if (file.reason.source === FileMatchSource.BUILT_IN) {

@@ -210,7 +210,7 @@ export async function selectConfig(
 
   // ***************************************************************
   // Step #1:
-  // Select the config to be used w/ the deployment
+  // Select the config to be used w/ the contentRecord
   // ***************************************************************
   async function inputConfigFileSelection(
     input: MultiStepInput,
@@ -246,7 +246,7 @@ export async function selectConfig(
 
   // ***************************************************************
   // Step #2 - maybe?:
-  // Select the config to be used w/ the deployment
+  // Select the config to be used w/ the contentRecord
   // ***************************************************************
   async function inputEntryPointSelection(
     input: MultiStepInput,
