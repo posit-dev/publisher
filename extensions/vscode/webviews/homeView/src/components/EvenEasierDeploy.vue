@@ -160,7 +160,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { isConfigurationError, isPreDeployment } from "../../../../src/api";
+import {
+  Configuration,
+  isConfigurationError,
+  isPreDeployment,
+} from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
 
@@ -227,22 +231,21 @@ const isConfigInErrorList = (configName?: string): boolean => {
   );
 };
 
-const contextMenuContext = computed((): string => {
-  const configs = filterConfigurationsToValidAndType(
+const filteredConfigs = computed((): Configuration[] => {
+  return filterConfigurationsToValidAndType(
     home.configurations,
     home.selectedDeployment?.type,
   );
-  return configs.length > 0
+});
+
+const contextMenuContext = computed((): string => {
+  return filteredConfigs.value.length > 0
     ? "even-easier-deploy-more-menu-matching-configs"
     : "even-easier-deploy-more-menu-no-matching-configs";
 });
 
 const promptForConfigSelection = computed((): string => {
-  const configs = filterConfigurationsToValidAndType(
-    home.configurations,
-    home.selectedDeployment?.type,
-  );
-  return configs.length > 0
+  return filteredConfigs.value.length > 0
     ? "Select a Configuration"
     : "Create a Configuration";
 });

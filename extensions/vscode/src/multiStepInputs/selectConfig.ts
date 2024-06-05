@@ -31,7 +31,10 @@ import {
 } from "src/multiStepInputs/multiStepHelper";
 import { untitledConfigurationName } from "src/utils/names";
 import { calculateTitle } from "src/utils/titles";
-import { filterConfigurationsToValidAndType } from "src/utils/filters";
+import {
+  filterConfigurationDetailsToType,
+  filterConfigurationsToValidAndType,
+} from "src/utils/filters";
 
 export async function selectConfig(
   activeDeployment: Deployment | PreDeployment,
@@ -89,27 +92,22 @@ export async function selectConfig(
           activeDeployment.type,
         );
       } else {
-        configurations = [];
-        rawConfigs.forEach((config) => {
-          if (!isConfigurationError(config)) {
-            configurations.push(config);
-          }
-        });
+        configurations = rawConfigs.filter(
+          (c): c is Configuration => !isConfigurationError(c),
+        );
       }
       configFileListItems = [];
 
       configurations.forEach((config) => {
-        if (!isConfigurationError(config)) {
-          const { title, problem } = calculateTitle(activeDeployment, config);
-          if (problem) {
-            return;
-          }
-          configFileListItems.push({
-            iconPath: new ThemeIcon("gear"),
-            label: title,
-            detail: config.configurationName,
-          });
+        const { title, problem } = calculateTitle(activeDeployment, config);
+        if (problem) {
+          return;
         }
+        configFileListItems.push({
+          iconPath: new ThemeIcon("gear"),
+          label: title,
+          detail: config.configurationName,
+        });
       });
       configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
         var x = a.label.toLowerCase();
@@ -138,7 +136,10 @@ export async function selectConfig(
       try {
         const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(python);
-        configDetails = inspectResponse.data;
+        configDetails = filterConfigurationDetailsToType(
+          inspectResponse.data,
+          activeDeployment.type,
+        );
         configDetails.forEach((config, i) => {
           if (config.entrypoint) {
             entryPointListItems.push({

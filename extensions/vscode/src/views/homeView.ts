@@ -67,6 +67,7 @@ import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
 const selectConfigForDestination = viewName + ".selectConfigForDestination";
+const createConfigForDestination = viewName + ".createConfigForDestination";
 const selectDestinationCommand = viewName + ".selectDestination";
 const newDestinationCommand = viewName + ".newDestination";
 const contextIsHomeViewInitialized = viewName + ".initialized";
@@ -707,6 +708,25 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
+  private async createConfigForDestination() {
+    const activeDeployment = this._getActiveDeployment();
+    if (activeDeployment === undefined) {
+      console.error(
+        "homeView::createConfigForDestination: No active deployment.",
+      );
+      return;
+    }
+    // selectConfig handles create as well
+    const config = await selectConfig(activeDeployment, viewName);
+    if (config) {
+      const api = await useApi();
+      await api.deployments.patch(
+        activeDeployment.deploymentName,
+        config.configurationName,
+      );
+    }
+  }
+
   public async showNewDestinationMultiStep(
     viewId?: string,
   ): Promise<DestinationNames | undefined> {
@@ -1088,6 +1108,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         selectConfigForDestination,
         this.selectConfigForDestination,
+        this,
+      ),
+      commands.registerCommand(
+        createConfigForDestination,
+        this.createConfigForDestination,
         this,
       ),
       commands.registerCommand(visitDestinationServerCommand, async () => {
