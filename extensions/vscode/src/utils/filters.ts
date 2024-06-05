@@ -12,6 +12,9 @@ export function filterConfigurationDetailsToType(
   configDetails: ConfigurationDetails[],
   type: ContentType | undefined,
 ): ConfigurationDetails[] {
+  if (!type || type === ContentType.UNKNOWN) {
+    return configDetails;
+  }
   return configDetails.filter((c) => isConfigurationDetailsOfType(c, type));
 }
 
@@ -29,9 +32,13 @@ export function filterConfigurationsToValidAndType(
   configs: (Configuration | ConfigurationError)[],
   type: ContentType | undefined,
 ): Configuration[] {
-  return configs
-    .filter((c): c is Configuration => !isConfigurationError(c))
-    .filter((c) => isConfigurationOfType(c, type));
+  let result = configs.filter(
+    (c): c is Configuration => !isConfigurationError(c),
+  );
+  if (type && type !== ContentType.UNKNOWN) {
+    result = result.filter((c) => isConfigurationOfType(c, type));
+  }
+  return result;
 }
 
 export function isConfigurationOfType(
