@@ -24,22 +24,12 @@
     - [Pre-Releases](#pre-releases)
     - [Release Lifecycle](#release-lifecycle)
 
-The get this project up and running on your local machine, execute the following Just commands:
-
-```console
-just
-just run
-```
-
 ## Getting Started
 
-These instructions will give you a copy of the project up and running on your local machine for development and testing purposes.
+These instructions will give you a copy of the project up and running on your
+local machine for development and testing purposes.
 
 ### Prerequisites
-
-#### Option 1 - Native
-
-Utilizing your machines native software will result in a faster development iteration cycle, but requires more setup. The project defaults to native tooling in most environments.
 
 - [Go](https://go.dev/dl/)
 - [Just](https://just.systems/man/en/chapter_4.html)
@@ -123,9 +113,7 @@ This mode can be reproduced on your local machine by setting `CI=true`.
 
 ### Extension Development
 
-Extensions require the executable to exist on your `$PATH`.
-
-Execute `eval "$(just configure)"` to configure the executable on your current `$PATH`.
+See [the Contribution Guide for the VSCode Extension](./extensions/vscode/CONTRIBUTING.md).
 
 ## Release
 
