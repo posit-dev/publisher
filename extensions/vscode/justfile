@@ -105,7 +105,7 @@ set-version:
 
     version=$(just ../../version)
     echo "info: version $version"
-    python ./scripts/set-version.py $version
+    python3 ./scripts/set-version.py $version
 
 # Installs the packaged extension on your configured editor using the editor's CLI. The editor CLI defaults to 'code'. Modify this value via the EDITOR environment variable.
 install os="$(just ../../os)" arch="$(just ../../arch)" editor="code":
