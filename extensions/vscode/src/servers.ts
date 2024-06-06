@@ -136,11 +136,19 @@ export class Server implements Disposable {
           if (error instanceof Error) {
             // Check if the error message indicates ECONNREFUSED
             // This is what we want to happen when the server is down
-            if (error.message.includes("ECONNREFUSED")) {
+            if (error instanceof AggregateError) {
+              if (
+                error.errors.some((err) => err.message.includes("ECONNREFUSED"))
+              ) {
+                resolve(true);
+                return;
+              }
+            } else if (error.message.includes("ECONNREFUSED")) {
               // Resolve the Promise indicating that the server is down
               resolve(true);
               return;
             }
+
             // If retry is possible, log the attempt and continue
             if (operation.retry(error)) {
               console.error(`Attempt ${attempt} failed. Retrying...`);
