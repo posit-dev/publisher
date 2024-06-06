@@ -18,6 +18,7 @@ import {
 import { EventStream, displayEventStreamMessage } from "src/events";
 
 import { EventStreamMessage } from "src/api";
+import { Commands, Views } from "src/constants";
 
 enum LogStageStatus {
   notStarted,
@@ -59,10 +60,6 @@ const createLogStage = (
     events,
   };
 };
-
-const viewName = "posit.publisher.logs";
-const visitCommand = viewName + ".visit";
-const showContentRecordLogsCommand = "posit.publisher.logs.focus";
 
 /**
  * Tree data provider for the Logs view.
@@ -179,7 +176,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           showLogsOption,
         );
         if (selection === showLogsOption) {
-          await commands.executeCommand(showContentRecordLogsCommand);
+          await commands.executeCommand(Commands.LogsFocus);
         }
         this.refresh();
       },
@@ -283,14 +280,17 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
     // Create a tree view with the specified view name and options
     this._context.subscriptions.push(
-      window.createTreeView(viewName, {
+      window.createTreeView(Views.Logs, {
         treeDataProvider: this,
       }),
-      commands.registerCommand(visitCommand, async (dashboardUrl: string) => {
-        // This command is only attached to messages with a dashboardUrl field.
-        const uri = Uri.parse(dashboardUrl, true);
-        await env.openExternal(uri);
-      }),
+      commands.registerCommand(
+        Commands.LogsVisit,
+        async (dashboardUrl: string) => {
+          // This command is only attached to messages with a dashboardUrl field.
+          const uri = Uri.parse(dashboardUrl, true);
+          await env.openExternal(uri);
+        },
+      ),
     );
   }
 }
@@ -361,7 +361,7 @@ export class LogsTreeLogItem extends TreeItem {
     if (msg.data.dashboardUrl !== undefined) {
       this.command = {
         title: "Visit",
-        command: visitCommand,
+        command: Commands.LogsVisit,
         arguments: [msg.data.dashboardUrl],
       };
     }

@@ -12,7 +12,8 @@ import { HelpAndFeedbackTreeDataProvider } from "src/views/helpAndFeedback";
 import { LogsTreeDataProvider } from "src/views/logs";
 import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
-import { WatcherManager } from "./watchers";
+import { WatcherManager } from "src/watchers";
+import { Commands } from "src/constants";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -22,13 +23,10 @@ enum PositPublishState {
 }
 
 const INITIALIZING_CONTEXT = "posit.publish.initialization.inProgress";
-const INIT_PROJECT_COMMAND = "posit.publisher.init-project";
 enum InitializationInProgress {
   true = "true",
   false = "false",
 }
-const SHOW_OUTPUT_CHANNEL_COMMAND = "posit.publisher.showOutputChannel";
-const SHOW_PUBLISHING_LOG_COMMAND = "posit.publisher.showPublishingLog";
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
@@ -90,16 +88,16 @@ export async function activate(context: ExtensionContext) {
   await service.start();
 
   context.subscriptions.push(
-    commands.registerCommand(INIT_PROJECT_COMMAND, async (viewId?: string) => {
+    commands.registerCommand(Commands.InitProject, async (viewId?: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
       await homeViewProvider.showNewDeploymentMultiStep(viewId);
       setInitializationInProgressContext(InitializationInProgress.false);
     }),
-    commands.registerCommand(SHOW_OUTPUT_CHANNEL_COMMAND, () =>
+    commands.registerCommand(Commands.ShowOutputChannel, () =>
       service.showOutputChannel(),
     ),
-    commands.registerCommand(SHOW_PUBLISHING_LOG_COMMAND, () =>
-      commands.executeCommand("posit.publisher.logs.focus"),
+    commands.registerCommand(Commands.ShowPublishingLog, () =>
+      commands.executeCommand(Commands.LogsVisit),
     ),
   );
 

@@ -8,7 +8,7 @@ import {
   window,
 } from "vscode";
 
-const viewName = "posit.publisher.project";
+import { Views } from "src/constants";
 
 export class ProjectTreeDataProvider
   implements TreeDataProvider<ProjectTreeItem>
@@ -27,7 +27,7 @@ export class ProjectTreeDataProvider
 
   public register() {
     this._context.subscriptions.push(
-      window.createTreeView(viewName, { treeDataProvider: this }),
+      window.createTreeView(Views.Project, { treeDataProvider: this }),
     );
   }
 }

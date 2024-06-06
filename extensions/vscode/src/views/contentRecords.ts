@@ -32,13 +32,7 @@ import { getSummaryStringFromError } from "src/utils/errors";
 import { ensureSuffix } from "src/utils/files";
 import { contentRecordNameValidator } from "src/utils/names";
 import { WatcherManager } from "src/watchers";
-
-const viewName = "posit.publisher.contentRecords";
-const refreshCommand = viewName + ".refresh";
-const editCommand = viewName + ".edit";
-const renameCommand = viewName + ".rename";
-const forgetCommand = viewName + ".forget";
-const visitCommand = viewName + ".visit";
+import { Commands, Views } from "src/constants";
 
 type ContentRecordsEventEmitter = EventEmitter<
   ContentRecordsTreeItem | undefined | void
@@ -105,18 +99,18 @@ export class ContentRecordsTreeDataProvider
   }
 
   public register(watchers: WatcherManager) {
-    const treeView = window.createTreeView(viewName, {
+    const treeView = window.createTreeView(Views.ContentRecords, {
       treeDataProvider: this,
     });
     this._context.subscriptions.push(treeView);
 
     this._context.subscriptions.push(
-      commands.registerCommand(refreshCommand, this.refresh),
+      commands.registerCommand(Commands.ContentRecordsRefresh, this.refresh),
     );
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        forgetCommand,
+        Commands.ContentRecordForget,
         async (item: ContentRecordsTreeItem) => {
           const ok = await confirmForget(
             `Are you sure you want to forget this deployment '${item.contentRecord.deploymentName}' locally?`,
@@ -131,7 +125,7 @@ export class ContentRecordsTreeDataProvider
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        editCommand,
+        Commands.ContentRecordEdit,
         async (item: ContentRecordsTreeItem) => {
           await commands.executeCommand("vscode.open", item.fileUri);
         },
@@ -140,7 +134,7 @@ export class ContentRecordsTreeDataProvider
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        visitCommand,
+        Commands.ContentRecordVisit,
         async (item: ContentRecordsTreeItem) => {
           // This command is only registered for ContentRecords
           if (isContentRecord(item.contentRecord)) {
@@ -153,7 +147,7 @@ export class ContentRecordsTreeDataProvider
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        renameCommand,
+        Commands.ContentRecordRename,
         async (item: ContentRecordsTreeItem) => {
           let contentRecordNames: string[] = [];
 
