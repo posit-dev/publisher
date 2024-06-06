@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@tsconfig/node18": "^18.2.4",
-    "@types/node": "^18.11.9",
+    "@types/node": "^20.14.2",
     "@types/vscode-webview": "^1.57.5",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vscode/webview-ui-toolkit": "^1.4.0",
