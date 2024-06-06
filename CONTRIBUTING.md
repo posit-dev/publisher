@@ -131,7 +131,10 @@ Execute `eval "$(just configure)"` to configure the executable on your current `
 
 ### Before Releasing
 
-- Ensure that all relevant changes are documented in the [CHANGELOG.md](CHANGELOG.md).
+- Ensure that all relevant changes are documented in:
+  - the [CHANGELOG.md](CHANGELOG.md) for the repository
+  - the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md)
+    that is bundled with the extension
 - Update the license docs in case any new dependencies have been added, by running
 
 ```
