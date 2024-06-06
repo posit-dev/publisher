@@ -76,9 +76,12 @@ export class CredentialsTreeDataProvider
   public register() {
     this._context.subscriptions.push(
       window.createTreeView(Views.Credentials, { treeDataProvider: this }),
-      commands.registerCommand(Commands.CredentialRefresh, this.triggerRefresh),
-      commands.registerCommand(Commands.CredentialAdd, this.add),
-      commands.registerCommand(Commands.CredentialDelete, this.delete),
+      commands.registerCommand(
+        Commands.Credentials.Refresh,
+        this.triggerRefresh,
+      ),
+      commands.registerCommand(Commands.Credentials.Add, this.add),
+      commands.registerCommand(Commands.Credentials.Delete, this.delete),
     );
   }
 

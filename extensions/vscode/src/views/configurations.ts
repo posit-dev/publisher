@@ -93,12 +93,12 @@ export class ConfigurationsTreeDataProvider
 
     this._context.subscriptions.push(
       treeView,
-      commands.registerCommand(Commands.ConfigurationsRefresh, this.refresh),
-      commands.registerCommand(Commands.ConfigurationNew, this.add),
-      commands.registerCommand(Commands.ConfigurationEdit, this.edit),
-      commands.registerCommand(Commands.ConfigurationRename, this.rename),
-      commands.registerCommand(Commands.ConfigurationClone, this.clone),
-      commands.registerCommand(Commands.ConfigurationDelete, this.delete),
+      commands.registerCommand(Commands.Configurations.Refresh, this.refresh),
+      commands.registerCommand(Commands.Configurations.New, this.add),
+      commands.registerCommand(Commands.Configurations.Edit, this.edit),
+      commands.registerCommand(Commands.Configurations.Rename, this.rename),
+      commands.registerCommand(Commands.Configurations.Clone, this.clone),
+      commands.registerCommand(Commands.Configurations.Delete, this.delete),
     );
 
     watchers.positDir?.onDidDelete(this.refresh, this);

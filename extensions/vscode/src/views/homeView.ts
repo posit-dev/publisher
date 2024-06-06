@@ -264,7 +264,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async _onNewConfigurationMsg() {
-    await commands.executeCommand(Commands.ConfigurationNew, Views.HomeView);
+    await commands.executeCommand(Commands.Configurations.New, Views.HomeView);
   }
 
   private async _onNavigateMsg(msg: NavigateMsg) {
@@ -788,7 +788,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const contentRecord = this._getActiveContentRecord();
 
     return commands.executeCommand(
-      Commands.CredentialAdd,
+      Commands.Credentials.Add,
       contentRecord?.serverUrl,
     );
   }
@@ -1106,30 +1106,30 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        Commands.HomeViewSelectDeployment,
+        Commands.HomeView.SelectDeployment,
         this.showDeploymentQuickPick,
         this,
       ),
       commands.registerCommand(
-        Commands.HomeViewNewDeployment,
+        Commands.HomeView.NewDeployment,
         () => this.showNewDeploymentMultiStep(Views.HomeView),
         this,
       ),
-      commands.registerCommand(Commands.HomeViewRefresh, () =>
+      commands.registerCommand(Commands.HomeView.Refresh, () =>
         this.refreshAll(true),
       ),
       commands.registerCommand(
-        Commands.HomeViewSelectConfigForDeployment,
+        Commands.HomeView.SelectConfigForDeployment,
         this.selectConfigForDeployment,
         this,
       ),
       commands.registerCommand(
-        Commands.HomeViewCreateConfigForDeployment,
+        Commands.HomeView.CreateConfigForDeployment,
         this.createConfigForDeployment,
         this,
       ),
       commands.registerCommand(
-        Commands.HomeViewNavigateToDeploymentServer,
+        Commands.HomeView.NavigateToDeploymentServer,
         async () => {
           const deployment = this._getActiveContentRecord();
           if (deployment) {
@@ -1138,7 +1138,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       ),
       commands.registerCommand(
-        Commands.HomeViewNavigateToDeploymentContent,
+        Commands.HomeView.NavigateToDeploymentContent,
         async () => {
           const contentRecord = this._getActiveContentRecord();
           if (contentRecord && !isPreContentRecord(contentRecord)) {
@@ -1146,7 +1146,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           }
         },
       ),
-      commands.registerCommand(Commands.HomeViewShowContentLogs, async () => {
+      commands.registerCommand(Commands.HomeView.ShowContentLogs, async () => {
         const contentRecord = this._getActiveContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
           const logUrl = `${contentRecord.dashboardUrl}/logs`;

@@ -29,12 +29,12 @@ export class HelpAndFeedbackTreeDataProvider
         new HelpAndFeedbackTreeItem(
           "Get Started with Posit Publisher",
           "Open Getting Started Documentation",
-          Commands.HelpOpenGettingStarted,
+          Commands.HelpAndFeedback.OpenGettingStarted,
         ),
         new HelpAndFeedbackTreeItem(
           "Provide Feedback",
           "Open Feedback Slack Channel",
-          Commands.HelpOpenGettingStarted,
+          Commands.HelpAndFeedback.OpenGettingStarted,
         ),
       ];
     }
@@ -47,17 +47,20 @@ export class HelpAndFeedbackTreeDataProvider
     );
 
     this._context.subscriptions.push(
-      commands.registerCommand(Commands.HelpOpenGettingStarted, () => {
-        env.openExternal(
-          Uri.parse(
-            "https://github.com/posit-dev/publisher/blob/main/docs/index.md",
-          ),
-        );
-      }),
+      commands.registerCommand(
+        Commands.HelpAndFeedback.OpenGettingStarted,
+        () => {
+          env.openExternal(
+            Uri.parse(
+              "https://github.com/posit-dev/publisher/blob/main/docs/index.md",
+            ),
+          );
+        },
+      ),
     );
 
     this._context.subscriptions.push(
-      commands.registerCommand(Commands.HelpOpenFeedback, () => {
+      commands.registerCommand(Commands.HelpAndFeedback.OpenFeedback, () => {
         env.openExternal(
           Uri.parse("https://positpbc.slack.com/channels/publisher-feedback"),
         );

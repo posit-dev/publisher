@@ -10,49 +10,86 @@ export const DEPLOYMENTS_PATTERN = ".posit/publish/deployments/*.toml";
 export const DEFAULT_PYTHON_PACKAGE_FILE = "requirements.txt";
 export const DEFAULT_R_PACKAGE_FILE = "renv.lock";
 
-export const enum Commands {
-  InitProject = "posit.publisher.init-project",
+const baseCommands = {
+  InitProject: "posit.publisher.init-project",
   // RefreshProjectInitialization = "posit.publisher.init-project.refresh",
-  ConfigurationsRefresh = "posit.publisher.configurations.refresh",
-  ConfigurationNew = "posit.publisher.configurations.add",
-  ConfigurationClone = "posit.publisher.configurations.clone",
-  ConfigurationEdit = "posit.publisher.configurations.edit",
-  ConfigurationRename = "posit.publisher.configurations.rename",
-  ConfigurationDelete = "posit.publisher.configurations.delete",
-  CredentialAdd = "posit.publisher.credentials.add",
-  CredentialDelete = "posit.publisher.credentials.delete",
-  CredentialRefresh = "posit.publisher.credentials.refresh",
-  ContentRecordEdit = "posit.publisher.contentRecords.edit",
-  ContentRecordRename = "posit.publisher.contentRecords.rename",
-  ContentRecordForget = "posit.publisher.contentRecords.forget",
-  ContentRecordVisit = "posit.publisher.contentRecords.visit",
-  ContentRecordsRefresh = "posit.publisher.contentRecords.refresh",
-  RefreshDeploymentFiles = "posit.publisher.files.refresh",
-  ExcludeFile = "posit.publisher.files.exclude",
-  IncludeFile = "posit.publisher.files.include",
-  EditRequirementsFile = "posit.publisher.pythonPackages.edit",
-  RefreshRequirements = "posit.publisher.pythonPackages.refresh",
-  ScanRequirements = "posit.publisher.pythonPackages.scan",
-  HomeViewRefresh = "posit.publisher.homeView.refresh",
-  HomeViewSelectConfigForDeployment = "posit.publisher.homeView.selectConfigForDeployment",
-  HomeViewCreateConfigForDeployment = "posit.publisher.homeView.createConfigForDeployment",
-  HomeViewSelectDeployment = "posit.publisher.homeView.selectDeployment",
-  HomeViewNewDeployment = "posit.publisher.homeView.newDeployment",
-  HelpOpenGettingStarted = "posit.publisher.helpAndFeedback.gettingStarted",
-  HelpOpenFeedback = "posit.publisher.helpAndFeedback.openFeedback",
+  ShowOutputChannel: "posit.publisher.showOutputChannel",
+  ShowPublishingLog: "posit.publisher.showPublishingLog",
+} as const;
 
-  // Logs Commands
-  LogsVisit = "posit.publisher.logs.visit",
+const logsCommands = {
+  Visit: "posit.publisher.logs.visit",
   // Added automatically by VSCode with view registration
-  LogsFocus = "posit.publisher.logs.focus",
-  LogsToggleVisibility = "posit.publisher.logs.toggleVisibility",
+  Focus: "posit.publisher.logs.focus",
+  ToggleVisibility: "posit.publisher.logs.toggleVisibility",
+} as const;
 
-  HomeViewNavigateToDeploymentServer = "posit.publisher.homeView.navigateToDeployment.Server",
-  HomeViewNavigateToDeploymentContent = "posit.publisher.homeView.navigateToDeployment.Content",
-  ShowOutputChannel = "posit.publisher.showOutputChannel",
-  ShowPublishingLog = "posit.publisher.showPublishingLog",
-  HomeViewShowContentLogs = "posit.publisher.homeView.navigateToDeployment.ContentLog",
-}
+const configurationsCommands = {
+  Refresh: "posit.publisher.configurations.refresh",
+  New: "posit.publisher.configurations.add",
+  Clone: "posit.publisher.configurations.clone",
+  Edit: "posit.publisher.configurations.edit",
+  Rename: "posit.publisher.configurations.rename",
+  Delete: "posit.publisher.configurations.delete",
+} as const;
+
+const credentialsCommands = {
+  Add: "posit.publisher.credentials.add",
+  Delete: "posit.publisher.credentials.delete",
+  Refresh: "posit.publisher.credentials.refresh",
+} as const;
+
+const contentRecordsCommands = {
+  Edit: "posit.publisher.contentRecords.edit",
+  Rename: "posit.publisher.contentRecords.rename",
+  Forget: "posit.publisher.contentRecords.forget",
+  Visit: "posit.publisher.contentRecords.visit",
+  Refresh: "posit.publisher.contentRecords.refresh",
+} as const;
+
+const filesCommands = {
+  Refresh: "posit.publisher.files.refresh",
+  Exclude: "posit.publisher.files.exclude",
+  Include: "posit.publisher.files.include",
+} as const;
+
+const pythonPackagesCommands = {
+  Edit: "posit.publisher.pythonPackages.edit",
+  Refresh: "posit.publisher.pythonPackages.refresh",
+  Scan: "posit.publisher.pythonPackages.scan",
+} as const;
+
+const homeViewCommands = {
+  Refresh: "posit.publisher.homeView.refresh",
+  SelectConfigForDeployment:
+    "posit.publisher.homeView.selectConfigForDeployment",
+  CreateConfigForDeployment:
+    "posit.publisher.homeView.createConfigForDeployment",
+  SelectDeployment: "posit.publisher.homeView.selectDeployment",
+  NewDeployment: "posit.publisher.homeView.newDeployment",
+  NavigateToDeploymentServer:
+    "posit.publisher.homeView.navigateToDeployment.Server",
+  NavigateToDeploymentContent:
+    "posit.publisher.homeView.navigateToDeployment.Content",
+  ShowContentLogs: "posit.publisher.homeView.navigateToDeployment.ContentLog",
+} as const;
+
+const helpAndFeedbackCommands = {
+  OpenFeedback: "posit.publisher.helpAndFeedback.openFeedback",
+  OpenGettingStarted: "posit.publisher.helpAndFeedback.gettingStarted",
+} as const;
+
+export const Commands = {
+  ...baseCommands,
+  Configurations: configurationsCommands,
+  Credentials: credentialsCommands,
+  ContentRecords: contentRecordsCommands,
+  Logs: logsCommands,
+  Files: filesCommands,
+  PythonPackages: pythonPackagesCommands,
+  HomeView: homeViewCommands,
+  HelpAndFeedback: helpAndFeedbackCommands,
+} as const;
 
 export const enum Views {
   Project = "posit.publisher.project",

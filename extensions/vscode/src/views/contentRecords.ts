@@ -105,12 +105,12 @@ export class ContentRecordsTreeDataProvider
     this._context.subscriptions.push(treeView);
 
     this._context.subscriptions.push(
-      commands.registerCommand(Commands.ContentRecordsRefresh, this.refresh),
+      commands.registerCommand(Commands.ContentRecords.Refresh, this.refresh),
     );
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        Commands.ContentRecordForget,
+        Commands.ContentRecords.Forget,
         async (item: ContentRecordsTreeItem) => {
           const ok = await confirmForget(
             `Are you sure you want to forget this deployment '${item.contentRecord.deploymentName}' locally?`,
@@ -125,7 +125,7 @@ export class ContentRecordsTreeDataProvider
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        Commands.ContentRecordEdit,
+        Commands.ContentRecords.Edit,
         async (item: ContentRecordsTreeItem) => {
           await commands.executeCommand("vscode.open", item.fileUri);
         },
@@ -134,7 +134,7 @@ export class ContentRecordsTreeDataProvider
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        Commands.ContentRecordVisit,
+        Commands.ContentRecords.Visit,
         async (item: ContentRecordsTreeItem) => {
           // This command is only registered for ContentRecords
           if (isContentRecord(item.contentRecord)) {
@@ -147,7 +147,7 @@ export class ContentRecordsTreeDataProvider
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        Commands.ContentRecordRename,
+        Commands.ContentRecords.Rename,
         async (item: ContentRecordsTreeItem) => {
           let contentRecordNames: string[] = [];
 

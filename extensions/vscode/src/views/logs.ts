@@ -176,7 +176,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           showLogsOption,
         );
         if (selection === showLogsOption) {
-          await commands.executeCommand(Commands.LogsFocus);
+          await commands.executeCommand(Commands.Logs.Focus);
         }
         this.refresh();
       },
@@ -284,7 +284,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         treeDataProvider: this,
       }),
       commands.registerCommand(
-        Commands.LogsVisit,
+        Commands.Logs.Visit,
         async (dashboardUrl: string) => {
           // This command is only attached to messages with a dashboardUrl field.
           const uri = Uri.parse(dashboardUrl, true);
@@ -361,7 +361,7 @@ export class LogsTreeLogItem extends TreeItem {
     if (msg.data.dashboardUrl !== undefined) {
       this.command = {
         title: "Visit",
-        command: Commands.LogsVisit,
+        command: Commands.Logs.Visit,
         arguments: [msg.data.dashboardUrl],
       };
     }
