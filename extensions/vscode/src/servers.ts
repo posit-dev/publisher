@@ -136,7 +136,10 @@ export class Server implements Disposable {
           if (error instanceof Error) {
             // Check if the error message indicates ECONNREFUSED
             // This is what we want to happen when the server is down
-            if (error instanceof AggregateError) {
+            if (
+              typeof AggregateError !== "undefined" &&
+              error instanceof AggregateError
+            ) {
               if (
                 error.errors.some((err) => err.message.includes("ECONNREFUSED"))
               ) {
