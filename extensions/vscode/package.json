@@ -144,19 +144,19 @@
       },
       {
         "command": "posit.publisher.pythonPackages.edit",
-        "title": "Edit Requirements File",
+        "title": "Edit Python Package File",
         "icon": "$(edit)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.pythonPackages.refresh",
-        "title": "Refresh Requirements",
+        "title": "Refresh Python Packages",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.pythonPackages.scan",
-        "title": "Scan Requirements",
+        "title": "Scan for Python Packages",
         "icon": "$(eye)",
         "category": "Posit Publisher"
       },
