@@ -41,12 +41,6 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.init-project.refresh",
-        "title": "Refresh Project Initialization",
-        "icon": "${refresh)",
-        "category": "Posit Publisher"
-      },
-      {
         "command": "posit.publisher.configurations.refresh",
         "title": "Refresh Configurations",
         "icon": "$(refresh)",
@@ -420,10 +414,6 @@
         {
           "command": "posit.publisher.homeView.newDeployment",
           "when": "posit.publisher.homeView.initialized == 'initialized'"
-        },
-        {
-          "command": "posit.publisher.init-project.refresh",
-          "when": "false"
         },
         {
           "command": "posit.publisher.showOutputChannel",
