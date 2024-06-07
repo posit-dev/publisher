@@ -12,7 +12,6 @@ export const DEFAULT_R_PACKAGE_FILE = "renv.lock";
 
 const baseCommands = {
   InitProject: "posit.publisher.init-project",
-  // RefreshProjectInitialization = "posit.publisher.init-project.refresh",
   ShowOutputChannel: "posit.publisher.showOutputChannel",
   ShowPublishingLog: "posit.publisher.showPublishingLog",
 } as const;
