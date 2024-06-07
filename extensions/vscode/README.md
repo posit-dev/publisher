@@ -6,4 +6,4 @@ way to deploy to [Posit Connect](https://posit.co/products/enterprise/connect/).
 
 ## Installation
 
-Posit Publisher can be installed via the [Visual Studio Code Marketplace]
+Install Posit Publisher from the [Visual Studio Code Marketplace]
