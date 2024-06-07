@@ -160,6 +160,10 @@ Once complete the action has completed, the release will be available on the [Re
 Update the Installation instructions in [installation.md](docs/installation.md)
 for the new release, using the links to the `.vsix` files uploaded to the CDN.
 
+**Step 5**
+
+Update the release / latest version string in the `install-publisher.bash` script.
+
 ### Pre-Releases
 
 Any tags denoted as a pre-release as defined by the [SemVer 2.0.0](https://semver.org/spec/v2.0.0.html) specification will be marked as such in GitHub. For example, the `v0.0.dev0` is a pre-release. Tag `v0.0.0` is a standard-release. Please consult the specification for additional information.
