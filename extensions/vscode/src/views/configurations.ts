@@ -28,14 +28,7 @@ import { ensureSuffix, fileExists, isValidFilename } from "src/utils/files";
 import { untitledConfigurationName } from "src/utils/names";
 import { newConfig } from "src/multiStepInputs/newConfig";
 import { WatcherManager } from "src/watchers";
-
-const viewName = "posit.publisher.configurations";
-const refreshCommand = viewName + ".refresh";
-const addCommand = viewName + ".add";
-const editCommand = viewName + ".edit";
-const cloneCommand = viewName + ".clone";
-const renameCommand = viewName + ".rename";
-const deleteCommand = viewName + ".delete";
+import { Commands, Views } from "src/constants";
 
 type ConfigurationEventEmitter = EventEmitter<
   ConfigurationTreeItem | undefined | void
@@ -94,18 +87,18 @@ export class ConfigurationsTreeDataProvider
   }
 
   public register(watchers: WatcherManager) {
-    const treeView = window.createTreeView(viewName, {
+    const treeView = window.createTreeView(Views.Configurations, {
       treeDataProvider: this,
     });
 
     this._context.subscriptions.push(
       treeView,
-      commands.registerCommand(refreshCommand, this.refresh),
-      commands.registerCommand(addCommand, this.add),
-      commands.registerCommand(editCommand, this.edit),
-      commands.registerCommand(renameCommand, this.rename),
-      commands.registerCommand(cloneCommand, this.clone),
-      commands.registerCommand(deleteCommand, this.delete),
+      commands.registerCommand(Commands.Configurations.Refresh, this.refresh),
+      commands.registerCommand(Commands.Configurations.New, this.add),
+      commands.registerCommand(Commands.Configurations.Edit, this.edit),
+      commands.registerCommand(Commands.Configurations.Rename, this.rename),
+      commands.registerCommand(Commands.Configurations.Clone, this.clone),
+      commands.registerCommand(Commands.Configurations.Delete, this.delete),
     );
 
     watchers.positDir?.onDidDelete(this.refresh, this);

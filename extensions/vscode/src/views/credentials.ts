@@ -15,11 +15,7 @@ import { useApi, Credential } from "src/api";
 import { useBus } from "src/bus";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { newCredential } from "src/multiStepInputs/newCredential";
-
-const viewName = "posit.publisher.credentials";
-const refreshCommand = viewName + ".refresh";
-const addCommand = viewName + ".add";
-const deleteCommand = viewName + ".delete";
+import { Commands, Views } from "src/constants";
 
 type CredentialEventEmitter = EventEmitter<
   CredentialsTreeItem | undefined | void
@@ -79,10 +75,13 @@ export class CredentialsTreeDataProvider
 
   public register() {
     this._context.subscriptions.push(
-      window.createTreeView(viewName, { treeDataProvider: this }),
-      commands.registerCommand(refreshCommand, this.triggerRefresh),
-      commands.registerCommand(addCommand, this.add),
-      commands.registerCommand(deleteCommand, this.delete),
+      window.createTreeView(Views.Credentials, { treeDataProvider: this }),
+      commands.registerCommand(
+        Commands.Credentials.Refresh,
+        this.triggerRefresh,
+      ),
+      commands.registerCommand(Commands.Credentials.Add, this.add),
+      commands.registerCommand(Commands.Credentials.Delete, this.delete),
     );
   }
 
