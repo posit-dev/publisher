@@ -1179,6 +1179,32 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this._onScanForPythonPackageRequirements,
         this,
       ),
+      commands.registerCommand(
+        Commands.RPackages.Edit,
+        async () => {
+          if (this.root === undefined) {
+            return;
+          }
+          const cfg = this._getActiveConfig();
+          const packageFile = cfg?.configuration.r?.packageFile;
+          if (packageFile === undefined) {
+            return;
+          }
+          const fileUri = Uri.joinPath(this.root.uri, packageFile);
+          await commands.executeCommand("vscode.open", fileUri);
+        },
+        this,
+      ),
+      commands.registerCommand(
+        Commands.RPackages.Refresh,
+        this._onRefreshRPackages,
+        this,
+      ),
+      commands.registerCommand(
+        Commands.RPackages.Scan,
+        this._onScanForRPackageRequirements,
+        this,
+      ),
     );
 
     watchers.positDir?.onDidDelete(() => {

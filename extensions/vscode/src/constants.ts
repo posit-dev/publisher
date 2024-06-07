@@ -58,6 +58,12 @@ const pythonPackagesCommands = {
   Scan: "posit.publisher.pythonPackages.scan",
 } as const;
 
+const rPackagesCommands = {
+  Edit: "posit.publisher.rPackages.edit",
+  Refresh: "posit.publisher.rPackages.refresh",
+  Scan: "posit.publisher.rPackages.scan",
+} as const;
+
 const homeViewCommands = {
   Refresh: "posit.publisher.homeView.refresh",
   SelectConfigForDeployment:
@@ -86,6 +92,7 @@ export const Commands = {
   Logs: logsCommands,
   Files: filesCommands,
   PythonPackages: pythonPackagesCommands,
+  RPackages: rPackagesCommands,
   HomeView: homeViewCommands,
   HelpAndFeedback: helpAndFeedbackCommands,
 } as const;

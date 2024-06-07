@@ -161,6 +161,24 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.rPackages.edit",
+        "title": "Edit R Package File",
+        "icon": "$(edit)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.rPackages.refresh",
+        "title": "Refresh R Packages",
+        "icon": "$(refresh)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.rPackages.scan",
+        "title": "Scan for R Packages",
+        "icon": "$(eye)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.homeView.refresh",
         "title": "Refresh Home View",
         "icon": "$(refresh)",
