@@ -1154,6 +1154,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
       }),
       commands.registerCommand(
+        Commands.Files.Refresh,
+        this.sendRefreshedFilesLists,
+        this,
+      ),
+      commands.registerCommand(
         Commands.PythonPackages.Edit,
         async () => {
           if (this.root === undefined) {
