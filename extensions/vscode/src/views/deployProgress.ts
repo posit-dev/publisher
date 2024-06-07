@@ -1,8 +1,9 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ProgressLocation, Uri, env, window } from "vscode";
+import { ProgressLocation, window } from "vscode";
 import { EventStreamMessage, eventMsgToString } from "src/api";
 import { EventStream, UnregisterCallback } from "src/events";
+import { openUrl } from "src/utils/browser";
 
 export function deployProject(localID: string, stream: EventStream) {
   window.withProgress(
@@ -455,8 +456,7 @@ export function deployProject(localID: string, stream: EventStream) {
               visitOption,
             );
             if (selection === visitOption) {
-              const uri = Uri.parse(msg.data.dashboardUrl, true);
-              await env.openExternal(uri);
+              await openUrl(msg.data.dashboardUrl);
             }
           }
         }),

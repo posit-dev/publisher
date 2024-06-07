@@ -6,13 +6,13 @@ import {
   ExtensionContext,
   ThemeIcon,
   Uri,
+  ViewColumn,
   Webview,
   WebviewView,
   WebviewViewProvider,
   WebviewViewResolveContext,
   WorkspaceFolder,
   commands,
-  env,
   window,
   workspace,
 } from "vscode";
@@ -63,6 +63,7 @@ import { selectConfig } from "src/multiStepInputs/selectConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
+import { openUrl } from "src/utils/browser";
 
 const viewName = "posit.publisher.homeView";
 const refreshCommand = viewName + ".refresh";
@@ -281,7 +282,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async _onNavigateMsg(msg: NavigateMsg) {
-    await env.openExternal(Uri.parse(msg.content.uriPath));
+    await openUrl(msg.content.uriPath);
   }
 
   private async _onSaveSelectionState(msg: SaveSelectionStatedMsg) {
@@ -1142,22 +1143,73 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(visitDeploymentServerCommand, async () => {
         const deployment = this._getActiveContentRecord();
         if (deployment) {
-          await env.openExternal(Uri.parse(deployment.serverUrl));
+          await openUrl(deployment.serverUrl);
         }
       }),
       commands.registerCommand(visitDeploymentContentCommand, async () => {
         const contentRecord = this._getActiveContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
-          await env.openExternal(Uri.parse(contentRecord.dashboardUrl));
+          // was contentRecord.dashboardUrl
+          await openUrl(contentRecord.directUrl);
         }
       }),
       commands.registerCommand(visitDeploymentContentLogCommand, async () => {
         const contentRecord = this._getActiveContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
-          const logUrl = `${contentRecord.dashboardUrl}/logs`;
-          await env.openExternal(Uri.parse(logUrl));
+          await openUrl(`${contentRecord.dashboardUrl}/logs`);
         }
       }),
+      commands.registerCommand(
+        "posit.publisher.homeView.loadContent",
+        (contentURL?: string, viewColumn?: ViewColumn) => {
+          if (!contentURL) {
+            const activeContentRecord = this._getActiveContentRecord();
+            if (
+              activeContentRecord &&
+              !isPreContentRecord(activeContentRecord)
+            ) {
+              contentURL = activeContentRecord.directUrl;
+            }
+          }
+          if (!contentURL) {
+            return;
+          }
+          if (!viewColumn) {
+            viewColumn = ViewColumn.Beside;
+          }
+          // Create and show panel
+          const panel = window.createWebviewPanel(
+            "posit.publisher.contentBrowser",
+            "Content Browser",
+            {
+              viewColumn,
+              preserveFocus: false,
+            },
+            {
+              enableScripts: true,
+              enableForms: true,
+              enableCommandUris: true,
+            },
+          );
+
+          // And set its HTML content
+          panel.webview.html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+        		<meta charset="UTF-8">
+        		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
+        </head>
+        <body>
+        		<iframe
+        			style="width: 100%; min-height: 1000px;"
+        			src="${contentURL}"
+        			sandbox="allow-forms allow-modals allow-popups allow-scripts allow-same-origin allow-top-navigation"
+        		/>
+        </body>
+        </html>`;
+        },
+      ),
     );
 
     watchers.positDir?.onDidDelete(() => {

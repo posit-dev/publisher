@@ -9,15 +9,14 @@ import {
   TreeDataProvider,
   TreeItem,
   TreeItemCollapsibleState,
-  Uri,
   commands,
-  env,
   window,
 } from "vscode";
 
 import { EventStream, displayEventStreamMessage } from "src/events";
 
 import { EventStreamMessage } from "src/api";
+import { openUrl } from "src/utils/browser";
 
 enum LogStageStatus {
   notStarted,
@@ -288,8 +287,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       }),
       commands.registerCommand(visitCommand, async (dashboardUrl: string) => {
         // This command is only attached to messages with a dashboardUrl field.
-        const uri = Uri.parse(dashboardUrl, true);
-        await env.openExternal(uri);
+        await openUrl(dashboardUrl);
       }),
     );
   }

@@ -1,14 +1,13 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { openUrl } from "src/utils/browser";
 import {
   TreeDataProvider,
   TreeItem,
   ProviderResult,
   ExtensionContext,
   window,
-  Uri,
   commands,
-  env,
 } from "vscode";
 
 const viewName = "posit.publisher.helpAndFeedback";
@@ -50,20 +49,16 @@ export class HelpAndFeedbackTreeDataProvider
     );
 
     this._context.subscriptions.push(
-      commands.registerCommand(openGettingStartedCommand, () => {
-        env.openExternal(
-          Uri.parse(
-            "https://github.com/posit-dev/publisher/blob/main/docs/index.md",
-          ),
+      commands.registerCommand(openGettingStartedCommand, async () => {
+        await openUrl(
+          "https://github.com/posit-dev/publisher/blob/main/docs/index.md",
         );
       }),
     );
 
     this._context.subscriptions.push(
-      commands.registerCommand(openFeedbackCommand, () => {
-        env.openExternal(
-          Uri.parse("https://positpbc.slack.com/channels/publisher-feedback"),
-        );
+      commands.registerCommand(openFeedbackCommand, async () => {
+        await openUrl("https://positpbc.slack.com/channels/publisher-feedback");
       }),
     );
   }

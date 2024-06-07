@@ -10,7 +10,6 @@ import {
   Uri,
   WorkspaceFolder,
   commands,
-  env,
   window,
   workspace,
 } from "vscode";
@@ -32,6 +31,7 @@ import { getSummaryStringFromError } from "src/utils/errors";
 import { ensureSuffix } from "src/utils/files";
 import { contentRecordNameValidator } from "src/utils/names";
 import { WatcherManager } from "src/watchers";
+import { openUrl } from "src/utils/browser";
 
 const viewName = "posit.publisher.contentRecords";
 const refreshCommand = viewName + ".refresh";
@@ -144,8 +144,7 @@ export class ContentRecordsTreeDataProvider
         async (item: ContentRecordsTreeItem) => {
           // This command is only registered for ContentRecords
           if (isContentRecord(item.contentRecord)) {
-            const uri = Uri.parse(item.contentRecord.dashboardUrl, true);
-            await env.openExternal(uri);
+            await openUrl(item.contentRecord.dashboardUrl);
           }
         },
       ),

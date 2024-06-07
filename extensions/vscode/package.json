@@ -239,14 +239,39 @@
         "title": "Show Content Logs",
         "icon": "$(output)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.homeView.loadContent",
+        "title": "Load My Content",
+        "icon": "open",
+        "category": "Posit Publisher"
       }
     ],
     "configuration": {
-      "title": "Posit",
+      "title": "Posit Publisher",
       "properties": {
-        "posit.publisher.executable.path": {
+        "positPublisher.executablePath": {
           "description": "A path to the Posit Publisher executable. By default, the extension looks for `publisher` in the `PATH`",
           "type": "string"
+        },
+        "positPublisher.openUrlBehavior": {
+          "type": "string",
+          "default": "beside",
+          "enum": [
+            "external",
+            "main",
+            "beside"
+          ],
+          "enumItemLabels": [
+            "External Default Browser Window",
+            "Main Editor Window",
+            "Editor Window to the Right"
+          ],
+          "enumDescriptions": [
+            "Causes links to be opened in the default browser, external to VSCode",
+            "Links will be opened within VSCode, within the main editor container",
+            "Links will be opened within VSCode, to the right of the main editor container"
+          ]
         }
       }
     },
@@ -443,6 +468,10 @@
         },
         {
           "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
+          "when": "posit.publisher.homeView.initialized == 'initialized'"
+        },
+        {
+          "command": "posit.publisher.homeView.loadContent",
           "when": "posit.publisher.homeView.initialized == 'initialized'"
         }
       ],
