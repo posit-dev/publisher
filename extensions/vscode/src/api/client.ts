@@ -4,7 +4,7 @@ import axios from "axios";
 
 import { Accounts } from "./resources/Accounts";
 import { Credentials } from "./resources/Credentials";
-import { Deployments } from "./resources/Deployments";
+import { ContentRecords } from "./resources/ContentRecords";
 import { Configurations } from "./resources/Configurations";
 import { Files } from "./resources/Files";
 import { Packages } from "./resources/Packages";
@@ -15,7 +15,7 @@ class PublishingClientApi {
   accounts: Accounts;
   configurations: Configurations;
   credentials: Credentials;
-  deployments: Deployments;
+  contentRecords: ContentRecords;
   files: Files;
   packages: Packages;
   apiServiceIsUp: Promise<boolean>;
@@ -29,7 +29,7 @@ class PublishingClientApi {
     this.accounts = new Accounts(this.client);
     this.configurations = new Configurations(this.client);
     this.credentials = new Credentials(this.client);
-    this.deployments = new Deployments(this.client);
+    this.contentRecords = new ContentRecords(this.client);
     this.files = new Files(this.client);
     this.packages = new Packages(this.client);
   }

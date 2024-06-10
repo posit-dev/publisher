@@ -27,8 +27,8 @@ export class WatcherManager implements Disposable {
   positDir: FileSystemWatcher | undefined;
   publishDir: FileSystemWatcher | undefined;
   configurations: FileSystemWatcher | undefined;
-  deploymentsDir: FileSystemWatcher | undefined;
-  deployments: FileSystemWatcher | undefined;
+  contentRecordsDir: FileSystemWatcher | undefined;
+  contentRecords: FileSystemWatcher | undefined;
   allFiles: FileSystemWatcher | undefined;
 
   constructor() {
@@ -55,14 +55,14 @@ export class WatcherManager implements Disposable {
       new RelativePattern(root, CONFIGURATIONS_PATTERN),
     );
 
-    this.deploymentsDir = workspace.createFileSystemWatcher(
+    this.contentRecordsDir = workspace.createFileSystemWatcher(
       new RelativePattern(root, PUBLISH_DEPLOYMENTS_FOLDER),
       true,
       true,
       false,
     );
 
-    this.deployments = workspace.createFileSystemWatcher(
+    this.contentRecords = workspace.createFileSystemWatcher(
       new RelativePattern(root, DEPLOYMENTS_PATTERN),
     );
 
@@ -75,8 +75,8 @@ export class WatcherManager implements Disposable {
     this.positDir?.dispose();
     this.publishDir?.dispose();
     this.configurations?.dispose();
-    this.deploymentsDir?.dispose();
-    this.deployments?.dispose();
+    this.contentRecordsDir?.dispose();
+    this.contentRecords?.dispose();
     this.allFiles?.dispose();
   }
 }

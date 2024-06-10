@@ -13,6 +13,7 @@ import (
 	"github.com/posit-dev/publisher/internal/accounts"
 	"github.com/posit-dev/publisher/internal/bundles"
 	"github.com/posit-dev/publisher/internal/clients/connect"
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
 	"github.com/posit-dev/publisher/internal/inspect"
@@ -247,11 +248,17 @@ func (p *defaultPublisher) createDeploymentRecord(
 	cfg := *p.Config
 
 	created := ""
+	var contentType config.ContentType
 
 	if p.Target != nil {
 		created = p.Target.CreatedAt
+		contentType = p.Target.Type
+		if contentType == "" || contentType == config.ContentTypeUnknown {
+			contentType = cfg.Type
+		}
 	} else {
 		created = time.Now().Format(time.RFC3339)
+		contentType = cfg.Type
 	}
 
 	p.Target = &deployment.Deployment{
@@ -259,6 +266,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		ServerType:    account.ServerType,
 		ServerURL:     account.URL,
 		ClientVersion: project.Version,
+		Type:          contentType,
 		CreatedAt:     created,
 		ID:            contentID,
 		ConfigName:    p.ConfigName,

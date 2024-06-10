@@ -32,10 +32,10 @@ export async function untitledConfigurationName(): Promise<string> {
   return defaultName;
 }
 
-export function untitledDeploymentName(
-  existingDeploymentNames: string[],
+export function untitledContentRecordName(
+  existingContentRecordNames: string[],
 ): string {
-  if (existingDeploymentNames.length === 0) {
+  if (existingContentRecordNames.length === 0) {
     return "deployment-1";
   }
 
@@ -45,14 +45,14 @@ export function untitledDeploymentName(
     id += 1;
     const trialName = `deployment-${id}`;
 
-    if (uniqueDeploymentName(trialName, existingDeploymentNames)) {
+    if (uniqueContentRecordName(trialName, existingContentRecordNames)) {
       defaultName = trialName;
     }
   } while (!defaultName);
   return defaultName;
 }
 
-export function uniqueDeploymentName(
+export function uniqueContentRecordName(
   nameToTest: string,
   existingNames: string[],
 ) {
@@ -61,17 +61,18 @@ export function uniqueDeploymentName(
   });
 }
 
-export function deploymentNameValidator(
-  deploymentNames: string[],
+export function contentRecordNameValidator(
+  contentRecordNames: string[],
   currentName: string,
 ) {
   return async (value: string) => {
     const isUnique =
-      value === currentName || uniqueDeploymentName(value, deploymentNames);
+      value === currentName ||
+      uniqueContentRecordName(value, contentRecordNames);
 
     if (value.length < 3 || !isUnique || !isValidFilename(value)) {
       return {
-        message: `Invalid Name: Value must be unique across other deployment names for this project, be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
+        message: `Invalid Name: Value must be unique across other deployment record names for this project, be longer than 3 characters, cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
         severity: InputBoxValidationSeverity.Error,
       };
     }

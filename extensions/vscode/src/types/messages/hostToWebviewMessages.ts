@@ -4,21 +4,21 @@ import { RPackage } from "../../api/types/packages";
 import {
   Credential,
   Configuration,
-  Deployment,
-  DeploymentFile,
-  PreDeployment,
+  ContentRecord,
+  ContentRecordFile,
+  PreContentRecord,
   ConfigurationError,
 } from "../../api";
 
 export enum HostToWebviewMessageType {
   // Sent from host to webviewView
-  REFRESH_DEPLOYMENT_DATA = "refreshDeploymentData",
+  REFRESH_CONTENTRECORD_DATA = "refreshContentRecordData",
   REFRESH_CONFIG_DATA = "refreshConfigData",
   REFRESH_CREDENTIAL_DATA = "refreshCredentialData",
   PUBLISH_START = "publishStart",
   PUBLISH_FINISH_SUCCESS = "publishFinishSuccess",
   PUBLISH_FINISH_FAILURE = "publishFinishFailure",
-  UPDATE_DEPLOYMENT_SELECTION = "updateDeploymentSelection",
+  UPDATE_CONTENTRECORD_SELECTION = "updateContentRecordSelection",
   UPDATE_CONFIG_SELECTION = "updateConfigSelection",
   SAVE_SELECTION = "saveSelection",
   REFRESH_FILES_LISTS = "refreshFilesLists",
@@ -37,13 +37,13 @@ export type AnyHostToWebviewMessage<
     };
 
 export type HostToWebviewMessage =
-  | RefreshDeploymentDataMsg
+  | RefreshContentRecordDataMsg
   | RefreshConfigDataMsg
   | RefreshCredentialDataMsg
   | PublishStartMsg
   | PublishFinishSuccessMsg
   | PublishFinishFailureMsg
-  | UpdateDeploymentSelectionMsg
+  | UpdateContentRecordSelectionMsg
   | UpdateConfigSelectionMsg
   | SaveSelectionMsg
   | RefreshFilesListsMsg
@@ -52,13 +52,13 @@ export type HostToWebviewMessage =
 
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
-    msg.kind === HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA ||
+    msg.kind === HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA ||
     msg.kind === HostToWebviewMessageType.REFRESH_CONFIG_DATA ||
     msg.kind === HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA ||
     msg.kind === HostToWebviewMessageType.PUBLISH_START ||
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS ||
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_FAILURE ||
-    msg.kind === HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION ||
+    msg.kind === HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION ||
     msg.kind === HostToWebviewMessageType.UPDATE_CONFIG_SELECTION ||
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
     msg.kind === HostToWebviewMessageType.REFRESH_FILES_LISTS ||
@@ -67,11 +67,11 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   );
 }
 
-export type RefreshDeploymentDataMsg = AnyHostToWebviewMessage<
-  HostToWebviewMessageType.REFRESH_DEPLOYMENT_DATA,
+export type RefreshContentRecordDataMsg = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,
   {
-    deployments: (Deployment | PreDeployment)[];
-    selectedDeploymentName?: string | null;
+    contentRecords: (ContentRecord | PreContentRecord)[];
+    selectedContentRecordName?: string | null;
   }
 >;
 export type RefreshConfigDataMsg = AnyHostToWebviewMessage<
@@ -100,10 +100,10 @@ export type PublishFinishFailureMsg = AnyHostToWebviewMessage<
     };
   }
 >;
-export type UpdateDeploymentSelectionMsg = AnyHostToWebviewMessage<
-  HostToWebviewMessageType.UPDATE_DEPLOYMENT_SELECTION,
+export type UpdateContentRecordSelectionMsg = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION,
   {
-    preDeployment: PreDeployment;
+    preContentRecord: PreContentRecord;
     saveSelection?: boolean;
   }
 >;
@@ -120,8 +120,8 @@ export type SaveSelectionMsg =
 export type RefreshFilesListsMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_FILES_LISTS,
   {
-    includedFiles: DeploymentFile[];
-    excludedFiles: DeploymentFile[];
+    includedFiles: ContentRecordFile[];
+    excludedFiles: ContentRecordFile[];
   }
 >;
 

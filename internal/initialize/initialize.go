@@ -47,7 +47,7 @@ func inspectProject(base util.AbsolutePath, python util.Path, rExecutable util.P
 		cfg.Title = base.Base()
 	}
 
-	needPython, err := requiresPython(cfg, base, python)
+	needPython, err := requiresPython(cfg, base)
 	if err != nil {
 		return nil, err
 	}
@@ -76,12 +76,7 @@ func inspectProject(base util.AbsolutePath, python util.Path, rExecutable util.P
 	return cfg, nil
 }
 
-func requiresPython(cfg *config.Config, base util.AbsolutePath, python util.Path) (bool, error) {
-	if python.String() != "" {
-		// If user provided Python on the command line,
-		// then configure Python for the project.
-		return true, nil
-	}
+func requiresPython(cfg *config.Config, base util.AbsolutePath) (bool, error) {
 	if cfg.Python != nil && cfg.Python.Version == "" {
 		// InferType returned a python configuration for us to fill in.
 		return true, nil
@@ -137,7 +132,7 @@ func GetPossibleConfigs(base util.AbsolutePath, python util.Path, rExecutable ut
 			// Default title is the name of the project directory.
 			cfg.Title = base.Base()
 		}
-		needPython, err := requiresPython(cfg, base, python)
+		needPython, err := requiresPython(cfg, base)
 		if err != nil {
 			return nil, err
 		}

@@ -24,22 +24,12 @@
     - [Pre-Releases](#pre-releases)
     - [Release Lifecycle](#release-lifecycle)
 
-The get this project up and running on your local machine, execute the following Just commands:
-
-```console
-just
-just run
-```
-
 ## Getting Started
 
-These instructions will give you a copy of the project up and running on your local machine for development and testing purposes.
+These instructions will give you a copy of the project up and running on your
+local machine for development and testing purposes.
 
 ### Prerequisites
-
-#### Option 1 - Native
-
-Utilizing your machines native software will result in a faster development iteration cycle, but requires more setup. The project defaults to native tooling in most environments.
 
 - [Go](https://go.dev/dl/)
 - [Just](https://just.systems/man/en/chapter_4.html)
@@ -123,15 +113,16 @@ This mode can be reproduced on your local machine by setting `CI=true`.
 
 ### Extension Development
 
-Extensions require the executable to exist on your `$PATH`.
-
-Execute `eval "$(just configure)"` to configure the executable on your current `$PATH`.
+See [the Contribution Guide for the VSCode Extension](./extensions/vscode/CONTRIBUTING.md).
 
 ## Release
 
 ### Before Releasing
 
-- Ensure that all relevant changes are documented in the [CHANGELOG.md](CHANGELOG.md).
+- Ensure that all relevant changes are documented in:
+  - the [CHANGELOG.md](CHANGELOG.md) for the repository
+  - the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md)
+    that is bundled with the extension
 - Update the license docs in case any new dependencies have been added, by running
 
 ```
@@ -168,6 +159,10 @@ Once complete the action has completed, the release will be available on the [Re
 
 Update the Installation instructions in [installation.md](docs/installation.md)
 for the new release, using the links to the `.vsix` files uploaded to the CDN.
+
+**Step 5**
+
+Update the release / latest version string in the `install-publisher.bash` script.
 
 ### Pre-Releases
 

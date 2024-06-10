@@ -18,17 +18,21 @@ import {
 import { EventStream, displayEventStreamMessage } from "src/events";
 
 import { EventStreamMessage } from "src/api";
+import { Commands, Views } from "src/constants";
 
 enum LogStageStatus {
   notStarted,
   neverStarted,
+  skipped,
   inProgress,
   completed,
   failed,
 }
 
 type LogStage = {
-  label: string;
+  inactiveLabel: string;
+  activeLabel: string;
+  alternatePaths?: string[];
   collapseState?: TreeItemCollapsibleState;
   status: LogStageStatus;
   stages: LogStage[];
@@ -38,24 +42,24 @@ type LogStage = {
 type LogsTreeItem = LogsTreeStageItem | LogsTreeLogItem;
 
 const createLogStage = (
-  label: string,
+  inactiveLabel: string,
+  activeLabel: string,
+  alternatePaths?: string[],
   collapseState?: TreeItemCollapsibleState,
   status: LogStageStatus = LogStageStatus.notStarted,
   stages: LogStage[] = [],
   events: EventStreamMessage[] = [],
 ): LogStage => {
   return {
-    label,
+    inactiveLabel,
+    activeLabel,
+    alternatePaths,
     collapseState,
     status,
     stages,
     events,
   };
 };
-
-const viewName = "posit.publisher.logs";
-const visitCommand = viewName + ".visit";
-const showDeploymentLogsCommand = "posit.publisher.logs.focus";
 
 /**
  * Tree data provider for the Logs view.
@@ -84,22 +88,47 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
   private resetStages() {
     this.stages = new Map([
-      ["publish/checkCapabilities", createLogStage("Check Capabilities")],
-      ["publish/createBundle", createLogStage("Create Bundle")],
-      ["publish/uploadBundle", createLogStage("Upload Bundle")],
-      ["publish/createDeployment", createLogStage("Create Deployment")],
-      ["publish/deployBundle", createLogStage("Deploy Bundle")],
       [
-        "publish/restorePythonEnv",
-        createLogStage("Restore Python Environment"),
+        "publish/checkCapabilities",
+        createLogStage("Check Capabilities", "Checking Capabilities"),
       ],
-      ["publish/restoreREnv", createLogStage("Restore R Environment")],
-      ["publish/runContent", createLogStage("Run Content")],
-      ["publish/validateDeployment", createLogStage("Validate Deployment")],
+      [
+        "publish/createBundle",
+        createLogStage("Create Bundle", "Creating Bundle"),
+      ],
+      [
+        "publish/uploadBundle",
+        createLogStage("Upload Bundle", "Uploading Bundle"),
+      ],
+      [
+        "publish/createDeployment",
+        createLogStage(
+          "Create Deployment Record",
+          "Creating Deployment Record",
+        ),
+      ],
+      [
+        "publish/deployBundle",
+        createLogStage("Deploy Bundle", "Deploying Bundle"),
+      ],
+      [
+        "publish/restoreEnv",
+        createLogStage("Restore Environment", "Restoring Environment"),
+      ],
+      ["publish/runContent", createLogStage("Run Content", "Running Content")],
+      [
+        "publish/validateDeployment",
+        createLogStage(
+          "Validate Deployment Record",
+          "Validating Deployment Record",
+        ),
+      ],
     ]);
 
     this.publishingStage = createLogStage(
       "Publishing",
+      "Published",
+      undefined,
       TreeItemCollapsibleState.Expanded,
       LogStageStatus.notStarted,
       Array.from(this.stages.values()),
@@ -110,7 +139,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     // Reset events when a new publish starts
     this._stream.register("publish/start", (msg: EventStreamMessage) => {
       this.resetStages();
-      this.publishingStage.label = `Publishing to ${msg.data.server}`;
+      this.publishingStage.inactiveLabel = `Publish to ${msg.data.server}`;
+      this.publishingStage.activeLabel = `Publishing to ${msg.data.server}`;
       this.publishingStage.status = LogStageStatus.inProgress;
       this.refresh();
     });
@@ -118,6 +148,13 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     this._stream.register("publish/success", (msg: EventStreamMessage) => {
       this.publishingStage.status = LogStageStatus.completed;
       this.publishingStage.events.push(msg);
+
+      this.stages.forEach((stage) => {
+        if (stage.status === LogStageStatus.notStarted) {
+          stage.status = LogStageStatus.skipped;
+        }
+      });
+
       this.refresh();
     });
 
@@ -139,7 +176,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           showLogsOption,
         );
         if (selection === showLogsOption) {
-          await commands.executeCommand(showDeploymentLogsCommand);
+          await commands.executeCommand(Commands.Logs.Focus);
         }
         this.refresh();
       },
@@ -243,14 +280,17 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
     // Create a tree view with the specified view name and options
     this._context.subscriptions.push(
-      window.createTreeView(viewName, {
+      window.createTreeView(Views.Logs, {
         treeDataProvider: this,
       }),
-      commands.registerCommand(visitCommand, async (dashboardUrl: string) => {
-        // This command is only attached to messages with a dashboardUrl field.
-        const uri = Uri.parse(dashboardUrl, true);
-        await env.openExternal(uri);
-      }),
+      commands.registerCommand(
+        Commands.Logs.Visit,
+        async (dashboardUrl: string) => {
+          // This command is only attached to messages with a dashboardUrl field.
+          const uri = Uri.parse(dashboardUrl, true);
+          await env.openExternal(uri);
+        },
+      ),
     );
   }
 }
@@ -258,6 +298,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 export class LogsTreeStageItem extends TreeItem {
   stages: LogStage[] = [];
   events: EventStreamMessage[] = [];
+  stage: LogStage;
 
   constructor(stage: LogStage) {
     let collapsibleState = stage.collapseState;
@@ -268,28 +309,38 @@ export class LogsTreeStageItem extends TreeItem {
           : TreeItemCollapsibleState.None;
     }
 
-    super(stage.label, collapsibleState);
+    super(stage.inactiveLabel, collapsibleState);
+    this.stage = stage;
 
     this.stages = stage.stages;
     this.events = stage.events;
-    this.setIcon(stage.status);
+    this.setLabelAndIcon(stage.status);
   }
 
-  setIcon(status: LogStageStatus) {
+  setLabelAndIcon(status: LogStageStatus) {
     switch (status) {
       case LogStageStatus.notStarted:
+        this.label = this.stage.inactiveLabel;
         this.iconPath = new ThemeIcon("circle-large-outline");
         break;
       case LogStageStatus.neverStarted:
+        this.label = this.stage.inactiveLabel;
         this.iconPath = new ThemeIcon("circle-slash");
         break;
+      case LogStageStatus.skipped:
+        this.label = `${this.stage.inactiveLabel} (skipped)`;
+        this.iconPath = new ThemeIcon("check");
+        break;
       case LogStageStatus.inProgress:
+        this.label = this.stage.activeLabel;
         this.iconPath = new ThemeIcon("loading~spin");
         break;
       case LogStageStatus.completed:
+        this.label = this.stage.inactiveLabel;
         this.iconPath = new ThemeIcon("check");
         break;
       case LogStageStatus.failed:
+        this.label = this.stage.inactiveLabel;
         this.iconPath = new ThemeIcon("error");
         break;
     }
@@ -310,7 +361,7 @@ export class LogsTreeLogItem extends TreeItem {
     if (msg.data.dashboardUrl !== undefined) {
       this.command = {
         title: "Visit",
-        command: visitCommand,
+        command: Commands.Logs.Visit,
         arguments: [msg.data.dashboardUrl],
       };
     }

@@ -10,7 +10,7 @@ import {
   commands,
 } from "vscode";
 
-import { DeploymentFile } from "../api";
+import { ContentRecordFile } from "../api";
 
 export async function fileExists(fileUri: Uri): Promise<boolean> {
   try {
@@ -201,14 +201,14 @@ export function standalonePathSorter(sep: string) {
 }
 
 export function splitFilesOnInclusion(
-  file: DeploymentFile,
+  file: ContentRecordFile,
   response: {
-    includedFiles: DeploymentFile[];
-    excludedFiles: DeploymentFile[];
+    includedFiles: ContentRecordFile[];
+    excludedFiles: ContentRecordFile[];
   } = { includedFiles: [], excludedFiles: [] },
 ): {
-  includedFiles: DeploymentFile[];
-  excludedFiles: DeploymentFile[];
+  includedFiles: ContentRecordFile[];
+  excludedFiles: ContentRecordFile[];
 } {
   if (file.isFile) {
     if (file.reason?.exclude === false) {

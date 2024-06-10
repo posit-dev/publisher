@@ -108,6 +108,15 @@ export interface EventSubscriptionTargetCallbackMap {
   "publish/restoreREnv/failure": OnPublishRestoreREnvFailureCallback;
   // 'publish/restoreREnv/failure/serverErr' | // received but temporarily converted
 
+  // This set of messages originate here, and are built from the
+  // publish/restorePythonEnv and publish/restoreREnv messages
+  "publish/restoreEnv/start": OnPublishRestoreEnvStartCallback;
+  "publish/restoreEnv/log": OnPublishRestoreEnvLogCallback;
+  "publish/restoreEnv/progress": OnPublishRestoreEnvProgressCallback;
+  "publish/restoreEnv/status": OnPublishRestoreEnvStatusCallback;
+  "publish/restoreEnv/success": OnPublishRestoreEnvSuccessCallback;
+  "publish/restoreEnv/failure": OnPublishRestoreEnvFailureCallback;
+
   "publish/runContent/start": OnPublishRunContentStartCallback;
   "publish/runContent/log": OnPublishRunContentLogCallback;
   "publish/runContent/success": OnPublishRunContentSuccessCallback;
@@ -155,6 +164,7 @@ export const eventTypeToString = (eventTypeStr: string): string => {
     "publish/restoreREnv": "Restore R Environment",
     "publish/runContent": "Run Content",
     "publish/setVanityURL": "Set Vanity URL",
+    "publish/setEnvVars": "Set Environment Variables",
     "publish/validateDeployment": "Validate Deployment",
     "publish/success": "Wrapping up Deployment",
   };
@@ -769,7 +779,6 @@ export function isPublishRestorePythonEnvFailure(
   return arg.type === "publish/restorePythonEnv/failure";
 }
 
-// begin
 export interface PublishRestoreREnvStart extends EventStreamMessage {
   type: "publish/restoreREnv/start";
   data: {
@@ -862,7 +871,97 @@ export function isPublishRestoreREnvFailure(
   return arg.type === "publish/restoreREnv/failure";
 }
 
-// end
+export interface PublishRestoreEnvStart extends EventStreamMessage {
+  type: "publish/restoreEnv/start";
+  data: {
+    localId: string;
+  };
+}
+export type OnPublishRestoreEnvStartCallback = (
+  msg: PublishRestoreEnvStart,
+) => void;
+export function isPublishRestoreEnvStart(
+  arg: Events,
+): arg is PublishRestoreEnvStart {
+  return arg.type === "publish/restoreEnv/start";
+}
+
+export interface PublishRestoreEnvLog extends EventStreamMessage {
+  type: "publish/restoreEnv/log";
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishRestoreEnvLogCallback = (
+  msg: PublishRestoreEnvLog,
+) => void;
+export function isPublishRestoreEnvLog(
+  arg: Events,
+): arg is PublishRestoreEnvLog {
+  return arg.type === "publish/restoreEnv/log";
+}
+
+export interface PublishRestoreEnvProgress extends EventStreamMessage {
+  type: "publish/restoreEnv/progress";
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishRestoreEnvProgressCallback = (
+  msg: PublishRestoreEnvProgress,
+) => void;
+export function isPublishRestoreEnvProgress(
+  arg: Events,
+): arg is PublishRestoreEnvProgress {
+  return arg.type === "publish/restoreEnv/progress";
+}
+
+export interface PublishRestoreEnvStatus extends EventStreamMessage {
+  type: "publish/restorePythonEnv/status";
+  data: {
+    localId: string;
+    name: string;
+    runtime: packageRuntime;
+    status: packageStatus;
+    version: string;
+  };
+}
+export type OnPublishRestoreEnvStatusCallback = (
+  msg: PublishRestoreEnvStatus,
+) => void;
+export function isPublishRestoreEnvStatus(
+  arg: Events,
+): arg is PublishRestoreEnvStatus {
+  return arg.type === "publish/restoreEnv/status";
+}
+
+export interface PublishRestoreEnvSuccess extends EventStreamMessage {
+  type: "publish/restoreEnv/success";
+  data: {
+    localId: string;
+  };
+}
+export type OnPublishRestoreEnvSuccessCallback = (
+  msg: PublishRestoreEnvSuccess,
+) => void;
+export function isPublishRestoreEnvSuccess(
+  arg: Events,
+): arg is PublishRestoreEnvSuccess {
+  return arg.type === "publish/restoreEnv/success";
+}
+
+export interface PublishRestoreEnvFailure extends EventStreamMessage {
+  type: "publish/restoreEnv/failure";
+  error: string; // translated internally
+  // structured data not guaranteed, use selective or generic queries
+  // from data map
+}
+export type OnPublishRestoreEnvFailureCallback = (
+  msg: PublishRestoreEnvFailure,
+) => void;
+export function isPublishRestoreEnvFailure(
+  arg: Events,
+): arg is PublishRestoreEnvFailure {
+  return arg.type === "publish/restoreEnv/failure";
+}
 
 export interface PublishRunContentStart extends EventStreamMessage {
   type: "publish/runContent/start";

@@ -38,11 +38,11 @@ func loadConfig(path util.AbsolutePath, configName string) (*config.Config, erro
 }
 
 func loadTarget(path util.AbsolutePath, targetName string) (*deployment.Deployment, error) {
-	configPath := deployment.GetDeploymentPath(path, targetName)
-	target, err := deployment.FromFile(configPath)
+	deploymentPath := deployment.GetDeploymentPath(path, targetName)
+	target, err := deployment.FromFile(deploymentPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return nil, fmt.Errorf("can't find deployment at '%s': %w", configPath, err)
+			return nil, fmt.Errorf("can't find deployment at '%s': %w", deploymentPath, err)
 		}
 		return nil, err
 	}

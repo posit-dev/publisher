@@ -13,8 +13,11 @@ import {
 import {
   Configuration,
   ConfigurationDetails,
+  ContentRecord,
+  PreContentRecord,
   contentTypeStrings,
   isConfigurationError,
+  isPreContentRecord,
   useApi,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
@@ -27,9 +30,14 @@ import {
   isQuickPickItemWithIndex,
 } from "src/multiStepInputs/multiStepHelper";
 import { untitledConfigurationName } from "src/utils/names";
+import { calculateTitle } from "src/utils/titles";
+import {
+  filterConfigurationDetailsToType,
+  filterConfigurationsToValidAndType,
+} from "src/utils/filters";
 
 export async function selectConfig(
-  title: string,
+  activeDeployment: ContentRecord | PreContentRecord,
   viewId?: string,
 ): Promise<Configuration | undefined> {
   // ***************************************************************
@@ -37,7 +45,6 @@ export async function selectConfig(
   // ***************************************************************
   const api = await useApi();
 
-  let configFileNames: string[] = [];
   let configFileListItems: QuickPickItem[] = [];
   let configurations: Configuration[] = [];
   let entryPointListItems: QuickPickItemWithIndex[] = [];
@@ -75,22 +82,32 @@ export async function selectConfig(
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.configurations.getAll();
-      response.data.forEach((config) => {
-        if (!isConfigurationError(config)) {
-          configurations.push(config);
-          configFileNames.push(config.configurationName);
-        }
-      });
+      let rawConfigs = response.data;
+      // Filter down configs to same content type as active deployment,
+      // but also allowing configs if active Deployment is a preDeployment
+      // or if the deployment file has no content type assigned yet.
+      if (!isPreContentRecord(activeDeployment)) {
+        configurations = filterConfigurationsToValidAndType(
+          rawConfigs,
+          activeDeployment.type,
+        );
+      } else {
+        configurations = rawConfigs.filter(
+          (c): c is Configuration => !isConfigurationError(c),
+        );
+      }
       configFileListItems = [];
 
-      configurations.forEach((configuration) => {
-        if (!isConfigurationError(configuration)) {
-          configFileListItems.push({
-            iconPath: new ThemeIcon("gear"),
-            label: configuration.configurationName,
-            detail: configuration.configurationRelPath,
-          });
+      configurations.forEach((config) => {
+        const { title, problem } = calculateTitle(activeDeployment, config);
+        if (problem) {
+          return;
         }
+        configFileListItems.push({
+          iconPath: new ThemeIcon("gear"),
+          label: title,
+          detail: config.configurationName,
+        });
       });
       configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
         var x = a.label.toLowerCase();
@@ -119,7 +136,10 @@ export async function selectConfig(
       try {
         const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(python);
-        configDetails = inspectResponse.data;
+        configDetails = filterConfigurationDetailsToType(
+          inspectResponse.data,
+          activeDeployment.type,
+        );
         configDetails.forEach((config, i) => {
           if (config.entrypoint) {
             entryPointListItems.push({
@@ -185,7 +205,7 @@ export async function selectConfig(
   // ***************************************************************
   async function collectInputs() {
     const state: MultiStepState = {
-      title,
+      title: "Select a Configuration",
       step: -1,
       lastStep: 0,
       totalSteps: -1,
@@ -210,7 +230,7 @@ export async function selectConfig(
 
   // ***************************************************************
   // Step #1:
-  // Select the config to be used w/ the deployment
+  // Select the config to be used w/ the contentRecord
   // ***************************************************************
   async function inputConfigFileSelection(
     input: MultiStepInput,
@@ -245,7 +265,7 @@ export async function selectConfig(
   }
 
   // ***************************************************************
-  // Step #2 - maybe?:
+  // Step #1 or 2...
   // Select the config to be used w/ the deployment
   // ***************************************************************
   async function inputEntryPointSelection(
@@ -255,9 +275,9 @@ export async function selectConfig(
     // skip if we only have one choice.
     if (hasMultipleEntryPoints()) {
       const pick = await input.showQuickPick({
-        title: state.title,
-        step: 2,
-        totalSteps: 3,
+        title: "Create a Configuration",
+        step: newConfigurationForced(state) ? 1 : 2,
+        totalSteps: newConfigurationForced(state) ? 2 : 3,
         placeholder:
           "Select main file and content type below. (Use this field to filter selections.)",
         items: entryPointListItems,
@@ -276,7 +296,7 @@ export async function selectConfig(
   }
 
   // ***************************************************************
-  // Step #2 - maybe:
+  // Step #1, 2 or 3...
   // Provide the title for the content
   // ***************************************************************
   async function inputTitle(input: MultiStepInput, state: MultiStepState) {
@@ -291,9 +311,21 @@ export async function selectConfig(
       }
     }
     const title = await input.showInputBox({
-      title: state.title,
-      step: hasMultipleEntryPoints() ? 3 : 2,
-      totalSteps: hasMultipleEntryPoints() ? 3 : 2,
+      title: "Create a Configuration",
+      step: newConfigurationForced(state)
+        ? hasMultipleEntryPoints()
+          ? 2
+          : 1
+        : hasMultipleEntryPoints()
+          ? 3
+          : 2,
+      totalSteps: newConfigurationForced(state)
+        ? hasMultipleEntryPoints()
+          ? 2
+          : 1
+        : hasMultipleEntryPoints()
+          ? 3
+          : 2,
       value:
         typeof state.data.title === "string" ? state.data.title : initialValue,
       prompt: "Enter a title for your content or application.",

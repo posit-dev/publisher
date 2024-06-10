@@ -23,18 +23,18 @@ import {
   ConfigurationDetails,
   Credential,
   Configuration,
-  PreDeployment,
+  PreContentRecord,
   contentTypeStrings,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   untitledConfigurationName,
-  untitledDeploymentName,
+  untitledContentRecordName,
 } from "src/utils/names";
 import { formatURL, normalizeURL } from "src/utils/url";
 import { validateApiKey } from "src/utils/apiKeys";
-import { DestinationObjects } from "src/types/shared";
+import { DeploymentObjects } from "src/types/shared";
 
 type stepInfo = {
   step: number;
@@ -251,9 +251,9 @@ const steps: Record<string, possibleSteps | undefined> = {
   },
 };
 
-export async function newDestination(
+export async function newDeployment(
   viewId?: string,
-): Promise<DestinationObjects | undefined> {
+): Promise<DeploymentObjects | undefined> {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
@@ -264,11 +264,11 @@ export async function newDestination(
 
   let entryPointListItems: QuickPickItemWithIndex[] = [];
   let configDetails: ConfigurationDetails[] = [];
-  let deploymentNames: string[] = [];
+  let contentRecordNames: string[] = [];
 
   let newConfig: Configuration | undefined;
   let newOrSelectedCredential: Credential | undefined;
-  let newDeployment: PreDeployment | undefined;
+  let newContentRecord: PreContentRecord | undefined;
 
   const createNewCredentialLabel = "Create a New Credential";
 
@@ -340,7 +340,7 @@ export async function newDestination(
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "newDestination, credentials.getAll",
+        "newDeployment, credentials.getAll",
         error,
       );
       window.showErrorMessage(
@@ -369,7 +369,7 @@ export async function newDestination(
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "newDestination, configurations.inspect",
+          "newDeployment, configurations.inspect",
           error,
         );
         window.showErrorMessage(
@@ -386,17 +386,17 @@ export async function newDestination(
     },
   );
 
-  const getDeployments = new Promise<void>(async (resolve, reject) => {
+  const getContentRecords = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.deployments.getAll();
-      const deploymentList = response.data;
-      // Note.. we want all of the deployment filenames regardless if they are valid or not.
-      deploymentNames = deploymentList.map(
-        (deployment) => deployment.deploymentName,
+      const response = await api.contentRecords.getAll();
+      const contentRecordList = response.data;
+      // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
+      contentRecordNames = contentRecordList.map(
+        (contentRecord) => contentRecord.deploymentName,
       );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "newDeployment, deployments.getAll",
+        "newContentRecord, contentRecords.getAll",
         error,
       );
       window.showInformationMessage(
@@ -410,7 +410,7 @@ export async function newDestination(
   const apisComplete = Promise.all([
     getCredentials,
     getConfigurationInspections,
-    getDeployments,
+    getContentRecords,
   ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
@@ -438,9 +438,9 @@ export async function newDestination(
   // Select the entrypoint, if there is more than one
   // Prompt for Title
   // Auto-name the config file to use
-  // Auto-name the deployment
+  // Auto-name the contentRecord
   // Call APIs and hopefully succeed at everything
-  // Return the names of the deployment, config and credentials
+  // Return the names of the contentRecord, config and credentials
 
   // ***************************************************************
   // Method which kicks off the multi-step.
@@ -449,7 +449,7 @@ export async function newDestination(
   // ***************************************************************
   async function collectInputs() {
     const state: MultiStepState = {
-      title: "Create a New Destination",
+      title: "Create a New Deployment",
       // We're going to temporarily disable display of steps due to the complex
       // nature of calculation with multiple paths through this flow.
       step: 0,
@@ -481,7 +481,7 @@ export async function newDestination(
     if (!newCredentialForced(state)) {
       const step = getStepInfo("pickCredentials", state);
       if (!step) {
-        throw new Error("newDestination::pickCredentials step info not found.");
+        throw new Error("newDeployment::pickCredentials step info not found.");
       }
       const pick = await input.showQuickPick({
         title: state.title,
@@ -519,7 +519,7 @@ export async function newDestination(
 
       const step = getStepInfo("inputServerUrl", state);
       if (!step) {
-        throw new Error("newDestination::inputServerUrl step info not found.");
+        throw new Error("newDeployment::inputServerUrl step info not found.");
       }
 
       const url = await input.showInputBox({
@@ -591,7 +591,7 @@ export async function newDestination(
       const step = getStepInfo("inputCredentialName", state);
       if (!step) {
         throw new Error(
-          "newDestination::inputCredentialName step info not found.",
+          "newDeployment::inputCredentialName step info not found.",
         );
       }
 
@@ -650,13 +650,14 @@ export async function newDestination(
 
       const step = getStepInfo("inputAPIKey", state);
       if (!step) {
-        throw new Error("newDestination::inputAPIKey step info not found.");
+        throw new Error("newDeployment::inputAPIKey step info not found.");
       }
 
       const apiKey = await input.showInputBox({
         title: state.title,
         step: step.step,
         totalSteps: step.totalSteps,
+        password: true,
         value: currentAPIKey,
         prompt: "The API key to be used to authenticate with Posit Connect",
         placeholder: "example: v1cKJzUzYnHP1p5WrAINMump4Sjp5pbq",
@@ -689,7 +690,7 @@ export async function newDestination(
 
   // ***************************************************************
   // Step #6 - maybe?:
-  // Select the config to be used w/ the deployment
+  // Select the config to be used w/ the contentRecord
   // ***************************************************************
   async function inputEntryPointSelection(
     input: MultiStepInput,
@@ -700,7 +701,7 @@ export async function newDestination(
       const step = getStepInfo("inputEntryPointSelection", state);
       if (!step) {
         throw new Error(
-          "newDestination::inputEntryPointSelection step info not found.",
+          "newDeployment::inputEntryPointSelection step info not found.",
         );
       }
 
@@ -732,7 +733,7 @@ export async function newDestination(
   async function inputTitle(input: MultiStepInput, state: MultiStepState) {
     const step = getStepInfo("inputTitle", state);
     if (!step) {
-      throw new Error("newDestination::inputTitle step info not found.");
+      throw new Error("newDeployment::inputTitle step info not found.");
     }
     let initialValue = "";
     if (
@@ -811,7 +812,7 @@ export async function newDestination(
       state.data.newCredentialApiKey === undefined ||
       isQuickPickItem(state.data.newCredentialApiKey)
     ) {
-      throw new Error("NewDestination Unexpected type guard failure @1");
+      throw new Error("NewDeployment Unexpected type guard failure @1");
     }
     try {
       // NEED an credential to be returned from this API
@@ -839,7 +840,7 @@ export async function newDestination(
     }
   } else {
     // we are not creating a credential but also do not have a required existing value
-    throw new Error("NewDestination Unexpected type guard failure @2");
+    throw new Error("NewDeployment Unexpected type guard failure @2");
   }
 
   // Create the Config File
@@ -863,7 +864,7 @@ export async function newDestination(
     await commands.executeCommand("vscode.open", fileUri);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "newDestination, configurations.createOrUpdate",
+      "newDeployment, configurations.createOrUpdate",
       error,
     );
     window.showErrorMessage(`Failed to create config file. ${summary}`);
@@ -878,7 +879,7 @@ export async function newDestination(
   ) {
     finalCredentialName = state.data.newCredentialName;
   } else if (!state.data.credentialName) {
-    throw new Error("NewDestination Unexpected type guard failure @3");
+    throw new Error("NewDeployment Unexpected type guard failure @3");
   } else if (
     newCredentialSelected(state) &&
     state.data.newCredentialName &&
@@ -890,30 +891,32 @@ export async function newDestination(
   }
   if (!finalCredentialName) {
     // should have assigned it by now. Logic error!
-    throw new Error("NewDestination Unexpected type guard failure @4");
+    throw new Error("NewDeployment Unexpected type guard failure @4");
   }
 
-  // Create the Predeployment File
+  // Create the PrecontentRecord File
   try {
-    const response = await api.deployments.createNew(
+    const response = await api.contentRecords.createNew(
       finalCredentialName,
       configName,
-      untitledDeploymentName(deploymentNames),
+      untitledContentRecordName(contentRecordNames),
     );
-    newDeployment = response.data;
+    newContentRecord = response.data;
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
-      "newDestination, deployments.createNew",
+      "newDeployment, contentRecords.createNew",
       error,
     );
-    window.showErrorMessage(`Failed to create pre-deployment file. ${summary}`);
+    window.showErrorMessage(
+      `Failed to create pre-deployment record. ${summary}`,
+    );
     return;
   }
   if (!newOrSelectedCredential) {
-    throw new Error("NewDestination Unexpected type guard failure @5");
+    throw new Error("NewDeployment Unexpected type guard failure @5");
   }
   return {
-    deployment: newDeployment,
+    contentRecord: newContentRecord,
     configuration: newConfig,
     credential: newOrSelectedCredential,
   };

@@ -32,7 +32,7 @@ func (s *NotebookContentsSuite) TestGetNotebookFileInputs() {
 
 	inputs, err := GetNotebookFileInputs(path)
 	s.Nil(err)
-	s.Equal("import sys\nprint(sys.executable)\nprint('Summing')\n123 + 456\n", inputs)
+	s.Equal("import sys\n\nprint(sys.executable)\n\nprint('Summing')\n\n123 + 456\n", inputs)
 }
 
 func (s *NotebookContentsSuite) TestGetNotebookFileInputsErr() {

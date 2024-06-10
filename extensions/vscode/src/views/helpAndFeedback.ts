@@ -1,5 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { Commands, Views } from "src/constants";
 import {
   TreeDataProvider,
   TreeItem,
@@ -10,10 +11,6 @@ import {
   commands,
   env,
 } from "vscode";
-
-const viewName = "posit.publisher.helpAndFeedback";
-const openGettingStartedCommand = viewName + ".gettingStarted";
-const openFeedbackCommand = viewName + "openFeedback";
 
 export class HelpAndFeedbackTreeDataProvider
   implements TreeDataProvider<HelpAndFeedbackTreeItem>
@@ -32,12 +29,12 @@ export class HelpAndFeedbackTreeDataProvider
         new HelpAndFeedbackTreeItem(
           "Get Started with Posit Publisher",
           "Open Getting Started Documentation",
-          openGettingStartedCommand,
+          Commands.HelpAndFeedback.OpenGettingStarted,
         ),
         new HelpAndFeedbackTreeItem(
           "Provide Feedback",
           "Open Feedback Slack Channel",
-          openFeedbackCommand,
+          Commands.HelpAndFeedback.OpenGettingStarted,
         ),
       ];
     }
@@ -46,21 +43,24 @@ export class HelpAndFeedbackTreeDataProvider
 
   public register() {
     this._context.subscriptions.push(
-      window.createTreeView(viewName, { treeDataProvider: this }),
+      window.createTreeView(Views.HelpAndFeedback, { treeDataProvider: this }),
     );
 
     this._context.subscriptions.push(
-      commands.registerCommand(openGettingStartedCommand, () => {
-        env.openExternal(
-          Uri.parse(
-            "https://github.com/posit-dev/publisher/blob/main/docs/index.md",
-          ),
-        );
-      }),
+      commands.registerCommand(
+        Commands.HelpAndFeedback.OpenGettingStarted,
+        () => {
+          env.openExternal(
+            Uri.parse(
+              "https://github.com/posit-dev/publisher/blob/main/docs/index.md",
+            ),
+          );
+        },
+      ),
     );
 
     this._context.subscriptions.push(
-      commands.registerCommand(openFeedbackCommand, () => {
+      commands.registerCommand(Commands.HelpAndFeedback.OpenFeedback, () => {
         env.openExternal(
           Uri.parse("https://positpbc.slack.com/channels/publisher-feedback"),
         );
