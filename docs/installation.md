@@ -1,9 +1,9 @@
 This page walks you through installation options for Posit Publisher.
 
-## Installation for VSCode / Positron
+## Installation for VSCode
 
 The VSCode extension package includes everything you need to get started within
-VSCode or Positron.
+VSCode.
 
 Download and install the VSCode extension.
 
