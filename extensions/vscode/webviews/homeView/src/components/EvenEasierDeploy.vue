@@ -97,6 +97,7 @@
     <vscode-button
       v-else
       class="w-full add-destination-btn"
+      id="data-automation-add-destination-button"
       @click="onAddDestination"
     >
       Add Destination
