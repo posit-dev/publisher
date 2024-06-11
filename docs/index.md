@@ -1,6 +1,6 @@
 # Posit Publisher
 
-Posit Publisher lets you deploy projects to Connect from VSCode / Positron.
+Posit Publisher lets you deploy projects to Connect from VSCode.
 
 Key concepts:
 
