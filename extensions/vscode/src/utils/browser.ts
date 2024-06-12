@@ -6,15 +6,15 @@ import { Uri, ViewColumn, commands, env, workspace } from "vscode";
 const CONFIG_KEY_OPEN_URL_BEHAVIOR = "openUrlBehavior";
 type OpenUrlBehaviors = "external" | "main" | "beside";
 
-export const openUrl = async (url: string) => {
+export const openUrl = async (url: string, forceExternal = false) => {
   const configuration = workspace.getConfiguration("positPublisher");
   let openUrlBehavior: OpenUrlBehaviors | undefined =
     configuration.get<OpenUrlBehaviors>(CONFIG_KEY_OPEN_URL_BEHAVIOR);
 
-  if (openUrlBehavior === "external") {
+  if (openUrlBehavior === "external" || forceExternal) {
     return await env.openExternal(Uri.parse(url, true));
   }
-  let viewColumn = ViewColumn.Beside;
+  let viewColumn = ViewColumn.Two;
   if (openUrlBehavior === "main") {
     viewColumn = ViewColumn.One;
   }

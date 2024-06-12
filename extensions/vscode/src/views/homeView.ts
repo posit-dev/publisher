@@ -1204,7 +1204,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         		<iframe
         			style="width: 100%; min-height: 1000px;"
         			src="${contentURL}"
-        			sandbox="allow-forms allow-modals allow-popups allow-scripts allow-same-origin allow-top-navigation"
+        			sandbox="allow-forms allow-modals allow-popups allow-scripts allow-same-origin allow-top-navigation allow-frame-ancestors"
         		/>
         </body>
         </html>`;

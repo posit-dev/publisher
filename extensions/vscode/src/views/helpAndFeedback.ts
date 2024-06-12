@@ -52,13 +52,17 @@ export class HelpAndFeedbackTreeDataProvider
       commands.registerCommand(openGettingStartedCommand, async () => {
         await openUrl(
           "https://github.com/posit-dev/publisher/blob/main/docs/index.md",
+          true,
         );
       }),
     );
 
     this._context.subscriptions.push(
       commands.registerCommand(openFeedbackCommand, async () => {
-        await openUrl("https://positpbc.slack.com/channels/publisher-feedback");
+        await openUrl(
+          "https://positpbc.slack.com/channels/publisher-feedback",
+          true,
+        );
       }),
     );
   }
