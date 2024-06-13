@@ -50,6 +50,7 @@ export async function activate(context: ExtensionContext) {
   context.subscriptions.push(stream);
 
   service = new Service(context, port);
+  service.start();
 
   const watchers = new WatcherManager();
   context.subscriptions.push(watchers);
@@ -85,8 +86,6 @@ export async function activate(context: ExtensionContext) {
   logsTreeDataProvider.register();
   homeViewProvider.register(watchers);
 
-  await service.start();
-
   context.subscriptions.push(
     commands.registerCommand(Commands.InitProject, async (viewId?: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
@@ -100,7 +99,6 @@ export async function activate(context: ExtensionContext) {
       commands.executeCommand(Commands.Logs.Visit),
     ),
   );
-
   setStateContext(PositPublishState.initialized);
 }
 
