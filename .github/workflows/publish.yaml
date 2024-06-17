@@ -3,7 +3,7 @@ on:
   push:
     tags:
       - "v*.*.*"
-  workflow_call: # TODO: testing
+  workflow_dispatch: # TODO: testing
 jobs:
   build:
     uses: ./.github/workflows/build.yaml
