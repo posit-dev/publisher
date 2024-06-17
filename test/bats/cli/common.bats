@@ -111,5 +111,5 @@ load '../node_modules/bats-assert/load'
 @test "test missing command" {
     run ${EXE}
     assert_failure
-    assert_line --partial 'publisher: error: expected one of "credentials",  "deploy",  "init",  "redeploy",  "requirements",  ...'
+    assert_line --partial 'error: expected one of "credentials",  "deploy",  "init",  "redeploy",  "requirements",  ...'
 }
