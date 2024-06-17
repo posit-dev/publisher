@@ -67,6 +67,7 @@ describe("VS Code Extension UI Test", () => {
     const init = await $(".add-deployment-btn");
     // .$(">>>#active-frame")
     // .$('>>>.easy-deploy-container');
+    await delay(15000);
     await expect(init).toHaveText("Add Deployment");
     await init.click();
 

@@ -61,6 +61,7 @@ jobs:
       - run: just bats test common
       - run: just bats test init
       - run: just bats test deploy
+
       # vscode ui tests
       - run: just package
       - run: just vscode configure
