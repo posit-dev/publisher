@@ -7,10 +7,10 @@ import logging
 import os
 
 # use the perftest fuzzbucket instance since it already has all the deps
-alias = "ubuntu22-publishing-client-2024.02"
+alias = "ubuntu22-publishing-client-2024.05"
 box_name = "connect-publishing-client"
 list_command = "fuzzbucket-client -j list"
-create_command = "fuzzbucket-client create -c -S 20 " + alias + " -n " + box_name
+create_command = "fuzzbucket-client create -c -S 20 -t m5.2xlarge " + alias + " -n " + box_name
 remove_command = "fuzzbucket-client rm " + box_name
 ssh_options = "-i fuzzbucket-ssh-key"
 

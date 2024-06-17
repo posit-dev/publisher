@@ -1,16 +1,16 @@
 // Copyright (C) 2023 by Posit Software, PBC.
 
-export enum DeploymentFileType {
+export enum ContentRecordFileType {
   REGULAR = "REGULAR",
   DIRECTORY = "DIR",
 }
 
-export type DeploymentFile = {
+export type ContentRecordFile = {
   id: string;
-  fileType: DeploymentFileType;
+  fileType: ContentRecordFileType;
   base: string;
   reason: FileMatch | null; // pattern that matched a file, null if no match
-  files: DeploymentFile[];
+  files: ContentRecordFile[];
   isDir: boolean;
   isEntrypoint: boolean;
   isFile: boolean;

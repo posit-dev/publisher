@@ -3,12 +3,12 @@
 import { AxiosInstance } from "axios";
 
 import {
-  PreDeployment,
-  AllDeploymentTypes,
-  Deployment,
-} from "../types/deployments";
+  PreContentRecord,
+  AllContentRecordTypes,
+  ContentRecord,
+} from "../types/contentRecords";
 
-export class Deployments {
+export class ContentRecords {
   private client: AxiosInstance;
 
   constructor(client: AxiosInstance) {
@@ -19,7 +19,7 @@ export class Deployments {
   // 200 - success
   // 500 - internal server error
   getAll() {
-    return this.client.get<Array<AllDeploymentTypes>>("/deployments");
+    return this.client.get<Array<AllContentRecordTypes>>("/deployments");
   }
 
   // Returns:
@@ -28,7 +28,7 @@ export class Deployments {
   // 500 - internal server error
   get(id: string) {
     const encodedId = encodeURIComponent(id);
-    return this.client.get<AllDeploymentTypes>(`deployments/${encodedId}`);
+    return this.client.get<AllContentRecordTypes>(`deployments/${encodedId}`);
   }
 
   // Returns:
@@ -43,7 +43,7 @@ export class Deployments {
       config: configName,
       saveName,
     };
-    return this.client.post<PreDeployment>("/deployments", params);
+    return this.client.post<PreContentRecord>("/deployments", params);
   }
 
   // Returns:
@@ -78,11 +78,11 @@ export class Deployments {
 
   // Returns:
   // 204 - no content
-  // 404 - deployment or config file not found
+  // 404 - contentRecord or config file not found
   // 500 - internal server error
   patch(deploymentName: string, configName: string) {
     const encodedName = encodeURIComponent(deploymentName);
-    return this.client.patch<Deployment>(`deployments/${encodedName}`, {
+    return this.client.patch<ContentRecord>(`deployments/${encodedName}`, {
       configurationName: configName,
     });
   }

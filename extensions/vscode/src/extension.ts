@@ -5,14 +5,15 @@ import { ExtensionContext, commands } from "vscode";
 import * as ports from "src/ports";
 import { Service } from "src/services";
 import { ProjectTreeDataProvider } from "src/views/project";
-import { DeploymentsTreeDataProvider } from "src/views/deployments";
+import { ContentRecordsTreeDataProvider } from "src/views/contentRecords";
 import { ConfigurationsTreeDataProvider } from "src/views/configurations";
 import { CredentialsTreeDataProvider } from "src/views/credentials";
 import { HelpAndFeedbackTreeDataProvider } from "src/views/helpAndFeedback";
 import { LogsTreeDataProvider } from "src/views/logs";
 import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
-import { WatcherManager } from "./watchers";
+import { WatcherManager } from "src/watchers";
+import { Commands } from "src/constants";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -22,13 +23,10 @@ enum PositPublishState {
 }
 
 const INITIALIZING_CONTEXT = "posit.publish.initialization.inProgress";
-const INIT_PROJECT_COMMAND = "posit.publisher.init-project";
 enum InitializationInProgress {
   true = "true",
   false = "false",
 }
-const SHOW_OUTPUT_CHANNEL_COMMAND = "posit.publisher.showOutputChannel";
-const SHOW_PUBLISHING_LOG_COMMAND = "posit.publisher.showPublishingLog";
 
 // Once the extension is activate, hang on to the service so that we can stop it on deactivation.
 let service: Service;
@@ -52,6 +50,7 @@ export async function activate(context: ExtensionContext) {
   context.subscriptions.push(stream);
 
   service = new Service(context, port);
+  service.start();
 
   const watchers = new WatcherManager();
   context.subscriptions.push(watchers);
@@ -59,7 +58,9 @@ export async function activate(context: ExtensionContext) {
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
 
-  const deploymentsTreeDataProvider = new DeploymentsTreeDataProvider(context);
+  const contentRecordsTreeDataProvider = new ContentRecordsTreeDataProvider(
+    context,
+  );
 
   const configurationsTreeDataProvider = new ConfigurationsTreeDataProvider(
     context,
@@ -78,29 +79,26 @@ export async function activate(context: ExtensionContext) {
 
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
-  deploymentsTreeDataProvider.register(watchers);
+  contentRecordsTreeDataProvider.register(watchers);
   configurationsTreeDataProvider.register(watchers);
   credentialsTreeDataProvider.register();
   helpAndFeedbackTreeDataProvider.register();
   logsTreeDataProvider.register();
   homeViewProvider.register(watchers);
 
-  await service.start();
-
   context.subscriptions.push(
-    commands.registerCommand(INIT_PROJECT_COMMAND, async (viewId?: string) => {
+    commands.registerCommand(Commands.InitProject, async (viewId?: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
-      await homeViewProvider.showNewDestinationMultiStep(viewId);
+      await homeViewProvider.showNewDeploymentMultiStep(viewId);
       setInitializationInProgressContext(InitializationInProgress.false);
     }),
-    commands.registerCommand(SHOW_OUTPUT_CHANNEL_COMMAND, () =>
+    commands.registerCommand(Commands.ShowOutputChannel, () =>
       service.showOutputChannel(),
     ),
-    commands.registerCommand(SHOW_PUBLISHING_LOG_COMMAND, () =>
-      commands.executeCommand("posit.publisher.logs.focus"),
+    commands.registerCommand(Commands.ShowPublishingLog, () =>
+      commands.executeCommand(Commands.Logs.Visit),
     ),
   );
-
   setStateContext(PositPublishState.initialized);
 }
 

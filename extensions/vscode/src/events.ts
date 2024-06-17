@@ -21,7 +21,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
   }
 
   if (msg.type === "publish/createNewDeployment/success") {
-    return `Created new deployment as ${msg.data.saveName}`;
+    return `Created new Deployment as ${msg.data.saveName}`;
   }
 
   if (msg.type === "publish/createBundle/success") {
@@ -29,7 +29,7 @@ export function displayEventStreamMessage(msg: EventStreamMessage): string {
   }
 
   if (msg.type === "publish/createDeployment/start") {
-    return `Updating existing deployment with ID ${msg.data.contentId}`;
+    return `Updating existing Deployment with ID ${msg.data.contentId}`;
   }
 
   if (msg.type === "publish/createBundle/log") {

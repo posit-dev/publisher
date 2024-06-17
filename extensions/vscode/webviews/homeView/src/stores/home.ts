@@ -1,13 +1,14 @@
 import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { useHostConduitService } from "../../src/HostConduitService";
+import { normalizeURL } from "../../../../src/utils/url";
 
 import {
   Credential,
-  Deployment,
-  PreDeployment,
+  ContentRecord,
+  PreContentRecord,
   Configuration,
-  DeploymentFile,
+  ContentRecordFile,
   ConfigurationError,
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
@@ -16,28 +17,30 @@ import { RPackage } from "../../../../src/api/types/packages";
 export const useHomeStore = defineStore("home", () => {
   const publishInProgress = ref(false);
 
-  const deployments = ref<(Deployment | PreDeployment)[]>([]);
+  const contentRecords = ref<(ContentRecord | PreContentRecord)[]>([]);
   const configurations = ref<Configuration[]>([]);
   const configurationsInError = ref<ConfigurationError[]>([]);
   const credentials = ref<Credential[]>([]);
 
-  const selectedDeployment = ref<Deployment | PreDeployment>();
+  const selectedContentRecord = ref<ContentRecord | PreContentRecord>();
   const selectedConfiguration = ref<Configuration>();
 
   const serverCredential = computed(() => {
     return credentials.value.find((c) => {
-      return (
-        c.url.toLowerCase() ===
-        selectedDeployment.value?.serverUrl.toLowerCase()
-      );
+      const credentialUrl = c.url.toLowerCase();
+      const recordUrl = selectedContentRecord.value?.serverUrl.toLowerCase();
+      if (!recordUrl) {
+        return false;
+      }
+      return normalizeURL(credentialUrl) === normalizeURL(recordUrl);
     });
   });
 
-  const lastDeploymentResult = ref<string>();
-  const lastDeploymentMsg = ref<string>();
+  const lastContentRecordResult = ref<string>();
+  const lastContentRecordMsg = ref<string>();
 
-  const includedFiles = ref<DeploymentFile[]>([]);
-  const excludedFiles = ref<DeploymentFile[]>([]);
+  const includedFiles = ref<ContentRecordFile[]>([]);
+  const excludedFiles = ref<ContentRecordFile[]>([]);
 
   const pythonProject = ref<boolean>(false);
   const pythonPackages = ref<string[]>();
@@ -51,34 +54,36 @@ export const useHomeStore = defineStore("home", () => {
   const rVersion = ref<string>();
 
   /**
-   * Updates the selected deployment to one with the given name.
-   * If the named deployment is not found, the selected deployment is set to undefined.
+   * Updates the selected contentRecord to one with the given name.
+   * If the named contentRecord is not found, the selected contentRecord is set to undefined.
    *
-   * @param name the name of the new deployment to select
-   * @returns true if the selected deployment was the same, false if not
+   * @param name the name of the new contentRecord to select
+   * @returns true if the selected contentRecord was the same, false if not
    */
-  function updateSelectedDeploymentByName(name: string) {
-    const previousSelectedDeployment = selectedDeployment.value;
+  function updateSelectedContentRecordByName(name: string) {
+    const previousSelectedContentRecord = selectedContentRecord.value;
 
-    const deployment = deployments.value.find((d) => d.deploymentName === name);
+    const contentRecord = contentRecords.value.find(
+      (d) => d.deploymentName === name,
+    );
 
-    selectedDeployment.value = deployment;
-    return previousSelectedDeployment === selectedDeployment.value;
+    selectedContentRecord.value = contentRecord;
+    return previousSelectedContentRecord === selectedContentRecord.value;
   }
 
-  function updateSelectedDeploymentByObject(
-    deployment: Deployment | PreDeployment,
+  function updateSelectedContentRecordByObject(
+    contentRecord: ContentRecord | PreContentRecord,
   ) {
-    deployments.value.push(deployment);
-    selectedDeployment.value = deployment;
+    contentRecords.value.push(contentRecord);
+    selectedContentRecord.value = contentRecord;
   }
 
   /**
    * Updates the selected configuration to the one with the given name.
-   * If the named configuration is not found, the selected deployment is set to undefined.
+   * If the named configuration is not found, the selected contentRecord is set to undefined.
    *
    * @param name the name of the new configuration to select
-   * @returns true if the selected deployment was the same, false if not
+   * @returns true if the selected contentRecord was the same, false if not
    */
   function updateSelectedConfigurationByName(name: string) {
     const previousSelectedConfig = selectedConfiguration.value;
@@ -96,10 +101,10 @@ export const useHomeStore = defineStore("home", () => {
     selectedConfiguration.value = config;
   }
 
-  const updateCredentialsAndConfigurationForDeployment = () => {
-    if (selectedDeployment.value?.configurationName) {
+  const updateCredentialsAndConfigurationForContentRecord = () => {
+    if (selectedContentRecord.value?.configurationName) {
       updateSelectedConfigurationByName(
-        selectedDeployment.value?.configurationName,
+        selectedContentRecord.value?.configurationName,
       );
     }
   };
@@ -112,7 +117,7 @@ export const useHomeStore = defineStore("home", () => {
       kind: WebviewToHostMessageType.SAVE_SELECTION_STATE,
       content: {
         state: {
-          deploymentName: selectedDeployment.value?.saveName,
+          deploymentName: selectedContentRecord.value?.saveName,
           configurationName: selectedConfiguration.value?.configurationName,
         },
       },
@@ -147,17 +152,17 @@ export const useHomeStore = defineStore("home", () => {
 
   return {
     publishInProgress,
-    deployments,
+    contentRecords,
     configurations,
     configurationsInError,
     credentials,
-    selectedDeployment,
+    selectedContentRecord,
     selectedConfiguration,
     serverCredential,
     includedFiles,
     excludedFiles,
-    lastDeploymentResult,
-    lastDeploymentMsg,
+    lastContentRecordResult,
+    lastContentRecordMsg,
     pythonProject,
     pythonPackages,
     pythonPackageFile,
@@ -165,11 +170,11 @@ export const useHomeStore = defineStore("home", () => {
     rProject,
     rPackages,
     rPackageFile,
-    updateSelectedDeploymentByName,
-    updateSelectedDeploymentByObject,
+    updateSelectedContentRecordByName,
+    updateSelectedContentRecordByObject,
     updateSelectedConfigurationByName,
     updateSelectedConfigurationByObject,
-    updateCredentialsAndConfigurationForDeployment,
+    updateCredentialsAndConfigurationForContentRecord,
     updateParentViewSelectionState,
     updatePythonPackages,
     updateRPackages,

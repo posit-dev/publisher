@@ -1,0 +1,60 @@
+name: Publish Extension
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: # TODO: testing
+jobs:
+  build:
+    uses: ./.github/workflows/build.yaml
+  package:
+    needs:
+      - build
+    uses: ./.github/workflows/package.yaml
+  publish-vscode-extension:
+    needs:
+      - package
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - darwin-amd64
+          - darwin-arm64
+          - linux-amd64
+          - linux-arm64
+          - windows-amd64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - id: get-prerelease
+        run: echo "prerelease=$(just pre-release)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+          extensionFile: dist/*-${{ matrix.target }}.vsix
+          target: ${{ matrix.target }}
+          preRelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}
+          skipDuplicate: true
+          dryRun: true # TODO: testing
+
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          registryUrl: https://marketplace.visualstudio.com
+          pat: ${{ secrets.VSCE_PAT }}
+          extensionFile: dist/*-${{ matrix.target }}.vsix
+          target: ${{ matrix.target }}
+          preRelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}
+          skipDuplicate: true
+          dryRun: true # TODO: testing

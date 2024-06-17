@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.beta1]
+
+### Added
+
+- Added protection against selecting a configuration of a different type than
+  the selected deployment (#1658)
+- Added a pre-flight deployment check that verifies the configuration and
+  deployment type match (#1666)
+- Once deployments are deployed and have GUIDs a content type is recorded in the
+  deployment record (#1741)
+- Added the MIT license to the extension bundle (#1773)
+- Added a context menu to the Deployment status section of the sidebar to view
+  logs (#1693)
+
+### Changed
+
+- Changed the name "Destination" to "Deployment" to make it more clear what
+  was being created and deployed (#1690)
+- Changed the order of steps when creating a credential. Now the user is
+  prompted to give the server URL, the API key, and then a name (#1751)
+- API key input prompts are now using the password type, hiding the input
+  (#1775)
+- Improved naming of deployment logs stages to make them more clear (#586)
+- Improved missing configuration error message - now prompts the user to
+  select or create a configuration based on available configurations (#1752)
+- Deployments and Configurations views are no hidden by default on initial
+  install of the extension (#1697)
+
+### Fixed
+
+- The extension no longer gets stuck on "Scanning folder..." on VSCode version
+  `1.90.0` (#1803)
+- Fixed extension commands for the Files, Python packages, and R packages views
+  that were not registered previously (#1766)
+- Removed an outdated message about a `publisher` CLI command from the extension
+  (#1781)
+- Configurations are no longer created specifying Python for a non-Python
+  project even if Python is detected (#1760)
+- Python Package scanning now handles notebook blocks without newlines (#1769)
+
 ## [1.0.alpha8]
 
 ### Added
@@ -27,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The renv/staging and renv/sandbox directories are now excluded from deployment (#1627)
 - Deploying without the wildcard `*` in the `files` section of the configuration file now includes the correct files (#1647)
-- The Python interpreter selected in VSCode/Positron is now used when deploying Python content (#1514)
+- The Python interpreter selected in VSCode is now used when deploying Python content (#1514)
 - Adding a new destination on Windows no longer fails with a 500 error for R projects (#1631)
 - Deploying R projects on Linux no longer fails (#1637)
 - Disposables are now correctly disposed in the home view improving performance on workspace changes (#1673)

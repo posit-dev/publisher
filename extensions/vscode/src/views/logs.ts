@@ -18,6 +18,7 @@ import {
 import { EventStream, displayEventStreamMessage } from "src/events";
 
 import { EventStreamMessage } from "src/api";
+import { Commands, Views } from "src/constants";
 
 enum LogStageStatus {
   notStarted,
@@ -60,10 +61,6 @@ const createLogStage = (
   };
 };
 
-const viewName = "posit.publisher.logs";
-const visitCommand = viewName + ".visit";
-const showDeploymentLogsCommand = "posit.publisher.logs.focus";
-
 /**
  * Tree data provider for the Logs view.
  */
@@ -105,7 +102,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ],
       [
         "publish/createDeployment",
-        createLogStage("Create Deployment", "Creating Deployment"),
+        createLogStage(
+          "Create Deployment Record",
+          "Creating Deployment Record",
+        ),
       ],
       [
         "publish/deployBundle",
@@ -118,7 +118,10 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ["publish/runContent", createLogStage("Run Content", "Running Content")],
       [
         "publish/validateDeployment",
-        createLogStage("Validate Deployment", "Validating Deployment"),
+        createLogStage(
+          "Validate Deployment Record",
+          "Validating Deployment Record",
+        ),
       ],
     ]);
 
@@ -173,7 +176,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           showLogsOption,
         );
         if (selection === showLogsOption) {
-          await commands.executeCommand(showDeploymentLogsCommand);
+          await commands.executeCommand(Commands.Logs.Focus);
         }
         this.refresh();
       },
@@ -277,14 +280,17 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
     // Create a tree view with the specified view name and options
     this._context.subscriptions.push(
-      window.createTreeView(viewName, {
+      window.createTreeView(Views.Logs, {
         treeDataProvider: this,
       }),
-      commands.registerCommand(visitCommand, async (dashboardUrl: string) => {
-        // This command is only attached to messages with a dashboardUrl field.
-        const uri = Uri.parse(dashboardUrl, true);
-        await env.openExternal(uri);
-      }),
+      commands.registerCommand(
+        Commands.Logs.Visit,
+        async (dashboardUrl: string) => {
+          // This command is only attached to messages with a dashboardUrl field.
+          const uri = Uri.parse(dashboardUrl, true);
+          await env.openExternal(uri);
+        },
+      ),
     );
   }
 }
@@ -355,7 +361,7 @@ export class LogsTreeLogItem extends TreeItem {
     if (msg.data.dashboardUrl !== undefined) {
       this.command = {
         title: "Visit",
-        command: visitCommand,
+        command: Commands.Logs.Visit,
         arguments: [msg.data.dashboardUrl],
       };
     }

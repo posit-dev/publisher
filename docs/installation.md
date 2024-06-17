@@ -1,17 +1,17 @@
 This page walks you through installation options for Posit Publisher.
 
-## Installation for VSCode / Positron
+## Installation for VSCode
 
 The VSCode extension package includes everything you need to get started within
-VSCode or Positron.
+VSCode.
 
 Download and install the VSCode extension.
 
-- For Arm MacOS: [publisher-1.0.alpha8-darwin-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha8/publisher-1.0.alpha8-darwin-arm64.vsix)
-- For Intel MacOS: [publisher-1.0.alpha8-darwin-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha8/publisher-1.0.alpha8-darwin-amd64.vsix)
-- For Windows: [publisher-1.0.alpha8-windows-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha8/publisher-1.0.alpha8-windows-amd64.vsix)
-- For Arm Linux: [publisher-1.0.alpha8-linux-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha8/publisher-1.0.alpha8-linux-arm64.vsix)
-- For Intel Linux: [publisher-1.0.alpha8-linux-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.alpha8/publisher-1.0.alpha8-linux-amd64.vsix)
+- For Arm MacOS: [publisher-1.0.beta1-darwin-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.beta1/publisher-1.0.beta1-darwin-arm64.vsix)
+- For Intel MacOS: [publisher-1.0.beta1-darwin-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.beta1/publisher-1.0.beta1-darwin-amd64.vsix)
+- For Windows: [publisher-1.0.beta1-windows-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.beta1/publisher-1.0.beta1-windows-amd64.vsix)
+- For Arm Linux: [publisher-1.0.beta1-linux-arm64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.beta1/publisher-1.0.beta1-linux-arm64.vsix)
+- For Intel Linux: [publisher-1.0.beta1-linux-amd64.vsix](https://cdn.posit.co/publisher/releases/tags/v1.0.beta1/publisher-1.0.beta1-linux-amd64.vsix)
 
 To learn how to install a `.vsix` file, see the [Install from a
 VSIX](https://code.visualstudio.com/docs/editor/extension-marketplace#_install-from-a-vsix)
@@ -51,7 +51,7 @@ You can also install nightlies with:
 Or install a specific version with:
 
 ```bash
-./install-publisher.bash 1.0.alpha6
+./install-publisher.bash 1.0.beta1
 ```
 
 ## Optional: Install Quarto

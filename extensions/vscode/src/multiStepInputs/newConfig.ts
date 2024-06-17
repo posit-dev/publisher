@@ -126,7 +126,7 @@ export async function newConfig(title: string, viewId?: string) {
   }
   // ***************************************************************
   // Step #1:
-  // Select the config to be used w/ the deployment
+  // Select the config to be used w/ the contentRecord
   // ***************************************************************
   async function inputEntryPointSelection(
     input: MultiStepInput,

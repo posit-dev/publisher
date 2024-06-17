@@ -96,6 +96,16 @@ configure os="$(just ../../os)" arch="$(just ../../arch)":
 
     cp "$binary_executable" ./bin/$(basename -- "$binary_executable")
     just assert-binary-executable-exists
+    just set-version
+
+set-version:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    version=$(just ../../version)
+    echo "info: version $version"
+    python3 ./scripts/set-version.py $version
 
 # Installs the packaged extension on your configured editor using the editor's CLI. The editor CLI defaults to 'code'. Modify this value via the EDITOR environment variable.
 install os="$(just ../../os)" arch="$(just ../../arch)" editor="code":
