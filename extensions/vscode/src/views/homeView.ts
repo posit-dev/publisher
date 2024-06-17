@@ -64,26 +64,16 @@ import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 import { openUrl } from "src/utils/browser";
+import { Commands, Views } from "src/constants";
 
-const viewName = "posit.publisher.homeView";
-const refreshCommand = viewName + ".refresh";
-const selectConfigForDeployment = viewName + ".selectConfigForDeployment";
-const createConfigForDeployment = viewName + ".createConfigForDeployment";
-const selectDeploymentCommand = viewName + ".selectDeployment";
-const newDeploymentCommand = viewName + ".newDeployment";
-const contextIsHomeViewInitialized = viewName + ".initialized";
-const visitDeploymentServerCommand = viewName + ".navigateToDeployment.Server";
-const visitDeploymentContentCommand =
-  viewName + ".navigateToDeployment.Content";
-const visitDeploymentContentLogCommand =
-  viewName + ".navigateToDeployment.ContentLog";
+const contextIsHomeViewInitialized = "posit.publisher.homeView.initialized";
 
 enum HomeViewInitialized {
   initialized = "initialized",
   uninitialized = "uninitialized",
 }
 
-const lastSelectionState = viewName + ".lastSelectionState.v2";
+const lastSelectionState = "posit.publisher.homeView.lastSelectionState.v2";
 
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private _disposables: Disposable[] = [];
@@ -213,7 +203,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.SELECT_DEPLOYMENT:
         return this.showDeploymentQuickPick();
       case WebviewToHostMessageType.NEW_DEPLOYMENT:
-        return this.showNewDeploymentMultiStep(viewName);
+        return this.showNewDeploymentMultiStep(Views.HomeView);
       case WebviewToHostMessageType.NEW_CREDENTIAL:
         return this.showNewCredential();
       default:
@@ -275,10 +265,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async _onNewConfigurationMsg() {
-    await commands.executeCommand(
-      "posit.publisher.configurations.add",
-      viewName,
-    );
+    await commands.executeCommand(Commands.Configurations.New, Views.HomeView);
   }
 
   private async _onNavigateMsg(msg: NavigateMsg) {
@@ -707,7 +694,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       return;
     }
-    const config = await selectConfig(activeDeployment, viewName);
+    const config = await selectConfig(activeDeployment, Views.HomeView);
     if (config) {
       const api = await useApi();
       await api.contentRecords.patch(
@@ -726,7 +713,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     // selectConfig handles create as well
-    const config = await selectConfig(activeDeployment, viewName);
+    const config = await selectConfig(activeDeployment, Views.HomeView);
     if (config) {
       const activeContentRecord = this._getActiveContentRecord();
       if (activeContentRecord === undefined) {
@@ -802,7 +789,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const contentRecord = this._getActiveContentRecord();
 
     return commands.executeCommand(
-      "posit.publisher.credentials.add",
+      Commands.Credentials.Add,
       contentRecord?.serverUrl,
     );
   }
@@ -1111,7 +1098,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
 
     this._context.subscriptions.push(
-      window.registerWebviewViewProvider(viewName, this, {
+      window.registerWebviewViewProvider(Views.HomeView, this, {
         webviewOptions: {
           retainContextWhenHidden: true,
         },
@@ -1120,47 +1107,55 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     this._context.subscriptions.push(
       commands.registerCommand(
-        selectDeploymentCommand,
+        Commands.HomeView.SelectDeployment,
         this.showDeploymentQuickPick,
         this,
       ),
       commands.registerCommand(
-        newDeploymentCommand,
-        () => this.showNewDeploymentMultiStep(viewName),
+        Commands.HomeView.NewDeployment,
+        () => this.showNewDeploymentMultiStep(Views.HomeView),
         this,
       ),
-      commands.registerCommand(refreshCommand, () => this.refreshAll(true)),
+      commands.registerCommand(Commands.HomeView.Refresh, () =>
+        this.refreshAll(true),
+      ),
       commands.registerCommand(
-        selectConfigForDeployment,
+        Commands.HomeView.SelectConfigForDeployment,
         this.selectConfigForDeployment,
         this,
       ),
       commands.registerCommand(
-        createConfigForDeployment,
+        Commands.HomeView.CreateConfigForDeployment,
         this.createConfigForDeployment,
         this,
       ),
-      commands.registerCommand(visitDeploymentServerCommand, async () => {
-        const deployment = this._getActiveContentRecord();
-        if (deployment) {
-          await openUrl(deployment.serverUrl);
-        }
-      }),
-      commands.registerCommand(visitDeploymentContentCommand, async () => {
-        const contentRecord = this._getActiveContentRecord();
-        if (contentRecord && !isPreContentRecord(contentRecord)) {
-          // was contentRecord.dashboardUrl
-          await openUrl(contentRecord.directUrl);
-        }
-      }),
-      commands.registerCommand(visitDeploymentContentLogCommand, async () => {
+      commands.registerCommand(
+        Commands.HomeView.NavigateToDeploymentServer,
+        async () => {
+          const deployment = this._getActiveContentRecord();
+          if (deployment) {
+            await openUrl(deployment.serverUrl);
+          }
+        },
+      ),
+      commands.registerCommand(
+        Commands.HomeView.NavigateToDeploymentContent,
+        async () => {
+          const contentRecord = this._getActiveContentRecord();
+          if (contentRecord && !isPreContentRecord(contentRecord)) {
+            // was contentRecord.dashboardUrl
+            await openUrl(contentRecord.directUrl);
+          }
+        },
+      ),
+      commands.registerCommand(Commands.HomeView.ShowContentLogs, async () => {
         const contentRecord = this._getActiveContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
           await openUrl(`${contentRecord.dashboardUrl}/logs`);
         }
       }),
       commands.registerCommand(
-        "posit.publisher.homeView.loadContent",
+        Commands.HomeView.LoadContent,
         (contentURL?: string, viewColumn?: ViewColumn) => {
           if (!contentURL) {
             const activeContentRecord = this._getActiveContentRecord();
@@ -1209,6 +1204,63 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         </body>
         </html>`;
         },
+      ),
+      commands.registerCommand(
+        Commands.Files.Refresh,
+        this.sendRefreshedFilesLists,
+        this,
+      ),
+      commands.registerCommand(
+        Commands.PythonPackages.Edit,
+        async () => {
+          if (this.root === undefined) {
+            return;
+          }
+          const cfg = this._getActiveConfig();
+          const packageFile = cfg?.configuration.python?.packageFile;
+          if (packageFile === undefined) {
+            return;
+          }
+          const fileUri = Uri.joinPath(this.root.uri, packageFile);
+          await commands.executeCommand("vscode.open", fileUri);
+        },
+        this,
+      ),
+      commands.registerCommand(
+        Commands.PythonPackages.Refresh,
+        this._onRefreshPythonPackages,
+        this,
+      ),
+      commands.registerCommand(
+        Commands.PythonPackages.Scan,
+        this._onScanForPythonPackageRequirements,
+        this,
+      ),
+      commands.registerCommand(
+        Commands.RPackages.Edit,
+        async () => {
+          if (this.root === undefined) {
+            return;
+          }
+          const cfg = this._getActiveConfig();
+          const packageFile = cfg?.configuration.r?.packageFile;
+          if (packageFile === undefined) {
+            return;
+          }
+          const fileUri = Uri.joinPath(this.root.uri, packageFile);
+          await commands.executeCommand("vscode.open", fileUri);
+        },
+        this,
+      ),
+      commands.registerCommand(
+        Commands.RPackages.Refresh,
+        this._onRefreshRPackages,
+        this,
+      ),
+      commands.registerCommand(
+        Commands.RPackages.Scan,
+        this._onScanForRPackageRequirements,
+        this,
       ),
     );
 

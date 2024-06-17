@@ -29,7 +29,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "workspaceContains:*"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -38,12 +38,6 @@
         "command": "posit.publisher.init-project",
         "title": "Initialize Project",
         "icon": "${star)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.init-project.refresh",
-        "title": "Refresh Project Initialization",
-        "icon": "${refresh)",
         "category": "Posit Publisher"
       },
       {
@@ -150,19 +144,37 @@
       },
       {
         "command": "posit.publisher.pythonPackages.edit",
-        "title": "Edit Requirements File",
+        "title": "Edit Python Package File",
         "icon": "$(edit)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.pythonPackages.refresh",
-        "title": "Refresh Requirements",
+        "title": "Refresh Python Packages",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.pythonPackages.scan",
-        "title": "Scan Requirements",
+        "title": "Scan for Python Packages",
+        "icon": "$(eye)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.rPackages.edit",
+        "title": "Edit R Package File",
+        "icon": "$(edit)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.rPackages.refresh",
+        "title": "Refresh R Packages",
+        "icon": "$(refresh)",
+        "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.rPackages.scan",
+        "title": "Scan for R Packages",
         "icon": "$(eye)",
         "category": "Posit Publisher"
       },
@@ -447,10 +459,6 @@
           "when": "posit.publisher.homeView.initialized == 'initialized'"
         },
         {
-          "command": "posit.publisher.init-project.refresh",
-          "when": "false"
-        },
-        {
           "command": "posit.publisher.showOutputChannel",
           "when": "posit.publisher.homeView.initialized == 'initialized'"
         },
@@ -630,14 +638,14 @@
     "@types/eventsource": "^1.1.15",
     "@types/mocha": "^10.0.2",
     "@types/mutexify": "^1.2.3",
-    "@types/node": "18.x",
+    "@types/node": "^20.14.2",
     "@types/retry": "^0.12.5",
     "@types/vscode": "^1.87.0",
     "@types/wait-on": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^7.4.0",
     "@typescript-eslint/parser": "^7.4.0",
     "@vscode/test-electron": "^2.3.8",
-    "esbuild": "^0.20.2",
+    "esbuild": "^0.21.4",
     "eslint": "^8.50.0",
     "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.3",
@@ -646,7 +654,7 @@
   },
   "dependencies": {
     "@hypersphere/omnibus": "0.1.6",
-    "@vscode/codicons": "^0.0.35",
+    "@vscode/codicons": "^0.0.36",
     "axios": "^1.6.0",
     "eventsource": "^2.0.2",
     "get-port": "5.1.1",

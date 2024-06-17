@@ -1,5 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import { Commands } from "src/constants";
 import { Uri, ViewColumn, commands, env, workspace } from "vscode";
 
 // under posit.publisher
@@ -20,7 +21,7 @@ export const openUrl = async (url: string, forceExternal = false) => {
   }
 
   return commands.executeCommand(
-    "posit.publisher.homeView.loadContent",
+    Commands.HomeView.LoadContent,
     url,
     viewColumn,
   );
