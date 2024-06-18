@@ -61,6 +61,9 @@ type quartoInspectOutput struct {
 	Formats struct {
 		HTML struct {
 			Metadata quartoMetadata `json:"metadata"`
+			Pandoc   struct {
+				OutputFile string `json:"output-file"`
+			} `json:"pandoc"`
 		} `json:"html"`
 	} `json:"formats"`
 }
@@ -228,6 +231,15 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, er
 			Version: inspectOutput.Quarto.Version,
 			Engines: engines,
 		}
+
+		// Exclude locally-rendered artifacts, since this will be rendered in Connect
+		outputFile := inspectOutput.Formats.HTML.Pandoc.OutputFile
+		if outputFile == "" {
+			outputFile = "*.html"
+		}
+		outputDir := strings.TrimSuffix(outputFile, ".html") + "_files"
+
+		cfg.Files = append(cfg.Files, "!"+outputFile, "!"+outputDir)
 		configs = append(configs, cfg)
 	}
 	return configs, nil

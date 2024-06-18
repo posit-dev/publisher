@@ -74,7 +74,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownDoc() {
 		Entrypoint: "quarto-doc-none.qmd",
 		Title:      "quarto-doc-none",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!quarto-doc-none.html", "!quarto-doc-none_files"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -94,7 +94,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProject() {
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!quarto-proj-none.html", "!quarto-proj-none_files"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -114,7 +114,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!quarto-proj-none-windows.html", "!quarto-proj-none-windows_files"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -134,7 +134,7 @@ func (s *QuartoDetectorSuite) TestInferTypePythonProject() {
 		Entrypoint: "quarto-proj-py.qmd",
 		Title:      "quarto-proj-py",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!quarto-proj-py.html", "!quarto-proj-py_files"},
 		Python:     &config.Python{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -155,7 +155,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRProject() {
 		Entrypoint: "quarto-proj-r.qmd",
 		Title:      "quarto-proj-r",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!quarto-proj-r.html", "!quarto-proj-r_files"},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -176,7 +176,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRAndPythonProject() {
 		Entrypoint: "quarto-proj-r-py.qmd",
 		Title:      "quarto-proj-r-py",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!quarto-proj-r-py.html", "!quarto-proj-r-py_files"},
 		Python:     &config.Python{},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
@@ -198,7 +198,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRShinyProject() {
 		Entrypoint: "quarto-proj-r-shiny.qmd",
 		Title:      "quarto-proj-r-shiny",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!quarto-proj-r-shiny.html", "!quarto-proj-r-shiny_files"},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -219,7 +219,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Entrypoint: "about.qmd",
 		Title:      "About",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!about.html", "!about_files"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -231,7 +231,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Entrypoint: "index.qmd",
 		Title:      "quarto-website-none",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!index.html", "!index_files"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -251,7 +251,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 		Entrypoint: "static.Rmd",
 		Title:      "static",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!static.html", "!static_files"},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -272,7 +272,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		Entrypoint: "document1.qmd",
 		Title:      "quarto-proj-none-multidocument",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!document1.html", "!document1_files"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -284,7 +284,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		Entrypoint: "document2.qmd",
 		Title:      "quarto-proj-none-multidocument",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"*", "!document2.html", "!document2_files"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
