@@ -41,9 +41,11 @@ describe("VS Code Extension UI Test", () => {
   let workbench: any;
   let input: any;
   let enterKey: any;
+  let webview: any;
 
   before(async () => {
     workbench = await browser.getWorkbench();
+    // webview = (await browser.getWorkbench()).getWebviewByTitle("Home");
     input = await $(".input");
     enterKey = await browser.keys("\uE007");
   });
@@ -59,6 +61,7 @@ describe("VS Code Extension UI Test", () => {
 
   it("create first deployment", async () => {
     await switchToSubframe();
+    // await workbench.getWebviewByTitle("Posit Publisher");
 
     // const subiframe = await browser.$('iframe');
     // await browser.switchToFrame(subiframe);
@@ -67,6 +70,7 @@ describe("VS Code Extension UI Test", () => {
     const init = await $(".add-deployment-btn");
     // .$(">>>#active-frame")
     // .$('>>>.easy-deploy-container');
+    await delay(30000);
     await expect(init).toHaveText("Add Deployment");
     await init.click();
 
