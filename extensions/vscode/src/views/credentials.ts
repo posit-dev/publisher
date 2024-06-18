@@ -13,6 +13,7 @@ import {
 
 import { useApi, Credential } from "src/api";
 import { useBus } from "src/bus";
+import { confirmDelete } from "src/dialogs";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { newCredential } from "src/multiStepInputs/newCredential";
 import { Commands, Views } from "src/constants";
@@ -103,6 +104,12 @@ export class CredentialsTreeDataProvider
   };
 
   public delete = async (item: CredentialsTreeItem) => {
+    const ok = await confirmDelete(
+      `Are you sure you want to delete the credential '${item.cred.name}'?`,
+    );
+    if (!ok) {
+      return;
+    }
     try {
       const api = await useApi();
       await api.credentials.delete(item.cred.guid);
