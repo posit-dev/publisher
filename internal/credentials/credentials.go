@@ -178,7 +178,8 @@ func (cs *CredentialsService) save(table CredentialTable) error {
 		return fmt.Errorf("failed to serialize credentials: %v", err)
 	}
 
-	err = keyring.Set(ServiceName, "credentials", string(data))
+	ks := KeyringService{}
+	err = ks.Set(ServiceName, "credentials", string(data))
 	if err != nil {
 		return fmt.Errorf("failed to set credentials: %v", err)
 	}
@@ -187,7 +188,8 @@ func (cs *CredentialsService) save(table CredentialTable) error {
 
 // Loads the CredentialTable
 func (cs *CredentialsService) load() (CredentialTable, error) {
-	data, err := keyring.Get(ServiceName, "credentials")
+	ks := KeyringService{}
+	data, err := ks.Get(ServiceName, "credentials")
 	if err != nil {
 		if err == keyring.ErrNotFound {
 			return make(map[string]CredentialRecord), nil
