@@ -1174,7 +1174,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           }
           // Create and show panel
           const panel = window.createWebviewPanel(
-            "posit.publisher.contentBrowser",
+            Commands.HomeView.ContentBrowser,
             "Content Browser",
             {
               viewColumn,

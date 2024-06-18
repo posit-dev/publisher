@@ -78,6 +78,7 @@ const homeViewCommands = {
     "posit.publisher.homeView.navigateToDeployment.Content",
   ShowContentLogs: "posit.publisher.homeView.navigateToDeployment.ContentLog",
   LoadContent: "posit.publisher.homeView.loadContent",
+  ContentBrowser: "posit.publisher.contentBrowser",
 } as const;
 
 const helpAndFeedbackCommands = {
