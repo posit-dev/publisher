@@ -114,7 +114,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
 		Validate:   true,
-		Files:      []string{"*", "!quarto-proj-none-windows.html", "!quarto-proj-none-windows_files"},
+		Files:      []string{"*", "!quarto-proj-none.html", "!quarto-proj-none_files"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
