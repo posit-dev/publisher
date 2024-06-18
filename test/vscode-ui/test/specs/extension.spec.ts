@@ -96,6 +96,20 @@ describe("VS Code Extension UI Test", () => {
     await expect(config).toHaveText("configuration-1");
   });
 
+  // it("clears creds", async () => {
+  //   await workbench.executeCommand(
+  //     "vscode.commands.executeCommand('posit.publisher.credentials.focus')");
+
+  //   // Clear the creds
+  //   const creds = await browser.$("aria/"+serverName);
+  //   await creds.click({ button: 'right' });
+  //   // down button to select delete
+  //   await delay(15000);
+  //   await browser.keys("\uE009");
+  //   await delay(15000);
+  //   await browser.keys("\uE007");
+  // });
+
   // cleanup
   after(async () => {
     const parentDir = path.resolve(
@@ -127,9 +141,5 @@ describe("VS Code Extension UI Test", () => {
     } else {
       console.log("Directory does not exist");
     }
-
-    // Clear the creds
-    // const creds = await browser.$("aria/"+serverName);
-    // await creds.click({ button: 'right' });
   });
 });
