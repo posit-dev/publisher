@@ -46,6 +46,11 @@ jobs:
       - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui test
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
