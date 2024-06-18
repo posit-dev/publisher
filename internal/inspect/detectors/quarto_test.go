@@ -219,7 +219,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Entrypoint: "about.qmd",
 		Title:      "About",
 		Validate:   true,
-		Files:      []string{"*", "!about.html", "!about_files"},
+		Files:      []string{"*", "!about.html", "!about_files", "!_site"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -231,7 +231,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Entrypoint: "index.qmd",
 		Title:      "quarto-website-none",
 		Validate:   true,
-		Files:      []string{"*", "!index.html", "!index_files"},
+		Files:      []string{"*", "!index.html", "!index_files", "!_site"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},

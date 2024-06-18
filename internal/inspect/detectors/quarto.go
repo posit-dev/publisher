@@ -47,6 +47,7 @@ type quartoInspectOutput struct {
 				Title      string   `json:"title"`
 				PreRender  []string `json:"pre-render"`
 				PostRender []string `json:"post-render"`
+				OutputDir  string   `json:"output-dir"`
 			} `json:"project"`
 			Website struct {
 				Title string `json:"title"`
@@ -237,9 +238,13 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, er
 		if outputFile == "" {
 			outputFile = "*.html"
 		}
-		outputDir := strings.TrimSuffix(outputFile, ".html") + "_files"
+		htmlOutputDir := strings.TrimSuffix(outputFile, ".html") + "_files"
 
-		cfg.Files = append(cfg.Files, "!"+outputFile, "!"+outputDir)
+		cfg.Files = append(cfg.Files, "!"+outputFile, "!"+htmlOutputDir)
+		projectOutputDir := inspectOutput.Project.Config.Project.OutputDir
+		if projectOutputDir != "" {
+			cfg.Files = append(cfg.Files, "!"+projectOutputDir)
+		}
 		configs = append(configs, cfg)
 	}
 	return configs, nil
