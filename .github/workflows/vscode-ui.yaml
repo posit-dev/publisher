@@ -41,17 +41,18 @@ jobs:
         with:
           name: bin
           path: bin
+      - uses: t1m0thyj/unlock-keyring@v1
       - run: chmod -R +x ./bin
-      - run: sudo apt-get install -y gnome-keyring
+      # - run: sudo apt-get install -y gnome-keyring
       - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
       - run: just vscode-ui test
-      # - name: Setup tmate session
-      #   if: ${{ failure() }}
-      #   uses: mxschmitt/action-tmate@v3
-      #   with:
-      #     limit-access-to-actor: true
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
       - name: Save screenshots
         uses: actions/upload-artifact@v4
