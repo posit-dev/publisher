@@ -2,7 +2,7 @@ name: Cypress-nightly
 on:
   workflow_call:
 jobs:
-  setup:
+  tests:
     env:
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
@@ -55,16 +55,13 @@ jobs:
         run: R -e "install.packages('renv', repos='https://packagemanager.posit.co/cran/latest')"
         if: matrix.runs-on == 'macos-latest'
 
-  bats-tests:
-    steps:
       - run: chmod -R +x ./bin
       - run: echo "${FUZZBUCKET_SSH_KEY}" > test/bats/fuzzbucket-ssh-key && chmod 600 test/bats/fuzzbucket-ssh-key
       - run: just bats install
       - run: just bats test common
       - run: just bats test init
       - run: just bats test deploy
-  vscode-ui-tests:
-    steps:
+      # vscode ui tests
       - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
