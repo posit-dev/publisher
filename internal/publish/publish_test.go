@@ -40,7 +40,7 @@ type mockPackageMapper struct {
 	mock.Mock
 }
 
-func (m *mockPackageMapper) GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath) (bundles.PackageMap, error) {
+func (m *mockPackageMapper) GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error) {
 	args := m.Called(base, lockfilePath)
 	pkgs := args.Get(0)
 	if pkgs == nil {
@@ -296,9 +296,9 @@ func (s *PublishSuite) publishWithClient(
 
 	rPackageMapper := &mockPackageMapper{}
 	if rPackageErr != nil {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(nil, rPackageErr)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(nil, rPackageErr)
 	} else {
-		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
+		rPackageMapper.On("GetManifestPackages", mock.Anything, mock.Anything, mock.Anything).Return(bundles.PackageMap{}, nil)
 	}
 	publisher.rPackageMapper = rPackageMapper
 

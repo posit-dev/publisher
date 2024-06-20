@@ -17,16 +17,16 @@ import (
 )
 
 type PackageMapper interface {
-	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath) (bundles.PackageMap, error)
+	GetManifestPackages(base util.AbsolutePath, lockfilePath util.AbsolutePath, log logging.Logger) (bundles.PackageMap, error)
 }
 
 type defaultPackageMapper struct {
 	lister AvailablePackagesLister
 }
 
-func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) *defaultPackageMapper {
+func NewPackageMapper(base util.AbsolutePath, rExecutable util.Path) *defaultPackageMapper {
 	return &defaultPackageMapper{
-		lister: NewAvailablePackageLister(base, rExecutable, log),
+		lister: NewAvailablePackageLister(base, rExecutable),
 	}
 }
 
@@ -160,32 +160,33 @@ var errMissingPackageSource = errors.New("can't re-install packages installed fr
 
 func (m *defaultPackageMapper) GetManifestPackages(
 	base util.AbsolutePath,
-	lockfilePath util.AbsolutePath) (bundles.PackageMap, error) {
+	lockfilePath util.AbsolutePath,
+	log logging.Logger) (bundles.PackageMap, error) {
 
 	lockfile, err := ReadLockfile(lockfilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	libPaths, err := m.lister.GetLibPaths()
+	libPaths, err := m.lister.GetLibPaths(log)
 	if err != nil {
 		return nil, err
 	}
 
 	repos := lockfile.R.Repositories
-	available, err := m.lister.ListAvailablePackages(repos)
+	available, err := m.lister.ListAvailablePackages(repos, log)
 	if err != nil {
 		return nil, err
 	}
 
-	biocRepos, err := m.lister.GetBioconductorRepos(base)
+	biocRepos, err := m.lister.GetBioconductorRepos(base, log)
 	if err != nil {
 		return nil, err
 	}
 
 	biocPackages := []AvailablePackage{}
 	if len(biocRepos) > 0 {
-		biocPackages, err = m.lister.ListAvailablePackages(biocRepos)
+		biocPackages, err = m.lister.ListAvailablePackages(biocRepos, log)
 		if err != nil {
 			return nil, err
 		}
