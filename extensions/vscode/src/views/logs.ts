@@ -139,8 +139,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     // Reset events when a new publish starts
     this._stream.register("publish/start", (msg: EventStreamMessage) => {
       this.resetStages();
-      this.publishingStage.inactiveLabel = `Publish to ${msg.data.server}`;
-      this.publishingStage.activeLabel = `Publishing to ${msg.data.server}`;
+      this.publishingStage.inactiveLabel = `Publish "${msg.data.title}" to ${msg.data.server}`;
+      this.publishingStage.activeLabel = `Publishing "${msg.data.title}" to ${msg.data.server}`;
       this.publishingStage.status = LogStageStatus.inProgress;
       this.refresh();
     });

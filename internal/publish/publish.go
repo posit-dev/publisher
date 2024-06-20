@@ -42,6 +42,7 @@ type baseEventData struct {
 
 type publishStartData struct {
 	Server string `mapstructure:"server"`
+	Title  string `mapstructure:"title"`
 }
 
 type publishSuccessData struct {
@@ -194,6 +195,7 @@ func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 	log.Info("Publishing from directory", logging.LogKeyOp, events.AgentOp, "path", p.Dir)
 	p.emitter.Emit(events.New(events.PublishOp, events.StartPhase, events.NoError, publishStartData{
 		Server: p.Account.URL,
+		Title:  p.Config.Title,
 	}))
 	log.Info("Starting deployment to server", "server", p.Account.URL)
 
