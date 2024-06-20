@@ -5,18 +5,14 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function switchToSubframe() {
   await browser.$(".webview");
   const iframe = await browser.$("iframe");
   await browser.switchToFrame(iframe);
 
-  await delay(15000);
-
+  await browser.$("iframe").waitForExist({ timeout: 30000 });
   const subiframe = await browser.$("iframe");
+  await subiframe.waitForExist({ timeout: 30000 });
   await browser.switchToFrame(subiframe);
 }
 
@@ -35,23 +31,17 @@ const apiKey = generateRandomString(32);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// const input = await $(".input");
-
 describe("VS Code Extension UI Test", () => {
   let workbench: any;
   let input: any;
-  let enterKey: any;
-  let webview: any;
 
   before(async () => {
     workbench = await browser.getWorkbench();
-    // webview = (await browser.getWorkbench()).getWebviewByTitle("Home");
     input = await $(".input");
-    enterKey = await browser.keys("\uE007");
   });
 
   it("open extension", async () => {
-    await delay(15000);
+    browser.$("aria/Posit Publisher").waitForExist({ timeout: 30000 });
 
     // open posit extension
     const extension = await browser.$("aria/Posit Publisher");
@@ -61,16 +51,10 @@ describe("VS Code Extension UI Test", () => {
 
   it("create first deployment", async () => {
     await switchToSubframe();
-    // await workbench.getWebviewByTitle("Posit Publisher");
-
-    // const subiframe = await browser.$('iframe');
-    // await browser.switchToFrame(subiframe);
-
     // initialize project via button
+    $(".add-deployment-btn").waitForExist({ timeout: 30000 });
     const init = await $(".add-deployment-btn");
-    // .$(">>>#active-frame")
-    // .$('>>>.easy-deploy-container');
-    await delay(30000);
+
     await expect(init).toHaveText("Add Deployment");
     await init.click();
 
@@ -90,29 +74,17 @@ describe("VS Code Extension UI Test", () => {
   });
 
   it("check config", async () => {
-    // await switchToSubframe();
-
     await workbench.executeCommand(
       "vscode.commands.executeCommand('posit.publisher.configurations.focus')",
     );
-    // await delay(30000);
+    const configLabel = await browser
+      .$(".monaco-icon-label")
+      .getAttribute("aria-label");
+    configLabel.includes("Configuration file:");
+
     const config = await browser.$(".monaco-icon-label-container");
     await expect(config).toHaveText("configuration-1");
   });
-
-  // it("clears creds", async () => {
-  //   await workbench.executeCommand(
-  //     "vscode.commands.executeCommand('posit.publisher.credentials.focus')");
-
-  //   // Clear the creds
-  //   const creds = await browser.$("aria/"+serverName);
-  //   await creds.click({ button: 'right' });
-  //   // down button to select delete
-  //   await delay(15000);
-  //   await browser.keys("\uE009");
-  //   await delay(15000);
-  //   await browser.keys("\uE007");
-  // });
 
   // cleanup
   after(async () => {
