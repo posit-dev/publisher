@@ -1,5 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import debounce from "debounce";
+
 import {
   CancellationToken,
   Disposable,
@@ -1230,7 +1232,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     watchers.contentRecords?.onDidDelete(this.refreshContentRecords, this);
     watchers.contentRecords?.onDidChange(this.refreshContentRecords, this);
 
-    watchers.allFiles?.onDidCreate(this.sendRefreshedFilesLists, this);
-    watchers.allFiles?.onDidDelete(this.sendRefreshedFilesLists, this);
+    watchers.allFiles?.onDidCreate(
+      debounce(this.sendRefreshedFilesLists, 500),
+      this,
+    );
+    watchers.allFiles?.onDidDelete(
+      debounce(this.sendRefreshedFilesLists, 500),
+      this,
+    );
   }
 }
