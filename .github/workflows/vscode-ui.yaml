@@ -17,10 +17,10 @@ jobs:
         runs-on: [ubuntu-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: ./.github/workflows/build.yaml
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/setup
       - uses: extractions/setup-just@v2
       - uses: actions/setup-node@v4
         with:

@@ -17,7 +17,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/workflows/build.yaml
       - uses: ./.github/actions/setup
       - name: python
         uses: actions/setup-python@v5
