@@ -1234,13 +1234,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     watchers.contentRecords?.onDidDelete(this.refreshContentRecords, this);
     watchers.contentRecords?.onDidChange(this.refreshContentRecords, this);
 
-    watchers.allFiles?.onDidCreate(
-      debounce(this.sendRefreshedFilesLists, fileEventDebounce),
-      this,
+    const fileEventCallback = debounce(
+      this.sendRefreshedFilesLists,
+      fileEventDebounce,
     );
-    watchers.allFiles?.onDidDelete(
-      debounce(this.sendRefreshedFilesLists, fileEventDebounce),
-      this,
-    );
+    watchers.allFiles?.onDidCreate(fileEventCallback, this);
+    watchers.allFiles?.onDidDelete(fileEventCallback, this);
   }
 }
