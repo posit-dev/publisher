@@ -16,8 +16,16 @@ import (
 func DeleteConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
-		path := config.GetConfigPath(base, name)
-		err := path.Remove()
+		dir := req.URL.Query().Get("dir")
+
+		projectDir, err := base.SafeJoin(dir)
+		if err != nil {
+			BadRequest(w, req, log, err)
+			return
+		}
+		path := config.GetConfigPath(projectDir, name)
+
+		err = path.Remove()
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
 				http.NotFound(w, req)
