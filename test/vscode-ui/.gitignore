@@ -1,0 +1,3 @@
+.wdio-vscode-service/
+errorShots/*.png
+node_modules/

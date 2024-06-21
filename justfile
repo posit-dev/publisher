@@ -270,10 +270,3 @@ vscode-ui *args:
     {{ _with_debug }}
 
     just test/vscode-ui/{{ args }}
-
-playwright-ui *args:
-    #!/usr/bin/env bash
-    set -eou pipefail
-    {{ _with_debug }}
-
-    just test/playwright/{{ args }}

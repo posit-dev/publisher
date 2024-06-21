@@ -1,0 +1,65 @@
+name: vscode-ui
+on:
+  workflow_call:
+env:
+  VSCODE_VERSION: stable
+jobs:
+  native:
+    env:
+      DOCKER: false
+      DOCKER_CONNECT: true
+      # deploy only these content
+      CONTENT: "fastapi-simple quarto-website-py"
+      CONNECT_LICENSE: ${{ secrets.CONNECT_LICENSE }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubuntu-latest]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - uses: extractions/setup-just@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+      - uses: actions/checkout@v4
+        with:
+          repository: rstudio/connect-content
+          path: "test/content"
+          sparse-checkout: bundles
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.CONNECT_PAT }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.4.549
+      - uses: actions/download-artifact@v4
+        with:
+          name: bin
+          path: bin
+      - uses: t1m0thyj/unlock-keyring@v1
+      - run: chmod -R +x ./bin
+      # - run: sudo apt-get install -y gnome-keyring
+      - run: just package
+      - run: just vscode configure
+      - run: just vscode-ui install
+      - run: just vscode-ui test
+      # - name: Setup tmate session
+      #   if: ${{ failure() }}
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     limit-access-to-actor: true
+
+      - name: Save screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ${{ matrix.runs-on}}-webdriver-screenshots
+          path: test/vscode-ui/errorShots
+          if-no-files-found: ignore
+          retention-days: 1
