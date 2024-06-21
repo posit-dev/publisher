@@ -76,6 +76,8 @@ enum HomeViewInitialized {
 
 const lastSelectionState = "posit.publisher.homeView.lastSelectionState.v2";
 
+const fileEventDebounce = 500;
+
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private _disposables: Disposable[] = [];
   private _contentRecords: (
@@ -1233,11 +1235,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     watchers.contentRecords?.onDidChange(this.refreshContentRecords, this);
 
     watchers.allFiles?.onDidCreate(
-      debounce(this.sendRefreshedFilesLists, 500),
+      debounce(this.sendRefreshedFilesLists, fileEventDebounce),
       this,
     );
     watchers.allFiles?.onDidDelete(
-      debounce(this.sendRefreshedFilesLists, 500),
+      debounce(this.sendRefreshedFilesLists, fileEventDebounce),
       this,
     );
   }
