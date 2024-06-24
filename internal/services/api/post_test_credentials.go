@@ -45,7 +45,7 @@ func PostTestCredentialsHandlerFunc(log logging.Logger) http.HandlerFunc {
 			ApiKey:     b.ApiKey,
 		}
 
-		timeout := time.Duration(max(b.Timeout, 1) * 1e9)
+		timeout := time.Duration(max(b.Timeout, 30) * 1e9)
 		client, err := clientFactory(acct, timeout, nil, log)
 		if err != nil {
 			InternalError(w, req, log, err)
