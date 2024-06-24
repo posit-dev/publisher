@@ -17,7 +17,7 @@ jobs:
       - uses: ./.github/actions/setup
       - uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: "20"
       - id: get-date
         run: echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
         shell: bash
