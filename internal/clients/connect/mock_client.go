@@ -29,7 +29,12 @@ func (m *MockClient) Read(p []byte) (n int, err error) {
 
 func (m *MockClient) TestAuthentication(log logging.Logger) (*User, error) {
 	args := m.Called(log)
-	return args.Get(0).(*User), args.Error(1)
+	user := args.Get(0)
+	if user == nil {
+		return nil, args.Error(1)
+	} else {
+		return user.(*User), args.Error(1)
+	}
 }
 
 func (m *MockClient) CreateDeployment(s *ConnectContent, log logging.Logger) (types.ContentID, error) {
