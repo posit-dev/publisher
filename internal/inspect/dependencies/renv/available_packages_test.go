@@ -33,7 +33,7 @@ func (s *AvailablePackagesSuite) SetupTest() {
 }
 
 func (s *AvailablePackagesSuite) TestListAvailablePackages() {
-	lister := NewAvailablePackageLister(s.base, util.Path{}, logging.New())
+	lister := NewAvailablePackageLister(s.base, util.Path{})
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", "R", mock.Anything, s.base, mock.Anything).Return([]byte(
 		"pkg1 1.0 https://cran.rstudio.com/src/contrib \npkg2 2.0 https://cran.rstudio.com/src/contrib \n"), []byte{}, nil)
@@ -41,7 +41,7 @@ func (s *AvailablePackagesSuite) TestListAvailablePackages() {
 
 	pkgs, err := lister.ListAvailablePackages([]Repository{
 		{Name: "cran", URL: "https://cran.rstudio.com"},
-	})
+	}, logging.New())
 	s.NoError(err)
 	s.Equal([]AvailablePackage{
 		{Name: "pkg1", Version: "1.0", Repository: "https://cran.rstudio.com"},
@@ -57,12 +57,12 @@ BioCbooks https://bioconductor.org/packages/3.18/books
 `
 
 func (s *AvailablePackagesSuite) TestGetBioconductorRepos() {
-	lister := NewAvailablePackageLister(s.base, util.Path{}, logging.New())
+	lister := NewAvailablePackageLister(s.base, util.Path{})
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", "R", mock.Anything, s.base, mock.Anything).Return([]byte(biocReposOutput), []byte{}, nil)
 	lister.rExecutor = executor
 
-	repos, err := lister.GetBioconductorRepos(s.base)
+	repos, err := lister.GetBioconductorRepos(s.base, logging.New())
 	s.NoError(err)
 	s.Equal([]Repository{
 		{Name: "BioCsoft", URL: "https://bioconductor.org/packages/3.18/bioc"},
@@ -81,12 +81,12 @@ func (s *AvailablePackagesSuite) TestGetLibPaths() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip()
 	}
-	lister := NewAvailablePackageLister(s.base, util.Path{}, logging.New())
+	lister := NewAvailablePackageLister(s.base, util.Path{})
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", "R", mock.Anything, s.base, mock.Anything).Return([]byte(libPathsOutput), []byte{}, nil)
 	lister.rExecutor = executor
 
-	repos, err := lister.GetLibPaths()
+	repos, err := lister.GetLibPaths(logging.New())
 	s.NoError(err)
 	s.Len(repos, 2)
 	s.Equal("/project/renv/library/R-4.3/x86_64-apple-darwin20", repos[0].String())
@@ -101,12 +101,12 @@ func (s *AvailablePackagesSuite) TestGetLibPathsWindows() {
 	if runtime.GOOS != "windows" {
 		s.T().Skip()
 	}
-	lister := NewAvailablePackageLister(s.base, util.Path{}, logging.New())
+	lister := NewAvailablePackageLister(s.base, util.Path{})
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", "R", mock.Anything, s.base, mock.Anything).Return([]byte(windowsLibPathsOutput), []byte{}, nil)
 	lister.rExecutor = executor
 
-	repos, err := lister.GetLibPaths()
+	repos, err := lister.GetLibPaths(logging.New())
 	s.NoError(err)
 	s.Len(repos, 2)
 	s.Equal(`D:\project\renv\library\R-4.3\x86_64-apple-darwin20`, repos[0].String())

@@ -16,7 +16,6 @@ import (
 	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/events"
-	"github.com/posit-dev/publisher/internal/inspect"
 	"github.com/posit-dev/publisher/internal/inspect/dependencies/renv"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/project"
@@ -76,7 +75,7 @@ func NewFromState(s *state.State, emitter events.Emitter, log logging.Logger) (P
 	return &defaultPublisher{
 		State:          s,
 		emitter:        emitter,
-		rPackageMapper: renv.NewPackageMapper(s.Dir, util.Path{}, log),
+		rPackageMapper: renv.NewPackageMapper(s.Dir, util.Path{}),
 	}, nil
 }
 
@@ -118,23 +117,6 @@ func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log l
 		fmt.Fprintln(w, "Dashboard URL: ", dashboardURL)
 		fmt.Fprintln(w, "Direct URL:    ", directURL)
 	}
-}
-
-func (p *defaultPublisher) getRPackages(log logging.Logger) (bundles.PackageMap, error) {
-	log.Info("Collecting R package descriptions")
-
-	lockfileString := p.Config.R.PackageFile
-	if lockfileString == "" {
-		lockfileString = inspect.DefaultRenvLockfile
-	}
-	lockfilePath := p.Dir.Join(lockfileString)
-
-	rPackages, err := p.rPackageMapper.GetManifestPackages(p.Dir, lockfilePath)
-	if err != nil {
-		return nil, err
-	}
-	log.Info("Done collecting R package descriptions")
-	return rPackages, nil
 }
 
 func (p *defaultPublisher) isDeployed() bool {
