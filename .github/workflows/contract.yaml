@@ -61,8 +61,3 @@ jobs:
       - run: just bats test common
       - run: just bats test init
       - run: just bats test deploy
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
