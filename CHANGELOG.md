@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0]
+
+### Added
+
+- Added a [VSCode Walkthrough](https://code.visualstudio.com/api/ux-guidelines/walkthroughs)
+  for the extension (#1834)
+- Added the currently-deploying Deployment's title to the Posit Publisher Logs
+  view for more clarity (#1756)
+- Added a confirmation prompt when deleting a Credential (#1733)
+- Added a "Get Package Descriptions" deploying stage to the Posit Publisher Logs
+  view for R projects (#1593)
+- Added a link to the GitHub Discussions for the project in the help and
+  feedback view (#1884)
+- Added validation for server URLs and API keys when creating Credentials
+  (#1610, #1611, #1612)
+
+### Changed
+
+- Generated configuration files now omit `has_parameters` if it is `false`
+  (#1788)
+- Adjusted the VSCode extension file watcher to send file information to views
+  less frequently when large amounts of files are being created or deleted.
+  Sending is now debounced. (#1735)
+- Rendered files are now excluded by default in generated Configurations for
+  Quarto deployments (#1707)
+- Moved the settings for the VSCode extension under the "Posit Publisher" title
+  (#1869)
+- Stopped `.ipynb` from being identified as potential `quarto` projects to avoid
+  deploying HTML without executing the code cells (#1863)
+
+### Fixed
+
+- Deployed Posit Connect manifests no longer contain empty option sections if
+  they are ommitted in the configuration file (#1823)
+- Fixed the "Got To Publishing Log" link in the last deployment message
+  context menu (#1889)
+
+### Removed
+
+- Removed the executable path option now that the extension is bundled with the
+  publisher binary (#1877)
+
 ## [1.0.beta1]
 
 ### Added
