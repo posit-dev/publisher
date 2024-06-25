@@ -98,7 +98,7 @@ func (s *ConfigSuite) TestWriteFile() {
 	s.NoError(err)
 }
 
-func (s *ConfigSuite) TestWriteFileEmptyEntrypoing() {
+func (s *ConfigSuite) TestWriteFileEmptyEntrypoint() {
 	configFile := GetConfigPath(s.cwd, "myConfig")
 	cfg := New()
 	cfg.Type = ContentTypeHTML
@@ -114,6 +114,8 @@ func (s *ConfigSuite) TestWriteFileEmptyEntrypoing() {
 	s.NoError(err)
 	lines := strings.Split(string(contents), "\n")
 	s.Contains(lines, "entrypoint = ''")
+
+	s.NotContains(contents, []byte("has_parameters"))
 }
 
 func (s *ConfigSuite) TestWriteFileErr() {
