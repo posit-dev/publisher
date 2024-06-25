@@ -145,13 +145,9 @@ func ReadManifestFile(path util.Path) (*Manifest, error) {
 
 func NewManifest() *Manifest {
 	return &Manifest{
-		Version:     1,
-		Python:      &Python{},
-		Quarto:      &Quarto{},
-		Jupyter:     &Jupyter{},
-		Environment: &Environment{},
-		Packages:    make(PackageMap),
-		Files:       make(ManifestFileMap),
+		Version:  1,
+		Packages: make(PackageMap),
+		Files:    make(ManifestFileMap),
 	}
 }
 
