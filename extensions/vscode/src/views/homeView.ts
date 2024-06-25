@@ -1,5 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import debounce from "debounce";
+
 import {
   CancellationToken,
   Disposable,
@@ -73,6 +75,8 @@ enum HomeViewInitialized {
 }
 
 const lastSelectionState = "posit.publisher.homeView.lastSelectionState.v2";
+
+const fileEventDebounce = 200;
 
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private _disposables: Disposable[] = [];
@@ -1230,7 +1234,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     watchers.contentRecords?.onDidDelete(this.refreshContentRecords, this);
     watchers.contentRecords?.onDidChange(this.refreshContentRecords, this);
 
-    watchers.allFiles?.onDidCreate(this.sendRefreshedFilesLists, this);
-    watchers.allFiles?.onDidDelete(this.sendRefreshedFilesLists, this);
+    const fileEventCallback = debounce(
+      this.sendRefreshedFilesLists,
+      fileEventDebounce,
+    );
+    watchers.allFiles?.onDidCreate(fileEventCallback, this);
+    watchers.allFiles?.onDidDelete(fileEventCallback, this);
   }
 }
