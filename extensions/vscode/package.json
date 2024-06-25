@@ -598,13 +598,13 @@
     "walkthroughs": [
       {
         "id": "posit.publisher.walkthrough.gettingStarted",
-        "title": "Getting Started",
+        "title": "Get Started with Posit Publisher",
         "description": "Deploy your First Project",
         "steps": [
           {
             "id": "posit.publisher.walkthrough.gettingStarted.openProject",
             "title": "Open project",
-            "description": "Open the folder which contains your project",
+            "description": "Open the folder containing your project.",
             "media": {
               "image": "assets/walkthroughs/open-folder.png",
               "altText": "Posit Publisher"
@@ -613,7 +613,7 @@
           {
             "id": "posit.publisher.walkthrough.gettingStarted.activateExtension",
             "title": "Activate Posit Publisher Extension",
-            "description": "Click on the Posit Publisher icon, located within the left taskbar.",
+            "description": "Click on the Posit Publisher icon in the left taskbar.",
             "media": {
               "image": "assets/walkthroughs/activate-extension.png",
               "altText": "Posit Publisher"
@@ -622,7 +622,7 @@
           {
             "id": "posit.publisher.walkthrough.gettingStarted.createDeployment",
             "title": "Create a Deployment",
-            "description": "A deployment represents a single content installation located on the Posit Connect server. It has one identifier and each redeployment replaces the active code behind the content.",
+            "description": "A deployment represents a single piece of content on a Posit Connect server. You can iterate on it locally and redeploy it at any time.",
             "media": {
               "image": "assets/walkthroughs/create-new-deployment.png",
               "altText": "Posit Publisher"
@@ -630,8 +630,8 @@
           },
           {
             "id": "posit.publisher.walkthrough.gettingStarted.editConfig",
-            "title": "Edit your deployment options",
-            "description": "Each deployment can set various configuration options. These are located in a configuration file. A deployment can have multiple configuration files, but only one can be active at a time for the deployment process. Configuration files are edited within the VSCode editor panes.",
+            "title": "Edit your deployment's configuration",
+            "description": "Each deployment is deployed using a configuration file. Edit the configuration before deploying.",
             "media": {
               "image": "assets/walkthroughs/edit-configuration.png",
               "altText": "Posit Publisher"
@@ -640,7 +640,7 @@
           {
             "id": "posit.publisher.walkthrough.gettingStarted.publishContent",
             "title": "Deploy your content to Posit Connect",
-            "description": "Once you have configured your deployment, you are ready to deploy your latest code changes up to the Posit Connect server. Click on the Deploy button to proceed.",
+            "description": "Once you have configured your deployment, you are ready to deploy your latest code changes up to the Posit Connect server. Click the Deploy button to proceed.",
             "media": {
               "image": "assets/walkthroughs/deploy.png",
               "altText": "Posit Publisher"
@@ -649,7 +649,7 @@
           {
             "id": "posit.publisher.walkthrough.gettingStarted.accessContent",
             "title": "View your content on Posit Connect",
-            "description": "Click on the button to view your content running on the Posit Connect server",
+            "description": "Click on the button to view your content running on the Posit Connect server.",
             "media": {
               "image": "assets/walkthroughs/visit-content.png",
               "altText": "Posit Publisher"
