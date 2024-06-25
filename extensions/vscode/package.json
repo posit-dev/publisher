@@ -254,9 +254,9 @@
       }
     ],
     "configuration": {
-      "title": "Posit",
+      "title": "Posit Publisher",
       "properties": {
-        "posit.publisher.executable.path": {
+        "positPublisher.executablePath": {
           "description": "A path to the Posit Publisher executable. By default, the extension looks for `publisher` in the `PATH`",
           "type": "string"
         }
