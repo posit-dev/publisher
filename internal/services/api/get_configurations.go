@@ -60,16 +60,9 @@ func readConfigFiles(projectDir util.AbsolutePath, relProjectDir util.RelativePa
 
 func GetConfigurationsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		dir := req.URL.Query().Get("dir")
-		projectDir, err := base.SafeJoin(dir)
+		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
 		if err != nil {
-			BadRequest(w, req, log, err)
-			return
-		}
-		// We will return a normalized version of the project directory
-		relProjectDir, err := projectDir.Rel(base)
-		if err != nil {
-			InternalError(w, req, log, err)
+			// Response already returned by ProjectDirFromRequest
 			return
 		}
 		response, err := readConfigFiles(projectDir, relProjectDir)
