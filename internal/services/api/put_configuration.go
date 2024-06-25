@@ -47,7 +47,12 @@ func camelToSnakeMap(m map[string]any) {
 func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
-		err := util.ValidateFilename(name)
+		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
+		err = util.ValidateFilename(name)
 		if err != nil {
 			BadRequest(w, req, log, err)
 			return
@@ -99,7 +104,7 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 		}
 
 		var response configDTO
-		configPath := config.GetConfigPath(base, name)
+		configPath := config.GetConfigPath(projectDir, name)
 
 		err = cfg.WriteFile(configPath)
 		if err != nil {
@@ -115,6 +120,7 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			Name:          name,
 			Path:          configPath.String(),
 			RelPath:       relPath.String(),
+			ProjectDir:    relProjectDir.String(),
 			Configuration: &cfg,
 		}
 		w.Header().Set("content-type", "application/json")

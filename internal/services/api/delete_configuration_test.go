@@ -3,8 +3,10 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -93,4 +95,41 @@ func (s *DeleteConfigurationSuite) TestDeleteConfigurationNotFound() {
 	h(rec, req)
 
 	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+}
+
+func (s *DeleteConfigurationSuite) TestDeleteConfigurationFromSubdir() {
+	base := s.cwd.Dir().Dir()
+	configToDelete := "myConfig"
+
+	// Create a config in the upper directory that should be left alone
+	_, err := createSampleConfiguration(base, configToDelete)
+	s.NoError(err)
+	pathToPreserve := config.GetConfigPath(base, configToDelete)
+	s.fileExists(pathToPreserve)
+
+	// Create a config in the subdir that should be deleted
+	_, err = createSampleConfiguration(s.cwd, configToDelete)
+	s.NoError(err)
+	targetPath := config.GetConfigPath(s.cwd, configToDelete)
+	s.fileExists(targetPath)
+
+	relProjectDir, err := s.cwd.Rel(base)
+	s.NoError(err)
+
+	h := DeleteConfigurationHandlerFunc(base, s.log)
+
+	dirParam := url.QueryEscape(relProjectDir.String())
+	apiUrl := fmt.Sprintf("/api/configurations/%s?dir=%s", configToDelete, dirParam)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", apiUrl, nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{
+		"name": configToDelete,
+	})
+	h(rec, req)
+
+	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
+	s.fileDoesNotExist(targetPath)
+	s.fileExists(pathToPreserve)
 }

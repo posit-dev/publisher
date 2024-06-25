@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"testing"
 
@@ -79,6 +80,7 @@ func (s *GetConfigurationuite) TestGetConfiguration() {
 	s.Equal(relPath, res.RelPath)
 
 	s.Equal("myConfig", res.Name)
+	s.Equal(".", res.ProjectDir)
 	s.Nil(res.Error)
 	s.Equal(cfg, res.Configuration)
 }
@@ -111,6 +113,7 @@ func (s *GetConfigurationuite) TestGetConfigurationError() {
 	s.Equal(relPath, res.RelPath)
 
 	s.Equal("myConfig", res.Name)
+	s.Equal(".", res.ProjectDir)
 	s.NotNil(res.Error)
 	s.Equal(nilConfiguration, res.Configuration)
 }
@@ -126,4 +129,42 @@ func (s *GetConfigurationuite) TestGetConfigurationNotFound() {
 	h(rec, req)
 
 	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+}
+
+func (s *GetConfigurationuite) TestGetConfigurationFromSubdir() {
+	cfg := s.makeConfiguration("myConfig")
+
+	// Getting configurations from a subdirectory two levels down
+	base := s.cwd.Dir().Dir()
+	relProjectDir, err := s.cwd.Rel(base)
+	s.NoError(err)
+
+	h := GetConfigurationHandlerFunc(base, s.log)
+
+	dirParam := url.QueryEscape(relProjectDir.String())
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/configurations/myConfig?dir="+dirParam, nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{
+		"name": "myConfig",
+	})
+
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := configDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+
+	relPath := filepath.Join(".posit", "publish", "myConfig.toml")
+	s.Equal(s.cwd.Join(relPath).String(), res.Path)
+	s.Equal(relPath, res.RelPath)
+
+	s.Equal("myConfig", res.Name)
+	s.Equal(relProjectDir.String(), res.ProjectDir)
+	s.Nil(res.Error)
+	s.Equal(cfg, res.Configuration)
 }
