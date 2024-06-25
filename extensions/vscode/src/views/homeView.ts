@@ -76,7 +76,7 @@ enum HomeViewInitialized {
 
 const lastSelectionState = "posit.publisher.homeView.lastSelectionState.v2";
 
-const fileEventDebounce = 500;
+const fileEventDebounce = 200;
 
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private _disposables: Disposable[] = [];
