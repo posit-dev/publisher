@@ -57,6 +57,38 @@ type possibleSteps = {
 };
 
 const steps: Record<string, possibleSteps | undefined> = {
+  inputEntryPointSelection: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 1,
+        totalSteps: 5,
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 1,
+        totalSteps: 6,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 2,
+      },
+      multipleEntryPoints: {
+        step: 1,
+        totalSteps: 3,
+      },
+    },
+  },
   pickCredentials: {
     noCredentials: {
       singleEntryPoint: {
@@ -74,7 +106,7 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 5,
       },
       multipleEntryPoints: {
-        step: 1,
+        step: 2,
         totalSteps: 6,
       },
     },
@@ -84,7 +116,7 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 1,
+        step: 2,
         totalSteps: 3,
       },
     },
@@ -96,7 +128,7 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 4,
       },
       multipleEntryPoints: {
-        step: 1,
+        step: 2,
         totalSteps: 5,
       },
     },
@@ -106,7 +138,7 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 5,
       },
       multipleEntryPoints: {
-        step: 2,
+        step: 3,
         totalSteps: 6,
       },
     },
@@ -128,7 +160,7 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 4,
       },
       multipleEntryPoints: {
-        step: 2,
+        step: 3,
         totalSteps: 5,
       },
     },
@@ -138,7 +170,7 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 5,
       },
       multipleEntryPoints: {
-        step: 3,
+        step: 4,
         totalSteps: 6,
       },
     },
@@ -160,45 +192,13 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 4,
       },
       multipleEntryPoints: {
-        step: 3,
-        totalSteps: 5,
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 4,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        step: 4,
-        totalSteps: 6,
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 0,
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        step: 0,
-        totalSteps: 3,
-      },
-    },
-  },
-  inputEntryPointSelection: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 0,
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
         step: 4,
         totalSteps: 5,
       },
     },
     newCredentials: {
       singleEntryPoint: {
-        step: 0,
+        step: 4,
         totalSteps: 5,
       },
       multipleEntryPoints: {
@@ -212,7 +212,7 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 2,
+        step: 0,
         totalSteps: 3,
       },
     },
@@ -469,8 +469,46 @@ export async function newDeployment(
     };
 
     // start the progression through the steps
-    await MultiStepInput.run((input) => pickCredentials(input, state));
+    await MultiStepInput.run((input) => inputEntryPointSelection(input, state));
     return state as MultiStepState;
+  }
+
+  // ***************************************************************
+  // Step #1
+  // Select the config to be used w/ the contentRecord
+  // ***************************************************************
+  async function inputEntryPointSelection(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    // skip if we only have one choice.
+    if (entryPointListItems.length > 1) {
+      const step = getStepInfo("inputEntryPointSelection", state);
+      if (!step) {
+        throw new Error(
+          "newDeployment::inputEntryPointSelection step info not found.",
+        );
+      }
+
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: step.step,
+        totalSteps: step.totalSteps,
+        placeholder:
+          "Select main file and content type below. (Use this field to filter selections.)",
+        items: entryPointListItems,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+      });
+
+      state.data.entryPoint = pick;
+      return (input: MultiStepInput) => pickCredentials(input, state);
+    } else {
+      state.data.entryPoint = entryPointListItems[0];
+      // We're skipping this step, so we must silently just jump to the next step
+      return pickCredentials(input, state);
+    }
   }
 
   // ***************************************************************
@@ -683,47 +721,9 @@ export async function newDeployment(
       });
 
       state.data.newCredentialApiKey = apiKey;
-      return (input: MultiStepInput) => inputEntryPointSelection(input, state);
-    }
-    return inputEntryPointSelection(input, state);
-  }
-
-  // ***************************************************************
-  // Step #6 - maybe?:
-  // Select the config to be used w/ the contentRecord
-  // ***************************************************************
-  async function inputEntryPointSelection(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    // skip if we only have one choice.
-    if (entryPointListItems.length > 1) {
-      const step = getStepInfo("inputEntryPointSelection", state);
-      if (!step) {
-        throw new Error(
-          "newDeployment::inputEntryPointSelection step info not found.",
-        );
-      }
-
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: step.step,
-        totalSteps: step.totalSteps,
-        placeholder:
-          "Select main file and content type below. (Use this field to filter selections.)",
-        items: entryPointListItems,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-
-      state.data.entryPoint = pick;
       return (input: MultiStepInput) => inputTitle(input, state);
-    } else {
-      state.data.entryPoint = entryPointListItems[0];
-      // We're skipping this step, so we must silently just jump to the next step
-      return inputTitle(input, state);
     }
+    return inputTitle(input, state);
   }
 
   // ***************************************************************
