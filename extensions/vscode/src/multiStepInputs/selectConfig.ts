@@ -332,7 +332,7 @@ export async function selectConfig(
       validate: (value) => {
         if (value.length < 3) {
           return Promise.resolve({
-            message: `Invalid Title: Value must be longer than 3 characters`,
+            message: `Error: Invalid Title (value must be longer than 3 characters)`,
             severity: InputBoxValidationSeverity.Error,
           });
         }

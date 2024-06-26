@@ -27,13 +27,16 @@ import {
   contentTypeStrings,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
-import { getSummaryStringFromError } from "src/utils/errors";
+import {
+  getMessageFromError,
+  getSummaryStringFromError,
+} from "src/utils/errors";
 import {
   untitledConfigurationName,
   untitledContentRecordName,
 } from "src/utils/names";
 import { formatURL, normalizeURL } from "src/utils/url";
-import { validateApiKey } from "src/utils/apiKeys";
+import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
 
 type stepInfo = {
@@ -121,7 +124,7 @@ const steps: Record<string, possibleSteps | undefined> = {
       },
     },
   },
-  inputCredentialName: {
+  inputAPIKey: {
     noCredentials: {
       singleEntryPoint: {
         step: 2,
@@ -153,7 +156,7 @@ const steps: Record<string, possibleSteps | undefined> = {
       },
     },
   },
-  inputAPIKey: {
+  inputCredentialName: {
     noCredentials: {
       singleEntryPoint: {
         step: 3,
@@ -459,9 +462,9 @@ export async function newDeployment(
         // each attribute is initialized to undefined
         // to be returned when it has not been cancelled to assist type guards
         credentialName: undefined, // eventual type is either a string or QuickPickItem
-        newCredentialUrl: undefined, // eventual type is string
-        newCredentialName: undefined, // eventual type is string
-        newCredentialApiKey: undefined, // eventual type is string
+        url: undefined, // eventual type is string
+        name: undefined, // eventual type is string
+        apiKey: undefined, // eventual type is string
         entryPoint: undefined, // eventual type is QuickPickItem
         title: undefined, // eventual type is string
       },
@@ -512,9 +515,8 @@ export async function newDeployment(
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
     if (newCredentialByAnyMeans(state)) {
       const currentURL =
-        typeof state.data.newCredentialUrl === "string" &&
-        state.data.newCredentialUrl.length
-          ? state.data.newCredentialUrl
+        typeof state.data.url === "string" && state.data.url.length
+          ? state.data.url
           : "";
 
       const step = getStepInfo("inputServerUrl", state);
@@ -530,13 +532,15 @@ export async function newDeployment(
         prompt: "Enter the Public URL of the Posit Connect Server",
         placeholder: "example: https://servername.com:3939",
         validate: (input: string) => {
-          input = input.trim();
-          if (input === "") {
+          if (input.includes(" ")) {
             return Promise.resolve({
-              message: "You must enter a valid Server URL.",
+              message: "Error: Invalid URL (spaces are not allowed).",
               severity: InputBoxValidationSeverity.Error,
             });
           }
+          return Promise.resolve(undefined);
+        },
+        finalValidation: async (input: string) => {
           input = formatURL(input);
           try {
             // will validate that this is a valid URL
@@ -546,7 +550,7 @@ export async function newDeployment(
               throw e;
             }
             return Promise.resolve({
-              message: "Invalid URL.",
+              message: `Error: Invalid URL (${getMessageFromError(e)}).`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
@@ -557,7 +561,27 @@ export async function newDeployment(
           );
           if (existingCredential) {
             return Promise.resolve({
-              message: `Server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed.`,
+              message: `Error: Invalid URL (this server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          try {
+            const testResult = await api.credentials.test(input);
+            if (testResult.status !== 200) {
+              return Promise.resolve({
+                message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
+                severity: InputBoxValidationSeverity.Error,
+              });
+            }
+            if (testResult.data.error) {
+              return Promise.resolve({
+                message: `Error: Invalid URL (${testResult.data.error.msg}).`,
+                severity: InputBoxValidationSeverity.Error,
+              });
+            }
+          } catch (e) {
+            return Promise.resolve({
+              message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
@@ -567,85 +591,21 @@ export async function newDeployment(
         ignoreFocusOut: true,
       });
 
-      state.data.newCredentialUrl = formatURL(url.trim());
-      return (input: MultiStepInput) => inputCredentialName(input, state);
-    }
-    return inputCredentialName(input, state);
-  }
-
-  // ***************************************************************
-  // Step #4 - maybe?:
-  // Name the credential
-  // ***************************************************************
-  async function inputCredentialName(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    if (newCredentialByAnyMeans(state)) {
-      const currentName =
-        typeof state.data.newCredentialName === "string" &&
-        state.data.newCredentialName.length
-          ? state.data.newCredentialName
-          : "";
-
-      const step = getStepInfo("inputCredentialName", state);
-      if (!step) {
-        throw new Error(
-          "newDeployment::inputCredentialName step info not found.",
-        );
-      }
-
-      const name = await input.showInputBox({
-        title: state.title,
-        step: step.step,
-        totalSteps: step.totalSteps,
-        value: currentName,
-        prompt: "Enter a Unique Nickname for your Credential.",
-        placeholder: "example: Posit Connect",
-        validate: (input: string) => {
-          input = input.trim();
-          if (input === "") {
-            return Promise.resolve({
-              message: "A credential is required.",
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          if (credentials.find((credential) => credential.name === input)) {
-            return Promise.resolve({
-              message:
-                "Nickname is already in use. Please enter a unique value.",
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          if (input === createNewCredentialLabel) {
-            return Promise.resolve({
-              message:
-                "Nickname is reserved for internal use. Please provide another value.",
-              severity: InputBoxValidationSeverity.Error,
-            });
-          }
-          return Promise.resolve(undefined);
-        },
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-
-      state.data.newCredentialName = name.trim();
+      state.data.url = formatURL(url.trim());
       return (input: MultiStepInput) => inputAPIKey(input, state);
     }
     return inputAPIKey(input, state);
   }
 
   // ***************************************************************
-  // Step #5 - maybe?:
+  // Step #4 - maybe?:
   // Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
     if (newCredentialByAnyMeans(state)) {
       const currentAPIKey =
-        typeof state.data.newCredentialApiKey === "string" &&
-        state.data.newCredentialApiKey.length
-          ? state.data.newCredentialApiKey
+        typeof state.data.apiKey === "string" && state.data.apiKey.length
+          ? state.data.apiKey
           : "";
 
       const step = getStepInfo("inputAPIKey", state);
@@ -662,17 +622,44 @@ export async function newDeployment(
         prompt: "The API key to be used to authenticate with Posit Connect",
         placeholder: "example: v1cKJzUzYnHP1p5WrAINMump4Sjp5pbq",
         validate: (input: string) => {
-          input = input.trim();
-          if (input === "") {
+          if (input.includes(" ")) {
             return Promise.resolve({
-              message: "An API key is required.",
+              message: "Error: Invalid API Key (spaces are not allowed).",
               severity: InputBoxValidationSeverity.Error,
             });
           }
-          const errorMsg = validateApiKey(input);
+          return Promise.resolve(undefined);
+        },
+        finalValidation: async (input: string) => {
+          // first validate that the API key is formed correctly
+          const errorMsg = checkSyntaxApiKey(input);
           if (errorMsg) {
             return Promise.resolve({
-              message: errorMsg,
+              message: `Error: Invalid API Key (${errorMsg}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          // url should always be defined by the time we get to this step
+          // but we have to type guard it for the API
+          const serverUrl =
+            typeof state.data.url === "string" ? state.data.url : "";
+          try {
+            const testResult = await api.credentials.test(serverUrl, input);
+            if (testResult.status !== 200) {
+              return Promise.resolve({
+                message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,
+                severity: InputBoxValidationSeverity.Error,
+              });
+            }
+            if (testResult.data.error) {
+              return Promise.resolve({
+                message: `Error: Invalid API Key (${testResult.data.error.msg}).`,
+                severity: InputBoxValidationSeverity.Error,
+              });
+            }
+          } catch (e) {
+            return Promise.resolve({
+              message: `Error: Invalid API Key (${getMessageFromError(e)})`,
               severity: InputBoxValidationSeverity.Error,
             });
           }
@@ -682,7 +669,69 @@ export async function newDeployment(
         ignoreFocusOut: true,
       });
 
-      state.data.newCredentialApiKey = apiKey;
+      state.data.apiKey = apiKey;
+      return (input: MultiStepInput) => inputCredentialName(input, state);
+    }
+    return inputCredentialName(input, state);
+  }
+
+  // ***************************************************************
+  // Step #5 - maybe?:
+  // Name the credential
+  // ***************************************************************
+  async function inputCredentialName(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    if (newCredentialByAnyMeans(state)) {
+      const currentName =
+        typeof state.data.name === "string" && state.data.name.length
+          ? state.data.name
+          : "";
+
+      const step = getStepInfo("inputCredentialName", state);
+      if (!step) {
+        throw new Error(
+          "newDeployment::inputCredentialName step info not found.",
+        );
+      }
+
+      const name = await input.showInputBox({
+        title: state.title,
+        step: step.step,
+        totalSteps: step.totalSteps,
+        value: currentName,
+        prompt: "Enter a Unique Nickname for your Credential.",
+        placeholder: "example: Posit Connect",
+        finalValidation: (input: string) => {
+          input = input.trim();
+          if (input === "") {
+            return Promise.resolve({
+              message: "Error: Invalid Nickname (a value is required).",
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          if (credentials.find((credential) => credential.name === input)) {
+            return Promise.resolve({
+              message:
+                "Error: Invalid Nickname (value is already in use by a different credential).",
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          if (input === createNewCredentialLabel) {
+            return Promise.resolve({
+              message:
+                "Error: Nickname is reserved for internal use. Please provide another value.",
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          return Promise.resolve(undefined);
+        },
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+      });
+
+      state.data.name = name.trim();
       return (input: MultiStepInput) => inputEntryPointSelection(input, state);
     }
     return inputEntryPointSelection(input, state);
@@ -728,7 +777,7 @@ export async function newDeployment(
 
   // ***************************************************************
   // Step #7
-  // Name the configuration
+  // Input the Title
   // ***************************************************************
   async function inputTitle(input: MultiStepInput, state: MultiStepState) {
     const step = getStepInfo("inputTitle", state);
@@ -756,7 +805,7 @@ export async function newDeployment(
       validate: (value) => {
         if (value.length < 3) {
           return Promise.resolve({
-            message: `Invalid Title: Value must be longer than 3 characters`,
+            message: `Error: Invalid Title (value must be longer than 3 characters)`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -805,12 +854,12 @@ export async function newDeployment(
     // have to type guard here, will protect us against
     // cancellation.
     if (
-      state.data.newCredentialUrl === undefined ||
-      isQuickPickItem(state.data.newCredentialUrl) ||
-      state.data.newCredentialName === undefined ||
-      isQuickPickItem(state.data.newCredentialName) ||
-      state.data.newCredentialApiKey === undefined ||
-      isQuickPickItem(state.data.newCredentialApiKey)
+      state.data.url === undefined ||
+      isQuickPickItem(state.data.url) ||
+      state.data.name === undefined ||
+      isQuickPickItem(state.data.name) ||
+      state.data.apiKey === undefined ||
+      isQuickPickItem(state.data.apiKey)
     ) {
       throw new Error("NewDeployment Unexpected type guard failure @1");
     }
@@ -818,9 +867,9 @@ export async function newDeployment(
       // NEED an credential to be returned from this API
       // and assigned to newOrExistingCredential
       const response = await api.credentials.create(
-        state.data.newCredentialName,
-        state.data.newCredentialUrl,
-        state.data.newCredentialApiKey,
+        state.data.name,
+        state.data.url,
+        state.data.apiKey,
       );
       newOrSelectedCredential = response.data;
     } catch (error: unknown) {
@@ -874,18 +923,18 @@ export async function newDeployment(
   let finalCredentialName = <string | undefined>undefined;
   if (
     newCredentialForced(state) &&
-    state.data.newCredentialName &&
-    !isQuickPickItem(state.data.newCredentialName)
+    state.data.name &&
+    !isQuickPickItem(state.data.name)
   ) {
-    finalCredentialName = state.data.newCredentialName;
+    finalCredentialName = state.data.name;
   } else if (!state.data.credentialName) {
     throw new Error("NewDeployment Unexpected type guard failure @3");
   } else if (
     newCredentialSelected(state) &&
-    state.data.newCredentialName &&
-    !isQuickPickItem(state.data.newCredentialName)
+    state.data.name &&
+    !isQuickPickItem(state.data.name)
   ) {
-    finalCredentialName = state.data.newCredentialName;
+    finalCredentialName = state.data.name;
   } else if (isQuickPickItem(state.data.credentialName)) {
     finalCredentialName = state.data.credentialName.label;
   }
