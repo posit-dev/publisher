@@ -102,7 +102,13 @@ export async function activate(context: ExtensionContext) {
   );
   setStateContext(PositPublishState.initialized);
 
-  context.subscriptions.push(new DocumentTracker());
+  context.subscriptions.push(
+    new DocumentTracker(),
+    commands.registerCommand(Commands.DeployWithEntrypoint, () => {
+      commands.executeCommand(Commands.HomeView.Focus);
+      console.log("'Deploy with this Entrypoint' button hit!");
+    }),
+  );
 }
 
 // This method is called when your extension is deactivated
