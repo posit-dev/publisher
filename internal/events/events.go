@@ -44,19 +44,20 @@ const (
 const (
 	AgentOp Operation = "agent"
 
-	PublishCheckCapabilitiesOp   Operation = "publish/checkCapabilities"
-	PublishCreateNewDeploymentOp Operation = "publish/createNewDeployment"
-	PublishSetEnvVarsOp          Operation = "publish/setEnvVars"
-	PublishCreateBundleOp        Operation = "publish/createBundle"
-	PublishUpdateDeploymentOp    Operation = "publish/createDeployment"
-	PublishUploadBundleOp        Operation = "publish/uploadBundle"
-	PublishDeployBundleOp        Operation = "publish/deployBundle"
-	PublishRestorePythonEnvOp    Operation = "publish/restorePythonEnv"
-	PublishRestoreREnvOp         Operation = "publish/restoreREnv"
-	PublishRunContentOp          Operation = "publish/runContent"
-	PublishSetVanityUrlOp        Operation = "publish/setVanityURL"
-	PublishValidateDeploymentOp  Operation = "publish/validateDeployment"
-	PublishOp                    Operation = "publish"
+	PublishCheckCapabilitiesOp       Operation = "publish/checkCapabilities"
+	PublishGetRPackageDescriptionsOp Operation = "publish/getRPackageDescriptions"
+	PublishCreateNewDeploymentOp     Operation = "publish/createNewDeployment"
+	PublishSetEnvVarsOp              Operation = "publish/setEnvVars"
+	PublishCreateBundleOp            Operation = "publish/createBundle"
+	PublishUpdateDeploymentOp        Operation = "publish/createDeployment"
+	PublishUploadBundleOp            Operation = "publish/uploadBundle"
+	PublishDeployBundleOp            Operation = "publish/deployBundle"
+	PublishRestorePythonEnvOp        Operation = "publish/restorePythonEnv"
+	PublishRestoreREnvOp             Operation = "publish/restoreREnv"
+	PublishRunContentOp              Operation = "publish/runContent"
+	PublishSetVanityUrlOp            Operation = "publish/setVanityURL"
+	PublishValidateDeploymentOp      Operation = "publish/validateDeployment"
+	PublishOp                        Operation = "publish"
 )
 
 func New(op Operation, phase Phase, errCode ErrorCode, data any) *Event {

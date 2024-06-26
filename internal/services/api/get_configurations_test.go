@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"testing"
 
@@ -77,6 +78,7 @@ func (s *GetConfigurationsSuite) TestGetConfigurations() {
 	s.Equal(relPath, res[0].RelPath)
 
 	s.Equal("default", res[0].Name)
+	s.Equal(".", res[0].ProjectDir)
 	s.Nil(res[0].Error)
 	s.Equal(cfg, res[0].Configuration)
 }
@@ -109,6 +111,7 @@ func (s *GetConfigurationsSuite) TestGetConfigurationsError() {
 	s.Equal(relPath, res[0].RelPath)
 
 	s.Equal("default", res[0].Name)
+	s.Equal(".", res[0].ProjectDir)
 	s.Nil(res[0].Error)
 	s.Equal(cfg, res[0].Configuration)
 
@@ -118,6 +121,42 @@ func (s *GetConfigurationsSuite) TestGetConfigurationsError() {
 	s.Equal(relPath, res[1].RelPath)
 
 	s.Equal("other", res[1].Name)
+	s.Equal(".", res[1].ProjectDir)
 	s.NotNil(res[1].Error)
 	s.Equal(nilConfiguration, res[1].Configuration)
+}
+
+func (s *GetConfigurationsSuite) TestGetConfigurationsFromSubdir() {
+	cfg := s.makeConfiguration("default")
+
+	// Getting configurations from a subdirectory two levels down
+	base := s.cwd.Dir().Dir()
+	relProjectDir, err := s.cwd.Rel(base)
+	s.NoError(err)
+	h := GetConfigurationsHandlerFunc(base, s.log)
+
+	dirParam := url.QueryEscape(relProjectDir.String())
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/configurations?dir="+dirParam, nil)
+	s.NoError(err)
+
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := []configDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+	s.Len(res, 1)
+
+	relPath := filepath.Join(".posit", "publish", "default.toml")
+	s.Equal(s.cwd.Join(relPath).String(), res[0].Path)
+	s.Equal(relPath, res[0].RelPath)
+
+	s.Equal("default", res[0].Name)
+	s.Equal(relProjectDir.String(), res[0].ProjectDir)
+	s.Nil(res[0].Error)
+	s.Equal(cfg, res[0].Configuration)
 }

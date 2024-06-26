@@ -18,8 +18,13 @@ import (
 func GetConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
-		path := config.GetConfigPath(base, name)
-		relPath, err := path.Rel(base)
+		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
+		path := config.GetConfigPath(projectDir, name)
+		relPath, err := path.Rel(projectDir)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
@@ -32,10 +37,11 @@ func GetConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 		w.Header().Set("content-type", "application/json")
 		if err != nil {
 			response := &configDTO{
-				Name:    name,
-				Path:    path.String(),
-				RelPath: relPath.String(),
-				Error:   types.AsAgentError(err),
+				Name:       name,
+				Path:       path.String(),
+				RelPath:    relPath.String(),
+				ProjectDir: relProjectDir.String(),
+				Error:      types.AsAgentError(err),
 			}
 			json.NewEncoder(w).Encode(response)
 		} else {
@@ -43,6 +49,7 @@ func GetConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 				Name:          name,
 				Path:          path.String(),
 				RelPath:       relPath.String(),
+				ProjectDir:    relProjectDir.String(),
 				Configuration: cfg,
 			}
 			json.NewEncoder(w).Encode(response)

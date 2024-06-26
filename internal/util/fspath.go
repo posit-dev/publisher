@@ -4,6 +4,7 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -254,6 +255,31 @@ func (p RelativePath) Join(other ...string) RelativePath {
 	return RelativePath{
 		Path: p.Path.Join(other...),
 	}
+}
+
+func (p Path) SafeJoin(other ...string) (Path, error) {
+	elems := append([]string{p.path}, other...)
+	newPath := filepath.Join(elems...)
+	if !(newPath == p.path || strings.HasPrefix(newPath, p.path+afero.FilePathSeparator)) {
+		return Path{}, fmt.Errorf("invalid path: %s is not within %s", newPath, p.path)
+	}
+	return NewPath(newPath, p.fs), nil
+}
+
+func (p AbsolutePath) SafeJoin(other ...string) (AbsolutePath, error) {
+	newPath, err := p.Path.SafeJoin(other...)
+	if err != nil {
+		return AbsolutePath{}, err
+	}
+	return AbsolutePath{Path: newPath}, nil
+}
+
+func (p RelativePath) SafeJoin(other ...string) (RelativePath, error) {
+	newPath, err := p.Path.SafeJoin(other...)
+	if err != nil {
+		return RelativePath{}, err
+	}
+	return RelativePath{Path: newPath}, nil
 }
 
 func (p Path) Match(pattern string) (matched bool, err error) {

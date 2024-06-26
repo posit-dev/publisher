@@ -89,6 +89,13 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   private resetStages() {
     this.stages = new Map([
       [
+        "publish/getRPackageDescriptions",
+        createLogStage(
+          "Get Package Descriptions",
+          "Getting Package Descriptions",
+        ),
+      ],
+      [
         "publish/checkCapabilities",
         createLogStage("Check Capabilities", "Checking Capabilities"),
       ],

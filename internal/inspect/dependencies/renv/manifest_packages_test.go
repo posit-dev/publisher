@@ -34,8 +34,8 @@ type mockPackageLister struct {
 	mock.Mock
 }
 
-func (m *mockPackageLister) ListAvailablePackages(repos []Repository) ([]AvailablePackage, error) {
-	args := m.Called(repos)
+func (m *mockPackageLister) ListAvailablePackages(repos []Repository, log logging.Logger) ([]AvailablePackage, error) {
+	args := m.Called(repos, log)
 	pkgs := args.Get(0)
 	if pkgs == nil {
 		return nil, args.Error(1)
@@ -44,8 +44,8 @@ func (m *mockPackageLister) ListAvailablePackages(repos []Repository) ([]Availab
 	}
 }
 
-func (m *mockPackageLister) GetBioconductorRepos(base util.AbsolutePath) ([]Repository, error) {
-	args := m.Called(base)
+func (m *mockPackageLister) GetBioconductorRepos(base util.AbsolutePath, log logging.Logger) ([]Repository, error) {
+	args := m.Called(base, log)
 	repos := args.Get(0)
 	if repos == nil {
 		return nil, args.Error(1)
@@ -54,8 +54,8 @@ func (m *mockPackageLister) GetBioconductorRepos(base util.AbsolutePath) ([]Repo
 	}
 }
 
-func (m *mockPackageLister) GetLibPaths() ([]util.AbsolutePath, error) {
-	args := m.Called()
+func (m *mockPackageLister) GetLibPaths(log logging.Logger) ([]util.AbsolutePath, error) {
+	args := m.Called(log)
 	paths := args.Get(0)
 	if paths == nil {
 		return nil, args.Error(1)
@@ -70,11 +70,11 @@ func (s *ManifestPackagesSuite) TestCRAN() {
 	libPath := base.Join("renv_library")
 	otherlibPath := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
 
-	mapper := NewPackageMapper(base, util.Path{}, logging.New())
+	mapper := NewPackageMapper(base, util.Path{})
 	lister := &mockPackageLister{}
-	lister.On("GetLibPaths").Return([]util.AbsolutePath{otherlibPath, libPath}, nil)
-	lister.On("GetBioconductorRepos", mock.Anything).Return(nil, nil)
-	lister.On("ListAvailablePackages", mock.Anything).Return([]AvailablePackage{
+	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{otherlibPath, libPath}, nil)
+	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)
+	lister.On("ListAvailablePackages", mock.Anything, mock.Anything).Return([]AvailablePackage{
 		{
 			Name:       "random_package",
 			Version:    "4.5.6",
@@ -88,7 +88,7 @@ func (s *ManifestPackagesSuite) TestCRAN() {
 	}, nil)
 	mapper.lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath)
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NoError(err)
 
 	var expected bundles.PackageMap
@@ -107,7 +107,7 @@ func (s *ManifestPackagesSuite) TestBioconductor() {
 	libPath := base.Join("renv_library")
 	otherlibPath := util.NewAbsolutePath("/nonexistent", afero.NewMemMapFs())
 
-	mapper := NewPackageMapper(base, util.Path{}, logging.New())
+	mapper := NewPackageMapper(base, util.Path{})
 	lister := &mockPackageLister{}
 	lockfileRepos := []Repository{
 		{Name: "CRAN", URL: "https://cran.rstudio.com"},
@@ -119,9 +119,9 @@ func (s *ManifestPackagesSuite) TestBioconductor() {
 		{Name: "BioCworkflows", URL: "https://bioconductor.org/packages/3.18/workflows"},
 		{Name: "BioCbooks", URL: "https://bioconductor.org/packages/3.18/books"},
 	}
-	lister.On("GetLibPaths").Return([]util.AbsolutePath{otherlibPath, libPath}, nil)
-	lister.On("GetBioconductorRepos", mock.Anything).Return(biocRepos, nil)
-	lister.On("ListAvailablePackages", lockfileRepos).Return([]AvailablePackage{
+	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{otherlibPath, libPath}, nil)
+	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(biocRepos, nil)
+	lister.On("ListAvailablePackages", lockfileRepos, mock.Anything).Return([]AvailablePackage{
 		{
 			Name:       "random_package",
 			Version:    "4.5.6",
@@ -133,7 +133,7 @@ func (s *ManifestPackagesSuite) TestBioconductor() {
 			Repository: "https://cran.rstudio.com",
 		},
 	}, nil)
-	lister.On("ListAvailablePackages", biocRepos).Return([]AvailablePackage{
+	lister.On("ListAvailablePackages", biocRepos, mock.Anything).Return([]AvailablePackage{
 		{
 			Name:       "bioassayR",
 			Version:    "1.40.0",
@@ -152,7 +152,7 @@ func (s *ManifestPackagesSuite) TestBioconductor() {
 	}, nil)
 	mapper.lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath)
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NoError(err)
 
 	var expected bundles.PackageMap
@@ -170,11 +170,11 @@ func (s *ManifestPackagesSuite) TestVersionMismatch() {
 	lockfilePath := base.Join("renv.lock")
 	libPath := base.Join("renv_library")
 
-	mapper := NewPackageMapper(base, util.Path{}, logging.New())
+	mapper := NewPackageMapper(base, util.Path{})
 	lister := &mockPackageLister{}
-	lister.On("GetLibPaths").Return([]util.AbsolutePath{libPath}, nil)
-	lister.On("GetBioconductorRepos", mock.Anything).Return(nil, nil)
-	lister.On("ListAvailablePackages", mock.Anything).Return([]AvailablePackage{
+	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{libPath}, nil)
+	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)
+	lister.On("ListAvailablePackages", mock.Anything, mock.Anything).Return([]AvailablePackage{
 		{
 			Name:       "mypkg",
 			Version:    "1.2.3",
@@ -183,7 +183,7 @@ func (s *ManifestPackagesSuite) TestVersionMismatch() {
 	}, nil)
 	mapper.lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath)
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
 	s.ErrorIs(err, errLockfileLibraryMismatch)
 	s.Nil(manifestPackages)
@@ -194,11 +194,11 @@ func (s *ManifestPackagesSuite) TestDevVersion() {
 	lockfilePath := base.Join("renv.lock")
 	libPath := base.Join("renv_library")
 
-	mapper := NewPackageMapper(base, util.Path{}, logging.New())
+	mapper := NewPackageMapper(base, util.Path{})
 	lister := &mockPackageLister{}
-	lister.On("GetLibPaths").Return([]util.AbsolutePath{libPath}, nil)
-	lister.On("GetBioconductorRepos", mock.Anything).Return(nil, nil)
-	lister.On("ListAvailablePackages", mock.Anything).Return([]AvailablePackage{
+	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{libPath}, nil)
+	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)
+	lister.On("ListAvailablePackages", mock.Anything, mock.Anything).Return([]AvailablePackage{
 		{
 			Name:       "mypkg",
 			Version:    "1.0.0", // installed version is newer than this
@@ -207,7 +207,7 @@ func (s *ManifestPackagesSuite) TestDevVersion() {
 	}, nil)
 	mapper.lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath)
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
 	s.ErrorIs(err, errMissingPackageSource)
 	s.Nil(manifestPackages)
@@ -217,11 +217,11 @@ func (s *ManifestPackagesSuite) TestMissingDescriptionFile() {
 	base := s.testdata.Join("cran_project")
 	lockfilePath := base.Join("renv.lock")
 
-	mapper := NewPackageMapper(base, util.Path{}, logging.New())
+	mapper := NewPackageMapper(base, util.Path{})
 	lister := &mockPackageLister{}
-	lister.On("GetLibPaths").Return([]util.AbsolutePath{}, nil)
-	lister.On("GetBioconductorRepos", mock.Anything).Return(nil, nil)
-	lister.On("ListAvailablePackages", mock.Anything).Return([]AvailablePackage{
+	lister.On("GetLibPaths", mock.Anything).Return([]util.AbsolutePath{}, nil)
+	lister.On("GetBioconductorRepos", mock.Anything, mock.Anything).Return(nil, nil)
+	lister.On("ListAvailablePackages", mock.Anything, mock.Anything).Return([]AvailablePackage{
 		{
 			Name:       "mypkg",
 			Version:    "1.0.0", // installed version is newer than this
@@ -230,7 +230,7 @@ func (s *ManifestPackagesSuite) TestMissingDescriptionFile() {
 	}, nil)
 	mapper.lister = lister
 
-	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath)
+	manifestPackages, err := mapper.GetManifestPackages(base, lockfilePath, logging.New())
 	s.NotNil(err)
 	s.ErrorIs(err, errPackageNotFound)
 	s.Nil(manifestPackages)

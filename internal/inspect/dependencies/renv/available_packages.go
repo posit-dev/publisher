@@ -18,19 +18,18 @@ type AvailablePackage struct {
 }
 
 type AvailablePackagesLister interface {
-	ListAvailablePackages(repos []Repository) ([]AvailablePackage, error)
-	GetBioconductorRepos(base util.AbsolutePath) ([]Repository, error)
-	GetLibPaths() ([]util.AbsolutePath, error)
+	ListAvailablePackages(repos []Repository, log logging.Logger) ([]AvailablePackage, error)
+	GetBioconductorRepos(base util.AbsolutePath, log logging.Logger) ([]Repository, error)
+	GetLibPaths(log logging.Logger) ([]util.AbsolutePath, error)
 }
 
 type defaultAvailablePackagesLister struct {
 	base        util.AbsolutePath
 	rExecutable util.Path
 	rExecutor   executor.Executor
-	log         logging.Logger
 }
 
-func NewAvailablePackageLister(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) *defaultAvailablePackagesLister {
+func NewAvailablePackageLister(base util.AbsolutePath, rExecutable util.Path) *defaultAvailablePackagesLister {
 	if rExecutable.String() == "" {
 		rExecutable = util.NewPath("R", nil)
 	}
@@ -38,7 +37,6 @@ func NewAvailablePackageLister(base util.AbsolutePath, rExecutable util.Path, lo
 		base:        base,
 		rExecutable: rExecutable,
 		rExecutor:   executor.NewExecutor(),
-		log:         log,
 	}
 }
 
@@ -66,7 +64,7 @@ func repoNamesAsStrings(repos []Repository) string {
 	return strings.Join(quotedNames, ", ")
 }
 
-func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repository) ([]AvailablePackage, error) {
+func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repository, log logging.Logger) ([]AvailablePackage, error) {
 	const packageListCodeTemplate = `(function() { pkgs <- available.packages( repos = setNames(c(%s), c(%s)), type = "source", filters = c(getOption("rsconnect.available_packages_filters", default = c()), "duplicates"));info <- pkgs[,c("Package", "Version", "Repository")];apply(info, 1, function(x) { cat(x, sep=" ", collapse="\n") } );invisible()})()`
 	repoUrls := repoUrlsAsStrings(repos)
 	repoNames := repoNamesAsStrings(repos)
@@ -80,7 +78,7 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 			packageListCode,
 		},
 		l.base,
-		l.log)
+		log)
 
 	if err != nil {
 		return nil, err
@@ -106,7 +104,7 @@ func (l *defaultAvailablePackagesLister) ListAvailablePackages(repos []Repositor
 	return available, nil
 }
 
-func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.AbsolutePath) ([]Repository, error) {
+func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.AbsolutePath, log logging.Logger) ([]Repository, error) {
 	const bioconductorReposCodeTemplate = `(function() { if (requireNamespace("BiocManager", quietly = TRUE) || requireNamespace("BiocInstaller", quietly = TRUE)) {repos <- getFromNamespace("renv_bioconductor_repos", "renv")("%s"); repos <- repos[setdiff(names(repos), "CRAN")]; cat(repos, labels=names(repos), fill=1); invisible()}})()`
 	escapedBase := strings.ReplaceAll(l.base.String(), `\`, `\\`)
 	biocRepoListCode := fmt.Sprintf(bioconductorReposCodeTemplate, escapedBase)
@@ -119,7 +117,7 @@ func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.Absolute
 			biocRepoListCode,
 		},
 		l.base,
-		l.log)
+		log)
 
 	if err != nil {
 		return nil, err
@@ -145,7 +143,7 @@ func (l *defaultAvailablePackagesLister) GetBioconductorRepos(base util.Absolute
 	return repos, nil
 }
 
-func (l *defaultAvailablePackagesLister) GetLibPaths() ([]util.AbsolutePath, error) {
+func (l *defaultAvailablePackagesLister) GetLibPaths(log logging.Logger) ([]util.AbsolutePath, error) {
 	const getLibPathsCode = `cat(.libPaths(), sep="\n")`
 	out, _, err := l.rExecutor.RunCommand(
 		l.rExecutable.String(),
@@ -155,7 +153,7 @@ func (l *defaultAvailablePackagesLister) GetLibPaths() ([]util.AbsolutePath, err
 			getLibPathsCode,
 		},
 		l.base,
-		l.log)
+		log)
 
 	if err != nil {
 		return nil, err
