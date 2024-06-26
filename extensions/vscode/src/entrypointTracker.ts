@@ -1,4 +1,11 @@
-import { Disposable, TextDocument, TextEditor, commands, window } from "vscode";
+import {
+  Disposable,
+  TextDocument,
+  TextEditor,
+  commands,
+  window,
+  workspace,
+} from "vscode";
 
 const ACTIVE_FILE_ENTRYPOINT_CONTEXT = "posit.publish.activeFileEntrypoint";
 
@@ -47,6 +54,7 @@ export class DocumentTracker implements Disposable {
   constructor() {
     this.disposable = Disposable.from(
       window.onDidChangeActiveTextEditor(this.onActiveTextEditorChanged, this),
+      workspace.onDidCloseTextDocument(this.onTextDocumentClosed, this),
     );
 
     // activate the initial active file
@@ -59,7 +67,7 @@ export class DocumentTracker implements Disposable {
   }
 
   /**
-   * Adds a document to be tracked
+   * Starts tracking a document
    * @param document The document to track
    * @returns The document passed
    */
@@ -67,6 +75,14 @@ export class DocumentTracker implements Disposable {
     const entrypoint = await TrackedEntrypointDocument.create(document);
     this.documents.set(document, entrypoint);
     return document;
+  }
+
+  /**
+   * Stops tracking a document
+   * @param document The document to stop tracking
+   */
+  removeDocument(document: TextDocument) {
+    this.documents.delete(document);
   }
 
   /**
@@ -94,5 +110,13 @@ export class DocumentTracker implements Disposable {
     }
 
     tracked?.activate();
+  }
+
+  /**
+   * Listener function for the closing of a text document.
+   * @param document The closed document
+   */
+  onTextDocumentClosed(document: TextDocument) {
+    this.removeDocument(document);
   }
 }
