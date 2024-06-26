@@ -8,6 +8,7 @@ import {
   workspace,
   window,
   commands,
+  TextDocument,
 } from "vscode";
 
 import { ContentRecordFile } from "../api";
@@ -230,4 +231,9 @@ export function splitFilesOnInclusion(
 
 export function isRelativePathRoot(path: string): boolean {
   return path === ".";
+}
+
+export function isActiveDocument(document: TextDocument): boolean {
+  const editor = window.activeTextEditor;
+  return editor?.document === document;
 }
