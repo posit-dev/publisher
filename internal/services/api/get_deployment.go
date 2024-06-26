@@ -17,13 +17,18 @@ import (
 func GetDeploymentHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
-		path := deployment.GetDeploymentPath(base, name)
+		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
+		path := deployment.GetDeploymentPath(projectDir, name)
 		d, err := deployment.FromFile(path)
 		if err != nil && errors.Is(err, fs.ErrNotExist) {
 			http.NotFound(w, req)
 			return
 		}
-		response := deploymentAsDTO(d, err, base, path)
+		response := deploymentAsDTO(d, err, projectDir, relProjectDir, path)
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}

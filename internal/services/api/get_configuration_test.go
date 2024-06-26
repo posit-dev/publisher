@@ -168,3 +168,18 @@ func (s *GetConfigurationuite) TestGetConfigurationFromSubdir() {
 	s.Nil(res.Error)
 	s.Equal(cfg, res.Configuration)
 }
+
+func (s *GetConfigurationuite) TestGetConfigurationBadDir() {
+	// It's a Bad Request to try to get a config from a directory outside the project
+	_ = s.makeConfiguration("myConfig")
+
+	h := GetConfigurationHandlerFunc(s.cwd, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/configurations/myConfig?dir=../middleware", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"id": "myConfig"})
+	h(rec, req)
+
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+}

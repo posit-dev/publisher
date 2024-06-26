@@ -24,17 +24,22 @@ func PatchDeploymentHandlerFunc(
 
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
+		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
 		var b PatchDeploymentRequestBody
-		err := dec.Decode(&b)
+		err = dec.Decode(&b)
 		if err != nil {
 			BadRequest(w, req, log, err)
 			return
 		}
 
 		// Deployment must exist
-		path := deployment.GetDeploymentPath(base, name)
+		path := deployment.GetDeploymentPath(projectDir, name)
 		exists, err := path.Exists()
 		if err != nil {
 			InternalError(w, req, log, err)
@@ -46,7 +51,7 @@ func PatchDeploymentHandlerFunc(
 		}
 
 		// Config must exist
-		configPath := config.GetConfigPath(base, b.ConfigName)
+		configPath := config.GetConfigPath(projectDir, b.ConfigName)
 		exists, err = configPath.Exists()
 		if err != nil {
 			InternalError(w, req, log, err)
@@ -72,7 +77,7 @@ func PatchDeploymentHandlerFunc(
 			InternalError(w, req, log, err)
 			return
 		}
-		response := deploymentAsDTO(d, err, base, path)
+		response := deploymentAsDTO(d, err, projectDir, relProjectDir, path)
 		w.Header().Set("content-type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}

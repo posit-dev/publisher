@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -78,6 +79,8 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		path util.AbsolutePath,
 		accountName, configName, targetName, saveName string,
 		accountList accounts.AccountList) (*state.State, error) {
+
+		s.Equal(s.cwd, path)
 		s.Equal("myTargetName", targetName)
 		s.Equal("local", accountName)
 		s.Equal("default", configName)
@@ -88,7 +91,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFunc() {
 		st.Target = deployment.New()
 		return st, nil
 	}
-	handler := PostDeploymentHandlerFunc(util.AbsolutePath{}, log, lister, events.NewNullEmitter())
+	handler := PostDeploymentHandlerFunc(s.cwd, log, lister, events.NewNullEmitter())
 	handler(rec, req)
 
 	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
@@ -103,7 +106,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncBadJSON() 
 
 	req.Body = io.NopCloser(strings.NewReader(`{"random": "123"}`))
 
-	handler := PostDeploymentHandlerFunc(util.AbsolutePath{}, log, nil, events.NewNullEmitter())
+	handler := PostDeploymentHandlerFunc(s.cwd, log, nil, events.NewNullEmitter())
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -122,7 +125,7 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncStateErr()
 		return nil, errors.New("test error from state factory")
 	}
 
-	handler := PostDeploymentHandlerFunc(util.AbsolutePath{}, log, nil, events.NewNullEmitter())
+	handler := PostDeploymentHandlerFunc(s.cwd, log, nil, events.NewNullEmitter())
 	handler(rec, req)
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
@@ -195,10 +198,58 @@ func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentHandlerFuncPublishErr
 		return publisher, nil
 	}
 
-	handler := PostDeploymentHandlerFunc(util.AbsolutePath{}, log, lister, events.NewNullEmitter())
+	handler := PostDeploymentHandlerFunc(s.cwd, log, lister, events.NewNullEmitter())
 	handler(rec, req)
 
 	// Handler returns 202 Accepted even if publishing errs,
 	// because the publish action is asynchronous.
+	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
+}
+
+func (s *PostDeploymentHandlerFuncSuite) TestPostDeploymentSubdir() {
+	log := logging.New()
+
+	// Deployment is in a subdirectory two levels down
+	base := s.cwd.Dir().Dir()
+	relProjectDir, err := s.cwd.Rel(base)
+	s.NoError(err)
+
+	dirParam := url.QueryEscape(relProjectDir.String())
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/api/deployments/myTargetName?dir="+dirParam, nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": "myTargetName"})
+
+	lister := &accounts.MockAccountList{}
+	req.Body = io.NopCloser(strings.NewReader(
+		`{
+			"account": "local",
+			"config": "default"
+		}`))
+
+	publisher := &mockPublisher{}
+	publisher.On("PublishDirectory", mock.Anything).Return(nil)
+	publisherFactory = func(*state.State, events.Emitter, logging.Logger) (publish.Publisher, error) {
+		return publisher, nil
+	}
+	stateFactory = func(
+		path util.AbsolutePath,
+		accountName, configName, targetName, saveName string,
+		accountList accounts.AccountList) (*state.State, error) {
+
+		s.Equal(s.cwd, path)
+		s.Equal("myTargetName", targetName)
+		s.Equal("local", accountName)
+		s.Equal("default", configName)
+		s.Equal("", saveName)
+
+		st := state.Empty()
+		st.Account = &accounts.Account{}
+		st.Target = deployment.New()
+		return st, nil
+	}
+	handler := PostDeploymentHandlerFunc(base, log, lister, events.NewNullEmitter())
+	handler(rec, req)
+
 	s.Equal(http.StatusAccepted, rec.Result().StatusCode)
 }

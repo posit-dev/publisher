@@ -16,8 +16,13 @@ import (
 func DeleteDeploymentHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
-		path := deployment.GetDeploymentPath(base, name)
-		err := path.Remove()
+		projectDir, _, err := ProjectDirFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
+		path := deployment.GetDeploymentPath(projectDir, name)
+		err = path.Remove()
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
 				http.NotFound(w, req)
