@@ -55,8 +55,8 @@ test:
     set -eou pipefail
     {{ _with_debug }}
     if [ {{ os() }} == "linux" ]; then
-        # xvfb-run -a npm run wdio
-        npm run wdio
+        # xvfb-run is required to run tests in headless mode on Linux for GH Actions
+        xvfb-run -a npm run wdio
     else
         npm run wdio
     fi
