@@ -139,7 +139,7 @@ func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput, entrypoint
 	return ""
 }
 
-var quartoSuffixes = []string{".qmd", ".Rmd", ".ipynb"}
+var quartoSuffixes = []string{".qmd", ".Rmd"}
 
 func (d *QuartoDetector) findEntrypoints(base util.AbsolutePath) ([]util.AbsolutePath, error) {
 	allPaths := []util.AbsolutePath{}
