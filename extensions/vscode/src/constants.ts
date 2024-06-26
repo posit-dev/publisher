@@ -92,6 +92,8 @@ const homeViewCommands = {
   NavigateToDeploymentContent:
     "posit.publisher.homeView.navigateToDeployment.Content",
   ShowContentLogs: "posit.publisher.homeView.navigateToDeployment.ContentLog",
+  // Added automatically by VSCode with view registration
+  Focus: "posit.publisher.homeView.focus",
 } as const;
 
 const homeViewContexts = {
