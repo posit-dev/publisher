@@ -32,7 +32,7 @@ func NewConnectClient(
 	account *accounts.Account,
 	timeout time.Duration,
 	emitter events.Emitter,
-	log logging.Logger) (*ConnectClient, error) {
+	log logging.Logger) (APIClient, error) {
 
 	httpClient, err := http_client.NewDefaultHTTPClient(account, timeout, log)
 	if err != nil {
@@ -86,13 +86,12 @@ func (u *UserDTO) CanPublish() bool {
 }
 
 var errInvalidServerOrCredentials = errors.New("could not validate credentials; check server URL and API key or token")
+var errInvalidApiKey = errors.New("could not log in with the provided credentials")
 
 func isConnectAuthError(err error) bool {
 	// You might expect a 401 for a bad API key (and we'll handle that).
-	// But Connect returns a 404 on this endpoint if the API key is invalid.
-	// A non-Connect server would also 404, so it could be an invalid URL.
 	httpErr, ok := err.(*http_client.HTTPError)
-	return ok && (httpErr.Status == http.StatusNotFound || httpErr.Status == http.StatusUnauthorized)
+	return ok && (httpErr.Status == http.StatusUnauthorized)
 }
 
 func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
@@ -101,14 +100,28 @@ func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 	err := c.client.Get("/__api__/v1/user", &connectUser, log)
 	if err != nil {
 		if e, ok := err.(net.Error); ok && e.Timeout() {
+			log.Debug("Request to Connect timed out")
 			return nil, ErrTimedOut
 		} else if agentErr, ok := err.(*types.AgentError); ok {
 			if isConnectAuthError(agentErr.Err) {
-				return nil, errInvalidServerOrCredentials
+				if c.account.ApiKey != "" {
+					// Key was provided and should have worked
+					log.Info("Connect API key authentication check failed", "url", c.account.URL)
+					return nil, types.NewAgentError(events.AuthenticationFailedCode, errInvalidApiKey, nil)
+				} else {
+					// No key provided, an auth error is OK
+					log.Info("Connect server connectivity check failed", "url", c.account.URL)
+					return nil, nil
+				}
 			}
+			// This isn't a Connect server, or we were redirected for auth, or ???
+			log.Debug("Server responded with error", "error", agentErr.Error())
+			return nil, errInvalidServerOrCredentials
 		} else if e, ok := err.(*url.Error); ok {
+			log.Debug("Request to Connect had an URL error", "error", e.Error())
 			return nil, e.Err
 		}
+		log.Debug("Request to Connect had an error", "error", err.Error())
 		return nil, err
 	}
 	if connectUser.Locked {

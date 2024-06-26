@@ -34,8 +34,9 @@ func (s *ConnectClientSuite) TestNewConnectClient() {
 	timeout := 10 * time.Second
 	log := logging.New()
 
-	client, err := NewConnectClient(account, timeout, events.NewNullEmitter(), log)
+	apiClient, err := NewConnectClient(account, timeout, events.NewNullEmitter(), log)
 	s.NoError(err)
+	client := apiClient.(*ConnectClient)
 	s.Equal(account, client.account)
 	s.NotNil(client.client)
 }
@@ -70,8 +71,9 @@ func (s *ConnectClientSuite) TestWaitForTask() {
 			actualPackages = append(actualPackages, data)
 		}
 	}).Return(nil)
-	client, err := NewConnectClient(&accounts.Account{}, time.Second, emitter, logging.New())
+	apiClient, err := NewConnectClient(&accounts.Account{}, time.Second, emitter, logging.New())
 	s.NoError(err)
+	client := apiClient.(*ConnectClient)
 
 	expectedPackages := []packageStatusEvent{
 		{"wheel", pythonRuntime, installPackage, ""},
@@ -282,8 +284,9 @@ func (s *ConnectClientSuite) TestWaitForTaskErr() {
 	str := mock.AnythingOfType("string")
 	log.On("Info", str, str, mock.Anything)
 
-	client, err := NewConnectClient(&accounts.Account{}, time.Second, events.NewNullEmitter(), log)
+	apiClient, err := NewConnectClient(&accounts.Account{}, time.Second, events.NewNullEmitter(), log)
 	s.NoError(err)
+	client := apiClient.(*ConnectClient)
 
 	msg := "An error occurred while building your content. (Error code: python-package-version-not-available)"
 	task := taskDTO{
