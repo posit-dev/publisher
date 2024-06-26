@@ -1,18 +1,11 @@
-import {
-  Disposable,
-  TextDocument,
-  TextEditor,
-  commands,
-  window,
-  workspace,
-} from "vscode";
+import { Disposable, TextDocument, TextEditor, commands, window } from "vscode";
 
 const ACTIVE_FILE_ENTRYPOINT_CONTEXT = "posit.publish.activeFileEntrypoint";
 
 /**
  * Tracks whether a document is an entrypoint file and sets extension context.
  */
-export class TrackedEntrypointDocument implements Disposable {
+export class TrackedEntrypointDocument {
   readonly document: TextDocument;
   private isEntrypoint: boolean;
 
@@ -23,6 +16,7 @@ export class TrackedEntrypointDocument implements Disposable {
 
   static async create(document: TextDocument) {
     // set entrypoint with API call
+    // workspace.asRelativePath(editor.document.uri),
     return new TrackedEntrypointDocument(document, false);
   }
 
@@ -36,10 +30,6 @@ export class TrackedEntrypointDocument implements Disposable {
       ACTIVE_FILE_ENTRYPOINT_CONTEXT,
       this.isEntrypoint,
     );
-  }
-
-  dispose() {
-    return;
   }
 }
 
@@ -58,12 +48,13 @@ export class DocumentTracker implements Disposable {
     this.disposable = Disposable.from(
       window.onDidChangeActiveTextEditor(this.onActiveTextEditorChanged, this),
     );
+
+    // activate the initial active file
+    this.onActiveTextEditorChanged(window.activeTextEditor);
   }
 
   dispose() {
     this.disposable.dispose();
-
-    this.documents.forEach((doc) => doc.dispose());
     this.documents.clear();
   }
 
@@ -87,7 +78,6 @@ export class DocumentTracker implements Disposable {
    */
   async onActiveTextEditorChanged(editor: TextEditor | undefined) {
     if (editor === undefined) {
-      console.log("ACTIVE FILE undefined");
       commands.executeCommand(
         "setContext",
         ACTIVE_FILE_ENTRYPOINT_CONTEXT,
@@ -104,10 +94,5 @@ export class DocumentTracker implements Disposable {
     }
 
     tracked?.activate();
-
-    console.log(
-      "ACTIVE FILE EDITOR CHANGED",
-      workspace.asRelativePath(editor.document.uri),
-    );
   }
 }
