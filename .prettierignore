@@ -2,3 +2,6 @@ vendor
 
 # VSCode Extension
 extensions/vscode/out
+
+# webdriver.io service
+test/vscode-ui/.wdio-vscode-service
