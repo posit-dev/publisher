@@ -55,7 +55,8 @@ test:
     set -eou pipefail
     {{ _with_debug }}
     if [ {{ os() }} == "linux" ]; then
-        xvfb-run -a npm run wdio
+        # xvfb-run -a npm run wdio
+        npm run wdio
     else
         npm run wdio
     fi
