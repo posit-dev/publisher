@@ -251,9 +251,22 @@
         "title": "View Content Log on Connect",
         "icon": "$(output)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.deployWithEntrypoint",
+        "title": "Deploy with this Entrypoint",
+        "icon": "$(cloud-upload)",
+        "category": "Posit Publisher"
       }
     ],
     "menus": {
+      "editor/title": [
+        {
+          "command": "posit.publisher.deployWithEntrypoint",
+          "group": "navigation",
+          "when": "posit.publish.activeFileEntrypoint == true"
+        }
+      ],
       "view/title": [
         {
           "command": "posit.publisher.configurations.add",

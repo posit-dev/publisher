@@ -14,6 +14,7 @@ import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
 import { WatcherManager } from "src/watchers";
 import { Commands } from "src/constants";
+import { DocumentTracker } from "./entrypointTracker";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -100,6 +101,8 @@ export async function activate(context: ExtensionContext) {
     ),
   );
   setStateContext(PositPublishState.initialized);
+
+  context.subscriptions.push(new DocumentTracker());
 }
 
 // This method is called when your extension is deactivated
