@@ -619,8 +619,9 @@ export async function newDeployment(
         totalSteps: step.totalSteps,
         password: true,
         value: currentAPIKey,
-        prompt: "The API key to be used to authenticate with Posit Connect",
-        placeholder: "example: v1cKJzUzYnHP1p5WrAINMump4Sjp5pbq",
+        prompt: `The API key to be used to authenticate with Posit Connect.
+        See the [User Guide](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating)
+        for further information.`,
         validate: (input: string) => {
           if (input.includes(" ")) {
             return Promise.resolve({
