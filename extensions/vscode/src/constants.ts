@@ -14,6 +14,7 @@ const baseCommands = {
   InitProject: "posit.publisher.init-project",
   ShowOutputChannel: "posit.publisher.showOutputChannel",
   ShowPublishingLog: "posit.publisher.showPublishingLog",
+  DeployWithEntrypoint: "posit.publisher.deployWithEntrypoint",
 } as const;
 
 const logsCommands = {
