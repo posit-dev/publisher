@@ -10,7 +10,7 @@ if len(sys.argv) != 2:
 
 version = sys.argv[1]
 
-version_re = re.compile(r"\d+\.\d+\.\d+")
+version_re = re.compile(r"^\d+\.\d+\.\d+$")
 
 if not version_re.match(version):
     print(f"Version {version} is not a release version; skipping version update.")
