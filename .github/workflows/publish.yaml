@@ -46,7 +46,6 @@ jobs:
           target: ${{ matrix.target }}
           preRelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}
           skipDuplicate: true
-          dryRun: true # TODO: testing
 
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
@@ -57,4 +56,3 @@ jobs:
           target: ${{ matrix.target }}
           preRelease: ${{ steps.get-prerelease.outputs.prerelease == 'true' }}
           skipDuplicate: true
-          dryRun: true # TODO: testing
