@@ -68,7 +68,7 @@ func NewHTTPError(url, method string, status int) *HTTPError {
 }
 
 func (e *HTTPError) Error() string {
-	return "unexpected response from the server"
+	return fmt.Sprintf("unexpected response from the server (%d)", e.Status)
 }
 
 func (c *defaultHTTPClient) do(method string, path string, body io.Reader, bodyType string, log logging.Logger) ([]byte, error) {
