@@ -33,8 +33,8 @@ export class HelpAndFeedbackTreeDataProvider
         ),
         new HelpAndFeedbackTreeItem(
           "Provide Feedback",
-          "Open Feedback Slack Channel",
-          Commands.HelpAndFeedback.OpenGettingStarted,
+          "Open GitHub Discussions",
+          Commands.HelpAndFeedback.OpenFeedback,
         ),
       ];
     }
@@ -62,7 +62,7 @@ export class HelpAndFeedbackTreeDataProvider
     this._context.subscriptions.push(
       commands.registerCommand(Commands.HelpAndFeedback.OpenFeedback, () => {
         env.openExternal(
-          Uri.parse("https://positpbc.slack.com/channels/publisher-feedback"),
+          Uri.parse("https://github.com/posit-dev/publisher/discussions"),
         );
       }),
     );
