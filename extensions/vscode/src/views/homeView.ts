@@ -209,6 +209,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewDeploymentMultiStep(Views.HomeView);
       case WebviewToHostMessageType.NEW_CREDENTIAL:
         return this.showNewCredential();
+      case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
+        return this.showPublishingLog();
       default:
         throw new Error(
           `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -795,6 +797,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       Commands.Credentials.Add,
       contentRecord?.serverUrl,
     );
+  }
+
+  private showPublishingLog() {
+    return commands.executeCommand(Commands.Logs.Focus);
   }
 
   private async showDeploymentQuickPick(): Promise<

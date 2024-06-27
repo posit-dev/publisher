@@ -23,6 +23,7 @@ export enum WebviewToHostMessageType {
   SELECT_DEPLOYMENT = "selectDeployment",
   NEW_DEPLOYMENT = "newDeployment",
   NEW_CREDENTIAL = "newCredential",
+  VIEW_PUBLISHING_LOG = "viewPublishingLog",
 }
 
 export type AnyWebviewToHostMessage<
@@ -54,7 +55,8 @@ export type WebviewToHostMessage =
   | ScanRPackageRequirementsMsg
   | SelectDeploymentMsg
   | NewDeploymentMsg
-  | NewCredentialMsg;
+  | NewCredentialMsg
+  | ViewPublishingLog;
 
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
@@ -76,7 +78,8 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS ||
     msg.kind === WebviewToHostMessageType.SELECT_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
-    msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL
+    msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL ||
+    msg.kind === WebviewToHostMessageType.VIEW_PUBLISHING_LOG
   );
 }
 
@@ -170,3 +173,6 @@ export type NewDeploymentMsg =
 
 export type NewCredentialMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_CREDENTIAL>;
+
+export type ViewPublishingLog =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.VIEW_PUBLISHING_LOG>;

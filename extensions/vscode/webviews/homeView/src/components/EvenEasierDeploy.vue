@@ -105,7 +105,14 @@
         <div class="deployment-in-progress-container">
           <div class="progress-container">
             <vscode-progress-ring class="progress-ring" />
-            Deployment in Progress...
+            <div class="progress-desc">
+              <div>Deployment in Progress...</div>
+              <div>
+                <a href="" role="button" @click="onViewPublishingLog"
+                  >View Log</a
+                >
+              </div>
+            </div>
           </div>
           <ActionToolbar
             title="Logs"
@@ -212,6 +219,12 @@ const onEditConfiguration = (name: string) => {
     content: {
       configurationName: name,
     },
+  });
+};
+
+const onViewPublishingLog = () => {
+  hostConduit.sendMsg({
+    kind: WebviewToHostMessageType.VIEW_PUBLISHING_LOG,
   });
 };
 
@@ -447,6 +460,12 @@ const newCredential = () => {
 
 .progress-ring {
   margin-right: 10px;
+}
+
+.progress-desc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .deployment-details-container {
