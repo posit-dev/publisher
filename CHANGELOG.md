@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.2]
 
-### Removed
+### Fixed
 
-- Temporarily disabled OpenVSX publishing in CI (#1895)
+- Fixed VSIX target OS and architecture (#1895)
 
 ## [1.1.1]
 
