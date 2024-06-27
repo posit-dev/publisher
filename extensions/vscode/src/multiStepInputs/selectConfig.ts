@@ -329,7 +329,7 @@ export async function selectConfig(
       value:
         typeof state.data.title === "string" ? state.data.title : initialValue,
       prompt: "Enter a title for your content or application.",
-      validate: (value) => {
+      finalValidation: (value) => {
         if (value.length < 3) {
           return Promise.resolve({
             message: `Error: Invalid Title (value must be longer than 3 characters)`,
