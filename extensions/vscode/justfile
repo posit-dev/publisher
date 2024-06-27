@@ -132,11 +132,11 @@ lint:
 # Packages the extension.
 package os="$(just ../../os)" arch="$(just ../../arch)":
     #!/usr/bin/env bash
-    set -eou pipefail
+    set -eoux pipefail
     {{ _with_debug }}
     just assert-binary-executable-exists
     echo "info: getting package target platform..." 1>&2
-    target_platform=$(just package-target-platform)
+    target_platform=$(just package-target-platform {{ os }} {{ arch }})
     echo "info: getting package output path..." 1>&2
     path="$(just package-path)"
     mkdir -p "$path"
