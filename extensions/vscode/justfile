@@ -3,7 +3,7 @@ alias t := test
 
 _ci := env_var_or_default("CI", "false")
 
-_debug := env_var_or_default("DEBUG", "false")
+_debug := env_var_or_default("DEBUG", _ci)
 
 _with_debug := if _debug == "true" {
         "set -x pipefail"
@@ -136,7 +136,7 @@ package os="$(just ../../os)" arch="$(just ../../arch)":
     {{ _with_debug }}
     just assert-binary-executable-exists
     echo "info: getting package target platform..." 1>&2
-    target_platform=$(just package-target-platform)
+    target_platform=$(just package-target-platform {{ os }} {{ arch }})
     echo "info: getting package output path..." 1>&2
     path="$(just package-path)"
     mkdir -p "$path"
