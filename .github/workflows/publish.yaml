@@ -38,13 +38,12 @@ jobs:
       - id: get-extension-path
         run: echo "extension_path=dist/$(just name)-$(just version)-${{ matrix.target }}.vsix" >> "$GITHUB_OUTPUT"
 
-      - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v1
-        with:
-          pat: ${{ secrets.OPEN_VSX_TOKEN }}
-          extensionFile: ${{ steps.get-extension-path.outputs.extension_path }}
-          target: ${{ matrix.target }}
-          skipDuplicate: true
+      # - name: Publish to Open VSX Registry
+      #   uses: HaaLeo/publish-vscode-extension@v1
+      #   with:
+      #     pat: ${{ secrets.OPEN_VSX_TOKEN }}
+      #     extensionFile: ${{ steps.get-extension-path.outputs.extension_path }}
+      #     skipDuplicate: true
 
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
@@ -52,5 +51,4 @@ jobs:
           registryUrl: https://marketplace.visualstudio.com
           pat: ${{ secrets.VSCE_PAT }}
           extensionFile: ${{ steps.get-extension-path.outputs.extension_path }}
-          target: ${{ matrix.target }}
           skipDuplicate: true
