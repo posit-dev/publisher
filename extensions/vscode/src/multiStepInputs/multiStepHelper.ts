@@ -68,7 +68,10 @@ interface InputBoxParameters {
   password?: boolean;
   value: string;
   prompt: string;
-  validate: (
+  validate?: (
+    value: string,
+  ) => Promise<string | InputBoxValidationMessage | undefined>;
+  finalValidation?: (
     value: string,
   ) => Promise<string | InputBoxValidationMessage | undefined>;
   buttons?: QuickInputButton[];
@@ -196,6 +199,7 @@ export class MultiStepInput {
     value,
     prompt,
     validate,
+    finalValidation,
     buttons,
     ignoreFocusOut,
     placeholder,
@@ -224,7 +228,9 @@ export class MultiStepInput {
           ...(this.steps.length > 1 ? [QuickInputButtons.Back] : []),
           ...(buttons || []),
         ];
-        let validating = validate("");
+        let validating: Promise<
+          string | InputBoxValidationMessage | undefined
+        > = Promise.resolve(undefined);
         disposables.push(
           input.onDidTriggerButton((item) => {
             if (item === QuickInputButtons.Back) {
@@ -237,18 +243,37 @@ export class MultiStepInput {
             const value = input.value;
             input.enabled = false;
             input.busy = true;
-            if (!(await validate(value))) {
-              resolve(value);
+
+            let validateError: string | InputBoxValidationMessage | undefined =
+              undefined;
+            if (validate) {
+              validateError = await validate(value);
+            }
+            let finalValidateError:
+              | string
+              | InputBoxValidationMessage
+              | undefined = undefined;
+            if (!validateError && finalValidation) {
+              finalValidateError = await finalValidation(value);
+              input.validationMessage = finalValidateError;
             }
             input.enabled = true;
             input.busy = false;
+
+            // if we resolve, the page will move on.
+            // if we don't, then it sticks around.
+            if (!validateError && !finalValidateError) {
+              resolve(value);
+            }
           }),
           input.onDidChangeValue(async (text) => {
-            const current = validate(text);
-            validating = current;
-            const validationMessage = await current;
-            if (current === validating) {
-              input.validationMessage = validationMessage;
+            if (validate) {
+              const current = validate(text);
+              validating = current;
+              const validationMessage = await current;
+              if (current === validating) {
+                input.validationMessage = validationMessage;
+              }
             }
           }),
           input.onDidHide(() => {

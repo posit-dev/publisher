@@ -5,9 +5,9 @@
  *
  * @returns <string | undefined> - the error or undefined for valid
  */
-export const validateApiKey = (key: string): string | undefined => {
+export const checkSyntaxApiKey = (key: string): string | undefined => {
   if (!key.match(/^[\da-zA-Z]{32}$/g)) {
-    return "Invalid characters or length for an API Key (32 alphanumeric characters required)";
+    return "invalid characters or length for an API Key (32 alphanumeric characters required)";
   }
   return undefined;
 };
