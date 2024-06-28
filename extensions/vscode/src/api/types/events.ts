@@ -136,15 +136,29 @@ export interface EventSubscriptionTargetCallbackMap {
   "publish/failure": OnPublishFailureCallback;
 }
 
+export const restoreMsgToStatusSuffix = (
+  msg:
+    | PublishRestorePythonEnvStatus
+    | PublishRestoreREnvStatus
+    | PublishRestoreEnvStatus,
+) => {
+  let suffix = msg.data.name;
+  if (msg.data.version) {
+    suffix = `${suffix} (${msg.data.version})...`;
+  } else {
+    suffix = `${suffix}...`;
+  }
+  return suffix;
+};
+
 export const eventMsgToString = (msg: EventStreamMessage): string => {
   let suffix: string | undefined;
-  if (isPublishRestorePythonEnvStatus(msg) || isPublishRestoreREnvStatus(msg)) {
-    suffix = msg.data.name;
-    if (msg.data.version) {
-      suffix = `${suffix} (${msg.data.version})...`;
-    } else {
-      suffix = `${suffix}...`;
-    }
+  if (
+    isPublishRestorePythonEnvStatus(msg) ||
+    isPublishRestoreREnvStatus(msg) ||
+    isPublishRestoreEnvStatus(msg)
+  ) {
+    suffix = restoreMsgToStatusSuffix(msg);
   }
 
   if (suffix) {
@@ -153,22 +167,106 @@ export const eventMsgToString = (msg: EventStreamMessage): string => {
   return eventTypeToString(msg.type);
 };
 
-export const eventTypeToString = (eventTypeStr: string): string => {
-  const eventVerbToString: Record<string, string> = {
-    "publish/checkCapabilities": "Check Capabilities",
-    "publish/createBundle": "Create Bundle",
-    "publish/uploadBundle": "Upload Bundle",
-    "publish/createDeployment": "Create Deployment",
-    "publish/deployBundle": "Deploy Bundle",
-    "publish/restorePythonEnv": "Restore Python Environment",
-    "publish/restoreREnv": "Restore R Environment",
-    "publish/runContent": "Run Content",
-    "publish/setVanityURL": "Set Vanity URL",
-    "publish/setEnvVars": "Set Environment Variables",
-    "publish/validateDeployment": "Validate Deployment",
-    "publish/success": "Wrapping up Deployment",
-  };
+type activeInactivePhrases = {
+  inActive: string;
+  active: string;
+};
 
+const eventVerbToString = new Map<string, activeInactivePhrases>([
+  [
+    "publish/checkCapabilities",
+    {
+      active: "Checking Capabilities",
+      inActive: "Check Capabilities",
+    },
+  ],
+  [
+    "publish/createBundle",
+    {
+      inActive: "Create Bundle",
+      active: "Creating Bundle",
+    },
+  ],
+  [
+    "publish/uploadBundle",
+    {
+      inActive: "Upload Bundle",
+      active: "Uploading Bundle",
+    },
+  ],
+  [
+    "publish/createDeployment",
+    {
+      inActive: "Create Deployment",
+      active: "Creating Deployment",
+    },
+  ],
+  [
+    "publish/deployBundle",
+    {
+      inActive: "Deploy Bundle",
+      active: "Deploying Bundle",
+    },
+  ],
+  [
+    "publish/restorePythonEnv",
+    {
+      inActive: "Restore Python Environment",
+      active: "Restoring Python Environment",
+    },
+  ],
+  [
+    "publish/restoreREnv",
+    {
+      inActive: "Restore R Environment",
+      active: "Restoring R Environment",
+    },
+  ],
+  [
+    "publish/restoreEnv",
+    {
+      inActive: "Restore Environment",
+      active: "Restoring Environment",
+    },
+  ],
+  [
+    "publish/runContent",
+    {
+      inActive: "Run Content",
+      active: "Running Content",
+    },
+  ],
+  [
+    "publish/setVanityURL",
+    {
+      inActive: "Set Vanity URL",
+      active: "Setting Vanity URL",
+    },
+  ],
+  [
+    "publish/setEnvVars",
+    {
+      inActive: "Set Environment Variables",
+      active: "Set Environment Variables",
+    },
+  ],
+  [
+    "publish/validateDeployment",
+    {
+      inActive: "Validate Deployment",
+      active: "Validating Deployment",
+    },
+  ],
+  [
+    "publish/success",
+    {
+      inActive: "Wrapped up Deployment",
+      active: "Wrapping up Deployment",
+    },
+  ],
+]);
+
+export const eventTypeToString = (eventTypeStr: string): string => {
   // we do not provide strings for wildcards
   if (eventTypeStr.includes("*")) {
     return eventTypeStr;
@@ -181,14 +279,17 @@ export const eventTypeToString = (eventTypeStr: string): string => {
   }
 
   const verb = `${parts[0]}/${parts[1]}`;
-  const base = eventVerbToString[verb];
+  const base = eventVerbToString.get(verb);
 
   // we don't know about this event
   if (base === undefined) {
     return eventTypeStr;
   }
 
-  return base;
+  if (parts[2] === "success" || parts[2] === "failure") {
+    return base.inActive;
+  }
+  return base.active;
 };
 
 export function getLocalId(arg: EventStreamMessage) {

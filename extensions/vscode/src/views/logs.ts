@@ -17,7 +17,11 @@ import {
 
 import { EventStream, displayEventStreamMessage } from "src/events";
 
-import { EventStreamMessage } from "src/api";
+import {
+  EventStreamMessage,
+  isPublishRestoreEnvStatus,
+  restoreMsgToStatusSuffix,
+} from "src/api";
 import { Commands, Views } from "src/constants";
 
 enum LogStageStatus {
@@ -60,6 +64,8 @@ const createLogStage = (
     events,
   };
 };
+
+const RestoringEnvironmentLabel = "Restoring Environment";
 
 /**
  * Tree data provider for the Logs view.
@@ -120,7 +126,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ],
       [
         "publish/restoreEnv",
-        createLogStage("Restore Environment", "Restoring Environment"),
+        createLogStage("Restore Environment", RestoringEnvironmentLabel),
       ],
       ["publish/runContent", createLogStage("Run Content", "Running Content")],
       [
@@ -225,6 +231,17 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           this.refresh();
         },
       );
+
+      // Register for some specific events we need to handle differently
+      this._stream.register(
+        "publish/restoreEnv/status",
+        (msg: EventStreamMessage) => {
+          const stage = this.stages.get("publish/restoreEnv");
+          if (stage && isPublishRestoreEnvStatus(msg)) {
+            stage.activeLabel = `${RestoringEnvironmentLabel} - ${restoreMsgToStatusSuffix(msg)}`;
+          }
+        },
+      );
     });
   }
 
@@ -268,6 +285,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         result.push(new LogsTreeStageItem(stage));
       });
       result.push(...element.events.map((e) => new LogsTreeLogItem(e)));
+      console.log(`getChildren called again - ${element.id}`);
       return result;
     }
 
