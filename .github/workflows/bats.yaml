@@ -39,6 +39,7 @@ jobs:
         with:
           r-version: 4.3.0
           use-public-rspm: true
+
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: ${{ env.QUARTO_VERSION }}
