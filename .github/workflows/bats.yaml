@@ -41,6 +41,13 @@ jobs:
         with:
           name: bin
           path: bin
+      # cache Connect docker image
+      - uses: docker/setup-buildx-action@v1
+      - uses: docker/build-push-action@v2
+        with:
+          context: ./test/
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - run: chmod -R +x ./bin
       - run: just bats install
