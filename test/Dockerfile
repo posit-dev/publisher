@@ -1,7 +1,12 @@
 FROM rstudio/rstudio-connect-preview:dev-jammy-daily
 ARG QUARTO_VERSION
 ARG PYTHON_VERSION
+ARG CONNECT_LICENSE
+COPY ./setup/rstudio-connect.gcfg /etc/rstudio-connect/rstudio-connect.gcfg
+ENV RSC_LICENSE=${CONNECT_LICENSE}
+ENV RSTUDIO_CONNECT_HASTE="enabled"
 
+EXPOSE 3939
 RUN curl -fsSLO https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz && \
     tar xf quarto-${QUARTO_VERSION}-linux-amd64.tar.gz -C /opt/quarto --strip-components 1 && \
     ( echo ""; echo 'export PATH=$PATH:/opt/quarto/bin' ; echo "" ) >> ~/.profile && \

@@ -5,7 +5,8 @@ alias t := test
 export CONTENT := env_var_or_default("CONTENT", "all")
 export CONTENT_REPO := env_var_or_default("CONTENT_REPO", "/work/connect-content")
 export DOCKER_CONNECT := env_var_or_default("DOCKER_CONNECT", "false")
-
+export QUARTO_VERSION := env_var_or_default("QUARTO_VERSION", "1.4.549")
+export PYTHON_VERSION := env_var_or_default("PYTHON_VERSION", "3.12.1")
 export _ci := env_var_or_default("CI", "false")
 
 _debug := env_var_or_default("DEBUG", "false")
@@ -32,6 +33,11 @@ clean:
 
     rm -rf node_modules
 
+docker-build:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+    docker build -t connect ./ --build-arg QUARTO_VERSION=${QUARTO_VERSION} --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg CONNECT_LICENSE=${CONNECT_LICENSE}
 
 # Install dependencies
 install:

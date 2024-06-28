@@ -14,7 +14,7 @@ fi
 setup_connect() {
     pip install -r ../setup/requirements.txt
     if [[ "${DOCKER_CONNECT}" = true ]]; then
-        docker compose -f ../docker-compose.yml up -d
+        docker run -p 3939:3939 --rm -d --privileged -t connect
         export CONNECT_SERVER="http://localhost:3939"
         export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
         # wait until Connect is available
