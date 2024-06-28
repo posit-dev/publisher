@@ -285,7 +285,6 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         result.push(new LogsTreeStageItem(stage));
       });
       result.push(...element.events.map((e) => new LogsTreeLogItem(e)));
-      console.log(`getChildren called again - ${element.id}`);
       return result;
     }
 
