@@ -51,9 +51,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            QUARTO_VERSION=${QUARTO_VERSION}
-            PYTHON_VERSION=${PYTHON_VERSION}
-            CONNECT_LICENSE=${CONNECT_LICENSE}
+            QUARTO_VERSION=${{ env.QUARTO_VERSION }}
+            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+            CONNECT_LICENSE=${{ env.CONNECT_LICENSE }}
 
       - run: chmod -R +x ./bin
       - run: just bats install
