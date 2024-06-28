@@ -17,7 +17,11 @@ import {
 
 import { EventStream, displayEventStreamMessage } from "src/events";
 
-import { EventStreamMessage } from "src/api";
+import {
+  EventStreamMessage,
+  isPublishFailure,
+  isPublishSuccess,
+} from "src/api";
 import { Commands, Views } from "src/constants";
 
 enum LogStageStatus {
@@ -368,7 +372,9 @@ export class LogsTreeLogItem extends TreeItem {
     }
     super(displayEventStreamMessage(msg), state);
     this.tooltip = JSON.stringify(msg);
-    this.iconPath = new ThemeIcon("debug-stackframe-dot");
+    if (!isPublishSuccess(msg) && !isPublishFailure(msg)) {
+      this.iconPath = new ThemeIcon("debug-stackframe-dot");
+    }
 
     if (msg.data.dashboardUrl !== undefined) {
       this.command = {
