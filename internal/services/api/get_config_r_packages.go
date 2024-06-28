@@ -30,7 +30,12 @@ func NewGetConfigRPackagesHandler(base util.AbsolutePath, log logging.Logger) *g
 
 func (h *getConfigRPackagesHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	name := mux.Vars(req)["name"]
-	configPath := config.GetConfigPath(h.base, name)
+	projectDir, _, err := ProjectDirFromRequest(h.base, w, req, h.log)
+	if err != nil {
+		// Response already returned by ProjectDirFromRequest
+		return
+	}
+	configPath := config.GetConfigPath(projectDir, name)
 	cfg, err := config.FromFile(configPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -53,7 +58,7 @@ func (h *getConfigRPackagesHandler) ServeHTTP(w http.ResponseWriter, req *http.R
 		packageFilename = inspect.DefaultRenvLockfile
 	}
 
-	path := h.base.Join(packageFilename)
+	path := projectDir.Join(packageFilename)
 	response, err := renv.ReadLockfile(path)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
