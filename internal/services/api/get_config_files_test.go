@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -157,4 +158,80 @@ func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncInvalidConfigFiles() {
 	h(rec, req)
 
 	s.Equal(http.StatusUnprocessableEntity, rec.Result().StatusCode)
+}
+
+func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncSubdir() {
+	afs := afero.NewMemMapFs()
+	projectDir, err := util.Getwd(afs)
+	s.NoError(err)
+
+	// We are requesting files from a project directory two levels down.
+	base := projectDir.Dir().Dir()
+	relProjectDir, err := projectDir.Rel(base)
+	s.NoError(err)
+
+	src := &files.File{Rel: "."}
+
+	filesService := new(MockFilesService)
+	filesService.On("GetFile", projectDir, mock.Anything).Return(src, nil)
+
+	h := GetConfigFilesHandlerFunc(base, filesService, s.log)
+
+	dirParam := url.QueryEscape(relProjectDir.String())
+	rec := httptest.NewRecorder()
+
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	cfg.Files = []string{"*", "!ignoreme"}
+	err = cfg.WriteFile(config.GetConfigPath(projectDir, "myConfig"))
+	s.NoError(err)
+
+	req, err := http.NewRequest("GET", "/api/configurations/myConfig?dir="+dirParam, nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
+
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := &files.File{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(res))
+
+	s.Equal(src.Rel, res.Rel)
+	s.Equal(src.RelDir, res.RelDir)
+}
+
+func (s *GetConfigFilesHandlerFuncSuite) TestHandlerFuncBadSubdir() {
+	afs := afero.NewMemMapFs()
+	projectDir, err := util.Getwd(afs)
+	s.NoError(err)
+
+	// We are requesting files from a project directory two levels down.
+	base := projectDir.Dir().Dir()
+
+	src := &files.File{Rel: "."}
+
+	filesService := new(MockFilesService)
+	filesService.On("GetFile", projectDir, mock.Anything).Return(src, nil)
+
+	h := GetConfigFilesHandlerFunc(base, filesService, s.log)
+
+	rec := httptest.NewRecorder()
+
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	cfg.Files = []string{"*"}
+	err = cfg.WriteFile(config.GetConfigPath(projectDir, "myConfig"))
+	s.NoError(err)
+
+	req, err := http.NewRequest("GET", "/api/configurations/myConfig?dir=../middleware", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": "myConfig"})
+
+	h(rec, req)
+
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }

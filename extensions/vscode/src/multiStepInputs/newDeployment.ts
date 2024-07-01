@@ -20,11 +20,11 @@ import {
 
 import {
   useApi,
-  ConfigurationInspectionResult,
   Credential,
   Configuration,
   PreContentRecord,
   contentTypeStrings,
+  ConfigurationInspectionResult,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
 import {
@@ -60,134 +60,6 @@ type possibleSteps = {
 };
 
 const steps: Record<string, possibleSteps | undefined> = {
-  pickCredentials: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 0,
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        step: 0,
-        totalSteps: 5,
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 1,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        step: 1,
-        totalSteps: 6,
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 1,
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        step: 1,
-        totalSteps: 3,
-      },
-    },
-  },
-  inputServerUrl: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 1,
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        step: 1,
-        totalSteps: 5,
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 2,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        step: 2,
-        totalSteps: 6,
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 0,
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        step: 0,
-        totalSteps: 3,
-      },
-    },
-  },
-  inputAPIKey: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 2,
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        step: 2,
-        totalSteps: 5,
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 3,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        step: 3,
-        totalSteps: 6,
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 0,
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        step: 0,
-        totalSteps: 3,
-      },
-    },
-  },
-  inputCredentialName: {
-    noCredentials: {
-      singleEntryPoint: {
-        step: 3,
-        totalSteps: 4,
-      },
-      multipleEntryPoints: {
-        step: 3,
-        totalSteps: 5,
-      },
-    },
-    newCredentials: {
-      singleEntryPoint: {
-        step: 4,
-        totalSteps: 5,
-      },
-      multipleEntryPoints: {
-        step: 4,
-        totalSteps: 6,
-      },
-    },
-    existingCredentials: {
-      singleEntryPoint: {
-        step: 0,
-        totalSteps: 2,
-      },
-      multipleEntryPoints: {
-        step: 0,
-        totalSteps: 3,
-      },
-    },
-  },
   inputEntryPointSelection: {
     noCredentials: {
       singleEntryPoint: {
@@ -195,13 +67,141 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 4,
       },
       multipleEntryPoints: {
-        step: 4,
+        step: 1,
         totalSteps: 5,
       },
     },
     newCredentials: {
       singleEntryPoint: {
         step: 0,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 1,
+        totalSteps: 6,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 0,
+        totalSteps: 2,
+      },
+      multipleEntryPoints: {
+        step: 1,
+        totalSteps: 3,
+      },
+    },
+  },
+  inputTitle: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 1,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 2,
+        totalSteps: 5,
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
+        step: 1,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 2,
+        totalSteps: 6,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 1,
+        totalSteps: 2,
+      },
+      multipleEntryPoints: {
+        step: 2,
+        totalSteps: 3,
+      },
+    },
+  },
+  pickCredentials: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 0, // still 1
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 0, // still 2
+        totalSteps: 5,
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
+        step: 2,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 3,
+        totalSteps: 6,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 2,
+        totalSteps: 2,
+      },
+      multipleEntryPoints: {
+        step: 3,
+        totalSteps: 3,
+      },
+    },
+  },
+  inputServerUrl: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 2,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 3,
+        totalSteps: 5,
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
+        step: 3,
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        step: 4,
+        totalSteps: 6,
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 0, // still 2
+        totalSteps: 2,
+      },
+      multipleEntryPoints: {
+        step: 0, // still 3
+        totalSteps: 3,
+      },
+    },
+  },
+  inputAPIKey: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 3,
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        step: 4,
+        totalSteps: 5,
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
+        step: 4,
         totalSteps: 5,
       },
       multipleEntryPoints: {
@@ -211,16 +211,16 @@ const steps: Record<string, possibleSteps | undefined> = {
     },
     existingCredentials: {
       singleEntryPoint: {
-        step: 0,
+        step: 0, // still 2
         totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 2,
+        step: 0, // still 3
         totalSteps: 3,
       },
     },
   },
-  inputTitle: {
+  inputCredentialName: {
     noCredentials: {
       singleEntryPoint: {
         step: 4,
@@ -243,11 +243,11 @@ const steps: Record<string, possibleSteps | undefined> = {
     },
     existingCredentials: {
       singleEntryPoint: {
-        step: 2,
+        step: 0, // still 2
         totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 3,
+        step: 0, // still 3
         totalSteps: 3,
       },
     },
@@ -433,14 +433,14 @@ export async function newDeployment(
   // NOTE: This multi-stepper is used for multiple commands
   // ***************************************************************
 
+  // Select the entrypoint, if there is more than one
+  // Prompt for Title
   // If no credentials, then skip to create new credential
   // If some credentials, select either use of existing or creation of a new one
   // If creating credential:
   // - Get the server url
   // - Get the credential nickname
   // - Get the API key
-  // Select the entrypoint, if there is more than one
-  // Prompt for Title
   // Auto-name the config file to use
   // Auto-name the contentRecord
   // Call APIs and hopefully succeed at everything
@@ -462,23 +462,106 @@ export async function newDeployment(
       data: {
         // each attribute is initialized to undefined
         // to be returned when it has not been cancelled to assist type guards
+        entryPoint: undefined, // eventual type is QuickPickItem
+        title: undefined, // eventual type is string
         credentialName: undefined, // eventual type is either a string or QuickPickItem
         url: undefined, // eventual type is string
         name: undefined, // eventual type is string
         apiKey: undefined, // eventual type is string
-        entryPoint: undefined, // eventual type is QuickPickItem
-        title: undefined, // eventual type is string
       },
       promptStepNumbers: {},
     };
 
     // start the progression through the steps
-    await MultiStepInput.run((input) => pickCredentials(input, state));
+    await MultiStepInput.run((input) => inputEntryPointSelection(input, state));
     return state as MultiStepState;
   }
 
   // ***************************************************************
-  // Step #2:
+  // Step #1 - maybe?:
+  // Select the entrypoint to be used w/ the contentRecord
+  // ***************************************************************
+  async function inputEntryPointSelection(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    // skip if we only have one choice.
+    if (entryPointListItems.length > 1) {
+      const step = getStepInfo("inputEntryPointSelection", state);
+      if (!step) {
+        throw new Error(
+          "newDeployment::inputEntryPointSelection step info not found.",
+        );
+      }
+
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: step.step,
+        totalSteps: step.totalSteps,
+        placeholder:
+          "Select main file and content type below. (Use this field to filter selections.)",
+        items: entryPointListItems,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+      });
+
+      state.data.entryPoint = pick;
+      return (input: MultiStepInput) => inputTitle(input, state);
+    } else {
+      state.data.entryPoint = entryPointListItems[0];
+      // We're skipping this step, so we must silently just jump to the next step
+      return inputTitle(input, state);
+    }
+  }
+
+  // ***************************************************************
+  // Step #2 - maybe
+  // Input the Title
+  // ***************************************************************
+  async function inputTitle(input: MultiStepInput, state: MultiStepState) {
+    const step = getStepInfo("inputTitle", state);
+    if (!step) {
+      throw new Error("newDeployment::inputTitle step info not found.");
+    }
+    let initialValue = "";
+    if (
+      state.data.entryPoint &&
+      isQuickPickItemWithIndex(state.data.entryPoint)
+    ) {
+      const detail =
+        configDetails[state.data.entryPoint.index].configuration.title;
+      if (detail) {
+        initialValue = detail;
+      }
+    }
+
+    const title = await input.showInputBox({
+      title: state.title,
+      step: step.step,
+      totalSteps: step.totalSteps,
+      value:
+        typeof state.data.title === "string" ? state.data.title : initialValue,
+      prompt: "Enter a title for your content or application.",
+      validate: (value) => {
+        if (value.length < 3) {
+          return Promise.resolve({
+            message: `Error: Invalid Title (value must be longer than 3 characters)`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        return Promise.resolve(undefined);
+      },
+      shouldResume: () => Promise.resolve(false),
+      ignoreFocusOut: true,
+    });
+
+    state.data.title = title;
+    return (input: MultiStepInput) => pickCredentials(input, state);
+  }
+
+  // ***************************************************************
+  // Step #3 - maybe
   // Select the credentials to be used
   // ***************************************************************
   async function pickCredentials(input: MultiStepInput, state: MultiStepState) {
@@ -510,7 +593,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #3 - maybe?:
+  // Step #4 - maybe?:
   // Get the server url
   // ***************************************************************
   async function inputServerUrl(input: MultiStepInput, state: MultiStepState) {
@@ -599,7 +682,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #4 - maybe?:
+  // Step #5 - maybe?:
   // Enter the API Key
   // ***************************************************************
   async function inputAPIKey(input: MultiStepInput, state: MultiStepState) {
@@ -678,7 +761,7 @@ export async function newDeployment(
   }
 
   // ***************************************************************
-  // Step #5 - maybe?:
+  // Step #6 - maybe?:
   // Name the credential
   // ***************************************************************
   async function inputCredentialName(
@@ -734,92 +817,8 @@ export async function newDeployment(
       });
 
       state.data.name = name.trim();
-      return (input: MultiStepInput) => inputEntryPointSelection(input, state);
     }
-    return inputEntryPointSelection(input, state);
-  }
-
-  // ***************************************************************
-  // Step #6 - maybe?:
-  // Select the config to be used w/ the contentRecord
-  // ***************************************************************
-  async function inputEntryPointSelection(
-    input: MultiStepInput,
-    state: MultiStepState,
-  ) {
-    // skip if we only have one choice.
-    if (entryPointListItems.length > 1) {
-      const step = getStepInfo("inputEntryPointSelection", state);
-      if (!step) {
-        throw new Error(
-          "newDeployment::inputEntryPointSelection step info not found.",
-        );
-      }
-
-      const pick = await input.showQuickPick({
-        title: state.title,
-        step: step.step,
-        totalSteps: step.totalSteps,
-        placeholder:
-          "Select main file and content type below. (Use this field to filter selections.)",
-        items: entryPointListItems,
-        buttons: [],
-        shouldResume: () => Promise.resolve(false),
-        ignoreFocusOut: true,
-      });
-
-      state.data.entryPoint = pick;
-      return (input: MultiStepInput) => inputTitle(input, state);
-    } else {
-      state.data.entryPoint = entryPointListItems[0];
-      // We're skipping this step, so we must silently just jump to the next step
-      return inputTitle(input, state);
-    }
-  }
-
-  // ***************************************************************
-  // Step #7
-  // Input the Title
-  // ***************************************************************
-  async function inputTitle(input: MultiStepInput, state: MultiStepState) {
-    const step = getStepInfo("inputTitle", state);
-    if (!step) {
-      throw new Error("newDeployment::inputTitle step info not found.");
-    }
-    let initialValue = "";
-    if (
-      state.data.entryPoint &&
-      isQuickPickItemWithIndex(state.data.entryPoint)
-    ) {
-      const detail =
-        configDetails[state.data.entryPoint.index].configuration.title;
-      if (detail) {
-        initialValue = detail;
-      }
-    }
-
-    const title = await input.showInputBox({
-      title: state.title,
-      step: step.step,
-      totalSteps: step.totalSteps,
-      value:
-        typeof state.data.title === "string" ? state.data.title : initialValue,
-      prompt: "Enter a title for your content or application.",
-      validate: (value) => {
-        if (value.length < 3) {
-          return Promise.resolve({
-            message: `Error: Invalid Title (value must be longer than 3 characters)`,
-            severity: InputBoxValidationSeverity.Error,
-          });
-        }
-        return Promise.resolve(undefined);
-      },
-      shouldResume: () => Promise.resolve(false),
-      ignoreFocusOut: true,
-    });
-
-    state.data.title = title;
-    // last step, nothing gets returned.
+    // last step
   }
 
   // ***************************************************************
