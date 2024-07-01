@@ -5,6 +5,8 @@ alias t := test
 export CONTENT := env_var_or_default("CONTENT", "all")
 export CONTENT_REPO := env_var_or_default("CONTENT_REPO", "/work/connect-content")
 export DOCKER_CONNECT := env_var_or_default("DOCKER_CONNECT", "false")
+export PYTHON_VERSION := env_var_or_default("PYTHON_VERSION", "3.12.1")
+export QUARTO_VERSION := env_var_or_default("QUARTO_VERSION", "1.4.553")
 
 export _ci := env_var_or_default("CI", "false")
 
@@ -23,6 +25,13 @@ default:
 
     just install
     just test
+
+build-connect:
+    #!/usr/bin/env bash
+    set -eou pipefail
+    {{ _with_debug }}
+
+    docker compose build
 
 # Deletes ephemeral project files (i.e., cleans the project).
 clean:
@@ -47,16 +56,15 @@ run *args:
     set -eou pipefail
     {{ _with_debug }}
 
-    npm run {{ args }}
+    if [ {{ os() }} == "linux" ]; then
+        xvfb-run -a npm run wdio
+    else
+        npm run wdio
+    fi
 
 # this can run deploy or content tests
 test:
     #!/usr/bin/env bash
     set -eou pipefail
     {{ _with_debug }}
-    if [ {{ os() }} == "linux" ]; then
-        # xvfb-run is required to run tests in headless mode on Linux for GH Actions
-        xvfb-run -a npm run wdio
-    else
-        npm run wdio
-    fi
+    ../scripts/test-runner.bash vscode-ui

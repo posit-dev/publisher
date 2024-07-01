@@ -14,7 +14,6 @@ fi
 setup_connect() {
     pip install -r ../setup/requirements.txt
     if [[ "${DOCKER_CONNECT}" = true ]]; then
-        docker compose -f ../docker-compose.yml build
         docker compose -f ../docker-compose.yml up -d
         export CONNECT_SERVER="http://localhost:3939"
         export CONNECT_API_KEY="$(python ../setup/gen_apikey.py 'admin')"
@@ -57,6 +56,11 @@ cli_tests() {
     just run "${test_case}"
 }
 
+vscode_ui_tests() {
+    export EXE=$exe 
+    just run "${test_case}"
+}
+
 case "${test_case}" in
     "deploy")
         setup_connect
@@ -72,4 +76,7 @@ case "${test_case}" in
     "common")
         cli_tests
     ;;
+    "vscode-ui")
+        setup_connect
+        vscode_ui_tests
 esac

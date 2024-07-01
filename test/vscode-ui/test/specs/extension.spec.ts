@@ -16,18 +16,20 @@ async function switchToSubframe() {
   await browser.switchToFrame(subiframe);
 }
 
-function generateRandomString(length = 10) {
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-}
+// function generateRandomString(length = 10) {
+//   const characters =
+//     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+//   let result = "";
+//   for (let i = 0; i < length; i++) {
+//     result += characters.charAt(Math.floor(Math.random() * characters.length));
+//   }
+//   return result;
+// }
 
-const serverName = generateRandomString();
-const apiKey = generateRandomString(32);
+// const serverName = generateRandomString();
+// const apiKey = generateRandomString(32);
+const connectServer = process.env.CONNECT_SERVER;
+const apiKey = process.env.CONNECT_API_KEY;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -60,10 +62,10 @@ describe("VS Code Extension UI Test", () => {
 
     await browser.switchToFrame(null);
     // set server url
-    await input.setValue("https://rsc.radixu.com");
+    await input.setValue(connectServer);
     await browser.keys("\uE007");
     // set server name
-    await input.setValue(serverName);
+    await input.setValue("my connect server");
     await browser.keys("\uE007");
     //set api key
     await input.setValue(apiKey);
