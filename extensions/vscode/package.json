@@ -218,7 +218,7 @@
       },
       {
         "command": "posit.publisher.logs.visit",
-        "title": "View Deployment in Connect",
+        "title": "View Deployment Logs in Connect",
         "icon": "$(link-external)",
         "category": "Posit Publisher"
       },
@@ -230,25 +230,25 @@
       },
       {
         "command": "posit.publisher.homeView.navigateToDeployment.Content",
-        "title": "View Content",
+        "title": "View Deployment in Connect",
         "icon": "$(server-process)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.showOutputChannel",
-        "title": "Go to Debug Log",
+        "title": "Show Debug Log",
         "icon": "$(output)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.showPublishingLog",
-        "title": "Go to Publishing Log",
+        "title": "Show Publishing Log",
         "icon": "$(output)",
         "category": "Posit Publisher"
       },
       {
         "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
-        "title": "Show Content Logs",
+        "title": "View Content Log on Connect",
         "icon": "$(output)",
         "category": "Posit Publisher"
       }
@@ -497,7 +497,7 @@
       "panel": [
         {
           "id": "posit-publisher-logs",
-          "title": "Posit Publisher Logs",
+          "title": "Posit Publisher Log",
           "icon": "$(output)"
         }
       ]
@@ -562,8 +562,8 @@
       "posit-publisher-logs": [
         {
           "id": "posit.publisher.logs",
-          "name": "Logs",
-          "contextualTitle": "Logs",
+          "name": "Log",
+          "contextualTitle": "Log",
           "icon": "$(output)",
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
         }

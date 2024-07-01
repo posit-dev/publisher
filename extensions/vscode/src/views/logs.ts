@@ -181,7 +181,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           }
         });
 
-        let showLogsOption = "Show Logs";
+        let showLogsOption = "View Log";
         const selection = await window.showErrorMessage(
           `Deployment failed: ${msg.data.message}`,
           showLogsOption,
@@ -378,7 +378,7 @@ export class LogsTreeLogItem extends TreeItem {
 
     if (msg.data.dashboardUrl !== undefined) {
       this.command = {
-        title: "Visit",
+        title: "View",
         command: Commands.Logs.Visit,
         arguments: [msg.data.dashboardUrl],
       };

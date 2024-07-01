@@ -449,7 +449,7 @@ export function deployProject(localID: string, stream: EventStream) {
             });
             resolveCB("Success!");
 
-            let visitOption = "Visit";
+            let visitOption = "View";
             const selection = await window.showInformationMessage(
               "Deployment was successful",
               visitOption,
