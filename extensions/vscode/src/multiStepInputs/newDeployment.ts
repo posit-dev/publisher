@@ -20,11 +20,11 @@ import {
 
 import {
   useApi,
-  ConfigurationDetails,
   Credential,
   Configuration,
   PreContentRecord,
   contentTypeStrings,
+  ConfigurationInspectionResult,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
 import {
@@ -266,7 +266,7 @@ export async function newDeployment(
   let credentialListItems: QuickPickItem[] = [];
 
   let entryPointListItems: QuickPickItemWithIndex[] = [];
-  let configDetails: ConfigurationDetails[] = [];
+  let inspectionResults: ConfigurationInspectionResult[] = [];
   let contentRecordNames: string[] = [];
 
   let newConfig: Configuration | undefined;
@@ -359,8 +359,9 @@ export async function newDeployment(
       try {
         const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(python);
-        configDetails = inspectResponse.data;
-        configDetails.forEach((config, i) => {
+        inspectionResults = inspectResponse.data;
+        inspectionResults.forEach((result, i) => {
+          const config = result.configuration;
           if (config.entrypoint) {
             entryPointListItems.push({
               iconPath: new ThemeIcon("file"),
@@ -528,7 +529,8 @@ export async function newDeployment(
       state.data.entryPoint &&
       isQuickPickItemWithIndex(state.data.entryPoint)
     ) {
-      const detail = configDetails[state.data.entryPoint.index].title;
+      const detail =
+        inspectionResults[state.data.entryPoint.index].configuration.title;
       if (detail) {
         initialValue = detail;
       }
@@ -896,17 +898,18 @@ export async function newDeployment(
   let configName: string | undefined;
   try {
     configName = await untitledConfigurationName();
-    const selectedConfigDetails = configDetails[state.data.entryPoint.index];
-    if (!selectedConfigDetails) {
+    const selectedInspectionResult =
+      inspectionResults[state.data.entryPoint.index];
+    if (!selectedInspectionResult) {
       window.showErrorMessage(
         `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
       );
       return;
     }
-    selectedConfigDetails.title = state.data.title;
+    selectedInspectionResult.configuration.title = state.data.title;
     const createResponse = await api.configurations.createOrUpdate(
       configName,
-      selectedConfigDetails,
+      selectedInspectionResult.configuration,
     );
     const fileUri = Uri.file(createResponse.data.configurationPath);
     newConfig = createResponse.data;

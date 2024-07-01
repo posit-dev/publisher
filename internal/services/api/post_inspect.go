@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/initialize"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
@@ -15,24 +16,41 @@ type postInspectRequestBody struct {
 	Python string `json:"python"`
 }
 
+type postInspectResponseBody struct {
+	Configuration *config.Config `json:"configuration"`
+	ProjectDir    string         `json:"projectDir"`
+}
+
 func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
 		var b postInspectRequestBody
-		err := dec.Decode(&b)
+		err = dec.Decode(&b)
 		if err != nil {
 			BadRequest(w, req, log, err)
 			return
 		}
 
-		cfg, err := initialize.GetPossibleConfigs(base, util.NewPath(b.Python, nil), util.Path{}, log)
+		configs, err := initialize.GetPossibleConfigs(projectDir, util.NewPath(b.Python, nil), util.Path{}, log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
 		}
+		response := make([]postInspectResponseBody, 0, len(configs))
+		for _, cfg := range configs {
+			response = append(response, postInspectResponseBody{
+				ProjectDir:    relProjectDir.String(),
+				Configuration: cfg,
+			})
+		}
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(cfg)
+		json.NewEncoder(w).Encode(response)
 	}
 }

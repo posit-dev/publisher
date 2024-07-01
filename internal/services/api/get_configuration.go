@@ -37,20 +37,26 @@ func GetConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 		w.Header().Set("content-type", "application/json")
 		if err != nil {
 			response := &configDTO{
-				Name:       name,
-				Path:       path.String(),
-				RelPath:    relPath.String(),
-				ProjectDir: relProjectDir.String(),
-				Error:      types.AsAgentError(err),
+				configLocation: configLocation{
+					Name:    name,
+					Path:    path.String(),
+					RelPath: relPath.String(),
+				},
+				ProjectDir:    relProjectDir.String(),
+				Configuration: nil,
+				Error:         types.AsAgentError(err),
 			}
 			json.NewEncoder(w).Encode(response)
 		} else {
 			response := &configDTO{
-				Name:          name,
-				Path:          path.String(),
-				RelPath:       relPath.String(),
+				configLocation: configLocation{
+					Name:    name,
+					Path:    path.String(),
+					RelPath: relPath.String(),
+				},
 				ProjectDir:    relProjectDir.String(),
 				Configuration: cfg,
+				Error:         nil,
 			}
 			json.NewEncoder(w).Encode(response)
 		}

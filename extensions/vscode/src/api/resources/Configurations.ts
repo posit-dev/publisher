@@ -6,6 +6,7 @@ import {
   Configuration,
   ConfigurationDetails,
   ConfigurationError,
+  ConfigurationInspectionResult,
 } from "../types/configurations";
 
 export class Configurations {
@@ -59,6 +60,8 @@ export class Configurations {
   // 400 - bad request
   // 500 - internal server error
   inspect(python?: string) {
-    return this.client.post<ConfigurationDetails[]>("/inspect", { python });
+    return this.client.post<ConfigurationInspectionResult[]>("/inspect", {
+      python,
+    });
   }
 }
