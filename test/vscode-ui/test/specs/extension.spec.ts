@@ -16,18 +16,6 @@ async function switchToSubframe() {
   await browser.switchToFrame(subiframe);
 }
 
-// function generateRandomString(length = 10) {
-//   const characters =
-//     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-//   let result = "";
-//   for (let i = 0; i < length; i++) {
-//     result += characters.charAt(Math.floor(Math.random() * characters.length));
-//   }
-//   return result;
-// }
-
-// const serverName = generateRandomString();
-// const apiKey = generateRandomString(32);
 const connectServer = process.env.CONNECT_SERVER;
 const apiKey = process.env.CONNECT_API_KEY;
 const __filename = fileURLToPath(import.meta.url);
@@ -54,8 +42,7 @@ describe("VS Code Extension UI Test", () => {
   it("create first deployment", async () => {
     await switchToSubframe();
     // initialize project via button
-    $(".add-deployment-btn").waitForExist({ timeout: 30000 });
-    const init = await $(".add-deployment-btn");
+    const init = await $('[data-automation="add-deployment-button"]');
 
     await expect(init).toHaveText("Add Deployment");
     await init.click();
