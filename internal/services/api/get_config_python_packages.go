@@ -35,7 +35,12 @@ func NewGetConfigPythonPackagesHandler(base util.AbsolutePath, log logging.Logge
 
 func (h *getConfigPythonPackagesHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	name := mux.Vars(req)["name"]
-	configPath := config.GetConfigPath(h.base, name)
+	projectDir, _, err := ProjectDirFromRequest(h.base, w, req, h.log)
+	if err != nil {
+		// Response already returned by ProjectDirFromRequest
+		return
+	}
+	configPath := config.GetConfigPath(projectDir, name)
 	cfg, err := config.FromFile(configPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -59,7 +64,7 @@ func (h *getConfigPythonPackagesHandler) ServeHTTP(w http.ResponseWriter, req *h
 		requirementsFilename = inspect.PythonRequirementsFilename
 	}
 
-	path := h.base.Join(requirementsFilename)
+	path := projectDir.Join(requirementsFilename)
 	reqs, err := h.inspector.ReadRequirementsFile(path)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {

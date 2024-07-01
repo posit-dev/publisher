@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import re
 import sys
 
 if len(sys.argv) != 2:
     print("Usage: set-version.py <version>")
     sys.exit(1)
+
+if os.environ.get("CI") != "true":
+    print("Not running in CI; skipping version update.")
+    sys.exit(0)
 
 version = sys.argv[1]
 

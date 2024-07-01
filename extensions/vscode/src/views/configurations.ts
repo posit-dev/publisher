@@ -28,7 +28,7 @@ import { ensureSuffix, fileExists, isValidFilename } from "src/utils/files";
 import { untitledConfigurationName } from "src/utils/names";
 import { newConfig } from "src/multiStepInputs/newConfig";
 import { WatcherManager } from "src/watchers";
-import { Commands, Views } from "src/constants";
+import { Commands, Contexts, Views } from "src/constants";
 
 type ConfigurationEventEmitter = EventEmitter<
   ConfigurationTreeItem | undefined | void
@@ -200,7 +200,7 @@ export class ConfigurationsTreeDataProvider
 }
 
 export class ConfigurationTreeItem extends TreeItem {
-  contextValue = "posit.publisher.configurations.tree.item";
+  contextValue = Contexts.Configurations.TreeItem;
 
   constructor(
     public readonly config: Configuration | ConfigurationError,
