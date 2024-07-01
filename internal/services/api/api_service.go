@@ -102,10 +102,6 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("configurations"), GetConfigurationsHandlerFunc(base, log)).
 		Methods(http.MethodGet)
 
-	// POST /api/initialize
-	r.Handle(ToPath("initialize"), PostInitializeHandlerFunc(base, log)).
-		Methods(http.MethodPost)
-
 	// GET /api/configurations/$NAME
 	r.Handle(ToPath("configurations", "{name}"), GetConfigurationHandlerFunc(base, log)).
 		Methods(http.MethodGet)
