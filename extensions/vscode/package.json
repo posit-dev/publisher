@@ -248,7 +248,7 @@
       },
       {
         "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
-        "title": "Show Content Logs",
+        "title": "Show Content Log",
         "icon": "$(output)",
         "category": "Posit Publisher"
       }
@@ -497,7 +497,7 @@
       "panel": [
         {
           "id": "posit-publisher-logs",
-          "title": "Posit Publisher Logs",
+          "title": "Posit Publisher Log",
           "icon": "$(output)"
         }
       ]
@@ -562,8 +562,8 @@
       "posit-publisher-logs": [
         {
           "id": "posit.publisher.logs",
-          "name": "Logs",
-          "contextualTitle": "Logs",
+          "name": "Log",
+          "contextualTitle": "Log",
           "icon": "$(output)",
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
         }

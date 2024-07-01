@@ -177,7 +177,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           }
         });
 
-        let showLogsOption = "Show Logs";
+        let showLogsOption = "Show Log";
         const selection = await window.showErrorMessage(
           `Deployment failed: ${msg.data.message}`,
           showLogsOption,
