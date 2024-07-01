@@ -227,3 +227,7 @@ export function splitFilesOnInclusion(
 
   return response;
 }
+
+export function isRelativePathRoot(path: string): boolean {
+  return path === ".";
+}
