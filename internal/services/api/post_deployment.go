@@ -36,10 +36,15 @@ func PostDeploymentHandlerFunc(
 
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
+		projectDir, _, err := ProjectDirFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
 		var b PostDeploymentRequestBody
-		err := dec.Decode(&b)
+		err = dec.Decode(&b)
 		if err != nil {
 			BadRequest(w, req, log, err)
 			return
@@ -49,7 +54,7 @@ func PostDeploymentHandlerFunc(
 			InternalError(w, req, log, err)
 			return
 		}
-		newState, err := stateFactory(base, b.AccountName, b.ConfigName, name, "", accountList)
+		newState, err := stateFactory(projectDir, b.AccountName, b.ConfigName, name, "", accountList)
 		if err != nil {
 			if errors.Is(err, accounts.ErrAccountNotFound) {
 				NotFound(w, log, err)

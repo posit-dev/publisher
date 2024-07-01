@@ -19,9 +19,10 @@ const (
 )
 
 type deploymentLocation struct {
-	State deploymentState `json:"state"`
-	Name  string          `json:"deploymentName"`
-	Path  string          `json:"deploymentPath"`
+	State      deploymentState `json:"state"`
+	Name       string          `json:"deploymentName"`
+	Path       string          `json:"deploymentPath"`
+	ProjectDir string          `json:"projectDir"` // Relative path to the project directory from the global base
 }
 
 type preDeploymentDTO struct {
@@ -55,28 +56,30 @@ func getConfigPath(base util.AbsolutePath, configName string) util.AbsolutePath 
 	return config.GetConfigPath(base, configName)
 }
 
-func deploymentAsDTO(d *deployment.Deployment, err error, base util.AbsolutePath, path util.AbsolutePath) any {
+func deploymentAsDTO(d *deployment.Deployment, err error, projectDir util.AbsolutePath, relProjectDir util.RelativePath, path util.AbsolutePath) any {
 	saveName := deployment.SaveNameFromPath(path)
 	configPath := ""
 
 	if err != nil {
 		return &deploymentErrorDTO{
 			deploymentLocation: deploymentLocation{
-				State: deploymentStateError,
-				Name:  saveName,
-				Path:  path.String(),
+				State:      deploymentStateError,
+				Name:       saveName,
+				Path:       path.String(),
+				ProjectDir: relProjectDir.String(),
 			},
 			Error: types.AsAgentError(err),
 		}
 	} else if d.ID != "" {
 		if d.ConfigName != "" {
-			configPath = getConfigPath(base, d.ConfigName).String()
+			configPath = getConfigPath(projectDir, d.ConfigName).String()
 		}
 		return &fullDeploymentDTO{
 			deploymentLocation: deploymentLocation{
-				State: deploymentStateDeployed,
-				Name:  saveName,
-				Path:  path.String(),
+				State:      deploymentStateDeployed,
+				Name:       saveName,
+				Path:       path.String(),
+				ProjectDir: relProjectDir.String(),
 			},
 			Deployment: *d,
 			ConfigPath: configPath,
@@ -84,13 +87,14 @@ func deploymentAsDTO(d *deployment.Deployment, err error, base util.AbsolutePath
 		}
 	} else {
 		if d.ConfigName != "" {
-			configPath = getConfigPath(base, d.ConfigName).String()
+			configPath = getConfigPath(projectDir, d.ConfigName).String()
 		}
 		return preDeploymentDTO{
 			deploymentLocation: deploymentLocation{
-				State: deploymentStateNew,
-				Name:  saveName,
-				Path:  path.String(),
+				State:      deploymentStateNew,
+				Name:       saveName,
+				Path:       path.String(),
+				ProjectDir: relProjectDir.String(),
 			},
 			Schema:     d.Schema,
 			ServerType: d.ServerType,

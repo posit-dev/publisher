@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -66,6 +67,7 @@ func (s *GetDeploymentSuite) TestGetDeployment() {
 	s.Equal(deploymentStateDeployed, res.State)
 	s.Equal(*d, res.Deployment)
 	s.Equal("myTargetName", res.Name)
+	s.Equal(".", res.ProjectDir)
 	s.Equal(s.cwd.Join(".posit", "publish", "myConfig.toml").String(), res.ConfigPath)
 	s.Equal(types.ContentID("12345678"), res.Deployment.ID)
 }
@@ -91,6 +93,8 @@ func (s *GetDeploymentSuite) TestGetDeploymentError() {
 	dec.DisallowUnknownFields()
 	s.NoError(dec.Decode(&res))
 	s.NotNil(res.Error)
+	s.Equal("myTargetName", res.Name)
+	s.Equal(".", res.ProjectDir)
 }
 
 func (s *GetDeploymentSuite) TestGetDeploymentNotFound() {
@@ -137,4 +141,57 @@ func (s *GetDeploymentSuite) TestGetPreDeployment() {
 	s.Equal("test error", res.Error.Message)
 	s.Equal(deploymentStateNew, res.State)
 	s.Equal("myTargetName", res.Name)
+	s.Equal(".", res.ProjectDir)
+}
+
+func (s *GetDeploymentSuite) TestGetDeploymentFromSubdir() {
+	d, err := createSampleDeployment(s.cwd, "myTargetName")
+	s.NoError(err)
+
+	// Getting deployment from a subdirectory two levels down
+	base := s.cwd.Dir().Dir()
+	relProjectDir, err := s.cwd.Rel(base)
+	s.NoError(err)
+
+	h := GetDeploymentHandlerFunc(base, s.log)
+
+	dirParam := url.QueryEscape(relProjectDir.String())
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/deployments/myTargetName?dir="+dirParam, nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": "myTargetName"})
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := fullDeploymentDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+	s.NotNil(res.Deployment)
+	s.Nil(res.Error)
+	s.Equal(deploymentStateDeployed, res.State)
+	s.Equal(*d, res.Deployment)
+	s.Equal("myTargetName", res.Name)
+	s.Equal(relProjectDir.String(), res.ProjectDir)
+	s.Equal(s.cwd.Join(".posit", "publish", "myConfig.toml").String(), res.ConfigPath)
+	s.Equal(relProjectDir.String(), res.ProjectDir)
+	s.Equal(types.ContentID("12345678"), res.Deployment.ID)
+}
+
+func (s *GetDeploymentSuite) TestGetDeploymentBadDir() {
+	// It's a Bad Request to try to get a deployment from a directory outside the project
+	_, err := createSampleDeployment(s.cwd, "myTargetName")
+	s.NoError(err)
+
+	h := GetDeploymentHandlerFunc(s.cwd, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/deployments/myTargetName?dir=../middleware", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"id": "myTargetName"})
+	h(rec, req)
+
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }
