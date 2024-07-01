@@ -38,12 +38,12 @@ export class ContentRecords {
   // 500 - internal server error
   // Errors returned through event stream
   createNew(accountName?: string, configName?: string, saveName?: string) {
-    const params = {
+    const data = {
       account: accountName,
       config: configName,
       saveName,
     };
-    return this.client.post<PreContentRecord>("/deployments", params);
+    return this.client.post<PreContentRecord>("/deployments", data);
   }
 
   // Returns:
