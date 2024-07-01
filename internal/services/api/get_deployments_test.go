@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/posit-dev/publisher/internal/accounts"
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/types"
@@ -163,4 +165,49 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsBadDir() {
 	h(rec, req)
 
 	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
+}
+
+func createAlternateDeployment(root util.AbsolutePath, name string) (*deployment.Deployment, error) {
+	path := deployment.GetDeploymentPath(root, name)
+	d := deployment.New()
+	d.ID = "87654321"
+	d.ServerType = accounts.ServerTypeConnect
+	d.ConfigName = "htmlConfig"
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	cfg.Entrypoint = "index.html"
+	d.Configuration = cfg
+	return d, d.WriteFile(path)
+}
+
+func (s *GetDeploymentsSuite) TestGetDeploymentsByEntrypoint() {
+	matchingDeployment, err := createSampleDeployment(s.cwd, "matching")
+	s.NoError(err)
+	_, err = createAlternateDeployment(s.cwd, "nonmatching")
+	s.NoError(err)
+
+	h := GetDeploymentsHandlerFunc(s.cwd, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/deployments?entrypoint=app.py", nil)
+	s.NoError(err)
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := []fullDeploymentDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+	s.Len(res, 1)
+
+	s.Nil(res[0].Error)
+	s.Equal("matching", res[0].Name)
+	s.Equal(".", res[0].ProjectDir)
+	s.Equal(s.cwd.Join(".posit", "publish", "deployments", "matching.toml").String(), res[0].Path)
+	s.NotNil(res[0].Deployment)
+	s.Equal(*matchingDeployment, res[0].Deployment)
+	s.Equal(s.cwd.Join(".posit", "publish", "myConfig.toml").String(), res[0].ConfigPath)
+	s.Equal(types.ContentID("12345678"), res[0].Deployment.ID)
 }

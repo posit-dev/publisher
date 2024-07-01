@@ -11,7 +11,7 @@ import (
 	"github.com/posit-dev/publisher/internal/util"
 )
 
-func readLatestDeploymentFiles(projectDir util.AbsolutePath, relProjectDir util.RelativePath) ([]any, error) {
+func readLatestDeploymentFiles(projectDir util.AbsolutePath, relProjectDir util.RelativePath, entrypoint string) ([]any, error) {
 	paths, err := deployment.ListDeploymentFiles(projectDir)
 	if err != nil {
 		return nil, err
@@ -19,6 +19,12 @@ func readLatestDeploymentFiles(projectDir util.AbsolutePath, relProjectDir util.
 	response := make([]any, 0, len(paths))
 	for _, path := range paths {
 		d, err := deployment.FromFile(path)
+		if entrypoint != "" {
+			// Filter out non-matching entrypoints
+			if d == nil || d.Configuration == nil || d.Configuration.Entrypoint != entrypoint {
+				continue
+			}
+		}
 		response = append(response, deploymentAsDTO(d, err, projectDir, relProjectDir, path))
 	}
 	return response, nil
@@ -31,7 +37,8 @@ func GetDeploymentsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
-		response, err := readLatestDeploymentFiles(projectDir, relProjectDir)
+		entrypoint := req.URL.Query().Get("entrypoint")
+		response, err := readLatestDeploymentFiles(projectDir, relProjectDir, entrypoint)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
