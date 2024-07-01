@@ -22,7 +22,7 @@ type configDTO struct {
 	Error         *types.AgentError `json:"error,omitempty"`
 }
 
-func readConfigFiles(projectDir util.AbsolutePath, relProjectDir util.RelativePath) ([]configDTO, error) {
+func readConfigFiles(projectDir util.AbsolutePath, relProjectDir util.RelativePath, entrypoint string) ([]configDTO, error) {
 	paths, err := config.ListConfigFiles(projectDir)
 	if err != nil {
 		return nil, err
@@ -37,6 +37,12 @@ func readConfigFiles(projectDir util.AbsolutePath, relProjectDir util.RelativePa
 
 		cfg, err := config.FromFile(path)
 
+		if entrypoint != "" {
+			// Filter out non-matching entrypoints
+			if cfg == nil || cfg.Entrypoint != entrypoint {
+				continue
+			}
+		}
 		if err != nil {
 			response = append(response, configDTO{
 				Name:       name,
@@ -65,7 +71,8 @@ func GetConfigurationsHandlerFunc(base util.AbsolutePath, log logging.Logger) ht
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
-		response, err := readConfigFiles(projectDir, relProjectDir)
+		entrypoint := req.URL.Query().Get("entrypoint")
+		response, err := readConfigFiles(projectDir, relProjectDir, entrypoint)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
