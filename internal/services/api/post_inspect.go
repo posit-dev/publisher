@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/posit-dev/publisher/internal/config"
 	"github.com/posit-dev/publisher/internal/initialize"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
@@ -13,6 +14,11 @@ import (
 
 type postInspectRequestBody struct {
 	Python string `json:"python"`
+}
+
+type postInspectResponseBody struct {
+	Configuration *config.Config `json:"configuration"`
+	ProjectDir    string         `json:"projectDir"`
 }
 
 func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
@@ -36,13 +42,11 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			InternalError(w, req, log, err)
 			return
 		}
-		response := make([]configDTO, 0, len(configs))
+		response := make([]postInspectResponseBody, 0, len(configs))
 		for _, cfg := range configs {
-			response = append(response, configDTO{
-				configLocation: configLocation{},
-				ProjectDir:     relProjectDir.String(),
-				Configuration:  cfg,
-				Error:          nil,
+			response = append(response, postInspectResponseBody{
+				ProjectDir:    relProjectDir.String(),
+				Configuration: cfg,
 			})
 		}
 		w.Header().Set("content-type", "application/json")
