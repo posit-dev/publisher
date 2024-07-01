@@ -16,7 +16,7 @@ import { useBus } from "src/bus";
 import { confirmDelete } from "src/dialogs";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { newCredential } from "src/multiStepInputs/newCredential";
-import { Commands, Views } from "src/constants";
+import { Commands, Contexts, Views } from "src/constants";
 
 type CredentialEventEmitter = EventEmitter<
   CredentialsTreeItem | undefined | void
@@ -129,6 +129,6 @@ export class CredentialsTreeItem extends TreeItem {
     super(cred.name);
     this.iconPath = new ThemeIcon("key");
     this.description = `${cred.url}`;
-    this.contextValue = `posit.publisher.credentials.tree.item.keychain`;
+    this.contextValue = Contexts.Credentials.Keychain;
   }
 }

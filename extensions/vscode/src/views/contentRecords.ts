@@ -32,7 +32,7 @@ import { getSummaryStringFromError } from "src/utils/errors";
 import { ensureSuffix } from "src/utils/files";
 import { contentRecordNameValidator } from "src/utils/names";
 import { WatcherManager } from "src/watchers";
-import { Commands, Views } from "src/constants";
+import { Commands, Contexts, Views } from "src/constants";
 
 type ContentRecordsEventEmitter = EventEmitter<
   ContentRecordsTreeItem | undefined | void
@@ -226,8 +226,7 @@ export class ContentRecordsTreeItem extends TreeItem {
   }
 
   private initializeContentRecord(contentRecord: ContentRecord) {
-    this.contextValue =
-      "posit.publisher.contentRecords.tree.item.contentRecord";
+    this.contextValue = Contexts.ContentRecords.ContentRecord;
     if (!contentRecord.deploymentError) {
       this.tooltip =
         `ContentRecord file: ${contentRecord.deploymentPath}\n` +
@@ -253,8 +252,7 @@ export class ContentRecordsTreeItem extends TreeItem {
   }
 
   private initializePreContentRecord(precontentRecord: PreContentRecord) {
-    this.contextValue =
-      "posit.publisher.contentRecords.tree.item.precontentRecord";
+    this.contextValue = Contexts.ContentRecords.PreContentRecord;
     this.tooltip =
       `Deployment Record file: ${precontentRecord.deploymentPath}\n` +
       `\n` +
@@ -266,8 +264,7 @@ export class ContentRecordsTreeItem extends TreeItem {
   }
 
   private initializeContentRecordError(deploymentError: ContentRecordError) {
-    this.contextValue =
-      "posit.publisher.contentRecords.tree.item.deploymentError";
+    this.contextValue = Contexts.ContentRecords.DeploymentError;
     this.tooltip =
       `Deployment Record file: ${deploymentError.deploymentPath}\n` +
       `\n` +
