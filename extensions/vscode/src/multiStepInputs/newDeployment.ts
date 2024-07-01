@@ -20,7 +20,7 @@ import {
 
 import {
   useApi,
-  ConfigurationDetails,
+  ConfigurationInspectionResult,
   Credential,
   Configuration,
   PreContentRecord,
@@ -266,7 +266,7 @@ export async function newDeployment(
   let credentialListItems: QuickPickItem[] = [];
 
   let entryPointListItems: QuickPickItemWithIndex[] = [];
-  let configDetails: ConfigurationDetails[] = [];
+  let configDetails: ConfigurationInspectionResult[] = [];
   let contentRecordNames: string[] = [];
 
   let newConfig: Configuration | undefined;
@@ -360,7 +360,8 @@ export async function newDeployment(
         const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(python);
         configDetails = inspectResponse.data;
-        configDetails.forEach((config, i) => {
+        configDetails.forEach((result, i) => {
+          const config = result.configuration;
           if (config.entrypoint) {
             entryPointListItems.push({
               iconPath: new ThemeIcon("file"),
@@ -790,7 +791,8 @@ export async function newDeployment(
       state.data.entryPoint &&
       isQuickPickItemWithIndex(state.data.entryPoint)
     ) {
-      const detail = configDetails[state.data.entryPoint.index].title;
+      const detail =
+        configDetails[state.data.entryPoint.index].configuration.title;
       if (detail) {
         initialValue = detail;
       }
@@ -904,10 +906,10 @@ export async function newDeployment(
       );
       return;
     }
-    selectedConfigDetails.title = state.data.title;
+    selectedConfigDetails.configuration.title = state.data.title;
     const createResponse = await api.configurations.createOrUpdate(
       configName,
-      selectedConfigDetails,
+      selectedConfigDetails.configuration,
     );
     const fileUri = Uri.file(createResponse.data.configurationPath);
     newConfig = createResponse.data;

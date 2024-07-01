@@ -2,30 +2,30 @@
 
 import {
   Configuration,
-  ConfigurationDetails,
   ConfigurationError,
+  ConfigurationInspectionResult,
   ContentType,
   isConfigurationError,
 } from "../api";
 
-export function filterConfigurationDetailsToType(
-  configDetails: ConfigurationDetails[],
+export function filterInspectionResultsToType(
+  inspectionResults: ConfigurationInspectionResult[],
   type: ContentType | undefined,
-): ConfigurationDetails[] {
+): ConfigurationInspectionResult[] {
   if (!type || type === ContentType.UNKNOWN) {
-    return configDetails;
+    return inspectionResults;
   }
-  return configDetails.filter((c) => isConfigurationDetailsOfType(c, type));
+  return inspectionResults.filter((c) => isInspectionResultOfType(c, type));
 }
 
-export function isConfigurationDetailsOfType(
-  configDetails: ConfigurationDetails,
+export function isInspectionResultOfType(
+  inspectionResult: ConfigurationInspectionResult,
   type?: ContentType,
 ): boolean {
   if (type === undefined) {
     return false;
   }
-  return configDetails.type === type;
+  return inspectionResult.configuration.type === type;
 }
 
 export function filterConfigurationsToValidAndType(
