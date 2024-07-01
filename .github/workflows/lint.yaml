@@ -16,3 +16,5 @@ jobs:
 
       - run: just vscode deps
       - run: just vscode lint
+
+      - run: just lint
