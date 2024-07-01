@@ -391,18 +391,18 @@ export async function selectConfig(
     // Create the Config File
     try {
       const configName = await untitledConfigurationName();
-      const selectedConfigDetails =
+      const selectedInspectionResult =
         inspectionResults[state.data.entryPoint.index];
-      if (!selectedConfigDetails) {
+      if (!selectedInspectionResult) {
         window.showErrorMessage(
           `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
         );
         return;
       }
-      selectedConfigDetails.configuration.title = state.data.title;
+      selectedInspectionResult.configuration.title = state.data.title;
       const createResponse = await api.configurations.createOrUpdate(
         configName,
-        selectedConfigDetails.configuration,
+        selectedInspectionResult.configuration,
       );
       const fileUri = Uri.file(createResponse.data.configurationPath);
       const newConfig = createResponse.data;

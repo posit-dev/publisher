@@ -230,19 +230,19 @@ export async function newConfig(title: string, viewId?: string) {
   // Create the Config File
   let newConfig: Configuration | undefined = undefined;
   try {
-    const selectedConfigDetails =
+    const selectedInspectionResult =
       inspectionResults[state.data.entryPoint.index];
-    if (!selectedConfigDetails) {
+    if (!selectedInspectionResult) {
       window.showErrorMessage(
         `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
       );
       return;
     }
-    selectedConfigDetails.configuration.title = state.data.title;
+    selectedInspectionResult.configuration.title = state.data.title;
     const configName = await untitledConfigurationName();
     const createResponse = await api.configurations.createOrUpdate(
       configName,
-      selectedConfigDetails.configuration,
+      selectedInspectionResult.configuration,
     );
     newConfig = createResponse.data;
     const fileUri = Uri.file(newConfig.configurationPath);

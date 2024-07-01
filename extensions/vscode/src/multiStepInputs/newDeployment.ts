@@ -266,7 +266,7 @@ export async function newDeployment(
   let credentialListItems: QuickPickItem[] = [];
 
   let entryPointListItems: QuickPickItemWithIndex[] = [];
-  let configDetails: ConfigurationInspectionResult[] = [];
+  let inspectionResults: ConfigurationInspectionResult[] = [];
   let contentRecordNames: string[] = [];
 
   let newConfig: Configuration | undefined;
@@ -359,8 +359,8 @@ export async function newDeployment(
       try {
         const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(python);
-        configDetails = inspectResponse.data;
-        configDetails.forEach((result, i) => {
+        inspectionResults = inspectResponse.data;
+        inspectionResults.forEach((result, i) => {
           const config = result.configuration;
           if (config.entrypoint) {
             entryPointListItems.push({
@@ -530,7 +530,7 @@ export async function newDeployment(
       isQuickPickItemWithIndex(state.data.entryPoint)
     ) {
       const detail =
-        configDetails[state.data.entryPoint.index].configuration.title;
+        inspectionResults[state.data.entryPoint.index].configuration.title;
       if (detail) {
         initialValue = detail;
       }
@@ -898,17 +898,18 @@ export async function newDeployment(
   let configName: string | undefined;
   try {
     configName = await untitledConfigurationName();
-    const selectedConfigDetails = configDetails[state.data.entryPoint.index];
-    if (!selectedConfigDetails) {
+    const selectedInspectionResult =
+      inspectionResults[state.data.entryPoint.index];
+    if (!selectedInspectionResult) {
       window.showErrorMessage(
         `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
       );
       return;
     }
-    selectedConfigDetails.configuration.title = state.data.title;
+    selectedInspectionResult.configuration.title = state.data.title;
     const createResponse = await api.configurations.createOrUpdate(
       configName,
-      selectedConfigDetails.configuration,
+      selectedInspectionResult.configuration,
     );
     const fileUri = Uri.file(createResponse.data.configurationPath);
     newConfig = createResponse.data;
