@@ -17,7 +17,7 @@ type postInspectRequestBody struct {
 
 func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		projectDir, _, err := ProjectDirFromRequest(base, w, req, log)
+		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
 		if err != nil {
 			// Response already returned by ProjectDirFromRequest
 			return
@@ -36,8 +36,17 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			InternalError(w, req, log, err)
 			return
 		}
+		response := make([]configDTO, 0, len(configs))
+		for _, cfg := range configs {
+			response = append(response, configDTO{
+				configLocation: configLocation{},
+				ProjectDir:     relProjectDir.String(),
+				Configuration:  cfg,
+				Error:          nil,
+			})
+		}
 		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(configs)
+		json.NewEncoder(w).Encode(response)
 	}
 }

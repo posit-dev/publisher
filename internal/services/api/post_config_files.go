@@ -64,7 +64,12 @@ func applyFileAction(cfg *config.Config, action fileAction, path string) error {
 func PostConfigFilesHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		name := mux.Vars(req)["name"]
-		configPath := config.GetConfigPath(base, name)
+		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
+		if err != nil {
+			// Response already returned by ProjectDirFromRequest
+			return
+		}
+		configPath := config.GetConfigPath(projectDir, name)
 		cfg, err := config.FromFile(configPath)
 		if err != nil && errors.Is(err, fs.ErrNotExist) {
 			http.NotFound(w, req)
@@ -94,9 +99,12 @@ func PostConfigFilesHandlerFunc(base util.AbsolutePath, log logging.Logger) http
 			return
 		}
 		response := &configDTO{
-			Name:          name,
-			Path:          configPath.String(),
-			RelPath:       relPath.String(),
+			configLocation: configLocation{
+				Name:    name,
+				Path:    configPath.String(),
+				RelPath: relPath.String(),
+			},
+			ProjectDir:    relProjectDir.String(),
 			Configuration: cfg,
 		}
 		w.Header().Set("content-type", "application/json")

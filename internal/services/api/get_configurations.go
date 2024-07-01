@@ -13,11 +13,15 @@ import (
 	"github.com/posit-dev/publisher/internal/util"
 )
 
+type configLocation struct {
+	Name    string `json:"configurationName"`    // Config filename minus .toml
+	Path    string `json:"configurationPath"`    // Full path to config file
+	RelPath string `json:"configurationRelPath"` // Relative path to config file from the global base directory
+}
+
 type configDTO struct {
-	Name          string            `json:"configurationName"`    // Config filename minus .toml
-	Path          string            `json:"configurationPath"`    // Full path to config file
-	RelPath       string            `json:"configurationRelPath"` // Relative path to config file from the global base directory
-	ProjectDir    string            `json:"projectDir"`           // Relative path to the project directory from the global base
+	configLocation
+	ProjectDir    string            `json:"projectDir"` // Relative path to the project directory from the global base
 	Configuration *config.Config    `json:"configuration,omitempty"`
 	Error         *types.AgentError `json:"error,omitempty"`
 }
@@ -39,19 +43,25 @@ func readConfigFiles(projectDir util.AbsolutePath, relProjectDir util.RelativePa
 
 		if err != nil {
 			response = append(response, configDTO{
-				Name:       name,
-				Path:       path.String(),
-				RelPath:    relPath.String(),
-				ProjectDir: relProjectDir.String(),
-				Error:      types.AsAgentError(err),
+				configLocation: configLocation{
+					Name:    name,
+					Path:    path.String(),
+					RelPath: relPath.String(),
+				},
+				ProjectDir:    relProjectDir.String(),
+				Configuration: nil,
+				Error:         types.AsAgentError(err),
 			})
 		} else {
 			response = append(response, configDTO{
-				Name:          name,
-				Path:          path.String(),
-				RelPath:       relPath.String(),
+				configLocation: configLocation{
+					Name:    name,
+					Path:    path.String(),
+					RelPath: relPath.String(),
+				},
 				ProjectDir:    relProjectDir.String(),
 				Configuration: cfg,
+				Error:         nil,
 			})
 		}
 	}
