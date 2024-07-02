@@ -23,6 +23,7 @@ export enum ContentRecordState {
 export type ContentRecordLocation = {
   deploymentName: string;
   deploymentPath: string;
+  projectDir: string;
 };
 
 export type ContentRecordError = {
