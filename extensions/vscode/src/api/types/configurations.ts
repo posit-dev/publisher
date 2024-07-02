@@ -8,6 +8,7 @@ export type ConfigurationLocation = {
   configurationName: string;
   configurationPath: string;
   configurationRelPath: string;
+  projectDir: string;
 };
 
 export type ConfigurationError = {

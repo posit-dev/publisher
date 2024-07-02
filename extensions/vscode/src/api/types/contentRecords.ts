@@ -7,7 +7,12 @@ import {
   ContentType,
 } from "./configurations";
 import { SchemaURL } from "./schema";
-import { ServerType } from "./accounts";
+
+export enum ServerType {
+  CONNECT = "connect",
+  SHINY_APPS = "shinyapps",
+  CLOUD = "cloud",
+}
 
 export enum ContentRecordState {
   NEW = "new",
@@ -18,6 +23,7 @@ export enum ContentRecordState {
 export type ContentRecordLocation = {
   deploymentName: string;
   deploymentPath: string;
+  projectDir: string;
 };
 
 export type ContentRecordError = {

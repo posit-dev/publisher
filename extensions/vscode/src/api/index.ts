@@ -2,7 +2,6 @@
 
 export { initApi, useApi } from "./client";
 
-export * from "./types/accounts";
 export * from "./types/credentials";
 export * from "./types/configurations";
 export * from "./types/connect";

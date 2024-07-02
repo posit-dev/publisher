@@ -20,19 +20,21 @@ export class Configurations {
   // 200 - success
   // 404 - not found
   // 500 - internal server error
-  get(configName: string) {
+  get(configName: string, params?: { dir?: string }) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<Configuration | ConfigurationError>(
       `/configurations/${encodedName}`,
+      { params },
     );
   }
 
   // Returns:
   // 200 - success
   // 500 - internal server error
-  getAll() {
+  getAll(params?: { dir?: string; entrypoint?: string }) {
     return this.client.get<Array<Configuration | ConfigurationError>>(
       "/configurations",
+      { params },
     );
   }
 
@@ -40,18 +42,26 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  createOrUpdate(configName: string, cfg: ConfigurationDetails) {
+  createOrUpdate(
+    configName: string,
+    cfg: ConfigurationDetails,
+    params?: { dir?: string },
+  ) {
     const encodedName = encodeURIComponent(configName);
-    return this.client.put<Configuration>(`configurations/${encodedName}`, cfg);
+    return this.client.put<Configuration>(
+      `configurations/${encodedName}`,
+      cfg,
+      { params },
+    );
   }
 
   // Returns:
   // 204 - success (no response)
   // 404 - not found
   // 500 - internal server error
-  delete(configName: string) {
+  delete(configName: string, params?: { dir?: string }) {
     const encodedName = encodeURIComponent(configName);
-    return this.client.delete(`configurations/${encodedName}`);
+    return this.client.delete(`configurations/${encodedName}`, { params });
   }
 
   // Inspect the project, returning all possible (detected) configurations
@@ -59,9 +69,13 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  inspect(python?: string) {
-    return this.client.post<ConfigurationInspectionResult[]>("/inspect", {
-      python,
-    });
+  inspect(python?: string, params?: { dir?: string }) {
+    return this.client.post<ConfigurationInspectionResult[]>(
+      "/inspect",
+      {
+        python,
+      },
+      { params },
+    );
   }
 }
