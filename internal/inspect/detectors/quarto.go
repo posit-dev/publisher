@@ -167,16 +167,29 @@ func isQuartoShiny(metadata *quartoMetadata) bool {
 	return false
 }
 
-func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error) {
+	if entrypoint.String() != "" {
+		// Optimization: skip inspection if there's a specified entrypoint
+		// and it's not one of ours.
+		suffix := entrypoint.Ext()
+		if suffix != ".qmd" && suffix != ".Rmd" {
+			return nil, nil
+		}
+	}
 	var configs []*config.Config
 	entrypointPaths, err := d.findEntrypoints(base)
 	if err != nil {
 		return nil, err
 	}
-	if len(entrypointPaths) == 0 {
-		return nil, nil
-	}
 	for _, entrypointPath := range entrypointPaths {
+		relEntrypoint, err := entrypointPath.Rel(base)
+		if err != nil {
+			return nil, err
+		}
+		if entrypoint.String() != "" && relEntrypoint != entrypoint {
+			// Only inspect the specified file
+			continue
+		}
 		inspectOutput, err := d.quartoInspect(entrypointPath)
 		if err != nil {
 			// Maybe this isn't really a quarto project, or maybe the user doesn't have quarto.
@@ -187,13 +200,9 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, er
 		if inspectOutput.Files.Input != nil && len(inspectOutput.Files.Input) == 0 {
 			continue
 		}
-		entrypoint, err := entrypointPath.Rel(base)
-		if err != nil {
-			return nil, err
-		}
 		cfg := config.New()
-		cfg.Entrypoint = entrypoint.String()
-		cfg.Title = d.getTitle(inspectOutput, entrypoint.String())
+		cfg.Entrypoint = relEntrypoint.String()
+		cfg.Title = d.getTitle(inspectOutput, relEntrypoint.String())
 
 		if isQuartoShiny(&inspectOutput.Formats.HTML.Metadata) {
 			cfg.Type = config.ContentTypeQuartoShiny
@@ -207,9 +216,6 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath) ([]*config.Config, er
 		}
 
 		needR, needPython := pydeps.DetectMarkdownLanguagesInContent(content)
-		if err != nil {
-			return nil, err
-		}
 
 		engines := inspectOutput.Engines
 		if needPython || d.needsPython(inspectOutput) {

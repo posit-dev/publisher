@@ -15,7 +15,7 @@ import (
 // (nil, nil), i.e. failing inference is not an error.
 // If there's an error during inferences, it returns (nil, err).
 type ContentTypeInferer interface {
-	InferType(path util.AbsolutePath) ([]*config.Config, error)
+	InferType(path util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error)
 }
 
 type inferenceHelper interface {

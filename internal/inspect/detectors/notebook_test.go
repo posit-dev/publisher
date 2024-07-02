@@ -73,7 +73,7 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -98,7 +98,7 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -123,7 +123,7 @@ func (s *NotebookDetectorSuite) TestInferTypeNonNotebook() {
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Nil(configs)
 }
@@ -140,7 +140,36 @@ func (s *NotebookDetectorSuite) TestInferTypeBadNotebook() {
 	s.Nil(err)
 
 	detector := NewNotebookDetector()
-	t, err := detector.InferType(base)
+	t, err := detector.InferType(base, util.RelativePath{})
 	s.NotNil(err)
 	s.Nil(t)
+}
+
+func (s *NotebookDetectorSuite) TestInferTypeWithEntrypoint() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "my_notebook.ipynb"
+	err = base.Join(filename).WriteFile(notebookWithCell("import sys\nprint(sys.executable)\n"), 0600)
+	s.Nil(err)
+
+	otherFilename := "not_the_entrypoint.ipynb"
+	err = base.Join(otherFilename).WriteFile(notebookWithCell("import sys\nprint(sys.executable)\n"), 0600)
+	s.Nil(err)
+
+	detector := NewNotebookDetector()
+	entrypoint := util.NewRelativePath(filename, base.Fs())
+	configs, err := detector.InferType(base, entrypoint)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeJupyterNotebook,
+		Entrypoint: filename,
+		Validate:   true,
+		Files:      []string{"*"},
+		Python:     &config.Python{},
+	}, configs[0])
 }

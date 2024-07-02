@@ -34,7 +34,7 @@ func (s *PythonSuite) TestInferTypePreferredFilename() {
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -62,7 +62,7 @@ func (s *PythonSuite) TestInferTypeAlternatePreferredFilename() {
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -87,7 +87,7 @@ func (s *PythonSuite) TestInferTypeOnlyPythonFile() {
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -112,7 +112,7 @@ func (s *PythonSuite) TestInferTypeNotFlask() {
 	s.Nil(err)
 
 	detector := NewFlaskDetector()
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Nil(configs)
 }
@@ -133,9 +133,38 @@ func (s *PythonSuite) TestInferTypeHasImportsErr() {
 	detector := NewFlaskDetector()
 	detector.inferenceHelper = inferrer
 
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.Nil(configs)
 	inferrer.AssertExpectations(s.T())
+}
+
+func (s *PythonSuite) TestInferTypeWithEntrypoint() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "myapp.py"
+	err = base.Join(filename).WriteFile([]byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
+	s.Nil(err)
+
+	otherFilename := "app.py"
+	err = base.Join(otherFilename).WriteFile([]byte("import flask\napp = flask.Flask(__name__)\n"), 0600)
+	s.Nil(err)
+
+	detector := NewFlaskDetector()
+	entrypoint := util.NewRelativePath(filename, base.Fs())
+	configs, err := detector.InferType(base, entrypoint)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonFlask,
+		Entrypoint: filename,
+		Validate:   true,
+		Files:      []string{"*"},
+		Python:     &config.Python{},
+	}, configs[0])
 }

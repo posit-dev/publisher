@@ -80,28 +80,35 @@ func isShinyRmd(metadata *RMarkdownMetadata) bool {
 	return false
 }
 
-func (d *RMarkdownDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+func (d *RMarkdownDetector) InferType(base util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error) {
+	if entrypoint.String() != "" {
+		// Optimization: skip inspection if there's a specified entrypoint
+		// and it's not one of ours.
+		if entrypoint.Ext() != ".Rmd" {
+			return nil, nil
+		}
+	}
 	var configs []*config.Config
 	entrypointPaths, err := base.Glob("*.Rmd")
 	if err != nil {
 		return nil, err
 	}
-	if len(entrypointPaths) == 0 {
-		// Not an R Markdown project
-		return nil, nil
-	}
 	for _, entrypointPath := range entrypointPaths {
+		relEntrypoint, err := entrypointPath.Rel(base)
+		if err != nil {
+			return nil, err
+		}
+		if entrypoint.String() != "" && relEntrypoint != entrypoint {
+			// Only inspect the specified file
+			continue
+		}
 		metadata, err := d.getRmdFileMetadata(entrypointPath)
 		if err != nil {
 			d.log.Warn("Failed to read RMarkdown metadata", "path", entrypointPath, "error", err)
 			continue
 		}
-		entrypoint, err := entrypointPath.Rel(base)
-		if err != nil {
-			return nil, err
-		}
 		cfg := config.New()
-		cfg.Entrypoint = entrypoint.String()
+		cfg.Entrypoint = relEntrypoint.String()
 
 		if isShinyRmd(metadata) {
 			cfg.Type = config.ContentTypeRMarkdownShiny

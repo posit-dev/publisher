@@ -37,7 +37,7 @@ func (s *StaticHTMLDetectorSuite) TestInferType() {
 	s.Nil(err)
 
 	detector := NewStaticHTMLDetector()
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 2)
 
@@ -55,4 +55,34 @@ func (s *StaticHTMLDetectorSuite) TestInferType() {
 		Validate:   true,
 		Files:      []string{"*"},
 	}, configs[1])
+}
+
+func (s *StaticHTMLDetectorSuite) TestInferTypeWithEntrypoint() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "index.html"
+	path := base.Join(filename)
+	err = path.WriteFile([]byte("<html></html>\n"), 0600)
+	s.Nil(err)
+
+	otherFilename := "other.html"
+	otherPath := base.Join(otherFilename)
+	err = otherPath.WriteFile([]byte("<html></html>\n"), 0600)
+	s.Nil(err)
+
+	detector := NewStaticHTMLDetector()
+	entrypoint := util.NewRelativePath(otherFilename, base.Fs())
+	configs, err := detector.InferType(base, entrypoint)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeHTML,
+		Entrypoint: otherFilename,
+		Validate:   true,
+		Files:      []string{"*"},
+	}, configs[0])
 }

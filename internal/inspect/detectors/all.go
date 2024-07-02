@@ -58,7 +58,7 @@ func filenameStem(filename string) string {
 	return strings.TrimSuffix(filename, ext)
 }
 
-func (t *ContentTypeDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+func (t *ContentTypeDetector) InferType(base util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error) {
 	var allConfigs []*config.Config
 
 	_, err := base.Stat()
@@ -67,7 +67,7 @@ func (t *ContentTypeDetector) InferType(base util.AbsolutePath) ([]*config.Confi
 	}
 
 	for _, detector := range t.detectors {
-		configs, err := detector.InferType(base)
+		configs, err := detector.InferType(base, entrypoint)
 		if err != nil {
 			return nil, err
 		}

@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/config"
@@ -21,11 +22,47 @@ type postInspectResponseBody struct {
 	ProjectDir    string         `json:"projectDir"`
 }
 
+var errEntrypointNotFound = errors.New("entrypoint not found")
+
+func getEntrypointPath(projectDir util.AbsolutePath, w http.ResponseWriter, req *http.Request, log logging.Logger) (util.RelativePath, error) {
+	entrypoint := req.URL.Query().Get("entrypoint")
+	if entrypoint == "" {
+		return util.RelativePath{}, nil
+	}
+	entrypointPath, err := projectDir.SafeJoin(entrypoint)
+	if err != nil {
+		BadRequest(w, req, log, err)
+		return util.RelativePath{}, err
+	}
+	exists, err := entrypointPath.Exists()
+	if err != nil {
+		InternalError(w, req, log, err)
+		return util.RelativePath{}, err
+	}
+	if !exists {
+		err = errEntrypointNotFound
+		NotFound(w, log, err)
+		return util.RelativePath{}, err
+	}
+	// Return a relative path version of the entrypoint
+	relEntrypoint, err := entrypointPath.Rel(projectDir)
+	if err != nil {
+		InternalError(w, req, log, err)
+		return util.RelativePath{}, err
+	}
+	return relEntrypoint, nil
+}
+
 func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		projectDir, relProjectDir, err := ProjectDirFromRequest(base, w, req, log)
 		if err != nil {
 			// Response already returned by ProjectDirFromRequest
+			return
+		}
+		entrypointPath, err := getEntrypointPath(projectDir, w, req, log)
+		if err != nil {
+			// Response already returned by getEntrypointPath
 			return
 		}
 		dec := json.NewDecoder(req.Body)
@@ -37,7 +74,8 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			return
 		}
 
-		configs, err := initialize.GetPossibleConfigs(projectDir, util.NewPath(b.Python, nil), util.Path{}, log)
+		pythonPath := util.NewPath(b.Python, nil)
+		configs, err := initialize.GetPossibleConfigs(projectDir, pythonPath, util.Path{}, entrypointPath, log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
