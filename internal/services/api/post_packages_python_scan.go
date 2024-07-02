@@ -32,15 +32,6 @@ func NewPostPackagesPythonScanHandler(base util.AbsolutePath, log logging.Logger
 	}
 }
 
-func (h *PostPackagesPythonScanHandler) scan(inspector inspect.PythonInspector, saveName string) error {
-	reqs, _, err := inspector.ScanRequirements(h.base)
-	if err != nil {
-		return err
-	}
-	dest := h.base.Join(saveName)
-	return inspector.WriteRequirementsFile(dest, reqs)
-}
-
 func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	projectDir, _, err := ProjectDirFromRequest(h.base, w, req, h.log)
 	if err != nil {
