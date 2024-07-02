@@ -29,7 +29,7 @@ import {
 import { confirmForget } from "src/dialogs";
 import { formatDateString } from "src/utils/date";
 import { getSummaryStringFromError } from "src/utils/errors";
-import { ensureSuffix } from "src/utils/files";
+import { ensureSuffix, isRelativePathRoot } from "src/utils/files";
 import { contentRecordNameValidator } from "src/utils/names";
 import { WatcherManager } from "src/watchers";
 import { Commands, Contexts, Views } from "src/constants";
@@ -112,12 +112,16 @@ export class ContentRecordsTreeDataProvider
       commands.registerCommand(
         Commands.ContentRecords.Forget,
         async (item: ContentRecordsTreeItem) => {
+          const contentRecord = item.contentRecord;
+          const name = contentRecord.deploymentName;
           const ok = await confirmForget(
-            `Are you sure you want to forget this deployment '${item.contentRecord.deploymentName}' locally?`,
+            `Are you sure you want to forget this deployment '${name}' locally?`,
           );
           if (ok) {
             const api = await useApi();
-            await api.contentRecords.delete(item.contentRecord.deploymentName);
+            await api.contentRecords.delete(name, {
+              dir: contentRecord.projectDir,
+            });
           }
         },
       ),
@@ -218,6 +222,10 @@ export class ContentRecordsTreeItem extends TreeItem {
     } else {
       this.initializeContentRecordError(this.contentRecord);
     }
+    this.description = isRelativePathRoot(contentRecord.projectDir)
+      ? undefined
+      : contentRecord.projectDir;
+
     this.command = {
       title: "Open",
       command: "vscode.open",
