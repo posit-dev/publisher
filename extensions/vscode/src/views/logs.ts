@@ -283,10 +283,20 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     // Map the events array to LogsTreeItem instances and return them as children
     if (element instanceof LogsTreeStageItem) {
       const result = [];
+      let count = 0;
       element.stages.forEach((stage: LogStage) => {
         result.push(new LogsTreeStageItem(stage));
       });
-      result.push(...element.events.map((e) => new LogsTreeLogItem(e)));
+      result.push(
+        ...element.events.map(
+          (e) =>
+            new LogsTreeLogItem(
+              e,
+              TreeItemCollapsibleState.None,
+              `${element.id}/${count++}`,
+            ),
+        ),
+      );
       return result;
     }
 
@@ -336,6 +346,7 @@ export class LogsTreeStageItem extends TreeItem {
     }
 
     super(stage.inactiveLabel, collapsibleState);
+    this.id = stage.inactiveLabel;
     this.stage = stage;
 
     this.stages = stage.stages;
@@ -381,11 +392,13 @@ export class LogsTreeLogItem extends TreeItem {
   constructor(
     msg: EventStreamMessage,
     state: TreeItemCollapsibleState = TreeItemCollapsibleState.None,
+    id: string,
   ) {
     if (msg.data.message) {
       msg.data.message = msg.data.message.replaceAll("\n", " ");
     }
     super(displayEventStreamMessage(msg), state);
+    this.id = id;
     this.tooltip = JSON.stringify(msg);
     if (!isPublishSuccess(msg) && !isPublishFailure(msg)) {
       this.iconPath = new ThemeIcon("debug-stackframe-dot");
