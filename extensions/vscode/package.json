@@ -497,7 +497,7 @@
       "panel": [
         {
           "id": "posit-publisher-logs",
-          "title": "Posit Publisher Logs",
+          "title": "Posit Publisher Log",
           "icon": "$(output)"
         }
       ]
