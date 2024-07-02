@@ -25,14 +25,20 @@ export class Files {
   // 404 - configuration does not exist
   // 422 - configuration files list contains invalid patterns
   // 500 - internal server error
-  getByConfiguration(configName: string) {
+  getByConfiguration(configName: string, params?: { dir?: string }) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<ContentRecordFile>(
       `/configurations/${encodedName}/files`,
+      { params },
     );
   }
 
-  updateFileList(configName: string, path: string, action: FileAction) {
+  updateFileList(
+    configName: string,
+    path: string,
+    action: FileAction,
+    params?: { dir?: string },
+  ) {
     const encodedName = encodeURIComponent(configName);
     const body = {
       path,
@@ -41,6 +47,7 @@ export class Files {
     return this.client.post<Configuration>(
       `/configurations/${encodedName}/files`,
       body,
+      { params },
     );
   }
 }

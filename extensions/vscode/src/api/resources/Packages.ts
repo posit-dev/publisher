@@ -19,10 +19,11 @@ export class Packages {
   // 409 - conflict (Python is not configured)
   // 422 - package file is invalid
   // 500 - internal server error
-  getPythonPackages(configName: string) {
+  getPythonPackages(configName: string, params?: { dir?: string }) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<PythonPackagesResponse>(
       `/configurations/${encodedName}/packages/python`,
+      { params },
     );
   }
 
@@ -32,10 +33,11 @@ export class Packages {
   // 409 - conflict (R is not configured)
   // 422 - package file is invalid
   // 500 - internal server error
-  getRPackages(configName: string) {
+  getRPackages(configName: string, params?: { dir?: string }) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<GetRPackagesResponse>(
       `/configurations/${encodedName}/packages/r`,
+      { params },
     );
   }
 
