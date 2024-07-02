@@ -154,7 +154,7 @@ export class ConfigurationsTreeDataProvider
           return undefined;
         } else {
           return {
-            message: `Invalid Name: Cannot be '.' or contain '..' or any of these characters: /:*?"<>|\\`,
+            message: `Error: Invalid Name: Cannot be all blanks, '.' or contain '..' or any of these characters: /:*?"<>|\\`,
             severity: InputBoxValidationSeverity.Error,
           };
         }
