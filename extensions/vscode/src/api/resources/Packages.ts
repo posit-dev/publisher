@@ -43,15 +43,23 @@ export class Packages {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  createPythonRequirementsFile(python?: string, saveName?: string) {
-    return this.client.post<void>("packages/python/scan", { python, saveName });
+  createPythonRequirementsFile(
+    python?: string,
+    saveName?: string,
+    params?: { dir?: string },
+  ) {
+    return this.client.post<void>(
+      "packages/python/scan",
+      { python, saveName },
+      { params },
+    );
   }
 
   // Returns:
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  createRRequirementsFile(saveName?: string) {
-    return this.client.post<void>("packages/r/scan", { saveName });
+  createRRequirementsFile(saveName?: string, params?: { dir?: string }) {
+    return this.client.post<void>("packages/r/scan", { saveName }, { params });
   }
 }
