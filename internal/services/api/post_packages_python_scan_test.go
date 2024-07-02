@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
 	"github.com/posit-dev/publisher/internal/util/utiltest"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -43,7 +45,9 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTP() {
 	req, err := http.NewRequest("POST", "/api/packages/python/scan", body)
 	s.NoError(err)
 
-	base := util.NewAbsolutePath("/project", nil)
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err = base.MkdirAll(0777)
+	s.NoError(err)
 	destPath := base.Join("requirements.txt")
 
 	log := logging.New()
@@ -65,7 +69,9 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPEmptyBody() {
 	req, err := http.NewRequest("POST", "/api/packages/python/scan", body)
 	s.NoError(err)
 
-	base := util.NewAbsolutePath("/project", nil)
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err = base.MkdirAll(0777)
+	s.NoError(err)
 	destPath := base.Join("requirements.txt")
 
 	log := logging.New()
@@ -87,7 +93,9 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPWithSaveName() {
 	req, err := http.NewRequest("POST", "/api/packages/python/scan", body)
 	s.NoError(err)
 
-	base := util.NewAbsolutePath("/project", nil)
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err = base.MkdirAll(0777)
+	s.NoError(err)
 	destPath := base.Join("my_requirements.txt")
 
 	log := logging.New()
@@ -109,7 +117,9 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPErr() {
 	req, err := http.NewRequest("POST", "/api/packages/python/scan", body)
 	s.NoError(err)
 
-	base := util.NewAbsolutePath("/project", nil)
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err = base.MkdirAll(0777)
+	s.NoError(err)
 	log := logging.New()
 	h := NewPostPackagesPythonScanHandler(base, log)
 
@@ -121,4 +131,37 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPErr() {
 	h.ServeHTTP(rec, req)
 
 	s.Equal(http.StatusInternalServerError, rec.Result().StatusCode)
+}
+
+func (s *PostPackagesPythonScanSuite) TestServeHTTPSubdir() {
+	rec := httptest.NewRecorder()
+	body := strings.NewReader(`{"saveName":""}`)
+
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	projectDir := base.Join("subproject", "subdir")
+	err := projectDir.MkdirAll(0777)
+	s.NoError(err)
+	relProjectDir, err := projectDir.Rel(base)
+	s.NoError(err)
+
+	dirParam := url.QueryEscape(relProjectDir.String())
+	req, err := http.NewRequest("POST", "/api/packages/python/scan?dir="+dirParam, body)
+	s.NoError(err)
+
+	destPath := projectDir.Join("requirements.txt")
+
+	log := logging.New()
+	h := NewPostPackagesPythonScanHandler(base, log)
+
+	i := inspect.NewMockPythonInspector()
+	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
+	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
+	inspectorFactory = func(base util.AbsolutePath, python util.Path, log logging.Logger) inspect.PythonInspector {
+		s.Equal(projectDir, base)
+		return i
+	}
+
+	h.ServeHTTP(rec, req)
+
+	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
 }

@@ -32,20 +32,16 @@ func NewPostPackagesPythonScanHandler(base util.AbsolutePath, log logging.Logger
 	}
 }
 
-func (h *PostPackagesPythonScanHandler) scan(inspector inspect.PythonInspector, saveName string) error {
-	reqs, _, err := inspector.ScanRequirements(h.base)
-	if err != nil {
-		return err
-	}
-	dest := h.base.Join(saveName)
-	return inspector.WriteRequirementsFile(dest, reqs)
-}
-
 func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	projectDir, _, err := ProjectDirFromRequest(h.base, w, req, h.log)
+	if err != nil {
+		// Response already returned by ProjectDirFromRequest
+		return
+	}
 	dec := json.NewDecoder(req.Body)
 	dec.DisallowUnknownFields()
 	var b PostPackagesPythonScanRequest
-	err := dec.Decode(&b)
+	err = dec.Decode(&b)
 	if err != nil && !errors.Is(err, io.EOF) {
 		BadRequest(w, req, h.log, err)
 		return
@@ -54,13 +50,19 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 		b.SaveName = inspect.PythonRequirementsFilename
 	}
 	python := util.NewPath(b.Python, nil)
-	inspector := inspectorFactory(h.base, python, h.log)
+	inspector := inspectorFactory(projectDir, python, h.log)
 	err = util.ValidateFilename(b.SaveName)
 	if err != nil {
 		BadRequest(w, req, h.log, err)
 		return
 	}
-	err = h.scan(inspector, b.SaveName)
+	reqs, _, err := inspector.ScanRequirements(projectDir)
+	if err != nil {
+		InternalError(w, req, h.log, err)
+		return
+	}
+	dest := projectDir.Join(b.SaveName)
+	err = inspector.WriteRequirementsFile(dest, reqs)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return

@@ -19,24 +19,29 @@ type PostPackagesRScanRequest struct {
 }
 
 type PostPackagesRScanHandler struct {
-	base      util.AbsolutePath
-	log       logging.Logger
-	inspector inspect.RInspector
+	base util.AbsolutePath
+	log  logging.Logger
 }
 
 func NewPostPackagesRScanHandler(base util.AbsolutePath, log logging.Logger) *PostPackagesRScanHandler {
 	return &PostPackagesRScanHandler{
-		base:      base,
-		log:       log,
-		inspector: inspect.NewRInspector(base, util.Path{}, log),
+		base: base,
+		log:  log,
 	}
 }
 
+var rInspectorFactory = inspect.NewRInspector
+
 func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	projectDir, _, err := ProjectDirFromRequest(h.base, w, req, h.log)
+	if err != nil {
+		// Response already returned by ProjectDirFromRequest
+		return
+	}
 	dec := json.NewDecoder(req.Body)
 	dec.DisallowUnknownFields()
 	var b PostPackagesRScanRequest
-	err := dec.Decode(&b)
+	err = dec.Decode(&b)
 	if err != nil && !errors.Is(err, io.EOF) {
 		BadRequest(w, req, h.log, err)
 		return
@@ -52,8 +57,9 @@ func (h *PostPackagesRScanHandler) ServeHTTP(w http.ResponseWriter, req *http.Re
 		BadRequest(w, req, h.log, err)
 		return
 	}
-	lockfileAbsPath := h.base.Join(path.String())
-	err = h.inspector.CreateLockfile(lockfileAbsPath)
+	lockfileAbsPath := projectDir.Join(path.String())
+	inspector := rInspectorFactory(projectDir, util.Path{}, h.log)
+	err = inspector.CreateLockfile(lockfileAbsPath)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return
