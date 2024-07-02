@@ -28,6 +28,9 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
+		entrypoint := req.URL.Query().Get("entrypoint")
+		entrypointPath := util.NewRelativePath(entrypoint, base.Fs())
+
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
 		var b postInspectRequestBody
@@ -37,7 +40,8 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			return
 		}
 
-		configs, err := initialize.GetPossibleConfigs(projectDir, util.NewPath(b.Python, nil), util.Path{}, log)
+		pythonPath := util.NewPath(b.Python, nil)
+		configs, err := initialize.GetPossibleConfigs(projectDir, pythonPath, util.Path{}, entrypointPath, log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return

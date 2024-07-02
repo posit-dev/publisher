@@ -32,7 +32,7 @@ func (s *PyShinySuite) TestInferType() {
 	s.Nil(err)
 
 	detector := NewPyShinyDetector()
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -57,7 +57,7 @@ func (s *PyShinySuite) TestInferTypeShinyExpress() {
 	s.Nil(err)
 
 	detector := NewPyShinyDetector()
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -65,6 +65,35 @@ func (s *PyShinySuite) TestInferTypeShinyExpress() {
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonShiny,
 		Entrypoint: "shiny.express.app:app_2e_py",
+		Validate:   true,
+		Files:      []string{"*"},
+		Python:     &config.Python{},
+	}, configs[0])
+}
+
+func (s *PyShinySuite) TestInferTypeWithEntrypoint() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "myapp.py"
+	err = base.Join(filename).WriteFile([]byte("import shiny\n"), 0600)
+	s.Nil(err)
+
+	otherFilename := "app.py"
+	err = base.Join(otherFilename).WriteFile([]byte("import shiny\n"), 0600)
+	s.Nil(err)
+
+	detector := NewPyShinyDetector()
+	entrypoint := util.NewRelativePath(filename, base.Fs())
+	configs, err := detector.InferType(base, entrypoint)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypePythonShiny,
+		Entrypoint: filename,
 		Validate:   true,
 		Files:      []string{"*"},
 		Python:     &config.Python{},

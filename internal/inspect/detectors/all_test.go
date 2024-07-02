@@ -37,7 +37,7 @@ func (s *AllSuite) TestInferTypeDirectory() {
 	s.NoError(err)
 
 	detector := NewContentTypeDetector(logging.New())
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.NoError(err)
 	s.Len(configs, 2)
 
@@ -67,7 +67,7 @@ func (s *AllSuite) TestInferTypeDirectoryIndeterminate() {
 	s.NoError(err)
 
 	detector := NewContentTypeDetector(logging.New())
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.NoError(err)
 	s.Len(configs, 1)
 	s.Equal(config.ContentTypeUnknown, configs[0].Type)
@@ -77,7 +77,7 @@ func (s *AllSuite) TestInferTypeErr() {
 	fs := afero.NewMemMapFs()
 	detector := NewContentTypeDetector(logging.New())
 	base := util.NewAbsolutePath("/foo", fs)
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.NotNil(err)
 	s.ErrorIs(err, os.ErrNotExist)
 	s.Nil(configs)
@@ -97,7 +97,7 @@ func (s *AllSuite) TestInferAll() {
 	s.NoError(err)
 
 	detector := NewContentTypeDetector(logging.New())
-	t, err := detector.InferType(base)
+	t, err := detector.InferType(base, util.RelativePath{})
 	s.NoError(err)
 	s.Equal([]*config.Config{
 		{
@@ -128,7 +128,7 @@ func (s *AllSuite) TestInferAllIndeterminate() {
 	s.NoError(err)
 
 	detector := NewContentTypeDetector(logging.New())
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.NoError(err)
 
 	s.Len(configs, 1)

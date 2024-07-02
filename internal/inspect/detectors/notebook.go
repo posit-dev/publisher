@@ -32,16 +32,28 @@ var voilaImportNames = []string{
 	"ipywebrtc",
 }
 
-func (d *NotebookDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+func (d *NotebookDetector) InferType(base util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error) {
+	if entrypoint.String() != "" {
+		// Optimization: skip inspection if there's a specified entrypoint
+		// and it's not one of ours.
+		if entrypoint.Ext() != ".ipynb" {
+			return nil, nil
+		}
+	}
 	var configs []*config.Config
 	entrypointPaths, err := base.Glob("*.ipynb")
 	if err != nil {
 		return nil, err
 	}
-	if len(entrypointPaths) == 0 {
-		return nil, nil
-	}
 	for _, entrypointPath := range entrypointPaths {
+		relEntrypoint, err := entrypointPath.Rel(base)
+		if err != nil {
+			return nil, err
+		}
+		if entrypoint.String() != "" && relEntrypoint != entrypoint {
+			// Only inspect the specified file
+			continue
+		}
 		code, err := pydeps.GetNotebookFileInputs(entrypointPath)
 		if err != nil {
 			return nil, err
@@ -50,13 +62,9 @@ func (d *NotebookDetector) InferType(base util.AbsolutePath) ([]*config.Config, 
 		if err != nil {
 			return nil, err
 		}
-		entrypoint, err := entrypointPath.Rel(base)
-		if err != nil {
-			return nil, err
-		}
 		cfg := config.New()
 		cfg.Type = config.ContentTypeHTML
-		cfg.Entrypoint = entrypoint.String()
+		cfg.Entrypoint = relEntrypoint.String()
 		if isVoila {
 			cfg.Type = config.ContentTypeJupyterVoila
 		} else {

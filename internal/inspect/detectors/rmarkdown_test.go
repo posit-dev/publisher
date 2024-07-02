@@ -47,7 +47,7 @@ func (s *RMarkdownSuite) TestInferType() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -84,7 +84,7 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 	s.Equal(&config.Config{
@@ -131,7 +131,7 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -170,7 +170,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdRuntime() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -208,7 +208,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServer() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -247,7 +247,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServerType() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -281,7 +281,7 @@ func (s *RMarkdownSuite) TestInferTypeNoMetadata() {
 	s.Nil(err)
 
 	detector := NewRMarkdownDetector(logging.New())
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	s.Len(configs, 1)
 
@@ -289,6 +289,36 @@ func (s *RMarkdownSuite) TestInferTypeNoMetadata() {
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeRMarkdown,
 		Title:      "",
+		Entrypoint: filename,
+		Validate:   true,
+		Files:      []string{"*"},
+		R:          &config.R{},
+	}, configs[0])
+}
+
+func (s *RMarkdownSuite) TestInferTypeWithEntrypoint() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "report.Rmd"
+	err = base.Join(filename).WriteFile([]byte(basicRmdContent), 0600)
+	s.Nil(err)
+
+	otherFilename := "something_else.Rmd"
+	err = base.Join(otherFilename).WriteFile([]byte(basicRmdContent), 0600)
+	s.Nil(err)
+
+	detector := NewRMarkdownDetector(logging.New())
+	entrypoint := util.NewRelativePath(filename, base.Fs())
+	configs, err := detector.InferType(base, entrypoint)
+	s.Nil(err)
+	s.Len(configs, 1)
+
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeRMarkdown,
+		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   true,
 		Files:      []string{"*"},

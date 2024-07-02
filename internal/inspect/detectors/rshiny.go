@@ -20,14 +20,26 @@ func NewRShinyDetector() *RShinyDetector {
 	}
 }
 
-func (d *RShinyDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+func (d *RShinyDetector) InferType(base util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error) {
+	requiredEntrypoint := entrypoint.String()
+	if requiredEntrypoint != "" {
+		// Optimization: skip inspection if there's a specified entrypoint
+		// and it's not one of ours.
+		if entrypoint.Ext() != ".R" {
+			return nil, nil
+		}
+	}
 	// rsconnect looks for these two specific entrypoint filenames.
 	// Note that server.R might contain server code referenced from a shiny-document.
 	possibleEntrypoints := []string{"app.R", "server.R"}
 	var configs []*config.Config
 
-	for _, entrypoint := range possibleEntrypoints {
-		entrypointPath := base.Join(entrypoint)
+	for _, relEntrypoint := range possibleEntrypoints {
+		if requiredEntrypoint != "" && relEntrypoint != requiredEntrypoint {
+			// Only inspect the specified file
+			continue
+		}
+		entrypointPath := base.Join(relEntrypoint)
 		exists, err := entrypointPath.Exists()
 		if err != nil {
 			return nil, err
@@ -35,7 +47,7 @@ func (d *RShinyDetector) InferType(base util.AbsolutePath) ([]*config.Config, er
 		if exists {
 			cfg := config.New()
 			cfg.Type = config.ContentTypeRShiny
-			cfg.Entrypoint = entrypoint
+			cfg.Entrypoint = relEntrypoint
 
 			// Indicate that R inspection is needed.
 			cfg.R = &config.R{}

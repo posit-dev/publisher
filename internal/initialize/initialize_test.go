@@ -164,7 +164,7 @@ func (s *InitializeSuite) TestGetPossibleConfigs() {
 	s.NoError(err)
 
 	PythonInspectorFactory = makeMockPythonInspector
-	configs, err := GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, log)
+	configs, err := GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
 	s.NoError(err)
 
 	s.Len(configs, 2)
@@ -175,4 +175,30 @@ func (s *InitializeSuite) TestGetPossibleConfigs() {
 	s.Equal(config.ContentTypeHTML, configs[1].Type)
 	s.Equal("index.html", configs[1].Entrypoint)
 	s.Nil(configs[1].Python)
+}
+
+func (s *InitializeSuite) TestGetPossibleConfigsEmpty() {
+	log := logging.New()
+
+	configs, err := GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, util.RelativePath{}, log)
+	s.NoError(err)
+
+	s.Len(configs, 1)
+	s.Equal(config.ContentTypeUnknown, configs[0].Type)
+	s.Equal("unknown", configs[0].Entrypoint)
+	s.Nil(configs[0].Python)
+}
+
+func (s *InitializeSuite) TestGetPossibleConfigsWithMissingEntrypoint() {
+	log := logging.New()
+	s.createAppPy()
+
+	entrypoint := util.NewRelativePath("nonexistent.py", s.cwd.Fs())
+	configs, err := GetPossibleConfigs(s.cwd, util.Path{}, util.Path{}, entrypoint, log)
+	s.NoError(err)
+
+	s.Len(configs, 1)
+	s.Equal(config.ContentTypeUnknown, configs[0].Type)
+	s.Equal("nonexistent.py", configs[0].Entrypoint)
+	s.Nil(configs[0].Python)
 }

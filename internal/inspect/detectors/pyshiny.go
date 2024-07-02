@@ -44,17 +44,28 @@ func shinyExpressEntrypoint(entrypoint string) string {
 	return "shiny.express.app:" + safeEntrypoint
 }
 
-func (d *pyShinyDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+func (d *pyShinyDetector) InferType(base util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error) {
+	if entrypoint.String() != "" {
+		// Optimization: skip inspection if there's a specified entrypoint
+		// and it's not one of ours.
+		if entrypoint.Ext() != ".py" {
+			return nil, nil
+		}
+	}
 	var configs []*config.Config
 	entrypointPaths, err := base.Glob("*.py")
 	if err != nil {
 		return nil, err
 	}
-	if len(entrypointPaths) == 0 {
-		// We didn't find a matching filename
-		return nil, nil
-	}
 	for _, entrypointPath := range entrypointPaths {
+		relEntrypoint, err := entrypointPath.Rel(base)
+		if err != nil {
+			return nil, err
+		}
+		if entrypoint.String() != "" && relEntrypoint != entrypoint {
+			// Only inspect the specified file
+			continue
+		}
 		matches, err := d.FileHasPythonImports(entrypointPath, []string{"shiny"})
 		if err != nil {
 			return nil, err
@@ -69,14 +80,10 @@ func (d *pyShinyDetector) InferType(base util.AbsolutePath) ([]*config.Config, e
 		}
 		cfg := config.New()
 
-		entrypoint, err := entrypointPath.Rel(base)
-		if err != nil {
-			return nil, err
-		}
 		if isShinyExpress {
-			cfg.Entrypoint = shinyExpressEntrypoint(entrypoint.String())
+			cfg.Entrypoint = shinyExpressEntrypoint(relEntrypoint.String())
 		} else {
-			cfg.Entrypoint = entrypoint.String()
+			cfg.Entrypoint = relEntrypoint.String()
 		}
 		cfg.Type = config.ContentTypePythonShiny
 		// indicate that Python inspection is needed

@@ -17,7 +17,15 @@ func NewStaticHTMLDetector() *StaticHTMLDetector {
 	}
 }
 
-func (d *StaticHTMLDetector) InferType(base util.AbsolutePath) ([]*config.Config, error) {
+func (d *StaticHTMLDetector) InferType(base util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error) {
+	if entrypoint.String() != "" {
+		// Optimization: skip inspection if there's a specified entrypoint
+		// and it's not one of ours.
+		suffix := entrypoint.Ext()
+		if suffix != ".html" && suffix != ".htm" {
+			return nil, nil
+		}
+	}
 	var configs []*config.Config
 	entrypointPaths, err := base.Glob("*.html")
 	if err != nil {
@@ -28,17 +36,18 @@ func (d *StaticHTMLDetector) InferType(base util.AbsolutePath) ([]*config.Config
 		return nil, err
 	}
 	entrypointPaths = append(entrypointPaths, moreEntrypointPaths...)
-	if len(entrypointPaths) == 0 {
-		return nil, nil
-	}
 	for _, entrypointPath := range entrypointPaths {
-		entrypoint, err := entrypointPath.Rel(base)
+		relEntrypoint, err := entrypointPath.Rel(base)
 		if err != nil {
 			return nil, err
 		}
+		if entrypoint.String() != "" && relEntrypoint != entrypoint {
+			// Only inspect the specified file
+			continue
+		}
 		cfg := config.New()
 		cfg.Type = config.ContentTypeHTML
-		cfg.Entrypoint = entrypoint.String()
+		cfg.Entrypoint = relEntrypoint.String()
 		configs = append(configs, cfg)
 	}
 	return configs, nil

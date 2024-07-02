@@ -57,7 +57,7 @@ func (s *QuartoDetectorSuite) runInferType(testName string) []*config.Config {
 		executor.On("RunCommand", "quarto", []string{"inspect", filename.String()}, mock.Anything, mock.Anything).Return(fileOutput, nil, nil)
 	}
 
-	configs, err := detector.InferType(base)
+	configs, err := detector.InferType(base, util.RelativePath{})
 	s.Nil(err)
 	return configs
 }

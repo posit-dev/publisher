@@ -28,7 +28,7 @@ func inspectProject(base util.AbsolutePath, python util.Path, rExecutable util.P
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory(log)
 
-	configs, err := typeDetector.InferType(base)
+	configs, err := typeDetector.InferType(base, util.RelativePath{})
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
@@ -117,10 +117,16 @@ func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path
 	return false, nil
 }
 
-func GetPossibleConfigs(base util.AbsolutePath, python util.Path, rExecutable util.Path, log logging.Logger) ([]*config.Config, error) {
+func GetPossibleConfigs(
+	base util.AbsolutePath,
+	python util.Path,
+	rExecutable util.Path,
+	entrypoint util.RelativePath,
+	log logging.Logger) ([]*config.Config, error) {
+
 	log.Info("Detecting deployment type and entrypoint...")
 	typeDetector := ContentDetectorFactory(log)
-	configs, err := typeDetector.InferType(base)
+	configs, err := typeDetector.InferType(base, entrypoint)
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
@@ -159,6 +165,17 @@ func GetPossibleConfigs(base util.AbsolutePath, python util.Path, rExecutable ut
 			cfg.R = rConfig
 		}
 		cfg.Comments = strings.Split(initialComment, "\n")
+
+		// Usually an entrypoint will be inferred.
+		// If not, use the specified entrypoint, or
+		// fall back to unknown.
+		if cfg.Entrypoint == "" {
+			cfg.Entrypoint = entrypoint.String()
+
+			if cfg.Entrypoint == "" {
+				cfg.Entrypoint = "unknown"
+			}
+		}
 	}
 	return configs, nil
 }
