@@ -6,9 +6,36 @@ import {
   window,
   workspace,
 } from "vscode";
+
+import { useApi } from "src/api";
+import { getPythonInterpreterPath } from "src/utils/config";
 import { isActiveDocument } from "src/utils/files";
+import { hasKnownContentType } from "./utils/inspect";
 
 const ACTIVE_FILE_ENTRYPOINT_CONTEXT = "posit.publish.activeFileEntrypoint";
+
+/**
+ * Determines if a text document is an entrypoint file.
+ *
+ * @param document The text document to inspect
+ * @returns If the text document is an entrypoint
+ */
+async function isDocumentEntrypoint(document: TextDocument): Promise<boolean> {
+  const api = await useApi();
+  const python = await getPythonInterpreterPath();
+
+  // If the file is outside the workspace, it cannot be an entrypoint
+  const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
+  if (workspaceFolder === undefined) {
+    return false;
+  }
+
+  const response = await api.configurations.inspect(python, {
+    dir: workspace.asRelativePath(workspaceFolder.uri),
+    entrypoint: workspace.asRelativePath(document.fileName),
+  });
+  return hasKnownContentType(response.data);
+}
 
 /**
  * Tracks whether a document is an entrypoint file and sets extension context.
@@ -25,9 +52,8 @@ export class TrackedEntrypointDocument {
   }
 
   static async create(document: TextDocument) {
-    // set entrypoint with API call
-    // workspace.asRelativePath(editor.document.uri),
-    return new TrackedEntrypointDocument(document, false);
+    const isEntrypoint = await isDocumentEntrypoint(document);
+    return new TrackedEntrypointDocument(document, isEntrypoint);
   }
 
   /**
@@ -61,9 +87,8 @@ export class TrackedEntrypointDocument {
    * Updates whether or not the document is an entrypoint file.
    */
   private async update() {
-    // set entrypoint with API call
-    // workspace.asRelativePath(editor.document.uri),
-    this.isEntrypoint = !this.isEntrypoint;
+    this.requiresUpdate = false;
+    this.isEntrypoint = await isDocumentEntrypoint(this.document);
   }
 }
 
