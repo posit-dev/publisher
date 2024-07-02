@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/config"
@@ -30,7 +31,17 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 		}
 		entrypoint := req.URL.Query().Get("entrypoint")
 		entrypointPath := util.NewRelativePath(entrypoint, base.Fs())
-
+		entrypointAbsPath := projectDir.Join(entrypoint)
+		exists, err := entrypointAbsPath.Exists()
+		if err != nil {
+			InternalError(w, req, log, err)
+			return
+		}
+		if !exists {
+			err = fmt.Errorf("entrypoint %s does not exist", entrypoint)
+			NotFound(w, log, err)
+			return
+		}
 		dec := json.NewDecoder(req.Body)
 		dec.DisallowUnknownFields()
 		var b postInspectRequestBody
