@@ -12,7 +12,7 @@ import {
 
 import {
   Configuration,
-  ConfigurationDetails,
+  ConfigurationInspectionResult,
   ContentRecord,
   PreContentRecord,
   contentTypeStrings,
@@ -32,7 +32,7 @@ import {
 import { untitledConfigurationName } from "src/utils/names";
 import { calculateTitle } from "src/utils/titles";
 import {
-  filterConfigurationDetailsToType,
+  filterInspectionResultsToType,
   filterConfigurationsToValidAndType,
 } from "src/utils/filters";
 
@@ -48,7 +48,7 @@ export async function selectConfig(
   let configFileListItems: QuickPickItem[] = [];
   let configurations: Configuration[] = [];
   let entryPointListItems: QuickPickItemWithIndex[] = [];
-  let configDetails: ConfigurationDetails[] = [];
+  let inspectionResults: ConfigurationInspectionResult[] = [];
 
   const createNewConfigurationLabel = "Create a New Configuration";
 
@@ -136,11 +136,12 @@ export async function selectConfig(
       try {
         const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(python);
-        configDetails = filterConfigurationDetailsToType(
+        inspectionResults = filterInspectionResultsToType(
           inspectResponse.data,
           activeDeployment.type,
         );
-        configDetails.forEach((config, i) => {
+        inspectionResults.forEach((result, i) => {
+          const config = result.configuration;
           if (config.entrypoint) {
             entryPointListItems.push({
               iconPath: new ThemeIcon("file"),
@@ -305,7 +306,8 @@ export async function selectConfig(
       state.data.entryPoint &&
       isQuickPickItemWithIndex(state.data.entryPoint)
     ) {
-      const detail = configDetails[state.data.entryPoint.index].title;
+      const detail =
+        inspectionResults[state.data.entryPoint.index].configuration.title;
       if (detail) {
         initialValue = detail;
       }
@@ -329,10 +331,10 @@ export async function selectConfig(
       value:
         typeof state.data.title === "string" ? state.data.title : initialValue,
       prompt: "Enter a title for your content or application.",
-      validate: (value) => {
+      finalValidation: (value) => {
         if (value.length < 3) {
           return Promise.resolve({
-            message: `Invalid Title: Value must be longer than 3 characters`,
+            message: `Error: Invalid Title (value must be longer than 3 characters)`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -389,17 +391,18 @@ export async function selectConfig(
     // Create the Config File
     try {
       const configName = await untitledConfigurationName();
-      const selectedConfigDetails = configDetails[state.data.entryPoint.index];
-      if (!selectedConfigDetails) {
+      const selectedInspectionResult =
+        inspectionResults[state.data.entryPoint.index];
+      if (!selectedInspectionResult) {
         window.showErrorMessage(
           `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
         );
         return;
       }
-      selectedConfigDetails.title = state.data.title;
+      selectedInspectionResult.configuration.title = state.data.title;
       const createResponse = await api.configurations.createOrUpdate(
         configName,
-        selectedConfigDetails,
+        selectedInspectionResult.configuration,
       );
       const fileUri = Uri.file(createResponse.data.configurationPath);
       const newConfig = createResponse.data;

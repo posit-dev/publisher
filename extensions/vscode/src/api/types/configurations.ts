@@ -18,6 +18,11 @@ export type Configuration = {
   configuration: ConfigurationDetails;
 } & ConfigurationLocation;
 
+export type ConfigurationInspectionResult = {
+  configuration: ConfigurationDetails;
+  projectDir: string;
+};
+
 export function isConfigurationError(
   c: Configuration | ConfigurationError,
 ): c is ConfigurationError {

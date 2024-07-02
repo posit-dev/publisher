@@ -160,3 +160,39 @@ func (s *GetConfigurationsSuite) TestGetConfigurationsFromSubdir() {
 	s.Nil(res[0].Error)
 	s.Equal(cfg, res[0].Configuration)
 }
+
+func (s *GetConfigurationsSuite) TestGetConfigurationsByEntrypoint() {
+	matchingConfig := s.makeConfiguration("matching")
+	path := config.GetConfigPath(s.cwd, "nonmatching")
+	nonMatchingConfig := config.New()
+	nonMatchingConfig.Type = config.ContentTypeHTML
+	nonMatchingConfig.Entrypoint = "index.html"
+	err := nonMatchingConfig.WriteFile(path)
+	s.NoError(err)
+
+	h := GetConfigurationsHandlerFunc(s.cwd, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/configurations?entrypoint=app.py", nil)
+	s.NoError(err)
+
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := []configDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+	s.Len(res, 1)
+
+	relPath := filepath.Join(".posit", "publish", "matching.toml")
+	s.Equal(s.cwd.Join(relPath).String(), res[0].Path)
+	s.Equal(relPath, res[0].RelPath)
+
+	s.Equal("matching", res[0].Name)
+	s.Equal(".", res[0].ProjectDir)
+	s.Nil(res[0].Error)
+	s.Equal(matchingConfig, res[0].Configuration)
+}

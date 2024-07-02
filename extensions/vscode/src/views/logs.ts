@@ -17,7 +17,11 @@ import {
 
 import { EventStream, displayEventStreamMessage } from "src/events";
 
-import { EventStreamMessage } from "src/api";
+import {
+  EventStreamMessage,
+  isPublishFailure,
+  isPublishSuccess,
+} from "src/api";
 import { Commands, Views } from "src/constants";
 
 enum LogStageStatus {
@@ -177,7 +181,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           }
         });
 
-        let showLogsOption = "Show Logs";
+        let showLogsOption = "View Log";
         const selection = await window.showErrorMessage(
           `Deployment failed: ${msg.data.message}`,
           showLogsOption,
@@ -349,6 +353,7 @@ export class LogsTreeStageItem extends TreeItem {
       case LogStageStatus.failed:
         this.label = this.stage.inactiveLabel;
         this.iconPath = new ThemeIcon("error");
+        this.collapsibleState = TreeItemCollapsibleState.Expanded;
         break;
     }
   }
@@ -362,12 +367,18 @@ export class LogsTreeLogItem extends TreeItem {
     msg: EventStreamMessage,
     state: TreeItemCollapsibleState = TreeItemCollapsibleState.None,
   ) {
+    if (msg.data.message) {
+      msg.data.message = msg.data.message.replaceAll("\n", " ");
+    }
     super(displayEventStreamMessage(msg), state);
     this.tooltip = JSON.stringify(msg);
+    if (!isPublishSuccess(msg) && !isPublishFailure(msg)) {
+      this.iconPath = new ThemeIcon("debug-stackframe-dot");
+    }
 
     if (msg.data.dashboardUrl !== undefined) {
       this.command = {
-        title: "Visit",
+        title: "View",
         command: Commands.Logs.Visit,
         arguments: [msg.data.dashboardUrl],
       };

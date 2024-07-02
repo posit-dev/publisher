@@ -32,11 +32,19 @@ const configurationsCommands = {
   Delete: "posit.publisher.configurations.delete",
 } as const;
 
+const configurationsContexts = {
+  TreeItem: "posit.publisher.configurations.tree.item",
+} as const;
+
 const credentialsCommands = {
   Add: "posit.publisher.credentials.add",
   Delete: "posit.publisher.credentials.delete",
   Refresh: "posit.publisher.credentials.refresh",
 } as const;
+
+const credentialsContexts = {
+  Keychain: "posit.publisher.credentials.tree.item.keychain",
+};
 
 const contentRecordsCommands = {
   Edit: "posit.publisher.contentRecords.edit",
@@ -44,6 +52,12 @@ const contentRecordsCommands = {
   Forget: "posit.publisher.contentRecords.forget",
   Visit: "posit.publisher.contentRecords.visit",
   Refresh: "posit.publisher.contentRecords.refresh",
+} as const;
+
+const contentRecordsContexts = {
+  ContentRecord: "posit.publisher.contentRecords.tree.item.contentRecord",
+  PreContentRecord: "posit.publisher.contentRecords.tree.item.precontentRecord",
+  DeploymentError: "posit.publisher.contentRecords.tree.item.deploymentError",
 } as const;
 
 const filesCommands = {
@@ -79,10 +93,18 @@ const homeViewCommands = {
   ShowContentLogs: "posit.publisher.homeView.navigateToDeployment.ContentLog",
 } as const;
 
+const homeViewContexts = {
+  Initialized: "posit.publisher.homeView.initialized",
+};
+
 const helpAndFeedbackCommands = {
   OpenFeedback: "posit.publisher.helpAndFeedback.openFeedback",
   OpenGettingStarted: "posit.publisher.helpAndFeedback.gettingStarted",
 } as const;
+
+export const LocalState = {
+  LastSelectionState: "posit.publisher.homeView.lastSelectionState.v2",
+};
 
 export const Commands = {
   ...baseCommands,
@@ -95,7 +117,14 @@ export const Commands = {
   RPackages: rPackagesCommands,
   HomeView: homeViewCommands,
   HelpAndFeedback: helpAndFeedbackCommands,
-} as const;
+};
+
+export const Contexts = {
+  Configurations: configurationsContexts,
+  ContentRecords: contentRecordsContexts,
+  Credentials: credentialsContexts,
+  HomeView: homeViewContexts,
+};
 
 export const enum Views {
   Project = "posit.publisher.project",

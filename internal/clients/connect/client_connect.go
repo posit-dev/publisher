@@ -87,6 +87,7 @@ func (u *UserDTO) CanPublish() bool {
 
 var errInvalidServerOrCredentials = errors.New("could not validate credentials; check server URL and API key or token")
 var errInvalidApiKey = errors.New("could not log in with the provided credentials")
+var errInvalidServer = errors.New("could not access the server; check the server URL and try again")
 
 func isConnectAuthError(err error) bool {
 	// You might expect a 401 for a bad API key (and we'll handle that).
@@ -113,10 +114,15 @@ func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 					log.Info("Connect server connectivity check failed", "url", c.account.URL)
 					return nil, nil
 				}
+			} else {
+				// This isn't a Connect server, or we were redirected for auth, or ???
+				log.Debug("Server responded with error", "error", agentErr.Error())
+				if c.account.ApiKey != "" {
+					return nil, errInvalidServerOrCredentials
+				} else {
+					return nil, errInvalidServer
+				}
 			}
-			// This isn't a Connect server, or we were redirected for auth, or ???
-			log.Debug("Server responded with error", "error", agentErr.Error())
-			return nil, errInvalidServerOrCredentials
 		} else if e, ok := err.(*url.Error); ok {
 			log.Debug("Request to Connect had an URL error", "error", e.Error())
 			return nil, e.Err

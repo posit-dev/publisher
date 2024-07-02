@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -140,4 +141,56 @@ func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentHandlerBadDeploymen
 	handler := PatchDeploymentHandlerFunc(s.cwd, log)
 	handler(rec, req)
 	s.Equal(http.StatusUnprocessableEntity, rec.Result().StatusCode)
+}
+
+func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentSubdir() {
+	log := logging.New()
+
+	// Deployment is in a subdirectory two levels down
+	base := s.cwd.Dir().Dir()
+	relProjectDir, err := s.cwd.Rel(base)
+	s.NoError(err)
+
+	dirParam := url.QueryEscape(relProjectDir.String())
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("PATCH", "/api/deployments/myTargetName?dir="+dirParam, nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"name": "myTargetName"})
+
+	path := deployment.GetDeploymentPath(s.cwd, "myTargetName")
+	d := deployment.New()
+	err = d.WriteFile(path)
+	s.NoError(err)
+
+	cfg := config.New()
+	err = cfg.WriteFile(config.GetConfigPath(s.cwd, "myConfig"))
+	s.NoError(err)
+
+	req.Body = io.NopCloser(strings.NewReader(`{"configurationName": "myConfig"}`))
+
+	handler := PatchDeploymentHandlerFunc(base, log)
+	handler(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	updated, err := deployment.FromFile(path)
+	s.NoError(err)
+	s.Equal("myConfig", updated.ConfigName)
+}
+
+func (s *PatchDeploymentHandlerFuncSuite) TestPatchDeploymentBadDir() {
+	// It's a Bad Request to try to patch a deployment from a directory outside the project
+	_, err := createSampleDeployment(s.cwd, "myTargetName")
+	s.NoError(err)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("PATCH", "/api/deployments/myTargetName?dir=../middleware", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"id": "myTargetName"})
+	req.Body = io.NopCloser(strings.NewReader(`{"configurationName": "myConfig"}`))
+
+	h := GetDeploymentHandlerFunc(s.cwd, logging.New())
+	h(rec, req)
+
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }

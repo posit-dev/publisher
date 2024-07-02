@@ -136,6 +136,9 @@ minor version number is odd.
   - the [CHANGELOG.md](CHANGELOG.md) for the repository
   - the [VSCode Extension CHANGELOG.md](extensions/vscode/CHANGELOG.md)
     that is bundled with the extension
+  - Update the Installation instructions in [installation.md](docs/installation.md)
+    for the new release, using the links to the `.vsix` files uploaded to the CDN.
+  - Update the release / latest version string in the `install-publisher.bash` script.
 - Update the license docs in case any new dependencies have been added, by running
 
 ```
@@ -173,12 +176,3 @@ This command will trigger the [Release GitHub Action](https://github.com/rstudio
 Once complete the action has completed, the release will be available on the
 [Releases page](https://github.com/rstudio/publishing-client/releases), and
 published to the VSCode Marketplace.
-
-**Step 4**
-
-Update the Installation instructions in [installation.md](docs/installation.md)
-for the new release, using the links to the `.vsix` files uploaded to the CDN.
-
-**Step 5**
-
-Update the release / latest version string in the `install-publisher.bash` script.

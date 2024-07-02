@@ -103,7 +103,6 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			return
 		}
 
-		var response configDTO
 		configPath := config.GetConfigPath(projectDir, name)
 
 		err = cfg.WriteFile(configPath)
@@ -116,10 +115,12 @@ func PutConfigurationHandlerFunc(base util.AbsolutePath, log logging.Logger) htt
 			InternalError(w, req, log, err)
 			return
 		}
-		response = configDTO{
-			Name:          name,
-			Path:          configPath.String(),
-			RelPath:       relPath.String(),
+		response := configDTO{
+			configLocation: configLocation{
+				Name:    name,
+				Path:    configPath.String(),
+				RelPath: relPath.String(),
+			},
 			ProjectDir:    relProjectDir.String(),
 			Configuration: &cfg,
 		}

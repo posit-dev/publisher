@@ -413,6 +413,46 @@ func (s *ConnectClientSuite) TestTestAuthentication() {
 	s.NoError(err)
 }
 
+func (s *ConnectClientSuite) TestTestAuthentication401() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpErr := &http_client.HTTPError{
+		Status: 401,
+	}
+	agentError := types.NewAgentError(events.ServerErrorCode, httpErr, nil)
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, mock.Anything).Return(agentError)
+
+	client := &ConnectClient{
+		client:  httpClient,
+		account: &accounts.Account{},
+	}
+	user, err := client.TestAuthentication(logging.New())
+	s.Nil(user)
+	s.NoError(err)
+}
+
+func (s *ConnectClientSuite) TestTestAuthentication401WithKey() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpErr := &http_client.HTTPError{
+		Status: 401,
+	}
+	agentError := types.NewAgentError(events.ServerErrorCode, httpErr, nil)
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, mock.Anything).Return(agentError)
+
+	client := &ConnectClient{
+		client: httpClient,
+		account: &accounts.Account{
+			ApiKey: "my-api-key",
+		},
+	}
+	user, err := client.TestAuthentication(logging.New())
+	s.Nil(user)
+	s.NotNil(err)
+	agentErr, ok := err.(*types.AgentError)
+	s.True(ok)
+	s.ErrorIs(agentErr.Err, errInvalidApiKey)
+	s.Equal(events.AuthenticationFailedCode, agentErr.Code)
+}
+
 func (s *ConnectClientSuite) TestTestAuthentication404() {
 	httpClient := &http_client.MockHTTPClient{}
 	httpErr := &http_client.HTTPError{
@@ -424,6 +464,26 @@ func (s *ConnectClientSuite) TestTestAuthentication404() {
 	client := &ConnectClient{
 		client:  httpClient,
 		account: &accounts.Account{},
+	}
+	user, err := client.TestAuthentication(logging.New())
+	s.Nil(user)
+	s.NotNil(err)
+	s.ErrorIs(err, errInvalidServer)
+}
+
+func (s *ConnectClientSuite) TestTestAuthentication404WithKey() {
+	httpClient := &http_client.MockHTTPClient{}
+	httpErr := &http_client.HTTPError{
+		Status: 404,
+	}
+	agentError := types.NewAgentError(events.ServerErrorCode, httpErr, nil)
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, mock.Anything).Return(agentError)
+
+	client := &ConnectClient{
+		client: httpClient,
+		account: &accounts.Account{
+			ApiKey: "my-api-key",
+		},
 	}
 	user, err := client.TestAuthentication(logging.New())
 	s.Nil(user)

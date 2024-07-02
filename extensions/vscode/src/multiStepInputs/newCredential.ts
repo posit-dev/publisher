@@ -10,9 +10,14 @@ import {
 import { InputBoxValidationSeverity, ProgressLocation, window } from "vscode";
 
 import { useApi, Credential } from "src/api";
-import { getSummaryStringFromError } from "src/utils/errors";
-import { formatURL } from "src/utils/url";
-import { validateApiKey } from "src/utils/apiKeys";
+import {
+  getMessageFromError,
+  getSummaryStringFromError,
+} from "src/utils/errors";
+import { formatURL, normalizeURL } from "src/utils/url";
+import { checkSyntaxApiKey } from "src/utils/apiKeys";
+
+const createNewCredentialLabel = "Create a New Credential";
 
 export async function newCredential(
   startingServerUrl?: string,
@@ -109,13 +114,15 @@ export async function newCredential(
       prompt: "Enter the Public URL of the Posit Connect Server",
       placeholder: "https://servername.com:3939",
       validate: (input: string) => {
-        input = input.trim();
-        if (input === "") {
+        if (input.includes(" ")) {
           return Promise.resolve({
-            message: "You must enter a valid Server URL.",
+            message: "Error: Invalid URL (spaces are not allowed).",
             severity: InputBoxValidationSeverity.Error,
           });
         }
+        return Promise.resolve(undefined);
+      },
+      finalValidation: async (input: string) => {
         input = formatURL(input);
         try {
           // will validate that this is a valid URL
@@ -125,16 +132,38 @@ export async function newCredential(
             throw e;
           }
           return Promise.resolve({
-            message: "Invalid URL.",
+            message: `Error: Invalid URL (${getMessageFromError(e)}).`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
         const existingCredential = credentials.find(
-          (cred) => input.toLowerCase() === cred.url.toLowerCase(),
+          (credential) =>
+            normalizeURL(input).toLowerCase() ===
+            normalizeURL(credential.url).toLowerCase(),
         );
         if (existingCredential) {
           return Promise.resolve({
-            message: `Server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed.`,
+            message: `Error: Invalid URL (this server URL is already assigned to your credential "${existingCredential.name}". Only one credential per unique URL is allowed).`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        try {
+          const testResult = await api.credentials.test(input);
+          if (testResult.status !== 200) {
+            return Promise.resolve({
+              message: `Error: Invalid URL (unable to validate connectivity with Server URL - API Call result: ${testResult.status} - ${testResult.statusText}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          if (testResult.data.error) {
+            return Promise.resolve({
+              message: `Error: Invalid URL (${testResult.data.error.msg}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+        } catch (e) {
+          return Promise.resolve({
+            message: `Error: Invalid URL (unable to validate connectivity with Server URL - ${getMessageFromError(e)}).`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -170,17 +199,44 @@ export async function newCredential(
         See the [User Guide](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating)
         for further information.`,
       validate: (input: string) => {
-        input = input.trim();
-        if (input === "") {
+        if (input.includes(" ")) {
           return Promise.resolve({
-            message: "An API key is required.",
+            message: "Error: Invalid API Key (spaces are not allowed).",
             severity: InputBoxValidationSeverity.Error,
           });
         }
-        const errorMsg = validateApiKey(input);
+        return Promise.resolve(undefined);
+      },
+      finalValidation: async (input: string) => {
+        // validate that the API key is formed correctly
+        const errorMsg = checkSyntaxApiKey(input);
         if (errorMsg) {
           return Promise.resolve({
-            message: errorMsg,
+            message: `Error: Invalid API Key (${errorMsg}).`,
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        // url should always be defined by the time we get to this step
+        // but we have to type guard it for the API
+        const serverUrl =
+          typeof state.data.url === "string" ? state.data.url : "";
+        try {
+          const testResult = await api.credentials.test(serverUrl, input);
+          if (testResult.status !== 200) {
+            return Promise.resolve({
+              message: `Error: Invalid API Key (unable to validate API Key - API Call result: ${testResult.status} - ${testResult.statusText}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+          if (testResult.data.error) {
+            return Promise.resolve({
+              message: `Error: Invalid API Key (${testResult.data.error.msg}).`,
+              severity: InputBoxValidationSeverity.Error,
+            });
+          }
+        } catch (e) {
+          return Promise.resolve({
+            message: `Error: Invalid API Key (${getMessageFromError(e)})`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -217,17 +273,25 @@ export async function newCredential(
       value: currentName,
       prompt: "Enter a Unique Nickname for your Credential.",
       placeholder: "example: Posit Connect",
-      validate: (input: string) => {
+      finalValidation: (input: string) => {
         input = input.trim();
         if (input === "") {
           return Promise.resolve({
-            message: "A credential is required.",
+            message: "Error: Invalid Nickname (a value is required).",
             severity: InputBoxValidationSeverity.Error,
           });
         }
         if (credentials.find((cred) => cred.name === input)) {
           return Promise.resolve({
-            message: "Nickname is already in use. Please enter a unique value.",
+            message:
+              "Error: Invalid Nickname (value is already in use by a different credential).",
+            severity: InputBoxValidationSeverity.Error,
+          });
+        }
+        if (input === createNewCredentialLabel) {
+          return Promise.resolve({
+            message:
+              "Error: Nickname is reserved for internal use. Please provide another value.",
             severity: InputBoxValidationSeverity.Error,
           });
         }

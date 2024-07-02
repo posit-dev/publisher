@@ -5,7 +5,7 @@ Posit Publisher lets you deploy projects to Connect from VSCode.
 Key concepts:
 
 - Publisher is a VSCode
-  extension that presents a UI within the VSCode left activity panel.
+  extension that presents a UI within the VSCode sidebar.
 - Deployment options are set via configuration files in `.posit/publish/`.
 - Records of where you have deployed are kept in `.posit/publish/deployments`.
 
@@ -20,7 +20,7 @@ Supported features:
   VSCode](https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml)
   extension
 - Python content: APIs, applications, and notebooks
-- Quarto content: .qmd, .Rmd, and .ipynb files. Support for embedded Shiny apps
+- Quarto content: .qmd and .Rmd files. Support for embedded Shiny apps
 - R content: Shiny apps, RMarkdown, Plumber APIs, and Rmd with embedded Shiny apps
 - Automatic detection of client R, Python and Quarto versions
 - Dependencies from requirements.txt and/or renv.lock files

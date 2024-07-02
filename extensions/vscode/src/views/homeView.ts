@@ -65,16 +65,12 @@ import { selectConfig } from "src/multiStepInputs/selectConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
-import { Commands, Views } from "src/constants";
-
-const contextIsHomeViewInitialized = "posit.publisher.homeView.initialized";
+import { Commands, Contexts, LocalState, Views } from "src/constants";
 
 enum HomeViewInitialized {
   initialized = "initialized",
   uninitialized = "uninitialized",
 }
-
-const lastSelectionState = "posit.publisher.homeView.lastSelectionState.v2";
 
 const fileEventDebounce = 200;
 
@@ -209,6 +205,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewDeploymentMultiStep(Views.HomeView);
       case WebviewToHostMessageType.NEW_CREDENTIAL:
         return this.showNewCredential();
+      case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
+        return this.showPublishingLog();
       default:
         throw new Error(
           `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -244,7 +242,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private setInitializationContext(context: HomeViewInitialized) {
     commands.executeCommand(
       "setContext",
-      contextIsHomeViewInitialized,
+      Contexts.HomeView.Initialized,
       context,
     );
   }
@@ -431,7 +429,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private _getSelectionState(): HomeViewState {
     const state = this._context.workspaceState.get<HomeViewState>(
-      lastSelectionState,
+      LocalState.LastSelectionState,
       {
         deploymentName: undefined,
         configurationName: undefined,
@@ -462,7 +460,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async _saveSelectionState(state: HomeViewState): Promise<void> {
-    await this._context.workspaceState.update(lastSelectionState, state);
+    await this._context.workspaceState.update(
+      LocalState.LastSelectionState,
+      state,
+    );
 
     useBus().trigger(
       "activeContentRecordChanged",
@@ -795,6 +796,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       Commands.Credentials.Add,
       contentRecord?.serverUrl,
     );
+  }
+
+  private showPublishingLog() {
+    return commands.executeCommand(Commands.Logs.Focus);
   }
 
   private async showDeploymentQuickPick(): Promise<

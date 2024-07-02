@@ -19,7 +19,7 @@ import {
 
 import {
   Configuration,
-  ConfigurationDetails,
+  ConfigurationInspectionResult,
   contentTypeStrings,
   useApi,
 } from "../api";
@@ -33,15 +33,16 @@ export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
   const api = await useApi();
   let entryPointListItems: QuickPickItemWithIndex[] = [];
-  let configDetails: ConfigurationDetails[] = [];
+  let inspectionResults: ConfigurationInspectionResult[] = [];
 
   const getConfigurationInspections = new Promise<void>(
     async (resolve, reject) => {
       try {
         const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(python);
-        configDetails = inspectResponse.data;
-        configDetails.forEach((config, i) => {
+        inspectionResults = inspectResponse.data;
+        inspectionResults.forEach((result, i) => {
+          const config = result.configuration;
           if (config.entrypoint) {
             entryPointListItems.push({
               iconPath: new ThemeIcon("file"),
@@ -168,7 +169,8 @@ export async function newConfig(title: string, viewId?: string) {
       state.data.entryPoint &&
       isQuickPickItemWithIndex(state.data.entryPoint)
     ) {
-      const detail = configDetails[state.data.entryPoint.index].title;
+      const detail =
+        inspectionResults[state.data.entryPoint.index].configuration.title;
       if (detail) {
         initialValue = detail;
       }
@@ -180,10 +182,10 @@ export async function newConfig(title: string, viewId?: string) {
       value:
         typeof state.data.title === "string" ? state.data.title : initialValue,
       prompt: "Enter a title for your content or application.",
-      validate: (value) => {
+      finalValidation: (value) => {
         if (value.length < 3) {
           return Promise.resolve({
-            message: `Invalid Title: Value must be longer than 3 characters`,
+            message: `Error: Invalid Title - value must be longer than 3 characters`,
             severity: InputBoxValidationSeverity.Error,
           });
         }
@@ -228,18 +230,19 @@ export async function newConfig(title: string, viewId?: string) {
   // Create the Config File
   let newConfig: Configuration | undefined = undefined;
   try {
-    const selectedConfigDetails = configDetails[state.data.entryPoint.index];
-    if (!selectedConfigDetails) {
+    const selectedInspectionResult =
+      inspectionResults[state.data.entryPoint.index];
+    if (!selectedInspectionResult) {
       window.showErrorMessage(
         `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
       );
       return;
     }
-    selectedConfigDetails.title = state.data.title;
+    selectedInspectionResult.configuration.title = state.data.title;
     const configName = await untitledConfigurationName();
     const createResponse = await api.configurations.createOrUpdate(
       configName,
-      selectedConfigDetails,
+      selectedInspectionResult.configuration,
     );
     newConfig = createResponse.data;
     const fileUri = Uri.file(newConfig.configurationPath);

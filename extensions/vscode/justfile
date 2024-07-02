@@ -3,7 +3,7 @@ alias t := test
 
 _ci := env_var_or_default("CI", "false")
 
-_debug := env_var_or_default("DEBUG", "false")
+_debug := env_var_or_default("DEBUG", _ci)
 
 _with_debug := if _debug == "true" {
         "set -x pipefail"
@@ -136,14 +136,19 @@ package os="$(just ../../os)" arch="$(just ../../arch)":
     {{ _with_debug }}
     just assert-binary-executable-exists
     echo "info: getting package target platform..." 1>&2
-    target_platform=$(just package-target-platform)
+    target_platform=$(just package-target-platform {{ os }} {{ arch }})
     echo "info: getting package output path..." 1>&2
     path="$(just package-path)"
     mkdir -p "$path"
     echo "info: getting output package name..." 1>&2
     package="$path"/$(just package-name {{ os }} {{ arch }})
     echo "info: packaging..." 1>&2
-    npx --yes @vscode/vsce package -o "$package" -t "$target_platform" | sed 's/^/debug: /'
+    if [[ $(just ../../pre-release) == true ]]; then
+        prerelease_flag="--pre-release"
+    else
+        prerelease_flag=""
+    fi
+    npx --yes @vscode/vsce package -o "$package" -t "$target_platform" $prerelease_flag | sed 's/^/debug: /'
     echo "info: writing package to $package..." 1>&2
 
 package-name os="$(just ../../os)" arch="$(just ../../arch)":

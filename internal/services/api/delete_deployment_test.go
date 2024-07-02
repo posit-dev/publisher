@@ -3,8 +3,10 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -104,4 +106,57 @@ func (s *DeleteDeploymentSuite) TestDeleteDeploymentNotFound() {
 	h(rec, req)
 
 	s.Equal(http.StatusNotFound, rec.Result().StatusCode)
+}
+
+func (s *DeleteDeploymentSuite) TestDeleteDeploymentFromSubdir() {
+	base := s.cwd.Dir().Dir()
+	targetToDelete := "myTarget"
+
+	// Create a deployment in the upper directory that should be left alone
+	_, err := createSampleDeployment(base, targetToDelete)
+	s.NoError(err)
+	pathToPreserve := deployment.GetDeploymentPath(base, targetToDelete)
+	s.fileExists(pathToPreserve)
+
+	// Create a deployment in the subdir that should be deleted
+	_, err = createSampleDeployment(s.cwd, targetToDelete)
+	s.NoError(err)
+	targetPath := deployment.GetDeploymentPath(s.cwd, targetToDelete)
+	s.fileExists(targetPath)
+
+	relProjectDir, err := s.cwd.Rel(base)
+	s.NoError(err)
+
+	h := DeleteDeploymentHandlerFunc(base, s.log)
+
+	dirParam := url.QueryEscape(relProjectDir.String())
+	apiUrl := fmt.Sprintf("/api/deployments/%s?dir=%s", targetToDelete, dirParam)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", apiUrl, nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{
+		"name": targetToDelete,
+	})
+	h(rec, req)
+
+	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
+	s.fileDoesNotExist(targetPath)
+	s.fileExists(pathToPreserve)
+}
+
+func (s *DeleteDeploymentSuite) TestDeleteDeploymentBadDir() {
+	// It's a Bad Request to try to delete a deployment from a directory outside the project
+	_, err := createSampleDeployment(s.cwd, "myTargetName")
+	s.NoError(err)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("DELETE", "/api/deployments/myTargetName?dir=../middleware", nil)
+	s.NoError(err)
+	req = mux.SetURLVars(req, map[string]string{"id": "myTargetName"})
+
+	h := DeleteDeploymentHandlerFunc(s.cwd, logging.New())
+	h(rec, req)
+
+	s.Equal(http.StatusBadRequest, rec.Result().StatusCode)
 }

@@ -96,7 +96,7 @@ export async function activate(context: ExtensionContext) {
       service.showOutputChannel(),
     ),
     commands.registerCommand(Commands.ShowPublishingLog, () =>
-      commands.executeCommand(Commands.Logs.Visit),
+      commands.executeCommand(Commands.Logs.Focus),
     ),
   );
   setStateContext(PositPublishState.initialized);
