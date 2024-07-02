@@ -24,7 +24,12 @@ import {
 
 import { confirmDelete, confirmReplace } from "src/dialogs";
 import { getSummaryStringFromError } from "src/utils/errors";
-import { ensureSuffix, fileExists, isValidFilename } from "src/utils/files";
+import {
+  ensureSuffix,
+  fileExists,
+  isRelativePathRoot,
+  isValidFilename,
+} from "src/utils/files";
 import { untitledConfigurationName } from "src/utils/names";
 import { newConfig } from "src/multiStepInputs/newConfig";
 import { WatcherManager } from "src/watchers";
@@ -180,14 +185,17 @@ export class ConfigurationsTreeDataProvider
   }
 
   private delete = async (item: ConfigurationTreeItem) => {
-    const name = item.config.configurationName;
+    const config = item.config;
+    const name = config.configurationName;
     const ok = await confirmDelete(
       `Are you sure you want to delete the configuration '${name}'?`,
     );
     if (ok) {
       try {
         const api = await useApi();
-        await api.configurations.delete(name);
+        await api.configurations.delete(name, {
+          dir: config.projectDir,
+        });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
           "configurations::delete",
@@ -213,6 +221,9 @@ export class ConfigurationTreeItem extends TreeItem {
     } else {
       this.iconPath = new ThemeIcon("gear");
     }
+    this.description = isRelativePathRoot(config.projectDir)
+      ? undefined
+      : config.projectDir;
     this.tooltip = this.getTooltip();
     this.command = {
       title: "Open",
