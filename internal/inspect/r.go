@@ -34,6 +34,8 @@ var _ RInspector = &defaultRInspector{}
 
 const DefaultRenvLockfile = "renv.lock"
 
+var rVersionCache = make(map[string]string)
+
 func NewRInspector(base util.AbsolutePath, rExecutable util.Path, log logging.Logger) RInspector {
 	return &defaultRInspector{
 		base:        base,
@@ -119,6 +121,10 @@ func (i *defaultRInspector) CreateLockfile(lockfilePath util.AbsolutePath) error
 }
 
 func (i *defaultRInspector) validateRExecutable(rExecutable string) error {
+	if _, ok := rVersionCache[rExecutable]; ok {
+		// We've successfully run this executable before.
+		return nil
+	}
 	args := []string{"--version"}
 	_, _, err := i.executor.RunCommand(rExecutable, args, util.AbsolutePath{}, i.log)
 	if err != nil {
@@ -157,6 +163,9 @@ func (i *defaultRInspector) getRExecutable() (string, error) {
 var rVersionRE = regexp.MustCompile(`^R version (\d+\.\d+\.\d+)`)
 
 func (i *defaultRInspector) getRVersion(rExecutable string) (string, error) {
+	if version, ok := rVersionCache[rExecutable]; ok {
+		return version, nil
+	}
 	i.log.Info("Getting R version", "r", rExecutable)
 	args := []string{"--version"}
 	output, stderr, err := i.executor.RunCommand(rExecutable, args, util.AbsolutePath{}, i.log)
@@ -170,6 +179,7 @@ func (i *defaultRInspector) getRVersion(rExecutable string) (string, error) {
 	}
 	version := m[1]
 	i.log.Info("Detected R version", "version", version)
+	rVersionCache[rExecutable] = version
 	return version, nil
 }
 
