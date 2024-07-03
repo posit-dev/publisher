@@ -52,23 +52,32 @@ func NewRInspector(base util.AbsolutePath, rExecutable util.Path, log logging.Lo
 // Otherwise, we run R to get the version (and if it's not
 // available, that's an error).
 func (i *defaultRInspector) InspectR() (*config.R, error) {
-	var rVersion string
-	var lockfilePath util.AbsolutePath
-	var err error
-
-	rExecutable, getRExecutableErr := i.getRExecutable()
-	if getRExecutableErr == nil {
-		lockfilePath, err = i.getRenvLockfile(rExecutable)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		lockfilePath = i.base.Join(DefaultRenvLockfile)
-	}
+	lockfilePath := i.base.Join(DefaultRenvLockfile)
 	exists, err := lockfilePath.Exists()
 	if err != nil {
 		return nil, err
 	}
+
+	var rExecutable string
+	var getRExecutableErr error
+
+	if !exists {
+		// Maybe R can give us the lockfile path (e.g. from an renv profile)
+		rExecutable, getRExecutableErr = i.getRExecutable()
+		if getRExecutableErr == nil {
+			lockfilePath, err = i.getRenvLockfile(rExecutable)
+			if err != nil {
+				return nil, err
+			}
+			exists, err = lockfilePath.Exists()
+			if err != nil {
+				return nil, err
+			}
+		} // else stay with the default lockfile path
+	}
+
+	var rVersion string
+
 	if exists {
 		// Get R version from the lockfile
 		rVersion, err = i.getRVersionFromLockfile(lockfilePath)
