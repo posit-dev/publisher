@@ -11,7 +11,7 @@ import {
   TextDocument,
 } from "vscode";
 
-import { ContentRecordFile } from "../api";
+import { ContentRecordFile } from "src/api";
 
 export async function fileExists(fileUri: Uri): Promise<boolean> {
   try {

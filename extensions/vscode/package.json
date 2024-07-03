@@ -698,6 +698,7 @@
     "eventsource": "^2.0.2",
     "get-port": "5.1.1",
     "mutexify": "^1.4.0",
-    "retry": "^0.13.1"
+    "retry": "^0.13.1",
+    "vscode-uri": "^3.0.8"
   }
 }
