@@ -212,7 +212,7 @@ func (i *defaultRInspector) getRenvLockfile(rExecutable string) (util.AbsolutePa
 		}
 		// paths$lockfile returns an absolute path
 		path := m[1]
-		i.log.Info("Detected renv lockfile path", "path", path)
+		i.log.Info("renv::paths$lockfile returned lockfile path", "path", path)
 		return util.NewAbsolutePath(path, nil), nil
 	}
 	return util.AbsolutePath{}, fmt.Errorf("couldn't parse renv lockfile path from output: %s", output)
