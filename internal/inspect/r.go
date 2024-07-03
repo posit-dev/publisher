@@ -121,12 +121,7 @@ func (i *defaultRInspector) CreateLockfile(lockfilePath util.AbsolutePath) error
 }
 
 func (i *defaultRInspector) validateRExecutable(rExecutable string) error {
-	if _, ok := rVersionCache[rExecutable]; ok {
-		// We've successfully run this executable before.
-		return nil
-	}
-	args := []string{"--version"}
-	_, _, err := i.executor.RunCommand(rExecutable, args, util.AbsolutePath{}, i.log)
+	_, err := i.getRVersion(rExecutable)
 	if err != nil {
 		return fmt.Errorf("could not run R executable '%s': %w", rExecutable, err)
 	}

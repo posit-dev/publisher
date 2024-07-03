@@ -33,6 +33,8 @@ func (s *RSuite) SetupTest() {
 	s.cwd = cwd
 	err = cwd.MkdirAll(0700)
 	s.NoError(err)
+
+	rVersionCache = make(map[string]string)
 }
 
 func (s *RSuite) TestNewRInspector() {
@@ -217,10 +219,10 @@ func (s *RSuite) TestGetRVersionFromLockFile() {
 	s.Equal("4.3.1", version)
 }
 
-func (s *PythonSuite) TestGetRExecutable() {
+func (s *RSuite) TestGetRExecutable() {
 	log := logging.New()
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "/some/R", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, nil)
+	executor.On("RunCommand", "/some/R", []string{"--version"}, mock.Anything, mock.Anything).Return([]byte(rOutput), nil, nil)
 	i := &defaultRInspector{
 		executor: executor,
 		log:      log,
@@ -234,7 +236,7 @@ func (s *PythonSuite) TestGetRExecutable() {
 	s.Equal("/some/R", executable)
 }
 
-func (s *PythonSuite) TestGetRExecutableSpecifiedR() {
+func (s *RSuite) TestGetRExecutableSpecifiedR() {
 	log := logging.New()
 	rPath := s.cwd.Join("bin", "R")
 	rPath.Dir().MkdirAll(0777)
@@ -253,7 +255,7 @@ func (s *PythonSuite) TestGetRExecutableSpecifiedR() {
 	s.Equal(rPath.String(), executable)
 }
 
-func (s *PythonSuite) TestGetRExecutableSpecifiedRNotFound() {
+func (s *RSuite) TestGetRExecutableSpecifiedRNotFound() {
 	log := logging.New()
 
 	i := NewRInspector(s.cwd, util.NewPath("/some/R", nil), log)
@@ -264,7 +266,7 @@ func (s *PythonSuite) TestGetRExecutableSpecifiedRNotFound() {
 	s.Equal("", executable)
 }
 
-func (s *PythonSuite) TestGetRExecutableNotRunnable() {
+func (s *RSuite) TestGetRExecutableNotRunnable() {
 	log := logging.New()
 
 	testError := errors.New("test error from RunCommand")
@@ -280,6 +282,7 @@ func (s *PythonSuite) TestGetRExecutableNotRunnable() {
 	i.pathLooker = pathLooker
 
 	executable, err := i.getRExecutable()
+	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.Equal("", executable)
 }
