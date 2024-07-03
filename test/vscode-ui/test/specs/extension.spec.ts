@@ -21,22 +21,21 @@ const apiKey = process.env.CONNECT_API_KEY;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-
 async function waitForInputFields(inputText: string) {
-    // wait until the server responds
-    await browser.waitUntil(
-      async () => {
-        const element = await browser.$("#quickInput_message");
-        const text = await element.getText();
-        return text.includes(inputText);
-      },
-      {
-        timeout: 10000, // Timeout in milliseconds, adjust as necessary
-        timeoutMsg:
-          "Expected element signifying server response did not appear within timeout",
-      },
-    );
-  }
+  // wait until the server responds
+  await browser.waitUntil(
+    async () => {
+      const element = await browser.$("#quickInput_message");
+      const text = await element.getText();
+      return text.includes(inputText);
+    },
+    {
+      timeout: 10000, // Timeout in milliseconds, adjust as necessary
+      timeoutMsg:
+        "Expected element signifying server response did not appear within timeout",
+    },
+  );
+}
 
 describe("VS Code Extension UI Test", () => {
   let workbench: any;
@@ -65,25 +64,25 @@ describe("VS Code Extension UI Test", () => {
     await init.click();
 
     await browser.switchToFrame(null);
-  
+
     // set title
     await input.setValue("fastapi-test");
     await browser.keys("\uE007");
-  
+
     // set server url
     await input.setValue(connectServer);
     await browser.keys("\uE007");
 
     // wait until the server responds
     await waitForInputFields("The API key to be used");
-  
+
     //set api key
     await input.setValue(apiKey);
     await browser.keys("\uE007");
 
     // wait for validation
     await waitForInputFields("Enter a Unique Nickname");
-  
+
     // set server name
     await input.setValue("my connect server");
     await browser.keys("\uE007");
