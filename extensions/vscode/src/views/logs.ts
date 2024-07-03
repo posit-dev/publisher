@@ -21,6 +21,8 @@ import {
   EventStreamMessage,
   isPublishFailure,
   isPublishSuccess,
+  isPublishRestoreEnvStatus,
+  restoreMsgToStatusSuffix,
 } from "src/api";
 import { Commands, Views } from "src/constants";
 
@@ -64,6 +66,8 @@ const createLogStage = (
     events,
   };
 };
+
+const RestoringEnvironmentLabel = "Restoring Environment";
 
 /**
  * Tree data provider for the Logs view.
@@ -124,7 +128,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       ],
       [
         "publish/restoreEnv",
-        createLogStage("Restore Environment", "Restoring Environment"),
+        createLogStage("Restore Environment", RestoringEnvironmentLabel),
       ],
       ["publish/runContent", createLogStage("Run Content", "Running Content")],
       [
@@ -229,6 +233,17 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
           this.refresh();
         },
       );
+
+      // Register for some specific events we need to handle differently
+      this._stream.register(
+        "publish/restoreEnv/status",
+        (msg: EventStreamMessage) => {
+          const stage = this.stages.get("publish/restoreEnv");
+          if (stage && isPublishRestoreEnvStatus(msg)) {
+            stage.activeLabel = `${RestoringEnvironmentLabel} - ${restoreMsgToStatusSuffix(msg)}`;
+          }
+        },
+      );
     });
   }
 
@@ -268,10 +283,20 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     // Map the events array to LogsTreeItem instances and return them as children
     if (element instanceof LogsTreeStageItem) {
       const result = [];
+      let count = 0;
       element.stages.forEach((stage: LogStage) => {
         result.push(new LogsTreeStageItem(stage));
       });
-      result.push(...element.events.map((e) => new LogsTreeLogItem(e)));
+      result.push(
+        ...element.events.map(
+          (e) =>
+            new LogsTreeLogItem(
+              e,
+              TreeItemCollapsibleState.None,
+              `${element.id}/${count++}`,
+            ),
+        ),
+      );
       return result;
     }
 
@@ -321,6 +346,7 @@ export class LogsTreeStageItem extends TreeItem {
     }
 
     super(stage.inactiveLabel, collapsibleState);
+    this.id = stage.inactiveLabel;
     this.stage = stage;
 
     this.stages = stage.stages;
@@ -366,11 +392,13 @@ export class LogsTreeLogItem extends TreeItem {
   constructor(
     msg: EventStreamMessage,
     state: TreeItemCollapsibleState = TreeItemCollapsibleState.None,
+    id: string,
   ) {
     if (msg.data.message) {
       msg.data.message = msg.data.message.replaceAll("\n", " ");
     }
     super(displayEventStreamMessage(msg), state);
+    this.id = id;
     this.tooltip = JSON.stringify(msg);
     if (!isPublishSuccess(msg) && !isPublishFailure(msg)) {
       this.iconPath = new ThemeIcon("debug-stackframe-dot");

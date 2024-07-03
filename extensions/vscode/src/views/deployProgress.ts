@@ -252,7 +252,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/restorePythonEnv/start",
+          "publish/restoreEnv/start",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -260,7 +260,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/restorePythonEnv/success",
+          "publish/restoreEnv/success",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -268,7 +268,20 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/restorePythonEnv/failure",
+          "publish/restoreEnv/failure",
+          (msg: EventStreamMessage) => {
+            handleProgressMessages(msg);
+          },
+        ),
+      );
+      registrations.push(
+        stream.register("publish/restoreEnv/log", (msg: EventStreamMessage) => {
+          handleProgressMessages(msg);
+        }),
+      );
+      registrations.push(
+        stream.register(
+          "publish/restoreEnv/progress",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
@@ -276,71 +289,7 @@ export function deployProject(localID: string, stream: EventStream) {
       );
       registrations.push(
         stream.register(
-          "publish/restorePythonEnv/log",
-          (msg: EventStreamMessage) => {
-            handleProgressMessages(msg);
-          },
-        ),
-      );
-      registrations.push(
-        stream.register(
-          "publish/restorePythonEnv/progress",
-          (msg: EventStreamMessage) => {
-            handleProgressMessages(msg);
-          },
-        ),
-      );
-      registrations.push(
-        stream.register(
-          "publish/restorePythonEnv/status",
-          (msg: EventStreamMessage) => {
-            handleProgressMessages(msg);
-          },
-        ),
-      );
-      registrations.push(
-        stream.register(
-          "publish/restoreREnv/start",
-          (msg: EventStreamMessage) => {
-            handleProgressMessages(msg);
-          },
-        ),
-      );
-      registrations.push(
-        stream.register(
-          "publish/restoreREnv/success",
-          (msg: EventStreamMessage) => {
-            handleProgressMessages(msg);
-          },
-        ),
-      );
-      registrations.push(
-        stream.register(
-          "publish/restoreREnv/failure",
-          (msg: EventStreamMessage) => {
-            handleProgressMessages(msg);
-          },
-        ),
-      );
-      registrations.push(
-        stream.register(
-          "publish/restoreREnv/log",
-          (msg: EventStreamMessage) => {
-            handleProgressMessages(msg);
-          },
-        ),
-      );
-      registrations.push(
-        stream.register(
-          "publish/restoreREnv/progress",
-          (msg: EventStreamMessage) => {
-            handleProgressMessages(msg);
-          },
-        ),
-      );
-      registrations.push(
-        stream.register(
-          "publish/restoreREnv/status",
+          "publish/restoreEnv/status",
           (msg: EventStreamMessage) => {
             handleProgressMessages(msg);
           },
