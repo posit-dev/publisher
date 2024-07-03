@@ -57,6 +57,11 @@ cli_tests() {
     just run "${test_case}"
 }
 
+vscode_ui_tests() {
+    export EXE=$exe
+    just run "${test_case}"
+}
+
 case "${test_case}" in
     "deploy")
         setup_connect
@@ -72,4 +77,7 @@ case "${test_case}" in
     "common")
         cli_tests
     ;;
+    "vscode-ui")
+        setup_connect
+        vscode_ui_tests
 esac

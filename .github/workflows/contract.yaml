@@ -2,7 +2,7 @@ name: Cypress-nightly
 on:
   workflow_call:
 jobs:
-  native:
+  tests:
     env:
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
@@ -61,3 +61,9 @@ jobs:
       - run: just bats test common
       - run: just bats test init
       - run: just bats test deploy
+
+      # vscode ui tests
+      - run: just package
+      - run: just vscode configure
+      - run: just vscode-ui install
+      - run: just vscode-ui test

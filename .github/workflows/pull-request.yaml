@@ -36,3 +36,9 @@ jobs:
     needs: build
     secrets: inherit
     uses: ./.github/workflows/bats.yaml
+
+  # disable the vscode-ui tests for now
+  # vscode-ui:
+  #   needs: build
+  #   secrets: inherit
+  #   uses: ./.github/workflows/vscode-ui.yaml

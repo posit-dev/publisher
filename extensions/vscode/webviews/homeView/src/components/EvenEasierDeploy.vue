@@ -92,6 +92,7 @@
       v-else
       class="w-full add-deployment-btn"
       @click="onAddDeployment"
+      data-automation="add-deployment-button"
     >
       Add Deployment
     </vscode-button>
