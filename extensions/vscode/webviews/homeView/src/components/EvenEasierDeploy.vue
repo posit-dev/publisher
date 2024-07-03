@@ -108,11 +108,11 @@
             <vscode-progress-ring class="progress-ring" />
             <div class="progress-desc">
               <div>Deployment in Progress...</div>
-              <div class="progress-log-anchor">
+              <p class="progress-log-anchor">
                 <a href="" role="button" @click="onViewPublishingLog"
                   >View Log</a
                 >
-              </div>
+              </p>
             </div>
           </div>
           <ActionToolbar
@@ -471,6 +471,7 @@ const newCredential = () => {
 
 .progress-log-anchor {
   margin-top: 5px;
+  margin-bottom: 0px;
 }
 
 .deployment-details-container {
