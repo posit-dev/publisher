@@ -119,7 +119,25 @@ func (s *RSuite) TestGetRVersionFromRealDefaultR() {
 	s.NoError(err)
 }
 
-func (s *RSuite) TestGetRenvLockfile() {
+func (s *RSuite) TestGetRenvLockfileFromDir() {
+	log := logging.New()
+	i := NewRInspector(s.cwd, util.Path{}, log)
+	inspector := i.(*defaultRInspector)
+
+	expectedPath := s.cwd.Join(DefaultRenvLockfile)
+	err := expectedPath.WriteFile(nil, 0666)
+	s.NoError(err)
+
+	// Executor should not be called
+	executor := executortest.NewMockExecutor()
+	inspector.executor = executor
+
+	lockfilePath, err := inspector.getRenvLockfile("")
+	s.NoError(err)
+	s.Equal(expectedPath, lockfilePath)
+}
+
+func (s *RSuite) TestGetRenvLockfileFromR() {
 	log := logging.New()
 	rPath := s.cwd.Join("bin", "R")
 	rPath.Dir().MkdirAll(0777)
