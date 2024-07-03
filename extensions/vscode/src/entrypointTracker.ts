@@ -13,7 +13,7 @@ import { Utils as uriUtils } from "vscode-uri";
 import { useApi } from "src/api";
 import { Contexts } from "src/constants";
 import { getPythonInterpreterPath } from "src/utils/config";
-import { isActiveDocument } from "src/utils/files";
+import { isActiveDocument, relativeDir } from "src/utils/files";
 import { hasKnownContentType } from "src/utils/inspect";
 import { getSummaryStringFromError } from "src/utils/errors";
 
@@ -28,14 +28,14 @@ async function isDocumentEntrypoint(document: TextDocument): Promise<boolean> {
     const api = await useApi();
     const python = await getPythonInterpreterPath();
 
+    const dir = relativeDir(document.uri);
     // If the file is outside the workspace, it cannot be an entrypoint
-    const dirname = uriUtils.dirname(document.uri);
-    if (dirname === undefined) {
+    if (dir === undefined) {
       return false;
     }
 
     const response = await api.configurations.inspect(python, {
-      dir: workspace.asRelativePath(dirname),
+      dir: dir,
       entrypoint: uriUtils.basename(document.uri),
     });
     return hasKnownContentType(response.data);
