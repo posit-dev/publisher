@@ -31,7 +31,7 @@ export class Configurations {
   // Returns:
   // 200 - success
   // 500 - internal server error
-  getAll(params?: { dir?: string; entrypoint?: string }) {
+  getAll(params?: { dir?: string; entrypoint?: string; recursive?: boolean }) {
     return this.client.get<Array<Configuration | ConfigurationError>>(
       "/configurations",
       { params },
