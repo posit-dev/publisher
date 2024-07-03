@@ -11,12 +11,11 @@ import {
 import { Utils as uriUtils } from "vscode-uri";
 
 import { useApi } from "src/api";
+import { Contexts } from "src/constants";
 import { getPythonInterpreterPath } from "src/utils/config";
 import { isActiveDocument } from "src/utils/files";
 import { hasKnownContentType } from "src/utils/inspect";
 import { getSummaryStringFromError } from "src/utils/errors";
-
-const ACTIVE_FILE_ENTRYPOINT_CONTEXT = "posit.publish.activeFileEntrypoint";
 
 /**
  * Determines if a text document is an entrypoint file.
@@ -84,7 +83,7 @@ export class TrackedEntrypointDocument {
 
     commands.executeCommand(
       "setContext",
-      ACTIVE_FILE_ENTRYPOINT_CONTEXT,
+      Contexts.ActiveFileEntrypoint,
       this.isEntrypoint,
     );
   }
@@ -162,7 +161,7 @@ export class DocumentTracker implements Disposable {
     if (editor === undefined) {
       commands.executeCommand(
         "setContext",
-        ACTIVE_FILE_ENTRYPOINT_CONTEXT,
+        Contexts.ActiveFileEntrypoint,
         undefined,
       );
       return;

@@ -17,6 +17,10 @@ const baseCommands = {
   DeployWithEntrypoint: "posit.publisher.deployWithEntrypoint",
 } as const;
 
+const baseContexts = {
+  ActiveFileEntrypoint: "posit.publish.activeFileEntrypoint",
+} as const;
+
 const logsCommands = {
   Visit: "posit.publisher.logs.visit",
   // Added automatically by VSCode with view registration
@@ -123,6 +127,7 @@ export const Commands = {
 };
 
 export const Contexts = {
+  ...baseContexts,
   Configurations: configurationsContexts,
   ContentRecords: contentRecordsContexts,
   Credentials: credentialsContexts,
