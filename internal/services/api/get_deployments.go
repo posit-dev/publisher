@@ -4,8 +4,11 @@ package api
 
 import (
 	"encoding/json"
+	"io/fs"
 	"net/http"
+	"path/filepath"
 
+	"github.com/posit-dev/publisher/internal/bundles/matcher"
 	"github.com/posit-dev/publisher/internal/deployment"
 	"github.com/posit-dev/publisher/internal/logging"
 	"github.com/posit-dev/publisher/internal/util"
@@ -37,8 +40,47 @@ func GetDeploymentsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
+		var response []any
 		entrypoint := req.URL.Query().Get("entrypoint")
-		response, err := readLatestDeploymentFiles(projectDir, relProjectDir, entrypoint)
+
+		if req.URL.Query().Get("recursive") == "true" {
+			// Recursively search for .posit directories
+			walker, err := matcher.NewMatchingWalker([]string{"*"}, projectDir, log)
+			if err != nil {
+				InternalError(w, req, log, err)
+				return
+			}
+			err = walker.Walk(projectDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !info.IsDir() {
+					return nil
+				}
+				if path.Base() == ".posit" {
+					// Parent is a potential project directory
+					parent := path.Dir()
+					relParent, err := parent.Rel(base)
+					if err != nil {
+						return err
+					}
+					files, err := readLatestDeploymentFiles(parent, relParent, entrypoint)
+					if err != nil {
+						return err
+					}
+					response = append(response, files...)
+					// no need to recurse into .posit directories
+					return filepath.SkipDir
+				}
+				return nil
+			})
+			if err != nil {
+				InternalError(w, req, log, err)
+				return
+			}
+		} else {
+			response, err = readLatestDeploymentFiles(projectDir, relProjectDir, entrypoint)
+		}
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
