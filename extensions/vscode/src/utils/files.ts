@@ -10,6 +10,7 @@ import {
   commands,
   TextDocument,
 } from "vscode";
+import { Utils as uriUtils } from "vscode-uri";
 
 import { ContentRecordFile } from "src/api";
 
@@ -236,4 +237,30 @@ export function isRelativePathRoot(path: string): boolean {
 export function isActiveDocument(document: TextDocument): boolean {
   const editor = window.activeTextEditor;
   return editor?.document === document;
+}
+
+/**
+ * Returns a VSCode workspace relative directory path for a given URI.
+ *
+ * @param uri The URI to get the relative dirname of
+ * @returns A relative path `string` if the URI is in the workspace
+ * @returns `undefined` if the URI is not in the workspace
+ */
+export function relativeDir(uri: Uri): string | undefined {
+  const workspaceFolder = workspace.getWorkspaceFolder(uri);
+
+  if (!workspaceFolder) {
+    // File is outside of the workspace
+    return undefined;
+  }
+
+  const dirname = uriUtils.dirname(uri);
+
+  // If the file is in the workspace root, return "."
+  if (dirname.fsPath === workspaceFolder.uri.fsPath) {
+    return ".";
+  }
+
+  // Otherwise, return the relative path VSCode expects
+  return workspace.asRelativePath(dirname);
 }
