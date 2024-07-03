@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/accounts"
@@ -210,4 +211,165 @@ func (s *GetDeploymentsSuite) TestGetDeploymentsByEntrypoint() {
 	s.Equal(*matchingDeployment, res[0].Deployment)
 	s.Equal(s.cwd.Join(".posit", "publish", "myConfig.toml").String(), res[0].ConfigPath)
 	s.Equal(types.ContentID("12345678"), res[0].Deployment.ID)
+}
+
+func (s *GetDeploymentsSuite) makeSubdirDeployment(name string, subdir string) (*deployment.Deployment, error) {
+	subdirPath := s.cwd.Join(subdir)
+	err := subdirPath.MkdirAll(0777)
+	s.NoError(err)
+
+	path := deployment.GetDeploymentPath(subdirPath, name)
+	d := deployment.New()
+	d.ID = "abc123"
+	d.ServerType = accounts.ServerTypeConnect
+	d.ConfigName = name + "_config"
+	cfg := config.New()
+	cfg.Type = config.ContentTypeHTML
+	cfg.Entrypoint = subdir + ".html"
+	d.Configuration = cfg
+	return d, d.WriteFile(path)
+}
+
+func (s *GetDeploymentsSuite) TestGetDeploymentsRecursive() {
+	d0, err := s.makeSubdirDeployment("deployment0", ".")
+	s.NoError(err)
+	d1, err := s.makeSubdirDeployment("deployment1", "subdir")
+	s.NoError(err)
+	d2, err := s.makeSubdirDeployment("deployment2", "subdir")
+	s.NoError(err)
+	d3, err := s.makeSubdirDeployment("deployment3", filepath.Join("subdir", "nested"))
+	s.NoError(err)
+
+	h := GetDeploymentsHandlerFunc(s.cwd, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/deployments?recursive=true", nil)
+	s.NoError(err)
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := []fullDeploymentDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+	s.Len(res, 4)
+
+	s.Nil(res[0].Error)
+	s.Equal("deployment0", res[0].Name)
+	s.Equal(".", res[0].ProjectDir)
+	s.Equal(s.cwd.Join(".posit", "publish", "deployments", "deployment0.toml").String(), res[0].Path)
+	s.NotNil(res[0].Deployment)
+	s.Equal(*d0, res[0].Deployment)
+
+	s.Nil(res[1].Error)
+	s.Equal("deployment1", res[1].Name)
+	s.Equal("subdir", res[1].ProjectDir)
+	s.Equal(s.cwd.Join("subdir", ".posit", "publish", "deployments", "deployment1.toml").String(), res[1].Path)
+	s.NotNil(res[1].Deployment)
+	s.Equal(*d1, res[1].Deployment)
+
+	s.Nil(res[2].Error)
+	s.Equal("deployment2", res[2].Name)
+	s.Equal("subdir", res[2].ProjectDir)
+	s.Equal(s.cwd.Join("subdir", ".posit", "publish", "deployments", "deployment2.toml").String(), res[2].Path)
+	s.NotNil(res[2].Deployment)
+	s.Equal(*d2, res[2].Deployment)
+
+	s.Nil(res[3].Error)
+	s.Equal("deployment3", res[3].Name)
+	s.Equal(filepath.Join("subdir", "nested"), res[3].ProjectDir)
+	s.Equal(s.cwd.Join("subdir", "nested", ".posit", "publish", "deployments", "deployment3.toml").String(), res[3].Path)
+	s.NotNil(res[3].Deployment)
+	s.Equal(*d3, res[3].Deployment)
+}
+
+func (s *GetDeploymentsSuite) TestGetDeploymentsRecursiveWithEntrypoint() {
+	_, err := s.makeSubdirDeployment("deployment0", ".")
+	s.NoError(err)
+	d1, err := s.makeSubdirDeployment("deployment1", "subdir")
+	s.NoError(err)
+	d2, err := s.makeSubdirDeployment("deployment2", "subdir")
+	s.NoError(err)
+	_, err = s.makeSubdirDeployment("deployment3", filepath.Join("subdir", "nested"))
+	s.NoError(err)
+
+	h := GetDeploymentsHandlerFunc(s.cwd, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/deployments?recursive=true&entrypoint=subdir.html", nil)
+	s.NoError(err)
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := []fullDeploymentDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+	s.Len(res, 2)
+
+	s.Nil(res[0].Error)
+	s.Equal("deployment1", res[0].Name)
+	s.Equal("subdir", res[0].ProjectDir)
+	s.Equal(s.cwd.Join("subdir", ".posit", "publish", "deployments", "deployment1.toml").String(), res[0].Path)
+	s.NotNil(res[0].Deployment)
+	s.Equal(*d1, res[0].Deployment)
+
+	s.Nil(res[1].Error)
+	s.Equal("deployment2", res[1].Name)
+	s.Equal("subdir", res[1].ProjectDir)
+	s.Equal(s.cwd.Join("subdir", ".posit", "publish", "deployments", "deployment2.toml").String(), res[1].Path)
+	s.NotNil(res[1].Deployment)
+	s.Equal(*d2, res[1].Deployment)
+}
+
+func (s *GetDeploymentsSuite) TestGetDeploymentsRecursiveWithSubdir() {
+	_, err := s.makeSubdirDeployment("deployment0", ".")
+	s.NoError(err)
+	d1, err := s.makeSubdirDeployment("deployment1", "subdir")
+	s.NoError(err)
+	d2, err := s.makeSubdirDeployment("deployment2", "subdir")
+	s.NoError(err)
+	d3, err := s.makeSubdirDeployment("deployment3", filepath.Join("subdir", "nested"))
+	s.NoError(err)
+
+	h := GetDeploymentsHandlerFunc(s.cwd, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/deployments?recursive=true&dir=subdir", nil)
+	s.NoError(err)
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := []fullDeploymentDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+	s.Len(res, 3)
+
+	s.Nil(res[0].Error)
+	s.Equal("deployment1", res[0].Name)
+	s.Equal("subdir", res[0].ProjectDir)
+	s.Equal(s.cwd.Join("subdir", ".posit", "publish", "deployments", "deployment1.toml").String(), res[0].Path)
+	s.NotNil(res[0].Deployment)
+	s.Equal(*d1, res[0].Deployment)
+
+	s.Nil(res[1].Error)
+	s.Equal("deployment2", res[1].Name)
+	s.Equal("subdir", res[1].ProjectDir)
+	s.Equal(s.cwd.Join("subdir", ".posit", "publish", "deployments", "deployment2.toml").String(), res[1].Path)
+	s.NotNil(res[1].Deployment)
+	s.Equal(*d2, res[1].Deployment)
+
+	s.Nil(res[2].Error)
+	s.Equal("deployment3", res[2].Name)
+	s.Equal(filepath.Join("subdir", "nested"), res[2].ProjectDir)
+	s.Equal(s.cwd.Join("subdir", "nested", ".posit", "publish", "deployments", "deployment3.toml").String(), res[2].Path)
+	s.NotNil(res[2].Deployment)
+	s.Equal(*d3, res[2].Deployment)
 }
