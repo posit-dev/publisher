@@ -39,6 +39,9 @@ var StandardExclusions = []string{
 	"!renv/library",
 	"!renv/sandbox",
 	"!renv/staging",
+
+	// node_modules shouldn't be deployed and can be very large
+	"!node_modules/",
 }
 
 // matchingWalker is a Walker that excludes files and directories
