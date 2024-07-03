@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ExtensionContext, commands } from "vscode";
+import { ExtensionContext, Uri, commands } from "vscode";
 
 import * as ports from "src/ports";
 import { Service } from "src/services";
@@ -104,9 +104,9 @@ export async function activate(context: ExtensionContext) {
 
   context.subscriptions.push(
     new DocumentTracker(),
-    commands.registerCommand(Commands.DeployWithEntrypoint, () => {
+    commands.registerCommand(Commands.DeployWithEntrypoint, (uri: Uri) => {
       commands.executeCommand(Commands.HomeView.Focus);
-      console.log("'Deploy with this Entrypoint' button hit!");
+      console.log("'Deploy with this Entrypoint' button hit!", uri);
     }),
   );
 }
