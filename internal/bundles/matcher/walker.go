@@ -72,7 +72,6 @@ func (i *matchingWalker) Walk(base util.AbsolutePath, fn util.AbsoluteWalkFunc) 
 				return filepath.SkipDir
 			}
 		}
-		i.log.Debug("including", "path", path)
 		return fn(path, info, err)
 	})
 }
