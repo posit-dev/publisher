@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ExtensionContext, commands } from "vscode";
+import { ExtensionContext, Uri, commands } from "vscode";
 
 import * as ports from "src/ports";
 import { Service } from "src/services";
@@ -14,6 +14,7 @@ import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
 import { WatcherManager } from "src/watchers";
 import { Commands } from "src/constants";
+import { DocumentTracker } from "./entrypointTracker";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -100,6 +101,14 @@ export async function activate(context: ExtensionContext) {
     ),
   );
   setStateContext(PositPublishState.initialized);
+
+  context.subscriptions.push(
+    new DocumentTracker(),
+    commands.registerCommand(Commands.DeployWithEntrypoint, (uri: Uri) => {
+      commands.executeCommand(Commands.HomeView.Focus);
+      console.log("'Deploy with this Entrypoint' button hit!", uri);
+    }),
+  );
 }
 
 // This method is called when your extension is deactivated

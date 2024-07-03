@@ -14,6 +14,11 @@ const baseCommands = {
   InitProject: "posit.publisher.init-project",
   ShowOutputChannel: "posit.publisher.showOutputChannel",
   ShowPublishingLog: "posit.publisher.showPublishingLog",
+  DeployWithEntrypoint: "posit.publisher.deployWithEntrypoint",
+} as const;
+
+const baseContexts = {
+  ActiveFileEntrypoint: "posit.publish.activeFileEntrypoint",
 } as const;
 
 const logsCommands = {
@@ -91,6 +96,8 @@ const homeViewCommands = {
   NavigateToDeploymentContent:
     "posit.publisher.homeView.navigateToDeployment.Content",
   ShowContentLogs: "posit.publisher.homeView.navigateToDeployment.ContentLog",
+  // Added automatically by VSCode with view registration
+  Focus: "posit.publisher.homeView.focus",
 } as const;
 
 const homeViewContexts = {
@@ -120,6 +127,7 @@ export const Commands = {
 };
 
 export const Contexts = {
+  ...baseContexts,
   Configurations: configurationsContexts,
   ContentRecords: contentRecordsContexts,
   Credentials: credentialsContexts,

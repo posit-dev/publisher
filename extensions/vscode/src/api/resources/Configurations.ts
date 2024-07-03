@@ -69,7 +69,7 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  inspect(python?: string, params?: { dir?: string }) {
+  inspect(python?: string, params?: { dir?: string; entrypoint?: string }) {
     return this.client.post<ConfigurationInspectionResult[]>(
       "/inspect",
       {
