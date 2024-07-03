@@ -14,6 +14,7 @@ import { useApi } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
 import { isActiveDocument } from "src/utils/files";
 import { hasKnownContentType } from "src/utils/inspect";
+import { getSummaryStringFromError } from "src/utils/errors";
 
 const ACTIVE_FILE_ENTRYPOINT_CONTEXT = "posit.publish.activeFileEntrypoint";
 
@@ -24,20 +25,29 @@ const ACTIVE_FILE_ENTRYPOINT_CONTEXT = "posit.publish.activeFileEntrypoint";
  * @returns If the text document is an entrypoint
  */
 async function isDocumentEntrypoint(document: TextDocument): Promise<boolean> {
-  const api = await useApi();
-  const python = await getPythonInterpreterPath();
+  try {
+    const api = await useApi();
+    const python = await getPythonInterpreterPath();
 
-  // If the file is outside the workspace, it cannot be an entrypoint
-  const dirname = uriUtils.dirname(document.uri);
-  if (dirname === undefined) {
+    // If the file is outside the workspace, it cannot be an entrypoint
+    const dirname = uriUtils.dirname(document.uri);
+    if (dirname === undefined) {
+      return false;
+    }
+
+    const response = await api.configurations.inspect(python, {
+      dir: workspace.asRelativePath(dirname),
+      entrypoint: uriUtils.basename(document.uri),
+    });
+    return hasKnownContentType(response.data);
+  } catch (error: unknown) {
+    const summary = getSummaryStringFromError(
+      "entrypointTracker::isDocumentEntrypoint",
+      error,
+    );
+    window.showInformationMessage(summary);
     return false;
   }
-
-  const response = await api.configurations.inspect(python, {
-    dir: workspace.asRelativePath(dirname),
-    entrypoint: uriUtils.basename(document.uri),
-  });
-  return hasKnownContentType(response.data);
 }
 
 /**
