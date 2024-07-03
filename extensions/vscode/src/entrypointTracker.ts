@@ -24,20 +24,21 @@ import { getSummaryStringFromError } from "src/utils/errors";
  * @returns If the text document is an entrypoint
  */
 async function isDocumentEntrypoint(document: TextDocument): Promise<boolean> {
+  const dir = relativeDir(document.uri);
+  // If the file is outside the workspace, it cannot be an entrypoint
+  if (dir === undefined) {
+    return false;
+  }
+
   try {
     const api = await useApi();
     const python = await getPythonInterpreterPath();
-
-    const dir = relativeDir(document.uri);
-    // If the file is outside the workspace, it cannot be an entrypoint
-    if (dir === undefined) {
-      return false;
-    }
 
     const response = await api.configurations.inspect(python, {
       dir: dir,
       entrypoint: uriUtils.basename(document.uri),
     });
+
     return hasKnownContentType(response.data);
   } catch (error: unknown) {
     const summary = getSummaryStringFromError(
