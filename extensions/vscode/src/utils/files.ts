@@ -39,6 +39,9 @@ export function ensureSuffix(suffix: string, filename: string): string {
 }
 
 export function isValidFilename(filename: string): boolean {
+  if (!filename.trim()) {
+    return false;
+  }
   if (filename === "." || filename.includes("..")) {
     return false;
   }
