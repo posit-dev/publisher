@@ -284,7 +284,48 @@ func (s *GetConfigurationsSuite) TestGetConfigurationsRecursiveWithEntrypoint() 
 	h := GetConfigurationsHandlerFunc(s.cwd, s.log)
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/api/configurations?recursive=true&dir=subdir&entrypoint=subdir.py", nil)
+	req, err := http.NewRequest("GET", "/api/configurations?recursive=true&entrypoint=subdir.py", nil)
+	s.NoError(err)
+
+	h(rec, req)
+
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+	s.Equal("application/json", rec.Header().Get("content-type"))
+
+	res := []configDTO{}
+	dec := json.NewDecoder(rec.Body)
+	dec.DisallowUnknownFields()
+	s.NoError(dec.Decode(&res))
+	s.Len(res, 2)
+
+	relPath := filepath.Join(".posit", "publish", "config1.toml")
+	s.Equal(s.cwd.Join("subdir", relPath).String(), res[0].Path)
+	s.Equal(relPath, res[0].RelPath)
+	s.Equal("config1", res[0].Name)
+	s.Equal("subdir", res[0].ProjectDir)
+	s.Nil(res[0].Error)
+	s.Equal(cfg1, res[0].Configuration)
+
+	relPath = filepath.Join(".posit", "publish", "config2.toml")
+	s.Equal(s.cwd.Join("subdir", relPath).String(), res[1].Path)
+	s.Equal(relPath, res[1].RelPath)
+	s.Equal("config2", res[1].Name)
+	s.Equal("subdir", res[1].ProjectDir)
+	s.Nil(res[1].Error)
+	s.Equal(cfg2, res[1].Configuration)
+}
+
+func (s *GetConfigurationsSuite) TestGetConfigurationsRecursiveWithSubdir() {
+	_ = s.makeSubdirConfiguration("config0", ".")
+	cfg1 := s.makeSubdirConfiguration("config1", "subdir")
+	cfg2 := s.makeSubdirConfiguration("config2", "subdir")
+	subsubdir := filepath.Join("theAlphabeticvallyLastSubdir", "nested")
+	_ = s.makeSubdirConfiguration("config3", subsubdir)
+
+	h := GetConfigurationsHandlerFunc(s.cwd, s.log)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/configurations?recursive=true&dir=subdir", nil)
 	s.NoError(err)
 
 	h(rec, req)
