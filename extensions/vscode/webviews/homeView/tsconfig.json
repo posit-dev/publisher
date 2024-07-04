@@ -3,7 +3,11 @@
     "@tsconfig/node20/tsconfig.json",
     "@vue/tsconfig/tsconfig.dom.json"
   ],
-  "include": ["src/**/*", "src/**/*.vue"],
+  "include": [
+    "src/**/*",
+    "src/**/*.vue",
+    "index.d.ts" // declaration file path],
+  ],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {

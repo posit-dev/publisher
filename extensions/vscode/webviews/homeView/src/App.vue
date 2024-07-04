@@ -1,37 +1,41 @@
 <!-- Copyright (C) 2024 by Posit Software, PBC. -->
 
 <template>
-  <main>
-    <EvenEasierDeploy class="easy-deploy-container" />
-    <template v-if="home.selectedConfiguration">
-      <ProjectFiles v-model:expanded="projectFilesExpanded" />
-      <PythonPackages />
-      <RPackages />
-    </template>
+  <main class="container">
+    <Tabs @change="tabChanged" v-model="activeTab">
+      <Tab :value="ViewTabs.OnPrem">
+        <OnPremConnect />
+      </Tab>
+      <Tab :value="ViewTabs.Cloud">
+        <CloudConnect />
+      </Tab>
+    </Tabs>
   </main>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
 
-import EvenEasierDeploy from "src/components/EvenEasierDeploy.vue";
-import ProjectFiles from "src/components/views/ProjectFiles.vue";
-import PythonPackages from "src/components/views/PythonPackages.vue";
-import RPackages from "src/components/views/RPackages.vue";
+import OnPremConnect from "src/views/OnPremConnect.vue";
+import CloudConnect from "src/views/CloudConnect.vue";
+import { Tabs, Tab } from "super-vue3-tabs";
 
 import { useHostConduitService } from "src/HostConduitService";
-import { useHomeStore } from "./stores/home";
+
+enum ViewTabs {
+  OnPrem = "Connect",
+  Cloud = "Connect Cloud",
+}
+const activeTab = ref<ViewTabs>(ViewTabs.OnPrem);
+
+const tabChanged = (tab: ViewTabs) => {
+  console.log("Tab changed to", tab);
+};
 
 useHostConduitService();
-
-const home = useHomeStore();
-
-const projectFilesExpanded = ref(false);
 </script>
-
 <style lang="scss" scoped>
-.easy-deploy-container {
-  padding: 0 20px;
-  margin-block-end: 1rem;
+.container {
+  margin: 0 10px;
 }
 </style>
