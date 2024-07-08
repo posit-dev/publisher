@@ -53,6 +53,14 @@ export const useHomeStore = defineStore("home", () => {
   const rPackageManager = ref<string>();
   const rVersion = ref<string>();
 
+  const gitRefreshError = ref<string>();
+  const gitRepo = ref<string>();
+  const gitRepoUrl = ref<string>();
+  const gitRepoRemoteName = ref<string>();
+  const gitRepoLocalBranch = ref<string>();
+  const gitRepoLocalCommit = ref<string>();
+  const gitRepoNumberOfChanges = ref<number>(0);
+
   /**
    * Updates the selected contentRecord to one with the given name.
    * If the named contentRecord is not found, the selected contentRecord is set to undefined.
@@ -150,6 +158,38 @@ export const useHomeStore = defineStore("home", () => {
     rVersion.value = version;
   };
 
+  const updateGitRepoStatus = (
+    error?: string,
+    repo?: string,
+    repoUrl?: string,
+    remote?: string,
+    branch?: string,
+    commit?: string,
+    changes?: number,
+  ) => {
+    if (error) {
+      gitRefreshError.value = error;
+      gitRepo.value = undefined;
+      gitRepoUrl.value = undefined;
+      gitRepoRemoteName.value = undefined;
+      gitRepoLocalBranch.value = undefined;
+      gitRepoLocalCommit.value = undefined;
+      gitRepoNumberOfChanges.value = 0;
+      return;
+    }
+    gitRefreshError.value = undefined;
+    gitRepo.value = repo;
+    gitRepoUrl.value = repoUrl;
+    gitRepoRemoteName.value = remote;
+    gitRepoLocalBranch.value = branch;
+    gitRepoLocalCommit.value = commit;
+    if (changes !== undefined) {
+      gitRepoNumberOfChanges.value = changes;
+    } else {
+      gitRepoNumberOfChanges.value = 0;
+    }
+  };
+
   return {
     publishInProgress,
     contentRecords,
@@ -170,6 +210,13 @@ export const useHomeStore = defineStore("home", () => {
     rProject,
     rPackages,
     rPackageFile,
+    gitRefreshError,
+    gitRepo,
+    gitRepoUrl,
+    gitRepoRemoteName,
+    gitRepoLocalBranch,
+    gitRepoLocalCommit,
+    gitRepoNumberOfChanges,
     updateSelectedContentRecordByName,
     updateSelectedContentRecordByObject,
     updateSelectedConfigurationByName,
@@ -178,5 +225,6 @@ export const useHomeStore = defineStore("home", () => {
     updateParentViewSelectionState,
     updatePythonPackages,
     updateRPackages,
+    updateGitRepoStatus,
   };
 });

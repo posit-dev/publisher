@@ -24,6 +24,7 @@ export enum WebviewToHostMessageType {
   NEW_DEPLOYMENT = "newDeployment",
   NEW_CREDENTIAL = "newCredential",
   VIEW_PUBLISHING_LOG = "viewPublishingLog",
+  REFRESH_GIT_STATUS = "RefreshGitStatus",
 }
 
 export type AnyWebviewToHostMessage<
@@ -56,7 +57,8 @@ export type WebviewToHostMessage =
   | SelectDeploymentMsg
   | NewDeploymentMsg
   | NewCredentialMsg
-  | ViewPublishingLog;
+  | ViewPublishingLog
+  | RefreshGitStatus;
 
 export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
   return (
@@ -79,7 +81,8 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.SELECT_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL ||
-    msg.kind === WebviewToHostMessageType.VIEW_PUBLISHING_LOG
+    msg.kind === WebviewToHostMessageType.VIEW_PUBLISHING_LOG ||
+    msg.kind === WebviewToHostMessageType.REFRESH_GIT_STATUS
   );
 }
 
@@ -176,3 +179,6 @@ export type NewCredentialMsg =
 
 export type ViewPublishingLog =
   AnyWebviewToHostMessage<WebviewToHostMessageType.VIEW_PUBLISHING_LOG>;
+
+export type RefreshGitStatus =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.REFRESH_GIT_STATUS>;

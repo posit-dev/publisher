@@ -14,6 +14,7 @@ import {
   UpdateContentRecordSelectionMsg,
   UpdatePythonPackages,
   UpdateRPackages,
+  GitStatus,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
   WebviewToHostMessage,
@@ -77,6 +78,8 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onUpdatePythonPackages(msg);
     case HostToWebviewMessageType.UPDATE_R_PACKAGES:
       return onUpdateRPackages(msg);
+    case HostToWebviewMessageType.GIT_STATUS:
+      return onGitStatus(msg);
     default:
       console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
@@ -210,5 +213,18 @@ const onUpdateRPackages = (msg: UpdateRPackages) => {
     msg.content.file,
     msg.content.manager,
     msg.content.rVersion,
+  );
+};
+
+const onGitStatus = (msg: GitStatus) => {
+  const home = useHomeStore();
+  home.updateGitRepoStatus(
+    msg.content.error,
+    msg.content.repo,
+    msg.content.repoUrl,
+    msg.content.remote,
+    msg.content.branch,
+    msg.content.commit,
+    msg.content.changes,
   );
 };

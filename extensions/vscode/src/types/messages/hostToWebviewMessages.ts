@@ -24,6 +24,7 @@ export enum HostToWebviewMessageType {
   REFRESH_FILES_LISTS = "refreshFilesLists",
   UPDATE_PYTHON_PACKAGES = "updatePythonPackages",
   UPDATE_R_PACKAGES = "updateRPackages",
+  GIT_STATUS = "gitStatus",
 }
 
 export type AnyHostToWebviewMessage<
@@ -48,7 +49,8 @@ export type HostToWebviewMessage =
   | SaveSelectionMsg
   | RefreshFilesListsMsg
   | UpdatePythonPackages
-  | UpdateRPackages;
+  | UpdateRPackages
+  | GitStatus;
 
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
@@ -63,7 +65,8 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
     msg.kind === HostToWebviewMessageType.REFRESH_FILES_LISTS ||
     msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES ||
-    msg.kind === HostToWebviewMessageType.UPDATE_R_PACKAGES
+    msg.kind === HostToWebviewMessageType.UPDATE_R_PACKAGES ||
+    msg.kind === HostToWebviewMessageType.GIT_STATUS
   );
 }
 
@@ -143,5 +146,18 @@ export type UpdateRPackages = AnyHostToWebviewMessage<
     manager?: string;
     rVersion?: string;
     packages?: RPackage[];
+  }
+>;
+
+export type GitStatus = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.GIT_STATUS,
+  {
+    error?: string;
+    repo?: string;
+    repoUrl?: string;
+    remote?: string;
+    branch?: string;
+    commit?: string;
+    changes?: number;
   }
 >;

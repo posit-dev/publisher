@@ -15,9 +15,13 @@ import {
   WorkspaceFolder,
   commands,
   env,
+  extensions,
   window,
   workspace,
 } from "vscode";
+
+import { API as GitAPI, GitExtension } from "../types/git";
+
 import { isAxiosError } from "axios";
 
 import {
@@ -38,7 +42,10 @@ import {
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
 import { getPythonInterpreterPath } from "../utils/config";
-import { getSummaryStringFromError } from "src/utils/errors";
+import {
+  getMessageFromError,
+  getSummaryStringFromError,
+} from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
@@ -91,6 +98,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private _webviewConduit: WebviewConduit;
 
   private configWatchers: ConfigWatcherManager | undefined;
+  private gitRefreshInterval?: NodeJS.Timeout;
 
   constructor(
     private readonly _context: ExtensionContext,
@@ -158,6 +166,45 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this,
       );
     });
+
+    // useBus().on("getGitInfo", async() => {
+    //Get access to API provided by Git extension that is always part of VS Code
+    // const gitExtension =
+    //   extensions.getExtension<GitExtension>("vscode.git")!.exports;
+    // const gitApi = gitExtension.getAPI(1);
+    // gitApi.onDidOpenRepository((repo: Repository) => {
+    //   console.log(`now we have a repo`);
+    //   const branch = repo.state.HEAD;
+    //   const remote = repo.state.remotes[0];
+    //   console.log(
+    //     `after onDidOpenRepository - branch: ${branch}, remote: ${remote}`,
+    //   );
+    // });
+    // const enabled = gitExtension.enabled;
+    // console.log(`enabled: ${enabled}`);
+
+    // const repo = gitApi.repositories[0];
+    // if (repo) {
+    //   const branch = repo.state.HEAD;
+    //   const remote = repo.state.remotes[0];
+    //   console.log(`Already here: branch: ${branch}, remote: ${remote}`);
+    // }
+
+    // 	console.log(gitApi.repositories);
+
+    //   // const repository = gitApi.repositories.filter((r) =>
+    //   //   isDescendant(r.rootUri.fsPath, workspace.rootPath),
+    //   // )[0];
+
+    //   // //Get list of repositories available in current VS Code workspace
+    //   // const repos = git.repositories;
+
+    //   // //Get all changes for first repository in list
+    //   // const changes = await repos[0].diffWithHEAD();
+
+    //   // //Print out array of changes
+    //   // console.info(changes);
+    // });
   }
   /**
    * Dispatch messages passed from the webview to the handling code
@@ -207,6 +254,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewCredential();
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
         return this.showPublishingLog();
+      case WebviewToHostMessageType.REFRESH_GIT_STATUS:
+        return this._requestGitStatus();
       default:
         throw new Error(
           `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -425,6 +474,61 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this._webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.SAVE_SELECTION,
     });
+  }
+
+  private _requestGitStatus() {
+    if (this.gitRefreshInterval) {
+      return;
+    }
+    this.gitRefreshInterval = setInterval(() => {
+      let gitExtension: GitExtension;
+      let gitApi: GitAPI;
+      try {
+        gitExtension =
+          extensions.getExtension<GitExtension>("vscode.git")!.exports;
+        gitApi = gitExtension.getAPI(1);
+
+        const repo = gitApi.repositories[0];
+        if (!repo) {
+          throw new Error("No Repos found in working directory");
+        }
+        const branch = repo.state.HEAD;
+        if (!branch) {
+          throw new Error("Branch info not available.");
+        }
+        const remote = repo.state.remotes[0];
+        if (!remote.fetchUrl) {
+          throw new Error("Repo URL not available");
+        }
+        const gitHubRepo = remote.fetchUrl
+          .replace("https://github.com/", "")
+          .replace(".git", "");
+        if (gitHubRepo.length === remote.fetchUrl.length) {
+          throw new Error(
+            `Unable to extract repo from fetch URL: ${remote.fetchUrl}`,
+          );
+        }
+        this._webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.GIT_STATUS,
+          content: {
+            repo: gitHubRepo,
+            repoUrl: remote.fetchUrl,
+            remote: remote.name,
+            branch: branch.name,
+            commit: branch.commit,
+            changes: repo.state.workingTreeChanges.length,
+          },
+        });
+      } catch (e) {
+        this._webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.GIT_STATUS,
+          content: {
+            error: getMessageFromError(e),
+          },
+        });
+        return;
+      }
+    }, 1000); // TODO.. this one second refresh is rediculous.
   }
 
   private _getSelectionState(): HomeViewState {
