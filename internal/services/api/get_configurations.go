@@ -86,7 +86,7 @@ func GetConfigurationsHandlerFunc(base util.AbsolutePath, log logging.Logger) ht
 		}
 		entrypoint := req.URL.Query().Get("entrypoint")
 
-		var response []configDTO
+		response := make([]configDTO, 0)
 		if req.URL.Query().Get("recursive") == "true" {
 			// Recursively search for .posit directories
 			walker, err := matcher.NewMatchingWalker([]string{"*"}, projectDir, log)

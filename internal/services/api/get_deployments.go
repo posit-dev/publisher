@@ -40,7 +40,7 @@ func GetDeploymentsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.
 			// Response already returned by ProjectDirFromRequest
 			return
 		}
-		var response []any
+		response := make([]any, 0)
 		entrypoint := req.URL.Query().Get("entrypoint")
 
 		if req.URL.Query().Get("recursive") == "true" {
