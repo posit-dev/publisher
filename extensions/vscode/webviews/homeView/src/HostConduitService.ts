@@ -21,28 +21,28 @@ import {
 } from "../../../src/types/messages/webviewToHostMessages";
 import { useHomeStore } from "./stores/home";
 
-let _hostConduit: HostConduit | undefined = undefined;
+let hostConduit: HostConduit | undefined = undefined;
 
 const vsCodeApi = acquireVsCodeApi();
 
 export function useHostConduitService() {
-  if (!_hostConduit) {
-    _hostConduit = new HostConduit(window, vsCodeApi);
-    onMounted(() => _hostConduit && _hostConduit.onMsg(onMessageFromHost));
-    onUnmounted(() => _hostConduit && _hostConduit.deactivate());
-    _hostConduit.sendMsg({
+  if (!hostConduit) {
+    hostConduit = new HostConduit(window, vsCodeApi);
+    onMounted(() => hostConduit && hostConduit.onMsg(onMessageFromHost));
+    onUnmounted(() => hostConduit && hostConduit.deactivate());
+    hostConduit.sendMsg({
       kind: WebviewToHostMessageType.INITIALIZING,
     });
   }
 
   const sendMsg = (msg: WebviewToHostMessage) => {
-    if (!_hostConduit) {
+    if (!hostConduit) {
       throw new Error(
         "HostCondiutService::sendMsg attemped ahead of call to useHostConduitService",
       );
     }
     console.debug(`HostConduitService - Sending Msg: ${JSON.stringify(msg)}`);
-    return _hostConduit.sendMsg(msg);
+    return hostConduit.sendMsg(msg);
   };
 
   return {
