@@ -74,7 +74,7 @@ export class ConfigurationsTreeDataProvider
 
     try {
       const api = await useApi();
-      const response = await api.configurations.getAll();
+      const response = await api.configurations.getAll({ recursive: true });
       const configurations = response.data;
 
       return configurations.map((config) => {
