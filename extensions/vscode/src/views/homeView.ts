@@ -53,6 +53,7 @@ import {
   WebviewToHostMessage,
   WebviewToHostMessageType,
   VSCodeOpenRelativeMsg,
+  VSCodeOpenMsg,
 } from "src/types/messages/webviewToHostMessages";
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
 import { confirmOverwrite } from "src/dialogs";
@@ -187,10 +188,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS:
         return await this.onScanForRPackageRequirements();
       case WebviewToHostMessageType.VSCODE_OPEN:
-        return commands.executeCommand(
-          "vscode.open",
-          Uri.parse(msg.content.uri),
-        );
+        return await this.onVSCodeOpen(msg);
       case WebviewToHostMessageType.REQUEST_FILES_LISTS:
         return this.sendRefreshedFilesLists();
       case WebviewToHostMessageType.INCLUDE_FILE:
@@ -210,6 +208,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           `Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
         );
     }
+  }
+
+  private async onVSCodeOpen(msg: VSCodeOpenMsg) {
+    return await commands.executeCommand(
+      "vscode.open",
+      Uri.parse(msg.content.uri),
+    );
   }
 
   private async onDeployMsg(msg: DeployMsg) {
