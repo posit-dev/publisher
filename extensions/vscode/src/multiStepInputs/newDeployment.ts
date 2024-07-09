@@ -267,7 +267,7 @@ export async function newDeployment(
 
   let entryPointListItems: QuickPickItemWithIndex[] = [];
   let inspectionResults: ConfigurationInspectionResult[] = [];
-  let contentRecordNames: string[] = [];
+  let contentRecordNames = new Map<string, string[]>();
 
   let newConfig: Configuration | undefined;
   let newOrSelectedCredential: Credential | undefined;
@@ -358,7 +358,9 @@ export async function newDeployment(
     async (resolve, reject) => {
       try {
         const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(python);
+        const inspectResponse = await api.configurations.inspect(python, {
+          recursive: true,
+        });
         inspectionResults = inspectResponse.data;
         inspectionResults.forEach((result, i) => {
           const config = result.configuration;
@@ -367,6 +369,7 @@ export async function newDeployment(
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
+              detail: result.projectDir,
               index: i,
             });
           }
@@ -392,12 +395,17 @@ export async function newDeployment(
 
   const getContentRecords = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.contentRecords.getAll();
+      const response = await api.contentRecords.getAll({ recursive: true });
       const contentRecordList = response.data;
       // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
-      contentRecordNames = contentRecordList.map(
-        (contentRecord) => contentRecord.deploymentName,
-      );
+      contentRecordList.forEach((contentRecord) => {
+        let existingList = contentRecordNames.get(contentRecord.projectDir);
+        if (existingList === undefined) {
+          existingList = [];
+        }
+        existingList.push(contentRecord.deploymentName);
+        contentRecordNames.set(contentRecord.projectDir, existingList);
+      });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "newContentRecord, contentRecords.getAll",
@@ -896,20 +904,22 @@ export async function newDeployment(
 
   // Create the Config File
   let configName: string | undefined;
+  const selectedInspectionResult =
+    inspectionResults[state.data.entryPoint.index];
+  if (!selectedInspectionResult) {
+    window.showErrorMessage(
+      `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
+    );
+    return;
+  }
+  selectedInspectionResult.configuration.title = state.data.title;
+
   try {
     configName = await untitledConfigurationName();
-    const selectedInspectionResult =
-      inspectionResults[state.data.entryPoint.index];
-    if (!selectedInspectionResult) {
-      window.showErrorMessage(
-        `Unable to proceed creating configuration. Error retrieving config for ${state.data.entryPoint.label}, index = ${state.data.entryPoint.index}`,
-      );
-      return;
-    }
-    selectedInspectionResult.configuration.title = state.data.title;
     const createResponse = await api.configurations.createOrUpdate(
       configName,
       selectedInspectionResult.configuration,
+      { dir: selectedInspectionResult.projectDir },
     );
     const fileUri = Uri.file(createResponse.data.configurationPath);
     newConfig = createResponse.data;
@@ -948,10 +958,17 @@ export async function newDeployment(
 
   // Create the PrecontentRecord File
   try {
+    let existingNames = contentRecordNames.get(
+      selectedInspectionResult.projectDir,
+    );
+    if (!existingNames) {
+      existingNames = [];
+    }
     const response = await api.contentRecords.createNew(
       finalCredentialName,
       configName,
-      untitledContentRecordName(contentRecordNames),
+      untitledContentRecordName(existingNames),
+      { dir: selectedInspectionResult.projectDir },
     );
     newContentRecord = response.data;
   } catch (error: unknown) {
