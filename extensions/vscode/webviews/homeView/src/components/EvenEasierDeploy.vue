@@ -339,6 +339,7 @@ const toolTipText = computed(() => {
 - Deployment Record: ${home.selectedContentRecord?.saveName || "<undefined>"}
 - Configuration File: ${home.selectedConfiguration?.configurationName || "<undefined>"}
 - Credential In Use: ${home.serverCredential?.name || "<undefined>"}
+- Project Dir: ${home.selectedContentRecord?.projectDir || "<undefined>"}
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
 
