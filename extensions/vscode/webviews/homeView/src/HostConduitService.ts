@@ -93,20 +93,10 @@ const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
 
   const name = msg.content.deploymentSelected?.deploymentName;
   const projectDir = msg.content.deploymentSelected?.projectDir;
-  if (name && projectDir) {
-    home.updateSelectedContentRecordByName(name, projectDir);
-  } else if (name === null) {
+  if (msg.content.deploymentSelected) {
+    home.updateSelectedContentRecordBySelector(msg.content.deploymentSelected);
+  } else {
     home.selectedContentRecord = undefined;
-  } else if (home.selectedContentRecord) {
-    if (
-      !home.updateSelectedContentRecordByName(
-        home.selectedContentRecord.deploymentName,
-        home.selectedContentRecord.projectDir,
-      )
-    ) {
-      // Recalculate if the contentRecord object changed with new data
-      home.updateCredentialsAndConfigurationForContentRecord();
-    }
   }
 
   // If no contentRecord is selected, unset the selected configuration
@@ -126,22 +116,10 @@ const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
   home.configurations = msg.content.configurations;
   home.configurationsInError = msg.content.configurationsInError;
 
-  const name = msg.content.deploymentSelected?.configurationName;
-  const projectDir = msg.content.deploymentSelected?.projectDir;
-  if (name && projectDir) {
-    home.updateSelectedConfigurationByName(name, projectDir);
-  } else if (name === null) {
+  if (msg.content.deploymentSelected) {
+    home.updateSelectedConfigurationBySelector(msg.content.deploymentSelected);
+  } else {
     home.selectedConfiguration = undefined;
-  } else if (home.selectedConfiguration) {
-    home.updateSelectedConfigurationByName(
-      home.selectedConfiguration.configurationName,
-      home.selectedConfiguration.projectDir,
-    );
-  } else if (home.selectedContentRecord?.configurationName) {
-    home.updateSelectedConfigurationByName(
-      home.selectedContentRecord.configurationName,
-      home.selectedContentRecord.projectDir,
-    );
   }
 };
 

@@ -446,10 +446,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (!savedState || !savedState.configurationName) {
       return undefined;
     }
-    return this.getConfigByName(
-      savedState.configurationName,
-      savedState.projectDir,
-    );
+    return this.getConfigBySelector(savedState);
   }
 
   private getActiveContentRecord():
@@ -460,21 +457,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (!savedState) {
       return undefined;
     }
-    return this.getContentRecordByName(
-      savedState.deploymentName,
-      savedState.projectDir,
-    );
+    return this.getContentRecordBySelector(savedState);
   }
 
-  private getContentRecordByName(name: string, projectDir: string) {
+  private getContentRecordBySelector(selector: DeploymentSelector) {
     return this.contentRecords.find(
-      (d) => d.deploymentName === name && d.projectDir === projectDir,
+      (d) => d.deploymentPath === selector.deploymentPath,
     );
   }
 
-  private getConfigByName(name: string, projectDir: string) {
+  private getConfigBySelector(selector: DeploymentSelector) {
     return this.configs.find(
-      (c) => c.configurationName === name && c.projectDir === projectDir,
+      (c) =>
+        c.configurationName === selector.configurationName &&
+        c.projectDir === selector.projectDir,
     );
   }
 
@@ -504,10 +500,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const api = await useApi();
 
     if (activeConfiguration && savedState?.projectDir) {
-      const currentConfig = this.getConfigByName(
-        activeConfiguration,
-        savedState.projectDir,
-      );
+      const currentConfig = this.getConfigBySelector(savedState);
       const pythonSection = currentConfig?.configuration.python;
       if (!pythonSection) {
         pythonProject = false;
@@ -565,10 +558,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const api = await useApi();
 
     if (activeConfiguration && savedState?.projectDir) {
-      const currentConfig = this.getConfigByName(
-        activeConfiguration,
-        savedState.projectDir,
-      );
+      const currentConfig = this.getConfigBySelector(savedState);
       const rSection = currentConfig?.configuration.r;
       if (!rSection) {
         rProject = false;
@@ -800,6 +790,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const deploymentSelector: DeploymentSelector = {
         deploymentName: deploymentObjects.contentRecord.saveName,
         projectDir: deploymentObjects.contentRecord.projectDir,
+        deploymentPath: deploymentObjects.contentRecord.deploymentPath,
         configurationName: deploymentObjects.configuration.configurationName,
       };
 
@@ -812,6 +803,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         configurationName: deploymentObjects.configuration.configurationName,
         deploymentName: deploymentObjects.contentRecord.saveName,
         projectDir: deploymentObjects.contentRecord.projectDir,
+        deploymentPath: deploymentObjects.contentRecord.deploymentPath,
       };
     }
     return undefined;
@@ -944,6 +936,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       deploymentSelector = {
         deploymentName: deployment.contentRecord.saveName,
         projectDir: deployment.contentRecord.projectDir,
+        deploymentPath: deployment.contentRecord.deploymentPath,
         configurationName: deployment.contentRecord.configurationName,
       };
       this.updateWebViewViewCredentials();
@@ -1101,18 +1094,30 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   public sendRefreshedFilesLists = async () => {
     const api = await useApi();
-    const activeConfig = this.getActiveConfig();
-    if (activeConfig) {
-      const response = await api.files.getByConfiguration(
-        activeConfig.configurationName,
-      );
+    const activeDeployment = this.getActiveContentRecord();
+    if (activeDeployment) {
+      try {
+        const response = await api.files.getByConfiguration(
+          activeDeployment.configurationName,
+          {
+            dir: activeDeployment.projectDir,
+          },
+        );
 
-      this.webviewConduit.sendMsg({
-        kind: HostToWebviewMessageType.REFRESH_FILES_LISTS,
-        content: {
-          ...splitFilesOnInclusion(response.data),
-        },
-      });
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.REFRESH_FILES_LISTS,
+          content: {
+            ...splitFilesOnInclusion(response.data),
+          },
+        });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "sendRefreshedFilesLists, files.getByConfiguration",
+          error,
+        );
+        window.showErrorMessage(`Failed to refresh files. ${summary}`);
+        return;
+      }
     }
   };
 

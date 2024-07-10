@@ -10,6 +10,7 @@ import {
 export type DeploymentSelector = {
   deploymentName: string;
   projectDir: string;
+  deploymentPath: string;
   configurationName?: string;
 };
 

@@ -64,11 +64,11 @@ export const useHomeStore = defineStore("home", () => {
    * @param name the name of the new contentRecord to select
    * @returns true if the selected contentRecord was the same, false if not
    */
-  function updateSelectedContentRecordByName(name: string, projectDir: string) {
+  function updateSelectedContentRecordBySelector(selector: DeploymentSelector) {
     const previousSelectedContentRecord = selectedContentRecord.value;
 
     const contentRecord = contentRecords.value.find(
-      (d) => d.deploymentName === name && d.projectDir === projectDir,
+      (d) => d.deploymentPath === selector.deploymentPath,
     );
 
     selectedContentRecord.value = contentRecord;
@@ -89,17 +89,14 @@ export const useHomeStore = defineStore("home", () => {
    * @param name the name of the new configuration to select
    * @returns true if the selected contentRecord was the same, false if not
    */
-  function updateSelectedConfigurationByName(
-    name: string,
-    projectDir?: string,
-  ) {
+  function updateSelectedConfigurationBySelector(selector: DeploymentSelector) {
     const previousSelectedConfig = selectedConfiguration.value;
 
     const config = configurations.value.find((c) => {
-      if (projectDir) {
-        return c.configurationName === name && c.projectDir === projectDir;
-      }
-      return c.configurationName === name;
+      return (
+        c.configurationName === selector.configurationName &&
+        c.projectDir === selector.projectDir
+      );
     });
 
     selectedConfiguration.value = config;
@@ -113,9 +110,7 @@ export const useHomeStore = defineStore("home", () => {
 
   const updateCredentialsAndConfigurationForContentRecord = () => {
     if (selectedContentRecord.value?.configurationName) {
-      updateSelectedConfigurationByName(
-        selectedContentRecord.value?.configurationName,
-      );
+      updateSelectedConfigurationBySelector(selectedContentRecord.value);
     }
   };
 
@@ -123,15 +118,15 @@ export const useHomeStore = defineStore("home", () => {
 
   const updateParentViewSelectionState = () => {
     const hostConduit = useHostConduitService();
-    let state: HomeViewState = null;
     // skip saving the selection if we have not yet
     // selected a content record. This is probably an init
     // sequence.
     if (selectedContentRecord.value) {
-      state = {
+      const state = {
         deploymentName: selectedContentRecord.value.saveName,
         projectDir: selectedContentRecord.value.projectDir,
         configurationName: selectedConfiguration.value?.configurationName,
+        deploymentPath: selectedContentRecord.value.deploymentPath,
       };
       hostConduit.sendMsg({
         kind: WebviewToHostMessageType.SAVE_SELECTION_STATE,
@@ -188,9 +183,9 @@ export const useHomeStore = defineStore("home", () => {
     rProject,
     rPackages,
     rPackageFile,
-    updateSelectedContentRecordByName,
+    updateSelectedContentRecordBySelector,
     updateSelectedContentRecordByObject,
-    updateSelectedConfigurationByName,
+    updateSelectedConfigurationBySelector,
     updateSelectedConfigurationByObject,
     updateCredentialsAndConfigurationForContentRecord,
     updateParentViewSelectionState,
