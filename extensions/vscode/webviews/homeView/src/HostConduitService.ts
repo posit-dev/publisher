@@ -91,15 +91,17 @@ const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
   const home = useHomeStore();
   home.contentRecords = msg.content.contentRecords;
 
-  const name = msg.content.selectedContentRecordName;
-  if (name) {
-    home.updateSelectedContentRecordByName(name);
+  const name = msg.content.deploymentSelected?.deploymentName;
+  const projectDir = msg.content.deploymentSelected?.projectDir;
+  if (name && projectDir) {
+    home.updateSelectedContentRecordByName(name, projectDir);
   } else if (name === null) {
     home.selectedContentRecord = undefined;
   } else if (home.selectedContentRecord) {
     if (
       !home.updateSelectedContentRecordByName(
         home.selectedContentRecord.deploymentName,
+        home.selectedContentRecord.projectDir,
       )
     ) {
       // Recalculate if the contentRecord object changed with new data
@@ -124,18 +126,21 @@ const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
   home.configurations = msg.content.configurations;
   home.configurationsInError = msg.content.configurationsInError;
 
-  const name = msg.content.selectedConfigurationName;
-  if (name) {
-    home.updateSelectedConfigurationByName(name);
+  const name = msg.content.deploymentSelected?.configurationName;
+  const projectDir = msg.content.deploymentSelected?.projectDir;
+  if (name && projectDir) {
+    home.updateSelectedConfigurationByName(name, projectDir);
   } else if (name === null) {
     home.selectedConfiguration = undefined;
   } else if (home.selectedConfiguration) {
     home.updateSelectedConfigurationByName(
       home.selectedConfiguration.configurationName,
+      home.selectedConfiguration.projectDir,
     );
   } else if (home.selectedContentRecord?.configurationName) {
     home.updateSelectedConfigurationByName(
       home.selectedContentRecord.configurationName,
+      home.selectedContentRecord.projectDir,
     );
   }
 };

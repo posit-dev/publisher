@@ -9,6 +9,7 @@ import {
   PreContentRecord,
   ConfigurationError,
 } from "../../api";
+import { DeploymentSelector } from "../shared";
 
 export enum HostToWebviewMessageType {
   // Sent from host to webviewView
@@ -71,7 +72,7 @@ export type RefreshContentRecordDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,
   {
     contentRecords: (ContentRecord | PreContentRecord)[];
-    selectedContentRecordName?: string | null;
+    deploymentSelected: DeploymentSelector | null;
   }
 >;
 export type RefreshConfigDataMsg = AnyHostToWebviewMessage<
@@ -79,7 +80,7 @@ export type RefreshConfigDataMsg = AnyHostToWebviewMessage<
   {
     configurations: Configuration[];
     configurationsInError: ConfigurationError[];
-    selectedConfigurationName?: string | null;
+    deploymentSelected: DeploymentSelector | null;
   }
 >;
 export type RefreshCredentialDataMsg = AnyHostToWebviewMessage<

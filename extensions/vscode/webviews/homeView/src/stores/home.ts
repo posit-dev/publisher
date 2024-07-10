@@ -13,6 +13,10 @@ import {
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
+import {
+  DeploymentSelector,
+  HomeViewState,
+} from "../../../../src/types/shared";
 
 export const useHomeStore = defineStore("home", () => {
   const publishInProgress = ref(false);
@@ -60,11 +64,11 @@ export const useHomeStore = defineStore("home", () => {
    * @param name the name of the new contentRecord to select
    * @returns true if the selected contentRecord was the same, false if not
    */
-  function updateSelectedContentRecordByName(name: string) {
+  function updateSelectedContentRecordByName(name: string, projectDir: string) {
     const previousSelectedContentRecord = selectedContentRecord.value;
 
     const contentRecord = contentRecords.value.find(
-      (d) => d.deploymentName === name,
+      (d) => d.deploymentName === name && d.projectDir === projectDir,
     );
 
     selectedContentRecord.value = contentRecord;
@@ -85,12 +89,18 @@ export const useHomeStore = defineStore("home", () => {
    * @param name the name of the new configuration to select
    * @returns true if the selected contentRecord was the same, false if not
    */
-  function updateSelectedConfigurationByName(name: string) {
+  function updateSelectedConfigurationByName(
+    name: string,
+    projectDir?: string,
+  ) {
     const previousSelectedConfig = selectedConfiguration.value;
 
-    const config = configurations.value.find(
-      (c) => c.configurationName === name,
-    );
+    const config = configurations.value.find((c) => {
+      if (projectDir) {
+        return c.configurationName === name && c.projectDir === projectDir;
+      }
+      return c.configurationName === name;
+    });
 
     selectedConfiguration.value = config;
     return previousSelectedConfig === selectedConfiguration.value;
@@ -113,15 +123,23 @@ export const useHomeStore = defineStore("home", () => {
 
   const updateParentViewSelectionState = () => {
     const hostConduit = useHostConduitService();
-    hostConduit.sendMsg({
-      kind: WebviewToHostMessageType.SAVE_SELECTION_STATE,
-      content: {
-        state: {
-          deploymentName: selectedContentRecord.value?.saveName,
-          configurationName: selectedConfiguration.value?.configurationName,
+    let state: HomeViewState = null;
+    // skip saving the selection if we have not yet
+    // selected a content record. This is probably an init
+    // sequence.
+    if (selectedContentRecord.value) {
+      state = {
+        deploymentName: selectedContentRecord.value.saveName,
+        projectDir: selectedContentRecord.value.projectDir,
+        configurationName: selectedConfiguration.value?.configurationName,
+      };
+      hostConduit.sendMsg({
+        kind: WebviewToHostMessageType.SAVE_SELECTION_STATE,
+        content: {
+          state,
         },
-      },
-    });
+      });
+    }
   };
 
   const updatePythonPackages = (
