@@ -43,11 +43,12 @@ export class ContentRecordsTreeDataProvider
   implements TreeDataProvider<ContentRecordsTreeItem>
 {
   private root: WorkspaceFolder | undefined;
-  private _onDidChangeTreeData: ContentRecordsEventEmitter = new EventEmitter();
+  private treeDataChangeEventEmitter: ContentRecordsEventEmitter =
+    new EventEmitter();
   readonly onDidChangeTreeData: ContentRecordsEvent =
-    this._onDidChangeTreeData.event;
+    this.treeDataChangeEventEmitter.event;
 
-  constructor(private readonly _context: ExtensionContext) {
+  constructor(private readonly context: ExtensionContext) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -56,7 +57,7 @@ export class ContentRecordsTreeDataProvider
 
   public refresh = () => {
     console.debug("refreshing deployment records");
-    this._onDidChangeTreeData.fire();
+    this.treeDataChangeEventEmitter.fire();
   };
 
   getTreeItem(element: ContentRecordsTreeItem): TreeItem | Thenable<TreeItem> {
@@ -102,13 +103,13 @@ export class ContentRecordsTreeDataProvider
     const treeView = window.createTreeView(Views.ContentRecords, {
       treeDataProvider: this,
     });
-    this._context.subscriptions.push(treeView);
+    this.context.subscriptions.push(treeView);
 
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(Commands.ContentRecords.Refresh, this.refresh),
     );
 
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         Commands.ContentRecords.Forget,
         async (item: ContentRecordsTreeItem) => {
@@ -127,7 +128,7 @@ export class ContentRecordsTreeDataProvider
       ),
     );
 
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         Commands.ContentRecords.Edit,
         async (item: ContentRecordsTreeItem) => {
@@ -136,7 +137,7 @@ export class ContentRecordsTreeDataProvider
       ),
     );
 
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         Commands.ContentRecords.Visit,
         async (item: ContentRecordsTreeItem) => {
@@ -149,7 +150,7 @@ export class ContentRecordsTreeDataProvider
       ),
     );
 
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         Commands.ContentRecords.Rename,
         async (item: ContentRecordsTreeItem) => {

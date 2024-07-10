@@ -15,7 +15,7 @@ import {
 export class HelpAndFeedbackTreeDataProvider
   implements TreeDataProvider<HelpAndFeedbackTreeItem>
 {
-  constructor(private readonly _context: ExtensionContext) {}
+  constructor(private readonly context: ExtensionContext) {}
 
   getTreeItem(element: HelpAndFeedbackTreeItem): TreeItem | Thenable<TreeItem> {
     return element;
@@ -42,11 +42,11 @@ export class HelpAndFeedbackTreeDataProvider
   }
 
   public register() {
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       window.createTreeView(Views.HelpAndFeedback, { treeDataProvider: this }),
     );
 
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         Commands.HelpAndFeedback.OpenGettingStarted,
         () => {
@@ -59,7 +59,7 @@ export class HelpAndFeedbackTreeDataProvider
       ),
     );
 
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(Commands.HelpAndFeedback.OpenFeedback, () => {
         env.openExternal(
           Uri.parse("https://github.com/posit-dev/publisher/discussions"),

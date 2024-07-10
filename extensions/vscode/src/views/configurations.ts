@@ -44,11 +44,12 @@ export class ConfigurationsTreeDataProvider
   implements TreeDataProvider<ConfigurationTreeItem>
 {
   private root: WorkspaceFolder | undefined;
-  private _onDidChangeTreeData: ConfigurationEventEmitter = new EventEmitter();
+  private treeDataChangeEventEmitter: ConfigurationEventEmitter =
+    new EventEmitter();
   readonly onDidChangeTreeData: ConfigurationEvent =
-    this._onDidChangeTreeData.event;
+    this.treeDataChangeEventEmitter.event;
 
-  constructor(private readonly _context: ExtensionContext) {
+  constructor(private readonly context: ExtensionContext) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
@@ -96,7 +97,7 @@ export class ConfigurationsTreeDataProvider
       treeDataProvider: this,
     });
 
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       treeView,
       commands.registerCommand(Commands.Configurations.Refresh, this.refresh),
       commands.registerCommand(Commands.Configurations.New, this.add),
@@ -115,7 +116,7 @@ export class ConfigurationsTreeDataProvider
   }
 
   private refresh = () => {
-    this._onDidChangeTreeData.fire();
+    this.treeDataChangeEventEmitter.fire();
   };
 
   private add = async (viewId?: string) => {

@@ -27,13 +27,14 @@ type CredentialEvent = Event<CredentialsTreeItem | undefined | void>;
 export class CredentialsTreeDataProvider
   implements TreeDataProvider<CredentialsTreeItem>
 {
-  private _onDidChangeTreeData: CredentialEventEmitter = new EventEmitter();
+  private treeDataChangeEventEmitter: CredentialEventEmitter =
+    new EventEmitter();
   readonly onDidChangeTreeData: CredentialEvent =
-    this._onDidChangeTreeData.event;
+    this.treeDataChangeEventEmitter.event;
 
-  constructor(private readonly _context: ExtensionContext) {
+  constructor(private readonly context: ExtensionContext) {
     useBus().on("refreshCredentials", () => {
-      this._onDidChangeTreeData.fire();
+      this.treeDataChangeEventEmitter.fire();
     });
   }
 
@@ -75,7 +76,7 @@ export class CredentialsTreeDataProvider
   };
 
   public register() {
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       window.createTreeView(Views.Credentials, { treeDataProvider: this }),
       commands.registerCommand(
         Commands.Credentials.Refresh,
