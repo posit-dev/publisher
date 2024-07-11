@@ -930,10 +930,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let deploymentSelector: DeploymentSelector | undefined;
     if (deployment) {
       deploymentSelector = {
-        // deploymentName: deployment.contentRecord.saveName,
-        // projectDir: deployment.contentRecord.projectDir,
         deploymentPath: deployment.contentRecord.deploymentPath,
-        // configurationName: deployment.contentRecord.configurationName,
       };
       this.updateWebViewViewCredentials();
       this.updateWebViewViewConfigurations();
@@ -943,11 +940,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return deploymentSelector;
   }
 
-  public resolveWebviewView(
-    webviewView: WebviewView,
-    // context: WebviewViewResolveContext,
-    // token: CancellationToken,
-  ) {
+  public resolveWebviewView(webviewView: WebviewView) {
     this.webviewView = webviewView;
     this.webviewConduit.init(this.webviewView.webview);
 
