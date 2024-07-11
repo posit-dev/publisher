@@ -6,7 +6,3 @@ test/sample-content
 
 # webdriver.io service
 test/vscode-ui/.wdio-vscode-service
-extensions/vscode/dist
-extensions/vscode/node_modules
-extensions/vscode/webviews/homeView/node_modules
-extensions/vscode/webviews/homeView/dist
