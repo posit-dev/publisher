@@ -317,7 +317,7 @@ const isCredentialMissing = computed((): boolean => {
 
 const selectConfiguration = () => {
   hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.SELECT_CONFIGURATION,
+    kind: WebviewToHostMessageType.SHOW_SELECT_CONFIGURATION,
   });
 };
 

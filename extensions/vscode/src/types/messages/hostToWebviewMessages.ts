@@ -20,7 +20,6 @@ export enum HostToWebviewMessageType {
   PUBLISH_FINISH_SUCCESS = "publishFinishSuccess",
   PUBLISH_FINISH_FAILURE = "publishFinishFailure",
   UPDATE_CONTENTRECORD_SELECTION = "updateContentRecordSelection",
-  UPDATE_CONFIG_SELECTION = "updateConfigSelection",
   SAVE_SELECTION = "saveSelection",
   REFRESH_FILES_LISTS = "refreshFilesLists",
   UPDATE_PYTHON_PACKAGES = "updatePythonPackages",
@@ -45,7 +44,6 @@ export type HostToWebviewMessage =
   | PublishFinishSuccessMsg
   | PublishFinishFailureMsg
   | UpdateContentRecordSelectionMsg
-  | UpdateConfigSelectionMsg
   | SaveSelectionMsg
   | RefreshFilesListsMsg
   | UpdatePythonPackages
@@ -60,7 +58,6 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS ||
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_FAILURE ||
     msg.kind === HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION ||
-    msg.kind === HostToWebviewMessageType.UPDATE_CONFIG_SELECTION ||
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
     msg.kind === HostToWebviewMessageType.REFRESH_FILES_LISTS ||
     msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES ||
@@ -80,7 +77,6 @@ export type RefreshConfigDataMsg = AnyHostToWebviewMessage<
   {
     configurations: Configuration[];
     configurationsInError: ConfigurationError[];
-    deploymentSelected: DeploymentSelector | null;
   }
 >;
 export type RefreshCredentialDataMsg = AnyHostToWebviewMessage<
@@ -105,13 +101,6 @@ export type UpdateContentRecordSelectionMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION,
   {
     preContentRecord: PreContentRecord;
-    saveSelection?: boolean;
-  }
->;
-export type UpdateConfigSelectionMsg = AnyHostToWebviewMessage<
-  HostToWebviewMessageType.UPDATE_CONFIG_SELECTION,
-  {
-    config: Configuration;
     saveSelection?: boolean;
   }
 >;

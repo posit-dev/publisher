@@ -8,10 +8,7 @@ import {
 } from "../api";
 
 export type DeploymentSelector = {
-  deploymentName: string;
-  projectDir: string;
   deploymentPath: string;
-  configurationName?: string;
 };
 
 export type HomeViewState = DeploymentSelector | null;

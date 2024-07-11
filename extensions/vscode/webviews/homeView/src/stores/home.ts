@@ -66,39 +66,20 @@ export const useHomeStore = defineStore("home", () => {
    */
   function updateSelectedContentRecordBySelector(selector: DeploymentSelector) {
     const previousSelectedContentRecord = selectedContentRecord.value;
-
-    const contentRecord = contentRecords.value.find(
-      (d) => d.deploymentPath === selector.deploymentPath,
-    );
-
-    selectedContentRecord.value = contentRecord;
-    return previousSelectedContentRecord === selectedContentRecord.value;
-  }
-
-  function updateSelectedContentRecordByObject(
-    contentRecord: ContentRecord | PreContentRecord,
-  ) {
-    contentRecords.value.push(contentRecord);
-    selectedContentRecord.value = contentRecord;
-  }
-
-  /**
-   * Updates the selected configuration to the one with the given name.
-   * If the named configuration is not found, the selected contentRecord is set to undefined.
-   *
-   * @param name the name of the new configuration to select
-   * @returns true if the selected contentRecord was the same, false if not
-   */
-  function updateSelectedConfigurationBySelector(selector: DeploymentSelector) {
     const previousSelectedConfig = selectedConfiguration.value;
 
-    // Always determine the selected configuration by what is in the
-    // deployment file.
     const contentRecord = contentRecords.value.find(
       (d) => d.deploymentPath === selector.deploymentPath,
     );
+
+    selectedContentRecord.value = contentRecord;
+
+    // Determine the configuration. It is ALWAYS set to the value found
+    // in the content record. If changed, that will be through the file
+    // and the refresh will cause this to be re-evaluated.
     if (!contentRecord) {
-      return false;
+      selectedConfiguration.value = undefined;
+      return;
     }
 
     const config = configurations.value.find((c) => {
@@ -109,19 +90,27 @@ export const useHomeStore = defineStore("home", () => {
     });
 
     selectedConfiguration.value = config;
-    return previousSelectedConfig === selectedConfiguration.value;
+
+    return (
+      previousSelectedContentRecord === selectedContentRecord.value &&
+      previousSelectedConfig === selectedConfiguration.value
+    );
   }
 
-  function updateSelectedConfigurationByObject(config: Configuration) {
-    configurations.value.push(config);
+  function updateSelectedContentRecordByObject(
+    contentRecord: ContentRecord | PreContentRecord,
+  ) {
+    contentRecords.value.push(contentRecord);
+    selectedContentRecord.value = contentRecord;
+
+    const config = configurations.value.find((c) => {
+      return (
+        c.configurationName === contentRecord.configurationName &&
+        c.projectDir === contentRecord.projectDir
+      );
+    });
     selectedConfiguration.value = config;
   }
-
-  const updateCredentialsAndConfigurationForContentRecord = () => {
-    if (selectedContentRecord.value?.configurationName) {
-      updateSelectedConfigurationBySelector(selectedContentRecord.value);
-    }
-  };
 
   watch([selectedConfiguration], () => updateParentViewSelectionState());
 
@@ -194,9 +183,6 @@ export const useHomeStore = defineStore("home", () => {
     rPackageFile,
     updateSelectedContentRecordBySelector,
     updateSelectedContentRecordByObject,
-    updateSelectedConfigurationBySelector,
-    updateSelectedConfigurationByObject,
-    updateCredentialsAndConfigurationForContentRecord,
     updateParentViewSelectionState,
     updatePythonPackages,
     updateRPackages,

@@ -10,7 +10,6 @@ import {
   RefreshCredentialDataMsg,
   RefreshContentRecordDataMsg,
   RefreshFilesListsMsg,
-  UpdateConfigSelectionMsg,
   UpdateContentRecordSelectionMsg,
   UpdatePythonPackages,
   UpdateRPackages,
@@ -67,8 +66,6 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onPublishFinishFailureMsg(msg);
     case HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION:
       return onUpdateContentRecordSelectionMsg(msg);
-    case HostToWebviewMessageType.UPDATE_CONFIG_SELECTION:
-      return onUpdateConfigSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
       return onSaveSelectionMsg();
     case HostToWebviewMessageType.REFRESH_FILES_LISTS:
@@ -91,8 +88,6 @@ const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
   const home = useHomeStore();
   home.contentRecords = msg.content.contentRecords;
 
-  const name = msg.content.deploymentSelected?.deploymentName;
-  const projectDir = msg.content.deploymentSelected?.projectDir;
   if (msg.content.deploymentSelected) {
     home.updateSelectedContentRecordBySelector(msg.content.deploymentSelected);
   } else {
@@ -115,12 +110,6 @@ const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
   const home = useHomeStore();
   home.configurations = msg.content.configurations;
   home.configurationsInError = msg.content.configurationsInError;
-
-  if (msg.content.deploymentSelected) {
-    home.updateSelectedConfigurationBySelector(msg.content.deploymentSelected);
-  } else {
-    home.selectedConfiguration = undefined;
-  }
 };
 
 /**
@@ -157,13 +146,7 @@ const onUpdateContentRecordSelectionMsg = (
     home.updateParentViewSelectionState();
   }
 };
-const onUpdateConfigSelectionMsg = (msg: UpdateConfigSelectionMsg) => {
-  const home = useHomeStore();
-  home.updateSelectedConfigurationByObject(msg.content.config);
-  if (msg.content.saveSelection) {
-    home.updateParentViewSelectionState();
-  }
-};
+
 const onSaveSelectionMsg = () => {
   const home = useHomeStore();
   home.updateParentViewSelectionState();

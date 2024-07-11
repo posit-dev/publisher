@@ -85,8 +85,8 @@ const rPackagesCommands = {
 
 const homeViewCommands = {
   Refresh: "posit.publisher.homeView.refresh",
-  SelectConfigForDeployment:
-    "posit.publisher.homeView.selectConfigForDeployment",
+  ShowSelectConfigForDeployment:
+    "posit.publisher.homeView.showSelectConfigForDeployment",
   CreateConfigForDeployment:
     "posit.publisher.homeView.createConfigForDeployment",
   SelectDeployment: "posit.publisher.homeView.selectDeployment",
@@ -110,7 +110,7 @@ const helpAndFeedbackCommands = {
 } as const;
 
 export const LocalState = {
-  LastSelectionState: "posit.publisher.homeView.lastSelectionState",
+  LastSelectionState: "posit.publisher.homeView.lastDeploymentSelectedState",
 };
 
 export const Commands = {
