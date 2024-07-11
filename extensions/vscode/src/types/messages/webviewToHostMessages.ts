@@ -8,7 +8,7 @@ export enum WebviewToHostMessageType {
   INITIALIZING = "initializing",
   EDIT_CONFIGURATION = "editConfiguration",
   NEW_CONFIGURATION = "newConfiguration",
-  SHOW_SELECT_CONFIGURATION = "selectConfiguration",
+  SHOW_SELECT_CONFIGURATION = "showSelectConfiguration",
   NAVIGATE = "navigate",
   SAVE_SELECTION_STATE = "saveSelectionState",
   VSCODE_OPEN = "vsCodeOpen",
