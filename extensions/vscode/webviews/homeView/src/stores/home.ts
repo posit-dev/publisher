@@ -92,10 +92,19 @@ export const useHomeStore = defineStore("home", () => {
   function updateSelectedConfigurationBySelector(selector: DeploymentSelector) {
     const previousSelectedConfig = selectedConfiguration.value;
 
+    // Always determine the selected configuration by what is in the
+    // deployment file.
+    const contentRecord = contentRecords.value.find(
+      (d) => d.deploymentPath === selector.deploymentPath,
+    );
+    if (!contentRecord) {
+      return false;
+    }
+
     const config = configurations.value.find((c) => {
       return (
-        c.configurationName === selector.configurationName &&
-        c.projectDir === selector.projectDir
+        c.configurationName === contentRecord.configurationName &&
+        c.projectDir === contentRecord.projectDir
       );
     });
 

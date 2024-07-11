@@ -81,7 +81,9 @@ export async function selectConfig(
 
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.configurations.getAll();
+      const response = await api.configurations.getAll({
+        dir: activeDeployment.projectDir,
+      });
       let rawConfigs = response.data;
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment
@@ -135,7 +137,9 @@ export async function selectConfig(
     async (resolve, reject) => {
       try {
         const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(python);
+        const inspectResponse = await api.configurations.inspect(python, {
+          dir: activeDeployment.projectDir,
+        });
         inspectionResults = filterInspectionResultsToType(
           inspectResponse.data,
           activeDeployment.type,
@@ -428,7 +432,7 @@ export async function selectConfig(
       ) {
         return (
           config.configurationName ===
-          state.data.existingConfigurationName.label
+          state.data.existingConfigurationName.detail
         );
       }
       return false;

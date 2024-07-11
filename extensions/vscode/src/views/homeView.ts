@@ -719,6 +719,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       await api.contentRecords.patch(
         activeDeployment.deploymentName,
         config.configurationName,
+        { dir: activeDeployment.projectDir },
       );
     }
   }
@@ -745,6 +746,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       await api.contentRecords.patch(
         activeContentRecord.deploymentName,
         config.configurationName,
+        { dir: activeDeployment.projectDir },
       );
     }
   }
