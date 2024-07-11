@@ -118,44 +118,53 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
     });
 
-    useBus().on("activeConfigChanged", (cfg) => {
+    useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
+      const activeContentRecord = this.getActiveContentRecord();
+      if (!activeContentRecord) {
+        return;
+      }
+
       this.sendRefreshedFilesLists();
       this.onRefreshPythonPackages();
       this.onRefreshRPackages();
 
       this.configWatchers?.dispose();
-      this.configWatchers = new ConfigWatcherManager(cfg);
+      if (cfg) {
+        this.configWatchers = new ConfigWatcherManager(
+          activeContentRecord,
+          cfg,
+        );
+        this.configWatchers.configFile?.onDidChange(
+          this.sendRefreshedFilesLists,
+          this,
+        );
 
-      this.configWatchers.configFile?.onDidChange(
-        this.sendRefreshedFilesLists,
-        this,
-      );
+        this.configWatchers.pythonPackageFile?.onDidCreate(
+          this.onRefreshPythonPackages,
+          this,
+        );
+        this.configWatchers.pythonPackageFile?.onDidChange(
+          this.onRefreshPythonPackages,
+          this,
+        );
+        this.configWatchers.pythonPackageFile?.onDidDelete(
+          this.onRefreshPythonPackages,
+          this,
+        );
 
-      this.configWatchers.pythonPackageFile?.onDidCreate(
-        this.onRefreshPythonPackages,
-        this,
-      );
-      this.configWatchers.pythonPackageFile?.onDidChange(
-        this.onRefreshPythonPackages,
-        this,
-      );
-      this.configWatchers.pythonPackageFile?.onDidDelete(
-        this.onRefreshPythonPackages,
-        this,
-      );
-
-      this.configWatchers.rPackageFile?.onDidCreate(
-        this.onRefreshRPackages,
-        this,
-      );
-      this.configWatchers.rPackageFile?.onDidChange(
-        this.onRefreshRPackages,
-        this,
-      );
-      this.configWatchers.rPackageFile?.onDidDelete(
-        this.onRefreshRPackages,
-        this,
-      );
+        this.configWatchers.rPackageFile?.onDidCreate(
+          this.onRefreshRPackages,
+          this,
+        );
+        this.configWatchers.rPackageFile?.onDidChange(
+          this.onRefreshRPackages,
+          this,
+        );
+        this.configWatchers.rPackageFile?.onDidDelete(
+          this.onRefreshRPackages,
+          this,
+        );
+      }
     });
   }
   /**
@@ -221,12 +230,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const response = await api.contentRecords.publish(
-        msg.content.deploymentName,
-        msg.content.credentialName,
-        msg.content.configurationName,
         {
           dir: msg.content.projectDir,
         },
+        msg.content.deploymentName,
+        msg.content.credentialName,
+        msg.content.configurationName,
       );
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
@@ -284,18 +293,26 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async updateFileList(uri: string, action: FileAction) {
+    const activeDeployment = this.getActiveContentRecord();
+    if (!activeDeployment) {
+      console.error("homeView::updateFileList: No active deployment.");
+      return;
+    }
+    // this will only be true if the config really exists
     const activeConfig = this.getActiveConfig();
     if (activeConfig === undefined) {
       console.error("homeView::updateFileList: No active configuration.");
       return;
     }
-
     try {
       const api = await useApi();
       await api.files.updateFileList(
         activeConfig.configurationName,
         uri,
         action,
+        {
+          dir: activeDeployment.projectDir,
+        },
       );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -336,7 +353,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // 200 - success
       // 500 - internal server error
       const api = await useApi();
-      const response = await api.contentRecords.getAll({ recursive: true });
+      const response = await api.contentRecords.getAll({
+        dir: ".",
+        recursive: true,
+      });
       const contentRecords = response.data;
       this.contentRecords = [];
       contentRecords.forEach((contentRecord) => {
@@ -357,7 +377,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async refreshConfigurationData() {
     try {
       const api = await useApi();
-      const response = await api.configurations.getAll({ recursive: true });
+      const response = await api.configurations.getAll({
+        dir: ".",
+        recursive: true,
+      });
       const configurations = response.data;
       this.configs = [];
       this.configsInError = [];
@@ -610,7 +633,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (this.root === undefined) {
       return;
     }
-    const fileUri = Uri.joinPath(this.root.uri, msg.content.relativePath);
+    const activeContentRecord = this.getActiveContentRecord();
+    if (!activeContentRecord) {
+      return;
+    }
+
+    const fileUri = Uri.joinPath(
+      this.root.uri,
+      activeContentRecord.projectDir,
+      msg.content.relativePath,
+    );
     await commands.executeCommand("vscode.open", fileUri);
   }
 
@@ -619,6 +651,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
+    const activeContentRecord = this.getActiveContentRecord();
+    if (activeContentRecord === undefined) {
+      return;
+    }
+
     const activeConfiguration = this.getActiveConfig();
     const relPathPackageFile =
       activeConfiguration?.configuration.python?.packageFile;
@@ -626,7 +663,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
 
-    const fileUri = Uri.joinPath(this.root.uri, relPathPackageFile);
+    const fileUri = Uri.joinPath(
+      this.root.uri,
+      activeContentRecord.projectDir,
+      relPathPackageFile,
+    );
 
     if (await fileExists(fileUri)) {
       const ok = await confirmOverwrite(
@@ -641,6 +682,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const api = await useApi();
       const python = await getPythonInterpreterPath();
       await api.packages.createPythonRequirementsFile(
+        { dir: activeContentRecord?.projectDir },
         python,
         relPathPackageFile,
       );
@@ -659,14 +701,23 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
+    const activeContentRecord = this.getActiveContentRecord();
+    if (activeContentRecord === undefined) {
+      return;
+    }
     const activeConfiguration = this.getActiveConfig();
+
     const relPathPackageFile =
       activeConfiguration?.configuration.r?.packageFile;
     if (relPathPackageFile === undefined) {
       return;
     }
 
-    const fileUri = Uri.joinPath(this.root.uri, relPathPackageFile);
+    const fileUri = Uri.joinPath(
+      this.root.uri,
+      activeContentRecord.projectDir,
+      relPathPackageFile,
+    );
 
     if (await fileExists(fileUri)) {
       const ok = await confirmOverwrite(
@@ -679,7 +730,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       const api = await useApi();
-      await api.packages.createRRequirementsFile(relPathPackageFile);
+      await api.packages.createRRequirementsFile(
+        { dir: activeContentRecord.projectDir },
+        relPathPackageFile,
+      );
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(

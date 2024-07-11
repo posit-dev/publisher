@@ -19,24 +19,25 @@ export const bus = Omnibus.builder()
   .build();
 
 // Setup message logging
-bus.on("activeContentRecordChanged", (msg) => {
-  console.debug(
-    `\nbus trace: activeContentRecordChanged: ${JSON.stringify(msg)}\n`,
-  );
-});
-bus.on("activeConfigChanged", (msg) => {
+bus.on(
+  "activeContentRecordChanged",
+  (msg: ContentRecord | PreContentRecord | undefined) => {
+    console.debug(
+      `\nbus trace: activeContentRecordChanged: ${JSON.stringify(msg)}\n`,
+    );
+  },
+);
+bus.on("activeConfigChanged", (msg: Configuration | undefined) => {
   console.debug(`\nbus trace: activeConfigChanged: ${JSON.stringify(msg)}\n`);
 });
-bus.on("requestActiveConfig", (msg) => {
-  console.debug(`\nbus trace: requestActiveConfig: ${JSON.stringify(msg)}`);
+bus.on("requestActiveConfig", () => {
+  console.debug(`\nbus trace: requestActiveConfig`);
 });
-bus.on("requestActiveContentRecord", (msg) => {
-  console.debug(
-    `\nbus trace: requestActiveContentRecord: ${JSON.stringify(msg)}`,
-  );
+bus.on("requestActiveContentRecord", () => {
+  console.debug(`\nbus trace: requestActiveContentRecord`);
 });
-bus.on("refreshCredentials", (msg) => {
-  console.debug(`\nbus trace: refreshCredentials: ${JSON.stringify(msg)}`);
+bus.on("refreshCredentials", () => {
+  console.debug(`\nbus trace: refreshCredentials`);
 });
 
 export const useBus = () => {

@@ -75,7 +75,10 @@ export class ConfigurationsTreeDataProvider
 
     try {
       const api = await useApi();
-      const response = await api.configurations.getAll({ recursive: true });
+      const response = await api.configurations.getAll({
+        dir: ".",
+        recursive: true,
+      });
       const configurations = response.data;
 
       return configurations.map((config) => {
@@ -140,7 +143,9 @@ export class ConfigurationsTreeDataProvider
   };
 
   private clone = async (item: ConfigurationTreeItem) => {
-    const defaultName = await untitledConfigurationName();
+    const defaultName = await untitledConfigurationName(
+      item.config.configurationRelPath,
+    );
     const newUri = await this.promptForNewName(item.fileUri, defaultName);
     if (newUri === undefined) {
       return;

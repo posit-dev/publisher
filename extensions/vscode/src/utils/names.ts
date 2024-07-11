@@ -5,9 +5,13 @@ import { InputBoxValidationSeverity } from "vscode";
 import { useApi } from "src/api";
 import { isValidFilename } from "src/utils/files";
 
-export async function untitledConfigurationName(): Promise<string> {
+export async function untitledConfigurationName(
+  projectDir: string,
+): Promise<string> {
   const api = await useApi();
-  const existingConfigurations = (await api.configurations.getAll()).data;
+  const existingConfigurations = (
+    await api.configurations.getAll({ dir: projectDir })
+  ).data;
 
   if (existingConfigurations.length === 0) {
     return "configuration-1";

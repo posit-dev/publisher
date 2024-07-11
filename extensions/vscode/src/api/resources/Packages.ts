@@ -19,7 +19,7 @@ export class Packages {
   // 409 - conflict (Python is not configured)
   // 422 - package file is invalid
   // 500 - internal server error
-  getPythonPackages(configName: string, params?: { dir?: string }) {
+  getPythonPackages(configName: string, params: { dir: string }) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<PythonPackagesResponse>(
       `/configurations/${encodedName}/packages/python`,
@@ -33,7 +33,7 @@ export class Packages {
   // 409 - conflict (R is not configured)
   // 422 - package file is invalid
   // 500 - internal server error
-  getRPackages(configName: string, params?: { dir?: string }) {
+  getRPackages(configName: string, params: { dir: string }) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<GetRPackagesResponse>(
       `/configurations/${encodedName}/packages/r`,
@@ -46,9 +46,9 @@ export class Packages {
   // 400 - bad request
   // 500 - internal server error
   createPythonRequirementsFile(
+    params: { dir: string },
     python?: string,
     saveName?: string,
-    params?: { dir?: string },
   ) {
     return this.client.post<void>(
       "packages/python/scan",
@@ -61,7 +61,7 @@ export class Packages {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  createRRequirementsFile(saveName?: string, params?: { dir?: string }) {
+  createRRequirementsFile(params: { dir: string }, saveName?: string) {
     return this.client.post<void>("packages/r/scan", { saveName }, { params });
   }
 }

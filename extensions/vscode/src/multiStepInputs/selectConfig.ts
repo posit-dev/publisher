@@ -137,9 +137,12 @@ export async function selectConfig(
     async (resolve, reject) => {
       try {
         const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(python, {
-          dir: activeDeployment.projectDir,
-        });
+        const inspectResponse = await api.configurations.inspect(
+          {
+            dir: activeDeployment.projectDir,
+          },
+          python,
+        );
         inspectionResults = filterInspectionResultsToType(
           inspectResponse.data,
           activeDeployment.type,
@@ -394,7 +397,6 @@ export async function selectConfig(
 
     // Create the Config File
     try {
-      const configName = await untitledConfigurationName();
       const selectedInspectionResult =
         inspectionResults[state.data.entryPoint.index];
       if (!selectedInspectionResult) {
@@ -403,10 +405,16 @@ export async function selectConfig(
         );
         return;
       }
+      const configName = await untitledConfigurationName(
+        selectedInspectionResult.projectDir,
+      );
       selectedInspectionResult.configuration.title = state.data.title;
       const createResponse = await api.configurations.createOrUpdate(
         configName,
         selectedInspectionResult.configuration,
+        {
+          dir: selectedInspectionResult.projectDir,
+        },
       );
       const fileUri = Uri.file(createResponse.data.configurationPath);
       const newConfig = createResponse.data;
