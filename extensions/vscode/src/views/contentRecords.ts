@@ -33,6 +33,7 @@ import { ensureSuffix, isRelativePathRoot } from "src/utils/files";
 import { contentRecordNameValidator } from "src/utils/names";
 import { WatcherManager } from "src/watchers";
 import { Commands, Contexts, Views } from "src/constants";
+import { showProgress } from "src/utils/progress";
 
 type ContentRecordsEventEmitter = EventEmitter<
   ContentRecordsTreeItem | undefined | void
@@ -86,15 +87,10 @@ export class ContentRecordsTreeDataProvider
         dir: ".",
         recursive: true,
       });
-
-      window.withProgress(
-        {
-          title: "Initializing",
-          location: { viewId: Views.ContentRecords },
-        },
-        async () => {
-          return getAllPromise;
-        },
+      showProgress(
+        "Initializing::contentRecords",
+        Views.ContentRecords,
+        getAllPromise,
       );
 
       const response = await getAllPromise;

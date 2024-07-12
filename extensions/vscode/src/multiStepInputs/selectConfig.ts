@@ -2,7 +2,6 @@
 
 import {
   InputBoxValidationSeverity,
-  ProgressLocation,
   QuickPickItem,
   ThemeIcon,
   Uri,
@@ -35,6 +34,7 @@ import {
   filterInspectionResultsToType,
   filterConfigurationsToValidAndType,
 } from "src/utils/filters";
+import { showProgress } from "src/utils/progress";
 
 export async function selectConfig(
   activeDeployment: ContentRecord | PreContentRecord,
@@ -185,15 +185,7 @@ export async function selectConfig(
   ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
-  window.withProgress(
-    {
-      title: "Initializing",
-      location: viewId ? { viewId } : ProgressLocation.Window,
-    },
-    async () => {
-      return apisComplete;
-    },
-  );
+  showProgress("Initializing::selectConfig", viewId, apisComplete);
 
   // ***************************************************************
   // Order of all steps

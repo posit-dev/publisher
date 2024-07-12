@@ -10,7 +10,6 @@ import {
 
 import {
   InputBoxValidationSeverity,
-  ProgressLocation,
   QuickPickItem,
   ThemeIcon,
   Uri,
@@ -38,6 +37,7 @@ import {
 import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
+import { showProgress } from "src/utils/progress";
 
 type stepInfo = {
   step: number;
@@ -433,15 +433,7 @@ export async function newDeployment(
   ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
-  window.withProgress(
-    {
-      title: "Initializing",
-      location: viewId ? { viewId } : ProgressLocation.Window,
-    },
-    async () => {
-      return apisComplete;
-    },
-  );
+  showProgress("Initializing::newDeployment", viewId, apisComplete);
 
   // ***************************************************************
   // Order of all steps

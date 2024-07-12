@@ -7,7 +7,7 @@ import {
   assignStep,
 } from "./multiStepHelper";
 
-import { InputBoxValidationSeverity, ProgressLocation, window } from "vscode";
+import { InputBoxValidationSeverity, window } from "vscode";
 
 import { useApi, Credential } from "src/api";
 import {
@@ -16,6 +16,7 @@ import {
 } from "src/utils/errors";
 import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
+import { showProgress } from "src/utils/progress";
 
 const createNewCredentialLabel = "Create a New Credential";
 
@@ -48,15 +49,7 @@ export async function newCredential(
     return resolve();
   });
 
-  window.withProgress(
-    {
-      title: "Initializing",
-      location: viewId ? { viewId } : ProgressLocation.Window,
-    },
-    async () => {
-      return getCredentials;
-    },
-  );
+  showProgress("Initializing::newCredential", viewId, getCredentials);
 
   // ***************************************************************
   // Order of all steps

@@ -10,7 +10,6 @@ import {
 
 import {
   InputBoxValidationSeverity,
-  ProgressLocation,
   ThemeIcon,
   Uri,
   commands,
@@ -26,6 +25,7 @@ import {
 import { getPythonInterpreterPath } from "../utils/config";
 import { getSummaryStringFromError } from "../utils/errors";
 import { untitledConfigurationName } from "../utils/names";
+import { showProgress } from "src/utils/progress";
 
 export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
@@ -78,15 +78,7 @@ export async function newConfig(title: string, viewId?: string) {
   const apiCalls = Promise.all([getConfigurationInspections]);
 
   // Start the progress indicator and have it stop when the API calls are complete
-  window.withProgress(
-    {
-      title: "Initializing",
-      location: viewId ? { viewId } : ProgressLocation.Window,
-    },
-    async () => {
-      return apiCalls;
-    },
-  );
+  showProgress("Initializing::newConfig", viewId, apiCalls);
 
   // ***************************************************************
   // Order of all steps
