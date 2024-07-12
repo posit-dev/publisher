@@ -75,10 +75,22 @@ export class ConfigurationsTreeDataProvider
 
     try {
       const api = await useApi();
-      const response = await api.configurations.getAll({
+      const getAllPromise = api.configurations.getAll({
         dir: ".",
         recursive: true,
       });
+
+      window.withProgress(
+        {
+          title: "Initializing",
+          location: { viewId: Views.Configurations },
+        },
+        async () => {
+          return getAllPromise;
+        },
+      );
+
+      const response = await getAllPromise;
       const configurations = response.data;
 
       return configurations.map((config) => {
