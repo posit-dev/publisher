@@ -306,7 +306,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     try {
       const api = await useApi();
-      await api.files.updateFileList(
+      const apiRequest = api.files.updateFileList(
         activeConfig.configurationName,
         uri,
         action,
@@ -314,6 +314,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           dir: activeDeployment.projectDir,
         },
       );
+      window.withProgress(
+        {
+          title: "Updating File List",
+          location: { viewId: Views.HomeView },
+        },
+        async () => {
+          return apiRequest;
+        },
+      );
+      await apiRequest;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::updateFileList",
@@ -353,10 +363,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // 200 - success
       // 500 - internal server error
       const api = await useApi();
-      const response = await api.contentRecords.getAll({
+      const apiRequest = api.contentRecords.getAll({
         dir: ".",
         recursive: true,
       });
+      window.withProgress(
+        {
+          title: "Refreshing Deployments",
+          location: { viewId: Views.HomeView },
+        },
+        async () => {
+          return apiRequest;
+        },
+      );
+      const response = await apiRequest;
       const contentRecords = response.data;
       this.contentRecords = [];
       contentRecords.forEach((contentRecord) => {
@@ -377,10 +397,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async refreshConfigurationData() {
     try {
       const api = await useApi();
-      const response = await api.configurations.getAll({
+      const apiRequest = api.configurations.getAll({
         dir: ".",
         recursive: true,
       });
+      window.withProgress(
+        {
+          title: "Refreshing Configurations",
+          location: { viewId: Views.HomeView },
+        },
+        async () => {
+          return apiRequest;
+        },
+      );
+      const response = await apiRequest;
       const configurations = response.data;
       this.configs = [];
       this.configsInError = [];
@@ -404,7 +434,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async refreshCredentialData() {
     try {
       const api = await useApi();
-      const response = await api.credentials.list();
+      const apiRequest = api.credentials.list();
+      window.withProgress(
+        {
+          title: "Refreshing Credentials",
+          location: { viewId: Views.HomeView },
+        },
+        async () => {
+          return apiRequest;
+        },
+      );
+      const response = await apiRequest;
       this.credentials = response.data;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -530,10 +570,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = pythonSection.packageFile;
           packageMgr = pythonSection.packageManager;
 
-          const response = await api.packages.getPythonPackages(
+          const apiRequest = api.packages.getPythonPackages(
             activeConfiguration.configurationName,
             { dir: activeContentRecord.projectDir },
           );
+          window.withProgress(
+            {
+              title: "Refreshing Python Packages",
+              location: { viewId: Views.HomeView },
+            },
+            async () => {
+              return apiRequest;
+            },
+          );
+          const response = await apiRequest;
           packages = response.data.requirements;
         } catch (error: unknown) {
           if (isAxiosError(error) && error.response?.status === 404) {
@@ -587,10 +637,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = rSection.packageFile;
           packageMgr = rSection.packageManager;
 
-          const response = await api.packages.getRPackages(
+          const apiRequest = api.packages.getRPackages(
             activeConfiguration.configurationName,
             { dir: activeContentRecord.projectDir },
           );
+          window.withProgress(
+            {
+              title: "Refreshing R Packages",
+              location: { viewId: Views.HomeView },
+            },
+            async () => {
+              return apiRequest;
+            },
+          );
+          const response = await apiRequest;
           packages = [];
           Object.keys(response.data.packages).forEach((key: string) =>
             packages.push(response.data.packages[key]),
@@ -681,11 +741,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const python = await getPythonInterpreterPath();
-      await api.packages.createPythonRequirementsFile(
+      const apiRequest = api.packages.createPythonRequirementsFile(
         { dir: activeContentRecord?.projectDir },
         python,
         relPathPackageFile,
       );
+      window.withProgress(
+        {
+          title: "Creating Python Requirements File",
+          location: { viewId: Views.HomeView },
+        },
+        async () => {
+          return apiRequest;
+        },
+      );
+      await apiRequest;
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -730,10 +800,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       const api = await useApi();
-      await api.packages.createRRequirementsFile(
+      const apiRequest = api.packages.createRRequirementsFile(
         { dir: activeContentRecord.projectDir },
         relPathPackageFile,
       );
+      window.withProgress(
+        {
+          title: "Creating R Requirements File",
+          location: { viewId: Views.HomeView },
+        },
+        async () => {
+          return apiRequest;
+        },
+      );
+      await apiRequest;
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -770,11 +850,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const config = await selectConfig(activeDeployment, Views.HomeView);
     if (config) {
       const api = await useApi();
-      await api.contentRecords.patch(
+      const apiRequest = api.contentRecords.patch(
         activeDeployment.deploymentName,
         config.configurationName,
         { dir: activeDeployment.projectDir },
       );
+      window.withProgress(
+        {
+          title: "Updating Config",
+          location: { viewId: Views.HomeView },
+        },
+        async () => {
+          return apiRequest;
+        },
+      );
+      await apiRequest;
     }
   }
 
@@ -797,11 +887,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return;
       }
       const api = await useApi();
-      await api.contentRecords.patch(
+      const apiRequest = api.contentRecords.patch(
         activeContentRecord.deploymentName,
         config.configurationName,
         { dir: activeDeployment.projectDir },
       );
+      window.withProgress(
+        {
+          title: "Updating Deployment",
+          location: { viewId: Views.HomeView },
+        },
+        async () => {
+          return apiRequest;
+        },
+      );
+      await apiRequest;
     }
   }
 
@@ -1140,12 +1240,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const activeDeployment = this.getActiveContentRecord();
     if (activeDeployment) {
       try {
-        const response = await api.files.getByConfiguration(
+        const apiRequest = api.files.getByConfiguration(
           activeDeployment.configurationName,
           {
             dir: activeDeployment.projectDir,
           },
         );
+        window.withProgress(
+          {
+            title: "ReFreshing Files",
+            location: { viewId: Views.HomeView },
+          },
+          async () => {
+            return apiRequest;
+          },
+        );
+        const response = await apiRequest;
 
         // Need to remove the projectDir from the id, since the files id
         // which will be used to include or exclude is relative to the
