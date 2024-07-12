@@ -82,10 +82,22 @@ export class ContentRecordsTreeDataProvider
       // 200 - success
       // 500 - internal server error
       const api = await useApi();
-      const response = await api.contentRecords.getAll({
+      const getAllPromise = api.contentRecords.getAll({
         dir: ".",
         recursive: true,
       });
+
+      window.withProgress(
+        {
+          title: "Initializing",
+          location: { viewId: Views.ContentRecords },
+        },
+        async () => {
+          return getAllPromise;
+        },
+      );
+
+      const response = await getAllPromise;
       const contentRecords = response.data;
 
       return contentRecords.map((contentRecord) => {
