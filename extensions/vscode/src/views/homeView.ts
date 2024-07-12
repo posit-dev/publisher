@@ -252,6 +252,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // On first run, we have no saved state. Trigger a save
     // so we have the state, and can notify dependent views.
     this.requestWebviewSaveSelection();
+
+    // Signal the webapp that we believe the initialization refreshes
+    // are finished.
+    this.webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE,
+    });
   }
 
   private setInitializationContext(context: HomeViewInitialized) {

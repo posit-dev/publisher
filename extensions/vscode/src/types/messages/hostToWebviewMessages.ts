@@ -13,6 +13,7 @@ import { DeploymentSelector } from "../shared";
 
 export enum HostToWebviewMessageType {
   // Sent from host to webviewView
+  INITIALIZING_REQUEST_COMPLETE = "initializingRequestComplete",
   REFRESH_CONTENTRECORD_DATA = "refreshContentRecordData",
   REFRESH_CONFIG_DATA = "refreshConfigData",
   REFRESH_CREDENTIAL_DATA = "refreshCredentialData",
@@ -37,6 +38,7 @@ export type AnyHostToWebviewMessage<
     };
 
 export type HostToWebviewMessage =
+  | InitializingRequestComplete
   | RefreshContentRecordDataMsg
   | RefreshConfigDataMsg
   | RefreshCredentialDataMsg
@@ -51,6 +53,7 @@ export type HostToWebviewMessage =
 
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
+    msg.kind === HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE ||
     msg.kind === HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA ||
     msg.kind === HostToWebviewMessageType.REFRESH_CONFIG_DATA ||
     msg.kind === HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA ||
@@ -64,6 +67,9 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.UPDATE_R_PACKAGES
   );
 }
+
+export type InitializingRequestComplete =
+  AnyHostToWebviewMessage<HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE>;
 
 export type RefreshContentRecordDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,

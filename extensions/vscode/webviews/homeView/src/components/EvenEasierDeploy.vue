@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2024 by Posit Software, PBC. -->
 
 <template>
-  <div>
+  <div v-if="home.initializingRequestComplete">
     <div class="label">
       <span>Deployment:</span>
 
@@ -163,10 +163,17 @@
       </div>
     </template>
   </div>
+  <div v-else>
+    <div class="progress-container">
+      <div class="progress-desc">
+        <div>Scanning directories...</div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 import { Configuration, isPreContentRecord } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";

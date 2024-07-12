@@ -57,6 +57,8 @@ export const useHomeStore = defineStore("home", () => {
   const rPackageManager = ref<string>();
   const rVersion = ref<string>();
 
+  const initializingRequestComplete = ref<boolean>(false);
+
   /**
    * Updates the selected contentRecord to one with the given name.
    * If the named contentRecord is not found, the selected contentRecord is set to undefined.
@@ -171,6 +173,7 @@ export const useHomeStore = defineStore("home", () => {
     selectedConfiguration,
     serverCredential,
     includedFiles,
+    initializingRequestComplete,
     excludedFiles,
     lastContentRecordResult,
     lastContentRecordMsg,

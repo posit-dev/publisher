@@ -29,6 +29,7 @@ export function useHostConduitService() {
     hostConduit = new HostConduit(window, vsCodeApi);
     onMounted(() => hostConduit && hostConduit.onMsg(onMessageFromHost));
     onUnmounted(() => hostConduit && hostConduit.deactivate());
+    useHomeStore().initializingRequestComplete = false;
     hostConduit.sendMsg({
       kind: WebviewToHostMessageType.INITIALIZING,
     });
@@ -52,6 +53,8 @@ export function useHostConduitService() {
 const onMessageFromHost = (msg: HostToWebviewMessage): void => {
   console.debug(`HostConduitService - Receiving Msg: ${JSON.stringify(msg)}`);
   switch (msg.kind) {
+    case HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE:
+      return onInitializingRequestCompleteMsg();
     case HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA:
       return onRefreshContentRecordDataMsg(msg);
     case HostToWebviewMessageType.REFRESH_CONFIG_DATA:
@@ -77,6 +80,10 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
     default:
       console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
+};
+
+const onInitializingRequestCompleteMsg = () => {
+  useHomeStore().initializingRequestComplete = true;
 };
 
 /**
