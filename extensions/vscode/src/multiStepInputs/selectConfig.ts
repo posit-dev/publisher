@@ -154,6 +154,7 @@ export async function selectConfig(
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
+              detail: `${result.projectDir}/`,
               index: i,
             });
           }
