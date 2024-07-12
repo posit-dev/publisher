@@ -126,7 +126,10 @@ export class ConfigurationsTreeDataProvider
     // We only create a new configuration through this
     // command. We do not associate it automatically with
     // the current deployment
-    await newConfig("Create a Configuration File for your Project", viewId);
+    await newConfig(
+      "Create a Configuration File for your Project",
+      viewId ? viewId : Views.Configurations,
+    );
   };
 
   private edit = async (config: ConfigurationTreeItem) => {
@@ -143,9 +146,7 @@ export class ConfigurationsTreeDataProvider
   };
 
   private clone = async (item: ConfigurationTreeItem) => {
-    const defaultName = await untitledConfigurationName(
-      item.config.configurationRelPath,
-    );
+    const defaultName = await untitledConfigurationName(item.config.projectDir);
     const newUri = await this.promptForNewName(item.fileUri, defaultName);
     if (newUri === undefined) {
       return;
