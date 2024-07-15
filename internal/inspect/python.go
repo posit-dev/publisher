@@ -151,7 +151,12 @@ func (i *defaultPythonInspector) getPythonVersion(pythonExecutable string) (stri
 	}
 	version := strings.TrimSpace(string(output))
 	i.log.Info("Detected Python", "version", version)
-	pythonVersionCache[pythonExecutable] = version
+
+	// Cache interpreter version result, unless it's a pyenv shim
+	// (where the real Python interpreter may vary from run to run)
+	if !strings.Contains(pythonExecutable, "shims") {
+		pythonVersionCache[pythonExecutable] = version
+	}
 	return version, nil
 }
 
