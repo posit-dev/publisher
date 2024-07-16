@@ -270,21 +270,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async onEditConfigurationMsg(msg: EditConfigurationMsg) {
-    let config: Configuration | ConfigurationError | undefined;
-    config = this.configs.find(
-      (config) => config.configurationName === msg.content.configurationName,
+    await commands.executeCommand(
+      "vscode.open",
+      Uri.file(msg.content.configurationPath),
     );
-    if (!config) {
-      config = this.configsInError.find(
-        (config) => config.configurationName === msg.content.configurationName,
-      );
-    }
-    if (config) {
-      await commands.executeCommand(
-        "vscode.open",
-        Uri.file(config.configurationPath),
-      );
-    }
   }
 
   private async onNewConfigurationMsg() {
