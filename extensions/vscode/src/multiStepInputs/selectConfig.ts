@@ -2,7 +2,6 @@
 
 import {
   InputBoxValidationSeverity,
-  ProgressLocation,
   QuickPickItem,
   ThemeIcon,
   Uri,
@@ -35,6 +34,7 @@ import {
   filterInspectionResultsToType,
   filterConfigurationsToValidAndType,
 } from "src/utils/filters";
+import { showProgress } from "src/utils/progress";
 
 export async function selectConfig(
   activeDeployment: ContentRecord | PreContentRecord,
@@ -81,7 +81,9 @@ export async function selectConfig(
 
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.configurations.getAll();
+      const response = await api.configurations.getAll({
+        dir: activeDeployment.projectDir,
+      });
       let rawConfigs = response.data;
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment
@@ -135,7 +137,12 @@ export async function selectConfig(
     async (resolve, reject) => {
       try {
         const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(python);
+        const inspectResponse = await api.configurations.inspect(
+          {
+            dir: activeDeployment.projectDir,
+          },
+          python,
+        );
         inspectionResults = filterInspectionResultsToType(
           inspectResponse.data,
           activeDeployment.type,
@@ -147,6 +154,7 @@ export async function selectConfig(
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
+              detail: `${result.projectDir}/`,
               index: i,
             });
           }
@@ -177,15 +185,7 @@ export async function selectConfig(
   ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
-  window.withProgress(
-    {
-      title: "Initializing",
-      location: viewId ? { viewId } : ProgressLocation.Window,
-    },
-    async () => {
-      return apisComplete;
-    },
-  );
+  showProgress("Initializing::selectConfig", viewId, apisComplete);
 
   // ***************************************************************
   // Order of all steps
@@ -390,7 +390,6 @@ export async function selectConfig(
 
     // Create the Config File
     try {
-      const configName = await untitledConfigurationName();
       const selectedInspectionResult =
         inspectionResults[state.data.entryPoint.index];
       if (!selectedInspectionResult) {
@@ -399,10 +398,16 @@ export async function selectConfig(
         );
         return;
       }
+      const configName = await untitledConfigurationName(
+        selectedInspectionResult.projectDir,
+      );
       selectedInspectionResult.configuration.title = state.data.title;
       const createResponse = await api.configurations.createOrUpdate(
         configName,
         selectedInspectionResult.configuration,
+        {
+          dir: selectedInspectionResult.projectDir,
+        },
       );
       const fileUri = Uri.file(createResponse.data.configurationPath);
       const newConfig = createResponse.data;
@@ -428,7 +433,7 @@ export async function selectConfig(
       ) {
         return (
           config.configurationName ===
-          state.data.existingConfigurationName.label
+          state.data.existingConfigurationName.detail
         );
       }
       return false;

@@ -33,6 +33,7 @@ import { ensureSuffix, isRelativePathRoot } from "src/utils/files";
 import { contentRecordNameValidator } from "src/utils/names";
 import { WatcherManager } from "src/watchers";
 import { Commands, Contexts, Views } from "src/constants";
+import { showProgress } from "src/utils/progress";
 
 type ContentRecordsEventEmitter = EventEmitter<
   ContentRecordsTreeItem | undefined | void
@@ -82,7 +83,17 @@ export class ContentRecordsTreeDataProvider
       // 200 - success
       // 500 - internal server error
       const api = await useApi();
-      const response = await api.contentRecords.getAll({ recursive: true });
+      const getAllPromise = api.contentRecords.getAll({
+        dir: ".",
+        recursive: true,
+      });
+      showProgress(
+        "Initializing::contentRecords",
+        Views.ContentRecords,
+        getAllPromise,
+      );
+
+      const response = await getAllPromise;
       const contentRecords = response.data;
 
       return contentRecords.map((contentRecord) => {
@@ -158,7 +169,9 @@ export class ContentRecordsTreeDataProvider
 
           try {
             const api = await useApi();
-            const response = await api.contentRecords.getAll();
+            const response = await api.contentRecords.getAll({
+              dir: item.contentRecord.projectDir,
+            });
             const contentRecordList = response.data;
             // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
             contentRecordNames = contentRecordList.map(

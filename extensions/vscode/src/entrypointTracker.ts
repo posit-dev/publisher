@@ -34,10 +34,13 @@ async function isDocumentEntrypoint(document: TextDocument): Promise<boolean> {
     const api = await useApi();
     const python = await getPythonInterpreterPath();
 
-    const response = await api.configurations.inspect(python, {
-      dir: dir,
-      entrypoint: uriUtils.basename(document.uri),
-    });
+    const response = await api.configurations.inspect(
+      {
+        dir: dir,
+        entrypoint: uriUtils.basename(document.uri),
+      },
+      python,
+    );
 
     return hasKnownContentType(response.data);
   } catch (error: unknown) {

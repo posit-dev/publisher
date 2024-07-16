@@ -185,7 +185,7 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.selectConfigForDeployment",
+        "command": "posit.publisher.homeView.showSelectConfigForDeployment",
         "title": "Select Active Configuration For Deployment",
         "category": "Posit Publisher"
       },
@@ -460,7 +460,7 @@
       ],
       "webview/context": [
         {
-          "command": "posit.publisher.homeView.selectConfigForDeployment",
+          "command": "posit.publisher.homeView.showSelectConfigForDeployment",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs'"
         },
         {

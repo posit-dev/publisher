@@ -10,7 +10,6 @@ import {
 
 import {
   InputBoxValidationSeverity,
-  ProgressLocation,
   ThemeIcon,
   Uri,
   commands,
@@ -26,6 +25,7 @@ import {
 import { getPythonInterpreterPath } from "../utils/config";
 import { getSummaryStringFromError } from "../utils/errors";
 import { untitledConfigurationName } from "../utils/names";
+import { showProgress } from "src/utils/progress";
 
 export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
@@ -39,7 +39,10 @@ export async function newConfig(title: string, viewId?: string) {
     async (resolve, reject) => {
       try {
         const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(python);
+        const inspectResponse = await api.configurations.inspect(
+          { dir: ".", recursive: true },
+          python,
+        );
         inspectionResults = inspectResponse.data;
         inspectionResults.forEach((result, i) => {
           const config = result.configuration;
@@ -48,6 +51,7 @@ export async function newConfig(title: string, viewId?: string) {
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
+              detail: `${result.projectDir}/`,
               index: i,
             });
           }
@@ -74,15 +78,7 @@ export async function newConfig(title: string, viewId?: string) {
   const apiCalls = Promise.all([getConfigurationInspections]);
 
   // Start the progress indicator and have it stop when the API calls are complete
-  window.withProgress(
-    {
-      title: "Initializing",
-      location: viewId ? { viewId } : ProgressLocation.Window,
-    },
-    async () => {
-      return apiCalls;
-    },
-  );
+  showProgress("Initializing::newConfig", viewId, apiCalls);
 
   // ***************************************************************
   // Order of all steps
@@ -239,10 +235,15 @@ export async function newConfig(title: string, viewId?: string) {
       return;
     }
     selectedInspectionResult.configuration.title = state.data.title;
-    const configName = await untitledConfigurationName();
+    const configName = await untitledConfigurationName(
+      selectedInspectionResult.projectDir,
+    );
     const createResponse = await api.configurations.createOrUpdate(
       configName,
       selectedInspectionResult.configuration,
+      {
+        dir: selectedInspectionResult.projectDir,
+      },
     );
     newConfig = createResponse.data;
     const fileUri = Uri.file(newConfig.configurationPath);

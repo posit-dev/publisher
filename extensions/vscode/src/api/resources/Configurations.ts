@@ -20,7 +20,7 @@ export class Configurations {
   // 200 - success
   // 404 - not found
   // 500 - internal server error
-  get(configName: string, params?: { dir?: string }) {
+  get(configName: string, params: { dir: string }) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<Configuration | ConfigurationError>(
       `/configurations/${encodedName}`,
@@ -31,7 +31,7 @@ export class Configurations {
   // Returns:
   // 200 - success
   // 500 - internal server error
-  getAll(params?: { dir?: string; entrypoint?: string; recursive?: boolean }) {
+  getAll(params: { dir: string; entrypoint?: string; recursive?: boolean }) {
     return this.client.get<Array<Configuration | ConfigurationError>>(
       "/configurations",
       { params },
@@ -45,7 +45,7 @@ export class Configurations {
   createOrUpdate(
     configName: string,
     cfg: ConfigurationDetails,
-    params?: { dir?: string },
+    params: { dir: string },
   ) {
     const encodedName = encodeURIComponent(configName);
     return this.client.put<Configuration>(
@@ -59,7 +59,7 @@ export class Configurations {
   // 204 - success (no response)
   // 404 - not found
   // 500 - internal server error
-  delete(configName: string, params?: { dir?: string }) {
+  delete(configName: string, params: { dir: string }) {
     const encodedName = encodeURIComponent(configName);
     return this.client.delete(`configurations/${encodedName}`, { params });
   }
@@ -70,8 +70,8 @@ export class Configurations {
   // 400 - bad request
   // 500 - internal server error
   inspect(
+    params: { dir: string; entrypoint?: string; recursive?: boolean },
     python?: string,
-    params?: { dir?: string; entrypoint?: string; recursive?: boolean },
   ) {
     return this.client.post<ConfigurationInspectionResult[]>(
       "/inspect",

@@ -42,6 +42,7 @@ const deploy = () => {
       deploymentName: home.selectedContentRecord.saveName,
       configurationName: home.selectedConfiguration.configurationName,
       credentialName: home.serverCredential.name,
+      projectDir: home.selectedContentRecord.projectDir,
     },
   });
 };

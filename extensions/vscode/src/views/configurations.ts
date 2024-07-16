@@ -34,6 +34,7 @@ import { untitledConfigurationName } from "src/utils/names";
 import { newConfig } from "src/multiStepInputs/newConfig";
 import { WatcherManager } from "src/watchers";
 import { Commands, Contexts, Views } from "src/constants";
+import { showProgress } from "src/utils/progress";
 
 type ConfigurationEventEmitter = EventEmitter<
   ConfigurationTreeItem | undefined | void
@@ -75,7 +76,17 @@ export class ConfigurationsTreeDataProvider
 
     try {
       const api = await useApi();
-      const response = await api.configurations.getAll({ recursive: true });
+      const getAllPromise = api.configurations.getAll({
+        dir: ".",
+        recursive: true,
+      });
+      showProgress(
+        "Initializing::configurations",
+        Views.Configurations,
+        getAllPromise,
+      );
+
+      const response = await getAllPromise;
       const configurations = response.data;
 
       return configurations.map((config) => {
@@ -123,7 +134,10 @@ export class ConfigurationsTreeDataProvider
     // We only create a new configuration through this
     // command. We do not associate it automatically with
     // the current deployment
-    await newConfig("Create a Configuration File for your Project", viewId);
+    await newConfig(
+      "Create a Configuration File for your Project",
+      viewId ? viewId : Views.Configurations,
+    );
   };
 
   private edit = async (config: ConfigurationTreeItem) => {
@@ -140,7 +154,7 @@ export class ConfigurationsTreeDataProvider
   };
 
   private clone = async (item: ConfigurationTreeItem) => {
-    const defaultName = await untitledConfigurationName();
+    const defaultName = await untitledConfigurationName(item.config.projectDir);
     const newUri = await this.promptForNewName(item.fileUri, defaultName);
     if (newUri === undefined) {
       return;

@@ -10,7 +10,6 @@ import {
   RefreshCredentialDataMsg,
   RefreshContentRecordDataMsg,
   RefreshFilesListsMsg,
-  UpdateConfigSelectionMsg,
   UpdateContentRecordSelectionMsg,
   UpdatePythonPackages,
   UpdateRPackages,
@@ -30,6 +29,7 @@ export function useHostConduitService() {
     hostConduit = new HostConduit(window, vsCodeApi);
     onMounted(() => hostConduit && hostConduit.onMsg(onMessageFromHost));
     onUnmounted(() => hostConduit && hostConduit.deactivate());
+    useHomeStore().initializingRequestComplete = false;
     hostConduit.sendMsg({
       kind: WebviewToHostMessageType.INITIALIZING,
     });
@@ -53,6 +53,8 @@ export function useHostConduitService() {
 const onMessageFromHost = (msg: HostToWebviewMessage): void => {
   console.debug(`HostConduitService - Receiving Msg: ${JSON.stringify(msg)}`);
   switch (msg.kind) {
+    case HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE:
+      return onInitializingRequestCompleteMsg();
     case HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA:
       return onRefreshContentRecordDataMsg(msg);
     case HostToWebviewMessageType.REFRESH_CONFIG_DATA:
@@ -67,8 +69,6 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onPublishFinishFailureMsg(msg);
     case HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION:
       return onUpdateContentRecordSelectionMsg(msg);
-    case HostToWebviewMessageType.UPDATE_CONFIG_SELECTION:
-      return onUpdateConfigSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
       return onSaveSelectionMsg();
     case HostToWebviewMessageType.REFRESH_FILES_LISTS:
@@ -82,6 +82,10 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
   }
 };
 
+const onInitializingRequestCompleteMsg = () => {
+  useHomeStore().initializingRequestComplete = true;
+};
+
 /**
  * When getting new contentRecords set the new name if given one,
  * unset the contentRecord if told to do so with null,
@@ -91,20 +95,10 @@ const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
   const home = useHomeStore();
   home.contentRecords = msg.content.contentRecords;
 
-  const name = msg.content.selectedContentRecordName;
-  if (name) {
-    home.updateSelectedContentRecordByName(name);
-  } else if (name === null) {
+  if (msg.content.deploymentSelected) {
+    home.updateSelectedContentRecordBySelector(msg.content.deploymentSelected);
+  } else {
     home.selectedContentRecord = undefined;
-  } else if (home.selectedContentRecord) {
-    if (
-      !home.updateSelectedContentRecordByName(
-        home.selectedContentRecord.deploymentName,
-      )
-    ) {
-      // Recalculate if the contentRecord object changed with new data
-      home.updateCredentialsAndConfigurationForContentRecord();
-    }
   }
 
   // If no contentRecord is selected, unset the selected configuration
@@ -123,21 +117,6 @@ const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
   const home = useHomeStore();
   home.configurations = msg.content.configurations;
   home.configurationsInError = msg.content.configurationsInError;
-
-  const name = msg.content.selectedConfigurationName;
-  if (name) {
-    home.updateSelectedConfigurationByName(name);
-  } else if (name === null) {
-    home.selectedConfiguration = undefined;
-  } else if (home.selectedConfiguration) {
-    home.updateSelectedConfigurationByName(
-      home.selectedConfiguration.configurationName,
-    );
-  } else if (home.selectedContentRecord?.configurationName) {
-    home.updateSelectedConfigurationByName(
-      home.selectedContentRecord.configurationName,
-    );
-  }
 };
 
 /**
@@ -174,13 +153,7 @@ const onUpdateContentRecordSelectionMsg = (
     home.updateParentViewSelectionState();
   }
 };
-const onUpdateConfigSelectionMsg = (msg: UpdateConfigSelectionMsg) => {
-  const home = useHomeStore();
-  home.updateSelectedConfigurationByObject(msg.content.config);
-  if (msg.content.saveSelection) {
-    home.updateParentViewSelectionState();
-  }
-};
+
 const onSaveSelectionMsg = () => {
   const home = useHomeStore();
   home.updateParentViewSelectionState();

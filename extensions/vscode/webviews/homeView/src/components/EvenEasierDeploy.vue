@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2024 by Posit Software, PBC. -->
 
 <template>
-  <div>
+  <div v-if="home.initializingRequestComplete">
     <div class="label">
       <span>Deployment:</span>
 
@@ -163,10 +163,17 @@
       </div>
     </template>
   </div>
+  <div v-else>
+    <div class="progress-container">
+      <div class="progress-desc">
+        <div>Scanning directories...</div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 import { Configuration, isPreContentRecord } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
@@ -317,7 +324,7 @@ const isCredentialMissing = computed((): boolean => {
 
 const selectConfiguration = () => {
   hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.SELECT_CONFIGURATION,
+    kind: WebviewToHostMessageType.SHOW_SELECT_CONFIGURATION,
   });
 };
 
@@ -339,6 +346,7 @@ const toolTipText = computed(() => {
 - Deployment Record: ${home.selectedContentRecord?.saveName || "<undefined>"}
 - Configuration File: ${home.selectedConfiguration?.configurationName || "<undefined>"}
 - Credential In Use: ${home.serverCredential?.name || "<undefined>"}
+- Project Dir: ${home.selectedContentRecord?.projectDir || "<undefined>"}
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
 
