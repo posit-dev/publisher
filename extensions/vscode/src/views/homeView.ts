@@ -773,16 +773,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async propagateDeploymentSelection(
-    documentSelector: DeploymentSelector | null,
+    deploymentSelector: DeploymentSelector | null,
   ) {
     // We have to break our protocol and go ahead and write this into storage,
     // in case this multi-stepper is actually running ahead of the webview
     // being brought up.
-    this.saveSelectionState(documentSelector);
+    this.saveSelectionState(deploymentSelector);
     // Now push down into the webview
     this.updateWebViewViewCredentials();
     this.updateWebViewViewConfigurations();
-    this.updateWebViewViewContentRecords(documentSelector);
+    this.updateWebViewViewContentRecords(deploymentSelector);
     // And have the webview save what it has selected.
     this.requestWebviewSaveSelection();
   }
