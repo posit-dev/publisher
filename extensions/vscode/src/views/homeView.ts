@@ -1195,17 +1195,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
         const response = await apiRequest;
 
-        // Need to remove the projectDir from the id, since the files id
-        // which will be used to include or exclude is relative to the
-        // projectDir. We really should have the backend agent do this
-        // for us, but for now, it works.
-        response.data.files.forEach((contentRecordFile) => {
-          contentRecordFile.id = contentRecordFile.id.replace(
-            activeDeployment.projectDir + "/",
-            "",
-          );
-        });
-
         this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.REFRESH_FILES_LISTS,
           content: {
