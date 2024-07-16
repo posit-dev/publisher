@@ -17,14 +17,12 @@ type FilesService interface {
 
 func CreateFilesService(base util.AbsolutePath, log logging.Logger) FilesService {
 	return filesService{
-		root: base,
-		log:  log,
+		log: log,
 	}
 }
 
 type filesService struct {
-	root util.AbsolutePath
-	log  logging.Logger
+	log logging.Logger
 }
 
 func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) (*File, error) {
@@ -37,7 +35,7 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 	p = p.Clean()
 	m := matchList.Match(p)
 
-	file, err := CreateFile(s.root, p, m)
+	file, err := CreateFile(p, p, m)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +52,7 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 		if err != nil {
 			return err
 		}
-		_, err = file.insert(s.root, path, matchList)
+		_, err = file.insert(p, path, matchList)
 		return err
 	})
 
