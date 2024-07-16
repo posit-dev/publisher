@@ -99,7 +99,7 @@ export type InitializingMsg =
 export type EditConfigurationMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.EDIT_CONFIGURATION,
   {
-    configurationName: string;
+    configurationPath: string;
   }
 >;
 
