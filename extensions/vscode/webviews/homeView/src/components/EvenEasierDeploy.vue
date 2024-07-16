@@ -73,7 +73,7 @@
           href=""
           role="button"
           @click="
-            onEditConfiguration(home.selectedContentRecord!.configurationName)
+            onEditConfiguration(home.selectedConfiguration!.configurationPath)
           "
           >Edit the Configuration</a
         >.
@@ -203,7 +203,7 @@ const toolbarActions = computed(() => {
       label: "Edit Configuration",
       codicon: "codicon-edit",
       fn: () =>
-        onEditConfiguration(home.selectedConfiguration!.configurationName),
+        onEditConfiguration(home.selectedConfiguration!.configurationPath),
     });
   }
   return result;
@@ -221,11 +221,11 @@ const onAddDeployment = () => {
   });
 };
 
-const onEditConfiguration = (name: string) => {
+const onEditConfiguration = (fullPath: string) => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.EDIT_CONFIGURATION,
     content: {
-      configurationName: name,
+      configurationPath: fullPath,
     },
   });
 };
