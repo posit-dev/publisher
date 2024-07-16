@@ -65,6 +65,7 @@ import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 import { Commands, Contexts, LocalState, Views } from "src/constants";
+import { showProgress } from "src/utils/progress";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -320,15 +321,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           dir: activeDeployment.projectDir,
         },
       );
-      window.withProgress(
-        {
-          title: "Updating File List",
-          location: { viewId: Views.HomeView },
-        },
-        async () => {
-          return apiRequest;
-        },
-      );
+      showProgress("Updating File List", Views.HomeView, apiRequest);
+
       await apiRequest;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
@@ -373,15 +367,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         dir: ".",
         recursive: true,
       });
-      window.withProgress(
-        {
-          title: "Refreshing Deployments",
-          location: { viewId: Views.HomeView },
-        },
-        async () => {
-          return apiRequest;
-        },
-      );
+      showProgress("Refreshing Deployments", Views.HomeView, apiRequest);
+
       const response = await apiRequest;
       const contentRecords = response.data;
       this.contentRecords = [];
@@ -407,15 +394,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         dir: ".",
         recursive: true,
       });
-      window.withProgress(
-        {
-          title: "Refreshing Configurations",
-          location: { viewId: Views.HomeView },
-        },
-        async () => {
-          return apiRequest;
-        },
-      );
+      showProgress("Refreshing Configurations", Views.HomeView, apiRequest);
+
       const response = await apiRequest;
       const configurations = response.data;
       this.configs = [];
@@ -441,15 +421,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const apiRequest = api.credentials.list();
-      window.withProgress(
-        {
-          title: "Refreshing Credentials",
-          location: { viewId: Views.HomeView },
-        },
-        async () => {
-          return apiRequest;
-        },
-      );
+      showProgress("Refreshing Credentials", Views.HomeView, apiRequest);
+
       const response = await apiRequest;
       this.credentials = response.data;
     } catch (error: unknown) {
@@ -580,15 +553,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             activeConfiguration.configurationName,
             { dir: activeContentRecord.projectDir },
           );
-          window.withProgress(
-            {
-              title: "Refreshing Python Packages",
-              location: { viewId: Views.HomeView },
-            },
-            async () => {
-              return apiRequest;
-            },
+          showProgress(
+            "Refreshing Python Packages",
+            Views.HomeView,
+            apiRequest,
           );
+
           const response = await apiRequest;
           packages = response.data.requirements;
         } catch (error: unknown) {
@@ -647,15 +617,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             activeConfiguration.configurationName,
             { dir: activeContentRecord.projectDir },
           );
-          window.withProgress(
-            {
-              title: "Refreshing R Packages",
-              location: { viewId: Views.HomeView },
-            },
-            async () => {
-              return apiRequest;
-            },
-          );
+          showProgress("Refreshing R Packages", Views.HomeView, apiRequest);
+
           const response = await apiRequest;
           packages = [];
           Object.keys(response.data.packages).forEach((key: string) =>
@@ -752,15 +715,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         python,
         relPathPackageFile,
       );
-      window.withProgress(
-        {
-          title: "Creating Python Requirements File",
-          location: { viewId: Views.HomeView },
-        },
-        async () => {
-          return apiRequest;
-        },
+      showProgress(
+        "Refreshing Python Requirements File",
+        Views.HomeView,
+        apiRequest,
       );
+
       await apiRequest;
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
@@ -810,15 +770,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         { dir: activeContentRecord.projectDir },
         relPathPackageFile,
       );
-      window.withProgress(
-        {
-          title: "Creating R Requirements File",
-          location: { viewId: Views.HomeView },
-        },
-        async () => {
-          return apiRequest;
-        },
-      );
+      showProgress("Creating R Requirements File", Views.HomeView, apiRequest);
+
       await apiRequest;
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
@@ -861,15 +814,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         config.configurationName,
         { dir: activeDeployment.projectDir },
       );
-      window.withProgress(
-        {
-          title: "Updating Config",
-          location: { viewId: Views.HomeView },
-        },
-        async () => {
-          return apiRequest;
-        },
-      );
+      showProgress("Updating Config", Views.HomeView, apiRequest);
+
       await apiRequest;
     }
   }
@@ -898,15 +844,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         config.configurationName,
         { dir: activeDeployment.projectDir },
       );
-      window.withProgress(
-        {
-          title: "Updating Deployment",
-          location: { viewId: Views.HomeView },
-        },
-        async () => {
-          return apiRequest;
-        },
-      );
+      showProgress("Updating Deployment", Views.HomeView, apiRequest);
+
       await apiRequest;
     }
   }
@@ -1252,15 +1191,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             dir: activeDeployment.projectDir,
           },
         );
-        window.withProgress(
-          {
-            title: "ReFreshing Files",
-            location: { viewId: Views.HomeView },
-          },
-          async () => {
-            return apiRequest;
-          },
-        );
+        showProgress("ReFreshing Files", Views.HomeView, apiRequest);
+
         const response = await apiRequest;
 
         // Need to remove the projectDir from the id, since the files id

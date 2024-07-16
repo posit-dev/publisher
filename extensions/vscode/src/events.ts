@@ -116,9 +116,9 @@ export class EventStream extends Readable implements Disposable {
       // Invoke the message factory
       this.messageFactory(message).forEach((msg) => {
         // Trace message
-        console.debug(
-          `eventSource trace: ${event.type}: ${JSON.stringify(event)}`,
-        );
+        // console.debug(
+        //   `eventSource trace: ${event.type}: ${JSON.stringify(event)}`,
+        // );
         // Add the message to the messages array
         this.messages.push(msg);
         // Emit a 'message' event with the message as the payload

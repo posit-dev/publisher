@@ -34,6 +34,7 @@ import { untitledConfigurationName } from "src/utils/names";
 import { newConfig } from "src/multiStepInputs/newConfig";
 import { WatcherManager } from "src/watchers";
 import { Commands, Contexts, Views } from "src/constants";
+import { showProgress } from "src/utils/progress";
 
 type ConfigurationEventEmitter = EventEmitter<
   ConfigurationTreeItem | undefined | void
@@ -79,15 +80,10 @@ export class ConfigurationsTreeDataProvider
         dir: ".",
         recursive: true,
       });
-
-      window.withProgress(
-        {
-          title: "Initializing",
-          location: { viewId: Views.Configurations },
-        },
-        async () => {
-          return getAllPromise;
-        },
+      showProgress(
+        "Initializing::configurations",
+        Views.Configurations,
+        getAllPromise,
       );
 
       const response = await getAllPromise;
