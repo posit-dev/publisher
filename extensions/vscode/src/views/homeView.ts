@@ -461,7 +461,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private getSelectionState(): DeploymentSelector | null {
+  private getSelectionState(): HomeViewState {
     const state = this.context.workspaceState.get<DeploymentSelector | null>(
       LocalState.LastSelectionState,
       null,
