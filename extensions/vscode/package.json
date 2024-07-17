@@ -255,7 +255,10 @@
       {
         "command": "posit.publisher.deployWithEntrypoint",
         "title": "Deploy with this Entrypoint",
-        "icon": "$(cloud-upload)",
+        "icon": {
+          "light": "assets/img/bw/posit-publisher-light.png",
+          "dark": "assets/img/bw/posit-publisher-dark.png"
+        },
         "category": "Posit Publisher"
       }
     ],
