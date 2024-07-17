@@ -13,10 +13,7 @@ import {
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
-import {
-  DeploymentSelector,
-  HomeViewState,
-} from "../../../../src/types/shared";
+import { DeploymentSelector } from "../../../../src/types/shared";
 
 export const useHomeStore = defineStore("home", () => {
   const publishInProgress = ref(false);
@@ -27,8 +24,24 @@ export const useHomeStore = defineStore("home", () => {
   const credentials = ref<Credential[]>([]);
 
   const selectedContentRecord = ref<ContentRecord | PreContentRecord>();
-  const selectedConfiguration = ref<Configuration>();
 
+  // Always use the content record as the source of truth for the
+  // configuration. Can be undefined if a Configuration is not specified or
+  // found.
+  const selectedConfiguration = computed((): Configuration | undefined => {
+    if (!selectedContentRecord.value) {
+      return undefined;
+    }
+    const { configurationName, projectDir } = selectedContentRecord.value;
+    return configurations.value.find(
+      (c) =>
+        c.configurationName === configurationName &&
+        c.projectDir === projectDir,
+    );
+  });
+
+  // Always use the content record as the source of truth for the
+  // credential. Can be undefined if a Credential is not specified or found.
   const serverCredential = computed(() => {
     return credentials.value.find((c) => {
       const credentialUrl = c.url.toLowerCase();
@@ -76,23 +89,6 @@ export const useHomeStore = defineStore("home", () => {
 
     selectedContentRecord.value = contentRecord;
 
-    // Determine the configuration. It is ALWAYS set to the value found
-    // in the content record. If changed, that will be through the file
-    // and the refresh will cause this to be re-evaluated.
-    if (!contentRecord) {
-      selectedConfiguration.value = undefined;
-      return;
-    }
-
-    const config = configurations.value.find((c) => {
-      return (
-        c.configurationName === contentRecord.configurationName &&
-        c.projectDir === contentRecord.projectDir
-      );
-    });
-
-    selectedConfiguration.value = config;
-
     return (
       previousSelectedContentRecord === selectedContentRecord.value &&
       previousSelectedConfig === selectedConfiguration.value
@@ -104,14 +100,6 @@ export const useHomeStore = defineStore("home", () => {
   ) {
     contentRecords.value.push(contentRecord);
     selectedContentRecord.value = contentRecord;
-
-    const config = configurations.value.find((c) => {
-      return (
-        c.configurationName === contentRecord.configurationName &&
-        c.projectDir === contentRecord.projectDir
-      );
-    });
-    selectedConfiguration.value = config;
   }
 
   watch([selectedConfiguration], () => updateParentViewSelectionState());
