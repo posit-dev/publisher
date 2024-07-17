@@ -100,11 +100,6 @@ const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
   } else {
     home.selectedContentRecord = undefined;
   }
-
-  // If no contentRecord is selected, unset the selected configuration
-  if (home.selectedContentRecord === undefined) {
-    home.selectedConfiguration = undefined;
-  }
 };
 
 /**
