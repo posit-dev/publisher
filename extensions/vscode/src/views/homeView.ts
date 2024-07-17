@@ -280,12 +280,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async updateFileList(uri: string, action: FileAction) {
-    const activeDeployment = this.getActiveContentRecord();
-    if (!activeDeployment) {
-      console.error("homeView::updateFileList: No active deployment.");
-      return;
-    }
-    // this will only be true if the config really exists
     const activeConfig = this.getActiveConfig();
     if (activeConfig === undefined) {
       console.error("homeView::updateFileList: No active configuration.");
@@ -298,7 +292,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         uri,
         action,
         {
-          dir: activeDeployment.projectDir,
+          dir: activeConfig.projectDir,
         },
       );
       showProgress("Updating File List", Views.HomeView, apiRequest);
