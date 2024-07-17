@@ -131,10 +131,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       this.configWatchers?.dispose();
       if (cfg) {
-        this.configWatchers = new ConfigWatcherManager(
-          activeContentRecord,
-          cfg,
-        );
+        this.configWatchers = new ConfigWatcherManager(cfg);
         this.configWatchers.configFile?.onDidChange(
           this.sendRefreshedFilesLists,
           this,

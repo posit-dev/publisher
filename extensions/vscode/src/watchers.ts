@@ -5,10 +5,9 @@ import {
   RelativePattern,
   FileSystemWatcher,
   workspace,
-  Uri,
 } from "vscode";
 
-import { Configuration, ContentRecord, PreContentRecord } from "src/api";
+import { Configuration } from "src/api";
 import {
   PUBLISH_DEPLOYMENTS_FOLDER,
   POSIT_FOLDER,
@@ -90,41 +89,28 @@ export class ConfigWatcherManager implements Disposable {
   pythonPackageFile: FileSystemWatcher | undefined;
   rPackageFile: FileSystemWatcher | undefined;
 
-  constructor(
-    contentRecord: ContentRecord | PreContentRecord,
-    cfg: Configuration,
-  ) {
+  constructor(cfg: Configuration) {
     const root = workspace.workspaceFolders?.[0];
     if (root === undefined) {
       return;
     }
-    const configurationFileUri = Uri.joinPath(
-      root.uri,
-      contentRecord.projectDir,
-      ".posit",
-      "publisher",
-      contentRecord.configurationName,
-    );
+
     this.configFile = workspace.createFileSystemWatcher(
-      configurationFileUri.fsPath,
+      new RelativePattern(root, cfg.configurationPath),
     );
 
-    const packageFileUri = Uri.joinPath(
-      root.uri,
-      contentRecord.projectDir,
-      cfg.configuration.python?.packageFile || DEFAULT_PYTHON_PACKAGE_FILE,
-    );
     this.pythonPackageFile = workspace.createFileSystemWatcher(
-      packageFileUri.fsPath,
+      new RelativePattern(
+        root,
+        cfg.configuration.python?.packageFile || DEFAULT_PYTHON_PACKAGE_FILE,
+      ),
     );
 
-    const rPackageFileUri = Uri.joinPath(
-      root.uri,
-      contentRecord.projectDir,
-      cfg.configuration.r?.packageFile || DEFAULT_R_PACKAGE_FILE,
-    );
     this.rPackageFile = workspace.createFileSystemWatcher(
-      rPackageFileUri.fsPath,
+      new RelativePattern(
+        root,
+        cfg.configuration.r?.packageFile || DEFAULT_R_PACKAGE_FILE,
+      ),
     );
   }
 
