@@ -78,7 +78,7 @@ export async function newConfig(title: string, viewId?: string) {
   const apiCalls = Promise.all([getConfigurationInspections]);
 
   // Start the progress indicator and have it stop when the API calls are complete
-  showProgress("Initializing::newConfig", viewId, apiCalls);
+  showProgress("Initializing::newConfig", apiCalls, viewId);
 
   // ***************************************************************
   // Order of all steps

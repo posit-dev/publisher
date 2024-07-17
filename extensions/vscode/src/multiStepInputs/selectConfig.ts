@@ -185,7 +185,7 @@ export async function selectConfig(
   ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
-  showProgress("Initializing::selectConfig", viewId, apisComplete);
+  showProgress("Initializing::selectConfig", apisComplete, viewId);
 
   // ***************************************************************
   // Order of all steps

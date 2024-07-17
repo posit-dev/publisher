@@ -49,7 +49,7 @@ export async function newCredential(
     return resolve();
   });
 
-  showProgress("Initializing::newCredential", viewId, getCredentials);
+  showProgress("Initializing::newCredential", getCredentials, viewId);
 
   // ***************************************************************
   // Order of all steps

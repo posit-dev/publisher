@@ -82,8 +82,8 @@ export class ConfigurationsTreeDataProvider
       });
       showProgress(
         "Initializing::configurations",
-        Views.Configurations,
         getAllPromise,
+        Views.Configurations,
       );
 
       const response = await getAllPromise;
