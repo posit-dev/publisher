@@ -709,11 +709,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
-    const activeContentRecord = this.getActiveContentRecord();
-    if (activeContentRecord === undefined) {
+    const activeConfiguration = this.getActiveConfig();
+    if (activeConfiguration === undefined) {
+      // Cannot scan if there is no active configuration.
       return;
     }
-    const activeConfiguration = this.getActiveConfig();
 
     const relPathPackageFile =
       activeConfiguration?.configuration.r?.packageFile;
@@ -723,7 +723,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const fileUri = Uri.joinPath(
       this.root.uri,
-      activeContentRecord.projectDir,
+      activeConfiguration.projectDir,
       relPathPackageFile,
     );
 
@@ -739,7 +739,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const apiRequest = api.packages.createRRequirementsFile(
-        { dir: activeContentRecord.projectDir },
+        { dir: activeConfiguration.projectDir },
         relPathPackageFile,
       );
       showProgress("Creating R Requirements File", Views.HomeView, apiRequest);
