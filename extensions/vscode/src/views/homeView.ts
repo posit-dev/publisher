@@ -652,12 +652,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
-    const activeContentRecord = this.getActiveContentRecord();
-    if (activeContentRecord === undefined) {
+    const activeConfiguration = this.getActiveConfig();
+    if (activeConfiguration === undefined) {
+      // Cannot scan if there is no active configuration.
       return;
     }
 
-    const activeConfiguration = this.getActiveConfig();
     const relPathPackageFile =
       activeConfiguration?.configuration.python?.packageFile;
     if (relPathPackageFile === undefined) {
@@ -666,7 +666,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const fileUri = Uri.joinPath(
       this.root.uri,
-      activeContentRecord.projectDir,
+      activeConfiguration.projectDir,
       relPathPackageFile,
     );
 
@@ -683,7 +683,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const api = await useApi();
       const python = await getPythonInterpreterPath();
       const apiRequest = api.packages.createPythonRequirementsFile(
-        { dir: activeContentRecord?.projectDir },
+        { dir: activeConfiguration.projectDir },
         python,
         relPathPackageFile,
       );
