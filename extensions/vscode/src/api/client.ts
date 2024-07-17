@@ -23,16 +23,17 @@ class PublishingClientApi {
       baseURL: apiBaseUrl,
     });
     this.client.interceptors.request.use((request) => {
-      (<any>request).ts = performance.now();
+      request.ts = performance.now();
       return request;
     });
 
     this.client.interceptors.response.use((response) => {
-      const request = response.request;
-      const duration = Math.round(
-        Number(performance.now() - (<any>response).config.ts),
-      );
-      console.log(`Request: ${request.path} took ${duration}ms`);
+      const timestamp = response.config.ts;
+      if (timestamp) {
+        const request = response.request;
+        const duration = Math.round(Number(performance.now() - timestamp));
+        console.log(`Request: ${request.path} took ${duration}ms`);
+      }
       return response;
     });
     this.apiServiceIsUp = apiServiceIsUp;
