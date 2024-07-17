@@ -1,5 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import path from "path";
 import debounce from "debounce";
 
 import {
@@ -41,7 +42,7 @@ import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { WebviewConduit } from "src/utils/webviewConduit";
-import { fileExists } from "src/utils/files";
+import { fileExists, isRelativePathRoot } from "src/utils/files";
 import { newDeployment } from "src/multiStepInputs/newDeployment";
 
 import type { DeploymentSelector, HomeViewState } from "src/types/shared";
@@ -954,13 +955,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         problem = true;
       }
 
-      let detail = credential?.name;
-      if (!credential?.name) {
-        detail = `Missing Credential for ${contentRecord.serverUrl}`;
-        problem = true;
-      } else {
-        detail = `${contentRecord.projectDir} (${detail})`;
+      let details = [];
+      if (!isRelativePathRoot(contentRecord.projectDir)) {
+        details.push(`${contentRecord.projectDir}${path.sep}`);
       }
+      if (credential?.name) {
+        details.push(credential.name);
+      } else {
+        details.push(`Missing Credential for ${contentRecord.serverUrl}`);
+        problem = true;
+      }
+      const detail = details.join(" • ");
 
       let lastMatch =
         lastContentRecordName === contentRecord.saveName &&
