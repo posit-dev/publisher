@@ -89,9 +89,9 @@ export class ConfigWatcherManager implements Disposable {
   pythonPackageFile: FileSystemWatcher | undefined;
   rPackageFile: FileSystemWatcher | undefined;
 
-  constructor(cfg: Configuration) {
+  constructor(cfg?: Configuration) {
     const root = workspace.workspaceFolders?.[0];
-    if (root === undefined) {
+    if (root === undefined || cfg === undefined) {
       return;
     }
 
