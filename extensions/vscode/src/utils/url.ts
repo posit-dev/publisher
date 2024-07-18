@@ -5,10 +5,6 @@ export const formatURL = (input: string): string => {
   if (/^[a-zA-Z]+:\/\//.test(input)) {
     return input;
   }
-  if (input.endsWith("/connect/")) {
-    // This is a dashboard URL; trim to get the server URL.
-    input = input.slice(0, -8);
-  }
   return `https://${input}`;
 };
 
