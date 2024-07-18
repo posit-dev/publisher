@@ -1,5 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import path from "path";
+
 import {
   InputBoxValidationSeverity,
   QuickPickItem,
@@ -154,7 +156,7 @@ export async function selectConfig(
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
-              detail: `${result.projectDir}/`,
+              detail: `${result.projectDir}${path.sep}`,
               index: i,
             });
           }

@@ -1,5 +1,7 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import path from "path";
+
 import {
   MultiStepInput,
   MultiStepState,
@@ -373,7 +375,7 @@ export async function newDeployment(
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
-              detail: `${result.projectDir}/`,
+              detail: `${result.projectDir}${path.sep}`,
               index: i,
             });
           }

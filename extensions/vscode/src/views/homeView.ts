@@ -1,5 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import path from "path";
 import debounce from "debounce";
 
 import {
@@ -41,7 +42,7 @@ import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { WebviewConduit } from "src/utils/webviewConduit";
-import { fileExists } from "src/utils/files";
+import { fileExists, isRelativePathRoot } from "src/utils/files";
 import { newDeployment } from "src/multiStepInputs/newDeployment";
 
 import type { DeploymentSelector, HomeViewState } from "src/types/shared";
@@ -120,52 +121,43 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
 
     useBus().on("activeConfigChanged", (cfg: Configuration | undefined) => {
-      const activeContentRecord = this.getActiveContentRecord();
-      if (!activeContentRecord) {
-        return;
-      }
-
       this.sendRefreshedFilesLists();
       this.onRefreshPythonPackages();
       this.onRefreshRPackages();
 
       this.configWatchers?.dispose();
-      if (cfg) {
-        this.configWatchers = new ConfigWatcherManager(
-          activeContentRecord,
-          cfg,
-        );
-        this.configWatchers.configFile?.onDidChange(
-          this.sendRefreshedFilesLists,
-          this,
-        );
+      this.configWatchers = new ConfigWatcherManager(cfg);
 
-        this.configWatchers.pythonPackageFile?.onDidCreate(
-          this.onRefreshPythonPackages,
-          this,
-        );
-        this.configWatchers.pythonPackageFile?.onDidChange(
-          this.onRefreshPythonPackages,
-          this,
-        );
-        this.configWatchers.pythonPackageFile?.onDidDelete(
-          this.onRefreshPythonPackages,
-          this,
-        );
+      this.configWatchers.configFile?.onDidChange(
+        this.sendRefreshedFilesLists,
+        this,
+      );
 
-        this.configWatchers.rPackageFile?.onDidCreate(
-          this.onRefreshRPackages,
-          this,
-        );
-        this.configWatchers.rPackageFile?.onDidChange(
-          this.onRefreshRPackages,
-          this,
-        );
-        this.configWatchers.rPackageFile?.onDidDelete(
-          this.onRefreshRPackages,
-          this,
-        );
-      }
+      this.configWatchers.pythonPackageFile?.onDidCreate(
+        this.onRefreshPythonPackages,
+        this,
+      );
+      this.configWatchers.pythonPackageFile?.onDidChange(
+        this.onRefreshPythonPackages,
+        this,
+      );
+      this.configWatchers.pythonPackageFile?.onDidDelete(
+        this.onRefreshPythonPackages,
+        this,
+      );
+
+      this.configWatchers.rPackageFile?.onDidCreate(
+        this.onRefreshRPackages,
+        this,
+      );
+      this.configWatchers.rPackageFile?.onDidChange(
+        this.onRefreshRPackages,
+        this,
+      );
+      this.configWatchers.rPackageFile?.onDidDelete(
+        this.onRefreshRPackages,
+        this,
+      );
     });
   }
   /**
@@ -289,12 +281,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async updateFileList(uri: string, action: FileAction) {
-    const activeDeployment = this.getActiveContentRecord();
-    if (!activeDeployment) {
-      console.error("homeView::updateFileList: No active deployment.");
-      return;
-    }
-    // this will only be true if the config really exists
     const activeConfig = this.getActiveConfig();
     if (activeConfig === undefined) {
       console.error("homeView::updateFileList: No active configuration.");
@@ -307,7 +293,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         uri,
         action,
         {
-          dir: activeDeployment.projectDir,
+          dir: activeConfig.projectDir,
         },
       );
       showProgress("Updating File List", apiRequest, Views.HomeView);
@@ -461,7 +447,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private getSelectionState(): DeploymentSelector | null {
+  private getSelectionState(): HomeViewState {
     const state = this.context.workspaceState.get<DeploymentSelector | null>(
       LocalState.LastSelectionState,
       null,
@@ -520,7 +506,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async onRefreshPythonPackages() {
-    const activeContentRecord = this.getActiveContentRecord();
     const activeConfiguration = this.getActiveConfig();
     let pythonProject = true;
     let packages: string[] = [];
@@ -529,7 +514,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const api = await useApi();
 
-    if (activeConfiguration && activeContentRecord?.projectDir) {
+    if (activeConfiguration) {
       const pythonSection = activeConfiguration?.configuration.python;
       if (!pythonSection) {
         pythonProject = false;
@@ -540,7 +525,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
           const apiRequest = api.packages.getPythonPackages(
             activeConfiguration.configurationName,
-            { dir: activeContentRecord.projectDir },
+            { dir: activeConfiguration.projectDir },
           );
           showProgress(
             "Refreshing Python Packages",
@@ -583,7 +568,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async onRefreshRPackages() {
-    const activeContentRecord = this.getActiveContentRecord();
     const activeConfiguration = this.getActiveConfig();
     let rProject = true;
     let packages: RPackage[] = [];
@@ -593,7 +577,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const api = await useApi();
 
-    if (activeConfiguration && activeContentRecord?.projectDir) {
+    if (activeConfiguration) {
       const rSection = activeConfiguration?.configuration.r;
       if (!rSection) {
         rProject = false;
@@ -604,7 +588,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
           const apiRequest = api.packages.getRPackages(
             activeConfiguration.configurationName,
-            { dir: activeContentRecord.projectDir },
+            { dir: activeConfiguration.projectDir },
           );
           showProgress("Refreshing R Packages", apiRequest, Views.HomeView);
 
@@ -669,12 +653,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
-    const activeContentRecord = this.getActiveContentRecord();
-    if (activeContentRecord === undefined) {
+    const activeConfiguration = this.getActiveConfig();
+    if (activeConfiguration === undefined) {
+      // Cannot scan if there is no active configuration.
       return;
     }
 
-    const activeConfiguration = this.getActiveConfig();
     const relPathPackageFile =
       activeConfiguration?.configuration.python?.packageFile;
     if (relPathPackageFile === undefined) {
@@ -683,7 +667,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const fileUri = Uri.joinPath(
       this.root.uri,
-      activeContentRecord.projectDir,
+      activeConfiguration.projectDir,
       relPathPackageFile,
     );
 
@@ -700,7 +684,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const api = await useApi();
       const python = await getPythonInterpreterPath();
       const apiRequest = api.packages.createPythonRequirementsFile(
-        { dir: activeContentRecord?.projectDir },
+        { dir: activeConfiguration.projectDir },
         python,
         relPathPackageFile,
       );
@@ -726,11 +710,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
-    const activeContentRecord = this.getActiveContentRecord();
-    if (activeContentRecord === undefined) {
+    const activeConfiguration = this.getActiveConfig();
+    if (activeConfiguration === undefined) {
+      // Cannot scan if there is no active configuration.
       return;
     }
-    const activeConfiguration = this.getActiveConfig();
 
     const relPathPackageFile =
       activeConfiguration?.configuration.r?.packageFile;
@@ -740,7 +724,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const fileUri = Uri.joinPath(
       this.root.uri,
-      activeContentRecord.projectDir,
+      activeConfiguration.projectDir,
       relPathPackageFile,
     );
 
@@ -756,7 +740,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const apiRequest = api.packages.createRRequirementsFile(
-        { dir: activeContentRecord.projectDir },
+        { dir: activeConfiguration.projectDir },
         relPathPackageFile,
       );
       showProgress("Creating R Requirements File", apiRequest, Views.HomeView);
@@ -773,16 +757,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async propagateDeploymentSelection(
-    documentSelector: DeploymentSelector | null,
+    deploymentSelector: DeploymentSelector | null,
   ) {
     // We have to break our protocol and go ahead and write this into storage,
     // in case this multi-stepper is actually running ahead of the webview
     // being brought up.
-    this.saveSelectionState(documentSelector);
+    this.saveSelectionState(deploymentSelector);
     // Now push down into the webview
     this.updateWebViewViewCredentials();
     this.updateWebViewViewConfigurations();
-    this.updateWebViewViewContentRecords(documentSelector);
+    this.updateWebViewViewContentRecords(deploymentSelector);
     // And have the webview save what it has selected.
     this.requestWebviewSaveSelection();
   }
@@ -954,13 +938,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         problem = true;
       }
 
-      let detail = credential?.name;
-      if (!credential?.name) {
-        detail = `Missing Credential for ${contentRecord.serverUrl}`;
-        problem = true;
-      } else {
-        detail = `${contentRecord.projectDir} (${detail})`;
+      let details = [];
+      if (!isRelativePathRoot(contentRecord.projectDir)) {
+        details.push(`${contentRecord.projectDir}${path.sep}`);
       }
+      if (credential?.name) {
+        details.push(credential.name);
+      } else {
+        details.push(`Missing Credential for ${contentRecord.serverUrl}`);
+        problem = true;
+      }
+      const detail = details.join(" • ");
 
       let lastMatch =
         lastContentRecordName === contentRecord.saveName &&
@@ -1171,13 +1159,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   public sendRefreshedFilesLists = async () => {
     const api = await useApi();
-    const activeDeployment = this.getActiveContentRecord();
-    if (activeDeployment) {
+    const activeConfig = this.getActiveConfig();
+    if (activeConfig) {
       try {
         const apiRequest = api.files.getByConfiguration(
-          activeDeployment.configurationName,
+          activeConfig.configurationName,
           {
-            dir: activeDeployment.projectDir,
+            dir: activeConfig.projectDir,
           },
         );
         showProgress("ReFreshing Files", apiRequest, Views.HomeView);
