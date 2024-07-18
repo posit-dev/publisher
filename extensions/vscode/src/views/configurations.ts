@@ -130,7 +130,7 @@ export class ConfigurationsTreeDataProvider
     this.treeDataChangeEventEmitter.fire();
   };
 
-  private add = async (viewId?: string) => {
+  private add = async (viewId: string) => {
     // We only create a new configuration through this
     // command. We do not associate it automatically with
     // the current deployment

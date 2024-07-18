@@ -38,7 +38,7 @@ import { showProgress } from "src/utils/progress";
 
 export async function selectConfig(
   activeDeployment: ContentRecord | PreContentRecord,
-  viewId?: string,
+  viewId: string,
 ): Promise<Configuration | undefined> {
   // ***************************************************************
   // API Calls and results

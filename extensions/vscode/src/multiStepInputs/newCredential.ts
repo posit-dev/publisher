@@ -21,8 +21,8 @@ import { showProgress } from "src/utils/progress";
 const createNewCredentialLabel = "Create a New Credential";
 
 export async function newCredential(
+  viewId: string,
   startingServerUrl?: string,
-  viewId?: string,
 ): Promise<string | undefined> {
   // ***************************************************************
   // API Calls and results

@@ -840,7 +840,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   public async showNewDeploymentMultiStep(
-    viewId?: string,
+    viewId: string,
   ): Promise<DeploymentSelector | undefined> {
     const deploymentObjects = await newDeployment(viewId);
     if (deploymentObjects) {

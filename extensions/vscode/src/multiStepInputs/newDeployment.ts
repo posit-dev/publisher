@@ -255,7 +255,7 @@ const steps: Record<string, possibleSteps | undefined> = {
 };
 
 export async function newDeployment(
-  viewId?: string,
+  viewId: string,
 ): Promise<DeploymentObjects | undefined> {
   // ***************************************************************
   // API Calls and results

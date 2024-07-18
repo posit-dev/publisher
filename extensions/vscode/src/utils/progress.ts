@@ -5,7 +5,7 @@ import { ProgressLocation, window } from "vscode";
 export async function showProgress(
   title: string,
   until: Promise<any>,
-  viewId?: string,
+  viewId: string,
   trace = true,
 ) {
   const start = performance.now();

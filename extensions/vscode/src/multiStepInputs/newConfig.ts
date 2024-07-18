@@ -27,7 +27,7 @@ import { getSummaryStringFromError } from "../utils/errors";
 import { untitledConfigurationName } from "../utils/names";
 import { showProgress } from "src/utils/progress";
 
-export async function newConfig(title: string, viewId?: string) {
+export async function newConfig(title: string, viewId: string) {
   // ***************************************************************
   // API Calls and results
   // ***************************************************************
