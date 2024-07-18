@@ -29,7 +29,7 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:*"
+    "workspaceContains:/"
   ],
   "main": "./dist/extension.js",
   "contributes": {
