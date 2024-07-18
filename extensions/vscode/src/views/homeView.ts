@@ -1146,7 +1146,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   public refreshContentRecords = async () => {
     await this.refreshContentRecordData();
-    this.updateWebViewViewContentRecords(this.getSelectionState());
+    this.updateWebViewViewContentRecords();
     useBus().trigger(
       "activeContentRecordChanged",
       this.getActiveContentRecord(),
