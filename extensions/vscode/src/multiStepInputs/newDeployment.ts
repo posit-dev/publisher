@@ -40,6 +40,7 @@ import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
+import { isRelativePathRoot } from "src/utils/files";
 
 type stepInfo = {
   step: number;
@@ -375,7 +376,9 @@ export async function newDeployment(
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
-              detail: `${result.projectDir}${path.sep}`,
+              detail: isRelativePathRoot(result.projectDir)
+                ? undefined
+                : `${result.projectDir}${path.sep}`,
               index: i,
             });
           }

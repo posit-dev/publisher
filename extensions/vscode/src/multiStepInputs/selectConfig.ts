@@ -37,6 +37,7 @@ import {
   filterConfigurationsToValidAndType,
 } from "src/utils/filters";
 import { showProgress } from "src/utils/progress";
+import { isRelativePathRoot } from "src/utils/files";
 
 export async function selectConfig(
   activeDeployment: ContentRecord | PreContentRecord,
@@ -156,7 +157,9 @@ export async function selectConfig(
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
-              detail: `${result.projectDir}${path.sep}`,
+              detail: isRelativePathRoot(result.projectDir)
+                ? undefined
+                : `${result.projectDir}${path.sep}`,
               index: i,
             });
           }
