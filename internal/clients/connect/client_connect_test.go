@@ -471,6 +471,29 @@ func (s *ConnectClientSuite) TestTestAuthentication404() {
 	s.ErrorIs(err, errInvalidServer)
 }
 
+func (s *ConnectClientSuite) TestTestAuthenticationAuthRedirect() {
+	// in this case, the end result of the request is a 200 with HTML payload.
+	httpClient := &http_client.MockHTTPClient{}
+	httpClient.On("Get", "/__api__/v1/user", mock.Anything, mock.Anything).Run(
+		func(args mock.Arguments) {
+			user := args.Get(1).(*UserDTO)
+			*user = UserDTO{
+				Confirmed: true,
+				UserRole:  "publisher",
+			}
+		}).Return(nil)
+
+	client := &ConnectClient{
+		client: httpClient,
+		account: &accounts.Account{
+			ApiKey: "my-api-key",
+		},
+	}
+	user, err := client.TestAuthentication(logging.New())
+	s.NotNil(user)
+	s.NoError(err)
+}
+
 func (s *ConnectClientSuite) TestTestAuthentication404WithKey() {
 	httpClient := &http_client.MockHTTPClient{}
 	httpErr := &http_client.HTTPError{
