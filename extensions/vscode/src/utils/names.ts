@@ -9,9 +9,8 @@ export async function untitledConfigurationName(
   projectDir: string,
 ): Promise<string> {
   const api = await useApi();
-  const existingConfigurations = (
-    await api.configurations.getAll({ dir: projectDir })
-  ).data;
+  const existingConfigurations = (await api.configurations.getAll(projectDir))
+    .data;
 
   if (existingConfigurations.length === 0) {
     return "configuration-1";

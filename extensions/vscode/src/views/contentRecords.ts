@@ -83,8 +83,7 @@ export class ContentRecordsTreeDataProvider
       // 200 - success
       // 500 - internal server error
       const api = await useApi();
-      const getAllPromise = api.contentRecords.getAll({
-        dir: ".",
+      const getAllPromise = api.contentRecords.getAll(".", {
         recursive: true,
       });
       showProgress(
@@ -131,9 +130,7 @@ export class ContentRecordsTreeDataProvider
           );
           if (ok) {
             const api = await useApi();
-            await api.contentRecords.delete(name, {
-              dir: contentRecord.projectDir,
-            });
+            await api.contentRecords.delete(name, contentRecord.projectDir);
           }
         },
       ),
@@ -169,9 +166,9 @@ export class ContentRecordsTreeDataProvider
 
           try {
             const api = await useApi();
-            const response = await api.contentRecords.getAll({
-              dir: item.contentRecord.projectDir,
-            });
+            const response = await api.contentRecords.getAll(
+              item.contentRecord.projectDir,
+            );
             const contentRecordList = response.data;
             // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
             contentRecordNames = contentRecordList.map(

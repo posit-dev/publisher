@@ -41,10 +41,9 @@ export async function newConfig(title: string, viewId?: string) {
     async (resolve, reject) => {
       try {
         const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(
-          { dir: ".", recursive: true },
-          python,
-        );
+        const inspectResponse = await api.configurations.inspect(".", python, {
+          recursive: true,
+        });
         inspectionResults = inspectResponse.data;
         inspectionResults.forEach((result, i) => {
           const config = result.configuration;
@@ -243,9 +242,7 @@ export async function newConfig(title: string, viewId?: string) {
     const createResponse = await api.configurations.createOrUpdate(
       configName,
       selectedInspectionResult.configuration,
-      {
-        dir: selectedInspectionResult.projectDir,
-      },
+      selectedInspectionResult.projectDir,
     );
     newConfig = createResponse.data;
     const fileUri = Uri.file(newConfig.configurationPath);

@@ -83,9 +83,9 @@ export async function selectConfig(
 
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.configurations.getAll({
-        dir: activeDeployment.projectDir,
-      });
+      const response = await api.configurations.getAll(
+        activeDeployment.projectDir,
+      );
       let rawConfigs = response.data;
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment
@@ -140,9 +140,7 @@ export async function selectConfig(
       try {
         const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(
-          {
-            dir: activeDeployment.projectDir,
-          },
+          activeDeployment.projectDir,
           python,
         );
         inspectionResults = filterInspectionResultsToType(
@@ -407,9 +405,7 @@ export async function selectConfig(
       const createResponse = await api.configurations.createOrUpdate(
         configName,
         selectedInspectionResult.configuration,
-        {
-          dir: selectedInspectionResult.projectDir,
-        },
+        selectedInspectionResult.projectDir,
       );
       const fileUri = Uri.file(createResponse.data.configurationPath);
       const newConfig = createResponse.data;

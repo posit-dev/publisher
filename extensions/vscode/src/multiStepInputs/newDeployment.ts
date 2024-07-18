@@ -360,13 +360,9 @@ export async function newDeployment(
     async (resolve, reject) => {
       try {
         const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(
-          {
-            dir: ".",
-            recursive: true,
-          },
-          python,
-        );
+        const inspectResponse = await api.configurations.inspect(".", python, {
+          recursive: true,
+        });
         inspectionResults = inspectResponse.data;
         inspectionResults.forEach((result, i) => {
           const config = result.configuration;
@@ -401,8 +397,7 @@ export async function newDeployment(
 
   const getContentRecords = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.contentRecords.getAll({
-        dir: ".",
+      const response = await api.contentRecords.getAll(".", {
         recursive: true,
       });
       const contentRecordList = response.data;
@@ -922,7 +917,7 @@ export async function newDeployment(
     const createResponse = await api.configurations.createOrUpdate(
       configName,
       selectedInspectionResult.configuration,
-      { dir: selectedInspectionResult.projectDir },
+      selectedInspectionResult.projectDir,
     );
     const fileUri = Uri.file(createResponse.data.configurationPath);
     newConfig = createResponse.data;
@@ -968,7 +963,7 @@ export async function newDeployment(
       existingNames = [];
     }
     const response = await api.contentRecords.createNew(
-      { dir: selectedInspectionResult.projectDir },
+      selectedInspectionResult.projectDir,
       finalCredentialName,
       configName,
       untitledContentRecordName(existingNames),
