@@ -411,7 +411,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private updateWebViewViewContentRecords(
-    deploymentSelector: DeploymentSelector | null,
+    deploymentSelector?: DeploymentSelector | null,
   ) {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,
