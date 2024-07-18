@@ -106,7 +106,7 @@ export async function activate(context: ExtensionContext) {
     new DocumentTracker(),
     commands.registerCommand(Commands.DeployWithEntrypoint, (uri: Uri) => {
       commands.executeCommand(Commands.HomeView.Focus);
-      console.log("'Deploy with this Entrypoint' button hit!", uri);
+      homeViewProvider.handleFileInitiatedDeployment(uri);
     }),
   );
 }

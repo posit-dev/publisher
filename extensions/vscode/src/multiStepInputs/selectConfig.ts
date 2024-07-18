@@ -39,6 +39,7 @@ import { showProgress } from "src/utils/progress";
 export async function selectConfig(
   activeDeployment: ContentRecord | PreContentRecord,
   viewId?: string,
+  entryPoint?: string,
 ): Promise<Configuration | undefined> {
   // ***************************************************************
   // API Calls and results
@@ -83,6 +84,7 @@ export async function selectConfig(
     try {
       const response = await api.configurations.getAll({
         dir: activeDeployment.projectDir,
+        entrypoint: entryPoint,
       });
       let rawConfigs = response.data;
       // Filter down configs to same content type as active deployment,
@@ -140,6 +142,7 @@ export async function selectConfig(
         const inspectResponse = await api.configurations.inspect(
           {
             dir: activeDeployment.projectDir,
+            entrypoint: entryPoint,
           },
           python,
         );

@@ -18,7 +18,7 @@ export class ContentRecords {
   // Returns:
   // 200 - success
   // 500 - internal server error
-  getAll(params: { dir: string; entrypoints?: string; recursive?: boolean }) {
+  getAll(params: { dir: string; entrypoint?: string; recursive?: boolean }) {
     return this.client.get<Array<AllContentRecordTypes>>("/deployments", {
       params,
     });
