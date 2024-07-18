@@ -839,7 +839,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (
         !this.contentRecords.find(
           (contentRecord) =>
-            contentRecord.saveName === deploymentObjects.contentRecord.saveName,
+            contentRecord.saveName ===
+              deploymentObjects.contentRecord.saveName &&
+            contentRecord.projectDir ===
+              deploymentObjects.contentRecord.projectDir,
         )
       ) {
         this.contentRecords.push(deploymentObjects.contentRecord);
@@ -849,8 +852,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           (config) =>
             config.configurationName ===
               deploymentObjects.configuration.configurationName &&
-            config.configurationPath ===
-              deploymentObjects.contentRecord.projectDir,
+            config.projectDir === deploymentObjects.configuration.projectDir,
         )
       ) {
         this.configs.push(deploymentObjects.configuration);
