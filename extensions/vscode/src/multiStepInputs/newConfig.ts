@@ -28,6 +28,7 @@ import { getPythonInterpreterPath } from "../utils/config";
 import { getSummaryStringFromError } from "../utils/errors";
 import { untitledConfigurationName } from "../utils/names";
 import { showProgress } from "src/utils/progress";
+import { isRelativePathRoot } from "src/utils/files";
 
 export async function newConfig(title: string, viewId?: string) {
   // ***************************************************************
@@ -53,7 +54,9 @@ export async function newConfig(title: string, viewId?: string) {
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
-              detail: `${result.projectDir}${path.sep}`,
+              detail: isRelativePathRoot(result.projectDir)
+                ? undefined
+                : `${result.projectDir}${path.sep}`,
               index: i,
             });
           }
