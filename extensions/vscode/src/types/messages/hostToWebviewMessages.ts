@@ -75,7 +75,7 @@ export type RefreshContentRecordDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,
   {
     contentRecords: (ContentRecord | PreContentRecord)[];
-    deploymentSelected: DeploymentSelector | null;
+    deploymentSelected?: DeploymentSelector | null;
   }
 >;
 export type RefreshConfigDataMsg = AnyHostToWebviewMessage<

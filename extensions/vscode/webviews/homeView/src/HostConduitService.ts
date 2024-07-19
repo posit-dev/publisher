@@ -95,11 +95,25 @@ const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
   const home = useHomeStore();
   home.contentRecords = msg.content.contentRecords;
 
-  if (msg.content.deploymentSelected) {
-    home.updateSelectedContentRecordBySelector(msg.content.deploymentSelected);
-  } else {
+  let selector = msg.content.deploymentSelected;
+  if (selector === null) {
     home.selectedContentRecord = undefined;
+    return;
   }
+
+  // If the selector is undefined don't change the selection, but update
+  // the data
+  if (selector === undefined) {
+    if (home.selectedContentRecord) {
+      home.updateSelectedContentRecordBySelector({
+        deploymentPath: home.selectedContentRecord.deploymentPath,
+      });
+    }
+    return;
+  }
+
+  // At this point we have a selector, so update the selection
+  home.updateSelectedContentRecordBySelector(selector);
 };
 
 /**
