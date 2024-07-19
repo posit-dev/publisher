@@ -43,6 +43,7 @@ function setInitializationInProgressContext(context: InitializationInProgress) {
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: ExtensionContext) {
+  console.log("Activating Posit Publisher extension");
   setStateContext(PositPublishState.uninitialized);
   setInitializationInProgressContext(InitializationInProgress.false);
 
@@ -113,6 +114,7 @@ export async function activate(context: ExtensionContext) {
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
+  console.log("Deactivating Posit Publisher extension");
   if (service) {
     await service.stop();
   }
