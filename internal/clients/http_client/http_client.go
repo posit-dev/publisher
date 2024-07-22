@@ -137,7 +137,12 @@ func (c *defaultHTTPClient) doJSON(method string, path string, body any, into an
 	}
 	respBody, err := c.do(method, path, reqBody, "application/json", log)
 	if log.Enabled(context.Background(), slog.LevelDebug) {
-		log.Debug("API request", "method", method, "path", path, "body", string(bodyJSON), "response", string(respBody), "error", err)
+		const maxBody = 2000
+		trimmedRespBody := respBody
+		if len(trimmedRespBody) > maxBody {
+			trimmedRespBody = trimmedRespBody[:maxBody]
+		}
+		log.Debug("API request", "method", method, "path", path, "body", string(bodyJSON), "response", string(trimmedRespBody), "error", err)
 	}
 	if err != nil {
 		return err

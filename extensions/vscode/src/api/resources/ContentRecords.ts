@@ -18,9 +18,12 @@ export class ContentRecords {
   // Returns:
   // 200 - success
   // 500 - internal server error
-  getAll(params: { dir: string; entrypoint?: string; recursive?: boolean }) {
+  getAll(dir: string, params?: { entrypoints?: string; recursive?: boolean }) {
     return this.client.get<Array<AllContentRecordTypes>>("/deployments", {
-      params,
+      params: {
+        dir,
+        ...params,
+      },
     });
   }
 
@@ -28,10 +31,12 @@ export class ContentRecords {
   // 200 - success
   // 404 - not found
   // 500 - internal server error
-  get(id: string, params: { dir: string }) {
+  get(id: string, dir: string) {
     const encodedId = encodeURIComponent(id);
     return this.client.get<AllContentRecordTypes>(`deployments/${encodedId}`, {
-      params,
+      params: {
+        dir,
+      },
     });
   }
 
@@ -42,7 +47,7 @@ export class ContentRecords {
   // 500 - internal server error
   // Errors returned through event stream
   createNew(
-    params: { dir: string },
+    dir: string,
     accountName?: string,
     configName?: string,
     saveName?: string,
@@ -52,7 +57,9 @@ export class ContentRecords {
       config: configName,
       saveName,
     };
-    return this.client.post<PreContentRecord>("/deployments", data, { params });
+    return this.client.post<PreContentRecord>("/deployments", data, {
+      params: { dir },
+    });
   }
 
   // Returns:
@@ -61,10 +68,10 @@ export class ContentRecords {
   // 500 - internal server error
   // Errors returned through event stream
   publish(
-    params: { dir: string },
     targetName: string,
     accountName: string,
-    configName: string = "default",
+    configName: string,
+    dir: string,
   ) {
     const data = {
       account: accountName,
@@ -74,7 +81,11 @@ export class ContentRecords {
     return this.client.post<{ localId: string }>(
       `deployments/${encodedTarget}`,
       data,
-      { params },
+      {
+        params: {
+          dir,
+        },
+      },
     );
   }
 
@@ -82,23 +93,29 @@ export class ContentRecords {
   // 204 - no content
   // 404 - not found
   // 500 - internal server error
-  delete(saveName: string, params: { dir: string }) {
+  delete(saveName: string, dir: string) {
     const encodedSaveName = encodeURIComponent(saveName);
-    return this.client.delete(`deployments/${encodedSaveName}`, { params });
+    return this.client.delete(`deployments/${encodedSaveName}`, {
+      params: { dir },
+    });
   }
 
   // Returns:
   // 204 - no content
   // 404 - contentRecord or config file not found
   // 500 - internal server error
-  patch(deploymentName: string, configName: string, params: { dir: string }) {
+  patch(deploymentName: string, configName: string, dir: string) {
     const encodedName = encodeURIComponent(deploymentName);
     return this.client.patch<ContentRecord>(
       `deployments/${encodedName}`,
       {
         configurationName: configName,
       },
-      { params },
+      {
+        params: {
+          dir,
+        },
+      },
     );
   }
 }

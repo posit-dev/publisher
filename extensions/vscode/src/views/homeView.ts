@@ -233,12 +233,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const response = await api.contentRecords.publish(
-        {
-          dir: msg.content.projectDir,
-        },
         msg.content.deploymentName,
         msg.content.credentialName,
         msg.content.configurationName,
+        msg.content.projectDir,
       );
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
@@ -307,9 +305,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         activeConfig.configurationName,
         uri,
         action,
-        {
-          dir: activeConfig.projectDir,
-        },
+        activeConfig.projectDir,
       );
       showProgress("Updating File List", Views.HomeView, apiRequest);
 
@@ -353,8 +349,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // 200 - success
       // 500 - internal server error
       const api = await useApi();
-      const apiRequest = api.contentRecords.getAll({
-        dir: ".",
+      const apiRequest = api.contentRecords.getAll(".", {
         recursive: true,
       });
       showProgress("Refreshing Deployments", Views.HomeView, apiRequest);
@@ -380,8 +375,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async refreshConfigurationData() {
     try {
       const api = await useApi();
-      const apiRequest = api.configurations.getAll({
-        dir: ".",
+      const apiRequest = api.configurations.getAll(".", {
         recursive: true,
       });
       showProgress("Refreshing Configurations", Views.HomeView, apiRequest);
@@ -426,7 +420,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private updateWebViewViewContentRecords(
-    deploymentSelector: DeploymentSelector | null,
+    deploymentSelector?: DeploymentSelector | null,
   ) {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,
@@ -540,7 +534,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
           const apiRequest = api.packages.getPythonPackages(
             activeConfiguration.configurationName,
-            { dir: activeConfiguration.projectDir },
+            activeConfiguration.projectDir,
           );
           showProgress(
             "Refreshing Python Packages",
@@ -603,7 +597,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
           const apiRequest = api.packages.getRPackages(
             activeConfiguration.configurationName,
-            { dir: activeConfiguration.projectDir },
+            activeConfiguration.projectDir,
           );
           showProgress("Refreshing R Packages", Views.HomeView, apiRequest);
 
@@ -699,7 +693,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const api = await useApi();
       const python = await getPythonInterpreterPath();
       const apiRequest = api.packages.createPythonRequirementsFile(
-        { dir: activeConfiguration.projectDir },
+        activeConfiguration.projectDir,
         python,
         relPathPackageFile,
       );
@@ -755,7 +749,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const apiRequest = api.packages.createRRequirementsFile(
-        { dir: activeConfiguration.projectDir },
+        activeConfiguration.projectDir,
         relPathPackageFile,
       );
       showProgress("Creating R Requirements File", Views.HomeView, apiRequest);
@@ -818,7 +812,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const apiRequest = api.contentRecords.patch(
         targetContentRecord.deploymentName,
         config.configurationName,
-        { dir: targetContentRecord.projectDir },
+        targetContentRecord.projectDir,
       );
       showProgress("Updating Config", Views.HomeView, apiRequest);
 
@@ -852,7 +846,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (
         !this.contentRecords.find(
           (contentRecord) =>
-            contentRecord.saveName === deploymentObjects.contentRecord.saveName,
+            contentRecord.saveName ===
+              deploymentObjects.contentRecord.saveName &&
+            contentRecord.projectDir ===
+              deploymentObjects.contentRecord.projectDir,
         )
       ) {
         this.contentRecords.push(deploymentObjects.contentRecord);
@@ -862,8 +859,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           (config) =>
             config.configurationName ===
               deploymentObjects.configuration.configurationName &&
-            config.configurationPath ===
-              deploymentObjects.contentRecord.projectDir,
+            config.projectDir === deploymentObjects.configuration.projectDir,
         )
       ) {
         this.configs.push(deploymentObjects.configuration);
@@ -1167,7 +1163,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   public refreshContentRecords = async () => {
     await this.refreshContentRecordData();
-    this.updateWebViewViewContentRecords(this.getSelectionState());
+    this.updateWebViewViewContentRecords();
     useBus().trigger(
       "activeContentRecordChanged",
       this.getActiveContentRecord(),
@@ -1187,9 +1183,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       try {
         const apiRequest = api.files.getByConfiguration(
           activeConfig.configurationName,
-          {
-            dir: activeConfig.projectDir,
-          },
+          activeConfig.projectDir,
         );
         showProgress("Refreshing Files", Views.HomeView, apiRequest);
 

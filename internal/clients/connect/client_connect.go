@@ -9,7 +9,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -92,7 +91,13 @@ var errInvalidServer = errors.New("could not access the server; check the server
 func isConnectAuthError(err error) bool {
 	// You might expect a 401 for a bad API key (and we'll handle that).
 	httpErr, ok := err.(*http_client.HTTPError)
-	return ok && (httpErr.Status == http.StatusUnauthorized)
+	if ok && (httpErr.Status == http.StatusUnauthorized) {
+		return true
+	}
+	// An authenticating proxy may return a redirect to an auth page,
+	// which will return a 200 with an HTML body.
+	var serr *json.SyntaxError
+	return errors.As(err, &serr)
 }
 
 func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
@@ -100,35 +105,31 @@ func (c *ConnectClient) TestAuthentication(log logging.Logger) (*User, error) {
 	var connectUser UserDTO
 	err := c.client.Get("/__api__/v1/user", &connectUser, log)
 	if err != nil {
+		if agentErr, ok := err.(*types.AgentError); ok {
+			err = agentErr.Err
+		}
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			log.Debug("Request to Connect timed out")
 			return nil, ErrTimedOut
-		} else if agentErr, ok := err.(*types.AgentError); ok {
-			if isConnectAuthError(agentErr.Err) {
-				if c.account.ApiKey != "" {
-					// Key was provided and should have worked
-					log.Info("Connect API key authentication check failed", "url", c.account.URL)
-					return nil, types.NewAgentError(events.AuthenticationFailedCode, errInvalidApiKey, nil)
-				} else {
-					// No key provided, an auth error is OK
-					log.Info("Connect server connectivity check failed", "url", c.account.URL)
-					return nil, nil
-				}
+		} else if isConnectAuthError(err) {
+			if c.account.ApiKey != "" {
+				// Key was provided and should have worked
+				log.Info("Connect API key authentication check failed", "url", c.account.URL)
+				return nil, types.NewAgentError(events.AuthenticationFailedCode, errInvalidApiKey, nil)
 			} else {
-				// This isn't a Connect server, or we were redirected for auth, or ???
-				log.Debug("Server responded with error", "error", agentErr.Error())
-				if c.account.ApiKey != "" {
-					return nil, errInvalidServerOrCredentials
-				} else {
-					return nil, errInvalidServer
-				}
+				// No key provided, an auth error is OK
+				log.Info("Connect server connectivity test passed (no API key provided)", "url", c.account.URL)
+				return nil, nil
 			}
-		} else if e, ok := err.(*url.Error); ok {
-			log.Debug("Request to Connect had an URL error", "error", e.Error())
-			return nil, e.Err
+		} else {
+			// This isn't a Connect server, or we were redirected for auth, or ???
+			log.Debug("Server responded with error", "error", err)
+			if c.account.ApiKey != "" {
+				return nil, errInvalidServerOrCredentials
+			} else {
+				return nil, errInvalidServer
+			}
 		}
-		log.Debug("Request to Connect had an error", "error", err.Error())
-		return nil, err
 	}
 	if connectUser.Locked {
 		return nil, fmt.Errorf("user account %s is locked", connectUser.Username)
