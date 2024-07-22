@@ -171,8 +171,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return await this.onInitializingMsg();
       case WebviewToHostMessageType.EDIT_CONFIGURATION:
         return await this.onEditConfigurationMsg(msg);
-      case WebviewToHostMessageType.NEW_CONFIGURATION:
-        return await this.onNewConfigurationMsg();
       case WebviewToHostMessageType.SHOW_SELECT_CONFIGURATION:
         return await this.showSelectConfigForDeployment();
       case WebviewToHostMessageType.NAVIGATE:
@@ -264,10 +262,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "vscode.open",
       Uri.file(msg.content.configurationPath),
     );
-  }
-
-  private async onNewConfigurationMsg() {
-    await commands.executeCommand(Commands.Configurations.New, Views.HomeView);
   }
 
   private async onNavigateMsg(msg: NavigateMsg) {
