@@ -79,12 +79,14 @@ export const useHomeStore = defineStore("home", () => {
    * @param name the name of the new contentRecord to select
    * @returns true if the selected contentRecord was the same, false if not
    */
-  function updateSelectedContentRecordBySelector(selector: DeploymentSelector) {
+  function updateSelectedContentRecordBySelector(
+    selector?: DeploymentSelector,
+  ) {
     const previousSelectedContentRecord = selectedContentRecord.value;
     const previousSelectedConfig = selectedConfiguration.value;
 
     const contentRecord = contentRecords.value.find(
-      (d) => d.deploymentPath === selector.deploymentPath,
+      (d) => d.deploymentPath === selector?.deploymentPath,
     );
 
     selectedContentRecord.value = contentRecord;

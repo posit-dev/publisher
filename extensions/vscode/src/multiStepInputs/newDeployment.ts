@@ -40,6 +40,7 @@ import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
+import { isRelativePathRoot } from "src/utils/files";
 
 type stepInfo = {
   step: number;
@@ -363,12 +364,12 @@ export async function newDeployment(
       try {
         const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(
+          projectDir ? projectDir : ".",
+          python,
           {
-            dir: projectDir ? projectDir : ".",
             entrypoint: entryPoint,
             recursive: projectDir ? false : true,
           },
-          python,
         );
         inspectionResults = inspectResponse.data;
         inspectionResults.forEach((result, i) => {
@@ -378,7 +379,9 @@ export async function newDeployment(
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
-              detail: `${result.projectDir}${path.sep}`,
+              detail: isRelativePathRoot(result.projectDir)
+                ? undefined
+                : `${result.projectDir}${path.sep}`,
               index: i,
             });
           }
@@ -404,10 +407,12 @@ export async function newDeployment(
 
   const getContentRecords = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.contentRecords.getAll({
-        dir: projectDir ? projectDir : ".",
-        recursive: true,
-      });
+      const response = await api.contentRecords.getAll(
+        projectDir ? projectDir : ".",
+        {
+          recursive: true,
+        },
+      );
       const contentRecordList = response.data;
       // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
       contentRecordList.forEach((contentRecord) => {
@@ -925,7 +930,7 @@ export async function newDeployment(
     const createResponse = await api.configurations.createOrUpdate(
       configName,
       selectedInspectionResult.configuration,
-      { dir: selectedInspectionResult.projectDir },
+      selectedInspectionResult.projectDir,
     );
     const fileUri = Uri.file(createResponse.data.configurationPath);
     newConfig = createResponse.data;
@@ -972,7 +977,7 @@ export async function newDeployment(
     }
     const contentRecordName = untitledContentRecordName(existingNames);
     const response = await api.contentRecords.createNew(
-      { dir: selectedInspectionResult.projectDir },
+      selectedInspectionResult.projectDir,
       finalCredentialName,
       configName,
       contentRecordName,

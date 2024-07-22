@@ -37,6 +37,7 @@ import {
   filterConfigurationsToValidAndType,
 } from "src/utils/filters";
 import { showProgress } from "src/utils/progress";
+import { isRelativePathRoot } from "src/utils/files";
 
 export async function selectConfig(
   activeDeployment: ContentRecord | PreContentRecord,
@@ -84,10 +85,12 @@ export async function selectConfig(
 
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.configurations.getAll({
-        dir: activeDeployment.projectDir,
-        entrypoint: entryPoint,
-      });
+      const response = await api.configurations.getAll(
+        activeDeployment.projectDir,
+        {
+          entrypoint: entryPoint,
+        },
+      );
       let rawConfigs = response.data;
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment
@@ -142,11 +145,11 @@ export async function selectConfig(
       try {
         const python = await getPythonInterpreterPath();
         const inspectResponse = await api.configurations.inspect(
+          activeDeployment.projectDir,
+          python,
           {
-            dir: activeDeployment.projectDir,
             entrypoint: entryPoint,
           },
-          python,
         );
         inspectionResults = filterInspectionResultsToType(
           inspectResponse.data,
@@ -159,7 +162,9 @@ export async function selectConfig(
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
-              detail: `${result.projectDir}${path.sep}`,
+              detail: isRelativePathRoot(result.projectDir)
+                ? undefined
+                : `${result.projectDir}${path.sep}`,
               index: i,
             });
           }
@@ -410,9 +415,7 @@ export async function selectConfig(
       const createResponse = await api.configurations.createOrUpdate(
         configName,
         selectedInspectionResult.configuration,
-        {
-          dir: selectedInspectionResult.projectDir,
-        },
+        selectedInspectionResult.projectDir,
       );
       const fileUri = Uri.file(createResponse.data.configurationPath);
       const newConfig = createResponse.data;

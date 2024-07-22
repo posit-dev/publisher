@@ -76,10 +76,7 @@ export class ConfigurationsTreeDataProvider
 
     try {
       const api = await useApi();
-      const getAllPromise = api.configurations.getAll({
-        dir: ".",
-        recursive: true,
-      });
+      const getAllPromise = api.configurations.getAll(".", { recursive: true });
       showProgress(
         "Initializing::configurations",
         Views.Configurations,
@@ -208,9 +205,7 @@ export class ConfigurationsTreeDataProvider
     if (ok) {
       try {
         const api = await useApi();
-        await api.configurations.delete(name, {
-          dir: config.projectDir,
-        });
+        await api.configurations.delete(name, config.projectDir);
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
           "configurations::delete",
