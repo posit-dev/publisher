@@ -39,7 +39,7 @@ import {
 import { showProgress } from "src/utils/progress";
 import { isRelativePathRoot } from "src/utils/files";
 
-export async function selectConfig(
+export async function selectNewOrExistingConfig(
   activeDeployment: ContentRecord | PreContentRecord,
   viewId: string,
 ): Promise<Configuration | undefined> {
@@ -125,7 +125,7 @@ export async function selectConfig(
       });
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "selectConfig, configurations.getAll",
+        "selectNewOrExistingConfig, configurations.getAll",
         error,
       );
       window.showInformationMessage(
@@ -164,7 +164,7 @@ export async function selectConfig(
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "selectConfig, configurations.inspect",
+          "selectNewOrExistingConfig, configurations.inspect",
           error,
         );
         window.showErrorMessage(
@@ -188,7 +188,7 @@ export async function selectConfig(
   ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
-  showProgress("Initializing::selectConfig", apisComplete, viewId);
+  showProgress("Initializing::selectNewOrExistingConfig", apisComplete, viewId);
 
   // ***************************************************************
   // Order of all steps
@@ -416,7 +416,7 @@ export async function selectConfig(
       return newConfig;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "selectConfig, configurations.createOrUpdate",
+        "selectNewOrExistingConfig, configurations.createOrUpdate",
         error,
       );
       window.showErrorMessage(`Failed to create config file. ${summary}`);

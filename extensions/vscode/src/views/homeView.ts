@@ -61,7 +61,7 @@ import { confirmOverwrite } from "src/dialogs";
 import { splitFilesOnInclusion } from "src/utils/files";
 import { DeploymentQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
-import { selectConfig } from "src/multiStepInputs/selectConfig";
+import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
@@ -773,7 +773,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       return;
     }
-    const config = await selectConfig(activeDeployment, Views.HomeView);
+    const config = await selectNewOrExistingConfig(
+      activeDeployment,
+      Views.HomeView,
+    );
     if (config) {
       const api = await useApi();
       const apiRequest = api.contentRecords.patch(
@@ -795,8 +798,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       return;
     }
-    // selectConfig handles create as well
-    const config = await selectConfig(activeDeployment, Views.HomeView);
+    const config = await selectNewOrExistingConfig(
+      activeDeployment,
+      Views.HomeView,
+    );
     if (config) {
       const activeContentRecord = this.getActiveContentRecord();
       if (activeContentRecord === undefined) {
