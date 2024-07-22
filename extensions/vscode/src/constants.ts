@@ -38,20 +38,6 @@ const credentialsContexts = {
   Keychain: "posit.publisher.credentials.tree.item.keychain",
 };
 
-const contentRecordsCommands = {
-  Edit: "posit.publisher.contentRecords.edit",
-  Rename: "posit.publisher.contentRecords.rename",
-  Forget: "posit.publisher.contentRecords.forget",
-  Visit: "posit.publisher.contentRecords.visit",
-  Refresh: "posit.publisher.contentRecords.refresh",
-} as const;
-
-const contentRecordsContexts = {
-  ContentRecord: "posit.publisher.contentRecords.tree.item.contentRecord",
-  PreContentRecord: "posit.publisher.contentRecords.tree.item.precontentRecord",
-  DeploymentError: "posit.publisher.contentRecords.tree.item.deploymentError",
-} as const;
-
 const filesCommands = {
   Refresh: "posit.publisher.files.refresh",
   Exclude: "posit.publisher.files.exclude",
@@ -103,7 +89,6 @@ export const LocalState = {
 export const Commands = {
   ...baseCommands,
   Credentials: credentialsCommands,
-  ContentRecords: contentRecordsCommands,
   Logs: logsCommands,
   Files: filesCommands,
   PythonPackages: pythonPackagesCommands,
@@ -114,7 +99,6 @@ export const Commands = {
 
 export const Contexts = {
   ...baseContexts,
-  ContentRecords: contentRecordsContexts,
   Credentials: credentialsContexts,
   HomeView: homeViewContexts,
 };
