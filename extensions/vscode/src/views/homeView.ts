@@ -1230,8 +1230,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let contentRecordList: (ContentRecord | PreContentRecord)[] = [];
     const getContentRecords = new Promise<void>(async (resolve, reject) => {
       try {
-        const response = await api.contentRecords.getAll({
-          dir,
+        const response = await api.contentRecords.getAll(dir, {
           recursive: false,
         });
         response.data.forEach((c) => {
@@ -1255,8 +1254,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let configMap = new Map<string, Configuration>();
     const getConfigurations = new Promise<void>(async (resolve, reject) => {
       try {
-        const response = await api.configurations.getAll({
-          dir,
+        const response = await api.configurations.getAll(dir, {
           entrypoint,
           recursive: false,
         });
