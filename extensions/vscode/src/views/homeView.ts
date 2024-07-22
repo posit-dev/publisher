@@ -786,16 +786,25 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.requestWebviewSaveSelection();
   }
 
-  private async showSelectOrCreateConfigForDeployment(
-    targetContentRecord?: ContentRecord | PreContentRecord,
-    entryPoint?: string,
-  ) {
-    if (!targetContentRecord) {
-      targetContentRecord = this.getActiveContentRecord();
-    }
+  private async showSelectOrCreateConfigForDeployment() {
+    const targetContentRecord = this.getActiveContentRecord();
     if (targetContentRecord === undefined) {
       console.error(
         "homeView::showSelectConfigForDeployment: No target deployment.",
+      );
+      return;
+    }
+    const targetConfiguration = this.getActiveConfig();
+    if (targetConfiguration === undefined) {
+      console.error(
+        "homeView::showSelectConfigForDeployment: No target configuration.",
+      );
+      return;
+    }
+    const entryPoint = targetConfiguration.configuration.entrypoint;
+    if (entryPoint === undefined) {
+      console.error(
+        "homeView::showSelectConfigForDeployment: No target entrypoint.",
       );
       return;
     }
@@ -814,12 +823,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       showProgress("Updating Config", Views.HomeView, apiRequest);
 
       await apiRequest;
-
-      // now select the new, updated or existing deployment
-      const deploymentSelector: DeploymentSelector = {
-        deploymentPath: targetContentRecord.deploymentPath,
-      };
-      this.propagateDeploymentSelection(deploymentSelector);
     }
   }
 
@@ -1217,7 +1220,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // With multiple, if a compatible one is already active, then do nothing.
     // Otherwise, prompt for selection between multiple compatible deployments
 
-    // console.log("'Deploy with this Entrypoint' button hit!", uri);
     const dir = relativeDir(uri);
     // If the file is outside the workspace, it cannot be an entrypoint
     if (dir === undefined) {
@@ -1283,11 +1285,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       resolve();
     });
 
-    const apisComplete = Promise.all([
-      // getConfigurationInspections,
-      getContentRecords,
-      getConfigurations,
-    ]);
+    const apisComplete = Promise.all([getContentRecords, getConfigurations]);
 
     showProgress(
       "Initializing::handleFileInitiatedDeployment",
@@ -1303,16 +1301,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     // Build up a list of compatible content records with this entrypoint
+    // Unable to do this within the API because pre-deployments do not have
+    // their entrypoint recorded.
     const compatibleContentRecords: (ContentRecord | PreContentRecord)[] = [];
     contentRecordList.forEach((c) => {
       if (configMap.get(c.configurationName)) {
         compatibleContentRecords.push(c);
       }
     });
-
-    // console.log(
-    //   `compatibleContentRecords: # found: ${compatibleContentRecords.length}`,
-    // );
 
     // if no deployments, create one
     if (!compatibleContentRecords.length) {
