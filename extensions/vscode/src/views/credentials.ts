@@ -98,7 +98,7 @@ export class CredentialsTreeDataProvider
    */
   public add = async (startingServerUrl?: string) => {
     const credential = await newCredential(
-      Views.Configurations,
+      Views.Credentials,
       startingServerUrl,
     );
     if (credential) {
