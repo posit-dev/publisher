@@ -10,5 +10,6 @@ import { QuickPickItem } from "vscode";
 export interface DeploymentQuickPick extends QuickPickItem {
   contentRecord: ContentRecord | PreContentRecordWithConfig;
   config?: Configuration;
+  credentialName?: string;
   lastMatch: boolean;
 }

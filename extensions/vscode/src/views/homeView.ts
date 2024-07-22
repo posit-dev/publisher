@@ -46,8 +46,12 @@ import { WebviewConduit } from "src/utils/webviewConduit";
 import { fileExists, relativeDir, isRelativePathRoot } from "src/utils/files";
 import { newDeployment } from "src/multiStepInputs/newDeployment";
 import { Utils as uriUtils } from "vscode-uri";
-
-import type { DeploymentSelector, HomeViewState } from "src/types/shared";
+import type {
+  DeploymentSelectionResult,
+  DeploymentSelector,
+  HomeViewState,
+  PublishProcessParams,
+} from "src/types/shared";
 import {
   DeployMsg,
   EditConfigurationMsg,
@@ -786,10 +790,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.requestWebviewSaveSelection();
   }
 
+  private getCredentialNameForContentRecord(
+    contentRecord: ContentRecord | PreContentRecord,
+  ): string | undefined {
+    const credential = this.credentials.find(
+      (credential) =>
+        normalizeURL(credential.url).toLowerCase() ===
+        normalizeURL(contentRecord.serverUrl).toLowerCase(),
+    );
+    return credential?.name;
+  }
+
   private async showSelectOrCreateConfigForDeployment(
     targetContentRecord?: ContentRecord | PreContentRecord,
     entryPoint?: string,
-  ) {
+  ): Promise<DeploymentSelectionResult | undefined> {
     if (!targetContentRecord) {
       targetContentRecord = this.getActiveContentRecord();
     }
@@ -797,7 +812,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       console.error(
         "homeView::showSelectConfigForDeployment: No target deployment.",
       );
-      return;
+      return undefined;
     }
     const config = await selectConfig(
       targetContentRecord,
@@ -820,14 +835,37 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         deploymentPath: targetContentRecord.deploymentPath,
       };
       this.propagateDeploymentSelection(deploymentSelector);
+
+      const credentialName =
+        this.getCredentialNameForContentRecord(targetContentRecord);
+
+      if (
+        !targetContentRecord.deploymentName ||
+        !credentialName ||
+        !config.configurationName ||
+        !targetContentRecord.projectDir
+      ) {
+        // display an error.
+        return undefined;
+      }
+      return {
+        selector: deploymentSelector,
+        publishParams: {
+          deploymentName: targetContentRecord.deploymentName,
+          credentialName: credentialName,
+          configurationName: config.configurationName,
+          projectDir: targetContentRecord.projectDir,
+        },
+      };
     }
+    return undefined;
   }
 
   public async showNewDeploymentMultiStep(
     viewId?: string,
     projectDir?: string,
     entryPoint?: string,
-  ): Promise<DeploymentSelector | undefined> {
+  ): Promise<DeploymentSelectionResult | undefined> {
     // We need the initial queries to finish, before we can
     // use them (contentRecords, credentials and configs)
     await this.initComplete;
@@ -882,7 +920,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (refreshCredentials) {
         useBus().trigger("refreshCredentials", undefined);
       }
-      return deploymentSelector;
+      return {
+        selector: deploymentSelector,
+        publishParams: {
+          deploymentName: deploymentObjects.contentRecord.deploymentName,
+          credentialName: deploymentObjects.credential.name,
+          configurationName: deploymentObjects.configuration.configurationName,
+          projectDir: deploymentObjects.contentRecord.projectDir,
+        },
+      };
     }
     return undefined;
   }
@@ -903,7 +949,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async showDeploymentQuickPick(
     contentRecordsSubset?: AllContentRecordTypes[],
     projectDir?: string,
-  ): Promise<DeploymentSelector | undefined> {
+  ): Promise<DeploymentSelectionResult | undefined> {
     // We need the initial queries to finish, before we can
     // use them (contentRecords, credentials and configs)
     await this.initComplete;
@@ -983,6 +1029,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           : new ThemeIcon("cloud-upload"),
         contentRecord,
         config,
+        credentialName: credential?.name,
         lastMatch,
       };
       // Should we not push deployments with no config or matching credentials?
@@ -1033,7 +1080,24 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       this.updateWebViewViewContentRecords(deploymentSelector);
       this.requestWebviewSaveSelection();
     }
-    return deploymentSelector;
+
+    if (
+      !deploymentSelector ||
+      !deployment ||
+      !deployment.detail ||
+      !deployment.credentialName
+    ) {
+      return;
+    }
+    return {
+      selector: deploymentSelector,
+      publishParams: {
+        deploymentName: deployment.contentRecord.deploymentName,
+        credentialName: deployment.credentialName,
+        configurationName: deployment.contentRecord.configurationName,
+        projectDir: deployment.contentRecord.projectDir,
+      },
+    };
   }
 
   public resolveWebviewView(webviewView: WebviewView) {
@@ -1209,6 +1273,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   };
 
+  public initiatePublish(target: PublishProcessParams) {
+    this.onDeployMsg({
+      kind: WebviewToHostMessageType.DEPLOY,
+      content: target,
+    });
+  }
+
   public async handleFileInitiatedDeployment(uri: Uri) {
     // Guide the user to create a new Deployment with that file as the entrypoint
     // if one doesn’t exist
@@ -1226,6 +1297,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const entrypoint = uriUtils.basename(uri);
 
     const api = await useApi();
+
+    // We need the initial queries to finish, before we can
+    // use them (contentRecords, credentials and configs)
+    await this.initComplete;
 
     // get all of the deployments for projectDir
     // get the configs which are filtered for the entrypoint in that projectDir
@@ -1275,7 +1350,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           "handleFileInitiatedDeployment, configurations.getAll",
           error,
         );
-        window.showInformationMessage(
+        window.showErrorMessage(
           `Unable to continue with API Error: ${summary}`,
         );
         return reject();
@@ -1310,10 +1385,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
     });
 
-    // console.log(
-    //   `compatibleContentRecords: # found: ${compatibleContentRecords.length}`,
-    // );
-
     // if no deployments, create one
     if (!compatibleContentRecords.length) {
       // call new deployment
@@ -1323,32 +1394,41 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         entrypoint,
       );
       if (selected) {
-        window.showInformationMessage(
-          `A new deployment has been created for ${entrypoint}. Make any changes needed and
-					then click 'Deploy Your Project'to publish it`,
-        );
+        // publish!
+        return this.initiatePublish(selected.publishParams);
       }
-      return;
+      return false;
     }
-    // only one deployment, just activate it
+    // only one deployment, just publish it
     if (compatibleContentRecords.length === 1) {
       const contentRecord = compatibleContentRecords[0];
       const deploymentSelector: DeploymentSelector = {
         deploymentPath: contentRecord.deploymentPath,
       };
-      this.propagateDeploymentSelection(deploymentSelector);
-      window.showInformationMessage(
-        `An existing deployment for ${entrypoint} has been selected. After making any changes 
-					needed to your deployment configuration and your project settings,
-					you can click 'Deploy Your Project'to publish it.`,
-      );
+      await this.propagateDeploymentSelection(deploymentSelector);
+      const credentialName =
+        this.getCredentialNameForContentRecord(contentRecord);
+      if (!credentialName) {
+        window.showErrorMessage(
+          `Error: Unable to Deploy. No credential found for server at ${contentRecord.serverUrl}`,
+        );
+        return;
+      }
 
-      return deploymentSelector;
+      const target: PublishProcessParams = {
+        deploymentName: contentRecord.saveName,
+        credentialName,
+        configurationName: contentRecord.configurationName,
+        projectDir: contentRecord.projectDir,
+      };
+      // publish!
+      return this.initiatePublish(target);
     }
     // if there are multiple compatible deployments, then make sure one of these isn't
     // already selected. If it is, do nothing, otherwise pick between the compatible ones.
     const currentContentRecord = this.getActiveContentRecord();
     if (
+      !currentContentRecord ||
       !compatibleContentRecords.find((c) => {
         return c.deploymentPath === currentContentRecord?.deploymentPath;
       })
@@ -1359,22 +1439,27 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         dir,
       );
       if (selected) {
-        window.showInformationMessage(
-          `An existing deployment for ${entrypoint} has been selected. After making any changes 
-					needed to your deployment configuration and your project settings,
-					you can click 'Deploy Your Project'to publish it.`,
-        );
+        // publish!
+        return this.initiatePublish(selected.publishParams);
       }
-      return selected;
+      return false;
     }
-    // compatible content record already active. No change needed.
-    window.showInformationMessage(
-      `An existing deployment for ${entrypoint} has been selected. You may change to a different
-			deployment for this file by clicking on the deployment selector. After making any changes 
-			needed to your deployment configuration and your project settings,
-			you can click 'Deploy Your Project'to publish it.`,
-    );
-    return undefined;
+    // compatible content record already active. Publish
+    const credentialName =
+      this.getCredentialNameForContentRecord(currentContentRecord);
+    if (!credentialName) {
+      window.showErrorMessage(
+        `Error: Unable to Deploy. No credential found for server at ${currentContentRecord.serverUrl}`,
+      );
+      return;
+    }
+    const target: PublishProcessParams = {
+      deploymentName: currentContentRecord.saveName,
+      credentialName,
+      configurationName: currentContentRecord.configurationName,
+      projectDir: currentContentRecord.projectDir,
+    };
+    return this.initiatePublish(target);
   }
 
   /**
