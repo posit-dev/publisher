@@ -258,7 +258,7 @@ const steps: Record<string, possibleSteps | undefined> = {
 };
 
 export async function newDeployment(
-  viewId?: string,
+  viewId: string,
 ): Promise<DeploymentObjects | undefined> {
   // ***************************************************************
   // API Calls and results
@@ -433,7 +433,7 @@ export async function newDeployment(
   ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
-  showProgress("Initializing::newDeployment", viewId, apisComplete);
+  showProgress("Initializing::newDeployment", apisComplete, viewId);
 
   // ***************************************************************
   // Order of all steps

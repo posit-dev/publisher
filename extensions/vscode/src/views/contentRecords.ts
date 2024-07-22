@@ -88,8 +88,8 @@ export class ContentRecordsTreeDataProvider
       });
       showProgress(
         "Initializing::contentRecords",
-        Views.ContentRecords,
         getAllPromise,
+        Views.ContentRecords,
       );
 
       const response = await getAllPromise;

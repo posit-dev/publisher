@@ -292,7 +292,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         action,
         activeConfig.projectDir,
       );
-      showProgress("Updating File List", Views.HomeView, apiRequest);
+      showProgress("Updating File List", apiRequest, Views.HomeView);
 
       await apiRequest;
     } catch (error: unknown) {
@@ -337,7 +337,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const apiRequest = api.contentRecords.getAll(".", {
         recursive: true,
       });
-      showProgress("Refreshing Deployments", Views.HomeView, apiRequest);
+      showProgress("Refreshing Deployments", apiRequest, Views.HomeView);
 
       const response = await apiRequest;
       const contentRecords = response.data;
@@ -363,7 +363,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const apiRequest = api.configurations.getAll(".", {
         recursive: true,
       });
-      showProgress("Refreshing Configurations", Views.HomeView, apiRequest);
+      showProgress("Refreshing Configurations", apiRequest, Views.HomeView);
 
       const response = await apiRequest;
       const configurations = response.data;
@@ -390,7 +390,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const apiRequest = api.credentials.list();
-      showProgress("Refreshing Credentials", Views.HomeView, apiRequest);
+      showProgress("Refreshing Credentials", apiRequest, Views.HomeView);
 
       const response = await apiRequest;
       this.credentials = response.data;
@@ -523,8 +523,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           );
           showProgress(
             "Refreshing Python Packages",
-            Views.HomeView,
             apiRequest,
+            Views.HomeView,
           );
 
           const response = await apiRequest;
@@ -584,7 +584,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             activeConfiguration.configurationName,
             activeConfiguration.projectDir,
           );
-          showProgress("Refreshing R Packages", Views.HomeView, apiRequest);
+          showProgress("Refreshing R Packages", apiRequest, Views.HomeView);
 
           const response = await apiRequest;
           packages = [];
@@ -684,8 +684,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       showProgress(
         "Refreshing Python Requirements File",
-        Views.HomeView,
         apiRequest,
+        Views.HomeView,
       );
 
       await apiRequest;
@@ -737,7 +737,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         activeConfiguration.projectDir,
         relPathPackageFile,
       );
-      showProgress("Creating R Requirements File", Views.HomeView, apiRequest);
+      showProgress("Creating R Requirements File", apiRequest, Views.HomeView);
 
       await apiRequest;
       await commands.executeCommand("vscode.open", fileUri);
@@ -781,7 +781,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         config.configurationName,
         activeDeployment.projectDir,
       );
-      showProgress("Updating Config", Views.HomeView, apiRequest);
+      showProgress("Updating Config", apiRequest, Views.HomeView);
 
       await apiRequest;
     }
@@ -811,14 +811,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         config.configurationName,
         activeDeployment.projectDir,
       );
-      showProgress("Updating Deployment", Views.HomeView, apiRequest);
+      showProgress("Updating Deployment", apiRequest, Views.HomeView);
 
       await apiRequest;
     }
   }
 
   public async showNewDeploymentMultiStep(
-    viewId?: string,
+    viewId: string,
   ): Promise<DeploymentSelector | undefined> {
     const deploymentObjects = await newDeployment(viewId);
     if (deploymentObjects) {
@@ -1162,7 +1162,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           activeConfig.configurationName,
           activeConfig.projectDir,
         );
-        showProgress("Refreshing Files", Views.HomeView, apiRequest);
+        showProgress("ReFreshing Files", apiRequest, Views.HomeView);
 
         const response = await apiRequest;
 
