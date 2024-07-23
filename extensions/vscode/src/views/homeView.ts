@@ -788,24 +788,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       return;
     }
-    const targetConfiguration = this.getActiveConfig();
-    if (targetConfiguration === undefined) {
-      console.error(
-        "homeView::showSelectConfigForDeployment: No target configuration.",
-      );
-      return;
-    }
-    const entryPoint = targetConfiguration.configuration.entrypoint;
-    if (entryPoint === undefined) {
-      console.error(
-        "homeView::showSelectConfigForDeployment: No target entrypoint.",
-      );
-      return;
-    }
     const config = await selectConfig(
       targetContentRecord,
       Views.HomeView,
-      entryPoint,
+      this.getActiveConfig(),
     );
     if (config) {
       const api = await useApi();
