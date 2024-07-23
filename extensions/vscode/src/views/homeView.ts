@@ -907,13 +907,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return;
       }
 
-      let config: Configuration | undefined;
+      let config: Configuration | ConfigurationError | undefined;
       if (contentRecord.configurationName) {
         config = this.configs.find(
           (config) =>
             config.configurationName === contentRecord.configurationName &&
             config.projectDir === contentRecord.projectDir,
         );
+        if (!config) {
+          config = this.configsInError.find(
+            (config) =>
+              config.configurationName === contentRecord.configurationName &&
+              config.projectDir === contentRecord.projectDir,
+          );
+        }
       }
 
       let credential = this.credentials.find(
