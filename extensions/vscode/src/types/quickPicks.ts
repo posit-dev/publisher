@@ -2,6 +2,7 @@
 
 import {
   Configuration,
+  ConfigurationError,
   ContentRecord,
   PreContentRecordWithConfig,
 } from "src/api";
@@ -9,6 +10,6 @@ import { QuickPickItem } from "vscode";
 
 export interface DeploymentQuickPick extends QuickPickItem {
   contentRecord: ContentRecord | PreContentRecordWithConfig;
-  config?: Configuration;
+  config?: Configuration | ConfigurationError;
   lastMatch: boolean;
 }
