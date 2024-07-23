@@ -79,8 +79,8 @@ export class ConfigurationsTreeDataProvider
       const getAllPromise = api.configurations.getAll(".", { recursive: true });
       showProgress(
         "Initializing::configurations",
-        Views.Configurations,
         getAllPromise,
+        Views.Configurations,
       );
 
       const response = await getAllPromise;
@@ -127,7 +127,7 @@ export class ConfigurationsTreeDataProvider
     this.treeDataChangeEventEmitter.fire();
   };
 
-  private add = async (viewId?: string) => {
+  private add = async (viewId: string) => {
     // We only create a new configuration through this
     // command. We do not associate it automatically with
     // the current deployment

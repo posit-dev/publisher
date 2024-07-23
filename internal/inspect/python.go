@@ -36,6 +36,8 @@ var _ PythonInspector = &defaultPythonInspector{}
 
 const PythonRequirementsFilename = "requirements.txt"
 
+var pythonVersionCache = make(map[string]string)
+
 func NewPythonInspector(base util.AbsolutePath, pythonPath util.Path, log logging.Logger) PythonInspector {
 	return &defaultPythonInspector{
 		executor:   executor.NewExecutor(),
@@ -63,7 +65,11 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 	}
 	defer util.Chdir(oldWD)
 
-	pythonVersion, err := i.getPythonVersion()
+	pythonExecutable, err := i.getPythonExecutable()
+	if err != nil {
+		return nil, err
+	}
+	pythonVersion, err := i.getPythonVersion(pythonExecutable)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +85,7 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 }
 
 func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
-	args := []string{"--version"}
-	_, _, err := i.executor.RunCommand(pythonExecutable, args, i.base, i.log)
+	_, err := i.getPythonVersion(pythonExecutable)
 	if err != nil {
 		return fmt.Errorf("could not run python executable '%s': %w", pythonExecutable, err)
 	}
@@ -130,10 +135,9 @@ func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
 	return "", err
 }
 
-func (i *defaultPythonInspector) getPythonVersion() (string, error) {
-	pythonExecutable, err := i.getPythonExecutable()
-	if err != nil {
-		return "", err
+func (i *defaultPythonInspector) getPythonVersion(pythonExecutable string) (string, error) {
+	if version, ok := pythonVersionCache[pythonExecutable]; ok {
+		return version, nil
 	}
 	i.log.Info("Getting Python version", "python", pythonExecutable)
 	args := []string{
@@ -147,6 +151,12 @@ func (i *defaultPythonInspector) getPythonVersion() (string, error) {
 	}
 	version := strings.TrimSpace(string(output))
 	i.log.Info("Detected Python", "version", version)
+
+	// Cache interpreter version result, unless it's a pyenv shim
+	// (where the real Python interpreter may vary from run to run)
+	if !strings.Contains(pythonExecutable, "shims") {
+		pythonVersionCache[pythonExecutable] = version
+	}
 	return version, nil
 }
 
