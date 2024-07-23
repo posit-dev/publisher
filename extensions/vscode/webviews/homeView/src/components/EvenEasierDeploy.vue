@@ -41,7 +41,11 @@
       </div>
 
       <div
-        v-if="home.selectedConfiguration?.configuration?.entrypoint"
+        v-if="
+          home.selectedConfiguration &&
+          !isConfigurationError(home.selectedConfiguration) &&
+          home.selectedConfiguration?.configuration?.entrypoint
+        "
         class="deployment-details-container"
       >
         <div class="deployment-details-row">
@@ -175,7 +179,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import { Configuration, isPreContentRecord } from "../../../../src/api";
+import {
+  Configuration,
+  isPreContentRecord,
+  isConfigurationError,
+} from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
 
@@ -292,9 +300,8 @@ const isConfigMissing = computed((): boolean => {
 
 const isConfigInError = computed((): boolean => {
   return Boolean(
-    home.selectedContentRecord &&
-      !home.selectedConfiguration &&
-      isConfigInErrorList(home.selectedContentRecord?.configurationName),
+    home.selectedConfiguration &&
+      isConfigurationError(home.selectedConfiguration),
   );
 });
 
