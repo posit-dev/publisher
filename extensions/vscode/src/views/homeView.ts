@@ -67,7 +67,7 @@ import { confirmOverwrite } from "src/dialogs";
 import { splitFilesOnInclusion } from "src/utils/files";
 import { DeploymentQuickPick } from "src/types/quickPicks";
 import { normalizeURL } from "src/utils/url";
-import { selectConfig } from "src/multiStepInputs/selectConfig";
+import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
@@ -799,7 +799,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       return undefined;
     }
-    const config = await selectConfig(
+
+    const config = await selectNewOrExistingConfig(
       targetContentRecord,
       Views.HomeView,
       this.getActiveConfig(),
