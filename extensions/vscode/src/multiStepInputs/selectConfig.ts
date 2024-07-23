@@ -13,12 +13,13 @@ import {
 
 import {
   Configuration,
+  ConfigurationError,
   ConfigurationInspectionResult,
   ContentRecord,
+  ContentType,
   PreContentRecord,
   contentTypeStrings,
   isConfigurationError,
-  isPreContentRecord,
   useApi,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
@@ -42,6 +43,8 @@ import { isRelativePathRoot } from "src/utils/files";
 export async function selectConfig(
   activeDeployment: ContentRecord | PreContentRecord,
   viewId: string,
+  activeConfiguration?: Configuration | ConfigurationError,
+  // entryPoint?: string,
 ): Promise<Configuration | undefined> {
   // ***************************************************************
   // API Calls and results
@@ -82,25 +85,36 @@ export async function selectConfig(
     return entryPointListItems.length > 1;
   };
 
+  // what are we going to filter on?
+  // For this multiStepper, we want content type NOT entrypoint
+  let effectiveContentTypeFilter = activeDeployment.type;
+  if (effectiveContentTypeFilter === contentTypeStrings[ContentType.UNKNOWN]) {
+    // if we don't have it within the activeDeployment type
+    // then see if we can get it from active configuration file
+    if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
+      effectiveContentTypeFilter = activeConfiguration.configuration.type;
+    }
+  }
+
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
+      // get all configurations
       const response = await api.configurations.getAll(
         activeDeployment.projectDir,
       );
       let rawConfigs = response.data;
+      // remove the errors
+      configurations = configurations.filter(
+        (c): c is Configuration => !isConfigurationError(c),
+      );
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment
       // or if the deployment file has no content type assigned yet.
-      if (!isPreContentRecord(activeDeployment)) {
-        configurations = filterConfigurationsToValidAndType(
-          rawConfigs,
-          activeDeployment.type,
-        );
-      } else {
-        configurations = rawConfigs.filter(
-          (c): c is Configuration => !isConfigurationError(c),
-        );
-      }
+      configurations = filterConfigurationsToValidAndType(
+        rawConfigs,
+        effectiveContentTypeFilter, // possibly UNKNOWN - in which case, no filtering will be done!
+      );
+
       configFileListItems = [];
 
       configurations.forEach((config) => {
@@ -146,7 +160,7 @@ export async function selectConfig(
         );
         inspectionResults = filterInspectionResultsToType(
           inspectResponse.data,
-          activeDeployment.type,
+          effectiveContentTypeFilter,
         );
         inspectionResults.forEach((result, i) => {
           const config = result.configuration;

@@ -33,6 +33,7 @@ import {
   isPreContentRecord,
   isPreContentRecordWithConfig,
   useApi,
+  AllContentRecordTypes,
 } from "src/api";
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
@@ -42,8 +43,9 @@ import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { WebviewConduit } from "src/utils/webviewConduit";
-import { fileExists, isRelativePathRoot } from "src/utils/files";
+import { fileExists, relativeDir, isRelativePathRoot } from "src/utils/files";
 import { newDeployment } from "src/multiStepInputs/newDeployment";
+import { Utils as uriUtils } from "vscode-uri";
 
 import type { DeploymentSelector, HomeViewState } from "src/types/shared";
 import {
@@ -90,6 +92,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private webviewView?: WebviewView;
   private extensionUri: Uri;
   private webviewConduit: WebviewConduit;
+  private initCompleteResolver: (() => void) | undefined = undefined;
+
+  // Promise that methods can wait on, which will be resolved when
+  // the initial queries finish. Then they can use our internal collections of
+  // contentRecords, credentials and configs within this class
+  private initComplete: Promise<void> = new Promise((resolve) => {
+    this.initCompleteResolver = resolve;
+  });
 
   private configWatchers: ConfigWatcherManager | undefined;
 
@@ -174,7 +184,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.NEW_CONFIGURATION:
         return await this.onNewConfigurationMsg();
       case WebviewToHostMessageType.SHOW_SELECT_CONFIGURATION:
-        return await this.showSelectConfigForDeployment();
+        return await this.showSelectOrCreateConfigForDeployment();
       case WebviewToHostMessageType.NAVIGATE:
         return await this.onNavigateMsg(msg);
       case WebviewToHostMessageType.SAVE_SELECTION_STATE:
@@ -249,6 +259,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE,
     });
+
+    // signal our initialization has completed
+    if (this.initCompleteResolver) {
+      this.initCompleteResolver();
+    }
   }
 
   private setInitializationContext(context: HomeViewInitialized) {
@@ -765,21 +780,25 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.requestWebviewSaveSelection();
   }
 
-  private async showSelectConfigForDeployment() {
-    const activeDeployment = this.getActiveContentRecord();
-    if (activeDeployment === undefined) {
+  private async showSelectOrCreateConfigForDeployment() {
+    const targetContentRecord = this.getActiveContentRecord();
+    if (targetContentRecord === undefined) {
       console.error(
-        "homeView::showSelectConfigForDeployment: No active deployment.",
+        "homeView::showSelectConfigForDeployment: No target deployment.",
       );
       return;
     }
-    const config = await selectConfig(activeDeployment, Views.HomeView);
+    const config = await selectConfig(
+      targetContentRecord,
+      Views.HomeView,
+      this.getActiveConfig(),
+    );
     if (config) {
       const api = await useApi();
       const apiRequest = api.contentRecords.patch(
-        activeDeployment.deploymentName,
+        targetContentRecord.deploymentName,
         config.configurationName,
-        activeDeployment.projectDir,
+        targetContentRecord.projectDir,
       );
       showProgress("Updating Config", apiRequest, Views.HomeView);
 
@@ -787,40 +806,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private async createConfigForDeployment() {
-    const activeDeployment = this.getActiveContentRecord();
-    if (activeDeployment === undefined) {
-      console.error(
-        "homeView::createConfigForDestination: No active deployment.",
-      );
-      return;
-    }
-    // selectConfig handles create as well
-    const config = await selectConfig(activeDeployment, Views.HomeView);
-    if (config) {
-      const activeContentRecord = this.getActiveContentRecord();
-      if (activeContentRecord === undefined) {
-        console.error(
-          "homeView::showSelectConfigForDeployment: No active deployment.",
-        );
-        return;
-      }
-      const api = await useApi();
-      const apiRequest = api.contentRecords.patch(
-        activeContentRecord.deploymentName,
-        config.configurationName,
-        activeDeployment.projectDir,
-      );
-      showProgress("Updating Deployment", apiRequest, Views.HomeView);
-
-      await apiRequest;
-    }
-  }
-
   public async showNewDeploymentMultiStep(
     viewId: string,
+    projectDir?: string,
+    entryPoint?: string,
   ): Promise<DeploymentSelector | undefined> {
-    const deploymentObjects = await newDeployment(viewId);
+    // We need the initial queries to finish, before we can
+    // use them (contentRecords, credentials and configs)
+    await this.initComplete;
+
+    const deploymentObjects = await newDeployment(
+      viewId,
+      projectDir,
+      entryPoint,
+    );
     if (deploymentObjects) {
       // add out new objects into our collections possibly ahead (we don't know) of
       // the file refresh activity (for contentRecord and config)
@@ -886,17 +885,27 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return commands.executeCommand(Commands.Logs.Focus);
   }
 
-  private async showDeploymentQuickPick(): Promise<
-    DeploymentSelector | undefined
-  > {
+  private async showDeploymentQuickPick(
+    contentRecordsSubset?: AllContentRecordTypes[],
+    projectDir?: string,
+  ): Promise<DeploymentSelector | undefined> {
+    // We need the initial queries to finish, before we can
+    // use them (contentRecords, credentials and configs)
+    await this.initComplete;
+
     // Create quick pick list from current contentRecords, credentials and configs
     const deployments: DeploymentQuickPick[] = [];
     const lastContentRecordName = this.getActiveContentRecord()?.saveName;
-    const lastContentRecordProjectDir =
-      this.getActiveContentRecord()?.projectDir;
+    const lastContentRecordProjectDir = projectDir
+      ? projectDir
+      : this.getActiveContentRecord()?.projectDir;
     const lastConfigName = this.getActiveConfig()?.configurationName;
 
-    this.contentRecords.forEach((contentRecord) => {
+    const includedContentRecords = contentRecordsSubset
+      ? contentRecordsSubset
+      : this.contentRecords;
+
+    includedContentRecords.forEach((contentRecord) => {
       if (
         isContentRecordError(contentRecord) ||
         (isPreContentRecord(contentRecord) &&
@@ -1190,6 +1199,165 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   };
 
+  public async handleFileInitiatedDeployment(uri: Uri) {
+    // Guide the user to create a new Deployment with that file as the entrypoint
+    // if one doesn’t exist
+    // Select the Deployment with an active configuration for that entrypoint if there
+    // is only one
+    // With multiple, if a compatible one is already active, then do nothing.
+    // Otherwise, prompt for selection between multiple compatible deployments
+
+    const dir = relativeDir(uri);
+    // If the file is outside the workspace, it cannot be an entrypoint
+    if (dir === undefined) {
+      return false;
+    }
+    const entrypoint = uriUtils.basename(uri);
+
+    const api = await useApi();
+
+    // get all of the deployments for projectDir
+    // get the configs which are filtered for the entrypoint in that projectDir
+    // determine a list of deployments that use those filtered configs
+
+    let contentRecordList: (ContentRecord | PreContentRecord)[] = [];
+    const getContentRecords = new Promise<void>(async (resolve, reject) => {
+      try {
+        const response = await api.contentRecords.getAll(dir, {
+          recursive: false,
+        });
+        response.data.forEach((c) => {
+          if (!isContentRecordError(c)) {
+            contentRecordList.push(c);
+          }
+        });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "handleFileInitiatedDeployment, contentRecords.getAll",
+          error,
+        );
+        window.showInformationMessage(
+          `Unable to continue due to deployment error. ${summary}`,
+        );
+        return reject();
+      }
+      return resolve();
+    });
+
+    let configMap = new Map<string, Configuration>();
+    const getConfigurations = new Promise<void>(async (resolve, reject) => {
+      try {
+        const response = await api.configurations.getAll(dir, {
+          entrypoint,
+          recursive: false,
+        });
+        let rawConfigs = response.data;
+        rawConfigs.forEach((c) => {
+          if (!isConfigurationError(c)) {
+            configMap.set(c.configurationName, c);
+          }
+        });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "handleFileInitiatedDeployment, configurations.getAll",
+          error,
+        );
+        window.showInformationMessage(
+          `Unable to continue with API Error: ${summary}`,
+        );
+        return reject();
+      }
+      resolve();
+    });
+
+    const apisComplete = Promise.all([getContentRecords, getConfigurations]);
+
+    showProgress(
+      "Initializing::handleFileInitiatedDeployment",
+      apisComplete,
+      Views.HomeView,
+    );
+
+    try {
+      await apisComplete;
+    } catch {
+      // errors have already been displayed by the underlying promises..
+      return undefined;
+    }
+
+    // Build up a list of compatible content records with this entrypoint
+    // Unable to do this within the API because pre-deployments do not have
+    // their entrypoint recorded.
+    const compatibleContentRecords: (ContentRecord | PreContentRecord)[] = [];
+    contentRecordList.forEach((c) => {
+      if (configMap.get(c.configurationName)) {
+        compatibleContentRecords.push(c);
+      }
+    });
+
+    // if no deployments, create one
+    if (!compatibleContentRecords.length) {
+      // call new deployment
+      const selected = await this.showNewDeploymentMultiStep(
+        Views.HomeView,
+        dir,
+        entrypoint,
+      );
+      if (selected) {
+        window.showInformationMessage(
+          `A new deployment has been created for ${entrypoint}. Make any changes needed and
+					then click 'Deploy Your Project'to publish it`,
+        );
+      }
+      return;
+    }
+    // only one deployment, just activate it
+    if (compatibleContentRecords.length === 1) {
+      const contentRecord = compatibleContentRecords[0];
+      const deploymentSelector: DeploymentSelector = {
+        deploymentPath: contentRecord.deploymentPath,
+      };
+      this.propagateDeploymentSelection(deploymentSelector);
+      window.showInformationMessage(
+        `An existing deployment for ${entrypoint} has been selected. After making any changes 
+					needed to your deployment configuration and your project settings,
+					you can click 'Deploy Your Project'to publish it.`,
+      );
+
+      return deploymentSelector;
+    }
+    // if there are multiple compatible deployments, then make sure one of these isn't
+    // already selected. If it is, do nothing, otherwise pick between the compatible ones.
+    const currentContentRecord = this.getActiveContentRecord();
+    if (
+      !compatibleContentRecords.find((c) => {
+        return c.deploymentPath === currentContentRecord?.deploymentPath;
+      })
+    ) {
+      // none of the compatible ones are selected
+      const selected = await this.showDeploymentQuickPick(
+        compatibleContentRecords,
+        dir,
+      );
+      if (selected) {
+        window.showInformationMessage(
+          `An existing deployment for ${entrypoint} has been selected. After making any changes 
+					needed to your deployment configuration and your project settings,
+					you can click 'Deploy Your Project'to publish it.`,
+        );
+      }
+      return selected;
+    }
+    // compatible content record already active. No change needed.
+    window.showInformationMessage(
+      `An existing deployment for ${entrypoint} has been selected. You may change to a different
+			deployment for this file by clicking on the deployment selector. After making any changes 
+			needed to your deployment configuration and your project settings,
+			you can click 'Deploy Your Project'to publish it.`,
+    );
+    return undefined;
+  }
+
   /**
    * Cleans up and disposes of webview resources when view is disposed
    */
@@ -1234,12 +1402,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       ),
       commands.registerCommand(
         Commands.HomeView.ShowSelectConfigForDeployment,
-        this.showSelectConfigForDeployment,
+        this.showSelectOrCreateConfigForDeployment,
         this,
       ),
       commands.registerCommand(
         Commands.HomeView.CreateConfigForDeployment,
-        this.createConfigForDeployment,
+        this.showSelectOrCreateConfigForDeployment,
         this,
       ),
       commands.registerCommand(
