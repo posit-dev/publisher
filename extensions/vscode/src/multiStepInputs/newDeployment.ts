@@ -259,6 +259,8 @@ const steps: Record<string, possibleSteps | undefined> = {
 
 export async function newDeployment(
   viewId: string,
+  projectDir?: string,
+  entryPoint?: string,
 ): Promise<DeploymentObjects | undefined> {
   // ***************************************************************
   // API Calls and results
@@ -361,9 +363,14 @@ export async function newDeployment(
     async (resolve, reject) => {
       try {
         const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(".", python, {
-          recursive: true,
-        });
+        const inspectResponse = await api.configurations.inspect(
+          projectDir ? projectDir : ".",
+          python,
+          {
+            entrypoint: entryPoint,
+            recursive: projectDir ? false : true,
+          },
+        );
         inspectionResults = inspectResponse.data;
         inspectionResults.forEach((result, i) => {
           const config = result.configuration;
@@ -400,9 +407,12 @@ export async function newDeployment(
 
   const getContentRecords = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.contentRecords.getAll(".", {
-        recursive: true,
-      });
+      const response = await api.contentRecords.getAll(
+        projectDir ? projectDir : ".",
+        {
+          recursive: true,
+        },
+      );
       const contentRecordList = response.data;
       // Note.. we want all of the contentRecord filenames regardless if they are valid or not.
       contentRecordList.forEach((contentRecord) => {
@@ -957,7 +967,7 @@ export async function newDeployment(
     throw new Error("NewDeployment Unexpected type guard failure @4");
   }
 
-  // Create the PrecontentRecord File
+  // Create the PreContentRecord File
   try {
     let existingNames = contentRecordNames.get(
       selectedInspectionResult.projectDir,
@@ -965,11 +975,12 @@ export async function newDeployment(
     if (!existingNames) {
       existingNames = [];
     }
+    const contentRecordName = untitledContentRecordName(existingNames);
     const response = await api.contentRecords.createNew(
       selectedInspectionResult.projectDir,
       finalCredentialName,
       configName,
-      untitledContentRecordName(existingNames),
+      contentRecordName,
     );
     newContentRecord = response.data;
   } catch (error: unknown) {

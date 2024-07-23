@@ -1,15 +1,24 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Configuration, ContentRecord, PreContentRecord } from "../api";
+import {
+  Configuration,
+  ConfigurationError,
+  ContentRecord,
+  isConfigurationError,
+  PreContentRecord,
+} from "../api";
 
 export const calculateTitle = (
   contentRecord: ContentRecord | PreContentRecord,
-  config?: Configuration,
+  config?: Configuration | ConfigurationError,
 ): {
   title: string;
   problem: boolean;
 } => {
-  let title = config?.configuration.title;
+  let title =
+    config && isConfigurationError(config)
+      ? undefined
+      : config?.configuration.title;
   if (title) {
     return {
       title,
@@ -31,6 +40,14 @@ export const calculateTitle = (
       problem: true,
     };
   }
+
+  if (isConfigurationError(config)) {
+    return {
+      title: `Unknown Title • Error in ${config.configurationName}`,
+      problem: true,
+    };
+  }
+
   let configName = config.configurationName;
   if (!configName) {
     // we're guaranteed to have a value because of the check above
