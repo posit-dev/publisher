@@ -28,19 +28,6 @@ const logsCommands = {
   ToggleVisibility: "posit.publisher.logs.toggleVisibility",
 } as const;
 
-const configurationsCommands = {
-  Refresh: "posit.publisher.configurations.refresh",
-  New: "posit.publisher.configurations.add",
-  Clone: "posit.publisher.configurations.clone",
-  Edit: "posit.publisher.configurations.edit",
-  Rename: "posit.publisher.configurations.rename",
-  Delete: "posit.publisher.configurations.delete",
-} as const;
-
-const configurationsContexts = {
-  TreeItem: "posit.publisher.configurations.tree.item",
-} as const;
-
 const credentialsCommands = {
   Add: "posit.publisher.credentials.add",
   Delete: "posit.publisher.credentials.delete",
@@ -50,20 +37,6 @@ const credentialsCommands = {
 const credentialsContexts = {
   Keychain: "posit.publisher.credentials.tree.item.keychain",
 };
-
-const contentRecordsCommands = {
-  Edit: "posit.publisher.contentRecords.edit",
-  Rename: "posit.publisher.contentRecords.rename",
-  Forget: "posit.publisher.contentRecords.forget",
-  Visit: "posit.publisher.contentRecords.visit",
-  Refresh: "posit.publisher.contentRecords.refresh",
-} as const;
-
-const contentRecordsContexts = {
-  ContentRecord: "posit.publisher.contentRecords.tree.item.contentRecord",
-  PreContentRecord: "posit.publisher.contentRecords.tree.item.precontentRecord",
-  DeploymentError: "posit.publisher.contentRecords.tree.item.deploymentError",
-} as const;
 
 const filesCommands = {
   Refresh: "posit.publisher.files.refresh",
@@ -115,9 +88,7 @@ export const LocalState = {
 
 export const Commands = {
   ...baseCommands,
-  Configurations: configurationsCommands,
   Credentials: credentialsCommands,
-  ContentRecords: contentRecordsCommands,
   Logs: logsCommands,
   Files: filesCommands,
   PythonPackages: pythonPackagesCommands,
@@ -128,8 +99,6 @@ export const Commands = {
 
 export const Contexts = {
   ...baseContexts,
-  Configurations: configurationsContexts,
-  ContentRecords: contentRecordsContexts,
   Credentials: credentialsContexts,
   HomeView: homeViewContexts,
 };
@@ -137,7 +106,6 @@ export const Contexts = {
 export const enum Views {
   Project = "posit.publisher.project",
   HomeView = "posit.publisher.homeView",
-  Configurations = "posit.publisher.configurations",
   Credentials = "posit.publisher.credentials",
   ContentRecords = "posit.publisher.contentRecords",
   HelpAndFeedback = "posit.publisher.helpAndFeedback",

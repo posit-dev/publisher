@@ -41,42 +41,6 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.configurations.refresh",
-        "title": "Refresh Configurations",
-        "icon": "$(refresh)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.add",
-        "title": "New Configuration",
-        "icon": "$(add)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.clone",
-        "title": "Clone",
-        "icon": "$(files)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.edit",
-        "title": "Edit",
-        "icon": "$(edit)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.rename",
-        "title": "Rename",
-        "icon": "$(symbol-key)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.delete",
-        "title": "Delete",
-        "icon": "$(trash)",
-        "category": "Posit Publisher"
-      },
-      {
         "command": "posit.publisher.credentials.add",
         "title": "New Credential",
         "icon": "$(add)",
@@ -91,36 +55,6 @@
       {
         "command": "posit.publisher.credentials.refresh",
         "title": "Refresh Credentials",
-        "icon": "$(refresh)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.contentRecords.edit",
-        "title": "Edit",
-        "icon": "$(edit)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.contentRecords.rename",
-        "title": "Rename",
-        "icon": "$(symbol-key)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.contentRecords.forget",
-        "title": "Forget Deployment Locally",
-        "icon": "$(close-all)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.contentRecords.visit",
-        "title": "View Deployment in Connect",
-        "icon": "$(link-external)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.contentRecords.refresh",
-        "title": "Refresh Deployments",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
@@ -272,21 +206,6 @@
       ],
       "view/title": [
         {
-          "command": "posit.publisher.configurations.add",
-          "when": "view == posit.publisher.configurations",
-          "group": "navigation@1"
-        },
-        {
-          "command": "posit.publisher.configurations.refresh",
-          "when": "view == posit.publisher.configurations",
-          "group": "navigation@2"
-        },
-        {
-          "command": "posit.publisher.contentRecords.refresh",
-          "when": "view == posit.publisher.contentRecords",
-          "group": "navigation@2"
-        },
-        {
           "command": "posit.publisher.files.refresh",
           "when": "view == posit.publisher.files",
           "group": "navigation@2"
@@ -324,35 +243,8 @@
       ],
       "view/item/context": [
         {
-          "command": "posit.publisher.configurations.clone",
-          "when": "view == posit.publisher.configurations"
-        },
-        {
-          "command": "posit.publisher.configurations.rename",
-          "when": "view == posit.publisher.configurations"
-        },
-        {
-          "command": "posit.publisher.configurations.delete",
-          "when": "view == posit.publisher.configurations"
-        },
-        {
           "command": "posit.publisher.credentials.delete",
           "when": "view == posit.publisher.credentials && viewItem == posit.publisher.credentials.tree.item.keychain"
-        },
-        {
-          "command": "posit.publisher.contentRecords.rename",
-          "when": "view == posit.publisher.contentRecords",
-          "group": "menu@1"
-        },
-        {
-          "command": "posit.publisher.contentRecords.forget",
-          "when": "view == posit.publisher.contentRecords",
-          "group": "menu@2"
-        },
-        {
-          "command": "posit.publisher.contentRecords.visit",
-          "when": "viewItem == posit.publisher.contentRecords.tree.item.contentRecord",
-          "group": "inline"
         }
       ],
       "commandPalette": [
@@ -361,51 +253,11 @@
           "when": "workbenchState == folder  && posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.configurations.refresh",
-          "when": "posit.publish.state == 'initialized'"
-        },
-        {
-          "command": "posit.publisher.configurations.add",
-          "when": "posit.publish.state == 'initialized'"
-        },
-        {
-          "command": "posit.publisher.configurations.clone",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.configurations.edit",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.configurations.rename",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.configurations.delete",
-          "when": "false"
-        },
-        {
           "command": "posit.publisher.credentials.delete",
           "when": "false"
         },
         {
           "command": "posit.publisher.credentials.refresh",
-          "when": "posit.publish.state == 'initialized'"
-        },
-        {
-          "command": "posit.publisher.contentRecords.edit",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.contentRecords.rename",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.contentRecords.forget",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.contentRecords.refresh",
           "when": "posit.publish.state == 'initialized'"
         },
         {
@@ -539,29 +391,11 @@
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
         },
         {
-          "id": "posit.publisher.configurations",
-          "name": "Configurations",
-          "contextualTitle": "Publisher",
-          "icon": "$(gear)",
-          "visibility": "hidden",
-          "initialSize": 0,
-          "when": "workbenchState == folder && posit.publish.state == 'initialized'"
-        },
-        {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
           "contextualTitle": "Publisher",
           "icon": "$(key)",
           "visibility": "collapsed",
-          "initialSize": 0,
-          "when": "workbenchState == folder && posit.publish.state == 'initialized'"
-        },
-        {
-          "id": "posit.publisher.contentRecords",
-          "name": "Deployments",
-          "contextualTitle": "Publisher",
-          "icon": "$(cloud-upload)",
-          "visibility": "hidden",
           "initialSize": 0,
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
         },
