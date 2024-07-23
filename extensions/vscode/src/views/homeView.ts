@@ -814,7 +814,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         config.configurationName,
         targetContentRecord.projectDir,
       );
-      showProgress("Updating Config", Views.HomeView, apiRequest);
+      showProgress("Updating Config", apiRequest, Views.HomeView);
 
       await apiRequest;
     }
@@ -1281,8 +1281,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     showProgress(
       "Initializing::handleFileInitiatedDeployment",
-      Views.HomeView,
       apisComplete,
+      Views.HomeView,
     );
 
     try {
