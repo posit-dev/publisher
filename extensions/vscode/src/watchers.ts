@@ -5,6 +5,7 @@ import {
   RelativePattern,
   FileSystemWatcher,
   workspace,
+  Uri,
 } from "vscode";
 
 import { Configuration } from "src/api";
@@ -101,14 +102,14 @@ export class ConfigWatcherManager implements Disposable {
 
     this.pythonPackageFile = workspace.createFileSystemWatcher(
       new RelativePattern(
-        root,
+        Uri.joinPath(root.uri, cfg.projectDir),
         cfg.configuration.python?.packageFile || DEFAULT_PYTHON_PACKAGE_FILE,
       ),
     );
 
     this.rPackageFile = workspace.createFileSystemWatcher(
       new RelativePattern(
-        root,
+        Uri.joinPath(root.uri, cfg.projectDir),
         cfg.configuration.r?.packageFile || DEFAULT_R_PACKAGE_FILE,
       ),
     );
