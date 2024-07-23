@@ -5,8 +5,6 @@ package inspect
 import (
 	"errors"
 	"os"
-	"os/exec"
-	"strings"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/executor/executortest"
@@ -34,6 +32,8 @@ func (s *PythonSuite) SetupTest() {
 	s.cwd = cwd
 	err = cwd.MkdirAll(0700)
 	s.NoError(err)
+
+	pythonVersionCache = make(map[string]string)
 }
 
 func (s *PythonSuite) TestNewPythonInspector() {
@@ -56,7 +56,7 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutable() {
 	executor := executortest.NewMockExecutor()
 	executor.On("RunCommand", pythonPath.String(), mock.Anything, mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil, nil)
 	inspector.executor = executor
-	version, err := inspector.getPythonVersion()
+	version, err := inspector.getPythonVersion(pythonPath.String())
 	s.NoError(err)
 	s.Equal("3.10.4", version)
 }
@@ -73,61 +73,10 @@ func (s *PythonSuite) TestGetPythonVersionFromExecutableErr() {
 	testError := errors.New("test error from RunCommand")
 	executor.On("RunCommand", pythonPath.String(), mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, testError)
 	inspector.executor = executor
-	version, err := inspector.getPythonVersion()
+	version, err := inspector.getPythonVersion(pythonPath.String())
 	s.NotNil(err)
 	s.ErrorIs(err, testError)
 	s.Equal("", version)
-}
-
-func (s *PythonSuite) TestGetPythonVersionFromPATH() {
-	log := logging.New()
-	i := NewPythonInspector(s.cwd, util.Path{}, log)
-	inspector := i.(*defaultPythonInspector)
-
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil, nil)
-	inspector.executor = executor
-	version, err := inspector.getPythonVersion()
-	s.NoError(err)
-	s.Equal("3.10.4", version)
-	executor.AssertExpectations(s.T())
-}
-
-func (s *PythonSuite) TestGetPythonVersionFromSpecifiedNameOnPATH() {
-	log := logging.New()
-	i := NewPythonInspector(s.cwd, util.NewPath("py", nil), log)
-	inspector := i.(*defaultPythonInspector)
-
-	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "/some/python3", mock.Anything, mock.Anything, mock.Anything).Return([]byte("3.10.4"), nil, nil)
-	inspector.executor = executor
-
-	pathLooker := util.NewMockPathLooker()
-	pathLooker.On("LookPath", "py").Return("", os.ErrNotExist)
-	pathLooker.On("LookPath", "python3").Return("/some/python3", nil)
-	inspector.pathLooker = pathLooker
-
-	version, err := inspector.getPythonVersion()
-	s.NoError(err)
-	s.Equal("3.10.4", version)
-	executor.AssertExpectations(s.T())
-}
-
-func (s *PythonSuite) TestGetPythonVersionFromRealDefaultPython() {
-	// This test can only run if python3 or python is on the PATH.
-	_, err := exec.LookPath("python3")
-	if err != nil {
-		_, err := exec.LookPath("python")
-		if err != nil {
-			s.T().Skip("This test requires python or python3 to be available on PATH")
-		}
-	}
-	log := logging.New()
-	i := NewPythonInspector(s.cwd, util.Path{}, log)
-	inspector := i.(*defaultPythonInspector)
-	version, err := inspector.getPythonVersion()
-	s.NoError(err)
-	s.True(strings.HasPrefix(version, "3."))
 }
 
 func (s *PythonSuite) TestGetPythonExecutableFallbackPython() {
@@ -135,7 +84,7 @@ func (s *PythonSuite) TestGetPythonExecutableFallbackPython() {
 	// python exists and is runnable
 	log := logging.New()
 	executor := executortest.NewMockExecutor()
-	executor.On("RunCommand", "/some/python", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, nil)
+	executor.On("RunCommand", "/some/python", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil)
 	i := &defaultPythonInspector{
 		executor: executor,
 		log:      log,
@@ -156,8 +105,8 @@ func (s *PythonSuite) TestGetPythonExecutablePython3NotRunnable() {
 	log := logging.New()
 	executor := executortest.NewMockExecutor()
 	testError := errors.New("exit status 9009")
-	executor.On("RunCommand", "/some/python3", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, testError)
-	executor.On("RunCommand", "/some/python", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, nil)
+	executor.On("RunCommand", "/some/python3", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, testError)
+	executor.On("RunCommand", "/some/python", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil)
 
 	i := &defaultPythonInspector{
 		executor: executor,
@@ -179,8 +128,8 @@ func (s *PythonSuite) TestGetPythonExecutableNoRunnablePython() {
 	log := logging.New()
 	executor := executortest.NewMockExecutor()
 	testError := errors.New("exit status 9009")
-	executor.On("RunCommand", "/some/python3", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, testError)
-	executor.On("RunCommand", "/some/python", []string{"--version"}, mock.Anything, mock.Anything).Return(nil, nil, testError)
+	executor.On("RunCommand", "/some/python3", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, testError)
+	executor.On("RunCommand", "/some/python", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, testError)
 
 	i := &defaultPythonInspector{
 		executor: executor,

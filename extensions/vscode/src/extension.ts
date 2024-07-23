@@ -89,7 +89,7 @@ export async function activate(context: ExtensionContext) {
   homeViewProvider.register(watchers);
 
   context.subscriptions.push(
-    commands.registerCommand(Commands.InitProject, async (viewId?: string) => {
+    commands.registerCommand(Commands.InitProject, async (viewId: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
       await homeViewProvider.showNewDeploymentMultiStep(viewId);
       setInitializationInProgressContext(InitializationInProgress.false);
