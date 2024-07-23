@@ -805,24 +805,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       return undefined;
     }
-    const targetConfiguration = this.getActiveConfig();
-    if (targetConfiguration === undefined) {
-      console.error(
-        "homeView::showSelectConfigForDeployment: No target configuration.",
-      );
-      return;
-    }
-    const entryPoint = targetConfiguration.configuration.entrypoint;
-    if (entryPoint === undefined) {
-      console.error(
-        "homeView::showSelectConfigForDeployment: No target entrypoint.",
-      );
-      return;
-    }
     const config = await selectConfig(
       targetContentRecord,
       Views.HomeView,
-      entryPoint,
+      this.getActiveConfig(),
     );
     if (config) {
       const api = await useApi();
@@ -984,13 +970,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return;
       }
 
-      let config: Configuration | undefined;
+      let config: Configuration | ConfigurationError | undefined;
       if (contentRecord.configurationName) {
         config = this.configs.find(
           (config) =>
             config.configurationName === contentRecord.configurationName &&
             config.projectDir === contentRecord.projectDir,
         );
+        if (!config) {
+          config = this.configsInError.find(
+            (config) =>
+              config.configurationName === contentRecord.configurationName &&
+              config.projectDir === contentRecord.projectDir,
+          );
+        }
       }
 
       let credential = this.credentials.find(

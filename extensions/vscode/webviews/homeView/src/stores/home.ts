@@ -28,17 +28,28 @@ export const useHomeStore = defineStore("home", () => {
   // Always use the content record as the source of truth for the
   // configuration. Can be undefined if a Configuration is not specified or
   // found.
-  const selectedConfiguration = computed((): Configuration | undefined => {
-    if (!selectedContentRecord.value) {
-      return undefined;
-    }
-    const { configurationName, projectDir } = selectedContentRecord.value;
-    return configurations.value.find(
-      (c) =>
-        c.configurationName === configurationName &&
-        c.projectDir === projectDir,
-    );
-  });
+  const selectedConfiguration = computed(
+    (): Configuration | ConfigurationError | undefined => {
+      if (!selectedContentRecord.value) {
+        return undefined;
+      }
+      const { configurationName, projectDir } = selectedContentRecord.value;
+      let result;
+      result = configurations.value.find(
+        (c) =>
+          c.configurationName === configurationName &&
+          c.projectDir === projectDir,
+      );
+      if (!result) {
+        result = configurationsInError.value.find(
+          (c) =>
+            c.configurationName === configurationName &&
+            c.projectDir === projectDir,
+        );
+      }
+      return result;
+    },
+  );
 
   // Always use the content record as the source of truth for the
   // credential. Can be undefined if a Credential is not specified or found.

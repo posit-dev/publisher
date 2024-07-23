@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -180,8 +181,9 @@ func (i *defaultPythonInspector) ReadRequirementsFile(path util.AbsolutePath) ([
 		return nil, err
 	}
 	lines := strings.Split(string(content), "\n")
+	commentRE := regexp.MustCompile(`^\s*#`)
 	lines = slices.DeleteFunc(lines, func(line string) bool {
-		return line == "" || strings.HasPrefix(line, "#")
+		return line == "" || commentRE.MatchString(line)
 	})
 	return lines, nil
 }

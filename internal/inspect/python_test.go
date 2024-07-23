@@ -172,3 +172,18 @@ func (s *PythonSuite) TestScanRequirements() {
 	s.Equal(pythonPath.String(), python)
 	scanner.AssertExpectations(s.T())
 }
+
+func (s *PythonSuite) TestReadRequirementsFile() {
+	log := logging.New()
+	i := NewPythonInspector(s.cwd, util.Path{}, log)
+
+	filePath := s.cwd.Join("requirements.txt")
+	filePath.WriteFile([]byte("# leading comment\nnumpy==1.26.1\npandas\n    # indented comment\n"), 0777)
+
+	reqs, err := i.ReadRequirementsFile(filePath)
+	s.NoError(err)
+	s.Equal([]string{
+		"numpy==1.26.1",
+		"pandas",
+	}, reqs)
+}
