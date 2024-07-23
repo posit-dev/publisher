@@ -410,7 +410,7 @@ export async function newDeployment(
       const response = await api.contentRecords.getAll(
         projectDir ? projectDir : ".",
         {
-          recursive: true,
+          recursive: projectDir ? false : true,
         },
       );
       const contentRecordList = response.data;

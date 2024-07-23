@@ -11,6 +11,18 @@ export type DeploymentSelector = {
   deploymentPath: string;
 };
 
+export type PublishProcessParams = {
+  deploymentName: string;
+  credentialName: string;
+  configurationName: string;
+  projectDir: string;
+};
+
+export type DeploymentSelectionResult = {
+  selector: DeploymentSelector;
+  publishParams: PublishProcessParams;
+};
+
 export type HomeViewState = DeploymentSelector | null;
 
 export type DeploymentObjects = {
