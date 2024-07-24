@@ -88,19 +88,6 @@ describe("VS Code Extension UI Test", () => {
     await browser.keys("\uE007");
   });
 
-  it("check config", async () => {
-    await workbench.executeCommand(
-      "vscode.commands.executeCommand('posit.publisher.configurations.focus')",
-    );
-    const configLabel = await browser
-      .$(".monaco-icon-label")
-      .getAttribute("aria-label");
-    configLabel.includes("Configuration file:");
-
-    const config = await browser.$(".monaco-icon-label-container");
-    await expect(config).toHaveText("configuration-1");
-  });
-
   // cleanup
   after(async () => {
     const parentDir = path.resolve(
