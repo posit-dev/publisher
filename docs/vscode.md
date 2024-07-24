@@ -4,7 +4,9 @@
 
 ### Opening the UI
 
-In VSCode, open the folder containing the project you want to deploy. In this version of _Posit Publisher_, the project must be in the top level directory.
+In VSCode, open the folder containing the project you want to deploy.
+In this version of Posit Publisher, a workspace with too many projects may be
+slow for some operations .
 
 Open the _Posit Publisher_ UI by clicking the icon in the activity bar.
 
@@ -69,7 +71,14 @@ Once the deployment completes, the result will be displayed in the Home view.
 
 ---
 
-### Other Views and Features
+## Other Views and Features
+
+### Deploy via Entrypoint
+
+You can deploy or create a new deployment directly from an open file. If it is
+a valid entrypoint a Posit Publisher button will appear in the editor menu.
+
+![](https://cdn.posit.co/publisher/assets/img/entrypoint-button.png)
 
 ### Multiple Deployments
 
@@ -146,26 +155,6 @@ You can specify an alternate name in the deployment configuration file using the
 If your `renv.lock` file and library are out of sync, run `renv::snapshot()`
 or `renv::restore()` to update the lockfile or library, respectively. Clicking
 the "eye" icon in the R Packages view will run `renv::snapshot()` for you.
-
-### Deployments
-
-This view lists the deployments for the project. The icon indicates
-whether the content has been successfully deployed.
-
-![](https://cdn.posit.co/publisher/assets/img/deployment-icons.png)
-
-### Configurations
-
-This view lists the configurations in your project.
-
-Clicking a configuration will open the configuration file in the editor.
-Additionally, you can right-click on a configuration for more operations
-
-- Clone
-- Rename
-- Delete
-
-![](https://cdn.posit.co/publisher/assets/img/configurations.png)
 
 ### Credentials
 
