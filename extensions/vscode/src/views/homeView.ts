@@ -73,6 +73,7 @@ import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 import { Commands, Contexts, LocalState, Views } from "src/constants";
 import { showProgress } from "src/utils/progress";
+import { newCredential } from "src/multiStepInputs/newCredential";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -1411,16 +1412,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       };
       await this.propagateDeploymentSelection(deploymentSelector);
       const credential = this.getCredentialForContentRecord(contentRecord);
-      if (!credential) {
-        window.showErrorMessage(
-          `Error: Unable to Deploy. No credential found for server at ${contentRecord.serverUrl}`,
+      let credentialName = credential?.name;
+      if (!credentialName) {
+        credentialName = await newCredential(
+          Views.HomeView,
+          contentRecord.serverUrl,
         );
-        return;
+        if (!credentialName) {
+          return;
+        }
       }
-
       const target: PublishProcessParams = {
         deploymentName: contentRecord.saveName,
-        credentialName: credential.name,
+        credentialName,
         configurationName: contentRecord.configurationName,
         projectDir: contentRecord.projectDir,
       };
@@ -1449,15 +1453,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     // compatible content record already active. Publish
     const credential = this.getCredentialForContentRecord(currentContentRecord);
-    if (!credential) {
-      window.showErrorMessage(
-        `Error: Unable to Deploy. No credential found for server at ${currentContentRecord.serverUrl}`,
+    let credentialName = credential?.name;
+    if (!credentialName) {
+      credentialName = await newCredential(
+        Views.HomeView,
+        currentContentRecord.serverUrl,
       );
-      return;
+      if (!credentialName) {
+        return;
+      }
     }
     const target: PublishProcessParams = {
       deploymentName: currentContentRecord.saveName,
-      credentialName: credential.name,
+      credentialName,
       configurationName: currentContentRecord.configurationName,
       projectDir: currentContentRecord.projectDir,
     };
