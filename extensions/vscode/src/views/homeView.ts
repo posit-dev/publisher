@@ -231,20 +231,34 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
   }
 
-  private async onDeployMsg(msg: DeployMsg) {
+  private async initiateDeployment(
+    deploymentName: string,
+    credentialName: string,
+    configurationName: string,
+    projectDir: string,
+  ) {
     try {
       const api = await useApi();
       const response = await api.contentRecords.publish(
-        msg.content.deploymentName,
-        msg.content.credentialName,
-        msg.content.configurationName,
-        msg.content.projectDir,
+        deploymentName,
+        credentialName,
+        configurationName,
+        projectDir,
       );
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("homeView, deploy", error);
       window.showInformationMessage(`Failed to deploy . ${summary}`);
     }
+  }
+
+  private async onDeployMsg(msg: DeployMsg) {
+    this.initiateDeployment(
+      msg.content.deploymentName,
+      msg.content.credentialName,
+      msg.content.configurationName,
+      msg.content.projectDir,
+    );
   }
 
   private async onInitializingMsg() {
@@ -1267,10 +1281,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public initiatePublish(target: PublishProcessParams) {
-    this.onDeployMsg({
-      kind: WebviewToHostMessageType.DEPLOY,
-      content: target,
-    });
+    this.initiateDeployment(
+      target.deploymentName,
+      target.credentialName,
+      target.configurationName,
+      target.projectDir,
+    );
   }
 
   public async handleFileInitiatedDeployment(uri: Uri) {
