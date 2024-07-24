@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   file to allow for easier deployment of the entrypoint (#1846)
 - Added progress bars for asynchronous actions in each of the extension's views
   (#1958)
-- Retained deployment errors in pre-Deployment files (#2004)
 
 ### Changed
 
