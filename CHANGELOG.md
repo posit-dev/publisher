@@ -10,10 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added the support for recursively scanning workspace directories so the
-  extension can manage multiple projects at once (#1843, #1844, #1845, #1849,
-  #1850, #1851, #1852, #1853, #1854, #1855, #1944)
+  extension can manage multiple projects at once (#1849)
 - Added a publish button to the editor view when an entrypoint is the active
-  file to allow for easier deployment of the entrypoint (#1846, #1848, #2003)
+  file to allow for easier deployment of the entrypoint (#1846)
 - Added progress bars for asynchronous actions in each of the extension's views
   (#1958)
 - Retained deployment errors in pre-Deployment files (#2004)
