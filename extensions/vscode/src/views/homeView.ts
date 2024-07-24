@@ -839,21 +839,42 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       const credential =
         this.getCredentialForContentRecord(targetContentRecord);
+      let credentialName = credential?.name;
+      if (!credentialName) {
+        // prompt for creation
+        credentialName = await newCredential(
+          Views.HomeView,
+          targetContentRecord.serverUrl,
+        );
+        if (!credentialName) {
+          // user has hit ESC on credential creation
+          return;
+        }
+        useBus().trigger("refreshCredentials", undefined);
+      }
 
       if (
         !targetContentRecord.deploymentName ||
-        !credential ||
         !config.configurationName ||
         !targetContentRecord.projectDir
       ) {
+        let summary = "Selection has failed.";
+        if (!targetContentRecord.deploymentName) {
+          summary += ` ContentRecord: ${targetContentRecord.deploymentPath} has no name value.`;
+        } else if (!config.configurationName) {
+          summary += ` Configuration: ${config.configurationPath} has no name value.`;
+        } else {
+          summary += ` ContentRecord: ${targetContentRecord.deploymentPath} has no projectDir value.`;
+        }
         // display an error.
+        window.showErrorMessage(`Selection has failed. ${summary}`);
         return undefined;
       }
       return {
         selector: deploymentSelector,
         publishParams: {
           deploymentName: targetContentRecord.deploymentName,
-          credentialName: credential.name,
+          credentialName,
           configurationName: config.configurationName,
           projectDir: targetContentRecord.projectDir,
         },
@@ -1421,6 +1442,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         if (!credentialName) {
           return;
         }
+        useBus().trigger("refreshCredentials", undefined);
       }
       const target: PublishProcessParams = {
         deploymentName: contentRecord.saveName,
@@ -1462,6 +1484,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (!credentialName) {
         return;
       }
+      useBus().trigger("refreshCredentials", undefined);
     }
     const target: PublishProcessParams = {
       deploymentName: currentContentRecord.saveName,
