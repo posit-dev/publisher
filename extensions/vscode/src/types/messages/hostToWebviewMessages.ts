@@ -25,6 +25,8 @@ export enum HostToWebviewMessageType {
   REFRESH_FILES_LISTS = "refreshFilesLists",
   UPDATE_PYTHON_PACKAGES = "updatePythonPackages",
   UPDATE_R_PACKAGES = "updateRPackages",
+  SHOW_DISABLE_OVERLAY = "showDisableOverlay",
+  HIDE_DISABLE_OVERLAY = "hideDisableOverlay",
 }
 
 export type AnyHostToWebviewMessage<
@@ -49,7 +51,9 @@ export type HostToWebviewMessage =
   | SaveSelectionMsg
   | RefreshFilesListsMsg
   | UpdatePythonPackages
-  | UpdateRPackages;
+  | UpdateRPackages
+  | ShowDisableOverlayMsg
+  | HideDisableOverlayMsg;
 
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
@@ -64,7 +68,9 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
     msg.kind === HostToWebviewMessageType.REFRESH_FILES_LISTS ||
     msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES ||
-    msg.kind === HostToWebviewMessageType.UPDATE_R_PACKAGES
+    msg.kind === HostToWebviewMessageType.UPDATE_R_PACKAGES ||
+    msg.kind === HostToWebviewMessageType.SHOW_DISABLE_OVERLAY ||
+    msg.kind === HostToWebviewMessageType.HIDE_DISABLE_OVERLAY
   );
 }
 
@@ -141,3 +147,9 @@ export type UpdateRPackages = AnyHostToWebviewMessage<
     packages?: RPackage[];
   }
 >;
+
+export type ShowDisableOverlayMsg =
+  AnyHostToWebviewMessage<HostToWebviewMessageType.SHOW_DISABLE_OVERLAY>;
+
+export type HideDisableOverlayMsg =
+  AnyHostToWebviewMessage<HostToWebviewMessageType.HIDE_DISABLE_OVERLAY>;
