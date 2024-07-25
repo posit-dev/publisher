@@ -1,0 +1,28 @@
+<template>
+  <div class="container">
+    <div v-if="activateOverlay" class="overlay"></div>
+    <slot />
+  </div>
+</template>
+
+<script setup lang="ts">
+defineProps<{
+  activateOverlay: boolean;
+}>();
+</script>
+
+<style lang="scss" scoped>
+.container {
+  position: relative;
+  z-index: 1;
+}
+.overlay {
+  background: var(--dropdown-background);
+  position: absolute;
+  top: 0px;
+  z-index: 3;
+  opacity: var(--disabled-opacity);
+  min-width: 100%;
+  min-height: 100%;
+}
+</style>
