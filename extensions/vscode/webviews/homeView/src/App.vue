@@ -2,18 +2,23 @@
 
 <template>
   <main>
-    <EvenEasierDeploy class="easy-deploy-container" />
-    <template v-if="home.selectedConfiguration">
-      <ProjectFiles v-model:expanded="projectFilesExpanded" />
-      <PythonPackages />
-      <RPackages />
-    </template>
+    <OverlayableView :activateOverlay="home.showDisabledOverlay">
+      <div>
+        <EvenEasierDeploy class="easy-deploy-container" />
+        <template v-if="home.selectedConfiguration">
+          <ProjectFiles v-model:expanded="projectFilesExpanded" />
+          <PythonPackages />
+          <RPackages />
+        </template>
+      </div>
+    </OverlayableView>
   </main>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
 
+import OverlayableView from "src/components/OverlayableView.vue";
 import EvenEasierDeploy from "src/components/EvenEasierDeploy.vue";
 import ProjectFiles from "src/components/views/ProjectFiles.vue";
 import PythonPackages from "src/components/views/PythonPackages.vue";

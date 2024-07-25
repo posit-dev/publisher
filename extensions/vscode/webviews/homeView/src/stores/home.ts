@@ -23,6 +23,8 @@ export const useHomeStore = defineStore("home", () => {
   const configurationsInError = ref<ConfigurationError[]>([]);
   const credentials = ref<Credential[]>([]);
 
+  const showDisabledOverlay = ref(false);
+
   const selectedContentRecord = ref<ContentRecord | PreContentRecord>();
 
   // Always use the content record as the source of truth for the
@@ -165,6 +167,7 @@ export const useHomeStore = defineStore("home", () => {
   };
 
   return {
+    showDisabledOverlay,
     publishInProgress,
     contentRecords,
     configurations,
