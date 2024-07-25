@@ -73,6 +73,7 @@ import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 import { Commands, Contexts, LocalState, Views } from "src/constants";
 import { showProgress } from "src/utils/progress";
+import { newCredential } from "src/multiStepInputs/newCredential";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -231,20 +232,34 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
   }
 
-  private async onDeployMsg(msg: DeployMsg) {
+  private async initiateDeployment(
+    deploymentName: string,
+    credentialName: string,
+    configurationName: string,
+    projectDir: string,
+  ) {
     try {
       const api = await useApi();
       const response = await api.contentRecords.publish(
-        msg.content.deploymentName,
-        msg.content.credentialName,
-        msg.content.configurationName,
-        msg.content.projectDir,
+        deploymentName,
+        credentialName,
+        configurationName,
+        projectDir,
       );
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("homeView, deploy", error);
       window.showInformationMessage(`Failed to deploy . ${summary}`);
     }
+  }
+
+  private async onDeployMsg(msg: DeployMsg) {
+    this.initiateDeployment(
+      msg.content.deploymentName,
+      msg.content.credentialName,
+      msg.content.configurationName,
+      msg.content.projectDir,
+    );
   }
 
   private async onInitializingMsg() {
@@ -778,15 +793,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.requestWebviewSaveSelection();
   }
 
-  private getCredentialNameForContentRecord(
+  private getCredentialForContentRecord(
     contentRecord: ContentRecord | PreContentRecord,
-  ): string | undefined {
+  ): Credential | undefined {
     const credential = this.credentials.find(
       (credential) =>
         normalizeURL(credential.url).toLowerCase() ===
         normalizeURL(contentRecord.serverUrl).toLowerCase(),
     );
-    return credential?.name;
+    return credential;
   }
 
   private async showSelectOrCreateConfigForDeployment(): Promise<
@@ -822,12 +837,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       };
       this.propagateDeploymentSelection(deploymentSelector);
 
-      const credentialName =
-        this.getCredentialNameForContentRecord(targetContentRecord);
+      const credential =
+        this.getCredentialForContentRecord(targetContentRecord);
 
       if (
         !targetContentRecord.deploymentName ||
-        !credentialName ||
+        !credential ||
         !config.configurationName ||
         !targetContentRecord.projectDir
       ) {
@@ -838,7 +853,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         selector: deploymentSelector,
         publishParams: {
           deploymentName: targetContentRecord.deploymentName,
-          credentialName: credentialName,
+          credentialName: credential.name,
           configurationName: config.configurationName,
           projectDir: targetContentRecord.projectDir,
         },
@@ -1267,10 +1282,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public initiatePublish(target: PublishProcessParams) {
-    this.onDeployMsg({
-      kind: WebviewToHostMessageType.DEPLOY,
-      content: target,
-    });
+    this.initiateDeployment(
+      target.deploymentName,
+      target.credentialName,
+      target.configurationName,
+      target.projectDir,
+    );
   }
 
   public async handleFileInitiatedDeployment(uri: Uri) {
@@ -1394,15 +1411,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         deploymentPath: contentRecord.deploymentPath,
       };
       await this.propagateDeploymentSelection(deploymentSelector);
-      const credentialName =
-        this.getCredentialNameForContentRecord(contentRecord);
+      const credential = this.getCredentialForContentRecord(contentRecord);
+      let credentialName = credential?.name;
       if (!credentialName) {
-        window.showErrorMessage(
-          `Error: Unable to Deploy. No credential found for server at ${contentRecord.serverUrl}`,
+        credentialName = await newCredential(
+          Views.HomeView,
+          contentRecord.serverUrl,
         );
-        return;
+        if (!credentialName) {
+          return;
+        }
       }
-
       const target: PublishProcessParams = {
         deploymentName: contentRecord.saveName,
         credentialName,
@@ -1433,13 +1452,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return false;
     }
     // compatible content record already active. Publish
-    const credentialName =
-      this.getCredentialNameForContentRecord(currentContentRecord);
+    const credential = this.getCredentialForContentRecord(currentContentRecord);
+    let credentialName = credential?.name;
     if (!credentialName) {
-      window.showErrorMessage(
-        `Error: Unable to Deploy. No credential found for server at ${currentContentRecord.serverUrl}`,
+      credentialName = await newCredential(
+        Views.HomeView,
+        currentContentRecord.serverUrl,
       );
-      return;
+      if (!credentialName) {
+        return;
+      }
     }
     const target: PublishProcessParams = {
       deploymentName: currentContentRecord.saveName,
