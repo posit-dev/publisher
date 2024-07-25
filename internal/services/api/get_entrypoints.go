@@ -26,6 +26,9 @@ func GetEntrypointsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.
 		files := []string{
 			"*",
 			"!**/renv/activate.R",
+			"!_site",
+			"_site/index.html",
+			"!*_files",
 		}
 
 		walker, err := matcher.NewMatchingWalker(files, projectDir, log)
