@@ -38,6 +38,7 @@ def get_current_connect_version(connect_ip, api_key):
 
 def check_existing_boxes(box_name):
     output = subprocess.check_output(list_command, shell=True, text=True)
+    time.sleep(10)
     # use the existing box if one exists
     if box_name+"\": {" in output:
         boxes = json.loads(output)
@@ -45,6 +46,7 @@ def check_existing_boxes(box_name):
     else:
         subprocess.check_output(create_command, shell=True, text=True)
         output = subprocess.check_output(list_command, shell=True, text=True)
+        time.sleep(10)
         boxes = json.loads(output)
         time.sleep(5)
         connect_ip = boxes["boxes"][box_name]["public_ip"]
@@ -55,44 +57,35 @@ def get_ip(box_name):
     return connect_ip
 
 # check if fuzzbucket is up and taking requests
-def connect_ready(box_name, max_attempts, interval, api_key, ssh_options, install_connect, connect_version):
-    connect_box = get_ip(box_name)
+def connect_ready(box_name, max_attempts, interval):
+    connect_box=get_ip(box_name)
 
     attempts = 0
     while attempts < max_attempts:
         try:
             logging.info("Checking Connect Status")
-            response = requests.get("http://" + connect_box + ":3939/__ping__")
+            response = requests.get("http://"+connect_box+":3939/__ping__")
             if response.status_code == 200:
                 if connect_version != get_current_connect_version(get_ip(box_name), api_key):
-                    update_config = (
-                        "fuzzbucket-client ssh " + box_name + " " + ssh_options +
-                        " sudo sed -i 's/CONNECT_IP/" + connect_box + "/g' /etc/rstudio-connect/rstudio-connect.gcfg"
-                    )
-                    restart_connect = (
-                        "fuzzbucket-client ssh " + box_name + " " + ssh_options +
-                        " sudo systemctl restart rstudio-connect"
-                    )
+                    update_config="fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo sed -i 's/CONNECT_IP/" + connect_box + "/g' /etc/rstudio-connect/rstudio-connect.gcfg"
+                    restart_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo systemctl restart rstudio-connect"
                     logging.info("Installing Connect on " + connect_box)
                     subprocess.check_output(install_connect, shell=True, text=True)
                     subprocess.check_output(update_config, shell=True, text=True)
                     subprocess.check_output(restart_connect, shell=True, text=True)
                 return response.text
-        except requests.RequestException as e:
-            logging.error(f"Request failed: {e}")
-        except subprocess.CalledProcessError as e:
-            logging.error(f"Subprocess failed: {e}")
+        except requests.RequestException:
+            pass
 
-        attempts += 1
         time.sleep(interval)
-
-    raise Exception("Max attempts reached, Connect is not ready")
+        attempts += 1
+    return None
 
 api_key=get_api_key('admin')
 connect_version=get_connect_version()
 install_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo -E UNATTENDED=1 bash installer-ci.sh -d " + connect_version
 
-response = connect_ready(box_name, 20, 5, api_key, ssh_options, install_connect, connect_version)
+response = connect_ready(box_name, 20, 5)
 
 if response:
     print("http://" + get_ip(box_name) + ":3939")
