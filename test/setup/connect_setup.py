@@ -92,7 +92,7 @@ api_key=get_api_key('admin')
 connect_version=get_connect_version()
 install_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo -E UNATTENDED=1 bash installer-ci.sh -d " + connect_version
 
-response = connect_ready(box_name, 20, 5)
+response = connect_ready(box_name, 20, 5, api_key, ssh_options, install_connect, connect_version)
 
 if response:
     print("http://" + get_ip(box_name) + ":3939")
