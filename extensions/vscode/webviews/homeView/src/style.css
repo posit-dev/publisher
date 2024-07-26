@@ -8,6 +8,12 @@ body {
   padding: 0;
 }
 
+.webview-link {
+  pointer-events: auto;
+  opacity: 1;
+  cursor: pointer;
+}
+
 .w-full {
   width: 100%;
 }
