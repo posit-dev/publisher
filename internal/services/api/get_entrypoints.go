@@ -26,8 +26,8 @@ func GetEntrypointsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.
 		files := []string{
 			"*",
 			"!**/renv/activate.R",
-			"!_site",
-			"_site/index.html",
+			"!**/_site/*.html",
+			"**/_site/index.html",
 			"!*_files",
 		}
 
