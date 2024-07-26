@@ -12,7 +12,7 @@ box_name = "connect-publishing-client"
 list_command = "fuzzbucket-client -j list"
 create_command = "fuzzbucket-client create -c -S 20 -t m5.2xlarge " + alias + " -n " + box_name
 remove_command = "fuzzbucket-client rm " + box_name
-ssh_options = "-i fuzzbucket-ssh-key"
+ssh_options = "-i ../fuzzbucket-ssh-key"
 
 def get_api_key(username):
     # Calculate the MD5 hash for the username to get an API Key
@@ -38,7 +38,6 @@ def get_current_connect_version(connect_ip, api_key):
 
 def check_existing_boxes(box_name):
     output = subprocess.check_output(list_command, shell=True, text=True)
-    time.sleep(10)
     # use the existing box if one exists
     if box_name+"\": {" in output:
         boxes = json.loads(output)
@@ -46,7 +45,6 @@ def check_existing_boxes(box_name):
     else:
         subprocess.check_output(create_command, shell=True, text=True)
         output = subprocess.check_output(list_command, shell=True, text=True)
-        time.sleep(10)
         boxes = json.loads(output)
         time.sleep(5)
         connect_ip = boxes["boxes"][box_name]["public_ip"]
