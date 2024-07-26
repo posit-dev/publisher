@@ -19,10 +19,11 @@ import {
   WebviewToHostMessageType,
 } from "../../../src/types/messages/webviewToHostMessages";
 import { useHomeStore } from "./stores/home";
+import { vscodeAPI } from "src/vscode";
 
 let hostConduit: HostConduit | undefined = undefined;
 
-const vsCodeApi = acquireVsCodeApi();
+const vsCodeApi = vscodeAPI();
 
 export function useHostConduitService() {
   if (!hostConduit) {
