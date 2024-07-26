@@ -74,6 +74,10 @@ func RouterHandlerFunc(base util.AbsolutePath, lister accounts.AccountList, log 
 	r.Handle(ToPath("files"), GetFileHandlerFunc(base, filesService, pathsService, log)).
 		Methods(http.MethodGet)
 
+	// POST /api/entrypoints
+	r.Handle(ToPath("entrypoints"), GetEntrypointsHandlerFunc(base, log)).
+		Methods(http.MethodPost)
+
 	// POST /api/inspect
 	r.Handle(ToPath("inspect"), PostInspectHandlerFunc(base, log)).
 		Methods(http.MethodPost)

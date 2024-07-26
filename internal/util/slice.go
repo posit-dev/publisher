@@ -14,3 +14,11 @@ func RemoveDuplicates[T comparable](list []T) []T {
 	}
 	return out
 }
+
+func Map[T any](fn func(T) T, list []T) []T {
+	out := make([]T, len(list))
+	for i, item := range list {
+		out[i] = fn(item)
+	}
+	return out
+}
