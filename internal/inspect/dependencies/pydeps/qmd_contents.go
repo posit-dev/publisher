@@ -20,7 +20,7 @@ func GetQuartoFilePythonCode(path util.AbsolutePath) (string, error) {
 func GetQuartoPythonCode(content string) string {
 	lines := strings.Split(content, "\n")
 	inCodeBlock := false
-	var codeLines []string
+	codeLines := []string{}
 
 	for _, line := range lines {
 		if inCodeBlock {

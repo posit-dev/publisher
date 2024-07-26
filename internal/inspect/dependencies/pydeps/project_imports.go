@@ -36,7 +36,7 @@ func (s *defaultProjectImportScanner) ScanProjectImports(base util.AbsolutePath)
 		return nil, err
 	}
 
-	var projectImports []ImportName
+	projectImports := []ImportName{}
 
 	err = matchList.Walk(base, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		if err != nil {

@@ -72,7 +72,7 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			return
 		}
 		pythonPath := util.NewPath(b.Python, nil)
-		var response []postInspectResponseBody
+		response := []postInspectResponseBody{}
 
 		if req.URL.Query().Get("recursive") == "true" {
 			walker, err := matcher.NewMatchingWalker([]string{"*"}, projectDir, log)
