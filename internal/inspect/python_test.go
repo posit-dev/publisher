@@ -178,7 +178,7 @@ func (s *PythonSuite) TestReadRequirementsFile() {
 	i := NewPythonInspector(s.cwd, util.Path{}, log)
 
 	filePath := s.cwd.Join("requirements.txt")
-	filePath.WriteFile([]byte("# leading comment\nnumpy==1.26.1\npandas\n    # indented comment\n"), 0777)
+	filePath.WriteFile([]byte("# leading comment\nnumpy==1.26.1\n  \npandas\n    # indented comment\n"), 0777)
 
 	reqs, err := i.ReadRequirementsFile(filePath)
 	s.NoError(err)
