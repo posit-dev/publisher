@@ -59,7 +59,7 @@ func filenameStem(filename string) string {
 }
 
 func (t *ContentTypeDetector) InferType(base util.AbsolutePath, entrypoint util.RelativePath) ([]*config.Config, error) {
-	var allConfigs []*config.Config
+	allConfigs := []*config.Config{}
 
 	_, err := base.Stat()
 	if err != nil {
@@ -75,7 +75,7 @@ func (t *ContentTypeDetector) InferType(base util.AbsolutePath, entrypoint util.
 			allConfigs = append(allConfigs, configs...)
 		}
 	}
-	if allConfigs == nil {
+	if len(allConfigs) == 0 {
 		allConfigs = append(allConfigs, newUnknownConfig())
 	}
 
