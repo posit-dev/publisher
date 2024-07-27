@@ -1,4 +1,4 @@
-// import { fileURLToPath, URL } from 'url'
+/// <reference types="vitest" />
 
 import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
@@ -27,5 +27,8 @@ export default defineConfig({
       },
     },
     sourcemap: "inline",
+  },
+  test: {
+    environment: "jsdom",
   },
 });
