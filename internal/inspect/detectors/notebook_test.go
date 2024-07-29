@@ -145,6 +145,23 @@ func (s *NotebookDetectorSuite) TestInferTypeBadNotebook() {
 	s.Nil(t)
 }
 
+func (s *NotebookDetectorSuite) TestInferTypeEmptyNotebook() {
+	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
+	err := base.MkdirAll(0777)
+	s.NoError(err)
+
+	filename := "my_notebook.ipynb"
+	path := base.Join(filename)
+	// oops, content is not in notebook format
+	err = path.WriteFile([]byte{}, 0600)
+	s.Nil(err)
+
+	detector := NewNotebookDetector()
+	t, err := detector.InferType(base, util.RelativePath{})
+	s.Nil(err)
+	s.Nil(t)
+}
+
 func (s *NotebookDetectorSuite) TestInferTypeWithEntrypoint() {
 	base := util.NewAbsolutePath("/project", afero.NewMemMapFs())
 	err := base.MkdirAll(0777)
