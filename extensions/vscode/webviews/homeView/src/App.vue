@@ -3,14 +3,12 @@
 <template>
   <main>
     <OverlayableView :activateOverlay="home.showDisabledOverlay">
-      <div>
-        <EvenEasierDeploy class="easy-deploy-container" />
-        <template v-if="home.selectedConfiguration">
-          <ProjectFiles v-model:expanded="projectFilesExpanded" />
-          <PythonPackages />
-          <RPackages />
-        </template>
-      </div>
+      <EvenEasierDeploy class="easy-deploy-container" />
+      <template v-if="home.selectedConfiguration">
+        <ProjectFiles v-model:expanded="projectFilesExpanded" />
+        <PythonPackages />
+        <RPackages />
+      </template>
     </OverlayableView>
   </main>
 </template>
