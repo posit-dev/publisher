@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import { setActivePinia, createPinia } from "pinia";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { App, createApp } from "vue";

@@ -1,3 +1,5 @@
+// Copyright (C) 2024 by Posit Software, PBC.
+
 import { WebviewApi } from "vscode-webview";
 
 let apiInstance: WebviewApi<unknown> | undefined = undefined;
