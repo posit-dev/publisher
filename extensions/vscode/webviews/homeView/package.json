@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "vue-tsc --noEmit && vite build",
-    "test": "vitest"
+    "test": "TZ=UTC vitest"
   },
   "dependencies": {
     "axios": "^1.6.0",
