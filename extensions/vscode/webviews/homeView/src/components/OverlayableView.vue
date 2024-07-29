@@ -19,10 +19,8 @@ defineProps<{
 .overlay {
   background: var(--dropdown-background);
   position: absolute;
-  top: 0px;
+  inset: 0;
   z-index: 3;
   opacity: var(--disabled-opacity);
-  min-width: 100%;
-  min-height: 100%;
 }
 </style>
