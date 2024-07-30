@@ -59,14 +59,14 @@
       <p v-if="isConfigEntryMissing">
         No Config Entry in Deployment record -
         {{ home.selectedContentRecord?.saveName }}.
-        <a href="" role="button" @click="selectConfiguration">{{
+        <a class="webview-link" role="button" @click="selectConfiguration">{{
           promptForConfigSelection
         }}</a
         >.
       </p>
       <p v-if="isConfigMissing">
         The last Configuration used for this Deployment was not found.
-        <a href="" role="button" @click="selectConfiguration">{{
+        <a class="webview-link" role="button" @click="selectConfiguration">{{
           promptForConfigSelection
         }}</a
         >.
@@ -74,7 +74,7 @@
       <p v-if="isConfigInError">
         The selected Configuration has an error.
         <a
-          href=""
+          class="webview-link"
           role="button"
           @click="
             onEditConfiguration(home.selectedConfiguration!.configurationPath)
@@ -85,7 +85,7 @@
 
       <p v-if="isCredentialMissing">
         A Credential for the Deployment's server URL was not found.
-        <a href="" role="button" @click="newCredential"
+        <a class="webview-link" role="button" @click="newCredential"
           >Create a new Credential</a
         >.
       </p>
@@ -113,7 +113,10 @@
             <div class="progress-desc">
               <div>Deployment in Progress...</div>
               <p class="progress-log-anchor">
-                <a href="" role="button" @click="onViewPublishingLog"
+                <a
+                  class="webview-link"
+                  role="button"
+                  @click="onViewPublishingLog"
                   >View Log</a
                 >
               </p>

@@ -60,7 +60,7 @@ type taskTest struct {
 }
 
 func (s *ConnectClientSuite) TestWaitForTask() {
-	var actualPackages []packageStatusEvent
+	actualPackages := []packageStatusEvent{}
 	emitter := events.NewMockEmitter()
 	emitter.On("Emit", mock.Anything).Run(func(args mock.Arguments) {
 		event := args.Get(0).(*events.Event)

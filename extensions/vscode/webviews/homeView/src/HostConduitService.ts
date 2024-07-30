@@ -77,6 +77,10 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onUpdatePythonPackages(msg);
     case HostToWebviewMessageType.UPDATE_R_PACKAGES:
       return onUpdateRPackages(msg);
+    case HostToWebviewMessageType.SHOW_DISABLE_OVERLAY:
+      return onShowDisableOverlayMsg();
+    case HostToWebviewMessageType.HIDE_DISABLE_OVERLAY:
+      return onHideDisableOverlayMsg();
     default:
       console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
@@ -84,6 +88,14 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
 
 const onInitializingRequestCompleteMsg = () => {
   useHomeStore().initializingRequestComplete = true;
+};
+
+const onShowDisableOverlayMsg = () => {
+  useHomeStore().showDisabledOverlay = true;
+};
+
+const onHideDisableOverlayMsg = () => {
+  useHomeStore().showDisabledOverlay = false;
 };
 
 /**

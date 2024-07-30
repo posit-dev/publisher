@@ -73,6 +73,7 @@ import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 import { Commands, Contexts, LocalState, Views } from "src/constants";
 import { showProgress } from "src/utils/progress";
+import { newCredential } from "src/multiStepInputs/newCredential";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -231,20 +232,34 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
   }
 
-  private async onDeployMsg(msg: DeployMsg) {
+  private async initiateDeployment(
+    deploymentName: string,
+    credentialName: string,
+    configurationName: string,
+    projectDir: string,
+  ) {
     try {
       const api = await useApi();
       const response = await api.contentRecords.publish(
-        msg.content.deploymentName,
-        msg.content.credentialName,
-        msg.content.configurationName,
-        msg.content.projectDir,
+        deploymentName,
+        credentialName,
+        configurationName,
+        projectDir,
       );
       deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("homeView, deploy", error);
       window.showInformationMessage(`Failed to deploy . ${summary}`);
     }
+  }
+
+  private async onDeployMsg(msg: DeployMsg) {
+    this.initiateDeployment(
+      msg.content.deploymentName,
+      msg.content.credentialName,
+      msg.content.configurationName,
+      msg.content.projectDir,
+    );
   }
 
   private async onInitializingMsg() {
@@ -778,15 +793,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.requestWebviewSaveSelection();
   }
 
-  private getCredentialNameForContentRecord(
+  private getCredentialForContentRecord(
     contentRecord: ContentRecord | PreContentRecord,
-  ): string | undefined {
+  ): Credential | undefined {
     const credential = this.credentials.find(
       (credential) =>
         normalizeURL(credential.url).toLowerCase() ===
         normalizeURL(contentRecord.serverUrl).toLowerCase(),
     );
-    return credential?.name;
+    return credential;
   }
 
   private async showSelectOrCreateConfigForDeployment(): Promise<
@@ -799,52 +814,62 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       return undefined;
     }
-
-    const config = await selectNewOrExistingConfig(
-      targetContentRecord,
-      Views.HomeView,
-      this.getActiveConfig(),
-    );
-    if (config) {
-      const api = await useApi();
-      const apiRequest = api.contentRecords.patch(
-        targetContentRecord.deploymentName,
-        config.configurationName,
-        targetContentRecord.projectDir,
+    try {
+      // disable our home view, we are initiating a multi-step sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
+      });
+      const config = await selectNewOrExistingConfig(
+        targetContentRecord,
+        Views.HomeView,
+        this.getActiveConfig(),
       );
-      showProgress("Updating Config", apiRequest, Views.HomeView);
+      if (config) {
+        const api = await useApi();
+        const apiRequest = api.contentRecords.patch(
+          targetContentRecord.deploymentName,
+          config.configurationName,
+          targetContentRecord.projectDir,
+        );
+        showProgress("Updating Config", apiRequest, Views.HomeView);
 
-      await apiRequest;
+        await apiRequest;
 
-      // now select the new, updated or existing deployment
-      const deploymentSelector: DeploymentSelector = {
-        deploymentPath: targetContentRecord.deploymentPath,
-      };
-      this.propagateDeploymentSelection(deploymentSelector);
+        // now select the new, updated or existing deployment
+        const deploymentSelector: DeploymentSelector = {
+          deploymentPath: targetContentRecord.deploymentPath,
+        };
+        this.propagateDeploymentSelection(deploymentSelector);
 
-      const credentialName =
-        this.getCredentialNameForContentRecord(targetContentRecord);
+        const credential =
+          this.getCredentialForContentRecord(targetContentRecord);
 
-      if (
-        !targetContentRecord.deploymentName ||
-        !credentialName ||
-        !config.configurationName ||
-        !targetContentRecord.projectDir
-      ) {
-        // display an error.
-        return undefined;
+        if (
+          !targetContentRecord.deploymentName ||
+          !credential ||
+          !config.configurationName ||
+          !targetContentRecord.projectDir
+        ) {
+          // display an error.
+          return undefined;
+        }
+        return {
+          selector: deploymentSelector,
+          publishParams: {
+            deploymentName: targetContentRecord.deploymentName,
+            credentialName: credential.name,
+            configurationName: config.configurationName,
+            projectDir: targetContentRecord.projectDir,
+          },
+        };
       }
-      return {
-        selector: deploymentSelector,
-        publishParams: {
-          deploymentName: targetContentRecord.deploymentName,
-          credentialName: credentialName,
-          configurationName: config.configurationName,
-          projectDir: targetContentRecord.projectDir,
-        },
-      };
+      return undefined;
+    } finally {
+      // enable our home view, we are done with our sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.HIDE_DISABLE_OVERLAY,
+      });
     }
-    return undefined;
   }
 
   public async showNewDeploymentMultiStep(
@@ -855,76 +880,88 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // We need the initial queries to finish, before we can
     // use them (contentRecords, credentials and configs)
     await this.initComplete;
+    try {
+      // disable our home view, we are initiating a multi-step sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
+      });
+      const deploymentObjects = await newDeployment(
+        viewId,
+        projectDir,
+        entryPoint,
+      );
+      if (deploymentObjects) {
+        // add out new objects into our collections possibly ahead (we don't know) of
+        // the file refresh activity (for contentRecord and config)
+        // and the credential refresh that we will kick off
+        //
+        // Doing this as an alternative to forcing a full refresh
+        // of all three APIs prior to updating the UX, which would
+        // be seen as a visible delay (we'd have to have a progress indicator).
+        let refreshCredentials = false;
+        if (
+          !this.contentRecords.find(
+            (contentRecord) =>
+              contentRecord.saveName ===
+                deploymentObjects.contentRecord.saveName &&
+              contentRecord.projectDir ===
+                deploymentObjects.contentRecord.projectDir,
+          )
+        ) {
+          this.contentRecords.push(deploymentObjects.contentRecord);
+        }
+        if (
+          !this.configs.find(
+            (config) =>
+              config.configurationName ===
+                deploymentObjects.configuration.configurationName &&
+              config.projectDir === deploymentObjects.configuration.projectDir,
+          )
+        ) {
+          this.configs.push(deploymentObjects.configuration);
+        }
+        if (
+          !this.credentials.find(
+            (credential) =>
+              credential.name === deploymentObjects.credential.name,
+          )
+        ) {
+          this.credentials.push(deploymentObjects.credential);
+          refreshCredentials = true;
+        }
+        const deploymentSelector: DeploymentSelector = {
+          deploymentPath: deploymentObjects.contentRecord.deploymentPath,
+        };
 
-    const deploymentObjects = await newDeployment(
-      viewId,
-      projectDir,
-      entryPoint,
-    );
-    if (deploymentObjects) {
-      // add out new objects into our collections possibly ahead (we don't know) of
-      // the file refresh activity (for contentRecord and config)
-      // and the credential refresh that we will kick off
-      //
-      // Doing this as an alternative to forcing a full refresh
-      // of all three APIs prior to updating the UX, which would
-      // be seen as a visible delay (we'd have to have a progress indicator).
-      let refreshCredentials = false;
-      if (
-        !this.contentRecords.find(
-          (contentRecord) =>
-            contentRecord.saveName ===
-              deploymentObjects.contentRecord.saveName &&
-            contentRecord.projectDir ===
-              deploymentObjects.contentRecord.projectDir,
-        )
-      ) {
-        this.contentRecords.push(deploymentObjects.contentRecord);
+        this.propagateDeploymentSelection(deploymentSelector);
+        // Credentials aren't auto-refreshed, so we have to trigger it ourselves.
+        if (refreshCredentials) {
+          useBus().trigger("refreshCredentials", undefined);
+        }
+        return {
+          selector: deploymentSelector,
+          publishParams: {
+            deploymentName: deploymentObjects.contentRecord.deploymentName,
+            credentialName: deploymentObjects.credential.name,
+            configurationName:
+              deploymentObjects.configuration.configurationName,
+            projectDir: deploymentObjects.contentRecord.projectDir,
+          },
+        };
       }
-      if (
-        !this.configs.find(
-          (config) =>
-            config.configurationName ===
-              deploymentObjects.configuration.configurationName &&
-            config.projectDir === deploymentObjects.configuration.projectDir,
-        )
-      ) {
-        this.configs.push(deploymentObjects.configuration);
-      }
-      if (
-        !this.credentials.find(
-          (credential) => credential.name === deploymentObjects.credential.name,
-        )
-      ) {
-        this.credentials.push(deploymentObjects.credential);
-        refreshCredentials = true;
-      }
-      const deploymentSelector: DeploymentSelector = {
-        deploymentPath: deploymentObjects.contentRecord.deploymentPath,
-      };
-
-      this.propagateDeploymentSelection(deploymentSelector);
-      // Credentials aren't auto-refreshed, so we have to trigger it ourselves.
-      if (refreshCredentials) {
-        useBus().trigger("refreshCredentials", undefined);
-      }
-      return {
-        selector: deploymentSelector,
-        publishParams: {
-          deploymentName: deploymentObjects.contentRecord.deploymentName,
-          credentialName: deploymentObjects.credential.name,
-          configurationName: deploymentObjects.configuration.configurationName,
-          projectDir: deploymentObjects.contentRecord.projectDir,
-        },
-      };
+      return undefined;
+    } finally {
+      // enable our home view, we are done with the multi-step sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.HIDE_DISABLE_OVERLAY,
+      });
     }
-    return undefined;
   }
 
-  private showNewCredential() {
+  private async showNewCredential() {
     const contentRecord = this.getActiveContentRecord();
 
-    return commands.executeCommand(
+    return await commands.executeCommand(
       Commands.Credentials.Add,
       contentRecord?.serverUrl,
     );
@@ -942,157 +979,169 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // use them (contentRecords, credentials and configs)
     await this.initComplete;
 
-    // Create quick pick list from current contentRecords, credentials and configs
-    const deployments: DeploymentQuickPick[] = [];
-    const lastContentRecordName = this.getActiveContentRecord()?.saveName;
-    const lastContentRecordProjectDir = projectDir
-      ? projectDir
-      : this.getActiveContentRecord()?.projectDir;
-    const lastConfigName = this.getActiveConfig()?.configurationName;
+    try {
+      // disable our home view, we are initiating a multi-step sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
+      });
 
-    const includedContentRecords = contentRecordsSubset
-      ? contentRecordsSubset
-      : this.contentRecords;
+      // Create quick pick list from current contentRecords, credentials and configs
+      const deployments: DeploymentQuickPick[] = [];
+      const lastContentRecordName = this.getActiveContentRecord()?.saveName;
+      const lastContentRecordProjectDir = projectDir
+        ? projectDir
+        : this.getActiveContentRecord()?.projectDir;
+      const lastConfigName = this.getActiveConfig()?.configurationName;
 
-    includedContentRecords.forEach((contentRecord) => {
-      if (
-        isContentRecordError(contentRecord) ||
-        (isPreContentRecord(contentRecord) &&
-          !isPreContentRecordWithConfig(contentRecord))
-      ) {
-        // we won't include these for now. Perhaps in the future, we can show them
-        // as disabled.
-        return;
-      }
+      const includedContentRecords = contentRecordsSubset
+        ? contentRecordsSubset
+        : this.contentRecords;
 
-      let config: Configuration | ConfigurationError | undefined;
-      if (contentRecord.configurationName) {
-        config = this.configs.find(
-          (config) =>
-            config.configurationName === contentRecord.configurationName &&
-            config.projectDir === contentRecord.projectDir,
-        );
-        if (!config) {
-          config = this.configsInError.find(
+      includedContentRecords.forEach((contentRecord) => {
+        if (
+          isContentRecordError(contentRecord) ||
+          (isPreContentRecord(contentRecord) &&
+            !isPreContentRecordWithConfig(contentRecord))
+        ) {
+          // we won't include these for now. Perhaps in the future, we can show them
+          // as disabled.
+          return;
+        }
+
+        let config: Configuration | ConfigurationError | undefined;
+        if (contentRecord.configurationName) {
+          config = this.configs.find(
             (config) =>
               config.configurationName === contentRecord.configurationName &&
               config.projectDir === contentRecord.projectDir,
           );
+          if (!config) {
+            config = this.configsInError.find(
+              (config) =>
+                config.configurationName === contentRecord.configurationName &&
+                config.projectDir === contentRecord.projectDir,
+            );
+          }
         }
-      }
 
-      let credential = this.credentials.find(
-        (credential) =>
-          normalizeURL(credential.url).toLowerCase() ===
-          normalizeURL(contentRecord.serverUrl).toLowerCase(),
-      );
-
-      const result = calculateTitle(contentRecord, config);
-      const title = result.title;
-      let problem = result.problem;
-
-      let configName = config?.configurationName;
-      if (!configName) {
-        configName = contentRecord.configurationName
-          ? `Missing Configuration ${contentRecord.configurationName}`
-          : `ERROR: No Config Entry in Deployment record - ${contentRecord.saveName}`;
-        problem = true;
-      }
-
-      let details = [];
-      if (!isRelativePathRoot(contentRecord.projectDir)) {
-        details.push(`${contentRecord.projectDir}${path.sep}`);
-      }
-      if (credential?.name) {
-        details.push(credential.name);
-      } else {
-        details.push(`Missing Credential for ${contentRecord.serverUrl}`);
-        problem = true;
-      }
-      const detail = details.join(" • ");
-
-      let lastMatch =
-        lastContentRecordName === contentRecord.saveName &&
-        lastContentRecordProjectDir === contentRecord.projectDir &&
-        lastConfigName === configName;
-
-      const deployment: DeploymentQuickPick = {
-        label: title,
-        detail,
-        iconPath: problem
-          ? new ThemeIcon("error")
-          : new ThemeIcon("cloud-upload"),
-        contentRecord,
-        config,
-        credentialName: credential?.name,
-        lastMatch,
-      };
-      // Should we not push deployments with no config or matching credentials?
-      deployments.push(deployment);
-    });
-
-    const toDispose: Disposable[] = [];
-    const deployment = await new Promise<DeploymentQuickPick | undefined>(
-      (resolve) => {
-        const quickPick = window.createQuickPick<DeploymentQuickPick>();
-        this.disposables.push(quickPick);
-
-        quickPick.items = deployments;
-        const lastMatches = deployments.filter(
-          (deployment) => deployment.lastMatch,
+        let credential = this.credentials.find(
+          (credential) =>
+            normalizeURL(credential.url).toLowerCase() ===
+            normalizeURL(contentRecord.serverUrl).toLowerCase(),
         );
-        if (lastMatches) {
-          quickPick.activeItems = lastMatches;
+
+        const result = calculateTitle(contentRecord, config);
+        const title = result.title;
+        let problem = result.problem;
+
+        let configName = config?.configurationName;
+        if (!configName) {
+          configName = contentRecord.configurationName
+            ? `Missing Configuration ${contentRecord.configurationName}`
+            : `ERROR: No Config Entry in Deployment record - ${contentRecord.saveName}`;
+          problem = true;
         }
-        quickPick.title = "Select Deployment";
-        quickPick.ignoreFocusOut = true;
-        quickPick.matchOnDescription = true;
-        quickPick.matchOnDetail = true;
-        quickPick.show();
 
-        quickPick.onDidAccept(
-          () => {
-            quickPick.hide();
-            if (quickPick.selectedItems.length > 0) {
-              return resolve(quickPick.selectedItems[0]);
-            }
-            resolve(undefined);
-          },
-          undefined,
-          toDispose,
-        );
-        quickPick.onDidHide(() => resolve(undefined), undefined, toDispose);
-      },
-    ).finally(() => Disposable.from(...toDispose).dispose());
+        let details = [];
+        if (!isRelativePathRoot(contentRecord.projectDir)) {
+          details.push(`${contentRecord.projectDir}${path.sep}`);
+        }
+        if (credential?.name) {
+          details.push(credential.name);
+        } else {
+          details.push(`Missing Credential for ${contentRecord.serverUrl}`);
+          problem = true;
+        }
+        const detail = details.join(" • ");
 
-    let deploymentSelector: DeploymentSelector | undefined;
-    if (deployment) {
-      deploymentSelector = {
-        deploymentPath: deployment.contentRecord.deploymentPath,
+        let lastMatch =
+          lastContentRecordName === contentRecord.saveName &&
+          lastContentRecordProjectDir === contentRecord.projectDir &&
+          lastConfigName === configName;
+
+        const deployment: DeploymentQuickPick = {
+          label: title,
+          detail,
+          iconPath: problem
+            ? new ThemeIcon("error")
+            : new ThemeIcon("cloud-upload"),
+          contentRecord,
+          config,
+          credentialName: credential?.name,
+          lastMatch,
+        };
+        // Should we not push deployments with no config or matching credentials?
+        deployments.push(deployment);
+      });
+
+      const toDispose: Disposable[] = [];
+      const deployment = await new Promise<DeploymentQuickPick | undefined>(
+        (resolve) => {
+          const quickPick = window.createQuickPick<DeploymentQuickPick>();
+          this.disposables.push(quickPick);
+
+          quickPick.items = deployments;
+          const lastMatches = deployments.filter(
+            (deployment) => deployment.lastMatch,
+          );
+          if (lastMatches) {
+            quickPick.activeItems = lastMatches;
+          }
+          quickPick.title = "Select Deployment";
+          quickPick.ignoreFocusOut = true;
+          quickPick.matchOnDescription = true;
+          quickPick.matchOnDetail = true;
+          quickPick.show();
+
+          quickPick.onDidAccept(
+            () => {
+              quickPick.hide();
+              if (quickPick.selectedItems.length > 0) {
+                return resolve(quickPick.selectedItems[0]);
+              }
+              resolve(undefined);
+            },
+            undefined,
+            toDispose,
+          );
+          quickPick.onDidHide(() => resolve(undefined), undefined, toDispose);
+        },
+      ).finally(() => Disposable.from(...toDispose).dispose());
+
+      let deploymentSelector: DeploymentSelector | undefined;
+      if (deployment) {
+        deploymentSelector = {
+          deploymentPath: deployment.contentRecord.deploymentPath,
+        };
+        this.updateWebViewViewCredentials();
+        this.updateWebViewViewConfigurations();
+        this.updateWebViewViewContentRecords(deploymentSelector);
+        this.requestWebviewSaveSelection();
+      }
+
+      if (
+        !deploymentSelector ||
+        !deployment ||
+        !deployment.detail ||
+        !deployment.credentialName
+      ) {
+        return;
+      }
+      return {
+        selector: deploymentSelector,
+        publishParams: {
+          deploymentName: deployment.contentRecord.deploymentName,
+          credentialName: deployment.credentialName,
+          configurationName: deployment.contentRecord.configurationName,
+          projectDir: deployment.contentRecord.projectDir,
+        },
       };
-      this.updateWebViewViewCredentials();
-      this.updateWebViewViewConfigurations();
-      this.updateWebViewViewContentRecords(deploymentSelector);
-      this.requestWebviewSaveSelection();
+    } finally {
+      // enable our home view, we are done with our sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.HIDE_DISABLE_OVERLAY,
+      });
     }
-
-    if (
-      !deploymentSelector ||
-      !deployment ||
-      !deployment.detail ||
-      !deployment.credentialName
-    ) {
-      return;
-    }
-    return {
-      selector: deploymentSelector,
-      publishParams: {
-        deploymentName: deployment.contentRecord.deploymentName,
-        credentialName: deployment.credentialName,
-        configurationName: deployment.contentRecord.configurationName,
-        projectDir: deployment.contentRecord.projectDir,
-      },
-    };
   }
 
   public resolveWebviewView(webviewView: WebviewView) {
@@ -1267,10 +1316,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   public initiatePublish(target: PublishProcessParams) {
-    this.onDeployMsg({
-      kind: WebviewToHostMessageType.DEPLOY,
-      content: target,
-    });
+    this.initiateDeployment(
+      target.deploymentName,
+      target.credentialName,
+      target.configurationName,
+      target.projectDir,
+    );
   }
 
   public async handleFileInitiatedDeployment(uri: Uri) {
@@ -1394,15 +1445,30 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         deploymentPath: contentRecord.deploymentPath,
       };
       await this.propagateDeploymentSelection(deploymentSelector);
-      const credentialName =
-        this.getCredentialNameForContentRecord(contentRecord);
+      const credential = this.getCredentialForContentRecord(contentRecord);
+      let credentialName = credential?.name;
       if (!credentialName) {
-        window.showErrorMessage(
-          `Error: Unable to Deploy. No credential found for server at ${contentRecord.serverUrl}`,
-        );
-        return;
+        try {
+          // disable our home view, we are initiating a multi-step sequence
+          // NOTE: Doing this here, because we don't always want newCredential
+          // to disable the overlay (not necessary for add credential from credential view)
+          this.webviewConduit.sendMsg({
+            kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
+          });
+          credentialName = await newCredential(
+            Views.HomeView,
+            contentRecord.serverUrl,
+          );
+          if (!credentialName) {
+            return;
+          }
+        } finally {
+          // enable our home view, we are done with our sequence
+          this.webviewConduit.sendMsg({
+            kind: HostToWebviewMessageType.HIDE_DISABLE_OVERLAY,
+          });
+        }
       }
-
       const target: PublishProcessParams = {
         deploymentName: contentRecord.saveName,
         credentialName,
@@ -1433,13 +1499,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return false;
     }
     // compatible content record already active. Publish
-    const credentialName =
-      this.getCredentialNameForContentRecord(currentContentRecord);
+    const credential = this.getCredentialForContentRecord(currentContentRecord);
+    let credentialName = credential?.name;
     if (!credentialName) {
-      window.showErrorMessage(
-        `Error: Unable to Deploy. No credential found for server at ${currentContentRecord.serverUrl}`,
+      credentialName = await newCredential(
+        Views.HomeView,
+        currentContentRecord.serverUrl,
       );
-      return;
+      if (!credentialName) {
+        return;
+      }
     }
     const target: PublishProcessParams = {
       deploymentName: currentContentRecord.saveName,

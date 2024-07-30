@@ -3,6 +3,8 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
+	"io"
 	"strings"
 
 	"github.com/posit-dev/publisher/internal/config"
@@ -56,6 +58,10 @@ func (d *NotebookDetector) InferType(base util.AbsolutePath, entrypoint util.Rel
 		}
 		code, err := pydeps.GetNotebookFileInputs(entrypointPath)
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				// Empty notebooks are not valid
+				return nil, nil
+			}
 			return nil, err
 		}
 		isVoila, err := d.HasPythonImports(strings.NewReader(code), voilaImportNames)
