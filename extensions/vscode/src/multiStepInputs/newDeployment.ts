@@ -1,7 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import path from "path";
-
 import {
   MultiStepInput,
   MultiStepState,
@@ -13,6 +12,7 @@ import {
 import {
   InputBoxValidationSeverity,
   QuickPickItem,
+  QuickPickItemKind,
   ThemeIcon,
   Uri,
   commands,
@@ -26,6 +26,7 @@ import {
   PreContentRecord,
   contentTypeStrings,
   ConfigurationInspectionResult,
+  EntryPointPath,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
 import {
@@ -40,7 +41,7 @@ import { formatURL, normalizeURL } from "src/utils/url";
 import { checkSyntaxApiKey } from "src/utils/apiKeys";
 import { DeploymentObjects } from "src/types/shared";
 import { showProgress } from "src/utils/progress";
-import { isRelativePathRoot } from "src/utils/files";
+import { vscodeOpenFiles } from "src/utils/files";
 
 type stepInfo = {
   step: number;
@@ -50,48 +51,125 @@ type stepInfo = {
 type possibleSteps = {
   noCredentials: {
     singleEntryPoint: stepInfo;
-    multipleEntryPoints: stepInfo;
+    multipleEntryPoints: {
+      singleContentType: stepInfo;
+      multipleContentTypes: stepInfo;
+    };
   };
   newCredentials: {
     singleEntryPoint: stepInfo;
-    multipleEntryPoints: stepInfo;
+    multipleEntryPoints: {
+      singleContentType: stepInfo;
+      multipleContentTypes: stepInfo;
+    };
   };
   existingCredentials: {
     singleEntryPoint: stepInfo;
-    multipleEntryPoints: stepInfo;
+    multipleEntryPoints: {
+      singleContentType: stepInfo;
+      multipleContentTypes: stepInfo;
+    };
   };
 };
 
 const steps: Record<string, possibleSteps | undefined> = {
-  inputEntryPointSelection: {
+  inputEntryPointFileSelection: {
     noCredentials: {
       singleEntryPoint: {
-        step: 0,
+        step: 0, // not yet shown
         totalSteps: 4,
       },
       multipleEntryPoints: {
-        step: 1,
-        totalSteps: 5,
+        singleContentType: {
+          step: 1,
+          totalSteps: 5,
+        },
+        multipleContentTypes: {
+          step: 1,
+          totalSteps: 6,
+        },
       },
     },
     newCredentials: {
       singleEntryPoint: {
-        step: 0,
+        step: 0, // not yet shown
         totalSteps: 5,
       },
       multipleEntryPoints: {
-        step: 1,
-        totalSteps: 6,
+        singleContentType: {
+          step: 1,
+          totalSteps: 6,
+        },
+        multipleContentTypes: {
+          step: 1,
+          totalSteps: 7,
+        },
       },
     },
     existingCredentials: {
       singleEntryPoint: {
-        step: 0,
+        step: 0, // not yet shown
         totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 1,
-        totalSteps: 3,
+        singleContentType: {
+          step: 1,
+          totalSteps: 3,
+        },
+        multipleContentTypes: {
+          step: 1,
+          totalSteps: 4,
+        },
+      },
+    },
+  },
+  inputEntryPointContentTypeSelection: {
+    noCredentials: {
+      singleEntryPoint: {
+        step: 0, // still 0
+        totalSteps: 4,
+      },
+      multipleEntryPoints: {
+        singleContentType: {
+          step: 1, // not shown
+          totalSteps: 5,
+        },
+        multipleContentTypes: {
+          step: 2,
+          totalSteps: 6,
+        },
+      },
+    },
+    newCredentials: {
+      singleEntryPoint: {
+        step: 0, // still 0
+        totalSteps: 5,
+      },
+      multipleEntryPoints: {
+        singleContentType: {
+          step: 1, // not shown
+          totalSteps: 6,
+        },
+        multipleContentTypes: {
+          step: 2,
+          totalSteps: 7,
+        },
+      },
+    },
+    existingCredentials: {
+      singleEntryPoint: {
+        step: 0, // still 0
+        totalSteps: 2,
+      },
+      multipleEntryPoints: {
+        singleContentType: {
+          step: 1, // not shown
+          totalSteps: 3,
+        },
+        multipleContentTypes: {
+          step: 2,
+          totalSteps: 4,
+        },
       },
     },
   },
@@ -102,8 +180,14 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 4,
       },
       multipleEntryPoints: {
-        step: 2,
-        totalSteps: 5,
+        singleContentType: {
+          step: 2,
+          totalSteps: 5,
+        },
+        multipleContentTypes: {
+          step: 3,
+          totalSteps: 6,
+        },
       },
     },
     newCredentials: {
@@ -112,8 +196,14 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 5,
       },
       multipleEntryPoints: {
-        step: 2,
-        totalSteps: 6,
+        singleContentType: {
+          step: 2,
+          totalSteps: 6,
+        },
+        multipleContentTypes: {
+          step: 3,
+          totalSteps: 7,
+        },
       },
     },
     existingCredentials: {
@@ -122,20 +212,32 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 2,
-        totalSteps: 3,
+        singleContentType: {
+          step: 2,
+          totalSteps: 3,
+        },
+        multipleContentTypes: {
+          step: 3,
+          totalSteps: 4,
+        },
       },
     },
   },
   pickCredentials: {
     noCredentials: {
       singleEntryPoint: {
-        step: 0, // still 1
+        step: 1, // not shown
         totalSteps: 4,
       },
       multipleEntryPoints: {
-        step: 0, // still 2
-        totalSteps: 5,
+        singleContentType: {
+          step: 2, // not shown
+          totalSteps: 5,
+        },
+        multipleContentTypes: {
+          step: 3, // not shown
+          totalSteps: 6,
+        },
       },
     },
     newCredentials: {
@@ -144,8 +246,14 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 5,
       },
       multipleEntryPoints: {
-        step: 3,
-        totalSteps: 6,
+        singleContentType: {
+          step: 3,
+          totalSteps: 6,
+        },
+        multipleContentTypes: {
+          step: 4,
+          totalSteps: 7,
+        },
       },
     },
     existingCredentials: {
@@ -154,8 +262,14 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 3,
-        totalSteps: 3,
+        singleContentType: {
+          step: 3,
+          totalSteps: 3,
+        },
+        multipleContentTypes: {
+          step: 4,
+          totalSteps: 4,
+        },
       },
     },
   },
@@ -166,8 +280,14 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 4,
       },
       multipleEntryPoints: {
-        step: 3,
-        totalSteps: 5,
+        singleContentType: {
+          step: 3,
+          totalSteps: 5,
+        },
+        multipleContentTypes: {
+          step: 4,
+          totalSteps: 6,
+        },
       },
     },
     newCredentials: {
@@ -176,18 +296,30 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 5,
       },
       multipleEntryPoints: {
-        step: 4,
-        totalSteps: 6,
+        singleContentType: {
+          step: 4,
+          totalSteps: 6,
+        },
+        multipleContentTypes: {
+          step: 5,
+          totalSteps: 7,
+        },
       },
     },
     existingCredentials: {
       singleEntryPoint: {
-        step: 0, // still 2
+        step: 2, // not shown
         totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 0, // still 3
-        totalSteps: 3,
+        singleContentType: {
+          step: 3, // not shown
+          totalSteps: 3,
+        },
+        multipleContentTypes: {
+          step: 4, // not shown
+          totalSteps: 4,
+        },
       },
     },
   },
@@ -198,8 +330,14 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 4,
       },
       multipleEntryPoints: {
-        step: 4,
-        totalSteps: 5,
+        singleContentType: {
+          step: 4,
+          totalSteps: 5,
+        },
+        multipleContentTypes: {
+          step: 5,
+          totalSteps: 6,
+        },
       },
     },
     newCredentials: {
@@ -208,18 +346,30 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 5,
       },
       multipleEntryPoints: {
-        step: 5,
-        totalSteps: 6,
+        singleContentType: {
+          step: 5,
+          totalSteps: 6,
+        },
+        multipleContentTypes: {
+          step: 6,
+          totalSteps: 7,
+        },
       },
     },
     existingCredentials: {
       singleEntryPoint: {
-        step: 0, // still 2
+        step: 2, // not shown
         totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 0, // still 3
-        totalSteps: 3,
+        singleContentType: {
+          step: 3, // not shown
+          totalSteps: 3,
+        },
+        multipleContentTypes: {
+          step: 4, // not shown
+          totalSteps: 4,
+        },
       },
     },
   },
@@ -230,8 +380,14 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 4,
       },
       multipleEntryPoints: {
-        step: 5,
-        totalSteps: 5,
+        singleContentType: {
+          step: 5,
+          totalSteps: 5,
+        },
+        multipleContentTypes: {
+          step: 6,
+          totalSteps: 6,
+        },
       },
     },
     newCredentials: {
@@ -240,18 +396,30 @@ const steps: Record<string, possibleSteps | undefined> = {
         totalSteps: 5,
       },
       multipleEntryPoints: {
-        step: 6,
-        totalSteps: 6,
+        singleContentType: {
+          step: 6,
+          totalSteps: 6,
+        },
+        multipleContentTypes: {
+          step: 7,
+          totalSteps: 7,
+        },
       },
     },
     existingCredentials: {
       singleEntryPoint: {
-        step: 0, // still 2
+        step: 2, // not shown
         totalSteps: 2,
       },
       multipleEntryPoints: {
-        step: 0, // still 3
-        totalSteps: 3,
+        singleContentType: {
+          step: 3, // not shown
+          totalSteps: 3,
+        },
+        multipleContentTypes: {
+          step: 4, // not shown
+          totalSteps: 4,
+        },
       },
     },
   },
@@ -259,7 +427,7 @@ const steps: Record<string, possibleSteps | undefined> = {
 
 export async function newDeployment(
   viewId: string,
-  projectDir?: string,
+  projectDir = ".",
   entryPoint?: string,
 ): Promise<DeploymentObjects | undefined> {
   // ***************************************************************
@@ -270,7 +438,7 @@ export async function newDeployment(
   let credentials: Credential[] = [];
   let credentialListItems: QuickPickItem[] = [];
 
-  let entryPointListItems: QuickPickItemWithIndex[] = [];
+  let entryPointListItems: QuickPickItem[] = [];
   let inspectionResults: ConfigurationInspectionResult[] = [];
   let contentRecordNames = new Map<string, string[]>();
 
@@ -302,8 +470,12 @@ export async function newDeployment(
     return newCredentialForced(state) || newCredentialSelected(state);
   };
 
-  const hasMultipleEntryPoints = () => {
+  const hasMultiplePossibleEntryPointFiles = () => {
     return entryPointListItems.length > 1;
+  };
+
+  const hasMultipleContentTypesForSelectedEntryPoint = () => {
+    return inspectionResults.length > 1;
   };
 
   const getStepInfo = (
@@ -312,25 +484,85 @@ export async function newDeployment(
   ): stepInfo | undefined => {
     const step = steps[stepId];
     if (!step) {
-      return undefined;
+      // if we have not covered the step, then don't number it.
+      return {
+        step: 0,
+        totalSteps: 0,
+      };
     }
     if (newCredentialForced(multiStepState)) {
-      if (hasMultipleEntryPoints()) {
-        return step.noCredentials.multipleEntryPoints;
+      if (hasMultiplePossibleEntryPointFiles()) {
+        if (hasMultipleContentTypesForSelectedEntryPoint()) {
+          return step.noCredentials.multipleEntryPoints.multipleContentTypes;
+        }
+        return step.noCredentials.multipleEntryPoints.singleContentType;
       }
       return step.noCredentials.singleEntryPoint;
     }
     if (newCredentialSelected(multiStepState)) {
-      if (hasMultipleEntryPoints()) {
-        return step.newCredentials.multipleEntryPoints;
+      if (hasMultiplePossibleEntryPointFiles()) {
+        if (hasMultipleContentTypesForSelectedEntryPoint()) {
+          return step.newCredentials.multipleEntryPoints.multipleContentTypes;
+        }
+        return step.newCredentials.multipleEntryPoints.singleContentType;
       }
       return step.newCredentials.singleEntryPoint;
     }
     // else it has to be existing credential selected
-    if (hasMultipleEntryPoints()) {
-      return step.existingCredentials.multipleEntryPoints;
+    if (hasMultiplePossibleEntryPointFiles()) {
+      if (hasMultipleContentTypesForSelectedEntryPoint()) {
+        return step.existingCredentials.multipleEntryPoints
+          .multipleContentTypes;
+      }
+      return step.existingCredentials.multipleEntryPoints.singleContentType;
     }
     return step.existingCredentials.singleEntryPoint;
+  };
+
+  const getConfigurationInspectionQuickPicks = (
+    relEntryPoint: EntryPointPath,
+  ) => {
+    return new Promise<QuickPickItemWithIndex[]>(async (resolve, reject) => {
+      const inspectionListItems: QuickPickItemWithIndex[] = [];
+
+      try {
+        const python = await getPythonInterpreterPath();
+        const dir = path.dirname(relEntryPoint);
+        const entryPointFile = path.basename(relEntryPoint);
+
+        const inspectResponse = await api.configurations.inspect(dir, python, {
+          entrypoint: entryPointFile,
+        });
+
+        inspectionResults = inspectResponse.data;
+        inspectionResults.forEach((result, i) => {
+          const config = result.configuration;
+          if (config.entrypoint) {
+            inspectionListItems.push({
+              iconPath: new ThemeIcon("gear"),
+              label: config.type.toString(),
+              description: `(${contentTypeStrings[config.type]})`,
+              index: i,
+            });
+          }
+        });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "newDeployment, configurations.inspect",
+          error,
+        );
+        window.showErrorMessage(
+          `Unable to continue with project inspection failure for ${entryPoint}. ${summary}`,
+        );
+        return reject();
+      }
+      if (!inspectionListItems.length) {
+        const msg = `Unable to continue with no project entrypoints found during inspection for ${entryPoint}.`;
+        window.showErrorMessage(msg);
+        return reject();
+      }
+      return resolve(inspectionListItems);
+    });
   };
 
   const getCredentials = new Promise<void>(async (resolve, reject) => {
@@ -359,58 +591,90 @@ export async function newDeployment(
     return resolve();
   });
 
-  const getConfigurationInspections = new Promise<void>(
-    async (resolve, reject) => {
-      try {
-        const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(
-          projectDir ? projectDir : ".",
-          python,
-          {
-            entrypoint: entryPoint,
-            recursive: projectDir ? false : true,
-          },
-        );
-        inspectionResults = inspectResponse.data;
-        inspectionResults.forEach((result, i) => {
-          const config = result.configuration;
-          if (config.entrypoint) {
-            entryPointListItems.push({
-              iconPath: new ThemeIcon("file"),
-              label: config.entrypoint,
-              description: `(${contentTypeStrings[config.type]})`,
-              detail: isRelativePathRoot(result.projectDir)
-                ? undefined
-                : `${result.projectDir}${path.sep}`,
-              index: i,
-            });
-          }
+  const getEntrypoints = new Promise<void>(async (resolve, reject) => {
+    try {
+      if (entryPoint) {
+        // we were passed in a specific entrypoint file.
+        // while we don't need it, we'll still provide the results
+        // in the same way.
+        entryPointListItems.push({
+          iconPath: new ThemeIcon("file"),
+          label: entryPoint,
         });
-      } catch (error: unknown) {
-        const summary = getSummaryStringFromError(
-          "newDeployment, configurations.inspect",
-          error,
-        );
-        window.showErrorMessage(
-          `Unable to continue with project inspection failure. ${summary}`,
-        );
-        return reject();
+        return resolve();
       }
-      if (!entryPointListItems.length) {
-        const msg = `Unable to continue with no project entrypoints found during inspection`;
-        window.showErrorMessage(msg);
-        return reject();
+      const entrypointFilesOpened: string[] = [];
+      const entrypointFilesUnopened: string[] = [];
+
+      // rely upon the backend to tell us what are valid entrypoints
+      const entryPointsResponse =
+        await api.configurations.getEntrypoints(projectDir);
+
+      // build up a list of open files, relative to the opened workspace folder
+      const openFileList: string[] = vscodeOpenFiles();
+
+      // loop through and now separate possible entrypoints into open or not
+      entryPointsResponse.data.forEach((entrypointFile) => {
+        if (
+          openFileList.find(
+            (f) => f.toLowerCase() === entrypointFile.toLowerCase(),
+          )
+        ) {
+          entrypointFilesOpened.push(entrypointFile);
+        } else {
+          entrypointFilesUnopened.push(entrypointFile);
+        }
+      });
+
+      // build the entrypointList
+      if (entrypointFilesOpened.length) {
+        entryPointListItems.push({
+          label: "Open Files",
+          kind: QuickPickItemKind.Separator,
+        });
+        entrypointFilesOpened.forEach((entryPointFile) => {
+          entryPointListItems.push({
+            iconPath: new ThemeIcon("file"),
+            label: entryPointFile,
+          });
+        });
       }
-      return resolve();
-    },
-  );
+      if (entrypointFilesUnopened.length) {
+        entryPointListItems.push({
+          label: "Discovered Entrypoints",
+          kind: QuickPickItemKind.Separator,
+        });
+        entrypointFilesUnopened.forEach((entryPointFile) => {
+          entryPointListItems.push({
+            iconPath: new ThemeIcon("file"),
+            label: entryPointFile,
+          });
+        });
+      }
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError(
+        "newDeployment, configurations.getEntrypoints",
+        error,
+      );
+      window.showErrorMessage(
+        `Unable to continue with project entrypoint detection failure. ${summary}`,
+      );
+      return reject();
+    }
+    if (!entryPointListItems.length) {
+      const msg = `Unable to continue with no project entrypoints found.`;
+      window.showErrorMessage(msg);
+      return reject();
+    }
+    return resolve();
+  });
 
   const getContentRecords = new Promise<void>(async (resolve, reject) => {
     try {
       const response = await api.contentRecords.getAll(
         projectDir ? projectDir : ".",
         {
-          recursive: projectDir ? false : true,
+          recursive: true,
         },
       );
       const contentRecordList = response.data;
@@ -438,7 +702,7 @@ export async function newDeployment(
 
   const apisComplete = Promise.all([
     getCredentials,
-    getConfigurationInspections,
+    getEntrypoints,
     getContentRecords,
   ]);
 
@@ -451,6 +715,7 @@ export async function newDeployment(
   // ***************************************************************
 
   // Select the entrypoint, if there is more than one
+  // Select the content type, if there is more than one
   // Prompt for Title
   // If no credentials, then skip to create new credential
   // If some credentials, select either use of existing or creation of a new one
@@ -479,7 +744,8 @@ export async function newDeployment(
       data: {
         // each attribute is initialized to undefined
         // to be returned when it has not been cancelled to assist type guards
-        entryPoint: undefined, // eventual type is QuickPickItem
+        entryPointPath: undefined, // eventual type is QuickPickItem
+        entryPoint: undefined, // eventual type is QuickPickItemWithIndex
         title: undefined, // eventual type is string
         credentialName: undefined, // eventual type is either a string or QuickPickItem
         url: undefined, // eventual type is string
@@ -490,7 +756,9 @@ export async function newDeployment(
     };
 
     // start the progression through the steps
-    await MultiStepInput.run((input) => inputEntryPointSelection(input, state));
+    await MultiStepInput.run((input) =>
+      inputEntryPointFileSelection(input, state),
+    );
     return state as MultiStepState;
   }
 
@@ -498,13 +766,18 @@ export async function newDeployment(
   // Step #1 - maybe?:
   // Select the entrypoint to be used w/ the contentRecord
   // ***************************************************************
-  async function inputEntryPointSelection(
+  async function inputEntryPointFileSelection(
     input: MultiStepInput,
     state: MultiStepState,
   ) {
+    // in case we have backed up from the subsequent check, we need to reset
+    // the array that it will update. This will allow steps to be the minimum number
+    // as long as we don't know it will take another one.
+    inspectionResults = [];
+
     // skip if we only have one choice.
     if (entryPointListItems.length > 1) {
-      const step = getStepInfo("inputEntryPointSelection", state);
+      const step = getStepInfo("inputEntryPointFileSelection", state);
       if (!step) {
         throw new Error(
           "newDeployment::inputEntryPointSelection step info not found.",
@@ -516,8 +789,65 @@ export async function newDeployment(
         step: step.step,
         totalSteps: step.totalSteps,
         placeholder:
-          "Select main file and content type below. (Use this field to filter selections.)",
+          "Select entrypoint file. This is your main file for your project. (Use this field to filter selections.)",
         items: entryPointListItems,
+        buttons: [],
+        shouldResume: () => Promise.resolve(false),
+        ignoreFocusOut: true,
+      });
+      state.data.entryPointPath = pick.label;
+      return (input: MultiStepInput) =>
+        inputEntryPointContentTypeSelection(input, state);
+    } else {
+      state.data.entryPointPath = entryPointListItems[0].label;
+      // We're skipping this step, so we must silently just jump to the next step
+      return inputEntryPointContentTypeSelection(input, state);
+    }
+  }
+
+  // ***************************************************************
+  // Step #2 - maybe?:
+  // Select the content type of the entrypoint
+  // ***************************************************************
+  async function inputEntryPointContentTypeSelection(
+    input: MultiStepInput,
+    state: MultiStepState,
+  ) {
+    if (!state.data.entryPointPath) {
+      return;
+    }
+
+    // always relative
+    const entryPointPath = isQuickPickItem(state.data.entryPointPath)
+      ? state.data.entryPointPath.label
+      : state.data.entryPointPath;
+
+    const inspectionQuickPicksPromise =
+      getConfigurationInspectionQuickPicks(entryPointPath);
+
+    showProgress(
+      "Scanning::newDeployment",
+      inspectionQuickPicksPromise,
+      viewId,
+    );
+
+    const inspectionQuickPicks = await inspectionQuickPicksPromise;
+
+    // skip if we only have one choice.
+    if (inspectionQuickPicks.length > 1) {
+      const step = getStepInfo("inputEntryPointContentTypeSelection", state);
+      if (!step) {
+        throw new Error(
+          "newDeployment::inputEntryPointSelection step info not found.",
+        );
+      }
+
+      const pick = await input.showQuickPick({
+        title: state.title,
+        step: step.step,
+        totalSteps: step.totalSteps,
+        placeholder: `Select the content type for your entrypoint file (${entryPointPath}).`,
+        items: inspectionQuickPicks,
         buttons: [],
         shouldResume: () => Promise.resolve(false),
         ignoreFocusOut: true,
@@ -526,7 +856,7 @@ export async function newDeployment(
       state.data.entryPoint = pick;
       return (input: MultiStepInput) => inputTitle(input, state);
     } else {
-      state.data.entryPoint = entryPointListItems[0];
+      state.data.entryPoint = inspectionQuickPicks[0];
       // We're skipping this step, so we must silently just jump to the next step
       return inputTitle(input, state);
     }
@@ -537,6 +867,11 @@ export async function newDeployment(
   // Input the Title
   // ***************************************************************
   async function inputTitle(input: MultiStepInput, state: MultiStepState) {
+    // in case we have backed up from the subsequent check, we need to reset
+    // the selection that it will update. This will allow steps to be the minimum number
+    // as long as we don't know for certain it will take more steps.
+    state.data.credentialName = undefined;
+
     const step = getStepInfo("inputTitle", state);
     if (!step) {
       throw new Error("newDeployment::inputTitle step info not found.");
