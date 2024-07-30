@@ -54,12 +54,15 @@ func (s *GetEntrypointsSuite) TestGetEntrypoints() {
 		filepath.Join("_site", "index.html"),
 		"app.R",
 		"app.py",
+		"app2.r",
+		"index.QMD",
 		"index.htm",
 		"index.html",
 		"index.qmd",
 		"notebook.ipynb",
 		"plumber.R",
 		"report.Rmd",
+		"report2ju.rmd",
 		"streamlit_app.py",
 	}
 	badFiles := []string{
