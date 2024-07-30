@@ -7,6 +7,7 @@ import {
   ConfigurationDetails,
   ConfigurationError,
   ConfigurationInspectionResult,
+  EntryPointPath,
 } from "../types/configurations";
 
 export class Configurations {
@@ -95,5 +96,17 @@ export class Configurations {
         },
       },
     );
+  }
+
+  // Inspect the project, returning all possible (detected) configurations
+  // Returns:
+  // 200 - success
+  // 500 - internal server error
+  getEntrypoints(projectDir: string) {
+    return this.client.post<EntryPointPath[]>("/entrypoints", {
+      params: {
+        dir: projectDir,
+      },
+    });
   }
 }
