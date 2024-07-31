@@ -10,6 +10,9 @@ scripts/
 CONTRIBUTING.md
 vsc-extension-quickstart.md
 
+# Exclude icons as they are bundled into a font
+assets/icons/**
+
 # Include codicons dist from node_modules
 !node_modules/@vscode/codicons/dist
 
