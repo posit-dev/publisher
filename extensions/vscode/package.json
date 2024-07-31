@@ -507,7 +507,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify",
+    "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run build-font && npm run esbuild-base -- --minify",
     "esbuild-base": "tsc --noEmit && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
