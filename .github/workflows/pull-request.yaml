@@ -10,6 +10,8 @@ jobs:
   lint:
     uses: ./.github/workflows/lint.yaml
   # Unit Tests
+  home-view-unit-tests:
+    uses: ./.github/workflows/home-view-unit-test.yaml
   agent:
     uses: ./.github/workflows/agent.yaml
   vscode:

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vue-tsc --noEmit && vite build"
+    "build": "vue-tsc --noEmit && vite build",
+    "test": "TZ=UTC vitest"
   },
   "dependencies": {
     "axios": "^1.6.0",
@@ -20,9 +21,11 @@
     "@vitejs/plugin-vue": "^5.0.4",
     "@vscode/webview-ui-toolkit": "^1.4.0",
     "@vue/tsconfig": "^0.5.1",
+    "jsdom": "^24.1.1",
     "sass": "^1.72.0",
     "typescript": "~5.4.2",
     "vite": "^5.1.6",
+    "vitest": "^2.0.4",
     "vue-tsc": "^2.0.6"
   }
 }
