@@ -6,7 +6,7 @@
   "description": "Publish and share your Python and R content on Posit Connect",
   "version": "99.0.0",
   "license": "MIT",
-  "icon": "assets/img/color/posit-publisher.png",
+  "icon": "assets/img/posit-publisher.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/posit-dev/publisher/tree/main/extensions/vscode"
@@ -189,10 +189,7 @@
       {
         "command": "posit.publisher.deployWithEntrypoint",
         "title": "Deploy with this Entrypoint",
-        "icon": {
-          "light": "assets/img/bw/posit-publisher-light.png",
-          "dark": "assets/img/bw/posit-publisher-dark.png"
-        },
+        "icon": "$(posit-publisher-publish)",
         "category": "Posit Publisher"
       }
     ],
@@ -354,12 +351,21 @@
         }
       ]
     },
+    "icons": {
+      "posit-publisher-publish": {
+        "description": "publish icon",
+        "default": {
+          "fontPath": "dist/posit-publisher-icons.woff2",
+          "fontCharacter": "\\f101"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
           "id": "posit-publisher",
           "title": "Posit Publisher",
-          "icon": "assets/img/color/posit-publisher.png"
+          "icon": "$(posit-publisher-publish)"
         }
       ],
       "panel": [
