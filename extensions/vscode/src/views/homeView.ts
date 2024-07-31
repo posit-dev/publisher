@@ -1154,6 +1154,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       enableScripts: true,
       // Restrict the webview to only load resources from these directories
       localResourceRoots: [
+        Uri.joinPath(this.extensionUri, "dist"),
         Uri.joinPath(this.extensionUri, "webviews", "homeView", "dist"),
         Uri.joinPath(
           this.extensionUri,
@@ -1211,6 +1212,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "dist",
       "codicon.css",
     ]);
+    // Custom Posit Publisher font
+    const positPublisherFontCssUri = getUri(webview, extensionUri, [
+      "dist",
+      "posit-publisher-icons.css",
+    ]);
 
     const nonce = getNonce();
 
@@ -1230,6 +1236,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           />
           <link rel="stylesheet" type="text/css" href="${stylesUri}">
           <link rel="stylesheet" type="text/css" href="${codiconsUri}">
+          <link rel="stylesheet" type="text/css" href="${positPublisherFontCssUri}">
           <title>Hello World</title>
         </head>
         <body>

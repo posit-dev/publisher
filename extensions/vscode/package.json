@@ -6,7 +6,7 @@
   "description": "Publish and share your Python and R content on Posit Connect",
   "version": "99.0.0",
   "license": "MIT",
-  "icon": "assets/img/color/posit-publisher.png",
+  "icon": "assets/img/posit-publisher.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/posit-dev/publisher/tree/main/extensions/vscode"
@@ -189,10 +189,7 @@
       {
         "command": "posit.publisher.deployWithEntrypoint",
         "title": "Deploy with this Entrypoint",
-        "icon": {
-          "light": "assets/img/bw/posit-publisher-light.png",
-          "dark": "assets/img/bw/posit-publisher-dark.png"
-        },
+        "icon": "$(posit-publisher-publish)",
         "category": "Posit Publisher"
       }
     ],
@@ -354,12 +351,21 @@
         }
       ]
     },
+    "icons": {
+      "posit-publisher-publish": {
+        "description": "publish icon",
+        "default": {
+          "fontPath": "dist/posit-publisher-icons.woff2",
+          "fontCharacter": "\\f101"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
           "id": "posit-publisher",
           "title": "Posit Publisher",
-          "icon": "assets/img/color/posit-publisher.png"
+          "icon": "$(posit-publisher-publish)"
         }
       ],
       "panel": [
@@ -501,10 +507,11 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify",
+    "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify && npm run build-font",
     "esbuild-base": "tsc --noEmit && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "build-font": "fantasticon",
     "lint": "eslint src --ext ts --max-warnings 0",
     "compile": "tsc -p ./",
     "test": "npm run compile && node ./out/test/runTest.js"
@@ -523,6 +530,7 @@
     "esbuild": "^0.21.4",
     "eslint": "^8.50.0",
     "eslint-config-prettier": "^9.1.0",
+    "fantasticon": "^3.0.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
     "typescript": "^5.2.2"
