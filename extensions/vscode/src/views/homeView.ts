@@ -22,7 +22,6 @@ import { isAxiosError } from "axios";
 import {
   Configuration,
   ConfigurationError,
-  Credential,
   ContentRecord,
   EventStreamMessage,
   FileAction,
@@ -66,7 +65,6 @@ import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessag
 import { confirmOverwrite } from "src/dialogs";
 import { splitFilesOnInclusion } from "src/utils/files";
 import { DeploymentQuickPick } from "src/types/quickPicks";
-import { normalizeURL } from "src/utils/url";
 import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
@@ -93,7 +91,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private state: PublisherState = new PublisherState();
 
-  private credentials: Credential[] = [];
   private root: WorkspaceFolder | undefined;
   private webviewView?: WebviewView;
   private extensionUri: Uri;
@@ -403,12 +400,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshCredentialData() {
     try {
-      const api = await useApi();
-      const apiRequest = api.credentials.list();
-      showProgress("Refreshing Credentials", apiRequest, Views.HomeView);
-
-      const response = await apiRequest;
-      this.credentials = response.data;
+      const refresh = this.state.refreshCredentials();
+      showProgress("Refreshing Credentials", refresh, Views.HomeView);
+      await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshCredentialData::credentials.list",
@@ -445,7 +439,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
       content: {
-        credentials: this.credentials,
+        credentials: this.state.credentials,
       },
     });
   }
@@ -779,17 +773,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.requestWebviewSaveSelection();
   }
 
-  private getCredentialForContentRecord(
-    contentRecord: ContentRecord | PreContentRecord,
-  ): Credential | undefined {
-    const credential = this.credentials.find(
-      (credential) =>
-        normalizeURL(credential.url).toLowerCase() ===
-        normalizeURL(contentRecord.serverUrl).toLowerCase(),
-    );
-    return credential;
-  }
-
   private async showSelectOrCreateConfigForDeployment(): Promise<
     DeploymentSelectionResult | undefined
   > {
@@ -828,7 +811,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this.propagateDeploymentSelection(deploymentSelector);
 
         const credential =
-          this.getCredentialForContentRecord(targetContentRecord);
+          this.state.findCredentialForContentRecord(targetContentRecord);
 
         if (
           !targetContentRecord.deploymentName ||
@@ -904,13 +887,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         ) {
           this.state.configurations.push(deploymentObjects.configuration);
         }
-        if (
-          !this.credentials.find(
-            (credential) =>
-              credential.name === deploymentObjects.credential.name,
-          )
-        ) {
-          this.credentials.push(deploymentObjects.credential);
+        if (!this.state.findCredential(deploymentObjects.credential.name)) {
+          this.state.credentials.push(deploymentObjects.credential);
           refreshCredentials = true;
         }
         const deploymentSelector: DeploymentSelector = {
@@ -1006,11 +984,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           }
         }
 
-        let credential = this.credentials.find(
-          (credential) =>
-            normalizeURL(credential.url).toLowerCase() ===
-            normalizeURL(contentRecord.serverUrl).toLowerCase(),
-        );
+        let credential =
+          this.state.findCredentialForContentRecord(contentRecord);
 
         const result = calculateTitle(contentRecord, config);
         const title = result.title;
@@ -1434,7 +1409,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         deploymentPath: contentRecord.deploymentPath,
       };
       await this.propagateDeploymentSelection(deploymentSelector);
-      const credential = this.getCredentialForContentRecord(contentRecord);
+      const credential =
+        this.state.findCredentialForContentRecord(contentRecord);
       let credentialName = credential?.name;
       if (!credentialName) {
         try {
@@ -1488,7 +1464,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return false;
     }
     // compatible content record already active. Publish
-    const credential = this.getCredentialForContentRecord(currentContentRecord);
+    const credential =
+      this.state.findCredentialForContentRecord(currentContentRecord);
     let credentialName = credential?.name;
     if (!credentialName) {
       credentialName = await newCredential(

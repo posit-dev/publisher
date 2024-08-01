@@ -10,6 +10,7 @@ import {
   PreContentRecordWithConfig,
   useApi,
 } from "src/api";
+import { normalizeURL } from "./utils/url";
 
 // function findContentRecord<
 //   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -29,19 +30,30 @@ function findConfiguration<T extends Configuration | ConfigurationError>(
   );
 }
 
-// function findCredential(
-//   name: string,
-//   creds: Credential[],
-// ): Credential | undefined {
-//   return creds.find((c) => c.name === name);
-// }
+function findCredential(
+  name: string,
+  creds: Credential[],
+): Credential | undefined {
+  return creds.find((c) => c.name === name);
+}
+
+function findCredentialForContentRecord(
+  contentRecord: ContentRecord | PreContentRecord | PreContentRecordWithConfig,
+  creds: Credential[],
+): Credential | undefined {
+  return creds.find(
+    (c) =>
+      normalizeURL(c.url).toLowerCase() ===
+      normalizeURL(contentRecord.serverUrl).toLowerCase(),
+  );
+}
 
 export class PublisherState implements Disposable {
   contentRecords: Array<
     ContentRecord | PreContentRecord | PreContentRecordWithConfig
   > = [];
-  credentials: Credential[] = [];
   configurations: Array<Configuration | ConfigurationError> = [];
+  credentials: Credential[] = [];
 
   dispose() {
     this.contentRecords.splice(0, this.contentRecords.length);
@@ -76,5 +88,25 @@ export class PublisherState implements Disposable {
 
   findConfigInError(name: string, projectDir: string) {
     return findConfiguration(name, projectDir, this.configsInError);
+  }
+
+  async refreshCredentials() {
+    const api = await useApi();
+    const response = await api.credentials.list();
+
+    this.credentials = response.data;
+  }
+
+  findCredential(name: string) {
+    return findCredential(name, this.credentials);
+  }
+
+  findCredentialForContentRecord(
+    contentRecord:
+      | ContentRecord
+      | PreContentRecord
+      | PreContentRecordWithConfig,
+  ) {
+    return findCredentialForContentRecord(contentRecord, this.credentials);
   }
 }
