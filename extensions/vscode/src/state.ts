@@ -98,6 +98,17 @@ export class PublisherState implements Disposable {
     return this.findContentRecordByPath(selection.deploymentPath);
   }
 
+  getSelectedConfiguration() {
+    const contentRecord = this.getSelectedContentRecord();
+    if (!contentRecord) {
+      return undefined;
+    }
+    return this.findValidConfig(
+      contentRecord.configurationName,
+      contentRecord.projectDir,
+    );
+  }
+
   async refreshContentRecords() {
     const api = await useApi();
     const response = await api.contentRecords.getAll(".", { recursive: true });

@@ -121,7 +121,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       this.updateWebViewViewCredentials();
     });
     useBus().on("requestActiveConfig", () => {
-      useBus().trigger("activeConfigChanged", this.getActiveConfig());
+      useBus().trigger(
+        "activeConfigChanged",
+        this.state.getSelectedConfiguration(),
+      );
     });
     useBus().on("requestActiveContentRecord", () => {
       useBus().trigger(
@@ -302,7 +305,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async updateFileList(uri: string, action: FileAction) {
-    const activeConfig = this.getActiveConfig();
+    const activeConfig = this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::updateFileList: No active configuration.");
       return;
@@ -433,27 +436,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private getActiveConfig(): Configuration | undefined {
-    const savedState = this.state.getSelection();
-    if (!savedState) {
-      return undefined;
-    }
-    return this.getConfigBySelector(savedState);
-  }
-
-  private getConfigBySelector(selector: DeploymentSelector) {
-    const deployment = this.state.findContentRecordByPath(
-      selector.deploymentPath,
-    );
-    if (deployment) {
-      return this.state.findValidConfig(
-        deployment.configurationName,
-        deployment.projectDir,
-      );
-    }
-    return undefined;
-  }
-
   private async saveSelectionState(state: SelectionState): Promise<void> {
     await this.state.updateSelection(state);
 
@@ -461,11 +443,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "activeContentRecordChanged",
       this.state.getSelectedContentRecord(),
     );
-    useBus().trigger("activeConfigChanged", this.getActiveConfig());
+    useBus().trigger(
+      "activeConfigChanged",
+      this.state.getSelectedConfiguration(),
+    );
   }
 
   private async onRefreshPythonPackages() {
-    const activeConfiguration = this.getActiveConfig();
+    const activeConfiguration = this.state.getSelectedConfiguration();
     let pythonProject = true;
     let packages: string[] = [];
     let packageFile: string | undefined;
@@ -527,7 +512,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async onRefreshRPackages() {
-    const activeConfiguration = this.getActiveConfig();
+    const activeConfiguration = this.state.getSelectedConfiguration();
     let rProject = true;
     let packages: RPackage[] = [];
     let packageFile: string | undefined;
@@ -612,7 +597,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
-    const activeConfiguration = this.getActiveConfig();
+    const activeConfiguration = this.state.getSelectedConfiguration();
     if (activeConfiguration === undefined) {
       // Cannot scan if there is no active configuration.
       return;
@@ -669,7 +654,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
-    const activeConfiguration = this.getActiveConfig();
+    const activeConfiguration = this.state.getSelectedConfiguration();
     if (activeConfiguration === undefined) {
       // Cannot scan if there is no active configuration.
       return;
@@ -748,7 +733,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const config = await selectNewOrExistingConfig(
         targetContentRecord,
         Views.HomeView,
-        this.getActiveConfig(),
+        this.state.getSelectedConfiguration(),
       );
       if (config) {
         const api = await useApi();
@@ -908,7 +893,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const lastContentRecordProjectDir = projectDir
         ? projectDir
         : this.state.getSelectedContentRecord()?.projectDir;
-      const lastConfigName = this.getActiveConfig()?.configurationName;
+      const lastConfigName =
+        this.state.getSelectedConfiguration()?.configurationName;
 
       const includedContentRecords = contentRecordsSubset
         ? contentRecordsSubset
@@ -1185,7 +1171,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "activeContentRecordChanged",
         this.state.getSelectedContentRecord(),
       );
-      useBus().trigger("activeConfigChanged", this.getActiveConfig());
+      useBus().trigger(
+        "activeConfigChanged",
+        this.state.getSelectedConfiguration(),
+      );
     }
   };
 
@@ -1201,12 +1190,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   public refreshConfigurations = async () => {
     await this.refreshConfigurationData();
     this.updateWebViewViewConfigurations();
-    useBus().trigger("activeConfigChanged", this.getActiveConfig());
+    useBus().trigger(
+      "activeConfigChanged",
+      this.state.getSelectedConfiguration(),
+    );
   };
 
   public sendRefreshedFilesLists = async () => {
     const api = await useApi();
-    const activeConfig = this.getActiveConfig();
+    const activeConfig = this.state.getSelectedConfiguration();
     if (activeConfig) {
       try {
         const apiRequest = api.files.getByConfiguration(
@@ -1529,7 +1521,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           if (this.root === undefined) {
             return;
           }
-          const cfg = this.getActiveConfig();
+          const cfg = this.state.getSelectedConfiguration();
           const packageFile = cfg?.configuration.python?.packageFile;
           if (packageFile === undefined) {
             return;
@@ -1555,7 +1547,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           if (this.root === undefined) {
             return;
           }
-          const cfg = this.getActiveConfig();
+          const cfg = this.state.getSelectedConfiguration();
           const packageFile = cfg?.configuration.r?.packageFile;
           if (packageFile === undefined) {
             return;
