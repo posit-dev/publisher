@@ -36,6 +36,11 @@ const credentialsCommands = {
 
 const credentialsContexts = {
   Keychain: "posit.publisher.credentials.tree.item.keychain",
+  EnvironmentVars: "posit.publisher.credentials.tree.item.environmentVars",
+};
+
+export const CredentialGUIs = {
+  EnvironmentGUID: "00000000-0000-0000-0000-000000000000",
 };
 
 const filesCommands = {

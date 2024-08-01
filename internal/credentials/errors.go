@@ -30,11 +30,51 @@ func (e *NotFoundError) Error() string {
 
 // URL is used by another credential
 type URLCollisionError struct {
-	URL string
+	Name string
+	URL  string
 }
 
 func (e *URLCollisionError) Error() string {
-	return fmt.Sprintf("URL already in use: %s", e.URL)
+	return fmt.Sprintf("URL value conflicts with existing credential (%s) URL: %s", e.Name, e.URL)
+}
+
+// Environment URL overlaps with Credential URL
+type EnvURLCollisionError struct {
+	Name string
+	URL  string
+}
+
+func (e *EnvURLCollisionError) Error() string {
+	return fmt.Sprintf("CONNECT_SERVER URL value conflicts with existing credential (%s) URL: %s", e.Name, e.URL)
+}
+
+// Name is used by another credential
+type NameCollisionError struct {
+	Name string
+	URL  string
+}
+
+func (e *NameCollisionError) Error() string {
+	return fmt.Sprintf("Name value conflicts with existing credential (%s) URL: %s", e.Name, e.URL)
+}
+
+// Environment URL overlaps with Credential URL
+type EnvNameCollisionError struct {
+	Name string
+	URL  string
+}
+
+func (e *EnvNameCollisionError) Error() string {
+	return fmt.Sprintf("CONNECT_SERVER Name value conflicts with existing credential (%s) URL: %s", e.Name, e.URL)
+}
+
+// Deleting Environment Credentials Not allowed
+type EnvURLDeleteError struct {
+	GUID string
+}
+
+func (e *EnvURLDeleteError) Error() string {
+	return fmt.Sprintf("DELETING an environment credential is not allowed. (GUID=%s)", e.GUID)
 }
 
 type VersionError struct {

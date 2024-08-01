@@ -28,6 +28,9 @@ package credentials
 import (
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/url"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/posit-dev/publisher/internal/util"
@@ -37,6 +40,8 @@ import (
 const ServiceName = "Posit Publisher Safe Storage"
 
 const CurrentVersion = 0
+
+const EnvVarGUID = "00000000-0000-0000-0000-000000000000"
 
 type Credential struct {
 	GUID   string `json:"guid"`
@@ -71,9 +76,60 @@ func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 
 type CredentialsService struct{}
 
+// EnvFactory creates a Credential based on the presence of the
+// environment value of CONNECT_SERVER and CONNECT_API_KEY
+func (cs *CredentialsService) EnvCredentialRecordFactory() (*CredentialRecord, error) {
+
+	serverUrl := os.Getenv("CONNECT_SERVER")
+	ak := os.Getenv("CONNECT_API_KEY")
+	name := os.Getenv("CONNECT_SERVER_NAME")
+
+	if serverUrl != "" {
+		normalizedUrl, err := util.NormalizeServerURL(serverUrl)
+		if err != nil {
+			return nil, fmt.Errorf("error normalizing environment server URL: %s %v", serverUrl, err)
+		}
+
+		if name == "" {
+			name = normalizedUrl
+			u, err := url.Parse(normalizedUrl)
+			if err == nil {
+				// if we can, we'll use the host for the name
+				name, _, err = net.SplitHostPort(u.Host)
+				if err != nil {
+					name = u.Host
+				}
+			}
+		}
+
+		cred := Credential{
+			GUID:   EnvVarGUID, // We'll use a well known GUID to indicate it is from the ENV vars
+			Name:   name,
+			URL:    normalizedUrl,
+			ApiKey: ak,
+		}
+
+		raw, err := json.Marshal(cred)
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling environment credential: %v", err)
+		}
+
+		record := CredentialRecord{
+			GUID:    EnvVarGUID,
+			Version: CurrentVersion,
+			Data:    json.RawMessage(raw),
+		}
+
+		return &record, nil
+	}
+	// None found but not an error
+	return nil, nil
+}
+
 // Delete removes a Credential by its guid.
 // If lookup by guid fails, a NotFoundError is returned.
 func (cs *CredentialsService) Delete(guid string) error {
+
 	table, err := cs.load()
 	if err != nil {
 		return err
@@ -82,6 +138,11 @@ func (cs *CredentialsService) Delete(guid string) error {
 	_, exists := table[guid]
 	if !exists {
 		return &NotFoundError{GUID: guid}
+	}
+
+	// protect against deleting our environment variable credentials
+	if guid == EnvVarGUID {
+		return &EnvURLDeleteError{}
 	}
 
 	delete(table, guid)
@@ -133,15 +194,36 @@ func (cs *CredentialsService) Set(name string, url string, ak string) (*Credenti
 		return nil, err
 	}
 
-	// Check if URL is already used by another credential
+	// Check if URL or name is already used by another credential
 	for guid, record := range table {
 		cred, err := record.ToCredential()
 		if err != nil {
 			return nil, &CorruptedError{GUID: guid}
 		}
-		if cred.URL == url {
-			return nil, &URLCollisionError{URL: url}
+		if cred.URL == normalizedUrl {
+			if cred.GUID == EnvVarGUID {
+				return nil, &EnvURLCollisionError{
+					Name: name,
+					URL:  normalizedUrl,
+				}
+			}
+			return nil, &URLCollisionError{Name: name,
+				URL: normalizedUrl,
+			}
 		}
+		if cred.Name == name {
+			if cred.GUID == EnvVarGUID {
+				return nil, &EnvNameCollisionError{
+					Name: name,
+					URL:  normalizedUrl,
+				}
+			}
+			return nil, &NameCollisionError{
+				Name: name,
+				URL:  normalizedUrl,
+			}
+		}
+
 	}
 
 	guid := uuid.New().String()
@@ -173,6 +255,14 @@ func (cs *CredentialsService) Set(name string, url string, ak string) (*Credenti
 
 // Saves the CredentialTable
 func (cs *CredentialsService) save(table CredentialTable) error {
+
+	// remove any environment variable credential from the table
+	// before saving
+	_, found := table[EnvVarGUID]
+	if found {
+		delete(table, EnvVarGUID)
+	}
+
 	data, err := json.Marshal(table)
 	if err != nil {
 		return fmt.Errorf("failed to serialize credentials: %v", err)
@@ -192,15 +282,31 @@ func (cs *CredentialsService) load() (CredentialTable, error) {
 	data, err := ks.Get(ServiceName, "credentials")
 	if err != nil {
 		if err == keyring.ErrNotFound {
-			return make(map[string]CredentialRecord), nil
+			// create an empty table and continue (so we can add environment variables)
+			emptyTable := make(map[string]CredentialRecord)
+			emptyTableBytes, err := json.Marshal(emptyTable)
+			if err != nil {
+				return nil, fmt.Errorf("failed to initialize credentials: %v", err)
+			}
+			data = string(emptyTableBytes)
+		} else {
+			return nil, &LoadError{Err: err}
 		}
-		return nil, &LoadError{Err: err}
 	}
 
 	var table CredentialTable
 	err = json.Unmarshal([]byte(data), &table)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deserialize credentials: %v", err)
+	}
+
+	// insert a possible environment variable credential before returning
+	record, err := cs.EnvCredentialRecordFactory()
+	if err != nil {
+		return nil, err
+	}
+	if record != nil {
+		table[EnvVarGUID] = *record
 	}
 
 	return table, nil
