@@ -126,7 +126,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     useBus().on("requestActiveContentRecord", () => {
       useBus().trigger(
         "activeContentRecordChanged",
-        this.getActiveContentRecord(),
+        this.state.getSelectedContentRecord(),
       );
     });
 
@@ -441,17 +441,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return this.getConfigBySelector(savedState);
   }
 
-  private getActiveContentRecord():
-    | ContentRecord
-    | PreContentRecord
-    | undefined {
-    const savedState = this.state.getSelection();
-    if (!savedState) {
-      return undefined;
-    }
-    return this.state.findContentRecordByPath(savedState.deploymentPath);
-  }
-
   private getConfigBySelector(selector: DeploymentSelector) {
     const deployment = this.state.findContentRecordByPath(
       selector.deploymentPath,
@@ -470,7 +459,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     useBus().trigger(
       "activeContentRecordChanged",
-      this.getActiveContentRecord(),
+      this.state.getSelectedContentRecord(),
     );
     useBus().trigger("activeConfigChanged", this.getActiveConfig());
   }
@@ -605,7 +594,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (this.root === undefined) {
       return;
     }
-    const activeContentRecord = this.getActiveContentRecord();
+    const activeContentRecord = this.state.getSelectedContentRecord();
     if (!activeContentRecord) {
       return;
     }
@@ -744,7 +733,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async showSelectOrCreateConfigForDeployment(): Promise<
     DeploymentSelectionResult | undefined
   > {
-    const targetContentRecord = this.getActiveContentRecord();
+    const targetContentRecord = this.state.getSelectedContentRecord();
     if (targetContentRecord === undefined) {
       console.error(
         "homeView::showSelectConfigForDeployment: No target deployment.",
@@ -886,7 +875,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async showNewCredential() {
-    const contentRecord = this.getActiveContentRecord();
+    const contentRecord = this.state.getSelectedContentRecord();
 
     return await commands.executeCommand(
       Commands.Credentials.Add,
@@ -914,10 +903,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       // Create quick pick list from current contentRecords, credentials and configs
       const deployments: DeploymentQuickPick[] = [];
-      const lastContentRecordName = this.getActiveContentRecord()?.saveName;
+      const lastContentRecordName =
+        this.state.getSelectedContentRecord()?.saveName;
       const lastContentRecordProjectDir = projectDir
         ? projectDir
-        : this.getActiveContentRecord()?.projectDir;
+        : this.state.getSelectedContentRecord()?.projectDir;
       const lastConfigName = this.getActiveConfig()?.configurationName;
 
       const includedContentRecords = contentRecordsSubset
@@ -1193,7 +1183,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (includeSavedState && selectionState) {
       useBus().trigger(
         "activeContentRecordChanged",
-        this.getActiveContentRecord(),
+        this.state.getSelectedContentRecord(),
       );
       useBus().trigger("activeConfigChanged", this.getActiveConfig());
     }
@@ -1204,7 +1194,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.updateWebViewViewContentRecords();
     useBus().trigger(
       "activeContentRecordChanged",
-      this.getActiveContentRecord(),
+      this.state.getSelectedContentRecord(),
     );
   };
 
@@ -1410,7 +1400,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     // if there are multiple compatible deployments, then make sure one of these isn't
     // already selected. If it is, do nothing, otherwise pick between the compatible ones.
-    const currentContentRecord = this.getActiveContentRecord();
+    const currentContentRecord = this.state.getSelectedContentRecord();
     if (
       !currentContentRecord ||
       !compatibleContentRecords.find((c) => {
@@ -1506,7 +1496,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         Commands.HomeView.NavigateToDeploymentServer,
         async () => {
-          const deployment = this.getActiveContentRecord();
+          const deployment = this.state.getSelectedContentRecord();
           if (deployment) {
             await env.openExternal(Uri.parse(deployment.serverUrl));
           }
@@ -1515,14 +1505,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         Commands.HomeView.NavigateToDeploymentContent,
         async () => {
-          const contentRecord = this.getActiveContentRecord();
+          const contentRecord = this.state.getSelectedContentRecord();
           if (contentRecord && !isPreContentRecord(contentRecord)) {
             await env.openExternal(Uri.parse(contentRecord.dashboardUrl));
           }
         },
       ),
       commands.registerCommand(Commands.HomeView.ShowContentLogs, async () => {
-        const contentRecord = this.getActiveContentRecord();
+        const contentRecord = this.state.getSelectedContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
           const logUrl = `${contentRecord.dashboardUrl}/logs`;
           await env.openExternal(Uri.parse(logUrl));

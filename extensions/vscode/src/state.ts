@@ -90,6 +90,14 @@ export class PublisherState implements Disposable {
     );
   }
 
+  getSelectedContentRecord() {
+    const selection = this.getSelection();
+    if (!selection) {
+      return undefined;
+    }
+    return this.findContentRecordByPath(selection.deploymentPath);
+  }
+
   async refreshContentRecords() {
     const api = await useApi();
     const response = await api.contentRecords.getAll(".", { recursive: true });
