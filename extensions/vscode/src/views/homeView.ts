@@ -1514,6 +1514,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   public dispose() {
     Disposable.from(...this.disposables).dispose();
 
+    this.state.dispose();
     this.configWatchers?.dispose();
   }
 
