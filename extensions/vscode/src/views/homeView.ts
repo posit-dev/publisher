@@ -74,6 +74,7 @@ import { ConfigWatcherManager, WatcherManager } from "src/watchers";
 import { Commands, Contexts, LocalState, Views } from "src/constants";
 import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
+import { PublisherState } from "src/state";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -90,9 +91,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     | PreContentRecordWithConfig
   )[] = [];
 
+  private state: PublisherState = new PublisherState();
+
   private credentials: Credential[] = [];
-  private configs: Configuration[] = [];
-  private configsInError: ConfigurationError[] = [];
   private root: WorkspaceFolder | undefined;
   private webviewView?: WebviewView;
   private extensionUri: Uri;
@@ -387,23 +388,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshConfigurationData() {
     try {
-      const api = await useApi();
-      const apiRequest = api.configurations.getAll(".", {
-        recursive: true,
-      });
-      showProgress("Refreshing Configurations", apiRequest, Views.HomeView);
-
-      const response = await apiRequest;
-      const configurations = response.data;
-      this.configs = [];
-      this.configsInError = [];
-      configurations.forEach((config) => {
-        if (!isConfigurationError(config)) {
-          this.configs.push(config);
-        } else {
-          this.configsInError.push(config);
-        }
-      });
+      const refresh = this.state.refreshConfigurations();
+      showProgress("Refreshing Configurations", refresh, Views.HomeView);
+      await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshConfigurationData::configurations.getAll",
@@ -448,8 +435,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CONFIG_DATA,
       content: {
-        configurations: this.configs,
-        configurationsInError: this.configsInError,
+        configurations: this.state.validConfigs,
+        configurationsInError: this.state.configsInError,
       },
     });
   }
@@ -505,10 +492,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private getConfigBySelector(selector: DeploymentSelector) {
     const deployment = this.getContentRecordBySelector(selector);
     if (deployment) {
-      return this.configs.find(
-        (c) =>
-          c.configurationName === deployment.configurationName &&
-          c.projectDir === deployment.projectDir,
+      return this.state.findValidConfig(
+        deployment.configurationName,
+        deployment.projectDir,
       );
     }
     return undefined;
@@ -911,14 +897,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           this.contentRecords.push(deploymentObjects.contentRecord);
         }
         if (
-          !this.configs.find(
-            (config) =>
-              config.configurationName ===
-                deploymentObjects.configuration.configurationName &&
-              config.projectDir === deploymentObjects.configuration.projectDir,
+          !this.state.findValidConfig(
+            deploymentObjects.configuration.configurationName,
+            deploymentObjects.configuration.projectDir,
           )
         ) {
-          this.configs.push(deploymentObjects.configuration);
+          this.state.configurations.push(deploymentObjects.configuration);
         }
         if (
           !this.credentials.find(
@@ -1010,16 +994,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
         let config: Configuration | ConfigurationError | undefined;
         if (contentRecord.configurationName) {
-          config = this.configs.find(
-            (config) =>
-              config.configurationName === contentRecord.configurationName &&
-              config.projectDir === contentRecord.projectDir,
+          config = this.state.findValidConfig(
+            contentRecord.configurationName,
+            contentRecord.projectDir,
           );
           if (!config) {
-            config = this.configsInError.find(
-              (config) =>
-                config.configurationName === contentRecord.configurationName &&
-                config.projectDir === contentRecord.projectDir,
+            config = this.state.findConfigInError(
+              contentRecord.configurationName,
+              contentRecord.projectDir,
             );
           }
         }
