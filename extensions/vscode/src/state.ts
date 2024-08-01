@@ -6,19 +6,26 @@ import {
   ContentRecord,
   Credential,
   isConfigurationError,
+  isContentRecordError,
   PreContentRecord,
   PreContentRecordWithConfig,
   useApi,
 } from "src/api";
 import { normalizeURL } from "./utils/url";
 
-// function findContentRecord<
-//   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
-// >(name: string, projectDir: string, records: T[]): T | undefined {
-//   return records.find(
-//     (r) => r.saveName === name && r.projectDir === projectDir,
-//   );
-// }
+function findContentRecord<
+  T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
+>(name: string, projectDir: string, records: T[]): T | undefined {
+  return records.find(
+    (r) => r.saveName === name && r.projectDir === projectDir,
+  );
+}
+
+function findContentRecordByPath<
+  T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
+>(path: string, records: T[]): T | undefined {
+  return records.find((r) => r.deploymentPath === path);
+}
 
 function findConfiguration<T extends Configuration | ConfigurationError>(
   name: string,
@@ -59,6 +66,25 @@ export class PublisherState implements Disposable {
     this.contentRecords.splice(0, this.contentRecords.length);
     this.credentials.splice(0, this.contentRecords.length);
     this.configurations.splice(0, this.contentRecords.length);
+  }
+
+  async refreshContentRecords() {
+    const api = await useApi();
+    const response = await api.contentRecords.getAll(".", { recursive: true });
+
+    // Currently we filter out any Content Records in error
+    this.contentRecords = response.data.filter(
+      (r): r is ContentRecord | PreContentRecord | PreContentRecordWithConfig =>
+        !isContentRecordError(r),
+    );
+  }
+
+  findContentRecord(name: string, projectDir: string) {
+    return findContentRecord(name, projectDir, this.contentRecords);
+  }
+
+  findContentRecordByPath(path: string) {
+    return findContentRecordByPath(path, this.contentRecords);
   }
 
   async refreshConfigurations() {

@@ -26,7 +26,6 @@ import {
   EventStreamMessage,
   FileAction,
   PreContentRecord,
-  PreContentRecordWithConfig,
   isConfigurationError,
   isContentRecordError,
   isPreContentRecord,
@@ -83,11 +82,6 @@ const fileEventDebounce = 200;
 
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
-  private contentRecords: (
-    | ContentRecord
-    | PreContentRecord
-    | PreContentRecordWithConfig
-  )[] = [];
 
   private state: PublisherState = new PublisherState();
 
@@ -356,23 +350,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshContentRecordData() {
     try {
-      // API Returns:
-      // 200 - success
-      // 500 - internal server error
-      const api = await useApi();
-      const apiRequest = api.contentRecords.getAll(".", {
-        recursive: true,
-      });
-      showProgress("Refreshing Deployments", apiRequest, Views.HomeView);
-
-      const response = await apiRequest;
-      const contentRecords = response.data;
-      this.contentRecords = [];
-      contentRecords.forEach((contentRecord) => {
-        if (!isContentRecordError(contentRecord)) {
-          this.contentRecords.push(contentRecord);
-        }
-      });
+      const refresh = this.state.refreshContentRecords();
+      showProgress("Refreshing Deployments", refresh, Views.HomeView);
+      await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshContentRecordData::contentRecords.getAll",
@@ -419,7 +399,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,
       content: {
-        contentRecords: this.contentRecords,
+        contentRecords: this.state.contentRecords,
         deploymentSelected: deploymentSelector,
       },
     });
@@ -474,17 +454,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (!savedState) {
       return undefined;
     }
-    return this.getContentRecordBySelector(savedState);
-  }
-
-  private getContentRecordBySelector(selector: DeploymentSelector) {
-    return this.contentRecords.find(
-      (d) => d.deploymentPath === selector.deploymentPath,
-    );
+    return this.state.findContentRecordByPath(savedState.deploymentPath);
   }
 
   private getConfigBySelector(selector: DeploymentSelector) {
-    const deployment = this.getContentRecordBySelector(selector);
+    const deployment = this.state.findContentRecordByPath(
+      selector.deploymentPath,
+    );
     if (deployment) {
       return this.state.findValidConfig(
         deployment.configurationName,
@@ -869,15 +845,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         // be seen as a visible delay (we'd have to have a progress indicator).
         let refreshCredentials = false;
         if (
-          !this.contentRecords.find(
-            (contentRecord) =>
-              contentRecord.saveName ===
-                deploymentObjects.contentRecord.saveName &&
-              contentRecord.projectDir ===
-                deploymentObjects.contentRecord.projectDir,
+          !this.state.findContentRecord(
+            deploymentObjects.contentRecord.saveName,
+            deploymentObjects.contentRecord.projectDir,
           )
         ) {
-          this.contentRecords.push(deploymentObjects.contentRecord);
+          this.state.contentRecords.push(deploymentObjects.contentRecord);
         }
         if (
           !this.state.findValidConfig(
@@ -957,7 +930,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       const includedContentRecords = contentRecordsSubset
         ? contentRecordsSubset
-        : this.contentRecords;
+        : this.state.contentRecords;
 
       includedContentRecords.forEach((contentRecord) => {
         if (
