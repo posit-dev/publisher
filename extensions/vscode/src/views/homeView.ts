@@ -47,8 +47,8 @@ import { Utils as uriUtils } from "vscode-uri";
 import type {
   DeploymentSelectionResult,
   DeploymentSelector,
-  HomeViewState,
   PublishProcessParams,
+  SelectionState,
 } from "src/types/shared";
 import {
   DeployMsg,
@@ -68,7 +68,7 @@ import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExisti
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
-import { Commands, Contexts, LocalState, Views } from "src/constants";
+import { Commands, Contexts, Views } from "src/constants";
 import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
@@ -83,7 +83,7 @@ const fileEventDebounce = 200;
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
 
-  private state: PublisherState = new PublisherState();
+  private state: PublisherState;
 
   private root: WorkspaceFolder | undefined;
   private webviewView?: WebviewView;
@@ -108,6 +108,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
+
+    this.state = new PublisherState(this.context);
+
     this.extensionUri = this.context.extensionUri;
     this.webviewConduit = new WebviewConduit();
 
@@ -430,16 +433,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private getSelectionState(): HomeViewState {
-    const state = this.context.workspaceState.get<DeploymentSelector | null>(
-      LocalState.LastSelectionState,
-      null,
-    );
-    return state;
-  }
-
   private getActiveConfig(): Configuration | undefined {
-    const savedState = this.getSelectionState();
+    const savedState = this.state.getSelection();
     if (!savedState) {
       return undefined;
     }
@@ -450,7 +445,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     | ContentRecord
     | PreContentRecord
     | undefined {
-    const savedState = this.getSelectionState();
+    const savedState = this.state.getSelection();
     if (!savedState) {
       return undefined;
     }
@@ -470,11 +465,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return undefined;
   }
 
-  private async saveSelectionState(state: HomeViewState): Promise<void> {
-    await this.context.workspaceState.update(
-      LocalState.LastSelectionState,
-      state,
-    );
+  private async saveSelectionState(state: SelectionState): Promise<void> {
+    await this.state.updateSelection(state);
 
     useBus().trigger(
       "activeContentRecordChanged",
@@ -1193,7 +1185,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     const selectionState = includeSavedState
-      ? this.getSelectionState()
+      ? this.state.getSelection()
       : undefined;
     this.updateWebViewViewCredentials();
     this.updateWebViewViewConfigurations();

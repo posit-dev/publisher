@@ -1,4 +1,4 @@
-import { Disposable } from "vscode";
+import { Disposable, ExtensionContext } from "vscode";
 
 import {
   Configuration,
@@ -11,7 +11,9 @@ import {
   PreContentRecordWithConfig,
   useApi,
 } from "src/api";
-import { normalizeURL } from "./utils/url";
+import { normalizeURL } from "src/utils/url";
+import { SelectionState } from "src/types/shared";
+import { LocalState } from "./constants";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -56,16 +58,36 @@ function findCredentialForContentRecord(
 }
 
 export class PublisherState implements Disposable {
+  private readonly context: ExtensionContext;
+
   contentRecords: Array<
     ContentRecord | PreContentRecord | PreContentRecordWithConfig
   > = [];
   configurations: Array<Configuration | ConfigurationError> = [];
   credentials: Credential[] = [];
 
+  constructor(context: ExtensionContext) {
+    this.context = context;
+  }
+
   dispose() {
     this.contentRecords.splice(0, this.contentRecords.length);
     this.credentials.splice(0, this.contentRecords.length);
     this.configurations.splice(0, this.contentRecords.length);
+  }
+
+  getSelection(): SelectionState {
+    return this.context.workspaceState.get<SelectionState>(
+      LocalState.LastSelectionState,
+      null,
+    );
+  }
+
+  async updateSelection(state: SelectionState) {
+    await this.context.workspaceState.update(
+      LocalState.LastSelectionState,
+      state,
+    );
   }
 
   async refreshContentRecords() {
