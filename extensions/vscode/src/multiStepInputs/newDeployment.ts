@@ -607,8 +607,7 @@ export async function newDeployment(
       const entrypointFilesUnopened: string[] = [];
 
       // rely upon the backend to tell us what are valid entrypoints
-      const entryPointsResponse =
-        await api.configurations.getEntrypoints(projectDir);
+      const entryPointsResponse = await api.entrypoints.get(projectDir);
 
       // build up a list of open files, relative to the opened workspace folder
       const openFileList: string[] = vscodeOpenFiles();
@@ -653,7 +652,7 @@ export async function newDeployment(
       }
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "newDeployment, configurations.getEntrypoints",
+        "newDeployment, entrypoints.get",
         error,
       );
       window.showErrorMessage(

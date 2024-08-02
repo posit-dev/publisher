@@ -138,5 +138,3 @@ export type Group = {
   name?: string;
   permissions: string;
 };
-
-export type EntryPointPath = string;

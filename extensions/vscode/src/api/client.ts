@@ -7,6 +7,7 @@ import { ContentRecords } from "./resources/ContentRecords";
 import { Configurations } from "./resources/Configurations";
 import { Files } from "./resources/Files";
 import { Packages } from "./resources/Packages";
+import { EntryPoints } from "./resources/Entrypoints";
 
 class PublishingClientApi {
   private client;
@@ -17,6 +18,7 @@ class PublishingClientApi {
   files: Files;
   packages: Packages;
   apiServiceIsUp: Promise<boolean>;
+  entrypoints: EntryPoints;
 
   constructor(apiBaseUrl: string, apiServiceIsUp: Promise<boolean>) {
     this.client = axios.create({
@@ -43,6 +45,7 @@ class PublishingClientApi {
     this.contentRecords = new ContentRecords(this.client);
     this.files = new Files(this.client);
     this.packages = new Packages(this.client);
+    this.entrypoints = new EntryPoints(this.client);
   }
 
   setBaseUrl(url: string) {

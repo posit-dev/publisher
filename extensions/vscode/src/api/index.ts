@@ -9,3 +9,4 @@ export * from "./types/contentRecords";
 export * from "./types/events";
 export * from "./types/files";
 export * from "./types/schema";
+export * from "./types/entrypoints";
