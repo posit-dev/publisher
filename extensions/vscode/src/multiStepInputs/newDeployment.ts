@@ -438,6 +438,7 @@ export async function newDeployment(
   let credentials: Credential[] = [];
   let credentialListItems: QuickPickItem[] = [];
 
+  let discoveredEntryPoints: string[] = [];
   let entryPointListItems: QuickPickItem[] = [];
   let inspectionResults: ConfigurationInspectionResult[] = [];
   let contentRecordNames = new Map<string, string[]>();
@@ -608,12 +609,13 @@ export async function newDeployment(
 
       // rely upon the backend to tell us what are valid entrypoints
       const entryPointsResponse = await api.entrypoints.get(projectDir);
+      discoveredEntryPoints = entryPointsResponse.data;
 
       // build up a list of open files, relative to the opened workspace folder
       const openFileList: string[] = vscodeOpenFiles();
 
       // loop through and now separate possible entrypoints into open or not
-      entryPointsResponse.data.forEach((entrypointFile) => {
+      discoveredEntryPoints.forEach((entrypointFile) => {
         if (
           openFileList.find(
             (f) => f.toLowerCase() === entrypointFile.toLowerCase(),
@@ -660,7 +662,7 @@ export async function newDeployment(
       );
       return reject();
     }
-    if (!entryPointListItems.length) {
+    if (!discoveredEntryPoints.length) {
       const msg = `Unable to continue with no project entrypoints found.`;
       window.showErrorMessage(msg);
       return reject();
@@ -774,8 +776,8 @@ export async function newDeployment(
     // as long as we don't know it will take another one.
     inspectionResults = [];
 
-    // skip if we only have one choice.
-    if (entryPointListItems.length > 1) {
+    // show only if we have more than one potential entrypoint discovered
+    if (discoveredEntryPoints.length > 1) {
       const step = getStepInfo("inputEntryPointFileSelection", state);
       if (!step) {
         throw new Error(
@@ -798,7 +800,7 @@ export async function newDeployment(
       return (input: MultiStepInput) =>
         inputEntryPointContentTypeSelection(input, state);
     } else {
-      state.data.entryPointPath = entryPointListItems[0].label;
+      state.data.entryPointPath = discoveredEntryPoints[0];
       // We're skipping this step, so we must silently just jump to the next step
       return inputEntryPointContentTypeSelection(input, state);
     }
