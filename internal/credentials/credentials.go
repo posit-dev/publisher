@@ -82,23 +82,23 @@ func (cs *CredentialsService) EnvCredentialRecordFactory() (*CredentialRecord, e
 
 	serverUrl := os.Getenv("CONNECT_SERVER")
 	ak := os.Getenv("CONNECT_API_KEY")
-	name := os.Getenv("CONNECT_SERVER_NAME")
 
-	if serverUrl != "" {
+	if serverUrl != "" && ak != "" {
 		normalizedUrl, err := util.NormalizeServerURL(serverUrl)
 		if err != nil {
 			return nil, fmt.Errorf("error normalizing environment server URL: %s %v", serverUrl, err)
 		}
 
-		if name == "" {
-			name = normalizedUrl
-			u, err := url.Parse(normalizedUrl)
-			if err == nil {
-				// if we can, we'll use the host for the name
-				name, _, err = net.SplitHostPort(u.Host)
-				if err != nil {
-					name = u.Host
-				}
+		name := fmt.Sprint("Env: ", normalizedUrl)
+		u, err := url.Parse(normalizedUrl)
+		if err == nil {
+			// if we can, we'll use the host for the name
+			// u.Host possibly includes a port, which we don't want
+			host, _, err := net.SplitHostPort(u.Host)
+			if err != nil {
+				name = fmt.Sprint("Env:", u.Host)
+			} else {
+				name = fmt.Sprint("Env:", host)
 			}
 		}
 
@@ -253,7 +253,7 @@ func (cs *CredentialsService) Set(name string, url string, ak string) (*Credenti
 	return &cred, nil
 }
 
-// Saves the CredentialTable
+// Saves the CredentialTable, but removes Env Credentials first
 func (cs *CredentialsService) save(table CredentialTable) error {
 
 	// remove any environment variable credential from the table
@@ -263,6 +263,11 @@ func (cs *CredentialsService) save(table CredentialTable) error {
 		delete(table, EnvVarGUID)
 	}
 
+	return cs.saveToKeyRing(table)
+}
+
+// Saves the CredentialTable to keyring
+func (cs *CredentialsService) saveToKeyRing(table CredentialTable) error {
 	data, err := json.Marshal(table)
 	if err != nil {
 		return fmt.Errorf("failed to serialize credentials: %v", err)
@@ -276,28 +281,11 @@ func (cs *CredentialsService) save(table CredentialTable) error {
 	return nil
 }
 
-// Loads the CredentialTable
+// Loads the CredentialTable with keyring and env values
 func (cs *CredentialsService) load() (CredentialTable, error) {
-	ks := KeyringService{}
-	data, err := ks.Get(ServiceName, "credentials")
+	table, err := cs.loadFromKeyRing()
 	if err != nil {
-		if err == keyring.ErrNotFound {
-			// create an empty table and continue (so we can add environment variables)
-			emptyTable := make(map[string]CredentialRecord)
-			emptyTableBytes, err := json.Marshal(emptyTable)
-			if err != nil {
-				return nil, fmt.Errorf("failed to initialize credentials: %v", err)
-			}
-			data = string(emptyTableBytes)
-		} else {
-			return nil, &LoadError{Err: err}
-		}
-	}
-
-	var table CredentialTable
-	err = json.Unmarshal([]byte(data), &table)
-	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize credentials: %v", err)
+		return nil, err
 	}
 
 	// insert a possible environment variable credential before returning
@@ -307,6 +295,26 @@ func (cs *CredentialsService) load() (CredentialTable, error) {
 	}
 	if record != nil {
 		table[EnvVarGUID] = *record
+	}
+
+	return table, nil
+}
+
+// Loads the CredentialTable from keyRing
+func (cs *CredentialsService) loadFromKeyRing() (CredentialTable, error) {
+	ks := KeyringService{}
+	data, err := ks.Get(ServiceName, "credentials")
+	if err != nil {
+		if err == keyring.ErrNotFound {
+			return make(map[string]CredentialRecord), nil
+		}
+		return nil, &LoadError{Err: err}
+	}
+
+	var table CredentialTable
+	err = json.Unmarshal([]byte(data), &table)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize credentials: %v", err)
 	}
 
 	return table, nil
