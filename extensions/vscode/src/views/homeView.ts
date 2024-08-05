@@ -1439,11 +1439,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         dir,
         entrypoint,
       );
-      if (selected) {
-        // publish!
-        return this.initiatePublish(selected.publishParams);
-      }
-      return false;
+      // we do not publish this, as we expect the user needs
+      // to validate and update config settings.
+      return selected;
     }
     // only one deployment, just publish it
     if (compatibleContentRecords.length === 1) {
