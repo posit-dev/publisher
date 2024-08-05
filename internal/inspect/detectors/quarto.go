@@ -66,6 +66,12 @@ type quartoInspectOutput struct {
 				OutputFile string `json:"output-file"`
 			} `json:"pandoc"`
 		} `json:"html"`
+		RevealJS struct {
+			Metadata quartoMetadata `json:"metadata"`
+			Pandoc   struct {
+				OutputFile string `json:"output-file"`
+			} `json:"pandoc"`
+		} `json:"revealjs"`
 	} `json:"formats"`
 }
 
@@ -129,6 +135,9 @@ func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput, entrypoint
 	}
 	if isValidTitle(inspectOutput.Formats.HTML.Metadata.Title) {
 		return inspectOutput.Formats.HTML.Metadata.Title
+	}
+	if isValidTitle(inspectOutput.Formats.RevealJS.Metadata.Title) {
+		return inspectOutput.Formats.RevealJS.Metadata.Title
 	}
 	if isValidTitle(inspectOutput.Project.Config.Website.Title) {
 		return inspectOutput.Project.Config.Website.Title
@@ -204,7 +213,8 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 		cfg.Entrypoint = relEntrypoint.String()
 		cfg.Title = d.getTitle(inspectOutput, relEntrypoint.String())
 
-		if isQuartoShiny(&inspectOutput.Formats.HTML.Metadata) {
+		if isQuartoShiny(&inspectOutput.Formats.HTML.Metadata) ||
+			isQuartoShiny(&inspectOutput.Formats.RevealJS.Metadata) {
 			cfg.Type = config.ContentTypeQuartoShiny
 		} else {
 			cfg.Type = config.ContentTypeQuarto
@@ -242,7 +252,10 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 		// Exclude locally-rendered artifacts, since this will be rendered in Connect
 		outputFile := inspectOutput.Formats.HTML.Pandoc.OutputFile
 		if outputFile == "" {
-			outputFile = "*.html"
+			outputFile = inspectOutput.Formats.RevealJS.Pandoc.OutputFile
+			if outputFile == "" {
+				outputFile = "*.html"
+			}
 		}
 		htmlOutputDir := strings.TrimSuffix(outputFile, ".html") + "_files"
 
