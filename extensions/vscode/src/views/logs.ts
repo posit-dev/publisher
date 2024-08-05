@@ -180,12 +180,16 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.stages.forEach((stage) => {
         if (stage.status === LogStageStatus.notStarted) {
           stage.status = LogStageStatus.neverStarted;
+        } else if (stage.status === LogStageStatus.inProgress) {
+          stage.status = LogStageStatus.failed;
         }
       });
 
       let showLogsOption = "View Log";
       const selection = await window.showErrorMessage(
-        `Deployment failed: ${msg.data.message}`,
+        msg.data.cancelled === "true"
+          ? `Deployment cancelled: ${msg.data.message}`
+          : `Deployment failed: ${msg.data.message}`,
         showLogsOption,
       );
       if (selection === showLogsOption) {

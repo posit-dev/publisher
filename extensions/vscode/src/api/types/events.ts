@@ -1261,6 +1261,7 @@ export interface PublishFailure extends EventStreamMessage {
   data: {
     dashboardUrl: string;
     url: string;
+    canceled?: string; // not defined if not user cancelled. Value of "true" if true.
     // and other non-defined attributes
   };
   error: string; // translated internally
