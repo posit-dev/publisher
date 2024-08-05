@@ -89,16 +89,16 @@ func (cs *CredentialsService) EnvCredentialRecordFactory() (*CredentialRecord, e
 			return nil, fmt.Errorf("error normalizing environment server URL: %s %v", serverUrl, err)
 		}
 
-		name := fmt.Sprint("Env: ", normalizedUrl)
+		name := normalizedUrl
 		u, err := url.Parse(normalizedUrl)
 		if err == nil {
 			// if we can, we'll use the host for the name
 			// u.Host possibly includes a port, which we don't want
 			host, _, err := net.SplitHostPort(u.Host)
 			if err != nil {
-				name = fmt.Sprint("Env:", u.Host)
+				name = u.Host
 			} else {
-				name = fmt.Sprint("Env:", host)
+				name = host
 			}
 		}
 
@@ -124,6 +124,43 @@ func (cs *CredentialsService) EnvCredentialRecordFactory() (*CredentialRecord, e
 	}
 	// None found but not an error
 	return nil, nil
+}
+
+func (cs *CredentialsService) checkForConflicts(
+	table *map[string]CredentialRecord,
+	c *Credential) error {
+	// Check if Credential attributes (URL or name) are already used by another credential
+	for guid, record := range *table {
+		cred, err := record.ToCredential()
+		if err != nil {
+			return &CorruptedError{GUID: guid}
+		}
+		if cred.URL == c.URL {
+			if cred.GUID == EnvVarGUID || c.GUID == EnvVarGUID {
+				return &EnvURLCollisionError{
+					Name: c.Name,
+					URL:  c.URL,
+				}
+			}
+			return &URLCollisionError{
+				Name: c.Name,
+				URL:  c.URL,
+			}
+		}
+		if cred.Name == c.Name {
+			if cred.GUID == EnvVarGUID || c.GUID == EnvVarGUID {
+				return &EnvNameCollisionError{
+					Name: c.Name,
+					URL:  c.URL,
+				}
+			}
+			return &NameCollisionError{
+				Name: c.Name,
+				URL:  c.URL,
+			}
+		}
+	}
+	return nil
 }
 
 // Delete removes a Credential by its guid.
@@ -194,44 +231,17 @@ func (cs *CredentialsService) Set(name string, url string, ak string) (*Credenti
 		return nil, err
 	}
 
-	// Check if URL or name is already used by another credential
-	for guid, record := range table {
-		cred, err := record.ToCredential()
-		if err != nil {
-			return nil, &CorruptedError{GUID: guid}
-		}
-		if cred.URL == normalizedUrl {
-			if cred.GUID == EnvVarGUID {
-				return nil, &EnvURLCollisionError{
-					Name: name,
-					URL:  normalizedUrl,
-				}
-			}
-			return nil, &URLCollisionError{Name: name,
-				URL: normalizedUrl,
-			}
-		}
-		if cred.Name == name {
-			if cred.GUID == EnvVarGUID {
-				return nil, &EnvNameCollisionError{
-					Name: name,
-					URL:  normalizedUrl,
-				}
-			}
-			return nil, &NameCollisionError{
-				Name: name,
-				URL:  normalizedUrl,
-			}
-		}
-
-	}
-
 	guid := uuid.New().String()
 	cred := Credential{
 		GUID:   guid,
 		Name:   name,
 		URL:    normalizedUrl,
 		ApiKey: ak,
+	}
+
+	err = cs.checkForConflicts(&table, &cred)
+	if err != nil {
+		return nil, err
 	}
 
 	raw, err := json.Marshal(cred)
@@ -294,9 +304,16 @@ func (cs *CredentialsService) load() (CredentialTable, error) {
 		return nil, err
 	}
 	if record != nil {
+		c, err := record.ToCredential()
+		if err != nil {
+			return nil, err
+		}
+		err = cs.checkForConflicts(&table, c)
+		if err != nil {
+			return nil, err
+		}
 		table[EnvVarGUID] = *record
 	}
-
 	return table, nil
 }
 

@@ -20,23 +20,25 @@ var environmentCred = Credential{
 	GUID:   "00000000-0000-0000-0000-000000000000",
 	URL:    "https://connect.localtest.me/rsc/dev-password-copy",
 	ApiKey: "3456789",
-	Name:   "dev-password-copy",
+	Name:   "connect.localtest.me",
 }
 
-func initializeEnv(t *testing.T, cs *CredentialsService) {
+func initializeEnv(t *testing.T, cs *CredentialsService, errorCheck bool) {
 	t.Setenv("CONNECT_SERVER", environmentCred.URL)
 	t.Setenv("CONNECT_API_KEY", environmentCred.ApiKey)
 	t.Setenv("CONNECT_SERVER_NAME", environmentCred.Name)
 
-	res, err := cs.Get(environmentCred.GUID)
-	assert.NoError(t, err)
-	expected := Credential{
-		GUID:   environmentCred.GUID,
-		Name:   environmentCred.Name,
-		URL:    environmentCred.URL,
-		ApiKey: environmentCred.ApiKey,
+	if errorCheck {
+		res, err := cs.Get(environmentCred.GUID)
+		assert.NoError(t, err)
+		expected := Credential{
+			GUID:   environmentCred.GUID,
+			Name:   environmentCred.Name,
+			URL:    environmentCred.URL,
+			ApiKey: environmentCred.ApiKey,
+		}
+		assert.Equal(t, res, &expected)
 	}
-	assert.Equal(t, res, &expected)
 }
 
 func clearEnv(t *testing.T) {
@@ -70,7 +72,7 @@ func TestSetURLCollisionError(t *testing.T) {
 	assert.IsType(t, &URLCollisionError{}, err)
 
 	// validate collision with env var credentials
-	initializeEnv(t, &cs)
+	initializeEnv(t, &cs, true)
 
 	_, err = cs.Set("unique", environmentCred.URL, "12345")
 	assert.Error(t, err)
@@ -95,8 +97,12 @@ func TestGet(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, res, cred)
 
+	// confirm environment credential not available
+	_, err = cs.Get(environmentCred.GUID)
+	assert.Error(t, err)
+
 	// Test with credentials in environment
-	initializeEnv(t, &cs)
+	initializeEnv(t, &cs, true)
 
 	// retest prior test
 	res, err = cs.Get(cred.GUID)
@@ -107,6 +113,18 @@ func TestGet(t *testing.T) {
 	res, err = cs.Get(environmentCred.GUID)
 	assert.NoError(t, err)
 	assert.Equal(t, res, &environmentCred)
+
+	// Test for conflicts where credential was saved ahead of env variable
+	clearEnv(t)
+	cred, err = cs.Set("env", environmentCred.URL, "12345")
+	assert.NoError(t, err)
+	_, err = cs.Get(cred.GUID)
+	assert.NoError(t, err)
+
+	initializeEnv(t, &cs, false)
+	_, err = cs.Get(cred.GUID)
+	assert.Error(t, err)
+	assert.IsType(t, &EnvURLCollisionError{}, err)
 }
 
 func TestNormalizedSet(t *testing.T) {
@@ -137,7 +155,7 @@ func TestSetCollisions(t *testing.T) {
 	cs := CredentialsService{}
 
 	// Add credentials into environment
-	initializeEnv(t, &cs)
+	initializeEnv(t, &cs, true)
 
 	// add a non-environment credential
 	_, err := cs.Set("example", "https://example.com", "12345")
@@ -181,7 +199,7 @@ func TestDelete(t *testing.T) {
 	assert.Error(t, err)
 
 	// Add credentials into environment
-	initializeEnv(t, &cs)
+	initializeEnv(t, &cs, true)
 
 	// err for our special GUID
 	err = cs.Delete(environmentCred.GUID)
