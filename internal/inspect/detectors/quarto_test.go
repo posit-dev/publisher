@@ -291,3 +291,24 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		},
 	}, configs[1])
 }
+
+func (s *QuartoDetectorSuite) TestInferTypeRevalJSQuartoShiny() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	configs := s.runInferType("dashboard")
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuartoShiny,
+		Entrypoint: "dashboard.qmd",
+		Title:      "posit::conf(2024)",
+		Validate:   true,
+		Files:      []string{"*", "!dashboard.html", "!dashboard_files"},
+		Quarto: &config.Quarto{
+			Version: "1.5.54",
+			Engines: []string{"knitr"},
+		},
+		R: &config.R{},
+	}, configs[0])
+}

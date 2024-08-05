@@ -1,0 +1,382 @@
+{
+  "quarto": {
+    "version": "1.5.54"
+  },
+  "engines": ["knitr"],
+  "formats": {
+    "revealjs": {
+      "identifier": {
+        "display-name": "RevealJS",
+        "target-format": "revealjs",
+        "base-format": "revealjs"
+      },
+      "execute": {
+        "fig-width": 10,
+        "fig-height": 5,
+        "fig-format": "retina",
+        "fig-dpi": 96,
+        "fig-asp": 0.5,
+        "df-print": "default",
+        "error": false,
+        "eval": true,
+        "cache": null,
+        "freeze": false,
+        "echo": false,
+        "output": true,
+        "warning": false,
+        "include": true,
+        "keep-md": false,
+        "keep-ipynb": false,
+        "ipynb": null,
+        "enabled": null,
+        "daemon": null,
+        "daemon-restart": false,
+        "debug": false,
+        "ipynb-filters": [],
+        "ipynb-shell-interactivity": "all",
+        "plotly-connected": true,
+        "engine": "knitr"
+      },
+      "render": {
+        "keep-tex": false,
+        "keep-typ": false,
+        "keep-source": false,
+        "keep-hidden": false,
+        "prefer-html": false,
+        "output-divs": true,
+        "output-ext": "html",
+        "fig-align": "default",
+        "fig-pos": null,
+        "fig-env": null,
+        "code-fold": "none",
+        "code-overflow": "scroll",
+        "code-link": false,
+        "code-line-numbers": true,
+        "code-tools": false,
+        "tbl-colwidths": "auto",
+        "merge-includes": true,
+        "inline-includes": false,
+        "preserve-yaml": false,
+        "latex-auto-mk": true,
+        "latex-auto-install": true,
+        "latex-clean": true,
+        "latex-min-runs": 1,
+        "latex-max-runs": 10,
+        "latex-makeindex": "makeindex",
+        "latex-makeindex-opts": [],
+        "latex-tlmgr-opts": [],
+        "latex-input-paths": [],
+        "latex-output-dir": null,
+        "link-external-icon": false,
+        "link-external-newwindow": false,
+        "self-contained-math": false,
+        "format-resources": []
+      },
+      "pandoc": {
+        "standalone": true,
+        "wrap": "none",
+        "default-image-extension": "png",
+        "html-math-method": {
+          "method": "mathjax",
+          "url": "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML-full"
+        },
+        "slide-level": 2,
+        "to": "revealjs",
+        "output-file": "dashboard.html"
+      },
+      "language": {
+        "toc-title-document": "Table of contents",
+        "toc-title-website": "On this page",
+        "related-formats-title": "Other Formats",
+        "related-notebooks-title": "Notebooks",
+        "source-notebooks-prefix": "Source",
+        "other-links-title": "Other Links",
+        "code-links-title": "Code Links",
+        "launch-dev-container-title": "Launch Dev Container",
+        "launch-binder-title": "Launch Binder",
+        "article-notebook-label": "Article Notebook",
+        "notebook-preview-download": "Download Notebook",
+        "notebook-preview-download-src": "Download Source",
+        "notebook-preview-back": "Back to Article",
+        "manuscript-meca-bundle": "MECA Bundle",
+        "section-title-abstract": "Abstract",
+        "section-title-appendices": "Appendices",
+        "section-title-footnotes": "Footnotes",
+        "section-title-references": "References",
+        "section-title-reuse": "Reuse",
+        "section-title-copyright": "Copyright",
+        "section-title-citation": "Citation",
+        "appendix-attribution-cite-as": "For attribution, please cite this work as:",
+        "appendix-attribution-bibtex": "BibTeX citation:",
+        "appendix-view-license": "View License",
+        "title-block-author-single": "Author",
+        "title-block-author-plural": "Authors",
+        "title-block-affiliation-single": "Affiliation",
+        "title-block-affiliation-plural": "Affiliations",
+        "title-block-published": "Published",
+        "title-block-modified": "Modified",
+        "title-block-keywords": "Keywords",
+        "callout-tip-title": "Tip",
+        "callout-note-title": "Note",
+        "callout-warning-title": "Warning",
+        "callout-important-title": "Important",
+        "callout-caution-title": "Caution",
+        "code-summary": "Code",
+        "code-tools-menu-caption": "Code",
+        "code-tools-show-all-code": "Show All Code",
+        "code-tools-hide-all-code": "Hide All Code",
+        "code-tools-view-source": "View Source",
+        "code-tools-source-code": "Source Code",
+        "tools-share": "Share",
+        "tools-download": "Download",
+        "code-line": "Line",
+        "code-lines": "Lines",
+        "copy-button-tooltip": "Copy to Clipboard",
+        "copy-button-tooltip-success": "Copied!",
+        "repo-action-links-edit": "Edit this page",
+        "repo-action-links-source": "View source",
+        "repo-action-links-issue": "Report an issue",
+        "back-to-top": "Back to top",
+        "search-no-results-text": "No results",
+        "search-matching-documents-text": "matching documents",
+        "search-copy-link-title": "Copy link to search",
+        "search-hide-matches-text": "Hide additional matches",
+        "search-more-match-text": "more match in this document",
+        "search-more-matches-text": "more matches in this document",
+        "search-clear-button-title": "Clear",
+        "search-text-placeholder": "",
+        "search-detached-cancel-button-title": "Cancel",
+        "search-submit-button-title": "Submit",
+        "search-label": "Search",
+        "toggle-section": "Toggle section",
+        "toggle-sidebar": "Toggle sidebar navigation",
+        "toggle-dark-mode": "Toggle dark mode",
+        "toggle-reader-mode": "Toggle reader mode",
+        "toggle-navigation": "Toggle navigation",
+        "crossref-fig-title": "Figure",
+        "crossref-tbl-title": "Table",
+        "crossref-lst-title": "Listing",
+        "crossref-thm-title": "Theorem",
+        "crossref-lem-title": "Lemma",
+        "crossref-cor-title": "Corollary",
+        "crossref-prp-title": "Proposition",
+        "crossref-cnj-title": "Conjecture",
+        "crossref-def-title": "Definition",
+        "crossref-exm-title": "Example",
+        "crossref-exr-title": "Exercise",
+        "crossref-ch-prefix": "Chapter",
+        "crossref-apx-prefix": "Appendix",
+        "crossref-sec-prefix": "Section",
+        "crossref-eq-prefix": "Equation",
+        "crossref-lof-title": "List of Figures",
+        "crossref-lot-title": "List of Tables",
+        "crossref-lol-title": "List of Listings",
+        "environment-proof-title": "Proof",
+        "environment-remark-title": "Remark",
+        "environment-solution-title": "Solution",
+        "listing-page-order-by": "Order By",
+        "listing-page-order-by-default": "Default",
+        "listing-page-order-by-date-asc": "Oldest",
+        "listing-page-order-by-date-desc": "Newest",
+        "listing-page-order-by-number-desc": "High to Low",
+        "listing-page-order-by-number-asc": "Low to High",
+        "listing-page-field-date": "Date",
+        "listing-page-field-title": "Title",
+        "listing-page-field-description": "Description",
+        "listing-page-field-author": "Author",
+        "listing-page-field-filename": "File Name",
+        "listing-page-field-filemodified": "Modified",
+        "listing-page-field-subtitle": "Subtitle",
+        "listing-page-field-readingtime": "Reading Time",
+        "listing-page-field-wordcount": "Word Count",
+        "listing-page-field-categories": "Categories",
+        "listing-page-minutes-compact": "{0} min",
+        "listing-page-category-all": "All",
+        "listing-page-no-matches": "No matching items",
+        "listing-page-words": "{0} words",
+        "listing-page-filter": "Filter",
+        "draft": "Draft"
+      },
+      "metadata": {
+        "lang": "en",
+        "fig-responsive": false,
+        "quarto-version": "1.5.54",
+        "auto-stretch": true,
+        "title": "posit::conf(2024)",
+        "server": {
+          "type": "shiny"
+        },
+        "editor": {
+          "render-on-save": true
+        },
+        "theme": ["default", "assets/dashboard/styles.scss"],
+        "menu": false,
+        "autoSlide": 10000,
+        "loop": true,
+        "title-slide-attributes": {
+          "data-background-color": "#994665FF"
+        }
+      }
+    }
+  },
+  "resources": [
+    "_extensions/jmbuhr/qrcode/qrcode.lua",
+    "_extensions/jmbuhr/qrcode/_extension.yml",
+    "_extensions/jmbuhr/qrcode/assets/qrcode.js"
+  ],
+  "fileInformation": {
+    "dashboard.qmd": {
+      "includeMap": [],
+      "codeCells": [
+        {
+          "start": 21,
+          "end": 29,
+          "file": "dashboard.qmd",
+          "source": "library(dplyr)\nlibrary(readr)\nlibrary(tidyr)\nlibrary(ggplot2)\nlibrary(maps) # Needed for `map_data()`\nlibrary(ggwordcloud)\n",
+          "language": "r",
+          "metadata": {
+            "message": false
+          }
+        },
+        {
+          "start": 31,
+          "end": 35,
+          "file": "dashboard.qmd",
+          "source": "cities <- read_tsv(\"data/cities.tsv\")\n",
+          "language": "r",
+          "metadata": {
+            "message": false,
+            "context": "server"
+          }
+        },
+        {
+          "start": 37,
+          "end": 41,
+          "file": "dashboard.qmd",
+          "source": "responses <- read_csv(\"responses.csv\")\n",
+          "language": "r",
+          "metadata": {
+            "message": false,
+            "context": "server"
+          }
+        },
+        {
+          "start": 45,
+          "end": 89,
+          "file": "dashboard.qmd",
+          "source": "\nplot_location <- reactive({\n\tworld <- map_data(\"world\")\n\n\tgg <- \n    responses |>\n\t\tcount(from) |>\n\t\tarrange(n) |>\n\t\tleft_join(cities, by = c(from = \"full_name\")) |>\n\t\tggplot() +\n\t\tgeom_map(\n\t\t\tdata = world |> filter(region != \"Antarctica\"),\n\t\t\tmap = world,\n\t\t\taes(long, lat, map_id = region),\n\t\t\tcolor = \"white\",\n\t\t\tfill = \"lightgray\",\n\t\t\tsize = 0.1\n\t\t) +\n\t\tgeom_point(\n      aes(x = longitude, y = latitude, size = n, color = n)\n    ) +\n\t\tscale_color_gradient(\n\t\t\tlow = \"#2E171FFF\", # burgundy dark 3\n\t\t\thigh = \"#BE95A2FF\" # burgundy light 2\n\t\t) +\n\t\ttheme_void() +\n\t\ttheme(\n      legend.position = \"none\",\n      plot.margin = margin(0, 0, 0, 0)\n    )\n\n    tmpf <- tempfile(fileext = \".png\")\n    ggsave(tmpf, gg, width = 1950, height = 900, dpi = 150, units = \"px\")\n\n    tmpf\n})\n\noutput$ui_plot_location <- renderUI({\n  raw <- readr::read_file_raw(plot_location())\n  data_uri <- base64enc::dataURI(data = raw, mime = \"image/png\")\n  htmltools::img(src = data_uri, width = \"100%\", class = \"r-stretch\")\n})\n",
+          "language": "r",
+          "metadata": {
+            "context": "server"
+          }
+        },
+        {
+          "start": 91,
+          "end": 93,
+          "file": "dashboard.qmd",
+          "source": "uiOutput(\"ui_plot_location\", class = \"full-stretch\")\n",
+          "language": "r",
+          "metadata": {}
+        },
+        {
+          "start": 95,
+          "end": 102,
+          "file": "dashboard.qmd",
+          "source": "<style>\n.full-stretch {\n    margin-inline: calc(-1 * var(--stretch, 4em));\n    width: calc(100% + 2 * var(--stretch, 4em)) !important;\n}\n</style>\n",
+          "language": "=html",
+          "metadata": {}
+        },
+        {
+          "start": 106,
+          "end": 142,
+          "file": "dashboard.qmd",
+          "source": "\noutput$plot_person <- renderPlot({\n\tperson_types <- c(\"Dog\", \"Cat\", \"Plant\", \"All\", \"None\", \"Other\")\n\n\tresponses %>%\n\t\tmutate(type_of_person = factor(type_of_person, person_types)) %>%\n\t\tcount(type_of_person) %>%\n\t\tmutate(n = n / sum(n)) %>%\n\t\tggplot() +\n\t\taes(x = 1, y = n, fill = type_of_person) +\n\t\tgeom_col(color = \"white\", size = 3) +\n\t\tcoord_radial(\n\t\t\ttheta = \"y\",\n\t\t\tstart = 0.5 * pi,\n\t\t\tinner.radius = 0.1,\n\t\t\tdirection = -1\n\t\t) +\n\t\tscale_y_continuous(expand = c(0, 0)) +\n\t\tscale_fill_manual(\n\t\t\tvalues = c(\n\t\t\t\t\"#447098FF\",\n\t\t\t\t\"#419498FF\",\n\t\t\t\t\"#72984EFF\",\n\t\t\t\t\"#ED6331FF\",\n\t\t\t\t\"#994665FF\",\n\t\t\t\t\"#C1C1C3FF\"\n\t\t\t)\n\t\t) +\n\t\tlabs(fill = NULL) +\n\t\ttheme_void(base_size = 24) +\n\t\ttheme(\n\t\t\tlegend.key.size = unit(1.5, \"cm\")\n\t\t)\n})\n",
+          "language": "r",
+          "metadata": {
+            "context": "server"
+          }
+        },
+        {
+          "start": 144,
+          "end": 146,
+          "file": "dashboard.qmd",
+          "source": "plotOutput(\"plot_person\")\n",
+          "language": "r",
+          "metadata": {}
+        },
+        {
+          "start": 150,
+          "end": 201,
+          "file": "dashboard.qmd",
+          "source": "\noutput$plot_careers <- renderPlot({\n  role_types <- c(\n    \"Student\",\n    \"Teacher\",\n    \"Data Scientist\",\n    \"Data Analyst\",\n    \"Software Engineer\",\n    \"Manager\",\n    \"Other\"\n  )\n  \n  responses |>\n    mutate(role = factor(role, role_types)) |>\n    ggplot() +\n    aes(x = posit, y = industry, color = role) +\n    geom_point(size = 5, show.legend = TRUE) +\n    scale_y_continuous(\n      name = \"Years in data science\",\n      breaks = seq(0, 40, 10),\n      limits = c(0, 40),\n      expand = c(0, 0),\n      labels = c(\"0\", \"10yrs\", \"20yrs\", \"30yrs\", \"40yrs\")\n    ) +\n    scale_x_continuous(\n      name = \"Years using Posit products\",\n      breaks = seq(2, 14, 4),\n      limits = c(0, 14)\n    ) +\n    scale_color_manual(\n      drop = FALSE,\n      labels = role_types,\n      values = c(\n        \"#447098FF\", # student\n        \"#F4C540FF\", # teacher\n        \"#72984EFF\", # data scientist\n        \"#ED6331FF\", # data analyst\n        \"#994665FF\", # software engineer\n        \"#419498FF\", # manager\n        \"#C1C1C3FF\"  # other\n      ),\n      guide = guide_legend(\"\", override.aes = list(size = 8))\n    ) +\n    theme_minimal(20) +\n    theme(\n      panel.grid.minor = element_blank(),\n      legend.key.size = unit(1.5, \"cm\")\n    )\n})\n",
+          "language": "r",
+          "metadata": {
+            "context": "server"
+          }
+        },
+        {
+          "start": 203,
+          "end": 205,
+          "file": "dashboard.qmd",
+          "source": "plotOutput(\"plot_careers\")\n",
+          "language": "r",
+          "metadata": {}
+        },
+        {
+          "start": 209,
+          "end": 255,
+          "file": "dashboard.qmd",
+          "source": "\noutput$plot_conf_over_years <- renderPlot({\n  confs <- c(\n    \"2024 Seattle\",\n    \"2023 Chicago\",\n    \"2022 Washington D.C.\",\n    \"2021 Virtual\",\n    \"2020 San Francisco\",\n    \"2019 Austin\",\n    \"2018 San Diego\",\n    \"2017 Orlando\"\n  )\n  \n  responses |>\n    select(conf_attended) |>\n    separate_rows(conf_attended, sep = \",\\\\s*\") |>\n    mutate(conf_attended = factor(conf_attended, rev(confs))) |>\n    ggplot() +\n    aes(x = conf_attended) +\n    geom_bar(aes(fill = conf_attended), show.legend = FALSE, na.rm = FALSE) +\n    scale_x_discrete(\n      name = NULL,\n      labels = function(x) sub(\" \", \"\\n\", x),\n      drop = FALSE,\n    ) +\n    scale_fill_manual(\n      values = c(\n        \"#A67380FF\",\n        \"#8AA67AFF\",\n        \"#419498FF\",\n        \"#447098FF\",\n        \"#F4C540FF\",\n        \"#ED6331FF\",\n        \"#994665FF\",\n        \"#72984EFF\"\n      )\n    ) +\n    scale_y_continuous(NULL, expand = c(0, 0)) +\n    theme_minimal(14) +\n    theme(\n      panel.grid.minor = element_blank(),\n      panel.grid.major.x = element_blank()\n    )\n})\n",
+          "language": "r",
+          "metadata": {
+            "context": "server"
+          }
+        },
+        {
+          "start": 257,
+          "end": 259,
+          "file": "dashboard.qmd",
+          "source": "plotOutput(\"plot_conf_over_years\")\n",
+          "language": "r",
+          "metadata": {}
+        },
+        {
+          "start": 263,
+          "end": 299,
+          "file": "dashboard.qmd",
+          "source": "\nword_colors <- c(\n\t\"#A67380FF\",\n\t\"#8AA67AFF\",\n\t\"#419498FF\",\n\t\"#447098FF\",\n\t\"#F4C540FF\",\n\t\"#ED6331FF\",\n\t\"#994665FF\",\n\t\"#72984EFF\"\n)\n\nplot_word_cloud <- function(responses, var) {\n\tresponses |>\n\t\tcount({{ var }}) |>\n\t\tmutate(\n\t\t\tcolor = factor(sample(word_colors, n(), replace = TRUE)),\n\t\t\tangle = 45 * sample(-1:2, n(), replace = TRUE, prob = c(1, 4, 1, 1))\n\t\t) |>\n\t\tggplot() +\n\t\taes(\n\t\t\tlabel = {{ var }},\n\t\t\tsize = n,\n\t\t\tcolor = color\n\t\t) +\n\t\tgeom_text_wordcloud_area(aes(angle = angle), rm_outside = TRUE) +\n\t\tscale_size_area(max_size = 36, trans = power_trans(1 / .7)) +\n\t\tscale_color_identity() +\n\t\ttheme_void(24, \"Source Code Pro\")\n}\n\noutput$plot_pkgs_r <- renderPlot({\n\tplot_word_cloud(responses, pkgs_r)\n})\n",
+          "language": "r",
+          "metadata": {
+            "context": "server"
+          }
+        },
+        {
+          "start": 301,
+          "end": 303,
+          "file": "dashboard.qmd",
+          "source": "plotOutput(\"plot_pkgs_r\")\n",
+          "language": "r",
+          "metadata": {}
+        },
+        {
+          "start": 307,
+          "end": 312,
+          "file": "dashboard.qmd",
+          "source": "output$plot_pkgs_py <- renderPlot({\n  plot_word_cloud(responses, pkgs_python)\n})\n",
+          "language": "r",
+          "metadata": {
+            "context": "server"
+          }
+        },
+        {
+          "start": 314,
+          "end": 316,
+          "file": "dashboard.qmd",
+          "source": "plotOutput(\"plot_pkgs_py\")\n",
+          "language": "r",
+          "metadata": {}
+        }
+      ]
+    }
+  }
+}
