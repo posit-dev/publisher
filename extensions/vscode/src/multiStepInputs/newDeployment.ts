@@ -472,7 +472,7 @@ export async function newDeployment(
   };
 
   const hasMultiplePossibleEntryPointFiles = () => {
-    return entryPointListItems.length > 1;
+    return inspectionResults.length > 1;
   };
 
   const hasMultipleContentTypesForSelectedEntryPoint = () => {
