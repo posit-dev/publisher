@@ -7,7 +7,7 @@ import { Disposable } from "vscode";
 import EventSource from "eventsource";
 import { Readable } from "stream";
 
-import { EventStreamMessage } from "src/api";
+import { Events, EventStreamMessage } from "src/api";
 
 export type EventStreamRegistration = (message: EventStreamMessage) => void;
 
@@ -97,6 +97,8 @@ export class EventStream extends Readable implements Disposable {
   private messages: EventStreamMessage[] = [];
   // Map to store event callbacks
   private callbacks: Map<string, EventStreamRegistration[]> = new Map();
+  // Cancelled Event Streams - Suppressed when received
+  private cancelledLocalIDs: string[] = [];
 
   /**
    * Creates a new instance of the EventStream class.
@@ -115,16 +117,7 @@ export class EventStream extends Readable implements Disposable {
 
       // Invoke the message factory
       this.messageFactory(message).forEach((msg) => {
-        // Trace message
-        // console.debug(
-        //   `eventSource trace: ${event.type}: ${JSON.stringify(event)}`,
-        // );
-        // Add the message to the messages array
-        this.messages.push(msg);
-        // Emit a 'message' event with the message as the payload
-        this.emit("message", msg);
-        // Invoke the registered callbacks for the message type
-        this.invokeCallbacks(msg);
+        this.processMessage(msg);
       });
     });
   }
@@ -160,6 +153,44 @@ export class EventStream extends Readable implements Disposable {
         );
       },
     };
+  }
+
+  /**
+   * Provide a way to inject a message and have it processed as if it
+   * were received over the wire.
+   * @param message The event message to pass along
+   * @returns undefined
+   */
+  public injectMessage(message: Events) {
+    this.processMessage(message);
+  }
+
+  /**
+   * Provide a way to suppress the processing of incoming stream messages
+   * with a specific data.localId value
+   * @param localId: string
+   * @returns undefined
+   */
+  public suppressMessages(localId: string) {
+    this.cancelledLocalIDs.push(localId);
+  }
+
+  private processMessage(msg: EventStreamMessage) {
+    const localId = msg.data.localId;
+    if (localId && this.cancelledLocalIDs.includes(localId)) {
+      // suppress and ignore
+      return;
+    }
+    // Trace message
+    // console.debug(
+    //   `eventSource trace: ${event.type}: ${JSON.stringify(event)}`,
+    // );
+    // Add the message to the messages array
+    this.messages.push(msg);
+    // Emit a 'message' event with the message as the payload
+    this.emit("message", msg);
+    // Invoke the registered callbacks for the message type
+    this.invokeCallbacks(msg);
   }
 
   private invokeCallbacks(message: EventStreamMessage) {
