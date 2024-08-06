@@ -292,6 +292,27 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 	}, configs[1])
 }
 
+func (s *QuartoDetectorSuite) TestInferTypeNotebook() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	configs := s.runInferType("stock-report-jupyter")
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "stock-report-jupyter.ipynb",
+		Title:      "Stock Report: TSLA",
+		Validate:   true,
+		Files:      []string{"*", "!stock-report-jupyter.html", "!stock-report-jupyter_files"},
+		Python:     &config.Python{},
+		Quarto: &config.Quarto{
+			Version: "1.5.54",
+			Engines: []string{"jupyter"},
+		},
+	}, configs[0])
+}
+
 func (s *QuartoDetectorSuite) TestInferTypeRevalJSQuartoShiny() {
 	if runtime.GOOS == "windows" {
 		s.T().Skip("This test does not run on Windows")

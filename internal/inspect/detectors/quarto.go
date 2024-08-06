@@ -148,7 +148,7 @@ func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput, entrypoint
 	return ""
 }
 
-var quartoSuffixes = []string{".qmd", ".Rmd"}
+var quartoSuffixes = []string{".qmd", ".Rmd", ".ipynb"}
 
 func (d *QuartoDetector) findEntrypoints(base util.AbsolutePath) ([]util.AbsolutePath, error) {
 	allPaths := []util.AbsolutePath{}
@@ -220,13 +220,18 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 			cfg.Type = config.ContentTypeQuarto
 		}
 
-		content, err := entrypointPath.ReadFile()
-		if err != nil {
-			return nil, err
+		var needR, needPython bool
+
+		if entrypointPath.HasSuffix(".ipynb") {
+			needPython = true
+		} else {
+			// Look for code blocks in Rmd or qmd file.
+			content, err := entrypointPath.ReadFile()
+			if err != nil {
+				return nil, err
+			}
+			needR, needPython = pydeps.DetectMarkdownLanguagesInContent(content)
 		}
-
-		needR, needPython := pydeps.DetectMarkdownLanguagesInContent(content)
-
 		engines := inspectOutput.Engines
 		if needPython || d.needsPython(inspectOutput) {
 			// Indicate that Python inspection is needed.
