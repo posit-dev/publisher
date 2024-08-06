@@ -323,6 +323,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       showProgress("Updating File List", apiRequest, Views.HomeView);
 
       await apiRequest;
+      await commands.executeCommand(
+        "vscode.open",
+        Uri.file(activeConfig.configurationPath),
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::updateFileList",
