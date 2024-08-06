@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { HomeViewState } from "../shared";
+import { SelectionState } from "../shared";
 
 export enum WebviewToHostMessageType {
   // Sent from webviewView to host
@@ -113,7 +113,7 @@ export type NavigateMsg = AnyWebviewToHostMessage<
 export type SaveSelectionStatedMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.SAVE_SELECTION_STATE,
   {
-    state: HomeViewState;
+    state: SelectionState;
   }
 >;
 

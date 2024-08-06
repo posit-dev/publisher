@@ -22,12 +22,10 @@ import { isAxiosError } from "axios";
 import {
   Configuration,
   ConfigurationError,
-  Credential,
   ContentRecord,
   EventStreamMessage,
   FileAction,
   PreContentRecord,
-  PreContentRecordWithConfig,
   isConfigurationError,
   isContentRecordError,
   isPreContentRecord,
@@ -49,8 +47,8 @@ import { Utils as uriUtils } from "vscode-uri";
 import type {
   DeploymentSelectionResult,
   DeploymentSelector,
-  HomeViewState,
   PublishProcessParams,
+  SelectionState,
 } from "src/types/shared";
 import {
   DeployMsg,
@@ -66,14 +64,14 @@ import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessag
 import { confirmOverwrite } from "src/dialogs";
 import { splitFilesOnInclusion } from "src/utils/files";
 import { DeploymentQuickPick } from "src/types/quickPicks";
-import { normalizeURL } from "src/utils/url";
 import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
-import { Commands, Contexts, LocalState, Views } from "src/constants";
+import { Commands, Contexts, Views } from "src/constants";
 import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
+import { PublisherState } from "src/state";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -84,15 +82,9 @@ const fileEventDebounce = 200;
 
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
-  private contentRecords: (
-    | ContentRecord
-    | PreContentRecord
-    | PreContentRecordWithConfig
-  )[] = [];
 
-  private credentials: Credential[] = [];
-  private configs: Configuration[] = [];
-  private configsInError: ConfigurationError[] = [];
+  private state: PublisherState;
+
   private root: WorkspaceFolder | undefined;
   private webviewView?: WebviewView;
   private extensionUri: Uri;
@@ -116,6 +108,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
+
+    this.state = new PublisherState(this.context);
+
     this.extensionUri = this.context.extensionUri;
     this.webviewConduit = new WebviewConduit();
 
@@ -126,12 +121,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       this.updateWebViewViewCredentials();
     });
     useBus().on("requestActiveConfig", () => {
-      useBus().trigger("activeConfigChanged", this.getActiveConfig());
+      useBus().trigger(
+        "activeConfigChanged",
+        this.state.getSelectedConfiguration(),
+      );
     });
     useBus().on("requestActiveContentRecord", () => {
       useBus().trigger(
         "activeContentRecordChanged",
-        this.getActiveContentRecord(),
+        this.state.getSelectedContentRecord(),
       );
     });
 
@@ -307,7 +305,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async updateFileList(uri: string, action: FileAction) {
-    const activeConfig = this.getActiveConfig();
+    const activeConfig = this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::updateFileList: No active configuration.");
       return;
@@ -358,23 +356,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshContentRecordData() {
     try {
-      // API Returns:
-      // 200 - success
-      // 500 - internal server error
-      const api = await useApi();
-      const apiRequest = api.contentRecords.getAll(".", {
-        recursive: true,
-      });
-      showProgress("Refreshing Deployments", apiRequest, Views.HomeView);
-
-      const response = await apiRequest;
-      const contentRecords = response.data;
-      this.contentRecords = [];
-      contentRecords.forEach((contentRecord) => {
-        if (!isContentRecordError(contentRecord)) {
-          this.contentRecords.push(contentRecord);
-        }
-      });
+      const refresh = this.state.refreshContentRecords();
+      showProgress("Refreshing Deployments", refresh, Views.HomeView);
+      await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshContentRecordData::contentRecords.getAll",
@@ -387,23 +371,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshConfigurationData() {
     try {
-      const api = await useApi();
-      const apiRequest = api.configurations.getAll(".", {
-        recursive: true,
-      });
-      showProgress("Refreshing Configurations", apiRequest, Views.HomeView);
-
-      const response = await apiRequest;
-      const configurations = response.data;
-      this.configs = [];
-      this.configsInError = [];
-      configurations.forEach((config) => {
-        if (!isConfigurationError(config)) {
-          this.configs.push(config);
-        } else {
-          this.configsInError.push(config);
-        }
-      });
+      const refresh = this.state.refreshConfigurations();
+      showProgress("Refreshing Configurations", refresh, Views.HomeView);
+      await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshConfigurationData::configurations.getAll",
@@ -416,12 +386,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async refreshCredentialData() {
     try {
-      const api = await useApi();
-      const apiRequest = api.credentials.list();
-      showProgress("Refreshing Credentials", apiRequest, Views.HomeView);
-
-      const response = await apiRequest;
-      this.credentials = response.data;
+      const refresh = this.state.refreshCredentials();
+      showProgress("Refreshing Credentials", refresh, Views.HomeView);
+      await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshCredentialData::credentials.list",
@@ -438,7 +405,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,
       content: {
-        contentRecords: this.contentRecords,
+        contentRecords: this.state.contentRecords,
         deploymentSelected: deploymentSelector,
       },
     });
@@ -448,8 +415,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CONFIG_DATA,
       content: {
-        configurations: this.configs,
-        configurationsInError: this.configsInError,
+        configurations: this.state.validConfigs,
+        configurationsInError: this.state.configsInError,
       },
     });
   }
@@ -458,7 +425,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
       content: {
-        credentials: this.credentials,
+        credentials: this.state.credentials,
       },
     });
   }
@@ -469,66 +436,21 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private getSelectionState(): HomeViewState {
-    const state = this.context.workspaceState.get<DeploymentSelector | null>(
-      LocalState.LastSelectionState,
-      null,
-    );
-    return state;
-  }
-
-  private getActiveConfig(): Configuration | undefined {
-    const savedState = this.getSelectionState();
-    if (!savedState) {
-      return undefined;
-    }
-    return this.getConfigBySelector(savedState);
-  }
-
-  private getActiveContentRecord():
-    | ContentRecord
-    | PreContentRecord
-    | undefined {
-    const savedState = this.getSelectionState();
-    if (!savedState) {
-      return undefined;
-    }
-    return this.getContentRecordBySelector(savedState);
-  }
-
-  private getContentRecordBySelector(selector: DeploymentSelector) {
-    return this.contentRecords.find(
-      (d) => d.deploymentPath === selector.deploymentPath,
-    );
-  }
-
-  private getConfigBySelector(selector: DeploymentSelector) {
-    const deployment = this.getContentRecordBySelector(selector);
-    if (deployment) {
-      return this.configs.find(
-        (c) =>
-          c.configurationName === deployment.configurationName &&
-          c.projectDir === deployment.projectDir,
-      );
-    }
-    return undefined;
-  }
-
-  private async saveSelectionState(state: HomeViewState): Promise<void> {
-    await this.context.workspaceState.update(
-      LocalState.LastSelectionState,
-      state,
-    );
+  private async saveSelectionState(state: SelectionState): Promise<void> {
+    await this.state.updateSelection(state);
 
     useBus().trigger(
       "activeContentRecordChanged",
-      this.getActiveContentRecord(),
+      this.state.getSelectedContentRecord(),
     );
-    useBus().trigger("activeConfigChanged", this.getActiveConfig());
+    useBus().trigger(
+      "activeConfigChanged",
+      this.state.getSelectedConfiguration(),
+    );
   }
 
   private async onRefreshPythonPackages() {
-    const activeConfiguration = this.getActiveConfig();
+    const activeConfiguration = this.state.getSelectedConfiguration();
     let pythonProject = true;
     let packages: string[] = [];
     let packageFile: string | undefined;
@@ -590,7 +512,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async onRefreshRPackages() {
-    const activeConfiguration = this.getActiveConfig();
+    const activeConfiguration = this.state.getSelectedConfiguration();
     let rProject = true;
     let packages: RPackage[] = [];
     let packageFile: string | undefined;
@@ -657,7 +579,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (this.root === undefined) {
       return;
     }
-    const activeContentRecord = this.getActiveContentRecord();
+    const activeContentRecord = this.state.getSelectedContentRecord();
     if (!activeContentRecord) {
       return;
     }
@@ -675,7 +597,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
-    const activeConfiguration = this.getActiveConfig();
+    const activeConfiguration = this.state.getSelectedConfiguration();
     if (activeConfiguration === undefined) {
       // Cannot scan if there is no active configuration.
       return;
@@ -732,7 +654,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
-    const activeConfiguration = this.getActiveConfig();
+    const activeConfiguration = this.state.getSelectedConfiguration();
     if (activeConfiguration === undefined) {
       // Cannot scan if there is no active configuration.
       return;
@@ -793,21 +715,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.requestWebviewSaveSelection();
   }
 
-  private getCredentialForContentRecord(
-    contentRecord: ContentRecord | PreContentRecord,
-  ): Credential | undefined {
-    const credential = this.credentials.find(
-      (credential) =>
-        normalizeURL(credential.url).toLowerCase() ===
-        normalizeURL(contentRecord.serverUrl).toLowerCase(),
-    );
-    return credential;
-  }
-
   private async showSelectOrCreateConfigForDeployment(): Promise<
     DeploymentSelectionResult | undefined
   > {
-    const targetContentRecord = this.getActiveContentRecord();
+    const targetContentRecord = this.state.getSelectedContentRecord();
     if (targetContentRecord === undefined) {
       console.error(
         "homeView::showSelectConfigForDeployment: No target deployment.",
@@ -822,7 +733,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const config = await selectNewOrExistingConfig(
         targetContentRecord,
         Views.HomeView,
-        this.getActiveConfig(),
+        this.state.getSelectedConfiguration(),
       );
       if (config) {
         const api = await useApi();
@@ -842,7 +753,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this.propagateDeploymentSelection(deploymentSelector);
 
         const credential =
-          this.getCredentialForContentRecord(targetContentRecord);
+          this.state.findCredentialForContentRecord(targetContentRecord);
 
         if (
           !targetContentRecord.deploymentName ||
@@ -900,33 +811,23 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         // be seen as a visible delay (we'd have to have a progress indicator).
         let refreshCredentials = false;
         if (
-          !this.contentRecords.find(
-            (contentRecord) =>
-              contentRecord.saveName ===
-                deploymentObjects.contentRecord.saveName &&
-              contentRecord.projectDir ===
-                deploymentObjects.contentRecord.projectDir,
+          !this.state.findContentRecord(
+            deploymentObjects.contentRecord.saveName,
+            deploymentObjects.contentRecord.projectDir,
           )
         ) {
-          this.contentRecords.push(deploymentObjects.contentRecord);
+          this.state.contentRecords.push(deploymentObjects.contentRecord);
         }
         if (
-          !this.configs.find(
-            (config) =>
-              config.configurationName ===
-                deploymentObjects.configuration.configurationName &&
-              config.projectDir === deploymentObjects.configuration.projectDir,
+          !this.state.findValidConfig(
+            deploymentObjects.configuration.configurationName,
+            deploymentObjects.configuration.projectDir,
           )
         ) {
-          this.configs.push(deploymentObjects.configuration);
+          this.state.configurations.push(deploymentObjects.configuration);
         }
-        if (
-          !this.credentials.find(
-            (credential) =>
-              credential.name === deploymentObjects.credential.name,
-          )
-        ) {
-          this.credentials.push(deploymentObjects.credential);
+        if (!this.state.findCredential(deploymentObjects.credential.name)) {
+          this.state.credentials.push(deploymentObjects.credential);
           refreshCredentials = true;
         }
         const deploymentSelector: DeploymentSelector = {
@@ -959,7 +860,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async showNewCredential() {
-    const contentRecord = this.getActiveContentRecord();
+    const contentRecord = this.state.getSelectedContentRecord();
 
     return await commands.executeCommand(
       Commands.Credentials.Add,
@@ -987,15 +888,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       // Create quick pick list from current contentRecords, credentials and configs
       const deployments: DeploymentQuickPick[] = [];
-      const lastContentRecordName = this.getActiveContentRecord()?.saveName;
+      const lastContentRecordName =
+        this.state.getSelectedContentRecord()?.saveName;
       const lastContentRecordProjectDir = projectDir
         ? projectDir
-        : this.getActiveContentRecord()?.projectDir;
-      const lastConfigName = this.getActiveConfig()?.configurationName;
+        : this.state.getSelectedContentRecord()?.projectDir;
+      const lastConfigName =
+        this.state.getSelectedConfiguration()?.configurationName;
 
       const includedContentRecords = contentRecordsSubset
         ? contentRecordsSubset
-        : this.contentRecords;
+        : this.state.contentRecords;
 
       includedContentRecords.forEach((contentRecord) => {
         if (
@@ -1010,25 +913,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
         let config: Configuration | ConfigurationError | undefined;
         if (contentRecord.configurationName) {
-          config = this.configs.find(
-            (config) =>
-              config.configurationName === contentRecord.configurationName &&
-              config.projectDir === contentRecord.projectDir,
+          config = this.state.findValidConfig(
+            contentRecord.configurationName,
+            contentRecord.projectDir,
           );
           if (!config) {
-            config = this.configsInError.find(
-              (config) =>
-                config.configurationName === contentRecord.configurationName &&
-                config.projectDir === contentRecord.projectDir,
+            config = this.state.findConfigInError(
+              contentRecord.configurationName,
+              contentRecord.projectDir,
             );
           }
         }
 
-        let credential = this.credentials.find(
-          (credential) =>
-            normalizeURL(credential.url).toLowerCase() ===
-            normalizeURL(contentRecord.serverUrl).toLowerCase(),
-        );
+        let credential =
+          this.state.findCredentialForContentRecord(contentRecord);
 
         const result = calculateTitle(contentRecord, config);
         const title = result.title;
@@ -1263,7 +1161,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     const selectionState = includeSavedState
-      ? this.getSelectionState()
+      ? this.state.getSelection()
       : undefined;
     this.updateWebViewViewCredentials();
     this.updateWebViewViewConfigurations();
@@ -1271,9 +1169,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     if (includeSavedState && selectionState) {
       useBus().trigger(
         "activeContentRecordChanged",
-        this.getActiveContentRecord(),
+        this.state.getSelectedContentRecord(),
       );
-      useBus().trigger("activeConfigChanged", this.getActiveConfig());
+      useBus().trigger(
+        "activeConfigChanged",
+        this.state.getSelectedConfiguration(),
+      );
     }
   };
 
@@ -1282,19 +1183,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     this.updateWebViewViewContentRecords();
     useBus().trigger(
       "activeContentRecordChanged",
-      this.getActiveContentRecord(),
+      this.state.getSelectedContentRecord(),
     );
   };
 
   public refreshConfigurations = async () => {
     await this.refreshConfigurationData();
     this.updateWebViewViewConfigurations();
-    useBus().trigger("activeConfigChanged", this.getActiveConfig());
+    useBus().trigger(
+      "activeConfigChanged",
+      this.state.getSelectedConfiguration(),
+    );
   };
 
   public sendRefreshedFilesLists = async () => {
     const api = await useApi();
-    const activeConfig = this.getActiveConfig();
+    const activeConfig = this.state.getSelectedConfiguration();
     if (activeConfig) {
       try {
         const apiRequest = api.files.getByConfiguration(
@@ -1439,11 +1343,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         dir,
         entrypoint,
       );
-      if (selected) {
-        // publish!
-        return this.initiatePublish(selected.publishParams);
-      }
-      return false;
+      // we do not publish this, as we expect the user needs
+      // to validate and update config settings.
+      return selected;
     }
     // only one deployment, just publish it
     if (compatibleContentRecords.length === 1) {
@@ -1452,7 +1354,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         deploymentPath: contentRecord.deploymentPath,
       };
       await this.propagateDeploymentSelection(deploymentSelector);
-      const credential = this.getCredentialForContentRecord(contentRecord);
+      const credential =
+        this.state.findCredentialForContentRecord(contentRecord);
       let credentialName = credential?.name;
       if (!credentialName) {
         try {
@@ -1487,7 +1390,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     // if there are multiple compatible deployments, then make sure one of these isn't
     // already selected. If it is, do nothing, otherwise pick between the compatible ones.
-    const currentContentRecord = this.getActiveContentRecord();
+    const currentContentRecord = this.state.getSelectedContentRecord();
     if (
       !currentContentRecord ||
       !compatibleContentRecords.find((c) => {
@@ -1506,7 +1409,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return false;
     }
     // compatible content record already active. Publish
-    const credential = this.getCredentialForContentRecord(currentContentRecord);
+    const credential =
+      this.state.findCredentialForContentRecord(currentContentRecord);
     let credentialName = credential?.name;
     if (!credentialName) {
       credentialName = await newCredential(
@@ -1532,6 +1436,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   public dispose() {
     Disposable.from(...this.disposables).dispose();
 
+    this.state.dispose();
     this.configWatchers?.dispose();
   }
 
@@ -1581,7 +1486,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         Commands.HomeView.NavigateToDeploymentServer,
         async () => {
-          const deployment = this.getActiveContentRecord();
+          const deployment = this.state.getSelectedContentRecord();
           if (deployment) {
             await env.openExternal(Uri.parse(deployment.serverUrl));
           }
@@ -1590,14 +1495,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         Commands.HomeView.NavigateToDeploymentContent,
         async () => {
-          const contentRecord = this.getActiveContentRecord();
+          const contentRecord = this.state.getSelectedContentRecord();
           if (contentRecord && !isPreContentRecord(contentRecord)) {
             await env.openExternal(Uri.parse(contentRecord.dashboardUrl));
           }
         },
       ),
       commands.registerCommand(Commands.HomeView.ShowContentLogs, async () => {
-        const contentRecord = this.getActiveContentRecord();
+        const contentRecord = this.state.getSelectedContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
           const logUrl = `${contentRecord.dashboardUrl}/logs`;
           await env.openExternal(Uri.parse(logUrl));
@@ -1614,7 +1519,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           if (this.root === undefined) {
             return;
           }
-          const cfg = this.getActiveConfig();
+          const cfg = this.state.getSelectedConfiguration();
           const packageFile = cfg?.configuration.python?.packageFile;
           if (packageFile === undefined) {
             return;
@@ -1640,7 +1545,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           if (this.root === undefined) {
             return;
           }
-          const cfg = this.getActiveConfig();
+          const cfg = this.state.getSelectedConfiguration();
           const packageFile = cfg?.configuration.r?.packageFile;
           if (packageFile === undefined) {
             return;

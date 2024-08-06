@@ -23,7 +23,7 @@ export type DeploymentSelectionResult = {
   publishParams: PublishProcessParams;
 };
 
-export type HomeViewState = DeploymentSelector | null;
+export type SelectionState = DeploymentSelector | null;
 
 export type DeploymentObjects = {
   contentRecord: ContentRecord | PreContentRecord;
