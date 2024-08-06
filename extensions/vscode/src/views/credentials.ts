@@ -16,7 +16,7 @@ import { useBus } from "src/bus";
 import { confirmDelete } from "src/dialogs";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { newCredential } from "src/multiStepInputs/newCredential";
-import { Commands, Contexts, Views } from "src/constants";
+import { Commands, Contexts, CredentialGUIs, Views } from "src/constants";
 
 type CredentialEventEmitter = EventEmitter<
   CredentialsTreeItem | undefined | void
@@ -116,6 +116,7 @@ export class CredentialsTreeDataProvider
     }
     try {
       const api = await useApi();
+      item.cred.guid;
       await api.credentials.delete(item.cred.guid);
       window.setStatusBarMessage(
         `Credential for ${item.cred.name} has been erased from our memory!`,
@@ -131,8 +132,14 @@ export class CredentialsTreeDataProvider
 export class CredentialsTreeItem extends TreeItem {
   constructor(public readonly cred: Credential) {
     super(cred.name);
-    this.iconPath = new ThemeIcon("key");
+    this.iconPath =
+      cred.guid === CredentialGUIs.EnvironmentGUID
+        ? new ThemeIcon("bracket")
+        : new ThemeIcon("key");
     this.description = `${cred.url}`;
-    this.contextValue = Contexts.Credentials.Keychain;
+    this.contextValue =
+      cred.guid === CredentialGUIs.EnvironmentGUID
+        ? Contexts.Credentials.EnvironmentVars
+        : Contexts.Credentials.Keychain;
   }
 }
