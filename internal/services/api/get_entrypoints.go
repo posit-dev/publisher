@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
 	"github.com/posit-dev/publisher/internal/logging"
@@ -22,7 +23,8 @@ func GetEntrypointsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.
 		}
 
 		response := []string{}
-		suffixes := []string{".htm", ".html", ".ipynb", ".py", ".qmd", ".R", ".Rmd"}
+		// lowercase versions of file extensions - considered equal to all case combinations
+		suffixes := []string{".htm", ".html", ".ipynb", ".py", ".qmd", ".r", ".rmd"}
 		files := []string{
 			"*",
 			"!**/renv/activate.R",
@@ -43,7 +45,7 @@ func GetEntrypointsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.
 			if info.IsDir() {
 				return nil
 			}
-			if slices.Contains(suffixes, path.Ext()) {
+			if slices.Contains(suffixes, strings.ToLower(path.Ext())) {
 				relPath, err := path.Rel(projectDir)
 				if err != nil {
 					return err
