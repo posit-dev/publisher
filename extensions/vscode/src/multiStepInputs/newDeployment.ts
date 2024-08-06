@@ -602,6 +602,7 @@ export async function newDeployment(
           iconPath: new ThemeIcon("file"),
           label: entryPoint,
         });
+        discoveredEntryPoints.push(entryPoint);
         return resolve();
       }
       const entrypointFilesOpened: string[] = [];
