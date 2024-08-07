@@ -2,6 +2,8 @@
 
 import {
   Disposable,
+  NotebookDocument,
+  NotebookEditor,
   TextDocument,
   TextEditor,
   commands,
@@ -17,13 +19,21 @@ import { isActiveDocument, relativeDir } from "src/utils/files";
 import { hasKnownContentType } from "src/utils/inspect";
 import { getSummaryStringFromError } from "src/utils/errors";
 
+function isTextEditor(
+  editor: TextEditor | NotebookEditor,
+): editor is TextEditor {
+  return Object.hasOwn(editor, "document");
+}
+
 /**
  * Determines if a text document is an entrypoint file.
  *
  * @param document The text document to inspect
  * @returns If the text document is an entrypoint
  */
-async function isDocumentEntrypoint(document: TextDocument): Promise<boolean> {
+async function isDocumentEntrypoint(
+  document: TextDocument | NotebookDocument,
+): Promise<boolean> {
   const dir = relativeDir(document.uri);
   // If the file is outside the workspace, it cannot be an entrypoint
   if (dir === undefined) {
@@ -53,17 +63,20 @@ async function isDocumentEntrypoint(document: TextDocument): Promise<boolean> {
  * Tracks whether a document is an entrypoint file and sets extension context.
  */
 export class TrackedEntrypointDocument {
-  readonly document: TextDocument;
+  readonly document: TextDocument | NotebookDocument;
   private isEntrypoint: boolean;
 
   private requiresUpdate: boolean = false;
 
-  private constructor(document: TextDocument, isEntrypoint: boolean) {
+  private constructor(
+    document: TextDocument | NotebookDocument,
+    isEntrypoint: boolean,
+  ) {
     this.document = document;
     this.isEntrypoint = isEntrypoint;
   }
 
-  static async create(document: TextDocument) {
+  static async create(document: TextDocument | NotebookDocument) {
     const isEntrypoint = await isDocumentEntrypoint(document);
     return new TrackedEntrypointDocument(document, isEntrypoint);
   }
@@ -111,19 +124,26 @@ export class DocumentTracker implements Disposable {
   private disposable: Disposable;
 
   private readonly documents = new Map<
-    TextDocument,
+    TextDocument | NotebookDocument,
     TrackedEntrypointDocument
   >();
 
   constructor() {
     this.disposable = Disposable.from(
-      window.onDidChangeActiveTextEditor(this.onActiveTextEditorChanged, this),
-      workspace.onDidCloseTextDocument(this.onTextDocumentClosed, this),
-      workspace.onDidSaveTextDocument(this.onTextDocumentSaved, this),
+      // Track text editors
+      window.onDidChangeActiveTextEditor(this.onActiveEditorChanged, this),
+      workspace.onDidCloseTextDocument(this.onDocumentClosed, this),
+      workspace.onDidSaveTextDocument(this.onDocumentSaved, this),
+
+      // Track notebook editors
+      window.onDidChangeActiveNotebookEditor(this.onActiveEditorChanged, this),
+      workspace.onDidCloseNotebookDocument(this.onDocumentClosed, this),
+      workspace.onDidSaveNotebookDocument(this.onDocumentSaved, this),
     );
 
     // activate the initial active file
-    this.onActiveTextEditorChanged(window.activeTextEditor);
+    this.onActiveEditorChanged(window.activeTextEditor);
+    this.onActiveEditorChanged(window.activeNotebookEditor);
   }
 
   dispose() {
@@ -136,7 +156,7 @@ export class DocumentTracker implements Disposable {
    * @param document The document to track
    * @returns The TrackedEntrypointDocument created
    */
-  async addDocument(document: TextDocument) {
+  async addDocument(document: TextDocument | NotebookDocument) {
     const entrypoint = await TrackedEntrypointDocument.create(document);
     this.documents.set(document, entrypoint);
     return entrypoint;
@@ -146,18 +166,18 @@ export class DocumentTracker implements Disposable {
    * Stops tracking a document
    * @param document The document to stop tracking
    */
-  removeDocument(document: TextDocument) {
+  removeDocument(document: TextDocument | NotebookDocument) {
     this.documents.delete(document);
   }
 
   /**
-   * Listener function for changes to the active text editor.
+   * Listener function for changes to the active Text or Notebook Editor.
    *
    * Adds new documents to the tracker, and activates the associated
    * TrackedEntrypointDocument
-   * @param editor The active text editor
+   * @param editor The active editor
    */
-  async onActiveTextEditorChanged(editor: TextEditor | undefined) {
+  async onActiveEditorChanged(editor: TextEditor | NotebookEditor | undefined) {
     if (editor === undefined) {
       commands.executeCommand(
         "setContext",
@@ -167,32 +187,34 @@ export class DocumentTracker implements Disposable {
       return;
     }
 
-    let tracked = this.documents.get(editor.document);
+    const document = isTextEditor(editor) ? editor.document : editor.notebook;
+
+    let tracked = this.documents.get(document);
 
     if (tracked === undefined) {
-      tracked = await this.addDocument(editor.document);
+      tracked = await this.addDocument(document);
     }
 
     tracked.activate();
   }
 
   /**
-   * Listener function for the closing of a text document.
+   * Listener function for the closing of a document.
    * Stops the document from being tracked.
    *
    * @param document The closed document
    */
-  onTextDocumentClosed(document: TextDocument) {
+  onDocumentClosed(document: TextDocument | NotebookDocument) {
     this.removeDocument(document);
   }
 
   /**
-   * Listener function for the saving of a text document.
+   * Listener function for the saving of a document.
    * Triggers the document to update next time it is activated.
    *
    * @param document The saved document
    */
-  async onTextDocumentSaved(document: TextDocument) {
+  async onDocumentSaved(document: TextDocument | NotebookDocument) {
     const tracked = this.documents.get(document);
 
     if (tracked) {
