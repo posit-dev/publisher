@@ -8,22 +8,21 @@ import {
 } from "../api";
 
 export type DeploymentSelector = {
-  deploymentPath: string;
-};
-
-export type PublishProcessParams = {
   deploymentName: string;
-  credentialName: string;
-  configurationName: string;
+  deploymentPath: string;
   projectDir: string;
 };
 
-export type DeploymentSelectionResult = {
-  selector: DeploymentSelector;
-  publishParams: PublishProcessParams;
+export type PublishProcessParams = DeploymentSelector & {
+  credentialName: string;
+  configurationName: string;
 };
 
-export type SelectionState = DeploymentSelector | null;
+export type SelectionState =
+  | (DeploymentSelector & {
+      version: "v1";
+    })
+  | null;
 
 export type DeploymentObjects = {
   contentRecord: ContentRecord | PreContentRecord;
