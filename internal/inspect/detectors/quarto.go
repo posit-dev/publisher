@@ -180,8 +180,7 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 	if entrypoint.String() != "" {
 		// Optimization: skip inspection if there's a specified entrypoint
 		// and it's not one of ours.
-		suffix := entrypoint.Ext()
-		if suffix != ".qmd" && suffix != ".Rmd" && suffix != ".ipynb" {
+		if !slices.Contains(quartoSuffixes, entrypoint.Ext()) {
 			return nil, nil
 		}
 	}
