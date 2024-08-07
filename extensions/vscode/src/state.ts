@@ -14,7 +14,7 @@ import {
   useApi,
 } from "src/api";
 import { normalizeURL } from "src/utils/url";
-import { SelectionState } from "src/types/shared";
+import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState } from "./constants";
 
 function findContentRecord<
@@ -78,11 +78,24 @@ export class PublisherState implements Disposable {
     this.configurations.splice(0, this.contentRecords.length);
   }
 
-  getSelection(): SelectionState {
-    return this.context.workspaceState.get<SelectionState>(
+  getSelection(): DeploymentSelector | undefined {
+    const savedState = this.context.workspaceState.get<SelectionState>(
       LocalState.LastSelectionState,
       null,
     );
+    if (!savedState) {
+      return undefined;
+    }
+    if (savedState.version === "v1") {
+      return {
+        deploymentName: savedState.deploymentName,
+        deploymentPath: savedState.deploymentPath,
+        projectDir: savedState.projectDir,
+      };
+    }
+    // We don't know about this one, including the last
+    // one which didn't have the version string in it.
+    return undefined;
   }
 
   async updateSelection(state: SelectionState) {

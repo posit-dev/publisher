@@ -49,10 +49,8 @@ import {
 } from "src/utils/files";
 import { newDeployment } from "src/multiStepInputs/newDeployment";
 import type {
-  DeploymentSelectionResult,
   DeploymentSelector,
   PublishProcessParams,
-  SelectionState,
 } from "src/types/shared";
 import {
   DeployMsg,
@@ -440,9 +438,24 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private async saveSelectionState(state: SelectionState): Promise<void> {
-    await this.state.updateSelection(state);
-
+  private async saveSelectionState(
+    state: DeploymentSelector | null,
+  ): Promise<void> {
+    if (!state) {
+      // NOTE: Didn't make these fields optional because of the burden of
+      // type checking before use
+      await this.state.updateSelection({
+        deploymentName: "",
+        deploymentPath: "",
+        projectDir: "",
+        version: "v1",
+      });
+    } else {
+      await this.state.updateSelection({
+        ...state,
+        version: "v1",
+      });
+    }
     useBus().trigger(
       "activeContentRecordChanged",
       this.state.getSelectedContentRecord(),
@@ -720,7 +733,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async showSelectOrCreateConfigForDeployment(): Promise<
-    DeploymentSelectionResult | undefined
+    DeploymentSelector | undefined
   > {
     const targetContentRecord = this.state.getSelectedContentRecord();
     if (targetContentRecord === undefined) {
@@ -753,6 +766,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         // now select the new, updated or existing deployment
         const deploymentSelector: DeploymentSelector = {
           deploymentPath: targetContentRecord.deploymentPath,
+          deploymentName: targetContentRecord.saveName,
+          projectDir: targetContentRecord.projectDir,
         };
         this.propagateDeploymentSelection(deploymentSelector);
 
@@ -769,13 +784,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           return undefined;
         }
         return {
-          selector: deploymentSelector,
-          publishParams: {
-            deploymentName: targetContentRecord.deploymentName,
-            credentialName: credential.name,
-            configurationName: config.configurationName,
-            projectDir: targetContentRecord.projectDir,
-          },
+          deploymentName: targetContentRecord.deploymentName,
+          deploymentPath: targetContentRecord.deploymentPath,
+          projectDir: targetContentRecord.projectDir,
         };
       }
       return undefined;
@@ -791,7 +802,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     viewId: string,
     projectDir?: string,
     entryPoint?: string,
-  ): Promise<DeploymentSelectionResult | undefined> {
+  ): Promise<PublishProcessParams | undefined> {
     // We need the initial queries to finish, before we can
     // use them (contentRecords, credentials and configs)
     await this.initComplete;
@@ -836,6 +847,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
         const deploymentSelector: DeploymentSelector = {
           deploymentPath: deploymentObjects.contentRecord.deploymentPath,
+          deploymentName: deploymentObjects.contentRecord.saveName,
+          projectDir: deploymentObjects.contentRecord.projectDir,
         };
 
         this.propagateDeploymentSelection(deploymentSelector);
@@ -844,14 +857,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           useBus().trigger("refreshCredentials", undefined);
         }
         return {
-          selector: deploymentSelector,
-          publishParams: {
-            deploymentName: deploymentObjects.contentRecord.deploymentName,
-            credentialName: deploymentObjects.credential.name,
-            configurationName:
-              deploymentObjects.configuration.configurationName,
-            projectDir: deploymentObjects.contentRecord.projectDir,
-          },
+          deploymentName: deploymentObjects.contentRecord.deploymentName,
+          deploymentPath: deploymentObjects.contentRecord.deploymentPath,
+          projectDir: deploymentObjects.contentRecord.projectDir,
+          credentialName: deploymentObjects.credential.name,
+          configurationName: deploymentObjects.configuration.configurationName,
         };
       }
       return undefined;
@@ -879,7 +889,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private async showDeploymentQuickPick(
     contentRecordsSubset?: AllContentRecordTypes[],
     projectDir?: string,
-  ): Promise<DeploymentSelectionResult | undefined> {
+  ): Promise<PublishProcessParams | undefined> {
     // We need the initial queries to finish, before we can
     // use them (contentRecords, credentials and configs)
     await this.initComplete;
@@ -1014,6 +1024,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (deployment) {
         deploymentSelector = {
           deploymentPath: deployment.contentRecord.deploymentPath,
+          deploymentName: deployment.contentRecord.saveName,
+          projectDir: deployment.contentRecord.projectDir,
         };
         this.updateWebViewViewCredentials();
         this.updateWebViewViewConfigurations();
@@ -1030,13 +1042,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return;
       }
       return {
-        selector: deploymentSelector,
-        publishParams: {
-          deploymentName: deployment.contentRecord.deploymentName,
-          credentialName: deployment.credentialName,
-          configurationName: deployment.contentRecord.configurationName,
-          projectDir: deployment.contentRecord.projectDir,
-        },
+        deploymentPath: deployment.contentRecord.deploymentPath,
+        deploymentName: deployment.contentRecord.deploymentName,
+        projectDir: deployment.contentRecord.projectDir,
+        credentialName: deployment.credentialName,
+        configurationName: deployment.contentRecord.configurationName,
       };
     } finally {
       // enable our home view, we are done with our sequence
@@ -1356,6 +1366,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const contentRecord = compatibleContentRecords[0];
       const deploymentSelector: DeploymentSelector = {
         deploymentPath: contentRecord.deploymentPath,
+        deploymentName: contentRecord.deploymentName,
+        projectDir: contentRecord.projectDir,
       };
       await this.propagateDeploymentSelection(deploymentSelector);
       const credential =
@@ -1385,9 +1397,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
       const target: PublishProcessParams = {
         deploymentName: contentRecord.saveName,
-        credentialName,
-        configurationName: contentRecord.configurationName,
+        deploymentPath: contentRecord.deploymentPath,
         projectDir: contentRecord.projectDir,
+        configurationName: contentRecord.configurationName,
+        credentialName,
       };
       // publish!
       return this.initiatePublish(target);
@@ -1408,7 +1421,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       );
       if (selected) {
         // publish!
-        return this.initiatePublish(selected.publishParams);
+        return this.initiatePublish(selected);
       }
       return false;
     }
@@ -1427,9 +1440,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
     const target: PublishProcessParams = {
       deploymentName: currentContentRecord.saveName,
+      deploymentPath: currentContentRecord.deploymentPath,
+      projectDir: currentContentRecord.projectDir,
       credentialName,
       configurationName: currentContentRecord.configurationName,
-      projectDir: currentContentRecord.projectDir,
     };
     return this.initiatePublish(target);
   }

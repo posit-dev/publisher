@@ -120,6 +120,8 @@ const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
     if (home.selectedContentRecord) {
       home.updateSelectedContentRecordBySelector({
         deploymentPath: home.selectedContentRecord.deploymentPath,
+        deploymentName: home.selectedContentRecord.deploymentName,
+        projectDir: home.selectedContentRecord.projectDir,
       });
     }
     return;
