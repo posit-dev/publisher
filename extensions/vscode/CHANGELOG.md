@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support detecting the `quarto-shiny` type for Quarto documents that had
   `revealjs` as the output format (#2065)
 - Added inspection support for Jupyter notebooks using Quarto Inspect allowing
-  Jupyter notebooks to be published using Quarto (#2059)
+  Jupyter notebooks to be published using Quarto (#2059, #2085)
 - Added an overlay that disables the extension's Home view when a selection is
   being made (#1995)
 - Added support for deployment with credential set in environment variables -
