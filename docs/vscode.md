@@ -5,8 +5,6 @@
 ### Opening the UI
 
 In VSCode, open the folder containing the project you want to deploy.
-In this version of Posit Publisher, a workspace with too many projects may be
-slow for some operations .
 
 Open the _Posit Publisher_ UI by clicking the icon in the activity bar.
 
