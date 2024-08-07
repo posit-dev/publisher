@@ -8,7 +8,7 @@ In VSCode, open the folder containing the project you want to deploy.
 
 Open the _Posit Publisher_ UI by clicking the icon in the activity bar.
 
-![](https://cdn.posit.co/publisher/assets/img/icon.png)
+![](https://cdn.posit.co/publisher/assets/img/new-icon.png)
 
 ### Home
 
@@ -76,7 +76,7 @@ Once the deployment completes, the result will be displayed in the Home view.
 You can deploy or create a new deployment directly from an open file. If it is
 a valid entrypoint a Posit Publisher button will appear in the editor menu.
 
-![](https://cdn.posit.co/publisher/assets/img/entrypoint-button.png)
+![](https://cdn.posit.co/publisher/assets/img/new-entrypoint-button.png)
 
 ### Multiple Deployments
 
