@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The Posit Publisher button in the editor view for entrypoints now does not
   deploy after a new deployment is created - giving users time to review the
-  newly created xonfiguration before deploying (#2060)
+  newly created configuration before deploying (#2060)
 - Changed the scanning of entrypoints when adding a new deployment - now a
   cursory scan is done using file extensions and a full inspection is only done
   on the selected entrypoint greatly improving the speed of adding a new
