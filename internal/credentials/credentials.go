@@ -30,10 +30,10 @@ import (
 	"fmt"
 	"net"
 	"net/url"
-	"os"
 
 	"github.com/google/uuid"
 	"github.com/posit-dev/publisher/internal/util"
+	"github.com/spf13/afero"
 	"github.com/zalando/go-keyring"
 )
 
@@ -74,19 +74,41 @@ func (cr *CredentialRecord) ToCredential() (*Credential, error) {
 	}
 }
 
-type CredentialsService struct{}
+type CredentialsService struct {
+	afs afero.Fs
+}
 
-// EnvFactory creates a Credential based on the presence of the
-// environment value of CONNECT_SERVER and CONNECT_API_KEY
-func (cs *CredentialsService) EnvCredentialRecordFactory() (*CredentialRecord, error) {
+// FileCredentialRecordFactory creates a Credential based on the presence of the
+// a file containing CONNECT_SERVER and CONNECT_API_KEY.
 
-	serverUrl := os.Getenv("CONNECT_SERVER")
-	ak := os.Getenv("CONNECT_API_KEY")
+type fileCredential struct {
+	URL string `toml:"url"`
+	Key string `toml:"key"`
+}
 
-	if serverUrl != "" && ak != "" {
-		normalizedUrl, err := util.NormalizeServerURL(serverUrl)
+func (cs *CredentialsService) FileCredentialRecordFactory() (*CredentialRecord, error) {
+	homeDir, err := util.UserHomeDir(cs.afs)
+	if err != nil {
+		return nil, err
+	}
+	filePath := homeDir.Join(".connect-credentials")
+	exists, err := filePath.Exists()
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, nil
+	}
+	var credential fileCredential
+	err = util.ReadTOMLFile(filePath, &credential)
+	if err != nil {
+		return nil, err
+	}
+
+	if credential.URL != "" && credential.Key != "" {
+		normalizedUrl, err := util.NormalizeServerURL(credential.URL)
 		if err != nil {
-			return nil, fmt.Errorf("error normalizing environment server URL: %s %v", serverUrl, err)
+			return nil, fmt.Errorf("error normalizing environment server URL: %s %v", credential.URL, err)
 		}
 
 		name := normalizedUrl
@@ -106,7 +128,7 @@ func (cs *CredentialsService) EnvCredentialRecordFactory() (*CredentialRecord, e
 			GUID:   EnvVarGUID, // We'll use a well known GUID to indicate it is from the ENV vars
 			Name:   name,
 			URL:    normalizedUrl,
-			ApiKey: ak,
+			ApiKey: credential.Key,
 		}
 
 		raw, err := json.Marshal(cred)
@@ -298,8 +320,8 @@ func (cs *CredentialsService) load() (CredentialTable, error) {
 		return nil, err
 	}
 
-	// insert a possible environment variable credential before returning
-	record, err := cs.EnvCredentialRecordFactory()
+	// insert a possible file-based credential before returning
+	record, err := cs.FileCredentialRecordFactory()
 	if err != nil {
 		return nil, err
 	}
