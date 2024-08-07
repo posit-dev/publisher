@@ -178,8 +178,12 @@ your home directory using the following format:
 # ~/.connect-credentials.toml
 
 url = 'https://your.connect.server'
-key = 'api-key'
+key = 'r0TCAS9mCmTICwd2E97uM3KnUDlGWZ3D'
 ```
+
+The `url` is the URL of your Posit Connect Server.
+
+The `key` is the API key for the user you would like to publish as.
 
 ### Help and Feedback
 
