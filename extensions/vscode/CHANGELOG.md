@@ -16,8 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Jupyter notebooks to be published using Quarto (#2059, #2085)
 - Added an overlay that disables the extension's Home view when a selection is
   being made (#1995)
-- Added support for deployment with credential set in environment variables -
-  `CONNECT_SERVER` and `CONNECT_API_KEY` (#2062)
+- Added support for setting a Credential using a dotfile (#2088)
 - Added the ability to dismiss the current deployment in progress (#2057)
 - Added sorting of entrypoints when adding a new deployment including open files
   at the top of the list (#2045)

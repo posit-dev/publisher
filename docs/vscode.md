@@ -169,13 +169,17 @@ To remove a credential, right-click on it and select `Delete`.
 For instructions on how to create a Connect API key, see the
 [Connect documentation](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating).
 
-#### via Environment Variables
+#### via dotfile
 
-A Credential can also be set using environment variables:
+A Credential can also be set by creating a `.connect-credentials` file in
+your home directory using the following format:
 
-`CONNECT_SERVER`: The URL of the Connect server.
+```toml
+# ~/.connect-credentials.toml
 
-`CONNECT_API_KEY`: Your API key for the Connect server.
+url = 'https://your.connect.server'
+key = 'api-key'
+```
 
 ### Help and Feedback
 
