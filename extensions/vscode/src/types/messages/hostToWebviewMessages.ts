@@ -22,7 +22,7 @@ export enum HostToWebviewMessageType {
   PUBLISH_FINISH_FAILURE = "publishFinishFailure",
   UPDATE_CONTENTRECORD_SELECTION = "updateContentRecordSelection",
   SAVE_SELECTION = "saveSelection",
-  REFRESH_FILES_LISTS = "refreshFilesLists",
+  REFRESH_FILES = "refreshFiles",
   UPDATE_PYTHON_PACKAGES = "updatePythonPackages",
   UPDATE_R_PACKAGES = "updateRPackages",
   SHOW_DISABLE_OVERLAY = "showDisableOverlay",
@@ -49,7 +49,7 @@ export type HostToWebviewMessage =
   | PublishFinishFailureMsg
   | UpdateContentRecordSelectionMsg
   | SaveSelectionMsg
-  | RefreshFilesListsMsg
+  | RefreshFilesMsg
   | UpdatePythonPackages
   | UpdateRPackages
   | ShowDisableOverlayMsg
@@ -66,7 +66,7 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_FAILURE ||
     msg.kind === HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION ||
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
-    msg.kind === HostToWebviewMessageType.REFRESH_FILES_LISTS ||
+    msg.kind === HostToWebviewMessageType.REFRESH_FILES ||
     msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES ||
     msg.kind === HostToWebviewMessageType.UPDATE_R_PACKAGES ||
     msg.kind === HostToWebviewMessageType.SHOW_DISABLE_OVERLAY ||
@@ -119,11 +119,10 @@ export type UpdateContentRecordSelectionMsg = AnyHostToWebviewMessage<
 export type SaveSelectionMsg =
   AnyHostToWebviewMessage<HostToWebviewMessageType.SAVE_SELECTION>;
 
-export type RefreshFilesListsMsg = AnyHostToWebviewMessage<
-  HostToWebviewMessageType.REFRESH_FILES_LISTS,
+export type RefreshFilesMsg = AnyHostToWebviewMessage<
+  HostToWebviewMessageType.REFRESH_FILES,
   {
-    includedFiles: ContentRecordFile[];
-    excludedFiles: ContentRecordFile[];
+    files: ContentRecordFile;
   }
 >;
 
