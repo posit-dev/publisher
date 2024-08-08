@@ -11,8 +11,14 @@
       },
     ]"
   >
-    <ListProjectFiles v-if="viewLayout === FilesViewLayout.LIST" />
-    <TreeProjectFiles v-else-if="viewLayout === FilesViewLayout.TREE" />
+    <template v-if="home.files">
+      <ListProjectFiles v-if="viewLayout === FilesViewLayout.LIST" />
+      <TreeProjectFile
+        v-else-if="viewLayout === FilesViewLayout.TREE"
+        :file="home.files"
+      />
+    </template>
+    <p v-else>No files found</p>
   </TreeSection>
 </template>
 
@@ -22,15 +28,17 @@ import { computed, ref } from "vue";
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
 import TreeSection from "src/components/TreeSection.vue";
+import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 import ListProjectFiles from "src/components/views/projectFiles/ListProjectFiles.vue";
-import TreeProjectFiles from "src/components/views/projectFiles/TreeProjectFiles.vue";
+import TreeProjectFile from "src/components/views/projectFiles/TreeProjectFile.vue";
 
 enum FilesViewLayout {
   LIST,
   TREE,
 }
 
+const home = useHomeStore();
 const { sendMsg } = useHostConduitService();
 
 const viewLayout = ref<FilesViewLayout>(FilesViewLayout.LIST);
