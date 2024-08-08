@@ -48,6 +48,20 @@ func (d *StaticHTMLDetector) InferType(base util.AbsolutePath, entrypoint util.R
 		cfg := config.New()
 		cfg.Type = config.ContentTypeHTML
 		cfg.Entrypoint = relEntrypoint.String()
+		cfg.Files = []string{
+			relEntrypoint.String(),
+		}
+		extraDirs := []string{"_site", relEntrypoint.WithoutExt().String() + "_files"}
+		for _, filename := range extraDirs {
+			path := base.Join(filename)
+			exists, err := path.Exists()
+			if err != nil {
+				return nil, err
+			}
+			if exists {
+				cfg.Files = append(cfg.Files, filename)
+			}
+		}
 		configs = append(configs, cfg)
 	}
 	return configs, nil
