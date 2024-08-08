@@ -66,7 +66,6 @@ import {
 } from "src/types/messages/webviewToHostMessages";
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
 import { confirmOverwrite } from "src/dialogs";
-import { splitFilesOnInclusion } from "src/utils/files";
 import { DeploymentQuickPick } from "src/types/quickPicks";
 import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
@@ -1214,9 +1213,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const response = await apiRequest;
 
         this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.REFRESH_FILES_LISTS,
+          kind: HostToWebviewMessageType.REFRESH_FILES,
           content: {
-            ...splitFilesOnInclusion(response.data),
+            files: response.data,
           },
         });
       } catch (error: unknown) {

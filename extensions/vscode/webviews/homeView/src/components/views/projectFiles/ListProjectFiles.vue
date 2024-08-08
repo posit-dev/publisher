@@ -6,7 +6,7 @@
   >
     <template #default="{ indentLevel }">
       <TreeItem
-        v-for="file in home.includedFiles"
+        v-for="file in home.flatFiles.includedFiles"
         @click="
           sendMsg({
             kind: WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
@@ -45,7 +45,7 @@
   >
     <template #default="{ indentLevel }">
       <TreeItem
-        v-for="file in home.excludedFiles"
+        v-for="file in home.flatFiles.excludedFiles"
         @click="
           sendMsg({
             kind: WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
