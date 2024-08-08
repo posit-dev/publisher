@@ -19,7 +19,7 @@ func New() *Config {
 		Schema:   schema.ConfigSchemaURL,
 		Type:     ContentTypeUnknown,
 		Validate: true,
-		Files:    []string{"*"},
+		Files:    []string{},
 	}
 }
 

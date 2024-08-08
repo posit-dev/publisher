@@ -176,6 +176,11 @@ func GetPossibleConfigs(
 				cfg.Entrypoint = "unknown"
 			}
 		}
+		// The inspector may populate the file list.
+		// If it doesn't, default to just the entrypoint file.
+		if len(cfg.Files) == 0 {
+			cfg.Files = []string{cfg.Entrypoint}
+		}
 	}
 	return configs, nil
 }
