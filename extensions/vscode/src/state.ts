@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Disposable, ExtensionContext } from "vscode";
+import { Disposable, ExtensionContext, window } from "vscode";
 
 import {
   Configuration,
@@ -16,6 +16,7 @@ import {
 import { normalizeURL } from "src/utils/url";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState } from "./constants";
+import { getStatusFromError, getSummaryStringFromError } from "./utils/errors";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -105,23 +106,82 @@ export class PublisherState implements Disposable {
     );
   }
 
-  getSelectedContentRecord() {
+  async getSelectedContentRecord() {
     const selection = this.getSelection();
     if (!selection) {
       return undefined;
     }
-    return this.findContentRecordByPath(selection.deploymentPath);
+    // try finding it first within our cache
+    const cr = this.findContentRecordByPath(selection.deploymentPath);
+    if (cr) {
+      return cr;
+    }
+    // if not found, then retrieve it and add it to our cache.
+    try {
+      const api = await useApi();
+
+      const response = await api.contentRecords.get(
+        selection.deploymentName,
+        selection.projectDir,
+      );
+      const cr = response.data;
+      if (!isContentRecordError(cr)) {
+        this.contentRecords.push(cr);
+        return cr;
+      }
+      return undefined;
+    } catch (error: unknown) {
+      const code = getStatusFromError(error);
+      if (code !== 404) {
+        // 400 is expected when doesn't exist on disk
+        const summary = getSummaryStringFromError(
+          "getSelectedContentRecord, contentRecords.get",
+          error,
+        );
+        window.showInformationMessage(
+          `Unable to retrieve deployment record: ${summary}`,
+        );
+      }
+      return undefined;
+    }
   }
 
-  getSelectedConfiguration() {
-    const contentRecord = this.getSelectedContentRecord();
+  async getSelectedConfiguration() {
+    const contentRecord = await this.getSelectedContentRecord();
     if (!contentRecord) {
       return undefined;
     }
-    return this.findValidConfig(
+    const c = this.findValidConfig(
       contentRecord.configurationName,
       contentRecord.projectDir,
     );
+    if (c) {
+      return c;
+    }
+    // if not found, then retrieve it and add it to our cache.
+    try {
+      const api = await useApi();
+      const response = await api.configurations.get(
+        contentRecord.configurationName,
+        contentRecord.projectDir,
+      );
+      const c = response.data;
+      this.configurations.push(c);
+      return c;
+    } catch (error: unknown) {
+      const code = getStatusFromError(error);
+      if (code !== 400) {
+        // 400 is expected when doesn't exist on disk
+        const summary = getSummaryStringFromError(
+          "getSelectedConfiguration, contentRecords.get",
+          error,
+        );
+        window.showInformationMessage(
+          `Unable to retrieve deployment configuration: ${summary}`,
+        );
+      }
+      return undefined;
+    }
   }
 
   async refreshContentRecords() {
