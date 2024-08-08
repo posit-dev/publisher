@@ -13,7 +13,7 @@ import (
 
 func InternalError(w http.ResponseWriter, req *http.Request, log logging.Logger, err error) {
 	status := http.StatusInternalServerError
-	text := http.StatusText(status)
+	text := err.Error()
 	w.WriteHeader(status)
 	w.Write([]byte(text))
 	log.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)
