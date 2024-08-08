@@ -1,13 +1,19 @@
 <template>
   <TreeItem
-    v-if="file"
     :key="file.id"
     :title="file.base"
+    :indentLevel="indentLevel"
     v-on="{
       click: file.isFile ? openFile : undefined,
     }"
   >
-    <TreeProjectFile v-for="child in file.files" :file="child" />
+    <template v-if="file.files.length" #default="{ indentLevel }">
+      <TreeProjectFile
+        v-for="child in file.files"
+        :file="child"
+        :indentLevel="indentLevel"
+      />
+    </template>
   </TreeItem>
 </template>
 
@@ -21,8 +27,12 @@ import { WebviewToHostMessageType } from "../../../../../../src/types/messages/w
 
 interface Props {
   file: ContentRecordFile;
+  indentLevel?: number;
 }
-const props = defineProps<Props>();
+
+const props = withDefaults(defineProps<Props>(), {
+  indentLevel: 1,
+});
 
 const { sendMsg } = useHostConduitService();
 
