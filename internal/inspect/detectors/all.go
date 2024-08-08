@@ -93,7 +93,11 @@ func (t *ContentTypeDetector) InferType(base util.AbsolutePath, entrypoint util.
 		} else if !aIsPreferred && bIsPreferred {
 			return 1
 		} else {
-			return strings.Compare(entrypointA, entrypointB)
+			if entrypointA == entrypointB {
+				return strings.Compare(string(a.Type), string(b.Type))
+			} else {
+				return strings.Compare(entrypointA, entrypointB)
+			}
 		}
 	}
 
