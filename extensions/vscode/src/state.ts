@@ -126,7 +126,10 @@ export class PublisherState implements Disposable {
       );
       const cr = response.data;
       if (!isContentRecordError(cr)) {
-        this.contentRecords.push(cr);
+        // its not foolproof, but it may help
+        if (!this.findContentRecord(cr.saveName, cr.projectDir)) {
+          this.contentRecords.push(cr);
+        }
         return cr;
       }
       return undefined;
@@ -166,7 +169,10 @@ export class PublisherState implements Disposable {
         contentRecord.projectDir,
       );
       const c = response.data;
-      this.configurations.push(c);
+      // its not foolproof, but it may help
+      if (!this.findConfig(c.configurationName, c.projectDir)) {
+        this.configurations.push(c);
+      }
       return c;
     } catch (error: unknown) {
       const code = getStatusFromError(error);

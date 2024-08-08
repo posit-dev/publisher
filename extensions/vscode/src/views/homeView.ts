@@ -270,7 +270,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
   private async onInitializingMsg() {
     // send back the data needed.
-    await this.refreshAll(true);
+    await this.refreshAll(false, true);
     this.setInitializationContext(HomeViewInitialized.initialized);
 
     // On first run, we have no saved state. Trigger a save
@@ -905,15 +905,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     contentRecordsSubset?: AllContentRecordTypes[],
     projectDir?: string,
   ): Promise<PublishProcessParams | undefined> {
-    // We need the initial queries to finish, before we can
-    // use them (contentRecords, credentials and configs)
-    await this.initComplete;
-
     try {
       // disable our home view, we are initiating a multi-step sequence
       this.webviewConduit.sendMsg({
         kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
       });
+
+      // We need the latest lists. No choice but to refresh everything
+      // once again.
+      await this.refreshAll(true);
 
       // Create quick pick list from current contentRecords, credentials and configs
       const deployments: DeploymentQuickPick[] = [];
@@ -1173,11 +1173,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     `;
   }
 
-  public refreshAll = async (includeSavedState?: boolean) => {
+  public refreshAll = async (
+    forceAll?: boolean,
+    includeSavedState?: boolean,
+  ) => {
     try {
       const apis: Promise<void>[] = [this.refreshCredentialData()];
-      if (!this.state.getSelection()) {
-        // we have no current selection, so we have no choice but to
+      const selectedCR = await this.state.getSelectedContentRecord();
+      const selectedConfig = await this.state.getSelectedConfiguration();
+      if (!selectedCR || !selectedConfig || forceAll) {
+        // we have no current selection or it is invalid, so we have no choice but to
         // search recursively for deployments
         apis.push(this.refreshContentRecordData());
         apis.push(this.refreshConfigurationData());
@@ -1192,13 +1197,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       return;
     }
     const selectedContentRecord = await this.state.getSelectedContentRecord();
-    if (selectedContentRecord) {
-      this.state.contentRecords.push(selectedContentRecord);
-    }
     const selectedConfig = await this.state.getSelectedConfiguration();
-    if (selectedConfig) {
-      this.state.configurations.push(selectedConfig);
-    }
 
     const selectionState = includeSavedState
       ? this.state.getSelection()
@@ -1509,7 +1508,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this,
       ),
       commands.registerCommand(Commands.HomeView.Refresh, () =>
-        this.refreshAll(true),
+        this.refreshAll(true, true),
       ),
       commands.registerCommand(
         Commands.HomeView.ShowSelectConfigForDeployment,
