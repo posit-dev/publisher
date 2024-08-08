@@ -5,6 +5,7 @@ package detectors
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -53,6 +54,9 @@ type quartoInspectOutput struct {
 				Title string `json:"title"`
 			} `json:"website"`
 		} `json:"config"`
+		Files struct {
+			Input []string `json:"input"`
+		} `json:"files"`
 	} `json:"project"`
 	Engines []string `json:"engines"`
 	Files   struct {
@@ -73,6 +77,10 @@ type quartoInspectOutput struct {
 			} `json:"pandoc"`
 		} `json:"revealjs"`
 	} `json:"formats"`
+
+	// For single quarto docs without _quarto.yml,
+	// there is no project section in the output.
+	FileInformation map[string]any `json:"fileInformation"`
 }
 
 func (d *QuartoDetector) quartoInspect(path util.AbsolutePath) (*quartoInspectOutput, error) {
@@ -87,6 +95,23 @@ func (d *QuartoDetector) quartoInspect(path util.AbsolutePath) (*quartoInspectOu
 		return nil, fmt.Errorf("couldn't decode quarto inspect output: %w", err)
 	}
 	return &inspectOutput, nil
+}
+
+func getInputFiles(inspectOutput *quartoInspectOutput) []string {
+	if inspectOutput.Files.Input != nil {
+		return inspectOutput.Files.Input
+	}
+	if inspectOutput.Project.Files.Input != nil {
+		return inspectOutput.Project.Files.Input
+	}
+	if inspectOutput.FileInformation != nil {
+		filenames := []string{}
+		for name, _ := range inspectOutput.FileInformation {
+			filenames = append(filenames, name)
+		}
+		return filenames
+	}
+	return []string{}
 }
 
 func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
@@ -205,7 +230,8 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 			d.log.Warn("quarto inspect failed", "file", entrypointPath.String(), "error", err)
 			continue
 		}
-		if inspectOutput.Files.Input != nil && len(inspectOutput.Files.Input) == 0 {
+		inputFiles := getInputFiles(inspectOutput)
+		if len(inputFiles) == 0 {
 			continue
 		}
 		cfg := config.New()
@@ -253,20 +279,24 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 			Engines: engines,
 		}
 
-		// Exclude locally-rendered artifacts, since this will be rendered in Connect
-		outputFile := inspectOutput.Formats.HTML.Pandoc.OutputFile
-		if outputFile == "" {
-			outputFile = inspectOutput.Formats.RevealJS.Pandoc.OutputFile
-			if outputFile == "" {
-				outputFile = "*.html"
+		// Only include the entrypoint and its associated files.
+		for _, inputFile := range inputFiles {
+			relPath, err := filepath.Rel(base.String(), inputFile)
+			if err != nil {
+				return nil, err
 			}
+			cfg.Files = append(cfg.Files, relPath)
 		}
-		htmlOutputDir := strings.TrimSuffix(outputFile, ".html") + "_files"
-
-		cfg.Files = append(cfg.Files, "!"+outputFile, "!"+htmlOutputDir)
-		projectOutputDir := inspectOutput.Project.Config.Project.OutputDir
-		if projectOutputDir != "" {
-			cfg.Files = append(cfg.Files, "!"+projectOutputDir)
+		extraFiles := []string{"_quarto.yml", "_metadata.yaml"}
+		for _, filename := range extraFiles {
+			path := base.Join(filename)
+			exists, err := path.Exists()
+			if err != nil {
+				return nil, err
+			}
+			if exists {
+				cfg.Files = append(cfg.Files, filename)
+			}
 		}
 		configs = append(configs, cfg)
 	}

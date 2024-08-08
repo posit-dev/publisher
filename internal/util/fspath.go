@@ -164,6 +164,21 @@ func (p Path) Ext() string {
 	return filepath.Ext(p.path)
 }
 
+func (p Path) WithoutExt() Path {
+	withoutExt := strings.TrimSuffix(p.path, p.Ext())
+	return NewPath(withoutExt, p.fs)
+}
+
+func (p AbsolutePath) WithoutExt() AbsolutePath {
+	withoutExt := strings.TrimSuffix(p.path, p.Ext())
+	return NewAbsolutePath(withoutExt, p.fs)
+}
+
+func (p RelativePath) WithoutExt() RelativePath {
+	withoutExt := strings.TrimSuffix(p.path, p.Ext())
+	return NewRelativePath(withoutExt, p.fs)
+}
+
 func PathFromSlash(fs afero.Fs, path string) Path {
 	return NewPath(filepath.FromSlash(path), fs)
 }
