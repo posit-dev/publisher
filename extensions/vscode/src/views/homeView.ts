@@ -269,7 +269,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async onInitializingMsg() {
-    // send back the data needed.
+    // send back the data needed. Optimize request for initialization...
     await this.refreshAll(false, true);
     this.setInitializationContext(HomeViewInitialized.initialized);
 
