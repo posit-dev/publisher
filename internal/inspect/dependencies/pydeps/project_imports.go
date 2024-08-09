@@ -43,7 +43,9 @@ func (s *defaultProjectImportScanner) ScanProjectImports(base util.AbsolutePath)
 			return err
 		}
 		code := ""
-
+		if info.IsDir() {
+			return nil
+		}
 		switch strings.ToLower(path.Ext()) {
 		case ".py":
 			contents, err := path.ReadFile()
@@ -64,6 +66,15 @@ func (s *defaultProjectImportScanner) ScanProjectImports(base util.AbsolutePath)
 		}
 		if code != "" {
 			fileImports := s.scanner.ScanImports(string(code))
+			fileImports = slices.DeleteFunc(fileImports, func(name ImportName) bool {
+				// Remove references to local .py files or packages
+				dirExists, err := path.Dir().Join(string(name)).Exists()
+				if err == nil && dirExists {
+					return true
+				}
+				fileExists, err := path.Dir().Join(string(name) + ".py").Exists()
+				return err == nil && fileExists
+			})
 			projectImports = append(projectImports, fileImports...)
 			s.log.Info("imports from file", "path", path, "imports", fileImports)
 		}

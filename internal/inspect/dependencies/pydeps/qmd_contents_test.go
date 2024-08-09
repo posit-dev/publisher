@@ -25,7 +25,7 @@ func (s *QMDContentsSuite) TestGetQuartoFilePythonCode() {
 
 	inputs, err := GetQuartoFilePythonCode(path)
 	s.Nil(err)
-	s.Equal("import that\n\nthat.do_something()\n", inputs)
+	s.Equal("import that\nfrom example import *\n\nthat.do_something()\n", inputs)
 }
 
 func (s *QMDContentsSuite) TestDetectMarkdownLanguagesInContentEmpty() {

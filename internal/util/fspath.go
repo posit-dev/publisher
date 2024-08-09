@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -162,6 +163,21 @@ func (p RelativePath) Dir() RelativePath {
 
 func (p Path) Ext() string {
 	return filepath.Ext(p.path)
+}
+
+func (p Path) WithoutExt() Path {
+	withoutExt := strings.TrimSuffix(p.path, p.Ext())
+	return NewPath(withoutExt, p.fs)
+}
+
+func (p AbsolutePath) WithoutExt() AbsolutePath {
+	withoutExt := strings.TrimSuffix(p.path, p.Ext())
+	return NewAbsolutePath(withoutExt, p.fs)
+}
+
+func (p RelativePath) WithoutExt() RelativePath {
+	withoutExt := strings.TrimSuffix(p.path, p.Ext())
+	return NewRelativePath(withoutExt, p.fs)
 }
 
 func PathFromSlash(fs afero.Fs, path string) Path {
@@ -382,6 +398,20 @@ func (p Path) ReadFile() ([]byte, error) {
 
 func (p Path) ReadDir() ([]os.FileInfo, error) {
 	return afero.ReadDir(p.fs, p.path)
+}
+
+func (p Path) ReadDirNames() ([]string, error) {
+	f, err := p.Open()
+	if err != nil {
+		return nil, err
+	}
+	names, err := f.Readdirnames(-1)
+	f.Close()
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(names)
+	return names, nil
 }
 
 func (p Path) WriteFile(data []byte, perm os.FileMode) error {
