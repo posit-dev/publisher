@@ -18,12 +18,20 @@ body {
   width: 100%;
 }
 
+.text-foreground {
+  color: var(--vscode-foreground);
+}
+
 .text-placeholder {
   color: var(--vscode-input-placeholderForeground);
 }
 
 .text-icon {
   color: var(--vscode-icon-foreground);
+}
+
+.text-list-deemphasized {
+  color: var(--vscode-list-deemphasizedForeground);
 }
 
 .text-error {
