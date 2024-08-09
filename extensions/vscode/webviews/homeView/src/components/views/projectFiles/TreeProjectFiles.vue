@@ -3,6 +3,11 @@
     v-for="file in props.files"
     :key="file.id"
     :title="file.base"
+    :tooltip="
+      file.reason?.exclude
+        ? excludedFileTooltip(file)
+        : includedFileTooltip(file)
+    "
     :indentLevel="indentLevel"
     v-on="{
       click: file.isFile ? () => openFile(file) : undefined,
@@ -16,6 +21,10 @@
 
 <script setup lang="ts">
 import TreeItem from "src/components/TreeItem.vue";
+import {
+  includedFileTooltip,
+  excludedFileTooltip,
+} from "src/components/views/projectFiles/tooltips";
 import TreeProjectFiles from "src/components/views/projectFiles/TreeProjectFiles.vue";
 import { useHostConduitService } from "src/HostConduitService";
 
