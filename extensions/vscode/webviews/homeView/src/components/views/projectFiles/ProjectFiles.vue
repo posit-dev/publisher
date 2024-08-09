@@ -13,9 +13,9 @@
   >
     <template v-if="home.files">
       <ListProjectFiles v-if="viewLayout === FilesViewLayout.LIST" />
-      <TreeProjectFile
+      <TreeProjectFiles
         v-else-if="viewLayout === FilesViewLayout.TREE"
-        :file="home.files"
+        :files="home.files.files"
       />
     </template>
     <p v-else>No files found</p>
@@ -31,7 +31,7 @@ import TreeSection from "src/components/TreeSection.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 import ListProjectFiles from "src/components/views/projectFiles/ListProjectFiles.vue";
-import TreeProjectFile from "src/components/views/projectFiles/TreeProjectFile.vue";
+import TreeProjectFiles from "src/components/views/projectFiles/TreeProjectFiles.vue";
 
 enum FilesViewLayout {
   LIST,
