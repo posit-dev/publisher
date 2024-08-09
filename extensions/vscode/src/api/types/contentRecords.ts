@@ -55,6 +55,7 @@ export type ContentRecord = {
   bundleUrl: string;
   dashboardUrl: string;
   directUrl: string;
+  logsUrl: string;
   files: string[];
   deployedAt: string;
   state: ContentRecordState.DEPLOYED;
