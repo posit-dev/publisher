@@ -1,32 +1,29 @@
 <template>
   <TreeItem
+    v-for="file in props.files"
     :key="file.id"
     :title="file.base"
     :indentLevel="indentLevel"
     v-on="{
-      click: file.isFile ? openFile : undefined,
+      click: file.isFile ? () => openFile(file) : undefined,
     }"
   >
     <template v-if="file.files.length" #default="{ indentLevel }">
-      <TreeProjectFile
-        v-for="child in file.files"
-        :file="child"
-        :indentLevel="indentLevel"
-      />
+      <TreeProjectFiles :files="file.files" :indentLevel="indentLevel" />
     </template>
   </TreeItem>
 </template>
 
 <script setup lang="ts">
 import TreeItem from "src/components/TreeItem.vue";
-import TreeProjectFile from "src/components/views/projectFiles/TreeProjectFile.vue";
+import TreeProjectFiles from "src/components/views/projectFiles/TreeProjectFiles.vue";
 import { useHostConduitService } from "src/HostConduitService";
 
 import { ContentRecordFile } from "../../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
 interface Props {
-  file: ContentRecordFile;
+  files: ContentRecordFile[];
   indentLevel?: number;
 }
 
@@ -36,10 +33,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { sendMsg } = useHostConduitService();
 
-const openFile = () => {
+const openFile = (file: ContentRecordFile) => {
   sendMsg({
     kind: WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
-    content: { relativePath: props.file.id },
+    content: { relativePath: file.id },
   });
 };
 </script>
