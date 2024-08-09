@@ -29,6 +29,7 @@ import {
 import TreeProjectFiles from "src/components/views/projectFiles/TreeProjectFiles.vue";
 import { useHostConduitService } from "src/HostConduitService";
 import { ActionButton } from "src/components/ActionToolbar.vue";
+import { canFileBeExcluded, canFileBeIncluded } from "src/utils/files";
 
 import { ContentRecordFile, FileMatchSource } from "../../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
@@ -54,7 +55,7 @@ const openFile = (file: ContentRecordFile) => {
 const fileActions = (file: ContentRecordFile): ActionButton[] => {
   let actions: ActionButton[] = [];
 
-  if (file.reason?.exclude && file.reason?.source != FileMatchSource.BUILT_IN) {
+  if (canFileBeIncluded(file)) {
     actions.push({
       label: file.isFile ? "Include this file" : "Include this folder",
       codicon: "codicon-diff-added",
@@ -66,7 +67,7 @@ const fileActions = (file: ContentRecordFile): ActionButton[] => {
     });
   }
 
-  if (!file.reason?.exclude) {
+  if (canFileBeExcluded(file)) {
     actions.push({
       label: file.isFile ? "Exclude this file" : "Exclude this folder",
       codicon: "codicon-diff-removed",

@@ -10,6 +10,7 @@ import {
   Configuration,
   ContentRecordFile,
   ConfigurationError,
+  ContentRecordState,
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
@@ -79,10 +80,16 @@ export const useHomeStore = defineStore("home", () => {
     const response: {
       includedFiles: ContentRecordFile[];
       excludedFiles: ContentRecordFile[];
-    } = { includedFiles: [], excludedFiles: [] };
+      lastDeployedFiles: Set<string>;
+    } = { includedFiles: [], excludedFiles: [], lastDeployedFiles: new Set() };
     if (files.value) {
       splitFilesOnInclusion(files.value, response);
     }
+
+    if (selectedContentRecord.value?.state !== ContentRecordState.NEW) {
+      response.lastDeployedFiles = new Set(selectedContentRecord.value?.files);
+    }
+
     return response;
   });
 
