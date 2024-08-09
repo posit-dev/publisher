@@ -43,6 +43,7 @@ const { sendMsg } = useHostConduitService();
 
 const viewLayout = ref<FilesViewLayout>(FilesViewLayout.LIST);
 
+// Labels and Codicons selected to match source control view
 const swapViewLayoutAction = computed(() => {
   if (viewLayout.value === FilesViewLayout.LIST) {
     return {
