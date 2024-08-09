@@ -17,6 +17,17 @@
     <template v-if="file.files.length" #default="{ indentLevel }">
       <TreeProjectFiles :files="file.files" :indentLevel="indentLevel" />
     </template>
+
+    <template
+      #postDecor
+      v-if="
+        file.isFile &&
+        file.reason?.source !== FileMatchSource.BUILT_IN &&
+        !home.flatFiles.lastDeployedFiles.has(file.rel)
+      "
+    >
+      <PostDecor class="text-git-added">A</PostDecor>
+    </template>
   </TreeItem>
 </template>
 
@@ -27,7 +38,9 @@ import {
   excludedFileTooltip,
 } from "src/components/views/projectFiles/tooltips";
 import TreeProjectFiles from "src/components/views/projectFiles/TreeProjectFiles.vue";
+import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
+import PostDecor from "src/components/PostDecor.vue";
 import { ActionButton } from "src/components/ActionToolbar.vue";
 import { canFileBeExcluded, canFileBeIncluded } from "src/utils/files";
 
@@ -43,6 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
   indentLevel: 1,
 });
 
+const home = useHomeStore();
 const { sendMsg } = useHostConduitService();
 
 const openFile = (file: ContentRecordFile) => {
