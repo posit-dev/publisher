@@ -31,7 +31,10 @@
           },
         ]"
       >
-        <template #postDecor v-if="!lastDeployedFiles.has(file.rel)">
+        <template
+          #postDecor
+          v-if="!home.flatFiles.lastDeployedFiles.has(file.rel)"
+        >
           <PostDecor class="text-git-added">A</PostDecor>
         </template>
       </TreeItem>
@@ -59,7 +62,7 @@
         :tooltip="excludedFileTooltip(file)"
         :indentLevel="indentLevel"
         :actions="
-          file.reason?.source === FileMatchSource.BUILT_IN
+          canFileBeIncluded(file)
             ? undefined
             : [
                 {
@@ -79,13 +82,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { ref } from "vue";
 
-import {
-  ContentRecordFile,
-  ContentRecordState,
-  FileMatchSource,
-} from "../../../../../../src/api";
+import { ContentRecordFile, FileMatchSource } from "../../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
 import TreeItem from "src/components/TreeItem.vue";
@@ -95,20 +94,13 @@ import {
 } from "src/components/views/projectFiles/tooltips";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
+import { canFileBeIncluded } from "src/utils/files";
 
 const home = useHomeStore();
 const { sendMsg } = useHostConduitService();
 
 const includedExpanded = ref(false);
 const excludedExpanded = ref(false);
-
-const lastDeployedFiles = computed(() => {
-  if (home.selectedContentRecord?.state === ContentRecordState.NEW) {
-    return new Set();
-  }
-
-  return new Set(home.selectedContentRecord?.files);
-});
 
 const fileDescription = (file: ContentRecordFile) => {
   if (file.relDir === ".") {
