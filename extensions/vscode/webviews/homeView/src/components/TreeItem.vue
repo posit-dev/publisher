@@ -4,6 +4,8 @@
     :class="{
       'align-icon-with-twisty': alignIconWithTwisty,
       collapsible: $slots.default,
+      'text-foreground': listStyle === 'default',
+      'text-list-deemphasized': listStyle === 'deemphasized',
     }"
   >
     <div
@@ -55,10 +57,13 @@
 <script setup lang="ts">
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
 
+export type TreeItemStyle = "default" | "deemphasized";
+
 const expanded = defineModel("expanded", { required: false, default: false });
 
 interface Props {
   title: string;
+  listStyle?: TreeItemStyle;
   description?: string;
   tooltip?: string;
   alignIconWithTwisty?: boolean;
@@ -68,6 +73,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
+  listStyle: "default",
   indentLevel: 1,
 });
 
@@ -83,7 +89,6 @@ const toggleExpanded = () => {
 
 <style lang="scss" scoped>
 .tree-item {
-  color: var(--vscode-foreground);
   position: relative;
 
   &.align-icon-with-twisty:not(.collapsible) .twisty-container {

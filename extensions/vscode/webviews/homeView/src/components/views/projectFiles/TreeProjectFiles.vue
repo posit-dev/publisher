@@ -3,6 +3,7 @@
     v-for="file in props.files"
     :key="file.id"
     :title="file.base"
+    :list-style="file.reason?.exclude ? 'deemphasized' : 'default'"
     :codicon="file.reason?.exclude ? 'codicon-error' : 'codicon-pass'"
     :tooltip="
       file.reason?.exclude
