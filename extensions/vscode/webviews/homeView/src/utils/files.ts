@@ -1,4 +1,4 @@
-import { ContentRecordFile, FileMatchSource } from "../../../../src/api";
+import { ContentRecordFile } from "../../../../src/api";
 
 export function splitFilesOnInclusion(
   file: ContentRecordFile,
@@ -29,9 +29,7 @@ export function splitFilesOnInclusion(
 }
 
 export function canFileBeIncluded(file: ContentRecordFile): boolean {
-  return Boolean(
-    file.reason?.exclude && file.reason?.source !== FileMatchSource.BUILT_IN,
-  );
+  return Boolean(file.reason?.exclude && file.reason?.source !== "built-in");
 }
 
 export function canFileBeExcluded(file: ContentRecordFile): boolean {
