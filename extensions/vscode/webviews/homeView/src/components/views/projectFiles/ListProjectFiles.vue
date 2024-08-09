@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
-import { ContentRecordFile, FileMatchSource } from "../../../../../../src/api";
+import { ContentRecordFile } from "../../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
 import TreeItem from "src/components/TreeItem.vue";
