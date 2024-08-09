@@ -8,7 +8,7 @@ configuration_name = "production"
 deployed_at = '2024-01-19T09:33:33.131481-05:00'
 bundle_id = '123'
 bundle_url = 'https://connect.example.com/__api__/v1/content/de2e7bdb-b085-401e-a65c-443e40009749/bundles/123/download'
-dashboard_url = 'https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/'
+dashboard_url = 'https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749'
 direct_url = 'https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40009749/'
 
 [configuration]
