@@ -11,6 +11,7 @@ import {
   commands,
   TextDocument,
   TabInputText,
+  NotebookDocument,
 } from "vscode";
 import { Utils as uriUtils } from "vscode-uri";
 
@@ -239,9 +240,14 @@ export function isRelativePathRoot(path: string): boolean {
   return path === ".";
 }
 
-export function isActiveDocument(document: TextDocument): boolean {
-  const editor = window.activeTextEditor;
-  return editor?.document === document;
+export function isActiveDocument(
+  document: TextDocument | NotebookDocument,
+): boolean {
+  const textEditor = window.activeTextEditor;
+  const notebookEditor = window.activeNotebookEditor;
+  return (
+    textEditor?.document === document || notebookEditor?.notebook === document
+  );
 }
 
 /**
