@@ -1508,8 +1508,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(Commands.HomeView.ShowContentLogs, async () => {
         const contentRecord = this.state.getSelectedContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
-          const logUrl = `${contentRecord.dashboardUrl}/logs`;
-          await env.openExternal(Uri.parse(logUrl));
+          await env.openExternal(Uri.parse(contentRecord.logsUrl));
         }
       }),
       commands.registerCommand(
