@@ -56,5 +56,6 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 		return err
 	})
 
+	file.CalculateDirectorySizes()
 	return file, err
 }
