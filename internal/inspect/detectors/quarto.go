@@ -230,10 +230,7 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 			d.log.Warn("quarto inspect failed", "file", entrypointPath.String(), "error", err)
 			continue
 		}
-		inputFiles := getInputFiles(inspectOutput)
-		if len(inputFiles) == 0 {
-			continue
-		}
+
 		cfg := config.New()
 		cfg.Entrypoint = relEntrypoint.String()
 		cfg.Title = d.getTitle(inspectOutput, relEntrypoint.String())
@@ -280,10 +277,16 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 		}
 
 		// Only include the entrypoint and its associated files.
+		inputFiles := getInputFiles(inspectOutput)
 		for _, inputFile := range inputFiles {
-			relPath, err := filepath.Rel(base.String(), inputFile)
-			if err != nil {
-				return nil, err
+			var relPath string
+			if filepath.IsAbs(inputFile) {
+				relPath, err = filepath.Rel(base.String(), inputFile)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				relPath = inputFile
 			}
 			cfg.Files = append(cfg.Files, relPath)
 		}

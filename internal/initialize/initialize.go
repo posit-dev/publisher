@@ -137,6 +137,11 @@ func GetPossibleConfigs(
 			// Default title is the name of the project directory.
 			cfg.Title = base.Base()
 		}
+		// The inspector may populate the file list.
+		// If it doesn't, default to just the entrypoint file.
+		if len(cfg.Files) == 0 {
+			cfg.Files = []string{cfg.Entrypoint}
+		}
 		needPython, err := requiresPython(cfg, base)
 		if err != nil {
 			return nil, err
@@ -174,11 +179,6 @@ func GetPossibleConfigs(
 			if cfg.Entrypoint == "" {
 				cfg.Entrypoint = "unknown"
 			}
-		}
-		// The inspector may populate the file list.
-		// If it doesn't, default to just the entrypoint file.
-		if len(cfg.Files) == 0 {
-			cfg.Files = []string{cfg.Entrypoint}
 		}
 	}
 	return configs, nil

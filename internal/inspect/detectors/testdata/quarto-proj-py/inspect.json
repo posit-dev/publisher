@@ -2,7 +2,7 @@
   "quarto": {
     "version": "1.4.553"
   },
-  "dir": "/Users/mike/rstudio/connect-content/bundles/quarto-proj-py",
+  "dir": "$DIR/quarto-proj-py",
   "engines": ["jupyter"],
   "config": {
     "project": {
@@ -12,13 +12,9 @@
     "language": {}
   },
   "files": {
-    "input": [
-      "/Users/mike/rstudio/connect-content/bundles/quarto-proj-py/quarto-proj-py.qmd"
-    ],
+    "input": ["$DIR/quarto-proj-py/quarto-proj-py.qmd"],
     "resources": [],
-    "config": [
-      "/Users/mike/rstudio/connect-content/bundles/quarto-proj-py/_quarto.yml"
-    ],
+    "config": ["$DIR/quarto-proj-py/_quarto.yml"],
     "configResources": []
   }
 }

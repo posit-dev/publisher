@@ -42,7 +42,7 @@ func (s *PlumberSuite) TestInferTypePlumberR() {
 		Title:      "",
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -68,7 +68,7 @@ func (s *PlumberSuite) TestInferTypeEntrypointR() {
 		Title:      "",
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -109,7 +109,7 @@ func (s *PlumberSuite) TestInferTypeWithEntrypoint() {
 		Title:      "",
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
 }
