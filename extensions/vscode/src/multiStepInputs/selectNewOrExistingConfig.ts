@@ -105,7 +105,7 @@ export async function selectNewOrExistingConfig(
       let rawConfigs = response.data;
       // remove the errors
       configurations = configurations.filter(
-        (c): c is Configuration => !isConfigurationError(c),
+        (cfg): cfg is Configuration => !isConfigurationError(cfg),
       );
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment

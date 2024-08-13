@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Disposable, ExtensionContext } from "vscode";
+import { Disposable, ExtensionContext, window } from "vscode";
 
 import {
   Configuration,
@@ -16,6 +16,7 @@ import {
 import { normalizeURL } from "src/utils/url";
 import { DeploymentSelector, SelectionState } from "src/types/shared";
 import { LocalState } from "./constants";
+import { getStatusFromError, getSummaryStringFromError } from "./utils/errors";
 
 function findContentRecord<
   T extends ContentRecord | PreContentRecord | PreContentRecordWithConfig,
@@ -37,7 +38,7 @@ function findConfiguration<T extends Configuration | ConfigurationError>(
   configs: Array<T>,
 ): T | undefined {
   return configs.find(
-    (c) => c.configurationName === name && c.projectDir === projectDir,
+    (cfg) => cfg.configurationName === name && cfg.projectDir === projectDir,
   );
 }
 
@@ -45,7 +46,7 @@ function findCredential(
   name: string,
   creds: Credential[],
 ): Credential | undefined {
-  return creds.find((c) => c.name === name);
+  return creds.find((cfg) => cfg.name === name);
 }
 
 function findCredentialForContentRecord(
@@ -53,8 +54,8 @@ function findCredentialForContentRecord(
   creds: Credential[],
 ): Credential | undefined {
   return creds.find(
-    (c) =>
-      normalizeURL(c.url).toLowerCase() ===
+    (cfg) =>
+      normalizeURL(cfg.url).toLowerCase() ===
       normalizeURL(contentRecord.serverUrl).toLowerCase(),
   );
 }
@@ -105,23 +106,88 @@ export class PublisherState implements Disposable {
     );
   }
 
-  getSelectedContentRecord() {
+  async getSelectedContentRecord() {
     const selection = this.getSelection();
     if (!selection) {
       return undefined;
     }
-    return this.findContentRecordByPath(selection.deploymentPath);
+    // try finding it first within our cache
+    const cr = this.findContentRecordByPath(selection.deploymentPath);
+    if (cr) {
+      return cr;
+    }
+    // if not found, then retrieve it and add it to our cache.
+    try {
+      const api = await useApi();
+
+      const response = await api.contentRecords.get(
+        selection.deploymentName,
+        selection.projectDir,
+      );
+      const cr = response.data;
+      if (!isContentRecordError(cr)) {
+        // its not foolproof, but it may help
+        if (!this.findContentRecord(cr.saveName, cr.projectDir)) {
+          this.contentRecords.push(cr);
+        }
+        return cr;
+      }
+      return undefined;
+    } catch (error: unknown) {
+      const code = getStatusFromError(error);
+      if (code !== 404) {
+        // 400 is expected when doesn't exist on disk
+        const summary = getSummaryStringFromError(
+          "getSelectedContentRecord, contentRecords.get",
+          error,
+        );
+        window.showInformationMessage(
+          `Unable to retrieve deployment record: ${summary}`,
+        );
+      }
+      return undefined;
+    }
   }
 
-  getSelectedConfiguration() {
-    const contentRecord = this.getSelectedContentRecord();
+  async getSelectedConfiguration() {
+    const contentRecord = await this.getSelectedContentRecord();
     if (!contentRecord) {
       return undefined;
     }
-    return this.findValidConfig(
+    const cfg = this.findValidConfig(
       contentRecord.configurationName,
       contentRecord.projectDir,
     );
+    if (cfg) {
+      return cfg;
+    }
+    // if not found, then retrieve it and add it to our cache.
+    try {
+      const api = await useApi();
+      const response = await api.configurations.get(
+        contentRecord.configurationName,
+        contentRecord.projectDir,
+      );
+      const cfg = response.data;
+      // its not foolproof, but it may help
+      if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
+        this.configurations.push(cfg);
+      }
+      return cfg;
+    } catch (error: unknown) {
+      const code = getStatusFromError(error);
+      if (code !== 404) {
+        // 400 is expected when doesn't exist on disk
+        const summary = getSummaryStringFromError(
+          "getSelectedConfiguration, contentRecords.get",
+          error,
+        );
+        window.showInformationMessage(
+          `Unable to retrieve deployment configuration: ${summary}`,
+        );
+      }
+      return undefined;
+    }
   }
 
   async refreshContentRecords() {
@@ -152,7 +218,7 @@ export class PublisherState implements Disposable {
 
   get validConfigs(): Configuration[] {
     return this.configurations.filter(
-      (c): c is Configuration => !isConfigurationError(c),
+      (cfg): cfg is Configuration => !isConfigurationError(cfg),
     );
   }
 

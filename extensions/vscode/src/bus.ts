@@ -1,7 +1,12 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
 import { Omnibus, args } from "@hypersphere/omnibus";
-import { Configuration, ContentRecord, PreContentRecord } from "src/api";
+import {
+  Configuration,
+  ConfigurationError,
+  ContentRecord,
+  PreContentRecord,
+} from "src/api";
 
 export const bus = Omnibus.builder()
   // activeContentRecordChanged: triggered if contentRecord name or value has changed
@@ -10,7 +15,10 @@ export const bus = Omnibus.builder()
     args<ContentRecord | PreContentRecord | undefined>(),
   )
   // activeConfigurationChanged: triggered if configuration name or value has changed
-  .register("activeConfigChanged", args<Configuration | undefined>())
+  .register(
+    "activeConfigChanged",
+    args<Configuration | ConfigurationError | undefined>(),
+  )
   // requestActive*: simple events which will cause an Active*Change event to be sent back out.
   .register("requestActiveConfig", args<undefined>())
   .register("requestActiveContentRecord", args<undefined>())
