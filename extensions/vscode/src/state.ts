@@ -176,7 +176,7 @@ export class PublisherState implements Disposable {
       return cfg;
     } catch (error: unknown) {
       const code = getStatusFromError(error);
-      if (code !== 400) {
+      if (code !== 404) {
         // 400 is expected when doesn't exist on disk
         const summary = getSummaryStringFromError(
           "getSelectedConfiguration, contentRecords.get",
