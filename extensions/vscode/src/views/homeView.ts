@@ -1323,9 +1323,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const response = await api.contentRecords.getAll(dir, {
           recursive: false,
         });
-        response.data.forEach((c) => {
-          if (!isContentRecordError(c)) {
-            contentRecordList.push(c);
+        response.data.forEach((cfg) => {
+          if (!isContentRecordError(cfg)) {
+            contentRecordList.push(cfg);
           }
         });
       } catch (error: unknown) {
@@ -1349,9 +1349,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           recursive: false,
         });
         let rawConfigs = response.data;
-        rawConfigs.forEach((c) => {
-          if (!isConfigurationError(c)) {
-            configMap.set(c.configurationName, c);
+        rawConfigs.forEach((cfg) => {
+          if (!isConfigurationError(cfg)) {
+            configMap.set(cfg.configurationName, cfg);
           }
         });
       } catch (error: unknown) {
@@ -1386,9 +1386,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // Unable to do this within the API because pre-deployments do not have
     // their entrypoint recorded.
     const compatibleContentRecords: (ContentRecord | PreContentRecord)[] = [];
-    contentRecordList.forEach((c) => {
-      if (configMap.get(c.configurationName)) {
-        compatibleContentRecords.push(c);
+    contentRecordList.forEach((cfg) => {
+      if (configMap.get(cfg.configurationName)) {
+        compatibleContentRecords.push(cfg);
       }
     });
 
@@ -1453,8 +1453,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     const currentContentRecord = await this.state.getSelectedContentRecord();
     if (
       !currentContentRecord ||
-      !compatibleContentRecords.find((c) => {
-        return c.deploymentPath === currentContentRecord.deploymentPath;
+      !compatibleContentRecords.find((cfg) => {
+        return cfg.deploymentPath === currentContentRecord.deploymentPath;
       })
     ) {
       // none of the compatible ones are selected
@@ -1565,8 +1565,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(Commands.HomeView.ShowContentLogs, async () => {
         const contentRecord = await this.state.getSelectedContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
-          const logUrl = `${contentRecord.dashboardUrl}/logs`;
-          await env.openExternal(Uri.parse(logUrl));
+          await env.openExternal(Uri.parse(contentRecord.logsUrl));
         }
       }),
       commands.registerCommand(

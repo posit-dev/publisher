@@ -403,7 +403,7 @@ func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
 	for _, event := range emitter.Events {
 		s.True(strings.HasSuffix(event.Type, "/failure"))
 		s.Equal(expectedErr.Error(), event.Data["message"])
-		s.Equal(getDashboardURL("connect.example.com", targetID, true), event.Data["dashboardUrl"])
+		s.Equal(getDashboardURL("connect.example.com", targetID), event.Data["dashboardUrl"])
 		s.Equal(getDirectURL("connect.example.com", targetID), event.Data["url"])
 	}
 	s.Equal("publish/failure", emitter.Events[1].Type)
@@ -411,16 +411,11 @@ func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
 
 func (s *PublishSuite) TestGetDashboardURL() {
 	expected := "https://connect.example.com:1234/connect/#/apps/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"
-	s.Equal(expected, getDashboardURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f", false))
-}
-
-func (s *PublishSuite) TestGetDashboardURLFailed() {
-	expected := "https://connect.example.com:1234/connect/#/apps/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f/logs"
-	s.Equal(expected, getDashboardURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f", true))
+	s.Equal(expected, getDashboardURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"))
 }
 
 func (s *PublishSuite) TestGetDirectURL() {
-	expected := "https://connect.example.com:1234/content/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"
+	expected := "https://connect.example.com:1234/content/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f/"
 	s.Equal(expected, getDirectURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"))
 }
 
@@ -428,12 +423,12 @@ func (s *PublishSuite) TestLogAppInfo() {
 	accountURL := "https://connect.example.com:1234"
 	contentID := types.ContentID("myContentID")
 	directURL := getDirectURL(accountURL, contentID)
-	dashboardURL := getDashboardURL(accountURL, contentID, false)
+	dashboardURL := getDashboardURL(accountURL, contentID)
 
 	buf := new(bytes.Buffer)
 	a := mock.Anything
 	log := loggingtest.NewMockLogger()
-	log.On("Info", "Deployment information", a, a, a, a, a, a, a, a, a, a).Return()
+	log.On("Info", "Deployment information", a, a, a, a, a, a, a, a, a, a, a, a).Return()
 
 	logAppInfo(buf, accountURL, contentID, log, nil)
 	str := buf.String()
@@ -445,7 +440,8 @@ func (s *PublishSuite) TestLogAppInfoErr() {
 	accountURL := "https://connect.example.com:1234"
 	contentID := types.ContentID("myContentID")
 	directURL := getDirectURL(accountURL, contentID)
-	dashboardURL := getDashboardURL(accountURL, contentID, true)
+	dashboardURL := getDashboardURL(accountURL, contentID)
+	logsURL := getLogsURL(accountURL, contentID)
 
 	buf := new(bytes.Buffer)
 
@@ -454,6 +450,7 @@ func (s *PublishSuite) TestLogAppInfoErr() {
 	str := buf.String()
 	s.NotContains(str, directURL)
 	s.Contains(str, dashboardURL)
+	s.Contains(str, logsURL)
 }
 
 func (s *PublishSuite) TestLogAppInfoErrNoContentID() {

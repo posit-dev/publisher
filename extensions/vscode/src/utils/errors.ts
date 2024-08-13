@@ -29,7 +29,10 @@ export const getCodeStringFromError = (error: unknown): string | undefined => {
 };
 
 export const getMessageFromError = (error: unknown): string => {
-  if (axios.isAxiosError(error) || error instanceof Error) {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data || error.message;
+  }
+  if (error instanceof Error) {
     return error.message;
   }
   return String(error);

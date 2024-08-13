@@ -11,6 +11,7 @@ import {
   commands,
   TextDocument,
   TabInputText,
+  NotebookDocument,
 } from "vscode";
 import { Utils as uriUtils } from "vscode-uri";
 
@@ -239,9 +240,14 @@ export function isRelativePathRoot(path: string): boolean {
   return path === ".";
 }
 
-export function isActiveDocument(document: TextDocument): boolean {
-  const editor = window.activeTextEditor;
-  return editor?.document === document;
+export function isActiveDocument(
+  document: TextDocument | NotebookDocument,
+): boolean {
+  const textEditor = window.activeTextEditor;
+  const notebookEditor = window.activeNotebookEditor;
+  return (
+    textEditor?.document === document || notebookEditor?.notebook === document
+  );
 }
 
 /**
@@ -308,9 +314,11 @@ export function vscodeOpenFiles(): string[] {
   window.tabGroups.all.forEach((tabGroup) => {
     tabGroup.tabs.forEach((tab) => {
       const input = tab.input as TabInputText;
-      const filePath = relativePath(input.uri);
-      if (filePath) {
-        openFileList.push(filePath);
+      if (input) {
+        const filePath = relativePath(input.uri);
+        if (filePath) {
+          openFileList.push(filePath);
+        }
       }
     });
   });

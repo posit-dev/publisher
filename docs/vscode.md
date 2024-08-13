@@ -5,12 +5,10 @@
 ### Opening the UI
 
 In VSCode, open the folder containing the project you want to deploy.
-In this version of Posit Publisher, a workspace with too many projects may be
-slow for some operations .
 
 Open the _Posit Publisher_ UI by clicking the icon in the activity bar.
 
-![](https://cdn.posit.co/publisher/assets/img/icon.png)
+![](https://cdn.posit.co/publisher/assets/img/new-icon.png)
 
 ### Home
 
@@ -78,7 +76,7 @@ Once the deployment completes, the result will be displayed in the Home view.
 You can deploy or create a new deployment directly from an open file. If it is
 a valid entrypoint a Posit Publisher button will appear in the editor menu.
 
-![](https://cdn.posit.co/publisher/assets/img/entrypoint-button.png)
+![](https://cdn.posit.co/publisher/assets/img/new-entrypoint-button.png)
 
 ### Multiple Deployments
 
@@ -170,6 +168,22 @@ To remove a credential, right-click on it and select `Delete`.
 
 For instructions on how to create a Connect API key, see the
 [Connect documentation](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating).
+
+#### via dotfile
+
+A Credential can also be set by creating a `.connect-credentials` file in
+your home directory using the following format:
+
+```toml
+# ~/.connect-credentials.toml
+
+url = 'https://your.connect.server'
+key = 'r0TCAS9mCmTICwd2E97uM3KnUDlGWZ3D'
+```
+
+The `url` is the URL of your Posit Connect Server.
+
+The `key` is the API key for the user you would like to publish as.
 
 ### Help and Feedback
 

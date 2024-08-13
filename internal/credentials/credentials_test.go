@@ -5,6 +5,9 @@ package credentials
 import (
 	"testing"
 
+	"github.com/pelletier/go-toml/v2"
+	"github.com/posit-dev/publisher/internal/util"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/zalando/go-keyring"
 )
@@ -16,41 +19,62 @@ type Cred struct {
 	Name   string
 }
 
-var environmentCred = Credential{
+var fileCred = Credential{
 	GUID:   "00000000-0000-0000-0000-000000000000",
 	URL:    "https://connect.localtest.me/rsc/dev-password-copy",
 	ApiKey: "3456789",
 	Name:   "connect.localtest.me",
 }
 
-func initializeEnv(t *testing.T, cs *CredentialsService, errorCheck bool) {
-	t.Setenv("CONNECT_SERVER", environmentCred.URL)
-	t.Setenv("CONNECT_API_KEY", environmentCred.ApiKey)
-	t.Setenv("CONNECT_SERVER_NAME", environmentCred.Name)
+func credentialsFilePath(afs afero.Fs) (util.AbsolutePath, error) {
+	homeDir, err := util.UserHomeDir(afs)
+	if err != nil {
+		return util.AbsolutePath{}, err
+	}
+	return homeDir.Join(".connect-credentials"), nil
+}
+
+func createFileCredentials(t *testing.T, cs *CredentialsService, errorCheck bool) {
+	path, err := credentialsFilePath(cs.afs)
+	assert.NoError(t, err)
+
+	f, err := path.Create()
+	assert.NoError(t, err)
+	defer f.Close()
+
+	enc := toml.NewEncoder(f)
+	cred := fileCredential{
+		URL: fileCred.URL,
+		Key: fileCred.ApiKey,
+	}
+	err = enc.Encode(cred)
+	assert.NoError(t, err)
 
 	if errorCheck {
-		res, err := cs.Get(environmentCred.GUID)
+		res, err := cs.Get(fileCred.GUID)
 		assert.NoError(t, err)
 		expected := Credential{
-			GUID:   environmentCred.GUID,
-			Name:   environmentCred.Name,
-			URL:    environmentCred.URL,
-			ApiKey: environmentCred.ApiKey,
+			GUID:   fileCred.GUID,
+			Name:   fileCred.Name,
+			URL:    fileCred.URL,
+			ApiKey: fileCred.ApiKey,
 		}
 		assert.Equal(t, res, &expected)
 	}
 }
 
-func clearEnv(t *testing.T) {
-	t.Setenv("CONNECT_SERVER", "")
-	t.Setenv("CONNECT_API_KEY", "")
-	t.Setenv("CONNECT_SERVER_NAME", "")
+func clearFileCredentials(t *testing.T, cs *CredentialsService) {
+	path, err := credentialsFilePath(cs.afs)
+	assert.NoError(t, err)
+	_ = path.Remove()
 }
 
 func TestSet(t *testing.T) {
 	keyring.MockInit()
-	cs := CredentialsService{}
-	clearEnv(t)
+	cs := CredentialsService{
+		afs: afero.NewMemMapFs(),
+	}
+	clearFileCredentials(t, &cs)
 
 	cred, err := cs.Set("example", "https://example.com", "12345")
 	assert.NoError(t, err)
@@ -62,8 +86,10 @@ func TestSet(t *testing.T) {
 
 func TestSetURLCollisionError(t *testing.T) {
 	keyring.MockInit()
-	cs := CredentialsService{}
-	clearEnv(t)
+	cs := CredentialsService{
+		afs: afero.NewMemMapFs(),
+	}
+	clearFileCredentials(t, &cs)
 
 	_, err := cs.Set("example", "https://example.com", "12345")
 	assert.NoError(t, err)
@@ -72,17 +98,19 @@ func TestSetURLCollisionError(t *testing.T) {
 	assert.IsType(t, &URLCollisionError{}, err)
 
 	// validate collision with env var credentials
-	initializeEnv(t, &cs, true)
+	createFileCredentials(t, &cs, true)
 
-	_, err = cs.Set("unique", environmentCred.URL, "12345")
+	_, err = cs.Set("unique", fileCred.URL, "12345")
 	assert.Error(t, err)
 	assert.IsType(t, &EnvURLCollisionError{}, err)
 }
 
 func TestGet(t *testing.T) {
 	keyring.MockInit()
-	cs := CredentialsService{}
-	clearEnv(t)
+	cs := CredentialsService{
+		afs: afero.NewMemMapFs(),
+	}
+	clearFileCredentials(t, &cs)
 
 	// First test without any credentials in environment
 
@@ -98,11 +126,11 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, res, cred)
 
 	// confirm environment credential not available
-	_, err = cs.Get(environmentCred.GUID)
+	_, err = cs.Get(fileCred.GUID)
 	assert.Error(t, err)
 
 	// Test with credentials in environment
-	initializeEnv(t, &cs, true)
+	createFileCredentials(t, &cs, true)
 
 	// retest prior test
 	res, err = cs.Get(cred.GUID)
@@ -110,18 +138,18 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, res, cred)
 
 	// request environment credentials
-	res, err = cs.Get(environmentCred.GUID)
+	res, err = cs.Get(fileCred.GUID)
 	assert.NoError(t, err)
-	assert.Equal(t, res, &environmentCred)
+	assert.Equal(t, res, &fileCred)
 
 	// Test for conflicts where credential was saved ahead of env variable
-	clearEnv(t)
-	cred, err = cs.Set("env", environmentCred.URL, "12345")
+	clearFileCredentials(t, &cs)
+	cred, err = cs.Set("env", fileCred.URL, "12345")
 	assert.NoError(t, err)
 	_, err = cs.Get(cred.GUID)
 	assert.NoError(t, err)
 
-	initializeEnv(t, &cs, false)
+	createFileCredentials(t, &cs, false)
 	_, err = cs.Get(cred.GUID)
 	assert.Error(t, err)
 	assert.IsType(t, &EnvURLCollisionError{}, err)
@@ -129,8 +157,10 @@ func TestGet(t *testing.T) {
 
 func TestNormalizedSet(t *testing.T) {
 	keyring.MockInit()
-	cs := CredentialsService{}
-	clearEnv(t)
+	cs := CredentialsService{
+		afs: afero.NewMemMapFs(),
+	}
+	clearFileCredentials(t, &cs)
 
 	// pass if no change (already normalized)
 	cred, err := cs.Set("example", "https://example.com", "12345")
@@ -152,10 +182,12 @@ func TestNormalizedSet(t *testing.T) {
 
 func TestSetCollisions(t *testing.T) {
 	keyring.MockInit()
-	cs := CredentialsService{}
+	cs := CredentialsService{
+		afs: afero.NewMemMapFs(),
+	}
 
 	// Add credentials into environment
-	initializeEnv(t, &cs, true)
+	createFileCredentials(t, &cs, true)
 
 	// add a non-environment credential
 	_, err := cs.Set("example", "https://example.com", "12345")
@@ -167,7 +199,7 @@ func TestSetCollisions(t *testing.T) {
 	assert.IsType(t, &NameCollisionError{}, err)
 
 	// environment name collision
-	_, err = cs.Set(environmentCred.Name, "https://more_examples2.com", "12345")
+	_, err = cs.Set(fileCred.Name, "https://more_examples2.com", "12345")
 	assert.Error(t, err)
 	assert.IsType(t, &EnvNameCollisionError{}, err)
 
@@ -177,15 +209,17 @@ func TestSetCollisions(t *testing.T) {
 	assert.IsType(t, &URLCollisionError{}, err)
 
 	// environment URL collision
-	_, err = cs.Set("one_more", environmentCred.URL, "12345")
+	_, err = cs.Set("one_more", fileCred.URL, "12345")
 	assert.Error(t, err)
 	assert.IsType(t, &EnvURLCollisionError{}, err)
 }
 
 func TestDelete(t *testing.T) {
 	keyring.MockInit()
-	cs := CredentialsService{}
-	clearEnv(t)
+	cs := CredentialsService{
+		afs: afero.NewMemMapFs(),
+	}
+	clearFileCredentials(t, &cs)
 
 	cred, err := cs.Set("example", "https://example.com", "12345")
 	assert.NoError(t, err)
@@ -199,10 +233,10 @@ func TestDelete(t *testing.T) {
 	assert.Error(t, err)
 
 	// Add credentials into environment
-	initializeEnv(t, &cs, true)
+	createFileCredentials(t, &cs, true)
 
 	// err for our special GUID
-	err = cs.Delete(environmentCred.GUID)
+	err = cs.Delete(fileCred.GUID)
 	assert.Error(t, err)
 	assert.IsType(t, &EnvURLDeleteError{}, err)
 }
