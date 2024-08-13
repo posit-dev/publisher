@@ -314,9 +314,11 @@ export function vscodeOpenFiles(): string[] {
   window.tabGroups.all.forEach((tabGroup) => {
     tabGroup.tabs.forEach((tab) => {
       const input = tab.input as TabInputText;
-      const filePath = relativePath(input.uri);
-      if (filePath) {
-        openFileList.push(filePath);
+      if (input) {
+        const filePath = relativePath(input.uri);
+        if (filePath) {
+          openFileList.push(filePath);
+        }
       }
     });
   });
