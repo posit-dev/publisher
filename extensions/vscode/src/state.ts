@@ -38,7 +38,7 @@ function findConfiguration<T extends Configuration | ConfigurationError>(
   configs: Array<T>,
 ): T | undefined {
   return configs.find(
-    (c) => c.configurationName === name && c.projectDir === projectDir,
+    (cfg) => cfg.configurationName === name && cfg.projectDir === projectDir,
   );
 }
 
@@ -46,7 +46,7 @@ function findCredential(
   name: string,
   creds: Credential[],
 ): Credential | undefined {
-  return creds.find((c) => c.name === name);
+  return creds.find((cfg) => cfg.name === name);
 }
 
 function findCredentialForContentRecord(
@@ -54,8 +54,8 @@ function findCredentialForContentRecord(
   creds: Credential[],
 ): Credential | undefined {
   return creds.find(
-    (c) =>
-      normalizeURL(c.url).toLowerCase() ===
+    (cfg) =>
+      normalizeURL(cfg.url).toLowerCase() ===
       normalizeURL(contentRecord.serverUrl).toLowerCase(),
   );
 }
@@ -154,12 +154,12 @@ export class PublisherState implements Disposable {
     if (!contentRecord) {
       return undefined;
     }
-    const c = this.findValidConfig(
+    const cfg = this.findValidConfig(
       contentRecord.configurationName,
       contentRecord.projectDir,
     );
-    if (c) {
-      return c;
+    if (cfg) {
+      return cfg;
     }
     // if not found, then retrieve it and add it to our cache.
     try {
@@ -168,12 +168,12 @@ export class PublisherState implements Disposable {
         contentRecord.configurationName,
         contentRecord.projectDir,
       );
-      const c = response.data;
+      const cfg = response.data;
       // its not foolproof, but it may help
-      if (!this.findConfig(c.configurationName, c.projectDir)) {
-        this.configurations.push(c);
+      if (!this.findConfig(cfg.configurationName, cfg.projectDir)) {
+        this.configurations.push(cfg);
       }
-      return c;
+      return cfg;
     } catch (error: unknown) {
       const code = getStatusFromError(error);
       if (code !== 400) {
@@ -218,7 +218,7 @@ export class PublisherState implements Disposable {
 
   get validConfigs(): Configuration[] {
     return this.configurations.filter(
-      (c): c is Configuration => !isConfigurationError(c),
+      (cfg): cfg is Configuration => !isConfigurationError(cfg),
     );
   }
 

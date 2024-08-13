@@ -38,15 +38,15 @@ export const useHomeStore = defineStore("home", () => {
       const { configurationName, projectDir } = selectedContentRecord.value;
       let result;
       result = configurations.value.find(
-        (c) =>
-          c.configurationName === configurationName &&
-          c.projectDir === projectDir,
+        (cfg) =>
+          cfg.configurationName === configurationName &&
+          cfg.projectDir === projectDir,
       );
       if (!result) {
         result = configurationsInError.value.find(
-          (c) =>
-            c.configurationName === configurationName &&
-            c.projectDir === projectDir,
+          (cfg) =>
+            cfg.configurationName === configurationName &&
+            cfg.projectDir === projectDir,
         );
       }
       return result;
@@ -56,8 +56,8 @@ export const useHomeStore = defineStore("home", () => {
   // Always use the content record as the source of truth for the
   // credential. Can be undefined if a Credential is not specified or found.
   const serverCredential = computed(() => {
-    return credentials.value.find((c) => {
-      const credentialUrl = c.url.toLowerCase();
+    return credentials.value.find((cfg) => {
+      const credentialUrl = cfg.url.toLowerCase();
       const recordUrl = selectedContentRecord.value?.serverUrl.toLowerCase();
       if (!recordUrl) {
         return false;
