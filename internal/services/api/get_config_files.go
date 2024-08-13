@@ -26,8 +26,12 @@ func GetConfigFilesHandlerFunc(base util.AbsolutePath, filesService files.FilesS
 		}
 		configPath := config.GetConfigPath(projectDir, name)
 		cfg, err := config.FromFile(configPath)
-		if err != nil && errors.Is(err, fs.ErrNotExist) {
-			http.NotFound(w, req)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				http.NotFound(w, req)
+			} else {
+				InternalError(w, req, log, err)
+			}
 			return
 		}
 		matchList, err := matcher.NewMatchList(projectDir, matcher.StandardExclusions)
