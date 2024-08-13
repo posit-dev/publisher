@@ -106,7 +106,7 @@ func getInputFiles(inspectOutput *quartoInspectOutput) []string {
 	}
 	if inspectOutput.FileInformation != nil {
 		filenames := []string{}
-		for name, _ := range inspectOutput.FileInformation {
+		for name := range inspectOutput.FileInformation {
 			filenames = append(filenames, name)
 		}
 		return filenames
