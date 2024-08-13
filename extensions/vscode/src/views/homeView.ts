@@ -6,6 +6,7 @@ import debounce from "debounce";
 import {
   Disposable,
   ExtensionContext,
+  QuickPickItem,
   QuickPickItemKind,
   ThemeIcon,
   Uri,
@@ -917,7 +918,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       await this.refreshAll(true, true);
 
       // Create quick pick list from current contentRecords, credentials and configs
-      const deployments: DeploymentQuickPick[] = [];
+      let deploymentQuickPickList: DeploymentQuickPick[] = [];
       const lastContentRecord = await this.state.getSelectedContentRecord();
       const lastContentRecordName = lastContentRecord?.saveName;
       const lastContentRecordProjectDir = projectDir
@@ -930,13 +931,26 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         ? contentRecordsSubset
         : this.state.contentRecords;
 
+      // Display New Deployment at beginning
+      deploymentQuickPickList.push({
+        label: "New",
+        kind: QuickPickItemKind.Separator,
+      });
+      deploymentQuickPickList.push({
+        iconPath: new ThemeIcon("plus"),
+        label: createNewDeploymentLabel,
+        detail: "(or pick one of the existing deployments below)", // we're forcing a blank here, just to maintain height of selection
+        lastMatch: includedContentRecords.length ? false : true,
+      });
+
+      // Then we display the existing deployments
       if (includedContentRecords.length) {
-        deployments.push({
+        deploymentQuickPickList.push({
           label: "Existing",
           kind: QuickPickItemKind.Separator,
-          lastMatch: false,
         });
       }
+      const existingDeploymentQuickPickList: DeploymentQuickPick[] = [];
       includedContentRecords.forEach((contentRecord) => {
         if (
           isContentRecordError(contentRecord) ||
@@ -1006,18 +1020,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           lastMatch,
         };
         // Should we not push deployments with no config or matching credentials?
-        deployments.push(deployment);
+        existingDeploymentQuickPickList.push(deployment);
       });
-      deployments.push({
-        label: "New",
-        kind: QuickPickItemKind.Separator,
-        lastMatch: false,
-      });
-      deployments.push({
-        iconPath: new ThemeIcon("plus"),
-        label: createNewDeploymentLabel,
-        lastMatch: includedContentRecords.length ? false : true,
-      });
+      existingDeploymentQuickPickList.sort(
+        (a: QuickPickItem, b: QuickPickItem) => {
+          var x = a.label.toLowerCase();
+          var y = b.label.toLowerCase();
+          return x < y ? -1 : x > y ? 1 : 0;
+        },
+      );
+      deploymentQuickPickList = deploymentQuickPickList.concat(
+        existingDeploymentQuickPickList,
+      );
 
       const toDispose: Disposable[] = [];
       const deployment = await new Promise<DeploymentQuickPick | undefined>(
@@ -1025,8 +1039,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           const quickPick = window.createQuickPick<DeploymentQuickPick>();
           this.disposables.push(quickPick);
 
-          quickPick.items = deployments;
-          const lastMatches = deployments.filter(
+          quickPick.items = deploymentQuickPickList;
+          const lastMatches = deploymentQuickPickList.filter(
             (deployment) => deployment.lastMatch,
           );
           if (lastMatches) {
