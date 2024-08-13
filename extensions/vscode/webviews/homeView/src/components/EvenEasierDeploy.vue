@@ -79,15 +79,17 @@
 
       <DeployButton class="w-full" />
     </template>
-    <vscode-button
-      v-else
-      class="w-full add-deployment-btn"
-      @click="onSelectDeployment"
-      data-automation="add-deployment-button"
-    >
-      Select Deployment...
-    </vscode-button>
-
+    <div v-else class="deployment-control" v-on="{ click: onSelectDeployment }">
+      <QuickPickItem
+        label="Select..."
+        detail="(new or existing)"
+        data-automation="add-deployment-button"
+      />
+      <div
+        class="select-indicator codicon codicon-chevron-down"
+        aria-hidden="true"
+      />
+    </div>
     <template
       v-if="home.selectedContentRecord && home.selectedContentRecord.serverType"
     >
