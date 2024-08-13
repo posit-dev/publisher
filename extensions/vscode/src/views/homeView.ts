@@ -6,6 +6,7 @@ import debounce from "debounce";
 import {
   Disposable,
   ExtensionContext,
+  QuickPickItemKind,
   ThemeIcon,
   Uri,
   Webview,
@@ -913,7 +914,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
       // We need the latest lists. No choice but to refresh everything
       // once again.
-      await this.refreshAll(true);
+      await this.refreshAll(true, true);
 
       // Create quick pick list from current contentRecords, credentials and configs
       const deployments: DeploymentQuickPick[] = [];
@@ -923,11 +924,19 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         ? projectDir
         : lastContentRecord?.projectDir;
       const lastConfigName = lastContentRecord?.configurationName;
+      const createNewDeploymentLabel = "Create a New Deployment";
 
       const includedContentRecords = contentRecordsSubset
         ? contentRecordsSubset
         : this.state.contentRecords;
 
+      if (includedContentRecords.length) {
+        deployments.push({
+          label: "Existing",
+          kind: QuickPickItemKind.Separator,
+          lastMatch: false,
+        });
+      }
       includedContentRecords.forEach((contentRecord) => {
         if (
           isContentRecordError(contentRecord) ||
@@ -999,6 +1008,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         // Should we not push deployments with no config or matching credentials?
         deployments.push(deployment);
       });
+      deployments.push({
+        label: "New",
+        kind: QuickPickItemKind.Separator,
+        lastMatch: false,
+      });
+      deployments.push({
+        iconPath: new ThemeIcon("plus"),
+        label: createNewDeploymentLabel,
+        lastMatch: includedContentRecords.length ? false : true,
+      });
 
       const toDispose: Disposable[] = [];
       const deployment = await new Promise<DeploymentQuickPick | undefined>(
@@ -1034,8 +1053,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         },
       ).finally(() => Disposable.from(...toDispose).dispose());
 
+      // If user selected create new, then switch over to that flow
+      if (deployment?.label === createNewDeploymentLabel) {
+        return this.showNewDeploymentMultiStep(Views.HomeView);
+      }
+
       let deploymentSelector: DeploymentSelector | undefined;
-      if (deployment) {
+      if (deployment && deployment.contentRecord) {
         deploymentSelector = {
           deploymentPath: deployment.contentRecord.deploymentPath,
           deploymentName: deployment.contentRecord.saveName,
@@ -1050,6 +1074,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       if (
         !deploymentSelector ||
         !deployment ||
+        !deployment.contentRecord ||
         !deployment.detail ||
         !deployment.credentialName
       ) {
@@ -1179,15 +1204,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   ) => {
     try {
       const apis: Promise<void>[] = [this.refreshCredentialData()];
-      const selectedCR = await this.state.getSelectedContentRecord();
-      const selectedConfig = await this.state.getSelectedConfiguration();
-      if (!selectedCR || !selectedConfig || forceAll) {
-        // we have no current selection or it is invalid, so we have no choice but to
-        // search recursively for deployments
+      if (forceAll) {
+        // we have been told to refresh everything
         apis.push(this.refreshContentRecordData());
         apis.push(this.refreshConfigurationData());
       }
-      await Promise.all(apis);
+      const allApis = Promise.all(apis);
+      showProgress("Refreshing Data", allApis, Views.HomeView);
+      await allApis;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshAll::Promise.all",

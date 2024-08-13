@@ -14,26 +14,13 @@
       />
     </div>
 
-    <template v-if="home.contentRecords.length > 0">
-      <div
-        class="deployment-control"
-        :disabled="home.contentRecords.length === 0 ? true : undefined"
-        v-on="home.contentRecords.length ? { click: onSelectDeployment } : {}"
-      >
+    <template v-if="home.selectedContentRecord">
+      <div class="deployment-control" v-on="{ click: onSelectDeployment }">
         <QuickPickItem
-          v-if="home.selectedContentRecord"
           :label="deploymentTitle"
           :detail="deploymentSubTitle"
           :title="toolTipText"
         />
-
-        <QuickPickItem
-          v-else
-          class="text-placeholder"
-          label="Select a Deployment"
-          detail="Get deploying"
-        />
-
         <div
           class="select-indicator codicon codicon-chevron-down"
           aria-hidden="true"
@@ -92,15 +79,17 @@
 
       <DeployButton class="w-full" />
     </template>
-    <vscode-button
-      v-else
-      class="w-full add-deployment-btn"
-      @click="onAddDeployment"
-      data-automation="add-deployment-button"
-    >
-      Add Deployment
-    </vscode-button>
-
+    <div v-else class="deployment-control" v-on="{ click: onSelectDeployment }">
+      <QuickPickItem
+        label="Select..."
+        detail="(new or existing)"
+        data-automation="add-deployment-button"
+      />
+      <div
+        class="select-indicator codicon codicon-chevron-down"
+        aria-hidden="true"
+      />
+    </div>
     <template
       v-if="home.selectedContentRecord && home.selectedContentRecord.serverType"
     >
