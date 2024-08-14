@@ -208,7 +208,7 @@
     "quarto": {
       "version": "1.4.553"
     },
-    "dir": "C:\\Users\\somebody\\quarto-proj-none",
+    "dir": "$DIR\\quarto-proj-none-windows",
     "engines": ["markdown"],
     "config": {
       "project": {
@@ -218,9 +218,9 @@
       "language": {}
     },
     "files": {
-      "input": ["C:\\Users\\somebody\\quarto-proj-none\\quarto-proj-none.qmd"],
+      "input": ["$DIR\\quarto-proj-none-windows\\quarto-proj-none.qmd"],
       "resources": [],
-      "config": ["C:\\Users\\somebody\\quarto-proj-none\\_quarto.yml"],
+      "config": ["$DIR\\quarto-proj-none-windows\\_quarto.yml"],
       "configResources": []
     }
   }

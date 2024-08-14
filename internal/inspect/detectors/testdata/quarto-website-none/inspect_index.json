@@ -210,7 +210,7 @@
     "quarto": {
       "version": "1.4.553"
     },
-    "dir": "/Users/mike/rstudio/connect-content/bundles/quarto-website-none",
+    "dir": "$DIR/quarto-website-none",
     "engines": ["markdown"],
     "config": {
       "project": {
@@ -242,16 +242,12 @@
     },
     "files": {
       "input": [
-        "/Users/mike/rstudio/connect-content/bundles/quarto-website-none/index.qmd",
-        "/Users/mike/rstudio/connect-content/bundles/quarto-website-none/about.qmd"
+        "$DIR/quarto-website-none/index.qmd",
+        "$DIR/quarto-website-none/about.qmd"
       ],
       "resources": [],
-      "config": [
-        "/Users/mike/rstudio/connect-content/bundles/quarto-website-none/_quarto.yml"
-      ],
-      "configResources": [
-        "/Users/mike/rstudio/connect-content/bundles/quarto-website-none/styles.css"
-      ]
+      "config": ["$DIR/quarto-website-none/_quarto.yml"],
+      "configResources": ["$DIR/quarto-website-none/styles.css"]
     }
   }
 }

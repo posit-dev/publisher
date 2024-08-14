@@ -57,7 +57,7 @@ func (s *RMarkdownSuite) TestInferType() {
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -93,7 +93,7 @@ func (s *RMarkdownSuite) TestInferTypeWithPython() {
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
 }
@@ -142,7 +142,7 @@ func (s *RMarkdownSuite) TestInferTypeParameterized() {
 		Entrypoint:    filename,
 		Validate:      true,
 		HasParameters: true,
-		Files:         []string{"*"},
+		Files:         []string{},
 		R:             &config.R{},
 	}, configs[0])
 }
@@ -180,7 +180,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdRuntime() {
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -218,7 +218,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServer() {
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -257,7 +257,7 @@ func (s *RMarkdownSuite) TestInferTypeShinyRmdServerType() {
 		Title:      "Interactive Report",
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -291,7 +291,7 @@ func (s *RMarkdownSuite) TestInferTypeNoMetadata() {
 		Title:      "",
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
 }
@@ -321,7 +321,7 @@ func (s *RMarkdownSuite) TestInferTypeWithEntrypoint() {
 		Title:      "Special Report",
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		R:          &config.R{},
 	}, configs[0])
 }

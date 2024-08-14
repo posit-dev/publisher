@@ -46,14 +46,14 @@ func (s *StaticHTMLDetectorSuite) TestInferType() {
 		Type:       config.ContentTypeHTML,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{filename},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypeHTML,
 		Entrypoint: otherFilename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{otherFilename},
 	}, configs[1])
 }
 
@@ -83,6 +83,6 @@ func (s *StaticHTMLDetectorSuite) TestInferTypeWithEntrypoint() {
 		Type:       config.ContentTypeHTML,
 		Entrypoint: otherFilename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{otherFilename},
 	}, configs[0])
 }

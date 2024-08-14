@@ -5,6 +5,7 @@ import path from "path";
 import {
   InputBoxValidationSeverity,
   QuickPickItem,
+  QuickPickItemKind,
   ThemeIcon,
   Uri,
   commands,
@@ -117,26 +118,46 @@ export async function selectNewOrExistingConfig(
 
       configFileListItems = [];
 
+      // Display New Deployment at beginning
+      configFileListItems.push({
+        label: "New",
+        kind: QuickPickItemKind.Separator,
+      });
+      configFileListItems.push({
+        iconPath: new ThemeIcon("plus"),
+        label: createNewConfigurationLabel,
+        detail: "(or pick one of the existing deployments below)",
+        picked: configurations.length ? false : true,
+      });
+
+      // Then we display the existing deployments
+      if (configurations.length) {
+        configFileListItems.push({
+          label: "Existing",
+          kind: QuickPickItemKind.Separator,
+        });
+      }
+      let existingConfigFileListItems: QuickPickItem[] = [];
       configurations.forEach((config) => {
         const { title, problem } = calculateTitle(activeDeployment, config);
         if (problem) {
           return;
         }
-        configFileListItems.push({
+        existingConfigFileListItems.push({
           iconPath: new ThemeIcon("gear"),
           label: title,
           detail: config.configurationName,
         });
       });
-      configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
+      existingConfigFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
         var x = a.label.toLowerCase();
         var y = b.label.toLowerCase();
         return x < y ? -1 : x > y ? 1 : 0;
       });
-      configFileListItems.push({
-        iconPath: new ThemeIcon("plus"),
-        label: createNewConfigurationLabel,
-      });
+      // add to end of our list items
+      configFileListItems = configFileListItems.concat(
+        existingConfigFileListItems,
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "selectNewOrExistingConfig, configurations.getAll",

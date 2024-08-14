@@ -117,6 +117,65 @@ func requiresR(cfg *config.Config, base util.AbsolutePath, rExecutable util.Path
 	return false, nil
 }
 
+func normalizeConfig(
+	cfg *config.Config,
+	base util.AbsolutePath,
+	python util.Path,
+	rExecutable util.Path,
+	entrypoint util.RelativePath,
+	log logging.Logger,
+) error {
+	log.Info("Possible deployment type", "Entrypoint", cfg.Entrypoint, "Type", cfg.Type)
+	if cfg.Title == "" {
+		// Default title is the name of the project directory.
+		cfg.Title = base.Base()
+	}
+	// The inspector may populate the file list.
+	// If it doesn't, default to just the entrypoint file.
+	if len(cfg.Files) == 0 {
+		cfg.Files = []string{cfg.Entrypoint}
+	}
+	needPython, err := requiresPython(cfg, base)
+	if err != nil {
+		return err
+	}
+	if needPython {
+		inspector := PythonInspectorFactory(base, python, log)
+		pyConfig, err := inspector.InspectPython()
+		if err != nil {
+			return err
+		}
+		cfg.Python = pyConfig
+		cfg.Files = append(cfg.Files, cfg.Python.PackageFile)
+	}
+	needR, err := requiresR(cfg, base, rExecutable)
+	if err != nil {
+		return err
+	}
+	if needR {
+		inspector := RInspectorFactory(base, rExecutable, log)
+		rConfig, err := inspector.InspectR()
+		if err != nil {
+			return err
+		}
+		cfg.R = rConfig
+		cfg.Files = append(cfg.Files, cfg.R.PackageFile)
+	}
+	cfg.Comments = strings.Split(initialComment, "\n")
+
+	// Usually an entrypoint will be inferred.
+	// If not, use the specified entrypoint, or
+	// fall back to unknown.
+	if cfg.Entrypoint == "" {
+		cfg.Entrypoint = entrypoint.String()
+
+		if cfg.Entrypoint == "" {
+			cfg.Entrypoint = "unknown"
+		}
+	}
+	return nil
+}
+
 func GetPossibleConfigs(
 	base util.AbsolutePath,
 	python util.Path,
@@ -130,51 +189,11 @@ func GetPossibleConfigs(
 	if err != nil {
 		return nil, fmt.Errorf("error detecting content type: %w", err)
 	}
-	var pyConfig *config.Python
 
 	for _, cfg := range configs {
-		log.Info("Possible deployment type", "Entrypoint", cfg.Entrypoint, "Type", cfg.Type)
-		if cfg.Title == "" {
-			// Default title is the name of the project directory.
-			cfg.Title = base.Base()
-		}
-		needPython, err := requiresPython(cfg, base)
+		err = normalizeConfig(cfg, base, python, rExecutable, entrypoint, log)
 		if err != nil {
 			return nil, err
-		}
-		if needPython {
-			if pyConfig == nil {
-				inspector := PythonInspectorFactory(base, python, log)
-				pyConfig, err = inspector.InspectPython()
-				if err != nil {
-					return nil, err
-				}
-			}
-			cfg.Python = pyConfig
-		}
-		needR, err := requiresR(cfg, base, rExecutable)
-		if err != nil {
-			return nil, err
-		}
-		if needR {
-			inspector := RInspectorFactory(base, rExecutable, log)
-			rConfig, err := inspector.InspectR()
-			if err != nil {
-				return nil, err
-			}
-			cfg.R = rConfig
-		}
-		cfg.Comments = strings.Split(initialComment, "\n")
-
-		// Usually an entrypoint will be inferred.
-		// If not, use the specified entrypoint, or
-		// fall back to unknown.
-		if cfg.Entrypoint == "" {
-			cfg.Entrypoint = entrypoint.String()
-
-			if cfg.Entrypoint == "" {
-				cfg.Entrypoint = "unknown"
-			}
 		}
 	}
 	return configs, nil
@@ -185,6 +204,10 @@ func Init(base util.AbsolutePath, configName string, python util.Path, rExecutab
 		configName = config.DefaultConfigName
 	}
 	cfg, err := inspectProject(base, python, rExecutable, log)
+	if err != nil {
+		return nil, err
+	}
+	err = normalizeConfig(cfg, base, python, rExecutable, util.RelativePath{}, log)
 	if err != nil {
 		return nil, err
 	}
