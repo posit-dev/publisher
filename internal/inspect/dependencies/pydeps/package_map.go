@@ -116,6 +116,16 @@ func (m *defaultPackageMapper) getMappingForLibDir(libDir util.Path) (PackageMap
 
 func (m *defaultPackageMapper) GetPackageMap(pythonExecutable string) (PackageMap, error) {
 	mapping := PackageMap{}
+
+	// Default package map contains packages with mismatched import names,
+	// in case they are not installed locally.
+	for importName, packageName := range importToPackageNameMap {
+		mapping[importName] = &PackageSpec{
+			Name:    packageName,
+			Version: "",
+		}
+	}
+
 	libDirs, err := m.getLibDirs(pythonExecutable)
 	if err != nil {
 		return nil, err

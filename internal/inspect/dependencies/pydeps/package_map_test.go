@@ -54,14 +54,20 @@ func (s *PackageMapperSuite) TestGetPackageMap() {
 	mapping, err := m.GetPackageMap("/some/python")
 	s.NoError(err)
 
-	s.Equal(PackageMap{
-		"mypkg": &PackageSpec{
-			Name:    "MyPackage",
-			Version: "1.2.3",
-		},
-		"other": &PackageSpec{
-			Name:    "other",
-			Version: "4.5.6",
-		},
-	}, mapping)
+	s.Equal(&PackageSpec{
+		Name:    "MyPackage",
+		Version: "1.2.3",
+	}, mapping["mypkg"])
+
+	s.Equal(&PackageSpec{
+		Name:    "other",
+		Version: "4.5.6",
+	}, mapping["other"])
+
+	// From the mismatched names list; our best effort
+	// for a package not installed locally.
+	s.Equal(&PackageSpec{
+		Name:    "beautifulsoup4",
+		Version: "",
+	}, mapping["bs4"])
 }
