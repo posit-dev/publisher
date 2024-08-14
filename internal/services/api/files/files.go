@@ -3,6 +3,8 @@ package files
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
+	"os"
 	"time"
 
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
@@ -34,7 +36,11 @@ func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.P
 
 	info, err := path.Stat()
 	if err != nil {
-		return nil, err
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
 	}
 
 	filetype, err := getFileType(path.String(), info)
@@ -82,7 +88,7 @@ func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList 
 		match := matchList.Match(path)
 
 		child, err := CreateFile(root, path, match)
-		if err != nil {
+		if err != nil || child == nil {
 			return nil, err
 		}
 
@@ -93,7 +99,7 @@ func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList 
 
 	// otherwise, create the parent file
 	parent, err := f.insert(root, pathdir, matchList)
-	if err != nil {
+	if err != nil || parent == nil {
 		return nil, err
 	}
 
