@@ -4,6 +4,7 @@ package detectors
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"runtime"
 	"strings"
@@ -40,10 +41,17 @@ func (s *QuartoDetectorSuite) runInferType(testName string) []*config.Config {
 	exists, err := dirOutputPath.Exists()
 	s.NoError(err)
 
+	// Replace the $DIR placeholder in the file with
+	// the correct path (json-escaped)
+	placeholder := []byte("$DIR")
+	baseDir, err := json.Marshal(base.Dir().String())
+	s.NoError(err)
+	baseDir = baseDir[1 : len(baseDir)-1]
+
 	if exists {
 		dirOutput, err := dirOutputPath.ReadFile()
 		s.NoError(err)
-		dirOutput = bytes.ReplaceAll(dirOutput, []byte("$DIR"), []byte(base.Dir().String()))
+		dirOutput = bytes.ReplaceAll(dirOutput, placeholder, baseDir)
 		executor.On("RunCommand", "quarto", []string{"inspect", base.String()}, mock.Anything, mock.Anything).Return(dirOutput, nil, nil)
 	}
 
@@ -55,7 +63,7 @@ func (s *QuartoDetectorSuite) runInferType(testName string) []*config.Config {
 		outputPath := base.Join(fmt.Sprintf("inspect_%s.json", fileBase))
 		fileOutput, err := outputPath.ReadFile()
 		s.NoError(err)
-		fileOutput = bytes.ReplaceAll(fileOutput, []byte("$DIR"), []byte(base.Dir().String()))
+		fileOutput = bytes.ReplaceAll(fileOutput, placeholder, baseDir)
 		executor.On("RunCommand", "quarto", []string{"inspect", filename.String()}, mock.Anything, mock.Anything).Return(fileOutput, nil, nil)
 	}
 
