@@ -35,8 +35,7 @@ func (w *symlinkWalker) Walk(path AbsolutePath, fn AbsoluteWalkFunc) error {
 func (w *symlinkWalker) visit(fn AbsoluteWalkFunc) AbsoluteWalkFunc {
 	return func(path AbsolutePath, info fs.FileInfo, err error) error {
 		if err != nil {
-			// Stop walking the tree on errors.
-			return err
+			return fn(path, nil, err)
 		}
 		if info.Mode().Type()&os.ModeSymlink != 0 {
 			w.log.Info("Following symlink", "path", path)

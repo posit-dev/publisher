@@ -3,7 +3,9 @@ package files
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"errors"
 	"io/fs"
+	"os"
 	"path/filepath"
 
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
@@ -36,21 +38,25 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 	m := matchList.Match(p)
 
 	file, err := CreateFile(p, p, m)
-	if err != nil {
+	if err != nil || file == nil {
 		return nil, err
 	}
 
 	walker := util.NewSymlinkWalker(util.FSWalker{}, s.log)
 	err = walker.Walk(p, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return nil
+			} else {
+				return err
+			}
+		}
 		if info.IsDir() {
 			// Ignore Python environment directories. We check for these
 			// separately because they aren't expressible as gitignore patterns.
 			if util.IsPythonEnvironmentDir(path) || util.IsRenvLibraryDir(path) {
 				return filepath.SkipDir
 			}
-		}
-		if err != nil {
-			return err
 		}
 		_, err = file.insert(p, path, matchList)
 		return err

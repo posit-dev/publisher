@@ -4,8 +4,10 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"net/http"
+	"os"
 	"slices"
 	"strings"
 
@@ -40,7 +42,11 @@ func GetEntrypointsHandlerFunc(base util.AbsolutePath, log logging.Logger) http.
 		}
 		err = walker.Walk(projectDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 			if err != nil {
-				return err
+				if errors.Is(err, os.ErrNotExist) {
+					return nil
+				} else {
+					return err
+				}
 			}
 			if info.IsDir() {
 				return nil
