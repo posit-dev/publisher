@@ -12,5 +12,5 @@ export interface DeploymentQuickPick extends QuickPickItem {
   contentRecord?: ContentRecord | PreContentRecordWithConfig;
   config?: Configuration | ConfigurationError;
   credentialName?: string;
-  lastMatch: boolean;
+  lastMatch?: boolean;
 }
