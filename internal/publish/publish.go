@@ -281,11 +281,6 @@ func (p *defaultPublisher) publishWithClient(
 	log logging.Logger) error {
 
 	manifest := bundles.NewManifestFromConfig(p.Config)
-	filePatterns := p.Config.Files
-	if len(filePatterns) == 0 {
-		log.Info("No file patterns specified; using default pattern '*'")
-		filePatterns = []string{"*"}
-	}
 	if p.Config.R != nil {
 		rPackages, err := p.getRPackages(log)
 		if err != nil {
@@ -293,7 +288,7 @@ func (p *defaultPublisher) publishWithClient(
 		}
 		manifest.Packages = rPackages
 	}
-	bundler, err := bundles.NewBundler(p.Dir, manifest, filePatterns, log)
+	bundler, err := bundles.NewBundler(p.Dir, manifest, p.Config.Files, log)
 	if err != nil {
 		return err
 	}

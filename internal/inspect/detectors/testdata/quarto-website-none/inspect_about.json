@@ -210,7 +210,7 @@
     "quarto": {
       "version": "1.4.553"
     },
-    "dir": "/Users/mike/posit-dev/publisher/internal/inspect/detectors/testdata/quarto-website-none",
+    "dir": "$DIR/quarto-website-none",
     "engines": ["markdown"],
     "config": {
       "project": {
@@ -242,13 +242,11 @@
     },
     "files": {
       "input": [
-        "/Users/mike/posit-dev/publisher/internal/inspect/detectors/testdata/quarto-website-none/index.qmd",
-        "/Users/mike/posit-dev/publisher/internal/inspect/detectors/testdata/quarto-website-none/about.qmd"
+        "$DIR/quarto-website-none/index.qmd",
+        "$DIR/quarto-website-none/about.qmd"
       ],
       "resources": [],
-      "config": [
-        "/Users/mike/posit-dev/publisher/internal/inspect/detectors/testdata/quarto-website-none/_quarto.yml"
-      ],
+      "config": ["$DIR/quarto-website-none/_quarto.yml"],
       "configResources": []
     }
   }

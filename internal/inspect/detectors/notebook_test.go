@@ -82,7 +82,7 @@ func (s *NotebookDetectorSuite) TestInferTypePlainNotebook() {
 		Type:       config.ContentTypeJupyterNotebook,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
 }
@@ -107,7 +107,7 @@ func (s *NotebookDetectorSuite) TestInferTypeVoilaNotebook() {
 		Type:       config.ContentTypeJupyterVoila,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
 }
@@ -186,7 +186,7 @@ func (s *NotebookDetectorSuite) TestInferTypeWithEntrypoint() {
 		Type:       config.ContentTypeJupyterNotebook,
 		Entrypoint: filename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[0])
 }
