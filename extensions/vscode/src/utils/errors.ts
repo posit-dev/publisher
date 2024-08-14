@@ -7,7 +7,7 @@ export type ErrorMessages = ErrorMessage[];
 
 export const getStatusFromError = (error: unknown): number | undefined => {
   if (axios.isAxiosError(error)) {
-    return error.status;
+    return error.response?.status;
   }
   return undefined;
 };
