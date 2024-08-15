@@ -22,9 +22,16 @@ func (cmd *ShowRequirementsCommand) Run(args *cli_types.CommonArgs, ctx *cli_typ
 		return err
 	}
 	inspector := inspect.NewPythonInspector(absPath, cmd.Python, ctx.Logger)
-	reqs, pythonExecutable, err := inspector.ScanRequirements(absPath)
+	reqs, incomplete, pythonExecutable, err := inspector.ScanRequirements(absPath)
 	if err != nil {
 		return err
+	}
+	if len(incomplete) > 0 {
+		fmt.Println("# Warning: could not find some package versions in your local Python library.")
+		fmt.Println("# Consider installing these packages and re-running.")
+		for _, pkg := range incomplete {
+			fmt.Println("#", pkg)
+		}
 	}
 	fmt.Println("# Project dependencies for", absPath)
 	fmt.Println("# Using package information from", pythonExecutable)

@@ -4,6 +4,12 @@ export type PythonPackagesResponse = {
   requirements: string[];
 };
 
+export type ScanPythonPackagesResponse = {
+  requirements: string[];
+  incomplete: string[];
+  python: string;
+};
+
 export type RPackage = {
   package: string;
   version: string;
