@@ -28,7 +28,10 @@ import {
   ConfigurationInspectionResult,
   EntryPointPath,
 } from "src/api";
-import { getPythonInterpreterPath } from "src/utils/config";
+import {
+  getPythonInterpreterPath,
+  getRInterpreterPath,
+} from "src/utils/config";
 import {
   getMessageFromError,
   getSummaryStringFromError,
@@ -528,12 +531,18 @@ export async function newDeployment(
 
       try {
         const python = await getPythonInterpreterPath();
+        const r = await getRInterpreterPath();
         const dir = path.dirname(relEntryPoint);
         const entryPointFile = path.basename(relEntryPoint);
 
-        const inspectResponse = await api.configurations.inspect(dir, python, {
-          entrypoint: entryPointFile,
-        });
+        const inspectResponse = await api.configurations.inspect(
+          dir,
+          python,
+          r,
+          {
+            entrypoint: entryPointFile,
+          },
+        );
 
         inspectionResults = inspectResponse.data;
         inspectionResults.forEach((result, i) => {
