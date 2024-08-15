@@ -19,6 +19,7 @@ import (
 type PostDeploymentRequestBody struct {
 	AccountName string `json:"account"`
 	ConfigName  string `json:"config"`
+	R           string `json:"r"`
 }
 
 type PostDeploymentsReponse struct {
@@ -77,7 +78,8 @@ func PostDeploymentHandlerFunc(
 		json.NewEncoder(w).Encode(response)
 
 		newState.LocalID = localID
-		publisher, err := publisherFactory(newState, emitter, log)
+		rExecutable := util.NewPath(b.R, nil)
+		publisher, err := publisherFactory(newState, rExecutable, emitter, log)
 		if err != nil {
 			InternalError(w, req, log, err)
 			return
