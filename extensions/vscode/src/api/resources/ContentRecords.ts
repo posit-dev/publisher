@@ -72,10 +72,12 @@ export class ContentRecords {
     accountName: string,
     configName: string,
     dir: string,
+    r?: string,
   ) {
     const data = {
       account: accountName,
       config: configName,
+      r: r,
     };
     const encodedTarget = encodeURIComponent(targetName);
     return this.client.post<{ localId: string }>(

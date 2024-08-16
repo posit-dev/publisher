@@ -65,7 +65,8 @@ export async function getRInterpreterPath(): Promise<string | undefined> {
   if (api) {
     const runtime = await api.runtime.getPreferredRuntime("r");
     if (runtime) {
-      return runtime.runtimePath;
+      const interpreter = runtime.runtimePath;
+      return interpreter;
     }
   }
   // We don't know the interpreter path.

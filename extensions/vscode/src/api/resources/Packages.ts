@@ -61,10 +61,10 @@ export class Packages {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  createRRequirementsFile(dir: string, saveName?: string) {
+  createRRequirementsFile(dir: string, saveName?: string, r?: string) {
     return this.client.post<void>(
       "packages/r/scan",
-      { saveName },
+      { saveName, r },
       { params: { dir } },
     );
   }
