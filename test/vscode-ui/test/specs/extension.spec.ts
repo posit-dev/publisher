@@ -58,14 +58,26 @@ describe("VS Code Extension UI Test", () => {
   it("create first deployment", async () => {
     await switchToSubframe();
     // initialize project via button
-    const init = await $('[data-automation="add-deployment-button"]');
+    const selectButton = (await $('[data-automation="select-deployment"]')).$(
+      ".quick-pick-label",
+    );
+    await expect(selectButton).toHaveText("Select...");
+    await selectButton.click();
 
-    await expect(init).toHaveText("Add Deployment");
-    await init.click();
-
+    // switch out of iframe
     await browser.switchToFrame(null);
 
-    // set title
+    // verify Create New Deployment message displays and select it
+    const createMessage = await browser.$(".label-name");
+    await expect(createMessage).toHaveText("Create a New Deployment");
+    await createMessage.click();
+
+    // confirm title is ready and set title
+    const titleMessage = await browser.$("#quickInput_message");
+    await titleMessage.waitForExist({ timeout: 5000 });
+    await expect(titleMessage).toHaveText(
+      "Enter a title for your content or application. (Press 'Enter' to confirm or 'Escape' to cancel)",
+    );
     await input.setValue("fastapi-test");
     await browser.keys("\uE007");
 
