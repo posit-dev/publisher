@@ -122,7 +122,10 @@ export async function newCredential(
           new URL(input);
         } catch (e) {
           if (!(e instanceof TypeError)) {
-            throw e;
+            return Promise.resolve({
+              message: `Unexpected error within NewCredential::inputSeverUrl.finalValidation: ${JSON.stringify(e)}`,
+              severity: InputBoxValidationSeverity.Error,
+            });
           }
           return Promise.resolve({
             message: `Error: Invalid URL (${getMessageFromError(e)}).`,

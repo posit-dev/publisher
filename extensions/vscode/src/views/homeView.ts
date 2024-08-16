@@ -223,9 +223,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
         return this.showPublishingLog();
       default:
-        throw new Error(
-          `Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
+        window.showErrorMessage(
+          `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
         );
+        return;
     }
   }
 
@@ -370,8 +371,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         "refreshContentRecordData::contentRecords.getAll",
         error,
       );
-      window.showInformationMessage(summary);
-      throw error;
+      window.showErrorMessage(summary);
+      return;
     }
   }
 
@@ -382,11 +383,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "refreshConfigurationData::configurations.getAll",
+        "Internal Error: refreshConfigurationData::configurations.getAll",
         error,
       );
-      window.showInformationMessage(summary);
-      throw error;
+      window.showErrorMessage(summary);
+      return;
     }
   }
 
@@ -397,11 +398,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "refreshCredentialData::credentials.list",
+        "Internal Error: refreshCredentialData::credentials.list",
         error,
       );
-      window.showInformationMessage(summary);
-      throw error;
+      window.showErrorMessage(summary);
+      return;
     }
   }
 
@@ -1140,10 +1141,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
 
     // Sets up an event listener to listen for messages passed from the webview view this.context
-    // and executes code based on the message that is recieved
-    this.disposables.push(
-      this.webviewConduit.onMsg(this.onConduitMessage.bind(this)),
-    );
+    // and executes code based on the message that is received
+    const disp = this.webviewConduit.onMsg(this.onConduitMessage.bind(this));
+    if (disp) {
+      this.disposables.push(disp);
+    }
   }
   /**
    * Defines and returns the HTML that should be rendered within the webview panel.
