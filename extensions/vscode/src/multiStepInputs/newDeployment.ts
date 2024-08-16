@@ -431,7 +431,7 @@ const steps: Record<string, possibleSteps | undefined> = {
 export async function newDeployment(
   viewId: string,
   projectDir = ".",
-  entryPoint?: string,
+  entryPointFile?: string,
 ): Promise<DeploymentObjects | undefined> {
   // ***************************************************************
   // API Calls and results
@@ -532,15 +532,15 @@ export async function newDeployment(
       try {
         const python = await getPythonInterpreterPath();
         const r = await getRInterpreterPath();
-        const dir = path.dirname(relEntryPoint);
-        const entryPointFile = path.basename(relEntryPoint);
+        const relEntryPointDir = path.dirname(relEntryPoint);
+        const relEntryPointFile = path.basename(relEntryPoint);
 
         const inspectResponse = await api.configurations.inspect(
-          dir,
+          relEntryPointDir,
           python,
           r,
           {
-            entrypoint: entryPointFile,
+            entrypoint: relEntryPointFile,
           },
         );
 
@@ -562,12 +562,12 @@ export async function newDeployment(
           error,
         );
         window.showErrorMessage(
-          `Unable to continue with project inspection failure for ${entryPoint}. ${summary}`,
+          `Unable to continue with project inspection failure for ${entryPointFile}. ${summary}`,
         );
         return reject();
       }
       if (!inspectionListItems.length) {
-        const msg = `Unable to continue with no project entrypoints found during inspection for ${entryPoint}.`;
+        const msg = `Unable to continue with no project entrypoints found during inspection for ${entryPointFile}.`;
         window.showErrorMessage(msg);
         return reject();
       }
@@ -603,15 +603,16 @@ export async function newDeployment(
 
   const getEntrypoints = new Promise<void>(async (resolve, reject) => {
     try {
-      if (entryPoint) {
+      if (entryPointFile) {
         // we were passed in a specific entrypoint file.
         // while we don't need it, we'll still provide the results
         // in the same way.
+        const entryPointPath = path.join(projectDir, entryPointFile);
         entryPointListItems.push({
           iconPath: new ThemeIcon("file"),
-          label: entryPoint,
+          label: entryPointPath,
         });
-        discoveredEntryPoints.push(entryPoint);
+        discoveredEntryPoints.push(entryPointPath);
         return resolve();
       }
       const entrypointFilesOpened: string[] = [];
