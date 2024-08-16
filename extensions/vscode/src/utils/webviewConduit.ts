@@ -63,14 +63,11 @@ export class WebviewConduit {
   };
 
   public sendMsg = (msg: HostToWebviewMessage) => {
-    const e = JSON.stringify(msg);
+    // don't send messages if the Webview hasn't initialized yet
     if (!this.target) {
-      console.warn(
-        `Warning: WebviewConduit::sendMsg queueing up msg called before webview reference established with init(): ${e}`,
-      );
-      this.pendingMsgs.push(msg);
       return;
     }
+    const e = JSON.stringify(msg);
     this.target.postMessage(e);
   };
 }
