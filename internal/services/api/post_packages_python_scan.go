@@ -18,6 +18,12 @@ type PostPackagesPythonScanRequest struct {
 	SaveName string `json:"saveName"`
 }
 
+type PostPackagesPythonScanResponse struct {
+	Python       string   `json:"python"`
+	Requirements []string `json:"requirements"`
+	Incomplete   []string `json:"incomplete"`
+}
+
 var inspectorFactory = inspect.NewPythonInspector
 
 type PostPackagesPythonScanHandler struct {
@@ -56,7 +62,7 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 		BadRequest(w, req, h.log, err)
 		return
 	}
-	reqs, _, err := inspector.ScanRequirements(projectDir)
+	reqs, incomplete, effectivePython, err := inspector.ScanRequirements(projectDir)
 	if err != nil {
 		InternalError(w, req, h.log, err)
 		return
@@ -67,5 +73,11 @@ func (h *PostPackagesPythonScanHandler) ServeHTTP(w http.ResponseWriter, req *ht
 		InternalError(w, req, h.log, err)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	response := PostPackagesPythonScanResponse{
+		Python:       effectivePython,
+		Requirements: reqs,
+		Incomplete:   incomplete,
+	}
+	w.Header().Set("content-type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

@@ -163,12 +163,15 @@ func (s *PythonSuite) TestScanRequirements() {
 	scanner.On("ScanDependencies", s.cwd, pythonPath.String()).Return(specs, nil)
 	inspector.scanner = scanner
 
-	reqs, python, err := inspector.ScanRequirements(s.cwd)
+	reqs, incomplete, python, err := inspector.ScanRequirements(s.cwd)
 	s.NoError(err)
 	s.Equal([]string{
 		"numpy==1.26.1",
 		"pandas",
 	}, reqs)
+	s.Equal([]string{
+		"pandas",
+	}, incomplete)
 	s.Equal(pythonPath.String(), python)
 	scanner.AssertExpectations(s.T())
 }

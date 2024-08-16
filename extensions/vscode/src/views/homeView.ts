@@ -662,8 +662,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Views.HomeView,
       );
 
-      await apiRequest;
+      const response = (await apiRequest).data;
       await commands.executeCommand("vscode.open", fileUri);
+
+      if (response.incomplete.length > 0) {
+        const importList = response.incomplete.join(", ");
+        const msg = `Could not find installed packages for some imports using ${response.python}. Install the required packages, or select a different interpreter, and try scanning again. Imports: ${importList}`;
+        window.showWarningMessage(msg);
+      }
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::onScanForPythonPackageRequirements",

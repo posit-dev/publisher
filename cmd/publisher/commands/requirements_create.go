@@ -35,7 +35,7 @@ func (cmd *CreateRequirementsCommand) Run(args *cli_types.CommonArgs, ctx *cli_t
 		return errRequirementsFileExists
 	}
 	inspector := inspect.NewPythonInspector(absPath, cmd.Python, ctx.Logger)
-	reqs, _, err := inspector.ScanRequirements(absPath)
+	reqs, incomplete, pythonExecutable, err := inspector.ScanRequirements(absPath)
 	if err != nil {
 		return err
 	}
@@ -44,6 +44,14 @@ func (cmd *CreateRequirementsCommand) Run(args *cli_types.CommonArgs, ctx *cli_t
 		return err
 	}
 	fmt.Fprintf(os.Stderr, "Wrote file %s:\n", cmd.Output)
+	fmt.Println("Using package information from", pythonExecutable)
+	if len(incomplete) > 0 {
+		fmt.Println("Warning: could not find some package versions in your local Python library.")
+		fmt.Println("Consider installing these packages and re-running.")
+		for _, pkg := range incomplete {
+			fmt.Println(pkg)
+		}
+	}
 	content, err := reqPath.ReadFile()
 	if err != nil {
 		return err
