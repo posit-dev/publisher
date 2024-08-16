@@ -82,7 +82,7 @@ interface InputBoxParameters {
 
 export class MultiStepInput {
   // These were templatized: static async run<T>(start: InputStep) {
-  static async run(start: InputStep) {
+  static run(start: InputStep) {
     const input = new MultiStepInput();
     return input.stepThrough(start);
   }
