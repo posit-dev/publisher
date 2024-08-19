@@ -46,14 +46,14 @@ func (s *AllSuite) TestInferTypeDirectory() {
 		Type:       config.ContentTypeHTML,
 		Entrypoint: "index.html",
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{"index.html"},
 	}, configs[0])
 	s.Equal(&config.Config{
 		Schema:     schema.ConfigSchemaURL,
 		Type:       config.ContentTypePythonDash,
 		Entrypoint: appFilename,
 		Validate:   true,
-		Files:      []string{"*"},
+		Files:      []string{},
 		Python:     &config.Python{},
 	}, configs[1])
 }
@@ -105,7 +105,7 @@ func (s *AllSuite) TestInferAll() {
 			Type:       config.ContentTypePythonDash,
 			Entrypoint: appFilename,
 			Validate:   true,
-			Files:      []string{"*"},
+			Files:      []string{},
 			Python:     &config.Python{},
 		},
 		{
@@ -113,7 +113,7 @@ func (s *AllSuite) TestInferAll() {
 			Type:       config.ContentTypeHTML,
 			Entrypoint: "myfile.html",
 			Validate:   true,
-			Files:      []string{"*"},
+			Files:      []string{"myfile.html"},
 			Python:     nil,
 		},
 	}, t)

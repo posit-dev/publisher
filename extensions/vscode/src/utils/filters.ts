@@ -15,7 +15,7 @@ export function filterInspectionResultsToType(
   if (!type || type === ContentType.UNKNOWN) {
     return inspectionResults;
   }
-  return inspectionResults.filter((c) => isInspectionResultOfType(c, type));
+  return inspectionResults.filter((cfg) => isInspectionResultOfType(cfg, type));
 }
 
 export function isInspectionResultOfType(
@@ -33,10 +33,10 @@ export function filterConfigurationsToValidAndType(
   type: ContentType | undefined,
 ): Configuration[] {
   let result = configs.filter(
-    (c): c is Configuration => !isConfigurationError(c),
+    (cfg): cfg is Configuration => !isConfigurationError(cfg),
   );
   if (type && type !== ContentType.UNKNOWN) {
-    result = result.filter((c) => isConfigurationOfType(c, type));
+    result = result.filter((cfg) => isConfigurationOfType(cfg, type));
   }
   return result;
 }

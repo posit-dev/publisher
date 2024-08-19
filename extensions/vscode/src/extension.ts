@@ -1,12 +1,10 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { ExtensionContext, commands } from "vscode";
+import { ExtensionContext, Uri, commands } from "vscode";
 
 import * as ports from "src/ports";
 import { Service } from "src/services";
 import { ProjectTreeDataProvider } from "src/views/project";
-import { ContentRecordsTreeDataProvider } from "src/views/contentRecords";
-import { ConfigurationsTreeDataProvider } from "src/views/configurations";
 import { CredentialsTreeDataProvider } from "src/views/credentials";
 import { HelpAndFeedbackTreeDataProvider } from "src/views/helpAndFeedback";
 import { LogsTreeDataProvider } from "src/views/logs";
@@ -14,6 +12,7 @@ import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
 import { WatcherManager } from "src/watchers";
 import { Commands } from "src/constants";
+import { DocumentTracker } from "./entrypointTracker";
 
 const STATE_CONTEXT = "posit.publish.state";
 
@@ -42,6 +41,7 @@ function setInitializationInProgressContext(context: InitializationInProgress) {
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: ExtensionContext) {
+  console.log("Activating Posit Publisher extension");
   setStateContext(PositPublishState.uninitialized);
   setInitializationInProgressContext(InitializationInProgress.false);
 
@@ -58,14 +58,6 @@ export async function activate(context: ExtensionContext) {
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
 
-  const contentRecordsTreeDataProvider = new ContentRecordsTreeDataProvider(
-    context,
-  );
-
-  const configurationsTreeDataProvider = new ConfigurationsTreeDataProvider(
-    context,
-  );
-
   const credentialsTreeDataProvider = new CredentialsTreeDataProvider(context);
 
   const helpAndFeedbackTreeDataProvider = new HelpAndFeedbackTreeDataProvider(
@@ -79,15 +71,13 @@ export async function activate(context: ExtensionContext) {
 
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
-  contentRecordsTreeDataProvider.register(watchers);
-  configurationsTreeDataProvider.register(watchers);
   credentialsTreeDataProvider.register();
   helpAndFeedbackTreeDataProvider.register();
   logsTreeDataProvider.register();
   homeViewProvider.register(watchers);
 
   context.subscriptions.push(
-    commands.registerCommand(Commands.InitProject, async (viewId?: string) => {
+    commands.registerCommand(Commands.InitProject, async (viewId: string) => {
       setInitializationInProgressContext(InitializationInProgress.true);
       await homeViewProvider.showNewDeploymentMultiStep(viewId);
       setInitializationInProgressContext(InitializationInProgress.false);
@@ -100,10 +90,19 @@ export async function activate(context: ExtensionContext) {
     ),
   );
   setStateContext(PositPublishState.initialized);
+
+  context.subscriptions.push(
+    new DocumentTracker(),
+    commands.registerCommand(Commands.DeployWithEntrypoint, (uri: Uri) => {
+      commands.executeCommand(Commands.HomeView.Focus);
+      homeViewProvider.handleFileInitiatedDeployment(uri);
+    }),
+  );
 }
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
+  console.log("Deactivating Posit Publisher extension");
   if (service) {
     await service.stop();
   }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/posit-dev/publisher/internal/bundles/matcher"
@@ -72,7 +73,7 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			return
 		}
 		pythonPath := util.NewPath(b.Python, nil)
-		var response []postInspectResponseBody
+		response := []postInspectResponseBody{}
 
 		if req.URL.Query().Get("recursive") == "true" {
 			walker, err := matcher.NewMatchingWalker([]string{"*"}, projectDir, log)
@@ -82,7 +83,11 @@ func PostInspectHandlerFunc(base util.AbsolutePath, log logging.Logger) http.Han
 			}
 			err = walker.Walk(projectDir, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 				if err != nil {
-					return err
+					if errors.Is(err, os.ErrNotExist) {
+						return nil
+					} else {
+						return err
+					}
 				}
 				if !info.IsDir() {
 					return nil

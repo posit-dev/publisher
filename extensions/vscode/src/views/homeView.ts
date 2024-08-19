@@ -1,17 +1,18 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import path from "path";
 import debounce from "debounce";
 
 import {
-  CancellationToken,
   Disposable,
   ExtensionContext,
+  QuickPickItem,
+  QuickPickItemKind,
   ThemeIcon,
   Uri,
   Webview,
   WebviewView,
   WebviewViewProvider,
-  WebviewViewResolveContext,
   WorkspaceFolder,
   commands,
   env,
@@ -27,17 +28,16 @@ import { isAxiosError } from "axios";
 import {
   Configuration,
   ConfigurationError,
-  Credential,
   ContentRecord,
   EventStreamMessage,
   FileAction,
   PreContentRecord,
-  PreContentRecordWithConfig,
   isConfigurationError,
   isContentRecordError,
   isPreContentRecord,
   isPreContentRecordWithConfig,
   useApi,
+  AllContentRecordTypes,
 } from "src/api";
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
@@ -50,10 +50,13 @@ import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { WebviewConduit } from "src/utils/webviewConduit";
-import { fileExists } from "src/utils/files";
+import { fileExists, relativeDir, isRelativePathRoot } from "src/utils/files";
+import { Utils as uriUtils } from "vscode-uri";
 import { newDeployment } from "src/multiStepInputs/newDeployment";
-
-import type { DeploymentNames, HomeViewState } from "src/types/shared";
+import type {
+  DeploymentSelector,
+  PublishProcessParams,
+} from "src/types/shared";
 import {
   DeployMsg,
   EditConfigurationMsg,
@@ -62,17 +65,20 @@ import {
   WebviewToHostMessage,
   WebviewToHostMessageType,
   VSCodeOpenRelativeMsg,
+  VSCodeOpenMsg,
 } from "src/types/messages/webviewToHostMessages";
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
 import { confirmOverwrite } from "src/dialogs";
 import { splitFilesOnInclusion } from "src/utils/files";
 import { DeploymentQuickPick } from "src/types/quickPicks";
-import { normalizeURL } from "src/utils/url";
-import { selectConfig } from "src/multiStepInputs/selectConfig";
+import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
-import { Commands, Contexts, LocalState, Views } from "src/constants";
+import { Commands, Contexts, Views } from "src/constants";
+import { showProgress } from "src/utils/progress";
+import { newCredential } from "src/multiStepInputs/newCredential";
+import { PublisherState } from "src/state";
 
 enum HomeViewInitialized {
   initialized = "initialized",
@@ -82,90 +88,104 @@ enum HomeViewInitialized {
 const fileEventDebounce = 200;
 
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
-  private _disposables: Disposable[] = [];
-  private _contentRecords: (
-    | ContentRecord
-    | PreContentRecord
-    | PreContentRecordWithConfig
-  )[] = [];
+  private disposables: Disposable[] = [];
 
-  private _credentials: Credential[] = [];
-  private _configs: Configuration[] = [];
-  private configsInError: ConfigurationError[] = [];
+  private state: PublisherState;
+
   private root: WorkspaceFolder | undefined;
-  private _webviewView?: WebviewView;
-  private _extensionUri: Uri;
-  private _webviewConduit: WebviewConduit;
+  private webviewView?: WebviewView;
+  private extensionUri: Uri;
+  private webviewConduit: WebviewConduit;
+  private initCompleteResolver: (() => void) | undefined = undefined;
+
+  // Promise that methods can wait on, which will be resolved when
+  // the initial queries finish. Then they can use our internal collections of
+  // contentRecords, credentials and configs within this class
+  private initComplete: Promise<void> = new Promise((resolve) => {
+    this.initCompleteResolver = resolve;
+  });
 
   private configWatchers: ConfigWatcherManager | undefined;
   private gitRefreshInterval?: NodeJS.Timeout;
 
   constructor(
-    private readonly _context: ExtensionContext,
-    private readonly _stream: EventStream,
+    private readonly context: ExtensionContext,
+    private readonly stream: EventStream,
   ) {
     const workspaceFolders = workspace.workspaceFolders;
     if (workspaceFolders !== undefined) {
       this.root = workspaceFolders[0];
     }
-    this._extensionUri = this._context.extensionUri;
-    this._webviewConduit = new WebviewConduit();
+
+    this.state = new PublisherState(this.context);
+
+    this.extensionUri = this.context.extensionUri;
+    this.webviewConduit = new WebviewConduit();
 
     // if someone needs a refresh of any active params,
     // we are here to service that request!
     useBus().on("refreshCredentials", async () => {
-      await this._refreshCredentialData();
-      this._updateWebViewViewCredentials();
+      await this.refreshCredentialData();
+      this.updateWebViewViewCredentials();
     });
-    useBus().on("requestActiveConfig", () => {
-      useBus().trigger("activeConfigChanged", this._getActiveConfig());
+    useBus().on("requestActiveConfig", async () => {
+      useBus().trigger(
+        "activeConfigChanged",
+        await this.state.getSelectedConfiguration(),
+      );
     });
-    useBus().on("requestActiveContentRecord", () => {
+    useBus().on("requestActiveContentRecord", async () => {
       useBus().trigger(
         "activeContentRecordChanged",
-        this._getActiveContentRecord(),
+        await this.state.getSelectedContentRecord(),
       );
     });
 
-    useBus().on("activeConfigChanged", (cfg) => {
-      this.sendRefreshedFilesLists();
-      this._onRefreshPythonPackages();
-      this._onRefreshRPackages();
+    useBus().on(
+      "activeConfigChanged",
+      (cfg: Configuration | ConfigurationError | undefined) => {
+        this.sendRefreshedFilesLists();
+        this.onRefreshPythonPackages();
+        this.onRefreshRPackages();
 
-      this.configWatchers?.dispose();
-      this.configWatchers = new ConfigWatcherManager(cfg);
+        this.configWatchers?.dispose();
+        if (cfg && isConfigurationError(cfg)) {
+          return;
+        }
+        this.configWatchers = new ConfigWatcherManager(cfg);
 
-      this.configWatchers.configFile?.onDidChange(
-        this.sendRefreshedFilesLists,
-        this,
-      );
+        this.configWatchers.configFile?.onDidChange(
+          this.sendRefreshedFilesLists,
+          this,
+        );
 
-      this.configWatchers.pythonPackageFile?.onDidCreate(
-        this._onRefreshPythonPackages,
-        this,
-      );
-      this.configWatchers.pythonPackageFile?.onDidChange(
-        this._onRefreshPythonPackages,
-        this,
-      );
-      this.configWatchers.pythonPackageFile?.onDidDelete(
-        this._onRefreshPythonPackages,
-        this,
-      );
+        this.configWatchers.pythonPackageFile?.onDidCreate(
+          this.onRefreshPythonPackages,
+          this,
+        );
+        this.configWatchers.pythonPackageFile?.onDidChange(
+          this.onRefreshPythonPackages,
+          this,
+        );
+        this.configWatchers.pythonPackageFile?.onDidDelete(
+          this.onRefreshPythonPackages,
+          this,
+        );
 
-      this.configWatchers.rPackageFile?.onDidCreate(
-        this._onRefreshRPackages,
-        this,
-      );
-      this.configWatchers.rPackageFile?.onDidChange(
-        this._onRefreshRPackages,
-        this,
-      );
-      this.configWatchers.rPackageFile?.onDidDelete(
-        this._onRefreshRPackages,
-        this,
-      );
-    });
+        this.configWatchers.rPackageFile?.onDidCreate(
+          this.onRefreshRPackages,
+          this,
+        );
+        this.configWatchers.rPackageFile?.onDidChange(
+          this.onRefreshRPackages,
+          this,
+        );
+        this.configWatchers.rPackageFile?.onDidDelete(
+          this.onRefreshRPackages,
+          this,
+        );
+      },
+    );
 
     // useBus().on("getGitInfo", async() => {
     //Get access to API provided by Git extension that is always part of VS Code
@@ -209,37 +229,32 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   /**
    * Dispatch messages passed from the webview to the handling code
    */
-  private async _onConduitMessage(msg: WebviewToHostMessage) {
+  private async onConduitMessage(msg: WebviewToHostMessage) {
     switch (msg.kind) {
       case WebviewToHostMessageType.DEPLOY:
-        return await this._onDeployMsg(msg);
+        return await this.onDeployMsg(msg);
       case WebviewToHostMessageType.INITIALIZING:
-        return await this._onInitializingMsg();
+        return await this.onInitializingMsg();
       case WebviewToHostMessageType.EDIT_CONFIGURATION:
-        return await this._onEditConfigurationMsg(msg);
-      case WebviewToHostMessageType.NEW_CONFIGURATION:
-        return await this._onNewConfigurationMsg();
-      case WebviewToHostMessageType.SELECT_CONFIGURATION:
-        return await this.selectConfigForDeployment();
+        return await this.onEditConfigurationMsg(msg);
+      case WebviewToHostMessageType.SHOW_SELECT_CONFIGURATION:
+        return await this.showSelectOrCreateConfigForDeployment();
       case WebviewToHostMessageType.NAVIGATE:
-        return await this._onNavigateMsg(msg);
+        return await this.onNavigateMsg(msg);
       case WebviewToHostMessageType.SAVE_SELECTION_STATE:
-        return await this._onSaveSelectionState(msg);
+        return await this.onSaveSelectionState(msg);
       case WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES:
-        return await this._onRefreshPythonPackages();
+        return await this.onRefreshPythonPackages();
       case WebviewToHostMessageType.REFRESH_R_PACKAGES:
-        return await this._onRefreshRPackages();
+        return await this.onRefreshRPackages();
       case WebviewToHostMessageType.VSCODE_OPEN_RELATIVE:
-        return await this._onRelativeOpenVSCode(msg);
+        return await this.onRelativeOpenVSCode(msg);
       case WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS:
-        return await this._onScanForPythonPackageRequirements();
+        return await this.onScanForPythonPackageRequirements();
       case WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS:
-        return await this._onScanForRPackageRequirements();
+        return await this.onScanForRPackageRequirements();
       case WebviewToHostMessageType.VSCODE_OPEN:
-        return commands.executeCommand(
-          "vscode.open",
-          Uri.parse(msg.content.uri),
-        );
+        return await this.onVSCodeOpen(msg);
       case WebviewToHostMessageType.REQUEST_FILES_LISTS:
         return this.sendRefreshedFilesLists();
       case WebviewToHostMessageType.INCLUDE_FILE:
@@ -258,34 +273,67 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this._requestGitStatus();
       default:
         throw new Error(
-          `Error: _onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
+          `Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
         );
     }
   }
 
-  private async _onDeployMsg(msg: DeployMsg) {
+  private async onVSCodeOpen(msg: VSCodeOpenMsg) {
+    return await commands.executeCommand(
+      "vscode.open",
+      Uri.parse(msg.content.uri),
+    );
+  }
+
+  private async initiateDeployment(
+    deploymentName: string,
+    credentialName: string,
+    configurationName: string,
+    projectDir: string,
+  ) {
     try {
       const api = await useApi();
       const response = await api.contentRecords.publish(
-        msg.content.deploymentName,
-        msg.content.credentialName,
-        msg.content.configurationName,
+        deploymentName,
+        credentialName,
+        configurationName,
+        projectDir,
       );
-      deployProject(response.data.localId, this._stream);
+      deployProject(response.data.localId, this.stream);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError("homeView, deploy", error);
       window.showInformationMessage(`Failed to deploy . ${summary}`);
     }
   }
 
-  private async _onInitializingMsg() {
-    // send back the data needed.
-    await this.refreshAll(true);
+  private async onDeployMsg(msg: DeployMsg) {
+    this.initiateDeployment(
+      msg.content.deploymentName,
+      msg.content.credentialName,
+      msg.content.configurationName,
+      msg.content.projectDir,
+    );
+  }
+
+  private async onInitializingMsg() {
+    // send back the data needed. Optimize request for initialization...
+    await this.refreshAll(false, true);
     this.setInitializationContext(HomeViewInitialized.initialized);
 
     // On first run, we have no saved state. Trigger a save
     // so we have the state, and can notify dependent views.
-    this._requestWebviewSaveSelection();
+    this.requestWebviewSaveSelection();
+
+    // Signal the webapp that we believe the initialization refreshes
+    // are finished.
+    this.webviewConduit.sendMsg({
+      kind: HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE,
+    });
+
+    // signal our initialization has completed
+    if (this.initCompleteResolver) {
+      this.initCompleteResolver();
+    }
   }
 
   private setInitializationContext(context: HomeViewInitialized) {
@@ -296,50 +344,38 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
   }
 
-  private async _onEditConfigurationMsg(msg: EditConfigurationMsg) {
-    let config: Configuration | ConfigurationError | undefined;
-    config = this._configs.find(
-      (config) => config.configurationName === msg.content.configurationName,
+  private async onEditConfigurationMsg(msg: EditConfigurationMsg) {
+    await commands.executeCommand(
+      "vscode.open",
+      Uri.file(msg.content.configurationPath),
     );
-    if (!config) {
-      config = this.configsInError.find(
-        (config) => config.configurationName === msg.content.configurationName,
-      );
-    }
-    if (config) {
-      await commands.executeCommand(
-        "vscode.open",
-        Uri.file(config.configurationPath),
-      );
-    }
   }
 
-  private async _onNewConfigurationMsg() {
-    await commands.executeCommand(Commands.Configurations.New, Views.HomeView);
-  }
-
-  private async _onNavigateMsg(msg: NavigateMsg) {
+  private async onNavigateMsg(msg: NavigateMsg) {
     await env.openExternal(Uri.parse(msg.content.uriPath));
   }
 
-  private async _onSaveSelectionState(msg: SaveSelectionStatedMsg) {
-    await this._saveSelectionState(msg.content.state);
+  private async onSaveSelectionState(msg: SaveSelectionStatedMsg) {
+    await this.saveSelectionState(msg.content.state);
   }
 
   private async updateFileList(uri: string, action: FileAction) {
-    const activeConfig = this._getActiveConfig();
+    const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig === undefined) {
       console.error("homeView::updateFileList: No active configuration.");
       return;
     }
-
     try {
       const api = await useApi();
-      await api.files.updateFileList(
+      const apiRequest = api.files.updateFileList(
         activeConfig.configurationName,
         uri,
         action,
+        activeConfig.projectDir,
       );
+      showProgress("Updating File List", apiRequest, Views.HomeView);
+
+      await apiRequest;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::updateFileList",
@@ -350,20 +386,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private _onPublishStart() {
-    this._webviewConduit.sendMsg({
+  private onPublishStart() {
+    this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.PUBLISH_START,
     });
   }
 
-  private _onPublishSuccess() {
-    this._webviewConduit.sendMsg({
+  private onPublishSuccess() {
+    this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS,
     });
   }
 
-  private _onPublishFailure(msg: EventStreamMessage) {
-    this._webviewConduit.sendMsg({
+  private onPublishFailure(msg: EventStreamMessage) {
+    this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.PUBLISH_FINISH_FAILURE,
       content: {
         data: {
@@ -373,23 +409,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private async _refreshContentRecordData() {
+  private async refreshContentRecordData() {
     try {
-      // API Returns:
-      // 200 - success
-      // 500 - internal server error
-      const api = await useApi();
-      const response = await api.contentRecords.getAll();
-      const contentRecords = response.data;
-      this._contentRecords = [];
-      contentRecords.forEach((contentRecord) => {
-        if (!isContentRecordError(contentRecord)) {
-          this._contentRecords.push(contentRecord);
-        }
-      });
+      const refresh = this.state.refreshContentRecords();
+      showProgress("Refreshing Deployments", refresh, Views.HomeView);
+      await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "_refreshContentRecordData::contentRecords.getAll",
+        "refreshContentRecordData::contentRecords.getAll",
         error,
       );
       window.showInformationMessage(summary);
@@ -397,23 +424,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private async _refreshConfigurationData() {
+  private async refreshConfigurationData() {
     try {
-      const api = await useApi();
-      const response = await api.configurations.getAll();
-      const configurations = response.data;
-      this._configs = [];
-      this.configsInError = [];
-      configurations.forEach((config) => {
-        if (!isConfigurationError(config)) {
-          this._configs.push(config);
-        } else {
-          this.configsInError.push(config);
-        }
-      });
+      const refresh = this.state.refreshConfigurations();
+      showProgress("Refreshing Configurations", refresh, Views.HomeView);
+      await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "_refreshConfigurationData::configurations.getAll",
+        "refreshConfigurationData::configurations.getAll",
         error,
       );
       window.showInformationMessage(summary);
@@ -421,14 +439,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private async _refreshCredentialData() {
+  private async refreshCredentialData() {
     try {
-      const api = await useApi();
-      const response = await api.credentials.list();
-      this._credentials = response.data;
+      const refresh = this.state.refreshCredentials();
+      showProgress("Refreshing Credentials", refresh, Views.HomeView);
+      await refresh;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "_refreshCredentialData::credentials.list",
+        "refreshCredentialData::credentials.list",
         error,
       );
       window.showInformationMessage(summary);
@@ -436,42 +454,39 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private _updateWebViewViewContentRecords(
-    selectedContentRecordName?: string | null,
+  private updateWebViewViewContentRecords(
+    deploymentSelector?: DeploymentSelector | null,
   ) {
-    this._webviewConduit.sendMsg({
+    this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,
       content: {
-        contentRecords: this._contentRecords,
-        selectedContentRecordName,
+        contentRecords: this.state.contentRecords,
+        deploymentSelected: deploymentSelector,
       },
     });
   }
 
-  private _updateWebViewViewConfigurations(
-    selectedConfigurationName?: string | null,
-  ) {
-    this._webviewConduit.sendMsg({
+  private updateWebViewViewConfigurations() {
+    this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CONFIG_DATA,
       content: {
-        configurations: this._configs,
-        configurationsInError: this.configsInError,
-        selectedConfigurationName,
+        configurations: this.state.validConfigs,
+        configurationsInError: this.state.configsInError,
       },
     });
   }
 
-  private _updateWebViewViewCredentials() {
-    this._webviewConduit.sendMsg({
+  private updateWebViewViewCredentials() {
+    this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA,
       content: {
-        credentials: this._credentials,
+        credentials: this.state.credentials,
       },
     });
   }
 
-  private _requestWebviewSaveSelection() {
-    this._webviewConduit.sendMsg({
+  private requestWebviewSaveSelection() {
+    this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.SAVE_SELECTION,
     });
   }
@@ -508,7 +523,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             `Unable to extract repo from fetch URL: ${remote.fetchUrl}`,
           );
         }
-        this._webviewConduit.sendMsg({
+        this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.GIT_STATUS,
           content: {
             repo: gitHubRepo,
@@ -520,7 +535,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           },
         });
       } catch (e) {
-        this._webviewConduit.sendMsg({
+        this.webviewConduit.sendMsg({
           kind: HostToWebviewMessageType.GIT_STATUS,
           content: {
             error: getMessageFromError(e),
@@ -531,54 +546,36 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }, 1000); // TODO.. this one second refresh is rediculous.
   }
 
-  private _getSelectionState(): HomeViewState {
-    const state = this._context.workspaceState.get<HomeViewState>(
-      LocalState.LastSelectionState,
-      {
-        deploymentName: undefined,
-        configurationName: undefined,
-      },
-    );
-    return state;
-  }
-
-  private _getActiveConfig(): Configuration | undefined {
-    const savedState = this._getSelectionState();
-    return this.getConfigByName(savedState.configurationName);
-  }
-
-  private _getActiveContentRecord():
-    | ContentRecord
-    | PreContentRecord
-    | undefined {
-    const savedState = this._getSelectionState();
-    return this.getContentRecordByName(savedState.deploymentName);
-  }
-
-  private getContentRecordByName(name: string | undefined) {
-    return this._contentRecords.find((d) => d.deploymentName === name);
-  }
-
-  private getConfigByName(name: string | undefined) {
-    return this._configs.find((c) => c.configurationName === name);
-  }
-
-  private async _saveSelectionState(state: HomeViewState): Promise<void> {
-    await this._context.workspaceState.update(
-      LocalState.LastSelectionState,
-      state,
-    );
-
+  private async saveSelectionState(
+    state: DeploymentSelector | null,
+  ): Promise<void> {
+    if (!state) {
+      // NOTE: Didn't make these fields optional because of the burden of
+      // type checking before use
+      await this.state.updateSelection({
+        deploymentName: "",
+        deploymentPath: "",
+        projectDir: "",
+        version: "v1",
+      });
+    } else {
+      await this.state.updateSelection({
+        ...state,
+        version: "v1",
+      });
+    }
     useBus().trigger(
       "activeContentRecordChanged",
-      this._getActiveContentRecord(),
+      await this.state.getSelectedContentRecord(),
     );
-    useBus().trigger("activeConfigChanged", this._getActiveConfig());
+    useBus().trigger(
+      "activeConfigChanged",
+      await this.state.getSelectedConfiguration(),
+    );
   }
 
-  private async _onRefreshPythonPackages() {
-    const savedState = this._getSelectionState();
-    const activeConfiguration = savedState.configurationName;
+  private async onRefreshPythonPackages() {
+    const activeConfiguration = await this.state.getSelectedConfiguration();
     let pythonProject = true;
     let packages: string[] = [];
     let packageFile: string | undefined;
@@ -586,9 +583,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const api = await useApi();
 
-    if (activeConfiguration) {
-      const currentConfig = this.getConfigByName(activeConfiguration);
-      const pythonSection = currentConfig?.configuration.python;
+    if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
+      const pythonSection = activeConfiguration.configuration.python;
       if (!pythonSection) {
         pythonProject = false;
       } else {
@@ -596,8 +592,17 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = pythonSection.packageFile;
           packageMgr = pythonSection.packageManager;
 
-          const response =
-            await api.packages.getPythonPackages(activeConfiguration);
+          const apiRequest = api.packages.getPythonPackages(
+            activeConfiguration.configurationName,
+            activeConfiguration.projectDir,
+          );
+          showProgress(
+            "Refreshing Python Packages",
+            apiRequest,
+            Views.HomeView,
+          );
+
+          const response = await apiRequest;
           packages = response.data.requirements;
         } catch (error: unknown) {
           if (isAxiosError(error) && error.response?.status === 404) {
@@ -611,7 +616,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             pythonProject = false;
           } else {
             const summary = getSummaryStringFromError(
-              "homeView::_onRefreshPythonPackages",
+              "homeView::onRefreshPythonPackages",
               error,
             );
             window.showInformationMessage(summary);
@@ -620,7 +625,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
       }
     }
-    this._webviewConduit.sendMsg({
+    this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES,
       content: {
         pythonProject,
@@ -631,9 +636,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private async _onRefreshRPackages() {
-    const savedState = this._getSelectionState();
-    const activeConfiguration = savedState.configurationName;
+  private async onRefreshRPackages() {
+    const activeConfiguration = await this.state.getSelectedConfiguration();
     let rProject = true;
     let packages: RPackage[] = [];
     let packageFile: string | undefined;
@@ -642,9 +646,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     const api = await useApi();
 
-    if (activeConfiguration) {
-      const currentConfig = this.getConfigByName(activeConfiguration);
-      const rSection = currentConfig?.configuration.r;
+    if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
+      const rSection = activeConfiguration.configuration.r;
       if (!rSection) {
         rProject = false;
       } else {
@@ -652,7 +655,13 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = rSection.packageFile;
           packageMgr = rSection.packageManager;
 
-          const response = await api.packages.getRPackages(activeConfiguration);
+          const apiRequest = api.packages.getRPackages(
+            activeConfiguration.configurationName,
+            activeConfiguration.projectDir,
+          );
+          showProgress("Refreshing R Packages", apiRequest, Views.HomeView);
+
+          const response = await apiRequest;
           packages = [];
           Object.keys(response.data.packages).forEach((key: string) =>
             packages.push(response.data.packages[key]),
@@ -670,7 +679,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             rProject = false;
           } else {
             const summary = getSummaryStringFromError(
-              "homeView::_onRefreshRPackages",
+              "homeView::onRefreshRPackages",
               error,
             );
             window.showInformationMessage(summary);
@@ -679,7 +688,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
       }
     }
-    this._webviewConduit.sendMsg({
+    this.webviewConduit.sendMsg({
       kind: HostToWebviewMessageType.UPDATE_R_PACKAGES,
       content: {
         rProject,
@@ -691,27 +700,48 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private async _onRelativeOpenVSCode(msg: VSCodeOpenRelativeMsg) {
+  private async onRelativeOpenVSCode(msg: VSCodeOpenRelativeMsg) {
     if (this.root === undefined) {
       return;
     }
-    const fileUri = Uri.joinPath(this.root.uri, msg.content.relativePath);
+    const activeContentRecord = await this.state.getSelectedContentRecord();
+    if (!activeContentRecord) {
+      return;
+    }
+
+    const fileUri = Uri.joinPath(
+      this.root.uri,
+      activeContentRecord.projectDir,
+      msg.content.relativePath,
+    );
     await commands.executeCommand("vscode.open", fileUri);
   }
 
-  private async _onScanForPythonPackageRequirements() {
+  private async onScanForPythonPackageRequirements() {
     if (this.root === undefined) {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
-    const activeConfiguration = this._getActiveConfig();
+    const activeConfiguration = await this.state.getSelectedConfiguration();
+    if (
+      activeConfiguration === undefined ||
+      isConfigurationError(activeConfiguration)
+    ) {
+      // Cannot scan if there is no active configuration.
+      return;
+    }
+
     const relPathPackageFile =
-      activeConfiguration?.configuration.python?.packageFile;
+      activeConfiguration.configuration.python?.packageFile;
     if (relPathPackageFile === undefined) {
       return;
     }
 
-    const fileUri = Uri.joinPath(this.root.uri, relPathPackageFile);
+    const fileUri = Uri.joinPath(
+      this.root.uri,
+      activeConfiguration.projectDir,
+      relPathPackageFile,
+    );
 
     if (await fileExists(fileUri)) {
       const ok = await confirmOverwrite(
@@ -725,33 +755,59 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     try {
       const api = await useApi();
       const python = await getPythonInterpreterPath();
-      await api.packages.createPythonRequirementsFile(
+      const apiRequest = api.packages.createPythonRequirementsFile(
+        activeConfiguration.projectDir,
         python,
         relPathPackageFile,
       );
+      showProgress(
+        "Refreshing Python Requirements File",
+        apiRequest,
+        Views.HomeView,
+      );
+
+      const response = (await apiRequest).data;
       await commands.executeCommand("vscode.open", fileUri);
+
+      if (response.incomplete.length > 0) {
+        const importList = response.incomplete.join(", ");
+        const msg = `Could not find installed packages for some imports using ${response.python}. Install the required packages, or select a different interpreter, and try scanning again. Imports: ${importList}`;
+        window.showWarningMessage(msg);
+      }
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "homeView::_onScanForPythonPackageRequirements",
+        "homeView::onScanForPythonPackageRequirements",
         error,
       );
       window.showInformationMessage(summary);
     }
   }
 
-  private async _onScanForRPackageRequirements() {
+  private async onScanForRPackageRequirements() {
     if (this.root === undefined) {
       // We shouldn't get here if there's no workspace folder open.
       return;
     }
-    const activeConfiguration = this._getActiveConfig();
+    const activeConfiguration = await this.state.getSelectedConfiguration();
+    if (
+      activeConfiguration === undefined ||
+      isConfigurationError(activeConfiguration)
+    ) {
+      // Cannot scan if there is no active configuration.
+      return;
+    }
+
     const relPathPackageFile =
       activeConfiguration?.configuration.r?.packageFile;
     if (relPathPackageFile === undefined) {
       return;
     }
 
-    const fileUri = Uri.joinPath(this.root.uri, relPathPackageFile);
+    const fileUri = Uri.joinPath(
+      this.root.uri,
+      activeConfiguration.projectDir,
+      relPathPackageFile,
+    );
 
     if (await fileExists(fileUri)) {
       const ok = await confirmOverwrite(
@@ -764,141 +820,188 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
 
     try {
       const api = await useApi();
-      await api.packages.createRRequirementsFile(relPathPackageFile);
+      const apiRequest = api.packages.createRRequirementsFile(
+        activeConfiguration.projectDir,
+        relPathPackageFile,
+      );
+      showProgress("Creating R Requirements File", apiRequest, Views.HomeView);
+
+      await apiRequest;
       await commands.executeCommand("vscode.open", fileUri);
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "homeView::_onScanForRPackageRequirements",
+        "homeView::onScanForRPackageRequirements",
         error,
       );
       window.showInformationMessage(summary);
     }
   }
 
-  private async propogateDeploymentSelection(
-    configurationName?: string,
-    deploymentName?: string,
+  private async propagateDeploymentSelection(
+    deploymentSelector: DeploymentSelector | null,
   ) {
     // We have to break our protocol and go ahead and write this into storage,
     // in case this multi-stepper is actually running ahead of the webview
     // being brought up.
-    this._saveSelectionState({
-      deploymentName,
-      configurationName,
-    });
+    this.saveSelectionState(deploymentSelector);
     // Now push down into the webview
-    this._updateWebViewViewCredentials();
-    this._updateWebViewViewConfigurations(configurationName);
-    this._updateWebViewViewContentRecords(deploymentName);
+    this.updateWebViewViewCredentials();
+    this.updateWebViewViewConfigurations();
+    this.updateWebViewViewContentRecords(deploymentSelector);
     // And have the webview save what it has selected.
-    this._requestWebviewSaveSelection();
+    this.requestWebviewSaveSelection();
   }
 
-  private async selectConfigForDeployment() {
-    const activeDeployment = this._getActiveContentRecord();
-    if (activeDeployment === undefined) {
+  private async showSelectOrCreateConfigForDeployment(): Promise<
+    DeploymentSelector | undefined
+  > {
+    const targetContentRecord = await this.state.getSelectedContentRecord();
+    if (targetContentRecord === undefined) {
       console.error(
-        "homeView::selectConfigForDeployment: No active deployment.",
+        "homeView::showSelectConfigForDeployment: No target deployment.",
       );
-      return;
+      return undefined;
     }
-    const config = await selectConfig(activeDeployment, Views.HomeView);
-    if (config) {
-      const api = await useApi();
-      await api.contentRecords.patch(
-        activeDeployment.deploymentName,
-        config.configurationName,
+    try {
+      // disable our home view, we are initiating a multi-step sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
+      });
+      const config = await selectNewOrExistingConfig(
+        targetContentRecord,
+        Views.HomeView,
+        await this.state.getSelectedConfiguration(),
       );
-    }
-  }
-
-  private async createConfigForDeployment() {
-    const activeDeployment = this._getActiveContentRecord();
-    if (activeDeployment === undefined) {
-      console.error(
-        "homeView::createConfigForDestination: No active deployment.",
-      );
-      return;
-    }
-    // selectConfig handles create as well
-    const config = await selectConfig(activeDeployment, Views.HomeView);
-    if (config) {
-      const activeContentRecord = this._getActiveContentRecord();
-      if (activeContentRecord === undefined) {
-        console.error(
-          "homeView::selectConfigForDeployment: No active deployment.",
+      if (config) {
+        const api = await useApi();
+        const apiRequest = api.contentRecords.patch(
+          targetContentRecord.deploymentName,
+          config.configurationName,
+          targetContentRecord.projectDir,
         );
-        return;
+        showProgress("Updating Config", apiRequest, Views.HomeView);
+
+        await apiRequest;
+
+        // now select the new, updated or existing deployment
+        const deploymentSelector: DeploymentSelector = {
+          deploymentPath: targetContentRecord.deploymentPath,
+          deploymentName: targetContentRecord.saveName,
+          projectDir: targetContentRecord.projectDir,
+        };
+        this.propagateDeploymentSelection(deploymentSelector);
+
+        const credential =
+          this.state.findCredentialForContentRecord(targetContentRecord);
+
+        if (
+          !targetContentRecord.deploymentName ||
+          !credential ||
+          !config.configurationName ||
+          !targetContentRecord.projectDir
+        ) {
+          // display an error.
+          return undefined;
+        }
+        return {
+          deploymentName: targetContentRecord.deploymentName,
+          deploymentPath: targetContentRecord.deploymentPath,
+          projectDir: targetContentRecord.projectDir,
+        };
       }
-      const api = await useApi();
-      await api.contentRecords.patch(
-        activeContentRecord.deploymentName,
-        config.configurationName,
-      );
+      return undefined;
+    } finally {
+      // enable our home view, we are done with our sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.HIDE_DISABLE_OVERLAY,
+      });
     }
   }
 
   public async showNewDeploymentMultiStep(
-    viewId?: string,
-  ): Promise<DeploymentNames | undefined> {
-    const deploymentObjects = await newDeployment(viewId);
-    if (deploymentObjects) {
-      // add out new objects into our collections possibly ahead (we don't know) of
-      // the file refresh activity (for contentRecord and config)
-      // and the credential refresh that we will kick off
-      //
-      // Doing this as an alternative to forcing a full refresh
-      // of all three APIs prior to updating the UX, which would
-      // be seen as a visible delay (we'd have to have a progress indicator).
-      let refreshCredentials = false;
-      if (
-        !this._contentRecords.find(
-          (contentRecord) =>
-            contentRecord.saveName === deploymentObjects.contentRecord.saveName,
-        )
-      ) {
-        this._contentRecords.push(deploymentObjects.contentRecord);
-      }
-      if (
-        !this._configs.find(
-          (config) =>
-            config.configurationName ===
-            deploymentObjects.configuration.configurationName,
-        )
-      ) {
-        this._configs.push(deploymentObjects.configuration);
-      }
-      if (
-        !this._credentials.find(
-          (credential) => credential.name === deploymentObjects.credential.name,
-        )
-      ) {
-        this._credentials.push(deploymentObjects.credential);
-        refreshCredentials = true;
-      }
-
-      this.propogateDeploymentSelection(
-        deploymentObjects.configuration.configurationName,
-        deploymentObjects.contentRecord.saveName,
+    viewId: string,
+    projectDir?: string,
+    entryPointFile?: string,
+  ): Promise<PublishProcessParams | undefined> {
+    // We need the initial queries to finish, before we can
+    // use them (contentRecords, credentials and configs)
+    await this.initComplete;
+    try {
+      // disable our home view, we are initiating a multi-step sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
+      });
+      const deploymentObjects = await newDeployment(
+        viewId,
+        projectDir,
+        entryPointFile,
       );
-      // Credentials aren't auto-refreshed, so we have to trigger it ourselves.
-      if (refreshCredentials) {
-        useBus().trigger("refreshCredentials", undefined);
+      if (deploymentObjects) {
+        // add out new objects into our collections possibly ahead (we don't know) of
+        // the file refresh activity (for contentRecord and config)
+        // and the credential refresh that we will kick off
+        //
+        // Doing this as an alternative to forcing a full refresh
+        // of all three APIs prior to updating the UX, which would
+        // be seen as a visible delay (we'd have to have a progress indicator).
+        let refreshCredentials = false;
+        if (
+          !this.state.findContentRecord(
+            deploymentObjects.contentRecord.saveName,
+            deploymentObjects.contentRecord.projectDir,
+          )
+        ) {
+          this.state.contentRecords.push(deploymentObjects.contentRecord);
+        }
+        if (
+          !this.state.findValidConfig(
+            deploymentObjects.configuration.configurationName,
+            deploymentObjects.configuration.projectDir,
+          )
+        ) {
+          this.state.configurations.push(deploymentObjects.configuration);
+        }
+        if (!this.state.findCredential(deploymentObjects.credential.name)) {
+          this.state.credentials.push(deploymentObjects.credential);
+          refreshCredentials = true;
+        }
+        const deploymentSelector: DeploymentSelector = {
+          deploymentPath: deploymentObjects.contentRecord.deploymentPath,
+          deploymentName: deploymentObjects.contentRecord.saveName,
+          projectDir: deploymentObjects.contentRecord.projectDir,
+        };
+
+        this.propagateDeploymentSelection(deploymentSelector);
+        // Credentials aren't auto-refreshed, so we have to trigger it ourselves.
+        if (refreshCredentials) {
+          useBus().trigger("refreshCredentials", undefined);
+        }
+        return {
+          deploymentName: deploymentObjects.contentRecord.deploymentName,
+          deploymentPath: deploymentObjects.contentRecord.deploymentPath,
+          projectDir: deploymentObjects.contentRecord.projectDir,
+          credentialName: deploymentObjects.credential.name,
+          configurationName: deploymentObjects.configuration.configurationName,
+        };
       }
-      return {
-        configurationName: deploymentObjects.configuration.configurationName,
-        deploymentName: deploymentObjects.contentRecord.saveName,
-      };
+      return undefined;
+    } finally {
+      // enable our home view, we are done with the multi-step sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.HIDE_DISABLE_OVERLAY,
+      });
     }
-    return undefined;
   }
 
-  private showNewCredential() {
-    const contentRecord = this._getActiveContentRecord();
+  private async showNewCredential() {
+    const contentRecord = await this.state.getSelectedContentRecord();
+    if (!contentRecord) {
+      return;
+    }
 
-    return commands.executeCommand(
+    return await commands.executeCommand(
       Commands.Credentials.Add,
-      contentRecord?.serverUrl,
+      contentRecord.serverUrl,
     );
   }
 
@@ -906,130 +1009,215 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     return commands.executeCommand(Commands.Logs.Focus);
   }
 
-  private async showDeploymentQuickPick(): Promise<
-    DeploymentNames | undefined
-  > {
-    // Create quick pick list from current contentRecords, credentials and configs
-    const deployments: DeploymentQuickPick[] = [];
-    const lastContentRecordName = this._getActiveContentRecord()?.saveName;
-    const lastConfigName = this._getActiveConfig()?.configurationName;
+  private async showDeploymentQuickPick(
+    contentRecordsSubset?: AllContentRecordTypes[],
+    projectDir?: string,
+  ): Promise<PublishProcessParams | undefined> {
+    try {
+      // disable our home view, we are initiating a multi-step sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
+      });
 
-    this._contentRecords.forEach((contentRecord) => {
-      if (
-        isContentRecordError(contentRecord) ||
-        (isPreContentRecord(contentRecord) &&
-          !isPreContentRecordWithConfig(contentRecord))
-      ) {
-        // we won't include these for now. Perhaps in the future, we can show them
-        // as disabled.
-        return;
+      // We need the latest lists. No choice but to refresh everything
+      // once again.
+      await this.refreshAll(true, true);
+
+      // Create quick pick list from current contentRecords, credentials and configs
+      let deploymentQuickPickList: DeploymentQuickPick[] = [];
+      const lastContentRecord = await this.state.getSelectedContentRecord();
+      const lastContentRecordName = lastContentRecord?.saveName;
+      const lastContentRecordProjectDir = projectDir
+        ? projectDir
+        : lastContentRecord?.projectDir;
+      const lastConfigName = lastContentRecord?.configurationName;
+      const createNewDeploymentLabel = "Create a New Deployment";
+
+      const includedContentRecords = contentRecordsSubset
+        ? contentRecordsSubset
+        : this.state.contentRecords;
+
+      // Display New Deployment at beginning
+      deploymentQuickPickList.push({
+        label: "New",
+        kind: QuickPickItemKind.Separator,
+      });
+      deploymentQuickPickList.push({
+        iconPath: new ThemeIcon("plus"),
+        label: createNewDeploymentLabel,
+        detail: "(or pick one of the existing deployments below)", // we're forcing a blank here, just to maintain height of selection
+        lastMatch: includedContentRecords.length ? false : true,
+      });
+
+      // Then we display the existing deployments
+      if (includedContentRecords.length) {
+        deploymentQuickPickList.push({
+          label: "Existing",
+          kind: QuickPickItemKind.Separator,
+        });
       }
+      const existingDeploymentQuickPickList: DeploymentQuickPick[] = [];
+      includedContentRecords.forEach((contentRecord) => {
+        if (
+          isContentRecordError(contentRecord) ||
+          (isPreContentRecord(contentRecord) &&
+            !isPreContentRecordWithConfig(contentRecord))
+        ) {
+          // we won't include these for now. Perhaps in the future, we can show them
+          // as disabled.
+          return;
+        }
 
-      let config: Configuration | undefined;
-      if (contentRecord.configurationName) {
-        config = this._configs.find(
-          (config) =>
-            config.configurationName === contentRecord.configurationName,
-        );
-      }
+        let config: Configuration | ConfigurationError | undefined;
+        if (contentRecord.configurationName) {
+          config = this.state.findValidConfig(
+            contentRecord.configurationName,
+            contentRecord.projectDir,
+          );
+          if (!config) {
+            config = this.state.findConfigInError(
+              contentRecord.configurationName,
+              contentRecord.projectDir,
+            );
+          }
+        }
 
-      let credential = this._credentials.find(
-        (credential) =>
-          normalizeURL(credential.url).toLowerCase() ===
-          normalizeURL(contentRecord.serverUrl).toLowerCase(),
+        let credential =
+          this.state.findCredentialForContentRecord(contentRecord);
+
+        const result = calculateTitle(contentRecord, config);
+        const title = result.title;
+        let problem = result.problem;
+
+        let configName = config?.configurationName;
+        if (!configName) {
+          configName = contentRecord.configurationName
+            ? `Missing Configuration ${contentRecord.configurationName}`
+            : `ERROR: No Config Entry in Deployment record - ${contentRecord.saveName}`;
+          problem = true;
+        }
+
+        let details = [];
+        if (!isRelativePathRoot(contentRecord.projectDir)) {
+          details.push(`${contentRecord.projectDir}${path.sep}`);
+        }
+        if (credential?.name) {
+          details.push(credential.name);
+        } else {
+          details.push(`Missing Credential for ${contentRecord.serverUrl}`);
+          problem = true;
+        }
+        const detail = details.join(" • ");
+
+        let lastMatch =
+          lastContentRecordName === contentRecord.saveName &&
+          lastContentRecordProjectDir === contentRecord.projectDir &&
+          lastConfigName === configName;
+
+        const deployment: DeploymentQuickPick = {
+          label: title,
+          detail,
+          iconPath: problem
+            ? new ThemeIcon("error")
+            : new ThemeIcon("cloud-upload"),
+          contentRecord,
+          config,
+          credentialName: credential?.name,
+          lastMatch,
+        };
+        // Should we not push deployments with no config or matching credentials?
+        existingDeploymentQuickPickList.push(deployment);
+      });
+      existingDeploymentQuickPickList.sort(
+        (a: QuickPickItem, b: QuickPickItem) => {
+          var x = a.label.toLowerCase();
+          var y = b.label.toLowerCase();
+          return x < y ? -1 : x > y ? 1 : 0;
+        },
+      );
+      deploymentQuickPickList = deploymentQuickPickList.concat(
+        existingDeploymentQuickPickList,
       );
 
-      const result = calculateTitle(contentRecord, config);
-      const title = result.title;
-      let problem = result.problem;
+      const toDispose: Disposable[] = [];
+      const deployment = await new Promise<DeploymentQuickPick | undefined>(
+        (resolve) => {
+          const quickPick = window.createQuickPick<DeploymentQuickPick>();
+          this.disposables.push(quickPick);
 
-      let configName = config?.configurationName;
-      if (!configName) {
-        configName = contentRecord.configurationName
-          ? `Missing Configuration ${contentRecord.configurationName}`
-          : `ERROR: No Config Entry in Deployment record - ${contentRecord.saveName}`;
-        problem = true;
+          quickPick.items = deploymentQuickPickList;
+          const lastMatches = deploymentQuickPickList.filter(
+            (deployment) => deployment.lastMatch,
+          );
+          if (lastMatches) {
+            quickPick.activeItems = lastMatches;
+          }
+          quickPick.title = "Select Deployment";
+          quickPick.ignoreFocusOut = true;
+          quickPick.matchOnDescription = true;
+          quickPick.matchOnDetail = true;
+          quickPick.show();
+
+          quickPick.onDidAccept(
+            () => {
+              quickPick.hide();
+              if (quickPick.selectedItems.length > 0) {
+                return resolve(quickPick.selectedItems[0]);
+              }
+              resolve(undefined);
+            },
+            undefined,
+            toDispose,
+          );
+          quickPick.onDidHide(() => resolve(undefined), undefined, toDispose);
+        },
+      ).finally(() => Disposable.from(...toDispose).dispose());
+
+      // If user selected create new, then switch over to that flow
+      if (deployment?.label === createNewDeploymentLabel) {
+        return this.showNewDeploymentMultiStep(Views.HomeView);
       }
 
-      let detail = credential?.name;
-      if (!credential?.name) {
-        detail = `Missing Credential for ${contentRecord.serverUrl}`;
-        problem = true;
+      let deploymentSelector: DeploymentSelector | undefined;
+      if (deployment && deployment.contentRecord) {
+        deploymentSelector = {
+          deploymentPath: deployment.contentRecord.deploymentPath,
+          deploymentName: deployment.contentRecord.saveName,
+          projectDir: deployment.contentRecord.projectDir,
+        };
+        this.updateWebViewViewCredentials();
+        this.updateWebViewViewConfigurations();
+        this.updateWebViewViewContentRecords(deploymentSelector);
+        this.requestWebviewSaveSelection();
       }
 
-      let lastMatch =
-        lastContentRecordName === contentRecord.saveName &&
-        lastConfigName === configName;
-
-      const deployment: DeploymentQuickPick = {
-        label: title,
-        detail,
-        iconPath: problem
-          ? new ThemeIcon("error")
-          : new ThemeIcon("cloud-upload"),
-        contentRecord,
-        config,
-        lastMatch,
-      };
-      // Should we not push deployments with no config or matching credentials?
-      deployments.push(deployment);
-    });
-
-    const toDispose: Disposable[] = [];
-    const deployment = await new Promise<DeploymentQuickPick | undefined>(
-      (resolve) => {
-        const quickPick = window.createQuickPick<DeploymentQuickPick>();
-        this._disposables.push(quickPick);
-
-        quickPick.items = deployments;
-        const lastMatches = deployments.filter(
-          (deployment) => deployment.lastMatch,
-        );
-        if (lastMatches) {
-          quickPick.activeItems = lastMatches;
-        }
-        quickPick.title = "Select Deployment";
-        quickPick.ignoreFocusOut = true;
-        quickPick.matchOnDescription = true;
-        quickPick.matchOnDetail = true;
-        quickPick.show();
-
-        quickPick.onDidAccept(
-          () => {
-            quickPick.hide();
-            if (quickPick.selectedItems.length > 0) {
-              return resolve(quickPick.selectedItems[0]);
-            }
-            resolve(undefined);
-          },
-          undefined,
-          toDispose,
-        );
-        quickPick.onDidHide(() => resolve(undefined), undefined, toDispose);
-      },
-    ).finally(() => Disposable.from(...toDispose).dispose());
-
-    let result: DeploymentNames | undefined;
-    if (deployment) {
-      result = {
-        deploymentName: deployment.contentRecord.saveName,
+      if (
+        !deploymentSelector ||
+        !deployment ||
+        !deployment.contentRecord ||
+        !deployment.detail ||
+        !deployment.credentialName
+      ) {
+        return;
+      }
+      return {
+        deploymentPath: deployment.contentRecord.deploymentPath,
+        deploymentName: deployment.contentRecord.deploymentName,
+        projectDir: deployment.contentRecord.projectDir,
+        credentialName: deployment.credentialName,
         configurationName: deployment.contentRecord.configurationName,
       };
-      this._updateWebViewViewCredentials();
-      this._updateWebViewViewConfigurations(result.configurationName);
-      this._updateWebViewViewContentRecords(result.deploymentName);
-      this._requestWebviewSaveSelection();
+    } finally {
+      // enable our home view, we are done with our sequence
+      this.webviewConduit.sendMsg({
+        kind: HostToWebviewMessageType.HIDE_DISABLE_OVERLAY,
+      });
     }
-    return result;
   }
 
-  public resolveWebviewView(
-    webviewView: WebviewView,
-    _: WebviewViewResolveContext,
-    _token: CancellationToken,
-  ) {
-    this._webviewView = webviewView;
-    this._webviewConduit.init(this._webviewView.webview);
+  public resolveWebviewView(webviewView: WebviewView) {
+    this.webviewView = webviewView;
+    this.webviewConduit.init(this.webviewView.webview);
 
     // Allow scripts in the webview
     webviewView.webview.options = {
@@ -1037,9 +1225,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       enableScripts: true,
       // Restrict the webview to only load resources from these directories
       localResourceRoots: [
-        Uri.joinPath(this._extensionUri, "webviews", "homeView", "dist"),
+        Uri.joinPath(this.extensionUri, "dist"),
+        Uri.joinPath(this.extensionUri, "webviews", "homeView", "dist"),
         Uri.joinPath(
-          this._extensionUri,
+          this.extensionUri,
           "node_modules",
           "@vscode",
           "codicons",
@@ -1049,15 +1238,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     };
 
     // Set the HTML content that will fill the webview view
-    webviewView.webview.html = this._getWebviewContent(
+    webviewView.webview.html = this.getWebviewContent(
       webviewView.webview,
-      this._extensionUri,
+      this.extensionUri,
     );
 
-    // Sets up an event listener to listen for messages passed from the webview view this._context
+    // Sets up an event listener to listen for messages passed from the webview view this.context
     // and executes code based on the message that is recieved
-    this._disposables.push(
-      this._webviewConduit.onMsg(this._onConduitMessage.bind(this)),
+    this.disposables.push(
+      this.webviewConduit.onMsg(this.onConduitMessage.bind(this)),
     );
   }
   /**
@@ -1071,7 +1260,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
    * @returns A template string literal containing the HTML that should be
    * rendered within the webview panel
    */
-  private _getWebviewContent(webview: Webview, extensionUri: Uri) {
+  private getWebviewContent(webview: Webview, extensionUri: Uri) {
     // The CSS files from the Vue build output
     const stylesUri = getUri(webview, extensionUri, [
       "webviews",
@@ -1094,6 +1283,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "dist",
       "codicon.css",
     ]);
+    // Custom Posit Publisher font
+    const positPublisherFontCssUri = getUri(webview, extensionUri, [
+      "dist",
+      "posit-publisher-icons.css",
+    ]);
 
     const nonce = getNonce();
 
@@ -1113,6 +1307,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           />
           <link rel="stylesheet" type="text/css" href="${stylesUri}">
           <link rel="stylesheet" type="text/css" href="${codiconsUri}">
+          <link rel="stylesheet" type="text/css" href="${positPublisherFontCssUri}">
           <title>Hello World</title>
         </head>
         <body>
@@ -1123,13 +1318,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     `;
   }
 
-  public refreshAll = async (includeSavedState?: boolean) => {
+  public refreshAll = async (
+    forceAll?: boolean,
+    includeSavedState?: boolean,
+  ) => {
     try {
-      await Promise.all([
-        this._refreshContentRecordData(),
-        this._refreshConfigurationData(),
-        this._refreshCredentialData(),
-      ]);
+      const apis: Promise<void>[] = [this.refreshCredentialData()];
+      if (forceAll) {
+        // we have been told to refresh everything
+        apis.push(this.refreshContentRecordData());
+        apis.push(this.refreshConfigurationData());
+      }
+      const allApis = Promise.all(apis);
+      showProgress("Refreshing Data", allApis, Views.HomeView);
+      await allApis;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "refreshAll::Promise.all",
@@ -1138,78 +1340,301 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       window.showInformationMessage(summary);
       return;
     }
+    const selectedContentRecord = await this.state.getSelectedContentRecord();
+    const selectedConfig = await this.state.getSelectedConfiguration();
+
     const selectionState = includeSavedState
-      ? this._getSelectionState()
+      ? this.state.getSelection()
       : undefined;
-    this._updateWebViewViewCredentials();
-    this._updateWebViewViewConfigurations(
-      selectionState?.configurationName || null,
-    );
-    this._updateWebViewViewContentRecords(
-      selectionState?.deploymentName || null,
-    );
+    this.updateWebViewViewCredentials();
+    this.updateWebViewViewConfigurations();
+    this.updateWebViewViewContentRecords(selectionState || null);
     if (includeSavedState && selectionState) {
-      useBus().trigger(
-        "activeContentRecordChanged",
-        this._getActiveContentRecord(),
-      );
-      useBus().trigger("activeConfigChanged", this._getActiveConfig());
+      useBus().trigger("activeContentRecordChanged", selectedContentRecord);
+      useBus().trigger("activeConfigChanged", selectedConfig);
     }
   };
 
   public refreshContentRecords = async () => {
-    await this._refreshContentRecordData();
-    this._updateWebViewViewContentRecords();
+    await this.refreshContentRecordData();
+    this.updateWebViewViewContentRecords();
     useBus().trigger(
       "activeContentRecordChanged",
-      this._getActiveContentRecord(),
+      await this.state.getSelectedContentRecord(),
     );
   };
 
   public refreshConfigurations = async () => {
-    await this._refreshConfigurationData();
-    this._updateWebViewViewConfigurations();
-    useBus().trigger("activeConfigChanged", this._getActiveConfig());
+    await this.refreshConfigurationData();
+    this.updateWebViewViewConfigurations();
+    useBus().trigger(
+      "activeConfigChanged",
+      await this.state.getSelectedConfiguration(),
+    );
   };
 
   public sendRefreshedFilesLists = async () => {
     const api = await useApi();
-    const activeConfig = this._getActiveConfig();
+    const activeConfig = await this.state.getSelectedConfiguration();
     if (activeConfig) {
-      const response = await api.files.getByConfiguration(
-        activeConfig.configurationName,
-      );
+      try {
+        const apiRequest = api.files.getByConfiguration(
+          activeConfig.configurationName,
+          activeConfig.projectDir,
+        );
+        showProgress("ReFreshing Files", apiRequest, Views.HomeView);
 
-      this._webviewConduit.sendMsg({
-        kind: HostToWebviewMessageType.REFRESH_FILES_LISTS,
-        content: {
-          ...splitFilesOnInclusion(response.data),
-        },
-      });
+        const response = await apiRequest;
+
+        this.webviewConduit.sendMsg({
+          kind: HostToWebviewMessageType.REFRESH_FILES_LISTS,
+          content: {
+            ...splitFilesOnInclusion(response.data),
+          },
+        });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "sendRefreshedFilesLists, files.getByConfiguration",
+          error,
+        );
+        window.showErrorMessage(`Failed to refresh files. ${summary}`);
+        return;
+      }
     }
   };
+
+  public initiatePublish(target: PublishProcessParams) {
+    this.initiateDeployment(
+      target.deploymentName,
+      target.credentialName,
+      target.configurationName,
+      target.projectDir,
+    );
+  }
+
+  public async handleFileInitiatedDeployment(uri: Uri) {
+    // Guide the user to create a new Deployment with that file as the entrypoint
+    // if one doesn’t exist
+    // Select the Deployment with an active configuration for that entrypoint if there
+    // is only one
+    // With multiple, if a compatible one is already active, then do nothing.
+    // Otherwise, prompt for selection between multiple compatible deployments
+
+    const entrypointDir = relativeDir(uri);
+    // If the file is outside the workspace, it cannot be an entrypoint
+    if (entrypointDir === undefined) {
+      return false;
+    }
+    const entrypointFile = uriUtils.basename(uri);
+
+    const api = await useApi();
+
+    await this.refreshAll(true, true);
+
+    // We need the initial queries to finish, before we can
+    // use them (contentRecords, credentials and configs)
+    await this.initComplete;
+
+    // get all of the deployments for projectDir
+    // get the configs which are filtered for the entrypoint in that projectDir
+    // determine a list of deployments that use those filtered configs
+
+    let contentRecordList: (ContentRecord | PreContentRecord)[] = [];
+    const getContentRecords = new Promise<void>(async (resolve, reject) => {
+      try {
+        const response = await api.contentRecords.getAll(entrypointDir, {
+          recursive: false,
+        });
+        response.data.forEach((cfg) => {
+          if (!isContentRecordError(cfg)) {
+            contentRecordList.push(cfg);
+          }
+        });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "handleFileInitiatedDeployment, contentRecords.getAll",
+          error,
+        );
+        window.showInformationMessage(
+          `Unable to continue due to deployment error. ${summary}`,
+        );
+        return reject();
+      }
+      return resolve();
+    });
+
+    let configMap = new Map<string, Configuration>();
+    const getConfigurations = new Promise<void>(async (resolve, reject) => {
+      try {
+        const response = await api.configurations.getAll(entrypointDir, {
+          entrypoint: entrypointFile,
+          recursive: false,
+        });
+        let rawConfigs = response.data;
+        rawConfigs.forEach((cfg) => {
+          if (!isConfigurationError(cfg)) {
+            configMap.set(cfg.configurationName, cfg);
+          }
+        });
+      } catch (error: unknown) {
+        const summary = getSummaryStringFromError(
+          "handleFileInitiatedDeployment, configurations.getAll",
+          error,
+        );
+        window.showErrorMessage(
+          `Unable to continue with API Error: ${summary}`,
+        );
+        return reject();
+      }
+      resolve();
+    });
+
+    const apisComplete = Promise.all([getContentRecords, getConfigurations]);
+
+    showProgress(
+      "Initializing::handleFileInitiatedDeployment",
+      apisComplete,
+      Views.HomeView,
+    );
+
+    try {
+      await apisComplete;
+    } catch {
+      // errors have already been displayed by the underlying promises..
+      return undefined;
+    }
+
+    // Build up a list of compatible content records with this entrypoint
+    // Unable to do this within the API because pre-deployments do not have
+    // their entrypoint recorded.
+    const compatibleContentRecords: (ContentRecord | PreContentRecord)[] = [];
+    contentRecordList.forEach((cfg) => {
+      if (configMap.get(cfg.configurationName)) {
+        compatibleContentRecords.push(cfg);
+      }
+    });
+
+    // if no deployments, create one
+    if (!compatibleContentRecords.length) {
+      // call new deployment
+      const selected = await this.showNewDeploymentMultiStep(
+        Views.HomeView,
+        entrypointDir,
+        entrypointFile,
+      );
+      // we do not publish this, as we expect the user needs
+      // to validate and update config settings.
+      return selected;
+    }
+    // only one deployment, just publish it
+    if (compatibleContentRecords.length === 1) {
+      const contentRecord = compatibleContentRecords[0];
+      const deploymentSelector: DeploymentSelector = {
+        deploymentPath: contentRecord.deploymentPath,
+        deploymentName: contentRecord.deploymentName,
+        projectDir: contentRecord.projectDir,
+      };
+      await this.propagateDeploymentSelection(deploymentSelector);
+      const credential =
+        this.state.findCredentialForContentRecord(contentRecord);
+      let credentialName = credential?.name;
+      if (!credentialName) {
+        try {
+          // disable our home view, we are initiating a multi-step sequence
+          // NOTE: Doing this here, because we don't always want newCredential
+          // to disable the overlay (not necessary for add credential from credential view)
+          this.webviewConduit.sendMsg({
+            kind: HostToWebviewMessageType.SHOW_DISABLE_OVERLAY,
+          });
+          credentialName = await newCredential(
+            Views.HomeView,
+            contentRecord.serverUrl,
+          );
+          if (!credentialName) {
+            return;
+          }
+        } finally {
+          // enable our home view, we are done with our sequence
+          this.webviewConduit.sendMsg({
+            kind: HostToWebviewMessageType.HIDE_DISABLE_OVERLAY,
+          });
+        }
+      }
+      const target: PublishProcessParams = {
+        deploymentName: contentRecord.saveName,
+        deploymentPath: contentRecord.deploymentPath,
+        projectDir: contentRecord.projectDir,
+        configurationName: contentRecord.configurationName,
+        credentialName,
+      };
+      // publish!
+      return this.initiatePublish(target);
+    }
+    // if there are multiple compatible deployments, then make sure one of these isn't
+    // already selected. If it is, do nothing, otherwise pick between the compatible ones.
+    const currentContentRecord = await this.state.getSelectedContentRecord();
+    if (
+      !currentContentRecord ||
+      !compatibleContentRecords.find((cfg) => {
+        return cfg.deploymentPath === currentContentRecord.deploymentPath;
+      })
+    ) {
+      // none of the compatible ones are selected
+      const selected = await this.showDeploymentQuickPick(
+        compatibleContentRecords,
+        entrypointDir,
+      );
+      if (selected) {
+        // publish!
+        return this.initiatePublish(selected);
+      }
+      return false;
+    }
+    // compatible content record already active. Publish
+    const credential =
+      this.state.findCredentialForContentRecord(currentContentRecord);
+    let credentialName = credential?.name;
+    if (!credentialName) {
+      credentialName = await newCredential(
+        Views.HomeView,
+        currentContentRecord.serverUrl,
+      );
+      if (!credentialName) {
+        return;
+      }
+    }
+    const target: PublishProcessParams = {
+      deploymentName: currentContentRecord.saveName,
+      deploymentPath: currentContentRecord.deploymentPath,
+      projectDir: currentContentRecord.projectDir,
+      credentialName,
+      configurationName: currentContentRecord.configurationName,
+    };
+    return this.initiatePublish(target);
+  }
 
   /**
    * Cleans up and disposes of webview resources when view is disposed
    */
   public dispose() {
-    Disposable.from(...this._disposables).dispose();
+    Disposable.from(...this.disposables).dispose();
 
+    this.state.dispose();
     this.configWatchers?.dispose();
   }
 
   public register(watchers: WatcherManager) {
-    this._stream.register("publish/start", () => {
-      this._onPublishStart();
+    this.stream.register("publish/start", () => {
+      this.onPublishStart();
     });
-    this._stream.register("publish/success", () => {
-      this._onPublishSuccess();
+    this.stream.register("publish/success", () => {
+      this.onPublishSuccess();
     });
-    this._stream.register("publish/failure", (msg: EventStreamMessage) => {
-      this._onPublishFailure(msg);
+    this.stream.register("publish/failure", (msg: EventStreamMessage) => {
+      this.onPublishFailure(msg);
     });
 
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       window.registerWebviewViewProvider(Views.HomeView, this, {
         webviewOptions: {
           retainContextWhenHidden: true,
@@ -1217,7 +1642,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }),
     );
 
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       commands.registerCommand(
         Commands.HomeView.SelectDeployment,
         this.showDeploymentQuickPick,
@@ -1229,22 +1654,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this,
       ),
       commands.registerCommand(Commands.HomeView.Refresh, () =>
-        this.refreshAll(true),
+        this.refreshAll(true, true),
       ),
       commands.registerCommand(
-        Commands.HomeView.SelectConfigForDeployment,
-        this.selectConfigForDeployment,
+        Commands.HomeView.ShowSelectConfigForDeployment,
+        this.showSelectOrCreateConfigForDeployment,
         this,
       ),
       commands.registerCommand(
         Commands.HomeView.CreateConfigForDeployment,
-        this.createConfigForDeployment,
+        this.showSelectOrCreateConfigForDeployment,
         this,
       ),
       commands.registerCommand(
         Commands.HomeView.NavigateToDeploymentServer,
         async () => {
-          const deployment = this._getActiveContentRecord();
+          const deployment = await this.state.getSelectedContentRecord();
           if (deployment) {
             await env.openExternal(Uri.parse(deployment.serverUrl));
           }
@@ -1253,17 +1678,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       commands.registerCommand(
         Commands.HomeView.NavigateToDeploymentContent,
         async () => {
-          const contentRecord = this._getActiveContentRecord();
+          const contentRecord = await this.state.getSelectedContentRecord();
           if (contentRecord && !isPreContentRecord(contentRecord)) {
             await env.openExternal(Uri.parse(contentRecord.dashboardUrl));
           }
         },
       ),
       commands.registerCommand(Commands.HomeView.ShowContentLogs, async () => {
-        const contentRecord = this._getActiveContentRecord();
+        const contentRecord = await this.state.getSelectedContentRecord();
         if (contentRecord && !isPreContentRecord(contentRecord)) {
-          const logUrl = `${contentRecord.dashboardUrl}/logs`;
-          await env.openExternal(Uri.parse(logUrl));
+          await env.openExternal(Uri.parse(contentRecord.logsUrl));
         }
       }),
       commands.registerCommand(
@@ -1277,8 +1701,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           if (this.root === undefined) {
             return;
           }
-          const cfg = this._getActiveConfig();
-          const packageFile = cfg?.configuration.python?.packageFile;
+          const cfg = await this.state.getSelectedConfiguration();
+          if (!cfg || isConfigurationError(cfg)) {
+            return;
+          }
+          const packageFile = cfg.configuration.python?.packageFile;
           if (packageFile === undefined) {
             return;
           }
@@ -1289,12 +1716,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       ),
       commands.registerCommand(
         Commands.PythonPackages.Refresh,
-        this._onRefreshPythonPackages,
+        this.onRefreshPythonPackages,
         this,
       ),
       commands.registerCommand(
         Commands.PythonPackages.Scan,
-        this._onScanForPythonPackageRequirements,
+        this.onScanForPythonPackageRequirements,
         this,
       ),
       commands.registerCommand(
@@ -1303,8 +1730,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           if (this.root === undefined) {
             return;
           }
-          const cfg = this._getActiveConfig();
-          const packageFile = cfg?.configuration.r?.packageFile;
+          const cfg = await this.state.getSelectedConfiguration();
+          if (!cfg || isConfigurationError(cfg)) {
+            return;
+          }
+          const packageFile = cfg.configuration.r?.packageFile;
           if (packageFile === undefined) {
             return;
           }
@@ -1315,12 +1745,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       ),
       commands.registerCommand(
         Commands.RPackages.Refresh,
-        this._onRefreshRPackages,
+        this.onRefreshRPackages,
         this,
       ),
       commands.registerCommand(
         Commands.RPackages.Scan,
-        this._onScanForRPackageRequirements,
+        this.onScanForRPackageRequirements,
         this,
       ),
     );

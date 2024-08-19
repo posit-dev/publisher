@@ -1,11 +1,11 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-export const POSIT_FOLDER = ".posit";
-export const PUBLISH_FOLDER = ".posit/publish";
-export const PUBLISH_DEPLOYMENTS_FOLDER = ".posit/publish/deployments";
+export const POSIT_FOLDER = "**/.posit";
+export const PUBLISH_FOLDER = "**/.posit/publish";
+export const PUBLISH_DEPLOYMENTS_FOLDER = "**/.posit/publish/deployments";
 
-export const CONFIGURATIONS_PATTERN = ".posit/publish/*.toml";
-export const DEPLOYMENTS_PATTERN = ".posit/publish/deployments/*.toml";
+export const CONFIGURATIONS_PATTERN = "**/.posit/publish/*.toml";
+export const DEPLOYMENTS_PATTERN = "**/.posit/publish/deployments/*.toml";
 
 export const DEFAULT_PYTHON_PACKAGE_FILE = "requirements.txt";
 export const DEFAULT_R_PACKAGE_FILE = "renv.lock";
@@ -14,6 +14,11 @@ const baseCommands = {
   InitProject: "posit.publisher.init-project",
   ShowOutputChannel: "posit.publisher.showOutputChannel",
   ShowPublishingLog: "posit.publisher.showPublishingLog",
+  DeployWithEntrypoint: "posit.publisher.deployWithEntrypoint",
+} as const;
+
+const baseContexts = {
+  ActiveFileEntrypoint: "posit.publish.activeFileEntrypoint",
 } as const;
 
 const logsCommands = {
@@ -21,19 +26,6 @@ const logsCommands = {
   // Added automatically by VSCode with view registration
   Focus: "posit.publisher.logs.focus",
   ToggleVisibility: "posit.publisher.logs.toggleVisibility",
-} as const;
-
-const configurationsCommands = {
-  Refresh: "posit.publisher.configurations.refresh",
-  New: "posit.publisher.configurations.add",
-  Clone: "posit.publisher.configurations.clone",
-  Edit: "posit.publisher.configurations.edit",
-  Rename: "posit.publisher.configurations.rename",
-  Delete: "posit.publisher.configurations.delete",
-} as const;
-
-const configurationsContexts = {
-  TreeItem: "posit.publisher.configurations.tree.item",
 } as const;
 
 const credentialsCommands = {
@@ -44,21 +36,12 @@ const credentialsCommands = {
 
 const credentialsContexts = {
   Keychain: "posit.publisher.credentials.tree.item.keychain",
+  EnvironmentVars: "posit.publisher.credentials.tree.item.environmentVars",
 };
 
-const contentRecordsCommands = {
-  Edit: "posit.publisher.contentRecords.edit",
-  Rename: "posit.publisher.contentRecords.rename",
-  Forget: "posit.publisher.contentRecords.forget",
-  Visit: "posit.publisher.contentRecords.visit",
-  Refresh: "posit.publisher.contentRecords.refresh",
-} as const;
-
-const contentRecordsContexts = {
-  ContentRecord: "posit.publisher.contentRecords.tree.item.contentRecord",
-  PreContentRecord: "posit.publisher.contentRecords.tree.item.precontentRecord",
-  DeploymentError: "posit.publisher.contentRecords.tree.item.deploymentError",
-} as const;
+export const CredentialGUIs = {
+  EnvironmentGUID: "00000000-0000-0000-0000-000000000000",
+};
 
 const filesCommands = {
   Refresh: "posit.publisher.files.refresh",
@@ -80,8 +63,8 @@ const rPackagesCommands = {
 
 const homeViewCommands = {
   Refresh: "posit.publisher.homeView.refresh",
-  SelectConfigForDeployment:
-    "posit.publisher.homeView.selectConfigForDeployment",
+  ShowSelectConfigForDeployment:
+    "posit.publisher.homeView.showSelectConfigForDeployment",
   CreateConfigForDeployment:
     "posit.publisher.homeView.createConfigForDeployment",
   SelectDeployment: "posit.publisher.homeView.selectDeployment",
@@ -91,6 +74,8 @@ const homeViewCommands = {
   NavigateToDeploymentContent:
     "posit.publisher.homeView.navigateToDeployment.Content",
   ShowContentLogs: "posit.publisher.homeView.navigateToDeployment.ContentLog",
+  // Added automatically by VSCode with view registration
+  Focus: "posit.publisher.homeView.focus",
 } as const;
 
 const homeViewContexts = {
@@ -103,14 +88,12 @@ const helpAndFeedbackCommands = {
 } as const;
 
 export const LocalState = {
-  LastSelectionState: "posit.publisher.homeView.lastSelectionState.v2",
+  LastSelectionState: "posit.publisher.homeView.lastDeploymentSelectedState",
 };
 
 export const Commands = {
   ...baseCommands,
-  Configurations: configurationsCommands,
   Credentials: credentialsCommands,
-  ContentRecords: contentRecordsCommands,
   Logs: logsCommands,
   Files: filesCommands,
   PythonPackages: pythonPackagesCommands,
@@ -120,8 +103,7 @@ export const Commands = {
 };
 
 export const Contexts = {
-  Configurations: configurationsContexts,
-  ContentRecords: contentRecordsContexts,
+  ...baseContexts,
   Credentials: credentialsContexts,
   HomeView: homeViewContexts,
 };
@@ -129,7 +111,6 @@ export const Contexts = {
 export const enum Views {
   Project = "posit.publisher.project",
   HomeView = "posit.publisher.homeView",
-  Configurations = "posit.publisher.configurations",
   Credentials = "posit.publisher.credentials",
   ContentRecords = "posit.publisher.contentRecords",
   HelpAndFeedback = "posit.publisher.helpAndFeedback",

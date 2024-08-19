@@ -20,21 +20,28 @@ export class Configurations {
   // 200 - success
   // 404 - not found
   // 500 - internal server error
-  get(configName: string, params?: { dir?: string }) {
+  get(configName: string, dir: string) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<Configuration | ConfigurationError>(
       `/configurations/${encodedName}`,
-      { params },
+      {
+        params: { dir },
+      },
     );
   }
 
   // Returns:
   // 200 - success
   // 500 - internal server error
-  getAll(params?: { dir?: string; entrypoint?: string; recursive?: boolean }) {
+  getAll(dir: string, params?: { entrypoint?: string; recursive?: boolean }) {
     return this.client.get<Array<Configuration | ConfigurationError>>(
       "/configurations",
-      { params },
+      {
+        params: {
+          dir,
+          ...params,
+        },
+      },
     );
   }
 
@@ -42,16 +49,16 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  createOrUpdate(
-    configName: string,
-    cfg: ConfigurationDetails,
-    params?: { dir?: string },
-  ) {
+  createOrUpdate(configName: string, cfg: ConfigurationDetails, dir: string) {
     const encodedName = encodeURIComponent(configName);
     return this.client.put<Configuration>(
       `configurations/${encodedName}`,
       cfg,
-      { params },
+      {
+        params: {
+          dir,
+        },
+      },
     );
   }
 
@@ -59,9 +66,11 @@ export class Configurations {
   // 204 - success (no response)
   // 404 - not found
   // 500 - internal server error
-  delete(configName: string, params?: { dir?: string }) {
+  delete(configName: string, dir: string) {
     const encodedName = encodeURIComponent(configName);
-    return this.client.delete(`configurations/${encodedName}`, { params });
+    return this.client.delete(`configurations/${encodedName}`, {
+      params: { dir },
+    });
   }
 
   // Inspect the project, returning all possible (detected) configurations
@@ -69,13 +78,22 @@ export class Configurations {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  inspect(python?: string, params?: { dir?: string }) {
+  inspect(
+    dir: string,
+    python?: string,
+    params?: { entrypoint?: string; recursive?: boolean },
+  ) {
     return this.client.post<ConfigurationInspectionResult[]>(
       "/inspect",
       {
         python,
       },
-      { params },
+      {
+        params: {
+          dir,
+          ...params,
+        },
+      },
     );
   }
 }

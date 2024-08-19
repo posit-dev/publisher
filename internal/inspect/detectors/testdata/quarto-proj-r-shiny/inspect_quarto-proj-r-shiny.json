@@ -213,7 +213,7 @@
     "quarto": {
       "version": "1.4.553"
     },
-    "dir": "/Users/mike/rstudio/connect-content/bundles/quarto-proj-r-shiny",
+    "dir": "$DIR/quarto-proj-r-shiny",
     "engines": ["knitr"],
     "config": {
       "project": {
@@ -223,13 +223,9 @@
       "language": {}
     },
     "files": {
-      "input": [
-        "/Users/mike/rstudio/connect-content/bundles/quarto-proj-r-shiny/quarto-proj-r-shiny.qmd"
-      ],
+      "input": ["$DIR/quarto-proj-r-shiny/quarto-proj-r-shiny.qmd"],
       "resources": [],
-      "config": [
-        "/Users/mike/rstudio/connect-content/bundles/quarto-proj-r-shiny/_quarto.yml"
-      ],
+      "config": ["$DIR/quarto-proj-r-shiny/_quarto.yml"],
       "configResources": []
     }
   }

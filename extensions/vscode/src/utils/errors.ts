@@ -7,7 +7,16 @@ export type ErrorMessages = ErrorMessage[];
 
 export const getStatusFromError = (error: unknown): number | undefined => {
   if (axios.isAxiosError(error)) {
-    return error.status;
+    return error.response?.status;
+  }
+  return undefined;
+};
+
+export const getStatusStringFromErrorResponse = (
+  error: unknown,
+): string | undefined => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.statusText;
   }
   return undefined;
 };
@@ -20,7 +29,10 @@ export const getCodeStringFromError = (error: unknown): string | undefined => {
 };
 
 export const getMessageFromError = (error: unknown): string => {
-  if (axios.isAxiosError(error) || error instanceof Error) {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data || error.message;
+  }
+  if (error instanceof Error) {
     return error.message;
   }
   return String(error);
@@ -44,6 +56,9 @@ export const getSummaryStringFromError = (location: string, error: unknown) => {
     if (summary.status) {
       msg += `, Status=${summary.status}`;
     }
+    if (summary.statusText) {
+      msg += `, StatusText=${summary.statusText}`;
+    }
     if (summary.code) {
       msg += `, Code=${summary.code}`;
     }
@@ -60,14 +75,16 @@ export const getSummaryStringFromError = (location: string, error: unknown) => {
 };
 
 export const getSummaryFromError = (error: unknown) => {
-  const stat = getStatusFromError(error);
+  const status = getStatusFromError(error);
+  const statusText = getStatusStringFromErrorResponse(error);
   const code = getCodeStringFromError(error);
   const msg = getMessageFromError(error);
   const url = getAPIURLFromError(error);
 
-  if (stat || code || msg || url) {
+  if (status || statusText || code || msg || url) {
     return {
-      status: stat,
+      status,
+      statusText,
       code,
       msg,
       ...url,

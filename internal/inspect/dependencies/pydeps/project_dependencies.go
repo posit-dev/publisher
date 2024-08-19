@@ -34,7 +34,7 @@ func (s *defaultDependencyScanner) ScanDependencies(base util.AbsolutePath, pyth
 	if err != nil {
 		return nil, err
 	}
-	var specs []*PackageSpec
+	specs := []*PackageSpec{}
 	for _, importName := range importNames {
 		spec, ok := mapping[importName]
 		if ok {

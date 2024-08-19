@@ -1,9 +1,11 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import path from "path";
+
 import {
   InputBoxValidationSeverity,
-  ProgressLocation,
   QuickPickItem,
+  QuickPickItemKind,
   ThemeIcon,
   Uri,
   commands,
@@ -12,12 +14,13 @@ import {
 
 import {
   Configuration,
+  ConfigurationError,
   ConfigurationInspectionResult,
   ContentRecord,
+  ContentType,
   PreContentRecord,
   contentTypeStrings,
   isConfigurationError,
-  isPreContentRecord,
   useApi,
 } from "src/api";
 import { getPythonInterpreterPath } from "src/utils/config";
@@ -35,10 +38,14 @@ import {
   filterInspectionResultsToType,
   filterConfigurationsToValidAndType,
 } from "src/utils/filters";
+import { showProgress } from "src/utils/progress";
+import { isRelativePathRoot } from "src/utils/files";
 
-export async function selectConfig(
+export async function selectNewOrExistingConfig(
   activeDeployment: ContentRecord | PreContentRecord,
-  viewId?: string,
+  viewId: string,
+  activeConfiguration?: Configuration | ConfigurationError,
+  // entryPoint?: string,
 ): Promise<Configuration | undefined> {
   // ***************************************************************
   // API Calls and results
@@ -79,48 +86,81 @@ export async function selectConfig(
     return entryPointListItems.length > 1;
   };
 
+  // what are we going to filter on?
+  // For this multiStepper, we want content type NOT entrypoint
+  let effectiveContentTypeFilter = activeDeployment.type;
+  if (effectiveContentTypeFilter === contentTypeStrings[ContentType.UNKNOWN]) {
+    // if we don't have it within the activeDeployment type
+    // then see if we can get it from active configuration file
+    if (activeConfiguration && !isConfigurationError(activeConfiguration)) {
+      effectiveContentTypeFilter = activeConfiguration.configuration.type;
+    }
+  }
+
   const getConfigurations = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await api.configurations.getAll();
+      // get all configurations
+      const response = await api.configurations.getAll(
+        activeDeployment.projectDir,
+      );
       let rawConfigs = response.data;
+      // remove the errors
+      configurations = configurations.filter(
+        (cfg): cfg is Configuration => !isConfigurationError(cfg),
+      );
       // Filter down configs to same content type as active deployment,
       // but also allowing configs if active Deployment is a preDeployment
       // or if the deployment file has no content type assigned yet.
-      if (!isPreContentRecord(activeDeployment)) {
-        configurations = filterConfigurationsToValidAndType(
-          rawConfigs,
-          activeDeployment.type,
-        );
-      } else {
-        configurations = rawConfigs.filter(
-          (c): c is Configuration => !isConfigurationError(c),
-        );
-      }
+      configurations = filterConfigurationsToValidAndType(
+        rawConfigs,
+        effectiveContentTypeFilter, // possibly UNKNOWN - in which case, no filtering will be done!
+      );
+
       configFileListItems = [];
 
+      // Display New Deployment at beginning
+      configFileListItems.push({
+        label: "New",
+        kind: QuickPickItemKind.Separator,
+      });
+      configFileListItems.push({
+        iconPath: new ThemeIcon("plus"),
+        label: createNewConfigurationLabel,
+        detail: "(or pick one of the existing deployments below)",
+        picked: configurations.length ? false : true,
+      });
+
+      // Then we display the existing deployments
+      if (configurations.length) {
+        configFileListItems.push({
+          label: "Existing",
+          kind: QuickPickItemKind.Separator,
+        });
+      }
+      let existingConfigFileListItems: QuickPickItem[] = [];
       configurations.forEach((config) => {
         const { title, problem } = calculateTitle(activeDeployment, config);
         if (problem) {
           return;
         }
-        configFileListItems.push({
+        existingConfigFileListItems.push({
           iconPath: new ThemeIcon("gear"),
           label: title,
           detail: config.configurationName,
         });
       });
-      configFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
+      existingConfigFileListItems.sort((a: QuickPickItem, b: QuickPickItem) => {
         var x = a.label.toLowerCase();
         var y = b.label.toLowerCase();
         return x < y ? -1 : x > y ? 1 : 0;
       });
-      configFileListItems.push({
-        iconPath: new ThemeIcon("plus"),
-        label: createNewConfigurationLabel,
-      });
+      // add to end of our list items
+      configFileListItems = configFileListItems.concat(
+        existingConfigFileListItems,
+      );
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "selectConfig, configurations.getAll",
+        "selectNewOrExistingConfig, configurations.getAll",
         error,
       );
       window.showInformationMessage(
@@ -135,10 +175,13 @@ export async function selectConfig(
     async (resolve, reject) => {
       try {
         const python = await getPythonInterpreterPath();
-        const inspectResponse = await api.configurations.inspect(python);
+        const inspectResponse = await api.configurations.inspect(
+          activeDeployment.projectDir,
+          python,
+        );
         inspectionResults = filterInspectionResultsToType(
           inspectResponse.data,
-          activeDeployment.type,
+          effectiveContentTypeFilter,
         );
         inspectionResults.forEach((result, i) => {
           const config = result.configuration;
@@ -147,13 +190,16 @@ export async function selectConfig(
               iconPath: new ThemeIcon("file"),
               label: config.entrypoint,
               description: `(${contentTypeStrings[config.type]})`,
+              detail: isRelativePathRoot(result.projectDir)
+                ? undefined
+                : `${result.projectDir}${path.sep}`,
               index: i,
             });
           }
         });
       } catch (error: unknown) {
         const summary = getSummaryStringFromError(
-          "selectConfig, configurations.inspect",
+          "selectNewOrExistingConfig, configurations.inspect",
           error,
         );
         window.showErrorMessage(
@@ -177,15 +223,7 @@ export async function selectConfig(
   ]);
 
   // Start the progress indicator and have it stop when the API calls are complete
-  window.withProgress(
-    {
-      title: "Initializing",
-      location: viewId ? { viewId } : ProgressLocation.Window,
-    },
-    async () => {
-      return apisComplete;
-    },
-  );
+  showProgress("Initializing::selectNewOrExistingConfig", apisComplete, viewId);
 
   // ***************************************************************
   // Order of all steps
@@ -390,7 +428,6 @@ export async function selectConfig(
 
     // Create the Config File
     try {
-      const configName = await untitledConfigurationName();
       const selectedInspectionResult =
         inspectionResults[state.data.entryPoint.index];
       if (!selectedInspectionResult) {
@@ -399,10 +436,14 @@ export async function selectConfig(
         );
         return;
       }
+      const configName = await untitledConfigurationName(
+        selectedInspectionResult.projectDir,
+      );
       selectedInspectionResult.configuration.title = state.data.title;
       const createResponse = await api.configurations.createOrUpdate(
         configName,
         selectedInspectionResult.configuration,
+        selectedInspectionResult.projectDir,
       );
       const fileUri = Uri.file(createResponse.data.configurationPath);
       const newConfig = createResponse.data;
@@ -410,7 +451,7 @@ export async function selectConfig(
       return newConfig;
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
-        "selectConfig, configurations.createOrUpdate",
+        "selectNewOrExistingConfig, configurations.createOrUpdate",
         error,
       );
       window.showErrorMessage(`Failed to create config file. ${summary}`);
@@ -428,7 +469,7 @@ export async function selectConfig(
       ) {
         return (
           config.configurationName ===
-          state.data.existingConfigurationName.label
+          state.data.existingConfigurationName.detail
         );
       }
       return false;

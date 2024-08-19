@@ -9,9 +9,11 @@ import {
   PreContentRecord,
   ConfigurationError,
 } from "../../api";
+import { DeploymentSelector } from "../shared";
 
 export enum HostToWebviewMessageType {
   // Sent from host to webviewView
+  INITIALIZING_REQUEST_COMPLETE = "initializingRequestComplete",
   REFRESH_CONTENTRECORD_DATA = "refreshContentRecordData",
   REFRESH_CONFIG_DATA = "refreshConfigData",
   REFRESH_CREDENTIAL_DATA = "refreshCredentialData",
@@ -19,11 +21,12 @@ export enum HostToWebviewMessageType {
   PUBLISH_FINISH_SUCCESS = "publishFinishSuccess",
   PUBLISH_FINISH_FAILURE = "publishFinishFailure",
   UPDATE_CONTENTRECORD_SELECTION = "updateContentRecordSelection",
-  UPDATE_CONFIG_SELECTION = "updateConfigSelection",
   SAVE_SELECTION = "saveSelection",
   REFRESH_FILES_LISTS = "refreshFilesLists",
   UPDATE_PYTHON_PACKAGES = "updatePythonPackages",
   UPDATE_R_PACKAGES = "updateRPackages",
+  SHOW_DISABLE_OVERLAY = "showDisableOverlay",
+  HIDE_DISABLE_OVERLAY = "hideDisableOverlay",
   GIT_STATUS = "gitStatus",
 }
 
@@ -38,6 +41,7 @@ export type AnyHostToWebviewMessage<
     };
 
 export type HostToWebviewMessage =
+  | InitializingRequestComplete
   | RefreshContentRecordDataMsg
   | RefreshConfigDataMsg
   | RefreshCredentialDataMsg
@@ -45,15 +49,17 @@ export type HostToWebviewMessage =
   | PublishFinishSuccessMsg
   | PublishFinishFailureMsg
   | UpdateContentRecordSelectionMsg
-  | UpdateConfigSelectionMsg
   | SaveSelectionMsg
   | RefreshFilesListsMsg
   | UpdatePythonPackages
   | UpdateRPackages
+  | ShowDisableOverlayMsg
+  | HideDisableOverlayMsg
   | GitStatus;
 
 export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
   return (
+    msg.kind === HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE ||
     msg.kind === HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA ||
     msg.kind === HostToWebviewMessageType.REFRESH_CONFIG_DATA ||
     msg.kind === HostToWebviewMessageType.REFRESH_CREDENTIAL_DATA ||
@@ -61,20 +67,24 @@ export function isHostToWebviewMessage(msg: any): msg is HostToWebviewMessage {
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_SUCCESS ||
     msg.kind === HostToWebviewMessageType.PUBLISH_FINISH_FAILURE ||
     msg.kind === HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION ||
-    msg.kind === HostToWebviewMessageType.UPDATE_CONFIG_SELECTION ||
     msg.kind === HostToWebviewMessageType.SAVE_SELECTION ||
     msg.kind === HostToWebviewMessageType.REFRESH_FILES_LISTS ||
     msg.kind === HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES ||
     msg.kind === HostToWebviewMessageType.UPDATE_R_PACKAGES ||
-    msg.kind === HostToWebviewMessageType.GIT_STATUS
+    msg.kind === HostToWebviewMessageType.GIT_STATUS ||
+    msg.kind === HostToWebviewMessageType.SHOW_DISABLE_OVERLAY ||
+    msg.kind === HostToWebviewMessageType.HIDE_DISABLE_OVERLAY
   );
 }
+
+export type InitializingRequestComplete =
+  AnyHostToWebviewMessage<HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE>;
 
 export type RefreshContentRecordDataMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA,
   {
     contentRecords: (ContentRecord | PreContentRecord)[];
-    selectedContentRecordName?: string | null;
+    deploymentSelected?: DeploymentSelector | null;
   }
 >;
 export type RefreshConfigDataMsg = AnyHostToWebviewMessage<
@@ -82,7 +92,6 @@ export type RefreshConfigDataMsg = AnyHostToWebviewMessage<
   {
     configurations: Configuration[];
     configurationsInError: ConfigurationError[];
-    selectedConfigurationName?: string | null;
   }
 >;
 export type RefreshCredentialDataMsg = AnyHostToWebviewMessage<
@@ -107,13 +116,6 @@ export type UpdateContentRecordSelectionMsg = AnyHostToWebviewMessage<
   HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION,
   {
     preContentRecord: PreContentRecord;
-    saveSelection?: boolean;
-  }
->;
-export type UpdateConfigSelectionMsg = AnyHostToWebviewMessage<
-  HostToWebviewMessageType.UPDATE_CONFIG_SELECTION,
-  {
-    config: Configuration;
     saveSelection?: boolean;
   }
 >;
@@ -148,6 +150,12 @@ export type UpdateRPackages = AnyHostToWebviewMessage<
     packages?: RPackage[];
   }
 >;
+
+export type ShowDisableOverlayMsg =
+  AnyHostToWebviewMessage<HostToWebviewMessageType.SHOW_DISABLE_OVERLAY>;
+
+export type HideDisableOverlayMsg =
+  AnyHostToWebviewMessage<HostToWebviewMessageType.HIDE_DISABLE_OVERLAY>;
 
 export type GitStatus = AnyHostToWebviewMessage<
   HostToWebviewMessageType.GIT_STATUS,

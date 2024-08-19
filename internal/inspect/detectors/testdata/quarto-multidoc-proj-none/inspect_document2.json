@@ -209,7 +209,7 @@
     "quarto": {
       "version": "1.4.554"
     },
-    "dir": "/Users/mike/rstudio/connect-content/bundles/quarto-multidoc-proj-none",
+    "dir": "$DIR/quarto-multidoc-proj-none",
     "engines": ["markdown"],
     "config": {
       "project": {
@@ -221,13 +221,11 @@
     },
     "files": {
       "input": [
-        "/Users/mike/rstudio/connect-content/bundles/quarto-multidoc-proj-none/document1.qmd",
-        "/Users/mike/rstudio/connect-content/bundles/quarto-multidoc-proj-none/document2.qmd"
+        "$DIR/quarto-multidoc-proj-none/document1.qmd",
+        "$DIR/quarto-multidoc-proj-none/document2.qmd"
       ],
       "resources": [],
-      "config": [
-        "/Users/mike/rstudio/connect-content/bundles/quarto-multidoc-proj-none/_quarto.yml"
-      ],
+      "config": ["$DIR/quarto-multidoc-proj-none/_quarto.yml"],
       "configResources": []
     }
   }

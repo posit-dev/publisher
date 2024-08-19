@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2024 by Posit Software, PBC. -->
 
 <template>
-  <div>
+  <div v-if="home.initializingRequestComplete">
     <div class="label">
       <span>Deployment:</span>
 
@@ -14,26 +14,13 @@
       />
     </div>
 
-    <template v-if="home.contentRecords.length > 0">
-      <div
-        class="deployment-control"
-        :disabled="home.contentRecords.length === 0 ? true : undefined"
-        v-on="home.contentRecords.length ? { click: onSelectDeployment } : {}"
-      >
+    <template v-if="home.selectedContentRecord">
+      <div class="deployment-control" v-on="{ click: onSelectDeployment }">
         <QuickPickItem
-          v-if="home.selectedContentRecord"
           :label="deploymentTitle"
           :detail="deploymentSubTitle"
           :title="toolTipText"
         />
-
-        <QuickPickItem
-          v-else
-          class="text-placeholder"
-          label="Select a Deployment"
-          detail="Get deploying"
-        />
-
         <div
           class="select-indicator codicon codicon-chevron-down"
           aria-hidden="true"
@@ -41,7 +28,11 @@
       </div>
 
       <div
-        v-if="home.selectedConfiguration?.configuration?.entrypoint"
+        v-if="
+          home.selectedConfiguration &&
+          !isConfigurationError(home.selectedConfiguration) &&
+          home.selectedConfiguration?.configuration?.entrypoint
+        "
         class="deployment-details-container"
       >
         <div class="deployment-details-row">
@@ -55,14 +46,14 @@
       <p v-if="isConfigEntryMissing">
         No Config Entry in Deployment record -
         {{ home.selectedContentRecord?.saveName }}.
-        <a href="" role="button" @click="selectConfiguration">{{
+        <a class="webview-link" role="button" @click="selectConfiguration">{{
           promptForConfigSelection
         }}</a
         >.
       </p>
       <p v-if="isConfigMissing">
         The last Configuration used for this Deployment was not found.
-        <a href="" role="button" @click="selectConfiguration">{{
+        <a class="webview-link" role="button" @click="selectConfiguration">{{
           promptForConfigSelection
         }}</a
         >.
@@ -70,10 +61,10 @@
       <p v-if="isConfigInError">
         The selected Configuration has an error.
         <a
-          href=""
+          class="webview-link"
           role="button"
           @click="
-            onEditConfiguration(home.selectedContentRecord!.configurationName)
+            onEditConfiguration(home.selectedConfiguration!.configurationPath)
           "
           >Edit the Configuration</a
         >.
@@ -81,22 +72,24 @@
 
       <p v-if="isCredentialMissing">
         A Credential for the Deployment's server URL was not found.
-        <a href="" role="button" @click="newCredential"
+        <a class="webview-link" role="button" @click="newCredential"
           >Create a new Credential</a
         >.
       </p>
 
       <DeployButton class="w-full" />
     </template>
-    <vscode-button
-      v-else
-      class="w-full add-deployment-btn"
-      @click="onAddDeployment"
-      data-automation="add-deployment-button"
-    >
-      Add Deployment
-    </vscode-button>
-
+    <div v-else class="deployment-control" v-on="{ click: onSelectDeployment }">
+      <QuickPickItem
+        label="Select..."
+        detail="(new or existing)"
+        data-automation="select-deployment"
+      />
+      <div
+        class="select-indicator codicon codicon-chevron-down"
+        aria-hidden="true"
+      />
+    </div>
     <template
       v-if="home.selectedContentRecord && home.selectedContentRecord.serverType"
     >
@@ -108,11 +101,14 @@
             <vscode-progress-ring class="progress-ring" />
             <div class="progress-desc">
               <div>Deployment in Progress...</div>
-              <div class="progress-log-anchor">
-                <a href="" role="button" @click="onViewPublishingLog"
+              <p class="progress-log-anchor">
+                <a
+                  class="webview-link"
+                  role="button"
+                  @click="onViewPublishingLog"
                   >View Log</a
                 >
-              </div>
+              </p>
             </div>
           </div>
           <ActionToolbar
@@ -163,12 +159,23 @@
       </div>
     </template>
   </div>
+  <div v-else>
+    <div class="progress-container">
+      <div class="progress-desc">
+        <div>Scanning directories...</div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
-import { Configuration, isPreContentRecord } from "../../../../src/api";
+import {
+  Configuration,
+  isPreContentRecord,
+  isConfigurationError,
+} from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
 
@@ -196,7 +203,7 @@ const toolbarActions = computed(() => {
       label: "Edit Configuration",
       codicon: "codicon-edit",
       fn: () =>
-        onEditConfiguration(home.selectedConfiguration!.configurationName),
+        onEditConfiguration(home.selectedConfiguration!.configurationPath),
     });
   }
   return result;
@@ -214,11 +221,11 @@ const onAddDeployment = () => {
   });
 };
 
-const onEditConfiguration = (name: string) => {
+const onEditConfiguration = (fullPath: string) => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.EDIT_CONFIGURATION,
     content: {
-      configurationName: name,
+      configurationPath: fullPath,
     },
   });
 };
@@ -285,9 +292,8 @@ const isConfigMissing = computed((): boolean => {
 
 const isConfigInError = computed((): boolean => {
   return Boolean(
-    home.selectedContentRecord &&
-      !home.selectedConfiguration &&
-      isConfigInErrorList(home.selectedContentRecord?.configurationName),
+    home.selectedConfiguration &&
+      isConfigurationError(home.selectedConfiguration),
   );
 });
 
@@ -317,7 +323,7 @@ const isCredentialMissing = computed((): boolean => {
 
 const selectConfiguration = () => {
   hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.SELECT_CONFIGURATION,
+    kind: WebviewToHostMessageType.SHOW_SELECT_CONFIGURATION,
   });
 };
 
@@ -339,6 +345,7 @@ const toolTipText = computed(() => {
 - Deployment Record: ${home.selectedContentRecord?.saveName || "<undefined>"}
 - Configuration File: ${home.selectedConfiguration?.configurationName || "<undefined>"}
 - Credential In Use: ${home.serverCredential?.name || "<undefined>"}
+- Project Dir: ${home.selectedContentRecord?.projectDir || "<undefined>"}
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
 
@@ -471,6 +478,7 @@ const newCredential = () => {
 
 .progress-log-anchor {
   margin-top: 5px;
+  margin-bottom: 0px;
 }
 
 .deployment-details-container {

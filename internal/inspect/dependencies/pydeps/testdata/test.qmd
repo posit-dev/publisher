@@ -11,6 +11,7 @@ Not actually an import! That's not in a code block.
 
 ```{python}
 import that
+from example import *
 
 that.do_something()
 ```

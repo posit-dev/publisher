@@ -5,6 +5,7 @@ package detectors
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -53,6 +54,9 @@ type quartoInspectOutput struct {
 				Title string `json:"title"`
 			} `json:"website"`
 		} `json:"config"`
+		Files struct {
+			Input []string `json:"input"`
+		} `json:"files"`
 	} `json:"project"`
 	Engines []string `json:"engines"`
 	Files   struct {
@@ -66,7 +70,17 @@ type quartoInspectOutput struct {
 				OutputFile string `json:"output-file"`
 			} `json:"pandoc"`
 		} `json:"html"`
+		RevealJS struct {
+			Metadata quartoMetadata `json:"metadata"`
+			Pandoc   struct {
+				OutputFile string `json:"output-file"`
+			} `json:"pandoc"`
+		} `json:"revealjs"`
 	} `json:"formats"`
+
+	// For single quarto docs without _quarto.yml,
+	// there is no project section in the output.
+	FileInformation map[string]any `json:"fileInformation"`
 }
 
 func (d *QuartoDetector) quartoInspect(path util.AbsolutePath) (*quartoInspectOutput, error) {
@@ -81,6 +95,23 @@ func (d *QuartoDetector) quartoInspect(path util.AbsolutePath) (*quartoInspectOu
 		return nil, fmt.Errorf("couldn't decode quarto inspect output: %w", err)
 	}
 	return &inspectOutput, nil
+}
+
+func getInputFiles(inspectOutput *quartoInspectOutput) []string {
+	if inspectOutput.Files.Input != nil {
+		return inspectOutput.Files.Input
+	}
+	if inspectOutput.Project.Files.Input != nil {
+		return inspectOutput.Project.Files.Input
+	}
+	if inspectOutput.FileInformation != nil {
+		filenames := []string{}
+		for name := range inspectOutput.FileInformation {
+			filenames = append(filenames, name)
+		}
+		return filenames
+	}
+	return []string{}
 }
 
 func (d *QuartoDetector) needsPython(inspectOutput *quartoInspectOutput) bool {
@@ -130,6 +161,9 @@ func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput, entrypoint
 	if isValidTitle(inspectOutput.Formats.HTML.Metadata.Title) {
 		return inspectOutput.Formats.HTML.Metadata.Title
 	}
+	if isValidTitle(inspectOutput.Formats.RevealJS.Metadata.Title) {
+		return inspectOutput.Formats.RevealJS.Metadata.Title
+	}
 	if isValidTitle(inspectOutput.Project.Config.Website.Title) {
 		return inspectOutput.Project.Config.Website.Title
 	}
@@ -139,7 +173,7 @@ func (d *QuartoDetector) getTitle(inspectOutput *quartoInspectOutput, entrypoint
 	return ""
 }
 
-var quartoSuffixes = []string{".qmd", ".Rmd"}
+var quartoSuffixes = []string{".qmd", ".Rmd", ".ipynb"}
 
 func (d *QuartoDetector) findEntrypoints(base util.AbsolutePath) ([]util.AbsolutePath, error) {
 	allPaths := []util.AbsolutePath{}
@@ -171,8 +205,7 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 	if entrypoint.String() != "" {
 		// Optimization: skip inspection if there's a specified entrypoint
 		// and it's not one of ours.
-		suffix := entrypoint.Ext()
-		if suffix != ".qmd" && suffix != ".Rmd" {
+		if !slices.Contains(quartoSuffixes, entrypoint.Ext()) {
 			return nil, nil
 		}
 	}
@@ -197,26 +230,30 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 			d.log.Warn("quarto inspect failed", "file", entrypointPath.String(), "error", err)
 			continue
 		}
-		if inspectOutput.Files.Input != nil && len(inspectOutput.Files.Input) == 0 {
-			continue
-		}
+
 		cfg := config.New()
 		cfg.Entrypoint = relEntrypoint.String()
 		cfg.Title = d.getTitle(inspectOutput, relEntrypoint.String())
 
-		if isQuartoShiny(&inspectOutput.Formats.HTML.Metadata) {
+		if isQuartoShiny(&inspectOutput.Formats.HTML.Metadata) ||
+			isQuartoShiny(&inspectOutput.Formats.RevealJS.Metadata) {
 			cfg.Type = config.ContentTypeQuartoShiny
 		} else {
 			cfg.Type = config.ContentTypeQuarto
 		}
 
-		content, err := entrypointPath.ReadFile()
-		if err != nil {
-			return nil, err
+		var needR, needPython bool
+
+		if entrypointPath.HasSuffix(".ipynb") {
+			needPython = true
+		} else {
+			// Look for code blocks in Rmd or qmd file.
+			content, err := entrypointPath.ReadFile()
+			if err != nil {
+				return nil, err
+			}
+			needR, needPython = pydeps.DetectMarkdownLanguagesInContent(content)
 		}
-
-		needR, needPython := pydeps.DetectMarkdownLanguagesInContent(content)
-
 		engines := inspectOutput.Engines
 		if needPython || d.needsPython(inspectOutput) {
 			// Indicate that Python inspection is needed.
@@ -239,17 +276,30 @@ func (d *QuartoDetector) InferType(base util.AbsolutePath, entrypoint util.Relat
 			Engines: engines,
 		}
 
-		// Exclude locally-rendered artifacts, since this will be rendered in Connect
-		outputFile := inspectOutput.Formats.HTML.Pandoc.OutputFile
-		if outputFile == "" {
-			outputFile = "*.html"
+		// Only include the entrypoint and its associated files.
+		inputFiles := getInputFiles(inspectOutput)
+		for _, inputFile := range inputFiles {
+			var relPath string
+			if filepath.IsAbs(inputFile) {
+				relPath, err = filepath.Rel(base.String(), inputFile)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				relPath = inputFile
+			}
+			cfg.Files = append(cfg.Files, relPath)
 		}
-		htmlOutputDir := strings.TrimSuffix(outputFile, ".html") + "_files"
-
-		cfg.Files = append(cfg.Files, "!"+outputFile, "!"+htmlOutputDir)
-		projectOutputDir := inspectOutput.Project.Config.Project.OutputDir
-		if projectOutputDir != "" {
-			cfg.Files = append(cfg.Files, "!"+projectOutputDir)
+		extraFiles := []string{"_quarto.yml", "_metadata.yaml"}
+		for _, filename := range extraFiles {
+			path := base.Join(filename)
+			exists, err := path.Exists()
+			if err != nil {
+				return nil, err
+			}
+			if exists {
+				cfg.Files = append(cfg.Files, filename)
+			}
 		}
 		configs = append(configs, cfg)
 	}

@@ -4,9 +4,9 @@
   "author": "Posit, PBC",
   "displayName": "Posit Publisher",
   "description": "Publish and share your Python and R content on Posit Connect",
-  "version": "0.0.0",
+  "version": "99.0.0",
   "license": "MIT",
-  "icon": "assets/img/color/posit-publisher.png",
+  "icon": "assets/img/posit-publisher.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/posit-dev/publisher/tree/main/extensions/vscode"
@@ -29,7 +29,7 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:*"
+    "workspaceContains:/"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -38,42 +38,6 @@
         "command": "posit.publisher.init-project",
         "title": "Initialize Project",
         "icon": "${star)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.refresh",
-        "title": "Refresh Configurations",
-        "icon": "$(refresh)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.add",
-        "title": "New Configuration",
-        "icon": "$(add)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.clone",
-        "title": "Clone",
-        "icon": "$(files)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.edit",
-        "title": "Edit",
-        "icon": "$(edit)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.rename",
-        "title": "Rename",
-        "icon": "$(symbol-key)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.configurations.delete",
-        "title": "Delete",
-        "icon": "$(trash)",
         "category": "Posit Publisher"
       },
       {
@@ -91,36 +55,6 @@
       {
         "command": "posit.publisher.credentials.refresh",
         "title": "Refresh Credentials",
-        "icon": "$(refresh)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.contentRecords.edit",
-        "title": "Edit",
-        "icon": "$(edit)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.contentRecords.rename",
-        "title": "Rename",
-        "icon": "$(symbol-key)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.contentRecords.forget",
-        "title": "Forget Deployment Locally",
-        "icon": "$(close-all)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.contentRecords.visit",
-        "title": "View Deployment in Connect",
-        "icon": "$(link-external)",
-        "category": "Posit Publisher"
-      },
-      {
-        "command": "posit.publisher.contentRecords.refresh",
-        "title": "Refresh Deployments",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
       },
@@ -185,7 +119,7 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.homeView.selectConfigForDeployment",
+        "command": "posit.publisher.homeView.showSelectConfigForDeployment",
         "title": "Select Active Configuration For Deployment",
         "category": "Posit Publisher"
       },
@@ -251,25 +185,23 @@
         "title": "View Content Log on Connect",
         "icon": "$(output)",
         "category": "Posit Publisher"
+      },
+      {
+        "command": "posit.publisher.deployWithEntrypoint",
+        "title": "Deploy with this Entrypoint",
+        "icon": "$(posit-publisher-publish)",
+        "category": "Posit Publisher"
       }
     ],
     "menus": {
+      "editor/title": [
+        {
+          "command": "posit.publisher.deployWithEntrypoint",
+          "group": "navigation",
+          "when": "posit.publish.activeFileEntrypoint == true"
+        }
+      ],
       "view/title": [
-        {
-          "command": "posit.publisher.configurations.add",
-          "when": "view == posit.publisher.configurations",
-          "group": "navigation@1"
-        },
-        {
-          "command": "posit.publisher.configurations.refresh",
-          "when": "view == posit.publisher.configurations",
-          "group": "navigation@2"
-        },
-        {
-          "command": "posit.publisher.contentRecords.refresh",
-          "when": "view == posit.publisher.contentRecords",
-          "group": "navigation@2"
-        },
         {
           "command": "posit.publisher.files.refresh",
           "when": "view == posit.publisher.files",
@@ -308,35 +240,8 @@
       ],
       "view/item/context": [
         {
-          "command": "posit.publisher.configurations.clone",
-          "when": "view == posit.publisher.configurations"
-        },
-        {
-          "command": "posit.publisher.configurations.rename",
-          "when": "view == posit.publisher.configurations"
-        },
-        {
-          "command": "posit.publisher.configurations.delete",
-          "when": "view == posit.publisher.configurations"
-        },
-        {
           "command": "posit.publisher.credentials.delete",
           "when": "view == posit.publisher.credentials && viewItem == posit.publisher.credentials.tree.item.keychain"
-        },
-        {
-          "command": "posit.publisher.contentRecords.rename",
-          "when": "view == posit.publisher.contentRecords",
-          "group": "menu@1"
-        },
-        {
-          "command": "posit.publisher.contentRecords.forget",
-          "when": "view == posit.publisher.contentRecords",
-          "group": "menu@2"
-        },
-        {
-          "command": "posit.publisher.contentRecords.visit",
-          "when": "viewItem == posit.publisher.contentRecords.tree.item.contentRecord",
-          "group": "inline"
         }
       ],
       "commandPalette": [
@@ -345,51 +250,11 @@
           "when": "workbenchState == folder  && posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.configurations.refresh",
-          "when": "posit.publish.state == 'initialized'"
-        },
-        {
-          "command": "posit.publisher.configurations.add",
-          "when": "posit.publish.state == 'initialized'"
-        },
-        {
-          "command": "posit.publisher.configurations.clone",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.configurations.edit",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.configurations.rename",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.configurations.delete",
-          "when": "false"
-        },
-        {
           "command": "posit.publisher.credentials.delete",
           "when": "false"
         },
         {
           "command": "posit.publisher.credentials.refresh",
-          "when": "posit.publish.state == 'initialized'"
-        },
-        {
-          "command": "posit.publisher.contentRecords.edit",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.contentRecords.rename",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.contentRecords.forget",
-          "when": "false"
-        },
-        {
-          "command": "posit.publisher.contentRecords.refresh",
           "when": "posit.publish.state == 'initialized'"
         },
         {
@@ -447,7 +312,7 @@
       ],
       "webview/context": [
         {
-          "command": "posit.publisher.homeView.selectConfigForDeployment",
+          "command": "posit.publisher.homeView.showSelectConfigForDeployment",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'even-easier-deploy-more-menu-matching-configs'"
         },
         {
@@ -486,12 +351,21 @@
         }
       ]
     },
+    "icons": {
+      "posit-publisher-publish": {
+        "description": "publish icon",
+        "default": {
+          "fontPath": "dist/posit-publisher-icons.woff2",
+          "fontCharacter": "\\f101"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
           "id": "posit-publisher",
           "title": "Posit Publisher",
-          "icon": "assets/img/color/posit-publisher.png"
+          "icon": "$(posit-publisher-publish)"
         }
       ],
       "panel": [
@@ -523,29 +397,11 @@
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
         },
         {
-          "id": "posit.publisher.configurations",
-          "name": "Configurations",
-          "contextualTitle": "Publisher",
-          "icon": "$(gear)",
-          "visibility": "hidden",
-          "initialSize": 0,
-          "when": "workbenchState == folder && posit.publish.state == 'initialized'"
-        },
-        {
           "id": "posit.publisher.credentials",
           "name": "Credentials",
           "contextualTitle": "Publisher",
           "icon": "$(key)",
           "visibility": "collapsed",
-          "initialSize": 0,
-          "when": "workbenchState == folder && posit.publish.state == 'initialized'"
-        },
-        {
-          "id": "posit.publisher.contentRecords",
-          "name": "Deployments",
-          "contextualTitle": "Publisher",
-          "icon": "$(cloud-upload)",
-          "visibility": "hidden",
           "initialSize": 0,
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
         },
@@ -651,10 +507,11 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify",
+    "vscode:prepublish": "npm run --prefix webviews/homeView build && npm run esbuild-base -- --minify && npm run build-font",
     "esbuild-base": "tsc --noEmit && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "build-font": "fantasticon",
     "lint": "eslint src --ext ts --max-warnings 0",
     "compile": "tsc -p ./",
     "test": "npm run compile && node ./out/test/runTest.js"
@@ -673,6 +530,7 @@
     "esbuild": "^0.21.4",
     "eslint": "^8.50.0",
     "eslint-config-prettier": "^9.1.0",
+    "fantasticon": "^3.0.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
     "typescript": "^5.2.2"
@@ -685,6 +543,7 @@
     "eventsource": "^2.0.2",
     "get-port": "5.1.1",
     "mutexify": "^1.4.0",
-    "retry": "^0.13.1"
+    "retry": "^0.13.1",
+    "vscode-uri": "^3.0.8"
   }
 }

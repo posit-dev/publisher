@@ -72,7 +72,7 @@ func (d *pyShinyDetector) InferType(base util.AbsolutePath, entrypoint util.Rela
 		}
 		if !matches {
 			// Not a PyShiny app
-			return nil, nil
+			continue
 		}
 		isShinyExpress, err := fileHasShinyExpressImport(entrypointPath)
 		if err != nil {

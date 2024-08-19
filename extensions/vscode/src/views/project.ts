@@ -19,9 +19,7 @@ export class ProjectTreeDataProvider
     return element;
   }
 
-  getChildren(
-    _: ProjectTreeItem | undefined,
-  ): ProviderResult<ProjectTreeItem[]> {
+  getChildren(): ProviderResult<ProjectTreeItem[]> {
     return [];
   }
 

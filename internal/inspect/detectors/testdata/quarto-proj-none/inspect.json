@@ -2,7 +2,7 @@
   "quarto": {
     "version": "1.4.553"
   },
-  "dir": "/Users/mike/rstudio/connect-content/bundles/quarto-proj-none",
+  "dir": "$DIR/quarto-proj-none",
   "engines": ["markdown"],
   "config": {
     "project": {
@@ -12,13 +12,9 @@
     "language": {}
   },
   "files": {
-    "input": [
-      "/Users/mike/rstudio/connect-content/bundles/quarto-proj-none/quarto-proj-none.qmd"
-    ],
+    "input": ["$DIR/quarto-proj-none/quarto-proj-none.qmd"],
     "resources": [],
-    "config": [
-      "/Users/mike/rstudio/connect-content/bundles/quarto-proj-none/_quarto.yml"
-    ],
+    "config": ["$DIR/quarto-proj-none/_quarto.yml"],
     "configResources": []
   }
 }

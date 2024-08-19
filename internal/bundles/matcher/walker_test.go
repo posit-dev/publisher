@@ -4,6 +4,7 @@ package matcher
 
 import (
 	"io/fs"
+	"path/filepath"
 	"testing"
 
 	"github.com/posit-dev/publisher/internal/logging"
@@ -103,5 +104,33 @@ func (s *WalkerSuite) TestWalk() {
 		dirPath.Join("included").String(),
 		dirPath.Join("included", "includeme").String(),
 		dirPath.Join("renv").String(),
+	}, seen)
+}
+
+func (s *WalkerSuite) TestWalkSubdirectory() {
+	baseDir := s.cwd.Join("test", "dir")
+	err := baseDir.MkdirAll(0777)
+	s.NoError(err)
+
+	err = baseDir.Join("app.py").WriteFile(nil, 0666)
+	s.NoError(err)
+
+	w, err := NewMatchingWalker([]string{"*.py"}, s.cwd, logging.New())
+	s.NoError(err)
+
+	seen := []string{}
+	err = w.Walk(s.cwd, func(path util.AbsolutePath, info fs.FileInfo, err error) error {
+		s.NoError(err)
+		relPath, err := path.Rel(s.cwd)
+		s.NoError(err)
+		seen = append(seen, relPath.String())
+		return nil
+	})
+	s.NoError(err)
+	s.Equal([]string{
+		".",
+		filepath.Join(".", "test"),
+		filepath.Join(".", "test", "dir"),
+		filepath.Join(".", "test", "dir", "app.py"),
 	}, seen)
 }

@@ -56,7 +56,7 @@ jobs:
         if: matrix.runs-on == 'macos-latest'
 
       - run: chmod -R +x ./bin
-      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/bats/fuzzbucket-ssh-key && chmod 600 test/bats/fuzzbucket-ssh-key
+      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
       - run: just bats install
       - run: just bats test common
       - run: just bats test init

@@ -4,6 +4,7 @@ import { AxiosInstance } from "axios";
 import {
   GetRPackagesResponse,
   PythonPackagesResponse,
+  ScanPythonPackagesResponse,
 } from "../types/packages";
 
 export class Packages {
@@ -19,11 +20,11 @@ export class Packages {
   // 409 - conflict (Python is not configured)
   // 422 - package file is invalid
   // 500 - internal server error
-  getPythonPackages(configName: string, params?: { dir?: string }) {
+  getPythonPackages(configName: string, dir: string) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<PythonPackagesResponse>(
       `/configurations/${encodedName}/packages/python`,
-      { params },
+      { params: { dir } },
     );
   }
 
@@ -33,11 +34,11 @@ export class Packages {
   // 409 - conflict (R is not configured)
   // 422 - package file is invalid
   // 500 - internal server error
-  getRPackages(configName: string, params?: { dir?: string }) {
+  getRPackages(configName: string, dir: string) {
     const encodedName = encodeURIComponent(configName);
     return this.client.get<GetRPackagesResponse>(
       `/configurations/${encodedName}/packages/r`,
-      { params },
+      { params: { dir } },
     );
   }
 
@@ -46,14 +47,14 @@ export class Packages {
   // 400 - bad request
   // 500 - internal server error
   createPythonRequirementsFile(
+    dir: string,
     python?: string,
     saveName?: string,
-    params?: { dir?: string },
   ) {
-    return this.client.post<void>(
+    return this.client.post<ScanPythonPackagesResponse>(
       "packages/python/scan",
       { python, saveName },
-      { params },
+      { params: { dir } },
     );
   }
 
@@ -61,7 +62,11 @@ export class Packages {
   // 200 - success
   // 400 - bad request
   // 500 - internal server error
-  createRRequirementsFile(saveName?: string, params?: { dir?: string }) {
-    return this.client.post<void>("packages/r/scan", { saveName }, { params });
+  createRRequirementsFile(dir: string, saveName?: string) {
+    return this.client.post<void>(
+      "packages/r/scan",
+      { saveName },
+      { params: { dir } },
+    );
   }
 }

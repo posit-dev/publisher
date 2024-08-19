@@ -47,6 +47,7 @@ type publishStartData struct {
 type publishSuccessData struct {
 	ContentID    types.ContentID `mapstructure:"contentId"`
 	DashboardURL string          `mapstructure:"dashboardUrl"`
+	LogsURL      string          `mapstructure:"logsUrl"`
 	DirectURL    string          `mapstructure:"directUrl"`
 	ServerURL    string          `mapstructure:"serverUrl"`
 }
@@ -57,6 +58,7 @@ type publishFailureData struct {
 
 type publishDeployedFailureData struct {
 	DashboardURL string `mapstructure:"dashboardUrl"`
+	LogsURL      string `mapstructure:"logsUrl"`
 	DirectURL    string `mapstructure:"url"`
 }
 
@@ -79,16 +81,16 @@ func NewFromState(s *state.State, emitter events.Emitter, log logging.Logger) (P
 	}, nil
 }
 
-func getDashboardURL(accountURL string, contentID types.ContentID, failed bool) string {
-	url := fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID)
-	if failed {
-		url += "/logs"
-	}
-	return url
+func getDashboardURL(accountURL string, contentID types.ContentID) string {
+	return fmt.Sprintf("%s/connect/#/apps/%s", accountURL, contentID)
+}
+
+func getLogsURL(accountURL string, contentID types.ContentID) string {
+	return getDashboardURL(accountURL, contentID) + "/logs"
 }
 
 func getDirectURL(accountURL string, contentID types.ContentID) string {
-	return fmt.Sprintf("%s/content/%s", accountURL, contentID)
+	return fmt.Sprintf("%s/content/%s/", accountURL, contentID)
 }
 
 func getBundleURL(accountURL string, contentID types.ContentID, bundleID types.BundleID) string {
@@ -96,7 +98,8 @@ func getBundleURL(accountURL string, contentID types.ContentID, bundleID types.B
 }
 
 func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log logging.Logger, publishingErr error) {
-	dashboardURL := getDashboardURL(accountURL, contentID, publishingErr != nil)
+	dashboardURL := getDashboardURL(accountURL, contentID)
+	logsURL := getLogsURL(accountURL, contentID)
 	directURL := getDirectURL(accountURL, contentID)
 	if publishingErr != nil {
 		if contentID == "" {
@@ -104,12 +107,13 @@ func logAppInfo(w io.Writer, accountURL string, contentID types.ContentID, log l
 			return
 		}
 		fmt.Fprintln(w)
-		fmt.Fprintln(w, "Dashboard URL: ", dashboardURL)
+		fmt.Fprintln(w, "Logs URL: ", logsURL)
 	} else {
 		log.Info("Deployment information",
 			logging.LogKeyOp, events.AgentOp,
 			"dashboardURL", dashboardURL,
 			"directURL", directURL,
+			"logsURL", logsURL,
 			"serverURL", accountURL,
 			"contentID", contentID,
 		)
@@ -130,6 +134,7 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 	}
 	dashboardURL := ""
 	directURL := ""
+	logsURL := ""
 
 	var data events.EventData
 
@@ -146,11 +151,13 @@ func (p *defaultPublisher) emitErrorEvents(err error, log logging.Logger) {
 		}
 		if p.isDeployed() {
 			// Provide URL in the event, if we got far enough in the deployment.
-			dashboardURL = getDashboardURL(p.Account.URL, p.Target.ID, err != nil)
+			dashboardURL = getDashboardURL(p.Account.URL, p.Target.ID)
+			logsURL = getLogsURL(p.Account.URL, p.Target.ID)
 			directURL = getDirectURL(p.Account.URL, p.Target.ID)
 
 			mapstructure.Decode(publishDeployedFailureData{
 				DashboardURL: dashboardURL,
+				LogsURL:      logsURL,
 				DirectURL:    directURL,
 			}, &data)
 		}
@@ -195,7 +202,8 @@ func (p *defaultPublisher) PublishDirectory(log logging.Logger) error {
 		p.emitErrorEvents(err, log)
 	} else {
 		p.emitter.Emit(events.New(events.PublishOp, events.SuccessPhase, events.NoError, publishSuccessData{
-			DashboardURL: getDashboardURL(p.Account.URL, p.Target.ID, false),
+			DashboardURL: getDashboardURL(p.Account.URL, p.Target.ID),
+			LogsURL:      getLogsURL(p.Account.URL, p.Target.ID),
 			DirectURL:    getDirectURL(p.Account.URL, p.Target.ID),
 			ServerURL:    p.Account.URL,
 			ContentID:    p.Target.ID,
@@ -258,7 +266,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		Requirements:  nil,
 		Configuration: &cfg,
 		BundleID:      "",
-		DashboardURL:  getDashboardURL(p.Account.URL, contentID, false),
+		DashboardURL:  getDashboardURL(p.Account.URL, contentID),
 		DirectURL:     getDirectURL(p.Account.URL, contentID),
 		Error:         nil,
 	}
@@ -273,11 +281,6 @@ func (p *defaultPublisher) publishWithClient(
 	log logging.Logger) error {
 
 	manifest := bundles.NewManifestFromConfig(p.Config)
-	filePatterns := p.Config.Files
-	if len(filePatterns) == 0 {
-		log.Info("No file patterns specified; using default pattern '*'")
-		filePatterns = []string{"*"}
-	}
 	if p.Config.R != nil {
 		rPackages, err := p.getRPackages(log)
 		if err != nil {
@@ -285,7 +288,7 @@ func (p *defaultPublisher) publishWithClient(
 		}
 		manifest.Packages = rPackages
 	}
-	bundler, err := bundles.NewBundler(p.Dir, manifest, filePatterns, log)
+	bundler, err := bundles.NewBundler(p.Dir, manifest, p.Config.Files, log)
 	if err != nil {
 		return err
 	}

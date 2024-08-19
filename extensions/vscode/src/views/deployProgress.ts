@@ -9,32 +9,54 @@ export function deployProject(localID: string, stream: EventStream) {
     {
       location: ProgressLocation.Notification,
       title: `Deploying your project`,
-      cancellable: false,
+      cancellable: true,
     },
-    (progress) => {
+    (progress, token) => {
       let resolveCB: (reason?: any) => void;
       let rejectCB: (reason?: any) => void;
       const registrations: UnregisterCallback[] = [];
-
-      const unregiserAll = () => {
-        registrations.forEach((cb) => cb.unregister());
-      };
-
       const promise = new Promise<void>((resolve, reject) => {
         resolveCB = resolve;
         rejectCB = reject;
       });
+      let streamID = localID;
+
+      const unregisterAll = () => {
+        registrations.forEach((cb) => cb.unregister());
+      };
+
+      token.onCancellationRequested(() => {
+        streamID = "NEVER_A_VALID_STREAM";
+        unregisterAll();
+        // inject a psuedo end of publishing event
+        stream.injectMessage({
+          type: "publish/failure",
+          time: Date.now().toString(),
+          data: {
+            dashboardUrl: "",
+            url: "",
+            // and other non-defined attributes
+            localId: localID,
+            cancelled: "true",
+            message:
+              "Deployment has been dismissed (but will continue to be processed on the Connect Server). Deployment status will be reset to the prior known state.",
+          },
+          error: "Deployment has been dismissed.",
+        });
+        stream.suppressMessages(localID);
+        resolveCB();
+      });
 
       registrations.push(
         stream.register("publish/start", (msg: EventStreamMessage) => {
-          if (localID === msg.data.localId) {
+          if (streamID === msg.data.localId) {
             progress.report({ message: "Starting to Deploy..." });
           }
         }),
       );
 
       const handleProgressMessages = (msg: EventStreamMessage) => {
-        if (localID === msg.data.localId) {
+        if (streamID === msg.data.localId) {
           const progressStr = eventMsgToString(msg);
           progress.report({
             message: progressStr,
@@ -391,8 +413,8 @@ export function deployProject(localID: string, stream: EventStream) {
 
       registrations.push(
         stream.register("publish/success", async (msg: EventStreamMessage) => {
-          if (localID === msg.data.localId) {
-            unregiserAll();
+          if (streamID === msg.data.localId) {
+            unregisterAll();
             progress.report({
               message: "Deployment was successful",
             });
@@ -413,8 +435,8 @@ export function deployProject(localID: string, stream: EventStream) {
 
       registrations.push(
         stream.register("publish/failure", (msg: EventStreamMessage) => {
-          if (localID === msg.data.localId) {
-            unregiserAll();
+          if (streamID === msg.data.localId) {
+            unregisterAll();
             progress.report({
               message: "Deployment process encountered an error",
             });

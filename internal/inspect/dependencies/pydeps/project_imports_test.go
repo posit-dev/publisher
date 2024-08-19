@@ -36,9 +36,13 @@ func (s *ProjectDepsSuite) TestScanProjectImports() {
 
 	importNames, err := scanner.ScanProjectImports(path)
 	s.NoError(err)
+
+	// "lib" and "example" are not included because they are
+	// local imports, not dependencies.
 	s.Equal([]ImportName{
 		"numpy",
 		"scipy",
+		"somelib",
 		"that",
 	}, importNames)
 }

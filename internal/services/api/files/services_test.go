@@ -70,6 +70,16 @@ func (s *ServicesSuite) TestGetFileUsingSampleContent() {
 	file, err := service.GetFile(base, matchList)
 	s.NoError(err)
 	s.NotNil(file)
+
+	s.Equal(".", file.Id)
+	s.Equal(".", file.Rel)
+	s.Equal(".", file.RelDir)
+	s.Equal("fastapi-simple", file.Base)
+	s.Equal(Directory, file.FileType)
+	s.True(file.IsDir)
+	s.False(file.IsRegular)
+	s.False(file.IsEntrypoint)
+	s.NotNil(file.Files)
 }
 
 func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
@@ -84,4 +94,29 @@ func (s *ServicesSuite) TestGetFileUsingSampleContentWithTrailingSlash() {
 	file, err := service.GetFile(base, matchList)
 	s.NoError(err)
 	s.NotNil(file)
+}
+
+func (s *ServicesSuite) TestGetFileUsingSampleContentFromParentDir() {
+	afs := afero.NewOsFs()
+	base := s.cwd.Join("..", "..", "..", "..").WithFs(afs)
+	toList := base.Join("test", "sample-content", "fastapi-simple")
+
+	service := CreateFilesService(base, s.log)
+	s.NotNil(service)
+	matchList, err := matcher.NewMatchList(toList, nil)
+	s.NoError(err)
+
+	file, err := service.GetFile(toList, matchList)
+	s.NoError(err)
+	s.NotNil(file)
+
+	s.Equal(".", file.Id)
+	s.Equal(".", file.Rel)
+	s.Equal(".", file.RelDir)
+	s.Equal("fastapi-simple", file.Base)
+	s.Equal(Directory, file.FileType)
+	s.True(file.IsDir)
+	s.False(file.IsRegular)
+	s.False(file.IsEntrypoint)
+	s.NotNil(file.Files)
 }

@@ -4,11 +4,11 @@
 
 ### Opening the UI
 
-In VSCode, open the folder containing the project you want to deploy. In this version of _Posit Publisher_, the project must be in the top level directory.
+In VSCode, open the folder containing the project you want to deploy.
 
 Open the _Posit Publisher_ UI by clicking the icon in the activity bar.
 
-![](https://cdn.posit.co/publisher/assets/img/icon.png)
+![](https://cdn.posit.co/publisher/assets/img/new-icon.png)
 
 ### Home
 
@@ -69,7 +69,14 @@ Once the deployment completes, the result will be displayed in the Home view.
 
 ---
 
-### Other Views and Features
+## Other Views and Features
+
+### Deploy via Entrypoint
+
+You can deploy or create a new deployment directly from an open file. If it is
+a valid entrypoint a Posit Publisher button will appear in the editor menu.
+
+![](https://cdn.posit.co/publisher/assets/img/new-entrypoint-button.png)
 
 ### Multiple Deployments
 
@@ -147,26 +154,6 @@ If your `renv.lock` file and library are out of sync, run `renv::snapshot()`
 or `renv::restore()` to update the lockfile or library, respectively. Clicking
 the "eye" icon in the R Packages view will run `renv::snapshot()` for you.
 
-### Deployments
-
-This view lists the deployments for the project. The icon indicates
-whether the content has been successfully deployed.
-
-![](https://cdn.posit.co/publisher/assets/img/deployment-icons.png)
-
-### Configurations
-
-This view lists the configurations in your project.
-
-Clicking a configuration will open the configuration file in the editor.
-Additionally, you can right-click on a configuration for more operations
-
-- Clone
-- Rename
-- Delete
-
-![](https://cdn.posit.co/publisher/assets/img/configurations.png)
-
 ### Credentials
 
 This view lists the credentials you have defined.
@@ -181,6 +168,22 @@ To remove a credential, right-click on it and select `Delete`.
 
 For instructions on how to create a Connect API key, see the
 [Connect documentation](https://docs.posit.co/connect/user/api-keys/index.html#api-keys-creating).
+
+#### via dotfile
+
+A Credential can also be set by creating a `.connect-credentials` file in
+your home directory using the following format:
+
+```toml
+# ~/.connect-credentials.toml
+
+url = 'https://your.connect.server'
+key = 'r0TCAS9mCmTICwd2E97uM3KnUDlGWZ3D'
+```
+
+The `url` is the URL of your Posit Connect Server.
+
+The `key` is the API key for the user you would like to publish as.
 
 ### Help and Feedback
 

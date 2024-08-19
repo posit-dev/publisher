@@ -1,14 +1,13 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { HomeViewState } from "../shared";
+import { DeploymentSelector } from "../shared";
 
 export enum WebviewToHostMessageType {
   // Sent from webviewView to host
   DEPLOY = "deploy",
   INITIALIZING = "initializing",
   EDIT_CONFIGURATION = "editConfiguration",
-  NEW_CONFIGURATION = "newConfiguration",
-  SELECT_CONFIGURATION = "selectConfiguration",
+  SHOW_SELECT_CONFIGURATION = "showSelectConfiguration",
   NAVIGATE = "navigate",
   SAVE_SELECTION_STATE = "saveSelectionState",
   VSCODE_OPEN = "vsCodeOpen",
@@ -41,8 +40,7 @@ export type WebviewToHostMessage =
   | DeployMsg
   | InitializingMsg
   | EditConfigurationMsg
-  | NewConfigurationMsg
-  | SelectConfigurationMsg
+  | ShowSelectConfigurationMsg
   | NavigateMsg
   | SaveSelectionStatedMsg
   | VSCodeOpenMsg
@@ -66,8 +64,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.EDIT_CONFIGURATION ||
     msg.kind === WebviewToHostMessageType.INITIALIZING ||
     msg.kind === WebviewToHostMessageType.NAVIGATE ||
-    msg.kind === WebviewToHostMessageType.NEW_CONFIGURATION ||
-    msg.kind === WebviewToHostMessageType.SELECT_CONFIGURATION ||
+    msg.kind === WebviewToHostMessageType.SHOW_SELECT_CONFIGURATION ||
     msg.kind === WebviewToHostMessageType.SAVE_SELECTION_STATE ||
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN ||
     msg.kind === WebviewToHostMessageType.INCLUDE_FILE ||
@@ -92,6 +89,7 @@ export type DeployMsg = AnyWebviewToHostMessage<
     deploymentName: string;
     credentialName: string;
     configurationName: string;
+    projectDir: string;
   }
 >;
 
@@ -101,15 +99,12 @@ export type InitializingMsg =
 export type EditConfigurationMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.EDIT_CONFIGURATION,
   {
-    configurationName: string;
+    configurationPath: string;
   }
 >;
 
-export type NewConfigurationMsg =
-  AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_CONFIGURATION>;
-
-export type SelectConfigurationMsg =
-  AnyWebviewToHostMessage<WebviewToHostMessageType.SELECT_CONFIGURATION>;
+export type ShowSelectConfigurationMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.SHOW_SELECT_CONFIGURATION>;
 
 export type NavigateMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.NAVIGATE,
@@ -121,7 +116,7 @@ export type NavigateMsg = AnyWebviewToHostMessage<
 export type SaveSelectionStatedMsg = AnyWebviewToHostMessage<
   WebviewToHostMessageType.SAVE_SELECTION_STATE,
   {
-    state: HomeViewState;
+    state: DeploymentSelector;
   }
 >;
 

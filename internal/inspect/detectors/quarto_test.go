@@ -3,6 +3,8 @@ package detectors
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"runtime"
 	"strings"
@@ -39,9 +41,17 @@ func (s *QuartoDetectorSuite) runInferType(testName string) []*config.Config {
 	exists, err := dirOutputPath.Exists()
 	s.NoError(err)
 
+	// Replace the $DIR placeholder in the file with
+	// the correct path (json-escaped)
+	placeholder := []byte("$DIR")
+	baseDir, err := json.Marshal(base.Dir().String())
+	s.NoError(err)
+	baseDir = baseDir[1 : len(baseDir)-1]
+
 	if exists {
 		dirOutput, err := dirOutputPath.ReadFile()
 		s.NoError(err)
+		dirOutput = bytes.ReplaceAll(dirOutput, placeholder, baseDir)
 		executor.On("RunCommand", "quarto", []string{"inspect", base.String()}, mock.Anything, mock.Anything).Return(dirOutput, nil, nil)
 	}
 
@@ -53,7 +63,7 @@ func (s *QuartoDetectorSuite) runInferType(testName string) []*config.Config {
 		outputPath := base.Join(fmt.Sprintf("inspect_%s.json", fileBase))
 		fileOutput, err := outputPath.ReadFile()
 		s.NoError(err)
-
+		fileOutput = bytes.ReplaceAll(fileOutput, placeholder, baseDir)
 		executor.On("RunCommand", "quarto", []string{"inspect", filename.String()}, mock.Anything, mock.Anything).Return(fileOutput, nil, nil)
 	}
 
@@ -74,7 +84,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownDoc() {
 		Entrypoint: "quarto-doc-none.qmd",
 		Title:      "quarto-doc-none",
 		Validate:   true,
-		Files:      []string{"*", "!quarto-doc-none.html", "!quarto-doc-none_files"},
+		Files:      []string{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -94,7 +104,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProject() {
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
 		Validate:   true,
-		Files:      []string{"*", "!quarto-proj-none.html", "!quarto-proj-none_files"},
+		Files:      []string{"quarto-proj-none.qmd", "_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -114,7 +124,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMarkdownProjectWindows() {
 		Entrypoint: "quarto-proj-none.qmd",
 		Title:      "quarto-proj-none",
 		Validate:   true,
-		Files:      []string{"*", "!quarto-proj-none.html", "!quarto-proj-none_files"},
+		Files:      []string{"quarto-proj-none.qmd", "_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -134,7 +144,7 @@ func (s *QuartoDetectorSuite) TestInferTypePythonProject() {
 		Entrypoint: "quarto-proj-py.qmd",
 		Title:      "quarto-proj-py",
 		Validate:   true,
-		Files:      []string{"*", "!quarto-proj-py.html", "!quarto-proj-py_files"},
+		Files:      []string{"quarto-proj-py.qmd", "_quarto.yml"},
 		Python:     &config.Python{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -155,7 +165,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRProject() {
 		Entrypoint: "quarto-proj-r.qmd",
 		Title:      "quarto-proj-r",
 		Validate:   true,
-		Files:      []string{"*", "!quarto-proj-r.html", "!quarto-proj-r_files"},
+		Files:      []string{"quarto-proj-r.qmd", "_quarto.yml"},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -176,7 +186,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRAndPythonProject() {
 		Entrypoint: "quarto-proj-r-py.qmd",
 		Title:      "quarto-proj-r-py",
 		Validate:   true,
-		Files:      []string{"*", "!quarto-proj-r-py.html", "!quarto-proj-r-py_files"},
+		Files:      []string{"quarto-proj-r-py.qmd", "_quarto.yml"},
 		Python:     &config.Python{},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
@@ -198,7 +208,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRShinyProject() {
 		Entrypoint: "quarto-proj-r-shiny.qmd",
 		Title:      "quarto-proj-r-shiny",
 		Validate:   true,
-		Files:      []string{"*", "!quarto-proj-r-shiny.html", "!quarto-proj-r-shiny_files"},
+		Files:      []string{"quarto-proj-r-shiny.qmd", "_quarto.yml"},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -219,7 +229,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Entrypoint: "about.qmd",
 		Title:      "About",
 		Validate:   true,
-		Files:      []string{"*", "!about.html", "!about_files", "!_site"},
+		Files:      []string{"index.qmd", "about.qmd", "_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -231,7 +241,7 @@ func (s *QuartoDetectorSuite) TestInferTypeQuartoWebsite() {
 		Entrypoint: "index.qmd",
 		Title:      "quarto-website-none",
 		Validate:   true,
-		Files:      []string{"*", "!index.html", "!index_files", "!_site"},
+		Files:      []string{"index.qmd", "about.qmd", "_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -251,7 +261,7 @@ func (s *QuartoDetectorSuite) TestInferTypeRMarkdownDoc() {
 		Entrypoint: "static.Rmd",
 		Title:      "static",
 		Validate:   true,
-		Files:      []string{"*", "!static.html", "!static_files"},
+		Files:      []string{},
 		R:          &config.R{},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
@@ -272,7 +282,7 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		Entrypoint: "document1.qmd",
 		Title:      "quarto-proj-none-multidocument",
 		Validate:   true,
-		Files:      []string{"*", "!document1.html", "!document1_files"},
+		Files:      []string{"document1.qmd", "document2.qmd", "_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
@@ -284,10 +294,52 @@ func (s *QuartoDetectorSuite) TestInferTypeMultidocProject() {
 		Entrypoint: "document2.qmd",
 		Title:      "quarto-proj-none-multidocument",
 		Validate:   true,
-		Files:      []string{"*", "!document2.html", "!document2_files"},
+		Files:      []string{"document1.qmd", "document2.qmd", "_quarto.yml"},
 		Quarto: &config.Quarto{
 			Version: "1.4.553",
 			Engines: []string{"markdown"},
 		},
 	}, configs[1])
+}
+
+func (s *QuartoDetectorSuite) TestInferTypeNotebook() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	configs := s.runInferType("stock-report-jupyter")
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuarto,
+		Entrypoint: "stock-report-jupyter.ipynb",
+		Title:      "Stock Report: TSLA",
+		Validate:   true,
+		Files:      []string{"stock-report-jupyter.ipynb"},
+		Python:     &config.Python{},
+		Quarto: &config.Quarto{
+			Version: "1.5.54",
+			Engines: []string{"jupyter"},
+		},
+	}, configs[0])
+}
+
+func (s *QuartoDetectorSuite) TestInferTypeRevalJSQuartoShiny() {
+	if runtime.GOOS == "windows" {
+		s.T().Skip("This test does not run on Windows")
+	}
+	configs := s.runInferType("dashboard")
+	s.Len(configs, 1)
+	s.Equal(&config.Config{
+		Schema:     schema.ConfigSchemaURL,
+		Type:       config.ContentTypeQuartoShiny,
+		Entrypoint: "dashboard.qmd",
+		Title:      "posit::conf(2024)",
+		Validate:   true,
+		Files:      []string{"dashboard.qmd"},
+		Quarto: &config.Quarto{
+			Version: "1.5.54",
+			Engines: []string{"knitr"},
+		},
+		R: &config.R{},
+	}, configs[0])
 }

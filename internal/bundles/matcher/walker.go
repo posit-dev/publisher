@@ -59,20 +59,24 @@ func (i *matchingWalker) Walk(base util.AbsolutePath, fn util.AbsoluteWalkFunc) 
 	return base.Walk(func(path util.AbsolutePath, info fs.FileInfo, err error) error {
 		if path != base {
 			m := i.matchList.Match(path)
-			if m == nil || m.Exclude {
-				i.log.Debug("excluding", "path", path)
-				if info.IsDir() {
+			if info.IsDir() {
+				// If there was not an explicit exclusion, we need to
+				// traverse the directory to see if any patterns match
+				// within it.
+				if m != nil && m.Exclude {
+					i.log.Debug("excluding directory", "path", path)
 					return filepath.SkipDir
-				} else {
+				}
+				// Ignore Python environment directories. We check for these
+				// separately because they aren't expressible as gitignore patterns.
+				if util.IsPythonEnvironmentDir(path) || util.IsRenvLibraryDir(path) {
+					i.log.Debug("excluding library dir", "path", path)
+					return filepath.SkipDir
+				}
+			} else {
+				if m == nil || m.Exclude {
 					return nil
 				}
-			}
-
-			// Ignore Python environment directories. We check for these
-			// separately because they aren't expressible as gitignore patterns.
-			if info.IsDir() && (util.IsPythonEnvironmentDir(path) || util.IsRenvLibraryDir(path)) {
-				i.log.Debug("excluding library dir", "path", path)
-				return filepath.SkipDir
 			}
 		}
 		return fn(path, info, err)

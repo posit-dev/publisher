@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -20,7 +21,7 @@ type PythonInspector interface {
 	InspectPython() (*config.Python, error)
 	ReadRequirementsFile(path util.AbsolutePath) ([]string, error)
 	WriteRequirementsFile(dest util.AbsolutePath, reqs []string) error
-	ScanRequirements(base util.AbsolutePath) ([]string, string, error)
+	ScanRequirements(base util.AbsolutePath) ([]string, []string, string, error)
 }
 
 type defaultPythonInspector struct {
@@ -35,6 +36,8 @@ type defaultPythonInspector struct {
 var _ PythonInspector = &defaultPythonInspector{}
 
 const PythonRequirementsFilename = "requirements.txt"
+
+var pythonVersionCache = make(map[string]string)
 
 func NewPythonInspector(base util.AbsolutePath, pythonPath util.Path, log logging.Logger) PythonInspector {
 	return &defaultPythonInspector{
@@ -63,7 +66,11 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 	}
 	defer util.Chdir(oldWD)
 
-	pythonVersion, err := i.getPythonVersion()
+	pythonExecutable, err := i.getPythonExecutable()
+	if err != nil {
+		return nil, err
+	}
+	pythonVersion, err := i.getPythonVersion(pythonExecutable)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +86,7 @@ func (i *defaultPythonInspector) InspectPython() (*config.Python, error) {
 }
 
 func (i *defaultPythonInspector) validatePythonExecutable(pythonExecutable string) error {
-	args := []string{"--version"}
-	_, _, err := i.executor.RunCommand(pythonExecutable, args, i.base, i.log)
+	_, err := i.getPythonVersion(pythonExecutable)
 	if err != nil {
 		return fmt.Errorf("could not run python executable '%s': %w", pythonExecutable, err)
 	}
@@ -130,10 +136,9 @@ func (i *defaultPythonInspector) getPythonExecutable() (string, error) {
 	return "", err
 }
 
-func (i *defaultPythonInspector) getPythonVersion() (string, error) {
-	pythonExecutable, err := i.getPythonExecutable()
-	if err != nil {
-		return "", err
+func (i *defaultPythonInspector) getPythonVersion(pythonExecutable string) (string, error) {
+	if version, ok := pythonVersionCache[pythonExecutable]; ok {
+		return version, nil
 	}
 	i.log.Info("Getting Python version", "python", pythonExecutable)
 	args := []string{
@@ -147,6 +152,12 @@ func (i *defaultPythonInspector) getPythonVersion() (string, error) {
 	}
 	version := strings.TrimSpace(string(output))
 	i.log.Info("Detected Python", "version", version)
+
+	// Cache interpreter version result, unless it's a pyenv shim
+	// (where the real Python interpreter may vary from run to run)
+	if !strings.Contains(pythonExecutable, "shims") {
+		pythonVersionCache[pythonExecutable] = version
+	}
 	return version, nil
 }
 
@@ -170,32 +181,38 @@ func (i *defaultPythonInspector) ReadRequirementsFile(path util.AbsolutePath) ([
 		return nil, err
 	}
 	lines := strings.Split(string(content), "\n")
+	commentRE := regexp.MustCompile(`^\s*(#.*)?$`)
 	lines = slices.DeleteFunc(lines, func(line string) bool {
-		return line == "" || strings.HasPrefix(line, "#")
+		return commentRE.MatchString(line)
 	})
 	return lines, nil
 }
 
-func (i *defaultPythonInspector) ScanRequirements(base util.AbsolutePath) ([]string, string, error) {
+func (i *defaultPythonInspector) ScanRequirements(base util.AbsolutePath) ([]string, []string, string, error) {
 	oldWD, err := util.Chdir(base.String())
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
 	defer util.Chdir(oldWD)
 
 	pythonExecutable, err := i.getPythonExecutable()
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
 	specs, err := i.scanner.ScanDependencies(base, pythonExecutable)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
 	reqs := make([]string, 0, len(specs))
+	incomplete := []string{}
+
 	for _, spec := range specs {
 		reqs = append(reqs, spec.String())
+		if spec.Version == "" {
+			incomplete = append(incomplete, string(spec.Name))
+		}
 	}
-	return reqs, pythonExecutable, nil
+	return reqs, incomplete, pythonExecutable, nil
 }
 
 func (i *defaultPythonInspector) WriteRequirementsFile(dest util.AbsolutePath, reqs []string) error {

@@ -80,18 +80,18 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
    * Event emitter for when the tree data of the Logs view changes.
    * @private
    */
-  private _onDidChangeTreeData: EventEmitter<LogsTreeItem | undefined> =
+  private treeDataChangeEventEmitter: EventEmitter<LogsTreeItem | undefined> =
     new EventEmitter<LogsTreeItem | undefined>();
 
   /**
    * Creates an instance of LogsTreeDataProvider.
    * @constructor
-   * @param {ExtensionContext} _context = The VSCode Extension's runtime context
-   * @param {EventStream} _stream - The event stream to listen to.
+   * @param {ExtensionContext} context = The VSCode Extension's runtime context
+   * @param {EventStream} stream - The event stream to listen to.
    */
   constructor(
-    private readonly _context: ExtensionContext,
-    private readonly _stream: EventStream,
+    private readonly context: ExtensionContext,
+    private readonly stream: EventStream,
   ) {}
 
   private resetStages() {
@@ -152,7 +152,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
   private registerEvents() {
     // Reset events when a new publish starts
-    this._stream.register("publish/start", (msg: EventStreamMessage) => {
+    this.stream.register("publish/start", (msg: EventStreamMessage) => {
       this.resetStages();
       this.publishingStage.inactiveLabel = `Publish "${msg.data.title}" to ${msg.data.server}`;
       this.publishingStage.activeLabel = `Publishing "${msg.data.title}" to ${msg.data.server}`;
@@ -160,7 +160,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.refresh();
     });
 
-    this._stream.register("publish/success", (msg: EventStreamMessage) => {
+    this.stream.register("publish/success", (msg: EventStreamMessage) => {
       this.publishingStage.status = LogStageStatus.completed;
       this.publishingStage.events.push(msg);
 
@@ -173,40 +173,44 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       this.refresh();
     });
 
-    this._stream.register(
-      "publish/failure",
-      async (msg: EventStreamMessage) => {
-        this.publishingStage.status = LogStageStatus.failed;
-        this.publishingStage.events.push(msg);
+    this.stream.register("publish/failure", async (msg: EventStreamMessage) => {
+      this.publishingStage.status = LogStageStatus.failed;
+      this.publishingStage.events.push(msg);
 
-        this.stages.forEach((stage) => {
-          if (stage.status === LogStageStatus.notStarted) {
-            stage.status = LogStageStatus.neverStarted;
-          }
-        });
-
-        let showLogsOption = "View Log";
-        const selection = await window.showErrorMessage(
-          `Deployment failed: ${msg.data.message}`,
-          showLogsOption,
-        );
-        if (selection === showLogsOption) {
-          await commands.executeCommand(Commands.Logs.Focus);
+      this.stages.forEach((stage) => {
+        if (stage.status === LogStageStatus.notStarted) {
+          stage.status = LogStageStatus.neverStarted;
+        } else if (stage.status === LogStageStatus.inProgress) {
+          stage.status = LogStageStatus.failed;
         }
-        this.refresh();
-      },
-    );
-
-    Array.from(this.stages.keys()).forEach((stageName) => {
-      this._stream.register(`${stageName}/start`, (_: EventStreamMessage) => {
-        const stage = this.stages.get(stageName);
-        if (stage) {
-          stage.status = LogStageStatus.inProgress;
-        }
-        this.refresh();
       });
 
-      this._stream.register(`${stageName}/log`, (msg: EventStreamMessage) => {
+      let showLogsOption = "View Log";
+      const selection = await window.showErrorMessage(
+        msg.data.cancelled === "true"
+          ? `Deployment cancelled: ${msg.data.message}`
+          : `Deployment failed: ${msg.data.message}`,
+        showLogsOption,
+      );
+      if (selection === showLogsOption) {
+        await commands.executeCommand(Commands.Logs.Focus);
+      }
+      this.refresh();
+    });
+
+    Array.from(this.stages.keys()).forEach((stageName) => {
+      this.stream.register(
+        `${stageName}/start`,
+        (/* _: EventStreamMessage */) => {
+          const stage = this.stages.get(stageName);
+          if (stage) {
+            stage.status = LogStageStatus.inProgress;
+          }
+          this.refresh();
+        },
+      );
+
+      this.stream.register(`${stageName}/log`, (msg: EventStreamMessage) => {
         const stage = this.stages.get(stageName);
         if (stage && msg.data.level !== "DEBUG") {
           stage.events.push(msg);
@@ -214,15 +218,18 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
         this.refresh();
       });
 
-      this._stream.register(`${stageName}/success`, (_: EventStreamMessage) => {
-        const stage = this.stages.get(stageName);
-        if (stage) {
-          stage.status = LogStageStatus.completed;
-        }
-        this.refresh();
-      });
+      this.stream.register(
+        `${stageName}/success`,
+        (/* _: EventStreamMessage */) => {
+          const stage = this.stages.get(stageName);
+          if (stage) {
+            stage.status = LogStageStatus.completed;
+          }
+          this.refresh();
+        },
+      );
 
-      this._stream.register(
+      this.stream.register(
         `${stageName}/failure`,
         (msg: EventStreamMessage) => {
           const stage = this.stages.get(stageName);
@@ -235,7 +242,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       );
 
       // Register for some specific events we need to handle differently
-      this._stream.register(
+      this.stream.register(
         "publish/restoreEnv/status",
         (msg: EventStreamMessage) => {
           const stage = this.stages.get("publish/restoreEnv");
@@ -251,14 +258,14 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
    * Get the event emitter for tree data changes.
    */
   get onDidChangeTreeData(): Event<LogsTreeItem | undefined> {
-    return this._onDidChangeTreeData.event;
+    return this.treeDataChangeEventEmitter.event;
   }
 
   /**
    * Refresh the tree view by firing the onDidChangeTreeData event.
    */
   public refresh(): void {
-    this._onDidChangeTreeData.fire(undefined);
+    this.treeDataChangeEventEmitter.fire(undefined);
   }
 
   /**
@@ -272,7 +279,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
 
   /**
    * Get the child elements of the specified element.
-   * @param _ The parent element.
+   * @param The parent element.
    * @returns The child elements of the parent element.
    */
   getChildren(element?: LogsTreeItem): ProviderResult<Array<LogsTreeItem>> {
@@ -304,8 +311,8 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
   }
 
   /**
-   * Register the tree view in the extension this._context.
-   * @param this._context The extension this._context.
+   * Register the tree view in the extension this.context.
+   * @param this.context The extension this.context.
    */
   public register() {
     // Initialize the stages map and the outer, publishing stage
@@ -315,7 +322,7 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
     this.registerEvents();
 
     // Create a tree view with the specified view name and options
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       window.createTreeView(Views.Logs, {
         treeDataProvider: this,
       }),

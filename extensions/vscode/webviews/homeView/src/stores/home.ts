@@ -13,6 +13,7 @@ import {
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
+import { DeploymentSelector } from "../../../../src/types/shared";
 
 export const useHomeStore = defineStore("home", () => {
   const publishInProgress = ref(false);
@@ -22,12 +23,41 @@ export const useHomeStore = defineStore("home", () => {
   const configurationsInError = ref<ConfigurationError[]>([]);
   const credentials = ref<Credential[]>([]);
 
-  const selectedContentRecord = ref<ContentRecord | PreContentRecord>();
-  const selectedConfiguration = ref<Configuration>();
+  const showDisabledOverlay = ref(false);
 
+  const selectedContentRecord = ref<ContentRecord | PreContentRecord>();
+
+  // Always use the content record as the source of truth for the
+  // configuration. Can be undefined if a Configuration is not specified or
+  // found.
+  const selectedConfiguration = computed(
+    (): Configuration | ConfigurationError | undefined => {
+      if (!selectedContentRecord.value) {
+        return undefined;
+      }
+      const { configurationName, projectDir } = selectedContentRecord.value;
+      let result;
+      result = configurations.value.find(
+        (cfg) =>
+          cfg.configurationName === configurationName &&
+          cfg.projectDir === projectDir,
+      );
+      if (!result) {
+        result = configurationsInError.value.find(
+          (cfg) =>
+            cfg.configurationName === configurationName &&
+            cfg.projectDir === projectDir,
+        );
+      }
+      return result;
+    },
+  );
+
+  // Always use the content record as the source of truth for the
+  // credential. Can be undefined if a Credential is not specified or found.
   const serverCredential = computed(() => {
-    return credentials.value.find((c) => {
-      const credentialUrl = c.url.toLowerCase();
+    return credentials.value.find((cfg) => {
+      const credentialUrl = cfg.url.toLowerCase();
       const recordUrl = selectedContentRecord.value?.serverUrl.toLowerCase();
       if (!recordUrl) {
         return false;
@@ -53,6 +83,8 @@ export const useHomeStore = defineStore("home", () => {
   const rPackageManager = ref<string>();
   const rVersion = ref<string>();
 
+  const initializingRequestComplete = ref<boolean>(false);
+
   const gitRefreshError = ref<string>();
   const gitRepo = ref<string>();
   const gitRepoUrl = ref<string>();
@@ -68,15 +100,22 @@ export const useHomeStore = defineStore("home", () => {
    * @param name the name of the new contentRecord to select
    * @returns true if the selected contentRecord was the same, false if not
    */
-  function updateSelectedContentRecordByName(name: string) {
+  function updateSelectedContentRecordBySelector(
+    selector?: DeploymentSelector,
+  ) {
     const previousSelectedContentRecord = selectedContentRecord.value;
+    const previousSelectedConfig = selectedConfiguration.value;
 
     const contentRecord = contentRecords.value.find(
-      (d) => d.deploymentName === name,
+      (d) => d.deploymentPath === selector?.deploymentPath,
     );
 
     selectedContentRecord.value = contentRecord;
-    return previousSelectedContentRecord === selectedContentRecord.value;
+
+    return (
+      previousSelectedContentRecord === selectedContentRecord.value &&
+      previousSelectedConfig === selectedConfiguration.value
+    );
   }
 
   function updateSelectedContentRecordByObject(
@@ -86,50 +125,27 @@ export const useHomeStore = defineStore("home", () => {
     selectedContentRecord.value = contentRecord;
   }
 
-  /**
-   * Updates the selected configuration to the one with the given name.
-   * If the named configuration is not found, the selected contentRecord is set to undefined.
-   *
-   * @param name the name of the new configuration to select
-   * @returns true if the selected contentRecord was the same, false if not
-   */
-  function updateSelectedConfigurationByName(name: string) {
-    const previousSelectedConfig = selectedConfiguration.value;
-
-    const config = configurations.value.find(
-      (c) => c.configurationName === name,
-    );
-
-    selectedConfiguration.value = config;
-    return previousSelectedConfig === selectedConfiguration.value;
-  }
-
-  function updateSelectedConfigurationByObject(config: Configuration) {
-    configurations.value.push(config);
-    selectedConfiguration.value = config;
-  }
-
-  const updateCredentialsAndConfigurationForContentRecord = () => {
-    if (selectedContentRecord.value?.configurationName) {
-      updateSelectedConfigurationByName(
-        selectedContentRecord.value?.configurationName,
-      );
-    }
-  };
-
   watch([selectedConfiguration], () => updateParentViewSelectionState());
 
   const updateParentViewSelectionState = () => {
     const hostConduit = useHostConduitService();
-    hostConduit.sendMsg({
-      kind: WebviewToHostMessageType.SAVE_SELECTION_STATE,
-      content: {
-        state: {
-          deploymentName: selectedContentRecord.value?.saveName,
-          configurationName: selectedConfiguration.value?.configurationName,
+    // skip saving the selection if we have not yet
+    // selected a content record. This is probably an init
+    // sequence.
+    if (selectedContentRecord.value) {
+      const state = {
+        deploymentName: selectedContentRecord.value.saveName,
+        projectDir: selectedContentRecord.value.projectDir,
+        configurationName: selectedConfiguration.value?.configurationName,
+        deploymentPath: selectedContentRecord.value.deploymentPath,
+      };
+      hostConduit.sendMsg({
+        kind: WebviewToHostMessageType.SAVE_SELECTION_STATE,
+        content: {
+          state,
         },
-      },
-    });
+      });
+    }
   };
 
   const updatePythonPackages = (
@@ -191,6 +207,7 @@ export const useHomeStore = defineStore("home", () => {
   };
 
   return {
+    showDisabledOverlay,
     publishInProgress,
     contentRecords,
     configurations,
@@ -200,6 +217,7 @@ export const useHomeStore = defineStore("home", () => {
     selectedConfiguration,
     serverCredential,
     includedFiles,
+    initializingRequestComplete,
     excludedFiles,
     lastContentRecordResult,
     lastContentRecordMsg,
@@ -217,11 +235,8 @@ export const useHomeStore = defineStore("home", () => {
     gitRepoLocalBranch,
     gitRepoLocalCommit,
     gitRepoNumberOfChanges,
-    updateSelectedContentRecordByName,
+    updateSelectedContentRecordBySelector,
     updateSelectedContentRecordByObject,
-    updateSelectedConfigurationByName,
-    updateSelectedConfigurationByObject,
-    updateCredentialsAndConfigurationForContentRecord,
     updateParentViewSelectionState,
     updatePythonPackages,
     updateRPackages,

@@ -10,7 +10,6 @@ import {
   RefreshCredentialDataMsg,
   RefreshContentRecordDataMsg,
   RefreshFilesListsMsg,
-  UpdateConfigSelectionMsg,
   UpdateContentRecordSelectionMsg,
   UpdatePythonPackages,
   UpdateRPackages,
@@ -21,29 +20,31 @@ import {
   WebviewToHostMessageType,
 } from "../../../src/types/messages/webviewToHostMessages";
 import { useHomeStore } from "./stores/home";
+import { vscodeAPI } from "src/vscode";
 
-let _hostConduit: HostConduit | undefined = undefined;
+let hostConduit: HostConduit | undefined = undefined;
 
-const vsCodeApi = acquireVsCodeApi();
+const vsCodeApi = vscodeAPI();
 
 export function useHostConduitService() {
-  if (!_hostConduit) {
-    _hostConduit = new HostConduit(window, vsCodeApi);
-    onMounted(() => _hostConduit && _hostConduit.onMsg(onMessageFromHost));
-    onUnmounted(() => _hostConduit && _hostConduit.deactivate());
-    _hostConduit.sendMsg({
+  if (!hostConduit) {
+    hostConduit = new HostConduit(window, vsCodeApi);
+    onMounted(() => hostConduit && hostConduit.onMsg(onMessageFromHost));
+    onUnmounted(() => hostConduit && hostConduit.deactivate());
+    useHomeStore().initializingRequestComplete = false;
+    hostConduit.sendMsg({
       kind: WebviewToHostMessageType.INITIALIZING,
     });
   }
 
   const sendMsg = (msg: WebviewToHostMessage) => {
-    if (!_hostConduit) {
+    if (!hostConduit) {
       throw new Error(
         "HostCondiutService::sendMsg attemped ahead of call to useHostConduitService",
       );
     }
     console.debug(`HostConduitService - Sending Msg: ${JSON.stringify(msg)}`);
-    return _hostConduit.sendMsg(msg);
+    return hostConduit.sendMsg(msg);
   };
 
   return {
@@ -54,6 +55,8 @@ export function useHostConduitService() {
 const onMessageFromHost = (msg: HostToWebviewMessage): void => {
   console.debug(`HostConduitService - Receiving Msg: ${JSON.stringify(msg)}`);
   switch (msg.kind) {
+    case HostToWebviewMessageType.INITIALIZING_REQUEST_COMPLETE:
+      return onInitializingRequestCompleteMsg();
     case HostToWebviewMessageType.REFRESH_CONTENTRECORD_DATA:
       return onRefreshContentRecordDataMsg(msg);
     case HostToWebviewMessageType.REFRESH_CONFIG_DATA:
@@ -68,8 +71,6 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onPublishFinishFailureMsg(msg);
     case HostToWebviewMessageType.UPDATE_CONTENTRECORD_SELECTION:
       return onUpdateContentRecordSelectionMsg(msg);
-    case HostToWebviewMessageType.UPDATE_CONFIG_SELECTION:
-      return onUpdateConfigSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
       return onSaveSelectionMsg();
     case HostToWebviewMessageType.REFRESH_FILES_LISTS:
@@ -80,9 +81,25 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onUpdateRPackages(msg);
     case HostToWebviewMessageType.GIT_STATUS:
       return onGitStatus(msg);
+    case HostToWebviewMessageType.SHOW_DISABLE_OVERLAY:
+      return onShowDisableOverlayMsg();
+    case HostToWebviewMessageType.HIDE_DISABLE_OVERLAY:
+      return onHideDisableOverlayMsg();
     default:
       console.warn(`unexpected command: ${JSON.stringify(msg)}`);
   }
+};
+
+const onInitializingRequestCompleteMsg = () => {
+  useHomeStore().initializingRequestComplete = true;
+};
+
+const onShowDisableOverlayMsg = () => {
+  useHomeStore().showDisabledOverlay = true;
+};
+
+const onHideDisableOverlayMsg = () => {
+  useHomeStore().showDisabledOverlay = false;
 };
 
 /**
@@ -94,26 +111,27 @@ const onRefreshContentRecordDataMsg = (msg: RefreshContentRecordDataMsg) => {
   const home = useHomeStore();
   home.contentRecords = msg.content.contentRecords;
 
-  const name = msg.content.selectedContentRecordName;
-  if (name) {
-    home.updateSelectedContentRecordByName(name);
-  } else if (name === null) {
+  let selector = msg.content.deploymentSelected;
+  if (selector === null) {
     home.selectedContentRecord = undefined;
-  } else if (home.selectedContentRecord) {
-    if (
-      !home.updateSelectedContentRecordByName(
-        home.selectedContentRecord.deploymentName,
-      )
-    ) {
-      // Recalculate if the contentRecord object changed with new data
-      home.updateCredentialsAndConfigurationForContentRecord();
-    }
+    return;
   }
 
-  // If no contentRecord is selected, unset the selected configuration
-  if (home.selectedContentRecord === undefined) {
-    home.selectedConfiguration = undefined;
+  // If the selector is undefined don't change the selection, but update
+  // the data
+  if (selector === undefined) {
+    if (home.selectedContentRecord) {
+      home.updateSelectedContentRecordBySelector({
+        deploymentPath: home.selectedContentRecord.deploymentPath,
+        deploymentName: home.selectedContentRecord.deploymentName,
+        projectDir: home.selectedContentRecord.projectDir,
+      });
+    }
+    return;
   }
+
+  // At this point we have a selector, so update the selection
+  home.updateSelectedContentRecordBySelector(selector);
 };
 
 /**
@@ -126,21 +144,6 @@ const onRefreshConfigDataMsg = (msg: RefreshConfigDataMsg) => {
   const home = useHomeStore();
   home.configurations = msg.content.configurations;
   home.configurationsInError = msg.content.configurationsInError;
-
-  const name = msg.content.selectedConfigurationName;
-  if (name) {
-    home.updateSelectedConfigurationByName(name);
-  } else if (name === null) {
-    home.selectedConfiguration = undefined;
-  } else if (home.selectedConfiguration) {
-    home.updateSelectedConfigurationByName(
-      home.selectedConfiguration.configurationName,
-    );
-  } else if (home.selectedContentRecord?.configurationName) {
-    home.updateSelectedConfigurationByName(
-      home.selectedContentRecord.configurationName,
-    );
-  }
 };
 
 /**
@@ -177,13 +180,7 @@ const onUpdateContentRecordSelectionMsg = (
     home.updateParentViewSelectionState();
   }
 };
-const onUpdateConfigSelectionMsg = (msg: UpdateConfigSelectionMsg) => {
-  const home = useHomeStore();
-  home.updateSelectedConfigurationByObject(msg.content.config);
-  if (msg.content.saveSelection) {
-    home.updateParentViewSelectionState();
-  }
-};
+
 const onSaveSelectionMsg = () => {
   const home = useHomeStore();
   home.updateParentViewSelectionState();

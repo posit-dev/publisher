@@ -16,7 +16,7 @@ import { useBus } from "src/bus";
 import { confirmDelete } from "src/dialogs";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { newCredential } from "src/multiStepInputs/newCredential";
-import { Commands, Contexts, Views } from "src/constants";
+import { Commands, Contexts, CredentialGUIs, Views } from "src/constants";
 
 type CredentialEventEmitter = EventEmitter<
   CredentialsTreeItem | undefined | void
@@ -27,13 +27,14 @@ type CredentialEvent = Event<CredentialsTreeItem | undefined | void>;
 export class CredentialsTreeDataProvider
   implements TreeDataProvider<CredentialsTreeItem>
 {
-  private _onDidChangeTreeData: CredentialEventEmitter = new EventEmitter();
+  private treeDataChangeEventEmitter: CredentialEventEmitter =
+    new EventEmitter();
   readonly onDidChangeTreeData: CredentialEvent =
-    this._onDidChangeTreeData.event;
+    this.treeDataChangeEventEmitter.event;
 
-  constructor(private readonly _context: ExtensionContext) {
+  constructor(private readonly context: ExtensionContext) {
     useBus().on("refreshCredentials", () => {
-      this._onDidChangeTreeData.fire();
+      this.treeDataChangeEventEmitter.fire();
     });
   }
 
@@ -75,7 +76,7 @@ export class CredentialsTreeDataProvider
   };
 
   public register() {
-    this._context.subscriptions.push(
+    this.context.subscriptions.push(
       window.createTreeView(Views.Credentials, { treeDataProvider: this }),
       commands.registerCommand(
         Commands.Credentials.Refresh,
@@ -96,7 +97,10 @@ export class CredentialsTreeDataProvider
    * @returns
    */
   public add = async (startingServerUrl?: string) => {
-    const credential = await newCredential(startingServerUrl);
+    const credential = await newCredential(
+      Views.Credentials,
+      startingServerUrl,
+    );
     if (credential) {
       // refresh the credentials view
       this.triggerRefresh();
@@ -112,6 +116,7 @@ export class CredentialsTreeDataProvider
     }
     try {
       const api = await useApi();
+      item.cred.guid;
       await api.credentials.delete(item.cred.guid);
       window.setStatusBarMessage(
         `Credential for ${item.cred.name} has been erased from our memory!`,
@@ -127,8 +132,14 @@ export class CredentialsTreeDataProvider
 export class CredentialsTreeItem extends TreeItem {
   constructor(public readonly cred: Credential) {
     super(cred.name);
-    this.iconPath = new ThemeIcon("key");
+    this.iconPath =
+      cred.guid === CredentialGUIs.EnvironmentGUID
+        ? new ThemeIcon("bracket")
+        : new ThemeIcon("key");
     this.description = `${cred.url}`;
-    this.contextValue = Contexts.Credentials.Keychain;
+    this.contextValue =
+      cred.guid === CredentialGUIs.EnvironmentGUID
+        ? Contexts.Credentials.EnvironmentVars
+        : Contexts.Credentials.Keychain;
   }
 }

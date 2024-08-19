@@ -35,6 +35,7 @@ type Deployment struct {
 	BundleURL     string            `toml:"bundle_url,omitempty" json:"bundleUrl"`
 	DashboardURL  string            `toml:"dashboard_url,omitempty" json:"dashboardUrl"`
 	DirectURL     string            `toml:"direct_url,omitempty" json:"directUrl"`
+	LogsURL       string            `toml:"logs_url,omitempty" json:"logsUrl"`
 	Error         *types.AgentError `toml:"deployment_error,omitempty" json:"deploymentError"`
 	Files         []string          `toml:"files,multiline,omitempty" json:"files"`
 	Requirements  []string          `toml:"requirements,multiline,omitempty" json:"requirements"`
@@ -102,6 +103,10 @@ func FromFile(path util.AbsolutePath) (*Deployment, error) {
 	err = util.ReadTOMLFile(path, d)
 	if err != nil {
 		return nil, err
+	}
+	if d.LogsURL == "" && d.DashboardURL != "" {
+		// Migration
+		d.LogsURL = d.DashboardURL + "/logs"
 	}
 	return d, nil
 }

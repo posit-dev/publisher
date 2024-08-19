@@ -25,9 +25,9 @@ export type ConfigurationInspectionResult = {
 };
 
 export function isConfigurationError(
-  c: Configuration | ConfigurationError,
-): c is ConfigurationError {
-  return (c as ConfigurationError).error !== undefined;
+  cfg: Configuration | ConfigurationError,
+): cfg is ConfigurationError {
+  return (cfg as ConfigurationError).error !== undefined;
 }
 
 export enum ContentType {

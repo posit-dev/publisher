@@ -7,15 +7,22 @@ import {
   PreContentRecord,
 } from "../api";
 
-export type HomeViewState = {
-  deploymentName?: string;
-  configurationName?: string;
+export type DeploymentSelector = {
+  deploymentName: string;
+  deploymentPath: string;
+  projectDir: string;
 };
 
-export type DeploymentNames = {
-  deploymentName: string;
-  configurationName?: string;
+export type PublishProcessParams = DeploymentSelector & {
+  credentialName: string;
+  configurationName: string;
 };
+
+export type SelectionState =
+  | (DeploymentSelector & {
+      version: "v1";
+    })
+  | null;
 
 export type DeploymentObjects = {
   contentRecord: ContentRecord | PreContentRecord;

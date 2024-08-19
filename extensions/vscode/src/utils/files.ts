@@ -1,5 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
+import path from "path";
 import {
   FileType,
   Position,
@@ -8,9 +9,13 @@ import {
   workspace,
   window,
   commands,
+  TextDocument,
+  TabInputText,
+  NotebookDocument,
 } from "vscode";
+import { Utils as uriUtils } from "vscode-uri";
 
-import { ContentRecordFile } from "../api";
+import { ContentRecordFile } from "src/api";
 
 export async function fileExists(fileUri: Uri): Promise<boolean> {
   try {
@@ -233,4 +238,89 @@ export function splitFilesOnInclusion(
 
 export function isRelativePathRoot(path: string): boolean {
   return path === ".";
+}
+
+export function isActiveDocument(
+  document: TextDocument | NotebookDocument,
+): boolean {
+  const textEditor = window.activeTextEditor;
+  const notebookEditor = window.activeNotebookEditor;
+  return (
+    textEditor?.document === document || notebookEditor?.notebook === document
+  );
+}
+
+/**
+ * Returns a VSCode workspace relative directory path for a given URI.
+ *
+ * @param uri The URI to get the relative dirname of
+ * @returns A relative path `string` if the URI is in the workspace
+ * @returns `undefined` if the URI is not in the workspace
+ */
+export function relativeDir(uri: Uri): string | undefined {
+  const workspaceFolder = workspace.getWorkspaceFolder(uri);
+
+  if (!workspaceFolder) {
+    // File is outside of the workspace
+    return undefined;
+  }
+
+  const dirname = uriUtils.dirname(uri);
+
+  // If the file is in the workspace root, return "."
+  if (dirname.fsPath === workspaceFolder.uri.fsPath) {
+    return ".";
+  }
+
+  // Otherwise, return the relative path VSCode expects
+  return workspace.asRelativePath(dirname);
+}
+
+/**
+ * Returns a VSCode workspace relative file path for a given URI.
+ * This will include the path to a file
+ *
+ * @param uri The URI to get the relative path of
+ * @returns A relative path `string` if the URI is in the workspace
+ * @returns `undefined` if the URI is not in the workspace
+ */
+export function relativePath(uri: Uri): string | undefined {
+  if (uri === undefined) {
+    return undefined;
+  }
+  const relativeDirPath = relativeDir(uri);
+  if (!relativeDirPath) {
+    return undefined;
+  }
+  const base = uriUtils.basename(uri);
+  const relativeFilePath = uriUtils.joinPath(Uri.parse(relativeDirPath), base);
+  let result = relativeFilePath.path;
+  if (result.startsWith(path.sep)) {
+    result = result.replace(path.sep, "");
+  }
+  return result;
+}
+
+/**
+ * Returns a list of file path strings, representing the files which are currently
+ * open within the editor.
+ *
+ * @returns An array of relative paths (to the workspace)
+ *          NOTE: paths are not included if they are outside of the workspace
+ */
+export function vscodeOpenFiles(): string[] {
+  // build up a list of open files, relative to the opened workspace folder
+  const openFileList: string[] = [];
+  window.tabGroups.all.forEach((tabGroup) => {
+    tabGroup.tabs.forEach((tab) => {
+      const input = tab.input as TabInputText;
+      if (input) {
+        const filePath = relativePath(input.uri);
+        if (filePath) {
+          openFileList.push(filePath);
+        }
+      }
+    });
+  });
+  return openFileList;
 }
