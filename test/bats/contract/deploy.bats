@@ -59,7 +59,8 @@ init_with_fields() {
     perl -i -pe '$_ .= qq(description =  "'"${CONTENT}"' description"\n) if /title/' ${FULL_PATH}/.posit/publish/${CONTENT}.toml
 
     if [[ ${ADDITIONAL_FILES} ]]; then
-        sed -i '' "/files = \[/ s/\(.*\)\]/\1, '${ADDITIONAL_FILES}']/" ${FULL_PATH}/.posit/publish/${CONTENT}.toml
+        # sed -i '' "/files = \[/ s/\(.*\)\]/\1, '${ADDITIONAL_FILES}']/" ${FULL_PATH}/.posit/publish/${CONTENT}.toml
+        perl -i -pe "s/(files = \[.*)\]/\1, '${ADDITIONAL_FILES}']/" ${FULL_PATH}/.posit/publish/${CONTENT}.toml
     fi
 
     # add Connect runtime fields for interactive content
@@ -99,7 +100,7 @@ python_content_types=(
         run ${EXE} requirements show ${FULL_PATH}/                                                                                                                                                            
         assert_success
 
-        run diff <(grep -o '^[^=]*' ${FULL_PATH}/test/requirements.in | grep -v '^#') <(grep -o '^[^=]*' ${FULL_PATH}/requirements.txt | grep -v '^#')
+        run diff -i <(grep -o '^[^=]*' ${FULL_PATH}/test/requirements.in | grep -v '^#') <(grep -o '^[^=]*' ${FULL_PATH}/requirements.txt | grep -v '^#')
         assert_success
     else
         skip
