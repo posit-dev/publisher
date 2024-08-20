@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import TreeItem from "src/components/TreeItem.vue";
+import TreeItem from "src/components/tree/TreeItem.vue";
 import {
   includedFileTooltip,
   excludedFileTooltip,
@@ -42,7 +42,7 @@ import {
 import TreeProjectFiles from "src/components/views/projectFiles/TreeProjectFiles.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
-import PostDecor from "src/components/PostDecor.vue";
+import PostDecor from "src/components/tree/PostDecor.vue";
 import { ActionButton } from "src/components/ActionToolbar.vue";
 import { canFileBeExcluded, canFileBeIncluded } from "src/utils/files";
 

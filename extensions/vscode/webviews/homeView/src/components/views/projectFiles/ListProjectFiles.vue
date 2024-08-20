@@ -87,7 +87,7 @@ import { ref } from "vue";
 import { ContentRecordFile } from "../../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
-import TreeItem from "src/components/TreeItem.vue";
+import TreeItem from "src/components/tree/TreeItem.vue";
 import {
   includedFileTooltip,
   excludedFileTooltip,

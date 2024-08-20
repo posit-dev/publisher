@@ -27,7 +27,7 @@ import { computed, ref } from "vue";
 
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
 
-import TreeSection from "src/components/TreeSection.vue";
+import TreeSection from "src/components/tree/TreeSection.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 import ListProjectFiles from "src/components/views/projectFiles/ListProjectFiles.vue";
