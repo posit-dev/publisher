@@ -59,7 +59,6 @@ init_with_fields() {
     perl -i -pe '$_ .= qq(description =  "'"${CONTENT}"' description"\n) if /title/' ${FULL_PATH}/.posit/publish/${CONTENT}.toml
 
     if [[ ${ADDITIONAL_FILES} ]]; then
-        # sed -i '' "/files = \[/ s/\(.*\)\]/\1, '${ADDITIONAL_FILES}']/" ${FULL_PATH}/.posit/publish/${CONTENT}.toml
         perl -i -pe "s/(files = \[.*)\]/\1, '${ADDITIONAL_FILES}']/" ${FULL_PATH}/.posit/publish/${CONTENT}.toml
     fi
 
