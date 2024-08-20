@@ -2,6 +2,6 @@
 
 import getPort = require("get-port");
 
-export const acquire = async (): Promise<number> => {
+export const acquire = (): Promise<number> => {
   return getPort();
 };
