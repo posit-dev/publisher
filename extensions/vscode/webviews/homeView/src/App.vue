@@ -33,7 +33,7 @@ useHostConduitService();
 
 const home = useHomeStore();
 
-const projectFilesExpanded = ref(false);
+const projectFilesExpanded = ref(true);
 </script>
 
 <style lang="scss" scoped>
