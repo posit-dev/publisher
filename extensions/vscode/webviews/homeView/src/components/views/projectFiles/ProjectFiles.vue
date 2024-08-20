@@ -41,7 +41,7 @@ enum FilesViewLayout {
 const home = useHomeStore();
 const { sendMsg } = useHostConduitService();
 
-const viewLayout = ref<FilesViewLayout>(FilesViewLayout.LIST);
+const viewLayout = ref<FilesViewLayout>(FilesViewLayout.TREE);
 
 // Labels and Codicons selected to match source control view
 const swapViewLayoutAction = computed(() => {
