@@ -223,6 +223,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewDeploymentMultiStep(Views.HomeView);
       case WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT:
         return this.showNewCredentialForDeployment();
+      case WebviewToHostMessageType.NEW_CREDENTIAL:
+        return this.showNewCredential();
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
         return this.showPublishingLog();
       default:
@@ -901,6 +903,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         kind: HostToWebviewMessageType.HIDE_DISABLE_OVERLAY,
       });
     }
+  }
+
+  private async showNewCredential() {
+    return await commands.executeCommand(Commands.Credentials.Add);
   }
 
   private async showNewCredentialForDeployment() {

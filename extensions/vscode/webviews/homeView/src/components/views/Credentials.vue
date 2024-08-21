@@ -34,9 +34,9 @@ const sectionActions = computed(() => {
       label: "New Credential",
       codicon: "codicon-add",
       fn: () => {
-        // sendMsg({
-        //   kind: WebviewToHostMessageType.NEW_CREDENTIAL,
-        // });
+        sendMsg({
+          kind: WebviewToHostMessageType.NEW_CREDENTIAL,
+        });
       },
     },
     {
