@@ -1262,7 +1262,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   private refreshContentRecordsMutex = new Mutex();
-  public refreshContentRecords = async () => {
+  public refreshContentRecords = () => {
     return throttleWithLastPending(
       this.refreshContentRecordsMutex,
       async () => {
@@ -1277,7 +1277,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   };
 
   private refreshConfigurationsMutex = new Mutex();
-  public refreshConfigurations = async () => {
+  public refreshConfigurations = () => {
     return throttleWithLastPending(
       this.refreshConfigurationsMutex,
       async () => {
