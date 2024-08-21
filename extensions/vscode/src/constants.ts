@@ -116,3 +116,9 @@ export const enum Views {
   HelpAndFeedback = "posit.publisher.helpAndFeedback",
   Logs = "posit.publisher.logs",
 }
+
+export const DebounceDelaysMS = {
+  file: 1000,
+  refreshRPackages: 1000,
+  refreshPythonPackages: 1000,
+};

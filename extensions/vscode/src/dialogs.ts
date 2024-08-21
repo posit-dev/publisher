@@ -40,27 +40,27 @@ async function confirm(
   return choice === affirmativeItem;
 }
 
-export async function confirmOK(message: string): Promise<boolean> {
+export function confirmOK(message: string): Promise<boolean> {
   return confirm(message, okItem);
 }
 
-export async function confirmYes(message: string): Promise<boolean> {
+export function confirmYes(message: string): Promise<boolean> {
   return confirm(message, yesItem);
 }
 
-export async function confirmDelete(message: string): Promise<boolean> {
+export function confirmDelete(message: string): Promise<boolean> {
   return confirm(message, deleteItem);
 }
 
-export async function confirmForget(message: string): Promise<boolean> {
+export function confirmForget(message: string): Promise<boolean> {
   return confirm(message, forgetItem);
 }
 
-export async function confirmReplace(message: string): Promise<boolean> {
+export function confirmReplace(message: string): Promise<boolean> {
   return confirm(message, replaceItem);
 }
 
-export async function confirmOverwrite(message: string): Promise<boolean> {
+export function confirmOverwrite(message: string): Promise<boolean> {
   return confirm(message, overwriteItem);
 }
 
