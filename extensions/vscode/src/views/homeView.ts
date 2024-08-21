@@ -221,8 +221,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showDeploymentQuickPick();
       case WebviewToHostMessageType.NEW_DEPLOYMENT:
         return this.showNewDeploymentMultiStep(Views.HomeView);
-      case WebviewToHostMessageType.NEW_CREDENTIAL:
-        return this.showNewCredential();
+      case WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT:
+        return this.showNewCredentialForDeployment();
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
         return this.showPublishingLog();
       default:
@@ -903,7 +903,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private async showNewCredential() {
+  private async showNewCredentialForDeployment() {
     const contentRecord = await this.state.getSelectedContentRecord();
     if (!contentRecord) {
       return;
