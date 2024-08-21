@@ -20,6 +20,7 @@ import {
   workspace,
 } from "vscode";
 import { isAxiosError } from "axios";
+import { Mutex } from "async-mutex";
 
 import {
   Configuration,
@@ -68,17 +69,16 @@ import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExisti
 import { RPackage, RVersionConfig } from "src/api/types/packages";
 import { calculateTitle } from "src/utils/titles";
 import { ConfigWatcherManager, WatcherManager } from "src/watchers";
-import { Commands, Contexts, Views } from "src/constants";
+import { Commands, Contexts, DebounceDelaysMS, Views } from "src/constants";
 import { showProgress } from "src/utils/progress";
 import { newCredential } from "src/multiStepInputs/newCredential";
 import { PublisherState } from "src/state";
+import { throttleWithLastPending } from "src/utils/throttle";
 
 enum HomeViewInitialized {
   initialized = "initialized",
   uninitialized = "uninitialized",
 }
-
-const fileEventDebounce = 200;
 
 export class HomeViewProvider implements WebviewViewProvider, Disposable {
   private disposables: Disposable[] = [];
@@ -137,8 +137,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       "activeConfigChanged",
       (cfg: Configuration | ConfigurationError | undefined) => {
         this.sendRefreshedFilesLists();
-        this.onRefreshPythonPackages();
-        this.onRefreshRPackages();
+        this.refreshPythonPackages();
+        this.refreshRPackages();
 
         this.configWatchers?.dispose();
         if (cfg && isConfigurationError(cfg)) {
@@ -147,33 +147,33 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         this.configWatchers = new ConfigWatcherManager(cfg);
 
         this.configWatchers.configFile?.onDidChange(
-          this.sendRefreshedFilesLists,
+          this.debounceSendRefreshedFilesLists,
           this,
         );
 
         this.configWatchers.pythonPackageFile?.onDidCreate(
-          this.onRefreshPythonPackages,
+          this.debounceRefreshPythonPackages,
           this,
         );
         this.configWatchers.pythonPackageFile?.onDidChange(
-          this.onRefreshPythonPackages,
+          this.debounceRefreshPythonPackages,
           this,
         );
         this.configWatchers.pythonPackageFile?.onDidDelete(
-          this.onRefreshPythonPackages,
+          this.debounceRefreshPythonPackages,
           this,
         );
 
         this.configWatchers.rPackageFile?.onDidCreate(
-          this.onRefreshRPackages,
+          this.debounceRefreshRPackages,
           this,
         );
         this.configWatchers.rPackageFile?.onDidChange(
-          this.onRefreshRPackages,
+          this.debounceRefreshRPackages,
           this,
         );
         this.configWatchers.rPackageFile?.onDidDelete(
-          this.onRefreshRPackages,
+          this.debounceRefreshRPackages,
           this,
         );
       },
@@ -197,9 +197,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.SAVE_SELECTION_STATE:
         return await this.onSaveSelectionState(msg);
       case WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES:
-        return await this.onRefreshPythonPackages();
+        return await this.debounceRefreshPythonPackages();
       case WebviewToHostMessageType.REFRESH_R_PACKAGES:
-        return await this.onRefreshRPackages();
+        return await this.debounceRefreshRPackages();
       case WebviewToHostMessageType.VSCODE_OPEN_RELATIVE:
         return await this.onRelativeOpenVSCode(msg);
       case WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS:
@@ -209,7 +209,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.VSCODE_OPEN:
         return await this.onVSCodeOpen(msg);
       case WebviewToHostMessageType.REQUEST_FILES_LISTS:
-        return this.sendRefreshedFilesLists();
+        return this.debounceSendRefreshedFilesLists();
       case WebviewToHostMessageType.INCLUDE_FILE:
         return this.updateFileList(msg.content.path, FileAction.INCLUDE);
       case WebviewToHostMessageType.EXCLUDE_FILE:
@@ -470,7 +470,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     );
   }
 
-  private async onRefreshPythonPackages() {
+  public debounceRefreshPythonPackages = debounce(
+    this.refreshPythonPackages,
+    DebounceDelaysMS.refreshPythonPackages,
+  );
+
+  private async refreshPythonPackages() {
     const activeConfiguration = await this.state.getSelectedConfiguration();
     let pythonProject = true;
     let packages: string[] = [];
@@ -512,7 +517,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             pythonProject = false;
           } else {
             const summary = getSummaryStringFromError(
-              "homeView::onRefreshPythonPackages",
+              "homeView::refreshPythonPackages",
               error,
             );
             window.showInformationMessage(summary);
@@ -532,7 +537,12 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     });
   }
 
-  private async onRefreshRPackages() {
+  public debounceRefreshRPackages = debounce(
+    this.refreshRPackages,
+    DebounceDelaysMS.refreshRPackages,
+  );
+
+  private async refreshRPackages() {
     const activeConfiguration = await this.state.getSelectedConfiguration();
     let rProject = true;
     let packages: RPackage[] = [];
@@ -575,7 +585,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
             rProject = false;
           } else {
             const summary = getSummaryStringFromError(
-              "homeView::onRefreshRPackages",
+              "homeView::refreshRPackages",
               error,
             );
             window.showInformationMessage(summary);
@@ -1251,21 +1261,33 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   };
 
-  public refreshContentRecords = async () => {
-    await this.refreshContentRecordData();
-    this.updateWebViewViewContentRecords();
-    useBus().trigger(
-      "activeContentRecordChanged",
-      await this.state.getSelectedContentRecord(),
+  private refreshContentRecordsMutex = new Mutex();
+  public refreshContentRecords = () => {
+    return throttleWithLastPending(
+      this.refreshContentRecordsMutex,
+      async () => {
+        await this.refreshContentRecordData();
+        this.updateWebViewViewContentRecords();
+        useBus().trigger(
+          "activeContentRecordChanged",
+          await this.state.getSelectedContentRecord(),
+        );
+      },
     );
   };
 
-  public refreshConfigurations = async () => {
-    await this.refreshConfigurationData();
-    this.updateWebViewViewConfigurations();
-    useBus().trigger(
-      "activeConfigChanged",
-      await this.state.getSelectedConfiguration(),
+  private refreshConfigurationsMutex = new Mutex();
+  public refreshConfigurations = () => {
+    return throttleWithLastPending(
+      this.refreshConfigurationsMutex,
+      async () => {
+        await this.refreshConfigurationData();
+        this.updateWebViewViewConfigurations();
+        useBus().trigger(
+          "activeConfigChanged",
+          await this.state.getSelectedConfiguration(),
+        );
+      },
     );
   };
 
@@ -1298,6 +1320,10 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       }
     }
   };
+
+  public debounceSendRefreshedFilesLists = debounce(async () => {
+    return await this.sendRefreshedFilesLists();
+  }, DebounceDelaysMS.file);
 
   public initiatePublish(target: PublishProcessParams) {
     this.initiateDeployment(
@@ -1612,7 +1638,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       ),
       commands.registerCommand(
         Commands.PythonPackages.Refresh,
-        this.onRefreshPythonPackages,
+        this.refreshPythonPackages,
         this,
       ),
       commands.registerCommand(
@@ -1641,7 +1667,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       ),
       commands.registerCommand(
         Commands.RPackages.Refresh,
-        this.onRefreshRPackages,
+        this.refreshRPackages,
         this,
       ),
       commands.registerCommand(
@@ -1651,6 +1677,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       ),
     );
 
+    // directories
     watchers.positDir?.onDidDelete(() => {
       this.refreshContentRecords();
       this.refreshConfigurations();
@@ -1661,19 +1688,18 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }, this);
     watchers.contentRecordsDir?.onDidDelete(this.refreshContentRecords, this);
 
+    // configurations
     watchers.configurations?.onDidCreate(this.refreshConfigurations, this);
-    watchers.configurations?.onDidDelete(this.refreshConfigurations, this);
     watchers.configurations?.onDidChange(this.refreshConfigurations, this);
+    watchers.configurations?.onDidDelete(this.refreshConfigurations, this);
 
+    // content records
     watchers.contentRecords?.onDidCreate(this.refreshContentRecords, this);
-    watchers.contentRecords?.onDidDelete(this.refreshContentRecords, this);
     watchers.contentRecords?.onDidChange(this.refreshContentRecords, this);
+    watchers.contentRecords?.onDidDelete(this.refreshContentRecords, this);
 
-    const fileEventCallback = debounce(
-      this.sendRefreshedFilesLists,
-      fileEventDebounce,
-    );
-    watchers.allFiles?.onDidCreate(fileEventCallback, this);
-    watchers.allFiles?.onDidDelete(fileEventCallback, this);
+    // all files
+    watchers.allFiles?.onDidCreate(this.debounceSendRefreshedFilesLists, this);
+    watchers.allFiles?.onDidDelete(this.debounceSendRefreshedFilesLists, this);
   }
 }
