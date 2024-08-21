@@ -68,7 +68,7 @@ export function contentRecordNameValidator(
   contentRecordNames: string[],
   currentName: string,
 ) {
-  return async (value: string) => {
+  return (value: string) => {
     const isUnique =
       value === currentName ||
       uniqueContentRecordName(value, contentRecordNames);

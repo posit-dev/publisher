@@ -136,7 +136,7 @@ export class PublisherState implements Disposable {
     } catch (error: unknown) {
       const code = getStatusFromError(error);
       if (code !== 404) {
-        // 400 is expected when doesn't exist on disk
+        // 404 is expected when doesn't exist on disk
         const summary = getSummaryStringFromError(
           "getSelectedContentRecord, contentRecords.get",
           error,

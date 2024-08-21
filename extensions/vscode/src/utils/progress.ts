@@ -14,7 +14,7 @@ export async function showProgress(
       title,
       location: viewId ? { viewId } : ProgressLocation.Window,
     },
-    async () => {
+    () => {
       return until;
     },
   );

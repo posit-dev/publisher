@@ -21,7 +21,7 @@ type PythonInspector interface {
 	InspectPython() (*config.Python, error)
 	ReadRequirementsFile(path util.AbsolutePath) ([]string, error)
 	WriteRequirementsFile(dest util.AbsolutePath, reqs []string) error
-	ScanRequirements(base util.AbsolutePath) ([]string, string, error)
+	ScanRequirements(base util.AbsolutePath) ([]string, []string, string, error)
 }
 
 type defaultPythonInspector struct {
@@ -188,26 +188,31 @@ func (i *defaultPythonInspector) ReadRequirementsFile(path util.AbsolutePath) ([
 	return lines, nil
 }
 
-func (i *defaultPythonInspector) ScanRequirements(base util.AbsolutePath) ([]string, string, error) {
+func (i *defaultPythonInspector) ScanRequirements(base util.AbsolutePath) ([]string, []string, string, error) {
 	oldWD, err := util.Chdir(base.String())
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
 	defer util.Chdir(oldWD)
 
 	pythonExecutable, err := i.getPythonExecutable()
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
 	specs, err := i.scanner.ScanDependencies(base, pythonExecutable)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, "", err
 	}
 	reqs := make([]string, 0, len(specs))
+	incomplete := []string{}
+
 	for _, spec := range specs {
 		reqs = append(reqs, spec.String())
+		if spec.Version == "" {
+			incomplete = append(incomplete, string(spec.Name))
+		}
 	}
-	return reqs, pythonExecutable, nil
+	return reqs, incomplete, pythonExecutable, nil
 }
 
 func (i *defaultPythonInspector) WriteRequirementsFile(dest util.AbsolutePath, reqs []string) error {

@@ -41,12 +41,19 @@ func (m *MockPythonInspector) WriteRequirementsFile(base util.AbsolutePath, reqs
 	return args.Error(0)
 }
 
-func (m *MockPythonInspector) ScanRequirements(base util.AbsolutePath) ([]string, string, error) {
+func (m *MockPythonInspector) ScanRequirements(base util.AbsolutePath) ([]string, []string, string, error) {
 	args := m.Called()
+
 	reqs := args.Get(0)
-	if reqs == nil {
-		return nil, args.String(1), args.Error(2)
-	} else {
-		return reqs.([]string), args.String(1), args.Error(2)
+	var reqsStrings []string
+	if reqs != nil {
+		reqsStrings = reqs.([]string)
 	}
+
+	incomplete := args.Get(1)
+	var incompleteStrings []string
+	if incomplete != nil {
+		incompleteStrings = incomplete.([]string)
+	}
+	return reqsStrings, incompleteStrings, args.String(2), args.Error(3)
 }

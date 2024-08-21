@@ -4,6 +4,7 @@ import { AxiosInstance } from "axios";
 import {
   GetRPackagesResponse,
   PythonPackagesResponse,
+  ScanPythonPackagesResponse,
 } from "../types/packages";
 
 export class Packages {
@@ -50,7 +51,7 @@ export class Packages {
     python?: string,
     saveName?: string,
   ) {
-    return this.client.post<void>(
+    return this.client.post<ScanPythonPackagesResponse>(
       "packages/python/scan",
       { python, saveName },
       { params: { dir } },

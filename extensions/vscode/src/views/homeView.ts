@@ -44,12 +44,8 @@ import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
 import { deployProject } from "src/views/deployProgress";
 import { WebviewConduit } from "src/utils/webviewConduit";
-import {
-  fileExists,
-  relativeDir,
-  isRelativePathRoot,
-  relativePath,
-} from "src/utils/files";
+import { fileExists, relativeDir, isRelativePathRoot } from "src/utils/files";
+import { Utils as uriUtils } from "vscode-uri";
 import { newDeployment } from "src/multiStepInputs/newDeployment";
 import type {
   DeploymentSelector,
@@ -261,8 +257,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private async onDeployMsg(msg: DeployMsg) {
-    this.initiateDeployment(
+  private onDeployMsg(msg: DeployMsg) {
+    return this.initiateDeployment(
       msg.content.deploymentName,
       msg.content.credentialName,
       msg.content.configurationName,
@@ -676,8 +672,14 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Views.HomeView,
       );
 
-      await apiRequest;
+      const response = (await apiRequest).data;
       await commands.executeCommand("vscode.open", fileUri);
+
+      if (response.incomplete.length > 0) {
+        const importList = response.incomplete.join(", ");
+        const msg = `Could not find installed packages for some imports using ${response.python}. Install the required packages, or select a different interpreter, and try scanning again. Imports: ${importList}`;
+        window.showWarningMessage(msg);
+      }
     } catch (error: unknown) {
       const summary = getSummaryStringFromError(
         "homeView::onScanForPythonPackageRequirements",
@@ -741,7 +743,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private async propagateDeploymentSelection(
+  private propagateDeploymentSelection(
     deploymentSelector: DeploymentSelector | null,
   ) {
     // We have to break our protocol and go ahead and write this into storage,
@@ -825,7 +827,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   public async showNewDeploymentMultiStep(
     viewId: string,
     projectDir?: string,
-    entryPoint?: string,
+    entryPointFile?: string,
   ): Promise<PublishProcessParams | undefined> {
     // We need the initial queries to finish, before we can
     // use them (contentRecords, credentials and configs)
@@ -838,7 +840,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const deploymentObjects = await newDeployment(
         viewId,
         projectDir,
-        entryPoint,
+        entryPointFile,
       );
       if (deploymentObjects) {
         // add out new objects into our collections possibly ahead (we don't know) of
@@ -1340,14 +1342,16 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     // With multiple, if a compatible one is already active, then do nothing.
     // Otherwise, prompt for selection between multiple compatible deployments
 
-    const dir = relativeDir(uri);
+    const entrypointDir = relativeDir(uri);
     // If the file is outside the workspace, it cannot be an entrypoint
-    if (dir === undefined) {
+    if (entrypointDir === undefined) {
       return false;
     }
-    const entrypoint = relativePath(uri);
+    const entrypointFile = uriUtils.basename(uri);
 
     const api = await useApi();
+
+    await this.refreshAll(true, true);
 
     // We need the initial queries to finish, before we can
     // use them (contentRecords, credentials and configs)
@@ -1360,7 +1364,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let contentRecordList: (ContentRecord | PreContentRecord)[] = [];
     const getContentRecords = new Promise<void>(async (resolve, reject) => {
       try {
-        const response = await api.contentRecords.getAll(dir, {
+        const response = await api.contentRecords.getAll(entrypointDir, {
           recursive: false,
         });
         response.data.forEach((cfg) => {
@@ -1384,8 +1388,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     let configMap = new Map<string, Configuration>();
     const getConfigurations = new Promise<void>(async (resolve, reject) => {
       try {
-        const response = await api.configurations.getAll(dir, {
-          entrypoint,
+        const response = await api.configurations.getAll(entrypointDir, {
+          entrypoint: entrypointFile,
           recursive: false,
         });
         let rawConfigs = response.data;
@@ -1437,8 +1441,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // call new deployment
       const selected = await this.showNewDeploymentMultiStep(
         Views.HomeView,
-        dir,
-        entrypoint,
+        entrypointDir,
+        entrypointFile,
       );
       // we do not publish this, as we expect the user needs
       // to validate and update config settings.
@@ -1500,7 +1504,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       // none of the compatible ones are selected
       const selected = await this.showDeploymentQuickPick(
         compatibleContentRecords,
-        dir,
+        entrypointDir,
       );
       if (selected) {
         // publish!
