@@ -1679,6 +1679,24 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       ),
     );
 
+    this.context.subscriptions.push(
+      commands.registerCommand(Commands.HomeView.OpenGettingStarted, () => {
+        env.openExternal(
+          Uri.parse(
+            "https://github.com/posit-dev/publisher/blob/main/docs/index.md",
+          ),
+        );
+      }),
+    );
+
+    this.context.subscriptions.push(
+      commands.registerCommand(Commands.HomeView.OpenFeedback, () => {
+        env.openExternal(
+          Uri.parse("https://github.com/posit-dev/publisher/discussions"),
+        );
+      }),
+    );
+
     // directories
     watchers.positDir?.onDidDelete(() => {
       this.refreshContentRecords();

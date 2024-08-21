@@ -141,12 +141,12 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.helpAndFeedback.gettingStarted",
+        "command": "posit.publisher.homeView.gettingStarted",
         "title": "Open Getting Started Documentation",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.helpAndFeedback.openFeedback",
+        "command": "posit.publisher.homeView.openFeedback",
         "title": "Provide Feedback",
         "category": "Posit Publisher"
       },
@@ -404,15 +404,6 @@
           "visibility": "collapsed",
           "initialSize": 0,
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
-        },
-        {
-          "id": "posit.publisher.helpAndFeedback",
-          "name": "Help And Feedback",
-          "contextualTitle": "Publisher",
-          "icon": "$(info)",
-          "visibility": "collapsed",
-          "initialSize": 0,
-          "when": "workbenchState == folder  && posit.publish.state == 'initialized'"
         }
       ],
       "posit-publisher-logs": [

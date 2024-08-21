@@ -6,7 +6,6 @@ import * as ports from "src/ports";
 import { Service } from "src/services";
 import { ProjectTreeDataProvider } from "src/views/project";
 import { CredentialsTreeDataProvider } from "src/views/credentials";
-import { HelpAndFeedbackTreeDataProvider } from "src/views/helpAndFeedback";
 import { LogsTreeDataProvider } from "src/views/logs";
 import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
@@ -60,10 +59,6 @@ export async function activate(context: ExtensionContext) {
 
   const credentialsTreeDataProvider = new CredentialsTreeDataProvider(context);
 
-  const helpAndFeedbackTreeDataProvider = new HelpAndFeedbackTreeDataProvider(
-    context,
-  );
-
   const logsTreeDataProvider = new LogsTreeDataProvider(context, stream);
 
   const homeViewProvider = new HomeViewProvider(context, stream);
@@ -72,7 +67,6 @@ export async function activate(context: ExtensionContext) {
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
   credentialsTreeDataProvider.register();
-  helpAndFeedbackTreeDataProvider.register();
   logsTreeDataProvider.register();
   homeViewProvider.register(watchers);
 

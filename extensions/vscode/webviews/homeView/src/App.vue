@@ -8,6 +8,7 @@
         <ProjectFiles v-model:expanded="projectFilesExpanded" />
         <PythonPackages />
         <RPackages />
+        <HelpAndFeedback />
       </template>
     </OverlayableView>
   </main>
@@ -21,6 +22,7 @@ import EvenEasierDeploy from "src/components/EvenEasierDeploy.vue";
 import ProjectFiles from "src/components/views/ProjectFiles.vue";
 import PythonPackages from "src/components/views/PythonPackages.vue";
 import RPackages from "src/components/views/RPackages.vue";
+import HelpAndFeedback from "src/components/views/HelpAndFeedback.vue";
 
 import { useHostConduitService } from "src/HostConduitService";
 import { useHomeStore } from "./stores/home";
