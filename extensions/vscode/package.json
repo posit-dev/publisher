@@ -530,7 +530,7 @@
     "esbuild": "^0.21.4",
     "eslint": "^8.50.0",
     "eslint-config-prettier": "^9.1.0",
-    "fantasticon": "^3.0.0",
+    "@twbs/fantasticon": "^3.0.0",
     "glob": "^10.3.3",
     "mocha": "^10.2.0",
     "typescript": "^5.2.2"
