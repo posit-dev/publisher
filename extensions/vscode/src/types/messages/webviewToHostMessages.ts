@@ -14,6 +14,7 @@ export enum WebviewToHostMessageType {
   INCLUDE_FILE = "includeFile",
   EXCLUDE_FILE = "excludeFile",
   REQUEST_FILES_LISTS = "requestFilesLists",
+  REQUEST_CREDENTIALS = "requestCredentials",
   VSCODE_OPEN_RELATIVE = "VSCodeOpenRelativeMsg",
   REFRESH_PYTHON_PACKAGES = "RefreshPythonPackagesMsg",
   SCAN_PYTHON_PACKAGE_REQUIREMENTS = "ScanPythonPackageRequirementsMsg",
@@ -46,6 +47,7 @@ export type WebviewToHostMessage =
   | IncludeFileMsg
   | ExcludeFileMsg
   | RequestFilesListsMsg
+  | RequestCredentialsMsg
   | RefreshPythonPackagesMsg
   | VSCodeOpenRelativeMsg
   | ScanPythonPackageRequirementsMsg
@@ -68,6 +70,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.INCLUDE_FILE ||
     msg.kind === WebviewToHostMessageType.EXCLUDE_FILE ||
     msg.kind === WebviewToHostMessageType.REQUEST_FILES_LISTS ||
+    msg.kind === WebviewToHostMessageType.REQUEST_CREDENTIALS ||
     msg.kind === WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES ||
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN_RELATIVE ||
     msg.kind === WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS ||
@@ -140,6 +143,9 @@ export type ExcludeFileMsg = AnyWebviewToHostMessage<
 
 export type RequestFilesListsMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.REQUEST_FILES_LISTS>;
+
+export type RequestCredentialsMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.REQUEST_CREDENTIALS>;
 
 export type RefreshPythonPackagesMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES>;

@@ -210,6 +210,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return await this.onVSCodeOpen(msg);
       case WebviewToHostMessageType.REQUEST_FILES_LISTS:
         return this.debounceSendRefreshedFilesLists();
+      case WebviewToHostMessageType.REQUEST_CREDENTIALS:
+        await this.refreshCredentialData();
+        return this.updateWebViewViewCredentials();
       case WebviewToHostMessageType.INCLUDE_FILE:
         return this.updateFileList(msg.content.path, FileAction.INCLUDE);
       case WebviewToHostMessageType.EXCLUDE_FILE:

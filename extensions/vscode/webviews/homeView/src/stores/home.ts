@@ -22,6 +22,9 @@ export const useHomeStore = defineStore("home", () => {
   const configurations = ref<Configuration[]>([]);
   const configurationsInError = ref<ConfigurationError[]>([]);
   const credentials = ref<Credential[]>([]);
+  const sortedCredentials = computed(() => {
+    return credentials.value.sort((a, b) => a.name.localeCompare(b.name));
+  });
 
   const showDisabledOverlay = ref(false);
 
@@ -173,6 +176,7 @@ export const useHomeStore = defineStore("home", () => {
     configurations,
     configurationsInError,
     credentials,
+    sortedCredentials,
     selectedContentRecord,
     selectedConfiguration,
     serverCredential,
