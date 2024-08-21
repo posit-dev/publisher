@@ -268,6 +268,7 @@ func (p *defaultPublisher) createDeploymentRecord(
 		BundleID:      "",
 		DashboardURL:  getDashboardURL(p.Account.URL, contentID),
 		DirectURL:     getDirectURL(p.Account.URL, contentID),
+		LogsURL:       getLogsURL(p.Account.URL, contentID),
 		Error:         nil,
 	}
 
