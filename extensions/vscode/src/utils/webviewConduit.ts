@@ -1,6 +1,6 @@
 // Copyright (C) 2024 by Posit Software, PBC.
 
-import { Webview, Disposable } from "vscode";
+import { Webview, Disposable, window } from "vscode";
 import { WebviewToHostMessageCB } from "../types/messages/conduit";
 import { isWebviewToHostMessage } from "../types/messages/webviewToHostMessages";
 import { HostToWebviewMessage } from "../types/messages/hostToWebviewMessages";
@@ -22,16 +22,16 @@ export class WebviewConduit {
     //   `\nWebviewConduit trace: ${obj.kind}: ${JSON.stringify(obj.content)}`,
     // );
     if (!isWebviewToHostMessage(obj)) {
-      const msg = `\nNonConduitMessage Received: ${JSON.stringify(e)}\n`;
-
-      throw new Error(msg);
+      const msg = `Internal Error: WebviewConduit::onRawMsgCB - NonConduitMessage Received: ${JSON.stringify(e)}`;
+      window.showErrorMessage(msg);
+      return;
     }
     if (this.onMsgCB) {
       this.onMsgCB(obj);
     } else {
-      const msg = `onMsg callback not set ahead of receiving message: ${JSON.stringify(e)}`;
-      console.error(msg);
-      throw new Error(msg);
+      const msg = `Internal Error: WebviewConduit::onRawMsgCB - onMsg callback not set ahead of receiving message: ${JSON.stringify(e)}`;
+      window.showErrorMessage(msg);
+      return;
     }
   };
 
@@ -49,14 +49,18 @@ export class WebviewConduit {
     this.pendingMsgs = [];
   };
 
-  public onMsg = (cb: WebviewToHostMessageCB): Disposable => {
+  public onMsg = (cb: WebviewToHostMessageCB): Disposable | undefined => {
     if (!this.target) {
-      throw new Error(
-        `WebviewConduit::onMsg called before webview reference established with init().`,
+      window.showErrorMessage(
+        "Internal Error: WebviewConduit::onMsg called before webview reference established with init().",
       );
+      return undefined;
     }
     if (this.onMsgCB) {
-      throw new Error(`WebviewConduit::onMsg called a second time!`);
+      window.showErrorMessage(
+        "Internal Error: WWebviewConduit::onMsg called an unexpected second time",
+      );
+      return undefined;
     }
     this.onMsgCB = cb;
     return this.target.onDidReceiveMessage(this.onRawMsgCB);
