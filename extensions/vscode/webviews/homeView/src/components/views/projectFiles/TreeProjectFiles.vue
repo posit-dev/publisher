@@ -1,20 +1,20 @@
 <template>
-  <TreeItem
+  <TreeItemCheckbox
     v-for="file in props.files"
     :key="file.id"
     :title="file.base"
-    :list-style="file.reason?.exclude ? 'deemphasized' : 'default'"
-    :codicon="file.reason?.exclude ? 'codicon-error' : 'codicon-pass'"
+    :checked="isFileIncluded(file)"
+    :disabled="file.reason?.source === 'built-in'"
+    :list-style="isFileIncluded(file) ? 'default' : 'deemphasized'"
     :tooltip="
-      file.reason?.exclude
-        ? excludedFileTooltip(file)
-        : includedFileTooltip(file)
+      isFileIncluded(file)
+        ? includedFileTooltip(file)
+        : excludedFileTooltip(file)
     "
     :indentLevel="indentLevel"
     :actions="fileActions(file)"
-    v-on="{
-      click: file.isFile ? () => openFile(file) : undefined,
-    }"
+    @check="includeFile(file)"
+    @uncheck="excludeFile(file)"
   >
     <template v-if="file.files.length" #default="{ indentLevel }">
       <TreeProjectFiles :files="file.files" :indentLevel="indentLevel" />
@@ -30,11 +30,11 @@
     >
       <PostDecor class="text-git-added">A</PostDecor>
     </template>
-  </TreeItem>
+  </TreeItemCheckbox>
 </template>
 
 <script setup lang="ts">
-import TreeItem from "src/components/tree/TreeItem.vue";
+import TreeItemCheckbox from "src/components/tree/TreeItemCheckbox.vue";
 import {
   includedFileTooltip,
   excludedFileTooltip,
@@ -44,7 +44,6 @@ import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 import PostDecor from "src/components/tree/PostDecor.vue";
 import { ActionButton } from "src/components/ActionToolbar.vue";
-import { canFileBeExcluded, canFileBeIncluded } from "src/utils/files";
 
 import { ContentRecordFile, FileMatchSource } from "../../../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../../../src/types/messages/webviewToHostMessages";
@@ -61,6 +60,24 @@ const props = withDefaults(defineProps<Props>(), {
 const home = useHomeStore();
 const { sendMsg } = useHostConduitService();
 
+const isFileIncluded = (file: ContentRecordFile) => {
+  return Boolean(file.reason?.exclude === false);
+};
+
+const includeFile = (file: ContentRecordFile) => {
+  sendMsg({
+    kind: WebviewToHostMessageType.INCLUDE_FILE,
+    content: { path: file.id },
+  });
+};
+
+const excludeFile = (file: ContentRecordFile) => {
+  sendMsg({
+    kind: WebviewToHostMessageType.EXCLUDE_FILE,
+    content: { path: file.id },
+  });
+};
+
 const openFile = (file: ContentRecordFile) => {
   sendMsg({
     kind: WebviewToHostMessageType.VSCODE_OPEN_RELATIVE,
@@ -71,27 +88,13 @@ const openFile = (file: ContentRecordFile) => {
 const fileActions = (file: ContentRecordFile): ActionButton[] => {
   let actions: ActionButton[] = [];
 
-  if (canFileBeIncluded(file)) {
+  if (file.isFile) {
     actions.push({
-      label: file.isFile ? "Include this file" : "Include this folder",
-      codicon: "codicon-diff-added",
-      fn: () =>
-        sendMsg({
-          kind: WebviewToHostMessageType.INCLUDE_FILE,
-          content: { path: file.id },
-        }),
-    });
-  }
-
-  if (canFileBeExcluded(file)) {
-    actions.push({
-      label: file.isFile ? "Exclude this file" : "Exclude this folder",
-      codicon: "codicon-diff-removed",
-      fn: () =>
-        sendMsg({
-          kind: WebviewToHostMessageType.EXCLUDE_FILE,
-          content: { path: file.id },
-        }),
+      label: "Open file",
+      codicon: "codicon-link-external",
+      fn: () => {
+        openFile(file);
+      },
     });
   }
 
