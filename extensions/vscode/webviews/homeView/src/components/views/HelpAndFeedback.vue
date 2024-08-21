@@ -3,6 +3,7 @@
     <TreeItem
       title="Get Started with Posit Publisher"
       tooltip="Open Getting Started Documentation"
+      align-icon-with-twisty
       @click="
         hostConduit.sendMsg({
           kind: WebviewToHostMessageType.NAVIGATE,
@@ -16,6 +17,7 @@
     <TreeItem
       title="Provide Feedback"
       tooltip="Open GitHub Discussions"
+      align-icon-with-twisty
       @click="
         hostConduit.sendMsg({
           kind: WebviewToHostMessageType.NAVIGATE,
