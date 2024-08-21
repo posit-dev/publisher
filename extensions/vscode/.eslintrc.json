@@ -27,6 +27,7 @@
     "eqeqeq": "warn",
     "no-throw-literal": "error",
     "semi": "off",
+    "require-await": "error",
     "no-restricted-syntax": [
       "error",
       {

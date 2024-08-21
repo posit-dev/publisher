@@ -16,8 +16,6 @@ export const create = async (
   return [executable, [subcommand, "-vv", `--listen=${HOST}:${port}`, path]];
 };
 
-const getExecutableBinary = async (
-  context: ExtensionContext,
-): Promise<string> => {
+const getExecutableBinary = (context: ExtensionContext): string => {
   return path.join(context.extensionPath, "bin", "publisher");
 };

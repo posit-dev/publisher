@@ -258,8 +258,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private async onDeployMsg(msg: DeployMsg) {
-    this.initiateDeployment(
+  private onDeployMsg(msg: DeployMsg) {
+    return this.initiateDeployment(
       msg.content.deploymentName,
       msg.content.credentialName,
       msg.content.configurationName,
@@ -734,7 +734,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
   }
 
-  private async propagateDeploymentSelection(
+  private propagateDeploymentSelection(
     deploymentSelector: DeploymentSelector | null,
   ) {
     // We have to break our protocol and go ahead and write this into storage,

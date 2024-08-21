@@ -75,7 +75,6 @@ func (i *matchingWalker) Walk(base util.AbsolutePath, fn util.AbsoluteWalkFunc) 
 				}
 			} else {
 				if m == nil || m.Exclude {
-					i.log.Debug("excluding file", "path", path)
 					return nil
 				}
 			}

@@ -92,9 +92,9 @@ export class Server implements Disposable {
    * @returns {Promise<boolean>} A Promise that resolves to `true` if the server is up, and rejects if all attempts fail.
    * @throws {Error} Will throw an error if the connection check encounters an error or reaches the maximum number of retries.
    */
-  async isUp(): Promise<boolean> {
+  isUp(): Promise<boolean> {
     const operation = retry.operation();
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       // Attempt the operation with exponential backoff
       operation.attempt(async (attempt) => {
         try {
@@ -122,9 +122,9 @@ export class Server implements Disposable {
    * @returns {Promise<boolean>} A Promise that resolves to `true` if the server is down, and rejects if all attempts fail.
    * @throws {Error} Will throw an error if the connection check encounters an error (excluding ECONNREFUSED) or reaches the maximum number of retries.
    */
-  async isDown(): Promise<boolean> {
+  isDown(): Promise<boolean> {
     const operation = retry.operation();
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       // Attempt the operation with exponential backoff
       operation.attempt(async (attempt) => {
         try {
@@ -172,7 +172,7 @@ export class Server implements Disposable {
    * @returns {Promise<boolean>} A Promise that resolves to `true` if the server is reachable within the timeout, resolves to `false` if the connection times out, and rejects if an error occurs.
    * @throws {Error} Will throw an error if the connection encounters an error or is closed with an error.
    */
-  private async check(timeout: number = 1000): Promise<boolean> {
+  private check(timeout: number = 1000): Promise<boolean> {
     return new Promise((resolve, reject) => {
       // Create a new socket
       const socket = new net.Socket();
