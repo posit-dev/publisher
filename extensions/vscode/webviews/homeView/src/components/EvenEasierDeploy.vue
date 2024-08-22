@@ -140,26 +140,12 @@
           class="last-deployment-details last-deployment-error"
         >
           <span class="codicon codicon-error error-icon"></span>
-          <span class="error-message">
-            <span v-if="showEditLink" class="error-message">
-              Error: {{ errorMessageSplit[0] }}
-              <a
-                class="webview-link"
-                role="button"
-                @click="
-                  onEditConfiguration(
-                    home.selectedConfiguration!.configurationPath,
-                  )
-                "
-              >
-                {{ editingSplitStr }}
-              </a>
-              {{ errorMessageSplit[1] }}
-            </span>
-            <span v-else class="error-message">
-              Error: {{ home.selectedContentRecord.deploymentError.msg }}
-            </span>
-          </span>
+          <TextStringWithAnchor
+            :message="errorMessage"
+            :splitOptions="getErrorMessageSplitOptions()"
+            class="error-message"
+            @click="onErrorMessageAnchorClick"
+          />
         </div>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
@@ -195,20 +181,23 @@ import {
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
+import { formatDateString } from "src/utils/date";
+import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
 
 import { useHostConduitService } from "src/HostConduitService";
 import { useHomeStore } from "src/stores/home";
+
 import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
-import { formatDateString } from "src/utils/date";
-import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
+import TextStringWithAnchor from "./TextStringWithAnchor.vue";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
 
-const editingSplitStr = "editing";
-const editConfigFileDetectionStr = "editing your configuration file";
+enum ErrorMessageActionIds {
+  EditConfiguration,
+}
 
 const toolbarActions = computed(() => {
   const result = [];
@@ -369,19 +358,35 @@ const toolTipText = computed(() => {
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
 
-const showEditLink = computed(() => {
-  return home.selectedContentRecord?.deploymentError?.msg.includes(
-    editConfigFileDetectionStr,
+const errorMessage = computed(() => {
+  return home.selectedContentRecord?.deploymentError?.msg || "";
+});
+
+const getErrorMessageSplitOptions = () => {
+  return [
+    {
+      detectionStr: "editing your configuration file",
+      anchorStr: "editing",
+      id: ErrorMessageActionIds.EditConfiguration,
+    },
+  ];
+};
+
+const onErrorMessageAnchorClick = (splitOptionId: number) => {
+  const option = getErrorMessageSplitOptions().find(
+    (option) => option.id === splitOptionId,
   );
-});
-const errorMessageSplit = computed(() => {
-  const errorSplitResult =
-    home.selectedContentRecord?.deploymentError?.msg.split(editingSplitStr);
-  if (errorSplitResult?.length === 2) {
-    return errorSplitResult;
+  if (!option) {
+    console.error(
+      "EvenEasierDeploy::onErrorMessageAnchorClick, event does not match options. Ignoring.",
+    );
+    return;
   }
-  return ["", ""];
-});
+  if (option.id === ErrorMessageActionIds.EditConfiguration) {
+    onEditConfiguration(home.selectedConfiguration!.configurationPath);
+    return;
+  }
+};
 
 const navigateToUrl = (url: string) => {
   hostConduit.sendMsg({
