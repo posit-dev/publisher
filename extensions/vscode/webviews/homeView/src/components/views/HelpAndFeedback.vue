@@ -31,8 +31,8 @@
 </template>
 
 <script setup lang="ts">
-import TreeSection from "src/components/tree/TreeSection.vue";
-import TreeItem from "src/components/tree/TreeItem.vue";
+import TreeSection from "src/components/TreeSection.vue";
+import TreeItem from "src/components/TreeItem.vue";
 import { useHostConduitService } from "src/HostConduitService";
 
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
