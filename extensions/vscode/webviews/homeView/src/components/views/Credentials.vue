@@ -14,11 +14,7 @@
           : 'codicon-key'
       "
       align-icon-with-twisty
-      :data-vscode-context="
-        credential.guid === CredentialGUIs.EnvironmentGUID
-          ? undefined
-          : `{&quot;webviewSection&quot;: &quot;credentials-tree-item&quot;, &quot;credentialGUID&quot;: &quot;${credential.guid}&quot;, &quot;credentialName&quot;: &quot;${credential.name}&quot;, &quot;preventDefaultContextMenuItems&quot;: true}`
-      "
+      :data-vscode-context="vscodeContext(credential)"
     />
   </TreeSection>
 </template>
@@ -32,6 +28,7 @@ import WelcomeView from "src/components/WelcomeView.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 
+import { Credential } from "../../../../../src/api";
 import { CredentialGUIs } from "../../../../../src/constants";
 import { WebviewToHostMessageType } from "../../../../../src/types/messages/webviewToHostMessages";
 
@@ -58,4 +55,17 @@ const sectionActions = computed(() => {
     },
   ];
 });
+
+const vscodeContext = (credential: Credential) => {
+  if (credential.guid === CredentialGUIs.EnvironmentGUID) {
+    return undefined;
+  }
+
+  return JSON.stringify({
+    credentialGUID: credential.guid,
+    credentialName: credential.name,
+    webviewSection: "credentials-tree-item",
+    preventDefaultContextMenuItems: true,
+  });
+};
 </script>
