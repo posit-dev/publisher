@@ -62,8 +62,8 @@ import {
   VSCodeOpenMsg,
 } from "src/types/messages/webviewToHostMessages";
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
-import { confirmOverwrite } from "src/dialogs";
 import { splitFilesOnInclusion } from "src/utils/files";
+import { confirmDelete, confirmOverwrite } from "src/dialogs";
 import { DeploymentQuickPick } from "src/types/quickPicks";
 import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
@@ -906,7 +906,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async showNewCredential() {
-    return await commands.executeCommand(Commands.Credentials.Add);
+    return await commands.executeCommand(Commands.HomeView.AddCredential);
   }
 
   private async showNewCredentialForDeployment() {
@@ -916,10 +916,51 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     }
 
     return await commands.executeCommand(
-      Commands.Credentials.Add,
+      Commands.HomeView.AddCredential,
       contentRecord.serverUrl,
     );
   }
+
+  /**
+   * Add credential.
+   *
+   * Prompt the user for credential information. Then create or update the credential. Afterwards, refresh the provider.
+   *
+   * Once the server url is provided, the user is prompted with the url hostname as the default server name.
+   */
+  public addCredential = async (startingServerUrl?: string) => {
+    const credential = await newCredential(Views.HomeView, startingServerUrl);
+    if (credential) {
+      useBus().trigger("refreshCredentials", undefined);
+    }
+  };
+
+  /**
+   * Deletes the supplied Credential
+   */
+  public deleteCredential = async (context: {
+    credentialGUID: string;
+    credentialName: string;
+  }) => {
+    console.log("DELETE CREDENTIAL ITEM HERE", context.credentialGUID);
+    const ok = await confirmDelete(
+      `Are you sure you want to delete the credential '${context.credentialName}'?`,
+    );
+    if (!ok) {
+      return;
+    }
+    try {
+      const api = await useApi();
+      await api.credentials.delete(context.credentialGUID);
+      window.setStatusBarMessage(
+        `Credential for ${context.credentialName} has been erased from our memory!`,
+      );
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("credential::delete", error);
+      window.showInformationMessage(summary);
+    }
+    useBus().trigger("refreshCredentials", undefined);
+  };
 
   private showPublishingLog() {
     return commands.executeCommand(Commands.Logs.Focus);
@@ -1704,6 +1745,20 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           Uri.parse("https://github.com/posit-dev/publisher/discussions"),
         );
       }),
+    );
+
+    this.context.subscriptions.push(
+      commands.registerCommand(Commands.HomeView.RefreshCredentials, () =>
+        useBus().trigger("refreshCredentials", undefined),
+      ),
+      commands.registerCommand(
+        Commands.HomeView.AddCredential,
+        this.addCredential,
+      ),
+      commands.registerCommand(
+        Commands.HomeView.DeleteCredential,
+        this.deleteCredential,
+      ),
     );
 
     // directories

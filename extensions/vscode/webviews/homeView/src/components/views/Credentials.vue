@@ -1,6 +1,10 @@
 <template>
   <TreeSection title="Credentials" :actions="sectionActions">
+    <WelcomeView v-if="home.sortedCredentials.length === 0">
+      <p>No credentials have been added yet.</p>
+    </WelcomeView>
     <TreeItem
+      v-else
       v-for="credential in home.sortedCredentials"
       :title="credential.name"
       :description="credential.url"
@@ -10,6 +14,7 @@
           : 'codicon-key'
       "
       align-icon-with-twisty
+      :data-vscode-context="`{&quot;webviewSection&quot;: &quot;credentials-tree-item&quot;, &quot;credentialGUID&quot;: &quot;${credential.guid}&quot;, &quot;credentialName&quot;: &quot;${credential.name}&quot;, &quot;preventDefaultContextMenuItems&quot;: true}`"
     />
   </TreeSection>
 </template>
@@ -19,6 +24,7 @@ import { computed } from "vue";
 
 import TreeSection from "src/components/tree/TreeSection.vue";
 import TreeItem from "src/components/tree/TreeItem.vue";
+import WelcomeView from "src/components/WelcomeView.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
 

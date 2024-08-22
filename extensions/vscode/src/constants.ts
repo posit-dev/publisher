@@ -28,12 +28,6 @@ const logsCommands = {
   ToggleVisibility: "posit.publisher.logs.toggleVisibility",
 } as const;
 
-const credentialsCommands = {
-  Add: "posit.publisher.credentials.add",
-  Delete: "posit.publisher.credentials.delete",
-  Refresh: "posit.publisher.credentials.refresh",
-} as const;
-
 const credentialsContexts = {
   Keychain: "posit.publisher.credentials.tree.item.keychain",
   EnvironmentVars: "posit.publisher.credentials.tree.item.environmentVars",
@@ -76,6 +70,9 @@ const homeViewCommands = {
   ShowContentLogs: "posit.publisher.homeView.navigateToDeployment.ContentLog",
   OpenFeedback: "posit.publisher.homeView.openFeedback",
   OpenGettingStarted: "posit.publisher.homeView.gettingStarted",
+  AddCredential: "posit.publisher.homeView.addCredential",
+  DeleteCredential: "posit.publisher.homeView.deleteCredential",
+  RefreshCredentials: "posit.publisher.homeView.refreshCredentials",
   // Added automatically by VSCode with view registration
   Focus: "posit.publisher.homeView.focus",
 } as const;
@@ -90,7 +87,6 @@ export const LocalState = {
 
 export const Commands = {
   ...baseCommands,
-  Credentials: credentialsCommands,
   Logs: logsCommands,
   Files: filesCommands,
   PythonPackages: pythonPackagesCommands,
@@ -107,7 +103,6 @@ export const Contexts = {
 export const enum Views {
   Project = "posit.publisher.project",
   HomeView = "posit.publisher.homeView",
-  Credentials = "posit.publisher.credentials",
   ContentRecords = "posit.publisher.contentRecords",
   Logs = "posit.publisher.logs",
 }
