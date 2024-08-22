@@ -211,8 +211,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       case WebviewToHostMessageType.REQUEST_FILES_LISTS:
         return this.debounceSendRefreshedFilesLists();
       case WebviewToHostMessageType.REQUEST_CREDENTIALS:
-        await this.refreshCredentialData();
-        return this.updateWebViewViewCredentials();
+        return await this.onRequestCredentials();
       case WebviewToHostMessageType.INCLUDE_FILE:
         return this.updateFileList(msg.content.path, FileAction.INCLUDE);
       case WebviewToHostMessageType.EXCLUDE_FILE:
@@ -394,6 +393,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       window.showErrorMessage(summary);
       return;
     }
+  }
+
+  private async onRequestCredentials() {
+    await this.refreshCredentialData();
+    return this.updateWebViewViewCredentials();
   }
 
   private async refreshCredentialData() {
