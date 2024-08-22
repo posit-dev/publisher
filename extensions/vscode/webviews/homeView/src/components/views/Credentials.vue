@@ -14,7 +14,11 @@
           : 'codicon-key'
       "
       align-icon-with-twisty
-      :data-vscode-context="`{&quot;webviewSection&quot;: &quot;credentials-tree-item&quot;, &quot;credentialGUID&quot;: &quot;${credential.guid}&quot;, &quot;credentialName&quot;: &quot;${credential.name}&quot;, &quot;preventDefaultContextMenuItems&quot;: true}`"
+      :data-vscode-context="
+        credential.guid === CredentialGUIs.EnvironmentGUID
+          ? undefined
+          : `{&quot;webviewSection&quot;: &quot;credentials-tree-item&quot;, &quot;credentialGUID&quot;: &quot;${credential.guid}&quot;, &quot;credentialName&quot;: &quot;${credential.name}&quot;, &quot;preventDefaultContextMenuItems&quot;: true}`
+      "
     />
   </TreeSection>
 </template>
