@@ -223,8 +223,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showNewCredentialForDeployment();
       case WebviewToHostMessageType.NEW_CREDENTIAL:
         return this.showNewCredential();
-      case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
-        return this.showPublishingLog();
       default:
         window.showErrorMessage(
           `Internal Error: onConduitMessage unhandled msg: ${JSON.stringify(msg)}`,
@@ -964,10 +962,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     useBus().trigger("refreshCredentials", undefined);
   };
 
-  private showPublishingLog() {
-    return commands.executeCommand(Commands.Logs.Focus);
-  }
-
   private async showDeploymentQuickPick(
     contentRecordsSubset?: AllContentRecordTypes[],
     projectDir?: string,
@@ -1182,6 +1176,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     webviewView.webview.options = {
       // Enable JavaScript in the webview
       enableScripts: true,
+      // Enable command URIs as links to execute commands
+      enableCommandUris: true,
       // Restrict the webview to only load resources from these directories
       localResourceRoots: [
         Uri.joinPath(this.extensionUri, "dist"),

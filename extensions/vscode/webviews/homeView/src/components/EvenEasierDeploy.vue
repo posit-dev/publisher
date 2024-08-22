@@ -105,7 +105,7 @@
                 <a
                   class="webview-link"
                   role="button"
-                  @click="onViewPublishingLog"
+                  :href="`command:${Commands.Logs.Focus}`"
                   >View Log</a
                 >
               </p>
@@ -178,6 +178,7 @@ import {
 } from "../../../../src/api";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
+import { Commands } from "../../../../src/constants";
 
 import { useHostConduitService } from "src/HostConduitService";
 import { useHomeStore } from "src/stores/home";
@@ -227,12 +228,6 @@ const onEditConfiguration = (fullPath: string) => {
     content: {
       configurationPath: fullPath,
     },
-  });
-};
-
-const onViewPublishingLog = () => {
-  hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.VIEW_PUBLISHING_LOG,
   });
 };
 
