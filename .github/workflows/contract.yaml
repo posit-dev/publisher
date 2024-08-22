@@ -1,8 +1,8 @@
-name: Cypress-nightly
+name: Nightly
 on:
   workflow_call:
 jobs:
-  tests:
+  bats-tests:
     env:
       FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
       FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
@@ -62,8 +62,66 @@ jobs:
       - run: just bats test init
       - run: just bats test deploy
 
+  vscode-ui-tests:
+    env:
+      FUZZBUCKET_SSH_KEY: ${{ secrets.FUZZBUCKET_SSH_KEY }}
+      FUZZBUCKET_URL: ${{ secrets.FUZZBUCKET_URL }}
+      FUZZBUCKET_CREDENTIALS: ${{ secrets.FUZZBUCKET_CREDENTIALS }}
+      CI: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - name: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 4.3.0
+      - name: quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.4.549
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: bin
+          path: bin
+      - uses: actions/checkout@v4
+        with:
+          repository: rstudio/connect-content
+          path: "test/content"
+          sparse-checkout: bundles
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.CONNECT_PAT }}
+
+      - run: chmod -R +x ./bin
+      - run: echo "${FUZZBUCKET_SSH_KEY}" > test/fuzzbucket-ssh-key && chmod 600 test/fuzzbucket-ssh-key
+
       # vscode ui tests
       - run: just package
       - run: just vscode configure
       - run: just vscode-ui install
-      - run: just vscode-ui test
+
+      - name: Run tests
+        run: just vscode-ui test
+        shell: bash
+        env:
+          SPEC_PATH: ./test/specs/fastapi.spec.ts
+          WORKSPACE_PATH: ../sample-content/fastapi-simple
+
+      - name: Run nested tests
+        run: just vscode-ui test
+        shell: bash
+        env:
+          SPEC_PATH: ./test/specs/nested-fastapi.spec.ts
+          WORKSPACE_PATH: ../sample-content/
