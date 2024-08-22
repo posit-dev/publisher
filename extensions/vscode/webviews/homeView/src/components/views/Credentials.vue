@@ -26,8 +26,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import TreeSection from "src/components/tree/TreeSection.vue";
-import TreeItem from "src/components/tree/TreeItem.vue";
+import TreeSection from "src/components/TreeSection.vue";
+import TreeItem from "src/components/TreeItem.vue";
 import WelcomeView from "src/components/WelcomeView.vue";
 import { useHomeStore } from "src/stores/home";
 import { useHostConduitService } from "src/HostConduitService";
