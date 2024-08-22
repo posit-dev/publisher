@@ -134,6 +134,8 @@ export interface EventSubscriptionTargetCallbackMap {
 
   "publish/success": OnPublishSuccessCallback;
   "publish/failure": OnPublishFailureCallback;
+
+  undefined: OnUndefinedMessageCallback;
 }
 
 export const restoreMsgToStatusSuffix = (
@@ -1270,6 +1272,18 @@ export interface PublishFailure extends EventStreamMessage {
 export type OnPublishFailureCallback = (msg: PublishFailure) => void;
 export function isPublishFailure(arg: Events): arg is PublishFailure {
   return arg.type === "publish/failure";
+}
+
+export interface UndefinedMessage extends EventStreamMessage {
+  type: "undefined";
+  data: {
+    msgType: string;
+  };
+}
+
+export type OnUndefinedMessageCallback = (msg: UndefinedMessage) => void;
+export function isUndefinedMessage(arg: Events): arg is PublishFailure {
+  return arg.type === "undefined";
 }
 
 // Events are a union type of our base and our extended interfaces

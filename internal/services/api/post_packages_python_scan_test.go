@@ -3,6 +3,7 @@ package api
 // Copyright (C) 2023 by Posit Software, PBC.
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -54,13 +55,29 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTP() {
 	h := NewPostPackagesPythonScanHandler(base, log)
 
 	i := inspect.NewMockPythonInspector()
-	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
+
+	pkgs := []string{
+		"numpy==1.22.3",
+		"pandas",
+	}
+	incomplete := []string{
+		"pandas",
+	}
+	i.On("ScanRequirements", mock.Anything).Return(pkgs, incomplete, "/usr/bin/python", nil)
 	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
 	inspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector { return i }
 
 	h.ServeHTTP(rec, req)
 
-	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
+
+	var res PostPackagesPythonScanResponse
+	dec := json.NewDecoder(rec.Body)
+	s.NoError(dec.Decode(&res))
+
+	s.Equal(pkgs, res.Requirements)
+	s.Equal(incomplete, res.Incomplete)
+	s.Equal("/usr/bin/python", res.Python)
 }
 
 func (s *PostPackagesPythonScanSuite) TestServeHTTPEmptyBody() {
@@ -78,13 +95,13 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPEmptyBody() {
 	h := NewPostPackagesPythonScanHandler(base, log)
 
 	i := inspect.NewMockPythonInspector()
-	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
+	i.On("ScanRequirements", mock.Anything).Return(nil, nil, "", nil)
 	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
 	inspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector { return i }
 
 	h.ServeHTTP(rec, req)
 
-	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
 }
 
 func (s *PostPackagesPythonScanSuite) TestServeHTTPWithSaveName() {
@@ -102,13 +119,13 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPWithSaveName() {
 	h := NewPostPackagesPythonScanHandler(base, log)
 
 	i := inspect.NewMockPythonInspector()
-	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
+	i.On("ScanRequirements", mock.Anything).Return(nil, nil, "", nil)
 	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
 	inspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector { return i }
 
 	h.ServeHTTP(rec, req)
 
-	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
 }
 
 func (s *PostPackagesPythonScanSuite) TestServeHTTPErr() {
@@ -125,7 +142,7 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPErr() {
 
 	testError := errors.New("test error from ScanRequirements")
 	i := inspect.NewMockPythonInspector()
-	i.On("ScanRequirements", mock.Anything).Return(nil, "", testError)
+	i.On("ScanRequirements", mock.Anything).Return(nil, nil, "", testError)
 	inspectorFactory = func(util.AbsolutePath, util.Path, logging.Logger) inspect.PythonInspector { return i }
 
 	h.ServeHTTP(rec, req)
@@ -154,7 +171,7 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPSubdir() {
 	h := NewPostPackagesPythonScanHandler(base, log)
 
 	i := inspect.NewMockPythonInspector()
-	i.On("ScanRequirements", mock.Anything).Return(nil, "", nil)
+	i.On("ScanRequirements", mock.Anything).Return(nil, nil, "", nil)
 	i.On("WriteRequirementsFile", destPath, mock.Anything).Return(nil)
 	inspectorFactory = func(base util.AbsolutePath, python util.Path, log logging.Logger) inspect.PythonInspector {
 		s.Equal(projectDir, base)
@@ -163,5 +180,5 @@ func (s *PostPackagesPythonScanSuite) TestServeHTTPSubdir() {
 
 	h.ServeHTTP(rec, req)
 
-	s.Equal(http.StatusNoContent, rec.Result().StatusCode)
+	s.Equal(http.StatusOK, rec.Result().StatusCode)
 }

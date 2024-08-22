@@ -204,7 +204,7 @@ export class EventStream extends Readable implements Disposable {
   private messageFactory(message: EventStreamMessage): EventStreamMessage[] {
     // Transform restoreREnv messages into restoreEnv messages
     // while maintaining original message
-    if (message.type.includes("publish/restoreREnv")) {
+    if (message.type?.includes("publish/restoreREnv")) {
       const messages: EventStreamMessage[] = [];
       messages.push(message);
       const newMessage: EventStreamMessage = JSON.parse(
@@ -231,16 +231,19 @@ export class EventStream extends Readable implements Disposable {
           newMessage.type = "publish/restoreEnv/progress";
           break;
         default:
-          throw new Error(
-            `events::messageFactory: Unknown publish/restoreREnv based message: ${newMessage.type}`,
+          newMessage.type = "undefined";
+          newMessage.data.typeStr = message.type;
+          console.error(
+            `Internal Error: events::messageFactory: Unknown publish/restoreREnv based message: ${newMessage.type}.`,
           );
+          break;
       }
       messages.push(newMessage);
       return messages;
     }
     // Transform restorePythonEnv messages into restoreEnv messages
     // while maintaining original message
-    if (message.type.includes("publish/restorePythonEnv")) {
+    if (message.type?.includes("publish/restorePythonEnv")) {
       const messages: EventStreamMessage[] = [];
       messages.push(message);
       const newMessage: EventStreamMessage = JSON.parse(
@@ -266,8 +269,10 @@ export class EventStream extends Readable implements Disposable {
           newMessage.type = "publish/restoreEnv/progress";
           break;
         default:
-          throw new Error(
-            `events::messageFactory: Unknown publish/restorePythonEnv based message: ${newMessage.type}`,
+          newMessage.type = "undefined";
+          newMessage.data.typeStr = message.type;
+          console.error(
+            `Internal Error: events::messageFactory: Unknown publish/restorePythonEnv based message: ${newMessage.type}.`,
           );
       }
       messages.push(newMessage);

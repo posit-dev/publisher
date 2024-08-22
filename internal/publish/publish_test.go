@@ -335,6 +335,10 @@ func (s *PublishSuite) publishWithClient(
 		if couldCreateDeployment {
 			logs := s.logBuffer.String()
 			s.Contains(logs, "content_id="+myContentID)
+			s.Equal("https://connect.example.com/connect/#/apps/myContentID", record.DashboardURL)
+			s.Equal("https://connect.example.com/content/myContentID/", record.DirectURL)
+			s.Equal("https://connect.example.com/connect/#/apps/myContentID/logs", record.LogsURL)
+
 			// Files are written after upload.
 			if uploadErr == nil {
 				s.Contains(record.Files, "app.py")
@@ -405,6 +409,7 @@ func (s *PublishSuite) TestEmitErrorEventsWithTarget() {
 		s.Equal(expectedErr.Error(), event.Data["message"])
 		s.Equal(getDashboardURL("connect.example.com", targetID), event.Data["dashboardUrl"])
 		s.Equal(getDirectURL("connect.example.com", targetID), event.Data["url"])
+		s.Equal(getLogsURL("connect.example.com", targetID), event.Data["logsUrl"])
 	}
 	s.Equal("publish/failure", emitter.Events[1].Type)
 }
@@ -417,6 +422,11 @@ func (s *PublishSuite) TestGetDashboardURL() {
 func (s *PublishSuite) TestGetDirectURL() {
 	expected := "https://connect.example.com:1234/content/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f/"
 	s.Equal(expected, getDirectURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"))
+}
+
+func (s *PublishSuite) TestGetLogsURL() {
+	expected := "https://connect.example.com:1234/connect/#/apps/d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f/logs"
+	s.Equal(expected, getLogsURL("https://connect.example.com:1234", "d0e5c94a-d37f-4f26-bfc5-515c4c5ea50f"))
 }
 
 func (s *PublishSuite) TestLogAppInfo() {

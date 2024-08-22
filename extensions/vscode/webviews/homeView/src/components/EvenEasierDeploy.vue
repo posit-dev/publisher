@@ -83,7 +83,7 @@
       <QuickPickItem
         label="Select..."
         detail="(new or existing)"
-        data-automation="add-deployment-button"
+        data-automation="select-deployment"
       />
       <div
         class="select-indicator codicon codicon-chevron-down"
@@ -360,7 +360,7 @@ const navigateToUrl = (url: string) => {
 
 const newCredential = () => {
   hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.NEW_CREDENTIAL,
+    kind: WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT,
   });
 };
 </script>

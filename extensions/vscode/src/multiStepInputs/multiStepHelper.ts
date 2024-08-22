@@ -82,7 +82,7 @@ interface InputBoxParameters {
 
 export class MultiStepInput {
   // These were templatized: static async run<T>(start: InputStep) {
-  static async run(start: InputStep) {
+  static run(start: InputStep) {
     const input = new MultiStepInput();
     return input.stepThrough(start);
   }
@@ -110,7 +110,10 @@ export class MultiStepInput {
         } else if (err === InputFlowAction.cancel) {
           step = undefined;
         } else {
-          throw err;
+          window.showErrorMessage(
+            `Internal Error: MultiStepInput::stepThrough, err = ${JSON.stringify(err)}.`,
+          );
+          step = undefined;
         }
       }
     }

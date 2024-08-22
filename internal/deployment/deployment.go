@@ -106,7 +106,7 @@ func FromFile(path util.AbsolutePath) (*Deployment, error) {
 	}
 	if d.LogsURL == "" && d.DashboardURL != "" {
 		// Migration
-		d.LogsURL = d.DashboardURL + "/logs"
+		d.LogsURL = util.URLJoin(d.DashboardURL, "logs")
 	}
 	return d, nil
 }

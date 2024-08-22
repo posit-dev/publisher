@@ -108,6 +108,14 @@
         "https://connect.example.com/content/de2e7bdb-b085-401e-a65c-443e40009749/"
       ]
     },
+    "logs_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to the logs for this deployment in the Connect dashboard.",
+      "examples": [
+        "https://connect.example.com/connect/#/apps/de2e7bdb-b085-401e-a65c-443e40009749/logs"
+      ]
+    },
     "deployment_error": {
       "type": "object",
       "description": "Error from the deployment operation. Will be omitted if no error occurred.",

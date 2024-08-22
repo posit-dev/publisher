@@ -791,9 +791,10 @@ export async function newDeployment(
     if (discoveredEntryPoints.length > 1) {
       const step = getStepInfo("inputEntryPointFileSelection", state);
       if (!step) {
-        throw new Error(
-          "newDeployment::inputEntryPointSelection step info not found.",
+        window.showErrorMessage(
+          "Internal Error: newDeployment::inputEntryPointFileSelection step info not found.",
         );
+        return;
       }
 
       const pick = await input.showQuickPick({
@@ -849,9 +850,10 @@ export async function newDeployment(
     if (inspectionQuickPicks.length > 1) {
       const step = getStepInfo("inputEntryPointContentTypeSelection", state);
       if (!step) {
-        throw new Error(
-          "newDeployment::inputEntryPointSelection step info not found.",
+        window.showErrorMessage(
+          "Internal Error: newDeployment::inputEntryPointContentTypeSelection step info not found.",
         );
+        return;
       }
 
       const pick = await input.showQuickPick({
@@ -886,7 +888,10 @@ export async function newDeployment(
 
     const step = getStepInfo("inputTitle", state);
     if (!step) {
-      throw new Error("newDeployment::inputTitle step info not found.");
+      window.showErrorMessage(
+        "Internal Error: newDeployment::inputTitle step info not found.",
+      );
+      return;
     }
     let initialValue = "";
     if (
@@ -932,7 +937,10 @@ export async function newDeployment(
     if (!newCredentialForced(state)) {
       const step = getStepInfo("pickCredentials", state);
       if (!step) {
-        throw new Error("newDeployment::pickCredentials step info not found.");
+        window.showErrorMessage(
+          "Internal Error: newDeployment::pickCredentials step info not found.",
+        );
+        return;
       }
       const pick = await input.showQuickPick({
         title: state.title,
@@ -969,7 +977,10 @@ export async function newDeployment(
 
       const step = getStepInfo("inputServerUrl", state);
       if (!step) {
-        throw new Error("newDeployment::inputServerUrl step info not found.");
+        window.showErrorMessage(
+          "Internal Error: newDeployment::inputServerUrl step info not found.",
+        );
+        return;
       }
 
       const url = await input.showInputBox({
@@ -995,7 +1006,10 @@ export async function newDeployment(
             new URL(input);
           } catch (e) {
             if (!(e instanceof TypeError)) {
-              throw e;
+              return Promise.resolve({
+                message: `Internal Error: Unknown Error (${JSON.stringify(e)}).`,
+                severity: InputBoxValidationSeverity.Error,
+              });
             }
             return Promise.resolve({
               message: `Error: Invalid URL (${getMessageFromError(e)}).`,
@@ -1058,7 +1072,10 @@ export async function newDeployment(
 
       const step = getStepInfo("inputAPIKey", state);
       if (!step) {
-        throw new Error("newDeployment::inputAPIKey step info not found.");
+        window.showErrorMessage(
+          "Internal Error: newDeployment::inputAPIKey step info not found.",
+        );
+        return;
       }
 
       const apiKey = await input.showInputBox({
@@ -1140,9 +1157,10 @@ export async function newDeployment(
 
       const step = getStepInfo("inputCredentialName", state);
       if (!step) {
-        throw new Error(
-          "newDeployment::inputCredentialName step info not found.",
+        window.showErrorMessage(
+          "Internal Error: newDeployment::inputCredentialName step info not found.",
         );
+        return;
       }
 
       const name = await input.showInputBox({
@@ -1227,7 +1245,10 @@ export async function newDeployment(
       state.data.apiKey === undefined ||
       isQuickPickItem(state.data.apiKey)
     ) {
-      throw new Error("NewDeployment Unexpected type guard failure @1");
+      window.showErrorMessage(
+        "Internal Error: NewDeployment Unexpected type guard failure @1",
+      );
+      return;
     }
     try {
       // NEED an credential to be returned from this API
@@ -1255,7 +1276,10 @@ export async function newDeployment(
     }
   } else {
     // we are not creating a credential but also do not have a required existing value
-    throw new Error("NewDeployment Unexpected type guard failure @2");
+    window.showErrorMessage(
+      "Internal Error: NewDeployment Unexpected type guard failure @2",
+    );
+    return;
   }
 
   // Create the Config File
@@ -1299,7 +1323,10 @@ export async function newDeployment(
   ) {
     finalCredentialName = state.data.name;
   } else if (!state.data.credentialName) {
-    throw new Error("NewDeployment Unexpected type guard failure @3");
+    window.showErrorMessage(
+      "Internal Error: NewDeployment Unexpected type guard failure @3",
+    );
+    return;
   } else if (
     newCredentialSelected(state) &&
     state.data.name &&
@@ -1311,7 +1338,10 @@ export async function newDeployment(
   }
   if (!finalCredentialName) {
     // should have assigned it by now. Logic error!
-    throw new Error("NewDeployment Unexpected type guard failure @4");
+    window.showErrorMessage(
+      "Internal Error: NewDeployment Unexpected type guard failure @4",
+    );
+    return;
   }
 
   // Create the PreContentRecord File
@@ -1341,7 +1371,10 @@ export async function newDeployment(
     return;
   }
   if (!newOrSelectedCredential) {
-    throw new Error("NewDeployment Unexpected type guard failure @5");
+    window.showErrorMessage(
+      "Internal Error: NewDeployment Unexpected type guard failure @5",
+    );
+    return;
   }
   return {
     contentRecord: newContentRecord,

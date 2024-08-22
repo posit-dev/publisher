@@ -4,6 +4,8 @@
     :class="{
       'align-icon-with-twisty': alignIconWithTwisty,
       collapsible: $slots.default,
+      'text-foreground': listStyle === 'default',
+      'text-list-deemphasized': listStyle === 'deemphasized',
     }"
   >
     <div
@@ -17,7 +19,7 @@
         <div v-for="_ in indentLevel - 1" class="indent-guide"></div>
       </div>
       <div
-        class="twisty-container"
+        class="twisty-container text-icon"
         :class="[
           { codicon: $slots.default },
           $slots.default
@@ -27,7 +29,11 @@
             : undefined,
         ]"
       />
-      <div v-if="codicon" class="tree-item-icon codicon" :class="codicon" />
+      <div
+        v-if="codicon"
+        class="tree-item-icon text-icon codicon"
+        :class="codicon"
+      />
       <div class="tree-item-label-container">
         <span class="tree-item-title">{{ title }}</span>
         <span v-if="description" class="tree-item-description">
@@ -51,10 +57,13 @@
 <script setup lang="ts">
 import ActionToolbar, { ActionButton } from "src/components/ActionToolbar.vue";
 
+export type TreeItemStyle = "default" | "deemphasized";
+
 const expanded = defineModel("expanded", { required: false, default: false });
 
 interface Props {
   title: string;
+  listStyle?: TreeItemStyle;
   description?: string;
   tooltip?: string;
   alignIconWithTwisty?: boolean;
@@ -64,6 +73,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
+  listStyle: "default",
   indentLevel: 1,
 });
 
@@ -79,7 +89,6 @@ const toggleExpanded = () => {
 
 <style lang="scss" scoped>
 .tree-item {
-  color: var(--vscode-foreground);
   position: relative;
 
   &.align-icon-with-twisty:not(.collapsible) .twisty-container {
@@ -125,11 +134,9 @@ const toggleExpanded = () => {
       font-size: 16px;
       padding-right: 6px;
       width: 22px;
-      color: var(--vscode-icon-foreground);
     }
 
     .tree-item-icon {
-      color: var(--vscode-icon-foreground);
       align-items: center;
       background-position: 0;
       background-repeat: no-repeat;
