@@ -39,9 +39,10 @@ const deploy = () => {
     !home.selectedConfiguration ||
     !home.serverCredential
   ) {
-    throw new Error(
-      "DeployButton::deploy trying to send message with undefined values",
+    console.error(
+      "DeployButton::deploy trying to send message with undefined values. Action ignored.",
     );
+    return;
   }
 
   hostConduit.sendMsg({

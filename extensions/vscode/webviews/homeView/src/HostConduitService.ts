@@ -38,9 +38,10 @@ export function useHostConduitService() {
 
   const sendMsg = (msg: WebviewToHostMessage) => {
     if (!hostConduit) {
-      throw new Error(
-        "HostCondiutService::sendMsg attemped ahead of call to useHostConduitService",
+      console.error(
+        `HostCondiutService::sendMsg attempted ahead of call to useHostConduitService. Message Dropped: ${JSON.stringify(msg)}`,
       );
+      return;
     }
     console.debug(`HostConduitService - Sending Msg: ${JSON.stringify(msg)}`);
     return hostConduit.sendMsg(msg);
