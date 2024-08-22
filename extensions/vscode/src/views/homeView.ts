@@ -942,7 +942,6 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
     credentialGUID: string;
     credentialName: string;
   }) => {
-    console.log("DELETE CREDENTIAL ITEM HERE", context.credentialGUID);
     const ok = await confirmDelete(
       `Are you sure you want to delete the credential '${context.credentialName}'?`,
     );
