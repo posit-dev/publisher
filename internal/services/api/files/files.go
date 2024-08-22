@@ -26,6 +26,8 @@ type File struct {
 	RelDir           string           `json:"relDir"`           // the relative path of the directory containing the file
 	Size             int64            `json:"size"`             // nullable; length in bytes for regular files; system-dependent
 	Abs              string           `json:"abs"`              // the absolute path
+	AllIncluded      bool             `json:"allIncluded"`      // Are all nodes under this one included?
+	AllExcluded      bool             `json:"allExcluded"`      // Are all nodes under this one excluded?
 }
 
 func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.Pattern) (*File, error) {

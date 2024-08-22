@@ -62,5 +62,23 @@ func (s filesService) GetFile(p util.AbsolutePath, matchList matcher.MatchList) 
 		return err
 	})
 
+	updateInclusions(file)
 	return file, err
+}
+
+func updateInclusions(file *File) {
+	if !file.IsDir {
+		included := (file.Reason != nil) && !file.Reason.Exclude
+		file.AllIncluded = included
+		file.AllExcluded = !included
+		return
+	}
+	file.AllIncluded = true
+	file.AllExcluded = true
+
+	for _, child := range file.Files {
+		updateInclusions(child)
+		file.AllIncluded = file.AllIncluded && child.AllIncluded
+		file.AllExcluded = file.AllExcluded && child.AllExcluded
+	}
 }
