@@ -5,7 +5,6 @@ import { ExtensionContext, Uri, commands } from "vscode";
 import * as ports from "src/ports";
 import { Service } from "src/services";
 import { ProjectTreeDataProvider } from "src/views/project";
-import { CredentialsTreeDataProvider } from "src/views/credentials";
 import { LogsTreeDataProvider } from "src/views/logs";
 import { EventStream } from "src/events";
 import { HomeViewProvider } from "src/views/homeView";
@@ -57,8 +56,6 @@ export async function activate(context: ExtensionContext) {
   // First the construction of the data providers
   const projectTreeDataProvider = new ProjectTreeDataProvider(context);
 
-  const credentialsTreeDataProvider = new CredentialsTreeDataProvider(context);
-
   const logsTreeDataProvider = new LogsTreeDataProvider(context, stream);
 
   const homeViewProvider = new HomeViewProvider(context, stream);
@@ -66,7 +63,6 @@ export async function activate(context: ExtensionContext) {
 
   // Then the registration of the data providers with the VSCode framework
   projectTreeDataProvider.register();
-  credentialsTreeDataProvider.register();
   logsTreeDataProvider.register();
   homeViewProvider.register(watchers);
 

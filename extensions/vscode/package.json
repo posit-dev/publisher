@@ -41,19 +41,19 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.credentials.add",
+        "command": "posit.publisher.homeView.addCredential",
         "title": "New Credential",
         "icon": "$(add)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.credentials.delete",
-        "title": "Delete",
+        "command": "posit.publisher.homeView.deleteCredential",
+        "title": "Delete Credential",
         "icon": "$(trash)",
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.credentials.refresh",
+        "command": "posit.publisher.homeView.refreshCredentials",
         "title": "Refresh Credentials",
         "icon": "$(refresh)",
         "category": "Posit Publisher"
@@ -223,25 +223,9 @@
           "group": "navigation@3"
         },
         {
-          "command": "posit.publisher.credentials.add",
-          "when": "view == posit.publisher.credentials",
-          "group": "navigation@1"
-        },
-        {
-          "command": "posit.publisher.credentials.refresh",
-          "when": "view == posit.publisher.credentials",
-          "group": "navigation@2"
-        },
-        {
           "command": "posit.publisher.homeView.refresh",
           "when": "view == posit.publisher.homeView",
           "group": "navigation@1"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "posit.publisher.credentials.delete",
-          "when": "view == posit.publisher.credentials && viewItem == posit.publisher.credentials.tree.item.keychain"
         }
       ],
       "commandPalette": [
@@ -250,11 +234,11 @@
           "when": "workbenchState == folder  && posit.publish.state == 'initialized'"
         },
         {
-          "command": "posit.publisher.credentials.delete",
+          "command": "posit.publisher.homeView.deleteCredential",
           "when": "false"
         },
         {
-          "command": "posit.publisher.credentials.refresh",
+          "command": "posit.publisher.homeView.refreshCredentials",
           "when": "posit.publish.state == 'initialized'"
         },
         {
@@ -348,6 +332,10 @@
           "command": "posit.publisher.showPublishingLog",
           "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'homeview-active-contentRecord-more-menu'",
           "group": "show@2"
+        },
+        {
+          "command": "posit.publisher.homeView.deleteCredential",
+          "when": "webviewId == 'posit.publisher.homeView' && webviewSection == 'credentials-tree-item'"
         }
       ]
     },
@@ -394,15 +382,6 @@
           "icon": "$(symbol-file)",
           "visibility": "visible",
           "initialSize": 1,
-          "when": "workbenchState == folder && posit.publish.state == 'initialized'"
-        },
-        {
-          "id": "posit.publisher.credentials",
-          "name": "Credentials",
-          "contextualTitle": "Publisher",
-          "icon": "$(key)",
-          "visibility": "collapsed",
-          "initialSize": 0,
           "when": "workbenchState == folder && posit.publish.state == 'initialized'"
         }
       ],
