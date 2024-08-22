@@ -74,6 +74,8 @@ const homeViewCommands = {
   NavigateToDeploymentContent:
     "posit.publisher.homeView.navigateToDeployment.Content",
   ShowContentLogs: "posit.publisher.homeView.navigateToDeployment.ContentLog",
+  OpenFeedback: "posit.publisher.homeView.openFeedback",
+  OpenGettingStarted: "posit.publisher.homeView.gettingStarted",
   // Added automatically by VSCode with view registration
   Focus: "posit.publisher.homeView.focus",
 } as const;
@@ -81,11 +83,6 @@ const homeViewCommands = {
 const homeViewContexts = {
   Initialized: "posit.publisher.homeView.initialized",
 };
-
-const helpAndFeedbackCommands = {
-  OpenFeedback: "posit.publisher.helpAndFeedback.openFeedback",
-  OpenGettingStarted: "posit.publisher.helpAndFeedback.gettingStarted",
-} as const;
 
 export const LocalState = {
   LastSelectionState: "posit.publisher.homeView.lastDeploymentSelectedState",
@@ -99,7 +96,6 @@ export const Commands = {
   PythonPackages: pythonPackagesCommands,
   RPackages: rPackagesCommands,
   HomeView: homeViewCommands,
-  HelpAndFeedback: helpAndFeedbackCommands,
 };
 
 export const Contexts = {
@@ -113,7 +109,6 @@ export const enum Views {
   HomeView = "posit.publisher.homeView",
   Credentials = "posit.publisher.credentials",
   ContentRecords = "posit.publisher.contentRecords",
-  HelpAndFeedback = "posit.publisher.helpAndFeedback",
   Logs = "posit.publisher.logs",
 }
 
