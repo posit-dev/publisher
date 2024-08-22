@@ -25,6 +25,7 @@ type File struct {
 	Rel              string           `json:"rel"`              // the relative path to the project root, which is used as the identifier
 	RelDir           string           `json:"relDir"`           // the relative path of the directory containing the file
 	Size             int64            `json:"size"`             // nullable; length in bytes for regular files; system-dependent
+	FileCount        int64            `json:"fileCount"`        // total number of files in the subtree rooted at this node
 	Abs              string           `json:"abs"`              // the absolute path
 }
 
@@ -62,6 +63,23 @@ func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.P
 		Files:            make([]*File, 0),
 		Abs:              path.String(),
 	}, nil
+}
+
+func (f *File) CalculateDirectorySizes() {
+	var fileCount int64
+	var size int64
+
+	for _, child := range f.Files {
+		if child.IsDir {
+			child.CalculateDirectorySizes()
+		} else {
+			child.FileCount = 1
+		}
+		size += child.Size
+		fileCount += child.FileCount
+	}
+	f.FileCount = fileCount
+	f.Size = size
 }
 
 func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList matcher.MatchList) (*File, error) {
