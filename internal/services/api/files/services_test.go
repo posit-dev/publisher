@@ -120,3 +120,31 @@ func (s *ServicesSuite) TestGetFileUsingSampleContentFromParentDir() {
 	s.False(file.IsEntrypoint)
 	s.NotNil(file.Files)
 }
+
+func (s *ServicesSuite) TestGetFileSizeAndCount() {
+	base := s.cwd
+	service := CreateFilesService(base, s.log)
+	s.NotNil(service)
+	matchList, err := matcher.NewMatchList(base, nil)
+	s.NoError(err)
+
+	cwdFile := s.cwd.Join("cwdFile")
+	err = cwdFile.WriteFile([]byte("abcd"), 0666)
+	s.NoError(err)
+
+	subdir := s.cwd.Join("subdir")
+	err = subdir.MkdirAll(0777)
+	s.NoError(err)
+
+	subdirFile := subdir.Join("subdirFile")
+	err = subdirFile.WriteFile([]byte("abc"), 0666)
+	s.NoError(err)
+
+	file, err := service.GetFile(base, matchList)
+	s.NoError(err)
+	s.NotNil(file)
+
+	// There are two files (not directories) totaling 7 bytes
+	s.Equal(int64(2), file.FileCount)
+	s.Equal(int64(7), file.Size)
+}

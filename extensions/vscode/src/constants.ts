@@ -28,12 +28,6 @@ const logsCommands = {
   ToggleVisibility: "posit.publisher.logs.toggleVisibility",
 } as const;
 
-const credentialsCommands = {
-  Add: "posit.publisher.credentials.add",
-  Delete: "posit.publisher.credentials.delete",
-  Refresh: "posit.publisher.credentials.refresh",
-} as const;
-
 const credentialsContexts = {
   Keychain: "posit.publisher.credentials.tree.item.keychain",
   EnvironmentVars: "posit.publisher.credentials.tree.item.environmentVars",
@@ -74,6 +68,11 @@ const homeViewCommands = {
   NavigateToDeploymentContent:
     "posit.publisher.homeView.navigateToDeployment.Content",
   ShowContentLogs: "posit.publisher.homeView.navigateToDeployment.ContentLog",
+  OpenFeedback: "posit.publisher.homeView.openFeedback",
+  OpenGettingStarted: "posit.publisher.homeView.gettingStarted",
+  AddCredential: "posit.publisher.homeView.addCredential",
+  DeleteCredential: "posit.publisher.homeView.deleteCredential",
+  RefreshCredentials: "posit.publisher.homeView.refreshCredentials",
   // Added automatically by VSCode with view registration
   Focus: "posit.publisher.homeView.focus",
 } as const;
@@ -82,24 +81,17 @@ const homeViewContexts = {
   Initialized: "posit.publisher.homeView.initialized",
 };
 
-const helpAndFeedbackCommands = {
-  OpenFeedback: "posit.publisher.helpAndFeedback.openFeedback",
-  OpenGettingStarted: "posit.publisher.helpAndFeedback.gettingStarted",
-} as const;
-
 export const LocalState = {
   LastSelectionState: "posit.publisher.homeView.lastDeploymentSelectedState",
 };
 
 export const Commands = {
   ...baseCommands,
-  Credentials: credentialsCommands,
   Logs: logsCommands,
   Files: filesCommands,
   PythonPackages: pythonPackagesCommands,
   RPackages: rPackagesCommands,
   HomeView: homeViewCommands,
-  HelpAndFeedback: helpAndFeedbackCommands,
 };
 
 export const Contexts = {
@@ -111,8 +103,12 @@ export const Contexts = {
 export const enum Views {
   Project = "posit.publisher.project",
   HomeView = "posit.publisher.homeView",
-  Credentials = "posit.publisher.credentials",
   ContentRecords = "posit.publisher.contentRecords",
-  HelpAndFeedback = "posit.publisher.helpAndFeedback",
   Logs = "posit.publisher.logs",
 }
+
+export const DebounceDelaysMS = {
+  file: 1000,
+  refreshRPackages: 1000,
+  refreshPythonPackages: 1000,
+};

@@ -5,6 +5,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"html"
 	"net/http"
 
 	"github.com/posit-dev/publisher/internal/logging"
@@ -13,7 +14,8 @@ import (
 
 func InternalError(w http.ResponseWriter, req *http.Request, log logging.Logger, err error) {
 	status := http.StatusInternalServerError
-	text := err.Error()
+	text := html.EscapeString(err.Error())
+	w.Header().Add("Content-Type", "text/plain")
 	w.WriteHeader(status)
 	w.Write([]byte(text))
 	log.Error(text, "method", req.Method, "url", req.URL.String(), "error", err)

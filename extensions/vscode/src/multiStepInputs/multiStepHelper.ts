@@ -110,7 +110,10 @@ export class MultiStepInput {
         } else if (err === InputFlowAction.cancel) {
           step = undefined;
         } else {
-          throw err;
+          window.showErrorMessage(
+            `Internal Error: MultiStepInput::stepThrough, err = ${JSON.stringify(err)}.`,
+          );
+          step = undefined;
         }
       }
     }

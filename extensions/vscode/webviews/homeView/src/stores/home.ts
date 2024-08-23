@@ -14,6 +14,7 @@ import {
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { RPackage } from "../../../../src/api/types/packages";
 import { DeploymentSelector } from "../../../../src/types/shared";
+import { splitFilesOnInclusion } from "src/utils/files";
 
 export const useHomeStore = defineStore("home", () => {
   const publishInProgress = ref(false);
@@ -22,6 +23,9 @@ export const useHomeStore = defineStore("home", () => {
   const configurations = ref<Configuration[]>([]);
   const configurationsInError = ref<ConfigurationError[]>([]);
   const credentials = ref<Credential[]>([]);
+  const sortedCredentials = computed(() => {
+    return credentials.value.sort((a, b) => a.name.localeCompare(b.name));
+  });
 
   const showDisabledOverlay = ref(false);
 
@@ -69,8 +73,24 @@ export const useHomeStore = defineStore("home", () => {
   const lastContentRecordResult = ref<string>();
   const lastContentRecordMsg = ref<string>();
 
-  const includedFiles = ref<ContentRecordFile[]>([]);
-  const excludedFiles = ref<ContentRecordFile[]>([]);
+  const files = ref<ContentRecordFile>();
+
+  const flatFiles = computed(() => {
+    const response: {
+      includedFiles: ContentRecordFile[];
+      excludedFiles: ContentRecordFile[];
+      lastDeployedFiles: Set<string>;
+    } = { includedFiles: [], excludedFiles: [], lastDeployedFiles: new Set() };
+    if (files.value) {
+      splitFilesOnInclusion(files.value, response);
+    }
+
+    if (selectedContentRecord.value?.state !== "new") {
+      response.lastDeployedFiles = new Set(selectedContentRecord.value?.files);
+    }
+
+    return response;
+  });
 
   const pythonProject = ref<boolean>(false);
   const pythonPackages = ref<string[]>();
@@ -173,12 +193,13 @@ export const useHomeStore = defineStore("home", () => {
     configurations,
     configurationsInError,
     credentials,
+    sortedCredentials,
     selectedContentRecord,
     selectedConfiguration,
     serverCredential,
-    includedFiles,
+    files,
+    flatFiles,
     initializingRequestComplete,
-    excludedFiles,
     lastContentRecordResult,
     lastContentRecordMsg,
     pythonProject,

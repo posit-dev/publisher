@@ -360,7 +360,7 @@ const navigateToUrl = (url: string) => {
 
 const newCredential = () => {
   hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.NEW_CREDENTIAL,
+    kind: WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT,
   });
 };
 </script>
