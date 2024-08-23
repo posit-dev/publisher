@@ -130,11 +130,7 @@ describe("VS Code Extension UI Test", () => {
     describe("Cleanup creds", () => {
       it("remove credentials", async () => {
         let scriptPath: string;
-        if (os.platform() === "win32") {
-          scriptPath = "shell ../scripts/cleanup.bash";
-        } else {
-          scriptPath = "../scripts/cleanup.bash";
-        }
+        scriptPath = "cd ../scripts && cleanup.bash";
         await runShellScript(scriptPath);
       });
     });

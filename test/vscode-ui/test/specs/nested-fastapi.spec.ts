@@ -16,6 +16,8 @@ const __dirname = dirname(__filename);
 const connectServer = process.env.CONNECT_SERVER;
 const apiKey = process.env.CONNECT_API_KEY;
 
+const sep = path.sep;
+
 describe("Nested Fast API Deployment", () => {
   let workbench: any;
   let input: any;
@@ -57,66 +59,70 @@ describe("Nested Fast API Deployment", () => {
   });
 
   it("can list simplepy entrypoint", async () => {
-    const simplepy = browser.$("aria/fastapi-simple/simple.py");
+    const simplepy = browser.$(`aria/fastapi-simple${sep}simple.py`);
     await expect(simplepy).toExist();
   });
 
   it("can list quartoProjNoneMulti entrypoint", async () => {
     const quartoProjNoneMulti = browser.$(
-      "aria/quarto-proj-none/quarto-proj-none.qmd",
+      `aria/quarto-proj-none${sep}quarto-proj-none.qmd`,
     );
     await expect(quartoProjNoneMulti).toExist();
   });
 
   it("can list simplepyMulti entrypoint", async () => {
-    const simplepyMulti = browser.$("aria/multi-type/simple.py");
+    const simplepyMulti = browser.$(`aria/multi-type${sep}simple.py`);
     await expect(simplepyMulti).toExist();
   });
 
   it("can list quartoProjNone entrypoint", async () => {
     const quartoProjNone = browser.$(
-      "aria/quarto-proj-none/quarto-proj-none.qmd",
+      `aria/quarto-proj-none${sep}quarto-proj-none.qmd`,
     );
     await expect(quartoProjNone).toExist();
   });
 
   it("can list quartoProjPy entrypoint", async () => {
-    const quartoProjPy = browser.$("aria/quarto-proj-py/quarto-proj-py.qmd");
+    const quartoProjPy = browser.$(
+      `aria/quarto-proj-py${sep}quarto-proj-py.qmd`,
+    );
     await expect(quartoProjPy).toExist();
   });
 
   it("can list quartoProjR entrypoint", async () => {
-    const quartoProjR = browser.$("aria/quarto-proj-r/quarto-proj-r.qmd");
+    const quartoProjR = browser.$(`aria/quarto-proj-r${sep}quarto-proj-r.qmd`);
     await expect(quartoProjR).toExist();
   });
 
   it("can list quartoProject entrypoint", async () => {
-    const quartoProject = browser.$("aria/quarto-project/quarto-project.qmd");
+    const quartoProject = browser.$(
+      `aria/quarto-project${sep}quarto-project.qmd`,
+    );
     await expect(quartoProject).toExist();
   });
 
   it("can list rmdHtml entrypoint", async () => {
-    const rmdHtml = browser.$("aria/rmd-static-1/index.htm");
+    const rmdHtml = browser.$(`aria/rmd-static-1${sep}index.htm`);
     await expect(rmdHtml).toExist();
   });
 
   it("can list rmdKnitr entrypoint", async () => {
-    const rmdKnitr = browser.$("aria/rmd-static-1/static.Rmd");
+    const rmdKnitr = browser.$(`aria/rmd-static-1${sep}static.Rmd`);
     await expect(rmdKnitr).toExist();
   });
 
   it("can list shiny entrypoint", async () => {
-    const shiny = browser.$("aria/shinyapp/app.R");
+    const shiny = browser.$(`aria/shinyapp${sep}app.R`);
     await expect(shiny).toExist();
   });
 
   it("can list shinyHtml entrypoint", async () => {
-    const shinyHtml = browser.$("aria/shinyapp/index.htm");
+    const shinyHtml = browser.$(`aria/shinyapp${sep}index.htm`);
     await expect(shinyHtml).toExist();
   });
 
   it("can select entrypoint", async () => {
-    const simplepy = browser.$("aria/fastapi-simple/simple.py");
+    const simplepy = browser.$(`aria/fastapi-simple${sep}simple.py`);
     await expect(simplepy).toExist();
     await simplepy.click();
 
@@ -200,11 +206,7 @@ describe("Nested Fast API Deployment", () => {
     describe("Cleanup creds", () => {
       it("remove credentials", async () => {
         let scriptPath: string;
-        if (os.platform() === "win32") {
-          scriptPath = "shell ../scripts/cleanup.bash";
-        } else {
-          scriptPath = "../scripts/cleanup.bash";
-        }
+        scriptPath = "cd ../scripts && cleanup.bash";
         await runShellScript(scriptPath);
       });
     });
