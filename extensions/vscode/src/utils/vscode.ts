@@ -66,10 +66,18 @@ export async function getRInterpreterPath(): Promise<string | undefined> {
     const runtime = await api.runtime.getPreferredRuntime("r");
     if (runtime) {
       const interpreter = runtime.runtimePath;
+      console.log("Using selected R interpreter", interpreter);
       return interpreter;
+    } else {
+      console.log(
+        "Using default R interpreter because getPreferredRuntime did not return one",
+      );
     }
   }
   // We don't know the interpreter path.
   // The backend will run R from PATH.
+  console.log(
+    "Using default R interpreter because the Positron API is not available",
+  );
   return undefined;
 }
