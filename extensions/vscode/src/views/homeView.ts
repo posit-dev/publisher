@@ -38,7 +38,7 @@ import {
 } from "src/api";
 import { useBus } from "src/bus";
 import { EventStream } from "src/events";
-import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/config";
+import { getPythonInterpreterPath, getRInterpreterPath } from "../utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
 import { getNonce } from "src/utils/getNonce";
 import { getUri } from "src/utils/getUri";
