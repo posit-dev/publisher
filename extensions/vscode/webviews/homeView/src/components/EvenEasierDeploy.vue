@@ -358,7 +358,6 @@ const toolTipText = computed(() => {
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
 
-<<<<<<< HEAD
 const onErrorMessageAnchorClick = (splitOptionId: number) => {
   const option = ErrorMessageSplitOptions.find(
     (option) => option.actionId === splitOptionId,
@@ -375,8 +374,6 @@ const onErrorMessageAnchorClick = (splitOptionId: number) => {
   }
 };
 
-=======
->>>>>>> origin/main
 const navigateToUrl = (url: string) => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.NAVIGATE,
