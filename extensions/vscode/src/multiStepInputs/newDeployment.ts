@@ -31,7 +31,7 @@ import {
 import {
   getPythonInterpreterPath,
   getRInterpreterPath,
-} from "src/utils/config";
+} from "src/utils/vscode";
 import {
   getMessageFromError,
   getSummaryStringFromError,

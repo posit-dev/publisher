@@ -17,7 +17,7 @@ import { Contexts } from "src/constants";
 import {
   getPythonInterpreterPath,
   getRInterpreterPath,
-} from "src/utils/config";
+} from "src/utils/vscode";
 import { isActiveDocument, relativeDir } from "src/utils/files";
 import { hasKnownContentType } from "src/utils/inspect";
 import { getSummaryStringFromError } from "src/utils/errors";

@@ -26,7 +26,7 @@ import {
 import {
   getPythonInterpreterPath,
   getRInterpreterPath,
-} from "src/utils/config";
+} from "src/utils/vscode";
 import { getSummaryStringFromError } from "src/utils/errors";
 import {
   MultiStepInput,
