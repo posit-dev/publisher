@@ -1615,6 +1615,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
       }),
       commands.registerCommand(
+        Commands.HomeView.EditCurrentConfiguration,
+        async () => {
+          const config = await this.state.getSelectedConfiguration();
+          if (config) {
+            return await commands.executeCommand(
+              "vscode.open",
+              Uri.parse(config.configurationPath),
+            );
+          }
+          console.error(
+            "Ignoring ${Commands.HomeView.EditCurrentConfiguration} Command since no configuration is selected",
+          );
+          return undefined;
+        },
+      ),
+      commands.registerCommand(
         Commands.Files.Refresh,
         this.sendRefreshedFilesLists,
         this,

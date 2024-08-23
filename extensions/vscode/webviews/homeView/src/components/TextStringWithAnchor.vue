@@ -13,6 +13,10 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import {
+  ErrorMessageSplitOption,
+  findErrorMessageSplitOption,
+} from "../../../../src/utils/errorEnhancer";
 
 defineOptions({
   inheritAttrs: false,
@@ -23,15 +27,9 @@ const emit = defineEmits<{
   click: [splitOptionId: number]; // named tuple syntax
 }>();
 
-interface SplitOption {
-  detectionStr: string;
-  anchorStr: string;
-  id: number;
-}
-
 interface Props {
   message: string;
-  splitOptions: SplitOption[];
+  splitOptions: ErrorMessageSplitOption[];
   class?: string;
 }
 
@@ -40,13 +38,11 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const activeOption = computed(() => {
-  return props.splitOptions.find((option) =>
-    props.message.includes(option.detectionStr),
-  );
+  return findErrorMessageSplitOption(props.message);
 });
 
 const messageParts = computed(() => {
-  if (activeOption.value !== undefined) {
+  if (activeOption.value !== undefined && activeOption.value.anchorStr) {
     const parts = props.message.split(activeOption.value.anchorStr);
     if (parts.length === 2) {
       return parts;
@@ -57,7 +53,7 @@ const messageParts = computed(() => {
 
 const onClick = () => {
   if (activeOption.value) {
-    emit("click", activeOption.value.id);
+    emit("click", activeOption.value.actionId);
   }
 };
 </script>

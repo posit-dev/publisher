@@ -181,6 +181,12 @@
         "category": "Posit Publisher"
       },
       {
+        "command": "posit.publisher.edit.Configuration",
+        "title": "Edit Active Configuration",
+        "icon": "$(edit)",
+        "category": "Posit Publisher"
+      },
+      {
         "command": "posit.publisher.homeView.navigateToDeployment.ContentLog",
         "title": "View Content Log on Connect",
         "icon": "$(output)",
@@ -267,6 +273,10 @@
         },
         {
           "command": "posit.publisher.files.exclude",
+          "when": "false"
+        },
+        {
+          "command": "posit.publisher.edit.Configuration",
           "when": "false"
         },
         {

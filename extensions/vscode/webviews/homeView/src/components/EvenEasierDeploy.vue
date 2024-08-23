@@ -142,7 +142,7 @@
           <span class="codicon codicon-error error-icon"></span>
           <TextStringWithAnchor
             :message="errorMessage"
-            :splitOptions="getErrorMessageSplitOptions()"
+            :splitOptions="ErrorMessageSplitOptions"
             class="error-message"
             @click="onErrorMessageAnchorClick"
           />
@@ -179,6 +179,10 @@ import {
   isPreContentRecord,
   isConfigurationError,
 } from "../../../../src/api";
+import {
+  ErrorMessageActionIds,
+  ErrorMessageSplitOptions,
+} from "../../../../src/utils/errorEnhancer";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
 import { formatDateString } from "src/utils/date";
@@ -194,10 +198,6 @@ import TextStringWithAnchor from "./TextStringWithAnchor.vue";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
-
-enum ErrorMessageActionIds {
-  EditConfiguration,
-}
 
 const toolbarActions = computed(() => {
   const result = [];
@@ -362,19 +362,9 @@ const errorMessage = computed(() => {
   return home.selectedContentRecord?.deploymentError?.msg || "";
 });
 
-const getErrorMessageSplitOptions = () => {
-  return [
-    {
-      detectionStr: "editing your configuration file",
-      anchorStr: "editing",
-      id: ErrorMessageActionIds.EditConfiguration,
-    },
-  ];
-};
-
 const onErrorMessageAnchorClick = (splitOptionId: number) => {
-  const option = getErrorMessageSplitOptions().find(
-    (option) => option.id === splitOptionId,
+  const option = ErrorMessageSplitOptions.find(
+    (option) => option.actionId === splitOptionId,
   );
   if (!option) {
     console.error(
@@ -382,7 +372,7 @@ const onErrorMessageAnchorClick = (splitOptionId: number) => {
     );
     return;
   }
-  if (option.id === ErrorMessageActionIds.EditConfiguration) {
+  if (option.actionId === ErrorMessageActionIds.EditConfiguration) {
     onEditConfiguration(home.selectedConfiguration!.configurationPath);
     return;
   }
