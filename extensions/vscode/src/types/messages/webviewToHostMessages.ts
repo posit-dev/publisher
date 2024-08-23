@@ -14,6 +14,7 @@ export enum WebviewToHostMessageType {
   INCLUDE_FILE = "includeFile",
   EXCLUDE_FILE = "excludeFile",
   REQUEST_FILES_LISTS = "requestFilesLists",
+  REQUEST_CREDENTIALS = "requestCredentials",
   VSCODE_OPEN_RELATIVE = "VSCodeOpenRelativeMsg",
   REFRESH_PYTHON_PACKAGES = "RefreshPythonPackagesMsg",
   SCAN_PYTHON_PACKAGE_REQUIREMENTS = "ScanPythonPackageRequirementsMsg",
@@ -21,6 +22,7 @@ export enum WebviewToHostMessageType {
   SCAN_R_PACKAGE_REQUIREMENTS = "ScanRPackageRequirementsMsg",
   SELECT_DEPLOYMENT = "selectDeployment",
   NEW_DEPLOYMENT = "newDeployment",
+  NEW_CREDENTIAL_FOR_DEPLOYMENT = "newCredentialForDeployment",
   NEW_CREDENTIAL = "newCredential",
   VIEW_PUBLISHING_LOG = "viewPublishingLog",
 }
@@ -46,6 +48,7 @@ export type WebviewToHostMessage =
   | IncludeFileMsg
   | ExcludeFileMsg
   | RequestFilesListsMsg
+  | RequestCredentialsMsg
   | RefreshPythonPackagesMsg
   | VSCodeOpenRelativeMsg
   | ScanPythonPackageRequirementsMsg
@@ -53,6 +56,7 @@ export type WebviewToHostMessage =
   | ScanRPackageRequirementsMsg
   | SelectDeploymentMsg
   | NewDeploymentMsg
+  | NewCredentialForDeploymentMsg
   | NewCredentialMsg
   | ViewPublishingLog;
 
@@ -68,6 +72,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.INCLUDE_FILE ||
     msg.kind === WebviewToHostMessageType.EXCLUDE_FILE ||
     msg.kind === WebviewToHostMessageType.REQUEST_FILES_LISTS ||
+    msg.kind === WebviewToHostMessageType.REQUEST_CREDENTIALS ||
     msg.kind === WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES ||
     msg.kind === WebviewToHostMessageType.VSCODE_OPEN_RELATIVE ||
     msg.kind === WebviewToHostMessageType.SCAN_PYTHON_PACKAGE_REQUIREMENTS ||
@@ -75,6 +80,7 @@ export function isWebviewToHostMessage(msg: any): msg is WebviewToHostMessage {
     msg.kind === WebviewToHostMessageType.SCAN_R_PACKAGE_REQUIREMENTS ||
     msg.kind === WebviewToHostMessageType.SELECT_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_DEPLOYMENT ||
+    msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT ||
     msg.kind === WebviewToHostMessageType.NEW_CREDENTIAL ||
     msg.kind === WebviewToHostMessageType.VIEW_PUBLISHING_LOG
   );
@@ -141,6 +147,9 @@ export type ExcludeFileMsg = AnyWebviewToHostMessage<
 export type RequestFilesListsMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.REQUEST_FILES_LISTS>;
 
+export type RequestCredentialsMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.REQUEST_CREDENTIALS>;
+
 export type RefreshPythonPackagesMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.REFRESH_PYTHON_PACKAGES>;
 
@@ -165,6 +174,9 @@ export type SelectDeploymentMsg =
 
 export type NewDeploymentMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_DEPLOYMENT>;
+
+export type NewCredentialForDeploymentMsg =
+  AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT>;
 
 export type NewCredentialMsg =
   AnyWebviewToHostMessage<WebviewToHostMessageType.NEW_CREDENTIAL>;

@@ -46,8 +46,8 @@
 </template>
 
 <script setup lang="ts">
-import TreeItem from "src/components/TreeItem.vue";
-import TreeSection from "src/components/TreeSection.vue";
+import TreeItem from "src/components/tree/TreeItem.vue";
+import TreeSection from "src/components/tree/TreeSection.vue";
 import WelcomeView from "src/components/WelcomeView.vue";
 
 import { computed } from "vue";
