@@ -141,7 +141,7 @@
         >
           <span class="codicon codicon-error error-icon"></span>
           <TextStringWithAnchor
-            :message="errorMessage"
+            :message="home.selectedContentRecord?.deploymentError?.msg"
             :splitOptions="ErrorMessageSplitOptions"
             class="error-message"
             @click="onErrorMessageAnchorClick"
@@ -356,10 +356,6 @@ const toolTipText = computed(() => {
 - Credential In Use: ${home.serverCredential?.name || "<undefined>"}
 - Project Dir: ${home.selectedContentRecord?.projectDir || "<undefined>"}
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
-});
-
-const errorMessage = computed(() => {
-  return home.selectedContentRecord?.deploymentError?.msg || "";
 });
 
 const onErrorMessageAnchorClick = (splitOptionId: number) => {

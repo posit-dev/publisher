@@ -1,12 +1,12 @@
 <template>
-  <span v-if="activeOption" :class="class">
+  <span v-if="activeOption" :class="$attrs.class">
     {{ messageParts[0] }}
     <a class="webview-link" role="button" @click="onClick()">
       {{ activeOption?.anchorStr }}
     </a>
     {{ messageParts[1] }}
   </span>
-  <span v-else :class="class">
+  <span v-else :class="$attrs.class">
     {{ message }}
   </span>
 </template>
@@ -18,10 +18,6 @@ import {
   findErrorMessageSplitOption,
 } from "../../../../src/utils/errorEnhancer";
 
-defineOptions({
-  inheritAttrs: false,
-});
-
 const emit = defineEmits<{
   // <eventName>: <expected arguments>
   click: [splitOptionId: number]; // named tuple syntax
@@ -30,12 +26,9 @@ const emit = defineEmits<{
 interface Props {
   message: string;
   splitOptions: ErrorMessageSplitOption[];
-  class?: string;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  class: "",
-});
+const props = defineProps<Props>();
 
 const activeOption = computed(() => {
   return findErrorMessageSplitOption(props.message);
