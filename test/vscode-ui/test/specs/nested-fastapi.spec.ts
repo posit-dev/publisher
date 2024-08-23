@@ -1,5 +1,6 @@
 import { browser, $ } from "@wdio/globals";
 
+import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -198,7 +199,12 @@ describe("Nested Fast API Deployment", () => {
     // Use shell script to delete credentials
     describe("Cleanup creds", () => {
       it("remove credentials", async () => {
-        const scriptPath = "cd .. && scripts/cleanup.bash";
+        let scriptPath: string;
+        if (os.platform() === "win32") {
+          scriptPath = "shell ../scripts/cleanup.bash";
+        } else {
+          scriptPath = "../scripts/cleanup.bash";
+        }
         await runShellScript(scriptPath);
       });
     });
