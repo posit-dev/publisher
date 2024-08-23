@@ -2,8 +2,9 @@
 
 import { Uri, commands, workspace } from "vscode";
 import { fileExists, isDir } from "./files";
+import { delay } from "./throttle";
 import { substituteVariables } from "./variables";
-import { PositronApi } from "positron";
+import { LanguageRuntimeMetadata, PositronApi } from "positron";
 
 export async function getPythonInterpreterPath(): Promise<string | undefined> {
   const workspaceFolder = workspace.workspaceFolders?.[0];
@@ -63,7 +64,27 @@ export async function getRInterpreterPath(): Promise<string | undefined> {
   const api = getPositronApi();
 
   if (api) {
-    const runtime = await api.runtime.getPreferredRuntime("r");
+    let runtime: LanguageRuntimeMetadata | undefined;
+
+    // Small number of retries, because getPreferredRuntime
+    // has its own internal retry logic.
+    const retries = 3;
+    const retryInterval = 1000;
+
+    for (let i = 0; i < retries + 1; i++) {
+      try {
+        runtime = await api.runtime.getPreferredRuntime("r");
+        break;
+      } catch (error: any) {
+        // Delay and retry
+        console.error(
+          "getPreferredRuntime returned an error; retrying. ",
+          error,
+        );
+        await delay(retryInterval);
+      }
+    }
+
     if (runtime) {
       const interpreter = runtime.runtimePath;
       console.log("Using selected R interpreter", interpreter);
