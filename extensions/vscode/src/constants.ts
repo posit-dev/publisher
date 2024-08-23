@@ -103,7 +103,6 @@ export const Contexts = {
 export const enum Views {
   Project = "posit.publisher.project",
   HomeView = "posit.publisher.homeView",
-  ContentRecords = "posit.publisher.contentRecords",
   Logs = "posit.publisher.logs",
 }
 
