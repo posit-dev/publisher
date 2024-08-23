@@ -181,7 +181,7 @@
         "category": "Posit Publisher"
       },
       {
-        "command": "posit.publisher.edit.Configuration",
+        "command": "posit.publisher.homeView.edit.Configuration",
         "title": "Edit Active Configuration",
         "icon": "$(edit)",
         "category": "Posit Publisher"
@@ -260,7 +260,7 @@
           "when": "false"
         },
         {
-          "command": "posit.publisher.edit.Configuration",
+          "command": "posit.publisher.homeView.edit.Configuration",
           "when": "false"
         },
         {
