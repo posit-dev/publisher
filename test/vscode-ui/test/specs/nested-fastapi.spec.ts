@@ -119,7 +119,11 @@ describe("Nested Fast API Deployment", () => {
     await expect(simplepy).toExist();
     await simplepy.click();
 
-    await browser.pause(5000);
+    const titleMessage = browser.$("#quickInput_message");
+    await expect(titleMessage).toHaveText(
+      "Enter a title for your content or application. (Press 'Enter' to confirm or 'Escape' to cancel)",
+    );
+    // await input.waitForExist({ timeout: 30000 });
 
     // set title
     await input.setValue("my fastapi app");
@@ -194,7 +198,8 @@ describe("Nested Fast API Deployment", () => {
     // Use shell script to delete credentials
     describe("Cleanup creds", () => {
       it("remove credentials", async () => {
-        browser.executeAsyncScript("../scripts/cleanup.bash", []);
+        const scriptPath = "cd .. && scripts/cleanup.bash";
+        await runShellScript(scriptPath);
       });
     });
   });

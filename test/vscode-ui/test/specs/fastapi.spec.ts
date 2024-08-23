@@ -128,7 +128,8 @@ describe("VS Code Extension UI Test", () => {
     // Use shell script to delete credentials
     describe("Cleanup creds", () => {
       it("remove credentials", async () => {
-        browser.executeAsyncScript("../scripts/cleanup.bash", []);
+        const scriptPath = "cd .. && scripts/cleanup.bash";
+        await runShellScript(scriptPath);
       });
     });
   });
