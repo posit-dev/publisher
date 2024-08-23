@@ -25,6 +25,10 @@ import {
   restoreMsgToStatusSuffix,
 } from "src/api";
 import { Commands, Views } from "src/constants";
+import {
+  ErrorMessageActionIds,
+  findErrorMessageSplitOption,
+} from "src/utils/errorEnhancer";
 
 enum LogStageStatus {
   notStarted,
@@ -186,14 +190,27 @@ export class LogsTreeDataProvider implements TreeDataProvider<LogsTreeItem> {
       });
 
       let showLogsOption = "View Log";
+      let options = [showLogsOption];
+      let enhancedError = findErrorMessageSplitOption(msg.data.message);
+      if (enhancedError && enhancedError.buttonStr) {
+        options.push(enhancedError.buttonStr);
+      }
       const selection = await window.showErrorMessage(
         msg.data.cancelled === "true"
           ? `Deployment cancelled: ${msg.data.message}`
           : `Deployment failed: ${msg.data.message}`,
-        showLogsOption,
+        ...options,
       );
       if (selection === showLogsOption) {
         await commands.executeCommand(Commands.Logs.Focus);
+      } else if (selection === enhancedError?.buttonStr) {
+        if (
+          enhancedError?.actionId === ErrorMessageActionIds.EditConfiguration
+        ) {
+          await commands.executeCommand(
+            Commands.HomeView.EditCurrentConfiguration,
+          );
+        }
       }
       this.refresh();
     });

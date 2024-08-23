@@ -139,12 +139,16 @@ func newPythonNotAvailableErr(requested string, installations []server_settings.
 }
 
 const pythonNotAvailableCode types.ErrorCode = "pythonNotAvailable"
-const pythonNotAvailableMsg = `Python %s is not available on the server.
-Consider editing your configuration file to request one of the available versions:
-%s.`
+const pythonNotAvailableMsgSingle = `Python %s is not available on the server.
+Consider editing your configuration to use version %s.`
+const pythonNotAvailableMsgMultiple = `Python %s is not available on the server.
+Consider editing your configuration to use one of the available versions: %s.`
 
 func (e *pythonNotAvailableErr) Error() string {
-	return fmt.Sprintf(pythonNotAvailableMsg, e.Requested, strings.Join(e.Available, ", "))
+	if len(e.Available) > 1 {
+		return fmt.Sprintf(pythonNotAvailableMsgMultiple, e.Requested, strings.Join(e.Available, ", "))
+	}
+	return fmt.Sprintf(pythonNotAvailableMsgSingle, e.Requested, e.Available[0])
 }
 
 func (a *allSettings) checkMatchingPython(version string) error {

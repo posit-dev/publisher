@@ -73,6 +73,7 @@ const homeViewCommands = {
   AddCredential: "posit.publisher.homeView.addCredential",
   DeleteCredential: "posit.publisher.homeView.deleteCredential",
   RefreshCredentials: "posit.publisher.homeView.refreshCredentials",
+  EditCurrentConfiguration: "posit.publisher.homeView.edit.Configuration",
   // Added automatically by VSCode with view registration
   Focus: "posit.publisher.homeView.focus",
 } as const;
