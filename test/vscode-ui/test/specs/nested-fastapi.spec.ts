@@ -194,8 +194,7 @@ describe("Nested Fast API Deployment", () => {
     // Use shell script to delete credentials
     describe("Cleanup creds", () => {
       it("remove credentials", async () => {
-        const scriptPath = "../scripts/cleanup.bash";
-        await runShellScript(scriptPath);
+        browser.executeAsyncScript("../scripts/cleanup.bash", []);
       });
     });
   });
