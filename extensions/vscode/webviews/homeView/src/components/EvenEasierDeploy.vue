@@ -141,24 +141,7 @@
         >
           <span class="codicon codicon-error error-icon"></span>
           <span class="error-message">
-            <span v-if="showEditLink" class="error-message">
-              Error: {{ errorMessageSplit[0] }}
-              <a
-                class="webview-link"
-                role="button"
-                @click="
-                  onEditConfiguration(
-                    home.selectedConfiguration!.configurationPath,
-                  )
-                "
-              >
-                {{ editingSplitStr }}
-              </a>
-              {{ errorMessageSplit[1] }}
-            </span>
-            <span v-else class="error-message">
-              Error: {{ home.selectedContentRecord.deploymentError.msg }}
-            </span>
+            Error: {{ home.selectedContentRecord.deploymentError.msg }}
           </span>
         </div>
         <div
@@ -206,9 +189,6 @@ import { filterConfigurationsToValidAndType } from "../../../../src/utils/filter
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
-
-const editingSplitStr = "editing";
-const editConfigFileDetectionStr = "editing your configuration file";
 
 const toolbarActions = computed(() => {
   const result = [];
@@ -367,20 +347,6 @@ const toolTipText = computed(() => {
 - Credential In Use: ${home.serverCredential?.name || "<undefined>"}
 - Project Dir: ${home.selectedContentRecord?.projectDir || "<undefined>"}
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
-});
-
-const showEditLink = computed(() => {
-  return home.selectedContentRecord?.deploymentError?.msg.includes(
-    editConfigFileDetectionStr,
-  );
-});
-const errorMessageSplit = computed(() => {
-  const errorSplitResult =
-    home.selectedContentRecord?.deploymentError?.msg.split(editingSplitStr);
-  if (errorSplitResult?.length === 2) {
-    return errorSplitResult;
-  }
-  return ["", ""];
 });
 
 const navigateToUrl = (url: string) => {
