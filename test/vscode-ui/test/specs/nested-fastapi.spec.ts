@@ -206,7 +206,7 @@ describe("Nested Fast API Deployment", () => {
     describe("Cleanup creds", () => {
       it("remove credentials", async () => {
         let scriptPath: string;
-        scriptPath = "cd ../scripts && cleanup.bash";
+        scriptPath = "cd ../scripts && bash cleanup.bash";
         await runShellScript(scriptPath);
       });
     });

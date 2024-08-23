@@ -130,7 +130,7 @@ describe("VS Code Extension UI Test", () => {
     describe("Cleanup creds", () => {
       it("remove credentials", async () => {
         let scriptPath: string;
-        scriptPath = "cd ../scripts && cleanup.bash";
+        scriptPath = "cd ../scripts && bash cleanup.bash";
         await runShellScript(scriptPath);
       });
     });
