@@ -1673,7 +1673,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           if (config) {
             return await commands.executeCommand(
               "vscode.open",
-              Uri.parse(config.configurationPath),
+              Uri.file(config.configurationPath),
             );
           }
           console.error(

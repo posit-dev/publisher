@@ -79,7 +79,7 @@ export async function openNewOrExistingFileInPreview(
   appendedContents?: string,
 ) {
   let fileExist = true;
-  const existingUri = Uri.parse(filePath);
+  const existingUri = Uri.file(filePath);
   const newUri = Uri.file(filePath).with({ scheme: "untitled" });
 
   try {
@@ -123,7 +123,7 @@ export async function updateNewOrExistingFile(
   openEditor = false,
 ) {
   let fileExist = true;
-  const uri = Uri.parse(filePath);
+  const uri = Uri.file(filePath);
 
   try {
     await workspace.fs.stat(uri);
@@ -263,7 +263,7 @@ export function relativePath(uri: Uri): string | undefined {
     return undefined;
   }
   const base = uriUtils.basename(uri);
-  const relativeFilePath = uriUtils.joinPath(Uri.parse(relativeDirPath), base);
+  const relativeFilePath = uriUtils.joinPath(Uri.file(relativeDirPath), base);
   let result = relativeFilePath.path;
   if (result.startsWith(path.sep)) {
     result = result.replace(path.sep, "");
