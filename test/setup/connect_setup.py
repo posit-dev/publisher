@@ -81,7 +81,13 @@ def connect_ready(box_name, max_attempts, interval):
 
 api_key=get_api_key('admin')
 connect_version=get_connect_version()
-install_connect = "fuzzbucket-client ssh " + box_name + " " + ssh_options + " sudo -E UNATTENDED=1 bash installer-ci.sh -d " + connect_version
+install_connect = """
+while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
+    echo "Waiting for package manager lock to be released...";
+    sleep 5;
+done;
+fuzzbucket-client ssh {box_name} {ssh_options} sudo -E UNATTENDED=1 bash installer-ci.sh -d {connect_version}
+""".format(box_name=box_name, ssh_options=ssh_options, connect_version=connect_version)
 
 response = connect_ready(box_name, 20, 5)
 

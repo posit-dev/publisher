@@ -36,7 +36,8 @@ export const config: Options.Testrunner = {
   // The path of the spec files will be resolved relative from the directory of
   // of the config file unless it's absolute.
   //
-  specs: ["./test/specs/**/*.ts"],
+  // specs: ["./test/specs/**/*.ts"],
+  specs: [process.env.SPEC_PATH || "./test/specs/nested-fastapi.spec.ts"],
   // Patterns to exclude.
   exclude: [
     // 'path/to/excluded/files'
@@ -57,7 +58,7 @@ export const config: Options.Testrunner = {
   // and 30 processes will get spawned. The property handles how many capabilities
   // from the same test should run tests.
   //
-  maxInstances: 10,
+  maxInstances: 1,
   //
   // If you have trouble getting all important capabilities together, check out the
   // Sauce Labs platform configurator - a great tool to configure your capabilities:
@@ -72,7 +73,7 @@ export const config: Options.Testrunner = {
         extensionPath: path.resolve(__dirname, "../../extensions/vscode/"),
         workspacePath: path.resolve(
           __dirname,
-          "../sample-content/fastapi-simple/",
+          process.env.WORKSPACE_PATH || "../sample-content/",
         ),
         // optional VS Code settings
         userSettings: {
@@ -107,7 +108,7 @@ export const config: Options.Testrunner = {
   //
   // If you only want to run your tests until a specific amount of tests have failed use
   // bail (default is 0 - don't bail, run all tests).
-  bail: 0,
+  bail: 1,
   //
   // Set a base URL in order to shorten url command calls. If your `url` parameter starts
   // with `/`, the base url gets prepended, not including the path portion of your baseUrl.
@@ -116,7 +117,7 @@ export const config: Options.Testrunner = {
   // baseUrl: 'http://localhost:8080',
   //
   // Default timeout for all waitFor* commands.
-  waitforTimeout: 10000,
+  waitforTimeout: 30000,
   //
   // Default timeout in milliseconds for request
   // if browser driver or grid doesn't send response

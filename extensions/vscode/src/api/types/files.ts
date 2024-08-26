@@ -18,6 +18,7 @@ export type ContentRecordFile = {
   rel: string;
   relDir: string;
   size: number;
+  fileCount: number;
   abs: string;
 };
 

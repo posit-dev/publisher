@@ -23,7 +23,10 @@ export class HostConduit {
       if (isHostToWebviewMessage(obj)) {
         this.externalMsgCB(obj);
       } else {
-        throw new Error(`NonConduitMessage Received: ${JSON.stringify(e)}`);
+        console.error(
+          `HostConduit::rawMsgCB, NonConduitMessage Received: ${JSON.stringify(e)}`,
+        );
+        return;
       }
     }
   };

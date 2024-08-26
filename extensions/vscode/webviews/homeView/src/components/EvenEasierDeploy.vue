@@ -140,9 +140,12 @@
           class="last-deployment-details last-deployment-error"
         >
           <span class="codicon codicon-error error-icon"></span>
-          <span class="error-message">
-            Error: {{ home.selectedContentRecord.deploymentError.msg }}
-          </span>
+          <TextStringWithAnchor
+            :message="home.selectedContentRecord?.deploymentError?.msg"
+            :splitOptions="ErrorMessageSplitOptions"
+            class="error-message"
+            @click="onErrorMessageAnchorClick"
+          />
         </div>
         <div
           v-if="!isPreContentRecord(home.selectedContentRecord)"
@@ -176,16 +179,22 @@ import {
   isPreContentRecord,
   isConfigurationError,
 } from "../../../../src/api";
+import {
+  ErrorMessageActionIds,
+  ErrorMessageSplitOptions,
+} from "../../../../src/utils/errorEnhancer";
 import { WebviewToHostMessageType } from "../../../../src/types/messages/webviewToHostMessages";
 import { calculateTitle } from "../../../../src/utils/titles";
+import { formatDateString } from "src/utils/date";
+import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
 
 import { useHostConduitService } from "src/HostConduitService";
 import { useHomeStore } from "src/stores/home";
+
 import QuickPickItem from "src/components/QuickPickItem.vue";
 import ActionToolbar from "src/components/ActionToolbar.vue";
 import DeployButton from "src/components/DeployButton.vue";
-import { formatDateString } from "src/utils/date";
-import { filterConfigurationsToValidAndType } from "../../../../src/utils/filters";
+import TextStringWithAnchor from "./TextStringWithAnchor.vue";
 
 const home = useHomeStore();
 const hostConduit = useHostConduitService();
@@ -349,6 +358,22 @@ const toolTipText = computed(() => {
 - Server URL: ${home.serverCredential?.url || "<undefined>"}`;
 });
 
+const onErrorMessageAnchorClick = (splitOptionId: number) => {
+  const option = ErrorMessageSplitOptions.find(
+    (option) => option.actionId === splitOptionId,
+  );
+  if (!option) {
+    console.error(
+      "EvenEasierDeploy::onErrorMessageAnchorClick, event does not match options. Ignoring.",
+    );
+    return;
+  }
+  if (option.actionId === ErrorMessageActionIds.EditConfiguration) {
+    onEditConfiguration(home.selectedConfiguration!.configurationPath);
+    return;
+  }
+};
+
 const navigateToUrl = (url: string) => {
   hostConduit.sendMsg({
     kind: WebviewToHostMessageType.NAVIGATE,
@@ -360,7 +385,7 @@ const navigateToUrl = (url: string) => {
 
 const newCredential = () => {
   hostConduit.sendMsg({
-    kind: WebviewToHostMessageType.NEW_CREDENTIAL,
+    kind: WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT,
   });
 };
 </script>

@@ -9,10 +9,10 @@ import {
   RefreshConfigDataMsg,
   RefreshCredentialDataMsg,
   RefreshContentRecordDataMsg,
-  RefreshFilesListsMsg,
   UpdateContentRecordSelectionMsg,
   UpdatePythonPackages,
   UpdateRPackages,
+  RefreshFilesMsg,
 } from "../../../src/types/messages/hostToWebviewMessages";
 import {
   WebviewToHostMessage,
@@ -38,9 +38,10 @@ export function useHostConduitService() {
 
   const sendMsg = (msg: WebviewToHostMessage) => {
     if (!hostConduit) {
-      throw new Error(
-        "HostCondiutService::sendMsg attemped ahead of call to useHostConduitService",
+      console.error(
+        `HostCondiutService::sendMsg attempted ahead of call to useHostConduitService. Message Dropped: ${JSON.stringify(msg)}`,
       );
+      return;
     }
     console.debug(`HostConduitService - Sending Msg: ${JSON.stringify(msg)}`);
     return hostConduit.sendMsg(msg);
@@ -72,8 +73,8 @@ const onMessageFromHost = (msg: HostToWebviewMessage): void => {
       return onUpdateContentRecordSelectionMsg(msg);
     case HostToWebviewMessageType.SAVE_SELECTION:
       return onSaveSelectionMsg();
-    case HostToWebviewMessageType.REFRESH_FILES_LISTS:
-      return onRefreshFilesListMsg(msg);
+    case HostToWebviewMessageType.REFRESH_FILES:
+      return onRefreshFilesMsg(msg);
     case HostToWebviewMessageType.UPDATE_PYTHON_PACKAGES:
       return onUpdatePythonPackages(msg);
     case HostToWebviewMessageType.UPDATE_R_PACKAGES:
@@ -183,10 +184,9 @@ const onSaveSelectionMsg = () => {
   home.updateParentViewSelectionState();
 };
 
-const onRefreshFilesListMsg = (msg: RefreshFilesListsMsg) => {
+const onRefreshFilesMsg = (msg: RefreshFilesMsg) => {
   const home = useHomeStore();
-  home.includedFiles = msg.content.includedFiles;
-  home.excludedFiles = msg.content.excludedFiles;
+  home.files = msg.content.files;
 };
 
 const onUpdatePythonPackages = (msg: UpdatePythonPackages) => {

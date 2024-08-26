@@ -62,8 +62,7 @@ import {
   VSCodeOpenMsg,
 } from "src/types/messages/webviewToHostMessages";
 import { HostToWebviewMessageType } from "src/types/messages/hostToWebviewMessages";
-import { confirmOverwrite } from "src/dialogs";
-import { splitFilesOnInclusion } from "src/utils/files";
+import { confirmDelete, confirmOverwrite } from "src/dialogs";
 import { DeploymentQuickPick } from "src/types/quickPicks";
 import { selectNewOrExistingConfig } from "src/multiStepInputs/selectNewOrExistingConfig";
 import { RPackage, RVersionConfig } from "src/api/types/packages";
@@ -210,6 +209,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return await this.onVSCodeOpen(msg);
       case WebviewToHostMessageType.REQUEST_FILES_LISTS:
         return this.debounceSendRefreshedFilesLists();
+      case WebviewToHostMessageType.REQUEST_CREDENTIALS:
+        return await this.onRequestCredentials();
       case WebviewToHostMessageType.INCLUDE_FILE:
         return this.updateFileList(msg.content.path, FileAction.INCLUDE);
       case WebviewToHostMessageType.EXCLUDE_FILE:
@@ -218,6 +219,8 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         return this.showDeploymentQuickPick();
       case WebviewToHostMessageType.NEW_DEPLOYMENT:
         return this.showNewDeploymentMultiStep(Views.HomeView);
+      case WebviewToHostMessageType.NEW_CREDENTIAL_FOR_DEPLOYMENT:
+        return this.showNewCredentialForDeployment();
       case WebviewToHostMessageType.NEW_CREDENTIAL:
         return this.showNewCredential();
       case WebviewToHostMessageType.VIEW_PUBLISHING_LOG:
@@ -389,6 +392,11 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       window.showErrorMessage(summary);
       return;
     }
+  }
+
+  private async onRequestCredentials() {
+    await this.refreshCredentialData();
+    return this.updateWebViewViewCredentials();
   }
 
   private async refreshCredentialData() {
@@ -901,16 +909,60 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
   }
 
   private async showNewCredential() {
+    return await commands.executeCommand(Commands.HomeView.AddCredential);
+  }
+
+  private async showNewCredentialForDeployment() {
     const contentRecord = await this.state.getSelectedContentRecord();
     if (!contentRecord) {
       return;
     }
 
     return await commands.executeCommand(
-      Commands.Credentials.Add,
+      Commands.HomeView.AddCredential,
       contentRecord.serverUrl,
     );
   }
+
+  /**
+   * Add credential.
+   *
+   * Prompt the user for credential information. Then create or update the credential. Afterwards, refresh the provider.
+   *
+   * Once the server url is provided, the user is prompted with the url hostname as the default server name.
+   */
+  public addCredential = async (startingServerUrl?: string) => {
+    const credential = await newCredential(Views.HomeView, startingServerUrl);
+    if (credential) {
+      useBus().trigger("refreshCredentials", undefined);
+    }
+  };
+
+  /**
+   * Deletes the supplied Credential
+   */
+  public deleteCredential = async (context: {
+    credentialGUID: string;
+    credentialName: string;
+  }) => {
+    const ok = await confirmDelete(
+      `Are you sure you want to delete the credential '${context.credentialName}'?`,
+    );
+    if (!ok) {
+      return;
+    }
+    try {
+      const api = await useApi();
+      await api.credentials.delete(context.credentialGUID);
+      window.setStatusBarMessage(
+        `Credential for ${context.credentialName} has been erased from our memory!`,
+      );
+    } catch (error: unknown) {
+      const summary = getSummaryStringFromError("credential::delete", error);
+      window.showInformationMessage(summary);
+    }
+    useBus().trigger("refreshCredentials", undefined);
+  };
 
   private showPublishingLog() {
     return commands.executeCommand(Commands.Logs.Focus);
@@ -1307,9 +1359,9 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         const response = await apiRequest;
 
         this.webviewConduit.sendMsg({
-          kind: HostToWebviewMessageType.REFRESH_FILES_LISTS,
+          kind: HostToWebviewMessageType.REFRESH_FILES,
           content: {
-            ...splitFilesOnInclusion(response.data),
+            files: response.data,
           },
         });
       } catch (error: unknown) {
@@ -1615,6 +1667,22 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         }
       }),
       commands.registerCommand(
+        Commands.HomeView.EditCurrentConfiguration,
+        async () => {
+          const config = await this.state.getSelectedConfiguration();
+          if (config) {
+            return await commands.executeCommand(
+              "vscode.open",
+              Uri.parse(config.configurationPath),
+            );
+          }
+          console.error(
+            "Ignoring ${Commands.HomeView.EditCurrentConfiguration} Command since no configuration is selected",
+          );
+          return undefined;
+        },
+      ),
+      commands.registerCommand(
         Commands.Files.Refresh,
         this.sendRefreshedFilesLists,
         this,
@@ -1676,6 +1744,38 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
         Commands.RPackages.Scan,
         this.onScanForRPackageRequirements,
         this,
+      ),
+    );
+
+    this.context.subscriptions.push(
+      commands.registerCommand(Commands.HomeView.OpenGettingStarted, () => {
+        env.openExternal(
+          Uri.parse(
+            "https://github.com/posit-dev/publisher/blob/main/docs/index.md",
+          ),
+        );
+      }),
+    );
+
+    this.context.subscriptions.push(
+      commands.registerCommand(Commands.HomeView.OpenFeedback, () => {
+        env.openExternal(
+          Uri.parse("https://github.com/posit-dev/publisher/discussions"),
+        );
+      }),
+    );
+
+    this.context.subscriptions.push(
+      commands.registerCommand(Commands.HomeView.RefreshCredentials, () =>
+        useBus().trigger("refreshCredentials", undefined),
+      ),
+      commands.registerCommand(
+        Commands.HomeView.AddCredential,
+        this.addCredential,
+      ),
+      commands.registerCommand(
+        Commands.HomeView.DeleteCredential,
+        this.deleteCredential,
       ),
     );
 

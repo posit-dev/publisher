@@ -25,7 +25,7 @@
       <li
         v-if="contextMenu"
         ref="contextMenuButton"
-        :data-vscode-context="`{&quot;webviewSection&quot;: &quot;${contextMenu}&quot;, &quot;preventDefaultContextMenuItems&quot;: true}`"
+        :data-vscode-context="vscodeContext"
         class="action-item menu-entry"
         role="presentation"
       >
@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 export type ActionButton = {
   label: string;
@@ -53,7 +53,7 @@ export type ActionButton = {
   fn: () => void;
 };
 
-defineProps<{
+const props = defineProps<{
   title: string;
   actions?: ActionButton[];
   contextMenu?: string;
@@ -80,6 +80,17 @@ const openContextMenu = (e: Event) => {
     );
   }
 };
+
+const vscodeContext = computed(() => {
+  if (!props.contextMenu) {
+    return undefined;
+  }
+
+  return JSON.stringify({
+    webviewSection: props.contextMenu,
+    preventDefaultContextMenuItems: true,
+  });
+});
 </script>
 
 <style lang="scss" scoped>
