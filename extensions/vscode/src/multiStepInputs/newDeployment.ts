@@ -34,7 +34,7 @@ import {
   getSummaryStringFromError,
 } from "src/utils/errors";
 import {
-  untitledConfigurationName,
+  newConfigFileNameFromTitle,
   untitledContentRecordName,
 } from "src/utils/names";
 import { formatURL, normalizeURL } from "src/utils/url";
@@ -1290,9 +1290,7 @@ export async function newDeployment(
   selectedInspectionResult.configuration.title = state.data.title;
 
   try {
-    configName = await untitledConfigurationName(
-      selectedInspectionResult.projectDir,
-    );
+    configName = newConfigFileNameFromTitle(state.data.title);
     const createResponse = await api.configurations.createOrUpdate(
       configName,
       selectedInspectionResult.configuration,
