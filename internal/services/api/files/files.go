@@ -27,6 +27,8 @@ type File struct {
 	Size             int64            `json:"size"`             // nullable; length in bytes for regular files; system-dependent
 	FileCount        int64            `json:"fileCount"`        // total number of files in the subtree rooted at this node
 	Abs              string           `json:"abs"`              // the absolute path
+	AllIncluded      bool             `json:"allIncluded"`      // Are all nodes under this one included?
+	AllExcluded      bool             `json:"allExcluded"`      // Are all nodes under this one excluded?
 }
 
 func CreateFile(root util.AbsolutePath, path util.AbsolutePath, match *matcher.Pattern) (*File, error) {
@@ -80,6 +82,23 @@ func (f *File) CalculateDirectorySizes() {
 	}
 	f.FileCount = fileCount
 	f.Size = size
+}
+
+func (f *File) CalculateInclusions() {
+	if !f.IsDir {
+		included := (f.Reason != nil) && !f.Reason.Exclude
+		f.AllIncluded = included
+		f.AllExcluded = !included
+		return
+	}
+	f.AllIncluded = true
+	f.AllExcluded = true
+
+	for _, child := range f.Files {
+		child.CalculateInclusions()
+		f.AllIncluded = f.AllIncluded && child.AllIncluded
+		f.AllExcluded = f.AllExcluded && child.AllExcluded
+	}
 }
 
 func (f *File) insert(root util.AbsolutePath, path util.AbsolutePath, matchList matcher.MatchList) (*File, error) {
