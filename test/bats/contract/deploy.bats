@@ -59,7 +59,7 @@ init_with_fields() {
     perl -i -pe '$_ .= qq(description =  "'"${CONTENT}"' description"\n) if /title/' ${FULL_PATH}/.posit/publish/${CONTENT}.toml
 
     if [[ ${ADDITIONAL_FILES} ]]; then
-        perl -i -pe "s/(files = \[.*)\]/\1, '${ADDITIONAL_FILES}']/" ${FULL_PATH}/.posit/publish/${CONTENT}.toml
+        perl -i -0777 -pe "s/(files = \[.*?)(\s*\])/\1, '${ADDITIONAL_FILES}'\2/s" ${FULL_PATH}/.posit/publish/${CONTENT}.toml
     fi
 
     # add Connect runtime fields for interactive content

@@ -90,7 +90,7 @@ describe("VS Code Extension UI Test", () => {
     );
     const fileContent = fs.readFileSync(filePath, "utf8");
     await expect(fileContent).toContain(
-      "type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = ['simple.py', 'requirements.txt']\ntitle = 'my fastapi app'",
+      "type = 'python-fastapi'\nentrypoint = 'simple.py'\nvalidate = true\nfiles = [\n  'simple.py',\n  'requirements.txt'\n]\ntitle = 'my fastapi app'",
     );
   });
 
