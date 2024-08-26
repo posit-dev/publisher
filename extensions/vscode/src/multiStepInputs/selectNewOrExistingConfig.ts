@@ -436,7 +436,15 @@ export async function selectNewOrExistingConfig(
         );
         return;
       }
-      const configName = newConfigFileNameFromTitle(state.data.title);
+
+      const existingNames = (
+        await api.configurations.getAll(selectedInspectionResult.projectDir)
+      ).data.map((config) => config.configurationName);
+
+      const configName = newConfigFileNameFromTitle(
+        state.data.title,
+        existingNames,
+      );
       selectedInspectionResult.configuration.title = state.data.title;
       const createResponse = await api.configurations.createOrUpdate(
         configName,

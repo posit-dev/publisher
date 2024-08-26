@@ -1290,7 +1290,11 @@ export async function newDeployment(
   selectedInspectionResult.configuration.title = state.data.title;
 
   try {
-    configName = newConfigFileNameFromTitle(state.data.title);
+    const existingNames = (
+      await api.configurations.getAll(selectedInspectionResult.projectDir)
+    ).data.map((config) => config.configurationName);
+
+    configName = newConfigFileNameFromTitle(state.data.title, existingNames);
     const createResponse = await api.configurations.createOrUpdate(
       configName,
       selectedInspectionResult.configuration,

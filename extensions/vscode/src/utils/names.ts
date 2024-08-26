@@ -57,16 +57,28 @@ export function contentRecordNameValidator(
  * Creates a semi-unique configuration name from a content title.
  *
  * @param title The title of the content to create a filename from
+ * @param existingNames [[]] An array of existing configuration names to ensure
+ *   uniqueness
  * @returns A filename that is safe to use in the filesystem with a unique 4
  * character ending to avoid Git conflicts.
  */
-export function newConfigFileNameFromTitle(title: string): string {
+export function newConfigFileNameFromTitle(
+  title: string,
+  existingNames: string[] = [],
+): string {
   const filename = filenamify(title, {
     replacement: "-",
     maxLength: 95,
   });
-  const uniqueEnding = randomNameEnding(4);
-  return `${filename}-${uniqueEnding}`;
+
+  // Generate unique name endings until we find a unique one
+  let result;
+  do {
+    const uniqueEnding = randomNameEnding(4);
+    result = `${filename}-${uniqueEnding}`;
+  } while (existingNames.includes(result));
+
+  return result;
 }
 
 /**
