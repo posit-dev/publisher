@@ -19,7 +19,7 @@ import {
   window,
   workspace,
 } from "vscode";
-import { isAxiosError } from "axios";
+import { AxiosError } from "axios";
 import { Mutex } from "async-mutex";
 
 import {
@@ -502,10 +502,31 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = pythonSection.packageFile;
           packageMgr = pythonSection.packageManager;
 
-          const apiRequest = api.packages.getPythonPackages(
-            activeConfiguration.configurationName,
-            activeConfiguration.projectDir,
-          );
+          const apiRequest = api.packages
+            .getPythonPackages(
+              activeConfiguration.configurationName,
+              activeConfiguration.projectDir,
+            )
+            // Proposed Fix...
+            .catch((error: AxiosError) => {
+              if (error.response?.status === 404) {
+                // No requirements file or contains invalid entries; show the welcome view.
+                packageFile = undefined;
+              } else if (error.response?.status === 422) {
+                // invalid package file
+                packageFile = undefined;
+              } else if (error.response?.status === 409) {
+                // Python is not present in the configuration file
+                pythonProject = false;
+              } else {
+                const summary = getSummaryStringFromError(
+                  "homeView::refreshPythonPackages",
+                  error,
+                );
+                window.showInformationMessage(summary);
+              }
+              return undefined;
+            });
           showProgress(
             "Refreshing Python Packages",
             apiRequest,
@@ -513,25 +534,15 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           );
 
           const response = await apiRequest;
-          packages = response.data.requirements;
-        } catch (error: unknown) {
-          if (isAxiosError(error) && error.response?.status === 404) {
-            // No requirements file or contains invalid entries; show the welcome view.
-            packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 422) {
-            // invalid package file
-            packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 409) {
-            // Python is not present in the configuration file
-            pythonProject = false;
-          } else {
-            const summary = getSummaryStringFromError(
-              "homeView::refreshPythonPackages",
-              error,
-            );
-            window.showInformationMessage(summary);
-            return;
+          if (response) {
+            packages = response.data.requirements;
           }
+        } catch (error: unknown) {
+          const summary = getSummaryStringFromError(
+            "homeView::refreshPythonPackages",
+            error,
+          );
+          window.showInformationMessage(summary);
         }
       }
     }
@@ -570,36 +581,51 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
           packageFile = rSection.packageFile;
           packageMgr = rSection.packageManager;
 
-          const apiRequest = api.packages.getRPackages(
-            activeConfiguration.configurationName,
-            activeConfiguration.projectDir,
-          );
+          const apiRequest = api.packages
+            .getRPackages(
+              activeConfiguration.configurationName,
+              activeConfiguration.projectDir,
+            )
+            // proposed fix...
+            .catch((error: AxiosError) => {
+              console.log(`Handling AxiosError: ${error}`);
+              if (error.response?.status === 404) {
+                // No requirements file; show the welcome view.
+                packageFile = undefined;
+              } else if (error.response?.status === 422) {
+                // invalid package file
+                packageFile = undefined;
+              } else if (error.response?.status === 409) {
+                // R is not present in the configuration file
+                rProject = false;
+              } else {
+                const summary = getSummaryStringFromError(
+                  "homeView::refreshRPackages",
+                  error,
+                );
+                window.showErrorMessage(summary);
+              }
+              return undefined;
+            });
+
           showProgress("Refreshing R Packages", apiRequest, Views.HomeView);
 
           const response = await apiRequest;
+
           packages = [];
-          Object.keys(response.data.packages).forEach((key: string) =>
-            packages.push(response.data.packages[key]),
-          );
-          rVersionConfig = response.data.r;
-        } catch (error: unknown) {
-          if (isAxiosError(error) && error.response?.status === 404) {
-            // No requirements file; show the welcome view.
-            packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 422) {
-            // invalid package file
-            packageFile = undefined;
-          } else if (isAxiosError(error) && error.response?.status === 409) {
-            // R is not present in the configuration file
-            rProject = false;
-          } else {
-            const summary = getSummaryStringFromError(
-              "homeView::refreshRPackages",
-              error,
+          if (response) {
+            Object.keys(response.data.packages).forEach((key: string) =>
+              packages.push(response.data.packages[key]),
             );
-            window.showInformationMessage(summary);
-            return;
+            rVersionConfig = response.data.r;
           }
+        } catch (error: unknown) {
+          // kept as a final catch for ??? Probably should delete it.
+          const summary = getSummaryStringFromError(
+            "homeView::refreshRPackages",
+            error,
+          );
+          window.showInformationMessage(summary);
         }
       }
     }
