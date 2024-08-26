@@ -2,38 +2,8 @@
 
 import { InputBoxValidationSeverity } from "vscode";
 
-import { useApi } from "src/api";
 import { isValidFilename } from "src/utils/files";
-
-export async function untitledConfigurationName(
-  projectDir: string,
-): Promise<string> {
-  const api = await useApi();
-  const existingConfigurations = (await api.configurations.getAll(projectDir))
-    .data;
-
-  if (existingConfigurations.length === 0) {
-    return "configuration-1";
-  }
-
-  let id = 0;
-  let defaultName = "";
-  do {
-    id += 1;
-    const trialName = `configuration-${id}`;
-
-    if (
-      !existingConfigurations.find((config) => {
-        return (
-          config.configurationName.toLowerCase() === trialName.toLowerCase()
-        );
-      })
-    ) {
-      defaultName = trialName;
-    }
-  } while (!defaultName);
-  return defaultName;
-}
+import filenamify from "filenamify";
 
 export function untitledContentRecordName(
   existingContentRecordNames: string[],
@@ -81,4 +51,34 @@ export function contentRecordNameValidator(
     }
     return undefined;
   };
+}
+
+/**
+ * Creates a semi-unique configuration name from a content title.
+ *
+ * @param title The title of the content to create a filename from
+ * @returns A filename that is safe to use in the filesystem with a unique 4
+ * character ending to avoid Git conflicts.
+ */
+export function newConfigFileNameFromTitle(title: string): string {
+  const filename = filenamify(title, {
+    replacement: "-",
+    maxLength: 95,
+  });
+  const uniqueEnding = randomNameEnding(4);
+  return `${filename}-${uniqueEnding}`;
+}
+
+/**
+ * Generates a random, uppercase, base 32 string of the given length.
+ *
+ * @param length [4] The length of the resulting string
+ * @returns A random base 32 string of the given length
+ */
+export function randomNameEnding(length: number = 4): string {
+  return Array.from({ length: length }, () =>
+    Math.floor(Math.random() * 32)
+      .toString(32)
+      .toUpperCase(),
+  ).join("");
 }
