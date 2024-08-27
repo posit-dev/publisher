@@ -37,7 +37,7 @@ import {
   filterInspectionResultsToType,
   filterConfigurationsToValidAndType,
 } from "src/utils/filters";
-import { showProgress } from "src/utils/progress";
+import { showProgressPassthrough } from "src/utils/progress";
 import { isRelativePathRoot } from "src/utils/files";
 import { newConfigFileNameFromTitle } from "src/utils/names";
 
@@ -216,15 +216,6 @@ export async function selectNewOrExistingConfig(
     },
   );
 
-  // wait for all of them to complete
-  const apisComplete = Promise.all([
-    getConfigurations,
-    getConfigurationInspections,
-  ]);
-
-  // Start the progress indicator and have it stop when the API calls are complete
-  showProgress("Initializing::selectNewOrExistingConfig", apisComplete, viewId);
-
   // ***************************************************************
   // Order of all steps
   // NOTE: This multi-stepper is used for multiple commands
@@ -387,14 +378,20 @@ export async function selectNewOrExistingConfig(
   }
 
   // ***************************************************************
-  // Wait for the api promise to complete
+  // Wait for the api promise to complete while showing progress
   // Kick off the input collection
   // and await until it completes.
   // This is a promise which returns the state data used to
   // collect the info.
   // ***************************************************************
+
   try {
-    await apisComplete;
+    await showProgressPassthrough(
+      "Initializing::collectInputs",
+      viewId,
+      async () =>
+        await Promise.all([getConfigurations, getConfigurationInspections]),
+    );
   } catch {
     // errors have already been displayed by the underlying promises..
     return;
