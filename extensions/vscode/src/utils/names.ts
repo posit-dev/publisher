@@ -68,7 +68,7 @@ export function newConfigFileNameFromTitle(
 ): string {
   const filename = filenamify(title, {
     replacement: "-",
-    maxLength: 95,
+    maxLength: 30,
   });
 
   // Generate unique name endings until we find a unique one
