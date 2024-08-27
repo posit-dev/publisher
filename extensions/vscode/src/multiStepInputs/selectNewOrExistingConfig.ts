@@ -32,7 +32,6 @@ import {
   isQuickPickItem,
   isQuickPickItemWithIndex,
 } from "src/multiStepInputs/multiStepHelper";
-import { untitledConfigurationName } from "src/utils/names";
 import { calculateTitle } from "src/utils/titles";
 import {
   filterInspectionResultsToType,
@@ -40,6 +39,7 @@ import {
 } from "src/utils/filters";
 import { showProgress } from "src/utils/progress";
 import { isRelativePathRoot } from "src/utils/files";
+import { newConfigFileNameFromTitle } from "src/utils/names";
 
 export async function selectNewOrExistingConfig(
   activeDeployment: ContentRecord | PreContentRecord,
@@ -436,8 +436,14 @@ export async function selectNewOrExistingConfig(
         );
         return;
       }
-      const configName = await untitledConfigurationName(
-        selectedInspectionResult.projectDir,
+
+      const existingNames = (
+        await api.configurations.getAll(selectedInspectionResult.projectDir)
+      ).data.map((config) => config.configurationName);
+
+      const configName = newConfigFileNameFromTitle(
+        state.data.title,
+        existingNames,
       );
       selectedInspectionResult.configuration.title = state.data.title;
       const createResponse = await api.configurations.createOrUpdate(
