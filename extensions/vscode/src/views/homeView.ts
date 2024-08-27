@@ -324,7 +324,7 @@ export class HomeViewProvider implements WebviewViewProvider, Disposable {
       const api = await useApi();
       const apiRequest = api.files.updateFileList(
         activeConfig.configurationName,
-        uri,
+        `/${uri}`,
         action,
         activeConfig.projectDir,
       );

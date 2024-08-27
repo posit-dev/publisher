@@ -170,7 +170,7 @@ func (s *InitializeSuite) TestGetPossibleConfigs() {
 	s.Len(configs, 2)
 	s.Equal(config.ContentTypePythonFlask, configs[0].Type)
 	s.Equal("app.py", configs[0].Entrypoint)
-	s.Equal([]string{"app.py", "requirements.txt"}, configs[0].Files)
+	s.Equal([]string{"/app.py", "/requirements.txt"}, configs[0].Files)
 	s.Equal(expectedPyConfig, configs[0].Python)
 
 	s.Equal(config.ContentTypeHTML, configs[1].Type)

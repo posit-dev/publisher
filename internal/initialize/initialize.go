@@ -133,7 +133,7 @@ func normalizeConfig(
 	// The inspector may populate the file list.
 	// If it doesn't, default to just the entrypoint file.
 	if len(cfg.Files) == 0 {
-		cfg.Files = []string{cfg.Entrypoint}
+		cfg.Files = []string{fmt.Sprint("/", cfg.Entrypoint)}
 	}
 	needPython, err := requiresPython(cfg, base)
 	if err != nil {
@@ -146,7 +146,7 @@ func normalizeConfig(
 			return err
 		}
 		cfg.Python = pyConfig
-		cfg.Files = append(cfg.Files, cfg.Python.PackageFile)
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.Python.PackageFile))
 	}
 	needR, err := requiresR(cfg, base, rExecutable)
 	if err != nil {
@@ -159,7 +159,7 @@ func normalizeConfig(
 			return err
 		}
 		cfg.R = rConfig
-		cfg.Files = append(cfg.Files, cfg.R.PackageFile)
+		cfg.Files = append(cfg.Files, fmt.Sprint("/", cfg.R.PackageFile))
 	}
 	cfg.Comments = strings.Split(initialComment, "\n")
 
