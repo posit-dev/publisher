@@ -387,7 +387,7 @@ export async function selectNewOrExistingConfig(
 
   try {
     await showProgress(
-      "Initializing::collectInputs",
+      "Initializing::selectNewOrExistingConfig",
       viewId,
       async () =>
         await Promise.all([getConfigurations, getConfigurationInspections]),
